@@ -25,7 +25,7 @@ def overflow_requests(instance, runtime):
                 if profile['id'] not in candidates:
                     continue
                 selection(instance['config'], {**action, 'profile_ref': ref}, runtime['tasks'],
-                          instance.get('knowledge', {}), profiles=instance['execution_profiles'])
+                          instance.get('knowledge', {}), instance=instance)
                 allowed.append(ref)
             except ValueError:
                 continue

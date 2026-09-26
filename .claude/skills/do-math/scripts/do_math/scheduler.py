@@ -5,12 +5,10 @@ from copy import deepcopy
 from pathlib import Path
 import time
 
+from .execution_profiles import LEAN_ROLES, MACHINE_ROLES, WORK_ROLES
 from .model_policy import assessment_basis, selection, validate_assessments, preparation_only
-from .parallel import ModelCalls
-from .session_slots import SessionSlots
-
-MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
-WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
+from .parallel import ModelCalls, failed_result
+from .session_slots import SLOT_WAITS, SessionSlots
 
 # Upper bound of an owner wait while calls run. Calls wake the owner at once;
 # this bound only paces file-borne controls, transport requests and clock
@@ -24,11 +22,12 @@ class SchedulerMixin:
             return
         execution = self.runtime['executions'][execution_id]
         if execution.get('launch_ticket'):
-            execution['launch_ticket']['phase'] = 'not_started' if result.get('launch_not_created') is True else 'finished'
+            from .launch import mark_returned
+            mark_returned(execution['launch_ticket'], result)
 
     def _evaluate_stops(self):
         """Every head movement passes here: judge live calls' stop reasons; flags carry the verdict."""
-        calls = getattr(self, '_calls', None)
+        calls = self._calls
         if calls is not None:
             calls.judge()
 
@@ -53,7 +52,7 @@ class SchedulerMixin:
         """True when a time-bound stop reason fell due since the previous owner pass."""
         from .governance import timestamp
         now, instant = self._lifecycle_now(), time.monotonic()
-        since, self._stop_clock = getattr(self, '_stop_clock', None), (now, instant)
+        since, self._stop_clock = self._stop_clock, (now, instant)
         if since is None or not self._clock_guard()['usable']:
             return True
         expiries = [grant['expires_at'] for grant in self.instance.get('grants', {}).values()
@@ -65,7 +64,7 @@ class SchedulerMixin:
         if any(since[0] < timestamp(at) <= now for at in expiries):
             return True
         return any(since[1] < at <= instant
-                   for deadlines in getattr(self, '_stop_deadlines', {}).values() for at in deadlines)
+                   for deadlines in self._stop_deadlines.values() for at in deadlines)
 
     def _observation_failed(self, execution_id, error):
         """An unapplied observation stops its execution; the error is its recorded stop reason."""
@@ -74,30 +73,14 @@ class SchedulerMixin:
         self._save()
 
     def _run_machine_steps(self, generator, *, calculator=None):
-        """Start only the blocking calculation; resume its owner continuation once."""
+        """Start only the blocking calculation; the owner resumes its continuation when it returns."""
         try:
             execution_id, arguments = next(generator)
         except StopIteration as completed:
             return completed.value
-        if not hasattr(self, '_live_execution_ids'):
-            self._live_execution_ids = set()
         self._live_execution_ids.add(execution_id)
-        calculator = calculator or self.formal_verifier
-        if getattr(self, '_calls', None) is not None:
-            self._calls.start_call(generator, calculator, arguments, execution_id=execution_id)
-            return False  # The queued request remains owned until completion.
-        try:
-            result = calculator(**arguments)
-        except Exception as error:
-            result = {'status': 'failed', 'reason': f'{type(error).__name__}: {error}'}
-        self._local_call_returned(execution_id, result)
-        try:
-            generator.send(result)
-        except StopIteration as completed:
-            return completed.value
-        finally:
-            self._live_execution_ids.discard(execution_id)
-        raise RuntimeError('machine execution yielded more than one calculation')
+        self._calls.start_call(generator, calculator or self.formal_verifier, arguments, execution_id=execution_id)
+        return False  # The queued request remains owned until completion.
 
     def _abort_parallel_calls(self):
         """Preserve returned evidence and reconcile confirmed Jobs after owner failure."""
@@ -110,7 +93,7 @@ class SchedulerMixin:
             try:
                 result = future.result()
             except BaseException as error:
-                result = {'status': 'failed', 'reason': f'{type(error).__name__}: {error}'}
+                result = failed_result(error)
             if execution_id:
                 raw = canonical_json(json_safe(result))
                 # This local copy remains available even if publication itself failed.
@@ -119,9 +102,7 @@ class SchedulerMixin:
                 path.write_bytes(raw)
                 returned.append((execution_id, raw, str(path), result))
             generator.close()
-        self.head, self.instance, self.runtime = self.store.load()
-        self._saved_state = self._state_signature()
-        self._evaluate_stops()
+        self._reload()
         artifacts = {}
         for execution_id, raw, local_path, result in returned:
             execution = self.runtime['executions'].get(execution_id)
@@ -195,8 +176,6 @@ class SchedulerMixin:
 
 
     def _session_resources(self):
-        if getattr(self, "_slots", None) is not None:
-            return self._slots.snapshot()
         return SessionSlots(self.runtime, self.instance, observer=True).snapshot()
 
     def _select_model(self, action):
@@ -210,7 +189,7 @@ class SchedulerMixin:
                 "difficulty": chosen["tier"], "importance": chosen["tier"],
                 "reason": "Preserve the reviewed execution's model requirement."}
         return selection(self.instance["config"], action, self.runtime["tasks"], self.instance["knowledge"],
-                         profiles=self.instance["execution_profiles"])
+                         instance=self.instance)
 
     def _apply_model_metadata(self, action, output, execution_id):
         extensions = self.runtime["executions"][execution_id].get("extensions", {})
@@ -259,7 +238,7 @@ class SchedulerMixin:
                         reason='Reprepare the task with valid current observation profiles; preserve its old profile references in revision history')
                 continue
             fresh = deepcopy(action)
-            for key in ('profile_ref', 'model_selection', 'actor_kind', 'budget_kind', 'dispatch_wait'):
+            for key in ('profile_ref', 'model_selection', 'actor_kind', 'dispatch_wait'):
                 fresh.pop(key, None)
             try:
                 profile = self._execution_profile(fresh)
@@ -293,9 +272,9 @@ class SchedulerMixin:
 
     def _rule_deferral_inputs(self, deferrals):
         from .input_basis import aliases
-        from .planning import _records
+        from .planning import record_index
         from .repository import exact_content_hash
-        records = _records(self.instance, self.runtime)
+        records = record_index(self.instance, self.runtime)
         values = {}
         for ref in {ref for row in deferrals for ref in row['missing_inputs']}:
             if ref == 'user_input':
@@ -404,7 +383,7 @@ class SchedulerMixin:
             if not task.get('model_assessment'):
                 continue
             from .model_policy import work_profile_selection
-            work_profile_selection(self.instance['config'], task, self.instance['execution_profiles'])
+            work_profile_selection(self.instance['config'], task, self.instance)
             basis = {**assessment_basis(task), 'goal_revision': view['goal_revision'], 'policy_revision': view['policy_revision']}
             self._enqueue('task_contract_review', tid, contract_basis=basis,
                 review_basis_key=review_basis_key(task, self.instance, self.runtime),
@@ -431,7 +410,7 @@ class SchedulerMixin:
             return
         if action["role"] != "research_plan":
             raise ValueError("only research planning reorders queued work")
-        _, _, original = self.store.load(self.runtime["executions"][execution_id]["input_snapshot"])
+        _, _, original = self.store.view(self.runtime["executions"][execution_id]["input_snapshot"])
         original_live = {e.get("action", {}).get("id") for e in original["executions"].values() if e["status"] != "ended"}
         allowed = {a["id"] for a in original["queue"] if a.get("id") and a["role"] in WORK_ROLES and a["id"] not in original_live}
         live = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
@@ -517,36 +496,29 @@ class SchedulerMixin:
                 and not e.get("action", {}).get("review_cycle_id") for e in live):
             return False
         if role in MACHINE_ROLES:
-            if role in {'formal_check', 'trust_check'} and any(e['role'] in {'formal_check', 'trust_check'} for e in live):
+            if role in LEAN_ROLES and any(e['role'] in LEAN_ROLES for e in live):
                 action['dispatch_wait'] = {'kind': 'formal_execution'}
                 return False
-            from .session_slots import SessionSlots
-            profile = self._execution_profile(action)
-            admission = SessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
-            if not admission['allowed']:
-                action['dispatch_wait'] = admission['wait']
-            return admission['allowed']
+            return self._admissible(action, self._execution_profile(action))
         if action.get("live") and self.runtime["executions"].get(target, {}).get("status") == "ended":
             self._remove_action(action)
             return False
         chosen = self._select_model(action)
         action["model_selection"] = chosen
-        profile = None if action.get("profile_ref") else self._execution_profile(action)
         capability = self._capability_requirements(action["profile_ref"])
         if not capability["satisfied"]:
             action["dispatch_wait"] = {"kind": "capability_evidence", **capability}
             return False
-        from .session_slots import SessionSlots
-        profile = profile or self._execution_profile(action)
+        return self._admissible(action, self._execution_profile(action))
+
+    def _admissible(self, action, profile):
+        """Check admission without reserving; a refusal records its wait on the request."""
         admission = SessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
         if not admission['allowed']:
             action['dispatch_wait'] = admission['wait']
         return admission['allowed']
 
     def _run_parallel(self, *, max_steps=None, watch=False, until_active=False):
-        from .repository import new_id
-        self._slots = SessionSlots(
-                                   runtime=self.runtime, instance=self.instance)
         self._calls = ModelCalls(on_returned=self._local_call_returned,
                                  on_observation_error=self._observation_failed)
         self._stop_deadlines, self._stop_clock = {}, None
@@ -594,8 +566,6 @@ class SchedulerMixin:
                         if collected:
                             continue
                         break
-                self.instance["available_input_refs"] = self._available_inputs()
-                self._retry_provider_actions()
                 self._refresh_readiness()
                 if self.runtime["status"] in {"closed", "completed"} or (self.runtime['status'] == 'paused' and not limited):
                     continue
@@ -625,7 +595,8 @@ class SchedulerMixin:
                         except StopIteration:
                             pass
                         else:
-                            self._calls.start(generator, self.runner, arguments, execution_id=arguments.get('execution_id'))
+                            self._calls.start_call(generator, self.runner.run, arguments,
+                                                   execution_id=arguments.get('execution_id'))
                     if not action.get("live"):
                         steps += 1
                     continue
@@ -633,7 +604,7 @@ class SchedulerMixin:
                     self._calls.wait(OWNER_POLL_SECONDS)
                     continue
                 only_capacity = bool(self.runtime["queue"]) and all(
-                    a.get("dispatch_wait", {}).get("kind") in {"capacity", "host_capacity"}
+                    a.get("dispatch_wait", {}).get("kind") in SLOT_WAITS
                     for a in self.runtime["queue"])
                 if self.runtime['status'] != 'paused':
                     self.runtime["status"] = "capacity_waiting" if only_capacity else "waiting"
@@ -657,4 +628,3 @@ class SchedulerMixin:
         finally:
             self._calls.close()
             self._calls = None
-            self._slots = None

@@ -4,7 +4,15 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from .control_transport import SUBMIT_INTENT
 
+# Acceptance receipt kinds. A control submission's receipt keeps its request
+# kind (control_transport.SUBMIT_INTENT); the others name their own receiver.
+NATIVE_FINAL_RECEIPT = "native_final"
+MACHINE_OUTPUT_RECEIPT = "machine_output"
+RECOVERY_REPORT_RECEIPT = "recovery_report"
+# Receipts that accept an AI role's sealed submission.
+SUBMISSION_RECEIPT_KINDS = frozenset({SUBMIT_INTENT, NATIVE_FINAL_RECEIPT})
 EXECUTION_STATUSES = frozenset({"queued", "starting", "running", "stopping", "ended"})
 STOP_PHASES = frozenset({"checkpointing", "terminating"})
 OUTCOMES = frozenset({"output_accepted", "execution_incomplete", "cancelled", "start_failed"})
@@ -98,7 +106,7 @@ def record_submission_intent(execution: dict, intent: dict, receipt: dict, *, at
     if (not isinstance(intent, dict) or not isinstance(intent.get("candidate_id"), str)
             or not isinstance(intent.get("output_ref"), str)):
         raise ValueError("submission intent requires a centrally sealed candidate")
-    if not isinstance(receipt, dict) or receipt.get("kind") not in {"submit_intent", "native_final"} or receipt.get("state") != "accepted":
+    if not isinstance(receipt, dict) or receipt.get("kind") not in SUBMISSION_RECEIPT_KINDS or receipt.get("state") != "accepted":
         raise ValueError("submission intent requires an accepted control receipt")
     if receipt.get("execution_id") != execution.get("id"):
         raise ValueError("submission receipt belongs to another execution")
@@ -107,7 +115,7 @@ def record_submission_intent(execution: dict, intent: dict, receipt: dict, *, at
         if previous == intent and execution.get("submission_receipt") == receipt:
             return execution
         raise ValueError("a different submission intent or receipt was already recorded")
-    recovery = (receipt.get('kind') == 'native_final' and receipt.get('recovery_request_id')
+    recovery = (receipt.get('kind') == NATIVE_FINAL_RECEIPT and receipt.get('recovery_request_id')
         and execution.get('status') == 'ended' and execution.get('outcome') == 'execution_incomplete'
         and execution.get('capacity', {}).get('local_termination') == 'confirmed')
     if execution.get("status") != "running" and not recovery:
@@ -149,7 +157,7 @@ def end_preparation(execution: dict, *, at: str, stage: str, reason: str, cancel
     _nonempty(reason, "reason")
     candidate = deepcopy(execution)
     begin_preparation(candidate, at=at, stage=stage)
-    if candidate.get("capacity") or candidate.get("process"):
+    if candidate.get("capacity"):
         raise ValueError("admitted preparation must reconcile reservations and process before ending")
     candidate["input_preparation"].update(finished_at=at, reason=reason)
     transition_execution(candidate, "ended", at=at, reason=reason,
@@ -158,6 +166,33 @@ def end_preparation(execution: dict, *, at: str, stage: str, reason: str, cancel
     execution.clear()
     execution.update(candidate)
     return execution
+
+
+def drive_to_termination(execution: dict, *, at: str, reason: str) -> dict:
+    """Move a started or checkpointing execution to the terminating barrier.
+
+    Queued, ended and already terminating executions are unchanged.
+    """
+    if execution.get("status") in {"starting", "running"} or (
+            execution.get("status") == "stopping" and execution.get("stop_phase") == "checkpointing"):
+        transition_execution(execution, "stopping", at=at, reason=reason, stop_phase="terminating")
+    return execution
+
+
+def release_or_hold(execution: dict, slots, *, at: str) -> bool:
+    """Return the execution's local capacity, or hold it at the termination barrier.
+
+    Without confirmed local termination the execution stays stopping and keeps
+    its capacity and output for recovery; an error the call already reported is
+    kept. The caller preserves outputs and saves.
+    """
+    if not execution.get("capacity") or slots.release(execution["id"]):
+        return True
+    transition_execution(execution, "stopping", at=at, stop_phase="terminating",
+                         reason="local Job termination remains unconfirmed")
+    if not execution.get("error"):
+        execution["error"] = "Local Job termination is unconfirmed; capacity and output remain held for recovery."
+    return False
 
 
 def recover_execution(execution: dict, observation: dict, *, at: str) -> dict:
@@ -176,19 +211,14 @@ def recover_execution(execution: dict, observation: dict, *, at: str) -> dict:
     execution.setdefault("recovery", []).append({"at": at, "observation": deepcopy(observation)})
     if state == "queued" and fact == "no_execution_or_reservation":
         execution["recovery_disposition"] = "retain_for_recheck"
-    elif state == "starting" and fact == "no_substantive_action":
-        transition_execution(execution, "stopping", at=at, reason="recovery confirmed no substantive action",
-                             stop_phase="terminating")
-        transition_execution(execution, "ended", at=at, reason="recovery confirmed no substantive action",
-                             outcome="start_failed", disposition="preserved_preparation")
     elif state == "starting" and fact == "start_unknown":
-        transition_execution(execution, "stopping", at=at, reason="recovery cannot establish start", stop_phase="terminating")
+        drive_to_termination(execution, at=at, reason="recovery cannot establish start")
         execution["recovery_disposition"] = "preserve_space_and_reservations"
     elif state == "running" and fact == "previous_engine_lost":
-        transition_execution(execution, "stopping", at=at, reason="previous engine lost", stop_phase="terminating")
+        drive_to_termination(execution, at=at, reason="previous engine lost")
         execution["recovery_disposition"] = "reconcile_local_and_remote"
-    elif state == "stopping" and execution.get("stop_phase") == "checkpointing" and fact in {"engine_restarted", "checkpoint_deadline_elapsed"}:
-        transition_execution(execution, "stopping", at=at, reason="checkpointing cannot continue after recovery", stop_phase="terminating")
+    elif state == "stopping" and execution.get("stop_phase") == "checkpointing" and fact == "engine_restarted":
+        drive_to_termination(execution, at=at, reason="checkpointing cannot continue after recovery")
         execution["recovery_disposition"] = "preserve_received_checkpoint"
     elif state == "stopping" and fact == "termination_barrier_pending":
         execution["recovery_disposition"] = "preserve_space_and_reservations"

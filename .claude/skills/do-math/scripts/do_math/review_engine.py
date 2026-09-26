@@ -6,16 +6,15 @@ import hashlib
 import json
 from pathlib import Path
 
-from .repository import canonical_json, exact_content_hash, new_id, artifact_verified, verify_artifact
+from .file_io import compact_json_bytes, json_digest
+from .repository import canonical_json, exact_content_hash, new_id
 from .review_cycle import (accept_result, context_for, next_actions, record_turn, stage_schema, start_review,
                           defer_for_research, accept_research_result, research_schema, record_recovery_event,
                           authorize_record_replacement, reserved_review_slots, ReviewRestorationError,
                           validate_sealed_review, validate_review_execution, validate_review_independence,
                           replacement_authority, identity_assessment, review_action as _action,
-                          resource_disposition, validate_resource_disposition,
-                          # Transcript seals use review_cycle's compact encoding, not repository
-                          # JSON (which uses indentation and a terminal newline).
-                          _bytes as _transcript_bytes)
+                          resource_disposition, validate_resource_disposition, slot_key,
+                          classify_research_source)
 from .input_basis import capture_review_input_basis, review_input_basis_changes
 from . import knowledge_records as kr
 from .review_policy import build_review_policy, minimum_scope_executions
@@ -39,7 +38,14 @@ def _proposal(instance, knowledge_id):
 
 
 def _pending_key(action):
-    return f"{action['review_cycle_id']}:{action['stage']}:{action['round']}:{action['slot']}"
+    return f"{action['review_cycle_id']}:{slot_key(action)}"
+
+
+def _independence_seat(action):
+    """The seat that sealed replay passes to validate_review_independence for this action."""
+    if action.get('role') == 'supplemental_research':
+        return {'role': 'supplemental_research', 'research_request_id': action['research_request_id']}
+    return _action(action)
 
 
 class ReviewEngineMixin:
@@ -288,9 +294,8 @@ class ReviewEngineMixin:
         if resource_disposition(cycle):
             return {'disposition': 'review_resource_pending', 'cycle_id': cid}
         self._review_cycle({'role': 'identity_review', 'target': cycle['knowledge_id'], 'review_cycle_id': cid})
-        if cycle['proposal'].get('assessment_reassessment'):
-            projected = {**self.runtime, 'executions': {**self.runtime.get('executions', {}), execution['id']: execution}}
-            validate_review_independence(cycle, projected, execution['id'], action)
+        projected = {**self.runtime, 'executions': {**self.runtime.get('executions', {}), execution['id']: execution}}
+        validate_review_independence(cycle, projected, execution['id'], _independence_seat(action))
         changes = review_input_basis_changes(cycle.get('review_input_basis', {}), cycle)
         if changes:
             raise ValueError('review inputs changed before admission: ' + json.dumps(changes, ensure_ascii=False))
@@ -379,8 +384,8 @@ class ReviewEngineMixin:
             if any(self.runtime['executions'][eid]['status'] != 'ended'
                    for eid in activity['assigned_execution_ids']):
                 continue
-            if any(row.get('state') == 'held' and row.get('owner_id') in activity['assigned_execution_ids']
-                   for row in self.runtime.get('reservations', {}).values()):
+            from .session_slots import held_reservations
+            if held_reservations(self.runtime, activity['assigned_execution_ids']):
                 continue
             # A deferred review stays frozen until its proposal really changes or
             # is withdrawn. Elapsed time and newly free slots cannot reset it.
@@ -587,7 +592,7 @@ class ReviewEngineMixin:
         should escape and be retried as though nothing had been recorded.
         """
         cycle = self._review_cycle(action)
-        key = f"{action['stage']}:{action['round']}:{action['slot']}"
+        key = slot_key(action)
         if key in cycle.get('blocked_actions', {}) and key not in cycle.get('replacement_actions', {}):
             event = cycle['recovery_events'][cycle['blocked_actions'][key]]
             return {'disposition': 'recovery_recorded', 'recovery': {
@@ -624,7 +629,7 @@ class ReviewEngineMixin:
         """Seal the applied delegation behind a replacement slot, if one authorizes it."""
         if action.get('replacement_for') is None:
             return None
-        replacement = cycle['replacement_actions'][f"{action['stage']}:{action['round']}:{action['slot']}"]
+        replacement = cycle['replacement_actions'][slot_key(action)]
         if not replacement.get('delegation_id'):
             return None
         app = self.runtime['delegation_applications'][replacement['case']['application_id']]
@@ -636,7 +641,7 @@ class ReviewEngineMixin:
         if action.get('replacement_for') is None:
             return None
         cycle = self._review_cycle(action)
-        key = f"{action['stage']}:{action['round']}:{action['slot']}"
+        key = slot_key(action)
         replacement = cycle.get('replacement_actions', {}).get(key)
         if replacement is None or replacement['action'] != _action(action):
             return {'allowed': False, 'reason': 'replacement does not match the authorized slot'}
@@ -673,7 +678,7 @@ class ReviewEngineMixin:
             except (KeyError, IndexError) as error:
                 raise ReviewRestorationError('review source bytes are unavailable', cause_kind='missing_record',
                     coordinate={'slot': slot, 'index': index}, expected_sha256=reference['sha256']) from error
-            raw = _transcript_bytes(message)
+            raw = compact_json_bytes(message)
             if hashlib.sha256(raw).hexdigest() != reference['sha256'] or len(raw) != reference['bytes']:
                 raise ReviewRestorationError('review source hash does not match its sealed transcript', cause_kind='content_mismatch',
                     coordinate={'slot': slot, 'index': index}, expected_sha256=reference['sha256'],
@@ -803,7 +808,7 @@ class ReviewEngineMixin:
     def _retry_review_restoration(self, action, workspace, *, at=None):
         """Recheck recovered exact bytes; successful verification reopens the held action."""
         cycle = self._review_cycle(action)
-        key = f"{action['stage']}:{action['round']}:{action['slot']}"
+        key = slot_key(action)
         blocked = cycle.get('blocked_actions', {}).pop(key, None)
         try:
             outcome = self._prepare_review_context(action, workspace)
@@ -839,7 +844,7 @@ class ReviewEngineMixin:
                 action['slot'] in profiles and profiles[action['slot']] != profile):
             raise ValueError('logical review slot profile changed')
         binding = {'role_slot_id': action['slot'], 'profile_ref': deepcopy(profile),
-                   'input_sha256': execution.get('input_sha256'),
+                   'input_sha256': execution['input_manifest']['prompt']['sha256'],
                    'input_snapshot': execution.get('input_snapshot', self.head),
                    'proposal_digest': prepared['proposal_digest'],
                    'restored_messages': deepcopy(prepared['restored_messages']),
@@ -916,7 +921,7 @@ class ReviewEngineMixin:
         if not messages:
             return False
         source = {'artifact_ref': artifact_ref, 'event_index': event_index,
-                  'event_sha256': hashlib.sha256(_transcript_bytes(event)).hexdigest()}
+                  'event_sha256': json_digest(event)}
         for index, message in enumerate(messages):
             for field in ('content', 'arguments', 'call'):
                 if field not in message:
@@ -925,7 +930,7 @@ class ReviewEngineMixin:
                     canonical_json(message[field])
                 except ValueError:
                     # Provider JSON numbers remain exact text outside integer-only state.
-                    message[field] = _transcript_bytes(message[field]).decode('utf-8')
+                    message[field] = compact_json_bytes(message[field]).decode('utf-8')
             message.update(kind='observed_public_message', source=deepcopy(source),
                            message_id=f'{execution_id}:public:{event_index}:{index}')
         cycle = self._review_cycle(action)
@@ -963,8 +968,7 @@ class ReviewEngineMixin:
             raise ValueError('execution was assigned to a different review action')
         if _action(recorded_action) != _action(action):
             raise ValueError('execution replacement binding differs from its authorized action')
-        if execution_id in cycle.get('producer_execution_ids', []):
-            raise ValueError('proposal author cannot review their own proposal')
+        validate_review_independence(cycle, self.runtime, execution_id, _action(action))
         changes = review_input_basis_changes(cycle.get('review_input_basis', {}), cycle)
         if changes:
             raise ValueError('review inputs changed before acceptance: ' + json.dumps(changes, ensure_ascii=False))
@@ -978,7 +982,7 @@ class ReviewEngineMixin:
         manifest = {'proposal_digest': cycle['proposal_digest'], 'role_slot_id': action['slot'],
                     'visible_execution_ids': prepared['visible_execution_ids'],
                     'input_snapshot': execution.get('input_snapshot', self.head),
-                    'input_sha256': execution.get('input_sha256'),
+                    'input_sha256': execution['input_manifest']['prompt']['sha256'],
                     'continuation_of': execution.get('continuation_of', []),
                     'context_origin': execution.get('context_origin', []),
                     'review_input_basis': deepcopy(cycle.get('review_input_basis')),
@@ -987,12 +991,6 @@ class ReviewEngineMixin:
         if action.get('replacement_for') is not None:
             manifest.update(replacement_for=action['replacement_for'], grant_id=action['grant_id'],
                             grant_sha256=action['grant_sha256'], continuity_broken=True)
-        producer_context = set(cycle.get('producer_execution_ids', []))
-        for name in ('continuation_of', 'context_origin'):
-            origins = manifest[name] or []
-            if isinstance(origins, str): origins = [origins]
-            if producer_context.intersection(origins):
-                raise ValueError('identity reviewer inherited author context')
         updated = accept_result(cycle, _action(action), output, execution_id, input_manifest=manifest)
         if action['stage'] == 'scope':
             # Scope is the one authorized transition from an unassigned review
@@ -1061,40 +1059,25 @@ class ReviewEngineMixin:
                       evidence_refs=[updated['id'], item['id']])
 
     def _research_source_spec(self, cycle, action, reference):
-        """Resolve only fixed proposal, public issue, supplied source, or own transcript refs."""
-        value = None
-        if reference == 'proposal':
-            value = cycle['proposal']
-        elif reference.startswith('proposal:'):
-            value = cycle['proposal']
-            for name in reference.removeprefix('proposal:').replace('/', '.').strip('.').split('.'):
-                if not isinstance(value, dict) or name not in value: raise ValueError('unknown proposal source coordinate')
-                value = value[name]
-        elif reference.startswith('issue:'):
-            issue_id = reference.removeprefix('issue:')
-            if issue_id not in cycle['issues']: raise ValueError('unknown public issue source')
-            value = cycle['issues'][issue_id]
-        else:
-            prepared = self.runtime.get('review_inputs', {}).get(_pending_key(action), {})
-            source = next((s for s in prepared.get('request', {}).get('source_refs', []) if s.get('ref') == reference), None)
-            if source:
-                if source.get('slot') != action['slot']: raise ValueError('another slot transcript is private')
-                value = cycle['turns'][action['slot']][source['index']]
-            else:
-                from .input_basis import aliases
-                supplied = next((s for s in prepared.get('supplied_sources', self.instance.get('sources', [])) if reference in aliases(s)), None)
-                if supplied:
-                    snapshot = prepared.get('source_snapshot', self.head)
-                    raw = self.store.read(supplied['path'], snapshot)
-                    if supplied.get('sha256'):
-                        self._sealed_bytes(supplied['path'], supplied['sha256'], raw=raw,
-                                           error='supplied research source bytes changed')
-                    return {'ref': reference, 'artifact_ref': supplied['path'], 'snapshot': snapshot,
-                            'sha256': supplied.get('sha256') or hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
-                record = self.instance.get('knowledge', {}).get(reference)
-                if record is None: raise ValueError('research source is not in the supplied readable source set: ' + reference)
-                value = {**_proposal(self.instance, reference), 'usable_links': kr.usable_links(self.instance, reference)}
-        raw = _transcript_bytes(value)
+        """Seal one fixed investigation source admitted by the shared classification."""
+        prepared = self.runtime.get('review_inputs', {}).get(_pending_key(action), {})
+        own = {s['ref']: s for s in prepared.get('request', {}).get('source_refs', []) if s.get('slot') == action['slot']}
+        kind, value = classify_research_source(reference, proposal=cycle['proposal'], issues=cycle['issues'],
+            own_source_refs=own, sources=prepared.get('supplied_sources', self.instance.get('sources', [])),
+            knowledge_ids=self.instance.get('knowledge', {}))
+        if kind == 'transcript':
+            value = cycle['turns'][action['slot']][own[reference]['index']]
+        elif kind == 'source':
+            snapshot = prepared.get('source_snapshot', self.head)
+            raw = self.store.read(value['path'], snapshot)
+            if value.get('sha256'):
+                self._sealed_bytes(value['path'], value['sha256'], raw=raw,
+                                   error='supplied research source bytes changed')
+            return {'ref': reference, 'artifact_ref': value['path'], 'snapshot': snapshot,
+                    'sha256': value.get('sha256') or hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+        elif kind == 'knowledge':
+            value = {**_proposal(self.instance, reference), 'usable_links': kr.usable_links(self.instance, reference)}
+        raw = compact_json_bytes(value)
         return {'ref': reference, 'inline': deepcopy(value), 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
 
     def _defer_review_for_research(self, action, output, execution_id):
@@ -1107,13 +1090,9 @@ class ReviewEngineMixin:
         if execution.get('role') != 'identity_review' or any(execution.get('action', {}).get(key) != action.get(key)
                 for key in ('target', 'review_cycle_id', 'stage', 'slot', 'round')):
             raise ValueError('research request execution was assigned to another review slot')
-        if not isinstance(requests, list): raise ValueError('research_requests must be a list')
-        if execution_id in cycle.get('producer_execution_ids', []): raise ValueError('author cannot request independent review research')
-        source_specs = []
-        for request in requests:
-            if not isinstance(request, dict) or not isinstance(request.get('source_refs'), list):
-                raise ValueError('research request requires explicit source_refs')
-            source_specs.append([self._research_source_spec(cycle, action, ref) for ref in request['source_refs']])
+        validate_review_independence(cycle, self.runtime, execution_id, _action(action))
+        source_specs = [[self._research_source_spec(cycle, action, ref) for ref in request['source_refs']]
+                        for request in requests]
         cycle = self._record_review_input(action, execution_id)
         # This attempt returned provisionally. Its logical slot still needs a
         # future final response, even while ENGINE has not ended its execution.
@@ -1175,7 +1154,7 @@ class ReviewEngineMixin:
             coordinate = {'slot': slot, 'source_index': i, 'source_ref': source['ref'],
                           'artifact_ref': source.get('artifact_ref'), 'snapshot': source.get('snapshot', self.head)}
             try:
-                raw = _transcript_bytes(source['inline']) if 'inline' in source else self.store.read(source['artifact_ref'], source.get('snapshot', self.head))
+                raw = compact_json_bytes(source['inline']) if 'inline' in source else self.store.read(source['artifact_ref'], source.get('snapshot', self.head))
             except OSError as error:
                 import errno
                 raise ReviewRestorationError(str(error), cause_kind='fixed_source_io_unavailable',
@@ -1188,8 +1167,8 @@ class ReviewEngineMixin:
                 if 'inline' in source:
                     if hashlib.sha256(raw).hexdigest() != source['sha256'] or len(raw) != source['bytes']:
                         raise ValueError('inline source differs from its record')
-                elif not artifact_verified(self.store.git_dir, source['artifact_ref'], source['sha256'], source['bytes']):
-                    verify_artifact(self.store.git_dir, source['artifact_ref'], raw, source['sha256'], source['bytes'])
+                else:
+                    self._sealed_bytes(source['artifact_ref'], source['sha256'], source['bytes'], raw=raw)
             except ValueError as mismatch:
                 raise ReviewRestorationError('fixed research source bytes changed', cause_kind='fixed_source_content_mismatch',
                     coordinate=coordinate, expected_sha256=source['sha256'],
@@ -1222,14 +1201,8 @@ class ReviewEngineMixin:
             raise ValueError('research result has no matching assigned execution')
         if execution_id not in cycle['execution_accounting'].get('admissions', {}):
             raise ValueError('review investigation must be admitted before execution, not on result acceptance')
-        if execution_id in cycle.get('producer_execution_ids', []): raise ValueError('investigation execution cannot be the proposal author')
-        for name in ('continuation_of', 'context_origin'):
-            origins = execution.get(name, []) or []
-            if isinstance(origins, str): origins = [origins]
-            if set(cycle.get('producer_execution_ids', [])).intersection(origins):
-                raise ValueError('review investigation cannot inherit author context')
-        if any(execution.get('extensions', {}).get(key) for key in ('knowledge_changes', 'external_requests', 'research_requests', 'task_conditions')):
-            raise ValueError('fixed review investigation cannot author changes or start nested work')
+        # Sealed replay checks the same seat shape (validate_sealed_review).
+        validate_review_independence(cycle, self.runtime, execution_id, _independence_seat(action))
         records = deepcopy(request['source_records'])
         outputs = execution.get('output_files', [])
         allowed = {source['ref'] for source in records}

@@ -1,43 +1,37 @@
 """Public events: preserve the parent's facts and number only new records."""
-from copy import deepcopy
 
 
 def event_rows(value):
-    if isinstance(value, dict):
-        rows = list(value.values())
-        if any(not isinstance(row, dict) or key != row.get("id") for key, row in value.items()):
-            raise ValueError("event map key and id differ")
-        return rows
     if not isinstance(value, list) or any(not isinstance(row, dict) for row in value):
-        raise ValueError("events must be a record list or map")
+        raise ValueError("events must be a record list")
     return value
+
+
+def check_sequence(rows, cursor=None):
+    """The published numbering rule: ``event_seq`` runs 1..n in list order.
+
+    ``cursor``, when given, is the runtime ``event_cursor`` and must equal n.
+    Reading a snapshot and assigning new numbers both end with this check.
+    """
+    numbers = [row.get("event_seq") for row in rows]
+    if any(type(number) is not int for number in numbers) or numbers != list(range(1, len(rows) + 1)):
+        raise ValueError("published event sequence is not contiguous")
+    if cursor is not None and cursor != len(rows):
+        raise ValueError("event cursor differs from published events")
 
 
 class EventPublisher:
     @staticmethod
-    def prepare(instance, runtime, *, published_events=None):
-        """Return detached candidates; the repository supplies complete parent facts."""
-        instance, runtime = deepcopy(instance), deepcopy(runtime)
-        EventPublisher.assign_sequences_in_place(runtime, published_events=published_events)
-        return instance, runtime
-
-    @staticmethod
     def assign_sequences_in_place(runtime, *, published_events=None):
         """Validate event history and assign sequence fields on the supplied runtime.
 
-        An error can leave this runtime partially numbered. Callers requiring an
-        unchanged original use prepare(), or apply this to their own candidate copy.
+        ``published_events`` maps IDs to the parent's rows. The parent was read
+        or published under the same contract, so its numbering already follows
+        :func:`check_sequence` and is not checked again here. An error can
+        leave this runtime partially numbered; callers apply this to their own
+        candidate copy.
         """
         previous = published_events or {}
-        parent_last_seq = 0
-        if previous:
-            numbers = [row.get("event_seq") for row in previous.values()]
-            if any(type(number) is not int or number < 1 for number in numbers):
-                raise ValueError("invalid parent event sequence")
-            numbers.sort()
-            if numbers != list(range(1, len(previous) + 1)):
-                raise ValueError("parent event sequence is not contiguous")
-            parent_last_seq = numbers[-1]
         if "events" not in runtime and not previous and not runtime.get("pending_events"):
             return
         events = runtime.setdefault("events", [])
@@ -55,7 +49,7 @@ class EventPublisher:
             raise ValueError("published events cannot be removed")
         if set(pending) - set(ids):
             raise ValueError("pending_events references unknown event")
-        next_sequence = parent_last_seq
+        next_sequence = len(previous)
         for row in rows:
             identifier = row["id"]
             if "event_seq" in row and (type(row["event_seq"]) is not int or row["event_seq"] < 1):
@@ -72,10 +66,7 @@ class EventPublisher:
                 if row.get("event_seq", next_sequence) != next_sequence:
                     raise ValueError("new event sequence must be contiguous")
                 row["event_seq"] = next_sequence
-        if previous:
-            old_order = [row["event_seq"] for row in rows if row["id"] in previous]
-            if old_order != sorted(old_order):
-                raise ValueError("published event order cannot be changed")
-            if [row["event_seq"] for row in rows] != list(range(1, len(rows) + 1)):
-                raise ValueError("new events must follow published event order")
+        # Published rows keep their numbers and new rows follow them, so the
+        # result is 1..n in list order exactly when no published row moved.
+        check_sequence(rows)
         runtime["event_cursor"] = next_sequence

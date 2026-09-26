@@ -24,9 +24,11 @@ class WorkerTemporaryOutputTests(unittest.TestCase):
                     'model': 'fixture', 'effort': 'low', 'max_runtime_seconds': None,
                     'output_schema_path': str(schema),
                     **{key: str(root / name) for key, name in [('stdout_path', 'stdout.jsonl'),
-                        ('stderr_path', 'stderr.txt'), ('final_path', 'final.txt'), ('status_path', 'status.json')]}}
+                        ('stderr_path', 'stderr.txt'), ('status_path', 'status.json')]}}
                 if worker is codex_worker:
-                    request.update(approval_policy='never', sandbox='danger-full-access')
+                    # Only Codex writes a final message file; Claude's final comes from its stream.
+                    request.update(approval_policy='never', sandbox='danger-full-access',
+                                   final_path=str(root / 'final.txt'))
                 path = root / 'request.json'; path.write_text(json.dumps(request), encoding='utf-8')
                 events = [{'type': 'system', 'subtype': 'init', 'session_id': 'fixture'},
                           {'type': 'result', 'subtype': 'success', 'is_error': False,

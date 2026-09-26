@@ -2,10 +2,12 @@
 import uuid
 import re
 from . import windows_job
+from .execution_profiles import LEAN_ROLES
+from .file_io import is_sha256
 
 
 def ticket(execution_id, profile):
-    native = profile['actor_kind'] == 'ai' or profile['role'] in {'formal_check', 'trust_check'}
+    native = profile['actor_kind'] == 'ai' or profile['role'] in LEAN_ROLES
     return {'execution_id':execution_id, 'profile_sha256':profile['sha256'],
             'kind':'native_job' if native else 'owner_thread', 'owner':windows_job.owner_identity(),
             'job_name':'Local\\DoMath-' + uuid.uuid4().hex if native else None,
@@ -16,7 +18,7 @@ def validate(value, *, execution_id=None, profile_sha256=None):
     if not isinstance(value, dict) or set(value) != {'execution_id','profile_sha256','kind','owner','job_name','phase'}:
         raise ValueError('exact launch ticket required')
     if (not isinstance(value['execution_id'], str) or not value['execution_id']
-            or not isinstance(value['profile_sha256'], str) or not re.fullmatch('[0-9a-f]{64}', value['profile_sha256'])
+            or not is_sha256(value['profile_sha256'])
             or value['kind'] not in {'native_job','owner_thread'}
             or value['phase'] not in {'reserved','dispatched','finished','not_started'}):
         raise ValueError('invalid launch ticket')
@@ -36,6 +38,29 @@ def validate(value, *, execution_id=None, profile_sha256=None):
             raise ValueError('launch Job name invalid')
     elif value['job_name'] is not None:
         raise ValueError('thread launch cannot identify a native Job')
+    return value
+
+
+def mark_dispatched(value):
+    """The owner handed the reserved launch to its runner or calculation."""
+    if value['phase'] != 'reserved':
+        raise ValueError('only a reserved launch can be dispatched')
+    value['phase'] = 'dispatched'
+    return value
+
+
+def mark_returned(value, result=None):
+    """The local call returned; ``not_started`` is a start-failure receipt.
+
+    With a runner ``result``, its ``launch_not_created`` receipt decides. Without
+    one, an already recorded start failure is kept. A returned phase is final.
+    """
+    if value['phase'] in {'finished', 'not_started'}:
+        return value
+    if value['phase'] not in {'reserved', 'dispatched'}:
+        raise ValueError('invalid launch phase')
+    value['phase'] = ('not_started' if result is not None and result.get('launch_not_created') is True
+                      else 'finished')
     return value
 
 

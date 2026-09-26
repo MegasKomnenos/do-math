@@ -12,7 +12,7 @@ import os
 import uuid
 import inspect
 import json
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, initialize, control, DEFAULT_CONFIG
@@ -22,7 +22,7 @@ from do_math.input_basis import capture_decision_basis
 from do_math.repository import new_id
 from do_math.session_slots import SessionSlots
 from test_engine import ScriptedRunner, common, context_from
-from research_fixtures import local_job_runner
+from research_fixtures import local_job_runner, new_instance
 from research_fixtures import activate, install_adapter_fixture, candidate, contract_review, producer_result
 
 
@@ -70,7 +70,7 @@ class ConcurrentRunner:
 
 class SessionPolicyTests(unittest.TestCase):
     def test_old_profile_cannot_bypass_a_new_zero_capacity_limit(self):
-        from do_math.execution_profiles import build_profiles
+        from do_math.execution_profiles import apply_editions, build_profiles
         from do_math.session_slots import SessionSlots
 
         config = deepcopy(DEFAULT_CONFIG)
@@ -82,20 +82,19 @@ class SessionPolicyTests(unittest.TestCase):
 
         lower = deepcopy(config["session_limits"])
         lower["work"][MODELS["high"]] = 0
-        slots.configure(lower)
         config["session_limits"] = lower
+        apply_editions(instance, build_profiles(config))
         execution = {"id": "EX-old-profile", "role": "research_work", "status": "queued"}
-        self.assertFalse(slots.acquire(execution["id"], "work", MODELS["high"],
-                                       profile=old, execution=execution))
+        self.assertFalse(slots.acquire(execution["id"], profile=old, execution=execution))
         self.assertEqual(slots.admission_wait["kind"], "capacity")
+        self.assertEqual(slots.admission_wait["next_owner"], "user")
         self.assertEqual(runtime["reservations"], {})
 
         raised = deepcopy(lower)
         raised["work"][MODELS["high"]] = 1
-        slots.configure(raised)
         config["session_limits"] = raised
-        self.assertTrue(slots.acquire(execution["id"], "work", MODELS["high"],
-                                      profile=old, execution=execution))
+        apply_editions(instance, build_profiles(config))
+        self.assertTrue(slots.acquire(execution["id"], profile=old, execution=execution))
         current = next(instance["execution_profiles"][ref["id"]]
                        for ref in instance["role_profile_refs"]["research_work"]
                        if instance["execution_profiles"][ref["id"]]["ai"].get("tier") == "high")
@@ -105,7 +104,7 @@ class SessionPolicyTests(unittest.TestCase):
     def test_defaults_and_max_of_difficulty_and_importance(self):
         self.assertEqual(MODELS, {"high": "gpt-6-astra", "medium": "gpt-5.6-sol", "low": "gpt-5.6-terra"})
         per_model = {"gpt-6-astra": 3, "gpt-5.6-sol": 3, "gpt-5.6-terra": 3}
-        self.assertEqual(LIMITS, {"work": per_model, "operations": per_model})
+        self.assertEqual(LIMITS, {"work": per_model})
         self.assertEqual((DEFAULT_CONFIG["tier_models"], DEFAULT_CONFIG["session_limits"]), (MODELS, LIMITS))
         self.assertEqual(assessment_tier({"difficulty": "low", "importance": "high", "reason": "goal-wide impact"}), "high")
         config = deepcopy(DEFAULT_CONFIG)
@@ -117,8 +116,7 @@ class SessionPolicyTests(unittest.TestCase):
     def test_model_names_extend_without_closed_catalogue(self):
         config = deepcopy(DEFAULT_CONFIG)
         config["tier_models"]["high"] = "configured-future-model"
-        for pool in config["session_limits"].values():
-            pool["configured-future-model"] = 2
+        config["session_limits"]["work"]["configured-future-model"] = 2
         validate_policy(config)
 
     def test_bad_capacity_and_missing_tier_model_are_rejected(self):
@@ -147,20 +145,20 @@ class SlotTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.repo = self.root / 'repo'
-        subprocess.run(['git', 'init', '-q', str(self.repo)], check=True)
-        limits = {pool: {model: 1 for model in MODELS.values()} for pool in ('work', 'operations')}
-        initialized = initialize(self.repo, goal='Reservation boundary fixture', workspace=self.root / 'work',
+        limits = {'work': {model: 1 for model in MODELS.values()}}
+        instance_id = new_instance(self.repo, goal='Reservation boundary fixture', workspace=self.root / 'work',
             config={'operator_enabled': True, 'scholarly_enabled': False, 'session_limits': limits})
-        self.engine = ResearchEngine(self.repo, initialized['instance_id'], runner=ScriptedRunner())
+        self.engine = ResearchEngine(self.repo, instance_id, runner=ScriptedRunner())
 
     def slots(self, *, observer=False):
         e = self.engine
         return SessionSlots( runtime=e.runtime,
                             instance=e.instance, observer=observer)
 
-    def reserve(self, eid, pool='work'):
+    def reserve(self, eid, *, operational=False):
+        """Admit a work role, which holds a model slot, or an operational role, which holds none."""
         e = self.engine
-        role = 'task_contract_review' if pool == 'work' else 'research_plan'
+        role = 'research_plan' if operational else 'task_contract_review'
         profile = next(p for p in e.instance['execution_profiles'].values()
                        if p['role'] == role and p['ai']['model'] == MODELS['high'])
         from do_math.execution_profiles import profile_ref
@@ -175,18 +173,20 @@ class SlotTests(unittest.TestCase):
         execution.update(role=role, action=action, input_snapshot=e.head)
         transition_execution(execution, 'starting', at=now())
         assign_execution(e.runtime, activity['id'], execution)
-        accepted = self.slots().acquire(eid, pool, MODELS['high'], profile=profile, execution=execution)
+        accepted = self.slots().acquire(eid, profile=profile, execution=execution)
         return accepted, execution
 
-    def test_shared_capacity_separate_pools_and_reusable_slots_are_published_together(self):
+    def test_work_slot_operational_admission_and_reusable_slots_are_published_together(self):
         with self.engine.store.writer_lock():
             self.assertTrue(self.reserve('EX-work')[0])
             self.assertFalse(self.reserve('EX-blocked')[0])
-            self.assertTrue(self.reserve('EX-operation', 'operations')[0])
+            self.assertTrue(self.reserve('EX-operation', operational=True)[0])
             self.engine._save()
             head, state, runtime = self.engine.store.load()
             self.assertEqual(head, self.engine.head)
             self.assertTrue(runtime['reservations'])
+            self.assertFalse([row for row in runtime['reservations'].values()
+                              if row['owner_id'] == 'EX-operation' and row['unit'] == 'execution'])
             self.assertTrue(all(row['owner_id'] in runtime['executions'] for row in runtime['reservations'].values()))
             self.assertTrue(self.slots().release('EX-work'))
             self.assertTrue(self.reserve('EX-next')[0])
@@ -200,11 +200,11 @@ class SlotTests(unittest.TestCase):
         saved = deepcopy(self.engine.runtime['reservations'])
         self.engine = ResearchEngine(self.repo, self.engine.instance['id'], runner=ScriptedRunner())
         self.assertEqual(self.engine.runtime['reservations'], saved)
-        self.assertEqual(self.slots(observer=True).snapshot()['work'][MODELS['high']]['used'], 1)
+        self.assertEqual(self.slots(observer=True).snapshot()[MODELS['high']]['used'], 1)
         with self.engine.store.writer_lock():
             self.assertTrue(self.slots().release('EX-held'))
             self.engine._save()
-        self.assertEqual(self.slots(observer=True).snapshot()['work'][MODELS['high']]['used'], 0)
+        self.assertEqual(self.slots(observer=True).snapshot()[MODELS['high']]['used'], 0)
 
     def test_distinct_instances_have_distinct_reservation_ledgers(self):
         with self.engine.store.writer_lock():
@@ -218,8 +218,8 @@ class SlotTests(unittest.TestCase):
         self.assertNotEqual(other.instance['id'], self.engine.instance['id'])
         observer = SessionSlots( runtime=other.runtime,
                                 instance=other.instance, observer=True)
-        self.assertEqual(observer.snapshot()['work'][MODELS['high']]['used'], 0)
-        self.assertEqual(self.slots(observer=True).snapshot()['work'][MODELS['high']]['used'], 1)
+        self.assertEqual(observer.snapshot()[MODELS['high']]['used'], 0)
+        self.assertEqual(self.slots(observer=True).snapshot()[MODELS['high']]['used'], 1)
         self.assertEqual(other.store.load()[2]['reservations'], {})
 
     def test_observer_cannot_acquire_or_reconcile_an_unknown_lifetime(self):
@@ -251,12 +251,13 @@ class SlotTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'requires a Windows Job')
     def test_slot_waits_for_actual_named_job_termination(self):
         from do_math.windows_job import WindowsJob, named_job_empty
+        from do_math.engine import now
         name = 'Local\\DoMath-test-' + uuid.uuid4().hex
         with self.engine.store.writer_lock():
             self.assertTrue(self.reserve('EX-job')[0])
             name = self.engine.runtime['executions']['EX-job']['launch_ticket']['job_name']
             with WindowsJob([sys.executable, '-c', 'import time; time.sleep(30)'], name=name) as job:
-                self.slots().started('EX-job', {'pid': job.pid, 'job_name': name})
+                self.slots().started('EX-job', {'pid': job.pid, 'job_name': name}, at=now())
                 self.engine._save()
                 job.resume()
                 self.assertFalse(self.slots().release('EX-job'))
@@ -308,8 +309,8 @@ class ParallelEngineTests(unittest.TestCase):
             activate(engine, self.root, initialization_runner=ScriptedRunner())
         else:
             from state_fixtures import ACTIVE_LEAN_COMMAND, active_engine
-            from test_lifecycle_engine import AdapterDouble
-            self.enterContext(patch("do_math.initialization.adapter_for", return_value=AdapterDouble()))
+            from research_fixtures import FixtureAdapter
+            self.enterContext(patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()))
             engine = active_engine(self.repo, self.root / "work", runner=runner, config={
                 "operator_enabled": False, "scholarly_enabled": False,
                 "lean_command": list(ACTIVE_LEAN_COMMAND), **config})
@@ -352,14 +353,14 @@ class ParallelEngineTests(unittest.TestCase):
         def checked_save(*args, **kwargs):
             self.assertEqual(threading.get_ident(), main)
             return save(*args, **kwargs)
-        engine._save = checked_save
+        engine._save = create_autospec(engine._save, side_effect=checked_save)
         state = engine.run(max_steps=3)
         self.assertEqual(runner.peak, 3)
         self.assertEqual(len(set(runner.workspaces)), 3)
         self.assertEqual(runner.models, [MODELS["high"]] * 3)
         self.assertEqual(len({(p / "same-name.txt").read_text(encoding="utf-8") for p in runner.workspaces}), 3)
         self.assertEqual(len([e for e in engine.runtime["executions"].values() if e["role"] == "research_work" and e.get("outcome") == "output_accepted"]), 3)
-        self.assertEqual(state["budget"]["work"][MODELS["high"]]["used"], 0)
+        self.assertEqual(state["budget"][MODELS["high"]]["used"], 0)
         checked = engine.check()
         self.assertTrue(checked["passed"], checked)
 
@@ -415,7 +416,7 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertFalse(controller.is_alive())
         self.assertEqual(state["status"], "paused")
         self.assertEqual(state["active_executions"], [])
-        self.assertEqual(state["budget"]["work"][MODELS["high"]]["used"], 0)
+        self.assertEqual(state["budget"][MODELS["high"]]["used"], 0)
         self.assertEqual(len([e for e in engine.runtime["executions"].values() if e["role"] == "research_work"]), 3)
 
     def test_live_operations_can_run_when_work_is_full_and_step_limit_is_reached(self):
@@ -454,7 +455,9 @@ class ParallelEngineTests(unittest.TestCase):
         engine.run(max_steps=3)
         operating = [e for e in engine.runtime["executions"].values() if e["role"] == "operational_review"]
         self.assertTrue(operating)
-        self.assertEqual(operating[0]["budget_kind"], "operations")
+        self.assertFalse([row for row in engine.runtime["reservations"].values()
+                          if row["owner_id"] == operating[0]["id"] and row["unit"] == "execution"],
+                         "an operational role runs beside full work slots without holding one")
         self.assertEqual(operating[0]["model"], MODELS["high"])
         self.assertIn(operating[0]["outcome"], {"output_accepted", "output_preserved_after_target_change"})
         if operating[0]['outcome'] == 'output_preserved_after_target_change':
@@ -492,23 +495,6 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertEqual(inspection["submission_checks"]["status"], "verified")
         self.assertEqual(inspection["inspection"]["not_checked"], ["governance_trust"])
         self.assertEqual(inspection["inspection"]["status"], "incomplete")
-
-    def test_failed_work_waits_for_diagnosis_when_its_operating_model_is_full(self):
-        class FailingRunner:
-            def __init__(inner): inner.calls = 0
-            @local_job_runner
-            def run(inner, *, on_started, **kwargs):
-                inner.calls += 1
-                on_started()
-                return {"status": "failed", "output": None, "usage": {}, "error": "preserved tool failure"}
-        limits = deepcopy(LIMITS); limits["operations"][MODELS["high"]] = 0
-        runner = FailingRunner()
-        engine = self.engine(runner, count=1, session_limits=limits)
-        state = engine.run(max_steps=3)
-        self.assertEqual(runner.calls, 1)
-        self.assertEqual(state["status"], "capacity_waiting")
-        self.assertEqual(engine.runtime["queue"][0]["role"], "operational_review")
-        self.assertTrue(any(row.get("kind") == "execution_failure" for row in engine.runtime["waiting_actions"].values()))
 
     def test_failed_live_review_stops_its_parent_and_preserves_independent_work(self):
         class Runner:
@@ -557,13 +543,16 @@ class ParallelEngineTests(unittest.TestCase):
                 out = common("research_preparation")
                 out.pop("candidates")
                 return {"status": "completed", "output": out, "usage": {}, "error": None}
-        limits = deepcopy(LIMITS); limits["operations"][MODELS["medium"]] = 0
         runner = InvalidPreparation()
         # Activation leaves queue events that this queue-order rule meets.
-        engine = self.engine(runner, count=0, public=True, session_limits=limits)
+        engine = self.engine(runner, count=0, public=True)
         engine.runtime["queue"] = [{"id": "AC-older", "role": "maintenance", "reason": "older operating request"},
                                    {"id": "AC-preparation", "role": "research_preparation", "reason": "newer operating request"}]
         engine._save()
+        # Operational roles hold no model slot; the older request waits on its dispatch check instead.
+        dispatchable = engine._dispatchable
+        engine._dispatchable = create_autospec(engine._dispatchable,
+            side_effect=lambda action: action["role"] != "maintenance" and dispatchable(action))
         engine.run(max_steps=1)
         self.assertEqual(runner.roles, ["research_preparation"])
         self.assertEqual([a["id"] for a in engine.runtime["queue"]], ["AC-older", "AC-preparation"])

@@ -12,7 +12,7 @@ from do_math.engine import control
 from do_math.observations import ObservationTracker, validate_rules
 from do_math.planning import task_ready, contract_hash
 from do_math.input_basis import capture_decision_basis
-from research_fixtures import producer_result, await_control
+from research_fixtures import producer_result, await_control, write_checkpoint
 from test_purpose_engine import ActiveStateHarness, common
 
 
@@ -194,17 +194,19 @@ class CurrentnessTests(ActiveStateHarness):
             from research_fixtures import dispatched_launch
             profile = engine.instance['execution_profiles'][execution['execution_profile_ref']['id']]
             execution['launch_ticket'] = dispatched_launch(eid, profile)
-            execution['process'] = {'job_name': execution['launch_ticket']['job_name']}
+            # An admitted launch: its capacity holds the started Job's identity.
+            execution['capacity'] = {'reservation_ids': [], 'provider': profile['ai']['provider'],
+                'process': {'job_name': execution['launch_ticket']['job_name']}, 'local_termination': 'unknown'}
             folder = Path(engine.instance['workspace'])/'runs'/eid/'workspace'; folder.mkdir(parents=True)
             (folder/'partial.txt').write_text(eid)
-        engine.runtime.update(active_execution='EX-parent', status='running', queue=[action])
+        engine.runtime.update(status='running', queue=[action])
         engine._save()
         # No process was started in this fixture. Its termination observation
         # is explicit; unknown real processes must remain unreleased.
         with patch('do_math.windows_job.named_job_empty', return_value=True), \
                 patch('do_math.windows_job.owner_ended', return_value=True), engine.store.writer_lock():
             engine._recover_disappeared()
-        self.assertIsNone(engine.runtime['active_execution'])
+        self.assertFalse([e['id'] for e in engine.runtime['executions'].values() if e['status'] != 'ended'])
         self.assertTrue(engine.runtime['recoveries'])
         self.assertEqual(engine.runtime['waiting_actions']['AC-fixture']['execution_id'], 'EX-parent')
         self.assertTrue(any(a['role'] == 'operational_review' and a.get('target') == 'EX-parent'
@@ -225,17 +227,19 @@ class CurrentnessTests(ActiveStateHarness):
         folder = self.root / 'observed'; folder.mkdir()
         clock = [0]
         rules = [{'id': 'steps', 'operator': 'counter_gte', 'subject': {'kind': 'counter', 'id': 'attempts'},
-                  'basis': {'source': 'execution_events', 'unit': 'count'}, 'threshold': 2,
+                  'basis': {'source': 'checkpoint', 'unit': 'count'}, 'threshold': 2,
                   'repeat_interval': 2, 'required_evidence': ['EV-iteration']}]
         tracker = ObservationTracker('EX', folder, {
             'observation_rules': rules, 'self_check_response_window_seconds': 60}, clock=lambda: clock[0])
-        first = next(row for row in tracker.observe({'type': 'tick', 'counters': {'attempts': 2}})
+        write_checkpoint(folder, counters={'attempts': 2})
+        first = next(row for row in tracker.observe({'type': 'tick'})
                      if row['kind'] == 'self_check_due')
         self.assertEqual(first['due'][0]['boundary'], 2)
-        self.assertFalse(any(row['kind'] == 'self_check_due' for row in
-                             tracker.observe({'type': 'tick', 'counters': {'attempts': 2}})))
+        write_checkpoint(folder, counters={'attempts': 2}, claim='same count')
+        self.assertFalse(any(row['kind'] == 'self_check_due' for row in tracker.observe({'type': 'tick'})))
         (folder / 'observation-rules.json').write_text('{')
-        events = tracker.observe({'type': 'tick', 'counters': {'attempts': 4}})
+        write_checkpoint(folder, counters={'attempts': 4})
+        events = tracker.observe({'type': 'tick'})
         second = next(row for row in events if row['kind'] == 'self_check_due')
         self.assertEqual(second['due'][0]['boundary'], 4)
         self.assertTrue(any(row['kind'] == 'observation_rules_rejected' for row in events))

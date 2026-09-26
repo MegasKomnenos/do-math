@@ -50,17 +50,17 @@ class ExecutionObservationProfileTests(unittest.TestCase):
                 elapsed[0] = value
                 emitted = tracker.observe({"type": "tick"})
                 self.assertFalse(any(row["kind"] == "observation_unavailable" for row in emitted))
-                self.assertNotIn("attempts", tracker.checkpoint_counters)
+                self.assertNotIn("attempts", tracker.counters)
             elapsed[0] = config["observation_interval_seconds"]
             emitted = tracker.observe({"type": "tick"})
             unavailable = next(row for row in emitted if row["kind"] == "observation_unavailable")
             self.assertEqual(unavailable["rule_ids"], ["SC-attempts"])
             self.assertEqual(unavailable["followup"]["kind"], "operational_review_due")
-            self.assertNotIn("attempts", tracker.checkpoint_counters)
+            self.assertNotIn("attempts", tracker.counters)
 
     def test_shared_contract_rejects_forged_source_and_other_execution_subject(self):
         profile = self.research_profile()
-        with self.assertRaisesRegex(ValueError, "observable subject/source/unit"):
+        with self.assertRaisesRegex(ValueError, "basis"):
             tracker_config(profile, initial_self_check_rules=[counter_rule(source="invented")])
         other_execution = {"id": "SC-other", "operator": "checkpoint_count_gte",
             "subject": {"kind": "checkpoint", "id": "EX-other"},
@@ -82,9 +82,10 @@ class ExecutionObservationProfileTests(unittest.TestCase):
             store = ResearchRepository(root, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV")
             saved_config = {**deepcopy(DEFAULT_CONFIG), "tool_review_window_seconds": 60,
                             "self_check_response_window_seconds": 5}
-            instance = {**DomainGovernanceTests().initial(), "config": saved_config,
-                        **build_profiles(saved_config)}
-            runtime = {"feature_version": 5, "status": "ready", "tasks": {}, "executions": {}, "queue": [], "history": []}
+            from research_fixtures import current_state
+            instance, runtime = current_state(
+                {**DomainGovernanceTests().initial(), "config": saved_config, **build_profiles(saved_config)},
+                {"status": "ready", "tasks": {}, "executions": {}, "queue": [], "history": []})
             head = store.initialize(instance, runtime)
             _, restored, _ = store.load(head)
             profile = next(item for item in restored["execution_profiles"].values() if item["role"] == "research_work")

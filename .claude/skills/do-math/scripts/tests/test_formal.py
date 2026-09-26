@@ -4,7 +4,7 @@ from unittest.mock import patch, Mock
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from test_categories import test_group as category
-from do_math.formal import project_source_identity, verify_lean, _ident, portable_bin, toolchain_root, compare_formal_results
+from do_math.formal import project_source_identity, verify_lean, is_lean_identifier, portable_bin, toolchain_root, compare_formal_results
 from do_math import formal
 
 def actual_command():
@@ -157,9 +157,9 @@ class T(unittest.TestCase):
   self.assertEqual((result['status'],result['reason']),('failed','signature output missing'),result)
  def test_prime_names_keep_the_existing_identifier_boundary(self):
   for value in ("sumTo_succ'", "N.foo''", "α'", "N'.foo'"):
-   self.assertTrue(_ident(value), value)
+   self.assertTrue(is_lean_identifier(value), value)
   for value in ("'", "N.'", "x'; #eval 1", "x' y", "x\ny", "x'y", 'x"', "x()", ".x", "x."):
-   self.assertFalse(_ident(value), value)
+   self.assertFalse(is_lean_identifier(value), value)
  @category('lean')
  def test_actual_prime_declarations_have_signatures_and_axioms(self):
   with tempfile.TemporaryDirectory() as d:

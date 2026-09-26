@@ -51,9 +51,10 @@ class ProfileTests(unittest.TestCase):
             current = api.build_profiles(config)
             registry.update(current["execution_profiles"])
         allowed = current["role_profile_refs"]["maintenance"]
+        instance = {"execution_profiles": registry, "role_profile_refs": current["role_profile_refs"]}
         before = deepcopy(registry)
         with patch.object(api, "resolve_profile", wraps=api.resolve_profile) as resolve:
-            chosen = model_policy.selection(config, {"role": "maintenance"}, {}, {}, profiles=registry)
+            chosen = model_policy.selection(config, {"role": "maintenance"}, {}, {}, instance=instance)
         self.assertIn(chosen["profile_ref"], allowed)
         self.assertLessEqual(resolve.call_count, 2 * len(allowed))
         self.assertEqual(registry, before)
@@ -73,15 +74,17 @@ class ProfileTests(unittest.TestCase):
             api.select_profile(registry, {"role": "maintenance", "profile_ref": api.profile_ref(old)},
                                requirement, allowed_refs=allowed)
 
-    def test_ai_selection_builds_only_its_role_without_reading_lean(self):
+    def test_ai_selection_uses_adopted_editions_without_building_or_reading_lean(self):
         api = self.profiles()
         config = {**deepcopy(CONFIG), "lean_command": ["fixture-no-lean"]}
-        registry = api.build_profiles(config)["execution_profiles"]
+        instance = api.build_profiles(config)
+        registry = instance["execution_profiles"]
         with patch.object(api, "_lean_contract", side_effect=AssertionError("AI selection read Lean")), \
              patch.object(api, "seal_profile", wraps=api.seal_profile) as seals:
-            chosen = model_policy.selection(config, {"role": "maintenance"}, {}, {}, profiles=registry)
+            chosen = model_policy.selection(config, {"role": "maintenance"}, {}, {}, instance=instance)
         self.assertEqual(registry[chosen["profile_ref"]["id"]]["role"], "maintenance")
-        self.assertEqual(seals.call_count, len(model_policy.TIERS))
+        self.assertIn(chosen["profile_ref"], instance["role_profile_refs"]["maintenance"])
+        self.assertEqual(seals.call_count, 0)
 
     def test_scoped_authoring_keeps_shared_host_validation(self):
         api = self.profiles()
@@ -172,7 +175,7 @@ class ProfileTests(unittest.TestCase):
             self.assertIn("mcp_servers.execution_control.command=" + json.dumps(config["command"], ensure_ascii=False), argv)
             self.assertIn("mcp_servers.execution_control.args=" + json.dumps(config["args"], ensure_ascii=False), argv)
             claude_request = {k: v for k, v in request.items()
-                              if k not in {"codex_path", "sandbox", "windows_sandbox", "approval_policy"}}
+                              if k not in {"codex_path", "sandbox", "windows_sandbox", "approval_policy", "final_path"}}
             claude_request["claude_path"] = "claude"
             path = root / "claude-request.json"
             path.write_text(json.dumps(claude_request), encoding="utf-8")
@@ -184,21 +187,28 @@ class ProfileTests(unittest.TestCase):
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8",
                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             sequence = 0
-            def rpc(method, params):
+            def exchange(method, params):
                 nonlocal sequence
                 sequence += 1
                 process.stdin.write(json.dumps({"jsonrpc": "2.0", "id": sequence, "method": method, "params": params}) + "\n")
                 process.stdin.flush()
                 response = json.loads(process.stdout.readline())
                 self.assertEqual(response["id"], sequence)
+                return response
+            def rpc(method, params):
+                response = exchange(method, params)
                 self.assertNotIn("error", response)
                 return response["result"]
             def call(name, arguments):
                 return json.loads(rpc("tools/call", {"name": name, "arguments": arguments})["content"][0]["text"])
             try:
                 self.assertEqual(rpc("initialize", {"protocolVersion": "2024-11-05"})["serverInfo"]["version"], "5")
-                self.assertEqual({t["name"] for t in rpc("tools/list", {})["tools"]},
-                                 {"control_submit", "control_receipt", "control_self_check", "submit_draft"})
+                tools = {t["name"]: t["inputSchema"] for t in rpc("tools/list", {})["tools"]}
+                self.assertEqual(set(tools), {"control_submit", "control_receipt", "control_self_check", "submit_draft"})
+                # The worker sees the kinds the transport accepts and the answer schema it will be checked against.
+                from do_math.control_transport import REQUEST_KINDS, SELF_CHECK_RESPONSE_SCHEMA
+                self.assertEqual(set(tools["control_submit"]["properties"]["kind"]["enum"]), REQUEST_KINDS)
+                self.assertEqual(tools["control_self_check"]["properties"]["response"], SELF_CHECK_RESPONSE_SCHEMA)
                 submitted = call("control_submit", {"request_id": "REQ-one", "kind": "submit_intent",
                     "execution_id": "EX-cannot-override-bound-execution",
                     "payload": {"draft_path": "draft.json"}})
@@ -218,9 +228,20 @@ class ProfileTests(unittest.TestCase):
                 self.assertIsNone(ControlTransport.worker_receipt(other, "REQ-one"))
                 transport.pump(publish)
                 self.assertEqual(len(publications), 1)
-                transport.request_self_check(binding, self_check_id="SC-one", payload={"obligations": ["answer"]})
+                transport.request_self_check(binding, request={"self_check_id": "SC-one", "execution_id": "EX-bound",
+                                                               "payload": {"obligations": ["answer"]}})
                 self.assertEqual(call("control_self_check", {"self_check_id": "SC-one"})["execution_id"], "EX-bound")
-                call("control_self_check", {"self_check_id": "SC-one", "response": {"answered": True}})
+                # A malformed answer is a tool error the worker can correct; nothing is delivered.
+                refused = exchange("tools/call", {"name": "control_self_check",
+                                                  "arguments": {"self_check_id": "SC-one", "response": {"answered": True}}})
+                self.assertEqual(refused["error"]["code"], -32602)
+                self.assertIsNone(ControlTransport.worker_receipt(binding, "self-check-SC-one"))
+                self.assertFalse((Path(binding["endpoint"]) / "inbox" / "self-check-SC-one.json").exists())
+                answer = {"obligation_id": "SC-one", "execution_id": "EX-bound", "rule_revision": 0,
+                          "rule_results": [{"rule_id": "R-1", "status": "normal", "evidence_refs": ["EV-1"],
+                                            "missing_evidence_refs": [], "reason": "checked"}],
+                          "progress": "progress", "attempts": ["checked"], "next_method": "continue"}
+                call("control_self_check", {"self_check_id": "SC-one", "response": answer})
                 transport.pump(publish)
                 self.assertEqual(call("control_receipt", {"request_id": "self-check-SC-one"})["state"], "accepted")
                 transport.close(binding, reason="execution ended")
@@ -257,10 +278,11 @@ class ProfileTests(unittest.TestCase):
             schema.write_text("{}", encoding="utf-8")
             common = {"prompt_path": str(prompt), "output_schema_path": str(schema), "cwd": str(work),
                 "model": "test", "effort": "low", "max_runtime_seconds": 10,
-                **{key: str(root / key) for key in ("stdout_path", "stderr_path", "final_path", "status_path")},
+                **{key: str(root / key) for key in ("stdout_path", "stderr_path", "status_path")},
                 "execution_id": "EX-snapshot", "profile_ref": {"id": "EP-test", "revision": 1, "sha256": "a" * 64},
                 "control_binding": binding}
-            for adapter, options in ((CodexExecAdapter("codex"), {"codex_path": "codex", "sandbox": "danger-full-access", "approval_policy": "never"}),
+            for adapter, options in ((CodexExecAdapter("codex"), {"codex_path": "codex", "sandbox": "danger-full-access",
+                                                                  "approval_policy": "never", "final_path": str(root / "final_path")}),
                                      (ClaudePrintAdapter("claude"), {"claude_path": "claude"})):
                 request = root / (adapter.executable_key + ".json")
                 request.write_text(json.dumps({**common, **options}), encoding="utf-8")
@@ -280,15 +302,15 @@ class ProfileTests(unittest.TestCase):
         runtime = {"executions": {}, "reservations": {}, "provider_waits": {}}
         slots = SessionSlots(runtime, instance)
         model = profile["ai"]["model"]
-        self.assertTrue(slots.acquire("EX-history", "work", model, profile=profile,
-                                     execution={"id": "EX-history", "role": "research_work"}))
+        self.assertTrue(slots.acquire("EX-history", profile=profile,
+                                     execution={"id": "EX-history", "role": "research_work", "status": "queued"}))
         self.assertTrue(slots.release("EX-history"))
         history_id = runtime["executions"]["EX-history"]["capacity"]["reservation_ids"][0]
         history = deepcopy(runtime["reservations"][history_id])
         limits = deepcopy(CONFIG["session_limits"])
         limits["work"][model] = 1
-        slots.configure(limits)
         instance["config"]["session_limits"] = limits
+        api.apply_editions(instance, api.build_profiles(instance["config"]))
         provider = profile["ai"]["provider"]
         runtime["provider_waits"]["PW-" + provider] = {
             "id": "PW-" + provider, "provider": provider, "generation": 1,
@@ -299,8 +321,8 @@ class ProfileTests(unittest.TestCase):
         observer = SessionSlots(runtime, instance, observer=True)
         self.assertTrue(observer.admission_check(profile, current_time=100)["allowed"])
         self.assertEqual(runtime, before)
-        self.assertTrue(slots.acquire("EX-held", "work", model, profile=profile,
-            execution={"id": "EX-held", "role": "research_work"}, current_time=100))
+        self.assertTrue(slots.acquire("EX-held", profile=profile,
+            execution={"id": "EX-held", "role": "research_work", "status": "queued"}, current_time=100))
         self.assertEqual(runtime["reservations"][history_id], history)
         held_id = runtime["executions"]["EX-held"]["capacity"]["reservation_ids"][0]
         self.assertNotEqual(runtime["reservations"][held_id]["constraint_id"], history["constraint_id"])
@@ -369,7 +391,7 @@ class ProfileTests(unittest.TestCase):
         state = api.build_profiles(CONFIG)
         action = {"role": "research_work", "model_assessment": {
             "difficulty": "low", "importance": "low", "reason": "bounded arithmetic"}}
-        selected = model_policy.selection(CONFIG, action, {}, {}, profiles=state["execution_profiles"])
+        selected = model_policy.selection(CONFIG, action, {}, {}, instance=state)
         profile = api.resolve_profile(state["execution_profiles"], selected["profile_ref"])
         frozen = api.runtime_config(profile)
         config = deepcopy(CONFIG)
@@ -381,12 +403,14 @@ class ProfileTests(unittest.TestCase):
                          allowed_refs=[api.profile_ref(profile)])["id"], profile["id"])
         broken = deepcopy(state["execution_profiles"])
         broken[profile["id"]]["ai"]["model"] = "different"
+        # Lookup compares the reference only; an unsaved edit is caught by validate_profile.
         with self.assertRaises(ValueError):
-            api.resolve_profile(broken, selected["profile_ref"])
+            api.validate_profile(broken[profile["id"]])
         changed = {**deepcopy(CONFIG), "max_input_bytes": 400000}
         editions = api.build_profiles(changed)
         registry = {**state["execution_profiles"], **editions["execution_profiles"]}
-        newest = model_policy.selection(changed, action, {}, {}, profiles=registry)
+        newest = model_policy.selection(changed, action, {}, {}, instance={
+            "execution_profiles": registry, "role_profile_refs": editions["role_profile_refs"]})
         self.assertIn(newest["profile_ref"]["id"], editions["execution_profiles"])
 
     def test_modes_machine_fields_and_profile_rebinding(self):
@@ -427,26 +451,39 @@ class ProfileTests(unittest.TestCase):
                        if p["role"] == "research_work" and p["ai"]["model"] == CONFIG["tier_models"]["low"])
         slots = SessionSlots(runtime, instance)
         for i in range(3):
-            self.assertTrue(slots.acquire(f"EX-{i}", "work", profile["ai"]["model"],
-                            profile=profile, execution={"id": f"EX-{i}", "role": "research_work"}))
+            self.assertTrue(slots.acquire(f"EX-{i}", profile=profile,
+                            execution={"id": f"EX-{i}", "role": "research_work", "status": "queued"}))
         from do_math.state_contract import STATE_FORMAT_VERSION
         self.assertTrue(all(r["schema_version"] == STATE_FORMAT_VERSION for r in runtime["reservations"].values()))
         before = deepcopy(runtime)
-        self.assertFalse(slots.acquire("EX-over", "work", profile["ai"]["model"],
-                         profile=profile, execution={"id": "EX-over", "role": "research_work"}))
+        self.assertFalse(slots.acquire("EX-over", profile=profile,
+                         execution={"id": "EX-over", "role": "research_work", "status": "queued"}))
         self.assertEqual(runtime, before)
-        slots.started("EX-0", {"job_name": runtime["executions"]["EX-0"]["launch_ticket"]["job_name"], "pid": 1})
+        identity = {"job_name": runtime["executions"]["EX-0"]["launch_ticket"]["job_name"], "pid": 1}
+        started = slots.started("EX-0", identity, at="2026-01-01T00:00:00+00:00")
+        self.assertIs(started, runtime["executions"]["EX-0"])
+        self.assertEqual((started["status"], started["started_at"], started["capacity"]["process"]),
+                         ("running", "2026-01-01T00:00:00+00:00", identity))
+        repeated = deepcopy(runtime)
+        self.assertIs(slots.started("EX-0", identity, at="2026-01-01T00:00:01+00:00"), started)
+        self.assertEqual(runtime, repeated)
         with patch("do_math.windows_job.named_job_empty", return_value=None):
             self.assertFalse(slots.release("EX-0"))
-        self.assertEqual(slots.snapshot()["work"][profile["ai"]["model"]]["used"], 3)
+        self.assertEqual(slots.snapshot()[profile["ai"]["model"]]["used"], 3)
         with patch("do_math.windows_job.named_job_empty", return_value=True):
             self.assertTrue(slots.release("EX-0"))
             self.assertTrue(slots.release("EX-0"))
-        self.assertEqual(slots.snapshot()["work"][profile["ai"]["model"]]["used"], 2)
+        self.assertEqual(slots.snapshot()[profile["ai"]["model"]]["used"], 2)
+        # Operational AI roles reserve no model slot, even when every work slot is taken.
+        self.assertTrue(slots.acquire("EX-3", profile=profile,
+                        execution={"id": "EX-3", "role": "research_work", "status": "queued"}))
         operation = next(p for p in instance["execution_profiles"].values()
                          if p["role"] == "maintenance" and p["ai"]["model"] == profile["ai"]["model"])
-        self.assertTrue(slots.acquire("EX-op", "operations", operation["ai"]["model"],
-                        profile=operation, execution={"id": "EX-op", "role": "maintenance"}))
+        self.assertEqual(operation["ai"]["capacity_refs"], [])
+        self.assertTrue(slots.acquire("EX-op", profile=operation,
+                        execution={"id": "EX-op", "role": "maintenance", "status": "queued"}))
+        self.assertEqual(runtime["executions"]["EX-op"]["capacity"]["reservation_ids"], [])
+        self.assertEqual(slots.snapshot()[profile["ai"]["model"]]["used"], 3)
 
     def test_admission_accepts_registered_queued_execution_exactly_once(self):
         from do_math.session_slots import SessionSlots
@@ -457,26 +494,28 @@ class ProfileTests(unittest.TestCase):
                      "execution_profile_ref": api.profile_ref(profile), "owner_activity_id": "AY-one"}
         runtime = {"executions": {execution["id"]: execution}, "reservations": {}}
         slots = SessionSlots(runtime, instance)
-        self.assertTrue(slots.acquire(execution["id"], "work", profile["ai"]["model"], profile=profile, execution=execution))
+        self.assertTrue(slots.acquire(execution["id"], profile=profile, execution=execution))
         self.assertIs(runtime["executions"][execution["id"]], execution)
         self.assertEqual(execution["owner_activity_id"], "AY-one")
         before = deepcopy(runtime)
         with self.assertRaises(ValueError):
-            slots.acquire(execution["id"], "work", profile["ai"]["model"], profile=profile, execution=execution)
+            slots.acquire(execution["id"], profile=profile, execution=execution)
         self.assertEqual(runtime, before)
 
     def test_supervisor_does_not_call_model(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            with patch.object(scheduled_operator, "read_status", return_value={"status": "ready"}), \
+            status = {"status": "ready", "operator_enabled": True, "provider_waits": {"providers": {}}}
+            with patch.object(scheduled_operator, "read_status", return_value=status), \
                  patch.object(scheduled_operator, "ResearchRepository") as repository, \
                  patch("do_math.submission.install_tools", return_value={}), \
                  patch.object(scheduled_operator, "reconcile_wake", return_value={"status": "not_needed"}), \
                  patch.object(scheduled_operator, "schedule", return_value={"state": "Running"}), \
                  patch.object(scheduled_operator.ModelRunner, "run", side_effect=AssertionError("normal supervision called AI")):
-                repository.return_value.load.return_value = ("head", {"config": CONFIG}, {})
                 result = scheduled_operator.check(root, "instance", root)
             self.assertEqual(result["outcome"], "engine_requested")
+            # Supervision judges the one status snapshot; it loads no repository state.
+            repository.assert_not_called()
 
     def test_runner_pins_request_and_exposes_reported_evidence(self):
         from test_model_runner import Adapter
@@ -514,7 +553,7 @@ class ProfileTests(unittest.TestCase):
                 root = Path(directory)
                 workspace = root / 'workspace'; workspace.mkdir()
                 config = {**CONFIG, 'tier_models': {tier: model for tier in ('high', 'medium', 'low')},
-                          'session_limits': {pool: {model: 3} for pool in ('work', 'operations')}}
+                          'session_limits': {'work': {model: 3}}}
                 profile = next(p for p in api.build_profiles(config)['execution_profiles'].values()
                                if p['role'] == 'research_work')
                 binding = ControlTransport(root / 'transport').issue('EX-bound', 'GR-bound', workspace=workspace)
@@ -572,12 +611,13 @@ class ProfileTests(unittest.TestCase):
         runtime = {"executions": {}, "reservations": {}, "provider_waits": {}}
         profile = next(p for p in instance["execution_profiles"].values() if p["role"] == "research_work")
         slots = SessionSlots(runtime, instance)
-        admit = lambda eid, t: slots.acquire(eid, "work", profile["ai"]["model"], profile=profile,
-                         execution={"id": eid, "role": "research_work"}, current_time=t)
+        admit = lambda eid, t: slots.acquire(eid, profile=profile,
+                         execution={"id": eid, "role": "research_work", "status": "queued"}, current_time=t)
         self.assertTrue(admit("EX-failure", 10))
         failure = {"kind": "provider_limit", "provider": profile["ai"]["provider"],
                    "retry_at": "1970-01-01T00:00:20+00:00", "evidence_ref": "stdout.jsonl"}
-        slots.provider_result("EX-failure", profile["ai"]["provider"], failure=failure, current_time=10.5)
+        slots.provider_result_from_run("EX-failure", {"status": "failed", "error_kind": "provider_limit",
+                                                      "failure": failure}, CONFIG, current_time=10.5)
         self.assertTrue(all(key == row["id"] for key, row in runtime["provider_waits"].items()),
                         "provider gates must persist as individual family records")
         try:
@@ -587,7 +627,7 @@ class ProfileTests(unittest.TestCase):
         self.assertFalse(admit("EX-too-early", 19))
         self.assertTrue(admit("EX-probe", 21))
         self.assertFalse(admit("EX-concurrent-probe", 21))
-        slots.provider_result("EX-probe", profile["ai"]["provider"], response_observed=True, current_time=22)
+        slots.provider_result_from_run("EX-probe", {"status": "completed"}, CONFIG, current_time=22)
         self.assertTrue(admit("EX-after", 22))
 
     def test_capability_identity_has_host_worker_and_cli_hashes(self):
@@ -598,12 +638,19 @@ class ProfileTests(unittest.TestCase):
             path.write_bytes(b"first")
             adapter = CodexExecAdapter(str(path))
             first = adapter.capability_identity()
-            self.assertIn("windows_job_sha256", first)
+            self.assertIn("windows_job", first["module_sha256"])
             path.write_bytes(b"second")
             second = adapter.capability_identity()
             self.assertNotEqual(first["cli_sha256"], second["cli_sha256"])
-            self.assertEqual(first["worker_sha256"], second["worker_sha256"])
+            self.assertEqual(first["module_sha256"], second["module_sha256"])
             self.assertIn("host", first)
+        # Every module a worker runs in its Job, or its collector uses, identifies the implementation.
+        from do_math.claude_adapter import ClaudePrintAdapter
+        self.assertEqual(set(CodexExecAdapter("codex").capability_identity()["module_sha256"]),
+                         {"codex_worker", "control_transport", "file_io", "windows_job", "scholarly", "codex_adapter"})
+        self.assertEqual(set(ClaudePrintAdapter("claude").capability_identity()["module_sha256"]),
+                         {"claude_worker", "codex_worker", "control_transport", "file_io", "windows_job", "scholarly",
+                          "codex_adapter", "claude_adapter", "claude_stream"})
 
     def test_unchanged_cli_and_sources_are_not_rehashed_for_each_identity(self):
         from do_math import file_io
@@ -628,9 +675,11 @@ class ProfileTests(unittest.TestCase):
             subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
             iid = "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV"
             repository = ResearchRepository(root, iid)
-            instance = {**api.build_profiles(CONFIG), "feature_version": 5, "id": iid,
-                        "config": CONFIG, "workspace": str(root)}
-            runtime = {"feature_version": 5, "status": "ready", "executions": {}, "reservations": {}, "provider_waits": {}}
+            from research_fixtures import current_state
+            # Every stored state passes the current lifecycle gate.
+            instance, runtime = current_state({**api.build_profiles(CONFIG), "id": iid,
+                                               "config": {**CONFIG, "operator_enabled": True}, "workspace": str(root)},
+                                              {"status": "ready", "executions": {}, "reservations": {}, "provider_waits": {}})
             head = repository.initialize(instance, runtime)
             failure = {"kind": "engine_unavailable", "error": "installation test failure"}
             with repository.writer_lock(), patch.object(scheduled_operator.ModelRunner, "run") as runner:
@@ -647,7 +696,10 @@ class ProfileTests(unittest.TestCase):
             self.assertEqual(execution["status"], "ended")
             self.assertEqual(execution["error"], "fixture")
             self.assertEqual(execution["input_manifest"]["repair_authority"]["source"], "adopted_operator_repair_scope")
-            self.assertTrue(all(row["state"] == "settled" for row in runtime["reservations"].values()))
+            # Recovery is an operational role: it reserves no model slot, and its local capacity is returned.
+            self.assertEqual(runtime["reservations"], {})
+            self.assertEqual(execution["capacity"]["reservation_ids"], [])
+            self.assertEqual(execution["capacity"]["local_termination"], "confirmed")
             self.assertFalse((root / "session-slots").exists())
             self.assertTrue(any("execution_profiles/EP-" in p for p in repository.list_files("research/", new_head)))
             prior_activity = execution["owner_activity_id"]
@@ -673,13 +725,14 @@ class ProfileTests(unittest.TestCase):
                 return {"status": "completed", "output": {"summary": "fixture repair", "observed_status": "ready",
                     "actions": [], "evidence_paths": [], "user_questions": [], "next_step": "launcher verification"}}
             def restart(*args):
-                from do_math.session_slots import _lock, _unlock
+                from do_math.file_io import os_lock
                 with repository.writer_lock():
-                    maintenance = _lock(repository._store._git_dir / "do-math-installation-maintenance.lock")
-                    self.assertIsNotNone(maintenance, "restart still owns the maintenance lock")
-                    _unlock(maintenance)
+                    # Raises OSError if restart still owns the maintenance lock.
+                    with os_lock(repository._store._git_dir / "do-math-installation-maintenance.lock", blocking=False):
+                        pass
                     _, _, published = repository.load()
-                    self.assertTrue(all(r["state"] == "settled" for r in published["reservations"].values()))
+                    self.assertTrue(all(e["status"] == "ended" and e["capacity"]["local_termination"] == "confirmed"
+                                        for e in published["executions"].values()))
                 return {"outcome": "engine_requested"}
             with patch.object(scheduled_operator.ModelRunner, "run", side_effect=repaired), \
                  patch("do_math.initialization.adapter_for", return_value=self.capability_adapter()), \
@@ -703,7 +756,7 @@ class ProfileTests(unittest.TestCase):
         api = self.profiles()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            instance = {**api.build_profiles(CONFIG), "config": CONFIG}
+            instance = {**api.build_profiles(CONFIG), "config": {**CONFIG, "operator_enabled": True}}
             runtime = {"executions": {}, "reservations": {}, "activities": {}, "status": "ready"}
             repo = Mock()
             repo.writer_lock.return_value = nullcontext()
@@ -731,7 +784,13 @@ class ProfileTests(unittest.TestCase):
             wake.assert_not_called()
             self.assertEqual(result["outcome"], "recovery_termination_unknown")
             self.assertEqual(Path(verify.call_args.args[0][1]), root / "live-installation/scripts/probe_cli.py")
-            self.assertTrue(all(r["state"] == "held" for r in runtime["reservations"].values()))
+            # The unconfirmed Job keeps the execution at the termination barrier with its output.
+            execution = runtime["executions"][result["execution_id"]]
+            self.assertEqual((execution["status"], execution["stop_phase"]), ("stopping", "terminating"))
+            self.assertEqual(execution["capacity"]["local_termination"], "unknown")
+            self.assertEqual(execution["error"],
+                             "Local Job termination is unconfirmed; capacity and output remain held for recovery.")
+            self.assertEqual(runtime["reservations"], {})
 
     def test_recovery_requires_current_profile_capability_before_reservation(self):
         from contextlib import nullcontext
@@ -739,7 +798,7 @@ class ProfileTests(unittest.TestCase):
         api = self.profiles()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            instance = {**api.build_profiles(CONFIG), "config": CONFIG}
+            instance = {**api.build_profiles(CONFIG), "config": {**CONFIG, "operator_enabled": True}}
             runtime = {"executions": {}, "reservations": {}, "status": "ready"}
             repo = Mock()
             repo.writer_lock.return_value = nullcontext()
@@ -874,20 +933,20 @@ class Audit1Tests(unittest.TestCase):
         changed = deepcopy(CONFIG)
         changed["tier_models"]["high"] = "replacement-model"
         selected = model_policy.selection(changed, {"role": "intent_interpretation", "profile_ref": ep.profile_ref(profile)}, {}, {},
-                                          profiles=old["execution_profiles"])
+                                          instance=old)
         self.assertEqual(selected["model"], profile["ai"]["model"])
         low = next(p for p in old["execution_profiles"].values()
                    if p["role"] == "intent_interpretation" and p["ai"]["tier"] == "low")
         with self.assertRaises(ValueError):
-            model_policy.selection(CONFIG, {"role": "intent_interpretation", "profile_ref": ep.profile_ref(low)}, {}, {}, profiles=old["execution_profiles"])
+            model_policy.selection(CONFIG, {"role": "intent_interpretation", "profile_ref": ep.profile_ref(low)}, {}, {}, instance=old)
         # Task allowlists govern work, while interpretation keeps its own profile.
         model_policy.selection(CONFIG, {"role": "intent_interpretation", "target": "T", "profile_ref": ep.profile_ref(profile)},
-                               {"T": {"profile_refs": []}}, {}, profiles=old["execution_profiles"])
+                               {"T": {"profile_refs": []}}, {}, instance=old)
         work = next(p for p in old["execution_profiles"].values()
                     if p["role"] == "research_work" and p["ai"]["tier"] == "high")
         with self.assertRaises(ValueError):
             model_policy.selection(CONFIG, {"role": "research_work", "target": "T", "profile_ref": ep.profile_ref(work)},
-                                   {"T": {"profile_refs": []}}, {}, profiles=old["execution_profiles"])
+                                   {"T": {"profile_refs": []}}, {}, instance=old)
 
     def test_runner_preserves_exact_utf8_input_after_seal(self):
         from do_math.model_runner import CodexModelRunner

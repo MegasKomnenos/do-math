@@ -8,17 +8,16 @@ import time
 from .file_io import write_bytes_atomic
 
 
-def notice_seconds(config, pool=None):
-    if pool != "operations":
-        return 0
-    return min(config.get("finish_notice_seconds", 60), config["call_timeout_seconds"] / 10)
+def notice_seconds(config):
+    """Finish notice before a per-call deadline; only operational calls have one."""
+    return min(config["finish_notice_seconds"], config["call_timeout_seconds"] / 10)
 
 
 def _write(path, value):
     write_bytes_atomic(path,json.dumps(value,ensure_ascii=False,indent=2).encode('utf-8'))
 
 
-def publish(workspace: Path, execution_id: str, deadline: float | None, config: dict, pool: str, *,
+def publish(workspace: Path, execution_id: str, deadline: float | None, config: dict, *,
             deadline_source: str, clock=time.monotonic, wall_clock=None):
     if deadline is None:
         value = {"execution_id": execution_id, "effective_deadline_at": None,
@@ -29,7 +28,7 @@ def publish(workspace: Path, execution_id: str, deadline: float | None, config: 
     remaining_ms = max(0, int((Decimal(str(deadline)) - Decimal(str(clock()))) * 1000))
     current = wall_clock or datetime.now(timezone.utc)
     finish = current + timedelta(milliseconds=remaining_ms)
-    notice = notice_seconds(config, pool)
+    notice = notice_seconds(config)
     value = {"execution_id": execution_id, "effective_deadline_at": finish.isoformat(),
              "remaining_ms_at_start": remaining_ms, "deadline_source": deadline_source,
              "finish_notice_at": (finish - timedelta(seconds=notice)).isoformat(),
@@ -38,11 +37,11 @@ def publish(workspace: Path, execution_id: str, deadline: float | None, config: 
     return value
 
 
-def request_finish(workspace: Path, deadline: float | None, config: dict, pool: str, *, clock=time.monotonic):
+def request_finish(workspace: Path, deadline: float | None, config: dict, *, clock=time.monotonic):
     if deadline is None:
         return False
     path = workspace / ".control" / "finish-request.json"
-    if path.exists() or deadline - clock() > notice_seconds(config, pool):
+    if path.exists() or deadline - clock() > notice_seconds(config):
         return False
     _write(path, {"requested_at": datetime.now(timezone.utc).isoformat(),
                   "kind": "finish_notice", "revokes_authority": False,

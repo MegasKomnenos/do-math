@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib, json, os, re, shutil, subprocess, sys, tempfile, time, traceback, uuid
 from pathlib import Path
 from .trust_validation import AXIOMS
-from .file_io import cached_sha256, json_digest
+from .file_io import cached_sha256, is_sha256, json_digest
 from do_math.windows_job import WindowsJob, process_identity
 
 class VerificationStopped(RuntimeError):
@@ -137,8 +137,23 @@ elab "#do_math_dependencies " names:ident+ : command => do
 '''
 
 
+# The per-declaration evidence rows of one verification, keyed by declaration name.
+FORMAL_EVIDENCE_FIELDS = ("declaration_evidence", "dependency_closure", "dependency_evidence", "axioms")
+
+
+def lean_source_sha256(code: str) -> str:
+    """The identity of a Lean source that a verification names as source_sha256."""
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
+def forbidden_axioms(axiom_rows: dict, allowed) -> set[str]:
+    """Axioms outside the approved set; sorryAx is never approved."""
+    return {axiom for axioms in axiom_rows.values() for axiom in axioms
+            if axiom == 'sorryAx' or axiom not in allowed}
+
+
 def compare_formal_results(previous: dict, current: dict) -> dict:
-    fields = ("declaration_evidence", "dependency_closure", "dependency_evidence", "axioms")
+    fields = FORMAL_EVIDENCE_FIELDS
     missing = [field for field in fields if not previous.get(field) or not current.get(field)]
     changed = [field for field in fields if field not in missing and previous[field] != current[field]]
     return {"equivalent": not missing and not changed, "missing": missing, "changed": changed,
@@ -164,7 +179,8 @@ def discover_lean() -> list[str] | None:
     if not root: return None
     portable=portable_bin(root)/'lean.exe'
     return [str(portable)] if portable.is_file() else None
-def _ident(x: str) -> bool:
+def is_lean_identifier(x: str) -> bool:
+    """The declaration-name grammar that formal checks accept."""
     if not isinstance(x, str) or not x:
         return False
     parts = [part.rstrip("'") for part in x.split('.')]
@@ -293,7 +309,7 @@ def toolchain_errors(toolchain):
     errors = ['toolchain.' + key + ' is missing' for key in sorted(required - toolchain.keys())]
     for key in ('sha256', 'verifier_sha256'):
         value = toolchain.get(key)
-        if key in toolchain and (not isinstance(value, str) or not re.fullmatch('[0-9a-f]{64}', value)):
+        if key in toolchain and not is_sha256(value):
             errors.append('toolchain.' + key + ' must be a SHA-256')
     for key in ('executable', 'version'):
         if key in toolchain and (not isinstance(toolchain[key], str) or not toolchain[key].strip()):
@@ -307,7 +323,7 @@ def toolchain_errors(toolchain):
         errors.append('toolchain.version_exit must record a successful version observation')
     executables = toolchain.get('executables')
     if not isinstance(executables, dict) or any(not isinstance(p, str) or not p or
-            not isinstance(h, str) or not re.fullmatch('[0-9a-f]{64}', h) for p, h in executables.items()):
+            not is_sha256(h) for p, h in executables.items()):
         errors.append('toolchain.executables must map paths to SHA-256 values')
     project = toolchain.get('project')
     if project is not None and (not isinstance(project, dict) or
@@ -433,9 +449,9 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
         validate_start(launch_ticket)
         if launch_ticket['kind'] != 'native_job' or launch_ticket['phase'] != 'dispatched':
             raise ValueError('formal runner needs the dispatched native launch ticket')
-    workspace=workspace.resolve(); raw=source.encode(); base={"source_sha256":hashlib.sha256(raw).hexdigest(),"declarations":declarations,"axioms":{},"declaration_signatures":{},"dependency_closure":{},"declaration_evidence":{},"signature_hash":None,"stdout":"","stderr":"","command":None,"toolchain":None,"reason":None}
+    workspace=workspace.resolve(); raw=source.encode(); base={"source_sha256":lean_source_sha256(source),"declarations":declarations,"axioms":{},"declaration_signatures":{},"dependency_closure":{},"declaration_evidence":{},"signature_hash":None,"stdout":"","stderr":"","command":None,"toolchain":None,"reason":None}
     base['launch_not_created'] = True
-    if not all(_ident(x) for x in declarations): return {**base,"status":"rejected","reason":"invalid declaration"}
+    if not all(is_lean_identifier(x) for x in declarations): return {**base,"status":"rejected","reason":"invalid declaration"}
     if not declarations: return {**base,"status":"rejected","reason":"no declaration to audit"}
     command=list(lean_command) if lean_command else (discover_lean() or [])
     if not command or not command[0]: return {**base,"status":"unavailable","reason":"lean not found"}
@@ -553,7 +569,7 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
     base['declaration_signatures']=signatures
     base['axioms']=axiom_rows
     base['signature_hash']=hashlib.sha256(json.dumps(signatures,sort_keys=True,separators=(',',':')).encode()).hexdigest()
-    if any(axiom=='sorryAx' or axiom not in allowed_axioms for axioms in axiom_rows.values() for axiom in axioms):
+    if forbidden_axioms(axiom_rows, allowed_axioms):
         return {**base,'status':'rejected','reason':'forbidden axiom'}
     if set(extracted)!=selected: return {**base,'status':'failed','reason':'dependency output missing'}
     for declaration,row in extracted.items():

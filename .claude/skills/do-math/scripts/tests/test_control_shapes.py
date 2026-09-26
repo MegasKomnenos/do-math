@@ -158,8 +158,9 @@ class DomainShapeTests(unittest.TestCase):
                     validate_control_payload('trust', 'recheck', {'operation': 'recheck', 'env_id': 'TE-x'})
 
     def test_time_boundaries_reject_nonstrings_instead_of_treating_falsy_input_as_now(self):
-        from do_math import governance, delegations, external
-        for parse in (governance.timestamp, delegations._now, external._now):
+        from do_math import governance
+        from do_math.file_io import parse_utc
+        for parse in (governance.timestamp, parse_utc):
             for value in (False, 0, 1, [], {}, ''):
                 with self.subTest(parse=parse, value=value), self.assertRaises(ValueError):
                     parse(value)

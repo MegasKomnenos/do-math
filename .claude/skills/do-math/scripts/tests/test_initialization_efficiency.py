@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import payloads, maintenance_gate
 from do_math.operation_trace import tracing, phase, phase_rows, progress
 from do_math.repository import ResearchRepository, canonical_json, new_id
+from research_fixtures import current_state
 from test_categories import test_group
 
 
@@ -31,9 +32,10 @@ class EfficiencyUnits(unittest.TestCase):
             self.assertTrue(sink.path.is_file())
 
     def test_large_control_is_archived_before_reference_catalog_construction(self):
-        from test_lifecycle_engine import FakeEngine, AdapterDouble
+        from test_lifecycle_engine import FakeEngine
+        from research_fixtures import FixtureAdapter
         from do_math.context_store import prepare_role_input
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             root = Path(directory)
             owner = FakeEngine(root); owner.activate()
             import base64
@@ -127,8 +129,7 @@ class PayloadStorageTests(unittest.TestCase):
             repo=ResearchRepository(root,identifier)
             repo.register_family('research','label',shape='metadata',schema={'type':'string'},identity=False)
             text='exact 원문\n'*20000
-            head=repo.initialize({'feature_version':5,'title':text,'label':text},
-                                 {'feature_version':5,'status':'initializing'})
+            head=repo.initialize(*current_state({'title':text,'label':text}))
             stored=json.loads(repo.read('research/_state/metadata.json',head))
             self.assertIsNone(stored['record']['title'])
             self.assertEqual(len({r['path'] for r in stored['payloads']}),1)
@@ -152,7 +153,7 @@ class PayloadStorageTests(unittest.TestCase):
             root=Path(directory)
             subprocess.run(['git','init','-q',str(root)],check=True)
             repo=ResearchRepository(root,new_id('RI'))
-            repo.initialize({'feature_version':5,'title':'original'}, {'feature_version':5,'status':'initializing'})
+            repo.initialize(*current_state({'title':'original'}))
             repo.load()
             def reject(_): raise ValueError('new owner constraint')
             repo.register_family('research','title',shape='metadata',identity=False,validator=reject)

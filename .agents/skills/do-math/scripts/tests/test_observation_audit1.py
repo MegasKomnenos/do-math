@@ -10,11 +10,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import test_redesign_OBSERVATION as h
 from do_math import observations as obs
 from do_math.execution_profiles import seal_profile, BOUNDARY
+from research_fixtures import write_checkpoint
 
 
 def profile(bindings):
-    return seal_profile({"role": "research_work", "actor_kind": "ai", "budget_kind": "work", "boundary": BOUNDARY,
-        "ai": {"model": "test"}, "observation": {"mode": "event_driven", "settings": {
+    return seal_profile({"role": "research_work", "actor_kind": "ai", "boundary": BOUNDARY,
+        "ai": {"model": "test", "capacity_refs": ["CP-test"]}, "observation": {"mode": "event_driven", "settings": {
             "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5,
             "observation_interval_seconds": 300}, "rule_bindings": bindings}})
 
@@ -31,7 +32,8 @@ class AuditTests(unittest.TestCase):
             "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}, clock=self.clock)
 
     def submission(self, tracker):
-        obligation = next(r for r in tracker.observe({"type": "tick", "counters": {"attempts": 2}}) if r["kind"] == "self_check_due")
+        write_checkpoint(self.ws, counters={"attempts": 2})
+        obligation = next(r for r in tracker.observe({"type": "tick"}) if r["kind"] == "self_check_due")
         response = h.ObservationRedesignTests.response(obligation)
         request = {"request_id": "self-check-" + obligation["id"], "execution_id": "EX-1", "kind": "self_check_response",
                    "payload": {"self_check_id": obligation["id"], "response": response}}

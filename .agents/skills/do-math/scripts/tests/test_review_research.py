@@ -13,6 +13,7 @@ from do_math.review_cycle import (start_review, next_actions, context_for, defer
 from test_purpose_engine import PurposeHarness, PurposeRunner, common, formal_fixture, EXPLANATION, parse_context
 from test_review_engine import FakeEngine
 from do_math import knowledge_records as kr
+from do_math.execution_profiles import resolve_profile
 from research_fixtures import local_job_runner, send_control
 import tempfile
 
@@ -156,7 +157,9 @@ class ReviewResearchEngineTests(PurposeHarness):
         for request in requests:
             investigation = engine.runtime['executions'][request['result']['execution_id']]
             self.assertEqual(investigation['role'], 'supplemental_research')
-            self.assertEqual(investigation['budget_kind'], 'work')
+            # An investigation is work: its immutable profile reserves a work slot.
+            self.assertTrue(resolve_profile(engine.instance['execution_profiles'],
+                                            investigation['execution_profile_ref'])['ai']['capacity_refs'])
             self.assertEqual(request['action']['slot'], 'initial-0')
             self.assertNotEqual(request['requested_by'], investigation['id'])
             self.assertNotEqual(final_id, request['requested_by'])
@@ -325,9 +328,9 @@ class SplitReviewResearchTests(unittest.TestCase):
         requests = [{'id': 'domain', 'question': 'Which kernel constants does this exact declaration depend on?',
                      'source_refs': ['proposal:formal.dependency_closure', 'proposal:lean_code']}]
         engine.runtime['executions']['INV-request'] = {'id': 'INV-request', 'role': 'identity_review',
-            'action': action, 'actor_kind': 'ai', 'owner_activity_id': action['owner_activity_id'],
+            'status': 'running', 'action': action, 'actor_kind': 'ai', 'owner_activity_id': action['owner_activity_id'],
             'execution_profile_ref': deepcopy(engine.profile),
-            'budget_kind': 'work', 'extensions': {'research_requests': requests}}
+            'extensions': {'research_requests': requests}}
         output = {'proposal_digest': context['proposal_digest'], 'summary': 'Need a fixed-source comparison',
             'used_sources': [], 'questions': [], 'decision': 'unresolved', 'scope_complete': False, 'findings': []}
         self.assertTrue(engine._defer_review_for_research(action, output, 'INV-request'))
@@ -353,7 +356,7 @@ class SplitReviewResearchTests(unittest.TestCase):
         research = context['review_research']
         for source in research['sources']:
             self.assertEqual(hashlib.sha256((engine.root / 'investigation' / source['local_path']).read_bytes()).hexdigest(), source['sha256'])
-        execution = {'id': 'INV-answer', 'role': 'supplemental_research', 'action': action,
+        execution = {'id': 'INV-answer', 'role': 'supplemental_research', 'status': 'running', 'action': action,
                      'execution_profile_ref': deepcopy(engine.research_profile),
                      'actor_kind': 'ai', 'owner_activity_id': action['owner_activity_id']}
         self.assertEqual(engine._admit_review_execution(action, execution)['disposition'], 'admitted')
@@ -406,7 +409,7 @@ class SplitReviewResearchTests(unittest.TestCase):
         engine = self.engine
         cid = self.defer()
         action = next(a for a in engine.runtime['queue'] if a['role'] == 'supplemental_research')
-        execution = {'id': 'INV-stopped', 'role': 'supplemental_research', 'action': action,
+        execution = {'id': 'INV-stopped', 'role': 'supplemental_research', 'status': 'running', 'action': action,
                      'actor_kind': 'ai', 'owner_activity_id': action['owner_activity_id']}
         self.assertEqual(engine._admit_review_execution(action, execution)['disposition'], 'admitted')
         engine.runtime['executions']['INV-stopped'] = execution

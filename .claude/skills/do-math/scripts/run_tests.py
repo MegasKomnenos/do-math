@@ -5,11 +5,12 @@ process deadlines. This runner never changes the product's Lean time limits.
 
 A unit or integration test that already passed on the same inputs is not run
 again: its pass is reported from the result cache with the report it came from.
-The inputs are split in two. The shared key covers everything but the test
-modules (product code, documents, shared fixtures, the repository's
-docs/do-math, Python and git versions); any edit there invalidates all
-entries. A test module's key covers its own file and every test module it
-imports, transitively, so editing a test re-runs only the tests that read it.
+The inputs are split in two. The shared key covers everything but the Python
+modules in tests/ (product code, documents, the repository's docs/do-math,
+Python and git versions); any edit there invalidates all entries. A test
+module's key covers its own file and every tests/ module it imports,
+transitively, shared fixtures included, so editing a test or a fixture re-runs
+only the tests that read it.
 Failures are never cached. Lean and resource tests depend on host toolchains
 and processes and always run. ``--no-cache`` forces execution.
 """
@@ -41,17 +42,17 @@ CACHE = Path(tempfile.gettempdir()) / 'do-math-test-cache'
 CACHED_GROUPS = frozenset({'unit', 'integration'})
 
 
-TEST_IMPORT = re.compile(r'^\s*(?:from|import)\s+(test_\w+)', re.M)
+MODULE_IMPORT = re.compile(r'^\s*(?:from|import)\s+(\w+)', re.M)
 
 
-def _is_test_module(path):
-    return path.parent == TESTS and path.name.startswith('test_') and path.suffix == '.py'
+def _is_test_source(path):
+    return path.parent == TESTS and path.suffix == '.py'
 
 
 def _module_keys():
-    """Per test module: its own bytes and those of every test module it imports, transitively."""
-    sources = {path.stem: path.read_bytes() for path in TESTS.glob('test_*.py')}
-    imports = {name: set(TEST_IMPORT.findall(raw.decode('utf-8'))) & sources.keys() for name, raw in sources.items()}
+    """Per tests/ module: its own bytes and those of every tests/ module it imports, transitively."""
+    sources = {path.stem: path.read_bytes() for path in TESTS.glob('*.py')}
+    imports = {name: set(MODULE_IMPORT.findall(raw.decode('utf-8'))) & sources.keys() for name, raw in sources.items()}
     keys = {}
     for name in sources:
         seen, pending = set(), [name]
@@ -65,12 +66,12 @@ def _module_keys():
 
 
 def _input_key():
-    """Content key of everything a unit or integration test may read, except the test modules."""
+    """Content key of everything a unit or integration test may read, except the tests/ modules."""
     skill = SCRIPTS.parent
     files = {}
     for base, name in ((skill, 'skill'), (skill.parents[2] / 'docs' / 'do-math', 'docs')):
         for path in sorted(base.rglob('*')) if base.is_dir() else ():
-            if path.is_file() and '__pycache__' not in path.parts and not _is_test_module(path):
+            if path.is_file() and '__pycache__' not in path.parts and not _is_test_source(path):
                 files[name + '/' + path.relative_to(base).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
     try:
         git = subprocess.run(['git', '--version'], capture_output=True, text=True).stdout.strip()

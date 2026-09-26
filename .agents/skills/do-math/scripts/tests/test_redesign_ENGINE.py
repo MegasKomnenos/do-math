@@ -9,32 +9,34 @@ from copy import deepcopy
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, create_autospec, patch
 import tempfile
 import subprocess
 import hashlib
 import json
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.engine import ResearchEngine, _records
+from do_math.engine import ResearchEngine
 from do_math import execution_profiles, activities
-from do_math.engine import DEFAULT_CONFIG, initialize, _repository, read_record, control
+from do_math.engine import DEFAULT_CONFIG, _repository, read_record, control
 from do_math.repository import canonical_json
 from do_math import integration
+from do_math.repository import ResearchRepository
+from research_fixtures import bare_engine, current_state, new_instance, write_checkpoint
+from state_fixtures import owner_calls
 
 
 def routing_engine():
-    engine = object.__new__(ResearchEngine)
-    engine._slots = None
+    engine = bare_engine()
     engine.instance = {"id": "RI-test", "knowledge": {}, "relations": [],
                        "goal": "Original approved goal", "policies": "", "goal_status": "unresolved",
                        "config": {"goal_auditors": 2}}
     engine.runtime = {"tasks": {}, "activities": {}, "executions": {}, "queue": [],
                       "questions": [], "question_links": [], "history": [], "inputs": [],
                       "interpretations": {}, "status": "ready"}
-    engine._bind_revision_action = Mock()
-    engine._cancel_selected_revision_targets = Mock()
-    engine._record_output_questions = Mock()
+    engine._bind_revision_action = create_autospec(engine._bind_revision_action)
+    engine._cancel_selected_revision_targets = create_autospec(engine._cancel_selected_revision_targets)
+    engine._record_output_questions = create_autospec(engine._record_output_questions)
     return engine
 
 
@@ -119,11 +121,14 @@ class QueryIdentity(unittest.TestCase):
         self.assertNotEqual(first["semantic_sha256"], evidence(changed_payload)["semantic_sha256"])
 
     def test_duplicate_id_is_rejected_across_families(self):
-        engine = routing_engine()
-        engine.instance["knowledge"]["DUP"] = {"id": "DUP"}
-        engine.runtime["tasks"]["DUP"] = {"id": "DUP"}
-        with self.assertRaisesRegex(ValueError, "[Dd]uplicate|collision"):
-            _records(engine.instance, engine.runtime)
+        # The state contract checks global record IDs of every bundle candidate
+        # (_validate_bundle_candidate -> validate_candidate) before publication.
+        from do_math.state_contract import default_state_contract
+        instance, runtime = current_state(
+            {"object_format": "sha1", "sources": [{"id": "DUP", "path": "input.txt", "sha256": "a" * 64}]},
+            {"events": [{"id": "DUP", "kind": "created"}]})
+        with self.assertRaisesRegex(ValueError, "record IDs must be globally unique: DUP"):
+            default_state_contract().validate(instance, runtime)
 
 
 class ObservationMerge(unittest.TestCase):
@@ -183,20 +188,21 @@ class BundleConnections(unittest.TestCase):
     def test_independent_commit_survives_later_bundle_failure_and_retry(self):
         engine = routing_engine()
         engine.head = "input-snapshot"
-        engine._saved_state = None
         engine.runtime["executions"]["EX-work"] = {"id": "EX-work", "input_snapshot": engine.head}
         engine.instance["accepted_titles"] = []
-        engine.store = Mock()
+        engine.store = create_autospec(ResearchRepository, instance=True)
         published = []
-        def save(head, instance, runtime, **kwargs):
-            published.append((deepcopy(instance), deepcopy(runtime)))
-            return "snapshot-" + str(len(published)), deepcopy(instance), deepcopy(runtime)
-        engine.store.save_with_state.side_effect = save
+        def save(head, candidate):
+            published.append((deepcopy(candidate["instance"]), deepcopy(candidate["runtime"])))
+            return "snapshot-" + str(len(published)), deepcopy(candidate["instance"]), deepcopy(candidate["runtime"])
+        # Publication receives the candidate step's validated result.
+        engine.store.save_validated.side_effect = save
         engine.store.load.side_effect = lambda head=None: (head or "snapshot-" + str(len(published)),
             deepcopy(published[-1][0]), deepcopy(published[-1][1]))
-        engine.store.validate_candidate = Mock(side_effect=lambda instance, runtime, head: {"instance": deepcopy(instance), "runtime": deepcopy(runtime)})
-        engine._validate_bundle_current = Mock()
-        engine._validate_bundle_candidate = Mock()
+        engine._validate_bundle_current = create_autospec(engine._validate_bundle_current)
+        engine._validate_bundle_candidate = create_autospec(engine._validate_bundle_candidate,
+            side_effect=lambda instance, runtime, bundle, *, artifacts=None: {
+                "instance": deepcopy(instance), "runtime": deepcopy(runtime)})
         def apply(action, output, execution_id, *, owns_response=True, question_source_ref=None):
             for item in output["knowledge"]:
                 if item["title"] == "invalid":
@@ -204,12 +210,12 @@ class BundleConnections(unittest.TestCase):
                 engine.instance["accepted_titles"].append(item["title"])
             if owns_response:
                 engine.runtime["history"].append({"kind": "report"})
-        engine._apply = apply
+        engine._apply = create_autospec(engine._apply, side_effect=apply)
         for name in ("_apply_model_metadata", "_apply_extensions", "_apply_revision_followup",
                      "_apply_action_resolutions", "_apply_question_resolutions", "_resolve_failed_actions",
                      "_ensure_academic_followup", "_consume_action_events", "_record_task_receipt"):
-            setattr(engine, name, Mock())
-        engine._defer_review_for_research = Mock(return_value=False)
+            setattr(engine, name, create_autospec(getattr(engine, name)))
+        engine._defer_review_for_research = create_autospec(engine._defer_review_for_research, return_value=False)
         output = {"summary": "two independent claims", "knowledge": [{"title": "valid"}, {"title": "invalid"}],
                   "relations": [], "questions": [], "integration_bundles": [
                       {"integration_id": "IN-good", "members": ["output", "output/knowledge/0"], "impact_set": [], "authority_refs": []},
@@ -233,7 +239,7 @@ class ExecutionConnections(unittest.TestCase):
         engine = routing_engine()
         engine.instance["config"] = deepcopy(DEFAULT_CONFIG)
         engine.instance.update(execution_profiles.build_profiles(engine.instance["config"]))
-        engine._select_model = Mock(return_value={"model": DEFAULT_CONFIG["tier_models"]["medium"]})
+        engine._select_model = create_autospec(engine._select_model, return_value={"model": DEFAULT_CONFIG["tier_models"]["medium"]})
         action = {"id": "AC-work", "role": "research_work", "lineage_id": "AC-work"}
         first = engine._register_execution(action, {"id": "EX-first", "role": "research_work",
             "status": "starting", "created_at": "2026-09-20T00:00:00+00:00", "input_manifest": []})
@@ -253,8 +259,6 @@ class ExecutionConnections(unittest.TestCase):
         engine.instance["config"] = deepcopy(DEFAULT_CONFIG)
         engine.instance.update(execution_profiles.build_profiles(engine.instance["config"]))
         action = {"id": "AC-machine", "role": "formal_check", "target": "KN-one"}
-        from do_math.session_slots import SessionSlots
-        engine._slots = SessionSlots(engine.runtime, engine.instance)
         engine.runtime["executions"]["EX-unrelated"] = {"id": "EX-unrelated", "role": "formal_check",
             "status": "ended", "action": {"target": "KN-one"}, "owner_activity_id": "AY-unrelated"}
         row = engine._register_execution(action, {"id": "EX-new", "role": "formal_check", "status": "running",
@@ -268,10 +272,9 @@ class PersistedConnections(unittest.TestCase):
     def test_new_instance_is_v5_initializing_without_implicit_authority(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            subprocess.run(["git", "init", "--quiet", str(root / "repo")], check=True, capture_output=True)
-            result = initialize(root / "repo", goal="Prove the stated goal", workspace=root / "work",
+            identifier = new_instance(root / "repo", goal="Prove the stated goal", workspace=root / "work",
                 config={"scholarly_enabled": False, "operator_enabled": False})
-            head, instance, runtime = _repository(root / "repo", result["instance_id"]).load()
+            head, instance, runtime = _repository(root / "repo", identifier).load()
             self.assertEqual(runtime["status"], "initializing")
             self.assertEqual(runtime["queue"], [])
             self.assertEqual(instance["feature_version"], 5)
@@ -303,9 +306,9 @@ class InputManifestConnections(unittest.TestCase):
         task = contracts.task_candidate_record(candidate("bounded work"), task_id="TA-one")
         task.update(status="candidate", results=[])
         engine.runtime["tasks"][task["id"]] = task
-        engine.head = "fixed-input"; engine.store = Mock(); engine.store.read_many.return_value = {}
+        engine.head = "fixed-input"; engine.store = create_autospec(ResearchRepository, instance=True); engine.store.read_many.return_value = {}
         engine._documents = {"maintenance": contracts.prompt_documents("maintenance")}
-        engine._preparation_checkpoint = Mock(); engine._academic_status = Mock(return_value={"status": "not_evaluated"})
+        engine._preparation_checkpoint = create_autospec(engine._preparation_checkpoint); engine._academic_status = create_autospec(engine._academic_status, return_value={"status": "not_evaluated"})
         with tempfile.TemporaryDirectory() as temporary:
             engine.instance["workspace"] = temporary
             context = engine._context({"id": "AC-reader", "role": "maintenance"}, Path(temporary) / "reader")
@@ -332,11 +335,14 @@ class InputManifestConnections(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             context = {"action": {"role": "maintenance"}, "execution_id": "EX-maintenance"}
+            # The engine archives each role input once, below its input bundle.
             fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
                 role="maintenance", profile=profile, snapshot="a" * 40, workspace=root,
-                activity_id="AC-1", output_schema=schema, documents=engine._documents["maintenance"])
-            artifacts = engine._input_artifacts("BA-input", "maintenance", fitted["prompt"], schema, fitted, root)
+                activity_id="AC-1", output_schema=schema, documents=engine._documents["maintenance"],
+                artifact_prefix="runtime/artifacts/BA-input")
+            artifacts = engine._input_artifacts("BA-input", schema, fitted, root)
             self.assertEqual(json.loads(artifacts["runtime/artifacts/BA-input/manifest.json"]), fitted["manifest"])
+            self.assertEqual(artifacts["runtime/artifacts/BA-input/input.txt"], fitted["prompt"].encode("utf-8"))
             for entry in fitted["manifest"]["catalog"]:
                 raw = artifacts["runtime/artifacts/BA-input/" + entry["path"]]
                 self.assertEqual(hashlib.sha256(raw).hexdigest(), entry["sha256"])
@@ -355,11 +361,11 @@ class FormalAuthority(unittest.TestCase):
             source_ref="EX-author", actor_ref="EX-author")
         # This isolates the actual trust-environment gate; public lifecycle/grant
         # admission is exercised by PublicGitFlow and LIFECYCLE's owner tests.
-        engine._action_lifecycle_gate = Mock()
-        engine._require_action_clock = Mock()
+        engine._action_lifecycle_gate = create_autospec(engine._action_lifecycle_gate)
+        engine._require_action_clock = create_autospec(engine._require_action_clock)
         engine.runtime["trust_transitions"] = {}
         engine.formal_verifier = Mock()
-        engine._save = Mock()
+        engine._save = create_autospec(engine._save)
         engine._formal({"id": "AC-formal", "role": "formal_check", "target": kid})
         engine.formal_verifier.assert_not_called()
         self.assertIsNone(engine.instance["active_trust_environment"])
@@ -383,11 +389,11 @@ class FormalBindingConnections(unittest.TestCase):
         engine.instance, engine.runtime, kid = knowledge_io.import_candidate(engine.instance, engine.runtime,
             {"kind": "theorem", "title": "T", "statement": "True", "summary": "True", "explanation": "A proof",
                 "lean_code": "-- e\u0301\r\ntheorem t : True := by trivial", "declaration_names": ["t"], "dependencies": []}, source_ref="EX-author", actor_ref="EX-author")
-        engine.head = "fixed-input"; engine._save = Mock(); engine._controls = Mock()
-        engine._check_conversations = Mock(return_value=False)
-        engine._action_lifecycle_gate = Mock(); engine._formal_environment = Mock(return_value=deepcopy(environment))
+        engine.head = "fixed-input"; engine._save = create_autospec(engine._save); engine._controls = create_autospec(engine._controls)
+        engine._check_conversations = create_autospec(engine._check_conversations, return_value=False)
+        engine._action_lifecycle_gate = create_autospec(engine._action_lifecycle_gate); engine._formal_environment = create_autospec(engine._formal_environment, return_value=deepcopy(environment))
         engine.formal_verifier = Mock(return_value=result)
-        with patch("do_math.engine.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}):
+        with patch("do_math.engine.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}),                 owner_calls(engine):
             engine._formal({"id": "AC-formal", "role": "formal_check", "target": kid})
         return engine, environment
 
@@ -411,11 +417,15 @@ class FormalBindingConnections(unittest.TestCase):
         self.assertIn("e\u0301\r\n".encode("utf-8"), source)
 
     def test_publication_signature_distinguishes_exact_unicode_payload(self):
+        # _save publishes unless _unchanged() finds the state equal to this head's published state.
         engine = routing_engine(); engine.head = "snapshot"
         engine.instance["formal_results"] = {"FR-one": {"lean_code": '-- "e\u0301"'}}
-        before = engine._state_signature()
+        engine.store = create_autospec(ResearchRepository, instance=True)
+        engine.store.published_state.return_value = (deepcopy(engine.instance), deepcopy(engine.runtime))
+        self.assertTrue(engine._unchanged())
+        engine.store.published_state.assert_called_with("snapshot")
         engine.instance["formal_results"]["FR-one"]["lean_code"] = '-- "é"'
-        self.assertNotEqual(before, engine._state_signature())
+        self.assertFalse(engine._unchanged())
 
 
 class ControlReceipts(unittest.TestCase):
@@ -427,14 +437,14 @@ class ControlReceipts(unittest.TestCase):
         engine.instance["workspace"] = temporary.name
         engine.instance["config"]["max_artifact_bytes"] = 1024 * 1024
         (Path(temporary.name) / "runs/EX-work/workspace/.control").mkdir(parents=True)
-        engine.store = Mock()
+        engine.store = create_autospec(ResearchRepository, instance=True)
         engine.store.read.side_effect = [canonical_json({}), canonical_json({})]
         engine.instance["grants"] = {"GR-one": {"id": "GR-one", "kind": "local", "status": "active",
             "roles": ["research_work"], "task_ids": [], "expires_at": None}}
         engine.runtime["executions"]["EX-work"] = {"id": "EX-work", "role": "research_work", "status": "running",
             "grant_id": "GR-one", "action": {"id": "AC-work", "role": "research_work"}, "input_bundle": "BA-input"}
-        engine._clock_guard = Mock(return_value={"usable": True, "observed_utc": "2026-09-22T00:00:00Z"})
-        engine._save = Mock(side_effect=lambda *a: setattr(engine, "head", "published"))
+        engine._clock_guard = create_autospec(engine._clock_guard, return_value={"usable": True, "observed_utc": "2026-09-22T00:00:00Z"})
+        engine._save = create_autospec(engine._save, side_effect=lambda *a: setattr(engine, "head", "published"))
         request = {"request_id": "request-one", "transport_id": "local", "capability": "delivery-only",
             "execution_id": "EX-work", "grant_id": "GR-one", "kind": "submit_intent",
             "payload": {"draft_path": "draft.json"}}
@@ -469,7 +479,7 @@ class ControlReceipts(unittest.TestCase):
         engine, request = self.make_engine()
         request["kind"] = "submission_preview"
         result = {"contract_id": "do-math-candidate-preview/5", "passed": True, "authoritative": False}
-        engine._preview_submission = Mock(return_value=result)
+        engine._preview_submission = create_autospec(engine._preview_submission, return_value=result)
         before = deepcopy((engine.instance, engine.runtime))
         receipt = engine._publish_control_request(request)
         self.assertEqual(receipt, {"state": "previewed", "result": result})
@@ -487,7 +497,8 @@ class ControlReceipts(unittest.TestCase):
             tracker = ObservationTracker("EX-work", Path(temporary), {"observation_rules": [rule()],
                 "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}, clock=clock)
             tracker.observe({"type": "item.started", "item": {"id": "C", "type": "command_execution"}})
-            obligation = next(row for row in tracker.observe({"type": "tick", "counters": {"attempts": 2}})
+            write_checkpoint(temporary, counters={"attempts": 2})
+            obligation = next(row for row in tracker.observe({"type": "tick"})
                               if row["kind"] == "self_check_due")
             engine._trackers = {"EX-work": tracker}
             engine._transport = Mock(); engine._transport_bindings = {"EX-work": {}}
@@ -516,11 +527,12 @@ class ControlReceipts(unittest.TestCase):
             (Path(temporary)/"runs/EX-work/workspace/.control").mkdir(parents=True)
             tracker = ObservationTracker("EX-work", Path(temporary), {"observation_rules": [rule()],
                 "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}, clock=Clock())
-            obligation = next(row for row in tracker.observe({"type": "tick", "counters": {"attempts": 2}})
+            write_checkpoint(temporary, counters={"attempts": 2})
+            obligation = next(row for row in tracker.observe({"type": "tick"})
                               if row["kind"] == "self_check_due")
             engine._trackers = {"EX-work": tracker}
-            engine._available_inputs = Mock(return_value=[])
-            engine._control_evidence_refs = Mock(return_value=set())
+            engine._available_inputs = create_autospec(engine._available_inputs, return_value=[])
+            engine._control_evidence_refs = create_autospec(engine._control_evidence_refs, return_value=set())
             response = ObservationRedesignTests.response(obligation)
             request.update(kind="self_check_response", payload={"self_check_id": obligation["id"], "response": response})
             receipt = engine._publish_control_request(request)
@@ -539,7 +551,8 @@ class ControlReceipts(unittest.TestCase):
                 tracker = ObservationTracker("EX-work", workspace, {
                     "observation_rules": [rule()], "tool_review_window_seconds": 60,
                     "self_check_response_window_seconds": 5}, clock=Clock())
-                obligation = next(row for row in tracker.observe({"type": "tick", "counters": {"attempts": 2}})
+                write_checkpoint(workspace, counters={"attempts": 2})
+                obligation = next(row for row in tracker.observe({"type": "tick"})
                                   if row["kind"] == "self_check_due")
                 response = ObservationRedesignTests.response(obligation)
                 request.update(request_id="self-check-" + obligation["id"], kind="self_check_response",
@@ -547,7 +560,7 @@ class ControlReceipts(unittest.TestCase):
                 event = {"type": "item.started", "item": {"id": "CALL-SC", "type": "mcp_tool_call",
                     "server": "execution_control", "tool": "control_self_check", "arguments": request["payload"]}}
                 engine._trackers = {"EX-work": tracker}
-                engine._control_evidence_refs = Mock(return_value={"EV-1"})
+                engine._control_evidence_refs = create_autospec(engine._control_evidence_refs, return_value={"EV-1"})
                 if first == "native":
                     tracker.observe(event)
                 receipt = engine._publish_control_request(request)
@@ -570,12 +583,13 @@ class ControlReceipts(unittest.TestCase):
         tracker = ObservationTracker("EX-work", Path(engine.instance["workspace"]), {
             "observation_rules": [rule()], "tool_review_window_seconds": 60,
             "self_check_response_window_seconds": 5}, clock=Clock())
-        obligation = next(row for row in tracker.observe({"type": "tick", "counters": {"attempts": 2}})
+        write_checkpoint(engine.instance["workspace"], counters={"attempts": 2})
+        obligation = next(row for row in tracker.observe({"type": "tick"})
                           if row["kind"] == "self_check_due")
         request.update(request_id="self-check-" + obligation["id"], kind="self_check_response",
             payload={"self_check_id": obligation["id"], "response": ObservationRedesignTests.response(obligation)})
         engine._trackers = {"EX-work": tracker}
-        engine._control_evidence_refs = Mock(return_value={"EV-1"})
+        engine._control_evidence_refs = create_autospec(engine._control_evidence_refs, return_value={"EV-1"})
         engine._save.side_effect = OSError("publication failed")
         engine.store.load.side_effect = OSError("no committed receipt")
         self.assertEqual(engine._publish_control_request(request)["state"], "rejected")
@@ -603,7 +617,7 @@ class CentralSubmissionEvidence(unittest.TestCase):
         schema = contracts.identify_schema({"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]})
         submission.install_tools(root, context, schema, 10000000)
         (root / "draft.json").write_bytes(raw)
-        engine._response_schema = Mock(return_value=schema)
+        engine._response_schema = create_autospec(engine._response_schema, return_value=schema)
         execution = {"id": "EX-work", "action": context["action"], "status": "stopping",
                      "stop_phase": "terminating"}
         return engine, output, context, execution
@@ -613,11 +627,11 @@ class CentralSubmissionEvidence(unittest.TestCase):
             root = Path(temporary)
             engine, output, context, execution = self.fixture(root)
             engine.runtime["executions"]["EX-work"] = execution
-            engine._apply_submission_bundles = Mock(return_value={"status": "returned", "bundles": [],
+            engine._apply_submission_bundles = create_autospec(engine._apply_submission_bundles, return_value={"status": "returned", "bundles": [],
                 "issues": [], "retry_bundle_ids": []})
-            engine._remove_action = Mock()
-            engine._record_task_receipt = Mock()
-            engine._save = Mock()
+            engine._remove_action = create_autospec(engine._remove_action)
+            engine._record_task_receipt = create_autospec(engine._record_task_receipt)
+            engine._save = create_autospec(engine._save)
             result = engine._receive_submission(context["action"], {"output": output}, "EX-work",
                 context, engine._response_schema(context["action"]), root)
             self.assertEqual(result["status"], "returned")
@@ -646,9 +660,9 @@ class UserControlIdentity(unittest.TestCase):
             root = Path(temporary)
             engine = routing_engine()
             engine.instance["workspace"] = str(root / "work")
-            store = Mock()
+            store = create_autospec(ResearchRepository, instance=True)
             store.load.return_value = ("snapshot", engine.instance, engine.runtime)
-            with patch("do_math.engine._repository", return_value=store), patch("do_math.engine._require_current_contract"):
+            with patch("do_math.engine._repository", return_value=store):
                 first = control(root, "RI-test", "request", config={"role": "maintenance"}, request_id="UC-explicit")
                 engine.runtime["status"] = "closed"
                 replay = control(root, "RI-test", "request", config={"role": "maintenance"}, request_id="UC-explicit")
@@ -662,9 +676,7 @@ class UserControlIdentity(unittest.TestCase):
     def test_git_replay_keeps_original_outcome_and_snapshot_after_close(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            subprocess.run(["git", "init", "-q", str(root / "repo")], check=True)
-            created = initialize(root / "repo", goal="Control replay", workspace=root / "work")
-            identifier = created["instance_id"]
+            identifier = new_instance(root / "repo", goal="Control replay", workspace=root / "work")
             first = control(root / "repo", identifier, "pause", text="pause once")
             engine = ResearchEngine(root / "repo", identifier)
             engine.process_controls()
@@ -677,19 +689,19 @@ class UserControlIdentity(unittest.TestCase):
             self.assertTrue(replay["replayed"])
             self.assertEqual({key: replay[key] for key in original}, original)
             self.assertNotEqual(engine.head, original["snapshot"])
-            from do_math.cli import control_request_id
+            from do_math.control_contracts import control_request_id
             self.assertEqual(first["request_id"], control_request_id(identifier, "pause", text="pause once"))
 
     def test_normalized_source_has_one_identity_and_rejects_wrong_bytes(self):
-        from do_math.cli import control_request_id
+        from do_math.control_contracts import control_request_id
         import base64
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             engine = routing_engine(); engine.instance["workspace"] = str(root / "work")
-            store = Mock(); store.load.return_value = ("snapshot", engine.instance, engine.runtime)
+            store = create_autospec(ResearchRepository, instance=True); store.load.return_value = ("snapshot", engine.instance, engine.runtime)
             spec = {"name": "source.txt", "body_base64": base64.b64encode(b"original").decode(),
                     "sha256": hashlib.sha256(b"original").hexdigest(), "bytes": 8}
-            with patch("do_math.engine._repository", return_value=store), patch("do_math.engine._require_current_contract"):
+            with patch("do_math.engine._repository", return_value=store):
                 result = control(root, "RI-test", "source", config=spec, idempotency_key="source-once")
                 self.assertEqual(result["request_id"], control_request_id("RI-test", "source", config=spec, idempotency_key="source-once"))
                 with self.assertRaisesRegex(ValueError, "hash or size"):
@@ -774,13 +786,12 @@ class PublicGitFlow(unittest.TestCase):
                 return {"status": "completed", "output": output, "usage": {}}
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            subprocess.run(["git", "init", "--quiet", str(root / "repo")], check=True, capture_output=True)
-            created = initialize(root / "repo", goal="Record and assess a bounded observation", workspace=root / "work", config={
+            identifier = new_instance(root / "repo", goal="Record and assess a bounded observation", workspace=root / "work", config={
                  "scholarly_enabled": False, "operator_enabled": False, "lean_command": ["fixture-lean"],
                 "observation_mode": "periodic", "tool_review_window_seconds": 600, "self_check_response_window_seconds": 60,
                 "import_rework_limit": 3, "selection_failure_limit": 3, "exhaustion_empty_limit": 3,
                 "proposal_version_limit": 3, "contract_revision_limit": 3})
-            runner = Runner(); engine = ResearchEngine(root / "repo", created["instance_id"], runner=runner)
+            runner = Runner(); engine = ResearchEngine(root / "repo", identifier, runner=runner)
             run = engine.run
             def checked_run(**kwargs):
                 result = run(**kwargs)
@@ -809,14 +820,14 @@ class PublicGitFlow(unittest.TestCase):
 
 class ControlQueueConnections(unittest.TestCase):
     def engine(self, request):
-        engine = routing_engine(); engine.head = "parent"; engine._calls = None
+        engine = routing_engine(); engine.head = "parent"
         engine.instance.update(config={**deepcopy(DEFAULT_CONFIG), }, lifecycle={"state": "active"})
         engine.runtime["processed_controls"] = []
-        engine._inbox = Mock(return_value=[request]); engine._save = Mock(); engine._resume_lifecycle = Mock()
+        engine._inbox = create_autospec(engine._inbox, return_value=[request]); engine._save = create_autospec(engine._save); engine._resume_lifecycle = create_autospec(engine._resume_lifecycle)
         for name in ("_review_recovery_control", "_knowledge_io_control", "_academic_control", "_apply_extended_control"):
-            setattr(engine, name, Mock(return_value=False))
+            setattr(engine, name, create_autospec(getattr(engine, name), return_value=False))
         for name in ("_schedule_operational_reviews", "_retry_submission_publications", "_retry_impact_reviews", "_run_pending_operational_repairs"):
-            setattr(engine, name, Mock())
+            setattr(engine, name, create_autospec(getattr(engine, name)))
         return engine
 
     def test_every_call_budget_control_produces_stable_queue_identity(self):
@@ -845,12 +856,12 @@ class GovernanceOwnerConnections(unittest.TestCase):
         engine.runtime.update(status="ready", history=[], processed_controls=[])
         for execution in engine.runtime["executions"].values():
             execution.setdefault("status", "ended")
-        engine.head = "fixed-parent"; engine._calls = None
-        engine._inbox = Mock(return_value=[request]); engine._save = Mock()
+        engine.head = "fixed-parent"
+        engine._inbox = create_autospec(engine._inbox, return_value=[request]); engine._save = create_autospec(engine._save)
         for name in ("_review_recovery_control", "_knowledge_io_control", "_academic_control", "_apply_extended_control"):
-            setattr(engine, name, Mock(return_value=False))
+            setattr(engine, name, create_autospec(getattr(engine, name), return_value=False))
         for name in ("_schedule_operational_reviews", "_retry_submission_publications", "_retry_impact_reviews", "_run_pending_operational_repairs"):
-            setattr(engine, name, Mock())
+            setattr(engine, name, create_autospec(getattr(engine, name)))
         engine._controls()
         self.assertEqual(engine.instance["governance"]["CH2"]["content"]["goal"], "Prove Q")
         self.assertEqual(engine.runtime["intent_imports"][bundle["id"]]["application"]["status"], "applied")
@@ -862,13 +873,11 @@ class GovernanceOwnerConnections(unittest.TestCase):
 class MachineAdmissionConnections(unittest.TestCase):
     def fixture(self):
         from test_host_resources import fixture
-        from do_math.session_slots import SessionSlots
         instance, selected, _ = fixture()
         engine = routing_engine(); engine.instance.update(instance)
-        engine._execution_profile = Mock(return_value=selected["formal_check"])
-        engine._slots = SessionSlots(engine.runtime, engine.instance)
-        engine._admit_review_execution = Mock(return_value={"disposition": "not_applicable"})
-        engine._save = Mock()
+        engine._execution_profile = create_autospec(engine._execution_profile, return_value=selected["formal_check"])
+        engine._admit_review_execution = create_autospec(engine._admit_review_execution, return_value={"disposition": "not_applicable"})
+        engine._save = create_autospec(engine._save)
         return engine
 
     def test_common_machine_admission_reserves_before_start_and_refuses_without_execution(self):
@@ -886,7 +895,7 @@ class MachineAdmissionConnections(unittest.TestCase):
         self.assertEqual(engine.runtime["activities"][action["owner_activity_id"]]["status"], "waiting")
         self.assertEqual(len(engine.runtime["reservations"]), 9)
         engine._local_call_returned("EX-machine-0", {"launch_not_created":True})
-        self.assertTrue(engine._slots.release("EX-machine-0", reason="explicit local start failure"))
+        self.assertTrue(engine._session_slots().release("EX-machine-0", reason="explicit local start failure"))
         retry = engine._register_execution(action, {"id": "EX-retry", "status": "running", "role": "formal_check"})
         self.assertEqual(retry["status"], "starting")
 
@@ -901,29 +910,28 @@ class MachineAdmissionConnections(unittest.TestCase):
         engine._save.side_effect = published
         engine._machine_started("EX-one", identity)
         engine._save.assert_called_once()
+        from do_math.execution_lifecycle import release_or_hold
         with patch("do_math.windows_job.named_job_empty", return_value=False):
-            self.assertFalse(engine._release_call_slot("EX-one"))
+            self.assertFalse(release_or_hold(execution, engine._session_slots(), at="2026-09-20T00:00:01+00:00"))
+        self.assertEqual(execution["status"], "stopping")
+        self.assertEqual(execution["error"],
+                         "Local Job termination is unconfirmed; capacity and output remain held for recovery.")
         self.assertTrue(all(row["state"] != "settled" for row in engine.runtime["reservations"].values()))
 
     def test_actual_git_snapshot_binds_machine_reservations_and_start_identity(self):
         from do_math.repository import ResearchRepository, new_id
-        from do_math.session_slots import SessionSlots
         from test_host_resources import fixture
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             subprocess.run(["git", "init", "--quiet", str(root / "repo")], check=True, capture_output=True)
             instance, profiles, _ = fixture()
             engine = routing_engine()
-            engine.instance = {**instance, "id": new_id("RI"), "feature_version": 5, "workspace": str(root / "work")}
-            engine.runtime = {"feature_version": 5, "executions": {}, "activities": {}, "tasks": {}, "queue": [], "history": []}
+            engine.instance, engine.runtime = current_state(
+                {**instance, "id": new_id("RI"), "workspace": str(root / "work")},
+                {"executions": {}, "activities": {}, "tasks": {}, "queue": [], "history": []})
             engine.instance["role_profile_refs"]["formal_check"] = [execution_profiles.profile_ref(profiles["formal_check"])]
             engine.store = ResearchRepository(root / "repo", engine.instance["id"])
             engine.head = engine.store.initialize(engine.instance, engine.runtime)
-            def save(artifacts=None):
-                engine.head = engine.store.save_with_state(engine.head, engine.instance, engine.runtime, artifacts=artifacts)[0]
-                engine.head, engine.instance, engine.runtime = engine.store.load(engine.head)
-            engine._save = save
-            engine._slots = SessionSlots(engine.runtime, engine.instance)
             with engine.store.writer_lock():
                 engine._register_execution({"id": "AC-machine", "role": "formal_check"},
                     {"id": "EX-machine", "role": "formal_check", "status": "running"})
@@ -950,15 +958,15 @@ class MaintenanceConnections(unittest.TestCase):
             root = Path(temporary)
             subprocess.run(["git", "init", "--quiet", str(root / "repo")], check=True, capture_output=True)
             engine = routing_engine(); identifier = new_id("RI")
-            engine.instance = {"id": identifier, "feature_version": 5, "workspace": str(root / "work"),
-                               **execution_profiles.build_profiles(DEFAULT_CONFIG)}
-            engine.runtime = {"feature_version": 5, "executions": {}, "activities": {}, "history": [], "queue": []}
+            engine.instance, engine.runtime = current_state(
+                {"id": identifier, "workspace": str(root / "work"), **execution_profiles.build_profiles(DEFAULT_CONFIG)},
+                {"executions": {}, "activities": {}, "tasks": {}, "history": [], "queue": []})
             engine.instance["governance_sources"] = {"SOURCE-cleanup": governance.preserve_source(
                 "SOURCE-cleanup", "Authorize local maintenance and cleanup of the requested ended run.", origin="user")}
             engine.instance, engine.runtime, _ = governance.apply_decision(engine.instance, engine.runtime,
                 {"kind": "grant", "decision_id": "DEC-cleanup", "grant": {"id": "GR-cleanup", "kind": "local",
-                    "roles": ["maintenance"], "reuse": "reusable", "budget_kind": "operations"}}, source_ref="SOURCE-cleanup")
-            action = {"id": "AC-cleanup", "role": "maintenance", "budget_kind": "operations", "actor_kind": "ai",
+                    "roles": ["maintenance"], "reuse": "reusable"}}, source_ref="SOURCE-cleanup")
+            action = {"id": "AC-cleanup", "role": "maintenance", "actor_kind": "ai",
                       "grant_id": "GR-cleanup", "requested_by": "UC-cleanup", "cleanup_execution_ids": ["EX-finished"]}
             engine.runtime["history"].append({"kind": "user_control", "request": {"id": "UC-cleanup", "origin": "user",
                 "action": "request", "config": {"role": "maintenance", "cleanup_execution_ids": ["EX-finished"]}}})
@@ -978,10 +986,6 @@ class MaintenanceConnections(unittest.TestCase):
                 activities.finish_activity(engine.runtime, aid, result_refs=[], unresolved=[], followups=[], at="2026-09-20T00:00:01Z")
             engine.store = ResearchRepository(root / "repo", identifier)
             engine.head = engine.store.initialize(engine.instance, engine.runtime)
-            def save(artifacts=None):
-                engine.head = engine.store.save_with_state(engine.head, engine.instance, engine.runtime, artifacts=artifacts)[0]
-                engine.head, engine.instance, engine.runtime = engine.store.load(engine.head)
-            engine._save = save
             run = root / "work/runs/EX-finished"
             (run / "workspace").mkdir(parents=True); (run / "evidence").mkdir()
             (run / "workspace/draft.txt").write_bytes(b"draft retained")
@@ -1011,7 +1015,7 @@ class KindSemanticConnections(unittest.TestCase):
                       "constraints": {"mathematical_claim": False}}
         engine.runtime["executions"]["EX-author"] = {"id": "EX-author", "status": "ended", "role": "research_work",
             "action": {"role": "research_work"}, "extensions": {"kind_definitions": [definition]}}
-        engine._apply_queue_plan = Mock(); engine._apply_academic_resolutions = Mock()
+        engine._apply_queue_plan = create_autospec(engine._apply_queue_plan); engine._apply_academic_resolutions = create_autospec(engine._apply_academic_resolutions)
         engine._apply_extensions({"role": "research_work"}, "EX-author")
         definition = next(row for row in engine.instance["kind_definitions"].values() if row["token"] == "method_note")
         checks = [a for a in engine.runtime["queue"] if a.get("kind_definition_id") == definition["id"]]
@@ -1043,7 +1047,7 @@ class EvaluationConnections(unittest.TestCase):
 
     def test_artifact_condition_reads_exact_snapshot_and_validates_bytes(self):
         from do_math import planning
-        engine = routing_engine(); engine.head = "a" * 40; engine.store = Mock()
+        engine = routing_engine(); engine.head = "a" * 40; engine.store = create_autospec(ResearchRepository, instance=True)
         data = b'{"proof": true}'
         engine.store.read.return_value = data
         ref = {"path": "runtime/artifacts/BA-test/evidence.json", "snapshot": "b" * 40,
@@ -1065,16 +1069,16 @@ class ContinuationConnections(unittest.TestCase):
         engine = routing_engine()
         engine.head = "snapshot"
         engine.runtime["executions"]["EX-one"] = {"id": "EX-one", "extensions": {}}
-        engine._apply_model_metadata = Mock()
-        engine._defer_review_for_research = Mock(return_value=False)
-        engine._apply_extensions = Mock()
-        engine._apply_revision_followup = Mock()
-        engine._apply_action_resolutions = Mock()
-        engine._apply_question_resolutions = Mock()
-        engine._consume_action_events = Mock()
-        engine._record_task_receipt = Mock()
-        engine._save = Mock(side_effect=AssertionError("preview cannot publish"))
-        engine._apply = lambda *a, **kw: engine.runtime["history"].append({"kind": "candidate"})
+        engine._apply_model_metadata = create_autospec(engine._apply_model_metadata)
+        engine._defer_review_for_research = create_autospec(engine._defer_review_for_research, return_value=False)
+        engine._apply_extensions = create_autospec(engine._apply_extensions)
+        engine._apply_revision_followup = create_autospec(engine._apply_revision_followup)
+        engine._apply_action_resolutions = create_autospec(engine._apply_action_resolutions)
+        engine._apply_question_resolutions = create_autospec(engine._apply_question_resolutions)
+        engine._consume_action_events = create_autospec(engine._consume_action_events)
+        engine._record_task_receipt = create_autospec(engine._record_task_receipt)
+        engine._save = create_autospec(engine._save, side_effect=AssertionError("preview cannot publish"))
+        engine._apply = create_autospec(engine._apply, side_effect=lambda *a, **kw: engine.runtime["history"].append({"kind": "candidate"}))
         original = deepcopy((engine.instance, engine.runtime))
         instance, runtime = deepcopy(original)
         bundle = {"integration_id": "IN-one", "output": {}, "extensions": {}, "owns_response": True}
@@ -1135,14 +1139,14 @@ class ImpactReviewRouting(unittest.TestCase):
         review_action = reviews[0]
         self.assertEqual(review_action["input_basis"]["impact_review"], request)
         self.assertNotIn("continuation_of", review_action)
-        engine._receive_submission = Mock(); engine._save = Mock(); engine._settle_activity = Mock()
+        engine._receive_submission = create_autospec(engine._receive_submission); engine._save = create_autospec(engine._save); engine._settle_activity = create_autospec(engine._settle_activity)
         with patch("do_math.engine.submission.read_sealed_submission",
                    side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
             engine._retry_impact_reviews()
         engine._receive_submission.assert_not_called()
         engine.runtime["executions"]["EX-review"] = {"id": "EX-review", "status": "ended", "outcome": "output_accepted",
             "action": review_action, "output": source.review_output(request)}
-        engine.store = Mock(); engine.store.read.return_value = b"{}"
+        engine.store = create_autospec(ResearchRepository, instance=True); engine.store.read.return_value = b"{}"
         with patch("do_math.engine.submission.read_sealed_submission",
                    side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
             engine._retry_impact_reviews()
@@ -1177,8 +1181,8 @@ class ImpactReviewRouting(unittest.TestCase):
         output = source.review_output(request); output["impact_review"]["plan_decisions"][0]["decision"] = "unresolved"
         engine.runtime["executions"]["EX-review"] = {"id": "EX-review", "status": "ended", "outcome": "output_accepted",
             "action": deepcopy(next(row for row in engine.runtime["queue"] if row.get("stage") == "impact_review")), "output": output}
-        engine._record_task_receipt = Mock(); engine._save = Mock(); engine._receive_submission = Mock()
-        engine.store = Mock(git_dir="fixture-git")
+        engine._record_task_receipt = create_autospec(engine._record_task_receipt); engine._save = create_autospec(engine._save); engine._receive_submission = create_autospec(engine._receive_submission)
+        engine.store = create_autospec(ResearchRepository, instance=True); engine.store.git_dir = "fixture-git"
         with patch("do_math.engine.submission.read_sealed_submission",
                    side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
             engine._retry_impact_reviews(); engine._retry_impact_reviews()
@@ -1253,9 +1257,9 @@ class AssessmentReassessmentConnections(unittest.TestCase):
     def test_public_admission_binds_original_assessment_hash(self):
         owner = self.fixture(); engine = owner.engine
         engine.instance["workspace"] = owner.directory.name
-        store = Mock(); store.load.return_value = (engine.head, engine.instance, engine.runtime)
+        store = create_autospec(ResearchRepository, instance=True); store.load.return_value = (engine.head, engine.instance, engine.runtime)
         config = {"role": "identity_review", "assessment_reassessment": owner.request({"kind": "report", "text": "Read this original judgment"})}
-        with patch("do_math.engine._repository", return_value=store), patch("do_math.engine._require_current_contract"):
+        with patch("do_math.engine._repository", return_value=store):
             result = control(Path(owner.directory.name), "RI-test", "request", config=config)
             self.assertTrue(result["accepted"])
             wrong = deepcopy(config); wrong["assessment_reassessment"]["assessment_sha256"] = "0" * 64
@@ -1273,7 +1277,7 @@ class LivePreviewConnections(unittest.TestCase):
             workspace = root / "runs/EX-work/workspace"; workspace.mkdir(parents=True)
             engine = routing_engine(); engine.instance["workspace"] = str(root)
             engine.instance["config"]["max_artifact_bytes"] = 10000000
-            engine.head = "fixed-snapshot"; engine._trackers = {}
+            engine.head = "fixed-snapshot"
             transport = ControlTransport(root / "transport")
             binding = transport.issue("EX-work", "GR-one")
             action = {"id": "AC-work", "role": "maintenance", "grant_id": "GR-one"}
@@ -1285,13 +1289,13 @@ class LivePreviewConnections(unittest.TestCase):
             submission.install_tools(workspace, context, schema, 10000000)
             (workspace / "draft.json").write_bytes(canonical_json(output))
             engine.runtime["executions"]["EX-work"] = {"id": "EX-work", "status": "running", "grant_id": "GR-one", "action": action, "input_bundle": "BA-input"}
-            engine.store = Mock()
+            engine.store = create_autospec(ResearchRepository, instance=True)
             engine.store.read.side_effect = lambda path, head: canonical_json(schema) if path.endswith("schema.json") else (workspace / "input/submission/context.json").read_bytes()
-            engine._clock_guard = Mock(return_value={"usable": True, "observed_utc": "2026-09-22T00:00:00Z"})
-            engine._validate_bundle_current = Mock(); engine._validate_bundle_candidate = Mock()
-            engine._defer_review_for_research = Mock(return_value=False)
+            engine._clock_guard = create_autospec(engine._clock_guard, return_value={"usable": True, "observed_utc": "2026-09-22T00:00:00Z"})
+            engine._validate_bundle_current = create_autospec(engine._validate_bundle_current); engine._validate_bundle_candidate = create_autospec(engine._validate_bundle_candidate)
+            engine._defer_review_for_research = create_autospec(engine._defer_review_for_research, return_value=False)
             for name in ("_apply_model_metadata", "_apply_extensions", "_apply_revision_followup", "_apply_action_resolutions", "_apply_question_resolutions", "_consume_action_events"):
-                setattr(engine, name, Mock())
+                setattr(engine, name, create_autospec(getattr(engine, name)))
             before = deepcopy((engine.instance, engine.runtime))
             process = subprocess.Popen([sys.executable, "-B", str(workspace / "input/tools/check_submission.py"),
                 "--output", "draft.json", "--preview", "--wait-seconds", "20"], cwd=workspace,
@@ -1312,6 +1316,7 @@ class LivePreviewConnections(unittest.TestCase):
                 process.communicate()
             self.assertEqual((engine.instance, engine.runtime), before)
             engine.store.save_with_state.assert_not_called()
+            engine.store.save_validated.assert_not_called()
             receipt = next(iter(transport._receipts.values()))
             self.assertEqual(receipt["state"], "previewed")
             self.assertTrue(receipt["result"]["passed"], receipt)
@@ -1350,7 +1355,7 @@ class DelegationConnections(unittest.TestCase):
             for index, judgment in enumerate(judgments):
                 eid = "EX-delegation-" + str(index)
                 engine.runtime["executions"][eid] = {"id": eid, "role": "intent_interpretation", "status": "running",
-                    "input_sha256": hashlib.sha256(("exact rendered prompt " + str(index)).encode()).hexdigest(),
+                    "input_manifest": {"prompt": {"sha256": hashlib.sha256(("exact rendered prompt " + str(index)).encode()).hexdigest()}},
                     "delegation_input_sha256": application["input_sha256"]}
                 engine._apply_delegation_judgment(judgment, {"delegation_judgment": {"input_sha256": application["input_sha256"], "decision": "within_scope", "reason": "This exact case stays within the original approved replacement"}}, eid)
             self.assertEqual(engine.runtime["delegation_applications"][application_id]["application"]["status"], "applied")
@@ -1361,20 +1366,21 @@ class ObservationTransactions(unittest.TestCase):
     def test_failed_observation_publication_does_not_advance_the_tracker(self):
         from do_math.observations import ObservationTracker
         from test_redesign_OBSERVATION import Clock, rule
-        engine = routing_engine(); engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
+        engine = routing_engine(); engine._controls = create_autospec(engine._controls); engine._check_conversations = create_autospec(engine._check_conversations, return_value=False)
         engine.runtime["executions"]["EX-one"] = {"id": "EX-one", "role": "research_work", "action": {"role": "research_work"}}
         engine._transport = Mock(); engine._transport_bindings = {"EX-one": {}}
         with tempfile.TemporaryDirectory() as temporary:
             tracker = ObservationTracker("EX-one", Path(temporary), {"observation_rules": [rule()], "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}, clock=Clock())
             before = deepcopy((engine.instance, engine.runtime))
-            engine._save = Mock(side_effect=ValueError("CAS failure"))
+            engine._save = create_autospec(engine._save, side_effect=ValueError("CAS failure"))
+            write_checkpoint(temporary, counters={"attempts": 2})
             with self.assertRaisesRegex(ValueError, "CAS"):
-                engine._observe_running("EX-one", tracker, {"type": "tick", "counters": {"attempts": 2}})
+                engine._observe_running("EX-one", tracker, {"type": "tick"})
             self.assertEqual(tracker.counters, {})
             self.assertEqual((engine.instance, engine.runtime), before)
             engine._transport.request_self_check.assert_not_called()
             engine._save.side_effect = None
-            engine._observe_running("EX-one", tracker, {"type": "tick", "counters": {"attempts": 2}})
+            engine._observe_running("EX-one", tracker, {"type": "tick"})
             self.assertEqual(tracker.counters, {"attempts": 2})
             self.assertTrue(engine.runtime["self_check_obligations"])
             engine._transport.request_self_check.assert_called_once()
@@ -1385,14 +1391,14 @@ class ReceiptAndQuotaConnections(unittest.TestCase):
         for owner in (None, "engine"):
             with self.subTest(owner=owner), tempfile.TemporaryDirectory() as temporary:
                 workspace = Path(temporary)
-                from types import SimpleNamespace
                 from research_fixtures import sealed_maintenance_submission
                 from do_math import submission
                 intent, artifacts = sealed_maintenance_submission(workspace, 'EX-work')
                 prefix = intent['output_ref'].removesuffix('output.json')
                 intent.update(extensions_ref=prefix+'extensions.json', check_ref=prefix+'check.json')
                 engine = routing_engine()
-                engine.store = SimpleNamespace(read=lambda path, head: artifacts[path], git_dir='fixture-git-' + str(owner))
+                engine.store = create_autospec(ResearchRepository, instance=True)
+                engine.store.read.side_effect = lambda path, head: artifacts[path]; engine.store.git_dir = 'fixture-git-' + str(owner)
                 engine.head = 'fixture-snapshot'
                 output = submission.load_json(artifacts[intent['output_ref']])
                 context = submission.load_json((workspace/'input/submission/context.json').read_bytes())
@@ -1404,12 +1410,12 @@ class ReceiptAndQuotaConnections(unittest.TestCase):
                         'execution_id': 'EX-work', 'payload': {'submission_check': {'artifacts': receipt_artifacts}}}}
                 engine.runtime["executions"][execution["id"]] = execution
                 action = {"id": "AC-one", "role": "maintenance"}
-                engine._save = Mock(); engine._resolve_failed_actions = Mock(); engine._ensure_academic_followup = Mock()
+                engine._save = create_autospec(engine._save); engine._resolve_failed_actions = create_autospec(engine._resolve_failed_actions); engine._ensure_academic_followup = create_autospec(engine._ensure_academic_followup)
                 ordered = []
                 result = {"status": "accepted" if owner is None else "partial", "bundles": [{"integration_id": "IN-one", "status": "accepted" if owner is None else "returned", "next_owner": owner}], "retry_bundle_ids": [] if owner is None else ["IN-one"], "issues": []}
                 def bundles(*args): ordered.append("all bundles"); return result
-                engine._apply_submission_bundles = bundles
-                engine._record_task_receipt = Mock(side_effect=lambda *a, **kw: ordered.append("task receipt"))
+                engine._apply_submission_bundles = create_autospec(engine._apply_submission_bundles, side_effect=bundles)
+                engine._record_task_receipt = create_autospec(engine._record_task_receipt, side_effect=lambda *a, **kw: ordered.append("task receipt"))
                 engine._receive_submission(action, {"output": output}, execution["id"], context, engine._response_schema(action), workspace)
                 self.assertEqual(ordered, ["all bundles", "task receipt"] if owner is None else ["all bundles"])
                 self.assertEqual(execution["status"], "ended" if owner is None else "stopping")
@@ -1421,9 +1427,9 @@ class ReceiptAndQuotaConnections(unittest.TestCase):
         engine = routing_engine()
         profile = next(p for p in execution_profiles.build_profiles(DEFAULT_CONFIG)["execution_profiles"].values()
                        if p["role"] == "supplemental_research")
-        engine._execution_profile = Mock(return_value=profile)
-        engine._admit_review_execution = Mock(return_value={"disposition": "review_followup_reserved"})
-        engine._request_review_resource_disposition = Mock()
+        engine._execution_profile = create_autospec(engine._execution_profile, return_value=profile)
+        engine._admit_review_execution = create_autospec(engine._admit_review_execution, return_value={"disposition": "review_followup_reserved"})
+        engine._request_review_resource_disposition = create_autospec(engine._request_review_resource_disposition)
         action = {"id": "AC-review", "role": "supplemental_research", "owner_review_cycle_id": "RC-one"}
         engine.runtime["queue"] = [action]
         result = engine._register_execution(action, {"id": "EX-attempt", "role": action["role"], "status": "queued"})
@@ -1449,8 +1455,8 @@ class FinalBoundaryConnections(unittest.TestCase):
         runtime["executions"].update({"EX-work": {"id": "EX-work", "role": "research_work", "status": "ended", "action": {"target": "TK-1"}},
             "EX-review": {"id": "EX-review", "role": "operational_review", "input_snapshot": "input", "output": {"task_assessments": [assessment]}}})
         engine = routing_engine(); engine.instance, engine.runtime = instance, runtime
-        engine.store = Mock(); engine.store.load.return_value = ("input", deepcopy(instance), deepcopy(runtime))
-        engine._evaluation_context = Mock(return_value={})
+        engine.store = create_autospec(ResearchRepository, instance=True); engine.store.view.return_value = ("input", deepcopy(instance), deepcopy(runtime))
+        engine._evaluation_context = create_autospec(engine._evaluation_context, return_value={})
         record = {"id": "OD-one", "execution_id": "EX-review", "target_execution_id": "EX-work",
             "disposition": {"kind": "task_disposition", "task_id": "TK-1", "task_state": "closed", "authority_ref": "DC-1"}}
         engine.runtime["operational_dispositions"] = {record["id"]: record}
@@ -1483,8 +1489,8 @@ class FinalBoundaryConnections(unittest.TestCase):
         engine.runtime["tasks"]["TK-one"] = {"id": "TK-one", "status": "active"}
         engine.runtime["executions"] = {"EX-work": {"id": "EX-work", "status": "ended", "action": {"target": "TK-one"}},
             "EX-review": {"input_snapshot": "input", "output": {"task_assessments": [assessment]}}}
-        engine.store = Mock(); engine.store.load.return_value = ("input", {}, {"tasks": {"TK-one": {"id": "TK-one"}}})
-        engine._evaluation_context = Mock(return_value={"snapshot": "current"})
+        engine.store = create_autospec(ResearchRepository, instance=True); engine.store.view.return_value = ("input", {}, {"tasks": {"TK-one": {"id": "TK-one"}}})
+        engine._evaluation_context = create_autospec(engine._evaluation_context, return_value={"snapshot": "current"})
         record = {"id": "OD-one", "execution_id": "EX-review", "target_execution_id": "EX-work", "disposition": {"kind": "task_disposition", "task_id": "TK-one", "task_state": "completed", "authority_ref": "designated obligation judge"}}
         completed = deepcopy(engine.runtime); completed["tasks"]["TK-one"]["status"] = "completed"
         with patch("do_math.engine.task_scope.apply_task_assessments", return_value=(engine.instance, completed)) as apply:
@@ -1498,9 +1504,10 @@ class FinalBoundaryConnections(unittest.TestCase):
 class AuditConsumerConnections(unittest.TestCase):
     def test_review_public_dialogue_keeps_raw_row_order_and_retries_after_failed_cas(self):
         from do_math.observations import ObservationTracker
+        from do_math.observation_transport import ObservationBatch
         engine = routing_engine()
-        engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
-        engine._record_review_observation = Mock()
+        engine._controls = create_autospec(engine._controls); engine._check_conversations = create_autospec(engine._check_conversations, return_value=False)
+        engine._record_review_observation = create_autospec(engine._record_review_observation)
         engine.runtime["executions"]["EX-review"] = {"id": "EX-review", "action": {"role": "identity_review", "review_cycle_id": "RC-one"}}
         with tempfile.TemporaryDirectory() as temporary:
             engine.instance["workspace"] = temporary
@@ -1508,33 +1515,40 @@ class AuditConsumerConnections(unittest.TestCase):
             path.parent.mkdir(parents=True)
             event = {"type": "item.completed", "item": {"type": "agent_message", "text": "Visible independent judgment"}}
             row = json.dumps(event).encode() + b"\n"
-            path.write_bytes(b"\n" + row)
+            tail = {"type": "item.completed", "item": {"type": "agent_message", "text": "Final unterminated public message"}}
+            tail_row = json.dumps(tail).encode()
+            path.write_bytes(b"\n" + row + tail_row)
+
+            def batch(event, start, raw, first_row):
+                # The runner's batch carries the exact row bytes and their stream row number.
+                return ObservationBatch([event], [(start, start + len(raw))], [raw], first_row,
+                    "2026-09-25T00:00:00Z", 1.0, len(raw), start + len(raw), path, lambda: False)
             tracker = ObservationTracker("EX-review", Path(temporary), {"observation_mode": "deadline_only", "research_self_checks": False})
-            engine._save = Mock(side_effect=ValueError("CAS failed"))
+            engine._save = create_autospec(engine._save, side_effect=ValueError("CAS failed"))
             with self.assertRaisesRegex(ValueError, "CAS"):
-                engine._observe_running("EX-review", tracker, event)
-            self.assertFalse(getattr(engine, "_review_event_cursors", {}))
+                engine._observe_running("EX-review", tracker, batch(event, 1, row, 0))
             engine._save.side_effect = None
-            engine._observe_running("EX-review", tracker, event)
+            engine._observe_running("EX-review", tracker, batch(event, 1, row, 0))
             call = engine._record_review_observation.call_args
             self.assertEqual(call.args, ("EX-review", event))
-            self.assertEqual(call.kwargs["event_index"], 1)
+            self.assertEqual(call.kwargs["event_index"], 0)
             self.assertEqual(engine._save.call_args.args[0][call.kwargs["artifact_ref"]], row)
-            self.assertEqual(engine._review_event_cursors["EX-review"], (2, len(b"\n" + row)))
-            tail = {"type": "item.completed", "item": {"type": "agent_message", "text": "Final unterminated public message"}}
-            with path.open("ab") as stream: stream.write(json.dumps(tail).encode())
-            engine._drain_review_observations("EX-review", tracker)
-            self.assertEqual(engine._record_review_observation.call_args.args, ("EX-review", tail))
-            self.assertEqual(engine._record_review_observation.call_args.kwargs["event_index"], 2)
+            # After the Job ends the runner delivers the unterminated last row with the next number.
+            engine._observe_running("EX-review", tracker, batch(tail, 1 + len(row), tail_row, 1))
+            call = engine._record_review_observation.call_args
+            self.assertEqual(call.args, ("EX-review", tail))
+            self.assertEqual(call.kwargs["event_index"], 1)
+            self.assertEqual(engine._save.call_args.args[0][call.kwargs["artifact_ref"]], tail_row)
 
 
     def test_operational_repair_candidate_never_mutates_files_or_publishes(self):
-        engine = routing_engine(); engine._save = Mock()
+        engine = routing_engine(); engine._save = create_autospec(engine._save)
         engine.runtime["executions"] = {"EX-target": {"id": "EX-target", "status": "ended"}}
         proposal = {"kind": "repair", "basis_refs": ["EX-target"], "next_owner": "engine", "reason": "Restore input",
                     "repair_target": "input/catalog/task.json", "meaning_preserving": True, "verification": "sha256:" + "a" * 64}
         with patch("do_math.engine.repair_execution.complete_repair") as effect:
-            with self.assertRaisesRegex(ValueError, 'requires retry'):
+            # The disposition schema admits only installation: repair targets.
+            with self.assertRaisesRegex(ValueError, 'repair/repair_target'):
                 engine._apply_operational_disposition({"target": "EX-target"}, proposal, "EX-review")
             effect.assert_not_called()
         engine._save.assert_not_called()
@@ -1544,10 +1558,9 @@ class AuditConsumerConnections(unittest.TestCase):
     def test_current_corrupt_source_is_found_by_the_explicit_full_byte_check(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            subprocess.run(["git", "init", "-q", str(root / "repo")], check=True)
             source = root / "source.txt"; source.write_text("preserved original", encoding="utf-8")
-            created = initialize(root / "repo", goal="Read the preserved source", workspace=root / "work", sources=[source])
-            store = _repository(root / "repo", created["instance_id"])
+            identifier = new_instance(root / "repo", goal="Read the preserved source", workspace=root / "work", sources=[source])
+            store = _repository(root / "repo", identifier)
             head, instance, runtime = store.load()
             raw_store = store._store
             # Deliberate corruption fixture: only bypass the writer's immutable-artifact
@@ -1555,7 +1568,7 @@ class AuditConsumerConnections(unittest.TestCase):
             with patch.object(raw_store, "_validate_artifact_changes", return_value=None):
                 damaged = raw_store.publish(head, {instance["sources"][0]["path"]: b"corrupt bytes"}).head
             # run and controls check artifact presence and length only; full bytes belong to check.
-            report = ResearchEngine(root / "repo", created["instance_id"]).check(requested_areas=["record_storage"])
+            report = ResearchEngine(root / "repo", identifier).check(requested_areas=["record_storage"])
             self.assertFalse(report["passed"])
             self.assertTrue(any(instance["sources"][0]["path"] in row["evidence"]
                                 for row in report["inspection"]["findings"]), report["inspection"]["findings"])
@@ -1594,7 +1607,7 @@ class AuditConsumerConnections(unittest.TestCase):
             base = Path(temporary) / "runs/EX-one"
             base.mkdir(parents=True)
             (base / "partial").write_text("incomplete private input")
-            engine._transport_bindings = {}; engine._save = Mock()
+            engine._save = create_autospec(engine._save)
             engine._discard_prepared_input(base, "EX-one")
             ended = engine.runtime["executions"]["EX-one"]
             self.assertEqual(ended["outcome"], "cancelled")
@@ -1603,16 +1616,28 @@ class AuditConsumerConnections(unittest.TestCase):
             self.assertFalse(base.exists())
             engine._save.assert_called()
 
-    def test_runner_tools_consume_the_selected_edition(self):
-        engine = routing_engine()
+    def test_runner_takes_its_tools_only_from_the_pinned_profile(self):
+        from test_model_runner import Adapter
+        from do_math.model_runner import CodexModelRunner
+        from research_fixtures import dispatched_launch
         profile = next(p for p in execution_profiles.build_profiles(DEFAULT_CONFIG)["execution_profiles"].values()
-                       if p["actor_kind"] == "ai")
-        engine.instance["config"] = {"scholarly_enabled": True, "scholarly_server": {"command": "changed"}}
-        engine.runner = Mock(); engine.runner.run = lambda **kwargs: None
-        arguments = {"profile": profile}
-        engine._runner_tools(arguments)
-        for name, value in execution_profiles.runner_tools(profile).items():
-            self.assertEqual(arguments[name], value)
+                       if p["role"] == "research_work")
+        tools = execution_profiles.runner_tools(profile)
+        prompt = execution_profiles.prepare_prompt("fixture", profile)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runner = CodexModelRunner("fixture-cli")
+            runner._adapter = Adapter({"result": "output_collected", "final": {"raw": b"{}"}, "jsonl": {}})
+            options = dict(prompt=prompt, input_seal=execution_profiles.prompt_seal(prompt), output_schema={},
+                workspace=root, model=profile["ai"]["model"].removeprefix("claude:"), effort=profile["ai"]["effort"],
+                timeout_seconds=1, execution_id="EX-tools", profile=profile,
+                launch_ticket=dispatched_launch("EX-tools", profile))
+            runner.run(**options, evidence_dir=root / "evidence")
+            self.assertEqual(runner._adapter.request.get("scholarly_server"), tools["scholarly_server"])
+            for name, value in (("scholarly_server", {"command": "changed", "args": []}),
+                                ("claude_only_assigned_model", False)):
+                with self.subTest(name=name), self.assertRaisesRegex(ValueError, "pinned profile supplies"):
+                    runner.run(**options, evidence_dir=root / name, **{name: value})
 
 class TaskObservationRoleTests(unittest.TestCase):
     def test_task_rules_follow_the_selected_roles_observation_contract(self):
@@ -1635,16 +1660,16 @@ class TaskObservationRoleTests(unittest.TestCase):
                 engine.instance["config"] = deepcopy(settings)
                 engine.runtime["tasks"]["TK-one"] = {"initial_observation_rules": [deepcopy(rule)]}
                 profile = next(p for p in profiles.values() if p["role"] == role)
-                engine._check_installation = Mock(return_value=True)
-                engine._clock_guard = Mock(return_value={"usable": True})
-                engine._evaluation_context = Mock(return_value={})
-                engine._action_lifecycle_gate = Mock()
-                engine._revision_dispatch_waits = Mock(return_value=[])
-                engine._selected_action_current = Mock(return_value=True)
-                engine._obsolete_action_reason = Mock(return_value=None)
-                engine._execution_profile = Mock(return_value=profile)
-                engine._activity_for_action = Mock(return_value={"id": "AY-one"})
-                engine._register_execution = Mock(side_effect=BeforeInput)
+                engine._check_installation = create_autospec(engine._check_installation, return_value=True)
+                engine._clock_guard = create_autospec(engine._clock_guard, return_value={"usable": True})
+                engine._evaluation_context = create_autospec(engine._evaluation_context, return_value={})
+                engine._action_lifecycle_gate = create_autospec(engine._action_lifecycle_gate)
+                engine._revision_dispatch_waits = create_autospec(engine._revision_dispatch_waits, return_value=[])
+                engine._selected_action_current = create_autospec(engine._selected_action_current, return_value=True)
+                engine._obsolete_action_reason = create_autospec(engine._obsolete_action_reason, return_value=None)
+                engine._execution_profile = create_autospec(engine._execution_profile, return_value=profile)
+                engine._activity_for_action = create_autospec(engine._activity_for_action, return_value={"id": "AY-one"})
+                engine._register_execution = create_autospec(engine._register_execution, side_effect=BeforeInput)
                 action = {"id": "AC-one", "role": role, "target": "TK-one"}
                 with patch("do_math.engine.tracker_config", wraps=tracker_config) as configured, \
                      patch("do_math.engine.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}), \
@@ -1673,7 +1698,7 @@ class DuplicateRevisionConnections(unittest.TestCase):
         runtime.update(cycles=0, waiting_actions={})
         engine = routing_engine()
         engine.instance, engine.runtime = instance, runtime
-        engine._evaluation_context = Mock(return_value={})
+        engine._evaluation_context = create_autospec(engine._evaluation_context, return_value={})
         action = {"id": "AC-revise", "role": "research_preparation",
                   "revision_targets": revisions.capture_targets(instance, runtime, [task["id"]])}
         runtime["executions"]["EX-revise"] = {"id": "EX-revise", "role": "research_preparation",

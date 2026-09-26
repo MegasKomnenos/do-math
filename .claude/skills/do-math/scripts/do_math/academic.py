@@ -147,19 +147,23 @@ def academic_status(instance: dict, runtime: dict, current_basis: dict | None, *
     return {"status": "active" if started else "pending", "reason": "requirements remain"}
 
 
-def requirements_changed(old: dict, new: dict) -> bool:
-    return current_requirements(old) != current_requirements(new)
-
-
 def current_requirements(instance):
     from .governance import governance_view
     return governance_view(instance)["academic_requirements"]
 
 
-def _evidence(instance, runtime, identifier, resolve_evidence=None):
-    found = [root[family][identifier] for root in (instance, runtime)
-             for family in ("knowledge", "formal_results", "expositions", "external_operations", "executions")
-             if isinstance(root.get(family), dict) and identifier in root[family]]
+EVIDENCE_FAMILIES = ("knowledge", "formal-result", "exposition", "external-operation", "execution")
+
+
+def evidence_record(instance, runtime, identifier, resolve_evidence=None):
+    """Resolve academic evidence in EVIDENCE_FAMILIES of planning.RECORD_FAMILIES, else by resolve_evidence."""
+    from .planning import RECORD_FAMILIES
+    found = []
+    for family in EVIDENCE_FAMILIES:
+        space, key = RECORD_FAMILIES[family]
+        container = (instance if space == "research" else runtime).get(key)
+        if isinstance(container, dict) and identifier in container:
+            found.append(container[identifier])
     if not found and resolve_evidence:
         value = resolve_evidence(identifier)
         if value is not None: return value
@@ -184,7 +188,7 @@ def record_resolution(instance, runtime, basis, resolution, *, execution_id, res
     record = {"rejection_id": rejection["id"], "rejection_sha256": json_digest(rejection), "solution_basis": deepcopy(basis),
               "requirements_sha256": current_requirements(instance).get("sha256"), "execution_id": execution_id,
               "decision": resolution["decision"], "evidence": resolution["evidence"],
-              "evidence_refs": refs, "evidence_hashes": {ref:_evidence_hash(_evidence(instance, runtime, ref, resolve_evidence)) for ref in refs}}
+              "evidence_refs": refs, "evidence_hashes": {ref:_evidence_hash(evidence_record(instance, runtime, ref, resolve_evidence)) for ref in refs}}
     record["id"] = "AR-" + json_digest(record)[:24]
     record["sha256"] = json_digest(record)
     records = runtime.setdefault("academic_resolution_records", [])
@@ -205,7 +209,7 @@ def unresolved_rejections(instance, runtime, basis, *, resolve_evidence=None):
                      and record.get("sha256") == json_digest({k:v for k,v in record.items() if k != "sha256"})
                      and runtime.get("executions", {}).get(record.get("execution_id"), {}).get("input_solution_basis") == basis
                      and bool(record.get("evidence_refs"))
-                     and all(_evidence_hash(_evidence(instance, runtime, ref, resolve_evidence)) == record["evidence_hashes"][ref] for ref in record["evidence_refs"]))
+                     and all(_evidence_hash(evidence_record(instance, runtime, ref, resolve_evidence)) == record["evidence_hashes"][ref] for ref in record["evidence_refs"]))
         except (ValueError, KeyError): valid = False
         if not valid: unresolved.append(deepcopy(rejection))
     return unresolved

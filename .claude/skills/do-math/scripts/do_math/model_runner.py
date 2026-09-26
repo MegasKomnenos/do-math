@@ -4,8 +4,6 @@ from .operation_trace import measured
 
 
 import json
-import math
-import shutil
 import os
 from pathlib import Path
 from threading import Lock
@@ -14,24 +12,25 @@ from typing import Callable
 
 import jsonschema
 
-from do_math.codex_adapter import CodexExecAdapter
-from do_math.claude_adapter import ClaudePrintAdapter
-from do_math.claude_stream import provider_limit
+from do_math.claude_adapter import provider_adapter, request_provider
 from do_math.provider_wait import provider_for
 from datetime import datetime, timezone
-from do_math.repository import canonical_json, _unique_pairs, _reject_constant
-from .observation_transport import ObservationBatch
+from do_math.file_io import reject_constant, unique_pairs
+from do_math.repository import canonical_json
+from .observation_transport import ObservationBatch, decode_observation_row
 
 
 class CodexModelRunner:
     def __init__(self, codex_path: str | None = None) -> None:
-        self.codex_path = codex_path or shutil.which("codex") or "codex"
-        self._adapter = CodexExecAdapter(self.codex_path)
+        self._adapter = provider_adapter("codex", codex_path)
+        self.codex_path = self._adapter.cli_path
 
-    def worker_options(self) -> dict:
+    def worker_options(self, evidence_dir: Path) -> dict:
         # The adopted local permission mode: existing user permissions, approval never.
+        # Codex writes its own final message file; the collector compares it with the stream.
         return {"codex_path": self.codex_path, "sandbox": "danger-full-access",
-                "approval_policy": "never", "windows_sandbox": "unelevated"}
+                "approval_policy": "never", "windows_sandbox": "unelevated",
+                "final_path": str(evidence_dir / "final.txt")}
 
     @measured('model_execution')
     def run(self, *, prompt: str, output_schema: dict, workspace: Path, evidence_dir: Path,
@@ -41,20 +40,18 @@ class CodexModelRunner:
             control_binding: dict | None = None,
             input_seal: dict | None = None,
             scholarly_server: dict | None = None,
-            claude_only_assigned_model: bool = False,
+            claude_only_assigned_model: bool | None = None,
             should_stop: Callable[[], bool] | None = None,
             on_started: Callable[[dict], None] | None = None,
             on_observation: Callable[[ObservationBatch], None] | None = None) -> dict:
         reference = None
         resource_limits = None
-        if timeout_seconds is not None and (isinstance(timeout_seconds, bool)
-                or not isinstance(timeout_seconds, (int, float))
-                or not math.isfinite(timeout_seconds) or timeout_seconds <= 0):
-            raise ValueError("timeout must be positive and finite or null")
+        from .codex_worker import validate_max_runtime
+        validate_max_runtime(timeout_seconds)  # The worker applies the same rule to its request.
         if profile is not None:
             from .launch import validate_start
             validate_start(launch_ticket, execution_id=execution_id, profile_sha256=profile['sha256'])
-            from .execution_profiles import profile_ref, prompt_seal, job_resource_limits
+            from .execution_profiles import profile_ref, prompt_seal, job_resource_limits, WORK_ROLES
             reference = profile_ref(profile)
             resource_limits = job_resource_limits(profile)
             if resource_limits is not None and not callable(on_started):
@@ -62,11 +59,12 @@ class CodexModelRunner:
             ai = profile.get("ai", {})
             if not execution_id or model != ai.get("model", "").removeprefix("claude:") or effort != ai.get("effort"):
                 raise ValueError("runner assignment differs from the pinned execution profile")
-            if profile["budget_kind"] == "operations" and (
+            if profile["role"] not in WORK_ROLES and (
                     timeout_seconds is None or timeout_seconds > profile["window"]["call_timeout_seconds"]):
                 raise ValueError("runner deadline exceeds the pinned profile")
-            if scholarly_server is not None and scholarly_server != ai.get("scholarly_server"):
-                raise ValueError("runner tools differ from the pinned profile")
+            # A pinned profile alone supplies the runner's tools and model lock.
+            if scholarly_server is not None or claude_only_assigned_model is not None:
+                raise ValueError("a pinned profile supplies scholarly_server and claude_only_assigned_model")
             scholarly_server = ai.get("scholarly_server")
             claude_only_assigned_model = ai["claude_only_assigned_model"]
             if not isinstance(input_seal, dict) or any(input_seal.get(k) != v for k, v in prompt_seal(prompt).items()):
@@ -88,10 +86,10 @@ class CodexModelRunner:
         prompt_path, schema_path = evidence_dir / "input.txt", evidence_dir / "output.schema.json"
         prompt_path.write_bytes(prompt.encode("utf-8"))
         schema_path.write_text(json.dumps(output_schema, ensure_ascii=False, sort_keys=True), encoding="utf-8")
-        request = {**self.worker_options(), "prompt_path": str(prompt_path),
+        request = {**self.worker_options(evidence_dir), "prompt_path": str(prompt_path),
                    "cwd": str(workspace), "model": model, "effort": effort, "max_runtime_seconds": timeout_seconds,
                    "stdout_path": str(evidence_dir / "stdout.jsonl"), "stderr_path": str(evidence_dir / "stderr.txt"),
-                   "final_path": str(evidence_dir / "final.txt"), "status_path": str(evidence_dir / "worker-status.json")}
+                   "status_path": str(evidence_dir / "worker-status.json")}
         if control_binding is None:
             # Unbound consumers use the structured final response. Research
             # binds its full schema to the central draft submission instead;
@@ -137,6 +135,7 @@ class CodexModelRunner:
             return result
         offset = 0
         buffer = b""
+        rows_emitted = 0
         last_tick = 0.0
         # The owner applies queued batches later and may probe after this call
         # returns. A closed Job has terminated; never inspect its closed handle.
@@ -146,8 +145,9 @@ class CodexModelRunner:
             with job_guard:
                 return job_closed or self._adapter.wait_for_termination(execution, 0)
 
-        def observe() -> None:
-            nonlocal offset, buffer, last_tick
+        def observe(final: bool = False) -> None:
+            """Deliver complete rows; after termination, ``final`` also delivers an unterminated last row."""
+            nonlocal offset, buffer, rows_emitted, last_tick
             if on_observation is None:
                 return
             stdout_path = evidence_dir / "stdout.jsonl"
@@ -158,24 +158,26 @@ class CodexModelRunner:
                     stream.seek(offset)
                     chunk = stream.read(1024 * 1024)
                     offset = stream.tell()
-            lines = (buffer + chunk).split(b"\n")
-            buffer = lines.pop()
-            events, offsets = [], []
-            for line in lines:
-                start = begin
-                begin += len(line) + 1
-                if line.strip():
-                    try:
-                        event = json.loads(line)
-                    except (UnicodeError, json.JSONDecodeError):
-                        event = {"type": "unparsed_observation", "bytes": len(line)}
-                    events.append(event)
-                    offsets.append((start, begin))
+            data = buffer + chunk
+            end = len(data) if final else data.rfind(b"\n") + 1
+            buffer = data[end:]
+            events, offsets, rows = [], [], []
+            position = 0
+            while position < end:
+                stop = data.find(b"\n", position, end)
+                stop = end if stop < 0 else stop + 1
+                row = data[position:stop]
+                if row.strip():
+                    events.append(decode_observation_row(row))
+                    offsets.append((begin + position, begin + stop))
+                    rows.append(row)
+                position = stop
             current = time.monotonic()
-            if chunk or current - last_tick >= 1:
+            if chunk or final or current - last_tick >= 1:
                 last_tick = current
-                on_observation(ObservationBatch(events, offsets, datetime.now(timezone.utc).isoformat(),
-                    current, len(chunk), offset, stdout_path, terminated))
+                on_observation(ObservationBatch(events, offsets, rows, rows_emitted,
+                    datetime.now(timezone.utc).isoformat(), current, len(chunk), offset, stdout_path, terminated))
+                rows_emitted += len(rows)
         from .windows_job import process_identity
         started = {**process_identity(execution.job),
                    "request_sha256": execution.request_sha256, "job_name": getattr(execution.job, "name", None)}
@@ -194,7 +196,7 @@ class CodexModelRunner:
                 collected = self._adapter.collect(execution)
                 return {"status":"stopped","output":None,"usage":{},"evidence_dir":str(evidence_dir),
                         "execution_id": execution_id, "profile_ref": reference,
-                        "provider_observation": collected.get("provider_observation", {}),
+                        "provider_observation": collected["provider_observation"],
                         "execution":{"started":started,"collect":collected},"error":"stop requested before resume"}
             self._adapter.resume(execution)
             deadline = None if timeout_seconds is None else time.monotonic() + timeout_seconds
@@ -212,6 +214,8 @@ class CodexModelRunner:
             stdout_path = evidence_dir / "stdout.jsonl"
             while on_observation is not None and stdout_path.exists() and offset < stdout_path.stat().st_size:
                 observe()
+            if buffer:
+                observe(final=True)
             collected = self._adapter.collect(execution)
         except Exception:
             self._adapter.stop(execution)
@@ -223,18 +227,13 @@ class CodexModelRunner:
                 job_closed = True
             execution.job.close()
         parsed = collected.get("jsonl", {})
-        usage = parsed.get("usage", [])
-        usage = parsed.get("usage_total", usage[-1] if isinstance(usage, list) and usage else {})
+        observation = collected["provider_observation"]
+        usage = observation["usage"]
         result = {"status": "stopped" if stopped else "failed", "output": None,
                   "usage": usage if isinstance(usage, dict) else {}, "evidence_dir": str(evidence_dir),
                   "execution": {"started": started, "collect": collected}, "error": None,
                   "error_kind": "execution_failure", "assigned_model": model}
-        result.update(execution_id=execution_id, profile_ref=reference,
-            provider_observation=collected.get("provider_observation", {
-                "execution_id": execution_id, "operation_ids": "unknown", "operation_count": "unknown",
-                "remote_termination": "unknown", "stop_reason": parsed.get("stop_reason", "unknown"),
-                "usage": usage if isinstance(usage, dict) else {},
-                "usage_scope": "reported_execution_counters_not_invoice"}))
+        result.update(execution_id=execution_id, profile_ref=reference, provider_observation=observation)
         for key in ("usage_segments", "model_usage_reported", "usage_scope", "reported_models", "selected_result", "post_result_events", "background_events"):
             if key in parsed:
                 result[key] = parsed[key]
@@ -246,7 +245,7 @@ class CodexModelRunner:
             return result
         if collected.get("result") != "output_collected":
             result["error"] = "; ".join(collected.get("reasons", ["collection incomplete"]))
-            limit = provider_limit(parsed)
+            limit = self._adapter.provider_failure(parsed)
             if limit:
                 result.update(error_kind="provider_limit", failure={**limit,
                     "observed_at": datetime.now(timezone.utc).isoformat(),
@@ -258,7 +257,7 @@ class CodexModelRunner:
             return result
         raw = collected["final"].get("raw")
         try:
-            output = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
+            output = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_pairs, parse_constant=reject_constant)
             canonical_json(output)
             result["output"] = output
             jsonschema.validate(output, output_schema)
@@ -278,10 +277,11 @@ class ClaudeModelRunner(CodexModelRunner):
     """Use Claude's request contract with the same result and callback interface."""
 
     def __init__(self, claude_path: str | None = None) -> None:
-        self.claude_path = claude_path or shutil.which("claude") or "claude"
-        self._adapter = ClaudePrintAdapter(self.claude_path)
+        self._adapter = provider_adapter("claude", claude_path)
+        self.claude_path = self._adapter.cli_path
 
-    def worker_options(self) -> dict:
+    def worker_options(self, evidence_dir: Path) -> dict:
+        # The collector selects Claude's final response from the stream; no final file exists.
         return {"claude_path": self.claude_path}
 
 
@@ -309,9 +309,6 @@ def verified_native_final(result, execution, context):
     A completed runner status or an arbitrary final file is not sufficient.
     """
     import base64
-    from .submission import load_json
-    from .codex_adapter import CodexExecAdapter
-    from .claude_adapter import ClaudePrintAdapter
     if result.get('status') != 'completed':
         raise ValueError('native execution did not complete normally')
     try:
@@ -336,11 +333,12 @@ def verified_native_final(result, execution, context):
             return raw
         request_raw = raw_artifact('source_request'); raw_artifact('source_prompt')
         stdout = raw_artifact('stdout'); final = raw_artifact('final')
-        request = json.loads(request_raw, object_pairs_hook=_unique_pairs, parse_constant=_reject_constant); status = collected['worker_status']
+        request = json.loads(request_raw, object_pairs_hook=unique_pairs, parse_constant=reject_constant); status = collected['worker_status']
         request_hash = collected['source_request']['sha256']; prompt_hash = collected['source_prompt']['sha256']
+        published = execution.get('capacity', {}).get('process') or {}
         if (started.get('request_sha256') != request_hash
-                or execution.get('process', {}).get('request_sha256') != request_hash
-                or prompt_hash != execution.get('input_sha256')
+                or published.get('request_sha256') != request_hash
+                or prompt_hash != execution['input_manifest']['prompt']['sha256']
                 or status.get('state') != 'exited' or status.get('cli_exit_code') != 0
                 or status.get('request_sha256') != request_hash or status.get('stdin_sha256') != prompt_hash
                 or status.get('schema_sha256') is not None or 'output_schema_path' in request):
@@ -359,22 +357,14 @@ def verified_native_final(result, execution, context):
             if isinstance(value, str) and value.isascii() and value.isdecimal() and int(value) > 0:
                 return int(value)
             raise ValueError('native process identity requires an exact positive integer')
-        published = execution.get('process', {})
         for key in ('pid', 'creation_filetime'):
             expected = exact_integer(published.get(key))
             if any(exact_integer(row.get(key)) != expected for row in (started, collected['process_identity'])):
                 raise ValueError('native collected/start identity differs from its published process')
         if not started.get('job_name') or published.get('job_name') != started['job_name']:
             raise ValueError('native Job identity differs from its published process')
-        adapter = ClaudePrintAdapter('evidence-only') if 'claude_path' in request else CodexExecAdapter('evidence-only')
+        adapter = provider_adapter(request_provider(request), 'evidence-only')
         parsed = adapter.parse_response(stdout, request)
-        if 'claude_path' not in request:
-            events = [json.loads(line, object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
-                      for line in stdout.splitlines() if line.strip()]
-            message = events[-2].get('item', {}) if len(events) >= 2 else {}
-            if (events[-2].get('type') != 'item.completed' or message.get('type') != 'agent_message'
-                    or not isinstance(message.get('text'), str) or message['text'].encode('utf-8') != final):
-                raise ValueError('native final differs from the terminal message bytes')
         if (not parsed.get('parse_complete') or not parsed.get('turn_completed') or parsed.get('turn_failed')
                 or adapter.validate_final(parsed, final)):
             raise ValueError('native stream does not establish this exact completed final')

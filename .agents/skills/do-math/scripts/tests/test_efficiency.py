@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, control
 from research_fixtures import charter_change, policy_change, send_control, candidate
 from state_fixtures import active_engine
-from test_lifecycle_engine import AdapterDouble
+from research_fixtures import FixtureAdapter
 from do_math.model_policy import MODELS
 from do_math.planning import contract_hash
 from do_math.input_basis import capture_decision_basis
@@ -42,7 +42,7 @@ class EfficiencyTests(unittest.TestCase):
                 job.close()
 
     def setUp(self):
-        self.enterContext(patch('do_math.initialization.adapter_for', return_value=AdapterDouble()))
+        self.enterContext(patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()))
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
@@ -192,7 +192,7 @@ class EfficiencyTests(unittest.TestCase):
                 control(e.store._store.repository, e.instance['id'], 'pause', text='stop running work')
                 e._controls(pump=False)  # The owner pass applies and publishes the control.
                 self.assertTrue(arguments['should_stop']())
-                execution = e.runtime['executions'][e.runtime['active_execution']]
+                execution = e.runtime['executions'][arguments['execution_id']]
                 self.assertEqual(execution['status'], 'stopping')
                 self.assertEqual(execution['stop_phase'], 'terminating')
         finally:
@@ -258,9 +258,15 @@ class EfficiencyTests(unittest.TestCase):
             "status": "running", "input_snapshot": e.head, "goal_revision": 1, "policy_revision": 1,
             "action": {"id": "A", "role": "research_preparation", "reason": "derive last-car recurrence",
                        "repair": {"previous_output": {"secret": "private draft"}}}}
+        from do_math.context_store import prepare_role_input
         context = e._context({"role": "research_plan"}, self.root / "plan")
-        activities = context.get("ongoing_preparation", [])
+        profile = next(p for p in e.instance["execution_profiles"].values() if p["role"] == "research_plan")
+        # Unfinished preparations reach the plan as ongoing_work rows built from state.
+        fitted = prepare_role_input(context, instance=e.instance, runtime=e.runtime, role="research_plan",
+            profile=profile, snapshot=e.head, workspace=self.root / "plan", activity_id="AC-plan")
+        activities = [row for row in fitted["context"]["ongoing_work"] if row.get("execution_id") == "E"]
         self.assertEqual(len(activities), 1)
+        self.assertEqual((activities[0]["goal_revision"], activities[0]["policy_revision"]), (1, 1))
         self.assertEqual(activities[0]["reason"], "derive last-car recurrence")
         self.assertEqual(activities[0]["input_snapshot"], e.head)
         self.assertNotIn("private draft", str(activities))

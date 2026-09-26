@@ -2,13 +2,13 @@
 import csv
 from copy import deepcopy
 from datetime import datetime, timezone, timedelta
-import hashlib
 import io
 import json
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from .provider_wait import timestamp
+from .provider_wait import epoch_seconds
+from .session_slots import ADMISSION_WAITS
 from .state_checks import inspect_state
 
 # One implementation-level scope for live and historical status. Runtime state
@@ -36,7 +36,7 @@ def _zone(name):
 
 
 def _display(value, zone):
-    seconds = timestamp(value)
+    seconds = epoch_seconds(value)
     return datetime.fromtimestamp(seconds, timezone.utc).astimezone(zone).isoformat() if seconds is not None else None
 
 
@@ -63,7 +63,7 @@ def task_status(instance, runtime):
         executions = [e for e in live if e.get("action", {}).get("target") == identifier]
         running_ids = {e.get("action", {}).get("id") for e in executions}
         obligations = [aid for aid, entry in runtime.get("waiting_actions", {}).items()
-                       if entry.get("action", {}).get("target") == identifier or identifier in entry.get("revision_targets", {})
+                       if entry.get("action", {}).get("target") == identifier or identifier in entry.get("action", {}).get("revision_targets", {})
                        or identifier in entry.get("delegated_targets", {}).values()]
         waiting = []
         for action in queued:
@@ -71,8 +71,7 @@ def task_status(instance, runtime):
                 continue
             waiting.extend(questions.user_waits(action, instance, runtime))
             waiting.extend(planning.revision_waits(action, instance, runtime))
-            if action.get('dispatch_wait', {}).get('kind') in {
-                    'capacity', 'provider_limit', 'host_capacity', 'resource_unclassified'}:
+            if action.get('dispatch_wait', {}).get('kind') in ADMISSION_WAITS:
                 waiting.append(action['dispatch_wait'])
         readiness = None
         if not executions and task.get('status') not in planning.TERMINAL_TASK_STATUSES:
@@ -107,19 +106,21 @@ def task_status(instance, runtime):
 
 def operating_summary(instance, runtime):
     """One persisted-state handoff view; scheduler/process observations stay separate."""
-    from .repair_execution import pending_installation_repair
+    from .scheduled_operator import supervision_block, supervision_facts
     lifecycle=instance.get('lifecycle',{})
-    repair=pending_installation_repair(runtime)
-    if runtime.get('user_pause'):
+    facts=supervision_facts(instance,runtime)
+    code=supervision_block({key:value for key,value in facts.items() if key!='operator_enabled'})
+    repair=facts['installation_repair']
+    if code=='user_pause':
         blocker={'kind':'user_pause','next_owner':'user','reason':runtime['user_pause'].get('reason')}
-    elif runtime.get('maintenance_fence'):
+    elif code=='maintenance':
         blocker={'kind':'maintenance_fence','next_owner':'operator','reason':runtime['maintenance_fence'].get('state')}
-    elif runtime.get('model_policy_violation'):
+    elif code=='model_policy':
         blocker={'kind':'model_policy','next_owner':'user'}
-    elif runtime.get('status')=='paused':
+    elif code=='paused':
         blocker={'kind':'paused','next_owner':'operator','reason':runtime.get('stop_requested'),
                  'questions':deepcopy(runtime.get('questions',[]))}
-    elif repair:
+    elif code=='installation_repair':
         blocker={'kind':'installation_repair','next_owner':'installation_recovery',
                  'record_id':repair['id'],'reason':repair['disposition']['reason']}
     elif lifecycle.get('state')=='initializing':
@@ -157,11 +158,11 @@ def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None 
     head, instance, runtime = store.load(snapshot)
     inspection = inspect_state(instance, runtime, snapshot=head, requested_areas=requested_areas,
                                read_artifact=lambda path: store.read(path, head),
-                               read_artifacts=lambda paths: store.read_many(paths, head),
-                               artifact_sizes=lambda paths: store.blob_sizes(paths, head))
+                               read_artifacts=lambda paths: store.read_many(paths, head, missing="omit"),
+                               artifact_sizes=lambda paths: store.blob_sizes(paths, head, missing="omit"))
     observation = host_observation if isinstance(host_observation, dict) else None
-    from .governance import governance_view
-    goal = governance_view(instance).get('goal') if instance.get('governance') else instance.get('goal')
+    from .initialization import governance_or_initial_view
+    goal = governance_or_initial_view(instance, runtime)['goal']
     from .retention import pending_cleanup_failures
     from .repair_execution import pending_installation_repair
     return {"instance_id": instance_id, "snapshot": head, "goal": goal, "goal_status": instance.get("goal_status"), "status": runtime.get('status'),
@@ -206,7 +207,7 @@ def render_dispatch_waits(report):
             for row in report.get('dispatch_waits', []) if row.get('target') not in task_ids]
 
 
-def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name="Asia/Seoul", include_operator=False, include_operations=False):
+def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name="Asia/Seoul", include_operations=False):
     store = _repository(repository, instance_id)
     head, instance, runtime = store.load(snapshot)
     zone = _zone(timezone_name)
@@ -217,7 +218,7 @@ def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name
         rows.append({"unit": "internal_execution", "id": execution["id"], "snapshot": head,
             "input_snapshot": execution.get("input_snapshot"), "action_id": action.get("id"), "lineage_id": action.get("lineage_id"),
             "continuation_of": execution.get("continuation_of") or action.get("continuation_of"),
-            "role": execution.get("role"), "target": action.get("target"), "budget_kind": execution.get("budget_kind"),
+            "role": execution.get("role"), "target": action.get("target"),
             "assigned_model": execution.get("model"), "reported_models": execution.get("reported_models"),
             "created_at_utc": created, "started_at_utc": started, "ended_at_utc": ended,
             "created_at_local": _display(created, zone), "started_at_local": _display(started, zone), "ended_at_local": _display(ended, zone),
@@ -232,20 +233,6 @@ def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name
                 if a.get("continuation_of") == execution["id"] or any(
                     a.get(key, {}).get("execution_id") == execution["id"] for key in ("repair", "refresh", "recovery"))],
             "evidence_source": {"kind": "research_snapshot", "snapshot": head}})
-    if include_operator:
-        for path in sorted((Path(instance["workspace"]) / "operator/runs").glob("*/result.json")):
-            raw = path.read_bytes()
-            report = json.loads(raw)
-            result = report.get("result") or {}
-            rows.append({"unit": "independent_operator_invocation", "id": path.parent.name, "snapshot": None,
-                "role": "independent_operator", "ended_at_utc": report.get("ended_at"),
-                "ended_at_local": _display(report.get("ended_at"), zone), "outcome": report.get("outcome"),
-                "assigned_model": result.get("assigned_model") or report.get("model_selection", {}).get("model"),
-                "reported_models": result.get("reported_models"), "usage": result.get("usage"),
-                "usage_segments": result.get("usage_segments"), "model_usage_reported": result.get("model_usage_reported"),
-                "usage_scope": result.get("usage_scope"), "failure_kind": result.get("error_kind"),
-                "evidence_source": {"kind": "local_operator_file", "path": str(path),
-                    "sha256": hashlib.sha256(raw).hexdigest(), "observed_at": datetime.now(timezone.utc).isoformat()}})
     if include_operations:
         from .operation_trace import phase_rows
         for row in phase_rows(Path(instance['workspace']) / 'operations'):

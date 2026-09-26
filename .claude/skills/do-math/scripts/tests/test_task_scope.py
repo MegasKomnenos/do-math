@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from test_redesign_TASKS import task as task_contract
+from research_fixtures import bare_engine
 from do_math.planning import contract_hash
 from do_math.task_scope import apply_task_dispositions
 
@@ -15,9 +16,9 @@ from do_math.task_scope import apply_task_dispositions
 class EngineIntegrationTest(unittest.TestCase):
     def test_engine_applies_task_disposition_extension(self):
         """A planning extension closes the eligible task through task_scope."""
-        from do_math.engine import ResearchEngine as Engine
-        from types import SimpleNamespace
-        engine=Engine.__new__(Engine)
+        from unittest.mock import create_autospec
+        from do_math.repository import ResearchRepository
+        engine=bare_engine()
         task={**task_contract(),'id':'TK-AI','producer_execution':'EX-prep','results':[],'reviews':[]}
         engine.instance={};engine.runtime={'tasks':{},'executions':{},'queue':[],'history':[]}
         engine.runtime["tasks"][task["id"]] = deepcopy(task)
@@ -26,7 +27,8 @@ class EngineIntegrationTest(unittest.TestCase):
             "action": {"role": "research_preparation"},
         }
         engine.head='fixed-input'
-        engine.store=SimpleNamespace(load=lambda snapshot:('fixed-input',{},deepcopy(engine.runtime)))
+        engine.store=create_autospec(ResearchRepository,instance=True)
+        engine.store.load.side_effect=lambda snapshot:('fixed-input',{},deepcopy(engine.runtime))
         engine.runtime["executions"]["EX-plan"] = {
             "id": "EX-plan", "role": "research_plan", "status": "ended",
             "input_snapshot": engine.head,
@@ -117,15 +119,31 @@ class TaskScopeTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self.withdraw(runtime, snapshot)
 
-    def test_rejects_nonwithdraw_and_duplicate_requests_atomically(self):
-        _, runtime, snapshot = self.fixture()
-        with self.assertRaises(ValueError):
-            apply_task_dispositions({}, runtime, [{"task_id": "TK-AI", "disposition": "revise", "reason": "x"}],
-                execution_id="EX-plan", input_tasks=snapshot)
-        with self.assertRaises(ValueError):
-            apply_task_dispositions({}, runtime, [{"task_id": "TK-AI", "disposition": "withdraw", "reason": "x"},
-                {"task_id": "TK-AI", "disposition": "withdraw", "reason": "x"}], execution_id="EX-plan", input_tasks=snapshot)
-        self.assertEqual(runtime["tasks"]["TK-AI"]["status"], "planned")
+    def test_submission_rejects_nonwithdraw_and_duplicate_requests(self):
+        """The sealed extension schema and the submission check own disposition shape and distinct targets."""
+        import tempfile
+        from do_math.contracts import schema_for
+        from do_math.repository import canonical_json
+        from do_math.submission import payload_issues
+        from research_fixtures import seal_response
+        from test_engine import common
+        context = {"action": {"role": "research_preparation"}, "budget_unit": "concurrent_sessions",
+                   "tasks": [], "knowledge_catalog": [], "kind_definitions": {}, "sources": []}
+
+        def issues(dispositions):
+            with tempfile.TemporaryDirectory() as directory:
+                workspace, extensions = Path(directory), {"task_dispositions": dispositions}
+                (workspace / "activity-extensions.json").write_bytes(canonical_json(extensions))
+                output = common("research_preparation")
+                seal_response(output, context, workspace)
+                return payload_issues(output, schema_for("research_preparation"), context, extensions, workspace)
+
+        revise = issues([{"task_id": "TK-AI", "disposition": "revise", "reason": "x"}])
+        self.assertTrue(any(row["path"] == "activity-extensions.json/task_dispositions/0/disposition" for row in revise))
+        duplicate = issues([{"task_id": "TK-AI", "disposition": "withdraw", "reason": "x"},
+                            {"task_id": "TK-AI", "disposition": "withdraw", "reason": "x"}])
+        self.assertTrue(any(row["path"] == "activity-extensions.json/task_dispositions"
+                            and "distinct targets" in row["message"] for row in duplicate))
 
     def test_partial_work_requires_item_disposition_and_preserves_results_on_rejection(self):
         _, runtime, snapshot = self.fixture()

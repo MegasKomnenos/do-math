@@ -2,16 +2,21 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass, replace
-from functools import lru_cache
+from functools import cached_property, lru_cache
 import re
 from typing import Callable
 
 import jsonschema
 
 from .file_io import json_digest
+from .git_store import check_path_segment
 
 STATE_FORMAT_VERSION = 5
-STATE_CONTRACT_ID = "do-math-state/5"
+STATE_CONTRACT_ID = "do-math-state/6"
+# A record ID names its file research/<family>/<id>.json, so it excludes path
+# separators and ':'. The validator also applies the Git path segment rule
+# (git_store.check_path_segment), which refuses Windows device names.
+RECORD_ID = r"[A-Za-z0-9][A-Za-z0-9_.-]*"
 _ABSENT = object()
 
 
@@ -33,7 +38,11 @@ class RegisteredFamily:
     validator: Callable | None = None
     references: Callable | None = None
     identity: bool = True
-    derived: Callable | None = None
+
+    @cached_property
+    def checker(self):
+        """The schema validator, built once; a registered schema never changes."""
+        return jsonschema.Draft202012Validator(self.schema)
 
 
 class StateContract:
@@ -54,15 +63,13 @@ class StateContract:
         return contract
 
     def register_family(self, root, name, *, shape="map", schema=None,
-                        validator=None, references=None, identity=True, derived=None):
+                        validator=None, references=None, identity=True):
         if root not in {"research", "runtime"} or not re.fullmatch(r"[a-z][a-z0-9_]*", name):
             raise ValueError("invalid family root/name")
-        if shape not in {"map", "list", "singleton", "metadata", "derived", "events"}:
+        if shape not in {"map", "list", "singleton", "metadata"}:
             raise ValueError("invalid family shape")
         if shape == "metadata" and identity:
             raise ValueError("metadata fields cannot allocate independent record identities")
-        if shape == "derived" and not callable(derived):
-            raise ValueError("derived family requires a reconstruction function")
         existing = self.family(root, name)
         if existing is not None:
             # Existing owner adapters may repeat registration of an installed
@@ -89,9 +96,9 @@ class StateContract:
         if schema is None:
             raise ValueError("explicit record schema is required: " + name)
         schema = deepcopy(schema)
-        if (shape in {"map", "list", "events"} or identity) and (schema.get("type") != "object" or schema.get("additionalProperties") is not False):
+        if (shape in {"map", "list"} or identity) and (schema.get("type") != "object" or schema.get("additionalProperties") is not False):
             raise ValueError("record schema must reject unknown fields: " + name)
-        self._families[root, name] = RegisteredFamily(root, name, shape, schema, validator, references, identity, derived)
+        self._families[root, name] = RegisteredFamily(root, name, shape, schema, validator, references, identity)
         self.validation_generation += 1
 
     def family(self, root, name):
@@ -134,43 +141,37 @@ class StateContract:
                 family = self.family(root, name)
                 if family is None:
                     raise ValueError("unregistered family: " + root + "/" + name)
-                if family.shape == "derived":
-                    if value != family.derived(instance, runtime):
-                        raise ValueError("stale derived view: " + name)
-                    continue
                 if family.shape == "map":
                     if not isinstance(value, dict):
                         raise ValueError(name + " must be a record map")
                     entries = list(value.items())
-                elif family.shape in {"list", "events"}:
-                    if family.shape == "events" and isinstance(value, dict):
-                        entries = list(value.items())
-                    elif isinstance(value, list):
-                        entries = [(None, row) for row in value]
-                    else:
+                elif family.shape == "list":
+                    if not isinstance(value, list):
                         raise ValueError(name + " must be a record list")
+                    entries = [(None, row) for row in value]
                 else:
                     entries = [(None, value)]
                 prior = prior_state.get(name, _ABSENT)
-                if family.shape in {"list", "events"} and isinstance(prior, list):
+                if family.shape == "list" and isinstance(prior, list):
                     prior = {row.get("id"): row for row in prior if isinstance(row, dict)}
                 for key, record in entries:
-                    if family.shape in {"map", "list", "events"}:
+                    if family.shape in {"map", "list"}:
                         identifier = key if key is not None else record.get("id") if isinstance(record, dict) else None
                         before = prior.get(identifier, _ABSENT) if isinstance(prior, dict) else _ABSENT
                     else:
                         before = prior
                     if before is _ABSENT or before != record:
-                        errors = sorted(jsonschema.Draft202012Validator(family.schema).iter_errors(record), key=lambda e: str(e.path))
-                        if errors:
-                            location = "/".join(str(part) for part in errors[0].absolute_path)
-                            raise ValueError(f"{root}/{name}/{key}/{location}: {errors[0].message}")
+                        validate_record(family.checker, record, f"{root}/{name}/{key}")
                         if family.validator:
                             family.validator(deepcopy(record))
                     if family.identity:
                         identifier = record.get("id") if isinstance(record, dict) else None
-                        if not isinstance(identifier, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]*", identifier):
+                        if not isinstance(identifier, str) or not re.fullmatch(RECORD_ID, identifier):
                             raise ValueError(name + " requires a path-safe record id")
+                        try:
+                            check_path_segment(identifier)
+                        except ValueError as error:
+                            raise ValueError(name + " requires a path-safe record id: " + str(error)) from error
                         if key is not None and key != identifier:
                             raise ValueError(name + " map key and id differ")
                         if identifier in identifiers:
@@ -191,12 +192,30 @@ class StateContract:
                 if expected_family and identifiers[target][1] not in expected_family.split("|"):
                     raise ValueError(f"{family.name} reference has wrong family: {target}")
         from .record_schemas import validate_semantics
-        validate_semantics(instance, runtime, identifiers, parent)
+        validate_semantics(instance, runtime, identifiers, parent, contract=self)
         return identifiers
 
 
 def default_state_contract():
     return StateContract.default()
+
+
+def validate_record(checker, record, label):
+    """Raise ValueError naming ``label`` and the first schema violation of ``record``."""
+    errors = sorted(checker.iter_errors(record), key=lambda e: str(e.path))
+    if errors:
+        location = "/".join(str(part) for part in errors[0].absolute_path)
+        raise ValueError(f"{label}/{location}: {errors[0].message}")
+
+
+@lru_cache(maxsize=None)
+def installed_checker(root, name):
+    """The schema checker of one installed default family, built once per process.
+
+    It is built apart from the shared template, so the copies that
+    StateContract.default() makes do not carry a validator.
+    """
+    return jsonschema.Draft202012Validator(_default_template(StateContract).family(root, name).schema)
 
 
 @lru_cache(maxsize=16)

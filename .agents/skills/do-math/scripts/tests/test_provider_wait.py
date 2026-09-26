@@ -8,6 +8,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import activities, execution_lifecycle as lifecycle
@@ -16,7 +17,7 @@ from do_math.execution_profiles import build_profiles, profile_ref
 from do_math.git_store import GitStateStoreLockError
 from do_math.repository import ResearchRepository, new_id
 from do_math.session_slots import SessionSlots
-from do_math.provider_wait import provider_wait_disposition, timestamp
+from do_math.provider_wait import epoch_seconds
 
 MODEL = "claude-opus-5"
 FAILURE = {"kind": "provider_limit", "provider": "claude", "retry_at": None,
@@ -27,17 +28,15 @@ def instant(seconds):
     return datetime.fromtimestamp(seconds, timezone.utc).isoformat()
 
 
-def admit(slots, instance, runtime, identifier, pool="work", current=100):
-    role = "research_work" if pool == "work" else "maintenance"
+def admit(slots, instance, runtime, identifier, role="research_work", current=100):
+    """Admit a work role (a model slot) or an operational role such as maintenance (no slot)."""
     reference = instance["role_profile_refs"][role][-1]
     profile = instance["execution_profiles"][reference["id"]]
     aid = "AY-" + identifier
     execution = lifecycle.create_execution(execution_id=identifier, owner_activity_id=aid,
         actor_kind="ai", input_manifest=[], profile_ref=profile_ref(profile), created_at=instant(current))
     execution["role"] = role
-    lifecycle.transition_execution(execution, "starting", at=instant(current))
-    if not slots.acquire(identifier, pool, MODEL, profile=profile, execution=execution,
-                         provider="claude", current_time=current):
+    if not slots.acquire(identifier, profile=profile, execution=execution, current_time=current):
         return False
     activities.open_activity(runtime, activity_id=aid, activity_kind=role,
         owner_ref=instance["id"], input_refs=[], opened_at=instant(current))
@@ -45,13 +44,23 @@ def admit(slots, instance, runtime, identifier, pool="work", current=100):
     return True
 
 
-def finish(slots, runtime, identifier, current):
+def report(slots, instance, identifier, current, failure=None, **config):
+    """Apply a synthetic runner result: a provider_limit failure, or a completed call."""
+    result = ({"status": "failed", "error_kind": "provider_limit", "failure": failure}
+              if failure is not None else {"status": "completed"})
+    return slots.provider_result_from_run(identifier, result, {**instance["config"], **config},
+                                          current_time=current)
+
+
+def finish(slots, runtime, identifier, current, *, close_activity=True):
     if not slots.release(identifier):
         raise AssertionError("test execution without an acknowledged process did not settle")
     execution = runtime["executions"][identifier]
     lifecycle.transition_execution(execution, "stopping", at=instant(current), stop_phase="terminating")
     lifecycle.transition_execution(execution, "ended", at=instant(current), outcome="start_failed",
         disposition={"kind": "synthetic_provider_observation"})
+    if not close_activity:
+        return
     activities.finish_activity(runtime, execution["owner_activity_id"], result_refs=[],
         unresolved=[{"reason": "No model process was started in this allocator fixture"}],
         followups=[], at=instant(current))
@@ -95,10 +104,6 @@ def compete(root, iid, ready, release, output, name):
 
 class ProviderTests(unittest.TestCase):
     """No model execution or research activation is asserted by these fixtures."""
-    def test_empty_nonmapping_failure_is_rejected(self):
-        with self.assertRaisesRegex(ValueError, 'failure must be a dictionary'):
-            provider_wait_disposition(model=MODEL, failure=[], current=100)
-
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
@@ -111,12 +116,12 @@ class ProviderTests(unittest.TestCase):
         iid = new_id("RI")
         config = {**deepcopy(DEFAULT_CONFIG), "scholarly_enabled": False,
             "tier_models": {tier: MODEL for tier in ("low", "medium", "high")},
-            "session_limits": {"work": {MODEL: 3}, "operations": {MODEL: 1}},
+            "session_limits": {"work": {MODEL: 3}},
              }
-        instance = {"feature_version": 5, "id": iid, "workspace": str(self.root),
-                    "config": config, **build_profiles(config)}
-        runtime = {"feature_version": 5, "status": "ready", "executions": {},
-                   "activities": {}, "reservations": {}, "provider_waits": {}}
+        from research_fixtures import current_state
+        instance, runtime = current_state(
+            {"id": iid, "workspace": str(self.root), "config": config, **build_profiles(config)},
+            {"status": "ready", "executions": {}, "activities": {}, "reservations": {}, "provider_waits": {}})
         repository = ResearchRepository(self.root, iid)
         repository.initialize(instance, runtime)
         return repository
@@ -127,54 +132,68 @@ class ProviderTests(unittest.TestCase):
     def reject(self, identifier="EX-original", current=100):
         def operation(slots, instance, runtime):
             self.assertTrue(admit(slots, instance, runtime, identifier, current=current))
-            result = slots.provider_result(identifier, "claude", failure=FAILURE, current_time=current)
+            result = report(slots, instance, identifier, current, FAILURE)
             finish(slots, runtime, identifier, current)
             return result
         return self.change(operation)
 
-    def test_engine_provider_wait_disposition_survives_real_git_storage(self):
-        from do_math.engine import ResearchEngine
-        gate = self.reject()
+    def test_provider_limited_request_waits_in_queue_through_real_git_storage(self):
+        from research_fixtures import bare_engine
+        def rejected(slots, instance, runtime):
+            self.assertTrue(admit(slots, instance, runtime, "EX-original", current=100))
+            gate = report(slots, instance, "EX-original", 100, FAILURE)
+            finish(slots, runtime, "EX-original", 100, close_activity=False)
+            return gate
+        gate = self.change(rejected)
         head, instance, runtime = self.repository.load()
-        engine = ResearchEngine.__new__(ResearchEngine)
-        engine.instance, engine.runtime = instance, runtime
+        engine = bare_engine(instance, runtime)
+        reference = instance["role_profile_refs"]["research_work"][-1]
         action = {"id": "AC-original", "role": "research_work", "target": "TK-fixture",
+                  "profile_ref": deepcopy(reference),
                   "model_selection": {"tier": "high", "model": MODEL, "assessment": None,
                                       "reason": "Provider-limit fixture assignment"}}
         runtime["queue"] = [action]
-        engine._hold_provider_action(action, "EX-original", gate, "Observed provider limit")
-        waiting = runtime["waiting_actions"][action["id"]]
+        with patch("do_math.session_slots.time.time", return_value=399):
+            engine._requeue_provider_action(action, "EX-original", gate)
+        self.assertNotIn(action["id"], runtime.get("waiting_actions", {}))
+        queued, = [item for item in runtime["queue"] if item["id"] == action["id"]]
+        self.assertEqual(queued["recovery"], {"execution_id": "EX-original", "reason": "provider admission retry",
+                                              "provider_generation": gate["generation"]})
+        wait = queued["dispatch_wait"]
+        self.assertEqual((wait["kind"], wait["provider"], wait["next_owner"]),
+                         ("provider_limit", "claude", "scheduler"))
+        self.assertEqual(epoch_seconds(wait["retry_at"]), epoch_seconds(gate["retry_at"]))
+        activity = runtime["activities"]["AY-EX-original"]
+        self.assertEqual((activity["status"], activity["waiting"]["condition"]), ("waiting", wait))
         self.repository.save_with_state(head, instance, runtime)[0]
-        loaded = self.repository.load()[2]["waiting_actions"][action["id"]]
-        self.assertEqual(loaded, waiting)
-        due = loaded["activity_wait"]["retry_at_timestamp"]
-        self.assertIs(type(due), int)
-        self.assertGreaterEqual(due, timestamp(loaded["activity_wait"]["retry_at"]))
+        loaded = self.repository.load()[2]
+        self.assertEqual([item for item in loaded["queue"] if item["id"] == action["id"]], [queued])
+        self.assertEqual(loaded["activities"]["AY-EX-original"], activity)
 
-    def test_restriction_blocks_both_pools_and_survives_another_owner(self):
+    def test_restriction_blocks_work_and_operational_roles_and_survives_another_owner(self):
         self.reject()
         iid = self.repository.load()[1]["id"]
         other = ResearchRepository(self.root, iid)
         def blocked(slots, instance, runtime):
-            for pool in ("work", "operations"):
-                self.assertFalse(admit(slots, instance, runtime, "EX-" + pool, pool, 399))
-            self.assertEqual(slots.admission_reason, "provider_limit")
-            self.assertEqual(slots.snapshot()["work"][MODEL]["used"], 0)
+            for role in ("research_work", "maintenance"):
+                self.assertFalse(admit(slots, instance, runtime, "EX-" + role, role, 399))
+                self.assertEqual(slots.admission_reason, "provider_limit")
+            self.assertEqual(slots.snapshot()[MODEL]["used"], 0)
         self.change(blocked, repository=other)
-        self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-probe", "operations", 400), repository=other))
-        self.assertFalse(self.change(lambda s, i, r: admit(s, i, r, "EX-next", "work", 401)))
+        self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-probe", "maintenance", 400), repository=other))
+        self.assertFalse(self.change(lambda s, i, r: admit(s, i, r, "EX-next", "research_work", 401)))
         def observed(slots, instance, runtime):
-            slots.provider_result("EX-probe", "claude", current_time=402)
+            report(slots, instance, "EX-probe", 402)
             finish(slots, runtime, "EX-probe", 402)
         self.change(observed, repository=other)
-        self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-next", "work", 403)))
+        self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-next", "research_work", 403)))
 
     def test_late_success_does_not_release_a_newer_rejection(self):
         self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-old", current=1)))
         first = self.reject()
         self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-probe", current=400)))
-        second = self.change(lambda s, i, r: s.provider_result("EX-old", "claude", failure=FAILURE, current_time=401))
-        self.change(lambda s, i, r: s.provider_result("EX-probe", "claude", current_time=402))
+        second = self.change(lambda s, i, r: report(s, i, "EX-old", 401, FAILURE))
+        self.change(lambda s, i, r: report(s, i, "EX-probe", 402))
         _, instance, runtime = self.repository.load()
         current = SessionSlots(runtime, instance, observer=True).provider_snapshot(current_time=403)["providers"]["claude"]
         self.assertEqual(current["generation"], first["generation"] + 1)
@@ -184,19 +203,18 @@ class ProviderTests(unittest.TestCase):
 
     def test_unknown_limit_uses_bounded_backoff_and_known_limit_preserves_time(self):
         first = self.reject()
-        self.assertEqual(timestamp(first["retry_at"]), 400)
+        self.assertEqual(epoch_seconds(first["retry_at"]), 400)
         self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-probe", current=400)))
         def reject_again(slots, instance, runtime):
-            waiting = slots.provider_result("EX-probe", "claude", failure=FAILURE,
-                                            current_time=400, maximum_seconds=500)
+            waiting = report(slots, instance, "EX-probe", 400, FAILURE, provider_retry_max_seconds=500)
             finish(slots, runtime, "EX-probe", 400)
             return waiting
         waiting = self.change(reject_again)
-        self.assertEqual(timestamp(waiting["retry_at"]), 900)
+        self.assertEqual(epoch_seconds(waiting["retry_at"]), 900)
         self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-known", current=900)))
         known = {**FAILURE, "retry_at": instant(1500)}
-        waiting = self.change(lambda s, i, r: s.provider_result("EX-known", "claude", failure=known, current_time=900))
-        self.assertEqual(timestamp(waiting["retry_at"]), 1500)
+        waiting = self.change(lambda s, i, r: report(s, i, "EX-known", 900, known))
+        self.assertEqual(epoch_seconds(waiting["retry_at"]), 1500)
 
     def test_probe_is_reconciled_only_after_confirmed_local_termination(self):
         self.reject()
@@ -209,7 +227,7 @@ class ProviderTests(unittest.TestCase):
         _, instance, runtime = self.repository.load()
         gate = SessionSlots(runtime, instance, observer=True).provider_snapshot(current_time=500)["providers"]["claude"]
         self.assertEqual(gate["state"], "waiting")
-        self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-replacement", "operations", 500)))
+        self.assertTrue(self.change(lambda s, i, r: admit(s, i, r, "EX-replacement", "maintenance", 500)))
 
     def test_two_real_processes_admit_one_probe(self):
         self.reject()

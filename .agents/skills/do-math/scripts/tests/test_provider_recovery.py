@@ -1,7 +1,6 @@
 """The provider gate must change engine recovery, not only report a timestamp."""
 from pathlib import Path
 import json
-import subprocess
 import sys
 import tempfile
 import time
@@ -10,9 +9,9 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from research_fixtures import local_job_runner
-from do_math.engine import ResearchEngine, initialize, control
+from do_math.engine import ResearchEngine, control
 from do_math import scheduled_operator
-from research_fixtures import producer_result, activate, install_adapter_fixture
+from research_fixtures import producer_result, activate, install_adapter_fixture, new_instance
 from test_engine import common, context_from, ScriptedRunner
 
 
@@ -43,24 +42,28 @@ class RecoveryTests(unittest.TestCase):
             root = Path(directory)
             repository = root / "repository"
             repository.mkdir()
-            subprocess.run(["git", "-C", str(repository), "init", "-q"], check=True)
-            instance = initialize(repository, goal="provider recovery", workspace=root / "workspace",
+            instance_id = new_instance(repository, goal="provider recovery", workspace=root / "workspace",
                 config={"tier_models": {tier: "claude-opus-5" for tier in ("high", "medium", "low")},
                         "scholarly_enabled": False, "operator_enabled": False,
                         "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5,
                           "plan_settle_seconds": 1,
-                        "session_limits": {pool: {"claude-opus-5": 1} for pool in ("work", "operations")}, "lean_command": ["test-lean"]})
+                        "session_limits": {"work": {"claude-opus-5": 1}}, "lean_command": ["test-lean"]})
             runner = QuotaRunner()
-            engine = ResearchEngine(repository, instance["instance_id"], runner=runner)
+            engine = ResearchEngine(repository, instance_id, runner=runner)
             activate(engine, root, initialization_runner=ScriptedRunner())
             engine.run(max_steps=2)
             self.assertEqual(len(runner.calls), 1)
             self.assertFalse(any(e["role"] == "operational_review" for e in engine.runtime["executions"].values()))
-            waiting = list(engine.runtime["waiting_actions"].values())
-            self.assertEqual([row["failure_kind"] for row in waiting], ["provider_limit"])
+            # The limited request returns to the queue with its gate wait, not to waiting_actions.
+            retried = [row for row in engine.runtime["queue"]
+                       if row.get("recovery", {}).get("reason") == "provider admission retry"]
+            self.assertEqual(len(retried), 1)
+            self.assertEqual(retried[0]["dispatch_wait"]["kind"], "provider_limit")
+            self.assertEqual(retried[0]["dispatch_wait"]["provider"], "claude")
+            self.assertNotIn(retried[0]["id"], engine.runtime.get("waiting_actions", {}))
             self.assertFalse(engine.runtime["questions"])
             current = time.time()
-            original_action = waiting[0]["action"]["id"]
+            original_action = retried[0]["id"]
             # An already queued independent plan may consume the successful
             # provider probe. Follow the preserved action, not a call ordinal.
             with patch("do_math.session_slots.time.time", return_value=current + 301):
@@ -72,18 +75,18 @@ class RecoveryTests(unittest.TestCase):
             self.assertEqual(len(resumed), 1)
             self.assertTrue(any(row["path"] == "partial.txt" for row in resumed[0]["previous_output_files"]))
             self.assertFalse(any(e["role"] == "operational_review" for e in engine.runtime["executions"].values()))
-            self.assertNotIn(original_action, engine.runtime["waiting_actions"])
+            self.assertFalse([row for row in engine.runtime["queue"] if row["id"] == original_action
+                              and row.get("dispatch_wait", {}).get("kind") == "provider_limit"])
 
     def test_wake_keeps_hold_and_user_pause_and_only_requests_engine(self):
         from research_fixtures import send_control
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             repo = root / 'repo'; repo.mkdir()
-            subprocess.run(['git', '-C', str(repo), 'init', '-q'], check=True)
-            result = initialize(repo, goal='Wake guard', workspace=root / 'workspace',
+            instance_id = new_instance(repo, goal='Wake guard', workspace=root / 'workspace',
                 config={'operator_enabled': False, 'scholarly_enabled': False, 'lean_command': ['test-lean'],
                         'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5})
-            engine = ResearchEngine(repo, result['instance_id'], runner=ScriptedRunner())
+            engine = ResearchEngine(repo, instance_id, runner=ScriptedRunner())
             activate(engine, root, initialization_runner=ScriptedRunner())
             workspace = Path(engine.instance['workspace'])
             with patch.object(scheduled_operator, 'schedule', return_value={}) as schedule:

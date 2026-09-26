@@ -13,6 +13,46 @@ from typing import Any
 LIFECYCLE_STATES = frozenset({"planned", "active", "waiting", "completed", "closed"})
 DISPOSITION_KINDS = frozenset({"fulfilled", "open", "waived", "transferred"})
 REPEAT_LINEAGES = ("import_rework", "selection_failure", "exhaustion_empty", "proposal_version", "contract_revision")
+# Governance views every role receives; like tool references they name no file.
+CONTEXT_INPUT_REFS = frozenset({"context:goal", "context:policy"})
+# Configured tools a task may name as inputs.
+TOOL_INPUT_REFS = frozenset({"tool:lean", "tool:scholarly"})
+# Documents and governance views every role receives, whatever the host.
+FIXED_INPUT_REFS = frozenset({"SKILL.md", "GLOSSARY.md"}) | CONTEXT_INPUT_REFS
+# The record family whose citation stands in for each specialist judge (designated_judgment).
+JUDGE_EVIDENCE_FAMILIES = {"formal_check": "formal-result", "identity_review": "identity-assessment",
+                           "goal_audit": "goal-judgment"}
+
+
+def available_input_refs(instance: dict, runtime: dict, *, lean_available: bool) -> list[str]:
+    """Input references a role may copy into a task, derived on demand and never stored.
+
+    Fixed documents, configured tools, knowledge, tasks and source aliases come
+    from state. Whether a local Lean was discovered is a host fact the caller passes.
+    """
+    from .input_basis import aliases
+    config = instance.get("config", {})
+    result = set(FIXED_INPUT_REFS)
+    if config.get("lean_command") or lean_available:
+        result.add("tool:lean")
+    if config.get("scholarly_enabled") and config.get("scholarly_server"):
+        result.add("tool:scholarly")
+    result.update(instance.get("knowledge", {}))
+    result.update(runtime.get("tasks", {}))
+    for source in instance.get("sources", []):
+        result.update(aliases(source))
+    return sorted(result)
+
+
+def unsupplied_task_inputs(refs, supplied, *, admit_named_sources: bool) -> list[str]:
+    """Task inputs and reuse must name a supplied input or an existing record.
+
+    This is the common execution contract (`available_input_refs` or a supplied
+    record). A candidate may name a `source:` input that does not exist yet;
+    readiness passes admit_named_sources=False and waits until it does.
+    """
+    return sorted({ref for ref in refs if ref not in supplied
+                   and not (admit_named_sources and ref.startswith("source:"))})
 
 
 def prepared_dependencies(candidate, condition, titles=None):
@@ -41,60 +81,64 @@ def contract_obligations(task: dict) -> list[dict]:
     return obligations
 
 
-def validate_task_contract(task: dict) -> None:
-    if not isinstance(task, dict):
-        raise ValueError("task contract must be an object")
-    for name in ("id", "question"):
-        _text(task.get(name), name)
-    if type(task.get('revision')) is not int or task['revision']<1:
-        raise ValueError('task revision must be a positive integer')
-    if task.get("status", "planned") not in LIFECYCLE_STATES:
-        raise ValueError("task status is not a feature-5 lifecycle state")
-    scope = task.get("scope")
-    if not isinstance(scope, dict) or set(scope) != {"included", "excluded"} or not all(isinstance(scope[key], list) and all(isinstance(x, str) and x.strip() for x in scope[key]) for key in scope):
-        raise ValueError("scope requires included and excluded nonempty-text lists")
-    expected = task.get("expected")
-    if not isinstance(expected, dict) or set(expected) != {"outputs", "research_change"} or not isinstance(expected["outputs"], list):
-        raise ValueError("expected requires outputs and research_change")
-    _text(expected["research_change"], "expected.research_change")
-    if not expected["outputs"] or not all(isinstance(x, str) and x.strip() for x in expected["outputs"]):
-        raise ValueError("expected.outputs must be nonempty")
+def validate_contract_meaning(task: dict) -> None:
+    """What no task schema expresses: distinct obligation, criterion and profile IDs."""
     for name in ("progress_criteria", "completion_obligations"):
-        rows = task.get(name)
-        if not isinstance(rows, list) or not rows:
-            raise ValueError(f"{name} must be a nonempty list")
-        _distinct_ids(rows, name)
-        for row in rows:
-            _text(row.get("claim"), name + ".claim")
-            evidence=row.get('evidence_required',[])
-            if not isinstance(evidence,list) or any(not isinstance(v,str) or not v for v in evidence) or len(evidence)!=len(set(evidence)):
-                raise ValueError(name + '.evidence_required must contain distinct references')
-            descriptions = row.get('evidence_requirements', [])
-            if (not isinstance(descriptions, list) or any(not isinstance(v, str) or not v.strip() for v in descriptions)
-                    or len(descriptions) != len(set(descriptions))):
-                raise ValueError(name + '.evidence_requirements must contain distinct requirement descriptions')
-    for row in contract_obligations(task):
-        judges = row.get("judges")
-        if not isinstance(judges, list) or not judges or not all(isinstance(judge, str) and judge.strip() for judge in judges):
-            raise ValueError("each completion obligation needs judges")
-    for name in ("inputs", "reuse", "dependencies", "authority_refs", "basis_refs"):
-        rows = task.get(name, [])
-        if not isinstance(rows, list) or not all(isinstance(value, str) and value for value in rows) or len(rows) != len(set(rows)):
-            raise ValueError(name + " must be a distinct reference list")
-    profile_refs = task.get('profile_refs', [])
-    if not isinstance(profile_refs, list):
-        raise ValueError('profile_refs must be a list of sealed references')
-    seen = set()
-    for ref in profile_refs:
-        if (not isinstance(ref, dict) or set(ref) != {'id', 'revision', 'sha256'}
-                or not isinstance(ref['id'], str) or not ref['id'].strip()
-                or type(ref['revision']) is not int or ref['revision'] < 1
-                or not isinstance(ref['sha256'], str) or len(ref['sha256']) != 64
-                or any(c not in '0123456789abcdef' for c in ref['sha256'])):
-            raise ValueError('profile_refs require exact id, revision and sha256')
-        if ref['id'] in seen:
-            raise ValueError('profile_refs must identify distinct profiles')
-        seen.add(ref['id'])
+        _distinct_ids(task[name], name)
+    profiles = [ref["id"] for ref in task.get("profile_refs", [])]
+    if len(profiles) != len(set(profiles)):
+        raise ValueError('profile_refs must identify distinct profiles')
+
+
+def validate_contract_rules(task: dict) -> None:
+    """The stored contract rules its schema cannot state: sealed profile editions, then the meaning.
+
+    The storage gate runs this after the stored task schema (record_schemas).
+    """
+    from .execution_profiles import validate_profile_ref
+    for ref in task.get('profile_refs', []):
+        try:
+            validate_profile_ref(ref)
+        except ValueError as error:
+            raise ValueError('profile_refs require exact id, revision and sha256') from error
+    validate_contract_meaning(task)
+
+
+def validate_task_contract(task: dict) -> None:
+    """A stored or engine-built contract in memory: the stored task schema, then its rules.
+
+    These are the two checks the storage gate applies when the task is saved;
+    the stored schema is the one shape rule (nonempty text and lists, positive
+    revision, judged obligations, distinct evidence). A produced candidate is
+    checked by the wire TASK_CANDIDATE and validate_contract_meaning instead
+    (contracts.task_candidate_record).
+    """
+    from .state_contract import installed_checker, validate_record
+    validate_record(installed_checker("runtime", "tasks"), task, "task")
+    validate_contract_rules(task)
+
+
+def judge_coverage_errors(role: str, execution_id: str, task: dict, assessment: dict, families: dict) -> list[str]:
+    """A fulfilment by an assessor outside an obligation's judges must cite its judges' evidence.
+
+    `families` maps the cited IDs the caller can see to their record family. The
+    producer derives it from its catalog; the receiver from current records and
+    then also checks that the cited judgment is current (task_scope.designated_judgment).
+    """
+    obligations = {row["id"]: row for row in contract_obligations(task)}
+    errors = []
+    for row in assessment.get("item_dispositions", []):
+        obligation = obligations.get(row.get("obligation_id"))
+        if row.get("kind") != "fulfilled" or obligation is None:
+            continue
+        judges = obligation["judges"]
+        if role in judges or execution_id in judges:
+            continue
+        wanted = {JUDGE_EVIDENCE_FAMILIES[judge] for judge in judges if judge in JUDGE_EVIDENCE_FAMILIES}
+        if not any(families.get(ref) in wanted for ref in row.get("evidence_refs", [])):
+            errors.append("fulfilled obligation " + row["obligation_id"] + " needs its designated judge "
+                          + repr(sorted(judges)) + " or cited evidence of the family " + repr(sorted(wanted)))
+    return errors
 
 
 def _row_by_obligation(assessment: dict) -> dict[str, dict]:
@@ -226,8 +270,8 @@ def validate_plan_dispositions(plan: dict, tasks: dict, ready_ids: list[str]) ->
             if not revisit.get('event_refs') and not revisit.get('at'):
                 raise ValueError('nonselection requires a reobservation condition')
             if revisit.get('at'):
-                from .planning import _utc
-                _utc(revisit['at'])
+                from .file_io import parse_utc
+                parse_utc(revisit['at'])
         if row['kind'] == 'not_assessable' and not row.get('missing_inputs'):
             raise ValueError('not_assessable requires missing inputs')
         parallel = row.get('parallel_task_ids', [])

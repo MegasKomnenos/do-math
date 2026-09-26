@@ -1,42 +1,36 @@
 """Actual TASKS mixins retain revision ownership through delegation and retry.
 
-The harness supplies only queue storage; no provider or Git behavior is mocked as
+The harness supplies only fixture state; no provider or Git behavior is mocked as
 an end-to-end result. Central dispatch/serialization remains the MAIN regression.
 """
 from copy import deepcopy
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import create_autospec
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math import planning,revisions
-from do_math.revision_engine import RevisionEngineMixin
-from do_math.decision_engine import DecisionEngineMixin
+from research_fixtures import bare_engine
 from test_redesign_TASKS import approved_fixture,approve,disposition
 
 
-class OwnerHarness(RevisionEngineMixin,DecisionEngineMixin):
-    def __init__(self):
-        task,self.instance,self.runtime=approved_fixture()
-        self.runtime['waiting_actions']={}
-        self.counter=0
+def owner_harness():
+    task,instance,runtime=approved_fixture()
+    runtime['waiting_actions']={}
+    return bare_engine(instance,runtime)
 
-    def _remove_action(self,action):
-        self.runtime['queue'][:]=[a for a in self.runtime['queue'] if a.get('id')!=action.get('id')]
 
-    def _enqueue(self,role,target=None,**fields):
-        self.counter+=1
-        action={'id':'AC-'+str(self.counter),'role':role,**fields}
-        if target:action['target']=target
-        self._bind_revision_action(action)
-        self.runtime['queue'].append(action)
-        return action
+def enqueue(h,role,target=None,**fields):
+    """Queue through the product and return the row it added or merged into."""
+    h._enqueue(role,target,**fields)
+    return next(a for a in reversed(h.runtime['queue']) if a['role']==role and a.get('target')==target)
 
 
 class RevisionObligationTests(unittest.TestCase):
     def test_closed_target_does_not_erase_other_targets_or_merged_new_request(self):
-        h=OwnerHarness();other=deepcopy(h.runtime['tasks']['TK-1']);other['id']='TK-2'
+        h=owner_harness();other=deepcopy(h.runtime['tasks']['TK-1']);other['id']='TK-2'
         h.runtime['tasks']['TK-2']=other
-        a=h._enqueue('research_preparation',revision_targets=revisions.capture_targets(h.instance,h.runtime,['TK-1','TK-2']))
+        a=enqueue(h,'research_preparation',revision_targets=revisions.capture_targets(h.instance,h.runtime,['TK-1','TK-2']))
         h.runtime['tasks']['TK-1']['status']='closed';h._retire_closed_revision_targets()
         self.assertEqual(set(a['revision_targets']),{'TK-2'})
         a['unbound_request']=True
@@ -46,10 +40,10 @@ class RevisionObligationTests(unittest.TestCase):
         h._retire_closed_revision_targets();self.assertEqual(h.runtime['queue'],[])
 
     def test_revision_blocks_consumer_but_independent_work_can_overlap(self):
-        h=OwnerHarness();a=h.runtime['tasks']['TK-1']
+        h=owner_harness();a=h.runtime['tasks']['TK-1']
         b=deepcopy(a);b.update(id='TK-B',inputs=['TK-1'],reviews=[]);h.runtime['tasks']['TK-B']=b
         c=deepcopy(a);c.update(id='TK-C',reviews=[]);h.runtime['tasks']['TK-C']=c
-        writer=h._enqueue('research_preparation','TK-1')
+        writer=enqueue(h,'research_preparation','TK-1')
         read={'id':'AC-B','role':'research_work','target':'TK-B'}
         independent={'id':'AC-C','role':'research_work','target':'TK-C'}
         self.assertTrue(planning.revision_waits(read,h.instance,h.runtime))
@@ -60,8 +54,8 @@ class RevisionObligationTests(unittest.TestCase):
         self.assertEqual(planning.revision_waits(writer,h.instance,h.runtime),[])
 
     def delegated(self):
-        h=OwnerHarness();h.instance['knowledge']={'KN-source':{'id':'KN-source','revision':1,'statement':'old'}}
-        parent=h._enqueue('research_preparation',revision_targets=revisions.capture_targets(h.instance,h.runtime,['KN-source'],required=True))
+        h=owner_harness();h.instance['knowledge']={'KN-source':{'id':'KN-source','revision':1,'statement':'old'}}
+        parent=enqueue(h,'research_preparation',revision_targets=revisions.capture_targets(h.instance,h.runtime,['KN-source'],required=True))
         task=h.runtime['tasks']['TK-1'];task.update(title='Correct source',producer_execution='EX-prep',knowledge_revision_targets=['KN-source'])
         h.runtime['executions']['EX-prep']={'id':'EX-prep','role':'research_preparation','status':'ended',
             'extensions':{'revision_resolutions':[{'record_id':'KN-source','disposition':'delegated','task_title':'Correct source','reason':'research replacement'}]}}
@@ -73,7 +67,7 @@ class RevisionObligationTests(unittest.TestCase):
         self.assertEqual(entry['delegated_targets'],{'KN-source':'TK-1'})
         review={'id':'AC-review','role':'task_contract_review','target':'TK-1'}
         self.assertEqual(planning.revision_waits(review,h.instance,h.runtime),[])
-        work=h._enqueue('research_work','TK-1')
+        work=enqueue(h,'research_work','TK-1')
         self.assertIn('KN-source',work['revision_targets'])
         self.assertEqual(planning.revision_waits(work,h.instance,h.runtime),[])
         h.runtime['executions']['EX-work']={'id':'EX-work','role':'research_work','status':'ended','extensions':{
@@ -99,14 +93,14 @@ class RevisionObligationTests(unittest.TestCase):
         h._retire_closed_revision_targets();h._reconcile_revision_delegations()
         self.assertNotIn('failed-child',h.runtime['waiting_actions'])
         entry=h.runtime['waiting_actions'][parent['id']]
-        self.assertEqual(set(entry['revision_targets']),{'KN-source'});self.assertFalse(entry['delegated_targets'])
-        new=h._enqueue('research_preparation',revision_targets=revisions.capture_targets(h.instance,h.runtime,['KN-source']))
+        self.assertEqual(set(entry['action']['revision_targets']),{'KN-source'});self.assertFalse(entry['delegated_targets'])
+        new=enqueue(h,'research_preparation',revision_targets=revisions.capture_targets(h.instance,h.runtime,['KN-source']))
         self.assertIn(parent['id'],new['revision_parent_ids'])
         self.assertEqual(planning.revision_waits(new,h.instance,h.runtime),[])
         self.assertEqual(planning.revision_cycles(h.instance,h.runtime),[])
 
     def test_plan_selection_and_predispatch_use_actual_current_input(self):
-        h=OwnerHarness();h.runtime['executions']['EX-plan']={'id':'EX-plan','role':'research_plan','status':'ended'}
+        h=owner_harness();h.runtime['executions']['EX-plan']={'id':'EX-plan','role':'research_plan','status':'ended'}
         plan={'dispositions':[disposition('TK-1')],'task_assessments':[],'preparation_requests':[]}
         h._apply_task_plan(plan,'EX-plan',deepcopy(h.runtime['tasks']),['TK-1'])
         action=next(a for a in h.runtime['queue'] if a['role']=='research_work')
@@ -118,8 +112,7 @@ class RevisionObligationTests(unittest.TestCase):
         from do_math.engine import ResearchEngine
         from do_math.governance import governance_view
         from research_fixtures import contract_review
-        h._governance = lambda: governance_view(h.instance)
-        h._governance_revisions = ResearchEngine._governance_revisions.__get__(h)
+        h._governance = create_autospec(h._governance, side_effect=lambda: governance_view(h.instance))
         task = h.runtime['tasks']['TK-1']
         review_action = {'role': 'task_contract_review', 'target': task['id']}
         ResearchEngine._apply(h, review_action, contract_review({'task': task}),
@@ -133,7 +126,7 @@ class RevisionObligationTests(unittest.TestCase):
         self.assertEqual(planning.task_ready(task, h.instance, h.runtime)['state'], 'not_ready')
 
     def test_revision_cannot_omit_target_or_cancel_required_repair_as_unchanged(self):
-        h=OwnerHarness();task=h.runtime['tasks']['TK-1']
+        h=owner_harness();task=h.runtime['tasks']['TK-1']
         action={'role':'research_preparation','revision_targets':revisions.capture_targets(h.instance,h.runtime,['TK-1'],required=True)}
         context={'action':action,'tasks':[task]}
         self.assertTrue(revisions.submission_errors({}, {},context))

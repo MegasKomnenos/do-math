@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.repository import ResearchRepository, new_id
 from do_math.payloads import decode, encode, seal_large
 from do_math.repository import canonical_json
+from research_fixtures import current_state
 from test_categories import test_group
 
 
@@ -30,8 +31,7 @@ class PayloadPublicationTests(unittest.TestCase):
         root = Path(temporary.name)
         subprocess.run(['git', 'init', '-q', str(root)], check=True)
         self.repo = ResearchRepository(root, new_id('RI'))
-        self.head = self.repo.initialize({'feature_version': 5, 'title': 'initial'},
-                                         {'feature_version': 5, 'status': 'initializing'})
+        self.head = self.repo.initialize(*current_state({'title': 'initial'}))
 
     def test_unreferenced_payload_can_be_reused_without_rewriting_the_blob(self):
         for value in ('exact 원문\n' * 20000,

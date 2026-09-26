@@ -9,7 +9,7 @@ import jsonschema
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import contracts, execution_profiles, review_cycle, review_policy
 from do_math.engine import DEFAULT_CONFIG
-from research_fixtures import scope_response
+from research_fixtures import bare_engine, scope_response
 
 
 class ScopeWireTests(unittest.TestCase):
@@ -29,7 +29,7 @@ class ScopeWireTests(unittest.TestCase):
     def test_review_action_keeps_replacement_authority_only_for_a_replacement(self):
         execution_action = {'id': 'AC-execution', 'role': 'identity_review',
             'stage': 'scope', 'slot': 'scope', 'round': 1, 'grant_id': 'GR-running',
-            'actor_kind': 'ai', 'budget_kind': 'work'}
+            'actor_kind': 'ai'}
         self.assertEqual(review_cycle.review_action(execution_action),
                          {'stage': 'scope', 'slot': 'scope', 'round': 1})
         replacement = {**execution_action, 'replacement_for': 'initial-0',
@@ -37,7 +37,7 @@ class ScopeWireTests(unittest.TestCase):
             'continuity_break_cause': 'permanent loss'}
         projected = review_cycle.review_action(replacement)
         for key in ('id', 'replacement_for', 'grant_id', 'grant_sha256', 'continuity_broken',
-                    'actor_kind', 'budget_kind', 'purpose', 'continuity_break_cause'):
+                    'actor_kind', 'purpose', 'continuity_break_cause'):
             self.assertEqual(projected[key], replacement[key])
 
     def setUp(self):
@@ -49,7 +49,11 @@ class ScopeWireTests(unittest.TestCase):
                               "execution_profile": profile}),
             "integration_bundles": [{"integration_id": "IN-scope", "members": ["output"],
                                       "impact_set": [], "authority_refs": []}]}
-        self.wire = contracts.action_schema({"role": "identity_review", "stage": "scope", "review_cycle_id": "RC-fixture"})
+        # The installed wire as engine._response_schema builds it for a review seat:
+        # _review_schema binds the live proposal digest, then the integration envelope.
+        seat = review_cycle.stage_schema("scope")
+        seat["properties"]["proposal_digest"] = {**seat["properties"]["proposal_digest"], "enum": ["fixture-proposal"]}
+        self.wire = contracts.with_integration_schema(seat)
 
     def test_one_real_response_contract_reaches_the_consumer(self):
         jsonschema.Draft202012Validator(self.wire).validate(self.response)
@@ -85,8 +89,7 @@ class ScopeWireTests(unittest.TestCase):
 
 class ExpandedScopeRevisionTests(unittest.TestCase):
     def test_revision_retains_all_prior_slots_above_the_policy_minimum(self):
-        from unittest.mock import patch
-        from do_math.review_engine import ReviewEngineMixin
+        from unittest.mock import create_autospec, patch
         policy = review_policy.build_review_policy(reviewer_count=2, max_rounds=2)
         slots = ['initial-0', 'initial-1', 'specialist']
         scope = {'assessment_id': 'SA-expanded', 'policy_id': policy['id'], 'policy_version': 5,
@@ -102,15 +105,15 @@ class ExpandedScopeRevisionTests(unittest.TestCase):
                 'used_sources': ['proposal'], 'questions': [], 'decision': 'match',
                 'scope_complete': True, 'findings': []}, 'EX-prior-' + str(index))
         previous.update(id='RC-old', knowledge_id='KN-old')
-        owner = ReviewEngineMixin()
-        owner.instance = {'knowledge': {'KN-new': {'id': 'KN-new', 'supersedes': 'KN-old'}},
-                          'config': {}, 'review_policy': policy}
-        owner.runtime = {'review_cycles': {'RC-old': previous}}
-        owner.head = 'fixed-input'
-        owner._settle_review_resource_dispositions = lambda: None
-        owner._review_publication_premises = lambda _: {}
+        owner = bare_engine({'knowledge': {'KN-new': {'id': 'KN-new', 'supersedes': 'KN-old'}},
+                             'config': {}, 'review_policy': policy},
+                            {'review_cycles': {'RC-old': previous}}, head='fixed-input')
+        owner._settle_review_resource_dispositions = create_autospec(owner._settle_review_resource_dispositions,
+                                                                     return_value=None)
+        owner._review_publication_premises = create_autospec(owner._review_publication_premises, return_value={})
         queued = []
-        owner._queue_identity_actions = lambda kid, cid: queued.append((kid, cid))
+        owner._queue_identity_actions = create_autospec(owner._queue_identity_actions,
+                                                        side_effect=lambda kid, cid: queued.append((kid, cid)))
         with patch('do_math.review_engine._proposal', return_value={'id': 'KN-new', 'revision': 2}), \
                 patch('do_math.review_engine.kr.identity_basis', return_value={}):
             cid = owner._start_identity_review('KN-new', previous_cycle_id='RC-old')

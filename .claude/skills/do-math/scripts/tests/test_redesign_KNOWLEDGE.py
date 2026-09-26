@@ -295,6 +295,9 @@ class KnowledgeRedesign(unittest.TestCase):
                 {**assessment, 'basis': cycle['identity_basis']}, cycle['policy_ref'], runtime=runtime)
             subprocess.run(["git", "init", "-q", directory], check=True)
             repo = ResearchRepository(Path(directory), new_id("RI"), contract=contract)
+            # Every stored state passes the current lifecycle gate.
+            from research_fixtures import current_state
+            state, runtime = current_state(state, runtime)
             repo.initialize(state, runtime)
             head, loaded, loaded_runtime = repo.load()
             self.assertEqual(loaded["formal_results"], state["formal_results"])
@@ -421,7 +424,9 @@ class KnowledgeAudit2(unittest.TestCase):
         environment, binding = trust_environment(trust_fixture(self.root, ['synthetic-lean']),
                                                  environment_id='TE-test', source_ref='synthetic:approval')
         self.state, self.runtime, self.kid, _ = KnowledgeRedesign().verified(environment, binding=binding, identity=False)
-        self.state['feature_version'] = self.runtime['feature_version'] = 5
+        # Every stored state passes the current lifecycle gate.
+        from research_fixtures import current_state
+        self.state, self.runtime = current_state(self.state, self.runtime)
         profiles = build_profiles({**DEFAULT_CONFIG, 'lean_command': ['synthetic-lean']})
         self.profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'identity_review')
         self.state.update(execution_profiles={self.profile['id']: self.profile}, capacity_constraints=profiles['capacity_constraints'])
@@ -670,11 +675,12 @@ class KnowledgeAudit2(unittest.TestCase):
         self.assertTrue(knowledge.assess_use(self.state['identity_assessments'][aid], self.state)['valid'])
 
     def test_central_explanation_revision_reuses_formal_and_schedules_only_replacement(self):
-        from do_math.engine import ResearchEngine, DEFAULT_CONFIG
+        from do_math.engine import DEFAULT_CONFIG
         from do_math import activities, execution_lifecycle
         from do_math.execution_profiles import build_profiles, profile_ref
         from do_math.repository import new_id
-        from unittest.mock import Mock
+        from unittest.mock import create_autospec
+        from research_fixtures import bare_engine
         self.assessment()
         self.roundtrip()
         original_fid = self.state['knowledge'][self.kid]['formal_result_id']
@@ -702,11 +708,9 @@ class KnowledgeAudit2(unittest.TestCase):
         retained = {'id': retained_id, 'lineage_id': retained_id, 'role': 'research_work', 'target': self.kid}
         self.runtime['queue'].append(retained)
         prior_history = copy.deepcopy(self.runtime.get('history', []))
-        engine = ResearchEngine.__new__(ResearchEngine)
-        engine.instance, engine.runtime = self.state, self.runtime
-        engine.head, engine.store = self.head, self.repo
-        engine._enqueue = Mock()  # Unrelated planner wake-up; domain follow-up remains real.
-        engine._invalidate_goal_currentness = Mock()  # Goal consensus is another owner's consumer.
+        engine = bare_engine(self.state, self.runtime, head=self.head, store=self.repo)
+        engine._enqueue = create_autospec(engine._enqueue)  # Unrelated planner wake-up; domain follow-up remains real.
+        engine._invalidate_goal_currentness = create_autospec(engine._invalidate_goal_currentness)  # Goal consensus is another owner's consumer.
         execution['input_snapshot'] = self.head
         # Candidate application now owns knowledge revisions; extension-only
         # bundles do not own the separate research response/task disposition.
@@ -868,10 +872,11 @@ class KnowledgeRawSource(unittest.TestCase):
         # are the same explicit synthetic fixtures as the central boundary tests.
         engine, self.kid = FormalBoundaryTests.host(self, self.root, observed['toolchain'])
         profiles, constraints = self.state['execution_profiles'], self.state['capacity_constraints']
-        self.state = engine.instance
-        self.state.update(feature_version=5, execution_profiles=profiles, capacity_constraints=constraints)
-        self.runtime = {'feature_version': 5, 'queue': [], 'history': [],
-                        'trust_bindings': copy.deepcopy(engine.runtime['trust_bindings'])}
+        from research_fixtures import current_state
+        # Every stored state passes the current lifecycle gate.
+        self.state, self.runtime = current_state(
+            {**engine.instance, 'execution_profiles': profiles, 'capacity_constraints': constraints},
+            {'queue': [], 'history': [], 'trust_bindings': copy.deepcopy(engine.runtime['trust_bindings'])})
         fid = self.state['knowledge'][self.kid]['formal_result_id']
         self.state['formal_results'][fid].update(lean_code=source, declaration_names=names)
         persist()  # The Git case checks candidate transport before compilation.

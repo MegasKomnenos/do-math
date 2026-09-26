@@ -2,18 +2,20 @@
 from datetime import datetime, timezone
 import math
 
+from .file_io import parse_utc
+
 
 def provider_for(model: str) -> str:
     return "claude" if model.startswith(("claude:", "claude-")) else "codex"
 
 
-def timestamp(value):
+def epoch_seconds(value):
+    """Seconds since the epoch of a finite number or a zoned ISO time; otherwise None."""
     if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value):
         return float(value)
     if isinstance(value, str):
         try:
-            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-            return parsed.timestamp() if parsed.tzinfo is not None else None
+            return parse_utc(value).timestamp()
         except ValueError:
             return None
     return None
@@ -23,36 +25,17 @@ def utc(value):
     return datetime.fromtimestamp(value, timezone.utc).isoformat() if value is not None else None
 
 
-def retry_time(failure, attempts, current, initial=300, maximum=7200):
-    known = timestamp(failure.get("retry_at"))
+def retry_time(failure, attempts, current, initial, maximum):
+    known = epoch_seconds(failure.get("retry_at"))
     if known is not None and known > current:
         return known
     return current + min(maximum, initial * (2 ** min(max(0, attempts - 1), 20)))
 
 
-def provider_wait_disposition(*, model, failure=None, attempts=1, current=None,
-                              initial=300, maximum=7200, provider=None):
-    """Describe an admission wait without deciding whether work should resume.
+def gate_open(row, now):
+    """A provider gate admits new work: available, or waiting with its retry time reached.
 
-    `retry_at` is a provider observation/backoff boundary.  It is not a claim
-    that a provider has capacity, nor a deadline for an activity to finish.
+    ``row`` is a stored gate (``retry_at`` in epoch seconds); a checking gate
+    stays closed until its probe owner reports.
     """
-    if not isinstance(model, str) or not model:
-        raise ValueError("model is required")
-    if isinstance(attempts, bool) or not isinstance(attempts, int) or attempts < 1:
-        raise ValueError("attempts must be a positive integer")
-    if current is None or not isinstance(current, (int, float)) or isinstance(current, bool) or not math.isfinite(current):
-        raise ValueError("current must be a finite timestamp")
-    if (isinstance(initial, bool) or not isinstance(initial, (int, float)) or initial <= 0 or
-            isinstance(maximum, bool) or not isinstance(maximum, (int, float)) or maximum < initial):
-        raise ValueError("retry bounds are invalid")
-    failure = {} if failure is None else failure
-    if not isinstance(failure, dict):
-        raise ValueError("failure must be a dictionary")
-    resolved_provider = provider or provider_for(model)
-    if resolved_provider not in {"codex", "claude"}:
-        raise ValueError("provider is unsupported")
-    # Persist whole seconds, rounding upward so the wait never ends early.
-    due = math.ceil(retry_time(failure, attempts, float(current), initial=initial, maximum=maximum))
-    return {"kind": "provider_admission", "provider": resolved_provider, "state": "waiting",
-            "retry_at": utc(due), "retry_at_timestamp": due, "attempt": attempts}
+    return row["state"] == "available" or row["state"] == "waiting" and row["retry_at"] <= now

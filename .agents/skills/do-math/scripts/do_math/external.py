@@ -7,7 +7,10 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit, unquote
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from .file_io import json_digest
+from .file_io import json_digest, parse_utc
+
+# The states of one external operation; its EX execution reports the same set.
+OPERATION_STATUSES = frozenset({"prepared", "confirmed", "failed", "unknown", "cancelled"})
 
 
 def idempotency_key(operation_id: str, request_sha256: str) -> str: return hashlib.sha256((operation_id + request_sha256).encode()).hexdigest()
@@ -15,12 +18,11 @@ def request_binding_current(operation: dict) -> bool:
     """The stored request bytes and idempotency key still bind this operation ID."""
     digest = json_digest(operation.get("request"))
     return operation.get("request_sha256") == digest and operation.get("idempotency_key") == idempotency_key(operation.get("id", ""), digest)
-def _now(value: str) -> datetime:
-    if not isinstance(value, str) or not value:
-        raise ValueError('external authority time must be a nonempty timestamp string')
-    result = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    if result.tzinfo is None: raise ValueError("external authority time requires timezone")
-    return result.astimezone(timezone.utc)
+
+def _retry_evidence_bound(operation: dict, evidence: dict) -> bool:
+    """Retry evidence names this operation's exact request hash, idempotency key and an evidence ref."""
+    return (evidence.get("request_sha256") == operation.get("request_sha256")
+            and evidence.get("idempotency_key") == operation.get("idempotency_key") and bool(evidence.get("evidence_ref")))
 
 def _url(request: dict):
     if not isinstance(request, dict) or request.get("method") not in {"GET","POST","PUT","DELETE"} or not isinstance(request.get("url"),str): raise ValueError("request needs HTTP method and URL")
@@ -40,21 +42,22 @@ def _body(request: dict) -> str:
     return body
 
 def prepare_operation(request: dict, grant_id: str, source_ref: str, operation_id: str|None=None, *,
-                      target_id=None, purpose=None, subject=None, budget_kind=None, actor_kind=None) -> dict:
+                      target_id=None, purpose=None, subject=None, actor_kind=None) -> dict:
     parsed=_url(request)
     if not isinstance(grant_id,str) or not isinstance(source_ref,str) or not grant_id or not source_ref: raise ValueError("grant and source refs required")
     normalized={"method":request["method"],"url":parsed.geturl(),"body":_body(request)}
     digest=json_digest(normalized); oid=operation_id or hashlib.sha256((grant_id+source_ref+digest).encode()).hexdigest()[:24]
     scope = {key: value for key, value in {"target_id": target_id, "purpose": purpose, "subject": subject,
-             "budget_kind": budget_kind, "actor_kind": actor_kind}.items() if value is not None}
+             "actor_kind": actor_kind}.items() if value is not None}
     if any(not isinstance(value, str) or not value.strip() for value in scope.values()):
         raise ValueError("external action scope fields must be nonempty text")
     return {"id":oid,"request":normalized,"request_sha256":digest,"grant_id":grant_id,"source_ref":source_ref,"status":"prepared","idempotency_key":idempotency_key(oid,digest),"attempts":[],"credential_env":None, **scope}
 
 def validate_operation(operation: dict, grant: dict, now_iso: str, *, runtime=None, academic_check=None) -> None:
     if grant.get("id")!=operation.get("grant_id") or grant.get("status")!="active": raise ValueError("grant is inactive")
-    if grant.get("expires_at") and _now(now_iso)>=_now(grant["expires_at"]): raise ValueError("grant expired")
-    if grant.get("valid_from") and _now(now_iso)<_now(grant["valid_from"]): raise ValueError("grant is not effective yet")
+    from .governance import grant_time_reason
+    time_reason = grant_time_reason(grant, parse_utc(now_iso))
+    if time_reason: raise ValueError(time_reason)
     if any(header.lower() in {"idempotency-key", "host", "content-length"} for header in grant.get("credential_env", {})):
         raise ValueError("credential headers cannot override operation identity or routing")
     parsed=_url(operation.get("request")); origin=f"{parsed.scheme}://{parsed.netloc}"
@@ -68,14 +71,12 @@ def validate_operation(operation: dict, grant: dict, now_iso: str, *, runtime=No
         from .governance import grant_scope_reason
         action = {"id": operation.get("action_id", operation.get("id")), "target": operation.get("target_id"),
                   "role": "external_operation", "subject": operation.get("subject", "external_operation"),
-                  "purpose": operation.get("purpose"), "budget_kind": operation.get("budget_kind"),
-                  "actor_kind": operation.get("actor_kind")}
+                  "purpose": operation.get("purpose"), "actor_kind": operation.get("actor_kind")}
         reason = grant_scope_reason(grant, action, runtime, at=now_iso)
         if reason: raise ValueError(reason)
     if grant.get("academic_only") or grant.get("requires_academic") or operation.get("academic_binding") or operation.get("academic_basis"):
         if academic_check is None or not academic_check(operation, grant): raise ValueError("current academic prerequisite is not established")
-    if json_digest(operation["request"])!=operation.get("request_sha256"): raise ValueError("request bytes changed")
-    if operation.get("idempotency_key")!=idempotency_key(operation["id"],operation["request_sha256"]): raise ValueError("idempotency key changed")
+    if not request_binding_current(operation): raise ValueError("request bytes or idempotency key changed")
     if operation.get("status") != "prepared": raise ValueError("operation is not startable")
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -99,10 +100,10 @@ def execute_operation(operation: dict, grant: dict, *, persist: Callable[[dict],
         raise ValueError("recorded transmission requires recovery before another send")
     if operation.get("attempts"):
         retry = operation.get("retry_evidence", {})
-        if retry.get("request_sha256") != operation.get("request_sha256") or retry.get("idempotency_key") != operation.get("idempotency_key") or not retry.get("evidence_ref"):
+        if not _retry_evidence_bound(operation, retry):
             raise ValueError("retry lacks request-bound evidence")
         if retry.get("kind") not in {"effect_absent", "verified_idempotency"}: raise ValueError("invalid retry evidence kind")
-        if retry["kind"] == "verified_idempotency" and (not retry.get("valid_until") or _now(retry["valid_until"]) <= datetime.now(timezone.utc)):
+        if retry["kind"] == "verified_idempotency" and (not retry.get("valid_until") or parse_utc(retry["valid_until"]) <= datetime.now(timezone.utc)):
             raise ValueError("idempotency assurance expired")
     grant = current_grant(operation["grant_id"]) if current_grant else grant
     validate_operation(operation,grant,datetime.now(timezone.utc).isoformat(),runtime=runtime,academic_check=academic_check)
@@ -156,12 +157,12 @@ def recover_operation(operation):
 def prepare_retry(operation, evidence, *, source, now_iso=None):
     if operation.get("status") not in {"unknown", "failed"} or source not in {"user", "adapter"}:
         raise ValueError("retry needs an uncertain or absent-effect operation and authorized evidence source")
-    if evidence.get("request_sha256") != operation["request_sha256"] or evidence.get("idempotency_key") != operation["idempotency_key"] or not evidence.get("evidence_ref"):
+    if not _retry_evidence_bound(operation, evidence):
         raise ValueError("retry evidence must bind exact request and key")
     if evidence.get("kind") == "effect_absent":
         if operation.get("status") != "failed" or operation.get("effect_absent") is not True: raise ValueError("effect absence not established")
     elif evidence.get("kind") == "verified_idempotency":
-        if not evidence.get("valid_until") or _now(evidence["valid_until"]) <= _now(now_iso or datetime.now(timezone.utc).isoformat()): raise ValueError("idempotency evidence expired")
+        if not evidence.get("valid_until") or parse_utc(evidence["valid_until"]) <= parse_utc(now_iso or datetime.now(timezone.utc).isoformat()): raise ValueError("idempotency evidence expired")
     else: raise ValueError("unsupported retry evidence")
     return {**operation,"status":"prepared","transmitted":False,"transmission_phase":"not_started",
             "retry_evidence": {**evidence, "source":source}, "previous_outcome":operation["status"]}
@@ -173,7 +174,7 @@ def reconcile_operation(operation: dict, evidence: dict, result: str, *, source:
     if (evidence.get("operation_id") != operation["id"] or evidence.get("request_sha256") != operation["request_sha256"]
             or evidence.get("idempotency_key") != operation["idempotency_key"] or not evidence.get("evidence_ref") or not evidence.get("observed_at")):
         raise ValueError("reconciliation evidence must bind the exact external operation")
-    _now(evidence["observed_at"])
+    parse_utc(evidence["observed_at"])
     expected = {"confirmed":"succeeded", "failed":"effect_absent", "cancelled":"not_transmitted"}.get(result)
     if evidence.get("fact") != expected: raise ValueError("evidence fact differs from asserted outcome")
     if result == "confirmed" and succeeded is True:

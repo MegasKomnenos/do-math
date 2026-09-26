@@ -4,7 +4,7 @@ import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.academic import (academic_status, assess, current_requirements,
-    effect_receipts, record_resolution, requirement_record, requirements_changed, solution_basis)
+    effect_receipts, record_resolution, requirement_record, solution_basis)
 
 
 class Tests(unittest.TestCase):
@@ -21,7 +21,6 @@ class Tests(unittest.TestCase):
         changed = deepcopy(self.instance)
         changed['governance']['CH']['revision'] = 2
         changed['governance']['CH']['content']['academic_requirements'][0]['criteria'] = ['publish']
-        self.assertTrue(requirements_changed(self.instance, changed))
         self.assertNotEqual(current_requirements(changed)['sha256'], current_requirements(self.instance)['sha256'])
 
     def test_assessment_covers_exact_criteria_but_does_not_replace_task_evidence(self):

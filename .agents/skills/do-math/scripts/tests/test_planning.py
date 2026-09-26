@@ -175,15 +175,6 @@ class PlanningTests(unittest.TestCase):
         i['formal_results'][fid]['formal_use']='suspended'
         self.assertNotEqual(planning.evaluate_condition(condition,i,r)['state'],'ready')
 
-    def test_cited_task_basis_ignores_lifecycle_and_appended_results_but_not_contract_rewrites(self):
-        t=self.task;t['results']=[{'execution_id':'EX-1','summary':'first'}]
-        basis=[planning.task_reference_basis(t)];tasks={t['id']:deepcopy(t)}
-        tasks[t['id']].update(status='active',selected_by='EX-2',reviews=[])
-        tasks[t['id']]['results'].append({'execution_id':'EX-3','summary':'later'})
-        self.assertEqual(planning.task_reference_changes(basis,tasks),[])
-        tasks[t['id']]['scope']['included'].append('new');tasks[t['id']]['results'][0]['summary']='rewritten'
-        self.assertEqual(planning.task_reference_changes(basis,tasks),['contract_changed:TK-1','results_changed:TK-1'])
-        self.assertEqual(planning.task_reference_changes(basis,{}),['missing:TK-1'])
 
 
 class ConditionIndexTests(unittest.TestCase):
@@ -193,7 +184,7 @@ class ConditionIndexTests(unittest.TestCase):
         condition = {'op': 'all', 'args': [
             {'op': 'record_exists', 'space': 'research', 'family': 'knowledge', 'record_id': 'K' + str(i)}
             for i in range(50)]}
-        with patch.object(planning, '_records', wraps=planning._records) as scans:
+        with patch.object(planning, 'record_index', wraps=planning.record_index) as scans:
             result = planning.evaluate_condition(condition, instance, {})
             self.assertEqual(scans.call_count, 1)
         self.assertEqual(result['state'], 'ready')

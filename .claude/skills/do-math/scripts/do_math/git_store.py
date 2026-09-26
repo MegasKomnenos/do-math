@@ -10,7 +10,7 @@ from .operation_trace import measured
 
 
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 import json
 import os
@@ -20,6 +20,8 @@ import subprocess
 import tempfile
 import stat
 from typing import Final
+
+from .file_io import os_lock
 
 
 class GitStateStoreError(RuntimeError):
@@ -36,20 +38,42 @@ class GitStateStoreLockError(GitStateStoreError):
 
 @dataclass(frozen=True, slots=True)
 class StateSnapshot:
-    """The authoritative commit and its two required top-level subtrees."""
+    """The authoritative state commit, or None before the initial publication."""
 
     head: str | None
-    research_tree: str | None
-    runtime_tree: str | None
 
 
-_INSTANCE_ID = re.compile(r"RI-[0-7][0-9A-HJKMNP-TV-Z]{25}\Z")
+# ULID in Crockford base32: 26 digits, the first at most 7 (48-bit time + 80 random bits).
+ULID_ALPHABET: Final = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+ULID_LENGTH: Final = 26
+ULID_PATTERN: Final = f"[0-7][{ULID_ALPHABET}]{{{ULID_LENGTH - 1}}}"
 _HEX = re.compile(r"[0-9a-f]+\Z")
 _WINDOWS_RESERVED: Final = {
     "CON", "PRN", "AUX", "NUL",
     *(f"COM{number}" for number in range(1, 10)),
     *(f"LPT{number}" for number in range(1, 10)),
 }
+
+
+def is_new_id(prefix: str, value) -> bool:
+    """True for ``<prefix>-<ULID>``, the form ``repository.new_id`` creates."""
+    return isinstance(value, str) and re.fullmatch(re.escape(prefix) + "-" + ULID_PATTERN, value) is not None
+
+
+def check_path_segment(part: str) -> None:
+    """Reject one state path segment that a Windows checkout cannot store under that name.
+
+    Empty, ``.``/``..``, trailing dot or space (Win32 strips them), separators,
+    ``<>:"|?*`` and control characters, and reserved device names (``CON``,
+    ``com1.txt``) are refused.
+    """
+    if (not isinstance(part, str) or not part or part in {".", ".."} or part[-1] in {".", " "}
+            or "/" in part or "\\" in part):
+        raise ValueError("path contains an invalid segment")
+    if any(character in '<>:"|?*' or ord(character) < 32 for character in part):
+        raise ValueError("path contains a Windows-invalid segment")
+    if part.rstrip(". ").split(".", 1)[0].upper() in _WINDOWS_RESERVED:
+        raise ValueError("path contains a reserved Windows device name")
 
 
 def oid_shape(oid: str) -> str:
@@ -64,8 +88,8 @@ class GitStateStore:
 
     ``publish`` uses Git's expected-old-OID ref update as its concurrency
     guarantee.  ``writer_lock`` is a separate, optional local OS lock for
-    callers that need to serialize work before that final CAS; while this
-    store holds it, the final CAS is the only ref comparison.
+    callers that need to serialize work before that final CAS; while a caller
+    holds it, no other do-math writer can move the ref.
 
     Physical boundaries (no reparse ancestor, local fixed NTFS volume, final
     path) are established when the store is opened and re-established when
@@ -75,7 +99,7 @@ class GitStateStore:
     """
 
     def __init__(self, repository: str | os.PathLike[str], instance_id: str) -> None:
-        if not isinstance(instance_id, str) or not _INSTANCE_ID.fullmatch(instance_id):
+        if not isinstance(instance_id, str) or not is_new_id("RI", instance_id):
             raise ValueError("instance_id must be the registry RI-prefixed canonical ULID")
         self.repository = Path(repository).absolute()
         self._repository_boundary = PhysicalBoundary(self.repository)
@@ -83,9 +107,12 @@ class GitStateStore:
             raise ValueError("repository must be an existing Git work tree or bare repository")
         self.instance_id = instance_id
         self.ref = f"refs/heads/do-math/{instance_id}"
-        self._git_dir = Path(self._git_text("rev-parse", "--absolute-git-dir")).absolute()
+        facts = self._git_text("rev-parse", "--absolute-git-dir", "--show-object-format").splitlines()
+        if len(facts) != 2:
+            raise GitStateStoreError("git rev-parse did not report the Git directory and object format")
+        self._git_dir = Path(facts[0]).absolute()
         self._git_boundary = PhysicalBoundary(self._git_dir)
-        self.object_format = self._git_text("rev-parse", "--show-object-format")
+        self.object_format = facts[1].strip()
         if self.object_format not in {"sha1", "sha256"}:
             raise GitStateStoreError(f"unsupported Git object format: {self.object_format!r}")
         self.oid_length = 40 if self.object_format == "sha1" else 64
@@ -93,28 +120,34 @@ class GitStateStore:
         self._holds_writer_lock = False
 
     def read_snapshot(self) -> StateSnapshot:
-        """Return the current state commit and its research/runtime tree OIDs."""
-        head = self._ref_oid()
-        if head is None:
-            return StateSnapshot(None, None, None)
+        """Return the current state commit, checking that it holds research/runtime trees.
+
+        One batch query resolves the ref, its object type and both subtrees.
+        Only when the ref line is missing does ``rev-parse`` separate an absent
+        ref from a ref that names a missing object.
+        """
         names = ("research", "runtime")
-        queries = "\n".join([head, *(f"{head}:{name}" for name in names)]) + "\n"
+        queries = "".join(f"{self.ref}{suffix}\n" for suffix in ("", *(":" + name for name in names)))
         result = self._git("cat-file", "--batch-check=%(objectname) %(objecttype)",
                            input=queries.encode("ascii"), check=False)
         rows = result.stdout.decode("ascii").splitlines()
         root = rows[0].split() if rows else []
-        if not root or root == [head, "missing"]:
+        if not root or root[-1] == "missing":
+            if self._ref_oid() is None:
+                return StateSnapshot(None)
             detail = result.stderr.decode("utf-8", "replace").strip()
             raise GitStateStoreError(f"state ref points to an unreadable object: {detail}")
-        if len(root) != 2 or root[0] != head:
+        if len(root) != 2:
             raise GitStateStoreError("invalid state commit metadata")
-        if root[1] != "commit":
+        head, object_type = root
+        self._validate_oid(head)
+        if object_type != "commit":
             raise GitStateStoreError("state ref must point to a commit")
         if result.returncode:
             detail = result.stderr.decode("utf-8", "replace").strip()
             raise GitStateStoreError(f"cannot read state subtree metadata: {detail}")
-        trees = self._parse_subtree_oids(rows[1:], names)
-        return StateSnapshot(head, trees["research"], trees["runtime"])
+        self._check_subtrees(rows[1:], names)
+        return StateSnapshot(head)
 
     def read_bytes(self, commit: str, path: str) -> bytes:
         """Read exact blob bytes from an explicit, format-valid state commit."""
@@ -122,9 +155,14 @@ class GitStateStore:
         self._validate_path(path)
         return self._git("cat-file", "blob", f"{commit}:{path}").stdout
 
-    def read_many(self, commit: str, paths: list[str]) -> dict[str, bytes]:
-        """Read a fixed snapshot in one process, using binary lengths, not lines."""
+    def read_many(self, commit: str, paths: list[str], *, missing: str = "raise") -> dict[str, bytes]:
+        """Read a fixed snapshot in one process, using binary lengths, not lines.
+
+        With ``missing="omit"`` a path absent from the snapshot is left out of
+        the result; with ``"raise"`` it fails the whole batch.
+        """
         self._validate_oid(commit)
+        self._check_missing_mode(missing)
         paths = list(dict.fromkeys(paths))
         for path in paths:
             self._validate_path(path)
@@ -135,6 +173,9 @@ class GitStateStore:
         result, offset = {}, 0
         for path in paths:
             end = raw.find(b"\n", offset)
+            if missing == "omit" and end >= 0 and raw[offset:end] == f"{commit}:{path} missing".encode("utf-8"):
+                offset = end + 1
+                continue
             header = raw[offset:end].split() if end >= 0 else []
             if len(header) != 3 or header[1] != b"blob" or not header[2].isdigit():
                 raise GitStateStoreError("batch read did not return a blob: " + path)
@@ -149,9 +190,13 @@ class GitStateStore:
             raise GitStateStoreError("unexpected trailing batch output")
         return result
 
-    def blob_sizes(self, commit: str, paths: list[str]) -> dict[str, int]:
-        """Read object lengths once so callers can bound batch-read memory."""
+    def blob_sizes(self, commit: str, paths: list[str], *, missing: str = "raise") -> dict[str, int]:
+        """Read object lengths once so callers can bound batch-read memory.
+
+        ``missing`` has the meaning it has for :meth:`read_many`.
+        """
         self._validate_oid(commit)
+        self._check_missing_mode(missing)
         for path in paths:
             self._validate_path(path)
         if not paths:
@@ -162,11 +207,18 @@ class GitStateStore:
             raise GitStateStoreError('batch size response count differs')
         result = {}
         for path, row in zip(paths, output):
+            if missing == "omit" and row == f"{commit}:{path} missing".encode("utf-8"):
+                continue
             fields = row.split()
             if len(fields) != 2 or not fields[0].isdigit() or fields[1] != b'blob':
                 raise GitStateStoreError('batch size did not return a blob: ' + path)
             result[path] = int(fields[0])
         return result
+
+    @staticmethod
+    def _check_missing_mode(missing: str) -> None:
+        if missing not in {"raise", "omit"}:
+            raise ValueError('missing must be "raise" or "omit"')
 
     def _write_blobs(self, changes: Mapping[str, bytes | None]) -> dict[str, str]:
         values = [(path, raw) for path, raw in changes.items() if raw is not None]
@@ -197,15 +249,13 @@ class GitStateStore:
         ``expected_head`` is ``None`` only for the parentless initial commit.
         Every later commit has exactly that expected commit as its only parent.
         A failed expected-old-OID check raises :class:`GitStateStoreConflict`
-        and leaves the authoritative ref unchanged.
+        and leaves the authoritative ref unchanged. The final update-ref CAS is
+        the only ref comparison here; callers that want to avoid work against a
+        stale head compare it first (``ResearchRepository`` does).
         """
         if expected_head is not None:
             self._validate_oid(expected_head)
         normalized_changes = self._validate_changes(changes)
-        # Under this store's writer lock no other do-math writer can move the
-        # ref, so the final update-ref CAS below is the only comparison.
-        if not self._holds_writer_lock and self._head() != expected_head:
-            raise GitStateStoreConflict("expected head no longer matches the instance ref")
 
         existing_paths = self._tree_paths(expected_head) if expected_head is not None else set()
         self._validate_artifact_changes(existing_paths, normalized_changes)
@@ -222,13 +272,12 @@ class GitStateStore:
             updated = self._git("update-ref", self.ref, expected_head, expected_head, check=False)
             if updated.returncode:
                 raise GitStateStoreConflict("state ref changed before the no-op compare-and-swap")
-            trees = self._subtree_oids(expected_head, ("research", "runtime"))
-            return StateSnapshot(expected_head, trees["research"], trees["runtime"])
-        if expected_head is None:
-            if not any(path.startswith("research/") for path in candidate_paths):
-                raise ValueError("the initial state must contain a research subtree")
-            if not any(path.startswith("runtime/") for path in candidate_paths):
-                raise ValueError("the initial state must contain a runtime subtree")
+            return StateSnapshot(expected_head)
+        # The candidate path list decides both subtrees without reading the written tree.
+        if not any(path.startswith("research/") for path in candidate_paths):
+            raise ValueError("the state must contain a research subtree")
+        if not any(path.startswith("runtime/") for path in candidate_paths):
+            raise ValueError("the state must contain a runtime subtree")
 
         with self._private_index() as index_environment:
             if expected_head is None:
@@ -248,8 +297,6 @@ class GitStateStore:
                 self._git("update-index", "-z", "--index-info", input=bytes(index_records), env=index_environment)
             tree = self._git("write-tree", env=index_environment).stdout.decode("ascii").strip()
         self._validate_oid(tree)
-        trees = self._subtree_oids(tree, ("research", "runtime"))
-        research_tree, runtime_tree = trees["research"], trees["runtime"]
 
         command = ["commit-tree", tree]
         if expected_head is not None:
@@ -264,26 +311,14 @@ class GitStateStore:
         # The new tree is the parent tree with exactly these index updates, so
         # its path list is known without re-enumerating it (ls-tree -r).
         self._listed = (commit, frozenset(candidate_paths))
-        return StateSnapshot(commit, research_tree, runtime_tree)
+        return StateSnapshot(commit)
 
     @contextmanager
     def writer_lock(self) -> Iterator[None]:
         """Acquire a non-stale, same-instance advisory OS lock in the Git dir."""
-        lock_path = self._git_dir / f"do-math-{self.instance_id}.lock"
-        descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
-        try:
-            if os.fstat(descriptor).st_size == 0:
-                os.write(descriptor, b"\0")
-            os.lseek(descriptor, 0, os.SEEK_SET)
+        with ExitStack() as held:
             try:
-                if os.name == "nt":
-                    import msvcrt
-
-                    msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
-                else:
-                    import fcntl
-
-                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                held.enter_context(os_lock(self._git_dir / f"do-math-{self.instance_id}.lock", blocking=False))
             except OSError as error:
                 raise GitStateStoreLockError("another local writer owns this instance lock") from error
             self._holds_writer_lock = True
@@ -291,13 +326,6 @@ class GitStateStore:
                 yield
             finally:
                 self._holds_writer_lock = False
-                os.lseek(descriptor, 0, os.SEEK_SET)
-                if os.name == "nt":
-                    msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
-                else:
-                    fcntl.flock(descriptor, fcntl.LOCK_UN)
-        finally:
-            os.close(descriptor)
 
     def _ref_oid(self) -> str | None:
         """Resolve the ref and validate OID syntax; object kinds are checked by readers."""
@@ -311,32 +339,9 @@ class GitStateStore:
         self._validate_oid(oid)
         return oid
 
-    def _head(self) -> str | None:
-        oid = self._ref_oid()
-        if oid is None:
-            return None
-        object_type = self._git("cat-file", "-t", oid, check=False)
-        if object_type.returncode:
-            detail = object_type.stderr.decode("utf-8", "replace").strip()
-            raise GitStateStoreError(f"state ref points to an unreadable object: {detail}")
-        if object_type.stdout.decode("ascii").strip() != "commit":
-            raise GitStateStoreError("state ref must point to a commit")
-        return oid
-
-    def _subtree_oids(self, commit_or_tree: str, names: tuple[str, ...]) -> dict[str, str]:
-        """Resolve and type-check required trees in one immutable-object read."""
-        self._validate_oid(commit_or_tree)
-        if not names or any(name not in {"research", "runtime"} for name in names):
-            raise ValueError("only research/runtime state subtrees can be resolved")
-        queries = "".join(f"{commit_or_tree}:{name}\n" for name in names).encode("ascii")
-        result = self._git("cat-file", "--batch-check=%(objectname) %(objecttype)", input=queries)
-        rows = result.stdout.decode("ascii").splitlines()
-        return self._parse_subtree_oids(rows, names)
-
-    def _parse_subtree_oids(self, rows: list[str], names: tuple[str, ...]) -> dict[str, str]:
+    def _check_subtrees(self, rows: list[str], names: tuple[str, ...]) -> None:
         if len(rows) != len(names):
             raise GitStateStoreError("incomplete state subtree metadata")
-        trees = {}
         for name, row in zip(names, rows):
             fields = row.split()
             if len(fields) != 2 or fields[-1] == "missing":
@@ -345,8 +350,6 @@ class GitStateStore:
             self._validate_oid(oid)
             if object_type != "tree":
                 raise GitStateStoreError(f"state {name!r} entry must be a tree")
-            trees[name] = oid
-        return trees
 
     def _tree_paths(self, commit: str) -> frozenset[str]:
         self._validate_oid(commit)
@@ -423,13 +426,7 @@ class GitStateStore:
         if len(parts) < 2 or parts[0] not in {"research", "runtime"}:
             raise ValueError("state paths must be files below research/ or runtime/")
         for part in parts:
-            if not part or part in {".", ".."} or part[-1] in {".", " "}:
-                raise ValueError("path contains an invalid segment")
-            if any(character in '<>:"|?*' or ord(character) < 32 for character in part):
-                raise ValueError("path contains a Windows-invalid segment")
-            device_name = part.rstrip(". ").split(".", 1)[0].upper()
-            if device_name in _WINDOWS_RESERVED:
-                raise ValueError("path contains a reserved Windows device name")
+            check_path_segment(part)
         if parts[:2] == ["runtime", "artifacts"] and len(parts) < 4:
             raise ValueError("artifact paths must name a bundle and a file")
 
@@ -495,7 +492,7 @@ class GitStateStore:
         return completed
 
 
-def _no_reparse(path: Path, *, below: Path | None = None) -> None:
+def no_reparse(path: Path, *, below: Path | None = None) -> None:
     """Reject reparse components of ``path``, stopping at ``below`` when given."""
     candidate = path.absolute()
     for part in (candidate, *candidate.parents):
@@ -557,14 +554,14 @@ class PhysicalBoundary:
     """
     def __init__(self, root):
         self.root = Path(os.path.abspath(root))
-        _no_reparse(self.root)
+        no_reparse(self.root)
         if not self.root.is_dir():
             raise ValueError("physical boundary root must be an existing directory")
         self.device = self.root.stat().st_dev
         self.check()
 
     def check(self):
-        _no_reparse(self.root)
+        no_reparse(self.root)
         if self.root.stat().st_dev != self.device:
             raise ValueError("physical root volume changed")
         if os.name == "nt":
@@ -598,6 +595,6 @@ class PhysicalBoundary:
         if not path.is_relative_to(self.root):
             raise ValueError("file path is outside the physical boundary")
         # The root and its ancestors were proved when this boundary opened.
-        _no_reparse(path, below=self.root)
+        no_reparse(path, below=self.root)
         with path.open(mode) as stream:
             yield stream

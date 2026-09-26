@@ -14,8 +14,9 @@ from do_math.repository import exact_content_hash
 import check_coverage
 from test_categories import test_group as category
 from do_math import contracts, execution_profiles, governance, knowledge, knowledge_io, knowledge_records as kr, planning
-from do_math.engine import DEFAULT_CONFIG, ResearchEngine
+from do_math.engine import DEFAULT_CONFIG
 from do_math.task_scope import apply_task_dispositions
+from research_fixtures import bare_engine, review_items
 
 
 def repository_root(start=Path(__file__).resolve()):
@@ -34,10 +35,15 @@ TIME = '2026-09-20T00:00:00+00:00'
 
 class InputSnapshot:
     """Storage-boundary fixture, not a replacement for any domain transition."""
+    git_dir = None  # No repository: issued inputs are read, never cached across fixtures.
     def __init__(self, instance, runtime): self.snapshot = deepcopy((instance, runtime))
     def load(self, snapshot):
         if snapshot != 'input-snapshot': raise ValueError('unexpected snapshot')
         return snapshot, *deepcopy(self.snapshot)
+
+    def view(self, snapshot):
+        # The repository's read-only fixed-input read; callers never mutate it.
+        return self.load(snapshot)
 
     def read(self, path, snapshot):
         if path.endswith('/input/submission/context.json'):
@@ -48,7 +54,7 @@ class InputSnapshot:
 
 
 def engine_fixture(goal='Establish P', *, academic_requirements=None):
-    e = object.__new__(ResearchEngine)
+    e = bare_engine()
     e.instance = {'id': 'RI-evidence', 'feature_version': 5, 'lifecycle': {'state': 'active'},
         'goal_status': 'unresolved', 'goal_judgments': [],
         'sources': [], 'knowledge': {}, 'relations': [], 'decisions': {}, 'config': deepcopy(DEFAULT_CONFIG),
@@ -74,8 +80,7 @@ def engine_fixture(goal='Establish P', *, academic_requirements=None):
     e.runtime = {'feature_version': 5, 'last_observed_utc': TIME, 'tasks': {}, 'activities': {}, 'executions': {}, 'queue': [],
         'waiting_actions': {}, 'history': [], 'inputs': [], 'questions': [], 'question_links': [],
         'interpretations': {}, 'events': [], 'pending_events': [], 'status': 'ready'}
-    e.head, e._slots = 'input-snapshot', None
-    e._task_readiness = {}
+    e.head = 'input-snapshot'
     e.lifecycle_clock = lambda: TIME
     e.lifecycle_monotonic = lambda: 0
     e._documents = contracts.all_prompt_documents()
@@ -101,8 +106,7 @@ def reviewed_task(e, identifier='TK-1', **changes):
     task['profile_refs'] = [execution_profiles.profile_ref(p) for p in e.instance['execution_profiles'].values()
                             if p['role'] in {'research_work', 'supplemental_research'}]
     e.runtime['tasks'][identifier] = task
-    output = {'item_reviews': [{'item_id': i, 'decision': 'approved', 'missing_inputs': [],
-                               'evidence_refs': [identifier]} for i in contracts.CONTRACT_REVIEW_ITEMS]}
+    output = review_items([identifier])
     task['reviews'] = [planning.seal_contract_review(task, output, e.instance, e.runtime, execution_id='EX-review-' + identifier)]
     return task
 

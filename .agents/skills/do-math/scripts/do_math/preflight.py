@@ -13,7 +13,11 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError
 
-from .contracts import ROLES, all_prompt_documents, schema_for, action_schema
+from .contracts import OPERATING_DOCUMENTS, ROLES, all_prompt_documents, schema_for, action_schema
+from .file_io import compact_json_bytes
+
+# Installed documents checked besides the role reading map.
+INSTALLED_DOCUMENTS = ("README.md", "references/CLI-실행-계약.md", "requirements.txt", *OPERATING_DOCUMENTS)
 
 
 @lru_cache(maxsize=128)
@@ -27,10 +31,12 @@ def _check_schema_pair(text: str) -> None:
 
 
 def inspect_current_state(instance: dict, runtime: dict) -> dict:
-    """Read-only minimum gate for a loaded feature-5 state before recovery writes.
+    """Minimum structural gate of a current feature-5 state.
 
-    Repository/ref integrity, artifact bytes, and domain relations remain the
-    STORAGE and ENGINE checks that consume this structural result.
+    The state contract applies it to every validated state
+    (``record_schemas.validate_semantics``), so every loaded or published
+    state already satisfies it. Repository/ref integrity, artifact bytes and
+    domain relations are the contract's other checks.
     """
     errors: list[dict] = []
     if not isinstance(instance, dict) or not isinstance(runtime, dict):
@@ -51,42 +57,31 @@ def inspect_current_state(instance: dict, runtime: dict) -> dict:
         if not isinstance(runtime.get("last_observed_utc"), str):
             errors.append({"check": "clock_high_water", "reason": "feature-5 state has no persisted UTC high-water"})
         else:
-            from datetime import datetime
+            from .file_io import parse_utc
             try:
-                stamp = datetime.fromisoformat(runtime['last_observed_utc'].replace('Z', '+00:00'))
-                if stamp.tzinfo is None or stamp.utcoffset().total_seconds() != 0:
+                parse_utc(runtime['last_observed_utc'])
+                if not runtime['last_observed_utc'].endswith(('Z', '+00:00')):
                     raise ValueError('UTC offset required')
-            except (ValueError, TypeError):
+            except ValueError:
                 errors.append({'check': 'clock_high_water', 'reason': 'invalid UTC high-water timestamp'})
         if any(t.get('status') == 'ready' for t in runtime.get('tasks', {}).values()):
             errors.append({'check': 'derived_readiness', 'reason': 'derived task readiness cannot be persisted'})
     return {"valid": not errors, "errors": errors, "feature_version": version}
 
 
-def inspect_persisted_state(store, snapshot):
-    """Validate the exact current family bytes without publishing repairs."""
-    try:
-        head = store._resolve_snapshot(snapshot)
-        # The validated read checks envelopes, family schemas/relations, IDs
-        # and public events once per head; this inspection only reads it.
-        instance, runtime = store._read_documents(head)[:2]
-        result = inspect_current_state(instance, runtime)
-        result['snapshot'] = head
-        return result
-    except (ValueError, TypeError, KeyError, OSError, RuntimeError) as exc:
-        return {'valid': False, 'snapshot': snapshot,
-                'errors': [{'check': 'persisted_families', 'reason': str(exc)}]}
-
-
 def preserve_rejected_candidate(store, snapshot, *, raw, reason):
-    """Keep rejected bytes on the verified head, never publish the rejected state."""
+    """Keep rejected bytes on the verified head, never publish the rejected state.
+
+    Loading ``snapshot`` validates it under the state contract; a head that
+    does not load is damaged and is not rewritten.
+    """
     from .repository import new_id, canonical_json
     if not isinstance(raw, bytes):
         raise TypeError('candidate raw bytes required')
-    report = inspect_persisted_state(store, snapshot)
-    if not report['valid']:
-        raise ValueError('damaged current state cannot be rewritten: ' + str(report['errors']))
-    _, instance, runtime = store.load(snapshot)
+    try:
+        _, instance, runtime = store.load(snapshot)
+    except (ValueError, TypeError, KeyError, OSError, RuntimeError) as exc:
+        raise ValueError('damaged current state cannot be rewritten: ' + str(exc)) from exc
     identity = new_id('RJ')
     path = 'runtime/artifacts/' + identity + '/candidate.raw'
     audit = 'runtime/artifacts/' + identity + '/rejection.json'
@@ -104,8 +99,7 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
         roles = all_prompt_documents(skill_root=root)
         documents = {document["path"]: document["sha256"]
                      for assigned in roles.values() for document in assigned}
-        for name in ("README.md", "references/CLI-실행-계약.md", "계약/독립-운영.md",
-                     "scripts/operator_schedule.ps1", "requirements.txt"):
+        for name in INSTALLED_DOCUMENTS:
             path = root / name
             if not path.resolve().is_relative_to(root):
                 raise ValueError(f"document leaves the skill: {name}")
@@ -124,7 +118,7 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
         from .submission import extension_schema
         from .repository import exact_content_hash
         schemas = {role: schema_for(role) for role in ROLES}
-        schemas.update({"identity_review:" + stage: stage_schema(stage) for stage in ("initial", "organize", "answer", "judge")})
+        schemas.update({"identity_review:" + stage: stage_schema(stage) for stage in ("scope", "initial", "organize", "answer", "judge")})
         schemas.update({"intent_interpretation:" + stage: interpretation_schema(stage) for stage in ("interpret", "check")})
         schemas.update(review_research=research_schema(), independent_operator=OPERATOR_SCHEMA)
         schemas.update({role + ':bound_action': action_schema({'role': role}) for role in ROLES})
@@ -139,8 +133,7 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
         schemas["fixed_research:extensions"] = extension_schema({"role": "supplemental_research", "review_cycle_id": "fixed"})
         schemas['identity:extensions'] = extension_schema({'role': 'identity_review', 'review_cycle_id': 'fixed'})
         for schema in schemas.values():
-            _check_schema_pair(json.dumps(schema, ensure_ascii=False, sort_keys=True,
-                                          separators=(",", ":"), allow_nan=False))
+            _check_schema_pair(compact_json_bytes(schema).decode("utf-8"))
         checks.append({"check": "role_output_schemas", "status": "verified", "roles": len(ROLES),
                        "schemas": {name: exact_content_hash(schema) for name, schema in schemas.items()},
                        "claude_conversion": "Only top-level $schema and x-contract-id are removed; constraints are preserved."})

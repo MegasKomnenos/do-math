@@ -81,7 +81,8 @@ class KnowledgeIoTests(unittest.TestCase):
         import jsonschema
         from do_math import knowledge
         from do_math.state_contract import default_state_contract
-        ins, run = {'feature_version': 5, 'object_format': 'sha1'}, {'feature_version': 5}
+        from research_fixtures import current_state
+        ins, run = current_state({'object_format': 'sha1'})
         endpoints = []
         for title in ('Source endpoint', 'Target endpoint'):
             ins, run, kid = io.import_candidate(ins, run,

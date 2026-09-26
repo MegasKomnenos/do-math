@@ -15,32 +15,18 @@ from do_math.initialization import (  # noqa: E402
     initialize_state,
 )
 from do_math.knowledge import register_environment  # noqa: E402
-from do_math.lifecycle_engine import LifecycleEngineMixin  # noqa: E402
-from do_math.governance_engine import GovernanceEngineMixin
 from do_math.preflight import inspect_current_state  # noqa: E402
+from research_fixtures import bare_engine  # noqa: E402
 
 
-class FixtureEngine(LifecycleEngineMixin, GovernanceEngineMixin):
-    def __init__(self):
-        self.current_time = datetime(2026, 9, 20, tzinfo=timezone.utc)
-        self.lifecycle_clock = lambda: self.current_time.isoformat()
-        self.instance = {
-            "id": "RI-fixture", "feature_version": 5,
-            "config": {"research_reconsider_seconds": 60, "allowed_axioms": ["propext"]},
-            "knowledge": {}, "relations": [], "goal_judgments": [], "sources": [],
-            "trust_environments": {}, "active_trust_environment": None,
-        }
-        self.runtime = {"feature_version": 5, "status": "initializing", "tasks": {},
-                        "executions": {}, "activities": {}, "queue": [], "history": [],
-                        "questions": [], "last_observed_utc": self.current_time.isoformat()}
-        self.head = "snapshot-fixture"
-        self.instance, self.runtime = initialize_state(instance_id='RI-fixture', goal='G', workspace=Path(tempfile.gettempdir()), config={}, source_input='original request',
-            created_at=self.current_time.isoformat())
-        self.lifecycle_monotonic = lambda: 0.0
-        self._task_readiness = {}
-
-    def _enqueue(self, role, target=None, **extra):
-        self.runtime["queue"].append({"role": role, **({"target": target} if target else {}), **extra})
+def fixture_engine():
+    engine = bare_engine(head="snapshot-fixture")
+    engine.current_time = datetime(2026, 9, 20, tzinfo=timezone.utc)
+    engine.lifecycle_clock = lambda: engine.current_time.isoformat()
+    engine.instance, engine.runtime = initialize_state(instance_id='RI-fixture', goal='G', workspace=Path(tempfile.gettempdir()), config={}, source_input='original request',
+        created_at=engine.current_time.isoformat())
+    engine.lifecycle_monotonic = lambda: 0.0
+    return engine
 
 
 class LifecycleRedesignTests(unittest.TestCase):
@@ -59,7 +45,7 @@ class LifecycleRedesignTests(unittest.TestCase):
         self.assertEqual(runtime["availability"]["state"], "blocked")
 
     def test_formal_use_cannot_register_or_activate_an_environment(self):
-        engine = FixtureEngine()
+        engine = fixture_engine()
 
         with self.assertRaisesRegex(ValueError, 'approved'):
             engine._formal_environment()
@@ -68,7 +54,7 @@ class LifecycleRedesignTests(unittest.TestCase):
         self.assertEqual(engine.instance['trust_environments'], {})
 
     def test_clock_regression_blocks_new_lifecycle_action_without_rewriting_time(self):
-        engine = FixtureEngine()
+        engine = fixture_engine()
         engine.runtime["last_observed_utc"] = "2026-09-20T00:01:00+00:00"
 
         guard = engine._clock_guard()
@@ -86,9 +72,10 @@ class LifecycleRedesignTests(unittest.TestCase):
         self.assertFalse(result["satisfied"])
 
     def test_activation_requires_recorded_evidence_then_opens_the_correct_first_action(self):
-        from test_lifecycle_engine import FakeEngine, AdapterDouble
+        from test_lifecycle_engine import FakeEngine
+        from research_fixtures import FixtureAdapter
         from unittest.mock import patch
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for',return_value=AdapterDouble()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for',return_value=FixtureAdapter()):
             engine=FakeEngine(root)
             self.assertFalse(engine._activate_initialization()['activated'])
             engine.activate()
@@ -108,12 +95,11 @@ class LifecycleRedesignTests(unittest.TestCase):
 
 class FollowupTests(unittest.TestCase):
     def engine(self):
-        engine = FixtureEngine()
+        engine = fixture_engine()
         engine.instance, engine.runtime = initialize_state(instance_id='RI-test', goal='G',
             workspace=Path(tempfile.gettempdir()), config={},
             source_input='original', created_at=engine.current_time.isoformat())
         engine.lifecycle_monotonic = lambda: 0.0
-        engine._task_readiness = {}
         return engine
 
     def test_initialization_does_not_create_implicit_grants(self):
@@ -170,7 +156,7 @@ class ClockResolutionTests(unittest.TestCase):
     def test_actual_host_samples_do_not_report_quantization_as_regression(self):
         import time
         from datetime import timedelta
-        engine = FixtureEngine()
+        engine = fixture_engine()
         engine.lifecycle_clock = lambda: datetime.now(timezone.utc).isoformat()
         engine.lifecycle_monotonic = time.monotonic
         engine.runtime['last_observed_utc'] = (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
@@ -185,7 +171,7 @@ class ClockResolutionTests(unittest.TestCase):
         from datetime import timedelta
         from unittest.mock import patch
         from types import SimpleNamespace
-        engine = FixtureEngine()
+        engine = fixture_engine()
         ticks = iter([10., 10., 10.015625, 10.015625])
         engine.lifecycle_monotonic = lambda: next(ticks)
         with patch('do_math.lifecycle_engine.time.get_clock_info', return_value=SimpleNamespace(resolution=.015625)):
@@ -197,7 +183,7 @@ class ClockResolutionTests(unittest.TestCase):
         from datetime import timedelta
         for amount in (timedelta(microseconds=1), timedelta(seconds=60)):
             with self.subTest(amount=amount):
-                engine = FixtureEngine()
+                engine = fixture_engine()
                 engine.current_time += timedelta(seconds=120)
                 self.assertTrue(engine._clock_guard()['usable'])
                 engine.current_time -= amount
@@ -207,7 +193,7 @@ class ClockResolutionTests(unittest.TestCase):
 
     def test_elapsed_time_regression_outside_resolution_interval_is_rejected(self):
         from datetime import timedelta
-        engine = FixtureEngine()
+        engine = fixture_engine()
         tick = [0.]
         engine.lifecycle_monotonic = lambda: tick[0]
         self.assertTrue(engine._clock_guard()['usable'])

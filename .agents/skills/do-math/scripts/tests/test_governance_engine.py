@@ -4,8 +4,10 @@ import importlib.util
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import create_autospec
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.repository import exact_content_hash
+from research_fixtures import bare_engine, new_instance
 
 
 class CentralGovernanceTests(unittest.TestCase):
@@ -56,21 +58,13 @@ class CentralGovernanceTests(unittest.TestCase):
     def host(self):
         from test_redesign_GOVERNANCE import AuditRepairTests
         from do_math.engine import DEFAULT_CONFIG
-        from do_math.lifecycle_engine import LifecycleEngineMixin
         i, rt, bundle, request = AuditRepairTests().checked_import()
-        from do_math.academic_engine import AcademicEngineMixin
-        class Host(self.mixin(), LifecycleEngineMixin, AcademicEngineMixin):
-            _executor_running = False
-            _calls = None
-            _live_execution_ids = set()
-            _slots = None
-            def _enqueue(self, role, target=None, **kw):
-                from do_math.repository import new_id
-                identifier = new_id('AC')
-                self.runtime['queue'].append({'id': identifier, 'role': role, 'target': target, **kw})
-            def _complete_initial_intent(self, target): self.completed_input = target
-            def _activate_initialization(self): self.activation_attempted = True
-        h = Host(); h.instance = i; h.runtime = rt
+        self.mixin()
+        h = bare_engine(i, rt)
+        h._complete_initial_intent = create_autospec(h._complete_initial_intent,
+            side_effect=lambda target: setattr(h, 'completed_input', target))
+        h._activate_initialization = create_autospec(h._activate_initialization,
+            side_effect=lambda: setattr(h, 'activation_attempted', True))
         rt.setdefault('events', [])
         rt.setdefault('pending_events', [])
         for execution in rt['executions'].values(): execution.setdefault('status', 'queued')
@@ -85,7 +79,9 @@ class CentralGovernanceTests(unittest.TestCase):
         queue = deepcopy(h.runtime['queue'])
         self.assertTrue(h._governance_control(request))
         self.assertEqual(h.runtime['queue'], queue)
-        self.assertTrue(any(a.get('import_id') == bundle['id'] for a in queue))
+        # The product queue merges this follow-up into the same pending preparation request.
+        self.assertTrue(any(a['role'] == 'research_preparation' and 'checked user information' in a['reason']
+                            for a in queue))
 
     def test_initial_later_control_completes_initialization_without_new_check(self):
         h, bundle, request = self.host()
@@ -154,15 +150,15 @@ class CentralGovernanceTests(unittest.TestCase):
                 self.assertEqual(h.instance[field], public_i[field])
             self.assertEqual(h.runtime['reservations'], public_r['reservations'])
 
-    def test_configuration_rejects_operator_resources_and_running_mode_conversion(self):
+    def test_configuration_rejects_operator_resources(self):
+        from do_math.engine import DEFAULT_CONFIG
         h, _, _ = self.host()
         before = deepcopy(h.instance)
-        with self.assertRaises(ValueError): h._governance_control({'action': 'configure', 'origin': 'operator',
-            'config': {'session_limits': {'work': {}, 'operations': {}}}})
+        limits = deepcopy(DEFAULT_CONFIG['session_limits'])
+        limits['work'] = {model: count + 1 for model, count in limits['work'].items()}
+        with self.assertRaisesRegex(ValueError, 'resource settings require a user decision'):
+            h._governance_control({'action': 'configure', 'origin': 'operator', 'config': {'session_limits': limits}})
         self.assertEqual(h.instance, before)
-        h._executor_running = True
-        with self.assertRaises(ValueError): h._governance_control({'action': 'configure', 'origin': 'user',
-            'config': {'session_limits': {'work': {'x': 1}, 'operations': {'x': 1}}}})
 
     def test_nfd_original_reaches_actual_context_and_coverage(self):
         import hashlib, unicodedata
@@ -220,7 +216,7 @@ class CentralGovernanceTests(unittest.TestCase):
         h.instance, h.runtime = AuditRepairTests().audited()
         h.instance.update(knowledge={}, goal_judgments=[])
         h.runtime.update(events=[], pending_events=[], last_observed_utc='2020-01-01T00:00:00Z')
-        h._goal_basis_key = lambda: 'B'
+        h._goal_basis_key = create_autospec(h._goal_basis_key, return_value='B')
         action = {'role': 'goal_audit', 'basis': 'B', 'slot': 0, 'required': 1}
         execution = {'id': 'AUDITOR', 'role': 'goal_audit', 'action': deepcopy(action), 'status': 'ended'}
         h._bind_governance_input(action, execution, h._governance_context(action, {}))
@@ -274,7 +270,8 @@ class CentralGovernanceTests(unittest.TestCase):
                 h.instance.update(active_trust_environment='TE-audit', trust_environments={'TE-audit':trusted})
                 h.runtime['trust_bindings'] = {'TE-audit': binding}
                 h.runtime.update(questions=[], history=[])
-                h._ensure_academic_followup = lambda: setattr(h, 'academic_followup', True)
+                h._ensure_academic_followup = create_autospec(h._ensure_academic_followup,
+                    side_effect=lambda: setattr(h, 'academic_followup', True))
                 output['additional_audits'][0]['verdict'] = verdict
                 # Only proof availability is a double; mapping, judgment and
                 # final assurance are the actual production consumers.
@@ -320,13 +317,11 @@ class PublicGitGovernanceTests(unittest.TestCase):
         return ResearchEngine
 
     def initialized(self, root, goal='User approves P'):
-        import subprocess
-        from do_math.engine import initialize, DEFAULT_CONFIG
-        subprocess.run(['git', 'init', '-q', str(root)], check=True)
-        result = initialize(root, goal=goal, workspace=root/'work', config={
+        from do_math.engine import DEFAULT_CONFIG
+        instance_id = new_instance(root, goal=goal, workspace=root/'work', config={
             'scholarly_enabled': False, 'session_limits': deepcopy(DEFAULT_CONFIG['session_limits']),
              })
-        return self.engine_type()(root, result['instance_id'])
+        return self.engine_type()(root, instance_id)
 
     def execution_fixture(self, engine, eid, role, target=None):
         aid = 'ACT-' + eid

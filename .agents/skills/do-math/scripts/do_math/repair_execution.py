@@ -18,7 +18,7 @@ def route_failed_action(engine, action, execution_id, *, reason, front=False):
             engine._enqueue('maintenance', execution_id, initial_submission_diagnosis=True, reason=reason)
         return
     wait['next_owner'] = 'operational_review'
-    if action['role'] != 'operational_review' and action.get('recovery_attempt', 0) < 1:
+    if action['role'] != 'operational_review':
         engine._enqueue('operational_review', execution_id, front=front, reason=reason)
 
 
@@ -101,12 +101,8 @@ def continue_initial_retries(engine):
 
 def installation_sha256(root):
     """Identity of the whole installed skill; unchanged files reuse their digests."""
-    from .file_io import cached_sha256
-    root = Path(root)
-    files = {path.relative_to(root).as_posix(): cached_sha256(path)
-        for path in root.rglob('*') if path.is_file() and '__pycache__' not in path.parts
-        and (path.suffix in {'.py', '.md', '.ps1'} or path.name == 'requirements.txt')}
-    return exact_content_hash(files)
+    from .file_io import cached_sha256, installation_files
+    return exact_content_hash({name: cached_sha256(path) for name, path in installation_files(root).items()})
 
 
 def pending_installation_repair(runtime):

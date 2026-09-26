@@ -5,17 +5,17 @@ and noncompiler build attestations are synthetic; no full Mathlib build claim.
 """
 from copy import deepcopy
 from pathlib import Path
-import subprocess
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, create_autospec, patch
 from test_knowledge import candidate, fixture, add, evidence, declaration
 from test_categories import test_group as category
-from do_math.engine import ResearchEngine, initialize, control, query_records
+from do_math.engine import ResearchEngine, control, query_records
 from do_math import knowledge as k, knowledge_records as kr
 from do_math.repository import new_id
 from do_math import activities, formal
-from research_fixtures import trust_fixture
+from research_fixtures import bare_engine, new_instance, trust_fixture
+from state_fixtures import owner_calls
 from test_formal import actual_command
 import hashlib
 import json
@@ -26,10 +26,9 @@ class KnowledgeImportTests(unittest.TestCase):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.repo = Path(self.directory.name)
-        subprocess.run(['git', 'init', '-q', str(self.repo)], check=True)
-        result = initialize(self.repo, goal='Knowledge integration test fixture', workspace=self.repo / 'work',
-                            config={'scholarly_enabled': False})
-        self.engine = ResearchEngine(self.repo, result['instance_id'])
+        instance_id = new_instance(self.repo, goal='Knowledge integration test fixture', workspace=self.repo / 'work',
+                                   config={'scholarly_enabled': False})
+        self.engine = ResearchEngine(self.repo, instance_id)
 
     def send(self, **config):
         control(self.repo, self.engine.instance['id'], 'knowledge', config=config)
@@ -109,7 +108,7 @@ class KnowledgeImportTests(unittest.TestCase):
 
 class FormalBoundaryTests(unittest.TestCase):
     def host(self, workspace, toolchain=None):
-        e = object.__new__(ResearchEngine)
+        e = bare_engine()
         from research_fixtures import trust_environment, validation_fixture
         from do_math.trust_validation import environment_errors
         request = trust_fixture(workspace, toolchain['configured_command'] if toolchain else ['fixture'])
@@ -137,38 +136,38 @@ class FormalBoundaryTests(unittest.TestCase):
         e.head = 'fixture-snapshot'
         for name in ('_save', '_controls', '_execution_profile', '_settle_activity', '_remove_action',
                      '_start_identity_review', '_action_lifecycle_gate', '_require_action_clock', '_enqueue'):
-            setattr(e, name, Mock())
+            setattr(e, name, create_autospec(getattr(e, name)))
         from do_math.engine import DEFAULT_CONFIG
         from do_math.execution_profiles import build_profiles
         profiles = build_profiles({**DEFAULT_CONFIG, 'lean_command': trust['toolchain']['configured_command'], })
         e._execution_profile.return_value = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'formal_check')
         # Registration is a host double here; no real shared reservation exists.
         # Compiler subprocesses remain real in PortableFormalBoundaryTests.
-        e._release_call_slot = Mock(return_value=True)
+        from do_math.session_slots import SessionSlots
+        e._session_slots = create_autospec(e._session_slots, return_value=create_autospec(SessionSlots, instance=True))
         activity = activities.open_activity(e.runtime, activity_id='AT-fixture', activity_kind='formal_check',
             owner_ref='fixture', input_refs=[kid], opened_at='2026-09-20T00:00:00Z')
-        e._activity_for_action = Mock(return_value=activity)
-        e._check_conversations = Mock(return_value=False)
+        e._activity_for_action = create_autospec(e._activity_for_action, return_value=activity)
+        e._check_conversations = create_autospec(e._check_conversations, return_value=False)
         def register(action, row):
             from research_fixtures import dispatched_launch
             row['launch_ticket'] = dispatched_launch(row['id'], e._execution_profile.return_value)
             row.update(action=action, activity_id='AT-fixture')
             e.runtime['executions'][row['id']] = row
             return row
-        e._register_execution = register
+        e._register_execution = create_autospec(e._register_execution, side_effect=register)
         # This fixture replaces admission/storage, while the compiler Job is real.
         # Acknowledge its suspended start through that same synthetic owner.
         def started(execution_id, identity):
-            e.runtime['executions'][execution_id]['process'] = deepcopy(identity)
             e._save()
-        e._machine_started = started
+        e._machine_started = create_autospec(e._machine_started, side_effect=started)
         e.formal_verifier = Mock(return_value=evidence(e.instance, kid))
         return e, kid
 
     def test_formal_consumer_passes_runtime_and_preapproved_toolchain(self):
         with tempfile.TemporaryDirectory() as d:
             e, kid = self.host(Path(d))
-            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}):
+            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
                 e._formal({'id': new_id('AC'), 'role': 'formal_check', 'target': kid})
             self.assertEqual(e.formal_verifier.call_args.kwargs['expected_toolchain'],
                              e.instance['trust_environments']['TE-old']['toolchain'])
@@ -187,7 +186,7 @@ class FormalBoundaryTests(unittest.TestCase):
             e, kid = self.host(Path(d))
             e._start_identity_review.side_effect = ValueError('adopted review policy is required before review admission')
             action = {'id': new_id('AC'), 'role': 'formal_check', 'target': kid}
-            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}):
+            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
                 e._formal(action)
             identifier, waiting = next(iter(e.runtime['waiting_actions'].items()))
             self.assertNotEqual(identifier, action['id'])
@@ -215,7 +214,7 @@ class FormalBoundaryTests(unittest.TestCase):
             environment = e.instance['trust_environments']['TE-old']
             olean = Path(environment['toolchain']['executable']).parents[1] / 'lib/lean/Init/Prelude.olean'
             olean.write_text('changed', encoding='utf-8')
-            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}):
+            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
                 e._formal({'id': new_id('AC'), 'role': 'formal_check', 'target': kid})
             e.formal_verifier.assert_not_called()
             execution = next(iter(e.runtime['executions'].values()))
@@ -227,11 +226,11 @@ class FormalBoundaryTests(unittest.TestCase):
             e._enqueue.assert_not_called()
 
     def test_revision_consumer_passes_declared_scope_and_queues_replacement(self):
-        e = object.__new__(ResearchEngine)
+        e = bare_engine()
         e.instance, e.runtime, ids = fixture()
         e.runtime.update(review_cycles={}, executions={})
-        e._lifecycle_event = Mock()
-        e._enqueue = Mock()
+        e._lifecycle_event = create_autospec(e._lifecycle_event)
+        e._enqueue = create_autospec(e._enqueue)
         kid = ids['a']
         changes = {'summary': 'Clarified summary'}
         impact = declaration(e.instance, e.runtime, k.revision_roots(e.instance, kid))
@@ -243,14 +242,14 @@ class FormalBoundaryTests(unittest.TestCase):
         kr.validate_knowledge_records(e.instance)
 
     def test_review_starts_from_split_proposal_without_nested_authorities(self):
-        e = object.__new__(ResearchEngine)
+        e = bare_engine()
         e.instance, e.runtime, ids = fixture()
         e.instance['config'] = {'reviewers': 2, 'review_rounds': 1}
         from do_math.review_policy import build_review_policy
         e.instance['review_policy'] = build_review_policy(reviewer_count=2, max_rounds=1)
         e.runtime['review_cycles'] = {}
         e.head = 'fixture-snapshot'
-        e._enqueue = Mock()
+        e._enqueue = create_autospec(e._enqueue)
         cycle = e._start_identity_review(ids['a'])
         proposal = e.runtime['review_cycles'][cycle]['proposal']
         self.assertEqual(proposal['lean_code'], candidate()['lean_code'])
@@ -284,7 +283,7 @@ class PortableFormalBoundaryTests(unittest.TestCase):
                 change(e)
             return result
         e.formal_verifier = Mock(side_effect=verify)
-        with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}):
+        with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
             e._formal({'id': new_id('AC'), 'role': 'formal_check', 'target': kid})
         artifacts = {path: raw for call in e._save.call_args_list for path, raw in (call.args[0] if call.args else {}).items()}
         result = json.loads(next(raw for path, raw in artifacts.items() if path.endswith('/formal.json')))
@@ -301,7 +300,7 @@ class PortableFormalBoundaryTests(unittest.TestCase):
             self.assertIn('True.intro', result['dependency_closure']['truth'])
             execution = next(iter(e.runtime['executions'].values()))
             self.assertEqual((execution['status'], execution['outcome']), ('ended', 'output_accepted'))
-            self.assertIsNone(e.runtime['active_execution'])
+            self.assertEqual([x['id'] for x in e.runtime['executions'].values() if x['status'] != 'ended'], [])
             e._start_identity_review.assert_called_once_with(kid)
             e._settle_activity.assert_called_once_with(execution['id'])
             import os
@@ -327,7 +326,7 @@ class PortableFormalBoundaryTests(unittest.TestCase):
                 observed.append(result)
                 return result
             e.formal_verifier = Mock(side_effect=verify)
-            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}):
+            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
                 e._formal({'id': new_id('AC'), 'role': 'formal_check', 'target': kid})
             record = e.instance['formal_results'][record['id']]
             self.assertEqual(record['publication_state'], 'accepted')

@@ -7,18 +7,22 @@ import base64
 import hashlib
 import json
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 from typing import Any
 
-from .codex_adapter import CodexExecAdapter
-from .claude_adapter import ClaudePrintAdapter
+from .claude_adapter import provider_adapter
+from .control_contracts import REQUEST_ID_PATTERN
 from .engine import ResearchEngine, control, initialize, json_safe
 from .git_store import GitStateStoreConflict, GitStateStoreError, GitStateStoreLockError
 from .engine import _repository as ResearchRepository
 from . import scheduled_operator
+from .file_io import unique_pairs
 from .repository import canonical_json, exact_content_hash
+from .state_checks import inspection_exit_code
+
+# Envelope fields every response carries, before its ``result`` or ``error``.
+RESPONSE_FIELDS = ('schema_version', 'response_contract', 'request_id', 'command', 'exit_code')
 
 
 class CliInputError(ValueError):
@@ -30,19 +34,10 @@ class _Parser(argparse.ArgumentParser):
         raise CliInputError(message)
 
 
-def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    value: dict[str, Any] = {}
-    for key, item in pairs:
-        if key in value:
-            raise CliInputError(f"duplicate JSON key: {key}")
-        value[key] = item
-    return value
-
-
 def _json_document(path: str) -> tuple[dict[str, Any], str]:
     try:
         text = Path(path).read_bytes().decode("utf-8")
-        value = json.loads(text, object_pairs_hook=_pairs)
+        value = json.loads(text, object_pairs_hook=unique_pairs)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
         raise CliInputError(f"cannot read JSON file {path}: {error}") from error
     if not isinstance(value, dict):
@@ -107,7 +102,6 @@ def build_parser() -> _Parser:
     timeline.add_argument("--snapshot")
     timeline.add_argument("--format", choices=("json", "csv"), default="json")
     timeline.add_argument("--timezone", default="Asia/Seoul")
-    timeline.add_argument("--include-operator", action="store_true", help="also read separately observed local operator logs")
     timeline.add_argument('--include-operations', action='store_true', help='include separately observed operational phase timings')
     run.add_argument("--max-steps", type=int)
     run.add_argument("--watch", action="store_true")
@@ -225,21 +219,11 @@ def build_parser() -> _Parser:
 
 
 def _control(args: argparse.Namespace, action: str, *, text: str = "", config: dict[str, Any] | None = None) -> dict[str, Any]:
-    explicit, key = getattr(args, 'request_id', None), getattr(args, 'idempotency_key', None)
-    if explicit is not None and key is not None:
-        raise CliInputError('request_id and idempotency_key are mutually exclusive')
-    identity_config = config or {}
-    if action == 'source':
-        path = Path(identity_config['path'])
-        raw = path.read_bytes()
-        identity_config = {'name': identity_config.get('name') or path.name,
-            'body_base64': base64.b64encode(raw).decode('ascii'), 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
-    identifier = explicit if explicit is not None else control_request_id(args.instance, action, text=text, config=identity_config,
-                                               origin=getattr(args,'origin','user'), idempotency_key=key)
-    args._resolved_request_id = identifier
-    extra = {'request_id': identifier}
-    request = control(args.repository, args.instance, action, text=text, config=identity_config,
-                      origin=getattr(args, "origin", "user"), **extra)
+    # ENGINE normalizes a source and derives the request ID; the CLI reports the ID it returns.
+    request = control(args.repository, args.instance, action, text=text, config=config or {},
+                      origin=getattr(args, "origin", "user"), request_id=getattr(args, 'request_id', None),
+                      idempotency_key=getattr(args, 'idempotency_key', None))
+    args._resolved_request_id = request['request_id']
     # ENGINE's replay receipt is tied to the original publication. Do not run
     # unrelated pending controls or replace that receipt with current state.
     if request.get('effect') in {'applied', 'rejected'} and request.get('snapshot'):
@@ -293,7 +277,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     if command == "timeline":
         from .reporting import timeline, timeline_csv
         value = timeline(args.repository, args.instance, snapshot=args.snapshot, timezone_name=args.timezone,
-                         include_operator=args.include_operator, include_operations=args.include_operations)
+                         include_operations=args.include_operations)
         return (timeline_csv(value) if args.format == "csv" else value), 0
     if command == "init":
         _require_git(args.repository, args.create_repository)
@@ -327,7 +311,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         if args.task and args.task not in runtime['tasks']:
             raise CliInputError('unknown task')
         selected = selection(instance['config'], {'role':args.role, 'target':args.task},
-                             runtime['tasks'], instance['knowledge'], profiles=instance['execution_profiles'])
+                             runtime['tasks'], instance['knowledge'], instance=instance)
         return {'snapshot':head, 'selection':selected,
                 'profile':resolve_profile(instance['execution_profiles'], selected['profile_ref'])}, 0
     if command == 'prepare-import-approval':
@@ -446,51 +430,45 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         prefixes = ("research/", "runtime/") if args.all else ("research/",)
         return ResearchRepository(args.repository, args.instance).export(args.destination, args.snapshot, prefixes), 0
     if command == "check":
-        from .state_checks import inspection_exit_code
         result = ResearchEngine(args.repository, args.instance).check(snapshot=args.snapshot, requested_areas=args.kinds)
         code = inspection_exit_code(result['inspection'])
         result.update(exit_code=code, passed=code == 0)
         return result, code
     if command == "profile":
-        if args.provider == "claude":
-            if args.codex_path:
-                raise CliInputError("--codex-path requires --provider codex")
-            path = args.claude_path or shutil.which("claude") or "claude"
-            adapter = ClaudePrintAdapter(path)
-        else:
-            if args.claude_path:
-                raise CliInputError("--claude-path requires --provider claude")
-            path = args.codex_path or shutil.which("codex") or "codex"
-            adapter = CodexExecAdapter(path)
-        result = json_safe(adapter.describe())
+        paths = {"codex": args.codex_path, "claude": args.claude_path}
+        other = next(name for name in paths if name != args.provider)
+        if paths[other]:
+            raise CliInputError(f"--{other}-path requires --provider {other}")
+        result = json_safe(provider_adapter(args.provider, paths[args.provider]).describe())
         return result, 0 if result.get("verified") else 1
     if command == "operator":
         workspace = _operator_workspace(args.repository, args.instance, args.workspace)
         mode = args.mode
         if mode in {"install", "uninstall", "status", "start", "start-operator"}:
-            _, initialized, _ = ResearchRepository(args.repository, args.instance).load()
-            configuration = initialized["config"]
             action = {"start": "start-engine", "start-operator": "start-operator"}.get(mode, mode)
             if action == "start-engine":
                 guard = scheduled_operator.engine_start_guard(args.repository, args.instance, workspace)
                 if guard["outcome"] != "startable":
                     return guard, 0
-            return scheduled_operator.schedule(action, repository=args.repository, instance=args.instance, workspace=workspace,
-                                               interval_seconds=configuration["operator_interval_seconds"],
-                                               operator_timeout_seconds=configuration["operator_timeout_seconds"]), 0
+            settings = {}
+            if action == "install":
+                configuration = ResearchRepository(args.repository, args.instance).load()[1]["config"]
+                settings = {"interval_seconds": configuration["operator_interval_seconds"],
+                            "operator_timeout_seconds": configuration["operator_timeout_seconds"]}
+            return scheduled_operator.schedule(action, repository=args.repository, instance=args.instance,
+                                               workspace=workspace, **settings), 0
         if mode == "hold":
             marker = scheduled_operator.hold(workspace, reason=args.reason)
-            pause = _control(args, "pause", text="User requested scheduled operator HOLD " + marker["id"])
+            pause = _control(args, "pause", text=scheduled_operator.hold_pause_reason(marker["id"]))
             try:
-                cleanup = scheduled_operator.schedule("cancel-wake", repository=args.repository, instance=args.instance, workspace=workspace)
-                (workspace / "operator/wake-registration.json").unlink(missing_ok=True)
+                cleanup = scheduled_operator.cancel_wake(args.repository, args.instance, workspace)
             except (RuntimeError, OSError) as error:
                 cleanup = {"status": "failed", "error": str(error), "hold_still_blocks_wake": True}
             return {"hold": marker, "pause": pause, "wake_cleanup": cleanup}, 0
         if mode == "release":
             released = scheduled_operator.release(workspace)
             marker = released.get("released")
-            expected = "User requested scheduled operator HOLD " + marker["id"] if marker else None
+            expected = scheduled_operator.hold_pause_reason(marker["id"]) if marker else None
             if expected:
                 released["resume"] = _control(args, "resume", text="User released scheduled operator HOLD " + marker["id"],
                                               config={"expected_user_pause_reason": expected})
@@ -508,8 +486,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
 def _human_status(status: dict[str, Any]) -> str:
     from .reporting import display_time
     budget = status["budget"]
-    budget_text = "sessions: " + "; ".join(pool + " " + ", ".join(
-        f"{model} {row['used']}/{row['limit']}" for model, row in values.items()) for pool, values in budget.items())
+    budget_text = "work sessions: " + ", ".join(f"{model} {row['used']}/{row['limit']}" for model, row in budget.items())
     tasks = status["tasks"]
     assurance = status["assurance"]
     task_text = ", ".join(f"{task['id']}={task['status']}" for task in tasks) or "none"
@@ -548,20 +525,6 @@ def _human_status(status: dict[str, Any]) -> str:
     return '\n'.join(lines)
 
 
-def control_request_id(instance_id, action, *, text='', config=None, origin='user', idempotency_key=None):
-    """Hash normalized content, not mutable admission state or delivery time.
-
-    Source controls must pass their normalized name/body/hash/size payload.
-    ENGINE may call this after resolving source bytes, before inbox admission.
-    """
-    if idempotency_key is not None and (not isinstance(idempotency_key,str) or not idempotency_key):
-        raise CliInputError('idempotency_key must be a nonempty string')
-    value = {'schema_version':5,'command':action,'caller':origin,
-             'payload':{'instance_id':instance_id,'text':text,'config':config or {}},
-             'idempotency_key':idempotency_key}
-    return 'UC-' + exact_content_hash(value)
-
-
 def _command_parsers(parser):
     return next(action.choices for action in parser._actions if isinstance(action,argparse._SubParsersAction))
 
@@ -571,7 +534,7 @@ def _request_schema(parser):
         'properties':{'schema_version':{'type':'integer','const':5},
             'command':{'type':'string','enum':list(_command_parsers(parser))},
             'caller':{'type':'string','enum':['user','operator']},'payload':{'type':'object'},
-            'request_id':{'type':'string','minLength':1,'maxLength':128,'pattern':'^[A-Za-z0-9_-]+$'},
+            'request_id':{'type':'string','pattern':REQUEST_ID_PATTERN},
             'idempotency_key':{'type':'string','minLength':1}}}
 
 
@@ -613,8 +576,9 @@ def describe_commands(parser, command=None):
         raise CliInputError('unknown command for --describe')
     return {'schema_version':5,'commands':commands,'request_schema':_request_schema(parser),
         'request_fields':['schema_version','command','caller','payload','request_id','idempotency_key'],
-        'response_fields':['schema_version','request_id','command','exit_code','result OR error'],
-        'inspection_exit_codes':{'healthy':0,'degraded':1,'blocked':1,'incomplete':1},
+        'response_fields':[*RESPONSE_FIELDS,'result OR error'],
+        'inspection_exit_codes':{status:inspection_exit_code({'status':status})
+                                 for status in ('healthy','degraded','blocked','incomplete')},
         'error_exit_codes':{'input_error':2,'tool_error':5,'contract_error':5},
         'caller_authority':'caller is a declared origin, not strong authentication'}
 
@@ -624,11 +588,10 @@ def _json_arguments(parser, request):
     errors = list(Draft202012Validator(_request_schema(parser)).iter_errors(request))
     if errors:
         raise CliInputError('invalid command request: ' + errors[0].message)
-    command = request.get('command')
+    # The request schema has already fixed the command and caller to their enums.
+    command = request['command']
     description = describe_commands(parser, command)
-    if command not in description['commands']:
-        raise CliInputError('command request requires a command')
-    payload = request.get('payload')
+    payload = request['payload']
     errors = list(Draft202012Validator(description['commands'][command]['payload_schema']).iter_errors(payload))
     if errors:
         raise CliInputError('invalid command payload: ' + errors[0].message)
@@ -636,8 +599,6 @@ def _json_arguments(parser, request):
     subparser = _command_parsers(parser)[command]
     known = {action.dest:action for action in subparser._actions}
     if 'caller' in request:
-        if request['caller'] not in {'user','operator'}:
-            raise CliInputError('caller must be user or operator')
         if 'origin' in known:
             if 'origin' in payload and payload['origin'] != request['caller']:
                 raise CliInputError('caller differs from payload origin')
@@ -671,8 +632,8 @@ def _emit(value, *, command=None, request_id=None, code=0, error=False, force_js
     if isinstance(value, str) and not force_json:
         print(value)
     else:
-        envelope = {'schema_version':5,'response_contract':'do-math-cli/5','request_id':request_id,
-                    'command':command,'exit_code':code,'error' if error else 'result':value}
+        fields = dict(zip(RESPONSE_FIELDS, (5, 'do-math-cli/5', request_id, command, code)))
+        envelope = {**fields, 'error' if error else 'result': value}
         print(json.dumps(json_safe(envelope), ensure_ascii=False, sort_keys=True))
 
 

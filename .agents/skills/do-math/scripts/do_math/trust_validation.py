@@ -9,7 +9,7 @@ from copy import deepcopy
 from pathlib import Path
 import re
 
-from .file_io import file_fingerprint, fingerprint_json
+from .file_io import file_fingerprint, fingerprint_json, is_sha256
 
 AXIOMS = ('propext', 'Classical.choice', 'Quot.sound')
 _AXIOM_SET = frozenset(AXIOMS)
@@ -17,14 +17,13 @@ ENVIRONMENT_FIELDS = {'id', 'status', 'toolchain', 'allowed_axioms', 'source_ref
 OPTIONAL_FIELDS = {'validation_receipt', 'invalidated_reason'}
 BINDING_FIELDS = ('baseline', 'fingerprint_sha256', 'content_sha256', 'validation_sha256')
 REGISTER_FIELDS = {'operation', 'toolchain', 'allowed_axioms', 'toolchain_record', 'binding'}
-_HASH = re.compile('[0-9a-f]{64}')
 _RECORD_ID = re.compile('TC-[0-9a-f]{64}')
 
 
 def binding_errors(binding):
     if (not isinstance(binding, dict) or set(binding) != set(BINDING_FIELDS)
             or type(binding['baseline']) is not int or binding['baseline'] < 0
-            or any(not isinstance(binding[k], str) or not _HASH.fullmatch(binding[k]) for k in BINDING_FIELDS[1:])):
+            or any(not is_sha256(binding[k]) for k in BINDING_FIELDS[1:])):
         return ['trust binding requires a baseline index and its fingerprint, content and validation digests']
     return []
 

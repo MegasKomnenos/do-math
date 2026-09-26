@@ -2,7 +2,7 @@
 from copy import deepcopy
 import json
 
-from . import questions
+from . import academic, questions
 
 
 def _pointer(value, pointer):
@@ -68,25 +68,21 @@ class QuestionEngineMixin:
         extension = self.runtime["executions"][execution_id].get("extensions", {})
         rows = deepcopy(self.runtime.get("question_links", []))
         by_id = {row["id"]: row for row in rows}
+        role = self.runtime["executions"][execution_id].get("role")
         seen = set()
         for resolution in extension.get("question_resolutions", []):
             identifier = resolution["question_id"]
-            if identifier in seen or identifier not in by_id: raise ValueError("question resolutions require distinct known IDs")
+            # The receiver's schema already fixed disposition, reason and evidence.
+            error = questions.resolution_error(None if identifier in seen else by_id.get(identifier), role)
+            if error:
+                raise ValueError(error)
             seen.add(identifier)
             row = by_id[identifier]
-            if row["status"] != "open" or row["owner"] not in {"research", "operations"}:
-                raise ValueError("question resolution is no longer applicable")
-            role = self.runtime["executions"][execution_id].get("role")
-            if row["owner"] == "operations" and role not in {"operational_review", "maintenance"}: raise ValueError("operations question needs operations owner")
-            if resolution.get("disposition") not in {"resolved", "superseded"} or not resolution.get("reason") or not resolution.get("evidence_refs"):
-                raise ValueError("resolution needs disposition, reason and evidence")
-            from .academic import _evidence
-            def resolve(ref):
-                return self.store.read_many([ref],self.head).get(ref)
-            for ref in resolution["evidence_refs"]: _evidence(self.instance, self.runtime, ref, resolve)
-            row.update(status=resolution["disposition"], resolution_ref=execution_id,
-                       unresolved_target_ids=[],
-                       resolution_evidence=deepcopy(resolution["evidence_refs"]), resolution_reason=resolution["reason"])
+            for ref in resolution["evidence_refs"]:
+                academic.evidence_record(self.instance, self.runtime, ref, self._academic_evidence)
+            questions.close(row, kind="ai_resolution", status=resolution["disposition"], resolution_ref=execution_id,
+                            affected_ids=questions.open_targets(row),
+                            evidence={"evidence_refs": resolution["evidence_refs"], "reason": resolution["reason"]})
         self.runtime["question_links"] = rows
 
     def _record_review_questions(self, cycle, execution_id):

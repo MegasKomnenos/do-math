@@ -45,23 +45,24 @@ class ModelMetadataBoundaryTests(unittest.TestCase):
     def test_task_work_allowlist_does_not_block_the_independent_contract_reviewer(self):
         from do_math import model_policy
         config = deepcopy(DEFAULT_CONFIG)
-        profiles = build_profiles(config)['execution_profiles']
+        instance = build_profiles(config)
+        profiles = instance['execution_profiles']
         work = next(p for p in profiles.values() if p['role'] == 'research_work'
                     and p['ai']['tier'] == 'low')
         tasks = {'TK-one': {'profile_refs': [profile_ref(work)], 'model_assessment': {
             'difficulty': 'low', 'importance': 'low', 'reason': 'Bounded work'}}}
         selected = model_policy.selection(config,
-            {'role': 'task_contract_review', 'target': 'TK-one'}, tasks, {}, profiles=profiles)
+            {'role': 'task_contract_review', 'target': 'TK-one'}, tasks, {}, instance=instance)
         reviewer = profiles[selected['profile_ref']['id']]
         self.assertEqual(reviewer['role'], 'task_contract_review')
         self.assertEqual(reviewer['ai']['tier'], config['role_tiers']['task_contract_review'])
         selected_work = model_policy.selection(config,
-            {'role': 'research_work', 'target': 'TK-one'}, tasks, {}, profiles=profiles)
+            {'role': 'research_work', 'target': 'TK-one'}, tasks, {}, instance=instance)
         self.assertEqual(selected_work['profile_ref'], profile_ref(work))
         tasks['TK-one']['profile_refs'] = []
         with self.assertRaisesRegex(ValueError, 'permitted role/model edition'):
             model_policy.selection(config, {'role': 'research_work', 'target': 'TK-one'},
-                tasks, {}, profiles=profiles)
+                tasks, {}, instance=instance)
 
     def test_assessment_is_preserved_without_changing_the_candidate_wire_shape(self):
         engine=routing_engine()

@@ -19,10 +19,83 @@ from unittest.mock import patch
 from do_math.contracts import CONTRACT_REVIEW_ITEMS, ROLES
 from do_math.control_transport import ControlTransport
 from do_math.execution_profiles import profile_ref
+from do_math.file_io import sha256_file
 from do_math.repository import canonical_json
 
 IDENTITY = {"host": "CORE_TESTS synthetic host", "implementation": "CORE_TESTS synthetic adapter"}
 from do_math.trust_validation import AXIOMS
+
+
+def bare_engine(instance=None, runtime=None, *, head="fixture-head", store=None, runner=None,
+                formal_verifier=None):
+    """A ``ResearchEngine`` over supplied state, without loading a repository.
+
+    The product initializes the process-local owner state, so the engine carries
+    every attribute a loaded engine has. ``_save`` compares the state with what
+    ``store`` holds for ``head`` (``published_state``); a fixture head the store
+    never published holds nothing, so the first ``_save`` publishes to ``store``.
+    """
+    from do_math.engine import ResearchEngine
+    engine = object.__new__(ResearchEngine)
+    engine._init_process_state()
+    engine.instance, engine.runtime, engine.head = instance, runtime, head
+    engine.store, engine.runner, engine.formal_verifier = store, runner, formal_verifier
+    return engine
+
+
+def current_state(instance=None, runtime=None):
+    """The smallest (instance, runtime) the current state contract accepts, plus the caller's fields.
+
+    Every validated state passes the lifecycle gate (``preflight.inspect_current_state``):
+    feature version 5, a lifecycle with its exact original input, a live runtime
+    status and a UTC clock high-water. Storage tests extend this with the
+    families they examine.
+    """
+    raw = b"fixture input"
+    base_instance = {"feature_version": 5, "lifecycle": {"state": "initializing", "immutable_input": {
+        "text": raw.decode(), "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}}}
+    base_runtime = {"feature_version": 5, "status": "initializing",
+                    "last_observed_utc": "2026-01-01T00:00:00+00:00"}
+    return {**base_instance, **(instance or {})}, {**base_runtime, **(runtime or {})}
+
+
+class StateStore:
+    """The persisted head of an in-memory engine double.
+
+    It implements the repository calls an in-memory engine reaches: ``load``
+    reads the engine's current state as that head's published state,
+    ``published_state`` holds no cached state (so ``_save`` always publishes),
+    and ``save_with_state`` publishes a candidate as the next head and keeps a
+    copy in ``published``. Any other repository use fails as it would without a store.
+    """
+    def __init__(self, engine):
+        self.engine = engine
+        self.published = []
+
+    def published_state(self, head):
+        return None
+
+    def load(self, snapshot=None):
+        return self.engine.head, deepcopy(self.engine.instance), deepcopy(self.engine.runtime)
+
+    def save_with_state(self, expected_head, instance, runtime, *, artifacts=None):
+        self.published.append({"instance": deepcopy(instance), "runtime": deepcopy(runtime),
+                               "artifacts": dict(artifacts or {})})
+        return f"{expected_head}+{len(self.published)}", deepcopy(instance), deepcopy(runtime)
+
+
+def new_instance(repository, *, goal, workspace=None, **options):
+    """Create a Git repository and initialize one instance in it through the public ``initialize``.
+
+    ``workspace`` defaults to ``repository / 'work'``; ``options`` pass to ``initialize``.
+    Returns the new instance ID.
+    """
+    import subprocess
+    from do_math.engine import initialize
+    repository = Path(repository)
+    subprocess.run(["git", "init", "-q", str(repository)], check=True)
+    return initialize(repository, goal=goal, workspace=repository / "work" if workspace is None else workspace,
+                      **options)["instance_id"]
 
 
 def read_fixture_context(prompt, workspace):
@@ -74,14 +147,19 @@ def bind_candidates(output, context):
                                  if g["status"] == "active" and "research_work" in g.get("roles", [])]
 
 
+def review_items(evidence_refs, *, decision="approved", next_owner="research_plan", findings=()):
+    """A contract review output that reviews every product contract item alike."""
+    return {"item_reviews": [{"item_id": item, "decision": decision,
+        "evidence_refs": list(evidence_refs), "findings": list(findings),
+        "missing_inputs": ["Contract clarification"] if decision == "unresolved" else [],
+        "next_owner": next_owner} for item in CONTRACT_REVIEW_ITEMS]}
+
+
 def contract_review(context, *, decision="approved", findings=()):
     task = context["task"]
     if not task.get("completion_obligations") or not task.get("scope"):
         raise AssertionError("The review fixture requires the actual structured contract")
-    return {"item_reviews": [{"item_id": item, "decision": decision,
-        "evidence_refs": [task["id"]], "findings": list(findings),
-        "missing_inputs": ["Contract clarification"] if decision == "unresolved" else [],
-        "next_owner": "research_preparation"} for item in CONTRACT_REVIEW_ITEMS]}
+    return review_items([task["id"]], decision=decision, next_owner="research_preparation", findings=findings)
 
 
 def scope_response(context):
@@ -140,6 +218,17 @@ def supply_observation_rules(candidates, extensions):
             'subject': {'kind': 'counter', 'id': 'attempts'},
             'basis': {'source': 'checkpoint', 'unit': 'count'}, 'threshold': 10,
             'required_evidence': ['checkpoint.json']}])
+
+
+def write_checkpoint(workspace, *, counters=None, iteration=None, claim="fixture progress"):
+    """Write a valid worker checkpoint; a tracker reads counters and iterations only from here."""
+    value = {"current_claim": claim, "evidence_paths": [], "attempts": [], "remaining_work": [],
+             "next_step": "continue", "progress_state": "working"}
+    if counters is not None:
+        value["counters"] = counters
+    if iteration is not None:
+        value["iteration"] = iteration
+    Path(workspace, "checkpoint.json").write_text(json.dumps(value), encoding="utf-8")
 
 
 def prepared_rule_conditions(task_ids):
@@ -298,9 +387,13 @@ def producer_result(result, arguments):
     return result
 
 
+FIXTURE_CAPABILITIES = {"jsonl": True, "model": True, "structured_output": True}
+
+
 class FixtureAdapter:
-    def __init__(self, capabilities):
-        self.capabilities = capabilities
+    """The synthetic observation double for ``LocalCLIAdapter``'s probe surface."""
+    def __init__(self, capabilities=FIXTURE_CAPABILITIES):
+        self.capabilities = dict(capabilities)
 
     def capability_identity(self):
         return deepcopy(IDENTITY)
@@ -317,7 +410,7 @@ class FixtureAdapter:
 def install_adapter_fixture(test_case):
     """Replace only external observation; retain evidence hashing and capability gates."""
     def adapter(profile):
-        return FixtureAdapter({"jsonl": True, "model": True, "structured_output": True})
+        return FixtureAdapter()
     mocked = patch("do_math.initialization.adapter_for", side_effect=adapter)
     mocked.start()
     test_case.addCleanup(mocked.stop)
@@ -367,13 +460,12 @@ def trust_fixture(root, command):
         path = directory / 'toolchain' / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(("CORE_TESTS synthetic " + relative + " for " + " ".join(command)).encode())
-    digest = lambda path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
     lean, lake = directory / 'toolchain/bin/lean.exe', directory / 'toolchain/bin/lake.exe'
     checker = Path(formal.__file__).resolve()
-    toolchain = {"executable": str(lean), "sha256": digest(lean), "version": "Lean test 4.32.0",
+    toolchain = {"executable": str(lean), "sha256": sha256_file(lean), "version": "Lean test 4.32.0",
                  "version_exit": 0, "configured_command": list(command),
-                 "verifier_sha256": digest(checker), "verifier_path": str(checker),
-                 "executables": {str(lean): digest(lean), str(lake): digest(lake)}, "project": None}
+                 "verifier_sha256": sha256_file(checker), "verifier_path": str(checker),
+                 "executables": {str(lean): sha256_file(lean), str(lake): sha256_file(lake)}, "project": None}
     fingerprint = records.observe_fingerprint(toolchain)
     content = records.content_hashes(toolchain, fingerprint['files'])
     record = records.new_record(toolchain, records.new_baseline(
@@ -456,13 +548,12 @@ def activate(engine, root, *, initialization_runner, external_policy="disabled",
     profiles = [p for p in profiles if p['actor_kind'] == 'ai']
     from do_math.model_policy import selection
     initial_ref = selection(engine.instance["config"], {"role": "intent_interpretation"},
-        {}, engine.instance["knowledge"],
-        profiles=engine.instance["execution_profiles"])["profile_ref"]
+        {}, engine.instance["knowledge"], instance=engine.instance)["profile_ref"]
     charter = charter_record(engine.instance["lifecycle"]["immutable_input"]["text"])
     controls = [("decision", {"change": {"kind": "initialization", "operation": "governance", "records": [charter]}}),
         ("decision", {"change": {"kind": "grant", "grant": {
         "id": "GR-initial-fixture", "kind": "local", "roles": ["intent_interpretation"],
-        "budget_kind": "operations", "reuse": "reusable", "expires_at": expiry}}}),
+        "reuse": "reusable", "expires_at": expiry}}}),
         ("decision", {"change": {"kind": "grant", "grant": {"id": "GR-research-fixture",
         "kind": "local", "roles": list(ROLES) + ["formal_check"], "reuse": "reusable", "expires_at": expiry}}})]
     controls += [("decision", {"change": {"kind": "initialization", "operation": "probe",

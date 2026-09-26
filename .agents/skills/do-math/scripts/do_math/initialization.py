@@ -4,11 +4,10 @@ from __future__ import annotations
 from copy import deepcopy
 import hashlib
 from pathlib import Path
-import shutil
 
 from .state_contract import STATE_FORMAT_VERSION, STATE_CONTRACT_ID
 from .execution_profiles import resolve_profile
-from .governance import timestamp
+from .governance import grant_time_reason, timestamp
 from .repository import exact_content_hash, new_id
 
 INITIAL_ROLES = {"intent_interpretation", "maintenance"}
@@ -25,14 +24,8 @@ def original_input_bytes(record):
 
 
 def adapter_for(profile):
-    from .codex_adapter import CodexExecAdapter
-    from .claude_adapter import ClaudePrintAdapter
-    provider = profile["ai"]["provider"]
-    if provider == "claude":
-        return ClaudePrintAdapter(shutil.which("claude") or "claude")
-    if provider == "codex":
-        return CodexExecAdapter(shutil.which("codex") or "codex")
-    raise ValueError("unsupported profile provider")
+    from .claude_adapter import provider_adapter
+    return provider_adapter(profile["ai"]["provider"])
 
 
 def capability_requirements(instance, reference, required=(), *, current_identity=None, at=None):
@@ -90,6 +83,23 @@ def governance_basis(instance):
     return exact_content_hash(instance.get('governance', {}))
 
 
+def governance_or_initial_view(instance, runtime):
+    """Governance view of one state; before charter adoption, the original input stands in."""
+    from .governance import governance_view
+    lifecycle = instance.get("lifecycle", {}).get("state")
+    unadopted = lifecycle == "initializing" or (lifecycle == "paused" and (
+        runtime.get("resume_lifecycle") == "initializing" or
+        runtime.get("status") == "closed" and not instance["lifecycle"].get("activated_at")))
+    if unadopted and not any(row.get("kind") == "charter" and row.get("status") == "active"
+                            for row in instance.get("governance", {}).values()):
+        initial_input = next(row for row in runtime["inputs"]
+                             if row["id"] == instance["lifecycle"]["input_id"])
+        return {**deepcopy(initial_input["config"]), "policies": "",
+                "status": "unadopted_input", "goal_revision": 0, "policy_revision": 0,
+                "source": deepcopy(instance["lifecycle"]["immutable_input"])}
+    return governance_view(instance)
+
+
 def governance_working_view(instance):
     """Ephemeral input for readers; never publish these derived authority fields."""
     from .governance import governance_view
@@ -125,15 +135,6 @@ def initial_intent_evidence(instance, runtime, *, owner_handlers=None):
         return {'input_sha256': original_sha256, 'interpretation_execution_id': bundle['execution_id'],
                 'check_execution_id': check['execution_id']}
     raise ValueError('initial input has no applied independent import')
-
-
-def operations_capacity_available(instance, runtime):
-    """Read approved concurrency/cumulative limits through the Git ledger view."""
-    from .session_slots import SessionSlots
-    if not instance.get('capacity_constraints') or not instance.get('role_profile_refs'):
-        return False
-    slots = SessionSlots(runtime, instance, observer=True)
-    return any(cell['available'] > 0 for cell in slots.snapshot()['operations'].values())
 
 
 def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
@@ -209,8 +210,6 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
     now = timestamp(at)
     if not grants or any(not grant_current(instance, gid, now, initial=False) for gid in grants):
         missing.append("research_authority")
-    if not operations_capacity_available(instance, runtime):
-        missing.append("operations_capacity")
     if not runtime.get("recovery_checked"):
         missing.append("recovery_check")
     if any(row.get("status") in {"checking", "ready"} for row in runtime.get("trust_transitions", {}).values()):
@@ -225,13 +224,12 @@ def grant_current(instance, gid, at, *, initial):
     if grant.get("kind") != "local" or grant.get("status") != "active" or not grant.get("source_ref"):
         return False
     if initial and (not grant.get("expires_at") or not set(grant.get("roles", [])).issubset(INITIAL_ROLES)
-                    or grant.get("budget_kind") != "operations" or grant.get('reuse') != 'reusable'):
+                    or grant.get('reuse') != 'reusable'):
         return False
     if not initial and (grant.get("initialization_only") or gid in
                         instance.get('lifecycle', {}).get('adoption', {}).get('initial_grant_ids', [])):
         return False
-    return bool(grant.get("roles")) and (not grant.get("expires_at") or timestamp(grant["expires_at"]) > at) and (
-        not grant.get("valid_from") or timestamp(grant["valid_from"]) <= at)
+    return bool(grant.get("roles")) and grant_time_reason(grant, at) is None
 
 
 def initialize_state(*, instance_id, goal, workspace, config, source_input,

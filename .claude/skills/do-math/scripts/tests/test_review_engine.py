@@ -6,13 +6,14 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import create_autospec
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.repository import exact_content_hash
 from do_math.review_cycle import record_turn
-from do_math.review_engine import ReviewEngineMixin
-from do_math.question_engine import QuestionEngineMixin
+from do_math.engine import ResearchEngine
 from do_math import knowledge_records as kr, knowledge_io, knowledge, governance
 from do_math.repository import ResearchRepository
+from research_fixtures import bare_engine, current_state
 
 
 def grant_replacement(engine, *, reuse='reusable'):
@@ -21,11 +22,12 @@ def grant_replacement(engine, *, reuse='reusable'):
     engine.instance, engine.runtime, _ = governance.apply_decision(engine.instance, engine.runtime,
         {'kind': 'grant', 'decision_id': 'DEC-review', 'grant': {'id': 'GR-review', 'kind': 'local',
          'roles': ['identity_review'], 'reuse': reuse, 'included_targets': ['K1'],
-         'budget_kind': 'work', 'purposes': ['record_replacement']}}, source_ref='SOURCE-review')
+         'purposes': ['record_replacement']}}, source_ref='SOURCE-review')
 
 
-class FakeEngine(QuestionEngineMixin, ReviewEngineMixin):
+class FakeEngine(ResearchEngine):
     def __init__(self, root, rounds=2):
+        self._init_process_state()
         source = 'theorem sample : 1 = 1 := rfl'
         policy = {'id': 'fixture-review-policy-v5', 'version': 5, 'required_perspectives': [],
                   'minimum_initial_slots': 2, 'judge_slots': ['judge-0', 'judge-1', 'judge-2'],
@@ -51,7 +53,8 @@ class FakeEngine(QuestionEngineMixin, ReviewEngineMixin):
         from do_math.engine import DEFAULT_CONFIG
         from do_math.execution_profiles import build_profiles, profile_ref
         profiles = build_profiles(DEFAULT_CONFIG)
-        self.instance.update(execution_profiles=profiles['execution_profiles'])
+        self.instance.update(execution_profiles=profiles['execution_profiles'],
+                             role_profile_refs=profiles['role_profile_refs'])
         self.profile = profile_ref(next(p for p in profiles['execution_profiles'].values() if p['role'] == 'identity_review'))
         self.research_profile = profile_ref(next(p for p in profiles['execution_profiles'].values() if p['role'] == 'supplemental_research'))
         self.instance['review_policy'] = deepcopy(policy)
@@ -71,18 +74,10 @@ class FakeEngine(QuestionEngineMixin, ReviewEngineMixin):
                      declaration_evidence={'sample': {'type': 'fixture-type', 'value': 'fixture-proof'}})
         self.instance = kr.record_formal_result(self.instance, 'K1', proof, 'TE-review', runtime=self.runtime)
         self.head = 'snapshot-one'
-        self.store = object()
+        self.store = None
         self.root = Path(root)
-        self.saved = 0
         self.sequence = 0
-
-    def _save(self, artifacts=None):
-        self.saved += 1
-
-    def _enqueue(self, role, target=None, **extra):
-        action = {'role': role, **extra}
-        if target is not None: action['target'] = target
-        if action not in self.runtime['queue']: self.runtime['queue'].append(action)
+        self._save = create_autospec(self._save)
 
     def pending(self):
         return next(a for a in self.runtime['queue'] if a['role'] == 'identity_review')
@@ -137,7 +132,8 @@ class FakeEngine(QuestionEngineMixin, ReviewEngineMixin):
         output.update(changes or {})
         self.runtime['executions'][execution_id] = dict(id=execution_id, role='identity_review', action=deepcopy(action),
                                                       status='running',
-                                                      input_snapshot=self.head, input_sha256='actual-prompt-hash',
+                                                      input_snapshot=self.head,
+                                                      input_manifest={'prompt': {'sha256': 'actual-prompt-hash'}},
                                                       actor_kind='ai', owner_activity_id=action.get('owner_activity_id') or 'AY-fixture',
                                                       execution_profile_ref=deepcopy(getattr(self, 'profile', None)))
         admitted = self._admit_review_execution(action, self.runtime['executions'][execution_id])
@@ -520,9 +516,10 @@ class ReviewEngineTests(unittest.TestCase):
         subprocess.run(['git', '-C', str(repository_path), 'init', '-q'], check=True)
         instance_id = 'RI-00000000000000000000000000'
         repository = ResearchRepository(repository_path, instance_id)
-        persisted_runtime_before = {'feature_version': 5, 'trust_bindings': {'TE-review': old_binding}}
-        persisted_runtime_after = deepcopy(engine.runtime)
-        persisted_runtime_after['feature_version'] = 5
+        # Every stored state passes the current lifecycle gate.
+        lifecycle_instance, lifecycle_runtime = current_state()
+        persisted_runtime_before = {**lifecycle_runtime, 'trust_bindings': {'TE-review': old_binding}}
+        persisted_runtime_after = {**deepcopy(engine.runtime), **lifecycle_runtime}
         persisted_runtime_after['trust_transitions'][transition_id]['status'] = 'active'
         # This domain-level fixture has explicitly applied the queued activation.
         persisted_runtime_after['queue'] = [a for a in persisted_runtime_after['queue']
@@ -536,10 +533,9 @@ class ReviewEngineTests(unittest.TestCase):
             'unresolved': [], 'followups': [], 'finished_at': '2026-09-22T00:00:01+00:00'}}
         for execution_id, execution in persisted_runtime_after['executions'].items():
             execution['action'].setdefault('id', 'AC-' + execution_id)
-            execution['input_manifest'] = {'review_cycle_id': cid}
+            execution['input_manifest'] = {'review_cycle_id': cid, 'prompt': {'sha256': 'a' * 64}}
             execution['created_at'] = '2026-09-22T00:00:00+00:00'
             execution['context_origin'] = []
-            execution['input_sha256'] = 'a' * 64
             execution['ended_at'] = '2026-09-22T00:00:01+00:00'
             execution['submission_receipt'] = {'accepted': True}
         for cycle in persisted_runtime_after['review_cycles'].values():
@@ -556,6 +552,7 @@ class ReviewEngineTests(unittest.TestCase):
             state['knowledge']['K1'].pop('required_reviews', None)
             state['capacity_constraints'] = deepcopy(capacity_constraints)
             state.pop('role_profile_refs', None)
+            state['lifecycle'] = deepcopy(lifecycle_instance['lifecycle'])
         first = repository.initialize(persisted_before, persisted_runtime_before)
         second = repository.save_with_state(first, persisted_after, persisted_runtime_after)[0]
         old_loaded = ResearchRepository(repository_path, instance_id).load(first)[1]
@@ -724,7 +721,7 @@ class ReviewEngineTests(unittest.TestCase):
                 'external_effects': [], 'resources': {}, 'effect': effect, 'basis_refs': [cid]}
         application = delegations.prepare_application(engine.instance, engine.runtime, 'DG', case)
         for eid, stage in [('INTERPRET', 'interpret'), ('CHECK', 'check')]:
-            engine.runtime['executions'][eid] = {'id': eid, 'role': 'intent_interpretation',
+            engine.runtime['executions'][eid] = {'id': eid, 'role': 'intent_interpretation', 'status': 'ended',
                                                 'delegation_input_sha256': application['input_sha256']}
             delegations.record_judgment(engine.runtime, application['id'],
                 {'input_sha256': application['input_sha256'], 'decision': 'within_scope', 'reason': 'Same authorized recovery'},
@@ -841,8 +838,6 @@ class ReviewEngineTests(unittest.TestCase):
                 self.assertEqual(action['profile_ref'], selected)
 
     def test_scope_to_answer_and_judgment_publishes_the_same_links_consumed_by_goal_audit(self):
-        from do_math.engine import ResearchEngine
-        from unittest.mock import Mock
         engine = self.engine
         engine.instance['config'].pop('review_scope_assessment')
         cid = engine._start_identity_review('K1')
@@ -860,8 +855,7 @@ class ReviewEngineTests(unittest.TestCase):
         self.assertEqual(kr.knowledge_view(engine.instance)[0]['links'], [link])
         self.assertTrue(knowledge.assess_use(engine.instance['knowledge']['K1'], engine.instance)['valid'])
         self.assertEqual(assessment['policy_ref'], engine.runtime['review_cycles'][cid]['policy_ref'])
-        audit = ResearchEngine.__new__(ResearchEngine)
-        audit.instance, audit.runtime = engine.instance, engine.runtime
+        audit = bare_engine(engine.instance, engine.runtime)
         audit.instance['goal_judgments'] = []
         audit.runtime['tasks'] = {}
         from do_math import governance as gov
@@ -872,11 +866,11 @@ class ReviewEngineTests(unittest.TestCase):
             {'id': 'DC-goal-fixture', 'actor': 'user', 'source_ref': source['id'],
              'source_sha256': source['sha256'], 'record_hashes': {record['id']: exact_content_hash(record)}}, [record])
         assessment = audit.instance['identity_assessments'][link['assessment_id']]
-        audit._render_prompt = Mock(return_value='fixed goal-audit instructions')
+        audit._render_prompt = create_autospec(audit._render_prompt, return_value='fixed goal-audit instructions')
         audit.runtime['inputs'] = []
         audit.instance['config']['goal_auditors'] = 2
         goal_basis = audit._goal_basis_key()
-        audit._record_output_questions = Mock()
+        audit._record_output_questions = create_autospec(audit._record_output_questions)
         audit.runtime['executions']['AUDIT'] = {'id': 'AUDIT', 'role': 'goal_audit', 'source_basis': []}
         audit._bind_governance_input({'role': 'goal_audit'}, audit.runtime['executions']['AUDIT'],
                                     audit._governance_context({'role': 'goal_audit'}, {}))

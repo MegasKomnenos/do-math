@@ -86,7 +86,7 @@ class CheckpointPersistenceTests(unittest.TestCase):
                 workspace = kwargs['workspace']
                 (workspace / 'proof.txt').write_bytes(b'original evidence')
                 (workspace / 'checkpoint.json').write_bytes(canonical_json(CHECKPOINT))
-                kwargs['on_observation'](ObservationBatch([], [], '2026-09-25T00:00:00Z',
+                kwargs['on_observation'](ObservationBatch([], [], [], 0, '2026-09-25T00:00:00Z',
                     time.monotonic(), 0, 0, kwargs['evidence_dir'] / 'stdout.jsonl', lambda: False))
                 # Observations are queued; the owner applies them on its next pass.
                 until = time.monotonic() + 60
@@ -117,15 +117,17 @@ class CheckpointPersistenceTests(unittest.TestCase):
             'status': 'running', 'input_snapshot': engine.head, 'input_manifest': [], 'parent_execution_id': None})
         profile = engine.instance['execution_profiles'][execution['execution_profile_ref']['id']]
         execution['launch_ticket'] = dispatched_launch(execution['id'], profile)
-        execution['process'] = {'job_name': execution['launch_ticket']['job_name']}
+        # An admitted launch: its capacity holds the started Job's identity.
+        execution['capacity'] = {'reservation_ids': [], 'provider': profile['ai']['provider'],
+            'process': {'job_name': execution['launch_ticket']['job_name']}, 'local_termination': 'unknown'}
         workspace = Path(engine.instance['workspace']) / 'runs' / execution['id'] / 'workspace'
         workspace.mkdir(parents=True)
         (workspace / 'proof.txt').write_bytes(b'original evidence')
         (workspace / 'checkpoint.json').write_bytes(canonical_json(CHECKPOINT))
-        engine.runtime.update(active_execution=execution['id'], status='running', queue=[action])
+        engine.runtime.update(status='running', queue=[action])
         engine._save()
         tracker = ObservationTracker(execution['id'], workspace, {'observation_mode': 'deadline_only'})
-        engine._observe_running(execution['id'], tracker, ObservationBatch([], [], '2026-09-25T00:00:00Z',
+        engine._observe_running(execution['id'], tracker, ObservationBatch([], [], [], 0, '2026-09-25T00:00:00Z',
             time.monotonic(), 0, 0, workspace / 'stdout.jsonl', lambda: False))
         previous = deepcopy(engine.runtime['checkpoints'][execution['id']])
         (workspace / 'checkpoint.json').write_bytes(b'{interrupted write')

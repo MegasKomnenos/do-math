@@ -16,6 +16,7 @@ if str(SCRIPTS) not in sys.path:
 from do_math.context_store import build_role_manifest, read_source, write_source_catalog
 from do_math.initialization import initialize_state, original_input_bytes
 from do_math.repository import ResearchRepository, canonical_json
+from research_fixtures import current_state
 
 
 INSTANCE_ID = "RI-00000000000000000000000000"
@@ -57,7 +58,7 @@ class UnicodeFlowTests(unittest.TestCase):
         }
         repository.register_family("research", "unicode_fixture", schema=schema)
         record = {"id": "UF-1", "payload": {"text": "e\u0301", "names": {"K": "kelvin", "K": "ascii"}}}
-        head = repository.initialize({"feature_version": 5, "unicode_fixture": {"UF-1": record}}, {"feature_version": 5})
+        head = repository.initialize(*current_state({"unicode_fixture": {"UF-1": record}}))
         _, instance, _ = repository.load(head)
         descriptor = repository.read_record("UF-1", head)
         stored = json.loads(descriptor["bytes"])
@@ -73,8 +74,7 @@ class UnicodeFlowTests(unittest.TestCase):
             "required": ["id", "text"],
         }
         repository.register_family("research", "unicode_fixture", schema=schema)
-        head = repository.initialize({"feature_version": 5, "unicode_fixture": {"UL-1": {"id": "UL-1", "text": "e\u0301"}}},
-                                     {"feature_version": 5})
+        head = repository.initialize(*current_state({"unicode_fixture": {"UL-1": {"id": "UL-1", "text": "e\u0301"}}}))
         descriptor = repository.read_record("UL-1", head)
         stored = json.loads(descriptor["bytes"])
         stored["unexpected_field"] = True

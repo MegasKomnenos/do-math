@@ -17,7 +17,6 @@ def current_solution_basis(instance, runtime):
     if any(not knowledge.validate_basis(j.get("record_basis", []), instance, runtime)["valid"] for j in judgments):
         return None
     ids = sorted({ref for j in judgments for ref in j.get("dependencies", []) if ref in instance["knowledge"]})
-    records = [instance["knowledge"][kid] for kid in ids]
     from .knowledge_records import usable_links, all_records
     if not ids or any(not usable_links(instance, kid) for kid in ids):
         return None

@@ -1,6 +1,6 @@
 """Persistent research workflow using observable Codex CLI executions.
 
-The persisted contract is do-math-state/5. Mathematical, semantic, goal,
+The persisted contract is do-math-state/6. Mathematical, semantic, goal,
 authority and execution judgments remain distinct. Session boundaries are
 instructions and do not claim OS isolation.
 """
@@ -9,44 +9,41 @@ from __future__ import annotations
 from .trust_validation import AXIOMS
 
 from copy import deepcopy
-from contextlib import contextmanager
 from datetime import datetime, timezone
 from functools import cached_property
 import base64
 import binascii
 import hashlib
 import json
-import inspect
 import os
 import shutil
 from pathlib import Path
-import tempfile
 import time
 from typing import Any
 
 import jsonschema
 
 from .contracts import render_prompt, all_prompt_documents, reading_map, prompt_metrics, action_schema, with_integration_schema, task_candidate_record
-from .formal import verify_lean, discover_lean
+from .formal import verify_lean, discover_lean, lean_source_sha256
 from . import governance, knowledge, planning, knowledge_io, knowledge_records, academic, task_scope, delegations
 from .input_basis import capture_sources, sources_current, capture_decision_basis, decision_basis_changes, CurrentnessChanged
-from .context_store import collect_outputs, prepare_role_input, defer_input_overflow, materialize_inputs, prefetch_artifacts
+from .context_store import collect_outputs, prepare_role_input, defer_input_overflow, materialize_inputs
 from .operation_trace import engine_operation, tracing, phase, measured, progress as operation_progress
 from .observation_transport import ObservationBatch
-from .observations import ObservationTracker, CHECKPOINT_SCHEMA, preserve_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, self_check_feedback, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint
+from .observations import ObservationTracker, CHECKPOINT_SCHEMA, preserve_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, self_check_feedback, self_check_request, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint
 from .review_engine import ReviewEngineMixin
 from .lifecycle_engine import LifecycleEngineMixin
 from .academic_engine import AcademicEngineMixin
 from .governance_engine import GovernanceEngineMixin
 from .model_runner import ModelRunner
 from .repository import ResearchRepository, canonical_json, exact_content_hash, semantic_content_hash, new_id
-from .repository import artifact_verified, mark_artifact_verified, verify_artifact
+from .repository import mark_artifact_verified, sealed_bytes
 from .state_checks import inspect_state
 from .git_store import GitStateStoreError
 from .scholarly import resolve_scholarly_server, validate_scholarly_server
 from .task_scope import apply_task_dispositions
 from . import model_policy
-from .scheduler import SchedulerMixin, WORK_ROLES
+from .scheduler import SchedulerMixin
 from .provider_engine import ProviderEngineMixin
 from .decision_engine import DecisionEngineMixin
 from .revision_engine import RevisionEngineMixin
@@ -54,12 +51,14 @@ from .question_engine import QuestionEngineMixin
 from . import questions, reporting
 from . import revisions
 from . import submission, execution_window, integration
-from . import activities, execution_lifecycle, execution_profiles, initialization
-from .preflight import inspect_current_state
+from . import activities, execution_lifecycle, execution_profiles, initialization, launch
+from .provider_engine import record_model_policy_violation
+from .scheduled_operator import supervision_facts
+from .session_slots import SLOT_WAITS, held_reservations
 from .state_contract import STATE_FORMAT_VERSION, STATE_CONTRACT_ID, default_state_contract
 from . import task_contracts, operational_dispositions, retention, repair_execution
-from .control_transport import ControlTransport
-from .file_io import cached_sha256
+from .control_transport import ControlTransport, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, SUBMIT_INTENT
+from .file_io import cached_sha256, os_lock, write_bytes_atomic
 
 CONTRACT = STATE_CONTRACT_ID
 
@@ -67,12 +66,6 @@ CONTRACT = STATE_CONTRACT_ID
 def _repository(repository: Path, instance_id: str) -> ResearchRepository:
     contract = default_state_contract()
     return ResearchRepository(repository, instance_id, contract=contract)
-
-
-def _require_current_contract(instance, runtime):
-    checked = inspect_current_state(instance, runtime)
-    if not checked["valid"]:
-        raise ValueError("current state is corrupt: " + json.dumps(checked["errors"], ensure_ascii=False))
 
 
 class InputPreparationInterrupted(Exception):
@@ -85,7 +78,6 @@ class ReviewPreparationDeferred(Exception):
         super().__init__("review input restoration requires its recorded recovery")
 
 
-ENGINE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 DEFAULT_CONFIG = {
     "tier_models": deepcopy(model_policy.MODELS), "role_tiers": deepcopy(model_policy.ROLE_TIERS),
     "session_limits": deepcopy(model_policy.LIMITS),
@@ -130,10 +122,6 @@ def json_safe(value: Any) -> Any:
     return value
 
 
-OPTIONAL_CONFIG = {"tool_review_window_seconds", "self_check_response_window_seconds", "no_progress_limit",
-    "import_rework_limit", "selection_failure_limit", "exhaustion_empty_limit", "proposal_version_limit", "contract_revision_limit"}
-
-
 def _artifact_format_valid(reference, raw):
     """Validate the supported file format, never its mathematical assertion."""
     suffix = Path(reference["path"]).suffix.lower()
@@ -151,55 +139,37 @@ def _artifact_format_valid(reference, raw):
     return False
 
 
-def _evaluation_context_for(store, snapshot):
+def _evaluation_context_for(store, snapshot, *, lean_available):
     def read_artifact(commit, path):
         if not isinstance(path, str) or not path.startswith("runtime/artifacts/"):
             raise ValueError("task evidence must identify an immutable archived artifact")
         return store.read(path, commit)
     return {"snapshot": snapshot, "read_artifact": read_artifact, "git_dir": getattr(store, "git_dir", None),
-            "validate_artifact": _artifact_format_valid, "now": now()}
+            "validate_artifact": _artifact_format_valid, "now": now(), "lean_available": lean_available}
 
 
 def validate_config(config: dict) -> None:
+    """The configuration section fixes keys, types and ranges; only cross-field rules remain here."""
     from .control_contracts import validate_config_shape
-    validate_config_shape(config)
-    if set(config) - set(DEFAULT_CONFIG) - OPTIONAL_CONFIG - {'host_resources'}:
+    from .record_schemas import config_schema
+    schema = config_schema()
+    if set(config) - set(schema["properties"]):
         raise ValueError("configuration fields differ from do-math-cli/5")
-    for key in OPTIONAL_CONFIG & config.keys():
-        if type(config[key]) is not int or config[key] <= 0:
-            raise ValueError(key + " must be an explicitly adopted positive integer")
+    validate_config_shape(config)
     config = {**DEFAULT_CONFIG, **config}
+    # A requested host constraint may still carry its request authority alias;
+    # build_profiles below checks the host section once it is bound.
+    error = next(jsonschema.Draft202012Validator(schema).iter_errors(
+        {key: value for key, value in config.items() if key != "host_resources"}), None)
+    if error is not None:
+        raise ValueError("config/" + "/".join(str(part) for part in error.absolute_path) + ": " + error.message)
     model_policy.validate_policy(config)
-    if config["effort"] not in {"minimal", "low", "medium", "high", "xhigh"}:
-        raise ValueError("unsupported reasoning effort")
-    for key in ("operator_enabled", "scholarly_enabled", "claude_only_assigned_model"):
-        if not isinstance(config[key], bool):
-            raise ValueError(f"{key} must be a boolean")
-    if config["operator_effort"] not in {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}:
-        raise ValueError("unsupported operator reasoning effort")
     if config["scholarly_server"] is not None:
         validate_scholarly_server(config["scholarly_server"])
-    for key in ("call_timeout_seconds",
-                "reviewers", "goal_auditors", "max_input_bytes",
-                "review_rounds", "review_research_limit", "research_reconsider_seconds", "observation_interval_seconds",
-                "max_artifact_bytes",
-                "operator_interval_seconds", "operator_timeout_seconds",
-                "provider_retry_initial_seconds", "provider_retry_max_seconds", "finish_notice_seconds",
-                "plan_settle_seconds"):
-        if isinstance(config[key], bool) or not isinstance(config[key], int) or config[key] < 1:
-            raise ValueError(f"{key} must be a positive integer")
-    if isinstance(config.get("max_output_repairs", 1), bool) or not isinstance(config.get("max_output_repairs", 1), int) or config.get("max_output_repairs", 1) < 0:
-        raise ValueError("max_output_repairs must be a nonnegative integer")
     if config["provider_retry_max_seconds"] < config["provider_retry_initial_seconds"]:
         raise ValueError("provider retry maximum must be at least the initial interval")
-    command = config["lean_command"]
-    if command is not None and (not isinstance(command, list) or not command or
-                               any(not isinstance(x, str) or not x or "\0" in x for x in command)):
+    if config["lean_command"] is not None and any("\0" in part for part in config["lean_command"]):
         raise ValueError("lean_command must be a nonempty argv list")
-    if config["observation_mode"] not in {"event_driven", "periodic"}:
-        raise ValueError("observation_mode must be event_driven or periodic")
-    if not isinstance(config["allowed_axioms"], list) or any(not isinstance(a, str) or not a for a in config["allowed_axioms"]):
-        raise ValueError("allowed_axioms must contain axiom names")
     if config.get('host_resources') is not None:
         import platform
         editions = execution_profiles.build_profiles(config)
@@ -232,8 +202,8 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
         instance['config'] = settings
         profiles = execution_profiles.build_profiles(settings)
         instance.update(contract_id=CONTRACT, grants={})
-        instance.update(profiles)
-        runtime.update(contract_id=CONTRACT, cycles=0, active_execution=None, processed_controls=[],
+        execution_profiles.apply_editions(instance, profiles)
+        runtime.update(contract_id=CONTRACT, cycles=0, processed_controls=[],
                        question_links=[], updated_at=now(), reservations={}, provider_waits={})
         instance = knowledge_io.ensure_ontology(governance.ensure_governance(instance))
         instance = knowledge_records.initialize_families(instance)
@@ -269,43 +239,6 @@ def _control_result(store, head, runtime, request_id):
     return {**deepcopy(row["result"]), "snapshot": commits[0]}
 
 
-@contextmanager
-def _control_acceptance_lock(inbox: Path):
-    """Serialize local control publication without taking the engine writer lock."""
-    lock_path = inbox / ".acceptance.lock"
-    if not lock_path.exists():
-        with tempfile.NamedTemporaryFile("wb", delete=False, dir=inbox,
-                                         prefix=".acceptance-lock.", suffix=".tmp") as stream:
-            stream.write(b"\0")
-            temporary = Path(stream.name)
-        try:
-            try:
-                os.link(temporary, lock_path)
-            except FileExistsError:
-                pass
-        finally:
-            temporary.unlink(missing_ok=True)
-    descriptor = os.open(lock_path, os.O_RDWR)
-    try:
-        os.lseek(descriptor, 0, os.SEEK_SET)
-        if os.name == "nt":
-            import msvcrt
-            msvcrt.locking(descriptor, msvcrt.LK_LOCK, 1)
-        else:
-            import fcntl
-            fcntl.flock(descriptor, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            os.lseek(descriptor, 0, os.SEEK_SET)
-            if os.name == "nt":
-                msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
-            else:
-                fcntl.flock(descriptor, fcntl.LOCK_UN)
-    finally:
-        os.close(descriptor)
-
-
 def _next_control_order(inbox: Path) -> str:
     """Persist an order that remains comparable after a restart or clock change."""
     counter = inbox / ".acceptance-counter"
@@ -319,54 +252,35 @@ def _next_control_order(inbox: Path) -> str:
     if previous < 0:
         raise ValueError("control acceptance counter is invalid")
     next_order = previous + 1
-    with tempfile.NamedTemporaryFile("wb", delete=False, dir=inbox,
-                                     prefix=".acceptance-counter.", suffix=".tmp") as stream:
-        stream.write(str(next_order).encode("ascii"))
-        stream.flush()
-        os.fsync(stream.fileno())
-        temporary = Path(stream.name)
-    from .file_io import atomic_replace
-    atomic_replace(temporary, counter)
+    write_bytes_atomic(counter, str(next_order).encode("ascii"), fsync=True)
     return f"{next_order:020d}"
 
 
 def control(repository: Path, instance_id: str, action: str, *, text: str = "", config: dict | None = None,
             origin: str = "user", request_id: str | None = None, idempotency_key: str | None = None) -> dict:
     """Queue user commands; only the owning engine publishes authority changes."""
-    from .control_contracts import validate_control_payload
+    from .control_contracts import (control_request_id, normalized_source, normalized_source_bytes,
+                                    validate_control_payload, validate_request_id)
     config = {} if config is None else config
     validate_control_payload(action, text, config)
     if not isinstance(origin, str) or origin not in {"user", "operator"}:
         raise ValueError("control origin must be user or operator")
     if origin == "operator" and action not in {"pause", "resume", "request", "configure", "source", "quiesce", "release_quiesce"}:
         raise ValueError("operator controls are limited to pause, resume, request, configure, source, quiesce, and release_quiesce")
-    if request_id is not None and (not isinstance(request_id, str) or not 1 <= len(request_id) <= 128 or
-            any(not (character.isascii() and (character.isalnum() or character in "-_")) for character in request_id)):
-        raise ValueError("request_id must be a safe nonempty ASCII identifier")
+    if request_id is not None:
+        validate_request_id(request_id)
     store = _repository(repository, instance_id)
     head, instance, runtime = store.load()
     if request_id is not None and idempotency_key is not None:
         raise ValueError("request_id and idempotency_key are mutually exclusive")
     if action == "source":
-        config = dict(config or {})
-        if "body_base64" in config:
-            if set(config) != {"name", "body_base64", "sha256", "bytes"}:
-                raise ValueError("normalized source requires exact name, body, hash and size")
-            raw = base64.b64decode(config["body_base64"], validate=True)
-            name = config["name"]
-            if hashlib.sha256(raw).hexdigest() != config["sha256"] or len(raw) != config["bytes"]:
-                raise ValueError("normalized source content differs from hash or size")
-        else:
+        if "body_base64" not in config:
             path = Path(config["path"]).resolve(strict=True)
-            raw = path.read_bytes()
-            name = config.get("name") or path.name
-        if not isinstance(name, str) or name in {"", ".", ".."} or "/" in name or "\\" in name:
-            raise ValueError("source name must be a file name")
-        config = {"name": name, "body_base64": base64.b64encode(raw).decode("ascii"),
-                  "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}
+            config = normalized_source(config.get("name") or path.name, path.read_bytes())
+        # The inbox consumer applies this same rule to the admitted copy.
+        normalized_source_bytes(config)
     payload = {"instance_id": instance_id, "action": action, "text": text, "config": config or {}, "origin": origin}
     if request_id is None:
-        from .cli import control_request_id
         request_id = control_request_id(instance_id, action, text=text, config=config, origin=origin,
                                         idempotency_key=idempotency_key)
     inbox = Path(instance["workspace"]) / "control" / instance_id
@@ -384,7 +298,6 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
         prior = row.get("request", {})
         if prior.get("id") == request_id:
             return replay(prior)
-    _require_current_contract(instance, runtime)
     if action == "configure":
         current_config = instance["config"]
         candidate = {**current_config, **(config or {})}
@@ -428,12 +341,13 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
             raise ValueError("closed/completed instance cannot accept new research activities")
         if role == "supplemental_research":
             task = runtime["tasks"].get((config or {}).get("target"))
-            if not task or planning.task_ready(task, instance, runtime, evaluation_context=_evaluation_context_for(store, head))["state"] != "ready":
+            if not task or planning.task_ready(task, instance, runtime, evaluation_context=_evaluation_context_for(
+                    store, head, lean_available=discover_lean() is not None))["state"] != "ready":
                 raise ValueError("supplemental research requires a task whose current contract is ready")
         if role == "operational_review" and (config or {}).get("target") not in runtime["executions"]:
             raise ValueError("operational review requires an existing execution ID")
     inbox.mkdir(parents=True, exist_ok=True)
-    with _control_acceptance_lock(inbox):
+    with os_lock(inbox / ".acceptance.lock", blocking=True):
         if destination.is_file():
             return replay(json.loads(destination.read_bytes()))
         request = {"id": request_id, **payload, "created_at": now(),
@@ -448,45 +362,6 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
         finally:
             temporary.unlink(missing_ok=True)
     return {"accepted": True, "request_id": request["id"], "effect": "pending engine processing"}
-
-
-def _records(instance: dict, runtime: dict) -> list[dict]:
-    records = []
-    for knowledge in instance["knowledge"].values():
-        records.append({"family": "knowledge", **knowledge})
-    for relation in instance["relations"]:
-        records.append({"family": "relation", **relation})
-    for task in runtime["tasks"].values():
-        records.append({"family": "task", **task})
-    for activity in runtime["activities"].values():
-        records.append({"family": "activity", **activity})
-    for execution in runtime["executions"].values():
-        records.append({"family": "execution", **execution})
-    for family, container in (("grant", instance.get("grants", {})), ("decision", instance.get("decisions", {})),
-                              ("external-operation", runtime.get("external_operations", {})),
-                              ("review-cycle", runtime.get("review_cycles", {})),
-                              ("trust-environment", instance.get("trust_environments", {}))):
-        for record in container.values():
-            records.append({"family": family, **record})
-    for source in instance.get("sources", []):
-        if source.get("id"):
-            records.append({"family": "source", **source})
-    for question in runtime.get("question_links", []):
-        records.append({"family": "question", **question})
-    for key, definition in instance.get("kind_definitions", {}).items():
-        records.append({**definition, "family": "kind-definition", "definition_family": definition["family"]})
-    for family in ("formal_results", "expositions", "identity_assessments", "assessment_uses",
-                   "execution_profiles", "capacity_constraints", "capability_evidence"):
-        records.extend({**record, "family": family} for record in instance.get(family, {}).values())
-    for family in ("integrations", "reservations", "operational_dispositions", "observations"):
-        records.extend({**record, "family": family} for record in runtime.get(family, {}).values()
-                       if isinstance(record, dict) and record.get("id"))
-    seen = set()
-    for record in records:
-        if record["id"] in seen:
-            raise ValueError("record ID collision across families: " + record["id"])
-        seen.add(record["id"])
-    return sorted(records, key=lambda r: r["id"])
 
 
 def _record_evidence(row):
@@ -569,21 +444,10 @@ def read_record(repository: Path, instance_id: str, record_id: str, *, snapshot:
 
 class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMixin, ProviderEngineMixin, SchedulerMixin, ReviewEngineMixin, LifecycleEngineMixin, AcademicEngineMixin, GovernanceEngineMixin):
     def _evaluation_context(self, snapshot=None):
-        return _evaluation_context_for(self.store, snapshot or self.head)
+        return _evaluation_context_for(self.store, snapshot or self.head, lean_available=self._lean_discovered())
 
     def _governance(self):
-        lifecycle = self.instance.get("lifecycle", {}).get("state")
-        unadopted = lifecycle == "initializing" or (lifecycle == "paused" and (
-            self.runtime.get("resume_lifecycle") == "initializing" or
-            self.runtime.get("status") == "closed" and not self.instance["lifecycle"].get("activated_at")))
-        if unadopted and not any(row.get("kind") == "charter" and row.get("status") == "active"
-                                for row in self.instance.get("governance", {}).values()):
-            initial_input = next(row for row in self.runtime["inputs"]
-                                 if row["id"] == self.instance["lifecycle"]["input_id"])
-            return {**deepcopy(initial_input["config"]), "policies": "",
-                    "status": "unadopted_input", "goal_revision": 0, "policy_revision": 0,
-                    "source": deepcopy(self.instance["lifecycle"]["immutable_input"])}
-        return governance.governance_view(self.instance)
+        return initialization.governance_or_initial_view(self.instance, self.runtime)
 
     def _governance_revisions(self):
         view = self._governance()
@@ -594,19 +458,26 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self.runner = runner or ModelRunner()
         self.formal_verifier = formal_verifier or verify_lean
         self.head, self.instance, self.runtime = self.store.load()
+        self._init_process_state(
+            transport=ControlTransport(Path(self.instance["workspace"]) / "execution-control" / instance_id))
+        self.instance = knowledge_io.ensure_ontology(self.instance)
+
+    def _init_process_state(self, *, transport=None):
+        """Process-local owner state that no repository holds.
+
+        Every engine starts here, including test engines built without a store.
+        """
         self._task_readiness = {}
-        self._saved_state = self._state_signature()
-        _require_current_contract(self.instance, self.runtime)
         self._live_execution_ids = set()
         self._executor_running = False
         self._calls = None
-        self._slots = None
         self._next_installation_check = 0.0
         self._preparing_input = False
-        self._transport = ControlTransport(Path(self.instance["workspace"]) / "execution-control" / instance_id)
+        self._transport = transport
         self._transport_bindings = {}
         self._trackers = {}
-        self.instance = knowledge_io.ensure_ontology(self.instance)
+        self._stop_deadlines, self._stop_clock = {}, None
+        self._clock_anchor = None
 
     @cached_property
     def _documents(self):
@@ -623,7 +494,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         """Hash the installed code and role documents; unchanged files reuse their digests."""
         root = Path(__file__).resolve().parents[2]
         documents = dict.fromkeys(relative for paths in reading_map(skill_root=root).values() for relative in paths)
-        documents.update(dict.fromkeys(["계약/독립-운영.md", "scripts/operator_schedule.ps1", "scripts/do_math.py"]))
+        from .contracts import OPERATING_DOCUMENTS
+        documents.update(dict.fromkeys(OPERATING_DOCUMENTS))
         paths = [*sorted((root / "scripts" / "do_math").rglob("*.py")), *(root / relative for relative in documents)]
         files = {path.relative_to(root).as_posix(): cached_sha256(path) for path in paths}
         return {"feature_version": STATE_FORMAT_VERSION, "files": files, "sha256": exact_content_hash(files)}
@@ -640,7 +512,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             allowed = task.get("profile_refs", [])
         profile = execution_profiles.select_profile(profiles, action, selection, allowed_refs=allowed)
         action["profile_ref"] = execution_profiles.profile_ref(profile)
-        action.update(actor_kind=profile["actor_kind"], budget_kind=profile["budget_kind"])
+        action.update(actor_kind=profile["actor_kind"])
         if selection:
             action["model_selection"] = {**selection, "profile_ref": deepcopy(action["profile_ref"])}
         return profile
@@ -687,7 +559,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             actor_kind=profile["actor_kind"], input_manifest=execution.get("input_manifest", []),
             profile_ref=execution_profiles.profile_ref(profile), created_at=execution.get("created_at", now()),
             continuation_of=action.get("continuation_of"), context_origin=action.get("context_origin", []))
-        execution.update(base, action=deepcopy(action), budget_kind=profile["budget_kind"])
+        execution.update(base, action=deepcopy(action))
         if action["role"] == "intent_interpretation" and action.get("stage") == "check":
             execution["intent_import_sha256"] = self.runtime["intent_imports"][action["import_id"]]["sha256"]
         execution.pop("activity_id", None)
@@ -714,16 +586,15 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             activities.resume_activity(self.runtime, activity["id"], condition=activity["waiting"]["condition"], at=now())
         machine_admission = profile["actor_kind"] == "machine" and requested_state in {"starting", "running"}
         if machine_admission:
-            slots = self._provider_slots()
-            if not slots.acquire(execution["id"], profile["budget_kind"], None,
-                                 profile=profile, execution=execution):
+            slots = self._session_slots()
+            if not slots.acquire(execution["id"], profile=profile, execution=execution):
                 action["dispatch_wait"] = deepcopy(slots.admission_wait)
                 activities.wait_for(self.runtime, activity["id"], reason="machine capacity unavailable",
                     condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=now())
                 return None
             action.pop("dispatch_wait", None)
             execution["action"] = deepcopy(action)
-            execution['launch_ticket']['phase'] = 'dispatched'
+            launch.mark_dispatched(execution['launch_ticket'])
         elif requested_state in {"starting", "running"}:
             execution_lifecycle.transition_execution(execution, "starting", at=now())
         if requested_state == "running" and not (machine_admission and profile.get("host_resources")):
@@ -737,9 +608,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         execution = self.runtime["executions"][execution_id]
         if execution["actor_kind"] != "machine":
             raise ValueError("machine process callback requires a machine execution")
-        self._provider_slots().started(execution_id, identity)
-        execution_lifecycle.transition_execution(execution, "running", at=now())
-        execution.update(process=json_safe(identity), started_at=now())
+        self._session_slots().started(execution_id, identity, at=now())
         self._save()
 
     def _settle_activity(self, execution_id):
@@ -839,18 +708,13 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._transport.close(binding, reason="execution was not admitted")
         shutil.rmtree(resolved)
 
-    def _input_artifacts(self, bundle: str, role: str, prompt: str, schema: dict, fitted: dict,
-                         workspace: Path) -> dict[str, bytes]:
+    def _input_artifacts(self, bundle: str, schema: dict, fitted: dict, workspace: Path) -> dict[str, bytes]:
+        """The role input's one archive: ``prepare_role_input`` archived the prompt,
+        documents, catalog and details below this bundle; add schema, manifest and tools."""
         base = f"runtime/artifacts/{bundle}"
-        documents = self._documents[role]
-        manifest = deepcopy(fitted["manifest"])
         support = []
-        artifacts = {f"{base}/input.txt": prompt.encode("utf-8"), f"{base}/schema.json": canonical_json(schema),
-                     f"{base}/manifest.json": canonical_json(manifest),
-                     **{f"{base}/input/implementation/{document['path']}": document["content"].encode("utf-8")
-                        for document in documents}}
-        for entry in manifest["catalog"]:
-            artifacts[f"{base}/{entry['path']}"] = fitted["catalog_files"][entry["path"]]
+        artifacts = {**fitted["artifacts"], f"{base}/schema.json": canonical_json(schema),
+                     f"{base}/manifest.json": canonical_json(fitted["manifest"])}
         for directory in (workspace / "input/tools", workspace / "input/submission"):
             for path in sorted(directory.rglob("*")):
                 if not path.is_file() or "__pycache__" in path.parts:
@@ -861,24 +725,28 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 support.append({"key": "submission_support", "path": relative,
                                  "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)})
         artifacts[f"{base}/support-manifest.json"] = canonical_json(support)
-        artifacts.update(fitted.get("artifacts", {}))
         return artifacts
 
-    def _state_signature(self):
-        # Exact no-change test for _save. State dicts are edited in place at
-        # hundreds of sites, so a mutation counter could miss a change. The
-        # compact C encoder replaces the indented, pre-validated canonical
-        # form; publication still validates every stored value.
-        from .payloads import payload_identity_view
-        return (self.head, json.dumps(
-            [payload_identity_view(self.instance),
-             payload_identity_view({k: v for k, v in self.runtime.items() if k != "updated_at"})],
-            ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+    def _unchanged(self):
+        """True when the state equals the published state of this head, apart from ``updated_at``.
+
+        The repository keeps the validated state of every head this process
+        read or published; comparing with it replaces a serialized copy. An
+        evicted entry answers False, and publishing an unchanged state is a no-op.
+        """
+        published = self.store.published_state(self.head)
+        if published is None:
+            return False
+        return self.instance == published[0] and (
+            {k: v for k, v in self.runtime.items() if k != "updated_at"}
+            == {k: v for k, v in published[1].items() if k != "updated_at"})
+
+    def _reload(self, snapshot=None):
+        """Adopt a published head's validated state, then judge live stop reasons."""
+        self.head, self.instance, self.runtime = self.store.load(snapshot)
+        self._evaluate_stops()
 
     def _save(self, artifacts: dict[str, bytes] | None = None) -> None:
-        live = [eid for eid, e in self.runtime["executions"].items() if e["status"] != "ended"]
-        self.runtime["active_executions"] = live
-        self.runtime["active_execution"] = live[0] if live else None
         for task_id, task in self.runtime["tasks"].items():
             if not task.get("pending_withdrawal"):
                 continue
@@ -892,10 +760,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 task.pop("pending_withdrawal")
                 self.runtime["queue"] = [action for action in self.runtime["queue"]
                                          if action.get("target") != task_id]
-        state = self._state_signature()
-        if not artifacts and state == self._saved_state:
+        if not artifacts and self._unchanged():
             return
-        anchor = getattr(self, "_clock_anchor", None)
+        anchor = self._clock_anchor
         # A rejected later sample never overwrites the last accepted anchor.
         # Persist that accepted high-water mark with this ordinary state change.
         if anchor:
@@ -905,10 +772,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         with phase('state_publish', snapshot=self.head):
             self.head, self.instance, self.runtime = self.store.save_with_state(
                 self.head, self.instance, self.runtime, artifacts=artifacts)
-        self._saved_state = self._state_signature()
-        slots = getattr(self, "_slots", None)
-        if slots is not None and hasattr(slots, "runtime"):
-            slots.runtime, slots.instance = self.runtime, self.instance
         self._evaluate_stops()
 
     def _record_control_result(self, request, *, rejected=False, reason=None, **details):
@@ -943,7 +806,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
     def _controls(self, *, pump=True) -> None:
         if pump and self._calls is not None:
             self._calls.pump()
-        if pump and getattr(self, "_transport", None) is not None:
+        if pump and self._transport is not None:
             self._transport.pump(self._publish_control_request)
         for request in self._inbox():
             action = request["action"]
@@ -956,11 +819,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if action == "source":
                 spec = request["config"]
                 try:
-                    if set(spec) != {'name', 'body_base64', 'sha256', 'bytes'}:
-                        raise ValueError('accepted source requires normalized exact bytes')
-                    raw = base64.b64decode(spec['body_base64'], validate=True)
-                    if hashlib.sha256(raw).hexdigest() != spec['sha256'] or len(raw) != spec['bytes']:
-                        raise ValueError('source bytes differ from the accepted request')
+                    from .control_contracts import normalized_source_bytes
+                    raw = normalized_source_bytes(spec)
                 except ValueError as error:
                     self._reject_control(request, str(error))
                     continue
@@ -1100,10 +960,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     continue
                 execution = self.runtime["executions"][waiting["execution_id"]]
                 action = waiting["action"]
-                prefix = f"runtime/artifacts/{execution['input_bundle']}"
                 try:
-                    context = submission.load_json(self.store.read(prefix + "/input/submission/context.json", self.head))
-                    schema = submission.load_json(self.store.read(prefix + "/schema.json", self.head))
+                    context, schema = self._issued_input(execution)
                     self._receive_submission(action, {}, execution["id"], context, schema,
                         Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace", preserved=True)
                     self._settle_activity(execution['id'])
@@ -1122,20 +980,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     def _sealed_bytes(self, path, sha256, size=None, *, raw=None, error="sealed artifact differs from its record",
                       needed=True):
-        """Stored artifact bytes, hashed only if this process has not matched the row (contract S3).
-
-        With ``needed=False`` only the match is established; an already matched row is not read.
-        """
-        if artifact_verified(self.store.git_dir, path, sha256, size):
-            if raw is None and needed:
-                raw = self.store.read(path, self.head)
-            return raw
-        raw = self.store.read(path, self.head) if raw is None else raw
-        try:
-            verify_artifact(self.store.git_dir, path, raw, sha256, size)
-        except ValueError as mismatch:
-            raise ValueError(error + ": " + path) from mismatch
-        return raw
+        """repository.sealed_bytes against this engine's repository and head."""
+        return sealed_bytes(self.store.git_dir, path, sha256, size, lambda: self.store.read(path, self.head),
+                            raw=raw, needed=needed, error=error + ": " + path)
 
     def _sealed_submission_files(self, execution):
         """Recover exact research files frozen by the accepted submission receipt."""
@@ -1151,6 +998,47 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             files[row["path"]] = raw
             manifest.append({key: deepcopy(row[key]) for key in ("path", "sha256", "bytes")})
         return {"files": files, "manifest": manifest, "omitted": [], "complete": True}
+
+    def _preserve_outputs(self, execution_id, workspace, bundle, *, max_bytes, evidence_dir=None):
+        """Seal one execution's outputs, control files and checkpoint into one artifact bundle.
+
+        The checkpoint is recorded in runtime. ``evidence_dir`` adds the provider
+        evidence as the checkpoint's observation sources. Returns the artifacts,
+        output file rows, checkpoint reference and whether every output fit.
+        """
+        prefix = f"runtime/artifacts/{bundle}"
+        files = (self._sealed_submission_files(self.runtime["executions"][execution_id])
+                 or collect_outputs(workspace, max_bytes=max_bytes))
+        control_files = collect_outputs(workspace / ".control", max_bytes=max_bytes)
+        artifacts = {f"{prefix}/output-manifest.json": canonical_json(files["manifest"]),
+                     f"{prefix}/omitted.json": canonical_json(files["omitted"]),
+                     f"{prefix}/control-manifest.json": canonical_json(control_files["manifest"]),
+                     f"{prefix}/control-omitted.json": canonical_json(control_files["omitted"])}
+        output_files = []
+        for path, raw in files["files"].items():
+            reference = f"{prefix}/files/{path}"
+            artifacts[reference] = raw
+            output_files.append({"path": path, "artifact_ref": reference,
+                                 "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)})
+        for path, raw in control_files["files"].items():
+            artifacts[f"{prefix}/control/{path}"] = raw
+        checkpoint, checkpoint_artifacts = preserve_checkpoint(workspace, artifact_prefix=f"{prefix}/checkpoint",
+            max_bytes=max_bytes, previous=self.runtime.get("checkpoints", {}).get(execution_id))
+        artifacts.update(checkpoint_artifacts)
+        if evidence_dir is not None:
+            evidence = collect_outputs(evidence_dir, max_bytes=max_bytes)
+            checkpoint["observation_sources"] = []
+            for path, raw in evidence["files"].items():
+                reference = f"{prefix}/provider-evidence/{path}"
+                artifacts[reference] = raw
+                checkpoint["observation_sources"].append({"artifact_ref": reference,
+                    "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw), "path": path})
+            checkpoint["observation_evidence_complete"] = evidence["complete"]
+            checkpoint["observation_evidence_omitted"] = deepcopy(evidence["omitted"])
+        self.runtime.setdefault("checkpoints", {})[execution_id] = checkpoint
+        checkpoint_ref = f"{prefix}/checkpoint-recovery.json"
+        artifacts[checkpoint_ref] = canonical_json(checkpoint)
+        return artifacts, output_files, checkpoint_ref, files["complete"]
 
     def _hold_impact_reviews(self, action, execution_id, received):
         waiting = self.runtime.setdefault("waiting_actions", {}).setdefault(action["id"], {
@@ -1235,9 +1123,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 self._save()
                 continue
             execution = self.runtime["executions"][waiting["execution_id"]]
-            prefix = "runtime/artifacts/" + execution["input_bundle"]
-            context = submission.load_json(self.store.read(prefix + "/input/submission/context.json", self.head))
-            schema = submission.load_json(self.store.read(prefix + "/schema.json", self.head))
+            context, schema = self._issued_input(execution)
             self._receive_submission(waiting["action"], {}, execution["id"], context, schema,
                 Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace", preserved=True)
             self._settle_activity(execution["id"])
@@ -1249,7 +1135,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             request = execution.get("operational_continuation", {})
             next_review = request.get("next_review")
             if (execution["status"] == "running" and next_review and not request.get("dispatched_at")
-                    and execution["id"] not in getattr(self, "_trackers", {})):
+                    and execution["id"] not in self._trackers):
                 if governance.timestamp(next_review["at"]) <= self._lifecycle_now():
                     due.append((execution["id"], request, next_review))
         if not due or not self._clock_guard()["usable"]:
@@ -1281,21 +1167,19 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             return {"state": "rejected", "reason": "execution authority no longer permits this request"}
         if not self._clock_guard()["usable"]:
             return {"state": "rejected", "reason": "clock regression prevents new acceptance"}
-        if request["kind"] == "submission_preview":
+        if request["kind"] == SUBMISSION_PREVIEW:
             try:
                 return {"state": "previewed", "result": self._preview_submission(execution, request["payload"])}
             except (ValueError, KeyError, TypeError, OSError):
                 return {"state": "rejected", "reason": "preview input or authority could not be verified"}
         submission_artifacts = {}
         sealed_submission = None
-        if request["kind"] == "submit_intent":
+        if request["kind"] == SUBMIT_INTENT:
             workspace = Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace"
             draft_path = request["payload"].get("draft_path")
             if not isinstance(draft_path, str):
                 return {"state": "rejected", "reason": "submission requires a workspace-relative draft_path"}
-            base = f"runtime/artifacts/{execution['input_bundle']}"
-            context = submission.load_json(self.store.read(base + "/input/submission/context.json", self.head))
-            schema = submission.load_json(self.store.read(base + "/schema.json", self.head))
+            context, schema = self._issued_input(execution)
             try:
                 sealed_submission = submission.seal_submission(workspace, draft_path,
                     execution_id=execution["id"], context=context, schema=schema,
@@ -1304,7 +1188,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 return {"state": "rejected", "reason": str(error)}
         original_instance, original_runtime = deepcopy(self.instance), deepcopy(self.runtime)
         original_head = self.head
-        tracker = self._trackers.get(execution["id"]) if hasattr(self, "_trackers") else None
+        tracker = self._trackers.get(execution["id"])
         live_tracker = tracker
         tracker = deepcopy(tracker) if tracker is not None else None
         boundary_updates = []
@@ -1313,15 +1197,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             "execution_id": execution["id"], "kind": request["kind"], "state": "accepted", "received_at": now(),
             "request": safe_request, "parent_snapshot": self.head}
         try:
-            if request["kind"] == "submit_intent":
+            if request["kind"] == SUBMIT_INTENT:
                 submission_artifacts = self._stage_submission_capture(execution, sealed_submission, receipt,
                     origin='explicit_tool')
                 if sealed_submission['capture_eligible'] and tracker is not None:
                     tracker.set_execution_status("stopping")
-            elif request["kind"] == "safety_boundary":
+            elif request["kind"] == SAFETY_BOUNDARY:
                 payload = request["payload"]
-                if payload.get("inflight_calls") is not False:
-                    raise ValueError("safety boundary must explicitly report no inflight calls")
+                # The transport's receipt check has already refused an in-flight boundary.
                 execution["safe_boundary_report"] = {"receipt_id": receipt["id"], **deepcopy(payload)}
                 if tracker is not None:
                     call_ids = payload.get("call_ids", [])
@@ -1333,7 +1216,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                         raise ValueError("safe boundary omits observed inflight research calls")
                     boundary_updates = tracker.record_safe_boundary(receipt["id"], call_ids=call_ids)
                     self.runtime.setdefault("self_check_obligations", {}).update(deepcopy(tracker.obligations))
-            elif request["kind"] == "self_check_response":
+            elif request["kind"] == SELF_CHECK_RESPONSE:
                 if tracker is None:
                     raise ValueError("self-check has no current tracker")
                 payload = request["payload"]
@@ -1362,11 +1245,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             # the receipt from durable state before deciding whether to retry.
             persisted = None
             try:
-                head, instance, runtime = self.store.load()
-                persisted = next((row for row in runtime.get("control_receipts", {}).values()
+                self._reload()
+                persisted = next((row for row in self.runtime.get("control_receipts", {}).values()
                     if row["request_id"] == request["request_id"] and row["request_sha256"] == digest), None)
-                self.head, self.instance, self.runtime = head, instance, runtime
-                self._evaluate_stops()
             except Exception:
                 if self.head == original_head:
                     self.instance, self.runtime = original_instance, original_runtime
@@ -1407,9 +1288,13 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         for item in feedback:
             publish_worker_feedback(workspace / ".control", item)
 
+    def _issued_input(self, execution, *, with_schema=True):
+        """The fixed context and schema this execution received (submission.issued_input)."""
+        return submission.issued_input(execution, self.head, lambda snapshot, path: self.store.read(path, snapshot),
+                                       git_dir=self.store.git_dir, with_schema=with_schema)
+
     def _control_evidence_refs(self, execution):
-        base = f"runtime/artifacts/{execution['input_bundle']}"
-        context = submission.load_json(self.store.read(base + "/input/submission/context.json", self.head))
+        context, _ = self._issued_input(execution, with_schema=False)
         refs = {row["value"] for row in context.get("reference_catalog", [])}
         for family in ("observation_facts", "self_check_obligations", "self_check_responses"):
             refs.update(row["id"] for row in self.runtime.get(family, {}).values()
@@ -1526,23 +1411,15 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
     def process_controls(self) -> None:
         """Apply queued user controls under the sole writer lock, without AI."""
         with self.store.writer_lock():
-            self.head, self.instance, self.runtime = self.store.load()
+            self._reload()
             self._inspect_before_write()
-            self._saved_state = self._state_signature()
-            self._evaluate_stops()
             self.instance = knowledge_io.ensure_ontology(self.instance)
             self._controls()
-            _, persisted_instance, persisted_runtime = self.store.load(self.head)
-            if self.instance != persisted_instance or self.runtime != persisted_runtime:
-                self._save()
+            self._save()
     def status(self, snapshot=None) -> dict:
-        self.head, self.instance, self.runtime = self.store.load(snapshot)
-        self._saved_state = self._state_signature()
-        self._evaluate_stops()
-        slots = getattr(self, "_slots", None)
-        if slots is not None and hasattr(slots, "runtime"):
-            slots.runtime, slots.instance = self.runtime, self.instance
+        self._reload(snapshot)
         executions = list(self.runtime["executions"].values())
+        live = [e["id"] for e in executions if e["status"] != "ended"]
         dispatch_waits = reporting.dispatch_waits(self.runtime)
         evaluation_context = self._evaluation_context()
         return {"instance_id": self.instance["id"], "snapshot": self.head, "title": self.instance["title"],
@@ -1553,10 +1430,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 "submission_checks": {"status": "not_evaluated",
                     "reason": "status reports persisted records; check derives submission check diagnostics"},
                 "goal": self._governance()["goal"], "goal_status": self.instance["goal_status"],
-                "status": self.runtime["status"], "active_execution": self.runtime["active_execution"],
+                "status": self.runtime["status"], "active_execution": live[0] if live else None,
                 "pending_actions": len(self.runtime["queue"]), "cycles": self.runtime["cycles"],
-                "installation_repair": deepcopy(repair_execution.pending_installation_repair(self.runtime)),
-                "maintenance_fence": deepcopy(self.runtime.get('maintenance_fence')),
                 "operation_progress": operation_progress(Path(self.instance['workspace']) / 'operations'),
                 "tasks": reporting.task_status(self.instance, self.runtime),
                 "dispatch_waits": dispatch_waits,
@@ -1567,15 +1442,16 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                               "identity_assessments": len(self.instance.get("identity_assessments", {}))},
                 "inspection": inspect_state(self.instance, self.runtime, snapshot=self.head,
                     read_artifact=lambda path: self.store.read(path, self.head),
-                    read_artifacts=lambda paths: self.store.read_many(paths, self.head),
-                    artifact_sizes=lambda paths: self.store.blob_sizes(paths, self.head)),
+                    read_artifacts=lambda paths: self.store.read_many(paths, self.head, missing="omit"),
+                    artifact_sizes=lambda paths: self.store.blob_sizes(paths, self.head, missing="omit")),
                 "research_effectiveness": {"status": "not_evaluated"},
                 "budget": self._session_resources(),
                 "budget_unit": "concurrent_sessions",
-                "active_executions": [e["id"] for e in executions if e["status"] != "ended"],
-                "execution_attempts": {pool: sum(e.get("budget_kind") == pool for e in executions) for pool in ("work", "operations")},
+                "active_executions": live,
+                "execution_attempts": {"work": sum(e.get("role") in execution_profiles.WORK_ROLES for e in executions),
+                                       "operations": sum(e.get("role") not in execution_profiles.WORK_ROLES for e in executions)},
                 "capacity_waiting": [{k: a[k] for k in ('role', 'target', 'model_selection')}
-                                     for a in dispatch_waits if a['wait']['kind'] in {'capacity', 'host_capacity'}],
+                                     for a in dispatch_waits if a['wait']['kind'] in SLOT_WAITS],
                 "usage": [e.get("usage", {}) for e in executions if e.get("usage")],
                 "latest_results": list(self.runtime["activities"].values())[-5:],
                 "provider_waits": self._provider_status(),
@@ -1584,14 +1460,13 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 "question_links": self._question_view(),
                 "operational_notices": deepcopy(self.runtime["questions"]),
                 "pending_controls": len(self._inbox()),
-                "user_pause": deepcopy(self.runtime.get("user_pause")),
-                "conversation_lost": (self.runtime.get('stop_requested') == 'conversation_lost'
-                    and self.instance.get('conversation_loss_policy') == 'pause'),
-                "model_policy_violation": deepcopy(self.runtime.get("model_policy_violation")),
+                # user_pause, conversation_lost, model_policy_violation, maintenance_fence,
+                # installation_repair and operator_enabled: the facts supervision decides on.
+                **supervision_facts(self.instance, self.runtime),
                 "waiting_actions": {aid: {"role": entry["action"].get("role"),
                     "target": entry["action"].get("target"), "kind": entry.get("kind"),
                     "reason": entry.get("reason"), "execution_id": entry.get("execution_id"),
-                    "failure_kind": entry.get("failure_kind"), "retry_at": entry.get("retry_at")}
+                    "failure_kind": entry.get("failure_kind")}
                     for aid, entry in self.runtime.get("waiting_actions", {}).items()},
                 "grants": [{"id": g["id"], "kind": g.get("kind"), "status": g.get("status"), "expires_at": g.get("expires_at")}
                            for g in self.instance.get("grants", {}).values()],
@@ -1617,10 +1492,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if max_steps is not None and max_steps < 1:
             raise ValueError("max_steps must be positive")
         with self.store.writer_lock():
-            self.head, self.instance, self.runtime = self.store.load()
+            self._reload()
             self._inspect_before_write()
-            self._saved_state = self._state_signature()
-            self._evaluate_stops()
             previous = self.runtime.get("installation")
             if previous != self._installation:
                 self.runtime.setdefault("implementation_history", []).append({
@@ -1639,7 +1512,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 return self.status()
             if self.instance["lifecycle"]["state"] != "initializing":
                 self._ensure_academic_followup()
-            self._retry_provider_actions()
             self._run_parallel(max_steps=max_steps, watch=watch, until_active=until_active)
         return self.status()
 
@@ -1673,8 +1545,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if (execution.get('role') == 'goal_audit' and execution.get('status') == 'ended'
                     and execution.get('outcome') != 'output_accepted'
                     and execution.get('capacity', {}).get('local_termination') == 'confirmed'
-                    and not any(r.get('owner_id') == execution['id'] and r.get('state') == 'held'
-                                for r in self.runtime.get('reservations', {}).values())
                     and self._committed_goal_audit(execution['id'])):
                 restored = self._restore_goal_audit_publication(execution) or restored
         if restored:
@@ -1694,9 +1564,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             execution = self.runtime["executions"][eid]
             state = execution["status"]
             if state == "queued":
-                reservations = [row for row in self.runtime.get("reservations", {}).values()
-                                if row.get("owner_id") == eid and row.get("status") != "released"]
-                if reservations:
+                if held_reservations(self.runtime, [eid]):
                     observation = {"fact": "queued_reservation_requires_reconciliation", "next_owner": "operator"}
                     execution["recovery_disposition"] = "preserve_space_and_reservations"
                 else:
@@ -1714,7 +1582,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                             "termination_barrier_pending")
             execution_lifecycle.recover_execution(execution, {"fact": initial_fact}, at=now())
             transport = execution.get("control_transport")
-            if transport and getattr(self, "_transport", None):
+            if transport and self._transport:
                 self._transport.close(transport, reason="executor restarted")
             local_ended = False
             if execution.get('launch_ticket'):
@@ -1735,34 +1603,12 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 continue
             bundle = new_id("BA")
             workspace = Path(self.instance["workspace"]) / "runs" / eid / "workspace"
-            if execution["role"] in {"formal_check", "trust_check"}:
+            if execution["role"] in execution_profiles.LEAN_ROLES:
                 workspace = Path(self.instance["workspace"]) / ("formal" if execution["role"] == "formal_check" else "trust") / eid
-            files = (self._sealed_submission_files(execution)
-                     or collect_outputs(workspace, max_bytes=self.instance["config"]["max_artifact_bytes"]))
-            control_files = collect_outputs(workspace / ".control",
-                                            max_bytes=self.instance["config"]["max_artifact_bytes"])
-            checkpoint, checkpoint_artifacts = preserve_checkpoint(workspace,
-                artifact_prefix=f'runtime/artifacts/{bundle}/checkpoint',
-                max_bytes=self.instance['config']['max_artifact_bytes'],
-                previous=self.runtime.get('checkpoints', {}).get(eid))
-            reference = f"runtime/artifacts/{bundle}/checkpoint-recovery.json"
-            artifacts = {
-                **checkpoint_artifacts,
-                reference: canonical_json(checkpoint),
-                f"runtime/artifacts/{bundle}/control-manifest.json": canonical_json(control_files["manifest"]),
-                f"runtime/artifacts/{bundle}/control-omitted.json": canonical_json(control_files["omitted"]),
-            }
-            entries = []
-            for path, raw in files["files"].items():
-                ref = f"runtime/artifacts/{bundle}/files/{path}"
-                artifacts[ref] = raw
-                entries.append({"path": path, "artifact_ref": ref, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)})
-            for path, raw in control_files["files"].items():
-                artifacts[f"runtime/artifacts/{bundle}/control/{path}"] = raw
+            artifacts, entries, reference, complete = self._preserve_outputs(
+                eid, workspace, bundle, max_bytes=self.instance["config"]["max_artifact_bytes"])
             execution.update(result_ref=reference, artifact_bundle=bundle, output_files=entries,
-                             outputs_complete=files["complete"], error="previous executor disappeared")
-            artifacts[reference] = canonical_json(checkpoint)
-            self.runtime.setdefault("checkpoints", {})[eid] = checkpoint
+                             outputs_complete=complete, error="previous executor disappeared")
             if not self._settle_recovered_execution(eid, at=now(), disposition={
                     "local_process": "terminated", "remote_state": "unknown", "artifact_ref": reference}):
                 self.runtime["recoveries"][recovery_id]["dispositions"].append({**disposition,
@@ -1878,12 +1724,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                    "instructions": "Read input/ and your workspace only. Pass the exact absolute workspace as workdir on every shell call, with login=false. Use absolute paths under this workspace for file reads and writes; a shell's default working directory may differ. Ask for missing inputs. Never read other runs or the central repository. New research source code belongs in this workspace."}
         context.update(goal_revision=governance_input.get("goal_revision", 1), policy_revision=governance_input.get("policy_revision", 1),
                        grants=[{k: v for k, v in grant.items() if k != "credential_env"} for grant in self.instance.get("grants", {}).values()],
-                        task_readiness={tid: planning.task_ready(task, self.instance, self.runtime, evaluation_context=evaluation_context)
-                                       for tid, task in self.runtime["tasks"].items()},
                        checkpoint_schema=CHECKPOINT_SCHEMA, checkpoint_path="checkpoint.json",
                        external_operations=list(self.runtime.get("external_operations", {}).values()),
                        events=[e for e in self.runtime.get("events", []) if e["id"] in action.get("event_refs", [])],
-                       available_input_refs=self.instance.get("available_input_refs", []))
+                       available_input_refs=self._available_inputs())
+        if action["role"] in {"research_plan", "research_work", "supplemental_research"}:
+            # The plan and research contracts read the readiness basis; other roles do not.
+            context["task_readiness"] = {tid: planning.task_ready(task, self.instance, self.runtime, evaluation_context=evaluation_context)
+                                         for tid, task in self.runtime["tasks"].items()}
         context["resources"] = self._session_resources()
         context["budget_unit"] = "concurrent_sessions"
         context["model_policy"] = {"tier_models": self.instance["config"]["tier_models"],
@@ -1891,12 +1739,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             "selected": action.get("model_selection"), "missing_assessment": "Existing tasks require assessment-only preparation before contract review; preparation uses its configured role floor."}
         if action["role"] == "research_plan":
             live_ids = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
-            context["queued_work"] = [deepcopy(a) for a in self.runtime["queue"] if a["role"] in WORK_ROLES and a.get("id") not in live_ids]
-        if action['role'] == 'research_plan':
+            context["queued_work"] = [deepcopy(a) for a in self.runtime["queue"] if a["role"] in execution_profiles.WORK_ROLES and a.get("id") not in live_ids]
             context['review_followups'] = [deepcopy(cycle) for cid, cycle in self.runtime.get('review_cycles', {}).items()
                 if cid in action.get('evidence_refs', [])]
-        context["execution_limits"] = {key: self.instance["config"][key] for key in
-            ("call_timeout_seconds", "review_rounds")}
         scholarly_enabled = self.instance["config"]["scholarly_enabled"]
         context["scholarly"] = {"enabled": scholarly_enabled,
             "configured": bool(scholarly_enabled and self.instance["config"]["scholarly_server"]),
@@ -1941,7 +1786,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 lambda snapshot, path: self.store.read(path, snapshot), git_dir=self.store.git_dir)
             context["impact_review_input"] = {"request": deepcopy(request),
                 "output": sealed["output"], "extensions": sealed["extensions"],
-                "records": {rid: deepcopy(record) for rid, (_, record) in planning._records(self.instance, self.runtime).items()
+                "records": {rid: deepcopy(record) for rid, (_, record) in planning.record_index(self.instance, self.runtime).items()
                     if any(rid in plan.get("basis", {}) or rid in plan.get("computed_impact", [])
                         or rid in plan.get("declared_impact", []) or rid in plan.get("roots", [])
                         for plan in request["plans"].values())}}
@@ -1951,12 +1796,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         context["execution_profiles"] = deepcopy(list(self.instance.get("execution_profiles", {}).values()))
         context["role_profile_refs"] = deepcopy(self.instance.get("role_profile_refs", {}))
         context["observed_at"] = evaluation_context["now"]
-        context["repetition_lineages"] = task_contracts.repetition_lineages(self.runtime, target)
         context['repetition_holds'] = list(revisions.active_repetition_holds(self.runtime).values())
         if action.get("profile_ref"):
             profile = execution_profiles.resolve_profile(self.instance["execution_profiles"], action["profile_ref"])
             context["execution_profile"] = profile
-            context["execution_limits"] = execution_profiles.runtime_config(profile)
             tools = execution_profiles.runner_tools(profile)
             context["scholarly"].update(enabled=tools["scholarly_server"] is not None,
                                        configured=tools["scholarly_server"] is not None)
@@ -1967,7 +1810,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             context.pop("recent_history")
         if action["role"] == "identity_review":
             context.pop("tasks")
-        if action["role"] == "identity_review":
             prepared = self._prepare_review_context(action, workspace, sources=sources)
             if prepared["disposition"] != "ready":
                 raise ReviewPreparationDeferred(prepared)
@@ -2113,17 +1955,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             for key in ("open_questions", "question_links", "recent_history", "tasks"):
                 context.pop(key, None)
         if action["role"] == "operational_review":
-            context["blocked_actions"] = [{"action_id": aid, "role": entry["action"].get("role"),
-                "target": entry["action"].get("target"), "kind": entry.get("kind"), "reason": entry.get("reason"),
-                "execution_id": entry.get("execution_id")} for aid, entry in self.runtime.get("waiting_actions", {}).items()
-                if entry.get("execution_id") == action.get("target")]
+            context["blocked_actions"] = [submission.blocked_action_row(aid, entry)
+                for aid, entry in self.runtime.get("waiting_actions", {}).items()
+                if entry.get("execution_id") == action.get("target") and entry.get("kind") in submission.RESOLVABLE_WAITS]
         if action["role"] == "maintenance":
             # Queue repairs are checked against the engine's own revision state.
             context["pending_revisions"] = deepcopy(planning.pending_revisions(self.runtime))
             context["revision_cycles"] = deepcopy(self.runtime.get("revision_cycles", []))
-            context["blocked_actions"] = [{"action_id": aid, "role": entry["action"].get("role"),
-                "target": entry["action"].get("target"), "kind": entry.get("kind"),
-                "reason": entry.get("reason"), "execution_id": entry.get("execution_id")}
+            context["blocked_actions"] = [submission.blocked_action_row(aid, entry)
                 for aid, entry in self.runtime.get("waiting_actions", {}).items()]
             if action.get('initial_submission_diagnosis'):
                 failed, waiting = repair_execution.initial_diagnosis_input(self, action)
@@ -2137,7 +1976,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 refs.extend(row['artifact_ref'] for row in failed.get('output_files', []))
                 if failed.get('input_bundle'):
                     prefix = 'runtime/artifacts/' + failed['input_bundle']
-                    refs.extend([prefix + '/input.txt', prefix + '/schema.json', prefix + '/input/submission/context.json'])
+                    refs.extend([failed['input_manifest']['prompt']['artifact_ref'], prefix + '/schema.json',
+                                 prefix + '/input/submission/context.json'])
                 context['initial_submission_diagnosis']['materials'] = []
                 for index, ref in enumerate(dict.fromkeys(refs)):
                     raw = self.store.read(ref, self.head)
@@ -2146,29 +1986,25 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     context['initial_submission_diagnosis']['materials'].append({
                         'artifact_ref': ref, 'local_path': 'input/' + local, 'sha256': hashlib.sha256(raw).hexdigest()})
         if action["role"] in {"research_preparation", "research_plan"}:
-            context["resources"] = self._session_resources()
-            context["config"] = deepcopy(self.instance["config"])
-            context["ready_task_ids"] = planning.ready_task_ids(self.runtime, self.instance, evaluation_context=evaluation_context)
-            context["pending_revisions"] = deepcopy(planning.pending_revisions(self.runtime))
+            # prepare_role_input derives configuration_source, and for preparation
+            # pending_revisions, from state; waiting actions appear in its ongoing_work.
+            if action["role"] == "research_plan":
+                context["ready_task_ids"] = sorted(tid for tid, row in context["task_readiness"].items()
+                                                   if row["state"] == "ready")
+                context["pending_revisions"] = deepcopy(planning.pending_revisions(self.runtime))
+            else:
+                context["ready_task_ids"] = planning.ready_task_ids(self.runtime, self.instance, evaluation_context=evaluation_context)
             context["revision_cycles"] = deepcopy(self.runtime.get("revision_cycles", []))
-            context["blocked_actions"] = [{"action_id": aid, "role": entry["action"].get("role"),
-                "target": entry["action"].get("target"), "kind": entry.get("kind"),
-                "reason": entry.get("reason"), "execution_id": entry.get("execution_id")}
-                for aid, entry in self.runtime.get("waiting_actions", {}).items()]
+            context["blocked_actions"] = [submission.blocked_action_row(aid, entry)
+                for aid, entry in self.runtime.get("waiting_actions", {}).items()
+                if entry.get("kind") in submission.RESOLVABLE_WAITS]
             context["recent_history"] = self._planning_history("research_plan", workspace)
-            context["ongoing_preparation"] = [
-                {"execution_id": e["id"], "status": e["status"],
-                 "input_snapshot": e.get("input_snapshot"),
-                 "revision_targets": deepcopy(e.get("action", {}).get("revision_targets", {})),
-                 "goal_revision": e.get("goal_revision"), "policy_revision": e.get("policy_revision"),
-                 "reason": e.get("action", {}).get("reason", ""),
-                 "target": e.get("action", {}).get("target"),
-                 "assessment_targets": deepcopy(e.get("action", {}).get("assessment_targets", {})),
-                 "observation_rule_targets": deepcopy(e.get("action", {}).get("observation_rule_targets", {}))}
-                for e in self.runtime["executions"].values()
-                if e["role"] == "research_preparation" and e["status"] != "ended"]
             if action["role"] == "research_preparation":
                 context["preparation_history"] = self._planning_history("research_preparation", workspace)
+        if action["role"] in {"research_preparation", "research_plan", "operational_review"}:
+            # Task inputs and completion evidence may cite these records (common execution contract).
+            context["supplied_record_ids"] = submission.supplied_record_ids(
+                context, planning.record_index(self.instance, self.runtime))
         return self._governance_context(action, context)
 
     def _planning_history(self, role: str, workspace: Path) -> list[dict]:
@@ -2253,7 +2089,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         return integration.require_bundle_impact_review(instance, runtime, bundle,
             producer_execution_id=execution_id, input_snapshot=runtime["executions"][execution_id]["input_snapshot"],
             review_execution_id=self._impact_review_execution(runtime, action, bundle["integration_id"]),
-            snapshot=self.head, read_artifact=lambda snapshot, path: self.store.read(path, snapshot))
+            snapshot=self.head, read_artifact=lambda snapshot, path: self.store.read(path, snapshot), git_dir=self.store.git_dir)
 
     def _validate_bundle_current(self, instance, runtime, bundle, *, action, execution_id, context):
         execution = runtime["executions"][execution_id]
@@ -2263,7 +2099,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._validate_bundle_impacts(instance, runtime, bundle, action=action, execution_id=execution_id)
             self._validate_decision_acceptance(action, bundle["output"], execution, context, evaluation_context=self._evaluation_context())
             reported = submission.reported_references(bundle["output"], bundle["extensions"], context)
-            _, input_instance, _ = self.store.load(execution["input_snapshot"])
+            _, input_instance, _ = self.store.view(execution["input_snapshot"])
             execution["source_basis"] = capture_sources(input_instance,
                 [row["name"] for row in execution.get("source_basis", [])] + reported)
             if not sources_current(execution["source_basis"], instance):
@@ -2287,16 +2123,17 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self.instance, self.runtime = original_instance, original_runtime
 
     def _validate_bundle_candidate(self, instance, runtime, bundle, *, artifacts=None):
-        # Storage performs its registered family/relation checks before the CAS.
-        # These checks also reject malformed domain projections before publication.
-        knowledge_records.validate_knowledge_records(instance)
-        _records(instance, runtime)
+        """Validate the candidate under the state contract; publication reuses the result.
+
+        The contract checks the registered families, relations, global record
+        IDs and the knowledge-record semantics before the CAS.
+        """
         if artifacts:
             from .question_engine import _pointer
             for row in runtime.get("question_links", []):
                 if row.get("source_ref") in artifacts:
                     _pointer(submission.load_json(artifacts[row["source_ref"]]), row["origin_field"])
-        self.store.validate_candidate(instance, runtime, self.head, artifacts=artifacts)
+        return self.store.validate_candidate(instance, runtime, self.head, artifacts=artifacts)
 
     def _apply_bundle_candidate(self, instance, runtime, bundle, *, action, execution_id, extensions,
                                 question_source_ref=None):
@@ -2310,7 +2147,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     self.instance, self.runtime, bundle, actor_ref=execution_id, producer_execution_id=execution_id,
                     input_snapshot=self.runtime["executions"][execution_id]["input_snapshot"],
                     review_execution_id=self._impact_review_execution(self.runtime, action, bundle["integration_id"]),
-                    snapshot=self.head, read_artifact=lambda snapshot, path: self.store.read(path, snapshot))
+                    snapshot=self.head, read_artifact=lambda snapshot, path: self.store.read(path, snapshot), git_dir=self.store.git_dir)
                 self._invalidate_goal_currentness()
             elif integration.mutation_members(bundle["output"], bundle["extensions"]):
                 request = integration.bundle_impact_request(self.instance, self.runtime, bundle,
@@ -2352,11 +2189,12 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     def _apply_submission_bundles(self, action, output, extensions, execution_id, context, issues):
         """Publish independent candidates without an enclosing execution rollback."""
-        def publish(instance, runtime, bundle):
+        def publish(instance, runtime, bundle, validated):
             # Normalize public events before the CAS. No fallible post-commit read
             # may make an already published bundle look like a rejected candidate.
-            self.head, normalized_instance, normalized_runtime = self.store.save_with_state(
-                self.head, instance, runtime)
+            # The candidate step validated exactly this state against this head.
+            self.head, normalized_instance, normalized_runtime = self.store.save_validated(
+                self.head, validated)
             instance.clear()
             instance.update(normalized_instance)
             runtime.clear()
@@ -2369,12 +2207,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 instance, runtime, bundle, action=action, execution_id=execution_id, context=context),
             validate_candidate=self._validate_bundle_candidate, publish=publish, submission_issues=issues)
         if any(row.get("next_owner") == "engine" for row in result["bundles"]):
-            self.head, self.instance, self.runtime = self.store.load()
+            self._reload()
             result["instance"], result["runtime"] = self.instance, self.runtime
         else:
             self.instance, self.runtime = result["instance"], result["runtime"]
-        self._saved_state = self._state_signature()
-        self._evaluate_stops()
+            self._evaluate_stops()
         self.runtime["executions"][execution_id]["integration_result"] = {
             key: deepcopy(result[key]) for key in ("status", "bundles", "issues", "retry_bundle_ids")}
         return result
@@ -2399,9 +2236,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     def _preview_submission(self, execution, payload):
         """Use the issued input and sole receiver callbacks; return no state projection."""
-        base = f"runtime/artifacts/{execution['input_bundle']}"
-        context = submission.load_json(self.store.read(base + "/input/submission/context.json", self.head))
-        schema = submission.load_json(self.store.read(base + "/schema.json", self.head))
+        context, schema = self._issued_input(execution)
         workspace = Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace"
         draft_path = payload.get("draft_path")
         sealed = submission.seal_submission(workspace, draft_path, execution_id=execution["id"],
@@ -2463,7 +2298,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 extension_issues = []
             check = submission.check_submission(output, schema, context, extensions, workspace,
                 mode="receiver", execution_id=execution_id,
-                tool_sha256=context.get("submission_contract", {}).get("tool_sha256", ENGINE_SHA256))
+                tool_sha256=context["submission_contract"]["tool_sha256"])
             check["issues"].extend(extension_issues)
             check["issues"].append(integration.issue(
                 "submission.sealed_candidate", "submission_receipt",
@@ -2553,9 +2388,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 except (ValueError, OSError, GitStateStoreError) as error:
                     # The response is already authoritative; local-effect recovery
                     # never revokes an accepted bundle or repeats its task receipt.
-                    self.head, self.instance, self.runtime = self.store.load()
-                    self._saved_state = self._state_signature()
-                    self._evaluate_stops()
+                    self._reload()
                     self.runtime["history"].append({"kind": "operational_repair_interrupted",
                         "execution_id": execution_id, "reason": str(error), "next_owner": "engine"})
         if received["status"] == "accepted" and action["role"] == "maintenance" and action.get("cleanup_execution_ids"):
@@ -2579,17 +2412,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         return self._lean_found
 
     def _available_inputs(self) -> list[str]:
-        result = {"SKILL.md", "GLOSSARY.md", "context:goal", "context:policy"}
-        if self.instance["config"].get("lean_command") or self._lean_discovered():
-            result.add("tool:lean")
-        if self.instance["config"]["scholarly_enabled"] and self.instance["config"]["scholarly_server"]:
-            result.add("tool:scholarly")
-        result.update(self.instance["knowledge"])
-        result.update(self.runtime["tasks"])
-        for source in self.instance["sources"]:
-            result.update((source["path"], source["name"], "source:"+source["name"]))
-            if source.get("id"): result.add(source["id"])
-        return sorted(result)
+        """This host's input references; derived for each role input, never stored."""
+        return task_contracts.available_input_refs(self.instance, self.runtime,
+            lean_available=bool(self.instance["config"].get("lean_command")) or self._lean_discovered())
 
     def _remove_action(self, action: dict) -> None:
         aid = action.get("id")
@@ -2628,9 +2453,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if any(self.runtime['executions'][eid]['status'] != 'ended'
                for eid in activity.get('assigned_execution_ids', [])):
             raise ValueError('initial retry cannot overlap a live predecessor')
-        if (predecessor.get('capacity', {}).get('local_termination') != 'confirmed'
-                or any(row.get('owner_id') == predecessor['id'] and row.get('state') == 'held'
-                       for row in self.runtime.get('reservations', {}).values())):
+        if predecessor.get('capacity', {}).get('local_termination') != 'confirmed':
             raise ValueError('initial retry requires confirmed local termination and released reservations')
         if any(row.get('id') == identifier for row in self.runtime['queue']):
             raise ValueError('initial retry action is already queued')
@@ -2655,7 +2478,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             else:
                 action['recovery'] = {'execution_id': predecessor['id'], 'reason': diagnosis['guidance']}
         # Check present initial authority even if the old native final is reusable.
-        for field in ('profile_ref', 'model_selection', 'actor_kind', 'budget_kind', 'dispatch_wait', 'grant_id'):
+        for field in ('profile_ref', 'model_selection', 'actor_kind', 'dispatch_wait', 'grant_id'):
             action.pop(field, None)
         action['profile_ref'] = deepcopy(lifecycle.get('adoption', {}).get('initial_profile_ref'))
         self._action_lifecycle_gate(action)
@@ -2686,9 +2509,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 or result.get('status') != 'completed'):
             return False
         from .model_runner import verified_native_final
-        base = f"runtime/artifacts/{execution['input_bundle']}"
-        context = submission.load_json(self.store.read(base + '/input/submission/context.json', self.head))
-        schema = submission.load_json(self.store.read(base + '/schema.json', self.head))
+        context, schema = self._issued_input(execution)
         raw = verified_native_final(result, execution, context)
         if execution.get('outputs_complete') is not True:
             raise ValueError('native recovery requires complete preserved workspace outputs')
@@ -2731,9 +2552,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self.runtime['queue'] = [row for row in self.runtime['queue']
             if not ((row.get('role') == 'operational_review' or row.get('initial_submission_diagnosis'))
                     and row.get('target') == execution_id)]
-        base = f"runtime/artifacts/{execution['input_bundle']}"
-        context = submission.load_json(self.store.read(base + '/input/submission/context.json', self.head))
-        schema = submission.load_json(self.store.read(base + '/schema.json', self.head))
+        context, schema = self._issued_input(execution)
         workspace = Path(self.instance['workspace']) / 'runs' / execution_id / 'workspace'
         received = self._receive_submission(action, {}, execution_id, context, schema, workspace, preserved=True)
         self.runtime['history'].append({'kind': 'native_final_recovery_completed', 'request_id': request['id'],
@@ -2749,7 +2568,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if self.runtime.get("status") in {"completed", "closed"} or self.instance.get("lifecycle", {}).get("permanently_closed"):
             raise ValueError("closed/completed instance cannot retry an input overflow")
         native = next((row for row in self.runtime.get('executions', {}).values()
-            if row.get('submission_receipt', {}).get('kind') == 'native_final'
+            if row.get('submission_receipt', {}).get('kind') == execution_lifecycle.NATIVE_FINAL_RECEIPT
             and row['submission_receipt'].get('recovery_request_id') == request['id']
             and row.get('action', {}).get('id') == identifier), None)
         if native:
@@ -2787,7 +2606,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if identifier not in condition.get("action_ids", []):
             raise ValueError("activity wait does not name the held input_overflow action")
         action = deepcopy(original)
-        for field in ("profile_ref", "model_selection", "actor_kind", "budget_kind", "dispatch_wait"):
+        for field in ("profile_ref", "model_selection", "actor_kind", "dispatch_wait"):
             action.pop(field, None)
         if selected_profile is not None:
             action['profile_ref'] = deepcopy(selected_profile)
@@ -2853,13 +2672,12 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         row = next((row for row in self.runtime.get("question_links", []) if row["id"] == identifier), None)
         if row is None:
             raise ValueError("input_overflow retry question is unknown")
-        if row.get("status") in {"resolved", "superseded"} and not row.get("unresolved_target_ids"):
+        if row.get("status") in {"resolved", "superseded"} and not questions.open_targets(row):
             return "already_resolved"
         if row.get("status") != "open":
             raise ValueError("input_overflow retry question is no longer open")
-        row.update(status="resolved", resolution_ref=execution_id, unresolved_target_ids=[])
-        row.setdefault("resolution_history", []).append({"kind": kind,
-            "resolution_ref": execution_id, "evidence": deepcopy(evidence)})
+        questions.close(row, kind=kind, resolution_ref=execution_id,
+                        affected_ids=questions.open_targets(row), evidence=evidence)
         return "resolved"
 
     def _consume_action_events(self, action: dict, execution_id: str) -> None:
@@ -2877,54 +2695,13 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
     def _read_extensions(self, workspace: Path) -> dict:
         return submission.read_extensions(workspace)
 
-    def _review_observation_source(self, execution_id, event):
-        execution = self.runtime["executions"][execution_id]
-        action = execution.get("action", {})
-        if (action.get("role") != "identity_review" or not action.get("review_cycle_id")
-                or event.get("type") in {"transport_bytes_received", "tick"}):
-            return None
-        cursors = getattr(self, "_review_event_cursors", {})
-        index, offset = cursors.get(execution_id, (0, 0))
-        path = Path(self.instance["workspace"]) / "runs" / execution_id / "evidence/stdout.jsonl"
-        with path.open("rb") as stream:
-            stream.seek(offset)
-            raw = stream.readline()
-            while raw and not raw.strip():
-                index += 1
-                raw = stream.readline()
-            offset = stream.tell()
-        if not raw:
-            raise ValueError("review observation has no actual provider JSONL row")
-        try:
-            decoded = json.loads(raw)
-        except (UnicodeError, json.JSONDecodeError):
-            decoded = {"type": "unparsed_observation", "bytes": len(raw.rstrip(b"\n"))}
-        if decoded != event:
-            raise ValueError("review observation differs from its actual provider row")
-        return {"raw": raw, "event_index": index, "next_cursor": (index + 1, offset),
-                "artifact_ref": f"runtime/artifacts/{new_id('BA')}/provider-event.jsonl"}
-
-    def _drain_review_observations(self, execution_id, tracker):
-        action = self.runtime["executions"][execution_id]["action"]
+    def _review_observation_source(self, execution_id, batch, index):
+        """The runner's own row bytes and row number; nothing is read or decoded again."""
+        action = self.runtime["executions"][execution_id].get("action", {})
         if action.get("role") != "identity_review" or not action.get("review_cycle_id"):
-            return
-        path = Path(self.instance["workspace"]) / "runs" / execution_id / "evidence/stdout.jsonl"
-        if not path.is_file():
-            return
-        while True:
-            _, offset = getattr(self, "_review_event_cursors", {}).get(execution_id, (0, 0))
-            with path.open("rb") as stream:
-                stream.seek(offset)
-                raw = stream.readline()
-                while raw and not raw.strip():
-                    raw = stream.readline()
-            if not raw:
-                return
-            try:
-                event = json.loads(raw)
-            except (UnicodeError, json.JSONDecodeError):
-                event = {"type": "unparsed_observation", "bytes": len(raw.rstrip(b"\n"))}
-            self._observe_running(execution_id, tracker, event)
+            return None
+        return {"raw": batch.rows[index], "event_index": batch.first_row + index,
+                "artifact_ref": f"runtime/artifacts/{new_id('BA')}/provider-event.jsonl"}
 
     @measured('observation_application')
     def _observe_running(self, execution_id: str, tracker: ObservationTracker, event: dict | ObservationBatch) -> None:
@@ -2940,20 +2717,17 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if checkpoint["status"] == "valid" and checkpoint["sha256"] not in candidate.seen_checkpoints:
                 candidate.register_self_check_checkpoint(checkpoint["sha256"])
         original_runtime = deepcopy(self.runtime)
-        original_cursors = deepcopy(getattr(self, '_review_event_cursors', {}))
         artifacts, self_checks, feedback = {}, [], []
         remind = False
-        coordinate = None
         try:
             observations = []
             for index, event in enumerate(events):
-                coordinate = self._review_observation_source(execution_id, event)
+                # Only stream rows have provider bytes; an engine event has none to preserve.
+                coordinate = self._review_observation_source(execution_id, batch, index) if batch is not None else None
                 if coordinate:
                     artifacts[coordinate["artifact_ref"]] = coordinate["raw"]
                     self._record_review_observation(execution_id, event, artifact_ref=coordinate["artifact_ref"],
                                                     event_index=coordinate["event_index"])
-                    self._review_event_cursors = getattr(self, '_review_event_cursors', {})
-                    self._review_event_cursors[execution_id] = coordinate['next_cursor']
                 observations.extend(candidate.observe(event) if batch is None else candidate.observe(event,
                     source=batch.source(batch.offsets[index][1], start_offset=batch.offsets[index][0]), evaluate=False, live=live))
             if batch is not None:
@@ -3011,20 +2785,17 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._save(artifacts or None)
         except Exception:
             self.runtime = original_runtime
-            self._review_event_cursors = original_cursors
             raise
         tracker.__dict__.clear()
         tracker.__dict__.update(candidate.__dict__)
         for obligation in self_checks:
             if batch is not None and batch.is_terminated():
                 break
+            # One request object is delivered and, for a live stream, hashed for its acknowledgement.
+            request = self_check_request(obligation) if batch is None else tracker.issue_self_check(obligation['id'])
+            self._transport.request_self_check(self._transport_bindings[execution_id], request=request)
             if batch is not None:
                 tracker.record_delivery(obligation['id'], source_offset=batch.stream_size())
-                obligation = tracker.obligations[obligation['id']]
-            self._transport.request_self_check(self._transport_bindings[execution_id],
-                self_check_id=obligation["id"], payload=self_check_feedback(obligation))
-            if batch is not None:
-                obligation['delivered_source_offset'] = batch.stream_size()
                 self.runtime['self_check_obligations'][obligation['id']] = deepcopy(tracker.obligations[obligation['id']])
         if batch is not None and self_checks:
             self._save()
@@ -3034,15 +2805,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             publish_worker_feedback(candidate.workspace / ".control", item)
 
 
-
-    def _runner_tools(self, arguments: dict) -> None:
-        parameters = inspect.signature(self.runner.run).parameters
-        extra = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values())
-        for name, value in execution_profiles.runner_tools(arguments["profile"]).items():
-            if name in parameters or extra:
-                arguments[name] = value
-            elif value:
-                raise ValueError("runner cannot consume profile field: " + name)
 
     def _collect_submitted_result(self, execution, result, context, schema, workspace):
         """Consume the sole central candidate, or capture a verified normal final."""
@@ -3129,9 +2891,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 or any(execution.get(key) != value for key, value in planning.governance_revisions(self.instance).items())
                 or execution['action']['role'] == 'goal_audit' and execution['action'].get('basis') != self._goal_basis_key()):
             raise ValueError('native candidate input premises changed before capture')
-        base = f"runtime/artifacts/{execution['input_bundle']}"
-        fixed = submission.load_json(self.store.read(base + '/input/submission/context.json', self.head))
-        fixed_schema = submission.load_json(self.store.read(base + '/schema.json', self.head))
+        fixed, fixed_schema = self._issued_input(execution)
         if fixed != context or fixed_schema != schema:
             raise ValueError('native capture differs from the published input or schema')
         sealed = submission.seal_submission(workspace, execution_id=execution['id'], context=fixed,
@@ -3143,7 +2903,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             proof['execution']['collect']['final'].items() if key != 'raw'}
         proof['execution']['collect']['final']['artifact'] = 'output.json'
         sealed['artifacts']['native-evidence.json'] = canonical_json(json_safe(proof))
-        receipt = {'id': new_id('NF'), 'kind': 'native_final', 'state': 'accepted',
+        receipt = {'id': new_id('NF'), 'kind': execution_lifecycle.NATIVE_FINAL_RECEIPT, 'state': 'accepted',
             'execution_id': execution['id'], 'received_at': now(), 'parent_snapshot': self.head,
             'final_sha256': hashlib.sha256(raw).hexdigest()}
         if recovery_request:
@@ -3153,15 +2913,13 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             artifacts = self._stage_submission_capture(execution, sealed, receipt, origin='native_final')
             self._save(artifacts)
         except Exception:
-            head, instance, runtime = self.store.load()
-            self.head, self.instance, self.runtime = head, instance, runtime
-            self._evaluate_stops()
-            saved = next((event['basis']['receipt'] for event in runtime.get('events', [])
+            self._reload()
+            saved = next((event['basis']['receipt'] for event in self.runtime.get('events', [])
                 if event['kind'] == 'submission_checked' and event.get('basis', {}).get('origin') == 'native_final'
                 and event['basis']['receipt']['id'] == receipt['id']), None)
             if saved:
                 return saved
-            if head == original_head:
+            if self.head == original_head:
                 self.instance, self.runtime = original_instance, original_runtime
             raise
         return receipt
@@ -3186,22 +2944,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 if event.get("assigned_to") == aid and not event.get("consumed_at"):
                     event.pop("assigned_to", None)
                     event.pop("assigned_at", None)
-
-    def _call(self, action: dict) -> bool:
-        generator = self._call_steps(action)
-        try:
-            arguments = next(generator)
-        except StopIteration as result:
-            return result.value
-        try:
-            output = self.runner.run(**arguments)
-        except Exception as error:
-            output = {"status": "failed", "output": None, "usage": {}, "error": f"{type(error).__name__}: {error}"}
-        try:
-            generator.send(output)
-        except StopIteration as result:
-            return result.value
-        raise RuntimeError("model call did not finish")
 
     def _obsolete_action_reason(self, action: dict, *, execution_id=None) -> str | None:
         judgment = self._goal_audit_seal(action)
@@ -3267,7 +3009,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             return True
         profile = self._execution_profile(action)
         activity = self._activity_for_action(action)
-        pool = profile["budget_kind"]
         config = {**self.instance["config"], **execution_profiles.runtime_config(profile)}
         task = self.runtime["tasks"].get(action.get("target"), {})
         rules = (self.runtime.get("task_observation_rules", {}).get(
@@ -3331,7 +3072,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         base = Path(self.instance["workspace"]) / "runs" / execution_id
         workspace = base / "workspace"
         workspace.mkdir(parents=True)
-        self.instance["available_input_refs"] = self._available_inputs()
         preparation_started = time.monotonic()
         input_head = self.head
         self._preparing_input = True
@@ -3363,10 +3103,12 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         schema = self._response_schema(action)
         if role == "intent_interpretation":
             context.setdefault("interpretation_to_check", None)
+        # The execution's one input archive; the role input manifest names its files.
+        input_bundle = new_id("BA")
         try:
             fitted = prepare_role_input(context, instance=self.instance, runtime=self.runtime, role=role, profile=profile,
                 snapshot=input_head, workspace=workspace, activity_id=activity_id, output_schema=schema,
-                documents=self._documents[role], artifact_prefix=f"runtime/artifacts/{execution_id}",
+                documents=self._documents[role], artifact_prefix=f"runtime/artifacts/{input_bundle}",
                 install_submission_tools=True, max_artifact_bytes=config["max_artifact_bytes"])
         except (ValueError, KeyError, TypeError, OSError) as error:
             self._discard_prepared_input(base, execution_id, reason=str(error), cancelled=False)
@@ -3439,7 +3181,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._settle_activity(execution_id)
             self._save({overflow_ref: canonical_json(detail)})
             return self.runtime["status"] == "ready"
-        input_bundle = new_id("BA")
         basis_ids = []
         source_refs = []
         if action.get("target") in self.runtime["tasks"]:
@@ -3456,7 +3197,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 raise ValueError("goal audit inputs changed before acceptance")
             basis_ids = [k["id"] for k in self.instance["knowledge"].values() if knowledge.assess_use(k, self.instance)["valid"]]
         chosen_model = action["model_selection"]
-        model = chosen_model["model"]
         if self._revision_dispatch_waits(action):
             self._discard_prepared_input(base, execution_id)
             return False
@@ -3476,11 +3216,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 "activity_id": activity_id, "execution_id": execution_id,
                 "question_disposition": question_disposition, "resolved_at": now(), **deepcopy(evidence)})
         execution = {"id": execution_id, "role": role, "action": action,
-                     "budget_kind": pool, "status": "queued", "created_at": now(), "input_snapshot": self.head,
-                     "input_sha256": hashlib.sha256(prompt.encode()).hexdigest(), "input_bundle": input_bundle,
+                     "status": "queued", "created_at": now(), "input_snapshot": self.head,
+                     "input_bundle": input_bundle,
                      "model": chosen_model["model"], "effort": config["effort"],
                      "model_selection": chosen_model,
-                     "engine_sha256": ENGINE_SHA256, "grant_id": authority["grant_id"], "observed_at": context["observed_at"],
+                     "grant_id": authority["grant_id"], "observed_at": context["observed_at"],
                      **self._governance_revisions(),
                      "validity_basis": knowledge.capture_basis(self.instance, self.runtime, basis_ids),
                      "decision_basis": capture_decision_basis(self.instance, self.runtime, self._decision_references(action)),
@@ -3508,7 +3248,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         tracker = ObservationTracker(execution_id, workspace, observation_config)
         if observation_config['observation_rules']:
             execution['observation_rules'] = deepcopy(observation_config['observation_rules'])
-        admitted = self._provider_admit(action, execution_id, pool, model, profile=profile, execution=execution)
+        admitted = self._provider_admit(action, execution_id, profile=profile, execution=execution)
         if not admitted:
             self._transport.close(binding, reason="execution was not admitted")
             self._transport_bindings.pop(execution_id, None)
@@ -3520,36 +3260,33 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     queued['dispatch_wait'] = deepcopy(action['dispatch_wait'])
             activities.wait_for(self.runtime, activity_id, reason="provider admission deferred",
                 condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=now())
-            self._save(self._input_artifacts(input_bundle, role, prompt, schema, fitted, workspace))
+            self._save(self._input_artifacts(input_bundle, schema, fitted, workspace))
             return False
         if execution["status"] == "queued":
             execution_lifecycle.transition_execution(execution, "starting", at=now())
-        self.runtime["active_execution"] = execution_id
         self._live_execution_ids.add(execution_id)
         if self.runtime["status"] != "paused":
             self.runtime["status"] = "running"
         if role in {"research_work", "supplemental_research"} and not action.get("review_cycle_id"):
             self.runtime["tasks"][action["target"]]["status"] = "active"
         execution["control_transport"] = {key: value for key, value in binding.items() if key != "capability"}
-        execution['launch_ticket']['phase'] = 'dispatched'
+        launch.mark_dispatched(execution['launch_ticket'])
         if role == "identity_review" and action.get("review_cycle_id"):
             self._record_review_input(action, execution_id)
-            self._record_review_prompt(execution_id, prompt, artifact_ref=f"runtime/artifacts/{input_bundle}/input.txt")
-        self._save(self._input_artifacts(input_bundle, role, prompt, schema, fitted, workspace))
+            self._record_review_prompt(execution_id, prompt, artifact_ref=fitted["manifest"]["prompt"]["artifact_ref"])
+        self._save(self._input_artifacts(input_bundle, schema, fitted, workspace))
         execution = self.runtime["executions"][execution_id]
         execution["input_published_at"] = now()
         self._trackers[execution_id] = tracker
         stop_started = None
         # Research ends by submission or an effective stop/authority condition.
-        # Only operations-budget AI has a per-call execution deadline.
-        call_deadline = None if pool == "work" else time.monotonic() + config["call_timeout_seconds"]
+        # Only operational AI roles have a per-call execution deadline.
+        call_deadline = (None if role in execution_profiles.WORK_ROLES
+                         else time.monotonic() + config["call_timeout_seconds"])
         def started(identity):
-            self._provider_slots().started(execution_id, identity)
-            window = execution_window.publish(workspace, execution_id, call_deadline, config, pool,
+            current = self._session_slots().started(execution_id, identity, at=now())
+            current["execution_window"] = execution_window.publish(workspace, execution_id, call_deadline, config,
                 deadline_source="none" if call_deadline is None else "operational_call")
-            current = self.runtime["executions"][execution_id]
-            execution_lifecycle.transition_execution(current, "running", at=now())
-            current.update(process=json_safe(identity), started_at=now(), execution_window=window)
             self._save()
         def should_stop():
             # Owner-thread judgment. The owner loop applies controls and conversation
@@ -3579,7 +3316,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                          or (call_deadline is not None and time.monotonic() >= call_deadline))
             if not requested:
                 # The notice compares the same clock as the deadline above.
-                execution_window.request_finish(workspace, call_deadline, config, pool, clock=time.monotonic)
+                execution_window.request_finish(workspace, call_deadline, config, clock=time.monotonic)
                 return False
             reason = current.get("stop_requested") or ("authority_changed" if not allowed or changed else
                 "submission_intent" if current.get("submission_intent") else "user_or_deadline_stop")
@@ -3601,27 +3338,22 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                          control_binding=binding,
                          input_seal=deepcopy(fitted["manifest"]["prompt"]),
                          timeout_seconds=None if call_deadline is None else max(.1, call_deadline-time.monotonic()),
-                         should_stop=should_stop, on_started=started)
-        self._runner_tools(arguments)
-        params = inspect.signature(self.runner.run).parameters
-        if "on_observation" in params or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()):
-            arguments["on_observation"] = lambda event: self._observe_running(execution_id, tracker, event)
-        deadlines = getattr(self, "_stop_deadlines", {})
+                         should_stop=should_stop, on_started=started,
+                         on_observation=lambda event: self._observe_running(execution_id, tracker, event))
+        deadlines = self._stop_deadlines
         if call_deadline is not None:
             # The owner loop compares these instants with the clock; the judgment runs when one passes.
-            deadlines[execution_id] = (call_deadline - execution_window.notice_seconds(config, pool), call_deadline)
+            deadlines[execution_id] = (call_deadline - execution_window.notice_seconds(config), call_deadline)
         result = yield arguments
         deadlines.pop(execution_id, None)
-        self._local_call_returned(execution_id, result)
         tracker.set_execution_status("stopping")
-        self._drain_review_observations(execution_id, tracker)
         self._transport.pump(self._publish_control_request)
         self._transport.close(binding, reason="execution process ended")
         tracker.set_execution_status("ended")
         self._trackers.pop(execution_id, None)
         self._check_installation(force=True)
         self._live_execution_ids.discard(execution_id)
-        provider_state = self._provider_outcome(execution_id, execution["model"], result)
+        provider_state = self._provider_outcome(execution_id, result)
         observation = execution_profiles.execution_observation(result)
         if observation is not None:
             self.runtime["executions"][execution_id]["provider_observation"] = observation
@@ -3630,11 +3362,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if evidence["execution_profile_ref"] != execution_profiles.profile_ref(profile):
                 raise ValueError("capability evidence differs from the attempted profile")
             self.instance.setdefault("capability_evidence", {})[evidence["id"]] = deepcopy(evidence)
-        if not self._release_call_slot(execution_id):
-            pending = self.runtime["executions"][execution_id]
-            execution_lifecycle.transition_execution(pending, "stopping", at=now(), stop_phase="terminating",
-                reason="Local Job termination remains unconfirmed")
-            pending["error"] = "Local Job termination is unconfirmed; slot and output remain held for recovery."
+        pending = self.runtime["executions"][execution_id]
+        if not execution_lifecycle.release_or_hold(pending, self._session_slots(), at=now()):
             result_ref = f"runtime/artifacts/{new_id('BA')}/result.json"
             pending['result_ref'] = result_ref
             for key in ('error_kind', 'failure'):
@@ -3648,7 +3377,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             result.setdefault('error_kind', 'execution_failure')
         stopped_execution = self.runtime["executions"][execution_id]
         if result.get("error_kind") == "model_policy":
-            self._pause_for_model_policy(execution_id, execution["model"], result)
+            record_model_policy_violation(self.runtime, execution_id, execution["model"], result)
         if result["status"] == "completed" and (
                 stopped_execution.get("after_stop")
                 or self._execution_stop_requested(action, stopped_execution)):
@@ -3657,39 +3386,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                       "error": "final output was collected after " + str(stopped_execution.get("stop_requested")
                           or "a pause or operational stop request") + "; preserved without acceptance"}
         bundle = new_id("BA")
-        files = (self._sealed_submission_files(self.runtime["executions"][execution_id])
-                 or collect_outputs(workspace, max_bytes=config["max_artifact_bytes"]))
-        control_files = collect_outputs(workspace / ".control", max_bytes=config["max_artifact_bytes"])
-        artifacts = {f"runtime/artifacts/{bundle}/result.json": canonical_json(result),
-                      f"runtime/artifacts/{bundle}/output-manifest.json": canonical_json(files["manifest"]),
-                      f"runtime/artifacts/{bundle}/omitted.json": canonical_json(files["omitted"]),
-                      f"runtime/artifacts/{bundle}/control-manifest.json": canonical_json(control_files["manifest"]),
-                      f"runtime/artifacts/{bundle}/control-omitted.json": canonical_json(control_files["omitted"])}
-        output_files = []
-        for path, raw in files["files"].items():
-            ref = f"runtime/artifacts/{bundle}/files/{path}"
-            artifacts[ref] = raw
-            output_files.append({"path": path, "artifact_ref": ref, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)})
-        for path, raw in control_files["files"].items():
-            ref = f"runtime/artifacts/{bundle}/control/{path}"
-            artifacts[ref] = raw
+        artifacts, output_files, _, outputs_complete = self._preserve_outputs(
+            execution_id, workspace, bundle, max_bytes=config["max_artifact_bytes"], evidence_dir=base / "evidence")
+        artifacts[f"runtime/artifacts/{bundle}/result.json"] = canonical_json(result)
         if result.get("output") is not None:
             artifacts[f"runtime/artifacts/{bundle}/output.json"] = canonical_json(result["output"])
-        checkpoint, checkpoint_artifacts = preserve_checkpoint(workspace,
-            artifact_prefix=f'runtime/artifacts/{bundle}/checkpoint', max_bytes=config['max_artifact_bytes'],
-            previous=self.runtime.get('checkpoints', {}).get(execution_id))
-        artifacts.update(checkpoint_artifacts)
-        evidence = collect_outputs(base / "evidence", max_bytes=config["max_artifact_bytes"])
-        checkpoint["observation_sources"] = []
-        for path, raw in evidence["files"].items():
-            reference = f"runtime/artifacts/{bundle}/provider-evidence/{path}"
-            artifacts[reference] = raw
-            checkpoint["observation_sources"].append({"artifact_ref": reference,
-                "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw), "path": path})
-        checkpoint["observation_evidence_complete"] = evidence["complete"]
-        checkpoint["observation_evidence_omitted"] = deepcopy(evidence["omitted"])
-        self.runtime.setdefault("checkpoints", {})[execution_id] = checkpoint
-        artifacts[f"runtime/artifacts/{bundle}/checkpoint-recovery.json"] = canonical_json(checkpoint)
         execution = self.runtime["executions"][execution_id]
         if execution["status"] != "stopping":
             execution_lifecycle.transition_execution(execution, "stopping", at=now(), stop_phase="terminating")
@@ -3705,12 +3406,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if cancelled:
                 self._continue_prepared_action(execution)
         execution.update(usage=result.get("usage", {}), artifact_bundle=bundle,
-                          output_files=output_files, outputs_complete=files["complete"],
+                          output_files=output_files, outputs_complete=outputs_complete,
                           result_ref=f"runtime/artifacts/{bundle}/result.json", error=result.get("error"))
         for key in ("usage_segments", "model_usage_reported", "usage_scope", "reported_models", "error_kind", "failure"):
             if key in result:
                 execution[key] = deepcopy(result[key])
-        self.runtime["active_execution"] = None
         # Raw evidence is durable before any domain bundle is attempted.
         self._save(artifacts)
         artifacts = {}
@@ -3729,14 +3429,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         elif execution.get("currentness_changes") and self.runtime["status"] != "paused":
             self._refresh_changed_decision(action, execution_id, execution["currentness_changes"])
         elif result.get("error_kind") == "provider_limit":
-            self._hold_provider_action(action, execution_id, provider_state, result.get("error"))
+            self._requeue_provider_action(action, execution_id, provider_state)
         elif result.get("error_kind") == "model_policy":
             self._remove_action(action)
             self.runtime["status"] = "paused"
             self.runtime["questions"].append("A reported model differed from the locked assignment; inspect " + execution_id)
         elif result["status"] == "completed" or result.get("error_kind") == "output_validation":
             try:
-                if not files["complete"]:
+                if not outputs_complete:
                     raise ValueError("required execution artifacts could not be preserved")
                 self._receive_submission(action, result, execution_id, context, schema, workspace)
             except Exception as error:
@@ -3777,8 +3477,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 if not returned:
                     repair_execution.route_failed_action(self, action, execution_id, front=False,
                         reason="Diagnose the preserved failure before selecting recovery")
-                    if action.get("recovery_attempt", 0) >= 1:
-                        self._finish_failed_investigation(action, execution_id, result.get("error"))
                 if self.runtime["status"] not in {"paused", "closed"}:
                     self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
             elif self.runtime["status"] not in {"closed", "paused"}:
@@ -3854,7 +3552,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if action["role"] not in {"research_preparation", "research_plan"}:
                 raise ValueError("only preparation and planning may withdraw AI-prepared tasks")
             execution = self.runtime["executions"][execution_id]
-            _, _, input_runtime = self.store.load(execution["input_snapshot"])
+            _, _, input_runtime = self.store.view(execution["input_snapshot"])
             self.instance, self.runtime = apply_task_dispositions(self.instance, self.runtime,
                 extension["task_dispositions"], execution_id=execution_id, input_tasks=input_runtime["tasks"])
         self._apply_queue_plan(action, execution_id)
@@ -3933,7 +3631,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if refs:
                 try:
                     origin = self.runtime["executions"][producer]["input_snapshot"]
-                    _, origin_instance, origin_runtime = self.store.load(origin)
+                    _, origin_instance, origin_runtime = self.store.view(origin)
                     basis = knowledge.capture_basis(origin_instance, origin_runtime,
                         sorted(set(refs) & (set(origin_instance["knowledge"]) | set(origin_runtime["tasks"]))))
                     changed = knowledge.validate_basis(basis, self.instance, self.runtime)["reasons"]
@@ -4016,7 +3714,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             titles = {}
             authoring_environment = None
             if any(proposal['work_class'] == 'formal' for proposal in output['candidates']):
-                _, authoring_instance, _ = self.store.load(self.runtime['executions'][execution_id]['input_snapshot'])
+                _, authoring_instance, _ = self.store.view(self.runtime['executions'][execution_id]['input_snapshot'])
                 authoring_environment = authoring_instance.get('active_trust_environment')
                 if authoring_environment is None:
                     raise ValueError('formal task requires the trust environment supplied to its author')
@@ -4034,7 +3732,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 if assessment is not None:
                     contract["model_assessment"] = deepcopy(assessment)
                 model_policy.work_profile_selection(self.instance['config'], contract,
-                    self.instance['execution_profiles'])
+                    self.instance)
                 if old:
                     # This is a complete replacement contract. Previous obligations
                     # remain in revision_history, not in the new completion criteria.
@@ -4079,15 +3777,19 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             cycles = revisions.dependency_cycles(self.runtime["tasks"])
             if any(set(cycle) & set(titles.values()) for cycle in cycles):
                 raise ValueError("explicit task dependency cycle: " + str(cycles))
-            available = set(self._available_inputs())
+            if titles:
+                fixed, _ = self._issued_input(self.runtime["executions"][execution_id], with_schema=False)
+                supplied = {*fixed.get("available_input_refs", []), *fixed.get("supplied_record_ids", []), *titles.values()}
             for tid in titles.values():
                 task = self.runtime["tasks"][tid]
                 task["inputs"] = [titles.get(ref, ref) for ref in task["inputs"]]
                 task["reuse"] = [titles.get(ref, ref) for ref in task["reuse"]]
                 task["dependencies"] = [titles.get(ref, ref) for ref in task["dependencies"]]
-                unknown = {ref for ref in (set(task["inputs"]) | set(task["reuse"])) - available if not ref.startswith("source:")}
+                unknown = task_contracts.unsupplied_task_inputs([*task["inputs"], *task["reuse"]], supplied,
+                                                                admit_named_sources=True)
                 if unknown:
-                    raise ValueError("task inputs must copy available source refs; unknown: " + ", ".join(sorted(unknown)))
+                    raise ValueError("task inputs must name available_input_refs, supplied records or titles "
+                                     "prepared in this output; unknown: " + ", ".join(unknown))
                 basis = {"revision": task["revision"], "contract_sha256": planning.contract_hash(task),
                          **self._governance_revisions()}
                 review_key = planning.review_basis_key(task, self.instance, self.runtime)
@@ -4127,7 +3829,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if decision == "approved" and task.get("waiting", {}).get("kind") == "contract_review":
                 task.pop("waiting")
             if decision != "approved":
-                task["revision_requested"] = {"execution_id": execution_id, "item_reviews": deepcopy(output["item_reviews"])}
+                task["revision_requested"] = {"revision": task["revision"], "source": execution_id,
+                                              "reason": "task contract review returned " + decision}
                 if task.get("academic_requirement_id"):
                     self._ensure_model_assessments()
                     return
@@ -4198,44 +3901,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         head, instance, runtime, rows = self.store.load_records()
         if head != self.head:
             raise ValueError("cleanup state changed outside the held writer lock")
-        records = {row["id"]: deepcopy(row["record"]) for row in rows if row.get("id")}
-        reference_keys = {"references", "dependencies", "source_refs", "origin_refs", "input_refs", "inputs", "reuse",
-            "artifact_ref", "path", "checkpoint_ref", "source_ref", "formal_result_id", "exposition_id",
-            "assessment_id", "evidence_refs", "authority_refs", "basis_refs", "record_refs", "result_ref"}
-        def references(value):
-            result = []
-            if isinstance(value, dict):
-                for key, child in value.items():
-                    if key in reference_keys:
-                        # Task reuse is a list of record references; grant reuse
-                        # is a policy enum and does not name an artifact.
-                        if key == "reuse" and isinstance(child, str):
-                            continue
-                        if isinstance(child, str):
-                            result.append(child)
-                        elif isinstance(child, list):
-                            result.extend(item for item in child if isinstance(item, str))
-                        elif isinstance(child, dict):
-                            result.extend(child[name] for name in ("id", "ref", "artifact_ref", "path") if isinstance(child.get(name), str))
-                    if isinstance(child, (dict, list)):
-                        result.extend(references(child))
-            elif isinstance(value, list):
-                for child in value:
-                    result.extend(references(child))
-            return result
-        for record in records.values():
-            record["references"] = sorted(set(references(record)))
-        for source in instance.get("sources", []):
-            if source.get("id") in records:
-                for alias in (source.get("name"), "source:" + source.get("name", "")):
-                    if alias:
-                        records.setdefault(alias, {"references": [source["id"]]})
-        # These issued semantic references do not name materialized run files.
-        for alias in ("context:goal", "context:policy", "tool:lean", "tool:scholarly"):
-            records.setdefault(alias, {"references": []})
-        protected = [row["id"] for row in rows if row.get("id") and
-                     (row["root"] == "research" or row["family"] in {"tasks", "question_links", "review_cycles"})]
-        protected.extend(references(runtime.get("waiting_actions", {})))
+        records, protected = retention.retention_inputs(instance, runtime, rows)
         return {"executions": runtime["executions"], "runtime": runtime,
                 "approved_execution_ids": self._cleanup_scope(action, instance, runtime),
                 "protected_references": protected, "reference_records": records}
@@ -4285,11 +3951,15 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 execution.setdefault("collection", {})["retention_manifest"] = [
                     {**row, "snapshot": archive_snapshot} for row in manifest]
             self._save()
-        state = self._retention_state(action)
+        state, state_head = self._retention_state(action), self.head
+        def current_state():
+            # Under the held writer lock the head moves only by this engine's
+            # publication, so one head's retention state serves every candidate.
+            return state if self.head == state_head else self._retention_state(action)
         reader = lambda path, snapshot: self.store.read(path, snapshot)
         candidates = retention.cleanup_candidates(workspace, **state, read_artifact=reader,
                                                   git_dir=self.store.git_dir, marks=marks)
-        result = retention.cleanup(workspace, candidates, current_state=lambda: self._retention_state(action),
+        result = retention.cleanup(workspace, candidates, current_state=current_state,
                                    read_artifact=reader, git_dir=self.store.git_dir, marks=marks)
         result["failures"].extend(failures)
         if failures:
@@ -4399,7 +4069,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 return record
             if target["status"] != "ended":
                 raise ValueError("recovery cannot overlap a live predecessor")
-            if ((target.get('capacity') or target.get('process'))
+            if (target.get('capacity')
                     and target.get('capacity', {}).get('local_termination') != 'confirmed'):
                 raise ValueError('recovery requires confirmed local termination')
             if kind == "resume" and disposition["checkpoint_ref"] != self.runtime.get("checkpoints", {}).get(target["id"], {}).get("artifact_ref"):
@@ -4449,7 +4119,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if (len(assessments) != 1 or assessments[0].get("task_id") != task["id"]
                     or assessments[0].get("decision") != disposition["task_state"]):
                 raise ValueError("operational task disposition requires one matching item assessment")
-            _, _, input_runtime = self.store.load(reviewer["input_snapshot"])
+            _, _, input_runtime = self.store.view(reviewer["input_snapshot"])
             self.instance, self.runtime = task_scope.apply_task_assessments(self.instance, self.runtime,
                 assessments, execution_id=record["execution_id"], input_tasks=input_runtime["tasks"],
                 evaluation_context=self._evaluation_context())
@@ -4507,9 +4177,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     def _apply_plan(self, output: dict, execution_id: str) -> None:
         execution = self.runtime["executions"][execution_id]
-        _, _, input_runtime = self.store.load(execution["input_snapshot"])
-        fixed = submission.load_json(self.store.read(
-            "runtime/artifacts/" + execution["input_bundle"] + "/input/submission/context.json", self.head))
+        _, _, input_runtime = self.store.view(execution["input_snapshot"])
+        fixed, _ = self._issued_input(execution, with_schema=False)
         if fixed.get("snapshot") != execution["input_snapshot"] or "ready_task_ids" not in fixed:
             raise ValueError("planning input is missing its fixed candidate population")
         input_tasks = {row["id"]: input_runtime["tasks"][row["id"]] for row in fixed["tasks"]}
@@ -4588,7 +4257,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         workspace = Path(self.instance["workspace"]) / "formal" / execution_id
         execution = self._register_execution(action, {
             "id": execution_id, "role": "formal_check", "status": "running", "created_at": now(),
-            "grant_id": authority["grant_id"], "engine_sha256": ENGINE_SHA256, "input_snapshot": self.head,
+            "grant_id": authority["grant_id"], "input_snapshot": self.head,
             'decision_basis': capture_decision_basis(self.instance, self.runtime,
                 planning.action_read_ids(action, self.instance, self.runtime)),
             "input_manifest": manifest})
@@ -4596,7 +4265,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._save()
             return
         workspace.mkdir(parents=True)
-        self.runtime["active_execution"] = execution_id
         self._save()
         stop_reasons = set()
         def stop():
@@ -4606,7 +4274,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 reasons.add("instance_ended")
             if self.runtime["status"] == "paused" or self.runtime.get("stop_requested"):
                 reasons.add("instance_paused")
-            if getattr(self, '_calls', None) is not None and self._calls.stopping:
+            if self._calls is not None and self._calls.stopping:
                 reasons.add("executor_stopping")
             if self.runtime["executions"][execution_id].get("stop_requested"):
                 reasons.add("execution_stop_requested")
@@ -4621,15 +4289,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             return bool(reasons)
         kwargs = dict(source=source, declarations=declarations, workspace=workspace,
                       environment=environment, binding=binding, verifier=self.formal_verifier,
-                      **invocation)
-        parameters = inspect.signature(self.formal_verifier).parameters
-        accepts_extra = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values())
-        if 'launch_ticket' in parameters or accepts_extra:
-            kwargs['launch_ticket'] = deepcopy(execution['launch_ticket'])
-        if "should_stop" in parameters or accepts_extra:
-            kwargs["should_stop"] = stop
-        if "allowed_axioms" in parameters or accepts_extra:
-            kwargs["allowed_axioms"] = tuple(environment.get("allowed_axioms", []))
+                      **invocation, launch_ticket=deepcopy(execution['launch_ticket']), should_stop=stop,
+                      allowed_axioms=tuple(environment.get("allowed_axioms", [])))
         result = ({'status': 'stopped', 'reason': 'formal authority changed'} if stop()
                   else (yield execution_id, kwargs))
         self._live_execution_ids.discard(execution_id)
@@ -4648,10 +4309,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         reference = f"runtime/artifacts/{bundle}/formal.json"
         execution = self.runtime["executions"][execution_id]
         execution.update(result_ref=reference, artifact_bundle=bundle, formal_status=result["status"])
-        if not self._release_call_slot(execution_id):
-            execution_lifecycle.transition_execution(execution, "stopping", at=now(), stop_phase="terminating",
-                reason="Machine Job termination remains unconfirmed")
-            execution["error"] = "Machine capacity and result remain held until local Job termination is confirmed."
+        if not execution_lifecycle.release_or_hold(execution, self._session_slots(), at=now()):
             self._save({f"runtime/artifacts/{bundle}/proposal.lean": source.encode(), reference: canonical_json(result)})
             return
         # Failed compiler runs remain evidence. Only complete checked evidence can seal a formal result.
@@ -4668,15 +4326,13 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._apply_trust_rebind(result["environment_check"])
         execution_lifecycle.transition_execution(execution, "stopping", at=now(), stop_phase="terminating")
         if result["status"] == "verified":
-            execution["submission_receipt"] = {"kind": "machine_output", "state": "accepted", "execution_id": execution_id,
-                "evidence_ref": reference, "source_sha256": hashlib.sha256(source.encode()).hexdigest(),
+            execution["submission_receipt"] = {"kind": execution_lifecycle.MACHINE_OUTPUT_RECEIPT, "state": "accepted", "execution_id": execution_id,
+                "evidence_ref": reference, "source_sha256": lean_source_sha256(source),
                 "trust_environment_id": environment_id, "accepted_at": now()}
         execution_lifecycle.transition_execution(execution, "ended", at=now(),
             outcome="output_accepted" if result["status"] == "verified" else "execution_incomplete",
             disposition={"kind": "formal_result", "status": result["status"], "artifact_ref": reference,
                          "stop_reasons": sorted(stop_reasons)})
-        if self.runtime.get('active_execution') == execution_id:
-            self.runtime["active_execution"] = None
         resumable = (result["status"] == "stopped" and "instance_paused" in stop_reasons
                      and not stop_reasons.intersection({"instance_ended", "authority_changed",
                                                        "trust_environment_changed", "input_changed"}))
@@ -4718,20 +4374,20 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     continue
                 if event.get('basis', {}).get('origin') == 'native_final':
                     receipt = event['basis']['receipt']
-                    if receipt['kind'] != 'native_final' or event['source_ref'] != event['target']:
+                    if receipt['kind'] != execution_lifecycle.NATIVE_FINAL_RECEIPT or event['source_ref'] != event['target']:
                         raise ValueError('native check event differs from its execution')
                     receipts[receipt['id']] = receipt
                 else:
                     receipt = receipts[event['source_ref']]
                 evidence = receipt['payload']['submission_check']
-                if (receipt['kind'] not in {'submit_intent', 'native_final'} or receipt['execution_id'] != event['target']
+                if (receipt['kind'] not in execution_lifecycle.SUBMISSION_RECEIPT_KINDS or receipt['execution_id'] != event['target']
                         or event.get('evidence_refs') != [evidence['check_ref']]):
                     raise ValueError('central check event differs from its receipt')
                 covered.add(receipt['id'])
                 seals.append({'event_seq': event['event_seq'], 'capture_id': receipt.get('request_id', receipt['id']),
                     'execution_id': receipt['execution_id'], 'state': receipt['state'],
                     'submission_check': evidence})
-            required = {row['id'] for row in receipts.values() if row.get('kind') == 'submit_intent'
+            required = {row['id'] for row in receipts.values() if row.get('kind') == SUBMIT_INTENT
                         and (row.get('state') == 'accepted' or row.get('payload', {}).get('submission_check'))}
             if required - covered:
                 raise ValueError('saved central submissions lack ordered check evidence: ' + ', '.join(sorted(required-covered)))
@@ -4744,7 +4400,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     raise ValueError('saved accepted submission has no matching central check evidence')
             seals.sort(key=lambda row: row['event_seq'])
             summary = submission.summarize_snapshot_checks(seals, snapshot=snapshot,
-                read_artifact=lambda selected,path: self.store.read(path,selected), history_window=len(seals))
+                read_artifact=lambda selected,path: self.store.read(path,selected), history_window=len(seals), git_dir=self.store.git_dir)
         except (ValueError, KeyError, TypeError, OSError, GitStateStoreError) as error:
             return {'snapshot':snapshot,'status':'incomplete','error':str(error),'next_owner':'maintenance'}
         summary.update(status='verified')
@@ -4753,50 +4409,36 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
     def _inspect_before_write(self):
         """Reject missing or truncated current evidence before any recovery or installation write.
 
-        Presence and stored length only; ``check`` compares full bytes.
+        Presence and stored length only; ``check`` compares full bytes. The
+        loaded state already passed the state contract.
         """
-        _require_current_contract(self.instance, self.runtime)
         snapshot = self.head
-        sizes = lambda paths: self.store.blob_sizes(paths, snapshot)
+        sizes = lambda paths: self.store.blob_sizes(paths, snapshot, missing="omit")
         inspection = inspect_state(self.instance, self.runtime, requested_areas=["record_storage"],
             snapshot=snapshot, artifact_sizes=sizes)
         failed = [row for row in inspection["findings"] if row.get("status") in {"blocked", "incomplete"}]
         if failed:
             raise ValueError("current state evidence must be repaired before publication: " + str(failed))
-        inputs = [(execution, f"runtime/artifacts/{execution['input_bundle']}/input.txt")
-                  for execution in self.runtime["executions"].values()
-                  if execution.get("input_bundle") and execution.get("input_sha256")]
-        try:
-            sizes([path for _, path in inputs])
-        except GitStateStoreError:
-            for execution, path in inputs:
-                try:
-                    sizes([path])
-                except GitStateStoreError as error:
-                    raise ValueError("current input artifact is missing: " + execution["id"]) from error
+        # Each sealed role input names its prompt in its manifest.
+        prompts = {execution["input_manifest"]["prompt"]["artifact_ref"]: execution["id"]
+                   for execution in self.runtime["executions"].values() if execution.get("input_bundle")}
+        present = sizes(list(prompts))
+        for path, execution_id in prompts.items():
+            if path not in present:
+                raise ValueError("current input artifact is missing: " + execution_id)
 
     def check(self, snapshot=None, requested_areas=None) -> dict:
+        # Loading validates the state contract; the start_import_input area
+        # compares every sealed role input, prompt included, with its manifest.
         head, instance, runtime = self.store.load(snapshot)
         inspection = inspect_state(instance, runtime, requested_areas=requested_areas,
             snapshot=head, read_artifact=lambda path: self.store.read(path, head),
-            read_artifacts=lambda paths: self.store.read_many(paths, head))
+            read_artifacts=lambda paths: self.store.read_many(paths, head, missing="omit"))
         areas = set(inspection["requested_areas"])
         errors = []
         try:
-            if "record_storage" in areas:
-                _require_current_contract(instance, runtime)
-                inputs = [(execution, f"runtime/artifacts/{execution['input_bundle']}/input.txt")
-                          for execution in runtime["executions"].values()
-                          if execution.get("input_bundle") and execution.get("input_sha256")]
-                read = prefetch_artifacts([path for _, path in inputs],
-                    lambda path: self.store.read(path, head), lambda paths: self.store.read_many(paths, head))
-                for execution, ref in inputs:
-                    if hashlib.sha256(read(ref)).hexdigest() != execution["input_sha256"]:
-                        errors.append(ref + ": preserved input differs from its content reference")
             if "governance_trust" in areas:
                 validate_config(instance["config"])
-            if "mathematical_effect" in areas:
-                knowledge_records.validate_knowledge_records(instance)
         except (ValueError, KeyError, TypeError, OSError, GitStateStoreError) as error:
             errors.append(str(error))
         summary = self._submission_check_summary(head, runtime) if "repair_iteration" in areas else None

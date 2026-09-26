@@ -5,8 +5,8 @@ from copy import deepcopy
 
 TIERS = ("low", "medium", "high")
 MODELS = {"high": "gpt-6-astra", "medium": "gpt-5.6-sol", "low": "gpt-5.6-terra"}
-LIMITS = {"work": {model: 3 for model in MODELS.values()},
-          "operations": {model: 3 for model in MODELS.values()}}
+# Work roles reserve these per-model slots. Operational roles reserve none.
+LIMITS = {"work": {model: 3 for model in MODELS.values()}}
 # Bootstrap judgments must be possible before a research planner has run.
 ROLE_TIERS = {"research_preparation": "high", "research_plan": "high",
               "research_work": "low", "supplemental_research": "low",
@@ -89,18 +89,23 @@ def validate_policy(config: dict) -> None:
     if not isinstance(roles, dict) or set(roles) - set(ROLE_TIERS) or any(t not in TIERS for t in roles.values()):
         raise ValueError("role_tiers contains an unknown role or tier")
     limits = config["session_limits"]
-    if not isinstance(limits, dict) or set(limits) != {"work", "operations"}:
-        raise ValueError("session_limits requires work and operations model maps")
-    for pool, values in limits.items():
-        if not isinstance(values, dict) or any(not isinstance(m, str) or not m.strip()
-                or isinstance(n, bool) or not isinstance(n, int) or n < 0 for m, n in values.items()):
-            raise ValueError(f"session_limits.{pool} must map model names to nonnegative integers")
-        if set(models.values()) - set(values):
-            raise ValueError(f"session_limits.{pool} must explicitly include every tier model, including zero capacity")
+    if not isinstance(limits, dict) or set(limits) != {"work"}:
+        raise ValueError("session_limits requires exactly the work model map")
+    values = limits["work"]
+    if not isinstance(values, dict) or any(not isinstance(m, str) or not m.strip()
+            or isinstance(n, bool) or not isinstance(n, int) or n < 0 for m, n in values.items()):
+        raise ValueError("session_limits.work must map model names to nonnegative integers")
+    if set(models.values()) - set(values):
+        raise ValueError("session_limits.work must explicitly include every tier model, including zero capacity")
 
 
-def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, profiles: dict | None = None) -> dict:
-    """Bind a requirement to a model without inspecting current slot availability."""
+def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, instance: dict | None = None) -> dict:
+    """Bind a requirement to a model without inspecting current slot availability.
+
+    With ``instance``, also select one of its registered profiles. Default
+    assignments use its adopted ``role_profile_refs``, the same editions the
+    engine publishes, never a profile rebuilt from the configuration.
+    """
     role, target = action["role"], action.get("target")
     requirement = action.get("model_assessment")
     task = tasks.get(target, {})
@@ -117,8 +122,9 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, profi
         tier, reason = floor, "Configured role requirement; raise when task difficulty or importance requires it."
     result = {"tier": tier, "model": config["tier_models"][tier],
               "assessment": deepcopy(requirement), "reason": reason}
-    if profiles is not None:
-        from .execution_profiles import build_profiles, select_profile, profile_ref, resolve_profile
+    if instance is not None:
+        from .execution_profiles import select_profile, profile_ref, resolve_profile
+        profiles = instance["execution_profiles"]
         # A task's allowlist governs its work attempts. Reviewers and other
         # decision roles use their own adopted role profiles, while still
         # inheriting the task's difficulty/importance requirement above.
@@ -136,16 +142,16 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, profi
                               reason="Explicit immutable profile meeting the role/task requirement.")
         if allowed is None and not action.get("profile_ref"):
             # The registry retains old editions for running executions. New
-            # default assignments use only the current adopted configuration.
-            allowed = build_profiles(config, roles={role})["role_profile_refs"].get(role, [])
+            # default assignments use only the currently adopted editions.
+            allowed = instance["role_profile_refs"].get(role, [])
         selected = select_profile(profiles, action, result, allowed_refs=allowed)
         result["profile_ref"] = profile_ref(selected)
     return result
 
 
-def work_profile_selection(config: dict, task: dict, profiles: dict, *, action=None) -> dict:
+def work_profile_selection(config: dict, task: dict, instance: dict, *, action=None) -> dict:
     """One admission rule for authored contracts, readiness and work dispatch."""
     action = action or {'role': 'research_work', 'target': task['id']}
     if action['role'] not in {'research_work', 'supplemental_research'}:
         raise ValueError('work profile admission requires a work role')
-    return selection(config, action, {task['id']: task}, {}, profiles=profiles)
+    return selection(config, action, {task['id']: task}, {}, instance=instance)

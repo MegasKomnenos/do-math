@@ -15,6 +15,7 @@ from .knowledge import (revise_knowledge, invalidate_knowledge, register_environ
     validate_basis, assess_use)
 from .planning import (task_ready, contract_hash, apply_event_schedule, contract_review_current, review_basis_key,
                        capture_task_basis)
+from .execution_lifecycle import MACHINE_OUTPUT_RECEIPT
 from .input_basis import sources_current
 from .repository import canonical_json, exact_content_hash, new_id
 from .initialization import activation_requirements, capability_requirements, governance_working_view
@@ -34,18 +35,6 @@ def _toolchain_matches(expected, actual):
 
 
 class LifecycleEngineMixin:
-    def _verify_current_head(self):
-        store = getattr(self, 'store', None)
-        if not callable(getattr(store, 'load', None)):
-            return  # Pure mixin fixtures have no persisted head.
-        if getattr(self, '_verified_lifecycle_head', None) == self.head:
-            return
-        from .preflight import inspect_persisted_state
-        report = inspect_persisted_state(store, self.head)
-        if not report['valid']:
-            raise ValueError('damaged current state; no recovery write allowed: ' + str(report['errors']))
-        self._verified_lifecycle_head = self.head
-
     def _lifecycle_now(self):
         clock = getattr(self, 'lifecycle_clock', None)
         return timestamp(clock() if clock else None)
@@ -80,7 +69,7 @@ class LifecycleEngineMixin:
         wall_radius = timedelta(microseconds=math.ceil(
             time.get_clock_info('time').resolution * 1_000_000) + 1)
         mono_radius = time.get_clock_info('monotonic').resolution + max(math.ulp(before), math.ulp(after))
-        anchor = getattr(self, '_clock_anchor', None)
+        anchor = self._clock_anchor
         reason = 'persisted_utc_regression' if now < previous else None
         expected = None
         if anchor is not None:
@@ -111,8 +100,19 @@ class LifecycleEngineMixin:
     def _capability_requirements(self, reference, required=()):
         return capability_requirements(self.instance, reference, required, at=self._lifecycle_now().isoformat())
 
+    def _instance_closed(self):
+        """Closed or completed research: no lifecycle control or dispatch applies any more."""
+        return (self.runtime.get('status') in {'closed', 'completed'}
+                or self.instance['lifecycle'].get('permanently_closed'))
+
+    def _request_stop_all(self, reason):
+        """Record one stop reason on every execution that has not ended."""
+        for execution in self.runtime['executions'].values():
+            if execution.get('status') != 'ended':
+                execution['stop_requested'] = reason
+
     def _pause_lifecycle(self, reason):
-        if self.runtime.get('status') in {'closed', 'completed'} or self.instance['lifecycle'].get('permanently_closed'):
+        if self._instance_closed():
             raise ValueError('closed/completed instance cannot pause or reopen')
         lifecycle = self.instance['lifecycle']
         if lifecycle['state'] != 'paused':
@@ -121,9 +121,7 @@ class LifecycleEngineMixin:
         self.runtime['status'] = 'paused'
         self.runtime['stop_requested'] = reason
         lifecycle.setdefault('history', []).append({'kind': 'pause', 'id': new_id('PA'), 'reason': reason})
-        for execution in self.runtime['executions'].values():
-            if execution.get('status') not in {'ended', 'finished'}:
-                execution['stop_requested'] = reason
+        self._request_stop_all(reason)
 
     def _conversation_live(self):
         if self.instance.get('conversation_loss_policy') != 'pause':
@@ -135,7 +133,7 @@ class LifecycleEngineMixin:
                    for row in self.runtime.get('conversations', {}).values())
 
     def _resume_lifecycle(self, request):
-        if self.runtime.get('status') in {'closed', 'completed'} or self.instance['lifecycle'].get('permanently_closed'):
+        if self._instance_closed():
             raise ValueError('closed/completed instance cannot resume')
         if request.get('origin', 'user') != 'user' and (
                 self.runtime.get('user_pause') or self.runtime.get('model_policy_violation')
@@ -162,15 +160,14 @@ class LifecycleEngineMixin:
 
 
     def _activate_initialization(self):
-        if self.runtime.get('status') in {'closed', 'completed'} or self.instance['lifecycle'].get('permanently_closed'):
+        if self._instance_closed():
             raise ValueError('closed/completed instance cannot activate')
         lifecycle = self.instance['lifecycle']
         if lifecycle['state'] != 'initializing':
             return {'activated': lifecycle['state'] == 'active', 'missing': []}
         self._require_action_clock()
-        self.runtime['recovery_checked'] = not any(
-            e.get('status') != 'ended' for e in self.runtime.get('executions', {}).values()) and not any(
-            r.get('state') == 'held' for r in self.runtime.get('reservations', {}).values())
+        from .session_slots import quiescence
+        self.runtime['recovery_checked'] = not any(quiescence(self.runtime).values())
         requirements = activation_requirements(self.instance, self.runtime, at=self._lifecycle_now().isoformat(),
             owner_handlers=getattr(self, '_governance_owner_handlers', lambda: None)())
         lifecycle.setdefault('activation', {})['missing'] = requirements['missing']
@@ -279,12 +276,12 @@ class LifecycleEngineMixin:
             from .model_policy import selection
             selection(self.instance['config'], {'role': 'intent_interpretation',
                 'profile_ref': change['initial_profile_ref']}, {}, self.instance['knowledge'],
-                profiles=self.instance['execution_profiles'])
+                instance=self.instance)
             adoption['initial_profile_ref'] = deepcopy(change['initial_profile_ref'])
         elif adoption.get('config_sha256') == exact_content_hash(self.instance['config']) and adoption.get('profile_refs'):
             from .model_policy import selection
             chosen = selection(self.instance['config'], {'role': 'intent_interpretation'}, {},
-                               self.instance['knowledge'], profiles=self.instance['execution_profiles'])['profile_ref']
+                               self.instance['knowledge'], instance=self.instance)['profile_ref']
             if chosen in adoption['profile_refs']:
                 adoption['initial_profile_ref'] = chosen
         for field, initial in [('initial_grant_ids', True), ('research_grant_ids', False)]:
@@ -345,12 +342,12 @@ class LifecycleEngineMixin:
         return True
 
     def _action_lifecycle_gate(self, action):
-        if self.runtime.get('status') in {'closed', 'completed'} or self.instance['lifecycle'].get('permanently_closed'):
+        if self._instance_closed():
             raise ValueError('closed/completed instance cannot dispatch')
         self._require_action_clock()
         profile = self._execution_profile(action)
         from .execution_profiles import profile_ref
-        action.update(profile_ref=profile_ref(profile), actor_kind=profile['actor_kind'], budget_kind=profile['budget_kind'])
+        action.update(profile_ref=profile_ref(profile), actor_kind=profile['actor_kind'])
         lifecycle = self.instance['lifecycle']['state']
         if lifecycle == 'paused' and self._limited_recovery_allowed(action):
             return
@@ -405,7 +402,7 @@ class LifecycleEngineMixin:
     @staticmethod
     def _recovery_action_basis(action):
         transient = {'repair', 'dispatch_wait', 'model_selection', 'owner_activity_id', 'activity_id',
-                     'execution_id', 'continuation_of', 'actor_kind', 'budget_kind'}
+                     'execution_id', 'continuation_of', 'actor_kind'}
         return exact_content_hash({k: v for k, v in action.items() if k not in transient})
 
     def _recovery_pause_basis(self):
@@ -426,8 +423,8 @@ class LifecycleEngineMixin:
                 raise ValueError('limited recovery requires ' + field)
         from .execution_profiles import resolve_profile
         profile = resolve_profile(self.instance['execution_profiles'], change['profile_ref'])
-        if profile['role'] != action['role'] or profile['budget_kind'] != 'operations':
-            raise ValueError('limited recovery requires the exact role and operations profile')
+        if profile['role'] != action['role']:
+            raise ValueError('limited recovery requires the exact role profile')
         if timestamp(change['expires_at']) <= self._lifecycle_now():
             raise ValueError('limited recovery approval has expired')
         action.update(grant_id=change['grant_id'], purpose=change['purpose'], profile_ref=deepcopy(change['profile_ref']))
@@ -475,10 +472,10 @@ class LifecycleEngineMixin:
                 or timestamp(change['expires_at']) <= self._lifecycle_now()):
             raise ValueError('limited recovery no longer matches its approval')
         profile = resolve_profile(self.instance['execution_profiles'], action['profile_ref'])
-        if (profile['role'] != action['role'] or profile['budget_kind'] != 'operations'
+        if (profile['role'] != action['role']
                 or action['role'] not in {'maintenance', 'trust_check', 'trust_activate'}):
             raise ValueError('limited recovery profile or role is outside scope')
-        request = {**action, 'actor_kind': profile['actor_kind'], 'budget_kind': profile['budget_kind']}
+        request = {**action, 'actor_kind': profile['actor_kind']}
         authority = authorize(self.instance, request, self._lifecycle_now().isoformat(), runtime=self.runtime)
         if not authority['allowed']:
             raise ValueError('limited recovery authority: ' + authority['reason'])
@@ -496,9 +493,7 @@ class LifecycleEngineMixin:
         """Central runners use this instead of a blanket paused-state veto."""
         if not self._clock_guard()['usable']:
             return True
-        if (self.runtime.get('status') in {'closed', 'completed'}
-                or self.instance['lifecycle'].get('permanently_closed')
-                or (execution or {}).get('stop_requested')):
+        if self._instance_closed() or (execution or {}).get('stop_requested'):
             return True
         if self.instance['lifecycle']['state'] == 'paused':
             return not self._limited_recovery_allowed(action)
@@ -510,9 +505,8 @@ class LifecycleEngineMixin:
             return False
         if action == 'close' and self.runtime.get('status') == 'closed':
             return True
-        if self.runtime.get('status') in {'closed', 'completed'} or self.instance.get('lifecycle', {}).get('permanently_closed'):
+        if self._instance_closed():
             raise ValueError('closed/completed instance cannot apply lifecycle controls')
-        self._verify_current_head()
         source_ref = request.get('id')
         if not isinstance(source_ref, str) or not source_ref:
             raise ValueError('extended control requires its preserved user request ID')
@@ -522,8 +516,7 @@ class LifecycleEngineMixin:
             lifecycle.setdefault('history', []).append({'kind':'closed', 'source_ref':source_ref})
             self.runtime.update(status='closed', stop_requested='closed', queue=[])
             self.runtime.pop('resume_lifecycle', None)
-            for execution in self.runtime['executions'].values():
-                if execution.get('status') != 'ended': execution['stop_requested'] = 'closed'
+            self._request_stop_all('closed')
             return True
         if action == 'pause':
             self._pause_lifecycle('user_pause')
@@ -589,12 +582,11 @@ class LifecycleEngineMixin:
                 self._refresh_readiness()
         except Exception as error:
             self.instance, self.runtime = before_instance, before_runtime
-            if callable(getattr(getattr(self, 'store', None), 'load', None)):
-                from .preflight import preserve_rejected_candidate
-                rejection = preserve_rejected_candidate(self.store, self.head, raw=canonical_json(request),
-                    reason=f'{type(error).__name__}: {error}')
-                self.head = rejection['snapshot']
-                self._evaluate_stops()
+            from .preflight import preserve_rejected_candidate
+            rejection = preserve_rejected_candidate(self.store, self.head, raw=canonical_json(request),
+                reason=f'{type(error).__name__}: {error}')
+            self.head = rejection['snapshot']
+            self._evaluate_stops()
             raise
         return True
 
@@ -726,10 +718,9 @@ class LifecycleEngineMixin:
             stable_source_ref = config.get('source_ref') or ('external:' + str(config['id']) if config.get('id') else source_ref)
             profile = self._execution_profile({'role': 'external_action'})
             scope = {key: config[key] for key in ('target_id', 'purpose', 'subject') if key in config}
-            for key in ('budget_kind', 'actor_kind'):
-                if key in config and config[key] != profile[key]:
-                    raise ValueError('external request scope differs from the actual execution profile: ' + key)
-                scope[key] = profile[key]
+            if 'actor_kind' in config and config['actor_kind'] != profile['actor_kind']:
+                raise ValueError('external request scope differs from the actual execution profile: actor_kind')
+            scope['actor_kind'] = profile['actor_kind']
             entry = prepare_operation(config.get('request'), config['grant_id'], stable_source_ref, config.get('id'), **scope)
             binding = getattr(self, '_external_preparation_binding', None)
             if binding is not None:
@@ -742,7 +733,7 @@ class LifecycleEngineMixin:
             self._validate_external(entry, grant)
             existing = self.runtime['external_operations'].get(entry['id'])
             immutable = ('id', 'request_sha256', 'grant_id', 'source_ref', 'target_id', 'purpose', 'subject',
-                         'budget_kind', 'actor_kind', 'academic_basis', 'academic_binding')
+                         'actor_kind', 'academic_basis', 'academic_binding')
             if existing:
                 if any(existing.get(key) != entry.get(key) for key in immutable): raise ValueError('external operation ID already identifies another ledger')
                 if existing.get('status') == 'prepared': self._enqueue('external_action', entry['id'], grant_id=entry['grant_id'], source_ref=source_ref)
@@ -872,9 +863,7 @@ class LifecycleEngineMixin:
         if self.instance.get('conversation_loss_policy', conversation['disconnect_policy']) == 'pause':
             self.runtime.setdefault('lost_conversation_generations', {})[conversation['id']] = conversation['generation']
             if self.runtime.get('status') != 'closed': self._pause_lifecycle('conversation_lost')
-            for execution in self.runtime['executions'].values():
-                if execution.get('status') not in {'ended', 'finished'}:
-                    execution['stop_requested'] = 'conversation_lost'
+            self._request_stop_all('conversation_lost')
 
     def _check_conversations(self):
         now = self._lifecycle_now()
@@ -891,7 +880,6 @@ class LifecycleEngineMixin:
             self._task_readiness[task_id] = {**evaluation, 'evaluated_at': when}
 
     def _refresh_readiness(self):
-        self._verify_current_head()
         guard = self._clock_guard()
         if not guard['usable']:
             self.runtime['clock_guard'] = {'state': 'blocked', **guard}
@@ -901,7 +889,7 @@ class LifecycleEngineMixin:
             return
         if self.instance['lifecycle']['state'] == 'paused':
             return
-        if self.runtime.get('status') in {'closed', 'completed'} or self.instance['lifecycle'].get('permanently_closed'):
+        if self._instance_closed():
             return
         if self.instance['lifecycle']['state'] == 'initializing':
             self._queue_initial_intent()
@@ -961,7 +949,7 @@ class LifecycleEngineMixin:
                 continue
             from .model_policy import work_profile_selection
             try:
-                work_profile_selection(self.instance['config'], task, self.instance['execution_profiles'])
+                work_profile_selection(self.instance['config'], task, self.instance)
             except ValueError as error:
                 owner='governance' if task.get('academic_requirement_id') else 'research_preparation'
                 reason='work profile requirement: '+str(error)
@@ -1008,7 +996,7 @@ class LifecycleEngineMixin:
                     self._enqueue('task_contract_review', task_id, contract_basis=required, review_basis_key=review_key,
                                   reason='Current contract and policy require independent approval')
             evaluation = deepcopy(task_ready(task, query_instance, self.runtime,
-                                    action={'role': 'research_work', 'target': task_id, 'budget_kind': 'work', 'actor_kind': 'ai'},
+                                    action={'role': 'research_work', 'target': task_id, 'actor_kind': 'ai'},
                                     evaluation_context=evaluation_context))
             if not approved:
                 evaluation = {'state': 'not_ready', 'basis': [], 'errors': ['current revision lacks approved contract review']}
@@ -1109,16 +1097,14 @@ class LifecycleEngineMixin:
                                             'previous': deepcopy(detail)})
 
     def _end_machine_execution(self, execution, *, outcome, disposition):
-        from .execution_lifecycle import transition_execution
+        from .execution_lifecycle import release_or_hold, transition_execution
+        from .launch import mark_returned
         at = self._lifecycle_now().isoformat()
         if execution['status'] == 'ended':
             return True
-        if execution.get('launch_ticket') and execution['launch_ticket']['phase'] != 'not_started':
-            execution['launch_ticket']['phase'] = 'finished'
-        if execution.get('capacity') and not self._release_call_slot(execution['id']):
-            transition_execution(execution, 'stopping', at=at, stop_phase='terminating',
-                                 reason='local machine Job termination remains unconfirmed')
-            execution['error'] = 'Machine capacity and result remain held until local Job termination is confirmed.'
+        if execution.get('launch_ticket'):
+            mark_returned(execution['launch_ticket'])
+        if execution.get('capacity') and not release_or_hold(execution, self._session_slots(), at=at):
             return False
         if execution['status'] in {'starting', 'running'}:
             transition_execution(execution, 'stopping', at=at, stop_phase='terminating',
@@ -1148,15 +1134,13 @@ class LifecycleEngineMixin:
         if terminal:
             accepted = operation['status'] == 'confirmed' and operation.get('succeeded') is True
             if accepted and record['status'] != 'ended':
-                record['submission_receipt'] = {'kind': 'machine_output', 'state': 'accepted',
+                record['submission_receipt'] = {'kind': MACHINE_OUTPUT_RECEIPT, 'state': 'accepted',
                     'execution_id': execution_id, 'evidence_ref': operation['id'],
                     'source_sha256': operation['request_sha256'], 'accepted_at': self._lifecycle_now().isoformat()}
             self._end_machine_execution(record, outcome='cancelled' if operation['status'] == 'cancelled'
                                         else 'output_accepted' if accepted else 'execution_incomplete',
                                         disposition={'external_operation': operation['id'],
                                                      'effect_status': operation['status']})
-            if self.runtime.get('active_execution') == execution_id:
-                self.runtime['active_execution'] = None
             activity_id = record['owner_activity_id']
             activity = self.runtime['activities'][activity_id]
             if operation['status'] == 'confirmed' and operation.get('succeeded') is True and activity['status'] != 'finished':
@@ -1169,12 +1153,6 @@ class LifecycleEngineMixin:
                 wait_for(self.runtime, activity_id, reason=reason,
                     condition={'operation_id': operation['id'], 'status': operation['status']},
                     next_owner='user', at=self._lifecycle_now().isoformat())
-        else:
-            self.runtime['active_execution'] = execution_id
-        if operation['status'] == 'confirmed' and operation.get('succeeded') is True:
-            refs = self.instance.setdefault('available_input_refs', [])
-            if operation['id'] not in refs:
-                refs.append(operation['id'])
 
     def _process_machine_action(self, action):
         role = action.get('role')
@@ -1223,7 +1201,6 @@ class LifecycleEngineMixin:
              'input_manifest': [{'kind': 'trust_transition', 'id': transition_id, 'sha256': exact_content_hash(transition)}]})
         if execution is None:
             return False
-        self.runtime['active_execution'] = execution_id
         self._save()
         environment = deepcopy(self.instance['trust_environments'][transition['to_environment']])
         binding = deepcopy(self.runtime.get('trust_bindings', {}).get(transition['to_environment']))
@@ -1254,7 +1231,7 @@ class LifecycleEngineMixin:
         accepted = transition['status'] == 'active'
         execution['result_ref'] = artifact
         if accepted:
-            execution['submission_receipt'] = {'kind': 'machine_output', 'state': 'accepted',
+            execution['submission_receipt'] = {'kind': MACHINE_OUTPUT_RECEIPT, 'state': 'accepted',
                 'execution_id': execution_id, 'evidence_ref': artifact,
                 'source_sha256': exact_content_hash(result), 'trust_environment_id': transition['to_environment'],
                 'accepted_at': self._lifecycle_now().isoformat()}
@@ -1262,15 +1239,13 @@ class LifecycleEngineMixin:
                                            disposition={'kind': 'trust_activation', **result, 'artifact_ref': artifact}):
             self._save({artifact: canonical_json(result)})
             return False
-        self.runtime['active_execution'] = None
         from .activities import finish_activity
         finish_activity(self.runtime, execution['owner_activity_id'], result_refs=[artifact],
                         unresolved=[] if accepted else [transition_id], followups=[], at=self._lifecycle_now().isoformat())
         self._save({artifact: canonical_json(result)})
-        if getattr(self, '_calls', None) is not None:
-            self._remove_action(action)
-            self._refresh_readiness()
-            self._save()
+        self._remove_action(action)
+        self._refresh_readiness()
+        self._save()
 
     def _run_external_action(self, action):
         self._action_lifecycle_gate(action)
@@ -1355,7 +1330,6 @@ class LifecycleEngineMixin:
             'created_at': self._lifecycle_now().isoformat()})
         if execution is None:
             return False
-        self.runtime['active_execution'] = execution_id
         self._save()
         toolchain = environment['toolchain']
         check = validate_basis([target['basis']], self.instance, self.runtime)
@@ -1364,7 +1338,7 @@ class LifecycleEngineMixin:
         def should_stop():
             # Owner-thread judgment of published state; the verifier reads only its flag.
             nonlocal stop_requested
-            if getattr(self, '_calls', None) is not None and self._calls.stopping:
+            if self._calls.stopping:
                 stop_requested = True
                 return True
             stop_requested = stop_requested or bool(
@@ -1385,15 +1359,10 @@ class LifecycleEngineMixin:
             fixed = resolve_profile(self.instance['execution_profiles'], execution['execution_profile_ref'])
             invocation = machine_invocation(fixed, trust_environment=environment,
                 on_started=lambda identity: self._machine_started(execution_id, identity))
-            import inspect
             arguments = dict(source=item['lean_code'], declarations=item['declaration_names'], workspace=workspace,
                 environment=environment, binding=binding, verifier=self.formal_verifier,
-                **invocation, allowed_axioms=tuple(environment['allowed_axioms']))
-            parameters = inspect.signature(self.formal_verifier).parameters
-            if 'launch_ticket' in parameters or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
-                arguments['launch_ticket'] = deepcopy(execution['launch_ticket'])
-            if 'should_stop' in parameters or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
-                arguments['should_stop'] = should_stop
+                **invocation, allowed_axioms=tuple(environment['allowed_axioms']),
+                launch_ticket=deepcopy(execution['launch_ticket']), should_stop=should_stop)
             if should_stop():
                 result = {'status': 'stopped', 'reason': 'stopped before trust verification'}
             else:
@@ -1426,15 +1395,13 @@ class LifecycleEngineMixin:
         # Machine result disposition is independent of the worker submission protocol.
         accepted = result['status'] == 'verified'
         if accepted:
-            execution['submission_receipt'] = {'kind': 'machine_output', 'state': 'accepted',
+            execution['submission_receipt'] = {'kind': MACHINE_OUTPUT_RECEIPT, 'state': 'accepted',
                 'execution_id': execution_id, 'evidence_ref': artifact, 'source_sha256': result['source_sha256'],
                 'trust_environment_id': transition['to_environment'], 'accepted_at': self._lifecycle_now().isoformat()}
         if not self._end_machine_execution(execution, outcome='output_accepted' if accepted else 'execution_incomplete',
                                            disposition={'trust_result': artifact, 'status': result['status']}):
             self._save({artifact: canonical_json(result)})
             return False
-        if self.runtime.get('active_execution') == execution_id:
-            self.runtime['active_execution'] = None
         if result['status'] == 'stopped' or stop_requested:
             result.update(status='stopped', reason=result.get('reason') or 'trust verification stopped')
             self._record_machine_continuation(action, execution_id)
@@ -1455,10 +1422,9 @@ class LifecycleEngineMixin:
         self._lifecycle_event('trust_target_checked', target=knowledge_id, transition_id=transition_id, result=result['status'])
         if self.runtime['trust_transitions'][transition_id]['status'] == 'ready':
             self._enqueue('trust_activate', transition_id=transition_id)
-        if getattr(self, '_calls', None) is not None:
-            self.runtime['queue'][:] = [queued for queued in self.runtime['queue'] if queued != action]
-            self._refresh_readiness()
-            self._save()
+        self.runtime['queue'][:] = [queued for queued in self.runtime['queue'] if queued != action]
+        self._refresh_readiness()
+        self._save()
 
     def _finish_trust_transition(self, transition_id, verification):
         self._require_action_clock()

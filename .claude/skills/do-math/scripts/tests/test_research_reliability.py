@@ -18,12 +18,13 @@ import test_redesign_TASKS as task_fixtures
 from do_math.observation_transport import ObservationBatch
 from do_math.observations import ObservationTracker
 from test_redesign_OBSERVATION import Clock
+from research_fixtures import write_checkpoint
 
 
 @test_group('unit')
 class ObservationCollectionTests(unittest.TestCase):
     def test_owner_distinguishes_preview_and_boundary_from_self_check(self):
-        from unittest.mock import Mock
+        from unittest.mock import create_autospec
         from test_redesign_ENGINE import routing_engine
         from test_redesign_OBSERVATION import rule
         for provider in ('codex', 'claude'):
@@ -32,8 +33,10 @@ class ObservationCollectionTests(unittest.TestCase):
                     root = Path(directory)
                     tracker = ObservationTracker('EX-one', root, {'observation_rules': [rule()],
                         'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}, clock=Clock())
-                    obligation = next(row for row in tracker.observe({'type': 'tick', 'counters': {'attempts': 2}})
+                    write_checkpoint(root, counters={'attempts': 2})
+                    obligation = next(row for row in tracker.observe({'type': 'tick'})
                                       if row['kind'] == 'self_check_due')
+                    tracker.issue_self_check(obligation['id'])
                     tracker.record_delivery(obligation['id'], source_offset=0)
                     tool = 'control_self_check' if kind == 'self_check' else 'control_submit'
                     arguments = ({'self_check_id': obligation['id']} if kind == 'self_check' else
@@ -44,9 +47,10 @@ class ObservationCollectionTests(unittest.TestCase):
                             {'type': 'tool_use', 'id': 'CALL', 'name': 'mcp__execution_control__' + tool,
                              'input': arguments}]}})
                     engine = routing_engine()
-                    engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
-                    engine._save = Mock(); engine._enqueue = Mock()
-                    engine._review_observation_source = Mock(return_value=None)
+                    engine._controls = create_autospec(engine._controls)
+                    engine._check_conversations = create_autospec(engine._check_conversations, return_value=False)
+                    engine._save = create_autospec(engine._save); engine._enqueue = create_autospec(engine._enqueue)
+                    engine._review_observation_source = create_autospec(engine._review_observation_source, return_value=None)
                     engine.runtime['executions']['EX-one'] = {'id': 'EX-one', 'status': 'running',
                         'role': 'research_work', 'action': {'role': 'research_work'}}
                     engine._observe_running('EX-one', tracker, event)
@@ -62,7 +66,8 @@ class ObservationCollectionTests(unittest.TestCase):
             workspace = root / 'workspace'; workspace.mkdir()
             transport = ControlTransport(root / 'transport')
             binding = transport.issue('EX-one', 'GR-one', workspace=workspace)
-            request = transport.request_self_check(binding, self_check_id='SC-one', payload={'claim': 'check'})
+            request = transport.request_self_check(binding, request={'self_check_id': 'SC-one',
+                'execution_id': 'EX-one', 'payload': {'claim': 'check'}})
             surface = workspace / '.control/self-checks/SC-one.json'
             self.assertTrue(surface.is_file(), 'An ID-required poll needs a discoverable request in the allowed workspace')
             self.assertEqual(json.loads(surface.read_bytes()), request)
@@ -70,16 +75,16 @@ class ObservationCollectionTests(unittest.TestCase):
 
     def test_native_poll_ack_requires_the_exact_successful_returned_request(self):
         from test_redesign_OBSERVATION import rule
-        from do_math.observations import self_check_feedback
         for variant in ('ok', 'started', 'failed', 'wrong_payload', 'error_result', 'claude'):
             with self.subTest(variant=variant), tempfile.TemporaryDirectory() as directory:
                 tracker = ObservationTracker('EX-one', Path(directory), {'observation_rules': [rule()],
                     'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}, clock=Clock())
-                obligation = next(r for r in tracker.observe({'type': 'tick', 'counters': {'attempts': 2}})
+                write_checkpoint(directory, counters={'attempts': 2})
+                obligation = next(r for r in tracker.observe({'type': 'tick'})
                                   if r['kind'] == 'self_check_due')
+                # The poll returns the exact request object the tracker issued and hashed.
+                envelope = deepcopy(tracker.issue_self_check(obligation['id']))
                 tracker.record_delivery(obligation['id'], source_offset=100)
-                envelope = {'self_check_id': obligation['id'], 'execution_id': 'EX-one',
-                            'payload': self_check_feedback(tracker.obligations[obligation['id']])}
                 if variant == 'wrong_payload': envelope['payload']['rule_revision'] += 1
                 item = {'id': 'poll', 'type': 'mcp_tool_call', 'server': 'execution_control',
                     'tool': 'control_self_check', 'arguments': {'self_check_id': obligation['id']},
@@ -107,8 +112,10 @@ class ObservationCollectionTests(unittest.TestCase):
             clock = Clock()
             tracker = ObservationTracker('EX-one', Path(directory), {'observation_rules': [rule()],
                 'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}, clock=clock)
-            obligation = next(r for r in tracker.observe({'type': 'tick', 'counters': {'attempts': 2}})
+            write_checkpoint(directory, counters={'attempts': 2})
+            obligation = next(r for r in tracker.observe({'type': 'tick'})
                               if r['kind'] == 'self_check_due')
+            tracker.issue_self_check(obligation['id'])
             tracker.record_delivery(obligation['id'], source_offset=100)
             source = {'stream': 'stdout.jsonl', 'start_offset': 200, 'end_offset': 300,
                       'received_at': '2026-09-25T00:00:00Z', 'received_monotonic': 1}
@@ -122,11 +129,12 @@ class ObservationCollectionTests(unittest.TestCase):
 
     def test_checkpoint_capture_preserves_its_evidence_before_live_file_changes(self):
         from test_redesign_ENGINE import routing_engine
-        from unittest.mock import Mock
+        from unittest.mock import create_autospec
         engine = routing_engine()
         engine.instance['config']['max_artifact_bytes'] = 4096
-        engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
-        engine._save = Mock()
+        engine._controls = create_autospec(engine._controls)
+        engine._check_conversations = create_autospec(engine._check_conversations, return_value=False)
+        engine._save = create_autospec(engine._save)
         engine.runtime['executions']['EX-one'] = {'id': 'EX-one', 'status': 'running',
             'role': 'research_work', 'action': {'role': 'research_work'}}
         with tempfile.TemporaryDirectory() as directory:
@@ -137,7 +145,7 @@ class ObservationCollectionTests(unittest.TestCase):
                 'evidence_paths': ['proof.lean'], 'attempts': [], 'remaining_work': ['check'],
                 'next_step': 'verify', 'progress_state': 'working'}), encoding='utf-8')
             tracker = ObservationTracker('EX-one', root, {'observation_mode': 'deadline_only'}, clock=Clock())
-            batch = ObservationBatch([], [], '2026-09-25T00:00:00Z', 1.25, 0, 0,
+            batch = ObservationBatch([], [], [], 0, '2026-09-25T00:00:00Z', 1.25, 0, 0,
                                      root / 'stdout.jsonl', lambda: False)
             engine._observe_running('EX-one', tracker, batch)
             record = engine.runtime['checkpoints']['EX-one']
@@ -181,8 +189,10 @@ class ObservationCollectionTests(unittest.TestCase):
             clock = Clock()
             tracker = ObservationTracker('EX-one', Path(directory), {'observation_rules': [rule()],
                 'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}, clock=clock)
-            obligation = next(r for r in tracker.observe({'type': 'tick', 'counters': {'attempts': 2}})
+            write_checkpoint(directory, counters={'attempts': 2})
+            obligation = next(r for r in tracker.observe({'type': 'tick'})
                               if r['kind'] == 'self_check_due')
+            envelope = tracker.issue_self_check(obligation['id'])
             tracker.record_delivery(obligation['id'], source_offset=100)
             source = {'stream': 'stdout.jsonl', 'start_offset': 0, 'end_offset': 80, 'received_at': '2026-09-25T00:00:00Z',
                       'received_monotonic': 1}
@@ -194,9 +204,6 @@ class ObservationCollectionTests(unittest.TestCase):
             rows = tracker.observe(partial, source={**source, 'start_offset': 80, 'end_offset': 160}, evaluate=False)
             self.assertFalse(any(r['kind'] == 'self_check_missed' for r in rows),
                              'The beginning of a partially written old event predates delivery')
-            from do_math.observations import self_check_feedback
-            envelope = {'self_check_id': obligation['id'], 'execution_id': 'EX-one',
-                        'payload': self_check_feedback(tracker.obligations[obligation['id']])}
             poll = {'type': 'item.completed', 'item': {'id': 'poll', 'type': 'mcp_tool_call',
                 'server': 'execution_control', 'tool': 'control_self_check',
                 'arguments': {'self_check_id': obligation['id']}, 'status': 'completed',
@@ -207,10 +214,11 @@ class ObservationCollectionTests(unittest.TestCase):
 
     def test_terminated_stream_replay_preserves_events_without_live_reviews(self):
         from test_redesign_ENGINE import routing_engine
-        from unittest.mock import Mock
+        from unittest.mock import create_autospec
         engine = routing_engine()
-        engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
-        engine._save = Mock()
+        engine._controls = create_autospec(engine._controls)
+        engine._check_conversations = create_autospec(engine._check_conversations, return_value=False)
+        engine._save = create_autospec(engine._save)
         engine.runtime['executions']['EX-one'] = {'id': 'EX-one', 'status': 'running',
             'role': 'research_work', 'action': {'role': 'research_work'}}
         with tempfile.TemporaryDirectory() as directory:
@@ -221,7 +229,8 @@ class ObservationCollectionTests(unittest.TestCase):
             clock.value = 900
             events = [{'type': 'turn.started'}, {'type': 'item.started',
                       'item': {'id': 'old-command', 'type': 'command_execution'}}]
-            batch = ObservationBatch(events, [(0, 20), (20, 100)], '2026-09-25T00:00:00Z',
+            rows = [json.dumps(event).encode() + b'\n' for event in events]
+            batch = ObservationBatch(events, [(0, 20), (20, 100)], rows, 0, '2026-09-25T00:00:00Z',
                                      301.25, 100, 100, root / 'stdout.jsonl', lambda: True)
             engine._observe_running('EX-one', tracker, batch)
             self.assertFalse(any(a['role'] == 'operational_review' for a in engine.runtime['queue']))
@@ -469,8 +478,9 @@ class SchedulingResponsibilityTests(unittest.TestCase):
             self.assertTrue(any(events[0]['id'] in a.get('event_refs', []) for a in engine.runtime['queue']))
 
     def test_initial_preparation_owns_initial_events_until_accepted(self):
-        from test_lifecycle_engine import FakeEngine, AdapterDouble
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        from test_lifecycle_engine import FakeEngine
+        from research_fixtures import FixtureAdapter
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             engine = FakeEngine(directory); engine.activate()
             engine.instance['lifecycle']['state'] = 'initializing'
             engine.runtime['status'] = 'initializing'
@@ -483,8 +493,9 @@ class SchedulingResponsibilityTests(unittest.TestCase):
             self.assertTrue(engine.runtime['pending_events'], 'Assignment is not consumption')
 
     def test_normal_dispatch_occupancy_does_not_request_a_new_plan(self):
-        from test_lifecycle_engine import FakeEngine, AdapterDouble
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        from test_lifecycle_engine import FakeEngine
+        from research_fixtures import FixtureAdapter
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             engine = FakeEngine(directory); engine.activate(); task = engine.task()
             engine._refresh_readiness()
             engine.runtime['queue'] = [{'id': 'AC-work', 'role': 'research_work', 'target': task['id']}]
@@ -503,7 +514,7 @@ class NativeBatchTests(unittest.TestCase):
     def test_real_job_completion_is_observed_before_delayed_batch_application(self):
         import os
         import time
-        from unittest.mock import Mock
+        from unittest.mock import create_autospec
         from do_math.codex_adapter import CodexExecAdapter, CodexExecution
         from do_math.windows_job import WindowsJob
         from do_math.record_schemas import RECORDS
@@ -535,8 +546,9 @@ class NativeBatchTests(unittest.TestCase):
             root = Path(directory)
             workspace = root / 'workspace'; workspace.mkdir()
             engine = routing_engine()
-            engine._controls = Mock(); engine._check_conversations = Mock(return_value=False)
-            engine._save = Mock()
+            engine._controls = create_autospec(engine._controls)
+            engine._check_conversations = create_autospec(engine._check_conversations, return_value=False)
+            engine._save = create_autospec(engine._save)
             engine.runtime['executions']['EX-real'] = {'id': 'EX-real', 'status': 'running',
                 'role': 'research_work', 'action': {'role': 'research_work'}}
             tracker = ObservationTracker('EX-real', workspace, {'observation_mode': 'periodic',

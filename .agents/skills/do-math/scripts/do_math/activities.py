@@ -195,31 +195,6 @@ def continue_activity(runtime: dict, execution_id: str, *, at: str, reason: str,
     return action
 
 
-def requeue_recovered_execution(runtime: dict, execution_id: str, *, at: str) -> dict:
-    """Retire an unstarted queued attempt; the successor must recheck its inputs."""
-    from .execution_lifecycle import transition_execution
-    execution = _executions(runtime)[execution_id]
-    held = [row for row in runtime.get("reservations", {}).values()
-            if row.get("owner_id") == execution_id and row.get("state") == "held"]
-    if execution.get("capacity") or execution.get("process") or held:
-        raise ValueError("queued execution with reservations or process requires reconciliation")
-    if execution["status"] != "queued":
-        raise ValueError("queued recovery requires a queued execution")
-    # Validate the followup before closing the original attempt.
-    candidate = deepcopy(runtime)
-    recovered = candidate["executions"][execution_id]
-    transition_execution(recovered, "ended", at=at, reason="queued preparation interrupted by engine loss",
-                         outcome="cancelled", disposition={"kind": "reprepare_after_recovery"})
-    recovered["recovery_disposition"] = "cancelled_for_repreparation"
-    continue_activity(candidate, execution_id, at=at, reason="reprepare_after_recovery")
-    execution.clear()
-    execution.update(recovered)
-    aid = execution["owner_activity_id"]
-    runtime["activities"][aid].update(candidate["activities"][aid])
-    runtime["queue"] = candidate["queue"]
-    return next(row for row in runtime["queue"] if row["id"] == execution["action"]["id"])
-
-
 def wait_for(runtime: dict, activity_id: str, *, reason: str, condition: Any,
              next_owner: Any, at: str) -> dict:
     """Record a durable wait after every currently assigned attempt ended."""

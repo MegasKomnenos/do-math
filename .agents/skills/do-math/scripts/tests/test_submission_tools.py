@@ -523,10 +523,10 @@ class ReviewFailureTests(purpose.PurposeHarness):
         self.assertFalse(any(a["role"] == "identity_review" and a.get("slot") == "initial-0" for a in engine.runtime["queue"]))
         self.assertTrue(any(e["action"].get("slot") == "initial-0" for e in engine.runtime["waiting_actions"].values()))
 
-    def test_explicit_diagnosis_can_open_one_new_attempt_after_an_exhausted_retry(self):
+    def test_explicit_diagnosis_can_open_one_new_attempt_of_a_failed_action(self):
         from do_math.engine import control
         engine, _ = self.make_active()
-        engine.runtime["queue"] = [{"id": "AC-failed", "role": "maintenance", "recovery_attempt": 1}]
+        engine.runtime["queue"] = [{"id": "AC-failed", "role": "maintenance"}]
         engine._save()
         class Runner:
             def run(inner, **args):
@@ -553,7 +553,6 @@ class ReviewFailureTests(purpose.PurposeHarness):
         self.assertEqual(len(retries), 1)
         self.assertEqual(retries[0]["id"], "AC-failed")
         self.assertEqual(retries[0]['continuation_of'], failed)
-        self.assertEqual(retries[0]["recovery_attempt"], 1)
 
     # v5 task_scope decisions authorize named obligations; they do not directly
     # withdraw a live task. test_task_scope's live/terminal withdrawal regression
@@ -660,7 +659,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
         self.assertFalse(assess_use(insight, engine.instance)["valid"])
         self.assertEqual(insight["dependencies"], [kid])
 
-    def test_exhausted_investigation_returns_incomplete_to_its_waiting_review_slot(self):
+    def test_stopped_investigation_returns_incomplete_to_its_waiting_review_slot(self):
         from test_review_research import InvestigationRunner, signed_formal_fixture, ReviewResearchEngineTests
         from do_math.review_cycle import next_actions
         engine, _ = ReviewResearchEngineTests.make_research(self, scholarly_enabled=False)
@@ -668,13 +667,12 @@ class ReviewFailureTests(purpose.PurposeHarness):
             def run(inner, **args):
                 if "role: supplemental_research." in args["prompt"]:
                     args["on_started"]({"pid": 1})
-                    return {"status": "failed", "output": None, "usage": {}, "error": "diagnosed investigation failed"}
+                    return {"status": "stopped", "output": None, "usage": {}, "error": "investigation stopped"}
                 return super().run(**args)
         engine.runner = CheckedRunner(Runner())
         engine.formal_verifier = signed_formal_fixture
         self.drive(engine, predicate=lambda e: any(a["role"] == "supplemental_research" for a in e.runtime["queue"]))
         request = next(a for a in engine.runtime["queue"] if a["role"] == "supplemental_research")
-        request["recovery_attempt"] = 1
         engine.runtime["queue"] = [request]
         engine._save()
         engine.run(max_steps=1)

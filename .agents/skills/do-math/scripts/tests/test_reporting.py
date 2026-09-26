@@ -12,7 +12,15 @@ from do_math.repository import new_id
 from do_math.engine import _repository as ResearchRepository
 from do_math.reporting import timeline, timeline_csv
 from do_math.cli import build_parser, execute
+from research_fixtures import current_state
 from test_redesign_SURFACE import surface_state
+
+
+def stored_surface_state():
+    """surface_state under the current lifecycle gate, as every stored state is."""
+    instance, runtime = surface_state()
+    del runtime['status']
+    return current_state(instance, runtime)
 
 
 class ReportingTests(unittest.TestCase):
@@ -37,7 +45,7 @@ class ReportingTests(unittest.TestCase):
             subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
             identifier = new_id("RI")
             store = ResearchRepository(root, identifier)
-            instance, runtime = surface_state()
+            instance, runtime = stored_surface_state()
             instance.update(id=identifier, workspace=str(root / "workspace"))
             runtime["activities"]["AC-1"]["owner_ref"] = identifier
             execution = runtime["executions"]["EX-1"]
@@ -73,11 +81,11 @@ class ReportingTests(unittest.TestCase):
         head = 'a' * 40
         stored = dict.fromkeys(paths, len(raw))
 
-        def sizes(requested, snapshot):
+        def sizes(requested, snapshot, *, missing='raise'):
             self.assertEqual(snapshot, head)
-            if any(path not in stored for path in requested):
+            if missing != 'omit' and any(path not in stored for path in requested):
                 raise GitStateStoreError('batch size did not return a blob')
-            return {path: stored[path] for path in requested}
+            return {path: stored[path] for path in requested if path in stored}
 
         store = SimpleNamespace(load=Mock(return_value=(head, instance, runtime)),
             read=Mock(side_effect=AssertionError('status reads no artifact bytes')),
@@ -86,7 +94,7 @@ class ReportingTests(unittest.TestCase):
         with patch('do_math.reporting._repository', return_value=store):
             report = snapshot_report(Path('.'), 'RI-test', requested_areas=['record_storage'])
             self.assertEqual(report['inspection']['status'], 'healthy')
-            store.blob_sizes.assert_called_once_with(paths, head)
+            store.blob_sizes.assert_called_once_with(paths, head, missing='omit')
             # A changed length or a missing artifact blocks; same-length byte changes are for check.
             stored[paths[0]] = len(raw) + 1
             del stored[paths[1]]
@@ -124,13 +132,13 @@ class ReportingTests(unittest.TestCase):
             subprocess.run(['git', '-C', str(root), 'init', '-q'], check=True)
             identifier = new_id('RI')
             store = ResearchRepository(root, identifier)
-            instance, runtime = surface_state()
+            instance, runtime = stored_surface_state()
             instance.update(id=identifier, workspace=str(root / 'workspace'))
             runtime['activities']['AC-1']['owner_ref'] = identifier
             runtime['executions']['EX-1'].update(status='ended',
                 action={'id': 'A', 'role': 'research_work', 'lineage_id': 'L'}, model='claude-opus-5',
                 created_at='2026-09-18T15:01:02+00:00', ended_at='2026-09-18T15:02:03+00:00',
-                outcome='cancelled', budget_kind='work')
+                outcome='cancelled')
             head = store.initialize(instance, runtime)
             instance['title'] = 'later metadata'
             store.save_with_state(head, instance, runtime)[0]
@@ -148,26 +156,6 @@ class ReportingTests(unittest.TestCase):
             actual, code = execute(args)
             self.assertEqual(code, 0)
             self.assertEqual(actual, timeline_csv(value))
-
-    def test_local_operator_evidence_has_its_own_hash_and_count_unit(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            subprocess.run(['git', '-C', str(root), 'init', '-q'], check=True)
-            identifier = new_id('RI')
-            store = ResearchRepository(root, identifier)
-            instance = {'id': identifier, 'feature_version': 5, 'workspace': str(root / 'workspace')}
-            store.initialize(instance, {'feature_version': 5, 'executions': {}, 'queue': []})
-            path = root / 'workspace/operator/runs/one/result.json'
-            path.parent.mkdir(parents=True)
-            path.write_text(json.dumps({'outcome': 'completed', 'ended_at': '2026-09-18T15:00:00Z',
-                                       'result': {'assigned_model': 'claude-opus-5', 'usage': {'output_tokens': 10}}}))
-            self.assertEqual(timeline(root, identifier)['rows'], [])
-            value = timeline(root, identifier, include_operator=True)
-            self.assertEqual(value['counts_by_unit'], {'independent_operator_invocation': 1})
-            row = value['rows'][0]
-            self.assertIsNone(row['snapshot'])
-            self.assertEqual(len(row['evidence_source']['sha256']), 64)
-            self.assertIn('observed_at', row['evidence_source'])
 
 
 if __name__ == '__main__':

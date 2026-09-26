@@ -25,9 +25,14 @@ def native_result(execution, context, raw, workspace):
     identity = {'request_sha256': hashlib.sha256(request_raw).hexdigest(),
         'pid': 123, 'creation_filetime': 134345064658094591, 'job_name': execution['launch_ticket']['job_name'], 'execution_id': execution['id'],
         'profile_ref': execution['execution_profile_ref']}
-    execution['process'] = {**identity, 'creation_filetime': str(identity['creation_filetime'])}
-    execution['input_sha256'] = hashlib.sha256(prompt).hexdigest()
-    execution['capacity'] = {'local_termination': 'confirmed'}
+    # The role input manifest carries the sealed prompt digest the provider received.
+    manifest = execution.get('input_manifest')
+    if not isinstance(manifest, dict):
+        manifest = execution['input_manifest'] = {}
+    manifest['prompt'] = {**manifest.get('prompt', {}),
+                          'sha256': hashlib.sha256(prompt).hexdigest(), 'bytes': len(prompt)}
+    execution['capacity'] = {'local_termination': 'confirmed',
+        'process': {**identity, 'creation_filetime': str(identity['creation_filetime'])}}
     stream = b''.join(json.dumps(row, ensure_ascii=False).encode() + b'\n' for row in [
         {'type': 'thread.started', 'thread_id': 'thread'}, {'type': 'turn.started'},
         {'type': 'item.completed', 'item': {'id': 'message', 'type': 'agent_message', 'text': raw.decode()}},
@@ -36,7 +41,7 @@ def native_result(execution, context, raw, workspace):
         'source_prompt': _artifact(prompt), 'stdout': _artifact(stream), 'stderr': _artifact(b''),
         'final': _artifact(raw), 'execution_id': execution['id'], 'profile_ref': execution['execution_profile_ref'],
         'worker_status': {'state': 'exited', 'cli_exit_code': 0, 'request_sha256': identity['request_sha256'],
-            'stdin_sha256': execution['input_sha256'], 'schema_sha256': None,
+            'stdin_sha256': execution['input_manifest']['prompt']['sha256'], 'schema_sha256': None,
             'execution_id': execution['id'], 'profile_ref': execution['execution_profile_ref']},
         'termination_barrier': {'confirmed': True, 'root_signaled': True, 'active_processes': 0, 'process_ids': []},
         'stop_receipts': [], 'process_identity': {'pid': 123, 'creation_filetime': identity['creation_filetime']}}
@@ -74,7 +79,7 @@ def job_native_result(case, execution, context, raw, workspace):
         case.assertFalse((evidence/'final.txt').exists())
         started = {**process_identity(job), 'job_name': job.name, 'request_sha256': native.request_sha256,
             'execution_id': execution['id'], 'profile_ref': execution['execution_profile_ref']}
-        execution['process'] = deepcopy(started)
+        execution['capacity']['process'] = deepcopy(started)
         result['execution']['started'] = started
         adapter.resume(native)
         case.assertTrue(adapter.wait_for_termination(native, 10))

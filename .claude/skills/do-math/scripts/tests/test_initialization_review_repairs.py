@@ -9,12 +9,13 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import activities, execution_profiles, model_policy, operational_dispositions, planning, repair_execution
 from do_math.initialization import governance_working_view
-from test_lifecycle_engine import AdapterDouble, FakeEngine
+from test_lifecycle_engine import FakeEngine
+from research_fixtures import FixtureAdapter
 
 
 class WorkProfileAdmissionTests(unittest.TestCase):
     def test_policy_change_reprepares_an_unstarted_incompatible_contract(self):
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             engine=FakeEngine(directory);engine.activate()
             task=engine.task(approved=False)
             task['model_assessment']={'difficulty':'low','importance':'low','reason':'local'}
@@ -30,7 +31,7 @@ class WorkProfileAdmissionTests(unittest.TestCase):
                                  for a in engine.runtime['queue']))
 
     def test_reviewed_contract_cannot_be_ready_with_an_inadequate_allowed_profile(self):
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             engine = FakeEngine(directory)
             engine.activate()
             task = engine.task(approved=False)
@@ -48,7 +49,7 @@ class WorkProfileAdmissionTests(unittest.TestCase):
             engine.approve(task)
             self.assertEqual(planning.task_ready(task, governance_working_view(engine.instance), engine.runtime)['state'], 'ready')
             self.assertEqual(model_policy.work_profile_selection(engine.instance['config'], task,
-                engine.instance['execution_profiles'])['profile_ref'], task['profile_refs'][0])
+                engine.instance)['profile_ref'], task['profile_refs'][0])
 
 
 class RecoveryOwnershipTests(unittest.TestCase):

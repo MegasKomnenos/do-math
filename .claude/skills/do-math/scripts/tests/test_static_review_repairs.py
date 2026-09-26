@@ -11,19 +11,19 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import contracts, integration, knowledge_io, knowledge_records, planning, repair_execution, submission
 from do_math.question_engine import QuestionEngineMixin
 from do_math.context_store import fit_context, prepare_role_input
-from do_math.engine import ResearchEngine, control, initialize
-from do_math.repository import canonical_json
+from do_math.engine import ResearchEngine, control
+from do_math.repository import ResearchRepository, canonical_json
 from test_redesign_SURFACE import surface_state
 import test_redesign_KNOWLEDGE as knowledge_fixtures
 from test_redesign_TASKS import approved_fixture, approve, disposition
 from test_engine import common
-from research_fixtures import seal_response
+from research_fixtures import bare_engine, new_instance, seal_response
 
 AT = '2026-09-22T00:00:00+00:00'
 
@@ -32,7 +32,7 @@ def context_engine(instance=None, runtime=None):
     """Keep the real context producer; replace unrelated host observations."""
     base, running = surface_state()
     base.update(relations=[], goal_status='unresolved', lifecycle={'state': 'active'})
-    running.update(inputs=[], questions=[], active_execution=None)
+    running.update(inputs=[], questions=[])
     running['executions'] = {}
     if instance:
         profiles = {**base['execution_profiles'], **instance.get('execution_profiles', {})}
@@ -40,19 +40,17 @@ def context_engine(instance=None, runtime=None):
         base['execution_profiles'] = profiles
     if runtime:
         running.update(runtime)
-    engine = object.__new__(ResearchEngine)
-    engine.instance, engine.runtime = base, running
-    engine.head = 'a' * 40
-    engine.store = Mock()
+    engine = bare_engine(base, running, head='a' * 40, store=create_autospec(ResearchRepository, instance=True))
     engine.store.read_many.side_effect = lambda paths, snapshot: {p: engine.store.read(p, snapshot) for p in paths}
     engine._documents = {role: contracts.prompt_documents(role) for role in ('research_preparation', 'research_plan', 'research_work')}
-    engine._preparation_checkpoint = lambda: None
-    engine._provider_slots = Mock()
-    engine._academic_status = lambda: {}
-    engine._planning_history = lambda *args: []
-    engine._execution_profile = Mock(side_effect=ValueError('no compiler launched in input test'))
-    engine._ensure_academic_followup = lambda: None
-    engine._record_academic_assessment = lambda *args: None
+    engine._preparation_checkpoint = create_autospec(engine._preparation_checkpoint, side_effect=lambda: None)
+    engine._session_slots = create_autospec(engine._session_slots)
+    engine._academic_status = create_autospec(engine._academic_status, side_effect=lambda: {})
+    engine._planning_history = create_autospec(engine._planning_history, side_effect=lambda *args: [])
+    engine._execution_profile = create_autospec(engine._execution_profile,
+                                                side_effect=ValueError('no compiler launched in input test'))
+    engine._ensure_academic_followup = create_autospec(engine._ensure_academic_followup, side_effect=lambda: None)
+    engine._record_academic_assessment = create_autospec(engine._record_academic_assessment, side_effect=lambda *args: None)
     return engine
 
 
@@ -78,17 +76,14 @@ def initial_failure_engine(root, kind='execution_failure', stage='interpret'):
     lifecycle = seed.instance['lifecycle']
     from do_math.model_policy import selection
     selected = selection(seed.instance['config'], {'role': 'intent_interpretation'}, {}, {},
-                         profiles=seed.instance['execution_profiles'])['profile_ref']
+                         instance=seed.instance)['profile_ref']
     profile = execution_profiles.resolve_profile(seed.instance['execution_profiles'], selected)
     lifecycle.update(input_id='UI-original', adoption={'initial_grant_ids': ['GR-init'],
         'initial_profile_ref': execution_profiles.profile_ref(profile)})
     seed.runtime['inputs'] = [{'id': 'UI-original', 'config': {}, **lifecycle['immutable_input']}]
-    engine = object.__new__(ResearchEngine)
-    engine.instance, engine.runtime = seed.instance, seed.runtime
-    engine.head, engine.store = 'a' * 40, Mock()
+    engine = bare_engine(seed.instance, seed.runtime, head='a' * 40, store=create_autospec(ResearchRepository, instance=True))
     engine.lifecycle_clock = seed.lifecycle_clock
     engine.lifecycle_monotonic = seed.lifecycle_monotonic
-    engine._slots = None
     action = {'id': 'AC-original', 'role': 'intent_interpretation', 'target': 'UI-original',
               'stage': stage, 'owner_activity_id': 'AY-original'}
     activities.open_activity(engine.runtime, activity_id='AY-original', activity_kind='intent_interpretation',
@@ -174,10 +169,8 @@ class InputBoundaryRepairs(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             repo = root / 'repo'
-            repo.mkdir()
-            subprocess.run(['git', '-C', str(repo), 'init', '-q'], check=True)
-            created = initialize(repo, goal='Check profile query', workspace=root / 'work')
-            engine = ResearchEngine(repo, created['instance_id'])
+            instance_id = new_instance(repo, goal='Check profile query', workspace=root / 'work')
+            engine = ResearchEngine(repo, instance_id)
             allowed = next(iter(engine.instance['role_profile_refs'].values()))[0]
             selected = engine.instance['execution_profiles'][allowed['id']]
             document = Path(__file__).resolve().parents[2] / 'references' / '초기화-운전.md'
@@ -192,7 +185,7 @@ class InputBoundaryRepairs(unittest.TestCase):
                               if lines[index].startswith('$dmProfileRefs = @('))
             selection = lines[selection_index:refs_index]
             environment = {**os.environ, 'DM_CLI': str(Path(__file__).resolve().parents[1] / 'do_math.py'),
-                           'DM_REPO': str(repo), 'DM_INSTANCE': created['instance_id'],
+                           'DM_REPO': str(repo), 'DM_INSTANCE': instance_id,
                            'DM_CHOSEN': selected['id']}
             self.assertGreater(len(engine.instance['execution_profiles']), 10)
             for page_size in (1000, 10):
@@ -221,14 +214,12 @@ class InputBoundaryRepairs(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             repo = root / 'repo'
-            repo.mkdir()
-            subprocess.run(['git', '-C', str(repo), 'init', '-q'], check=True)
             source = root / 'source.txt'
             source.write_text('fixed source\n', encoding='utf-8')
-            created = initialize(repo, goal='Check source receipts', workspace=root / 'work', sources=[source])
-            engine = ResearchEngine(repo, created['instance_id'])
+            instance_id = new_instance(repo, goal='Check source receipts', workspace=root / 'work', sources=[source])
+            engine = ResearchEngine(repo, instance_id)
             before = deepcopy(engine.instance['sources'][0])
-            sent = control(repo, created['instance_id'], 'source', config={'path': str(source)},
+            sent = control(repo, instance_id, 'source', config={'path': str(source)},
                            request_id='UC-unchanged-source')
             self.assertEqual(sent['effect'], 'pending engine processing')
             engine._controls(pump=False)
@@ -236,13 +227,13 @@ class InputBoundaryRepairs(unittest.TestCase):
             self.assertEqual(receipt['effect'], 'applied')
             self.assertEqual(receipt['reason'], 'source content unchanged')
             self.assertEqual(engine.instance['sources'][0], before)
-            replay = control(repo, created['instance_id'], 'source', config={'path': str(source)},
+            replay = control(repo, instance_id, 'source', config={'path': str(source)},
                              request_id='UC-unchanged-source')
             self.assertEqual(replay['snapshot'], receipt['snapshot'])
             self.assertEqual(len([row for row in engine.runtime['history']
                 if row.get('request', {}).get('id') == 'UC-unchanged-source']), 1)
             source.write_text('updated source\n', encoding='utf-8')
-            control(repo, created['instance_id'], 'source', config={'path': str(source)},
+            control(repo, instance_id, 'source', config={'path': str(source)},
                     request_id='UC-changed-source')
             engine._controls(pump=False)
             self.assertEqual(engine.instance['sources'][0]['revision'], 2)
@@ -250,10 +241,10 @@ class InputBoundaryRepairs(unittest.TestCase):
                              source.read_bytes())
 
     def test_operational_question_uses_exact_execution_or_sealed_source_coordinate(self):
-        engine = object.__new__(ResearchEngine)
+        engine = bare_engine()
         engine.instance = {'decisions': {}}
         engine.head = 'fixed'
-        engine.store = Mock()
+        engine.store = create_autospec(ResearchRepository, instance=True)
         engine.store.read_many.return_value = {'sealed-output.json': canonical_json({
             'disposition': {'question': 'Question from the sealed response'}})}
         engine.runtime = {'executions': {
@@ -396,6 +387,7 @@ class InputBoundaryRepairs(unittest.TestCase):
             self.assertTrue(check['passed'], check['issues'])
             original = deepcopy(engine.runtime)
             engine.store.load.return_value = (engine.head, deepcopy(engine.instance), original)
+            engine.store.view.return_value = engine.store.load.return_value
             frozen = canonical_json(fixed)
             evidence = engine.store.read.return_value
             task_sources = {row['source_ref']['artifact_ref']: (root / row['source_ref']['path']).read_bytes()
@@ -449,6 +441,7 @@ class InputBoundaryRepairs(unittest.TestCase):
                 check = submission.producer_check(root, draft)
                 self.assertTrue(check['passed'], check['issues'])
                 engine.store.load.return_value = (engine.head, deepcopy(engine.instance), deepcopy(engine.runtime))
+                engine.store.view.return_value = engine.store.load.return_value
                 task_sources = {row['source_ref']['artifact_ref']: (root / row['source_ref']['path']).read_bytes()
                                 for row in fixed['task_catalog']}
                 engine.store.read.side_effect = lambda path, head: task_sources.get(path, canonical_json(fixed))
@@ -491,8 +484,7 @@ class InputBoundaryRepairs(unittest.TestCase):
             sealed = submission.seal_submission(root, 'draft.json', execution_id='EX-plan',
                 context=fixed, schema=contracts.schema_for('research_work'), max_artifact_bytes=2000000)
             self.assertTrue(sealed['passed'], sealed['check']['issues'])
-            artifacts = engine._input_artifacts('BA-plan', 'research_work', fitted['prompt'],
-                                               contracts.schema_for('research_work'), fitted, root)
+            artifacts = engine._input_artifacts('BA-plan', contracts.schema_for('research_work'), fitted, root)
             self.assertIn('runtime/artifacts/BA-plan/input/submission/relation-state.json', artifacts)
             stopped = knowledge_records.set_assessment_use(engine.instance, aid, 'withdrawn', 'recheck', 'reviewer')
             with self.assertRaisesRegex(ValueError, 'invalid relation'):
@@ -508,7 +500,9 @@ class InputBoundaryRepairs(unittest.TestCase):
 class WakeRepairs(unittest.TestCase):
     def test_supervisor_requests_once_and_probe_reports_the_same_reason(self):
         from do_math import scheduled_operator as operator
-        status = {'status': 'waiting', 'research_wake_reasons': [{'kind': 'research_reconsider_due'}]}
+        # Supervision judges from this one engine status; it loads no repository state.
+        status = {'status': 'waiting', 'research_wake_reasons': [{'kind': 'research_reconsider_due'}],
+                  'operator_enabled': True, 'provider_waits': {'providers': {}}}
         running = False
         def schedule(kind, **kwargs):
             nonlocal running
@@ -518,11 +512,9 @@ class WakeRepairs(unittest.TestCase):
             return {'engine': {'state': 'Running' if running else 'Ready'}}
         with tempfile.TemporaryDirectory() as directory, \
                 patch.object(operator, 'read_status', return_value=status), \
-                patch.object(operator, 'ResearchRepository') as repo, \
                 patch.object(operator, 'reconcile_wake', return_value={'status': 'not_needed'}), \
                 patch.object(operator, 'schedule', side_effect=schedule) as start:
             root = Path(directory)
-            repo.return_value.load.return_value = ('snapshot', {'config': {'operator_enabled': True}}, {})
             observed = operator.check(root, 'RI-test', root, probe=True)
             self.assertEqual(observed['engine_start']['reason'], 'research reconsideration due')
             start.assert_not_called()
@@ -565,7 +557,7 @@ class WakeRepairs(unittest.TestCase):
             self.assertEqual(planning.research_wake_reasons(instance, runtime, now=AT), [{'kind': 'research_regeneration_due'}])
         instance['id'] = 'RI-wait'
         runtime['question_links'] = [{'id': 'QU-user', 'status': 'open', 'owner': 'user',
-                                     'blocks': True, 'target_ids': ['RI-wait']}]
+                                     'blocks': True, 'target_ids': ['RI-wait'], 'unresolved_target_ids': ['RI-wait']}]
         with patch('do_math.revisions.repetition_hold', return_value=False):
             self.assertEqual(planning.research_wake_reasons(instance, runtime, now=AT), [])
 
@@ -607,12 +599,16 @@ class RecoveryBoundaryRepairs(unittest.TestCase):
             originals = {prefix + '/input.txt': b'Original role contract and fixed prompt',
                 prefix + '/schema.json': b'{"type":"object"}',
                 prefix + '/input/submission/context.json': b'{"fixed":"original input"}'}
+            # The role input manifest names the archived prompt.
+            prompt = originals[prefix + '/input.txt']
+            engine.runtime['executions']['EX-bad']['input_manifest'] = {'prompt': {
+                'artifact_ref': prefix + '/input.txt', 'sha256': hashlib.sha256(prompt).hexdigest(), 'bytes': len(prompt)}}
             engine.store.read.side_effect = lambda ref, head: originals[ref]
             engine.store.read_many.side_effect = lambda refs, head: {ref: originals[ref] for ref in refs}
             engine._documents = {'maintenance': contracts.prompt_documents('maintenance')}
-            engine._preparation_checkpoint = lambda: None
-            engine._provider_slots = Mock()
-            engine._academic_status = lambda: {}
+            engine._preparation_checkpoint = create_autospec(engine._preparation_checkpoint, side_effect=lambda: None)
+            engine._session_slots = create_autospec(engine._session_slots)
+            engine._academic_status = create_autospec(engine._academic_status, side_effect=lambda: {})
             workspace = root / 'diagnosis'
             context = engine._context({'id': 'AC-diagnosis', 'role': 'maintenance', 'target': 'EX-bad',
                                        'initial_submission_diagnosis': True}, workspace)
@@ -663,7 +659,7 @@ class RecoveryBoundaryRepairs(unittest.TestCase):
                     repair_execution.apply_initial_diagnosis(engine, diagnostic,
                         {'initial_submission_diagnosis': {'decision': 'retry', 'guidance': 'Use the preserved contract'}}, 'EX-diagnosis')
                     self.assertEqual(engine.runtime['queue'], [], 'candidate application cannot publish a native recovery')
-                    engine._save = Mock()
+                    engine._save = create_autospec(engine._save)
                     engine.runtime['executions']['EX-diagnosis'] = {'id': 'EX-diagnosis', 'role': 'maintenance',
                         'status': 'ended', 'outcome': 'output_accepted', 'action': diagnostic}
                     repair_execution.continue_initial_retries(engine)
@@ -681,7 +677,7 @@ class RecoveryBoundaryRepairs(unittest.TestCase):
                     self.assertEqual(engine.runtime['queue'], [])
 
     def test_failed_diagnosed_retry_is_recorded_once_and_remains_storable(self):
-        from do_math.record_schemas.domains import RUNTIME_FIELDS
+        from do_math.record_schemas import RUNTIME_FIELDS
         from jsonschema import Draft202012Validator
         with tempfile.TemporaryDirectory() as directory:
             engine, action, wait = initial_failure_engine(Path(directory))
@@ -691,7 +687,7 @@ class RecoveryBoundaryRepairs(unittest.TestCase):
             engine.runtime['executions']['EX-diagnosis'] = {'id': 'EX-diagnosis', 'role': 'maintenance',
                 'status': 'ended', 'outcome': 'output_accepted', 'action': diagnostic}
             engine.instance['grants']['GR-init']['status'] = 'revoked'
-            engine._save = Mock()
+            engine._save = create_autospec(engine._save)
             repair_execution.continue_initial_retries(engine)
             repair_execution.continue_initial_retries(engine)
             self.assertIn('retry_error', wait['diagnosis'])
@@ -721,8 +717,7 @@ class RecoveryBoundaryRepairs(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             fitted, fixed = package(engine, root, 'research_work')
-            artifacts = engine._input_artifacts('BA-plan', 'research_work', fitted['prompt'],
-                                               contracts.schema_for('research_work'), fitted, root)
+            artifacts = engine._input_artifacts('BA-plan', contracts.schema_for('research_work'), fitted, root)
             engine.store.read.side_effect = lambda path, head: artifacts[path]
             profile = next(p for p in engine.instance['execution_profiles'].values() if p['role'] == 'research_work')
             activities.open_activity(engine.runtime, activity_id='AY-work', activity_kind='research_work',

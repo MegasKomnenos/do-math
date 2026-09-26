@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -17,7 +16,8 @@ from do_math.delegations import (
     prepare_application,
     record_judgment,
 )
-from do_math.engine import _repository, initialize
+from do_math.engine import _repository
+from research_fixtures import new_instance
 
 
 class DelegationStorageTests(unittest.TestCase):
@@ -31,8 +31,7 @@ class DelegationStorageTests(unittest.TestCase):
             repository = root / "repository"
             source_path = root / "source.txt"
             source_path.write_text("The original source bytes.", encoding="utf-8")
-            subprocess.run(["git", "init", "--quiet", str(repository)], check=True, capture_output=True)
-            created = initialize(
+            instance_id = new_instance(
                 repository,
                 goal="Preserve an independently checked delegated case.",
                 workspace=root / "workspace",
@@ -40,7 +39,7 @@ class DelegationStorageTests(unittest.TestCase):
                 config={ "scholarly_enabled": False, "operator_enabled": False,
                         "lean_command": ["fixture-lean"]},
             )
-            store = _repository(repository, created["instance_id"])
+            store = _repository(repository, instance_id)
             head, instance, runtime = store.load()
             source_id = instance["sources"][0]["id"]
             instance.setdefault("governance_sources", {})["GS-delegation"] = governance.preserve_source(
@@ -51,7 +50,7 @@ class DelegationStorageTests(unittest.TestCase):
                 runtime,
                 {"kind": "grant", "decision_id": "DC-original", "grant": {
                     "id": "GR-original", "kind": "local", "roles": ["maintenance"],
-                    "reuse": "reusable", "budget_kind": "operations",
+                    "reuse": "reusable",
                 }},
                 source_ref="GS-delegation",
             )

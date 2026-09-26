@@ -18,6 +18,9 @@ from do_math.governance import apply_decision, authorize, interpretation_schema
 from do_math.academic import academic_status, solution_basis
 from do_math import governance as gov, questions
 from copy import deepcopy
+from unittest.mock import create_autospec
+
+from research_fixtures import bare_engine, review_items
 
 
 def charter(identifier="CH1", goal="Prove P"):
@@ -249,9 +252,7 @@ class DomainGovernanceTests(unittest.TestCase):
 
 
     def test_question_mixin_publishes_advice_without_global_wait_and_resolves_atomically(self):
-        from do_math.question_engine import QuestionEngineMixin
-        class Host(QuestionEngineMixin): pass
-        h=Host();h.instance={"id":"I","feature_version":5}
+        h=bare_engine();h.instance={"id":"I","feature_version":5}
         h.runtime={"executions":{"E":{"id":"E","role":"research_plan","artifact_bundle":"B", "extensions":{"question_routes":[{"question_index":0,"owner":"user","target_ids":["I"],"blocks":False,"reason":"optional"}]}}}}
         h._record_output_questions({"role":"research_plan"},{"questions":["Optional priority?"]},"E")
         self.assertEqual(questions.user_waits({"role":"research_plan"}, h.instance, h.runtime), [])
@@ -262,17 +263,6 @@ class DomainGovernanceTests(unittest.TestCase):
         h.runtime["artifacts"]={"EV":{"id":"EV","answer":"evidence"}}
         with self.assertRaises(ValueError):h._apply_question_resolutions("E")
         self.assertEqual(one["status"],"open")
-
-    def test_question_wait_uses_activity_lifecycle_and_resumes_only_after_all_answers(self):
-        from do_math.activities import open_activity
-        rt={"executions":{}}
-        open_activity(rt,activity_id="A",activity_kind="research",owner_ref="T",input_refs=[],opened_at="2026-09-20T00:00:00Z")
-        one=questions.link(rt,execution_id="E",field="q/0",owner="user",targets=["T"],blocks=True)
-        questions.sync_activity_wait(rt,"A",[one["id"]],at="2026-09-20T00:00:00Z")
-        self.assertEqual(rt["activities"]["A"]["status"],"waiting")
-        questions.resolve_user(rt,[one["id"]],resolution_ref="D",affected_ids=["T"])
-        questions.sync_activity_wait(rt,"A",[one["id"]],at="2026-09-20T00:01:00Z")
-        self.assertEqual(rt["activities"]["A"]["status"],"ready")
 
     def test_reconciliation_cannot_assert_success_from_unbound_text(self):
         from do_math.external import reconcile_operation
@@ -301,10 +291,10 @@ class DomainGovernanceTests(unittest.TestCase):
         self.assertEqual(i["grants"]["G2"]["status"],"expired")
         self.assertEqual(events[0]["grant_id"],"G2")
 
-    def test_local_capability_pool_and_execution_kind_are_not_ignored(self):
+    def test_local_execution_kind_is_not_ignored(self):
         i={"feature_version":5,"grants":{"G":{"id":"G","kind":"local","status":"active","roles":["research_work"],
-            "reuse":"reusable","budget_kind":"operations","execution_kinds":["machine"]}}}
-        self.assertFalse(gov.authorize(i,{"role":"research_work","actor_kind":"ai","budget_kind":"work"},runtime={})["allowed"])
+            "reuse":"reusable","execution_kinds":["machine"]}}}
+        self.assertFalse(gov.authorize(i,{"role":"research_work","actor_kind":"ai"},runtime={})["allowed"])
 
     def test_generic_academic_request_must_bind_the_solution_it_relied_on(self):
         from do_math import academic
@@ -346,10 +336,8 @@ class DomainGovernanceTests(unittest.TestCase):
         self.assertEqual(updated["question_links"][0]["unresolved_target_ids"],["B"])
 
     def test_academic_basis_rejects_a_stale_judgment_dependency(self):
-        from do_math.academic_engine import AcademicEngineMixin
         from do_math.knowledge import capture_basis
-        class Host(AcademicEngineMixin):pass
-        h=Host();h.instance={"goal_status":"mathematically_solved","goal_revision":1,"knowledge":{"K":{"id":"K","text":"new"}},"goal_assessment_basis":"B"};h.runtime={}
+        h=bare_engine();h.instance={"goal_status":"mathematically_solved","goal_revision":1,"knowledge":{"K":{"id":"K","text":"new"}},"goal_assessment_basis":"B"};h.runtime={}
         h.instance["goal_judgments"]=[{"execution_id":"E","basis":"B","current":True,"dependencies":["K"],"record_basis":capture_basis({"knowledge":{"K":{"id":"K","text":"old"}}},{},["K"])}]
         self.assertIsNone(h._solution_basis())
 
@@ -467,10 +455,9 @@ class GovernanceRedesignTests(unittest.TestCase):
         runtime = {'tasks': {}, 'executions': {}, 'queue': []}
         for identifier in ('A', 'B'):
             instance, runtime, _ = apply_decision(instance, runtime, {'kind': 'grant', 'grant': {
-                'id': identifier, 'kind': 'local', 'reuse': 'reusable', 'roles': ['research_work'],
-                'budget_kind': 'work'}}, source_ref='user')
-        decision = authorize(instance, {'id': 'AC', 'role': 'research_work', 'budget_kind': 'work',
-                                        'actor_kind': 'ai'}, runtime=runtime)
+                'id': identifier, 'kind': 'local', 'reuse': 'reusable', 'roles': ['research_work']}},
+                source_ref='user')
+        decision = authorize(instance, {'id': 'AC', 'role': 'research_work', 'actor_kind': 'ai'}, runtime=runtime)
         self.assertFalse(decision["allowed"])
         self.assertEqual(decision["reason"], "ambiguous current grants")
 
@@ -524,26 +511,12 @@ class AcademicConsumerTests(unittest.TestCase):
     """Actual academic producer and TASKS consumers; mathematical evidence is synthetic."""
 
     def host(self):
-        from do_math.academic_engine import AcademicEngineMixin
-        from do_math.decision_engine import DecisionEngineMixin
-        from do_math.scheduler import SchedulerMixin
-        from do_math.revision_engine import RevisionEngineMixin
         from do_math.execution_profiles import seal_profile, profile_ref, BOUNDARY
-        class Host(AcademicEngineMixin, DecisionEngineMixin, SchedulerMixin, RevisionEngineMixin):
-            def _solution_basis(self): return deepcopy(self.basis)
-            def _academic_evidence(self, ref): return None
-            def _lifecycle_now(self):
-                from do_math.governance import timestamp
-                return timestamp('2026-09-20T00:00:00Z')
-            def _remove_action(self, action):
-                self.runtime['queue'][:] = [a for a in self.runtime['queue'] if a['id'] != action['id']]
-            def _apply_input_overflow_resolutions(self, choices, fixed, execution_id):
-                from do_math.engine import ResearchEngine
-                return ResearchEngine._apply_input_overflow_resolutions(self, choices, fixed, execution_id)
-            def _enqueue(self, role, target=None, **fields):
-                self.runtime['queue'].append({'id': 'A' + str(len(self.runtime['queue'])),
-                                             'role': role, 'target': target, **fields})
-        h = Host()
+        from do_math.governance import timestamp
+        h = bare_engine()
+        h._solution_basis = create_autospec(h._solution_basis, side_effect=lambda: deepcopy(h.basis))
+        h._academic_evidence = create_autospec(h._academic_evidence, return_value=None)
+        h._lifecycle_now = create_autospec(h._lifecycle_now, return_value=timestamp('2026-09-20T00:00:00Z'))
         source = gov.preserve_source('S', 'Synthetic approval of a manuscript requirement', origin='user')
         record = charter()
         record['content']['academic_requirements'] = [{'id': 'AR', 'scope': 'Prepare a manuscript',
@@ -571,7 +544,7 @@ class AcademicConsumerTests(unittest.TestCase):
         return h, next(iter(h.runtime['tasks'].values()))
 
     def reviewed(self):
-        from do_math import planning, contracts
+        from do_math import planning
         h, task = self.generated()
         from research_fixtures import prepared_rule_conditions
         action = next(a for a in h.runtime['queue'] if a.get('observation_rule_targets'))
@@ -579,9 +552,7 @@ class AcademicConsumerTests(unittest.TestCase):
             'action': action, 'extensions': {'task_conditions': prepared_rule_conditions([task['id']])}}
         h._finish_assessment_preparation(action, 'PREP')
         h._remove_action(action)
-        output = {'item_reviews': [{'item_id': key, 'decision': 'approved', 'evidence_refs': [task['id']],
-            'findings': [], 'missing_inputs': [], 'next_owner': 'research_preparation'}
-            for key in contracts.CONTRACT_REVIEW_ITEMS]}
+        output = review_items([task['id']], next_owner='research_preparation')
         task['reviews'].append(planning.seal_contract_review(task, output, h.instance, h.runtime, execution_id='REVIEW'))
         return h, task
 
@@ -634,15 +605,16 @@ class AcademicConsumerTests(unittest.TestCase):
 
     def test_engine_plan_dispatch_consumes_generated_contract_and_applied_assessment(self):
         from do_math.engine import ResearchEngine
-        from types import SimpleNamespace
+        from do_math.repository import ResearchRepository
         h, task = self.reviewed()
         tid = task['id']
         h.runtime['executions']['SELECT'] = {'id': 'SELECT', 'role': 'research_plan', 'status': 'ended', 'input_snapshot': 'before-work', 'input_bundle': 'BA-select'}
         first = deepcopy((h.instance, h.runtime))
-        h.store = SimpleNamespace(load=lambda snapshot: (snapshot, *deepcopy(first)),
-            read=lambda path, snapshot: json.dumps({'snapshot': 'before-work', 'tasks': list(first[1]['tasks'].values()), 'ready_task_ids': [tid]}).encode())
+        h.store = create_autospec(ResearchRepository, instance=True)
+        h.store.view.side_effect = lambda snapshot: (snapshot, *deepcopy(first))
+        h.store.read.side_effect = lambda path, snapshot: json.dumps({'snapshot': 'before-work', 'tasks': list(first[1]['tasks'].values()), 'ready_task_ids': [tid]}).encode()
         h.head = 'before-work'
-        h._evaluation_context = lambda snapshot=None: {'snapshot': snapshot}
+        h._evaluation_context = create_autospec(h._evaluation_context, side_effect=lambda snapshot=None: {'snapshot': snapshot})
         ResearchEngine._apply_plan(h, {'dispositions': [{'task_id': tid, 'kind': 'selected', 'reason': 'Current academic work',
             'next_owner': 'research_work', 'expected_research_change': 'Complete the manuscript'}],
             'task_assessments': [], 'goal_audit': False}, 'SELECT')
@@ -653,8 +625,9 @@ class AcademicConsumerTests(unittest.TestCase):
         h.runtime['executions'].update(WORK={'id': 'WORK', 'role': 'research_work', 'status': 'ended', 'action': {'target': tid}},
             PLAN={'id': 'PLAN', 'role': 'research_plan', 'status': 'ended', 'input_snapshot': 'after-work', 'input_bundle': 'BA-returned', 'input_solution_basis': h.basis})
         returned = deepcopy((h.instance, h.runtime))
-        h.store = SimpleNamespace(load=lambda snapshot: (snapshot, *deepcopy(returned)),
-            read=lambda path, snapshot: json.dumps({'snapshot': 'after-work', 'tasks': list(returned[1]['tasks'].values()), 'ready_task_ids': []}).encode())
+        h.store = create_autospec(ResearchRepository, instance=True)
+        h.store.view.side_effect = lambda snapshot: (snapshot, *deepcopy(returned))
+        h.store.read.side_effect = lambda path, snapshot: json.dumps({'snapshot': 'after-work', 'tasks': list(returned[1]['tasks'].values()), 'ready_task_ids': []}).encode()
         h.head = 'after-work'
         assessment = {'task_id': tid, 'decision': 'completed', 'item_dispositions': [
             {'obligation_id': o['id'], 'kind': 'fulfilled', 'evidence_refs': ['WORK']} for o in task['completion_obligations']]}
@@ -729,13 +702,13 @@ class ReplacementAuthorityTests(unittest.TestCase):
               'review_cycles': {'RC': {'id': 'RC', 'knowledge_id': 'K', 'revision': 1}},
               'activities': {}}
         i['knowledge'] = {'K': {'id': 'K', 'revision': 1}}
-        action = {'id': 'ACTION', 'role': 'identity_review', 'target': 'K', 'budget_kind': 'work',
+        action = {'id': 'ACTION', 'role': 'identity_review', 'target': 'K',
                   'actor_kind': 'ai', 'purpose': 'record_replacement', 'review_cycle_id': 'RC',
                   'stage': 'initial', 'slot': 'R1', 'round': 0, 'replacement_for': 0,
                   'continuity_break_cause': 'permanent_loss'}
         i, rt, _ = gov.apply_decision(i, rt, {'kind': 'grant', 'decision_id': 'GRANT-DECISION',
             'grant': {'id': 'G', 'kind': 'local', 'roles': ['identity_review'], 'reuse': 'reusable',
-                      'included_targets': ['K'], 'budget_kind': 'work', 'purposes': ['record_replacement']}}, source_ref='S')
+                      'included_targets': ['K'], 'purposes': ['record_replacement']}}, source_ref='S')
         i['decisions']['ORIGINAL'] = {'id': 'ORIGINAL', 'actor': 'user', 'kind': 'review_replacement', 'source_ref': 'S'}
         i, rt, _ = gov.apply_decision(i, rt, {'kind': 'delegation', 'decision_id': 'DD', 'delegation': {
             'id': 'DG', 'status': 'active', 'decision_kind': 'review_replacement', 'original_decision_id': 'ORIGINAL',
@@ -941,7 +914,7 @@ class AuditRepairTests(unittest.TestCase):
         i, rt, action, case = ReplacementAuthorityTests().fixture()
         app = d.prepare_application(i, rt, 'DG', case)
         for eid, stage in [('AUTHOR', 'interpret'), ('CHECKER', 'check')]:
-            rt['executions'][eid] = {'id': eid, 'role': 'intent_interpretation', 'input_sha256': 'whole-context-' + eid,
+            rt['executions'][eid] = {'id': eid, 'role': 'intent_interpretation', 'input_manifest': {'prompt': {'sha256': 'whole-context-' + eid}},
                                      'delegation_input_sha256': app['input_sha256']}
             d.record_judgment(rt, app['id'], {'input_sha256': app['input_sha256'], 'decision': 'within_scope',
                 'reason': 'Within exact delegated case'}, execution_id=eid, stage=stage)
@@ -995,7 +968,7 @@ class AuditRepairTests(unittest.TestCase):
             for index, stage in enumerate(stages):
                 self.assertEqual(d.judgment_input(engine.runtime, app_id), shared)
                 eid = 'DG-' + str(index)
-                engine.runtime['executions'][eid] = {'id': eid, 'role': 'intent_interpretation',
+                engine.runtime['executions'][eid] = {'id': eid, 'role': 'intent_interpretation', 'status': 'ended',
                     'input_sha256': 'full-context-' + eid, 'delegation_input_sha256': shared['input_sha256']}
                 ResearchEngine._apply_delegation_judgment(engine, stage, {'delegation_judgment': {
                     'input_sha256': shared['input_sha256'], 'decision': 'within_scope',
@@ -1017,10 +990,10 @@ class ExternalScopeConsumerTests(unittest.TestCase):
         from do_math.external import prepare_operation, execute_operation
         grant = {'id': 'G', 'kind': 'http', 'status': 'active', 'reuse': 'once',
             'included_targets': ['T'], 'purposes': ['publish'], 'subjects': ['external_operation'],
-            'budget_kind': 'operations', 'execution_kinds': ['machine'],
+            'execution_kinds': ['machine'],
             'allowed_origins': ['https://example.test'], 'allowed_methods': ['POST'], 'allowed_path_prefixes': ['/']}
         op = prepare_operation({'method': 'POST', 'url': 'https://example.test/p'}, 'G', 'S',
-            target_id='T', purpose='publish', subject='external_operation', budget_kind='operations', actor_kind='machine')
+            target_id='T', purpose='publish', subject='external_operation', actor_kind='machine')
         calls = []
         transport = lambda *args: calls.append(args) or {'http_status': 200, 'body': b'ok'}
         result = execute_operation(op, grant, persist=lambda row: True, transport=transport, runtime={})

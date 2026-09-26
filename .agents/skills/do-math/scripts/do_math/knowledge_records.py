@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import hashlib
+from .formal import FORMAL_EVIDENCE_FIELDS, forbidden_axioms, lean_source_sha256
+from .planning import record_index
 from .repository import exact_content_hash, new_id
 
 FAMILIES = ("knowledge", "formal_results", "expositions", "identity_assessments", "assessment_uses")
+# planning.RECORD_FAMILIES keys of the research-space records that all_records indexes.
+RESEARCH_RECORD_FAMILIES = ("knowledge", "formal-result", "exposition", "identity-assessment", "assessment-use",
+                            "kind-definition", "trust-environment", "relation", "goal-judgment")
 EXPOSITION_FIELDS = ("definitions", "assumptions", "statement", "explanation", "summary")
 
 
@@ -25,22 +29,8 @@ def initialize_families(instance):
 
 
 def all_records(instance):
-    result = {}
-    for family in (*FAMILIES, "kind_definitions", "trust_environments"):
-        for record in instance.get(family, {}).values():
-            rid = record.get("id")
-            if rid:
-                if rid in result:
-                    raise ValueError("duplicate record ID: " + rid)
-                result[rid] = record
-    for family in ("relations", "goal_judgments"):
-        for record in instance.get(family, []):
-            rid = record.get("id")
-            if rid:
-                if rid in result:
-                    raise ValueError("duplicate record ID: " + rid)
-                result[rid] = record
-    return result
+    return {rid: record for rid, (_, record) in
+            record_index(instance, {}, families=RESEARCH_RECORD_FAMILIES).items()}
 
 
 def exposition_items(candidate):
@@ -59,11 +49,11 @@ def exposition_items(candidate):
     return items
 
 
-def create_candidate(instance, candidate, *, source_ref, actor_ref):
-    output = initialize_families(instance)
+def create_candidate(output, candidate, *, source_ref, actor_ref):
+    """Write one checked candidate into the caller's own copy; import_candidate owns the checks."""
+    for family in FAMILIES:
+        output.setdefault(family, {})
     kid = candidate.get("id") or new_id("KN")
-    if kid in all_records(output):
-        raise ValueError("record ID already exists; use an explicit revision: " + kid)
     fid = candidate.get("formal_result_ref") or (new_id("FR") if candidate.get("lean_code") else None)
     xid = new_id("XP")
     if fid and not candidate.get("formal_result_ref"):
@@ -130,7 +120,7 @@ def formal_usable(instance, formal):
     return (formal.get("publication_state") == "accepted" and formal.get("formal_use") == "active"
             and verification.get("status") == "verified" and env_id is not None
             and env.get("status") == "active" and instance.get("active_trust_environment") == env_id
-            and verification.get("source_sha256") == hashlib.sha256(formal["lean_code"].encode()).hexdigest()
+            and verification.get("source_sha256") == lean_source_sha256(formal["lean_code"])
             and verification.get("toolchain") == env.get("toolchain"))
 
 
@@ -141,27 +131,38 @@ def _assessment_basis(formal, exposition):
             "exposition": exact_content_hash({key: exposition.get(key) for key in ("id", "formal_result_id", "items", "relation_claim")})}
 
 
-def usable_links(instance, knowledge_id, _visiting=None):
-    record = instance.get("knowledge", {}).get(knowledge_id, {})
+def premise_failures(instance, record):
+    """Yield, in order, the failed record premises shared by K support and research reuse."""
     if record.get("lifecycle") != "active" or record.get("kind_use_suspended"):
-        return []
+        yield "record_not_active"
     definition = instance.get("kind_definitions", {}).get(record.get("kind_definition_id"))
     if not definition or definition.get("status") != "active":
-        return []
-    visiting = set(_visiting or ())
-    if knowledge_id in visiting:
-        return []
-    visiting.add(knowledge_id)
-    for dependency in record.get("dependencies", []):
-        if not usable_links(instance, dependency, visiting):
-            return []
+        yield "kind_not_active"
     from .input_basis import sources_current
     if not sources_current(record.get("source_basis", []), instance):
-        return []
+        yield "sources_changed"
+
+
+def record_premises_current(instance, record, visiting=()):
+    """K premises of one knowledge record: shared premises, usable dependencies, current relation endpoints.
+
+    visiting holds the records whose premises are being judged; a dependency
+    among them is a cycle and is not usable."""
+    if next(premise_failures(instance, record), None) is not None:
+        return False
+    inner = {*visiting, record["id"]}
+    if any(not usable_links(instance, dependency, inner) for dependency in record.get("dependencies", [])):
+        return False
     if record.get("relation_claim"):
         from .knowledge import validate_basis
-        if not record.get("relation_endpoint_basis") or not validate_basis(record["relation_endpoint_basis"], instance, {})["valid"]:
-            return []
+        return bool(record.get("relation_endpoint_basis")) and validate_basis(record["relation_endpoint_basis"], instance, {})["valid"]
+    return True
+
+
+def usable_links(instance, knowledge_id, _visiting=None):
+    record = instance.get("knowledge", {}).get(knowledge_id, {})
+    if knowledge_id in (_visiting or ()) or not record_premises_current(instance, record, _visiting or ()):
+        return []
     fid = record.get("formal_result_id")
     formal = instance.get("formal_results", {}).get(fid, {})
     if not formal_usable(instance, formal):
@@ -195,20 +196,18 @@ def knowledge_view(instance):
 def validate_formal_evidence(formal, verification, env):
     if verification.get("toolchain") != env.get("toolchain"):
         raise ValueError("verification toolchain differs from approved environment")
-    if verification.get("source_sha256") != hashlib.sha256(formal["lean_code"].encode()).hexdigest():
+    if verification.get("source_sha256") != lean_source_sha256(formal["lean_code"]):
         raise ValueError("verification source differs from formal result")
     if verification.get("declarations") != formal["declaration_names"]:
         raise ValueError("verification declarations differ from formal result")
-    for field in ("dependency_closure", "dependency_evidence", "declaration_evidence", "axioms"):
+    for field in FORMAL_EVIDENCE_FIELDS:
         if set(verification.get(field, {})) != set(formal["declaration_names"]):
             raise ValueError("verification evidence incomplete: " + field)
     for declaration in formal["declaration_names"]:
         if set(verification["dependency_evidence"][declaration]) != set(verification["dependency_closure"][declaration]):
             raise ValueError("dependency body evidence differs from the closure")
-    if verification.get("status") == "verified":
-        axioms = {a for values in verification["axioms"].values() for a in values}
-        if "sorryAx" in axioms or axioms - set(env.get("allowed_axioms", [])):
-            raise ValueError("verification uses unapproved axioms")
+    if verification.get("status") == "verified" and forbidden_axioms(verification["axioms"], env.get("allowed_axioms", [])):
+        raise ValueError("verification uses unapproved axioms")
 
 
 def record_formal_result(instance, knowledge_id, verification, trust_environment_id, *, runtime):
@@ -292,20 +291,8 @@ def assessment_current(instance, assessment_id):
     if (not formal_usable(instance, formal) or exposition.get('lifecycle') != 'active'
             or assessment.get('basis') != _assessment_basis(formal, exposition)):
         return False
-    from .input_basis import sources_current
-    from .knowledge import validate_basis
-    for record in instance.get('knowledge', {}).values():
-        if (record.get('lifecycle') != 'active' or record.get('exposition_id') != exposition.get('id')
-                or record.get('formal_result_id') != formal.get('id') or record.get('kind_use_suspended')
-                or instance.get('kind_definitions', {}).get(record.get('kind_definition_id'), {}).get('status') != 'active'
-                or not sources_current(record.get('source_basis', []), instance)
-                or any(not usable_links(instance, dep, {record['id']}) for dep in record.get('dependencies', []))):
-            continue
-        if record.get('relation_claim') and (not record.get('relation_endpoint_basis')
-                or not validate_basis(record['relation_endpoint_basis'], instance, {})['valid']):
-            continue
-        return True
-    return False
+    return any(record.get('exposition_id') == exposition.get('id') and record.get('formal_result_id') == formal.get('id')
+               and record_premises_current(instance, record) for record in instance.get('knowledge', {}).values())
 
 
 def set_assessment_use(instance, assessment_id, status, reason, actor_ref):

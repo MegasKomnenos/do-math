@@ -16,6 +16,11 @@ from queue import Empty, Queue
 from threading import Event, Lock, Thread
 
 
+def failed_result(error):
+    """The one result a call records when its calculation raised instead of returning."""
+    return {"status": "failed", "output": None, "usage": {}, "error": f"{type(error).__name__}: {error}"}
+
+
 class ModelCalls:
     def __init__(self, *, on_returned=None, on_observation_error=None):
         self.events = Queue()
@@ -38,7 +43,7 @@ class ModelCalls:
             with self.guard:
                 if self.stopping:
                     raise RuntimeError("executor is shutting down")
-                self.events.put((function, args, response, None))
+                self.events.put((function, args, response))
                 self.wake.set()
             from .operation_trace import phase
             with phase('callback_wait', callback=getattr(function, '__name__', 'callback')):
@@ -53,9 +58,6 @@ class ModelCalls:
                 future.observations.append((function, args))
                 self.wake.set()
         return call
-
-    def start(self, generator, runner, arguments, *, execution_id=None):
-        return self.start_call(generator, runner.run, arguments, execution_id=execution_id)
 
     def start_call(self, generator, function, arguments, *, execution_id=None):
         arguments = dict(arguments)
@@ -146,7 +148,7 @@ class ModelCalls:
         try:
             for _ in range(self.events.qsize()):
                 try:
-                    function, args, response, _ = self.events.get_nowait()
+                    function, args, response = self.events.get_nowait()
                 except Empty:
                     break
                 try:
@@ -173,8 +175,7 @@ class ModelCalls:
                 try:
                     result = future.result()
                 except Exception as error:
-                    result = {"status": "failed", "output": None, "usage": {},
-                              "error": f"{type(error).__name__}: {error}"}
+                    result = failed_result(error)
                 error = getattr(future, "judge_error", None)
                 if error is not None and isinstance(result, dict):
                     result = {**result, "status": "failed",
@@ -206,7 +207,7 @@ class ModelCalls:
             future.observations.clear()
         while True:
             try:
-                _, _, response, _ = self.events.get_nowait()
+                _, _, response = self.events.get_nowait()
             except Empty:
                 break
             response.set_exception(RuntimeError("executor is shutting down"))

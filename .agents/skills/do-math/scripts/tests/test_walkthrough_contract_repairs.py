@@ -8,14 +8,14 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from do_math import cli, contracts, submission, task_contracts, task_scope
 import test_redesign_TASKS as task_fixtures
 import test_redesign_KNOWLEDGE as knowledge_fixtures
-from research_fixtures import candidate, trust_fixture
+from research_fixtures import bare_engine, candidate, trust_fixture
 
 
 class WalkthroughRepairs(unittest.TestCase):
@@ -36,10 +36,7 @@ class WalkthroughRepairs(unittest.TestCase):
                 git.assert_not_called()
 
     def test_independent_operation_does_not_require_a_conversation_lease(self):
-        from do_math.engine import ResearchEngine
-        engine = object.__new__(ResearchEngine)
-        engine.instance = {'conversation_loss_policy':'continue_authorized'}
-        engine.runtime = {'conversations':{}}
+        engine = bare_engine({'conversation_loss_policy':'continue_authorized'}, {'conversations':{}})
         self.assertTrue(engine._conversation_live())
 
     def test_governance_and_split_evidence_are_visible_but_arbitrary_nested_ids_are_not(self):
@@ -143,19 +140,19 @@ class WalkthroughRepairs(unittest.TestCase):
             task_fixtures.AssessmentApplicationTests().apply(instance, runtime, assessment)
 
     def test_changed_identity_blocks_match_publication_but_olean_metadata_is_not_rechecked(self):
-        from do_math.engine import ResearchEngine
         from research_fixtures import trust_environment
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             request = trust_fixture(root, ['synthetic-lean'])
             environment, binding = trust_environment(request, environment_id='TE-test', source_ref='approved-test')
-            engine = object.__new__(ResearchEngine)
+            engine = bare_engine()
             engine.instance = {'active_trust_environment':'TE-test', 'trust_environments':{'TE-test':environment}}
             from datetime import datetime, timezone
             engine.runtime = {'trust_transitions':{}, 'last_observed_utc':datetime.now(timezone.utc).isoformat(),
                               'trust_bindings':{'TE-test':binding}}
-            engine._review_publication_premises = lambda _: {'fixed':'same stored environment'}
-            engine._identity_assessment = lambda *a, **k: {'decision':'match'}
+            engine._review_publication_premises = create_autospec(engine._review_publication_premises,
+                return_value={'fixed':'same stored environment'})
+            engine._identity_assessment = create_autospec(engine._identity_assessment, return_value={'decision':'match'})
             updated = {'id':'RC-test','proposal':{},'decision':'match','identity_basis':{},'policy_ref':'policy',
                        'publication_premises':{'fixed':'same stored environment'}}
             with patch('do_math.review_engine.kr.record_identity_assessment', side_effect=RuntimeError('publication reached')):
@@ -250,32 +247,23 @@ class WalkthroughRepairs(unittest.TestCase):
             self.assertEqual(result['outcome'],'installation_repair_waiting')
 
     def test_scheduler_drains_existing_calls_without_dispatching_new_work_during_installation_repair(self):
-        from do_math.scheduler import SchedulerMixin
-        from types import SimpleNamespace
+        from do_math.parallel import ModelCalls
         runtime, _ = self.installation_fixture()
         runtime['queue'] = [{'id':'AC-independent','role':'research_work'}]
-        class Calls:
-            def __init__(self): self.futures = {'existing':object()}; self.collected = 0; self.closed = False
-            def collect(self):
-                self.collected += 1
-                if self.collected == 2: self.futures.clear()
-            def close(self): self.closed = True
-            def wait(self, timeout): pass
-        calls = Calls()
-        class Host(SchedulerMixin):
-            def _controls(self, *, pump=True): pass
-            def _check_installation(self): pass
-            def _save(self): pass
-            def _settle_stops(self, *, clock=True): pass  # stop judgment is not this rule
-            def _dispatchable(self, *args): raise AssertionError('new work must not be dispatched')
-        host = Host()
-        host.instance = {'workspace':'.','id':'RI-test','config':{}}
-        host.runtime = runtime
-        with patch('do_math.scheduler.SessionSlots',return_value=SimpleNamespace(close=lambda:None)), \
-                patch('do_math.scheduler.ModelCalls',return_value=calls), patch('do_math.scheduler.time.sleep'):
+        calls = create_autospec(ModelCalls, instance=True)
+        calls.futures = {'existing':object()}
+        calls.collect.side_effect = lambda: calls.futures.clear() if calls.collect.call_count == 2 else None
+        def dispatchable(action): raise AssertionError('new work must not be dispatched')
+        host = bare_engine({'workspace':'.','id':'RI-test','config':{}}, runtime)
+        host._controls = create_autospec(host._controls)
+        host._check_installation = create_autospec(host._check_installation)
+        host._save = create_autospec(host._save)
+        host._settle_stops = create_autospec(host._settle_stops)  # stop judgment is not this rule
+        host._dispatchable = create_autospec(host._dispatchable, side_effect=dispatchable)
+        with patch('do_math.scheduler.ModelCalls',return_value=calls), patch('do_math.scheduler.time.sleep'):
             host._run_parallel()
-        self.assertEqual(calls.collected,2)
-        self.assertTrue(calls.closed)
+        self.assertEqual(calls.collect.call_count,2)
+        self.assertTrue(calls.close.called)
         self.assertEqual(runtime['status'],'waiting')
         self.assertEqual(runtime['queue'],[{'id':'AC-independent','role':'research_work'}])
 
@@ -283,17 +271,23 @@ class WalkthroughRepairs(unittest.TestCase):
         from do_math import scheduled_operator as operator
         from types import SimpleNamespace
         runtime, record = self.installation_fixture()
-        repository = SimpleNamespace(load=lambda: ('head',{'config':{'operator_enabled':True}},runtime))
+        # The engine status carries the pending diagnosis; probe reads its snapshot only.
+        status = {'status':'ready','snapshot':'head','operator_enabled':True,
+                  'installation_repair':deepcopy(record)}
+        repository = SimpleNamespace(load=lambda snapshot: (snapshot,{'config':{'operator_enabled':True}},runtime))
         with tempfile.TemporaryDirectory() as directory, \
-                patch.object(operator,'read_status',return_value={'status':'ready'}), \
+                patch.object(operator,'read_status',return_value=status), \
                 patch.object(operator,'ResearchRepository',return_value=repository), \
                 patch.object(operator,'recovery',return_value={'outcome':'routed'}) as recover, \
                 patch.object(operator,'schedule') as schedule:
             args = (Path(directory)/'repo', 'RI-test', Path(directory)/'work')
-            self.assertEqual(operator.check(*args,probe=True)['outcome'],'installation_repair_pending')
+            probed = operator.check(*args,probe=True)
+            self.assertEqual(probed['outcome'],'installation_repair_pending')
+            self.assertEqual(probed['failure']['diagnosis_id'],record['id'])
             recover.assert_not_called(); schedule.assert_not_called()
             self.assertEqual(operator.check(*args)['outcome'],'routed')
-            self.assertEqual(recover.call_args.kwargs['failure']['diagnosis_id'],record['id'])
+            # Recovery rereads the pending diagnosis under its own lock.
+            recover.assert_called_once_with(*args)
             operator.hold(args[2],reason='user hold')
             recover.reset_mock()
             self.assertEqual(operator.check(*args)['outcome'],'held')

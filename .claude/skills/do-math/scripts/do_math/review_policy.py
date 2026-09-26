@@ -100,12 +100,12 @@ def validate_scope_assessment(assessment, policy, *, executions_used=0):
     if not set(perspectives).issubset({slot["perspective"] for slot in normalized}):
         raise ValueError("scope assessment has no slot for a required perspective")
     profile = assessment["selected_profile_ref"]
-    if profile is not None and (not isinstance(profile, dict) or set(profile) != {"id", "revision", "sha256"} or
-                                not isinstance(profile["id"], str) or not profile["id"] or
-                                type(profile["revision"]) is not int or profile["revision"] < 1 or
-                                not isinstance(profile['sha256'], str) or len(profile['sha256']) != 64 or
-                                any(c not in '0123456789abcdef' for c in profile['sha256'])):
-        raise ValueError("scope assessment profile reference is invalid")
+    if profile is not None:
+        from .execution_profiles import validate_profile_ref
+        try:
+            validate_profile_ref(profile)
+        except ValueError as error:
+            raise ValueError("scope assessment profile reference is invalid") from error
     limit = _positive(assessment["activity_execution_limit"], "scope activity execution limit")
     if limit > policy["activity_execution_limit"]:
         raise ValueError("scope assessment exceeds the policy execution limit")

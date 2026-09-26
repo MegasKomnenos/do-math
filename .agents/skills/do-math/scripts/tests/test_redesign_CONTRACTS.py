@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.repository import exact_content_hash
 from do_math import contracts, submission
 from do_math.repository import canonical_json
+from research_fixtures import review_items
 
 
 def response():
@@ -414,6 +415,9 @@ class ImpactReviewTests(unittest.TestCase):
                 at["assigned_execution_ids"] = [identifier]
                 return row
             execution("EX-producer", "research_work", {"id": "AC-producer", "role": "research_work", "target": None})
+            # Every stored state passes the current lifecycle gate.
+            from research_fixtures import current_state
+            self.instance, self.runtime = current_state(self.instance, self.runtime)
             repo = ResearchRepository(root, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV")
             head = repo.initialize(self.instance, self.runtime)
             self.runtime["executions"]["EX-producer"]["input_snapshot"] = head
@@ -441,11 +445,11 @@ class ImpactReviewTests(unittest.TestCase):
                          **{"runtime/artifacts/BA-review-output/" + path: raw
                             for path, raw in sealed["artifacts"].items()}}
             head = repo.save_with_state(head, self.instance, self.runtime, artifacts=artifacts)[0]
-            def publish(i, r, bundle):
+            def publish(i, r, bundle, validated):
                 nonlocal head
-                head = repo.save_with_state(head, i, r)[0]
+                head = repo.save_validated(head, validated)[0]
             def validate(i, r, bundle):
-                repo.validate_candidate(i, r, head)
+                return repo.validate_candidate(i, r, head)
             def accept_review(i, r, bundle):
                 from do_math.execution_lifecycle import record_submission_intent, transition_execution
                 self.api.validate_impact_review_response(request, bundle["output"])
@@ -594,7 +598,10 @@ class ContractBoundaryTests(unittest.TestCase):
 
     def test_intent_source_coverage_is_checked_before_independent_review(self):
         action = {"role": "intent_interpretation", "stage": "interpret"}
-        ctx = {**context(), "action": action, "user_request": {"id": "UC-1", "text": "첫째 둘째"}}
+        from do_math.governance import preserve_source
+        text = "첫째 둘째"
+        ctx = {**context(), "action": action, "user_request": {"id": "UC-1", "text": text},
+               "original_source": preserve_source("UC-1", text, origin="user_request")}
         output = dict(summary="interpret", used_sources=[], questions=[], question_details=[], needs_clarification=False,
             import_units=[dict(unit_id="IU-1", source_range={"start": 0, "end": 2}, interpretation="첫째",
                 owner_kind="charter", owner_ref="context:goal", payload={}, decision_refs=[], question_refs=[])],
@@ -602,14 +609,12 @@ class ContractBoundaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             schema = contracts.action_schema(action)
             issues = submission.payload_issues(output, schema, ctx, {}, Path(directory))
-            self.assertTrue(any(row["rule_id"] == "intent.source_coverage" for row in issues))
-            output["import_units"][0]["source_range"]["end"] = len(ctx["user_request"]["text"])
+            self.assertTrue(any(row["rule_id"] == "intent.import_units" for row in issues), issues)
+            output["import_units"][0]["source_range"]["end"] = len(text)
             self.assertEqual([], submission.payload_issues(output, schema, ctx, {}, Path(directory)))
 
     def test_contract_review_evidence_must_be_supplied(self):
-        output = dict(summary="review", used_sources=[], questions=[], item_reviews=[
-            dict(item_id=item, decision="approved", evidence_refs=["MISSING"], findings=[], missing_inputs=[], next_owner="research")
-            for item in contracts.CONTRACT_REVIEW_ITEMS],
+        output = dict(summary="review", used_sources=[], questions=[], **review_items(["MISSING"], next_owner="research"),
             integration_bundles=[dict(integration_id="IN-1", members=["output"], impact_set=[], authority_refs=[])])
         ctx = {**context(), "action": {"role": "task_contract_review"}}
         with tempfile.TemporaryDirectory() as directory:
@@ -623,8 +628,10 @@ class ContractBoundaryTests(unittest.TestCase):
         self.assertNotIn("deferred", props)
 
     def test_scope_planning_schema_reaches_domain_scope_validator(self):
-        props = contracts.action_schema({"role": "identity_review", "stage": "scope"})["properties"]
+        from do_math import review_cycle
+        props = review_cycle.stage_schema("scope")["properties"]
         self.assertIn("scope_assessment", props)
+        self.assertIn("initial_slots", props["scope_assessment"]["properties"])
 
     def test_machine_check_compares_checkpoint_failures_in_both_modes(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -713,10 +720,10 @@ class ContractBoundaryTests(unittest.TestCase):
                 "observation_mode": "event_driven", "max_input_bytes": 500000,
                 "effort": "medium", "operator_effort": "high", "operator_timeout_seconds": 600,
                 "scholarly_enabled": True, "scholarly_server": None, "claude_only_assigned_model": False})
-            instance = {"feature_version": 5, "knowledge": {}, "expositions": {},
-                        **{k: v for k, v in profile_state.items() if k != "role_profile_refs"}}
+            from research_fixtures import current_state
+            instance, runtime = current_state({"knowledge": {}, "expositions": {},
+                **{k: v for k, v in profile_state.items() if k != "role_profile_refs"}}, {"executions": {}})
             instance = knowledge_io.ensure_ontology(instance)
-            runtime = {"feature_version": 5, "executions": {}}
             activity = activities.open_activity(runtime, activity_id="AT-1", activity_kind="research_work",
                 owner_ref="task", input_refs=[], opened_at="2026-09-20T00:00:00Z")
             profile = next(p for p in instance["execution_profiles"].values() if p["role"] == "research_work")
@@ -726,9 +733,9 @@ class ContractBoundaryTests(unittest.TestCase):
             runtime["executions"]["EX-1"] = execution
             activity["assigned_execution_ids"] = ["EX-1"]
             head = repo.initialize(instance, runtime)
-            def publish(i, r, bundle):
+            def publish(i, r, bundle, validated):
                 nonlocal head
-                head = repo.save_with_state(head, i, r)[0]
+                head = repo.save_validated(head, validated)[0]
             def apply(i, r, bundle):
                 for record in bundle["output"]["knowledge"]:
                     updated, running, _ = knowledge_io.import_candidate(i, r, record,
@@ -738,7 +745,7 @@ class ContractBoundaryTests(unittest.TestCase):
                     r.clear()
                     r.update(running)
             def validate(i, r, bundle):
-                repo.validate_candidate(i, r, head)
+                return repo.validate_candidate(i, r, head)
             before = deepcopy((instance, runtime))
             preview = module.preview_bundles(instance, runtime, response(), {}, context(), execution_id="EX-1",
                 apply_bundle=apply, validate_current=lambda *a: None, validate_candidate=validate)
@@ -955,7 +962,7 @@ class ContractBoundaryTests(unittest.TestCase):
                 raise ValueError("B rejected")
         result = module.apply_bundles(original, {}, response(), {}, context(), execution_id="EX-1",
             apply_bundle=apply, validate_candidate=validate, validate_current=lambda *a: None,
-            publish=lambda i, r, b: publications.append(deepcopy(i)))
+            publish=lambda i, r, b, validated: publications.append(deepcopy(i)))
         self.assertEqual(["accepted", "returned"], [r["status"] for r in result["bundles"]])
         self.assertEqual({"A"}, set(result["instance"]["knowledge"]))
         self.assertEqual({"knowledge": {}}, original)
@@ -969,7 +976,7 @@ class ContractBoundaryTests(unittest.TestCase):
         calls = []
         kwargs = dict(execution_id="EX-1", apply_bundle=lambda i, r, b: calls.append(b["integration_id"]),
                       validate_candidate=lambda *a: None, validate_current=lambda *a: None,
-                      publish=lambda i, r, b: published.append(deepcopy(r)))
+                      publish=lambda i, r, b, validated: published.append(deepcopy(r)))
         first = module.apply_bundles({}, {}, response(), {}, context(), **kwargs)
         self.assertIn("IN-A", published[0]["integrations"])
         second = module.apply_bundles(first["instance"], first["runtime"], response(), {}, context(), **kwargs)

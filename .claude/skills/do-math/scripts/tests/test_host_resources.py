@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_categories import test_group as category
 from do_math import execution_profiles as profiles
 from do_math.session_slots import SessionSlots
-from research_fixtures import dispatched_launch
+from research_fixtures import current_state, dispatched_launch
 from do_math.windows_job import WindowsJob
 from test_redesign_PROFILES import CONFIG
 
@@ -55,8 +55,7 @@ def fixture():
 class HostReservations(unittest.TestCase):
     def admit(self, slots, eid, profile):
         execution = {"id": eid, "role": profile["role"], "status": "queued"}
-        accepted = slots.acquire(eid, profile["budget_kind"], profile.get("ai", {}).get("model"),
-                                 profile=profile, execution=execution)
+        accepted = slots.acquire(eid, profile=profile, execution=execution)
         return accepted, execution
 
     def test_work_operations_machine_share_capacity_and_preserve_control(self):
@@ -70,6 +69,10 @@ class HostReservations(unittest.TestCase):
         before = deepcopy(runtime)
         self.assertFalse(self.admit(slots, "EX-extra", selected["formal_check"])[0])
         self.assertEqual(runtime, before)
+        units = lambda eid: {r["unit"] for r in runtime["reservations"].values() if r["owner_id"] == eid}
+        host_units = {"jobs", "memory_bytes", "cpu_rate_basis_points"}
+        self.assertEqual(units("EX-0"), host_units | {"execution"})
+        self.assertEqual(units("EX-1"), host_units, "an operational role reserves no model slot")
         machine_rows = [r for r in runtime["reservations"].values() if r["owner_id"] == "EX-2"]
         self.assertEqual({r["unit"] for r in machine_rows}, {"jobs", "memory_bytes", "cpu_rate_basis_points"})
         self.assertTrue(all(r["constraint_id"] == constraint["id"] for r in machine_rows))
@@ -121,7 +124,8 @@ class HostReservations(unittest.TestCase):
                 self.admit(slots, "EX-wrong", selected["formal_check"])
         self.assertEqual(runtime["executions"], {})
         self.assertTrue(self.admit(slots, "EX-unknown", selected["formal_check"])[0])
-        slots.started("EX-unknown", {"job_name": runtime['executions']['EX-unknown']['launch_ticket']['job_name']})
+        slots.started("EX-unknown", {"job_name": runtime['executions']['EX-unknown']['launch_ticket']['job_name']},
+                      at="2026-09-20T00:00:00Z")
         with patch("do_math.windows_job.named_job_empty", return_value=None):
             self.assertFalse(slots.release("EX-unknown"))
         self.assertTrue(all(r["state"] == "held" for r in runtime["reservations"].values()))
@@ -210,14 +214,6 @@ class HostReservations(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "every capped role"):
             profiles.build_profiles(bad)
 
-    def test_session_reconfiguration_cannot_silently_remove_host_approval(self):
-        instance, _, _ = fixture()
-        instance["config"] = deepcopy(CONFIG)
-        before = deepcopy(instance)
-        with self.assertRaisesRegex(ValueError, "cannot drop"):
-            SessionSlots({}, instance).configure(CONFIG["session_limits"])
-        self.assertEqual(instance, before)
-
     def test_legacy_host_capped_lean_profile_requires_replacement(self):
         _, _, constraint = fixture()
         authored = profiles.build_profiles({**CONFIG, "lean_command": [sys.executable]})
@@ -239,8 +235,9 @@ class HostRepositoryContract(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             subprocess.run(["git", "-C", directory, "init", "-q"], check=True)
             iid = "RI-00000000000000000000000000"
-            instance.update(id=iid, feature_version=5, workspace=directory, config={})
-            runtime = {"feature_version": 5, "status": "ready", "executions": {}, "reservations": {}, "provider_waits": {}}
+            instance.update(id=iid, workspace=directory, config={})
+            instance, runtime = current_state(instance, {"status": "ready", "executions": {}, "reservations": {},
+                                                         "provider_waits": {}})
             repo = ResearchRepository(Path(directory), iid)
             head = repo.initialize(instance, runtime)
             p = selected["formal_check"]
@@ -253,7 +250,7 @@ class HostRepositoryContract(unittest.TestCase):
             e["role"] = p["role"]
             assign_execution(runtime, "AT-host", e)
             with repo.writer_lock():
-                self.assertTrue(SessionSlots(runtime, instance).acquire(e["id"], p["budget_kind"], None, profile=p, execution=e))
+                self.assertTrue(SessionSlots(runtime, instance).acquire(e["id"], profile=p, execution=e))
                 head = repo.save_with_state(head, instance, runtime)[0]
             loaded_head, _, loaded = repo.load()
             self.assertEqual(loaded_head, head)
@@ -270,7 +267,8 @@ class HostRepositoryContract(unittest.TestCase):
                                 name=e['launch_ticket']['job_name']) as job:
                     with repo.writer_lock():
                         slots.started(e["id"], {**process_identity(job), "job_name": job.name,
-                                               "host_resources": job.resource_usage()})
+                                               "host_resources": job.resource_usage()},
+                                      at="2026-09-20T00:00:30Z")
                         head = repo.save_with_state(head, instance, runtime)[0]
                     self.assertFalse(marker.exists(), "user code must wait for the published identity")
                     job.resume()
@@ -380,7 +378,7 @@ class HostJobTests(unittest.TestCase):
             slots = SessionSlots(runtime, instance)
             p = selected["formal_check"]
             e = {"id": "EX-" + outcome, "role": p["role"], "status": "queued"}
-            self.assertTrue(slots.acquire(e["id"], p["budget_kind"], None, profile=p, execution=e))
+            self.assertTrue(slots.acquire(e["id"], profile=p, execution=e))
             with tempfile.TemporaryDirectory() as directory:
                 marker = Path(directory) / "started"
                 code = f"from pathlib import Path; import sys,time; Path({str(marker)!r}).write_text('started'); "
@@ -396,7 +394,8 @@ class HostJobTests(unittest.TestCase):
                     self.assertFalse(marker.exists())
                 else:
                     with WindowsJob(argv, **kwargs) as job:
-                        slots.started(e["id"], {**process_identity(job), "job_name": job.name})
+                        slots.started(e["id"], {**process_identity(job), "job_name": job.name},
+                                      at="2026-09-20T00:00:00Z")
                         self.assertFalse(slots.release(e["id"]), "a suspended but live Job must retain capacity")
                         job.resume()
                         if outcome == "terminated": job.terminate()

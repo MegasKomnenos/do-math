@@ -3,19 +3,20 @@ from copy import deepcopy
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from do_math import activities, retention
-from do_math.engine import ResearchEngine
+from do_math.repository import ResearchRepository
+from research_fixtures import bare_engine
 from test_categories import test_group
 
 
 @test_group('unit')
 class CompletionSettlementTests(unittest.TestCase):
     def engine(self):
-        engine = object.__new__(ResearchEngine)
+        engine = bare_engine()
         engine.instance = {'id': 'RI-test', 'knowledge': {}}
         engine.runtime = {'status': 'completed', 'queue': [], 'waiting_actions': {},
                           'activities': {}, 'executions': {}, 'tasks': {},
@@ -63,7 +64,8 @@ class CompletionSettlementTests(unittest.TestCase):
         engine._settle_goal_completion()
         self.assertEqual(activity['status'], 'working')
         execution.update(status='ended', outcome='output_accepted')
-        engine._settle_review_resource_dispositions = lambda: None
+        engine._settle_review_resource_dispositions = create_autospec(engine._settle_review_resource_dispositions,
+                                                                      side_effect=lambda: None)
         engine._settle_activity('EX-live')
         self.assertEqual(activity['status'], 'finished')
         self.assertEqual(activity['unresolved'][-1]['action_id'], 'A-later')
@@ -71,8 +73,8 @@ class CompletionSettlementTests(unittest.TestCase):
 
     def test_academic_completion_uses_the_same_settlement(self):
         engine = self.engine()
-        engine._solution_basis = lambda: {'records': []}
-        engine._academic_status = lambda: {'status': 'not_applicable'}
+        engine._solution_basis = create_autospec(engine._solution_basis, side_effect=lambda: {'records': []})
+        engine._academic_status = create_autospec(engine._academic_status, side_effect=lambda: {'status': 'not_applicable'})
         engine.runtime['queue'] = [{'id': 'A-input', 'role': 'intent_interpretation',
                                     'target': 'UI-late', 'owner_activity_id': 'AC-input'}]
         with patch('do_math.academic.current_requirements', return_value={'sha256': 'current', 'items': []}):
@@ -81,7 +83,6 @@ class CompletionSettlementTests(unittest.TestCase):
         self.assertEqual(engine.runtime['history'][0]['action']['id'], 'A-input')
 
     def test_delayed_publication_settles_each_role_and_preserves_pending_followups(self):
-        from unittest.mock import Mock
         for role in ('maintenance', 'identity_review', 'research_work', 'goal_audit'):
             for followup in (False, True):
                 with self.subTest(role=role, followup=followup):
@@ -100,10 +101,11 @@ class CompletionSettlementTests(unittest.TestCase):
                         'kind': 'submission_publication', 'action': action,
                         'execution_id': execution['id']}
                     engine.head = 'snapshot'
-                    engine.store = Mock()
+                    engine.store = create_autospec(ResearchRepository, instance=True)
                     engine.store.read.return_value = b'{}'
-                    engine._save = Mock()
-                    engine._settle_review_resource_dispositions = lambda: None
+                    engine._save = create_autospec(engine._save)
+                    engine._settle_review_resource_dispositions = create_autospec(
+                        engine._settle_review_resource_dispositions, side_effect=lambda: None)
                     def receive(*args, **kwargs):
                         engine.runtime = deepcopy(engine.runtime)
                         engine.runtime['executions']['EX-publication'].update(
@@ -112,7 +114,7 @@ class CompletionSettlementTests(unittest.TestCase):
                         if followup:
                             engine.runtime['queue'].append({'id': 'A-next', 'role': role,
                                 'owner_activity_id': 'AC-producer'})
-                    engine._receive_submission = Mock(side_effect=receive)
+                    engine._receive_submission = create_autospec(engine._receive_submission, side_effect=receive)
                     engine._retry_submission_publications()
                     activity = engine.runtime['activities']['AC-producer']
                     self.assertEqual(activity['status'], 'working' if followup else 'finished')

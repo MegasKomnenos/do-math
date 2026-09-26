@@ -28,24 +28,27 @@ class DiagnosedRecoveryTests(unittest.TestCase):
             read=lambda path, snapshot: b'{"preserved":"actual rejected response"}',
             save_with_state=lambda *a, **k: ('next-head', state, runtime))
         self.provider_results = Mock(return_value={})
-        def acquire(eid, *args, profile, execution):
+        def acquire(eid, *, profile, execution):
             from do_math.launch import ticket
             execution['launch_ticket'] = ticket(eid, profile)
             return True
         slots = SimpleNamespace(acquire=acquire, started=lambda *a, **k:None,
-            release=lambda *a:True, provider_result=self.provider_results)
+            release=lambda *a, **k:True, provider_result_from_run=self.provider_results)
         installation = root/'skill'
         installation.mkdir()
         (installation/'SKILL.md').write_text('fixture installation',encoding='utf-8')
         observed = []
+        self.runner_results = []
         def provider(**arguments):
             observed.append(arguments)
             arguments['on_started']({'pid':123,'job_name':arguments['launch_ticket']['job_name']})
             (arguments['workspace']/'regression.txt').write_text('Synthetic regression: former input now accepted',encoding='utf-8')
-            return {**{'status':'completed','output':{'repair_outcome':outcome,'verification_evidence':['regression.txt'],
+            result = {**{'status':'completed','output':{'repair_outcome':outcome,'verification_evidence':['regression.txt'],
                 'summary':'synthetic repair','observed_status':outcome,'actions':['fixture inspection'],
                 'evidence_paths':['regression.txt'],'user_questions':[],'next_step':'launcher continuation'}},
                 **(runner_result or {})}
+            self.runner_results.append(result)
+            return result
         stack = ExitStack()
         self.addCleanup(stack.close)
         for owner,name,value in (
@@ -57,8 +60,7 @@ class DiagnosedRecoveryTests(unittest.TestCase):
         stack.enter_context(patch('do_math.initialization.adapter_for',return_value=SimpleNamespace(capability_identity=lambda:{})))
         stack.enter_context(patch('do_math.initialization.capability_requirements',return_value={'satisfied':True}))
         stack.enter_context(patch('do_math.session_slots.SessionSlots',return_value=slots))
-        stack.enter_context(patch('do_math.session_slots._lock',return_value=object()))
-        stack.enter_context(patch('do_math.session_slots._unlock'))
+        stack.enter_context(patch('do_math.file_io.os_lock',return_value=nullcontext()))
         stack.enter_context(patch.object(operator,'ModelRunner',return_value=SimpleNamespace(run=provider)))
         verify = stack.enter_context(patch.object(operator.subprocess,'run',return_value=subprocess.CompletedProcess([],0,'verified','')))
         wake = stack.enter_context(patch.object(operator,'wake',return_value={'outcome':'engine_requested'}))
@@ -109,20 +111,19 @@ class DiagnosedRecoveryTests(unittest.TestCase):
             runner_result={'status': 'failed', 'output': None, 'error': 'provider quota',
                            'error_kind': 'provider_limit', 'failure': failure})
         self.assertEqual(result['outcome'], 'recovery_failed')
-        self.provider_results.assert_called_once_with(observed[0]['execution_id'],
-            observed[0]['profile']['ai']['provider'], failure=failure, response_observed=False,
-            initial_seconds=DEFAULT_CONFIG['provider_retry_initial_seconds'],
-            maximum_seconds=DEFAULT_CONFIG['provider_retry_max_seconds'])
+        # The shared gate reads the failure and response from the unaltered runner result.
+        self.provider_results.assert_called_once_with(observed[0]['execution_id'], self.runner_results[0],
+                                                      DEFAULT_CONFIG)
+        self.assertEqual(self.runner_results[0]['failure'], failure)
         verify.assert_not_called()
         wake.assert_not_called()
 
     def test_normal_recovery_response_reaches_provider_reobservation(self):
         _, _, _, observed, result, _, _, _ = self.run_case('repaired')
         self.assertEqual(result['outcome'], 'repaired')
-        self.provider_results.assert_called_once_with(observed[0]['execution_id'],
-            observed[0]['profile']['ai']['provider'], failure=None, response_observed=True,
-            initial_seconds=DEFAULT_CONFIG['provider_retry_initial_seconds'],
-            maximum_seconds=DEFAULT_CONFIG['provider_retry_max_seconds'])
+        self.provider_results.assert_called_once_with(observed[0]['execution_id'], self.runner_results[0],
+                                                      DEFAULT_CONFIG)
+        self.assertEqual(self.runner_results[0]['status'], 'completed')
 
     def test_report_without_real_regression_file_cannot_claim_repaired(self):
         with tempfile.TemporaryDirectory() as directory:

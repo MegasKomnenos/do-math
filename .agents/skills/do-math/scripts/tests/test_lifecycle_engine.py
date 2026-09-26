@@ -2,42 +2,29 @@
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 import hashlib
 import sys
 import tempfile
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, DEFAULT_CONFIG
-from do_math.lifecycle_engine import LifecycleEngineMixin
-from do_math.revision_engine import RevisionEngineMixin
-from do_math.scheduler import SchedulerMixin
-from do_math.review_engine import ReviewEngineMixin
-from do_math.governance_engine import GovernanceEngineMixin
 from do_math.initialization import initialize_state, governance_working_view
 from do_math.trust_validation import AXIOMS
 from do_math import execution_profiles as profiles, knowledge_records as kr, planning
-from do_math.governance import WORK_ROLES, OPERATING_ROLES
+from do_math.governance import TASK_WORK_ROLES, OPERATING_ROLES
+from research_fixtures import FixtureAdapter, IDENTITY, StateStore, new_instance, review_items
+from state_fixtures import owner_calls
 
-IDENTITY={'host':'fixture','adapter_sha256':'a'*64}
-class AdapterDouble:
-    def observation_key(self): return ('fixture',)
-    def capability_identity(self): return deepcopy(IDENTITY)
-    def describe(self):
-        return {'identity':self.capability_identity(),'verified':True,'scope':'cli_command_surface_only',
-                'supported':{'jsonl':True,'model':True,'structured_output':True}}
+class FakeEngine(ResearchEngine):
+    """The product engine over in-memory state; a save records a copy.
 
-class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewEngineMixin,GovernanceEngineMixin):
-    _remove_action=ResearchEngine._remove_action
-    _register_execution=ResearchEngine._register_execution
-    _activity_for_action=ResearchEngine._activity_for_action
-    _provider_slots=ResearchEngine._provider_slots
-    _release_call_slot=ResearchEngine._release_call_slot
-    _resume_input_overflow_action=ResearchEngine._resume_input_overflow_action
-    def _evaluation_context(self, snapshot=None):
-        from do_math.engine import _evaluation_context_for
-        return _evaluation_context_for(getattr(self,'store',None), snapshot or self.head)
+    Its store is the in-memory ``StateStore`` double: a rejected extended
+    control preserves the rejected request on the current head through it.
+    """
     def __init__(self,root,config=None):
+        self._init_process_state()
+        self.store=StateStore(self); self.runner=None
         self.root=Path(root); self.current_time=datetime.now(timezone.utc)
         self.lifecycle_clock=lambda:self.current_time.isoformat()
         self.lifecycle_monotonic=lambda:0.
@@ -49,12 +36,8 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
             created_at=self.current_time.isoformat())
         self.instance.update(profiles.build_profiles(config))
         self.runtime.update(cycles=0,waiting_actions={})
-        self.head='fixture-head'; self.saves=[]; self.formal_calls=[]; self.formal_behavior=None; self._slots=None
-        self.formal_verifier=self.verify; self._task_readiness = {}
-    def _enqueue(self,role,target=None,**fields):
-        row={'role':role,**fields}
-        if target is not None: row['target']=target
-        if row not in self.runtime['queue']: self.runtime['queue'].append(row)
+        self.head='fixture-head'; self.saves=[]; self.formal_calls=[]; self.formal_behavior=None
+        self.formal_verifier=self.verify
     def _execution_profile(self,action):
         refs=self.runtime['tasks'].get(action.get('target'),{}).get('profile_refs')
         if refs and not action.get('profile_ref'):
@@ -69,11 +52,8 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
         return self._apply_extended_control({'id':request_id or 'UI-'+str(len(self.runtime['extended_controls'])),
                                             'action':action,'config':config})
     def grant(self,identifier,initial=False,http=None):
-        grant=http or {'kind':'local','roles':['intent_interpretation'] if initial else sorted(WORK_ROLES|OPERATING_ROLES),
-            'budget_kind':'operations' if initial else 'work','reuse':'reusable',
-            'expires_at':(self.current_time+timedelta(days=1)).isoformat()}
-        if not initial and not http:
-            grant.pop('budget_kind')  # This fixture explicitly grants both research pools.
+        grant=http or {'kind':'local','roles':['intent_interpretation'] if initial else sorted(TASK_WORK_ROLES|OPERATING_ROLES),
+            'reuse':'reusable','expires_at':(self.current_time+timedelta(days=1)).isoformat()}
         self.control('decision',{'change':{'kind':'grant','grant':{'id':identifier,**grant}}})
     def environment(self,name,active=False):
         from research_fixtures import trust_fixture
@@ -104,7 +84,7 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
         self.control('decision',{'change':{'kind':'initialization','operation':'governance','records':[charter]}})
         for p in self.instance['execution_profiles'].values():
             if p['actor_kind']=='ai':
-                row=profiles.capability_evidence(p,AdapterDouble().describe(),observed_at=self.current_time.isoformat())
+                row=profiles.capability_evidence(p,FixtureAdapter().describe(),observed_at=self.current_time.isoformat())
                 self.instance.setdefault('capability_evidence',{})[row['id']]=row
         self.control('decision',{'change':{'kind':'initialization','adopt_current_config':True,
             'adopt_current_governance':True,'conversation_loss_policy':'continue_authorized',
@@ -168,13 +148,16 @@ class FakeEngine(RevisionEngineMixin,LifecycleEngineMixin,SchedulerMixin,ReviewE
         if approved: self.approve(t)
         return t
     def approve(self,t,decision='approved'):
-        output={'item_reviews':[{'item_id':a,'decision':decision,'evidence_refs':['context:goal'],
-            'findings':[],'missing_inputs':[],'next_owner':'research_plan'} for a in
-            ('question_scope','inputs_reuse','outputs_obligations_judges','stage_boundaries','tools_authority_profiles')]}
+        output=review_items(['context:goal'],decision=decision)
         t['reviews']=[planning.seal_contract_review(t,output,governance_working_view(self.instance),self.runtime,execution_id='EX-review')]
     def machine(self,role):
         a=next(a for a in self.runtime['queue'] if a['role']==role)
         self._process_machine_action(a); return a
+
+def run_machine(engine,role):
+    """Process one queued machine action and finish its calculation, as the owner loop does."""
+    with owner_calls(engine):
+        return engine.machine(role)
 
 class PublicInitializationRunner:
     """Synthetic independent author/checker outputs; real producer/receiver paths."""
@@ -199,14 +182,11 @@ class PublicInitializationRunner:
 
 class PublicLifecycleTests(unittest.TestCase):
     def test_public_utc_watermark_is_published_only_with_normal_change(self):
-        import subprocess
-        from do_math.engine import initialize
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            subprocess.run(['git','init','-q',str(root)],check=True)
-            initialized = initialize(root,goal='Observe clock durability',workspace=root/'work',
+            instance_id = new_instance(root,goal='Observe clock durability',
                                      config={'scholarly_enabled':False})
-            engine = ResearchEngine(root,initialized['instance_id'])
+            engine = ResearchEngine(root,instance_id)
             engine._save()  # Establish any ordinary derived runtime fields first.
             head = engine.head
             initial = datetime.fromisoformat(engine.runtime['last_observed_utc'])
@@ -219,7 +199,7 @@ class PublicLifecycleTests(unittest.TestCase):
             engine.instance['title'] = 'Ordinary state update'
             engine._save()
             self.assertEqual(engine.runtime['last_observed_utc'],observed.isoformat())
-            restarted = ResearchEngine(root,initialized['instance_id'])
+            restarted = ResearchEngine(root,instance_id)
             restarted.lifecycle_clock = lambda: (observed-timedelta(microseconds=1)).isoformat()
             restarted.lifecycle_monotonic = lambda: 0.
             self.assertEqual(restarted._clock_guard()['reason'],'persisted_utc_regression')
@@ -233,31 +213,25 @@ class PublicLifecycleTests(unittest.TestCase):
             self.assertEqual(engine.store.load()[2]['last_observed_utc'],trusted)
 
     def test_public_unicode_original_survives_restart(self):
-        import subprocess
-        from do_math.engine import initialize
         from do_math.initialization import original_input_bytes
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); source = 'Cafe\u0301'
-            subprocess.run(['git','init','-q',str(root)],check=True)
-            initialized = initialize(root,goal=source,workspace=root/'work',config={'scholarly_enabled':False})
-            restarted = ResearchEngine(root,initialized['instance_id'])
+            instance_id = new_instance(root,goal=source,config={'scholarly_enabled':False})
+            restarted = ResearchEngine(root,instance_id)
             self.assertEqual(original_input_bytes(restarted.instance['lifecycle']['immutable_input']),source.encode())
 
     def test_public_initializing_pause_resume_preserves_source_and_missing(self):
-        import subprocess
-        from do_math.engine import initialize
         from research_fixtures import send_control
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)
-            subprocess.run(['git','init','-q',str(root)],check=True)
-            initialized=initialize(root,goal='Preserve this original input',workspace=root/'work',
+            instance_id = new_instance(root,goal='Preserve this original input',
                                    config={'scholarly_enabled':False})
-            engine=ResearchEngine(root,initialized['instance_id'])
+            engine=ResearchEngine(root,instance_id)
             source=deepcopy(engine.runtime['inputs'])
             send_control(engine,'pause',config={})
             self.assertEqual(engine.runtime['resume_lifecycle'],'initializing')
             send_control(engine,'resume',config={})
-            resumed=ResearchEngine(root,initialized['instance_id'])
+            resumed=ResearchEngine(root,instance_id)
             self.assertEqual(resumed.instance['lifecycle']['state'],'initializing')
             self.assertEqual(resumed.runtime['inputs'],source)
             self.assertIn('independent_intent',resumed.instance['lifecycle']['activation']['missing'])
@@ -266,22 +240,19 @@ class PublicLifecycleTests(unittest.TestCase):
             self.assertTrue(resumed.instance['lifecycle']['permanently_closed'])
             send_control(resumed,'pause',config={})
             send_control(resumed,'resume',config={})
-            terminal=ResearchEngine(root,initialized['instance_id'])
+            terminal=ResearchEngine(root,instance_id)
             self.assertEqual(terminal.runtime['status'],'closed')
             self.assertTrue(terminal.instance['lifecycle']['permanently_closed'])
 
     def test_public_call_mode_init_activate_pause_resume_and_persistence(self):
-        import subprocess
-        from do_math.engine import initialize
         from research_fixtures import activate, install_adapter_fixture, send_control
         install_adapter_fixture(self)
         with tempfile.TemporaryDirectory() as directory, patch('do_math.windows_job.named_job_empty',return_value=True):
             root = Path(directory)
-            subprocess.run(['git','init','-q',str(root)],check=True)
-            initialized = initialize(root,goal='Prove n + 0 = n',workspace=root/'work',config={
+            instance_id = new_instance(root,goal='Prove n + 0 = n',config={
                 'scholarly_enabled':False,
                 'lean_command':['synthetic-lean'],})
-            engine = ResearchEngine(root,initialized['instance_id'],runner=PublicInitializationRunner())
+            engine = ResearchEngine(root,instance_id,runner=PublicInitializationRunner())
             activate(engine,root,initialization_runner=engine.runner)
             self.assertEqual(engine.instance['lifecycle']['state'],'active')
             self.assertEqual(len(engine.runtime['intent_imports']),1)
@@ -295,7 +266,7 @@ class PublicLifecycleTests(unittest.TestCase):
             self.assertEqual(engine.runtime['resume_lifecycle'],'active')
             send_control(engine,'resume',config={})
             self.assertEqual(engine.instance['lifecycle']['state'],'active')
-            resumed = ResearchEngine(root,initialized['instance_id'])
+            resumed = ResearchEngine(root,instance_id)
             self.assertEqual(resumed.instance['lifecycle']['state'],'active')
             self.assertNotIn('task_readiness',resumed.runtime)
             self.assertNotIn('initial_request',resumed.instance['lifecycle'])
@@ -303,7 +274,6 @@ class PublicLifecycleTests(unittest.TestCase):
     def test_public_external_once_credential_resume_persists_attempts(self):
         import os, subprocess, threading
         from http.server import HTTPServer
-        from do_math.engine import initialize
         from research_fixtures import activate, install_adapter_fixture, send_control
         from test_external import H
         class Handler(H):
@@ -318,11 +288,10 @@ class PublicLifecycleTests(unittest.TestCase):
         origin=f'http://127.0.0.1:{server.server_port}'
         with tempfile.TemporaryDirectory() as directory, patch('do_math.windows_job.named_job_empty',return_value=True):
             root=Path(directory)
-            subprocess.run(['git','init','-q',str(root)],check=True)
-            initialized=initialize(root,goal='Prove n + 0 = n',workspace=root/'work',config={
+            instance_id = new_instance(root,goal='Prove n + 0 = n',config={
                 'scholarly_enabled':False,
                 'lean_command':['synthetic-lean'],})
-            engine=ResearchEngine(root,initialized['instance_id'],runner=PublicInitializationRunner())
+            engine=ResearchEngine(root,instance_id,runner=PublicInitializationRunner())
             activate(engine,root,initialization_runner=engine.runner,external_policy='explicit_grants')
             send_control(engine,'decision',config={'change':{'kind':'grant','grant':{
                 'id':'GR-public-http','kind':'http','reuse':'once','allowed_origins':[origin],
@@ -338,12 +307,12 @@ class PublicLifecycleTests(unittest.TestCase):
             before=deepcopy(engine.runtime['external_operations']['OP-public'])
             first=deepcopy(engine.runtime['executions'][before['execution_id']])
             self.assertEqual(first['status'],'ended'); self.assertEqual(Handler.count,0)
-            resumed=ResearchEngine(root,initialized['instance_id'])
+            resumed=ResearchEngine(root,instance_id)
             send_control(resumed,'external',config=config,request_id='UC-public-external-credential-resume')
             action=next(a for a in resumed.runtime['queue'] if a['role']=='external_action')
             with patch.dict(os.environ,{'LIFECYCLE_AUDIT_TEST_TOKEN':'synthetic-local-token'}):
                 resumed._process_machine_action(action)
-            saved=ResearchEngine(root,initialized['instance_id'])
+            saved=ResearchEngine(root,instance_id)
             op=saved.runtime['external_operations']['OP-public']
             current=saved.runtime['executions'][op['execution_id']]
             self.assertEqual(Handler.count,1); self.assertEqual(op['status'],'confirmed')
@@ -363,7 +332,7 @@ class PublicLifecycleTests(unittest.TestCase):
 class LifecycleTests(unittest.TestCase):
     def setUp(self):
         temp=tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
-        mock=patch('do_math.initialization.adapter_for',return_value=AdapterDouble())
+        mock=patch('do_math.initialization.adapter_for',return_value=FixtureAdapter())
         mock.start(); self.addCleanup(mock.stop)
         self.engine=FakeEngine(temp.name); self.engine.activate()
     def test_controls_reach_active_and_separate_initial_authority(self):
@@ -455,7 +424,7 @@ class LifecycleTests(unittest.TestCase):
     def test_empty_trust_activation_records_profile_bound_machine_execution(self):
         e=self.engine; environment=e.environment('empty-transition')
         e.control('trust',{'operation':'transition','env_id':environment})
-        e.machine('trust_activate')
+        run_machine(e,'trust_activate')
         attempts=[row for row in e.runtime['executions'].values() if row['role']=='trust_activate']
         self.assertEqual(len(attempts),1)
         self.assertEqual(attempts[0]['status'],'ended')
@@ -504,8 +473,8 @@ class LifecycleTests(unittest.TestCase):
     def test_full_transition_preserves_old_formal_records_and_full_command(self):
         e=self.engine; old,new,tid=self.transition(); prior=deepcopy(e.instance['formal_results'])
         with self.assertRaises(ValueError): e._formal_environment()
-        e.machine('trust_check'); self.assertEqual(e.instance['active_trust_environment'],old)
-        e.machine('trust_check'); e.machine('trust_activate'); self.assertEqual(e.instance['active_trust_environment'],new)
+        run_machine(e,'trust_check'); self.assertEqual(e.instance['active_trust_environment'],old)
+        run_machine(e,'trust_check'); run_machine(e,'trust_activate'); self.assertEqual(e.instance['active_trust_environment'],new)
         for fid,row in prior.items(): self.assertEqual(e.instance['formal_results'][fid],row)
         for args in e.formal_calls: self.assertEqual(args['lean_command'],args['expected_toolchain']['configured_command'])
         for row in e.runtime['executions'].values():
@@ -516,33 +485,33 @@ class LifecycleTests(unittest.TestCase):
     def test_partial_failure_cannot_activate(self):
         e=self.engine; old,new,tid=self.transition()
         e.formal_behavior=lambda args:{'status':'failed','reason':'fixture'}
-        e.machine('trust_check'); e.machine('trust_check')
-        e.machine('trust_activate')
+        run_machine(e,'trust_check'); run_machine(e,'trust_check')
+        run_machine(e,'trust_activate')
         self.assertEqual(e.instance['active_trust_environment'],old); self.assertEqual(e.runtime['trust_transitions'][tid]['status'],'failed')
     def test_wrong_compiler_is_rejected(self):
         e=self.engine; old,new,tid=self.transition()
         e.formal_behavior=lambda a:{**e.verification(a['source'],a['declarations'],a['expected_toolchain']),'toolchain':{'sha256':'wrong'}}
-        e.machine('trust_check'); self.assertEqual(e.runtime['trust_transitions'][tid]['results']['K1']['status'],'rejected')
+        run_machine(e,'trust_check'); self.assertEqual(e.runtime['trust_transitions'][tid]['results']['K1']['status'],'rejected')
     def test_changed_semantics_requires_independent_review(self):
         e=self.engine; old,new,tid=self.transition()
         def changed(a):
             r=e.verification(a['source'],a['declarations'],a['expected_toolchain'])
             r['declaration_evidence']={d:{'type':'changed'} for d in a['declarations']}; return r
-        e.formal_behavior=changed; e.machine('trust_check'); e.machine('trust_check')
-        e.machine('trust_activate')
+        e.formal_behavior=changed; run_machine(e,'trust_check'); run_machine(e,'trust_check')
+        run_machine(e,'trust_activate')
         self.assertEqual(e.instance['active_trust_environment'],old)
         self.assertEqual(e.runtime['trust_transitions'][tid]['status'],'ready')
         self.assertEqual(len([c for c in e.runtime['review_cycles'].values() if c.get('transition_id')==tid]),2)
     def test_completed_target_not_repeated_on_recovery(self):
-        e=self.engine; old,new,tid=self.transition(); a=e.machine('trust_check')
+        e=self.engine; old,new,tid=self.transition(); a=run_machine(e,'trust_check')
         calls=len(e.formal_calls); e._run_trust_check(a); self.assertEqual(len(e.formal_calls),calls)
-        e.machine('trust_check'); e.machine('trust_activate'); self.assertEqual(e.instance['active_trust_environment'],new)
+        run_machine(e,'trust_check'); run_machine(e,'trust_activate'); self.assertEqual(e.instance['active_trust_environment'],new)
     def olean(self,environment_id):
         return Path(self.engine.instance['trust_environments'][environment_id]['toolchain']['executable']).parents[1]/'lib/lean/Init/Prelude.olean'
     def test_changed_olean_blocks_trust_check_before_compiling(self):
         e=self.engine; old,new,tid=self.transition()
         self.olean(new).write_bytes(b'changed module bytes')
-        e.machine('trust_check')
+        run_machine(e,'trust_check')
         result=e.runtime['trust_transitions'][tid]['results']['K1']
         self.assertEqual(result['status'],'failed')
         self.assertEqual(result['error_kind'],'trust_environment')
@@ -571,7 +540,7 @@ class LifecycleTests(unittest.TestCase):
         record_path=Path(environment['toolchain_record']['path'])
         with fixture_setup_lean(environment['toolchain'],self.engine.root/'smoke.lean'):
             recorded=setup_lean.rerecord(['unused'],record_path.parent,self.engine.root/'evidence',None)
-        e.machine('trust_check'); e.machine('trust_check'); e.machine('trust_activate')
+        run_machine(e,'trust_check'); run_machine(e,'trust_check'); run_machine(e,'trust_activate')
         self.assertEqual(e.instance['active_trust_environment'],new)
         self.assertEqual(e.runtime['trust_bindings'][new],recorded['binding'])
         events=[row for row in e.runtime['events'] if row['kind']=='trust_environment_rebound']
@@ -591,7 +560,7 @@ class LifecycleTests(unittest.TestCase):
     def test_dispatch_uses_current_task_predicate(self):
         e=self.engine; t=e.task(); a={'id':'AC-work','role':'research_work','target':t['id']}
         e.runtime['queue']=[a]
-        with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True), patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
+        with patch.object(e,'_revision_dispatch_waits',autospec=True,return_value=[]), patch.object(e,'_selected_action_current',autospec=True,return_value=True), patch.object(e,'_provider_status',autospec=True,return_value={'providers':{}}):
             self.assertTrue(e._dispatchable(a))
             e.runtime['tasks'][t['id']]['inputs'].append('absent')
             self.assertFalse(e._dispatchable(a))
@@ -602,11 +571,11 @@ class LifecycleTests(unittest.TestCase):
             self.assertEqual(a['dispatch_wait']['kind'],'task_readiness')
 
     def test_task_artifact_context_reaches_refresh_schedule_and_dispatch(self):
-        from types import SimpleNamespace
-        from unittest.mock import Mock
+        from do_math.repository import ResearchRepository
         e=self.engine; raw=b'{"valid":true}'
         path='runtime/artifacts/EX-evidence/result.json'
-        e.store=SimpleNamespace(read=Mock(return_value=raw))
+        e.store=create_autospec(ResearchRepository,instance=True)
+        e.store.read.return_value=raw; e.store.git_dir=None
         condition={'op':'artifact_valid','artifact_ref':{'snapshot':'sealed-evidence',
             'path':path,'sha256':hashlib.sha256(raw).hexdigest()}}
         t=e.task(condition=condition); t['due_conditions']=[condition]; e.approve(t)
@@ -615,7 +584,7 @@ class LifecycleTests(unittest.TestCase):
         self.assertTrue(any(row['kind']=='task_condition_due' for row in e.runtime['events']))
         a={'id':'AC-artifact','role':'research_work','target':t['id']}
         e.runtime['queue']=[a]
-        with patch.object(e,'_revision_dispatch_waits',return_value=[]), patch.object(e,'_selected_action_current',return_value=True) as selected, patch.object(e,'_provider_status',return_value={'providers':{}},create=True):
+        with patch.object(e,'_revision_dispatch_waits',autospec=True,return_value=[]), patch.object(e,'_selected_action_current',autospec=True,return_value=True) as selected, patch.object(e,'_provider_status',autospec=True,return_value={'providers':{}}):
             self.assertTrue(e._dispatchable(a))
             context=selected.call_args.kwargs['evaluation_context']
             self.assertTrue(callable(context['validate_artifact']))
@@ -626,10 +595,10 @@ class LifecycleTests(unittest.TestCase):
         e=self.engine; old,new,tid=self.transition()
         def stop(args):
             e._pause_lifecycle('test_pause'); return {'status':'stopped'}
-        e.formal_behavior=stop; e.machine('trust_check')
+        e.formal_behavior=stop; run_machine(e,'trust_check')
         first=next(row for row in e.runtime['executions'].values() if row['role']=='trust_check')
         self.assertEqual(first['status'],'ended'); self.assertNotIn('K1',e.runtime['trust_transitions'][tid]['results'])
-        e.formal_behavior=None; e.control('resume',{}); e.machine('trust_check')
+        e.formal_behavior=None; e.control('resume',{}); run_machine(e,'trust_check')
         attempts=[row for row in e.runtime['executions'].values() if row['role']=='trust_check']
         self.assertEqual(attempts[1]['owner_activity_id'],first['owner_activity_id'])
         self.assertEqual(attempts[1]['continuation_of'],first['id'])
@@ -696,7 +665,7 @@ class LifecycleTests(unittest.TestCase):
     def test_capability_evidence_rejects_changed_host_or_forged_record(self):
         e=self.engine; ref=e.instance['role_profile_refs']['intent_interpretation'][0]
         self.assertTrue(e._capability_requirements(ref)['satisfied'])
-        with patch.object(AdapterDouble,'capability_identity',return_value={'host':'different'}):
+        with patch.object(FixtureAdapter,'capability_identity',return_value={'host':'different'}):
             self.assertFalse(e._capability_requirements(ref)['satisfied'])
         for row in e.instance['capability_evidence'].values(): row['identity']={'forged':True}
         self.assertFalse(e._capability_requirements(ref)['satisfied'])
@@ -705,7 +674,7 @@ class LifecycleTests(unittest.TestCase):
         e=self.engine; old,new,tid=self.transition()
         formal=e.instance['formal_results'][e.instance['knowledge']['K1']['formal_result_id']]
         formal['lean_code']+='\n-- changed'
-        e.machine('trust_check'); e.machine('trust_check')
+        run_machine(e,'trust_check'); run_machine(e,'trust_check')
         self.assertEqual(e.instance['active_trust_environment'],old)
 
     def test_http_success_finishes_activity_without_changing_effect_fact(self):
@@ -721,17 +690,18 @@ class LifecycleTests(unittest.TestCase):
 
     def test_authority_revoked_at_send_gate_prevents_transport(self):
         e=self.engine; op=self.http('http://127.0.0.1:1/effect'); count=[0]
-        def controls():
+        def controls(*, pump=True):
             count[0]+=1
             if count[0]==4: e.instance['grants']['GR-http']['status']='revoked'
-        e._controls=controls
+        e._controls=create_autospec(e._controls,side_effect=controls)
         with patch('do_math.external._http') as transport:
             e.machine('external_action'); transport.assert_not_called()
         self.assertEqual(e.runtime['external_operations'][op['id']]['status'],'cancelled')
 
     def test_session_capacity_reads_git_reservations_not_sqlite(self):
         e=self.engine; resources=e._session_resources()
-        self.assertTrue(resources['operations'])
+        self.assertTrue(resources)
+        for row in resources.values(): self.assertEqual(set(row),{'limit','used','execution_ids','available'})
         self.assertFalse((e.root/'session-slots').exists())
 
     def test_invalidated_split_knowledge_invalidates_dependent_goal(self):
@@ -758,10 +728,10 @@ class Audit2LifecycleTests(unittest.TestCase):
             self.assertEqual(e.runtime['last_observed_utc'],approved.isoformat())
 
     def test_scheduler_scopes_maintenance_dispatch_with_executor_double(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate(); e._pause_lifecycle('user_pause')
             e.grant('GR-repair',http={'kind':'local','roles':['maintenance'],
-                'budget_kind':'operations','reuse':'once','included_targets':['RI-test']})
+                'reuse':'once','included_targets':['RI-test']})
             e.runtime['queue'] = [{'id':'AC-repair','role':'maintenance','target':'RI-test'},
                                   {'id':'AC-general','role':'research_preparation'}]
             action = e.runtime['queue'][0]
@@ -777,32 +747,32 @@ class Audit2LifecycleTests(unittest.TestCase):
                 e._end_machine_execution(execution,outcome='execution_incomplete',disposition={'kind':'executor_double'})
                 e.runtime['queue'][:]=[row for row in e.runtime['queue'] if row['id']!=action['id']]
                 if False: yield
-            e._call_steps=executor_double
-            e._check_installation=lambda:None
-            e._retry_provider_actions=lambda:None
-            e._available_inputs=lambda:[]
-            e._provider_status=lambda:{'providers':{}}
-            e._selected_action_current=lambda *a,**kw:True
-            e._revision_dispatch_waits=lambda *a:[]
+            e._call_steps=create_autospec(e._call_steps,side_effect=executor_double)
+            e._check_installation=create_autospec(e._check_installation)
+            e._available_inputs=create_autospec(e._available_inputs,return_value=[])
+            e._provider_status=create_autospec(e._provider_status,return_value={'providers':{}})
+            e._selected_action_current=create_autospec(e._selected_action_current,return_value=True)
+            e._revision_dispatch_waits=create_autospec(e._revision_dispatch_waits,return_value=[])
             e._run_parallel(max_steps=1)
             self.assertEqual([row['role'] for row in dispatched],['maintenance'])
             self.assertEqual(e.runtime['status'],'paused')
             self.assertEqual(e.runtime['queue'][0]['id'],'AC-general')
 
     def test_wrong_pinned_trust_command_ends_attempt_without_verifier(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate(); e.knowledge('K1')
             old_ref = profiles.profile_ref(e._execution_profile({'role':'trust_check'}))
             env = e.environment('next')
             e.control('trust', {'operation':'transition','env_id':env})
             action = next(a for a in e.runtime['queue'] if a['role']=='trust_check')
             action['profile_ref'] = old_ref
-            e._process_machine_action(action)
+            with owner_calls(e):
+                e._process_machine_action(action)
             self.assertEqual(e.formal_calls,[])
             execution = next(x for x in e.runtime['executions'].values() if x['role']=='trust_check')
             self.assertEqual(execution['status'],'ended')
             self.assertEqual(execution['outcome'],'execution_incomplete')
-            self.assertIsNone(e.runtime['active_execution'])
+            self.assertEqual([x['id'] for x in e.runtime['executions'].values() if x['status']!='ended'],[])
 
     def test_terminal_marker_cannot_have_live_projection(self):
         from do_math.preflight import inspect_current_state
@@ -814,24 +784,23 @@ class Audit2LifecycleTests(unittest.TestCase):
             self.assertTrue(inspect_current_state(e.instance,e.runtime)['valid'])
 
     def test_scheduler_runs_only_approved_machine_recovery_and_stays_paused(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate()
             env = e.environment('repair')
             e.control('trust', {'operation':'transition','env_id':env})
             e._pause_lifecycle('user_pause')
             e.grant('GR-repair',http={'kind':'local','roles':['trust_activate'],
-                'budget_kind':'operations','reuse':'once','purposes':['activate empty verified environment']})
+                'reuse':'once','purposes':['activate empty verified environment']})
             action = next(a for a in e.runtime['queue'] if a['role']=='trust_activate')
             e.control('decision',{'change':{'kind':'limited_recovery','action_id':action['id'],
                 'grant_id':'GR-repair','profile_ref':profiles.profile_ref(e._execution_profile(action)),
                 'purpose':'activate empty verified environment','procedure':'Activate this empty target transition only',
                 'expires_at':(e.current_time+timedelta(minutes=5)).isoformat()}})
             e.runtime['queue'].insert(0,{'id':'AC-general','role':'research_preparation'})
-            e._check_installation=lambda:None
-            e._retry_provider_actions=lambda:None
-            e._available_inputs=lambda:[]
-            e._selected_action_current=lambda *a,**kw:True
-            e._revision_dispatch_waits=lambda *a:[]
+            e._check_installation=create_autospec(e._check_installation)
+            e._available_inputs=create_autospec(e._available_inputs,return_value=[])
+            e._selected_action_current=create_autospec(e._selected_action_current,return_value=True)
+            e._revision_dispatch_waits=create_autospec(e._revision_dispatch_waits,return_value=[])
             e._run_parallel(max_steps=1)
             self.assertEqual(e.instance['active_trust_environment'],env)
             self.assertEqual(e.runtime['status'],'paused')
@@ -842,7 +811,7 @@ class Audit2LifecycleTests(unittest.TestCase):
             self.assertEqual(repair['submission_receipt']['state'],'accepted')
 
     def test_changed_transition_opens_real_review_without_live_publication(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate(); e.knowledge('K1')
             new = e.environment('next')
             before = deepcopy(e.instance)
@@ -852,8 +821,8 @@ class Audit2LifecycleTests(unittest.TestCase):
                 result['declaration_evidence'] = {d:{'type':'Changed proposition'} for d in args['declarations']}
                 return result
             e.formal_behavior = changed
-            e.machine('trust_check')
-            e.machine('trust_activate')
+            run_machine(e,'trust_check')
+            run_machine(e,'trust_activate')
             transition = next(reversed(e.runtime['trust_transitions'].values()))
             self.assertEqual(transition['status'],'ready')
             cycles = [r for r in e.runtime['review_cycles'].values() if r.get('transition_id')==transition['id']]
@@ -863,7 +832,7 @@ class Audit2LifecycleTests(unittest.TestCase):
                 self.assertEqual(e.instance.get(family), before.get(family))
 
     def test_trust_verifier_uses_registered_command_without_deadline(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate(); e.knowledge('K1')
             new = e.environment('next')
             command = e.instance['trust_environments'][new]['toolchain']['configured_command']
@@ -872,16 +841,16 @@ class Audit2LifecycleTests(unittest.TestCase):
             e.instance['execution_profiles'][p['id']] = p
             e.instance['role_profile_refs']['trust_check'] = [profiles.profile_ref(p)]
             e.control('trust', {'operation':'transition','env_id':new})
-            e.machine('trust_check')
+            run_machine(e,'trust_check')
             self.assertEqual(len(e.formal_calls),1)
             self.assertNotIn("timeout_seconds", e.formal_calls[0])
             self.assertEqual(e.formal_calls[0]['lean_command'],command)
 
     def test_paused_recovery_is_exact_authorized_and_revocable(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate(); e._pause_lifecycle('user_pause')
             e.grant('GR-repair', http={'kind':'local','roles':['maintenance'],'included_targets':['RI-test'],
-                'purposes':['restore sealed input'],'budget_kind':'operations','reuse':'once'})
+                'purposes':['restore sealed input'],'reuse':'once'})
             action = {'id':'AC-repair','role':'maintenance','target':'RI-test','purpose':'restore sealed input'}
             e.runtime['queue'].append(action)
             ref = e._select_model(action)['profile_ref']
@@ -949,7 +918,7 @@ class Audit2LifecycleTests(unittest.TestCase):
             p = e._execution_profile({'role': 'maintenance'})
             negative = profiles.structural_failure_evidence(p, IDENTITY,
                 observed_at=e.current_time.isoformat(), execution_id='EX-failed', evidence_ref='failure.json')
-            positive = profiles.capability_evidence(p, AdapterDouble().describe(),
+            positive = profiles.capability_evidence(p, FixtureAdapter().describe(),
                 observed_at=(e.current_time + timedelta(seconds=1)).isoformat())
             e.instance['capability_evidence'] = {r['id']: r for r in (negative, positive)}
             outcome = capability_requirements(e.instance, profiles.profile_ref(p), current_identity=IDENTITY,
@@ -978,9 +947,9 @@ class AuditRepairTests(unittest.TestCase):
         validate(e.runtime['external_operations'][op['id']],'external_operations')
         environment=e.environment('audit-schema')
         e.control('trust',{'operation':'transition','env_id':environment})
-        e.machine('trust_activate')
+        run_machine(e,'trust_activate')
         LifecycleTests.transition(self)
-        e.machine('trust_check'); e.machine('trust_check')
+        run_machine(e,'trust_check'); run_machine(e,'trust_check')
         for execution in e.runtime['executions'].values():
             if execution['role'] in {'external_action','trust_activate','trust_check'}:
                 validate(execution,'executions')
@@ -1097,10 +1066,10 @@ class AuditRepairTests(unittest.TestCase):
     def test_12_scoped_http_control_preserves_exact_envelope(self):
         e=self.engine
         scope={'included_targets':['TARGET'],'purposes':['publish'],'subjects':['publisher'],
-               'budget_kind':'operations','execution_kinds':['machine']}
+               'execution_kinds':['machine']}
         config=self.prepare_http(scope=scope)
         fields={'target_id':'TARGET','purpose':'publish','subject':'publisher',
-                'budget_kind':'operations','actor_kind':'machine'}
+                'actor_kind':'machine'}
         e.control('external',{**config,**fields})
         op=e.runtime['external_operations'][config['id']]
         self.assertEqual({k:op[k] for k in fields},fields)
@@ -1134,8 +1103,8 @@ class AuditRepairTests(unittest.TestCase):
     def test_12_academic_control_binds_current_real_prerequisite(self):
         from do_math.academic import current_requirements, solution_basis
         e=self.engine; config=self.prepare_http(scope={'requires_academic':True})
-        e._solution_basis=lambda: solution_basis('synthetic-goal-evidence',
-            list(e.instance['formal_results'].values())) if e.instance['goal_status']=='mathematically_solved' else None
+        e._solution_basis=create_autospec(e._solution_basis,side_effect=lambda: solution_basis('synthetic-goal-evidence',
+            list(e.instance['formal_results'].values())) if e.instance['goal_status']=='mathematically_solved' else None)
         with self.assertRaises(ValueError): e.control('external',config)
         # Synthetic upstream proof result; actual binding and academic prerequisite consumers.
         e.knowledge('K-academic')
@@ -1165,7 +1134,7 @@ class AuditRepairTests(unittest.TestCase):
         e=self.engine; config=self.prepare_http(credentials=True,origin=f'http://127.0.0.1:{server.server_port}')
         # Real host clock on both registration and completion; no frozen fixture time.
         e.lifecycle_clock=None; e.lifecycle_monotonic=time.monotonic
-        e.__dict__.pop('_clock_anchor',None)
+        e._clock_anchor=None
         e.control('external',config)
         with patch.dict(os.environ), patch('do_math.external._http') as send:
             os.environ.pop('LIFECYCLE_AUDIT_TEST_TOKEN',None)

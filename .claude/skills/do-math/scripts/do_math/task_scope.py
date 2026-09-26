@@ -9,17 +9,23 @@ from .repository import exact_content_hash
 
 
 _WITHDRAWABLE_STATES = {"planned", "waiting", "active"}
-def _withdrawal(disposition: dict) -> tuple[str, str]:
-    if not isinstance(disposition, dict) or set(disposition) != {"task_id", "disposition", "reason"}:
-        raise ValueError("task disposition must contain only task_id, disposition, and reason")
-    task_id, kind, reason = disposition["task_id"], disposition["disposition"], disposition["reason"]
-    if not isinstance(task_id, str) or not task_id:
-        raise ValueError("task disposition needs a task ID")
-    if kind != "withdraw":
-        raise ValueError("AI task disposition supports only withdraw")
-    if not isinstance(reason, str) or not reason.strip():
-        raise ValueError("task withdrawal needs a reason")
-    return task_id, reason
+
+
+def result_ids(task: dict) -> set[str]:
+    """IDs of the returned results a completion assessment of this task may cite."""
+    return {row.get('id', row.get('execution_id')) for row in task.get('results', [])} - {None}
+
+
+def require_evidence_refs(refs, admissible) -> None:
+    """Completion evidence names a supplied record or a returned result, not a path or event.
+
+    The producer passes its input's supplied_record_ids with the task's result IDs;
+    the receiver passes current record IDs with the same result IDs.
+    """
+    invalid = sorted(set(refs) - set(admissible))
+    if invalid:
+        raise ValueError('completion evidence requires a supplied record ID; read the file and cite its producing '
+                         'execution or source record; invalid_evidence_refs=' + repr(invalid))
 
 
 def _task_execution(execution: dict, task_id: str) -> bool:
@@ -78,9 +84,8 @@ def apply_task_dispositions(instance: dict, runtime: dict, dispositions: list[di
         raise ValueError("task dispositions need an execution ID")
     if not isinstance(dispositions, list) or not isinstance(input_tasks, dict):
         raise ValueError("task dispositions and input tasks must be collections")
-    requested = [_withdrawal(item) for item in dispositions]
-    if len({task_id for task_id, _ in requested}) != len(requested):
-        raise ValueError("a task may be withdrawn only once per execution")
+    # The sealed extension schema and the submission check fixed shape and distinct targets.
+    requested = [(item["task_id"], item["reason"]) for item in dispositions]
 
     new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
     tasks = new_runtime.get("tasks", {})
@@ -144,7 +149,7 @@ def validate_withdrawal_record(task):
 
 def decision_is_current(decision, instance, runtime, *, evaluation_context=None):
     """Check the preserved user source, scope edition, and effect of a decision."""
-    from .planning import _utc
+    from .file_io import parse_utc
     from .input_basis import sources_current, aliases
     if decision.get('actor') != 'user' or not decision.get('source_ref') or not isinstance(decision.get('change'), dict):
         return False
@@ -152,10 +157,10 @@ def decision_is_current(decision, instance, runtime, *, evaluation_context=None)
             or decision.get('lifecycle', 'active') != 'active' or decision.get('current') is False):
         return False
     context = evaluation_context or {}
-    now = _utc(context['now']) if context.get('now') else datetime.now(timezone.utc)
-    if decision.get('expires_at') and _utc(decision['expires_at']) <= now:
+    now = parse_utc(context['now']) if context.get('now') else datetime.now(timezone.utc)
+    if decision.get('expires_at') and parse_utc(decision['expires_at']) <= now:
         return False
-    if decision.get('valid_from') and _utc(decision['valid_from']) > now:
+    if decision.get('valid_from') and parse_utc(decision['valid_from']) > now:
         return False
     if decision.get('source_basis') and not sources_current(decision['source_basis'], instance):
         return False
@@ -205,9 +210,9 @@ def validate_disposition_authority(task, row, instance, runtime, *, evaluation_c
 
 
 def assessment_basis(task, assessment, instance, runtime):
-    from .planning import _records,task_reference_basis,condition_refs
+    from .planning import record_index,task_reference_basis,condition_refs
     from .relation_refs import relation_references, relation_evidence_references
-    records=_records(instance,runtime)
+    records=record_index(instance,runtime)
     refs={ref for row in assessment.get('item_dispositions',[]) for ref in row.get('evidence_refs',[])}
     refs.update(row['authority_ref'] for row in assessment.get('item_dispositions',[]) if row.get('authority_ref'))
     refs.update(ref for row in assessment.get('unresolved',[]) for ref in row['missing_inputs'])
@@ -377,8 +382,8 @@ def designated_judgment(task, obligation, disposition, instance, runtime):
 
 def apply_task_assessments(instance, runtime, assessments, *, execution_id, input_tasks, reference_tasks=None, evaluation_context=None):
     """Apply the whole assessment set on copies, including recipient obligations."""
-    from .task_contracts import validate_item_dispositions, contract_obligations
-    from .planning import _records
+    from .task_contracts import validate_item_dispositions, contract_obligations, judge_coverage_errors
+    from .planning import record_index
     new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
     reference_tasks = input_tasks if reference_tasks is None else reference_tasks
     actor = new_runtime.get('executions', {}).get(execution_id)
@@ -389,7 +394,8 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
         raise ValueError('duplicate task assessment')
     tasks = new_runtime['tasks']
     transfers = []
-    records = _records(new_instance, new_runtime)
+    records = record_index(new_instance, new_runtime)
+    families = {identifier: family for identifier, (family, _) in records.items()}
     for assessment in assessments:
         if assessment.get('decision') not in {'completed','closed','incomplete'}:
             raise ValueError('unknown completion decision')
@@ -405,16 +411,18 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
                and e.get('role') in {'research_work', 'supplemental_research'} for e in new_runtime.get('executions', {}).values()):
             raise ValueError('work execution must end before completion assessment')
         validate_item_dispositions(task, assessment, require_complete=assessment['decision'] in {'completed','closed'})
+        coverage = judge_coverage_errors(actor['role'], execution_id, task, assessment, families)
+        if coverage:
+            raise ValueError(coverage[0])
         obligations = {o['id']: o for o in contract_obligations(task)}
-        evidence_ids = set(records) | {r.get('id', r.get('execution_id')) for r in task.get('results', [])}
+        evidence_ids = set(records) | result_ids(task)
         for row in assessment['item_dispositions']:
             obligation = obligations[row['obligation_id']]
             if (row['kind'] == 'fulfilled' and actor['role'] not in obligation['judges']
                     and execution_id not in obligation['judges']
                     and not designated_judgment(task, obligation, row, new_instance, new_runtime)):
                 raise ValueError('fulfilled obligation needs its designated judge or a current specialist judgment for this task')
-            if set(row['evidence_refs']) - evidence_ids:
-                raise ValueError('disposition evidence is not in the current input')
+            require_evidence_refs(row['evidence_refs'], evidence_ids)
             if row['kind'] in {'waived','transferred'}:
                 validate_disposition_authority(task, row, new_instance, new_runtime, evaluation_context=evaluation_context)
             if row['kind'] == 'transferred':

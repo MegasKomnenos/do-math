@@ -421,10 +421,9 @@ class RecoveryRoutingTests(PurposeHarness):
         engine.process_controls()
         self.assertEqual(engine.runtime['status'], 'paused')
 
-    def test_retry_count_does_not_substitute_for_an_operational_disposition(self):
+    def test_diagnosed_retry_preserves_the_failed_execution_and_independent_work(self):
         engine, _ = self.make_active()
         failed = self.failed_plan(engine)
-        failed['action']['recovery_attempt'] = 1
         preserved = deepcopy(failed)
         engine.runtime['queue'] = [{'id': 'AC-independent', 'role': 'research_preparation'}]
         self.diagnose(engine, failed)

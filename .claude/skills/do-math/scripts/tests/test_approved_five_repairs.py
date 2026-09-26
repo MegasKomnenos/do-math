@@ -5,20 +5,20 @@ import json
 from pathlib import Path
 import sys
 import tempfile
-from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, DEFAULT_CONFIG
 from do_math import observations, execution_profiles, task_scope, planning
-from do_math.repository import exact_content_hash
+from do_math.repository import ResearchRepository, exact_content_hash
+from research_fixtures import bare_engine
 from test_categories import test_group
 
 
 class WaitOwnershipTests(unittest.TestCase):
     def receive(self, kind, *, creates_wait=True):
-        engine = object.__new__(ResearchEngine)
+        engine = bare_engine()
         action = {'id': 'AC-one', 'role': 'intent_interpretation', 'target': 'UI-one'}
         row = {'action': deepcopy(action), 'kind': kind, 'execution_id': 'EX-one', 'reason': 'pending'}
         output = {'summary': 'Checked original'}
@@ -27,17 +27,19 @@ class WaitOwnershipTests(unittest.TestCase):
         engine.runtime = {'status': 'initializing', 'history': [], 'waiting_actions': {},
             'executions': {'EX-one': {'status': 'ended', 'submission_intent': {
                 'output_ref': 'out', 'extensions_ref': 'ext', 'check_ref': 'check'}}}}
-        engine.store = SimpleNamespace(git_dir='fixture-git', read=lambda ref, head: json.dumps(
-            {'out': output, 'ext': {}, 'check': {'issues': []}}[ref]).encode())
+        engine.store = create_autospec(ResearchRepository, instance=True)
+        engine.store.git_dir = 'fixture-git'
+        engine.store.read.side_effect = lambda ref, head: json.dumps(
+            {'out': output, 'ext': {}, 'check': {'issues': []}}[ref]).encode()
         def apply(*args):
             if creates_wait:
                 engine.runtime['waiting_actions']['AC-one'] = deepcopy(row)
             return {'status': 'accepted', 'bundles': [], 'retry_bundle_ids': []}
         if not creates_wait:
             engine.runtime['waiting_actions']['AC-one'] = deepcopy(row)
-        engine._apply_submission_bundles = apply
-        engine._remove_action = lambda action: None
-        engine._record_task_receipt = lambda *args, **kwargs: None
+        engine._apply_submission_bundles = create_autospec(engine._apply_submission_bundles, side_effect=apply)
+        engine._remove_action = create_autospec(engine._remove_action, side_effect=lambda action: None)
+        engine._record_task_receipt = create_autospec(engine._record_task_receipt, side_effect=lambda *args, **kwargs: None)
         # Sealing is covered separately; this fixture starts at a captured
         # submission so the wait ownership rule is the behavior under test.
         sealed = {'output': output, 'extensions': {}, 'check': {'issues': []}, 'output_ref': 'out'}
@@ -101,9 +103,9 @@ class RuleBindingTests(unittest.TestCase):
             fixture.doCleanups()
 
     def test_foreign_execution_is_not_silently_rebound(self):
-        rules = [{'id':'active', 'operator':'active_duration_gte',
-            'subject':{'kind':'execution','id':'EX-foreign'}, 'basis':{'source':'adapter_active_intervals','unit':'milliseconds'},
-            'threshold':1000, 'required_evidence':['input/contract.json']}]
+        rules = [{'id':'checkpoints', 'operator':'checkpoint_count_gte',
+            'subject':{'kind':'checkpoint','id':'EX-foreign'}, 'basis':{'source':'checkpoint','unit':'count'},
+            'threshold':1, 'required_evidence':['input/contract.json']}]
         with self.assertRaises(ValueError): observations.bind_task_rules(rules, 'EX-new')
         with self.assertRaises(ValueError): observations.task_rules_from_execution(rules, 'EX-new')
 
@@ -135,7 +137,7 @@ class RuleBindingTests(unittest.TestCase):
             observations.validate_execution_rules(bound,
                 bindings=observations.observation_rule_contract(), execution_id=eid)
             self.assertEqual(bound[0]['subject']['id'], eid)
-            snapshot = {'by_source': {'checkpoint': {'iterations': {eid: 10}}}}
+            snapshot = {'iterations': {eid: 10}}
             due = observations.evaluate_rules(bound, snapshot)
             self.assertEqual([row['rule_id'] for row in due], ['iteration-review'])
             self.assertEqual(observations.task_rules_from_execution(bound, eid), template)
@@ -150,16 +152,14 @@ class RuleBindingTests(unittest.TestCase):
                     bindings=observations.observation_rule_contract(), execution_id=eid)
         self.assertEqual(template[0]['subject']['id'], '$execution')
 
-    def test_event_iteration_names_remain_owned_by_the_event_source(self):
+    def test_iterations_have_only_the_checkpoint_source(self):
+        # Provider events carry no iterations, so an event-sourced iteration rule is not admitted.
         rules = [{'id': 'search', 'operator': 'iteration_gte',
-            'subject': {'kind': 'iteration', 'id': 'search-branches'},
+            'subject': {'kind': 'iteration', 'id': '$execution'},
             'basis': {'source': 'execution_events', 'unit': 'count'},
             'threshold': 2, 'required_evidence': ['contract']}]
-        bound = observations.bind_task_rules(rules, 'EX-new')
-        observations.validate_execution_rules(bound,
-            bindings=observations.observation_rule_contract(), execution_id='EX-new')
-        self.assertEqual(bound, rules)
-        self.assertEqual(observations.task_rules_from_execution(bound, 'EX-new'), rules)
+        with self.assertRaisesRegex(ValueError, 'basis'):
+            observations.bind_task_rules(rules, 'EX-new')
 
 
 class PartialWithdrawalTests(unittest.TestCase):
@@ -245,8 +245,9 @@ class InitialDiagnosisTests(unittest.TestCase):
     def test_exhausted_initial_repairs_have_a_reachable_diagnostic_owner(self):
         from do_math.repair_execution import route_submission_return
         requests = []
-        engine = SimpleNamespace(instance={'lifecycle':{'state':'initializing'}, 'config':{'max_output_repairs':1}},
-            runtime={'queue':[], 'waiting_actions':{}}, _enqueue=lambda *a, **kw: requests.append((a,kw)))
+        engine = bare_engine({'lifecycle':{'state':'initializing'}, 'config':{'max_output_repairs':1}},
+            {'queue':[], 'waiting_actions':{}})
+        engine._enqueue = create_autospec(engine._enqueue, side_effect=lambda *a, **kw: requests.append((a,kw)))
         action = {'id':'AC-original','role':'intent_interpretation','target':'UI-original','repair_attempt':1}
         route_submission_return(engine,action,{'retry_bundle_ids':[],'bundles':[],'issues':[]},'EX-bad',None)
         self.assertEqual(requests[0][0], ('maintenance','EX-bad'))
@@ -266,7 +267,7 @@ class InitialDiagnosisTests(unittest.TestCase):
         from test_static_review_repairs import initial_failure_engine
         with tempfile.TemporaryDirectory() as directory:
             engine, action, wait = initial_failure_engine(Path(directory), 'output_validation')
-            engine._save = Mock()
+            engine._save = create_autospec(engine._save)
             diagnostic = {'target': 'EX-bad', 'initial_submission_diagnosis': True}
             apply_initial_diagnosis(engine, diagnostic,
                 {'initial_submission_diagnosis':{'decision':'retry','guidance':'Return the missing required field'}}, 'EX-diagnosis')
@@ -297,10 +298,10 @@ class ResearchAdmissionTests(unittest.TestCase):
         engine.instance, engine.runtime = engine._configure_candidate(engine.instance, engine.runtime,
             {'origin':'user', 'config':{'tool_review_window_seconds':60,
                 'self_check_response_window_seconds':5, 'plan_settle_seconds':1}})
-        from test_lifecycle_engine import AdapterDouble
+        from research_fixtures import FixtureAdapter
         for profile in engine.instance['execution_profiles'].values():
             if profile['actor_kind'] == 'ai':
-                evidence = execution_profiles.capability_evidence(profile, AdapterDouble().describe(),
+                evidence = execution_profiles.capability_evidence(profile, FixtureAdapter().describe(),
                     observed_at=engine._lifecycle_now().isoformat())
                 engine.instance.setdefault('capability_evidence', {})[evidence['id']] = evidence
         engine._enqueue('research_preparation', reason='Exercise task admission after the approved initial fixture')
@@ -308,11 +309,11 @@ class ResearchAdmissionTests(unittest.TestCase):
         admit = engine._provider_admit
         def checked_admission(*args, **kwargs):
             accepted = admit(*args, **kwargs)
-            self.assertTrue(accepted, {'reason':engine._slots.admission_reason,
-                'resources':engine._slots.snapshot(), 'reservations':engine.runtime.get('reservations'),
+            self.assertTrue(accepted, {'reason':(args[0].get('dispatch_wait') or {}).get('kind'),
+                'resources':engine._session_slots().snapshot(), 'reservations':engine.runtime.get('reservations'),
                 'profile':kwargs['profile']})
             return accepted
-        engine._provider_admit = checked_admission
+        engine._provider_admit = create_autospec(engine._provider_admit, side_effect=checked_admission)
         # Readiness events may open an extra plan; a step counts an action,
         # not one of the four conceptual research phases.
         engine.run(max_steps=8)

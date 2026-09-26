@@ -10,15 +10,16 @@ from pathlib import Path
 from types import SimpleNamespace
 import sys
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_categories import test_group as category
-from do_math import contracts, engine as engine_module, events, repository, submission
+from do_math import contracts, engine as engine_module, repository, submission
 from do_math.context_store import prefetch_artifacts
 from do_math.git_store import GitStateStore, GitStateStoreError, StateSnapshot
 from do_math.state_checks import inspect_state
 from do_math.state_contract import default_state_contract
+from research_fixtures import bare_engine, current_state
 
 
 def artifact(path, raw, **changes):
@@ -29,6 +30,34 @@ def artifact(path, raw, **changes):
 def storage_state(refs):
     return ({"feature_version": 5, "sources": []},
             {"feature_version": 5, "executions": {"EX-1": {"id": "EX-1", "output_files": refs}}})
+
+
+def archived_role_input(bundle, snapshot, files):
+    """The manifest of a maintenance role input archived once below ``runtime/artifacts/<bundle>``.
+
+    Each row names its archived bytes (prompt at ``input.txt``); ``files``
+    receives those bytes.
+    """
+    prefix = 'runtime/artifacts/' + bundle + '/'
+
+    def row(path, raw, **fields):
+        files[prefix + path] = raw
+        return {**fields, **artifact(prefix + path, raw)}
+    return {'feature_version': 5, 'role': 'maintenance', 'snapshot': snapshot,
+            'output_contract': {'id': 'do-math-cli/5'}, 'prompt': row('input.txt', b'exact prompt'),
+            'direct': [row('input/catalog/' + key + '.json', b'{}\n', key=key)
+                       for key in ('snapshot', 'governance', 'execution_profile', 'action')],
+            'documents': [row('input/implementation/' + path, path.encode() + b'\n', path=path)
+                          for path in ('SKILL.md', 'GLOSSARY.md')],
+            'references': []}
+
+
+def candidate_repository():
+    """A repository over the installed contract; candidate validation never reaches its Git store."""
+    repo = repository.ResearchRepository.__new__(repository.ResearchRepository)
+    repo._store = Mock(object_format='sha1')
+    repo.contract = default_state_contract()
+    return repo
 
 
 @category('unit')
@@ -85,69 +114,68 @@ class BatchedInspectionTests(unittest.TestCase):
         batch.assert_not_called()
         self.assertIs(prefetch_artifacts(['one'], single), single)
         read = prefetch_artifacts(['one'], single, batch)
-        self.assertEqual(read('one'), b'single')
+        # The batch omits a requested path absent from the snapshot.
+        with self.assertRaisesRegex(ValueError, 'artifact is missing: one'):
+            read('one')
         self.assertEqual(read('another'), b'single')
 
     def test_engine_entry_checks_presence_and_length_while_check_compares_bytes(self):
         head = 'a' * 40
         output_path = 'runtime/artifacts/BA-output/result.bin'
         input_path = 'runtime/artifacts/BA-input/input.txt'
-        files = {output_path: b'\x00\xff', input_path: b'exact prompt'}
+        files = {output_path: b'\x00\xff'}
         instance, runtime = storage_state([artifact(output_path, files[output_path])])
         runtime['executions']['EX-1'].update(input_bundle='BA-input',
-            input_sha256=hashlib.sha256(files[input_path]).hexdigest())
-        engine = engine_module.ResearchEngine.__new__(engine_module.ResearchEngine)
-        engine.instance, engine.runtime, engine.head = instance, runtime, head
-        engine.store = Mock()
+            input_manifest=archived_role_input('BA-input', head, files))
+        engine = bare_engine(instance, runtime, head=head, store=create_autospec(repository.ResearchRepository, instance=True))
         engine.store.load.return_value = (head, instance, runtime)
         engine.store.read.side_effect = AssertionError('normal inspection must use batch reads')
 
-        def batch(paths, snapshot):
-            self.assertEqual(snapshot, head)
+        # Both batch readers leave paths absent from the snapshot out of their result.
+        def batch(paths, snapshot, *, missing='raise'):
+            self.assertEqual((snapshot, missing), (head, 'omit'))
             engine.head = 'b' * 40  # Later callbacks must retain the observed snapshot.
-            return {path: files[path] for path in paths}
+            return {path: files[path] for path in paths if path in files}
 
-        def sizes(paths, snapshot):
-            self.assertEqual(snapshot, head)
-            missing = [path for path in paths if path not in files]
-            if missing:
-                raise GitStateStoreError('batch size did not return a blob: ' + missing[0])
-            return {path: len(files[path]) for path in paths}
+        def sizes(paths, snapshot, *, missing='raise'):
+            self.assertEqual((snapshot, missing), (head, 'omit'))
+            return {path: len(files[path]) for path in paths if path in files}
 
         engine.store.read_many.side_effect = batch
         engine.store.blob_sizes.side_effect = sizes
-        # This fixture exercises artifact inspection, not lifecycle activation.
-        with patch.object(engine_module, '_require_current_contract'),                 patch.object(engine_module, 'inspect_current_state', return_value={'valid': True}):
+        engine._inspect_before_write()
+        # Entry to run/controls reads no artifact bytes: same-length changes are check's.
+        self.assertEqual(engine.store.read_many.call_count, 0)
+        self.assertTrue(engine.check(requested_areas=['start_import_input'])['passed'])
+        engine.head = head
+        files[input_path] = b'exact prompX'
+        engine._inspect_before_write()
+        # The start_import_input area compares each archived role input, prompt included.
+        result = engine.check(requested_areas=['start_import_input'])
+        self.assertFalse(result['passed'])
+        self.assertIn('EX-1: input artifact bytes differ: prompt',
+                      [row['message'] for row in result['inspection']['findings']])
+        del files[input_path]
+        engine.head = head
+        with self.assertRaisesRegex(ValueError, 'current input artifact is missing: EX-1'):
             engine._inspect_before_write()
-            # Entry to run/controls reads no artifact bytes: same-length changes are check's.
-            self.assertEqual(engine.store.read_many.call_count, 0)
-            files[input_path] = b'exact prompX'
+        files[output_path] = b'\x00'
+        with self.assertRaisesRegex(ValueError, 'repaired before publication'):
             engine._inspect_before_write()
-            engine.head = head
-            result = engine.check(requested_areas=['record_storage'])
-            self.assertFalse(result['passed'])
-            self.assertIn(input_path, result['errors'][0])
-            del files[input_path]
-            engine.head = head
-            with self.assertRaisesRegex(ValueError, 'input artifact is missing'):
-                engine._inspect_before_write()
-            files[output_path] = b'\x00'
-            with self.assertRaisesRegex(ValueError, 'repaired before publication'):
-                engine._inspect_before_write()
         engine.store.read.assert_not_called()
 
 
 @category('unit')
 class ImpactReviewRetryTests(unittest.TestCase):
     def test_sealed_bytes_are_read_only_after_every_requested_review_ended(self):
-        engine = engine_module.ResearchEngine.__new__(engine_module.ResearchEngine)
-        engine.head = 'a' * 40
+        engine = bare_engine(head='a' * 40)
         request = {'integration_id': 'IN-1', 'payload_sha256': 'p' * 64}
         engine.runtime = {'status': 'ready', 'executions': {'EX-producer': {'id': 'EX-producer'}},
             'waiting_actions': {'A-1': {'action': {'id': 'A-1'}, 'kind': 'impact_review',
                 'execution_id': 'EX-producer', 'review_requests': {'IN-1': request}}}}
-        engine._hold_unreadable_impact_submission = Mock()
-        engine.store = Mock(git_dir="fixture-git")
+        engine._hold_unreadable_impact_submission = create_autospec(engine._hold_unreadable_impact_submission)
+        engine.store = create_autospec(repository.ResearchRepository, instance=True)
+        engine.store.git_dir = "fixture-git"
         with patch.object(engine_module.submission, 'read_sealed_submission',
                           side_effect=submission.SealedSubmissionError('unreadable fixture')) as read:
             # Control processing retries every waiting item; a pending review reads nothing.
@@ -168,9 +196,8 @@ class SealedArtifactTests(unittest.TestCase):
         raw = b'sealed bytes'
         digest = hashlib.sha256(raw).hexdigest()
         path = 'runtime/artifacts/BA-sealed/output.json'
-        engine = engine_module.ResearchEngine.__new__(engine_module.ResearchEngine)
-        engine.head = 'a' * 40
-        engine.store = Mock(git_dir='git-' + uuid.uuid4().hex)
+        engine = bare_engine(head='a' * 40, store=create_autospec(repository.ResearchRepository, instance=True))
+        engine.store.git_dir = 'git-' + uuid.uuid4().hex
         engine.store.read.return_value = raw
         with self.assertRaisesRegex(ValueError, 'differs from its record'):
             engine._sealed_bytes(path, 'b' * 64, len(raw))
@@ -199,7 +226,7 @@ class SealedArtifactTests(unittest.TestCase):
 @category('unit')
 class ToolDiscoveryTests(unittest.TestCase):
     def test_lean_is_rediscovered_at_most_once_per_second(self):
-        engine = engine_module.ResearchEngine.__new__(engine_module.ResearchEngine)
+        engine = bare_engine()
         engine.instance = {'config': {'scholarly_enabled': False, 'scholarly_server': None},
                            'knowledge': {}, 'sources': []}
         engine.runtime = {'tasks': {}}
@@ -225,46 +252,26 @@ class ToolDiscoveryTests(unittest.TestCase):
 
 @category('unit')
 class CandidateCopyTests(unittest.TestCase):
-    def repo(self):
-        repo = repository.ResearchRepository.__new__(repository.ResearchRepository)
-        repo._store = Mock(object_format='sha1')
-        repo.contract = default_state_contract()
-        return repo
-
     def test_candidate_numbers_events_without_a_second_whole_state_copy(self):
-        instance = {'feature_version': 5, 'title': 'fixture'}
-        runtime = {'feature_version': 5, 'events': [{'id': 'EV-1', 'kind': 'created'}]}
+        instance, runtime = current_state({'title': 'fixture'}, {'events': [{'id': 'EV-1', 'kind': 'created'}]})
         before = deepcopy((instance, runtime))
-        with patch.object(events, 'deepcopy', side_effect=AssertionError('candidate is already detached')):
-            candidate = self.repo().validate_candidate(instance, runtime)
+        with patch.object(repository, 'deepcopy', wraps=deepcopy) as copies:
+            candidate = candidate_repository().validate_candidate(instance, runtime)
+        # One copy of each root; event numbering works on that detached copy.
+        self.assertEqual([call.args[0] for call in copies.call_args_list], [instance, runtime])
         self.assertEqual((instance, runtime), before)
         self.assertEqual(candidate['runtime']['events'][0]['event_seq'], 1)
         candidate['runtime']['events'][0]['kind'] = 'changed returned candidate'
         self.assertEqual((instance, runtime), before)
 
     def test_late_event_failure_never_numbers_the_callers_original(self):
-        instance = {'feature_version': 5}
-        runtime = {'feature_version': 5, 'events': [
+        instance, runtime = current_state(runtime={'events': [
             {'id': 'EV-1', 'kind': 'created'},
-            {'id': 'EV-2', 'kind': 'queued', 'event_seq': 99}]}
+            {'id': 'EV-2', 'kind': 'queued', 'event_seq': 99}]})
         before = deepcopy((instance, runtime))
         with self.assertRaisesRegex(ValueError, 'contiguous'):
-            self.repo().validate_candidate(instance, runtime)
+            candidate_repository().validate_candidate(instance, runtime)
         self.assertEqual((instance, runtime), before)
-
-    def test_public_event_prepare_still_returns_detached_state_and_protects_failures(self):
-        instance = {'nested': {'values': [1]}}
-        runtime = {'events': [{'id': 'EV-1', 'kind': 'created'}]}
-        copied_instance, copied_runtime = events.EventPublisher.prepare(instance, runtime)
-        copied_instance['nested']['values'].append(2)
-        copied_runtime['events'][0]['kind'] = 'changed'
-        self.assertEqual(instance, {'nested': {'values': [1]}})
-        self.assertEqual(runtime, {'events': [{'id': 'EV-1', 'kind': 'created'}]})
-        runtime['events'].append({'id': 'EV-2', 'kind': 'queued', 'event_seq': 99})
-        before = deepcopy(runtime)
-        with self.assertRaisesRegex(ValueError, 'contiguous'):
-            events.EventPublisher.prepare(instance, runtime)
-        self.assertEqual(runtime, before)
 
 
 @category('unit')
@@ -286,14 +293,15 @@ class StorageValueTests(unittest.TestCase):
                 self.assertEqual(str(checked.exception), str(encoded.exception))
         self.assertNotEqual(repository.canonical_json(True), repository.canonical_json(1))
 
-    def test_record_inspection_validates_without_building_unused_json_bytes(self):
+    def test_inspection_builds_no_json_bytes_and_publication_checks_the_value_domain(self):
         instance, runtime = storage_state([])
         with patch.object(repository, 'canonical_json', side_effect=AssertionError('unused serialization')):
             self.assertEqual(inspect_state(instance, runtime, requested_areas=['record_storage'])['status'], 'healthy')
-            instance['unexpected_value'] = float('nan')
-            rejected = inspect_state(instance, runtime, requested_areas=['record_storage'])
-        self.assertEqual(rejected['status'], 'blocked')
-        self.assertTrue(any('floating-point' in row['message'] for row in rejected['findings']))
+        # The storage value domain belongs to loading and publication: each
+        # record serialized for a candidate passes the storage value check.
+        instance, runtime = current_state(runtime={'installation': {'measured': float('nan')}})
+        with self.assertRaisesRegex(ValueError, 'floating-point'):
+            candidate_repository().validate_candidate(instance, runtime)
 
 
 @category('unit')
@@ -363,52 +371,57 @@ class SubmissionShapeWorkTests(unittest.TestCase):
 
 @category('unit')
 class SnapshotMetadataTests(unittest.TestCase):
-    def store(self, *, length=40, root_type='commit', rows=None, returncode=0):
+    REF = 'refs/heads/do-math/RI-fixture'
+
+    def store(self, *, length=40, root_type='commit', rows=None, returncode=0, resolved=None):
         store = GitStateStore.__new__(GitStateStore)
-        store.ref = 'refs/heads/do-math/RI-fixture'
+        store.ref = self.REF
         store.object_format = 'sha1' if length == 40 else 'sha256'
         head, research, runtime = ('a' * length, 'b' * length, 'c' * length)
         values = rows if rows is not None else [head + ' ' + root_type, research + ' tree', runtime + ' tree']
+        if resolved is None:
+            resolved = SimpleNamespace(returncode=0, stdout=(head + '\n').encode(), stderr=b'')
+        # One batch query; rev-parse (``resolved``) runs only when the ref line is missing.
         store._git = Mock(side_effect=[
-            SimpleNamespace(returncode=0, stdout=(head + '\n').encode(), stderr=b''),
-            SimpleNamespace(returncode=returncode, stdout=('\n'.join(values) + '\n').encode(), stderr=b'')])
-        return store, head, research, runtime
+            SimpleNamespace(returncode=returncode, stdout=('\n'.join(values) + '\n').encode(), stderr=b''),
+            resolved])
+        return store, head
 
-    def test_two_calls_bind_all_metadata_to_the_resolved_oid(self):
+    def test_one_batch_reads_the_ref_and_both_subtrees(self):
         for length in (40, 64):
             with self.subTest(length=length):
-                store, head, research, runtime = self.store(length=length)
-                self.assertEqual(store.read_snapshot(), StateSnapshot(head, research, runtime))
-                self.assertEqual(store._git.call_count, 2)
+                store, head = self.store(length=length)
+                self.assertEqual(store.read_snapshot(), StateSnapshot(head))
+                self.assertEqual(store._git.call_count, 1)
                 request = store._git.call_args
                 self.assertEqual(request.args, ('cat-file', '--batch-check=%(objectname) %(objecttype)'))
-                self.assertEqual(request.kwargs['input'], f'{head}\n{head}:research\n{head}:runtime\n'.encode())
-                self.assertNotIn(store.ref.encode(), request.kwargs['input'])
+                self.assertEqual(request.kwargs['input'],
+                                 f'{self.REF}\n{self.REF}:research\n{self.REF}:runtime\n'.encode())
 
-    def test_absent_ref_does_not_request_objects_but_corrupt_ref_is_rejected(self):
-        store, *_ = self.store()
-        store._git.side_effect = [SimpleNamespace(returncode=1, stdout=b'', stderr=b'')]
-        self.assertEqual(store.read_snapshot(), StateSnapshot(None, None, None))
-        self.assertEqual(store._git.call_count, 1)
-        store._git.side_effect = [SimpleNamespace(returncode=1, stdout=b'', stderr=b'bad ref')]
+    def test_absent_ref_is_none_but_corrupt_ref_is_rejected(self):
+        missing = [self.REF + suffix + ' missing' for suffix in ('', ':research', ':runtime')]
+        store, _ = self.store(rows=missing, resolved=SimpleNamespace(returncode=1, stdout=b'', stderr=b''))
+        self.assertEqual(store.read_snapshot(), StateSnapshot(None))
+        self.assertEqual([call.args[0] for call in store._git.call_args_list], ['cat-file', 'rev-parse'])
+        store, _ = self.store(rows=missing, resolved=SimpleNamespace(returncode=1, stdout=b'', stderr=b'bad ref'))
         with self.assertRaisesRegex(GitStateStoreError, 'cannot resolve'):
             store.read_snapshot()
 
     def test_wrong_or_incomplete_metadata_never_returns_a_snapshot(self):
-        head, tree = 'a' * 40, 'b' * 40
-        cases = [([head + ' blob', head + ':research missing', head + ':runtime missing'], 'commit'),
-                 ([head + ' missing'], 'unreadable'),
-                 ([tree + ' commit', tree + ' tree', tree + ' tree'], 'invalid state commit'),
-                 ([head + ' commit', head + ':research missing', tree + ' tree'], 'research'),
+        head, tree, ref = 'a' * 40, 'b' * 40, self.REF
+        cases = [([head + ' blob', ref + ':research missing', ref + ':runtime missing'], 'commit'),
+                 ([ref + ' missing'], 'unreadable'),
+                 ([head + ' commit extra', tree + ' tree', tree + ' tree'], 'invalid state commit'),
+                 ([head + ' commit', ref + ':research missing', tree + ' tree'], 'research'),
                  ([head + ' commit', tree + ' blob', tree + ' tree'], 'tree'),
                  ([head + ' commit', tree + ' tree'], 'incomplete'),
                  ([head + ' commit', tree + ' tree', tree + ' tree', tree + ' tree'], 'incomplete')]
         for rows, message in cases:
             with self.subTest(rows=rows):
-                store, *_ = self.store(rows=rows)
+                store, _ = self.store(rows=rows)
                 with self.assertRaisesRegex(GitStateStoreError, message):
                     store.read_snapshot()
-        store, *_ = self.store(returncode=1)
+        store, _ = self.store(returncode=1)
         with self.assertRaises(GitStateStoreError):
             store.read_snapshot()
 

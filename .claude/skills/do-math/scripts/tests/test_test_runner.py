@@ -190,6 +190,25 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(own['test_base'], shared['test_base'], 'an importer edit does not reach the imported module')
         self.assertNotEqual(own['test_user'], shared['test_user'])
 
+    def test_a_fixture_module_is_keyed_with_the_test_modules_it_imports(self):
+        with tempfile.TemporaryDirectory() as directory:
+            tests = Path(directory)
+            (tests / 'test_base.py').write_text('HELPER = 1\n', encoding='utf-8')
+            (tests / 'shared_fixture.py').write_text('from test_base import HELPER\n', encoding='utf-8')
+            (tests / 'test_user.py').write_text('import shared_fixture\n', encoding='utf-8')
+            (tests / 'test_other.py').write_text('X = 1\n', encoding='utf-8')
+            with patch.object(run_tests, 'TESTS', tests):
+                before = run_tests._module_keys()
+                (tests / 'test_base.py').write_text('HELPER = 2\n', encoding='utf-8')
+                through = run_tests._module_keys()
+                (tests / 'shared_fixture.py').write_text('from test_base import HELPER\nY = 1\n', encoding='utf-8')
+                fixture = run_tests._module_keys()
+                self.assertFalse(run_tests._is_test_source(tests.parent / 'shared_fixture.py'))
+                self.assertTrue(run_tests._is_test_source(tests / 'shared_fixture.py'))
+        self.assertNotEqual(through['test_user'], before['test_user'], 'a test module read through a fixture is tracked')
+        self.assertNotEqual(fixture['test_user'], through['test_user'], 'a fixture edit reaches its importers')
+        self.assertEqual(fixture['test_other'], before['test_other'], 'a fixture edit reaches only its importers')
+
 
 if __name__ == '__main__':
     unittest.main()

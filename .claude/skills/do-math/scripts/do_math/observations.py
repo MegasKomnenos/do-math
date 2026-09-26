@@ -13,47 +13,50 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 from .context_store import _excluded, _safe_path
-from .repository import validate_storage_value, _unique_pairs, _reject_constant
+from .control_transport import (CONTROL_SERVER, RECEIPT_TOOL, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE,
+                                SELF_CHECK_RESPONSE_SCHEMA, SELF_CHECK_TOOL, SUBMIT_TOOL, self_check_request_id)
+from .file_io import is_sha256, parse_utc, reject_constant, unique_pairs
+from .repository import validate_storage_value
 from .file_io import read_bytes_shared, write_bytes_atomic, file_fingerprint, fingerprint_settled
 
 CHECKPOINT_MAX_BYTES = 4 * 1024 * 1024
 RULES_MAX_BYTES = 65536
-OBSERVATION_OPERATORS = frozenset({
-    "event_recorded", "counter_gte", "iteration_gte", "checkpoint_count_gte",
-    "active_duration_gte", "wall_time_reached", "tool_call_completed", "safe_boundary_recorded",
-})
-_OPERATOR_SUBJECTS = {
-    "event_recorded": "event", "counter_gte": "counter", "iteration_gte": "iteration",
-    "checkpoint_count_gte": "checkpoint", "active_duration_gte": "execution",
-    "wall_time_reached": "clock", "tool_call_completed": "tool_call",
-    "safe_boundary_recorded": "safe_boundary",
+# The one operator table: each operator's subject kind, unit, and the one
+# source that actually produces its value during an execution.
+OPERATORS = {
+    "counter_gte": {"subject_kind": "counter", "unit": "count", "source": "checkpoint"},
+    "iteration_gte": {"subject_kind": "iteration", "unit": "count", "source": "checkpoint"},
+    "checkpoint_count_gte": {"subject_kind": "checkpoint", "unit": "count", "source": "checkpoint"},
+    "tool_call_completed": {"subject_kind": "tool_call", "unit": "count", "source": "adapter_calls"},
+    "safe_boundary_recorded": {"subject_kind": "safe_boundary", "unit": "count", "source": "control_receipts"},
+    "wall_time_reached": {"subject_kind": "clock", "unit": "UTC", "source": "clock"},
 }
+_ONE_TIME_OPERATORS = frozenset({"tool_call_completed", "safe_boundary_recorded"})
 _RULE_FIELDS = {"id", "operator", "subject", "basis", "threshold", "repeat_interval", "required_evidence"}
-OBSERVATION_SOURCES = {
-    "checkpoint": {"counter_gte", "iteration_gte", "checkpoint_count_gte"},
-    "execution_events": {"event_recorded", "counter_gte", "iteration_gte"},
-    "adapter_calls": {"tool_call_completed"},
-    "control_receipts": {"safe_boundary_recorded"},
-    "adapter_active_intervals": {"active_duration_gte"},
-    "clock": {"wall_time_reached"},
-}
+# Fields a worker may read from its feedback file. Every producer builds its
+# feedback through ``worker_feedback`` so that a stray field fails before ENGINE saves.
+WORKER_FEEDBACK_FIELDS = frozenset({
+    "kind", "reason", "errors", "obligation_id", "execution_id", "rule_revision", "due",
+    "deadline_offset_ms", "rejected_rule_reasons", "active_revision", "active_rules_sha256",
+    "previous_rules_sha256", "previous_rules_preserved", "next_owner"})
+
+
+def worker_feedback(feedback: dict) -> dict:
+    if not isinstance(feedback, dict) or set(feedback) - WORKER_FEEDBACK_FIELDS:
+        raise ValueError("worker feedback contains private or unknown fields")
+    return feedback
 
 
 def observation_rule_contract() -> list[dict]:
     """Return the sealed, actually-produced signal kinds available to a profile.
 
-    A profile names signal kinds only. Counter and event names are local to a
+    A profile names signal kinds only. Counter names are local to a
     particular execution and are checked against that execution's snapshot,
     rather than being guessed while a reusable profile is authored.
     """
-    return [
-        {"source": source, "operator": operator,
-         "subject_kind": _OPERATOR_SUBJECTS[operator],
-         "unit": ("UTC" if operator == "wall_time_reached" else
-                  "milliseconds" if operator == "active_duration_gte" else "count")}
-        for source, operators in OBSERVATION_SOURCES.items()
-        for operator in sorted(operators)
-    ]
+    return [{"source": spec["source"], "operator": operator,
+             "subject_kind": spec["subject_kind"], "unit": spec["unit"]}
+            for operator, spec in sorted(OPERATORS.items())]
 
 CHECKPOINT_SCHEMA = {
     "type": "object", "additionalProperties": False,
@@ -71,26 +74,6 @@ CHECKPOINT_SCHEMA = {
 }
 Draft202012Validator.check_schema(CHECKPOINT_SCHEMA)
 _CHECKPOINT_VALIDATOR = Draft202012Validator(CHECKPOINT_SCHEMA)
-
-_TEXT = {"type": "string", "minLength": 1}
-_REFS = {"type": "array", "items": _TEXT, "uniqueItems": True}
-SELF_CHECK_RESPONSE_SCHEMA = {
-    "type": "object", "additionalProperties": False,
-    "required": ["obligation_id", "execution_id", "rule_revision", "rule_results", "progress", "attempts", "next_method"],
-    "properties": {
-        "obligation_id": _TEXT, "execution_id": _TEXT,
-        "rule_revision": {"type": "integer", "minimum": 0},
-        "progress": {"enum": ["progress", "no_progress", "contract_mismatch"]},
-        "attempts": {"type": "array", "items": _TEXT, "minItems": 1}, "next_method": _TEXT,
-        "rule_results": {"type": "array", "minItems": 1, "items": {
-            "type": "object", "additionalProperties": False,
-            "required": ["rule_id", "status", "evidence_refs", "missing_evidence_refs", "reason"],
-            "properties": {"rule_id": _TEXT, "status": {"enum": ["normal", "defect", "indeterminate"]},
-                "evidence_refs": _REFS, "missing_evidence_refs": _REFS, "reason": _TEXT}}},
-        "rule_proposal": {},
-    },
-}
-
 
 def validate_rule_proposal(proposal: dict, *, current_revision: int,
                            allowed_subjects: set[str] | None = None) -> list[dict]:
@@ -128,9 +111,8 @@ def persistent_record(record: dict, *, artifact_ref: str | None = None) -> dict:
 
 
 def _execution_bound_subject(rule):
-    return (rule['subject']['kind'] in {'execution', 'checkpoint'}
-            or (rule['operator'] == 'iteration_gte'
-                and rule['basis']['source'] == 'checkpoint'))
+    # A checkpoint count and a checkpoint iteration are keyed by the execution itself.
+    return rule['subject']['kind'] == 'checkpoint' or rule['operator'] == 'iteration_gte'
 
 
 def validate_task_rules(rules):
@@ -237,15 +219,10 @@ def tracker_config(profile: dict, *, initial_self_check_rules: list[dict] | None
 
 
 def _utc(value: str, field: str) -> datetime:
-    if not isinstance(value, str):
-        raise ValueError(field + " must be an ISO UTC timestamp")
     try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return parse_utc(value)
     except ValueError as error:
-        raise ValueError(field + " must be an ISO UTC timestamp") from error
-    if parsed.tzinfo is None:
-        raise ValueError(field + " must include a timezone")
-    return parsed.astimezone(timezone.utc)
+        raise ValueError(field + " must be an ISO timestamp with a timezone") from error
 
 
 def duration_ms(seconds: Any, field: str, *, required: bool = False) -> int | None:
@@ -284,26 +261,26 @@ def validate_rules(rules: list[dict], *, allowed_subjects: set[str] | None = Non
             raise ValueError("observation rule IDs must be distinct and nonempty")
         seen.add(rule["id"])
         operator = rule.get("operator")
-        if operator not in OBSERVATION_OPERATORS:
+        if not isinstance(operator, str) or operator not in OPERATORS:
             raise ValueError("unsupported observation operator")
+        spec = OPERATORS[operator]
         subject, basis = rule.get("subject"), rule.get("basis")
         if not isinstance(subject, dict) or set(subject) != {"kind", "id"}:
             raise ValueError("rule subject must contain exactly kind and id")
-        if subject.get("kind") != _OPERATOR_SUBJECTS[operator] or not isinstance(subject.get("id"), str) or not subject["id"]:
+        if subject.get("kind") != spec["subject_kind"] or not isinstance(subject.get("id"), str) or not subject["id"]:
             raise ValueError("rule subject is incompatible with its operator")
         if allowed_subjects is not None and subject["id"] not in allowed_subjects:
             raise ValueError("rule subject is not available to this execution")
-        if (not isinstance(basis, dict) or set(basis) != {"source", "unit"} or
-                any(not isinstance(basis.get(key), str) or not basis[key] for key in ("source", "unit"))):
-            raise ValueError("rule basis must contain nonempty source and unit")
+        if basis != {"source": spec["source"], "unit": spec["unit"]}:
+            raise ValueError("rule basis of " + operator + " must be source " + spec["source"] + " in " + spec["unit"])
         evidence = rule.get("required_evidence")
         if (not isinstance(evidence, list) or not evidence or
                 any(not isinstance(ref, str) or not ref for ref in evidence) or len(evidence) != len(set(evidence))):
             raise ValueError("rule required_evidence must be a nonempty unique string list")
         if operator == "wall_time_reached":
             _utc(rule.get("threshold"), "wall_time_reached threshold")
-            if basis["unit"] != "UTC" or "repeat_interval" in rule:
-                raise ValueError("wall_time_reached requires UTC and cannot repeat")
+            if "repeat_interval" in rule:
+                raise ValueError("wall_time_reached cannot repeat")
             continue
         threshold = rule.get("threshold")
         if isinstance(threshold, bool) or not isinstance(threshold, int) or threshold < 1:
@@ -311,12 +288,8 @@ def validate_rules(rules: list[dict], *, allowed_subjects: set[str] | None = Non
         interval = rule.get("repeat_interval")
         if "repeat_interval" in rule and (isinstance(interval, bool) or not isinstance(interval, int) or interval < 1):
             raise ValueError("repeat_interval must be a positive integer")
-        if operator in {"event_recorded", "tool_call_completed", "safe_boundary_recorded"} and (threshold != 1 or interval is not None):
+        if operator in _ONE_TIME_OPERATORS and (threshold != 1 or interval is not None):
             raise ValueError(operator + " is a one-time recorded event")
-        if operator == "active_duration_gte" and basis["unit"] != "milliseconds":
-            raise ValueError("active_duration_gte uses milliseconds")
-        if operator != "active_duration_gte" and basis["unit"] != "count":
-            raise ValueError(operator + " uses count")
     return deepcopy(rules)
 
 
@@ -335,29 +308,15 @@ def validate_observation_rule_contract(bindings: list[dict]) -> list[dict]:
     """
     if not isinstance(bindings, list):
         raise ValueError("profile observation rule contract must be a list")
-    checked, identities = [], set()
+    contract, checked = observation_rule_contract(), []
     for binding in bindings:
-        if not isinstance(binding, dict):
+        if not isinstance(binding, dict) or set(binding) != {"source", "operator", "subject_kind", "unit"}:
             raise ValueError("invalid profile observation binding")
-        if set(binding) == {"source", "operator", "subject_kind", "unit"}:
-            source, operator = binding["source"], binding["operator"]
-            subject_kind, unit = binding["subject_kind"], binding["unit"]
-            if (not isinstance(source, str) or not isinstance(operator, str) or
-                    not isinstance(subject_kind, str) or not isinstance(unit, str) or
-                    operator not in OBSERVATION_SOURCES.get(source, set()) or
-                    _OPERATOR_SUBJECTS.get(operator) != subject_kind or
-                    unit != ("UTC" if operator == "wall_time_reached" else
-                             "milliseconds" if operator == "active_duration_gte" else "count")):
-                raise ValueError("profile observation contract has no implemented producer for its signal kind")
-            normalized = {"source": source, "operator": operator,
-                          "subject_kind": subject_kind, "unit": unit}
-        else:
-            raise ValueError("invalid profile observation binding")
-        identity = _raw_json(normalized)
-        if identity in identities:
+        if binding not in contract:
+            raise ValueError("profile observation contract has no implemented producer for its signal kind")
+        if binding in checked:
             raise ValueError("profile observation contract repeats a signal kind")
-        identities.add(identity)
-        checked.append(normalized)
+        checked.append(deepcopy(binding))
     return checked
 
 
@@ -387,7 +346,6 @@ def evaluate_rules(rules: list[dict], snapshot: dict, *, consumed_boundaries: di
     """Evaluate all rules against one accumulated observation snapshot."""
     validate_rules(rules, allow_empty=True)
     consumed = consumed_boundaries or {}
-    events = set(snapshot.get("event_ids", []))
     calls = set(snapshot.get("completed_call_ids", []))
     boundaries = set(snapshot.get("safe_boundary_ids", []))
     counters = snapshot.get("counters", {})
@@ -396,19 +354,11 @@ def evaluate_rules(rules: list[dict], snapshot: dict, *, consumed_boundaries: di
     due = []
     for rule in rules:
         operator, subject = rule["operator"], rule["subject"]["id"]
-        if "by_source" in snapshot:
-            source = snapshot["by_source"].get(rule["basis"]["source"], {})
-            events, calls, boundaries = (set(source.get(key, [])) for key in ("event_ids", "completed_call_ids", "safe_boundary_ids"))
-            counters, iterations, checkpoints = (source.get(key, {}) for key in ("counters", "iterations", "checkpoint_counts"))
-        else:
-            source = snapshot
-        if operator == "event_recorded": value = 1 if subject in events else None
-        elif operator == "counter_gte": value = counters.get(subject)
+        if operator == "counter_gte": value = counters.get(subject)
         elif operator == "iteration_gte": value = iterations.get(subject)
         elif operator == "checkpoint_count_gte": value = checkpoints.get(subject)
-        elif operator == "active_duration_gte": value = source.get("active_duration_ms")
         elif operator == "wall_time_reached":
-            observed = source.get("observed_at")
+            observed = snapshot.get("observed_at")
             value = 1 if observed is not None and _utc(observed, "observed_at") >= _utc(rule["threshold"], "threshold") else None
         elif operator == "tool_call_completed": value = 1 if subject in calls else None
         else: value = 1 if subject in boundaries else None
@@ -445,8 +395,8 @@ def read_checkpoint(workspace: Path) -> dict:
         if file_fingerprint(path) != before:
             return {"status": "being_written"}
         digest = hashlib.sha256(raw).hexdigest()
-        value = json.loads(raw.decode("utf-8-sig"), object_pairs_hook=_unique_pairs,
-                           parse_constant=_reject_constant)
+        value = json.loads(raw.decode("utf-8-sig"), object_pairs_hook=unique_pairs,
+                           parse_constant=reject_constant)
         validate_storage_value(value)
         _CHECKPOINT_VALIDATOR.validate(value)
         for reference in value["evidence_paths"]:
@@ -521,15 +471,10 @@ class ObservationTracker:
         self.checkpoint_reminded = False
         self.pending_tools: dict[str, dict] = {}
         self.completed_call_ids: set[str] = set()
-        self.event_ids: set[str] = set()
         self.safe_boundary_ids: set[str] = set()
+        # Counters and iterations are the worker's checkpoint values; no provider event carries them.
         self.counters: dict[str, int] = {}
         self.iterations: dict[str, int] = {}
-        self.checkpoint_counters: dict[str, int] = {}
-        self.checkpoint_iterations: dict[str, int] = {}
-        self.active_duration_ms = 0
-        self.active_observed = False
-        self.active_started = None
         self.tool_review_window_ms = duration_ms(config.get("tool_review_window_seconds"), "tool_review_window_seconds")
         self.periodic_interval_ms = duration_ms(config.get("observation_interval_seconds"), "observation_interval_seconds")
         self.response_window_ms = duration_ms(config.get("self_check_response_window_seconds"), "self_check_response_window_seconds")
@@ -548,7 +493,6 @@ class ObservationTracker:
         self.control_calls: dict[str, dict] = {}
         self.control_requests: dict[str, dict] = {}
         self.self_check_polls: dict[str, str] = {}
-        self.control_server_name = config.get("control_server_name", "execution_control")
         self.explicit_reviews: dict[str, dict] = {}
         self.pending_records: list[dict] = []
         self.last_clock = self.started
@@ -581,30 +525,11 @@ class ObservationTracker:
                 raise ValueError(name + " cannot decrease")
         destination.update(values)
 
-    def _active_value(self, when: float) -> int:
-        return self.active_duration_ms + (0 if self.active_started is None else _offset_ms(self.active_started, when))
-
     def _ingest_event(self, event: dict, when: float) -> None:
         self._observe_control_calls(event)
         event_type = event.get("type")
         if event.get("execution_id", self.execution_id) != self.execution_id:
             raise ValueError("observation belongs to a different execution")
-        counters, iterations = dict(self.counters), dict(self.iterations)
-        self._merge_monotonic(counters, event.get("counters"), "counters")
-        self._merge_monotonic(iterations, event.get("iterations"), "iterations")
-        supplied_active = event.get("active_duration_ms")
-        if supplied_active is not None:
-            if isinstance(supplied_active, bool) or not isinstance(supplied_active, int) or supplied_active < self._active_value(when):
-                raise ValueError("active_duration_ms must be a nondecreasing integer")
-            self.active_duration_ms, self.active_started = supplied_active, None
-            self.active_observed = True
-        self.counters, self.iterations = counters, iterations
-        if isinstance(event.get("id"), str): self.event_ids.add(event["id"])
-        if event_type == "research_activity_started" and self.active_started is None:
-            self.active_started = when
-            self.active_observed = True
-        elif event_type == "research_activity_finished" and self.active_started is not None:
-            self.active_duration_ms, self.active_started = self._active_value(when), None
         item = event.get("item") if isinstance(event.get("item"), dict) else {}
         if event_type == "item.started" and item.get("type") in {"command_execution", "mcp_tool_call"}:
             self._start_call(str(item.get("id", "unknown")), item.get("type"), when)
@@ -638,17 +563,27 @@ class ObservationTracker:
                 if after_delivery and obligation["status"] == "open" and obligation["deadline_offset_ms"] is not None:
                     self._miss(obligation, "research_action_before_response")
 
+    def issue_self_check(self, obligation_id) -> dict:
+        """Start the response deadline and return the one request object to deliver.
+
+        Its hash is what a successful poll must return.
+        """
+        obligation = self.obligations[obligation_id]
+        obligation['delivered_at'] = utc_now()
+        if obligation['response_availability'] == 'available' and self.response_window_ms is not None:
+            obligation['deadline_offset_ms'] = _offset_ms(self.started, self.clock()) + self.response_window_ms
+        request = self_check_request(obligation)
+        obligation['delivered_request_sha256'] = hashlib.sha256(_raw_json(request).encode()).hexdigest()
+        return request
+
     def record_delivery(self, obligation_id, *, source_offset):
-        """Existing stdout bytes predate delivery and cannot violate this request."""
+        """Stdout bytes before the delivered request's offset cannot violate it."""
         if type(source_offset) is not int or source_offset < 0:
             raise ValueError('self-check delivery requires a nonnegative stream offset')
         obligation = self.obligations[obligation_id]
-        obligation.update(delivered_source_offset=source_offset, delivered_at=utc_now())
-        if obligation['response_availability'] == 'available' and self.response_window_ms is not None:
-            obligation['deadline_offset_ms'] = _offset_ms(self.started, self.clock()) + self.response_window_ms
-        issued = {'self_check_id': obligation_id, 'execution_id': self.execution_id,
-                  'payload': self_check_feedback(obligation)}
-        obligation['delivered_request_sha256'] = hashlib.sha256(_raw_json(issued).encode()).hexdigest()
+        if not obligation.get('delivered_request_sha256'):
+            raise ValueError('self-check delivery requires an issued request')
+        obligation['delivered_source_offset'] = source_offset
 
     def _complete_call(self, call_id: str) -> None:
         self.pending_tools.pop(call_id, None)
@@ -661,19 +596,19 @@ class ObservationTracker:
         calls = []
         item = event.get("item", {})
         if (event.get("type") in {"item.started", "item.completed"} and isinstance(item, dict)
-                and item.get("type") == "mcp_tool_call" and item.get("server") == self.control_server_name):
+                and item.get("type") == "mcp_tool_call" and item.get("server") == CONTROL_SERVER):
             calls.append((item.get("id"), item.get("tool"), item.get("arguments")))
         if event.get("type") == "assistant":
             message = event.get("message", {})
             for block in message.get("content", []) if isinstance(message, dict) else []:
                 if isinstance(block, dict) and block.get("type") == "tool_use":
-                    prefix = "mcp__" + self.control_server_name + "__"
+                    prefix = "mcp__" + CONTROL_SERVER + "__"
                     name = block.get("name", "")
                     if isinstance(name, str) and name.startswith(prefix):
                         calls.append((block.get("id"), name[len(prefix):], block.get("input")))
         for call_id, tool, arguments in calls:
             if not isinstance(call_id, str) or not isinstance(arguments, dict): continue
-            if tool == "control_submit" and arguments.get("kind") == "safety_boundary":
+            if tool == SUBMIT_TOOL and arguments.get("kind") == SAFETY_BOUNDARY:
                 payload = arguments.get("payload")
                 request_id = arguments.get("request_id")
                 if (isinstance(request_id, str) and request_id and isinstance(payload, dict)
@@ -685,7 +620,7 @@ class ObservationTracker:
                     self.boundary_call_ids.add(call_id)
                     self.boundary_request_ids.add(request_id)
                 continue
-            if tool == "control_receipt":
+            if tool == RECEIPT_TOOL:
                 request_id = arguments.get("request_id")
                 if isinstance(request_id, str):
                     if request_id in self.control_requests:
@@ -693,18 +628,18 @@ class ObservationTracker:
                     elif request_id in self.boundary_request_ids:
                         self.boundary_call_ids.add(call_id)
                 continue
-            if tool == "control_self_check":
+            if tool == SELF_CHECK_TOOL:
                 oid = arguments.get("self_check_id")
                 payload = {"self_check_id": oid, "response": arguments.get("response")}
-                request_id = "self-check-" + oid if isinstance(oid, str) else None
-            elif tool == "control_submit" and arguments.get("kind") == "self_check_response":
+                request_id = self_check_request_id(oid) if isinstance(oid, str) else None
+            elif tool == SUBMIT_TOOL and arguments.get("kind") == SELF_CHECK_RESPONSE:
                 payload = arguments.get("payload")
                 oid = payload.get("self_check_id") if isinstance(payload, dict) else None
                 request_id = arguments.get("request_id")
             else:
                 continue
             if not isinstance(oid, str) or oid not in self.obligations or not isinstance(request_id, str): continue
-            if payload.get("response") is None and tool == "control_self_check":
+            if payload.get("response") is None and tool == SELF_CHECK_TOOL:
                 # This installed tool reads the already-issued self-check only.
                 self.self_check_call_ids.add(call_id)
                 if self.self_check_polls.get(call_id, oid) != oid:
@@ -759,7 +694,7 @@ class ObservationTracker:
         Payload equality links either arrival order without trusting a worker's
         declaration that an arbitrary research call is a self-check call.
         """
-        if (request.get("kind") != "self_check_response" or request.get("execution_id") != self.execution_id
+        if (request.get("kind") != SELF_CHECK_RESPONSE or request.get("execution_id") != self.execution_id
                 or not isinstance(request.get("request_id"), str) or not isinstance(receipt_id, str) or not receipt_id):
             raise ValueError("control request is not this execution's self-check response")
         payload = request.get("payload")
@@ -779,7 +714,7 @@ class ObservationTracker:
 
     def register_self_check_checkpoint(self, sha256: str) -> None:
         """Register the response's actual artifact before the next file poll."""
-        if not isinstance(sha256, str) or len(sha256) != 64 or any(c not in "0123456789abcdef" for c in sha256):
+        if not is_sha256(sha256):
             raise ValueError("self-check checkpoint requires its actual SHA-256")
         if sha256 in self.seen_checkpoints and sha256 not in self.self_check_checkpoints:
             raise ValueError("checkpoint already counted; response lineage must precede file polling")
@@ -810,9 +745,6 @@ class ObservationTracker:
             raise ValueError("unsupported live execution status")
         if self.execution_status == "ended" and status != "ended":
             raise ValueError("ended execution cannot restart its observation clock")
-        when = self.clock()
-        if status != "running" and self.active_started is not None:
-            self.active_duration_ms, self.active_started = self._active_value(when), None
         self.execution_status = status
 
     def _miss(self, obligation: dict, reason: str) -> None:
@@ -864,9 +796,9 @@ class ObservationTracker:
             return [{"kind": "observation_rules_rejected", "execution_id": self.execution_id,
                      "proposal_sha256": self.rule_proposal_digest, "active_revision": self.rule_revision,
                      "active_rules_sha256": self.rules_digest, "reason": reason,
-                     "worker_feedback": {"kind": "observation_rules_rejected", "reason": reason,
+                     "worker_feedback": worker_feedback({"kind": "observation_rules_rejected", "reason": reason,
                          "active_revision": self.rule_revision, "active_rules_sha256": self.rules_digest,
-                         "previous_rules_preserved": True, "next_owner": "worker"},
+                         "previous_rules_preserved": True, "next_owner": "worker"}),
                      "next_owner": "worker", "observed_at": utc_now()}]
 
     def _replace_rules(self, proposal: dict) -> dict:
@@ -885,24 +817,15 @@ class ObservationTracker:
             result = {"kind": "observation_rules_rejected", "reason": str(error), "previous_rules_preserved": True}
         result.update(execution_id=self.execution_id, active_revision=self.rule_revision,
                       active_rules_sha256=self.rules_digest, observed_at=utc_now())
-        result["worker_feedback"] = {key: value for key, value in result.items() if key not in {"rules", "observed_at"}}
+        result["worker_feedback"] = {key: value for key, value in result.items() if key in WORKER_FEEDBACK_FIELDS}
         return result
 
-    def _snapshot(self, when: float) -> dict:
-        snapshot = {"event_ids": sorted(self.event_ids), "completed_call_ids": sorted(self.completed_call_ids),
+    def _snapshot(self) -> dict:
+        # Each operator has one source (OPERATORS), so one flat snapshot is unambiguous.
+        return {"completed_call_ids": sorted(self.completed_call_ids),
                 "safe_boundary_ids": sorted(self.safe_boundary_ids), "counters": dict(self.counters),
                 "iterations": dict(self.iterations), "checkpoint_counts": {self.execution_id: self.checkpoint_count},
-                "active_duration_ms": self._active_value(when) if self.active_observed else None, "observed_at": utc_now()}
-        if self.rule_bindings is not None:
-            snapshot["by_source"] = {
-                "checkpoint": {"counters": dict(self.checkpoint_counters), "iterations": dict(self.checkpoint_iterations),
-                               "checkpoint_counts": snapshot["checkpoint_counts"]},
-                "execution_events": {key: snapshot[key] for key in ("event_ids", "counters", "iterations")},
-                "adapter_calls": {"completed_call_ids": snapshot["completed_call_ids"]},
-                "control_receipts": {"safe_boundary_ids": snapshot["safe_boundary_ids"]},
-                "adapter_active_intervals": {"active_duration_ms": snapshot["active_duration_ms"]},
-                "clock": {"observed_at": snapshot["observed_at"]}}
-        return snapshot
+                "observed_at": utc_now()}
 
     def _self_check_obligation(self, due: list[dict], when: float) -> dict:
         fingerprint = json.dumps({"execution_id": self.execution_id, "revision": self.rule_revision, "due": due}, ensure_ascii=False, sort_keys=True)
@@ -912,7 +835,7 @@ class ObservationTracker:
         available = not any(not details["safe_boundary"] for details in self.pending_tools.values())
         obligation = {"kind": "self_check_due", "id": identifier, "execution_id": self.execution_id,
                       "rule_revision": self.rule_revision, "due": due, "opened_offset_ms": opened,
-                      "rules_sha256": self.rules_digest, "snapshot": self._snapshot(when),
+                      "rules_sha256": self.rules_digest, "snapshot": self._snapshot(),
                       "consumed_boundaries": dict(self.consumed_rules),
                       "response_availability": "available" if available else "awaiting_safe_boundary",
                       "deadline_offset_ms": None if self.response_window_ms is None or not available else opened + self.response_window_ms,
@@ -952,30 +875,20 @@ class ObservationTracker:
                 if not any(row["payload_sha256"] == fingerprint for row in bound):
                     errors.append("control_response_mismatch")
         if not errors:
-            results = response.get("rule_results")
+            # The schema has already fixed each row's fields, status and reference lists.
+            results = response["rule_results"]
             expected = {row["rule_id"]: row for row in obligation["due"]}
-            if not isinstance(results, list): errors.append("rule_results_missing")
-            else:
-                received = [row.get("rule_id") for row in results if isinstance(row, dict)]
-                if len(received) != len(set(received)) or set(received) != set(expected): errors.append("rule_coverage_mismatch")
-                for row in results:
-                    if not isinstance(row, dict) or set(row) != {"rule_id", "status", "evidence_refs", "missing_evidence_refs", "reason"}:
-                        errors.append("invalid_rule_result"); continue
-                    if row["status"] not in {"normal", "defect", "indeterminate"}:
-                        errors.append("invalid_rule_status"); continue
-                    required = set(expected.get(row["rule_id"], {}).get("required_evidence", []))
-                    evidence, missing = row.get("evidence_refs"), row.get("missing_evidence_refs")
-                    if (not isinstance(evidence, list) or any(not isinstance(ref, str) for ref in evidence) or
-                            not isinstance(missing, list) or any(not isinstance(ref, str) for ref in missing) or
-                            not isinstance(row.get("reason"), str) or not row["reason"]):
-                        errors.append("invalid_rule_evidence"); continue
-                    supplied, declared_missing = set(evidence), set(missing)
-                    actual_missing = required - supplied
-                    if row["status"] == "indeterminate":
-                        if declared_missing != actual_missing: errors.append("indeterminate_evidence_mismatch")
-                    elif actual_missing or declared_missing: errors.append("required_evidence_missing")
-                    if available_evidence_refs is None: errors.append("evidence_currentness_unverified")
-                    elif not supplied.issubset(available_evidence_refs): errors.append("evidence_not_current")
+            received = [row["rule_id"] for row in results]
+            if len(received) != len(set(received)) or set(received) != set(expected): errors.append("rule_coverage_mismatch")
+            for row in results:
+                required = set(expected.get(row["rule_id"], {}).get("required_evidence", []))
+                supplied, declared_missing = set(row["evidence_refs"]), set(row["missing_evidence_refs"])
+                actual_missing = required - supplied
+                if row["status"] == "indeterminate":
+                    if declared_missing != actual_missing: errors.append("indeterminate_evidence_mismatch")
+                elif actual_missing or declared_missing: errors.append("required_evidence_missing")
+                if available_evidence_refs is None: errors.append("evidence_currentness_unverified")
+                elif not supplied.issubset(available_evidence_refs): errors.append("evidence_not_current")
         record = {"kind": "self_check_rejected" if errors else "self_check_received",
                   "id": f"SR-{self.execution_id}-{len(self.responses) + 1}", "receipt_ref": receipt_id,
                   "execution_id": self.execution_id,
@@ -988,8 +901,8 @@ class ObservationTracker:
             record.update(errors=sorted(set(errors)), followup={"kind": "operational_review_due",
                 "trigger": "self_check_response_defect", "next_owner": "operational_review",
                 "basis_refs": [record["id"]] + ([obligation["id"]] if obligation else [])})
-            record["worker_feedback"] = {"kind": "self_check_rejected", "errors": sorted(set(errors)),
-                                         "obligation_id": obligation_id if isinstance(obligation_id, str) else None, "next_owner": "worker"}
+            record["worker_feedback"] = worker_feedback({"kind": "self_check_rejected", "errors": sorted(set(errors)),
+                "obligation_id": obligation_id if isinstance(obligation_id, str) else None, "next_owner": "worker"})
         else:
             obligation["status"] = "answered"
             obligation["response_ref"] = record["id"]
@@ -1047,17 +960,15 @@ class ObservationTracker:
             if not self_check_only: self.checkpoint_count += 1
             progress = checkpoint["value"]
             try:
-                counters = self.checkpoint_counters if self.rule_bindings is not None else self.counters
-                iterations = self.checkpoint_iterations if self.rule_bindings is not None else self.iterations
-                if not self_check_only: self._merge_monotonic(counters, progress.get("counters"), "checkpoint counters")
+                if not self_check_only: self._merge_monotonic(self.counters, progress.get("counters"), "checkpoint counters")
                 if not self_check_only and "iteration" in progress:
-                    self._merge_monotonic(iterations, {self.execution_id: progress["iteration"]}, "checkpoint iterations")
+                    self._merge_monotonic(self.iterations, {self.execution_id: progress["iteration"]}, "checkpoint iterations")
             except ValueError as error:
                 emitted.append({"kind": "checkpoint_observation_rejected", "execution_id": self.execution_id,
                                 "reason": str(error), "observed_at": utc_now()})
             emitted.append({"kind": "checkpoint", "execution_id": self.execution_id, **checkpoint})
         if self.research_self_checks:
-            snapshot = self._snapshot(when)
+            snapshot = self._snapshot()
             unavailable = []
             # A source capability is not a measurement already produced at
             # execution start. Use the admitted first observation interval.
@@ -1065,10 +976,8 @@ class ObservationTracker:
                 _offset_ms(self.started, when) >= self.max_self_check_interval_ms)
             for rule in self.rules:
                 operator, subject = rule["operator"], rule["subject"]["id"]
-                source = snapshot.get("by_source", {}).get(rule["basis"]["source"], snapshot)
-                missing = ((operator == "active_duration_gte" and source.get("active_duration_ms") is None) or
-                           (operator == "counter_gte" and subject not in source.get("counters", {})) or
-                           (operator == "iteration_gte" and subject not in source.get("iterations", {})))
+                missing = ((operator == "counter_gte" and subject not in snapshot["counters"]) or
+                           (operator == "iteration_gte" and subject not in snapshot["iterations"]))
                 if missing and measurement_due and rule["id"] not in self.reported_unavailable:
                     unavailable.append(rule["id"])
             if unavailable:
@@ -1163,11 +1072,17 @@ def self_check_feedback(obligation: dict, rejected_rule_reasons: list[dict] | No
     due = obligation.get("due")
     if not isinstance(obligation.get("id"), str) or not isinstance(obligation.get("rule_revision"), int) or not isinstance(due, list) or not due:
         raise ValueError("malformed self-check obligation")
-    return {"obligation_id": obligation["id"], "execution_id": obligation["execution_id"],
+    return worker_feedback({"obligation_id": obligation["id"], "execution_id": obligation["execution_id"],
             "rule_revision": obligation["rule_revision"],
             "due": [{key: item[key] for key in ("rule_id", "operator", "subject", "required_evidence")} for item in due],
             "deadline_offset_ms": obligation.get("deadline_offset_ms"),
-            "rejected_rule_reasons": _json_safe(rejected_rule_reasons or [])}
+            "rejected_rule_reasons": _json_safe(rejected_rule_reasons or [])})
+
+
+def self_check_request(obligation: dict) -> dict:
+    """The one request object the transport delivers and the tracker hashes."""
+    return {"self_check_id": obligation["id"], "execution_id": obligation["execution_id"],
+            "payload": self_check_feedback(obligation)}
 
 
 def _control_root(workspace: Path) -> Path:
@@ -1183,12 +1098,7 @@ def publish_worker_feedback(workspace: Path, feedback: dict) -> None:
     This file is a delivery surface. Immutable facts/receipts remain the
     authoritative history and allow delivery to be retried after a crash.
     """
-    allowed = {"kind", "reason", "errors", "obligation_id", "execution_id", "rule_revision", "due",
-               "deadline_offset_ms", "rejected_rule_reasons", "active_revision", "active_rules_sha256",
-               "previous_rules_sha256", "previous_rules_preserved", "next_owner"}
-    if not isinstance(feedback, dict) or set(feedback) - allowed:
-        raise ValueError("worker feedback contains private or unknown fields")
-    encoded = json.dumps(_json_safe(feedback), ensure_ascii=False)
+    encoded = json.dumps(_json_safe(worker_feedback(feedback)), ensure_ascii=False)
     control = _control_root(workspace)
     destination = _safe_path(control, "observation-feedback.json")
     write_bytes_atomic(destination, encoded.encode("utf-8"))

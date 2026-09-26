@@ -9,8 +9,9 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from do_math.observations import ObservationTracker, evaluate_rules, self_check_feedback, validate_rules
+from do_math.observations import OPERATORS, ObservationTracker, evaluate_rules, self_check_feedback, validate_rules
 from do_math.operational_dispositions import validate_disposition, worker_feedback
+from research_fixtures import write_checkpoint
 
 
 class Clock:
@@ -21,8 +22,8 @@ class Clock:
 def rule(operator="counter_gte", subject_kind="counter", subject_id="attempts", threshold=2, **changes):
     value = {
         "id": "R-1", "operator": operator, "subject": {"kind": subject_kind, "id": subject_id},
-        "basis": {"source": "execution_events", "unit": "count"}, "threshold": threshold,
-        "required_evidence": ["EV-1"],
+        "basis": {"source": OPERATORS[operator]["source"], "unit": OPERATORS[operator]["unit"]},
+        "threshold": threshold, "required_evidence": ["EV-1"],
     }
     value.update(changes)
     return value
@@ -32,10 +33,18 @@ class ObservationRedesignTests(unittest.TestCase):
     def test_rules_bind_operator_subject_unit_and_evidence(self):
         accepted = rule(repeat_interval=2)
         self.assertEqual(validate_rules([accepted]), [accepted])
-        with self.assertRaisesRegex(ValueError, "basis"):
-            validate_rules([{**accepted, "basis": {"source": "x"}}])
+        for basis in ({"source": "x"}, {"source": "execution_events", "unit": "count"},
+                      {"source": "checkpoint", "unit": "milliseconds"}):
+            with self.subTest(basis=basis), self.assertRaisesRegex(ValueError, "basis"):
+                validate_rules([{**accepted, "basis": basis}])
         with self.assertRaisesRegex(ValueError, "unsupported"):
             validate_rules([{**accepted, "operator": "tool_results_gte"}])
+        # No provider produces event IDs or active intervals; their operators do not exist.
+        for operator, kind, source, unit in (("event_recorded", "event", "execution_events", "count"),
+                                             ("active_duration_gte", "execution", "adapter_active_intervals", "milliseconds")):
+            with self.subTest(operator=operator), self.assertRaisesRegex(ValueError, "unsupported"):
+                validate_rules([{**accepted, "operator": operator, "subject": {"kind": kind, "id": "EX-1"},
+                                 "basis": {"source": source, "unit": unit}}])
         with self.assertRaisesRegex(ValueError, "one-time"):
             validate_rules([rule("tool_call_completed", "tool_call", "CALL-1", 2)])
         with self.assertRaisesRegex(ValueError, "nonempty"):
@@ -59,7 +68,8 @@ class ObservationRedesignTests(unittest.TestCase):
                 "observation_rules": [rule()], "self_check_response_window_seconds": 5,
                 "tool_review_window_seconds": 60,
             }, clock=clock)
-            due = tracker.observe({"type": "tick", "counters": {"attempts": 2}})
+            write_checkpoint(directory, counters={"attempts": 2})
+            due = tracker.observe({"type": "tick"})
             obligation = next(row for row in due if row["kind"] == "self_check_due")
             self.assertEqual(3, obligation["rule_revision"])
             received = tracker.record_self_check_response(self.response(obligation), available_evidence_refs={"EV-1"})
@@ -94,7 +104,8 @@ class ObservationRedesignTests(unittest.TestCase):
         clock = Clock()
         with tempfile.TemporaryDirectory() as directory:
             tracker = self.tracker(Path(directory), clock)
-            obligation = next(r for r in tracker.observe({"type": "tick", "counters": {"attempts": 2}}) if r["kind"] == "self_check_due")
+            write_checkpoint(directory, counters={"attempts": 2})
+            obligation = next(r for r in tracker.observe({"type": "tick"}) if r["kind"] == "self_check_due")
             rejected = tracker.record_self_check_response(self.response(obligation, evidence=["unrelated"]), available_evidence_refs={"unrelated"})
             self.assertEqual(rejected["kind"], "self_check_rejected")
             tracker.observe({"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "C", "name": "Bash", "input": {"timeout": 1, "observation_review_window_seconds": 1}}]}})
@@ -107,7 +118,8 @@ class ObservationRedesignTests(unittest.TestCase):
         clock = Clock()
         with tempfile.TemporaryDirectory() as directory:
             tracker = self.tracker(Path(directory), clock)
-            obligation = next(r for r in tracker.observe({"type": "tick", "counters": {"attempts": 2}}) if r["kind"] == "self_check_due")
+            write_checkpoint(directory, counters={"attempts": 2})
+            obligation = next(r for r in tracker.observe({"type": "tick"}) if r["kind"] == "self_check_due")
             clock.value = 6
             rejected = tracker.record_self_check_response(self.response(obligation), available_evidence_refs={"EV-1"})
             self.assertEqual(rejected["kind"], "self_check_rejected")
@@ -119,7 +131,8 @@ class ObservationRedesignTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             tracker = self.tracker(Path(directory), clock)
             tracker.observe({"type": "item.started", "item": {"id": "C", "type": "command_execution"}})
-            obligation = next(r for r in tracker.observe({"type": "tick", "counters": {"attempts": 2}}) if r["kind"] == "self_check_due")
+            write_checkpoint(directory, counters={"attempts": 2})
+            obligation = next(r for r in tracker.observe({"type": "tick"}) if r["kind"] == "self_check_due")
             self.assertIsNone(obligation["deadline_offset_ms"])
             clock.value = 9
             tracker.record_safe_boundary("CT-1", call_ids=["C"])
@@ -160,11 +173,10 @@ class ObservationRedesignTests(unittest.TestCase):
         consumed = {first[0]["boundary_key"]: first[0]["boundary"]}
         self.assertEqual(evaluate_rules([rule(id="RENAMED")], {"counters": {"attempts": 2}}, consumed_boundaries=consumed), [])
 
-    def test_missing_active_measurement_is_reported_not_zero_or_wall_time(self):
+    def test_missing_checkpoint_counter_is_reported_not_zero_or_wall_time(self):
         clock = Clock()
         with tempfile.TemporaryDirectory() as directory:
-            tracker = self.tracker(Path(directory), clock, observation_rules=[rule("active_duration_gte", "execution", "EX-1", 1000,
-                basis={"source": "adapter_active_intervals", "unit": "milliseconds"})])
+            tracker = self.tracker(Path(directory), clock)
             clock.value = 100
             rows = tracker.observe({"type": "tick"})
             unavailable = next(r for r in rows if r["kind"] == "observation_unavailable")
@@ -175,8 +187,8 @@ class ObservationRedesignTests(unittest.TestCase):
     def test_profile_admission_requires_frozen_windows(self):
         from do_math.observations import observation_rule_contract, tracker_config
         from do_math.execution_profiles import seal_profile, BOUNDARY
-        body = {"role": "research_work", "actor_kind": "ai", "budget_kind": "work", "boundary": BOUNDARY,
-                "ai": {"model": "test"}, "observation": {"mode": "event_driven", "settings": {},
+        body = {"role": "research_work", "actor_kind": "ai", "boundary": BOUNDARY,
+                "ai": {"model": "test", "capacity_refs": ["CP-test"]}, "observation": {"mode": "event_driven", "settings": {},
                 "rule_bindings": observation_rule_contract()}}
         with self.assertRaisesRegex(ValueError, "window|interval"):
             tracker_config(seal_profile(body), initial_self_check_rules=[rule()])
@@ -214,7 +226,8 @@ class ObservationRedesignTests(unittest.TestCase):
                 "observation_interval_seconds": 10, "tool_review_window_seconds": 60,
                 "self_check_response_window_seconds": 5}, clock=clock)
             clock.value = 10
-            obligation = next(row for row in tracker.observe({"type": "tick", "counters": {"attempts": 2}})
+            write_checkpoint(directory, counters={"attempts": 2})
+            obligation = next(row for row in tracker.observe({"type": "tick"})
                               if row["kind"] == "self_check_due")
             ids = [row["rule_id"] for row in obligation["due"]]
             self.assertEqual(len(ids), 3)
@@ -228,7 +241,7 @@ class ObservationRedesignTests(unittest.TestCase):
                        "reason": "checkpoint is complete", "checkpoint_ref": "CK-1", "scope": "remaining proof"}
         self.assertEqual(disposition, validate_disposition(disposition))
         self.assertEqual({"kind": "resume", "reason": "checkpoint is complete", "next_owner": "engine"}, worker_feedback(disposition))
-        with self.assertRaisesRegex(ValueError, "fields"):
+        with self.assertRaisesRegex(ValueError, "Additional properties are not allowed"):
             validate_disposition({**disposition, "private_diagnostic": "do not leak"})
 
 

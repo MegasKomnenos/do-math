@@ -28,7 +28,7 @@ class ProviderFinalContractTests(unittest.TestCase):
                     workspace = root / 'workspace'; workspace.mkdir()
                     config = deepcopy(CONFIG)
                     config.update(tier_models={tier: model for tier in ('high', 'medium', 'low')},
-                        session_limits={pool: {model: 3} for pool in ('work', 'operations')})
+                        session_limits={'work': {model: 3}})
                     profile = next(p for p in execution_profiles.build_profiles(config)['execution_profiles'].values()
                                    if p['role'] == 'research_work')
                     prompt = execution_profiles.prepare_prompt('Use the provided draft schema.', profile)
@@ -57,8 +57,8 @@ class ProviderFinalContractTests(unittest.TestCase):
                         self.assertEqual(result['collection'], 'provider_evidence_only')
 
     def test_unsubmitted_provider_terminal_is_not_a_research_result(self):
-        from do_math.engine import ResearchEngine
-        engine = object.__new__(ResearchEngine)
+        from research_fixtures import bare_engine
+        engine = bare_engine()
         result = {'status': 'completed', 'output': None, 'collection': 'provider_evidence_only'}
         rejected = engine._collect_submitted_result({}, result, {}, {}, None)
         self.assertEqual(rejected['status'], 'failed')
@@ -80,7 +80,7 @@ class ProviderFinalContractTests(unittest.TestCase):
         self.assertTrue(parsed['turn_completed'])
         self.assertNotIn('structured_output', parsed)
         self.assertEqual(adapter.validate_final(parsed, text.encode('utf-8')), [])
-        self.assertEqual(adapter.validate_final(parsed, 'Submitted Caf\u00e9.'.encode('utf-8')), ['final_text_mismatch'])
+        self.assertEqual(adapter.validate_final(parsed, 'Submitted Caf\u00e9.'.encode('utf-8')), ['final_response_mismatch'])
         self.assertFalse(adapter.parse_response(raw + b'{', {})['parse_complete'])
 
 

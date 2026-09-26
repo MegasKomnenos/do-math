@@ -18,6 +18,7 @@ if str(SCRIPTS) not in sys.path:
 
 from do_math.git_store import GitStateStoreConflict  # noqa: E402
 from do_math.repository import ResearchRepository  # noqa: E402
+from research_fixtures import current_state  # noqa: E402
 
 
 INSTANCE_ID = "RI-00000000000000000000000000"
@@ -31,10 +32,7 @@ class SaveWithStateTests(unittest.TestCase):
         self.repository_path.mkdir()
         subprocess.run(["git", "-C", str(self.repository_path), "init", "-q"], check=True)
         self.repository = ResearchRepository(self.repository_path, INSTANCE_ID)
-        self.initial_head = self.repository.initialize(
-            {"feature_version": 5, "title": "instance"},
-            {"feature_version": 5, "status": "initializing"},
-        )
+        self.initial_head = self.repository.initialize(*current_state({"title": "instance"}))
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -49,7 +47,7 @@ class SaveWithStateTests(unittest.TestCase):
 
     def test_changed_state_writes_the_same_canonical_files_and_returns_reload_views(self) -> None:
         head, instance, runtime = self.repository.load()
-        changed_runtime = {**runtime, "status": "active"}
+        changed_runtime = {**runtime, "status": "running"}
         expected = self.repository.validate_candidate(instance, changed_runtime, head)
         saved_head, saved_instance, saved_runtime = self.repository.save_with_state(head, instance, changed_runtime)
         stored = self.repository._store.read_many(saved_head, sorted(expected["files"]))
@@ -67,7 +65,7 @@ class SaveWithStateTests(unittest.TestCase):
     def test_save_reads_parent_family_bytes_once_and_preserves_reload_equivalence(self) -> None:
         head, instance, runtime = self.repository.load()
         with patch.object(self.repository._store, 'read_many', wraps=self.repository._store.read_many) as reads:
-            saved = self.repository.save_with_state(head, instance, {**runtime, 'status': 'active'})
+            saved = self.repository.save_with_state(head, instance, {**runtime, 'status': 'running'})
         self.assertEqual(len([call for call in reads.call_args_list if call.args[0] == head]), 0)
         self.assertEqual(saved, self.repository.load(saved[0]))
 
@@ -79,7 +77,7 @@ class SaveWithStateTests(unittest.TestCase):
         head = self.repository.save_with_state(head, instance, runtime, artifacts={ref: raw})[0]
         head, instance, runtime = self.repository.load(head)
         with patch.object(self.repository._store, 'read_many', wraps=self.repository._store.read_many) as reads:
-            saved = self.repository.save_with_state(head, instance, {**runtime, 'status': 'active'})
+            saved = self.repository.save_with_state(head, instance, {**runtime, 'status': 'running'})
         self.assertFalse(any(ref in call.args[1] for call in reads.call_args_list))
         self.assertEqual(saved, self.repository.load(saved[0]))
         changed = deepcopy(saved[2])
@@ -99,15 +97,15 @@ class SaveWithStateTests(unittest.TestCase):
     def test_stale_parent_loser_does_not_publish(self) -> None:
         head, instance, runtime = self.repository.load()
         other = ResearchRepository(self.repository_path, INSTANCE_ID)
-        winner, _, _ = self.repository.save_with_state(head, instance, {**runtime, "status": "winner"})
+        winner, _, _ = self.repository.save_with_state(head, instance, {**runtime, "status": "running"})
         with self.assertRaises(GitStateStoreConflict):
-            other.save_with_state(head, instance, {**runtime, "status": "loser"})
+            other.save_with_state(head, instance, {**runtime, "status": "paused"})
         self.assertEqual(self.repository.load()[0], winner)
-        self.assertEqual(self.repository.load(winner)[2]["status"], "winner")
+        self.assertEqual(self.repository.load(winner)[2]["status"], "running")
 
     def test_stale_head_is_rejected_before_artifact_shape(self) -> None:
         head, instance, runtime = self.repository.load()
-        self.repository.save_with_state(head, instance, {**runtime, "status": "winner"})
+        self.repository.save_with_state(head, instance, {**runtime, "status": "running"})
         with self.assertRaises(GitStateStoreConflict):
             self.repository.save_with_state(
                 head, instance, runtime, artifacts={"outside-artifacts.txt": b"not allowed"}

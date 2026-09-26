@@ -22,14 +22,15 @@ from .file_io import atomic_replace
 
 from . import knowledge_io, planning, review_cycle
 from .context_store import collect_outputs, materialize_inputs, read_source, _safe_path, _excluded, _read_stable, _is_reparse, _relative
+from .git_store import ULID_PATTERN
 from .external import prepare_operation, validate_operation
 from .model_policy import ASSESSMENT_SCHEMA, assessment_key, validate_assessments, preparation_only
 from .observations import read_checkpoint, validate_rule_proposal, CHECKPOINT_SCHEMA, CHECKPOINT_MAX_BYTES, RULES_MAX_BYTES
-from .repository import canonical_json, exact_content_hash, _unique_pairs, _reject_constant
+from .file_io import reject_constant, unique_pairs
+from .repository import canonical_json, exact_content_hash
+from .contracts import REFS, TEXT
+from .task_contracts import CONTEXT_INPUT_REFS
 from . import integration
-
-
-TEXT = {"type": "string", "minLength": 1, "pattern": r"\S"}
 
 
 class SealedSubmissionError(ValueError):
@@ -42,7 +43,7 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact, *, git
     With the repository's ``git_dir``, a sealed row this process already matched
     (contract S3) is not hashed again.
     """
-    from .repository import artifact_verified, verify_artifact
+    from .repository import sealed_bytes
     identifier = execution.get("id", "<unknown>")
     intent = execution.get("submission_intent") or {}
     receipt = execution.get("submission_receipt") or {}
@@ -70,14 +71,10 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact, *, git
         mismatch = SealedSubmissionError(f"execution {identifier}: sealed {field} hash differs at {path}")
         if not isinstance(expected, str):
             raise mismatch
-        if git_dir is None:
-            if hashlib.sha256(raw).hexdigest() != expected:
-                raise mismatch
-        elif not artifact_verified(git_dir, path, expected, len(raw)):
-            try:
-                verify_artifact(git_dir, path, raw, expected)
-            except ValueError as error:
-                raise mismatch from error
+        try:
+            sealed_bytes(git_dir, path, expected, None, None, raw=raw, needed=False)
+        except ValueError as error:
+            raise mismatch from error
         if not entry or entry.get("sha256") != expected:
             raise SealedSubmissionError(f"execution {identifier}: {field} receipt differs at {path}")
         if entry and entry.get("bytes") != len(raw):
@@ -98,9 +95,7 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact, *, git
         raise SealedSubmissionError(f"execution {identifier}: sealed check_ref at {intent['check_ref']} is not capture eligible")
     if not check['passed']:
         try:
-            base = 'runtime/artifacts/' + execution['input_bundle']
-            context = load_json(read_artifact(snapshot, base + '/input/submission/context.json'))
-            schema = load_json(read_artifact(snapshot, base + '/schema.json'))
+            context, schema = issued_input(execution, snapshot, read_artifact, git_dir=git_dir)
             if (check['input_hashes'] != _check_hashes(result['output'], schema, context, result['extensions'])
                     or not capture_eligible(result['output'], result['extensions'], context, check['issues'])):
                 raise ValueError('partial candidate differs from its fixed input or independent bundle structure')
@@ -108,7 +103,35 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact, *, git
             raise SealedSubmissionError(f'execution {identifier}: {error}') from error
     result["output_ref"] = intent["output_ref"]
     return result
-STRINGS = {"type": "array", "items": TEXT, "uniqueItems": True}
+
+
+_ISSUED_INPUTS: dict = {}
+_ISSUED_INPUT_LIMIT = 32
+
+
+def issued_input(execution: dict, snapshot: str, read_artifact, *, git_dir=None,
+                 with_schema: bool = True) -> tuple[dict, dict | None]:
+    """The fixed validation context and output schema this execution received.
+
+    The engine writes both into the immutable input bundle (engine._input_artifacts);
+    this is the one reader. With the repository's git_dir path, a parsed file is kept
+    for this process (contract S3: bundles never change) and callers get copies.
+    A git_dir that is not a filesystem path (a test double or label) is not cached.
+    """
+    def issued(relative):
+        path = "runtime/artifacts/" + execution["input_bundle"] + "/" + relative
+        key = (os.fspath(git_dir), path) if isinstance(git_dir, os.PathLike) else None
+        value = _ISSUED_INPUTS.get(key) if key is not None else None
+        if value is None:
+            value = load_json(read_artifact(snapshot, path))
+            if key is not None:
+                if len(_ISSUED_INPUTS) >= _ISSUED_INPUT_LIMIT:
+                    _ISSUED_INPUTS.pop(next(iter(_ISSUED_INPUTS)))
+                _ISSUED_INPUTS[key] = value
+        return deepcopy(value)
+    return issued("input/submission/context.json"), issued("schema.json") if with_schema else None
+
+
 PRODUCERS = {"research_work", "supplemental_research"}
 PLANNERS = {"research_preparation", "research_plan"}
 EXTENSION_ROLES = {
@@ -141,12 +164,12 @@ def extension_schema(action: dict) -> dict:
     kind = TEXT
     claim = _object({"kind": TEXT, "source": TEXT, "target": TEXT, "confirmed_scope": TEXT})
     relation = _object({"id": TEXT, "kind": TEXT, "source": TEXT, "target": TEXT, "evidence": TEXT,
-        "evidence_refs": STRINGS, "formal_result_refs": STRINGS, "assessment_refs": STRINGS,
+        "evidence_refs": REFS, "formal_result_refs": REFS, "assessment_refs": REFS,
         "confirmed_scope": TEXT}, ["kind", "source", "target"])
     shapes = {
         "input_overflow_resolutions": _object({"action_id": TEXT, "profile_ref": PROFILE_REF, "reason": TEXT}),
-        "task_conditions": _object({"task_id": TEXT, "task_title": TEXT, "dependencies": STRINGS,
-            "knowledge_revision_targets": STRINGS,
+        "task_conditions": _object({"task_id": TEXT, "task_title": TEXT, "dependencies": REFS,
+            "knowledge_revision_targets": REFS,
             "occurrence_condition": {"type": "object"}, "observation_rules": {"type": "array"}}, []),
         "contract_checks": _object({"task_title": TEXT,
             "symbols": {"type": "array", "items": _object({"symbol": TEXT, "meaning": TEXT})},
@@ -155,43 +178,43 @@ def extension_schema(action: dict) -> dict:
                 "boundary": TEXT, "independent_of_next_revision": {"type": "boolean"}})}}),
         "task_dispositions": _object({"task_id": TEXT, "disposition": {"const": "withdraw"}, "reason": TEXT}),
         "research_insights": _object({"kind": kind, "title": TEXT, "statement": TEXT, "summary": TEXT,
-            "explanation": TEXT, "evidence_ids": STRINGS},
+            "explanation": TEXT, "evidence_ids": REFS},
             ["kind", "title", "statement", "summary"]),
         "external_requests": _object({"id": TEXT, "request": {"type": "object"}, "grant_id": {"type": ["string", "null"]},
             "purpose": TEXT, "academic_effect_id": TEXT}, ["request", "purpose"]),
         "knowledge_changes": _object({"id": TEXT,
-            "replacement_id": {"type": "string", "pattern": r"^KN-[0-7][0-9A-HJKMNP-TV-Z]{25}$"},
+            "replacement_id": {"type": "string", "pattern": "^KN-" + ULID_PATTERN + "$"},
             "changes": {"type": "object", "minProperties": 1},
-            "reason": TEXT, "impact_set": STRINGS}, ["id", "changes", "reason", "impact_set"]),
+            "reason": TEXT, "impact_set": REFS}, ["id", "changes", "reason", "impact_set"]),
         "kind_definitions": _object({"family": {"enum": ["knowledge", "relation"]}, "token": TEXT,
             "meaning": TEXT, "constraints": _object({
                 "mathematical_claim": {"type": "boolean"}, "requires_evidence": {"type": "boolean"},
                 "requires_formal_results": {"type": "boolean"}, "requires_assessments": {"type": "boolean"},
-                "allowed_epistemic_statuses": {**STRINGS, "minItems": 1},
-                "required_fields": {**STRINGS, "minItems": 1}}, [])}),
+                "allowed_epistemic_statuses": {**REFS, "minItems": 1},
+                "required_fields": {**REFS, "minItems": 1}}, [])}),
         "knowledge_metadata": _object({"title": TEXT, "relation_claim": claim, "confirmed_scope": TEXT,
             "epistemic_status": TEXT, "selection_relevance": TEXT,
             "uncertainty_assessment": {"type": ["string", "object"]}}, ["title"]),
         "relations": relation,
         "observation_rules": {"type": "object"},
-        "research_requests": _object({"id": TEXT, "question": TEXT, "source_refs": {**STRINGS, "minItems": 1}}),
+        "research_requests": review_cycle.research_request_schema(),
         "academic_resolutions": _object({"id": TEXT, "decision": {"enum": ["resolved", "unresolved"]},
-            "evidence": TEXT, "evidence_refs": {**STRINGS, "minItems": 1, "uniqueItems": True}}),
+            "evidence": TEXT, "evidence_refs": {**REFS, "minItems": 1, "uniqueItems": True}}),
         "model_assessments": _object({assessment_key(action): TEXT,
             **ASSESSMENT_SCHEMA["properties"]}),
         "model_assessment_deferrals": _object({"task_id": TEXT, "reason": TEXT}),
         "observation_rule_deferrals": _object({'task_id': TEXT, 'reason': TEXT,
-            'missing_inputs': {**STRINGS, 'minItems': 1},
+            'missing_inputs': {**REFS, 'minItems': 1},
             'next_owner': {'enum': ['user', 'research_preparation', 'research_plan', 'maintenance']}}),
         "queued_requests": _object({"request_id": TEXT, "decision": {"enum": ["keep", "cancel"]}, "reason": TEXT}),
-        "revision_requests": _object({"record_ids": {**STRINGS, "minItems": 1}, "reason": TEXT}),
+        "revision_requests": _object({"record_ids": {**REFS, "minItems": 1}, "reason": TEXT}),
         "revision_resolutions": _object({"record_id": TEXT, "disposition": {"enum": ["revised", "unchanged", "deferred", "delegated"]},
             "reason": TEXT, "task_title": TEXT}, ["record_id", "disposition", "reason"]),
         "question_routes": _object({"question_index": {"type": "integer", "minimum": 0},
-            "owner": {"enum": ["user", "research", "operations"]}, "target_ids": STRINGS, "reason": TEXT,
+            "owner": {"enum": ["user", "research", "operations"]}, "target_ids": REFS, "reason": TEXT,
             "blocks": {"type": "boolean"}}, ["question_index", "owner", "target_ids", "reason"]),
         "question_resolutions": _object({"question_id": TEXT, "disposition": {"enum": ["resolved", "superseded"]},
-            "evidence_refs": {**STRINGS, "minItems": 1}, "reason": TEXT}),
+            "evidence_refs": {**REFS, "minItems": 1}, "reason": TEXT}),
         "action_resolutions": _object({"action_id": TEXT, "evidence_execution_id": TEXT, "reason": TEXT}),
     }
     allowed = {name for name, roles in EXTENSION_ROLES.items() if action["role"] in roles}
@@ -212,7 +235,7 @@ def extension_schema(action: dict) -> dict:
 
 
 def load_json(raw: bytes):
-    value = json.loads(raw.decode("utf-8-sig"), object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
+    value = json.loads(raw.decode("utf-8-sig"), object_pairs_hook=unique_pairs, parse_constant=reject_constant)
     canonical_json(value)
     return value
 
@@ -338,39 +361,50 @@ def reference_catalog(context: dict, workspace: Path) -> list[dict]:
 RECORD_ID = re.compile(r"(?<![0-9A-Za-z])(?:TK|KN)-[0-9A-Za-z]+(?:-[0-9A-Za-z]+)*")
 
 
-def contract_check_errors(item: dict, entry: dict, dependencies: list[str], tasks: dict, known: set, revising: set) -> list[str]:
-    """The mechanically decidable part of contract review, run by the producer before submission."""
+def contract_check_errors(item: dict, entry: dict, dependencies: list[str], tasks: dict, known: set, revising: set) -> list[tuple[str, str]]:
+    """The mechanically decidable part of contract review, run by the producer before submission.
+
+    Each finding is (rule_id, message); the rule identifies the kind of defect,
+    so distinct defects of one candidate remain distinct issues.
+    """
     text = "\n".join([item["title"], item["question"], *item["scope"]["included"], *item["scope"]["excluded"],
         *item["expected"]["outputs"], item["expected"]["research_change"],
         *(row["claim"] for row in item["completion_obligations"]), *(row["claim"] for row in item["progress_criteria"])])
     errors = []
     cited = set(RECORD_ID.findall(text)) - {item["revises_task_id"]}
-    errors += ["cited record does not exist in the supplied input: " + ref for ref in sorted(cited - known - set(tasks))]
+    errors += [("contract_check.cited_record", "cited record does not exist in the supplied input: " + ref)
+               for ref in sorted(cited - known - set(tasks))]
     symbols = [row["symbol"] for row in entry["symbols"]]
-    errors += ["symbol has more than one declared meaning: " + symbol for symbol in sorted({x for x in symbols if symbols.count(x) > 1})]
-    errors += ["declared symbol is absent from the contract text: " + symbol for symbol in symbols if symbol not in text]
+    errors += [("contract_check.symbol_meaning", "symbol has more than one declared meaning: " + symbol)
+               for symbol in sorted({x for x in symbols if symbols.count(x) > 1})]
+    errors += [("contract_check.symbol_absent", "declared symbol is absent from the contract text: " + symbol)
+               for symbol in symbols if symbol not in text]
     outcomes = "\n".join(row["outcome"] for row in entry["outcome_branches"])
     if len({row["outcome"] for row in entry["outcome_branches"]}) < 2:
-        errors.append("outcome branches must state at least two distinct outcomes")
+        errors.append(("contract_check.outcome_branches", "outcome branches must state at least two distinct outcomes"))
     for dependency in dependencies:
         names = {dependency, tasks.get(dependency, {}).get("title", dependency)}
         if not any(name in outcomes for name in names):
-            errors.append("no outcome branch names the normal outcomes of the dependency: " + dependency)
+            errors.append(("contract_check.dependency_outcomes",
+                           "no outcome branch names the normal outcomes of the dependency: " + dependency))
     declared = {row["task_id"]: row for row in entry["sibling_boundaries"]}
     if len(declared) != len(entry["sibling_boundaries"]):
-        errors.append("sibling boundaries must name distinct tasks")
+        errors.append(("contract_check.sibling_boundary", "sibling boundaries must name distinct tasks"))
     siblings = {ref for ref in cited if ref.startswith("TK-")}
-    errors += ["cited sibling contract has no declared boundary: " + ref for ref in sorted(siblings - set(declared))]
+    errors += [("contract_check.sibling_boundary", "cited sibling contract has no declared boundary: " + ref)
+               for ref in sorted(siblings - set(declared))]
     for ref, row in declared.items():
         sibling = tasks.get(ref)
         if sibling is None:
-            errors.append("sibling boundary names a task outside the supplied input: " + ref)
+            errors.append(("contract_check.sibling_boundary", "sibling boundary names a task outside the supplied input: " + ref))
         elif row["revision"] != sibling.get("revision"):
-            errors.append(f"sibling boundary was not read from the current revision {sibling.get('revision')} of {ref}")
+            errors.append(("contract_check.sibling_revision",
+                           f"sibling boundary was not read from the current revision {sibling.get('revision')} of {ref}"))
         elif ((sibling.get("revision_requested") or ref in revising)
               and not row["independent_of_next_revision"] and ref not in dependencies):
-            errors.append("sibling contract is under revision: state a boundary that its next revision cannot move, "
-                          "or wait for it through task_conditions dependencies: " + ref)
+            errors.append(("contract_check.sibling_under_revision",
+                           "sibling contract is under revision: state a boundary that its next revision cannot move, "
+                           "or wait for it through task_conditions dependencies: " + ref))
     return errors
 
 
@@ -412,30 +446,29 @@ def _explicit_reference_fields(value, path="output"):
 
 
 def _intent_import_issues(output, context):
-    """Check character coverage and ownership coordinates, never source meaning."""
-    source = (context.get("user_request") or {}).get("text")
-    if not isinstance(source, str):
-        return [_issue("output/import_units", "fixed user_request.text is required", "intent.source_coverage")]
+    """Run the receiver's import-unit check and governance record check on the fixed input.
+
+    Coverage, identity, question and payload coordinates use governance.validate_import_units
+    over the supplied records; an owner's live-state candidate check stays with the receiver.
+    """
+    from .governance import GOVERNANCE_KINDS, validate_governance_record, validate_import_units
+    instance = {"id": context.get("instance_id"),
+                "decisions": {row["id"]: row for row in context.get("decisions", [])},
+                "governance": {row["id"]: row for row in context.get("governance_records", [])},
+                "grants": {row["id"]: row for row in context.get("grants", [])}}
+    runtime = {"tasks": {row["id"]: row for row in context.get("tasks", [])}}
     issues = []
-    units = output["import_units"]
-    identifiers = [unit["unit_id"] for unit in units]
-    if any(not value.strip() for value in identifiers) or len(set(identifiers)) != len(identifiers):
-        issues.append(_issue("output/import_units", "meaning units require distinct nonempty IDs", "intent.unit_identity"))
-    cursor = 0
-    for index, unit in enumerate(units):
-        start, end = unit["source_range"]["start"], unit["source_range"]["end"]
-        if start != cursor or end <= start or end > len(source):
-            issues.append(_issue(f"output/import_units/{index}/source_range",
-                "ranges must cover the fixed text once, using zero-based Unicode character offsets and exclusive ends",
-                "intent.source_coverage"))
-        cursor = end
-        if not all(unit[key].strip() for key in ("owner_kind", "owner_ref", "interpretation")):
-            issues.append(_issue(f"output/import_units/{index}", "unit needs one owner and its interpretation", "intent.owner"))
-        allowed_questions = {question['id'] for question in output.get('question_details', [])}
-        if set(unit["question_refs"]) - allowed_questions:
-            issues.append(_issue(f"output/import_units/{index}/question_refs", "question must name a question_details ID", "intent.question_reference"))
-    if cursor != len(source):
-        issues.append(_issue("output/import_units", "source text remains uncovered", "intent.source_coverage"))
+    try:
+        validate_import_units(instance, runtime, context.get("original_source"), output,
+                              owner_kinds={row["owner_kind"] for row in context.get("import_consumers", [])})
+    except (ValueError, TypeError, KeyError) as error:
+        issues.append(_issue("output/import_units", str(error), "intent.import_units"))
+    for index, unit in enumerate(output["import_units"]):
+        if unit["owner_kind"] in GOVERNANCE_KINDS and unit["payload"]:
+            try:
+                validate_governance_record(unit["payload"].get("record"))
+            except (ValueError, TypeError, KeyError) as error:
+                issues.append(_issue(f"output/import_units/{index}/payload/record", str(error), "intent.governance_record"))
     return issues
 
 
@@ -479,7 +512,7 @@ def _reference_ids(context):
 
 def _reference_index(context):
     """Supplied IDs and locators of one fixed input; workspace files are still checked per reference."""
-    known = _reference_ids(context) | set(context.get("available_input_refs", [])) | {"context:goal", "context:policy"}
+    known = _reference_ids(context) | set(context.get("available_input_refs", [])) | CONTEXT_INPUT_REFS
     locators = _reference_locators(context)
     for source in context.get("sources", []):
         locators.update((source["name"], "source:" + source["name"]))
@@ -527,29 +560,66 @@ def _validate_reference(reference, context, workspace, *, known, locators, candi
                          "; use an exact reference_catalog value or workspace:<preserved-file>")
 
 
-def assessment_reference_ids(context):
-    """Completion evidence cites durable records, not a file path in one run."""
-    result = _reference_ids(context)
-    for source in context.get('sources', []):
-        result.difference_update([source['name'], source['path'], 'source:' + source['name']])
-        if source.get('id'):
-            result.add(source['id'])
-    return result
+def supplied_record_ids(context: dict, record_ids) -> list[str]:
+    """Records this fixed input supplies: IDs it shows that are current records.
+
+    The engine stores the result as context['supplied_record_ids']; task inputs
+    and completion evidence may cite them (common execution contract).
+    """
+    return sorted(_reference_ids(context) & set(record_ids))
 
 
-def validate_research_reference(reference: str, context: dict, workspace: Path,
-                                *, candidate_files: dict[str, bytes] | None = None) -> None:
-    from .input_basis import aliases
-    supplied = {row["id"] for row in context.get("knowledge_catalog", [])}
-    for source in context.get("sources", []):
-        supplied.update(aliases(source))
-    supplied.update(row["ref"] for row in context.get("role_review", {}).get("source_refs", []))
-    if reference in supplied:
-        return
-    if reference == "proposal" or reference.startswith(("proposal:", "issue:")):
-        validate_reference(reference, context, workspace, candidate_files=candidate_files)
-        return
-    raise ValueError("research source must be a proposal coordinate, public issue, supplied source or knowledge ID: " + reference)
+# A failed action a later accepted execution may resolve, and the judgment scope it must share.
+RESOLVABLE_WAITS = frozenset({"output_validation", "execution_failure"})
+_JUDGMENT_SCOPE = ("role", "stage", "slot", "round", "review_cycle_id", "assessment_targets",
+                   "observation_rule_targets", "live")
+
+
+def blocked_action_row(action_id: str, entry: dict) -> dict:
+    """One waiting action as roles receive it: its wait and the scope a resolution must share."""
+    action = entry.get("action", {})
+    return {"action_id": action_id, "target": action.get("target"), "kind": entry.get("kind"),
+            "reason": entry.get("reason"), "execution_id": entry.get("execution_id"),
+            **{key: deepcopy(action[key]) for key in (*_JUDGMENT_SCOPE, "revision_targets") if key in action}}
+
+
+def action_resolution_errors(blocked: dict, evidence_action: dict | None) -> list[str]:
+    """What the fixed failed action and the evidence's own action decide about a resolution.
+
+    The producer passes its own action for `current` evidence; the receiver passes the
+    evidence execution's action and separately checks acceptance and current premises.
+    """
+    if blocked.get("kind") not in RESOLVABLE_WAITS:
+        return ["only an output_validation or execution_failure wait can be resolved; this action waits for "
+                + str(blocked.get("kind"))]
+    if evidence_action is None:
+        return []
+    same_target = (blocked.get("target") == evidence_action.get("target")
+                   or blocked.get("target") in evidence_action.get("revision_targets", {}))
+    if not same_target or any(blocked.get(key) != evidence_action.get(key) for key in _JUDGMENT_SCOPE):
+        return ["resolution evidence must be an execution of the same judgment scope as the failed action"]
+    return []
+
+
+def judgment_families(context: dict) -> dict:
+    """Record families of the specialist judgments visible in this input's catalogs."""
+    families = {row["formal_result_id"]: "formal-result"
+                for row in context.get("knowledge_catalog", []) if row.get("formal_result_id")}
+    families.update((identifier, "identity-assessment") for row in context.get("knowledge_catalog", [])
+                    for identifier in row.get("identity_assessment_ids", []))
+    families.update((row["id"], "goal-judgment") for row in context.get("goal_judgments", []) if row.get("id"))
+    return families
+
+
+def validate_research_reference(reference: str, context: dict) -> None:
+    """Producer view of review_cycle.classify_research_source over the seat's fixed input."""
+    role_review = context.get("role_review", {})
+    review_cycle.classify_research_source(reference,
+        proposal=context.get("proposal") or role_review.get("proposal"),
+        issues=role_review.get("issues", {}),
+        own_source_refs={row["ref"] for row in role_review.get("source_refs", [])},
+        sources=context.get("sources", []),
+        knowledge_ids={row["id"] for row in context.get("knowledge_catalog", [])})
 
 
 def fixed_research_reference_path(reference, source_refs):
@@ -589,9 +659,9 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             raise ValueError(message)
 
     if action['role'] == 'research_preparation' and 'regenerate_after' in schema.get('properties', {}):
-        from .governance import timestamp
+        from .revisions import regeneration_time_valid
         check('output/regenerate_after', lambda: require(
-            timestamp(output['regenerate_after']) > timestamp(context['observed_at']),
+            regeneration_time_valid(output['regenerate_after'], context['observed_at']),
             'regenerate_after must follow the machine observed_at'), 'submission.regeneration_time')
 
     if action["role"] == "maintenance" and action.get("stage") == "impact_review":
@@ -602,7 +672,6 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
 
     # One fixed input: build its reference index once, not once per reference.
     reference_known, reference_locators = _reference_index(context)
-    assessment_ids = assessment_reference_ids(context)
 
     def supplied(reference):
         _validate_reference(reference, context, workspace, known=reference_known,
@@ -610,11 +679,30 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
 
     for coordinate, reference in _explicit_reference_fields(output):
         check(coordinate, lambda reference=reference: supplied(reference), "submission.explicit_reference")
-        if '/evidence_required/' in coordinate or (coordinate.startswith('output/task_assessments/')
-                                                   and '/evidence_refs/' in coordinate):
-            check(coordinate, lambda reference=reference: require(reference in assessment_ids,
-                  'completion evidence requires a supplied record ID; read the file and cite its producing execution or source record'),
-                  'submission.assessment_reference')
+    from .task_scope import require_evidence_refs, result_ids
+    records = set(context.get("supplied_record_ids", []))
+    context_tasks = {row["id"]: row for row in context.get("tasks", [])}
+    returned = set().union(*(result_ids(task) for task in context_tasks.values()))
+    for index, item in enumerate(output.get("candidates", [])):
+        for family in ("progress_criteria", "completion_obligations"):
+            for number, row in enumerate(item[family]):
+                check(f"output/candidates/{index}/{family}/{number}/evidence_required",
+                      lambda row=row: require_evidence_refs(row["evidence_required"], records | returned),
+                      "submission.assessment_reference")
+    for index, assessment in enumerate(output.get("task_assessments", [])):
+        task = context_tasks.get(assessment["task_id"]) or (
+            context["task"] if (context.get("task") or {}).get("id") == assessment["task_id"] else None)
+        admissible = records | (result_ids(task) if task else set())
+        for number, row in enumerate(assessment["item_dispositions"]):
+            check(f"output/task_assessments/{index}/item_dispositions/{number}/evidence_refs",
+                  lambda row=row, admissible=admissible: require_evidence_refs(row["evidence_refs"], admissible),
+                  "submission.assessment_reference")
+        if task is not None:
+            from .task_contracts import judge_coverage_errors
+            families = judgment_families(context)
+            for message in judge_coverage_errors(action["role"], context.get("execution_id"), task, assessment, families):
+                issues.append(_issue(f"output/task_assessments/{index}/item_dispositions", message,
+                                     "submission.judge_coverage"))
     for index, row in enumerate(extensions.get("academic_resolutions", [])):
         for number, reference in enumerate(row["evidence_refs"]):
             check(f"activity-extensions.json/academic_resolutions/{index}/evidence_refs/{number}",
@@ -623,14 +711,18 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         issues.extend(_intent_import_issues(output, context))
 
     known = _reference_ids(context)
-    blocked_ids = {row["action_id"] for row in context.get("blocked_actions", [])}
+    blocked = {row["action_id"]: row for row in context.get("blocked_actions", [])}
     resolutions = extensions.get("action_resolutions", [])
     check("activity-extensions.json/action_resolutions", lambda: require(
         len({row["action_id"] for row in resolutions}) == len(resolutions), "failed action claims must be distinct"))
     for index, row in enumerate(resolutions):
-        check(f"activity-extensions.json/action_resolutions/{index}", lambda row=row: require(
-            row["action_id"] in blocked_ids and (row["evidence_execution_id"] == "current" or row["evidence_execution_id"] in known),
-            "action resolution requires a supplied failed action and current or supplied execution evidence"))
+        def resolution(row=row):
+            current = row["evidence_execution_id"] == "current"
+            require(row["action_id"] in blocked and (current or row["evidence_execution_id"] in known),
+                    "action resolution requires a supplied failed action and current or supplied execution evidence")
+            errors = action_resolution_errors(blocked[row["action_id"]], action if current else None)
+            require(not errors, "; ".join(errors))
+        check(f"activity-extensions.json/action_resolutions/{index}", resolution)
     for index, row in enumerate(extensions.get("question_resolutions", [])):
         for ref in row["evidence_refs"]:
             check(f"activity-extensions.json/question_resolutions/{index}/evidence_refs", lambda ref=ref: supplied(ref))
@@ -638,7 +730,6 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
     tasks = {row["id"]: row for row in context.get("tasks", [])}
     if isinstance(context.get("task"), dict):
         tasks[context["task"]["id"]] = context["task"]
-    available = {*context.get("available_input_refs", []), *known}
     new_knowledge = {item["title"] for item in output.get("knowledge", [])}
     new_tasks = {item["title"] for item in output.get("candidates", [])}
     if not (action["role"] == "supplemental_research" and action.get("review_cycle_id")):
@@ -663,8 +754,12 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                     for reference in item['profile_refs']:
                         errors = observation_settings_errors(resolve_profile(registry, reference))
                         require(not errors, 'candidate requires prepared observation profiles: ' + json.dumps(errors))
-                missing = {r for r in [*item["inputs"], *item["reuse"]] if r not in available | new_tasks and not r.startswith("source:")}
-                require(not missing, "unknown task inputs: " + ", ".join(sorted(missing)))
+                from .task_contracts import unsupplied_task_inputs
+                missing = unsupplied_task_inputs([*item["inputs"], *item["reuse"]], {
+                    *context.get("available_input_refs", []), *context.get("supplied_record_ids", []), *new_tasks},
+                    admit_named_sources=True)
+                require(not missing, "task inputs must name available_input_refs, supplied records or titles "
+                                     "prepared in this output; unknown: " + ", ".join(missing))
                 if item["revises_task_id"]:
                     old = tasks.get(item["revises_task_id"])
                     require(bool(old) and old.get("status") not in {"completed", "closed", "active"}, "revision requires an existing unfinished task")
@@ -684,7 +779,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             check("activity-extensions.json/contract_checks", lambda: require(
                 len(titles) == len(set(titles)) and set(titles) == set(expected),
                 "contract self-check coverage: every candidate needs exactly one entry; missing " +
-                json.dumps(sorted(set(expected) - set(titles)), ensure_ascii=False)))
+                json.dumps(sorted(set(expected) - set(titles)), ensure_ascii=False)), "contract_check.coverage")
             revising = {target for row in context.get("pending_revisions", []) if row["action"].get("id") != action.get("id")
                         for target in planning.action_write_ids(row['action'])}
             reference_tasks = dict(tasks)
@@ -714,8 +809,8 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                     if row.get('task_title') == item['title'] or
                        item.get('revises_task_id') and row.get('task_id') == item['revises_task_id']), {})
                 dependencies = prepared_dependencies(item, condition)
-                for message in contract_check_errors(item, entry, dependencies, reference_tasks, known, revising):
-                    issues.append(_issue(f"activity-extensions.json/contract_checks/{index}", message))
+                for rule_id, message in contract_check_errors(item, entry, dependencies, reference_tasks, known, revising):
+                    issues.append(_issue(f"activity-extensions.json/contract_checks/{index}", message, rule_id))
     if action["role"] == "research_plan":
         check("output", lambda: planning.validate_plan_submission(output, tasks, context.get("ready_task_ids", [])))
     if action["role"] == "identity_review" and action.get("stage") == "scope":
@@ -748,14 +843,12 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         for index, item in enumerate(output["knowledge"]):
             def candidate(item=item):
                 require(item["kind"] in {row["token"] for row in definitions.get("knowledge", [])}, "knowledge kind must be active or proposed in this bundle")
-                require(all(item[key].strip() for key in ("title", "statement", "explanation", "summary")), "knowledge text fields must be nonempty")
+                errors = knowledge_io.candidate_shape_errors(item)
+                require(not errors, "; ".join(errors))
                 require(item["title"] not in knowledge_ids, "a new title cannot collide with an existing knowledge ID")
                 refs = item["dependencies"]
-                require(len(refs) == len(set(refs)) and not set(refs) - knowledge_ids - new_knowledge, "knowledge dependencies must name provided knowledge or unique new titles")
+                require(not set(refs) - knowledge_ids - new_knowledge, "knowledge dependencies must name provided knowledge or unique new titles")
                 require(item["title"] not in refs, "knowledge cannot depend on itself")
-                declarations = item["declaration_names"]
-                require(len(declarations) == len(set(declarations)), "declaration names must be distinct")
-                require(not item["lean_code"] or bool(declarations), "Lean proposal requires declaration_names")
             check(f"output/knowledge/{index}", candidate)
 
     for index, insight in enumerate(extensions.get("research_insights", [])):
@@ -833,7 +926,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         cycles = [cycle for cycle in dependency_cycles(graph) if set(cycle) & set(titles.values())]
         check("activity-extensions.json/task_conditions/dependencies", lambda: require(not cycles, "explicit task dependency cycle: " + str(cycles)))
     for family, key in (("task_dispositions", "task_id"), ("queued_requests", "request_id"),
-                        ("research_requests", "id"), ("academic_resolutions", "id")):
+                        ("academic_resolutions", "id")):
         rows = extensions.get(family, [])
         check("activity-extensions.json/" + family, lambda rows=rows, key=key: require(
             len({row[key] for row in rows}) == len(rows), "entries must identify distinct targets"))
@@ -899,18 +992,20 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                 result = knowledge_io.validate_relation(instance, relation)
                 require(result["valid"], "; ".join(result["reasons"]))
         check("relations", relational)
+    if extensions.get("research_requests"):
+        check("activity-extensions.json/research_requests",
+              lambda: review_cycle.validate_research_requests(extensions["research_requests"]))
+        for index, entry in enumerate(extensions["research_requests"]):
+            for number, ref in enumerate(entry["source_refs"]):
+                check(f"activity-extensions.json/research_requests/{index}/source_refs/{number}",
+                      lambda ref=ref: validate_research_reference(ref, context), "submission.research_source")
     if action["role"] == "identity_review" and action.get("review_cycle_id") and action.get("stage") != "scope":
         domain_output = {key: value for key, value in output.items() if key not in {"integration_bundles", "repair_responses"}}
         check("output", lambda: review_cycle.validate_visible_output(context["role_review"], action, domain_output,
                     requesting_research=bool(extensions.get("research_requests"))))
-        for entry in extensions.get("research_requests", []):
-            for ref in entry["source_refs"]:
-                check("activity-extensions.json/research_requests/source_refs", lambda ref=ref: validate_research_reference(
-                    ref, context, workspace, candidate_files=candidate_files))
     if action["role"] == "supplemental_research" and action.get("review_cycle_id"):
         research = context["review_research"]
-        check("output", lambda: require(output["outcome"] != "answered" or (
-            output["scope_complete"] and output["evidence_refs"] and not output["questions"]), "answered requires complete scope, evidence and no unresolved question"))
+        check("output", lambda: review_cycle.validate_research_answer(output))
         for field in ('used_sources', 'evidence_refs'):
             for index, ref in enumerate(output[field]):
                 def source(ref=ref):
@@ -1282,8 +1377,13 @@ def _validate_producer_sequence(rows):
             raise ValueError("producer check sequence or execution differs")
 
 
-def summarize_snapshot_checks(seals, *, snapshot, read_artifact, history_window):
-    """Derive diagnostics from central checks in immutable publication order."""
+def summarize_snapshot_checks(seals, *, snapshot, read_artifact, history_window, git_dir=None):
+    """Derive diagnostics from central checks in immutable publication order.
+
+    With the repository's ``git_dir``, check artifacts this process already
+    matched (contract S3) are read but not hashed again.
+    """
+    from .repository import sealed_bytes
     if not isinstance(snapshot, str) or not snapshot or type(history_window) is not int or history_window < 0:
         raise ValueError("snapshot and nonnegative history_window are required")
     records, seen, sequence = [], set(), 0
@@ -1300,9 +1400,9 @@ def summarize_snapshot_checks(seals, *, snapshot, read_artifact, history_window)
         for entry in evidence['artifacts']:
             if not entry['path'].startswith('runtime/artifacts/') or entry['path'] in artifacts:
                 raise ValueError('central check artifact coordinate differs')
-            raw = read_artifact(snapshot, entry['path'])
-            if hashlib.sha256(raw).hexdigest() != entry['sha256'] or len(raw) != entry['bytes']:
-                raise ValueError('central check artifact hash or size differs')
+            raw = sealed_bytes(git_dir, entry['path'], entry['sha256'], entry['bytes'],
+                               lambda: read_artifact(snapshot, entry['path']),
+                               error='central check artifact hash or size differs')
             artifacts[entry['path']] = raw
         raw = artifacts[evidence['check_ref']]
         parsed = load_json(raw)
@@ -1543,8 +1643,8 @@ def seal_submission(workspace, draft=None, *, execution_id, context, schema, max
 
 def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
     """Send one draft locator; central capture owns validation and immutable receipt bytes."""
-    from .control_transport import ControlTransport
-    if kind not in {"submission_preview", "submit_intent"}:
+    from .control_transport import ControlTransport, SUBMISSION_KINDS, SUBMISSION_PREVIEW
+    if kind not in SUBMISSION_KINDS:
         raise ValueError("unsupported submission control kind")
     if not isinstance(wait_seconds, (int, float)) or isinstance(wait_seconds, bool) or not 0 <= wait_seconds < float("inf"):
         raise ValueError("wait_seconds must be a finite nonnegative caller budget")
@@ -1562,7 +1662,7 @@ def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
     # A locator is mutable; a corrected draft at the same path is a new call.
     # Query the returned request_id to resume waiting on the existing call.
     from .repository import new_id
-    request_id = ("preview-" if kind == "submission_preview" else "submit-") + new_id("RQ")
+    request_id = ("preview-" if kind == SUBMISSION_PREVIEW else "submit-") + new_id("RQ")
     delivery = ControlTransport.worker_submit(binding, request_id=request_id, kind=kind, payload=payload)
     if delivery["state"] in {"withdrawn", "closed"}:
         return delivery
@@ -1589,10 +1689,11 @@ def main(argv=None):
         parser.error("--output is required for checking, preview and submission")
     if (args.preview or args.submit) and args.wait_seconds is None:
         parser.error("central control requires an explicit --wait-seconds budget")
+    from .control_transport import SUBMISSION_PREVIEW, SUBMIT_INTENT
     workspace = Path.cwd().resolve()
     if args.submit:
         try:
-            delivery = request_control(workspace, args.output, kind="submit_intent", wait_seconds=args.wait_seconds)
+            delivery = request_control(workspace, args.output, kind=SUBMIT_INTENT, wait_seconds=args.wait_seconds)
         except (ValueError, TypeError, KeyError, OSError) as error:
             delivery = {"state": "rejected", "reason": str(error)}
         print(json.dumps({"delivery": delivery}, ensure_ascii=False))
@@ -1600,7 +1701,7 @@ def main(argv=None):
     result = producer_check(workspace, args.output)
     if args.preview:
         try:
-            delivery = request_control(workspace, args.output, kind="submission_preview", wait_seconds=args.wait_seconds)
+            delivery = request_control(workspace, args.output, kind=SUBMISSION_PREVIEW, wait_seconds=args.wait_seconds)
         except (ValueError, TypeError, KeyError, OSError) as error:
             delivery = {"state": "rejected", "reason": str(error)}
         print(json.dumps({"check": result, "delivery": delivery}, ensure_ascii=False))

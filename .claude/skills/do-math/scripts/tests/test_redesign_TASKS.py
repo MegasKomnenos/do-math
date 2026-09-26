@@ -9,15 +9,20 @@ from do_math import task_contracts
 from do_math import planning
 from copy import deepcopy
 
+from research_fixtures import bare_engine, review_items
+
 
 def approved_fixture():
     from do_math.engine import DEFAULT_CONFIG
     config={**deepcopy(DEFAULT_CONFIG), 'tier_models':{tier:'fixture-model' for tier in ('low','medium','high')},
-            'session_limits':{pool:{'fixture-model':3} for pool in ('work','operations')}}
+            'session_limits':{'work':{'fixture-model':3}}}
     from do_math.execution_profiles import seal_profile, profile_ref, BOUNDARY
     from do_math.observations import observation_rule_contract
-    profile = seal_profile({'role':'research_work','actor_kind':'ai','budget_kind':'work',
-        'ai':{'model':'fixture-model','tier':'high','effort':'high'},'boundary':BOUNDARY,
+    from do_math.repository import exact_content_hash
+    # A work role's AI profile reserves the model's work slot.
+    capacity = 'CP-' + exact_content_hash({'model':'fixture-model','work':3})
+    profile = seal_profile({'role':'research_work','actor_kind':'ai',
+        'ai':{'model':'fixture-model','tier':'high','effort':'high','capacity_refs':[capacity]},'boundary':BOUNDARY,
         'observation':{'mode':'event_driven','rule_bindings':observation_rule_contract()}})
     value = task()
     value.update(work_class='nonformal', basis_refs=['SO-1'], profile_refs=[profile_ref(profile)],
@@ -34,9 +39,7 @@ def approved_fixture():
 
 
 def approve(value, instance, runtime):
-    aspects = ('question_scope','inputs_reuse','outputs_obligations_judges','stage_boundaries','tools_authority_profiles')
-    output = {'item_reviews':[{'item_id':item,'decision':'approved','evidence_refs':['SO-1'],
-        'findings':[],'missing_inputs':[],'next_owner':'research_plan'} for item in aspects]}
+    output = review_items(['SO-1'])
     value['reviews'] = [planning.seal_contract_review(value,output,instance,runtime,execution_id='EX-review')]
 
 
@@ -207,9 +210,13 @@ class AuditPersistenceTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         root = Path(self.temporary.name)
         subprocess.run(['git','-C',str(root),'init','-q'], check=True)
+        from research_fixtures import current_state
         self.store = ResearchRepository(root, 'RI-01ARZ3NDEKTSV4RRFFQ69G5FAV')
-        self.instance = {**DomainGovernanceTests().initial(), 'config':deepcopy(DEFAULT_CONFIG), **build_profiles(DEFAULT_CONFIG)}
-        self.runtime = {'feature_version':5, 'status':'ready', 'tasks':{}, 'executions':{}, 'queue':[], 'history':[]}
+        # Stored states pass the current lifecycle gate; these tasks belong to an active instance.
+        self.instance, self.runtime = current_state(
+            {**DomainGovernanceTests().initial(), 'config':deepcopy(DEFAULT_CONFIG), **build_profiles(DEFAULT_CONFIG)},
+            {'status':'ready', 'tasks':{}, 'executions':{}, 'queue':[], 'history':[]})
+        self.instance['lifecycle']['state'] = 'active'
 
     def execution(self, identifier, role):
         from do_math.activities import open_activity, assign_execution
@@ -248,12 +255,10 @@ class AuditPersistenceTests(unittest.TestCase):
             {'kind':'grant', 'grant':{'id':'GR-audit','kind':'local','roles':['research_work'], 'reuse':'reusable'}}, source_ref='S')
 
     def review(self, identifier):
-        from do_math.contracts import CONTRACT_REVIEW_ITEMS
         eid = 'EX-review-' + identifier
         self.execution(eid, 'task_contract_review')
         task = self.runtime['tasks'][identifier]
-        output = {'item_reviews':[{'item_id':key,'decision':'approved','evidence_refs':['S'],
-            'findings':[], 'missing_inputs':[], 'next_owner':'research_plan'} for key in CONTRACT_REVIEW_ITEMS]}
+        output = review_items(['S'])
         task['reviews'] = [planning.seal_contract_review(task, output, self.instance, self.runtime, execution_id=eid)]
 
     def test_candidate_review_profile_selection_and_governance_survive_git_reload(self):
@@ -280,10 +285,8 @@ class AuditPersistenceTests(unittest.TestCase):
             self.store.save_with_state(head, instance, bad)[0]
         self.assertEqual(self.store.load()[0], head)
         # Receipt currentness reads the same persisted governance as review/dispatch.
-        from do_math.decision_engine import DecisionEngineMixin
         from do_math.input_basis import CurrentnessChanged
-        receiver = DecisionEngineMixin()
-        receiver.store, receiver.instance, receiver.runtime = self.store, instance, runtime
+        receiver = bare_engine(instance, runtime, store=self.store)
         receipt = {'input_snapshot':head, 'contract_sha256':planning.contract_hash(saved),
                    **planning.governance_revisions(instance)}
         review_action = {'role':'task_contract_review', 'target':saved['id']}
@@ -337,8 +340,7 @@ class AuditPersistenceTests(unittest.TestCase):
             task_contracts.validate_item_dispositions(recipient, omitted, require_complete=True)
 
     def test_actual_engine_candidate_and_review_receiver_round_trip(self):
-        from do_math.engine import ResearchEngine
-        from do_math.contracts import CONTRACT_REVIEW_ITEMS, TASK_CANDIDATE
+        from do_math.contracts import TASK_CANDIDATE
         from do_math.execution_profiles import profile_ref
         from jsonschema import Draft202012Validator
         from research_fixtures import candidate
@@ -347,8 +349,7 @@ class AuditPersistenceTests(unittest.TestCase):
         self.runtime.update(cycles=0, waiting_actions={})
         self.execution('EX-author', 'research_preparation')
         self.execution('EX-review', 'task_contract_review')
-        engine = ResearchEngine.__new__(ResearchEngine)
-        engine.instance, engine.runtime, engine.store = self.instance, self.runtime, self.store
+        engine = bare_engine(self.instance, self.runtime, store=self.store)
         engine.head = self.store.initialize(engine.instance, engine.runtime)
         wire = candidate()
         profile = next(p for p in self.instance['execution_profiles'].values()
@@ -357,12 +358,15 @@ class AuditPersistenceTests(unittest.TestCase):
         wire['authority_refs'] = ['GR-audit']
         Draft202012Validator(TASK_CANDIDATE).validate(wire)
         # No ID/revision or approval basis is patched into this actual receiver input.
+        # The author's issued input fixes which task inputs it could name.
+        from unittest.mock import create_autospec
+        engine._issued_input = create_autospec(engine._issued_input, return_value=(
+            {'available_input_refs': [], 'supplied_record_ids': []}, None))
         engine._apply({'role':'research_preparation'}, {'candidates':[wire]}, 'EX-author', owns_response=False)
         task = next(iter(engine.runtime['tasks'].values()))
         self.assertEqual(task['revision'], 1)
         self.assertEqual(task['profile_refs'], wire['profile_refs'])
-        output = {'item_reviews':[{'item_id':key, 'decision':'approved', 'evidence_refs':['S'],
-            'findings':[], 'missing_inputs':[], 'next_owner':'research_plan'} for key in CONTRACT_REVIEW_ITEMS]}
+        output = review_items(['S'])
         engine._apply({'role':'task_contract_review', 'target':task['id']}, output, 'EX-review', owns_response=False)
         saved_head = self.store.save_with_state(engine.head, engine.instance, engine.runtime)[0]
         _, instance, runtime = self.store.load(saved_head)
@@ -500,7 +504,7 @@ class FollowupRegressions(unittest.TestCase):
             lambda t,i,r:i['grants']['GR-1'].update(status='revoked'),
             lambda t,i,r:i['execution_profiles'].clear(),
             lambda t,i,r:t.update(revision_requested={'revision':1,'source':'EX-repair'}),
-            lambda t,i,r:r['question_links'].append({'id':'Q-1','owner':'user','status':'open','blocks':True,'target_ids':['TK-1']}),
+            lambda t,i,r:r['question_links'].append({'id':'Q-1','owner':'user','status':'open','blocks':True,'target_ids':['TK-1'],'unresolved_target_ids':['TK-1']}),
             lambda t,i,r:r['queue'].append({'id':'AC-revise','role':'research_preparation','revision_targets':{'TK-1':{}}})]
         for mutate in mutations:
             with self.subTest(mutate=mutate):

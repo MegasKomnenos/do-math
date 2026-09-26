@@ -17,9 +17,9 @@ from do_math.control_transport import ControlTransport
 from do_math.execution_lifecycle import (create_execution, record_submission_intent,
                                          recover_execution, transition_execution)
 from do_math.parallel import ModelCalls
-from do_math.provider_engine import ProviderEngineMixin
-from do_math.provider_wait import provider_wait_disposition
+from do_math.provider_wait import gate_open, retry_time
 from do_math.execution_profiles import TIERS, build_profiles
+from research_fixtures import bare_engine
 
 
 TIME = "2026-09-20T00:00:00+00:00"
@@ -67,37 +67,6 @@ class ActivityContractTests(unittest.TestCase):
         second = self.execution("EX-2", continuation_of="EX-1")
         assign_execution(self.runtime, "AY-1", second)
         self.assertTrue(any("continuation" in error for error in validate_activities(self.runtime)))
-
-    def test_pause_and_queued_recovery_preserve_obligation_without_inventing_context(self):
-        from do_math import activities
-        action = {"id": "AC-local", "role": "research_work"}
-        self.runtime["queue"] = [action]
-        working = deepcopy(action)
-        activities.bind_action(self.runtime, working, "AY-1")
-        self.assertEqual(action["owner_activity_id"], "AY-1")
-        execution = self.execution("EX-1")
-        execution["action"] = working
-        assign_execution(self.runtime, "AY-1", execution)
-        recovered = activities.requeue_recovered_execution(self.runtime, "EX-1", at=TIME)
-        self.assertEqual((execution["status"], execution["outcome"]), ("ended", "cancelled"))
-        self.assertEqual(recovered["continuation_of"], "EX-1")
-        activities.continue_activity(self.runtime, "EX-1", at=TIME, reason="user_pause",
-                                     condition={"kind": "user_resume"}, next_owner="user")
-        self.assertEqual(len(self.runtime["queue"]), 1)
-        self.assertEqual(self.runtime["activities"]["AY-1"]["waiting"]["next_owner"], "user")
-        self.assertEqual(recovered["context_origin"], [])
-        self.assertEqual(validate_activities(self.runtime), [])
-
-    def test_queued_recovery_does_not_discard_a_held_reservation(self):
-        from do_math.activities import requeue_recovered_execution
-        execution = self.execution("EX-1")
-        execution["action"] = {"id": "AC-1", "role": "research_work"}
-        assign_execution(self.runtime, "AY-1", execution)
-        self.runtime["reservations"] = {"RS-1": {"owner_id": "EX-1", "state": "held"}}
-        before = deepcopy(self.runtime)
-        with self.assertRaisesRegex(ValueError, "reconciliation"):
-            requeue_recovered_execution(self.runtime, "EX-1", at=TIME)
-        self.assertEqual(self.runtime, before)
 
     def test_assignment_cannot_erase_an_unresolved_pause_wait(self):
         first = self.execution("EX-1")
@@ -210,7 +179,8 @@ class ExecutionLifecycleTests(unittest.TestCase):
         from do_math.execution_lifecycle import end_preparation
         execution = create_execution(execution_id="EX-1", owner_activity_id="AY-1", actor_kind="ai",
             input_manifest=[], profile_ref="PF-1", created_at=TIME)
-        execution["process"] = {"job_name": "existing-job"}
+        execution["capacity"] = {"reservation_ids": [], "provider": None,
+                                 "process": {"job_name": "existing-job"}, "local_termination": "unknown"}
         before = deepcopy(execution)
         with self.assertRaisesRegex(ValueError, "reconcile"):
             end_preparation(execution, at=TIME, stage="role_input", reason="input error", cancelled=False)
@@ -219,37 +189,31 @@ class ExecutionLifecycleTests(unittest.TestCase):
 
 class ProviderAndParallelTests(unittest.TestCase):
     def test_provider_wait_is_a_wait_record_not_a_capacity_claim(self):
-        disposition = provider_wait_disposition(model="gpt-5.6-terra", attempts=2, current=100,
-                                                initial=20, maximum=60)
-        self.assertEqual((disposition["kind"], disposition["state"], disposition["provider"]),
-                         ("provider_admission", "waiting", "codex"))
-        self.assertEqual(disposition["retry_at_timestamp"], 140)
+        self.assertEqual(retry_time({}, 2, 100, 20, 60), 140)
+        self.assertEqual(retry_time({}, 9, 100, 20, 60), 160)
+        waiting = {"state": "waiting", "retry_at": 140}
+        self.assertFalse(gate_open(waiting, 139))
+        self.assertTrue(gate_open(waiting, 140))
+        self.assertTrue(gate_open({"state": "available", "retry_at": None}, 0))
+        self.assertFalse(gate_open({"state": "checking", "retry_at": 0}, 140))
 
-    def test_provider_mixin_records_structured_waits_on_admission_and_failure(self):
+    def test_provider_mixin_records_structured_wait_on_refused_admission(self):
+        from unittest.mock import create_autospec
+        wait = {"kind": "provider_limit", "provider": "codex", "retry_at": "2026-09-20T00:01:00+00:00",
+                "next_owner": "scheduler"}
         class Slots:
-            admission_reason = "provider_limit"
-            admission_wait = {"kind": "provider_limit", "provider": "codex", "next_owner": "scheduler"}
-            def acquire(self, *args, **kwargs):
+            admission_wait = wait
+            def acquire(self, execution_id, *, profile, execution, current_time=None):
                 return False
-        class Harness(ProviderEngineMixin):
-            def __init__(self):
-                self._slots = Slots()
-                self.runtime = {"queue": [], "status": "ready"}
-                self.instance = {"config": {"provider_retry_initial_seconds": 20,
-                                            "provider_retry_max_seconds": 60}}
-            def _remove_action(self, action):
-                self.runtime["queue"] = [item for item in self.runtime["queue"] if item is not action]
-        engine = Harness()
+        engine = bare_engine({"config": {"provider_retry_initial_seconds": 20,
+                                         "provider_retry_max_seconds": 60}}, {"queue": [], "status": "ready"})
+        engine._session_slots = create_autospec(engine._session_slots, return_value=Slots())
         action = {"id": "AC-1", "model_selection": {"tier": "low", "model": "gpt-5.6-terra",
                   "assessment": None, "reason": "Provider-admission fixture assignment"}}
         profile, execution = {"id": "EP-1"}, {"id": "EX-1"}
-        self.assertFalse(engine._provider_admit(action, "EX-1", "work", "gpt-5.6-terra", profile=profile, execution=execution))
-        self.assertEqual(action["dispatch_wait"]["activity_wait"]["kind"], "provider_admission")
-        engine.runtime["queue"] = [action]
-        engine._hold_provider_action(action, "EX-1", {"provider": "codex", "generation": 1, "retry_at": None}, "quota")
-        held = engine.runtime["waiting_actions"]["AC-1"]
-        self.assertEqual(held["activity_wait"]["state"], "waiting")
-        self.assertEqual(engine.runtime["status"], "waiting")
+        self.assertFalse(engine._provider_admit(action, "EX-1", profile=profile, execution=execution))
+        self.assertEqual(action["dispatch_wait"], wait)
+        self.assertIsNot(action["dispatch_wait"], wait)
 
     def test_provider_mixin_uses_git_runtime_reservation_not_sqlite(self):
         config = {
@@ -263,24 +227,17 @@ class ProviderAndParallelTests(unittest.TestCase):
             "claude_only_assigned_model": False,
             "tier_models": {tier: "gpt-5.6-terra" for tier in TIERS},
             "session_limits": {
-                "work": {"gpt-5.6-terra": 1},
-                "operations": {"gpt-5.6-terra": 1},
+                "work": {"gpt-5.6-terra": 2},
             },
         }
         authored = build_profiles(config)
         profile = next(value for value in authored["execution_profiles"].values()
-                       if value["role"] == "research_preparation" and value["actor_kind"] == "ai")
-        class Harness(ProviderEngineMixin):
-            def __init__(self):
-                self._slots = None
-                self.runtime = {"executions": {}, "reservations": {}, "provider_waits": {}, "queue": [], "status": "ready"}
-                self.instance = {"workspace": tempfile.gettempdir(), "id": "RI-test", "config": config, **authored}
-        engine = Harness()
+                       if value["role"] == "research_work" and value["actor_kind"] == "ai")
+        engine = bare_engine({"workspace": tempfile.gettempdir(), "id": "RI-test", "config": config, **authored},
+            {"executions": {}, "reservations": {}, "provider_waits": {}, "queue": [], "status": "ready"})
         execution = {"id": "EX-git", "role": profile["role"], "status": "starting"}
         action = {"id": "AC-git"}
-        model = profile["ai"]["model"]
-        self.assertTrue(engine._provider_admit(action, "EX-git", profile["budget_kind"], model,
-                                               profile=profile, execution=execution))
+        self.assertTrue(engine._provider_admit(action, "EX-git", profile=profile, execution=execution))
         self.assertIn("EX-git", engine.runtime["executions"])
         self.assertTrue(engine.runtime["reservations"])
         self.assertEqual(engine._provider_status()["source"], "git_runtime")
@@ -289,10 +246,10 @@ class ProviderAndParallelTests(unittest.TestCase):
                              if value["role"] == "research_work")
         other = {"id": "EX-independent", "role": "research_work", "status": "starting"}
         self.assertTrue(engine._provider_admit({"id": "AC-independent"}, other["id"],
-            other_profile["budget_kind"], model, profile=other_profile, execution=other))
-        slots = engine._provider_slots()
-        slots.started("EX-git", {"job_name": execution['launch_ticket']['job_name']})
-        transition_execution(execution, "running", at=TIME)
+                                               profile=other_profile, execution=other))
+        slots = engine._session_slots()
+        slots.started("EX-git", {"job_name": execution['launch_ticket']['job_name']}, at=TIME)
+        self.assertEqual(execution["status"], "running")
         with patch("do_math.windows_job.named_job_empty", return_value=False):
             self.assertFalse(engine._settle_recovered_execution("EX-git", at=TIME, outcome="cancelled"))
         self.assertEqual(execution["status"], "running")
@@ -324,10 +281,16 @@ class ProviderAndParallelTests(unittest.TestCase):
             self.assertEqual(child(query, binding)["snapshot"], "SN-1")
             recovered = ControlTransport(root)
             self.assertEqual(recovered.pump(lambda _: self.fail("published request must not republish"))[0]["publication_id"], "PR-1")
-            transport.request_self_check(binding, self_check_id="SC-1", payload={"obligation": "report scope"})
+            transport.request_self_check(binding, request={"self_check_id": "SC-1", "execution_id": "EX-1",
+                                                           "payload": {"obligation": "report scope"}})
             poll = "import json,sys; from do_math.control_transport import ControlTransport; b=json.loads(sys.argv[1]); print(json.dumps(ControlTransport.worker_self_check(b, self_check_id='SC-1')))"
             self.assertEqual(child(poll, binding)["payload"]["obligation"], "report scope")
-            reply = "import json,sys; from do_math.control_transport import ControlTransport; b=json.loads(sys.argv[1]); print(json.dumps(ControlTransport.worker_self_check(b, self_check_id='SC-1', response={'status':'complete'})))"
+            answer = {"obligation_id": "SC-1", "execution_id": "EX-1", "rule_revision": 0,
+                      "rule_results": [{"rule_id": "R-1", "status": "normal", "evidence_refs": ["EV-1"],
+                                        "missing_evidence_refs": [], "reason": "checked"}],
+                      "progress": "progress", "attempts": ["checked"], "next_method": "continue"}
+            reply = ("import json,sys; from do_math.control_transport import ControlTransport; b=json.loads(sys.argv[1]); "
+                     "print(json.dumps(ControlTransport.worker_self_check(b, self_check_id='SC-1', response=" + repr(answer) + ")))")
             self.assertEqual(child(reply, binding)["state"], "submitted")
             self.assertEqual(transport.pump(lambda _: {"state": "accepted", "published": True, "snapshot": "SN-2"})[-1]["kind"], "self_check_response")
             transport.close(binding, reason="execution ended")
@@ -371,7 +334,7 @@ class ProviderAndParallelTests(unittest.TestCase):
         generator = operation(); arguments = next(generator)
         calls = ModelCalls()
         try:
-            calls.start(generator, Runner(), arguments, execution_id="EX-1")
+            calls.start_call(generator, Runner().run, arguments, execution_id="EX-1")
             deadline = time.monotonic() + 10
             while not calls.collect():
                 self.assertLess(time.monotonic(), deadline,
@@ -394,11 +357,13 @@ class AuditRecoveryTests(unittest.TestCase):
         root = Path(self.temporary.name)
         subprocess.run(["git", "init", "-q", str(root)], check=True)
         self.repo = ResearchRepository(root, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV")
-        self.instance = {"feature_version": 5, "config": deepcopy(DEFAULT_CONFIG),
-                         **build_profiles(DEFAULT_CONFIG)}
+        from research_fixtures import current_state
+        # Every stored state passes the current lifecycle gate.
+        self.instance, self.runtime = current_state(
+            {"config": deepcopy(DEFAULT_CONFIG), **build_profiles(DEFAULT_CONFIG)},
+            {"executions": {}, "queue": [], "reservations": {}})
         self.profile = next(p for p in self.instance["execution_profiles"].values()
                             if p["role"] == "maintenance")
-        self.runtime = {"feature_version": 5, "executions": {}, "queue": [], "reservations": {}}
         open_activity(self.runtime, activity_id="AY-audit", activity_kind="maintenance",
                       owner_ref="AC-audit", input_refs=[], opened_at=TIME)
         self.execution = create_execution(execution_id="EX-audit", owner_activity_id="AY-audit",
@@ -428,17 +393,20 @@ class AuditRecoveryTests(unittest.TestCase):
 
     def test_04_confirmed_local_termination_releases_only_its_reservation(self):
         from unittest.mock import patch
+        from do_math.execution_profiles import profile_ref
         from do_math.session_slots import SessionSlots
+        # Only work roles reserve a model slot; bind this execution to one so a
+        # reservation exists whose return the recovery must confirm.
+        profile = next(p for p in self.instance["execution_profiles"].values()
+                       if p["role"] == "research_work" and p["actor_kind"] == "ai")
+        self.execution.update(role="research_work", execution_profile_ref=profile_ref(profile))
         slots = SessionSlots(self.runtime, self.instance)
         transition_execution(self.execution, "starting", at=TIME)
-        self.assertTrue(slots.acquire("EX-audit", self.profile["budget_kind"], self.profile["ai"]["model"],
-                                     profile=self.profile, execution=self.execution))
-        slots.started("EX-audit", {"job_name": self.execution['launch_ticket']['job_name']})
-        transition_execution(self.execution, "running", at=TIME)
+        self.assertTrue(slots.acquire("EX-audit", profile=profile, execution=self.execution))
+        self.assertTrue(self.execution["capacity"]["reservation_ids"])
+        slots.started("EX-audit", {"job_name": self.execution['launch_ticket']['job_name']}, at=TIME)
         self.reload()
-        engine = ProviderEngineMixin()
-        engine.instance, engine.runtime = self.instance, self.runtime
-        engine._slots = SessionSlots(self.runtime, self.instance)
+        engine = bare_engine(self.instance, self.runtime)
         self.assertTrue(hasattr(engine, "_settle_recovered_execution"), "missing recovery/slot settlement API")
         with patch("do_math.windows_job.named_job_empty", return_value=False):
             self.assertFalse(engine._settle_recovered_execution("EX-audit", at=TIME))
@@ -453,20 +421,7 @@ class AuditRecoveryTests(unittest.TestCase):
                 self.assertEqual(row["returned"], row["reserved"])
         engine.instance, engine.runtime = self.instance, self.runtime
         # A loaded ended execution is reconciled idempotently, not silently excluded.
-        engine._slots = SessionSlots(self.runtime, self.instance)
         self.assertTrue(engine._settle_recovered_execution("EX-audit", at=TIME))
-
-    def test_05_queued_recovery_is_retired_and_requeued_with_exact_lineage(self):
-        from do_math import activities
-        self.assertTrue(hasattr(activities, "requeue_recovered_execution"), "queued recovery has no redispatch API")
-        activities.requeue_recovered_execution(self.runtime, "EX-audit", at=TIME)
-        self.reload()
-        self.assertEqual((self.execution["status"], self.execution["outcome"]), ("ended", "cancelled"))
-        self.assertEqual(self.runtime["queue"][0]["continuation_of"], "EX-audit")
-        self.assertEqual(self.runtime["queue"][0]["owner_activity_id"], "AY-audit")
-        self.assertFalse(any(e["status"] != "ended" and e["action"]["id"] == "AC-audit"
-                             for e in self.runtime["executions"].values()))
-        self.assertEqual(validate_activities(self.runtime), [])
 
     def test_06_pause_keeps_original_queue_binding_and_checkpoint_lineage(self):
         from do_math import activities
@@ -531,12 +486,6 @@ class AuditRecoveryTests(unittest.TestCase):
         self.reload()
         self.assertEqual((self.execution["status"], self.execution["outcome"]), ("ended", "start_failed"))
         self.assertEqual(self.execution["input_preparation"]["reason"], "input unavailable")
-
-    def test_starting_no_substantive_action_has_a_legal_terminal_path(self):
-        transition_execution(self.execution, "starting", at=TIME)
-        recover_execution(self.execution, {"fact": "no_substantive_action"}, at=TIME)
-        self.assertEqual(self.execution["outcome"], "start_failed")
-        self.reload()
 
 
 if __name__ == "__main__":

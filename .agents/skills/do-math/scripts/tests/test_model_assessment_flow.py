@@ -11,7 +11,7 @@ import sys
 import tempfile
 import threading
 import unittest
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from research_fixtures import local_job_runner
@@ -383,7 +383,7 @@ class RejectedAcademicAssessmentTests(PurposeHarness):
                 engine, tid, original = self.rejected_engine("unresolved" if unchanged else "revision_required")
                 # This case exercises reassessment -> contract review. General
                 # user-decision planning has its own runner and separate tests.
-                engine._schedule_reconsideration = lambda *args, **kwargs: None
+                engine._schedule_reconsideration = create_autospec(engine._schedule_reconsideration, return_value=None)
                 engine.runtime['queue'] = [a for a in engine.runtime['queue']
                     if a.get('assessment_targets') or a['role'] == 'task_contract_review']
                 engine._save()

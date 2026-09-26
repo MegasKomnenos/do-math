@@ -4,7 +4,8 @@ import sys
 import unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.review_cycle import start_review, next_actions, stage_schema, accept_result, context_for, record_turn
+from do_math.review_cycle import (start_review, next_actions, stage_schema, accept_result, context_for, record_turn,
+                                  validate_review_independence)
 
 
 def scoped_start(proposal, reviewers, judges=3, max_rounds=3, previous=None):
@@ -242,10 +243,16 @@ class ReviewCycleTests(unittest.TestCase):
 
     def test_proposal_mutation_and_execution_identity(self):
         cycle = self.start()
-        with self.assertRaises(ValueError):
-            accept_result(cycle, next_actions(cycle)[0], self.output(cycle, 'initial'), 'author')
-        with self.assertRaises(ValueError):
-            accept_result(cycle, next_actions(cycle)[0], self.output(cycle, 'initial'), 'review', {'continuation_of': 'author'})
+        # Authorship and inherited author context are judged by the one lineage check
+        # that admission and acceptance both run before accept_result.
+        action = next_actions(cycle)[0]
+        runtime = {'executions': {'author': {'id': 'author'}, 'fresh': {'id': 'fresh'},
+                                  'resumed': {'id': 'resumed', 'continuation_of': 'author'},
+                                  'inherited': {'id': 'inherited', 'context_origin': ['author']}}}
+        validate_review_independence(cycle, runtime, 'fresh', action)
+        for execution_id in ('author', 'resumed', 'inherited'):
+            with self.subTest(execution_id=execution_id), self.assertRaises(ValueError):
+                validate_review_independence(cycle, runtime, execution_id, action)
         first = self.submit(cycle)
         with self.assertRaises(ValueError):
             accept_result(first, next_actions(first)[0], self.output(first, 'initial'), 'e-0')

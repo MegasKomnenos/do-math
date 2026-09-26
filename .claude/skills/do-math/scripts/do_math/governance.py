@@ -11,15 +11,26 @@ from datetime import datetime, timezone
 import hashlib
 from typing import Any
 
+from .file_io import is_sha256, parse_utc
 from .repository import exact_content_hash, new_id
 from .academic import requirement_record
+from .execution_profiles import WORK_ROLES as _SLOT_WORK_ROLES
 from .external import recover_operation
 
-WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit", "formal_check"}
+# Roles that carry out or judge task work: the slot-reserving work roles and
+# the machine formal check. A governance change stops their unended executions.
+TASK_WORK_ROLES = _SLOT_WORK_ROLES | {"formal_check"}
 OPERATING_ROLES = {"research_preparation", "research_plan", "operational_review", "intent_interpretation", "maintenance",
                    "trust_check", "trust_activate"}
 
 GOVERNANCE_KINDS = {"charter", "policy", "research_context", "additional_audit"}
+# Decision kinds owned by this module; import owners cannot replace them.
+DECISION_OWNER_KINDS = GOVERNANCE_KINDS | {"grant", "revoke", "delegation", "question_answer", "task_scope"}
+# Verdicts of the independent interpretation check (schema enum and receiver check).
+INTERPRETATION_DECISIONS = ("approved", "revision_required", "unresolved")
+GRANT_LIST_FIELDS = ("included_targets", "excluded_targets", "subjects", "execution_kinds", "purposes")
+# The states of one grant: created active, then revoked by a decision or expired by time.
+GRANT_STATUSES = frozenset({"active", "revoked", "expired"})
 
 
 def preserve_source(identifier: str, text: str, *, origin: str, revision: int = 1) -> dict:
@@ -90,7 +101,7 @@ def validate_governance_record(record: dict) -> None:
         document = record["document"]
         if not isinstance(document, dict): raise ValueError("document reference required")
         _require_text(document.get("ref"), "document ref")
-        if len(document.get("sha256", "")) != 64: raise ValueError("document bytes hash required")
+        if not is_sha256(document.get("sha256")): raise ValueError("document bytes hash required")
 
 
 def _install_record(instance, record, approval_ref, source_ref):
@@ -201,8 +212,8 @@ def evaluate_additional_audit(instance, audit_id, verdict, *, assessor, input_ha
     if audit.get("kind") != "additional_audit" or audit.get("status") != "active": raise ValueError("audit is not current")
     content = audit["content"]
     if assessor != content["assessor"] or verdict not in content["verdict_mapping"]: raise ValueError("audit assessor or verdict differs from approval")
-    from .planning import _records
-    records = _records(instance, runtime or {})
+    from .planning import record_index
+    records = record_index(instance, runtime or {})
     if set(input_hashes) != set(content["required_inputs"]): raise ValueError("audit inputs differ from the approved required set")
     for ref in content["required_inputs"]:
         record = records.get(ref, (None, None))[1]
@@ -217,8 +228,8 @@ def additional_audit_input(instance, runtime=None):
     Every active additional audit is required at the final goal gate. Its scope
     tells the assessor what to compare, not permission to silently omit it.
     """
-    from .planning import _records
-    records = _records(instance, runtime or {})
+    from .planning import record_index
+    records = record_index(instance, runtime or {})
     result = []
     for audit in sorted(instance.get("governance", {}).values(), key=lambda row: row["id"]):
         if audit.get("kind") != "additional_audit" or audit.get("status") != "active": continue
@@ -316,7 +327,7 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
     for execution in state.get("executions", {}).values():
         if (execution.get("status") != "ended" and record["kind"] in {"charter", "policy"}
                 and (not academic_only or state.get("tasks", {}).get(execution.get("action", {}).get("target"), {}).get("academic_requirement_id"))
-                and execution.get("role") in WORK_ROLES | {"research_preparation", "research_plan"}
+                and execution.get("role") in TASK_WORK_ROLES | {"research_preparation", "research_plan"}
                 and not execution.get("action", {}).get("review_cycle_id")):
             execution["stop_requested"] = "governance_changed"
             event["affected"].append(execution["id"])
@@ -330,12 +341,8 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
 
 
 def timestamp(value: str | None = None) -> datetime:
-    if value is not None and (not isinstance(value, str) or not value):
-        raise ValueError('time must be a nonempty timestamp string or null')
-    result = datetime.fromisoformat(value.replace("Z", "+00:00")) if value is not None else datetime.now(timezone.utc)
-    if result.tzinfo is None:
-        raise ValueError("a timezone is required")
-    return result.astimezone(timezone.utc)
+    """A stored zoned time as UTC; None means the current time."""
+    return datetime.now(timezone.utc) if value is None else parse_utc(value)
 
 
 def ensure_governance(instance: dict) -> dict:
@@ -376,16 +383,33 @@ def grant_scope_reason(grant, action, runtime, *, at=None):
     return _grant_scope_reason(grant, action, runtime, now=timestamp(at))
 
 
-def _grant_scope_reason(grant, action, runtime, *, now):
-    if grant.get("status") != "active": return "grant is not active"
+def grant_time_reason(grant, now):
+    """The one effective-interval rule of a grant: [valid_from, expires_at)."""
     if grant.get("expires_at") and timestamp(grant["expires_at"]) <= now: return "grant expired"
     if grant.get("valid_from") and timestamp(grant["valid_from"]) > now: return "grant is not effective yet"
+    return None
+
+
+def normalized_grant(spec, *, gid, created_at, source_ref, decision_id):
+    """Stored form of one approved grant; the producer and the source check both build it here."""
+    grant = deepcopy(spec)
+    grant.update(id=gid, status="active", expires_at=spec.get("expires_at"), created_at=created_at,
+                 source_ref=source_ref, decision_id=decision_id)
+    grant.setdefault("reuse", "once")
+    for field in GRANT_LIST_FIELDS:
+        grant.setdefault(field, [])
+    return grant
+
+
+def _grant_scope_reason(grant, action, runtime, *, now):
+    if grant.get("status") != "active": return "grant is not active"
+    time_reason = grant_time_reason(grant, now)
+    if time_reason: return time_reason
     target = action.get("target")
     if target in grant.get("excluded_targets", []): return "target excluded"
     for field in ("included_targets", "task_ids"):
         if grant.get(field) and target not in grant[field]: return "target outside grant"
     if grant.get("subjects") and action.get("subject", action.get("role")) not in grant["subjects"]: return "subject outside grant"
-    if grant.get("budget_kind") and action.get("budget_kind") != grant["budget_kind"]: return "resource pool outside grant"
     if grant.get("execution_kinds") and action.get("actor_kind") not in grant["execution_kinds"]: return "execution kind outside grant"
     if grant.get("purposes") and action.get("purpose") not in grant["purposes"]: return "purpose outside grant"
     if grant.get("resource_limits"):
@@ -450,12 +474,8 @@ def validate_grant_source(instance, grant):
             or decision.get("status", "active") != "active" or decision.get("source_ref") != source["id"]
             or decision.get("source_sha256", source["sha256"]) != source["sha256"]):
         raise ValueError("grant lacks current source-bound user approval")
-    approved = deepcopy(decision.get("change", {}).get("grant", {}))
-    approved.update(id=grant["id"], status="active", expires_at=approved.get("expires_at"),
-                    created_at=decision["created_at"], source_ref=source["id"], decision_id=decision["id"])
-    approved.setdefault("reuse", "once")
-    for field in ("included_targets", "excluded_targets", "subjects", "execution_kinds", "purposes"):
-        approved.setdefault(field, [])
+    approved = normalized_grant(decision.get("change", {}).get("grant", {}), gid=grant["id"],
+                                created_at=decision["created_at"], source_ref=source["id"], decision_id=decision["id"])
     if approved != grant: raise ValueError("grant differs from the actual approved scope")
 
 
@@ -511,7 +531,7 @@ def expire_grants(instance, runtime, *, at):
     result, state = deepcopy(instance), deepcopy(runtime)
     events = []
     for gid, grant in result.get("grants", {}).items():
-        if grant.get("status") != "active" or not grant.get("expires_at") or timestamp(grant["expires_at"]) > timestamp(at): continue
+        if grant.get("status") != "active" or grant_time_reason(grant, timestamp(at)) != "grant expired": continue
         event = {"id":new_id("GX"),"kind":"grant_expiry","grant_id":gid,"at":at,"affected":[]}
         grant.update(status="expired",expired_at=at,expiry_event_ref=event["id"])
         _dispose_grant_consumers(state,gid,event,"grant_expired")
@@ -553,7 +573,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
             raise ValueError("new grant has already expired")
         if spec["kind"] == "local":
             roles = spec.get("roles")
-            if not isinstance(roles, list) or not roles or set(roles) - WORK_ROLES - OPERATING_ROLES:
+            if not isinstance(roles, list) or not roles or set(roles) - TASK_WORK_ROLES - OPERATING_ROLES:
                 raise ValueError("local grant requires supported roles")
             if not isinstance(spec.get("task_ids", []), list):
                 raise ValueError("task_ids must be a list")
@@ -565,12 +585,10 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         gid = spec.get("id") or new_id("GR")
         if gid in instance["grants"]:
             raise ValueError("grant ID already exists; revoke it before replacing authority")
-        spec.update(id=gid, status="active", expires_at=expires, created_at=when,
-                    source_ref=source_ref, decision_id=decision_id)
-        spec.setdefault("reuse", "once")
+        spec = normalized_grant(spec, gid=gid, created_at=when, source_ref=source_ref, decision_id=decision_id)
         if spec["reuse"] not in {"once", "reusable"}: raise ValueError("grant reuse must be explicit once or reusable")
-        for field in ("included_targets", "excluded_targets", "subjects", "execution_kinds", "purposes"):
-            _strings(spec.setdefault(field, []), field)
+        for field in GRANT_LIST_FIELDS:
+            _strings(spec[field], field)
         if spec.get("resource_limits"):
             raise ValueError("resource limits require an enforcing reservation contract; unsupported limits cannot be granted")
         if spec.get("valid_from"): timestamp(spec["valid_from"])
@@ -634,7 +652,8 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         for identifier in identifiers:
             if identifier not in by_id:
                 raise ValueError("unknown question: " + str(identifier))
-            relevant = by_id[identifier].get("unresolved_target_ids", by_id[identifier]["target_ids"])
+            from .questions import open_targets
+            relevant = open_targets(by_id[identifier])
             if targets is not None and set(targets) - set(relevant): raise ValueError("answer names unrelated or already resolved targets")
             event["affected"].extend(targets if targets is not None else relevant)
     elif kind == "task_scope":
@@ -686,7 +705,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
 def _import_basis(instance, runtime, output):
     """Bind the governance and records actually referenced by this interpretation."""
     from .planning import contract_hash
-    from .planning import _records
+    from .planning import record_index
     reference_fields = {'owner_ref', 'decision_refs', 'used_sources', 'source_refs', 'supersedes',
         'target_ids', 'task_ids', 'resolves_questions', 'grant_id', 'replaces',
         'original_decision_id', 'task_id', 'target_task_id', 'included_targets', 'excluded_targets',
@@ -705,17 +724,12 @@ def _import_basis(instance, runtime, output):
     # Current research governance constrains every interpretation. Unrelated
     # task progress, decisions and grants are not part of that premise.
     governance = {key: row for key, row in instance.get('governance', {}).items() if row.get('status') == 'active'}
-    records = {key: row for key, (_, row) in _records(instance, runtime).items()}
+    records = {key: row for key, (_, row) in
+               record_index(instance, runtime, source_aliases=True, question_links=True).items()}
     if instance.get('id'):
         # An owner coordinate naming the instance is not a dependency on
         # every nested record. Domain handlers capture their own settings.
         records[instance['id']] = {'id': instance['id']}
-    records.update(instance.get('governance_sources', {}))
-    from .input_basis import aliases
-    for source in instance.get('sources', []):
-        for alias in aliases(source):
-            records.setdefault(alias, source)
-    records.update({row['id']: row for row in runtime.get('question_links', [])})
     for row in governance.values():
         references.update(row[key] for key in ('approval_ref', 'source_ref') if row.get(key))
     pending = list(references)
@@ -739,7 +753,7 @@ def register_import_owner(handlers, kind, *, apply, validate, basis, contract=No
     ENGINE supplies configuration's existing configure consumer through this API.
     """
     _require_text(kind, "import owner kind")
-    if kind in GOVERNANCE_KINDS or kind in {"grant", "revoke", "delegation", "question_answer", "task_scope"}:
+    if kind in DECISION_OWNER_KINDS:
         raise ValueError("cannot replace a governance authority owner")
     if kind in handlers: raise ValueError("import owner already registered")
     if not all(callable(fn) for fn in (apply, validate, basis)): raise ValueError("owner needs apply, validate and currentness functions")
@@ -754,9 +768,8 @@ def register_import_owner(handlers, kind, *, apply, validate, basis, contract=No
 def import_consumer_catalog(handlers=None):
     """Publish the actual registered kinds and their producer-facing contracts."""
     owners = _owner_handlers(handlers)
-    builtins = GOVERNANCE_KINDS | {'grant', 'revoke', 'delegation', 'question_answer', 'task_scope',
-                                  'configuration', 'research_record', 'evidence'}
-    kinds = GOVERNANCE_KINDS | {'grant', 'revoke', 'delegation', 'question_answer', 'task_scope'} | set(owners)
+    builtins = DECISION_OWNER_KINDS | {'configuration', 'research_record', 'evidence'}
+    kinds = DECISION_OWNER_KINDS | set(owners)
     rows = []
     for kind in sorted(kinds):
         contract = owners.get(kind, {}).get('contract')
@@ -786,11 +799,11 @@ def _validate_knowledge_import(instance, runtime, unit):
 
 
 def _knowledge_import_basis(instance, runtime, unit):
-    from .planning import _records
+    from .planning import record_index
     from .knowledge_io import _lookup_definition, ensure_ontology
     from .input_basis import capture_sources
     candidate = unit["payload"].get("record", {})
-    records = _records(instance, runtime)
+    records = record_index(instance, runtime)
     refs = {unit["owner_ref"], *candidate.get("dependencies", [])}
     if candidate.get("formal_result_ref"): refs.add(candidate["formal_result_ref"])
     return {"records": {ref: deepcopy(records.get(ref, (None, None))[1]) for ref in sorted(refs)},
@@ -845,13 +858,18 @@ def _owner_basis(instance, runtime, output, handlers):
             for unit in output["import_units"] if unit["owner_kind"] in handlers}
 
 
-def validate_import_units(instance, runtime, source, output, *, owner_handlers=None):
-    """Check exact character coverage and ownership; semantic preservation is checked separately."""
+def validate_import_units(instance, runtime, source, output, *, owner_handlers=None, owner_kinds=None):
+    """Check exact character coverage and ownership; semantic preservation is checked separately.
+
+    The interpreting producer runs this same check on its fixed input
+    (submission._intent_import_issues). It passes the published owner_kinds of
+    import_consumers instead of handlers, so owner checks of live state stay here.
+    """
     validate_source(source)
     units = output.get("import_units")
     if not isinstance(units, list) or not units: raise ValueError("import units required")
-    owner_handlers = _owner_handlers(owner_handlers)
-    known_owners = GOVERNANCE_KINDS | {"grant", "revoke", "delegation", "question_answer", "task_scope"} | set(owner_handlers)
+    owner_handlers = {} if owner_kinds is not None else _owner_handlers(owner_handlers)
+    known_owners = DECISION_OWNER_KINDS | set(owner_handlers if owner_kinds is None else owner_kinds)
     decisions = instance.get("decisions", {})
     details = output.get("question_details", [])
     if not isinstance(details, list): raise ValueError("question details required")
@@ -945,7 +963,7 @@ def prepare_import(instance, runtime, source, output, *, execution_id, previous_
     validate_import_units(instance, runtime, source, output, owner_handlers=owner_handlers)
     previous = runtime.get("intent_imports", {}).get(previous_id) if previous_id else None
     if previous_id:
-        if not previous or previous.get("superseded_by") or previous.get("status") not in {"revision_required", "unresolved", "approved"}:
+        if not previous or previous.get("superseded_by") or previous.get("status") not in INTERPRETATION_DECISIONS:
             raise ValueError("rework must follow a sealed failed or changed import")
         if previous["sha256"] != exact_content_hash(_import_payload(previous)): raise ValueError("rework parent seal changed")
         repair = output.get("repair", {})
@@ -995,7 +1013,7 @@ def _current_import(instance, runtime, import_id, *, owner_handlers=None):
     if expected_basis != _import_basis(instance, runtime, bundle["output"]): raise ValueError("import authority or affected targets changed")
     expected_owners = bundle.get("application", {}).get("post_owner_basis", bundle.get("owner_basis", {}))
     handlers = _owner_handlers(owner_handlers)
-    if any(u["owner_kind"] not in GOVERNANCE_KINDS | {"grant", "revoke", "delegation", "question_answer", "task_scope"} | set(handlers)
+    if any(u["owner_kind"] not in DECISION_OWNER_KINDS | set(handlers)
            for u in bundle["output"]["import_units"]): raise ValueError("import domain owner is no longer registered")
     if expected_owners != _owner_basis(instance, runtime, bundle["output"], handlers):
         raise ValueError("import domain premises changed")
@@ -1011,7 +1029,7 @@ def check_import(instance, runtime, import_id, output, *, execution_id, owner_ha
     if execution.get("role") != "intent_interpretation" or execution.get("intent_import_sha256") != bundle["sha256"]:
         raise ValueError("checker execution must bind exact preserved import input")
     if output.get("bundle_sha256") != bundle["sha256"]: raise ValueError("check read a different import")
-    if output.get("decision") not in {"approved", "revision_required", "unresolved"}: raise ValueError("invalid semantic verdict")
+    if output.get("decision") not in INTERPRETATION_DECISIONS: raise ValueError("invalid semantic verdict")
     if type(output.get("scope_complete")) is not bool: raise ValueError("scope completeness required")
     for field, expected in (("unit_ids", [u["unit_id"] for u in bundle["output"]["import_units"]]),
                             ("question_ids", [q["id"] for q in bundle["output"].get("question_details", [])])):
@@ -1159,7 +1177,7 @@ def interpretation_schema(stage: str) -> dict:
         fields.update(import_units={"type": "array", "items": unit, "minItems": 1}, needs_clarification={"type": "boolean"},
                       question_details={"type":"array","items":{"type":"object","additionalProperties":False,"properties":question_fields,"required":list(question_fields)}})
     elif stage == "check":
-        fields.update(decision={"type": "string", "enum": ["approved", "revision_required", "unresolved"]},
+        fields.update(decision={"type": "string", "enum": list(INTERPRETATION_DECISIONS)},
                       findings={"type": "array", "items": string}, scope_complete={"type": "boolean"}, bundle_sha256=string,
                       unit_ids={"type":"array","items":string,"uniqueItems":True},question_ids={"type":"array","items":string,"uniqueItems":True})
     else:

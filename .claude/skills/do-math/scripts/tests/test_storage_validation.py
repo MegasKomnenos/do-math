@@ -8,6 +8,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.repository import ResearchRepository, new_id
 from do_math.state_contract import StateContract
+from research_fixtures import current_state
 
 
 class RegisteredValidatorTests(unittest.TestCase):
@@ -19,8 +20,8 @@ class RegisteredValidatorTests(unittest.TestCase):
             subprocess.run(['git', 'init', '--quiet', str(root)], check=True, capture_output=True)
             identifier = new_id('RI')
             before = ResearchRepository(root, identifier)
-            head = before.initialize({'feature_version': 5, 'sources': [
-                {'id': 'SO-input', 'path': 'original.txt', 'sha256': 'a' * 64}]}, {'feature_version': 5})
+            head = before.initialize(*current_state({'sources': [
+                {'id': 'SO-input', 'path': 'original.txt', 'sha256': 'a' * 64}]}))
 
             contract = StateContract.default()
             def check_source(record):

@@ -19,23 +19,60 @@ import tempfile
 import time
 from typing import Any, Callable
 if __package__:
-    from .file_io import atomic_replace, read_bytes_shared, file_fingerprint, fingerprint_settled, json_digest
+    from .file_io import (compact_json_bytes, read_bytes_shared, file_fingerprint, fingerprint_settled,
+                          json_digest, write_bytes_atomic)
 else:
-    from file_io import atomic_replace, read_bytes_shared, file_fingerprint, fingerprint_settled, json_digest
+    from file_io import (compact_json_bytes, read_bytes_shared, file_fingerprint, fingerprint_settled,
+                         json_digest, write_bytes_atomic)
 
 
-_REQUEST_KINDS = frozenset({"safety_boundary", "submit_intent", "self_check_response", "submission_preview"})
+# Control vocabulary shared by the workers, the MCP server and the observers.
+CONTROL_SERVER = "execution_control"
+SUBMIT_TOOL, RECEIPT_TOOL, SELF_CHECK_TOOL = "control_submit", "control_receipt", "control_self_check"
+SAFETY_BOUNDARY, SUBMIT_INTENT = "safety_boundary", "submit_intent"
+SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW = "self_check_response", "submission_preview"
+REQUEST_KINDS = frozenset({SAFETY_BOUNDARY, SUBMIT_INTENT, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW})
+SUBMISSION_KINDS = frozenset({SUBMIT_INTENT, SUBMISSION_PREVIEW})
+# A binding names one execution's endpoint and capability; ``workspace`` is optional.
+BINDING_FIELDS = ("endpoint", "transport_id", "capability", "execution_id", "grant_id")
+
+_TEXT = {"type": "string", "minLength": 1}
+_REFS = {"type": "array", "items": _TEXT, "uniqueItems": True}
+# The worker checks its answer before sending it; the engine checks it again on receipt.
+SELF_CHECK_RESPONSE_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "required": ["obligation_id", "execution_id", "rule_revision", "rule_results", "progress", "attempts", "next_method"],
+    "properties": {
+        "obligation_id": _TEXT, "execution_id": _TEXT,
+        "rule_revision": {"type": "integer", "minimum": 0},
+        "progress": {"enum": ["progress", "no_progress", "contract_mismatch"]},
+        "attempts": {"type": "array", "items": _TEXT, "minItems": 1}, "next_method": _TEXT,
+        "rule_results": {"type": "array", "minItems": 1, "items": {
+            "type": "object", "additionalProperties": False,
+            "required": ["rule_id", "status", "evidence_refs", "missing_evidence_refs", "reason"],
+            "properties": {"rule_id": _TEXT, "status": {"enum": ["normal", "defect", "indeterminate"]},
+                "evidence_refs": _REFS, "missing_evidence_refs": _REFS, "reason": _TEXT}}},
+        "rule_proposal": {},
+    },
+}
+
+
+def self_check_request_id(self_check_id: str) -> str:
+    """The control request ID under which a self-check answer is submitted."""
+    return "self-check-" + self_check_id
+
+
+def self_check_response_errors(response: Any) -> list[str]:
+    from jsonschema import Draft202012Validator
+    return [error.message for error in Draft202012Validator(SELF_CHECK_RESPONSE_SCHEMA).iter_errors(response)]
+
+
 _FINAL_RECEIPTS = frozenset({"accepted", "rejected", "withdrawn", "closed", "previewed"})
 _WINDOWS_DEVICE_NAMES = frozenset(
     {"CON", "PRN", "AUX", "NUL"}
     | {f"COM{number}" for number in range(1, 10)}
     | {f"LPT{number}" for number in range(1, 10)}
 )
-
-
-def _canonical(value: Any) -> bytes:
-    return json.dumps(value, ensure_ascii=False, allow_nan=False, sort_keys=True,
-                      separators=(",", ":")).encode("utf-8")
 
 
 def _require_text(value: Any, name: str) -> str:
@@ -56,12 +93,7 @@ def _require_file_name(value: Any, name: str) -> str:
 
 
 def _atomic_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("wb", delete=False, dir=path.parent,
-                                     prefix=path.name + ".", suffix=".tmp") as handle:
-        handle.write(_canonical(value))
-        temporary = Path(handle.name)
-    atomic_replace(temporary, path)
+    write_bytes_atomic(path, compact_json_bytes(value))
 
 
 def _create_json_once(path: Path, value: Any) -> bool:
@@ -71,7 +103,7 @@ def _create_json_once(path: Path, value: Any) -> bool:
     try:
         with tempfile.NamedTemporaryFile("wb", delete=False, dir=path.parent,
                                          prefix=path.name + ".", suffix=".tmp") as handle:
-            handle.write(_canonical(value))
+            handle.write(compact_json_bytes(value))
             temporary = Path(handle.name)
         try:
             os.link(temporary, path)
@@ -94,6 +126,14 @@ def _json(path: Path) -> dict | None:
     return _decode_json(path, raw)
 
 
+def _is_open(endpoint: Path) -> bool:
+    try:
+        state = _json(endpoint / "state.json")
+    except ValueError:
+        return True  # An unreadable state is read, and rejected, by the next receipt.
+    return state is None or state.get("state") == "open"
+
+
 def _decode_json(path: Path, raw: bytes) -> dict:
     try:
         value = json.loads(raw.decode("utf-8"))
@@ -114,6 +154,10 @@ class ControlTransport:
         self._capabilities: dict[str, dict] = {}
         self._receipts: dict[str, dict] = {}
         self._pump_cache: dict[Path, tuple[tuple, dict]] = {}
+        # Only open transports can receive new deliveries; a pump reads their inboxes alone.
+        self._open: set[str] = set()
+        if self.root is not None and self.root.is_dir():
+            self._open = {path.parent.name for path in self.root.glob("*/binding.json") if _is_open(path.parent)}
 
     def issue(self, execution_id: str, grant_id: str, *, workspace: Path | str | None = None) -> dict:
         _require_text(execution_id, "execution_id")
@@ -130,20 +174,35 @@ class ControlTransport:
                 (endpoint / name).mkdir(parents=True, exist_ok=True)
             _atomic_json(endpoint / "binding.json", binding)
             _atomic_json(endpoint / "state.json", {"state": "open"})
+            self._open.add(transport_id)
         self._capabilities[transport_id] = deepcopy(binding)
         return deepcopy(binding)
 
     @staticmethod
+    def validate_binding(binding: Any, *, execution_id: str, cwd: str | None = None) -> None:
+        """A worker's binding names this execution, an absolute endpoint and, when given, its cwd."""
+        if (not isinstance(binding, dict) or set(BINDING_FIELDS) - set(binding)
+                or set(binding) - set(BINDING_FIELDS) - {"workspace"}
+                or any(not isinstance(binding[key], str) or not binding[key].strip() or "\0" in binding[key]
+                       for key in BINDING_FIELDS)
+                or binding["execution_id"] != execution_id
+                or not Path(binding["endpoint"]).is_absolute()):
+            raise ValueError("control binding must identify this execution and an absolute local endpoint")
+        if "workspace" in binding:
+            workspace = binding["workspace"]
+            if (not isinstance(workspace, str) or not workspace.strip() or "\0" in workspace
+                    or not Path(workspace).is_absolute()):
+                raise ValueError("control binding workspace must be an absolute local path")
+            if cwd is not None and (not isinstance(cwd, str) or not cwd.strip() or "\0" in cwd
+                    or not Path(cwd).is_absolute() or Path(workspace).resolve() != Path(cwd).resolve()):
+                raise ValueError("control binding workspace differs from execution cwd")
+
+    @staticmethod
     def mcp_server_config(binding: dict) -> dict:
-        required = ("endpoint", "transport_id", "capability", "execution_id", "grant_id")
-        if any(key not in binding for key in required):
+        if any(key not in binding for key in BINDING_FIELDS):
             raise ValueError("file transport binding lacks an MCP endpoint")
         arguments = [str(Path(__file__).resolve()), "mcp",
-                          "--endpoint=" + binding["endpoint"],
-                          "--transport-id=" + binding["transport_id"],
-                          "--capability=" + binding["capability"],
-                          "--execution-id=" + binding["execution_id"],
-                          "--grant-id=" + binding["grant_id"]]
+                     *("--" + key.replace("_", "-") + "=" + binding[key] for key in BINDING_FIELDS)]
         if binding.get("workspace"):
             arguments.append("--workspace=" + binding["workspace"])
         return {"command": sys.executable, "args": arguments}
@@ -177,7 +236,7 @@ class ControlTransport:
         if publisher is None:
             return self._store(request, {"state": "received"})
         decision = publisher(deepcopy(request))
-        if request["kind"] == "submission_preview":
+        if request["kind"] == SUBMISSION_PREVIEW:
             if (not isinstance(decision, dict) or decision.get("state") not in {"previewed", "rejected"}
                     or decision.get("published") is True):
                 raise ValueError("preview must return a check result without publication")
@@ -197,8 +256,13 @@ class ControlTransport:
             raise ValueError("a memory-only transport has no inbox to pump")
         if limit is not None and (isinstance(limit, bool) or not isinstance(limit, int) or limit < 1):
             raise ValueError("limit must be a positive integer or null")
+        paths = [path for transport_id in sorted(self._open)
+                 for path in sorted((self.root / transport_id / "inbox").glob("*.json"))]
+        return self._pump_paths(paths[:limit], publish)
+
+    def _pump_paths(self, paths: list[Path], publish: Callable[[dict], dict] | None) -> list[dict]:
         results = []
-        for path in sorted(self.root.glob("*/inbox/*.json"))[:limit]:
+        for path in paths:
             try:
                 mark = file_fingerprint(path)
             except FileNotFoundError:
@@ -229,6 +293,16 @@ class ControlTransport:
         _require_text(reason, "reason")
         state = {"state": "withdrawn" if withdrawn else "closed", "reason": reason}
         _atomic_json(endpoint / "state.json", state)
+        # A delivery that raced the close gets its closed receipt now; later pumps skip this transport.
+        inbox = sorted((endpoint / "inbox").glob("*.json"))
+        for path in inbox:
+            try:
+                self._pump_paths([path], None)
+            except ValueError:
+                pass  # A changed redelivery keeps the receipt it already has.
+        self._open.discard(endpoint.name)
+        for path in inbox:
+            self._pump_cache.pop(path, None)
         return state
 
     def receipt(self, request_id: str) -> dict | None:
@@ -238,17 +312,19 @@ class ControlTransport:
     def records(self) -> list[dict]:
         return [deepcopy(value) for value in self._receipts.values()]
 
-    def request_self_check(self, binding: dict, *, self_check_id: str, payload: dict) -> dict:
-        _require_file_name(self_check_id, "self_check_id")
+    def request_self_check(self, binding: dict, *, request: dict) -> dict:
+        """Deliver the issued request object; the tracker hashes this same object."""
+        if (not isinstance(request, dict) or set(request) != {"self_check_id", "execution_id", "payload"}
+                or request["execution_id"] != binding.get("execution_id")
+                or not isinstance(request["payload"], dict)):
+            raise ValueError("self-check request must be this execution's exact issued request")
+        self_check_id = _require_file_name(request["self_check_id"], "self_check_id")
         _require_file_name(binding.get("transport_id"), "transport_id")
-        if not isinstance(payload, dict):
-            raise ValueError("self-check payload must be an object")
         endpoint = self._endpoint(binding)
         state = _json(endpoint / "state.json") or {}
         if state.get("state") != "open":
             raise ValueError("a closed or withdrawn transport cannot request a self-check")
-        request = {"self_check_id": self_check_id, "execution_id": binding["execution_id"],
-                   "payload": deepcopy(payload)}
+        request = deepcopy(request)
         path = endpoint / "worker-inbox" / (self_check_id + ".json")
         existing = _json(path)
         if existing is None and _create_json_once(path, request):
@@ -267,17 +343,21 @@ class ControlTransport:
     @staticmethod
     def worker_submit(binding: dict, *, request_id: str, kind: str, payload: dict | None = None) -> dict:
         _require_file_name(request_id, "request_id")
-        if kind not in _REQUEST_KINDS:
+        if kind not in REQUEST_KINDS:
             raise ValueError("unsupported control kind")
         if payload is not None and not isinstance(payload, dict):
             raise ValueError("control payload must be an object")
+        if kind == SELF_CHECK_RESPONSE:
+            errors = self_check_response_errors((payload or {}).get("response"))
+            if errors:
+                raise ValueError("self-check response does not match its schema: " + errors[0])
         endpoint = ControlTransport._endpoint(binding)
         _require_file_name(binding.get("transport_id"), "transport_id")
         state = _json(endpoint / "state.json") or {}
         if state.get("state") != "open":
             return {"request_id": request_id, "state": "withdrawn" if state.get("state") == "withdrawn" else "closed",
                     "reason": state.get("reason", "transport is not open")}
-        request = {key: binding[key] for key in ("transport_id", "capability", "execution_id", "grant_id")}
+        request = {key: binding[key] for key in BINDING_FIELDS if key != "endpoint"}
         request.update(request_id=request_id, kind=kind, payload=deepcopy(payload or {}))
         path = endpoint / "inbox" / (request_id + ".json")
         receipt = _json(endpoint / "outbox" / (request_id + ".json"))
@@ -321,8 +401,8 @@ class ControlTransport:
             return _json(endpoint / "worker-inbox" / (self_check_id + ".json"))
         if _json(endpoint / "worker-inbox" / (self_check_id + ".json")) is None:
             raise ValueError("unknown self-check request")
-        return ControlTransport.worker_submit(binding, request_id="self-check-" + self_check_id,
-                                               kind="self_check_response",
+        return ControlTransport.worker_submit(binding, request_id=self_check_request_id(self_check_id),
+                                               kind=SELF_CHECK_RESPONSE,
                                                payload={"self_check_id": self_check_id, "response": response})
 
     def _validate_request(self, request: dict) -> dict:
@@ -333,15 +413,15 @@ class ControlTransport:
             _require_file_name(result.get(key), key)
         for key in ("capability", "execution_id", "grant_id"):
             _require_text(result.get(key), key)
-        if (not isinstance(result.get("kind"), str) or result["kind"] not in _REQUEST_KINDS
+        if (not isinstance(result.get("kind"), str) or result["kind"] not in REQUEST_KINDS
                 or not isinstance(result.get("payload"), dict)):
             raise ValueError("unsupported control kind or payload")
         binding = self._binding(result)
         if any(result[key] != binding[key] for key in ("execution_id", "grant_id", "capability")):
             raise ValueError("execution, grant, or capability differs from transport binding")
-        if result["kind"] == "safety_boundary" and result["payload"].get("inflight_calls") is not False:
+        if result["kind"] == SAFETY_BOUNDARY and result["payload"].get("inflight_calls") is not False:
             raise ValueError("boundary report has an in-flight call")
-        if result["kind"] == "self_check_response":
+        if result["kind"] == SELF_CHECK_RESPONSE:
             sid = result["payload"].get("self_check_id")
             _require_file_name(sid, "self_check_id")
             if _json(self._endpoint(binding) / "worker-inbox" / (sid + ".json")) is None:
@@ -351,7 +431,7 @@ class ControlTransport:
     def _store(self, request: dict, decision: dict) -> dict:
         receipt = {"request_id": request["request_id"], "request_sha256": json_digest(request), "kind": request["kind"],
                    "execution_id": request["execution_id"], "state": decision["state"]}
-        fields = (("reason", "result") if request["kind"] == "submission_preview" else
+        fields = (("reason", "result") if request["kind"] == SUBMISSION_PREVIEW else
                   ("reason", "result", "snapshot", "publication_id"))
         for key in fields:
             if key in decision:
@@ -443,12 +523,12 @@ def _mcp_server(binding: dict) -> int:
     tools = [
         {"name": "submit_draft", "description": "Validate and submit one workspace-relative draft; internal checks and hashes are derived automatically.",
          "inputSchema": {"type": "object", "properties": {"draft_path": {"type": "string"}, "preview": {"type": "boolean"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["draft_path"]}},
-        {"name": "control_submit", "description": "Submit a boundary or manifest to the central execution pump.",
-         "inputSchema": {"type": "object", "properties": {"request_id": {"type": "string"}, "kind": {"enum": ["safety_boundary", "submit_intent", "submission_preview"]}, "payload": {"type": "object"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["request_id", "kind", "payload"]}},
-        {"name": "control_receipt", "description": "Read or wait for the central receipt using a caller-provided duration.",
+        {"name": SUBMIT_TOOL, "description": "Submit a boundary, manifest or self-check answer to the central execution pump.",
+         "inputSchema": {"type": "object", "properties": {"request_id": {"type": "string"}, "kind": {"enum": sorted(REQUEST_KINDS)}, "payload": {"type": "object"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["request_id", "kind", "payload"]}},
+        {"name": RECEIPT_TOOL, "description": "Read or wait for the central receipt using a caller-provided duration.",
          "inputSchema": {"type": "object", "properties": {"request_id": {"type": "string"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["request_id"]}},
-        {"name": "control_self_check", "description": "Poll or answer a central self-check request.",
-         "inputSchema": {"type": "object", "properties": {"self_check_id": {"type": "string"}, "response": {"type": "object"}}, "required": ["self_check_id"]}}
+        {"name": SELF_CHECK_TOOL, "description": "Poll or answer a central self-check request.",
+         "inputSchema": {"type": "object", "properties": {"self_check_id": {"type": "string"}, "response": SELF_CHECK_RESPONSE_SCHEMA}, "required": ["self_check_id"]}}
     ]
     for line in sys.stdin:
         message = {}
@@ -472,19 +552,19 @@ def _mcp_server(binding: dict) -> int:
                     else:
                         sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
                         from do_math.submission import request_control
-                    kind = "submission_preview" if arguments.get("preview") else "submit_intent"
+                    kind = SUBMISSION_PREVIEW if arguments.get("preview") else SUBMIT_INTENT
                     delivery = request_control(binding["workspace"], arguments["draft_path"], kind=kind,
                         wait_seconds=arguments.get("wait_seconds", 0), binding=binding)
                     value = {"delivery": delivery}
                     result = _mcp_result(value)
-                elif name == "control_submit":
+                elif name == SUBMIT_TOOL:
                     value = ControlTransport.worker_submit(binding, request_id=arguments["request_id"], kind=arguments["kind"], payload=arguments["payload"])
                     if "wait_seconds" in arguments:
                         value["receipt"] = ControlTransport.wait_receipt(binding, arguments["request_id"], arguments["wait_seconds"])
                     result = _mcp_result(value)
-                elif name == "control_receipt":
+                elif name == RECEIPT_TOOL:
                     result = _mcp_result(ControlTransport.wait_receipt(binding, arguments["request_id"], arguments.get("wait_seconds", 0)))
-                elif name == "control_self_check":
+                elif name == SELF_CHECK_TOOL:
                     result = _mcp_result(ControlTransport.worker_self_check(binding, self_check_id=arguments["self_check_id"], response=arguments.get("response")))
                 else:
                     raise ValueError("unknown control tool")
@@ -502,13 +582,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
     mcp = subparsers.add_parser("mcp")
-    for name in ("endpoint", "transport_id", "capability", "execution_id", "grant_id"):
+    for name in BINDING_FIELDS:
         mcp.add_argument("--" + name.replace("_", "-"), required=True)
     mcp.add_argument("--workspace")
     args = parser.parse_args(argv)
-    return _mcp_server({"endpoint": args.endpoint, "transport_id": args.transport_id,
-                        "capability": args.capability, "execution_id": args.execution_id,
-                        "grant_id": args.grant_id, **({"workspace": args.workspace} if args.workspace else {})})
+    return _mcp_server({**{name: getattr(args, name) for name in BINDING_FIELDS},
+                        **({"workspace": args.workspace} if args.workspace else {})})
 
 
 if __name__ == "__main__":

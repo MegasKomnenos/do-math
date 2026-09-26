@@ -7,12 +7,11 @@ from copy import deepcopy
 from pathlib import Path
 
 from . import governance, academic, knowledge, knowledge_records, execution_profiles
-from .repository import new_id, canonical_json
+from .repository import new_id, canonical_json, exact_content_hash
 
 
 def bind_host_configuration(instance, config, *, origin):
     """Resolve the explicit request-source alias to the preserved user input."""
-    import hashlib
     config = deepcopy(config)
     host = config.get('host_resources')
     if host is None or 'configuration:request' not in host['constraint']['authority_refs']:
@@ -20,7 +19,7 @@ def bind_host_configuration(instance, config, *, origin):
     if origin != 'user':
         raise ValueError('host configuration request requires user authority')
     raw = canonical_json({'host_resources': host})
-    identifier = 'GS-host-' + hashlib.sha256(raw).hexdigest()
+    identifier = 'GS-host-' + exact_content_hash({'host_resources': host})
     source = governance.preserve_source(identifier, raw.decode('utf-8'), origin='user')
     sources = instance.setdefault('governance_sources', {})
     if identifier in sources and sources[identifier] != source:
@@ -40,7 +39,7 @@ class GovernanceEngineMixin:
         """Single transition for public configure and checked configuration units."""
         from .engine import validate_config, DEFAULT_CONFIG
         from .scholarly import resolve_scholarly_server
-        from .session_slots import SessionSlots
+        from .session_slots import RESOURCE_WAITS, quiescence
         patch = request.get('config', {})
         if not isinstance(patch, dict): raise ValueError('configuration patch must be an object')
         if request.get('origin', 'user') not in {'user', 'operator'}: raise ValueError('unknown configuration authority')
@@ -53,24 +52,15 @@ class GovernanceEngineMixin:
         if request.get('origin', 'user') == 'operator' and any(candidate.get(k) != current.get(k) for k in protected):
             raise ValueError('resource settings require a user decision at application time')
         host_changed = candidate.get('host_resources') != current.get('host_resources')
-        if host_changed and (getattr(self, '_executor_running', False) or getattr(self, '_calls', None) is not None
-                or getattr(self, '_live_execution_ids', set())
-                or any(row['status'] != 'ended' for row in runtime.get('executions', {}).values())
-                or any(row.get('state') == 'held' for row in runtime.get('reservations', {}).values())):
+        if host_changed and (self._executor_running or self._calls is not None
+                or self._live_execution_ids or any(quiescence(runtime).values())):
             raise ValueError('host resource changes require a stopped executor with no live execution or held reservation')
         validate_config(candidate)
         if candidate['scholarly_enabled']:
             candidate['scholarly_server'] = resolve_scholarly_server(candidate['scholarly_server'], start=Path.cwd())
         editions = execution_profiles.build_profiles(candidate)
         result['config'] = candidate
-        result.setdefault('execution_profiles', {}).update(editions['execution_profiles'])
-        result.setdefault('capacity_constraints', {}).update(editions['capacity_constraints'])
-        result['role_profile_refs'] = editions['role_profile_refs']
-        if editions.get('host_capacity_ref'):
-            result['host_capacity_ref'] = editions['host_capacity_ref']
-        else:
-            result.pop('host_capacity_ref', None)
-        SessionSlots(state, result).configure(candidate['session_limits'])
+        execution_profiles.apply_editions(result, editions)
         live = {e.get('action', {}).get('id') for e in state['executions'].values() if e['status'] != 'ended'}
         waiting = [row['action'] for row in state.get('waiting_actions', {}).values()]
         for pending in [*state['queue'], *waiting]:
@@ -112,8 +102,7 @@ class GovernanceEngineMixin:
         if state.get('status') in {'waiting', 'capacity_waiting'} and resources_changed:
             live = {e.get('action', {}).get('id') for e in state['executions'].values() if e['status'] != 'ended'}
             for action in state['queue']:
-                if (action.get('id') not in live and action.get('dispatch_wait', {}).get('kind') in {
-                        'capacity', 'host_capacity', 'resource_unclassified'}):
+                if (action.get('id') not in live and action.get('dispatch_wait', {}).get('kind') in RESOURCE_WAITS):
                     action.pop('dispatch_wait', None)
             if state['queue']:
                 state['status'] = 'ready'
@@ -131,7 +120,7 @@ class GovernanceEngineMixin:
         return governance.import_input_source(self.instance, self.runtime, input_id)
 
     def _governance_context(self, action, context):
-        context = deepcopy(context)
+        # The caller built this context for this role; prepare_role_input copies it before use.
         if action['role'] == 'goal_audit':
             context['additional_audit_input'] = governance.additional_audit_input(self.instance, self.runtime)
         elif action['role'] == 'intent_interpretation' and not action.get('delegation_application_id'):
@@ -142,7 +131,6 @@ class GovernanceEngineMixin:
             context['import_consumers'] = governance.import_consumer_catalog(self._governance_owner_handlers())
             context['governance_records'] = deepcopy(list(self.instance.get('governance', {}).values()))
             context['delegations'] = deepcopy(list(self.instance.get('delegations', {}).values()))
-            context['config'] = deepcopy(self.instance.get('config', {}))
             context['source_coordinate_unit'] = 'unicode_codepoint'
             context['interpretation_stage'] = action.get('stage', 'interpret')
             context['interpretation_to_check'] = deepcopy(self.runtime.get('intent_imports', {}).get(action.get('import_id')))
@@ -224,10 +212,6 @@ class GovernanceEngineMixin:
         was_applied = bool(bundle and bundle.get('application', {}).get('status') == 'applied')
         before_instance, before_runtime = deepcopy(self.instance), deepcopy(self.runtime)
         try:
-            input_id = (bundle.get('input_ref', bundle['source']['id']) if bundle else None)
-            if bundle and any(row['id'] == input_id for row in self.runtime.get('inputs', [])):
-                if self._governance_input_source(input_id) != bundle['source']:
-                    raise ValueError('original source changed before later approval')
             self.instance, self.runtime, _ = governance.apply_import_control(self.instance, self.runtime,
                 normalized, owner_handlers=self._governance_owner_handlers())
             if not was_applied: self._after_governance_import(change['import_id'])
@@ -362,9 +346,9 @@ class GovernanceEngineMixin:
             if not judgment:
                 continue
             owners = {eid: e for eid, e in executions.items() if e.get('action', {}).get('id') == identifier}
+            from .session_slots import held_reservations
             if (any(e.get('status') != 'ended' for e in owners.values())
-                    or any(r.get('owner_id') in owners and r.get('state') == 'held'
-                           for r in self.runtime.get('reservations', {}).values())
+                    or held_reservations(self.runtime, owners)
                     or (judgment['execution_id'] in owners
                         and owners[judgment['execution_id']].get('outcome') != 'output_accepted')):
                 continue
@@ -383,8 +367,7 @@ class GovernanceEngineMixin:
                            or any(e.get('action', {}).get(k) != action.get(k) for k in ('basis', 'slot', 'required'))
                            or (e.get('id') == judgment['execution_id'] and e.get('outcome') != 'output_accepted')
                            for e in assigned)
-                    or any(r.get('owner_id') in activity.get('assigned_execution_ids', []) and r.get('state') == 'held'
-                           for r in self.runtime.get('reservations', {}).values())
+                    or held_reservations(self.runtime, activity.get('assigned_execution_ids', []))
                     or any(not isinstance(row, dict) or row.get('action_id') != identifier
                            for row in [*activity.get('unresolved', []), *activity.get('followups', [])])):
                 continue

@@ -26,6 +26,7 @@ from do_math.repository import (  # noqa: E402
     canonical_json,
     new_id,
 )
+from research_fixtures import current_state  # noqa: E402
 
 
 INSTANCE_ID = "RI-00000000000000000000000000"
@@ -53,7 +54,7 @@ class ResearchRepositoryTests(unittest.TestCase):
 
         subprocess.run(["git", "-C", str(self.repository_path), "init", "-q"], check=True)
         self.repository = ResearchRepository(self.repository_path, INSTANCE_ID)
-        self.initial_head = self.repository.initialize({"feature_version": 5, "title": "instance"}, {"feature_version": 5, "status": "initializing"})
+        self.initial_head = self.repository.initialize(*current_state({"title": "instance"}))
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -65,35 +66,32 @@ class ResearchRepositoryTests(unittest.TestCase):
         self.assertEqual(instance["object_format"], "sha1")
         self.assertEqual(runtime["status"], "initializing")
 
-        later = self.repository.save_with_state(head, instance, {"feature_version": 5, "status": "active"})[0]
+        later = self.repository.save_with_state(head, instance, {**runtime, "status": "running"})[0]
         self.assertEqual(self.repository.load(self.initial_head)[2]["status"], "initializing")
-        self.assertEqual(json.loads(self.repository.read("runtime/_state/metadata.json", later))["record"]["status"], "active")
+        self.assertEqual(json.loads(self.repository.read("runtime/_state/metadata.json", later))["record"]["status"], "running")
 
     def test_stale_save_conflict_does_not_overwrite(self) -> None:
         second = ResearchRepository(self.repository_path, INSTANCE_ID)
-        winner = self.repository.save_with_state(self.initial_head, {"feature_version": 5, "title": "instance"}, {"feature_version": 5, "status": "winner"})[0]
+        winner = self.repository.save_with_state(self.initial_head, *current_state({"title": "instance"}, {"status": "running"}))[0]
         with self.assertRaises(GitStateStoreConflict):
-            second.save_with_state(self.initial_head, {"feature_version": 5, "title": "instance"}, {"feature_version": 5, "status": "loser"})[0]
-        self.assertEqual(self.repository.load(winner)[2]["status"], "winner")
+            second.save_with_state(self.initial_head, *current_state({"title": "instance"}, {"status": "paused"}))[0]
+        self.assertEqual(self.repository.load(winner)[2]["status"], "running")
 
     def test_new_artifact_bundle_is_saved_with_state_and_existing_bundle_is_immutable(self) -> None:
         first = self.repository.save_with_state(
             self.initial_head,
-            {"feature_version": 5, "title": "instance"},
-            {"feature_version": 5, "status": "running"},
+            *current_state({"title": "instance"}, {"status": "running"}),
             artifacts={"runtime/artifacts/AB-01/output.txt": b"sealed"},
         )[0]
         with self.assertRaises(ValueError):
             self.repository.save_with_state(
                 first,
-                {"feature_version": 5, "title": "instance"},
-                {"feature_version": 5, "status": "running"},
+                *current_state({"title": "instance"}, {"status": "running"}),
                 artifacts={"runtime/artifacts/AB-01/other.txt": b"forbidden"},
             )[0]
         later = self.repository.save_with_state(
             first,
-            {"feature_version": 5, "title": "instance"},
-            {"feature_version": 5, "status": "ended"},
+            *current_state({"title": "instance"}, {"status": "completed"}),
             artifacts={"runtime/artifacts/AB-02/output.txt": b"new bundle"},
         )[0]
         self.assertEqual(self.repository.read("runtime/artifacts/AB-01/output.txt", later), b"sealed")
@@ -208,14 +206,13 @@ class ValidatedReadReuseTests(unittest.TestCase):
         return self.repository._store.publish(parent, {f"runtime/artifacts/{bundle}/note.bin": bundle.encode()}).head
 
     def test_own_publication_is_not_revalidated_but_an_outside_head_is(self):
-        from do_math.preflight import inspect_persisted_state
         head, instance, runtime = self.repository.load()
         runtime["cycles"] = 1
         stack, decode, validate = self.counters()
         with stack:
             new_head, saved_instance, saved_runtime = self.repository.save_with_state(head, instance, runtime)
             _, loaded_instance, loaded_runtime = self.repository.load(new_head)
-            self.assertTrue(inspect_persisted_state(self.repository, new_head)["valid"])
+            self.assertEqual(self.repository.view(new_head)[2]["cycles"], 1)
         self.assertEqual((decode.call_count, validate.call_count), (0, 1))  # the candidate check only
         self.assertEqual(loaded_runtime["cycles"], 1)
         saved_runtime["cycles"] = 99  # returned views are detached from the shared entry

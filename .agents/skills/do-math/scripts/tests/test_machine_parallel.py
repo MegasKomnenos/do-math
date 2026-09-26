@@ -8,31 +8,26 @@ import tempfile
 import threading
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine
 from do_math.parallel import ModelCalls
 from do_math.execution_lifecycle import transition_execution
-from do_math.repository import new_id
+from do_math.repository import ResearchRepository, new_id
 from do_math import knowledge_records
-from test_lifecycle_engine import FakeEngine, AdapterDouble
+from test_lifecycle_engine import FakeEngine
+from research_fixtures import FixtureAdapter, await_stop
+from state_fixtures import owner_calls
 from test_categories import test_group
 
 
 class Host(FakeEngine):
-    _formal = ResearchEngine._formal
-    _formal_steps = ResearchEngine._formal_steps
-    _machine_started = ResearchEngine._machine_started
     _execution_profile = ResearchEngine._execution_profile
-    _provider_status = ResearchEngine._provider_status
-    _settle_recovered_execution = ResearchEngine._settle_recovered_execution
 
     def __init__(self, root):
         self.owner_thread = threading.get_ident()
         super().__init__(root)
-        self._calls = None
-        self._live_execution_ids = set()
         self.activate()
         from do_math.execution_profiles import build_profiles
         self.instance['config']['lean_command'] = self.instance['trust_environments'][self.instance['active_trust_environment']]['toolchain']['configured_command']
@@ -46,9 +41,9 @@ class Host(FakeEngine):
         self.runner = SimpleNamespace(run=lambda **args: {'status': 'completed'})
 
     def storage_double(self):
-        self.store = SimpleNamespace(load=lambda: ('fixture-head', deepcopy(self.saves[-1]['instance']), deepcopy(self.saves[-1]['runtime'])))
-        self._state_signature = lambda: 'fixture'
-        self._transport_bindings = {}
+        self.store = create_autospec(ResearchRepository, instance=True)
+        self.store.load.side_effect = lambda snapshot=None: (
+            'fixture-head', deepcopy(self.saves[-1]['instance']), deepcopy(self.saves[-1]['runtime']))
 
     def _save(self, artifacts=None):
         if threading.get_ident() != self.owner_thread:
@@ -62,13 +57,9 @@ class Host(FakeEngine):
         self.control_action()
 
     def _check_installation(self, **kwargs): return True
-    def _available_inputs(self): return []
-    def _retry_provider_actions(self): pass
     def _refresh_readiness(self): pass
     def _settle_activity(self, execution_id): pass
     def _start_identity_review(self, kid): self.identity_reviews.append(kid)
-    def _remove_action(self, action):
-        self.runtime['queue'][:] = [a for a in self.runtime['queue'] if a.get('id') != action.get('id')]
 
     def _call_steps(self, action):
         # Only the model response is synthetic. Admission, collection and release
@@ -76,8 +67,7 @@ class Host(FakeEngine):
         profile = self._execution_profile(action)
         eid = new_id('EX')
         execution = self._register_execution(action, {'id': eid, 'role': action['role'], 'status': 'queued'})
-        assert self._provider_slots().acquire(eid, profile['budget_kind'], profile['ai']['model'],
-                                             profile=profile, execution=execution)
+        assert self._session_slots().acquire(eid, profile=profile, execution=execution)
         transition_execution(execution, 'running', at=self._lifecycle_now().isoformat())
         result = yield {'execution_id': eid}
         assert result['status'] == 'completed', result
@@ -98,7 +88,7 @@ class MachineSchedulerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.enterContext(patch('do_math.initialization.adapter_for', return_value=AdapterDouble()))
+        self.enterContext(patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()))
         self.enterContext(patch('do_math.windows_job.named_job_empty', return_value=True))
         self.host = Host(self.temp.name)
         self.enterContext(patch('do_math.scheduler.time.monotonic', side_effect=lambda: self.host.tick))
@@ -175,7 +165,8 @@ class MachineSchedulerTests(unittest.TestCase):
         os.utime(olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))  # e.g. a cache re-download
         from unittest.mock import Mock
         host.formal_verifier = Mock()
-        host._formal(action)
+        with owner_calls(host):
+            host._formal(action)
         host.formal_verifier.assert_not_called()
         waiting = host.runtime['waiting_actions'][action['id']]
         self.assertEqual(waiting['kind'], 'formal_environment')
@@ -194,7 +185,8 @@ class MachineSchedulerTests(unittest.TestCase):
             args['on_started']({'job_name':args['launch_ticket']['job_name']})
             return host.verification(args['source'], args['declarations'], args['expected_toolchain'])
         host.formal_verifier = verify
-        host._formal(successor)
+        with owner_calls(host):
+            host._formal(successor)
         latest = next(e for e in host.runtime['executions'].values() if e.get('continuation_of')==previous)
         self.assertEqual(latest['outcome'], 'output_accepted')
         self.assertEqual(host.runtime['trust_bindings'][environment['id']], recorded['binding'])
@@ -237,7 +229,7 @@ class MachineSchedulerTests(unittest.TestCase):
                     # ResearchRepository.save_with_state returns new normalized roots.
                     self.host.instance = deepcopy(self.host.instance)
                     self.host.runtime = deepcopy(self.host.runtime)
-                self.host._save = publish
+                self.host._save = create_autospec(self.host._save, side_effect=publish)
                 host = self.run_case(trust=trust)
                 machine = next(e for e in host.runtime['executions'].values()
                                if e['role'] in {'formal_check', 'trust_check'})
@@ -264,12 +256,10 @@ class MachineSchedulerTests(unittest.TestCase):
             args['on_started']({'job_name': args['launch_ticket']['job_name']})
             flag['read'] = args['should_stop']
             started.set()
-            for _ in range(6000):
-                if args['should_stop']():
-                    seen['observed'] = passes[0]
-                    return {'status': 'stopped', 'reason': 'flag observed'}
-                time.sleep(.005)
-            raise AssertionError('the stop never reached the calculation')
+            if not await_stop(args['should_stop'], timeout=30):
+                raise AssertionError('the stop never reached the calculation')
+            seen['observed'] = passes[0]
+            return {'status': 'stopped', 'reason': 'flag observed'}
         host.formal_verifier = verify
         host._run_parallel(max_steps=1)
         self.assertTrue(seen['flag_after_publication'], 'the publication itself sets the flag')
@@ -285,12 +275,12 @@ class MachineSchedulerTests(unittest.TestCase):
         host._settle_activity = MethodType(ResearchEngine._settle_activity, host)
         def verify(**args):
             args['on_started']({'job_name': args['launch_ticket']['job_name']})
-            while not args['should_stop'](): time.sleep(.01)
+            await_stop(args['should_stop'])
             return {'status': 'stopped', 'reason': 'owner stopped',
                     'stdout': b'preserved evidence\xff', 'usage': {'cost_usd': 0.25}}
         host.formal_verifier = verify
         def control():
-            if any(e.get('process') for e in host.runtime['executions'].values()):
+            if any(e.get('capacity', {}).get('process') for e in host.runtime['executions'].values()):
                 raise RuntimeError('injected owner failure')
         host.control_action = control
         with self.assertRaisesRegex(RuntimeError, 'injected owner failure'):
@@ -318,7 +308,7 @@ class MachineSchedulerTests(unittest.TestCase):
         def fail_result_save(artifacts=None):
             if artifacts: raise OSError('injected result storage failure')
             save(artifacts)
-        host._save = fail_result_save
+        host._save = create_autospec(host._save, side_effect=fail_result_save)
         with self.assertRaisesRegex(OSError, 'result storage failure'):
             host._run_parallel(max_steps=1)
         _, _, durable = host.store.load()
@@ -389,8 +379,7 @@ class CallManagerTests(unittest.TestCase):
             input_manifest=[], profile_ref=profile_ref(profile), created_at=instant.isoformat())
         execution['role'] = 'formal_check'
         with patch('datetime.datetime', Clock), patch('do_math.session_slots.time.time', return_value=instant.timestamp() - .000001):
-            self.assertTrue(SessionSlots(runtime, instance).acquire(execution['id'], profile['budget_kind'], None,
-                profile=profile, execution=execution))
+            self.assertTrue(SessionSlots(runtime, instance).acquire(execution['id'], profile=profile, execution=execution))
         self.assertEqual(execution['transitions'][-1]['at'], instant.isoformat())
 
     def test_close_sets_every_stop_flag_and_fails_pending_start_callbacks(self):

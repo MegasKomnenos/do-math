@@ -19,7 +19,11 @@ class Adapter:
     def resume(self,*a): self.resumed=True
     def wait_for_termination(self,*a): self.done=True; return True
     def stop(self,*a): self.stopped=True
-    def collect(self,*a): return self.result
+    def collect(self,*a):
+     # A real collector reports provider facts in every result; derive them like it does.
+     from do_math.codex_adapter import _provider_observation
+     return {'provider_observation': _provider_observation(self.request, self.result.get('jsonl', {}), None), **self.result}
+    def provider_failure(self, parsed): return None
 
 class Tests(unittest.TestCase):
  def run_with(self, collected):
@@ -111,10 +115,19 @@ class WithoutDeadlineTests(unittest.TestCase):
         self.assertEqual(result["status"], "completed")
         events = [row for batch in observed for row in batch.events]
         self.assertEqual([row for row in events if row.get("type") == "item.updated"], [*expected, last])
+        # After the Job ends, the runner also delivers the unterminated last row.
         self.assertEqual([row for row in events if row.get("type") == "unparsed_observation"],
-                         [{"type": "unparsed_observation", "bytes": len(b"not-json\r")}])
+                         [{"type": "unparsed_observation", "bytes": len(b"not-json\r")},
+                          {"type": "unparsed_observation", "bytes": len(b'{"type":')}])
         self.assertEqual(sum(batch.bytes_received for batch in observed),
                          len(first) + len(second))
+        rows = [row for batch in observed for row in batch.rows]
+        self.assertEqual(b"".join(rows), (first + second).replace(b"\r\n\r\n", b"\r\n"))
+        numbers = [batch.first_row + index for batch in observed for index in range(len(batch.rows))]
+        self.assertEqual(numbers, list(range(len(rows))))
+        for batch in observed:
+            for (start, end), row in zip(batch.offsets, batch.rows):
+                self.assertEqual((first + second)[start:end], row)
 
     def test_long_running_work_keeps_running_until_its_normal_return(self):
         result, adapter = self.run_observed()

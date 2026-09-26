@@ -6,12 +6,12 @@ tools, enforce OS isolation, or infer mathematical equivalence.
 from __future__ import annotations
 
 from copy import deepcopy
-import hashlib
 import re
-from typing import Any, Iterable
+from typing import Any
 
 from .repository import exact_content_hash, new_id, semantic_content_hash
 from .input_basis import capture_sources, sources_current
+from .planning import READ_REFERENCE_FIELDS, READ_REFERENCE_ID_FIELDS, record_index
 
 
 def _hash(record: Any) -> str:
@@ -26,24 +26,14 @@ def _require_text(value: str, name: str) -> None:
         raise ValueError(f"{name} must be nonempty")
 
 
-def _records(instance: dict, runtime: dict) -> Iterable[tuple[str, dict]]:
-    for key in ("knowledge", "formal_results", "expositions", "identity_assessments", "assessment_uses", "kind_definitions", "trust_environments"):
-        for record_id, record in instance.get(key, {}).items():
-            yield record.get("id", record_id), record
-    for record in instance.get("relations", []):
-        if isinstance(record, dict) and isinstance(record.get("id"), str):
-            yield record["id"], record
-    for record in instance.get("goal_judgments", []):
-        if isinstance(record, dict) and isinstance(record.get("id"), str):
-            yield record["id"], record
-    for key in ("tasks", "activities", "executions"):
-        for record_id, record in runtime.get(key, {}).items():
-            yield record_id, record
+# planning.RECORD_FAMILIES keys whose records a basis row or an impact closure can name.
+BASIS_FAMILIES = frozenset({"knowledge", "formal-result", "exposition", "identity-assessment", "assessment-use",
+                            "kind-definition", "trust-environment", "relation", "goal-judgment",
+                            "task", "activity", "execution"})
 
 
-def _find(instance: dict, runtime: dict, record_id: str) -> dict | None:
-    return next((record for candidate, record in _records(instance, runtime)
-                 if candidate == record_id), None)
+def _basis_records(instance: dict, runtime: dict) -> dict[str, dict]:
+    return {rid: record for rid, (_, record) in record_index(instance, runtime, families=BASIS_FAMILIES).items()}
 
 
 def _status(record: dict) -> str:
@@ -57,9 +47,10 @@ def capture_basis(instance: dict, runtime: dict, record_ids: list[str]) -> list[
     if not isinstance(record_ids, list) or len(record_ids) != len(set(record_ids)):
         raise ValueError("record_ids must be a list of distinct IDs")
     basis = []
+    records = _basis_records(instance, runtime)
     for record_id in record_ids:
         _require_text(record_id, "record ID")
-        record = _find(instance, runtime, record_id)
+        record = records.get(record_id)
         if record is None:
             raise ValueError(f"unknown record ID: {record_id}")
         basis.append({"id": record_id, "sha256": _hash(record), "status": _status(record)})
@@ -71,6 +62,7 @@ def validate_basis(basis: list[dict], instance: dict, runtime: dict) -> dict:
     if not isinstance(basis, list):
         return {"valid": False, "reasons": ["basis_not_a_list"]}
     seen: set[str] = set()
+    records = _basis_records(instance, runtime)
     for row in basis:
         if not isinstance(row, dict) or set(row) != {"id", "sha256", "status"}:
             reasons.append("invalid_basis_row")
@@ -80,7 +72,7 @@ def validate_basis(basis: list[dict], instance: dict, runtime: dict) -> dict:
             reasons.append(f"duplicate_or_invalid_id:{record_id}")
             continue
         seen.add(record_id)
-        record = _find(instance, runtime, record_id)
+        record = records.get(record_id)
         if record is None:
             reasons.append(f"missing:{record_id}")
             continue
@@ -119,11 +111,12 @@ def decision_reference(record: dict, instance: dict) -> dict:
             "source_basis": deepcopy(record.get("source_basis", []))}
 
 
-_STRICT_REFERENCE_KEYS = frozenset({"dependencies", "formal_result_refs", "assessment_refs", "knowledge_refs", "record_refs"})
-_REFERENCE_KEYS = frozenset({
+# Impact also follows evidence and provenance fields beyond the shared read fields.
+_STRICT_REFERENCE_KEYS = frozenset({key for key, mode in READ_REFERENCE_FIELDS.items() if mode == "strict"}
+                                   | {"formal_result_refs", "assessment_refs", "knowledge_refs", "record_refs"})
+_REFERENCE_KEYS = frozenset({key for key, mode in READ_REFERENCE_FIELDS.items() if mode == "lenient"} | {
     "used_sources", "exact_refs", "record_refs", "knowledge_refs",
-    "evidence_refs", "source_refs", "formal_result_refs", "assessment_refs",
-    "inputs", "reuse", "origin_refs",
+    "evidence_refs", "source_refs", "formal_result_refs", "assessment_refs", "origin_refs",
 })
 # Preserved earlier versions are history, not current dependencies of the record.
 _HISTORY_KEYS = frozenset({"history", "use_history", "review_history", "revision_history",
@@ -175,23 +168,22 @@ def _explicit_refs(value: Any, known_ids: set[str]) -> set[str]:
 
 
 def assess_research_use(record: dict, instance: dict, _visiting=None) -> dict:
-    """Use a current research record at its stated evidence level, without certifying it."""
-    from .input_basis import sources_current
+    """Use a current research record at its stated evidence level, without certifying it.
+
+    The shared record premises are knowledge_records.premise_failures; research use
+    adds use suspension, an active exposition and research-level dependencies."""
+    from .knowledge_records import premise_failures
     identifier = record.get('id')
     visiting = set(_visiting or ())
     reasons = []
     if not identifier or identifier in visiting:
         reasons.append('missing_or_cyclic_research_dependency')
-    if record.get('lifecycle') != 'active' or record.get('use_suspended') or record.get('kind_use_suspended'):
+    reasons.extend('research_' + failure for failure in premise_failures(instance, record))
+    if record.get('use_suspended') and 'research_record_not_active' not in reasons:
         reasons.append('research_record_not_active')
-    definition = instance.get('kind_definitions', {}).get(record.get('kind_definition_id'), {})
-    if definition.get('status') != 'active':
-        reasons.append('research_kind_not_active')
     exposition = instance.get('expositions', {}).get(record.get('exposition_id'), {})
     if exposition.get('lifecycle') != 'active':
         reasons.append('research_exposition_not_active')
-    if not sources_current(record.get('source_basis', []), instance):
-        reasons.append('research_sources_changed')
     if reasons:
         return {'valid': False, 'reasons': reasons}
     visiting.add(identifier)
@@ -209,7 +201,7 @@ def assess_use(record: dict, instance: dict) -> dict:
     family = record.get("family", "knowledge")
     if family == "knowledge":
         links = usable_links(instance, record.get("id"))
-        valid = bool(links) and not record.get("kind_use_suspended", False)
+        valid = bool(links)
         return {"valid": valid, "reasons": [] if valid else ["no_current_verified_exposition"], "basis": links}
     if family == "formal_results":
         valid = formal_usable(instance, record)
@@ -223,16 +215,11 @@ def assess_use(record: dict, instance: dict) -> dict:
     return {"valid": False, "reasons": ["record_is_not_a_verified_knowledge_authority"], "basis": []}
 
 
-def _impact_records(instance, runtime):
-    return dict(_records(instance, runtime))
-
-
 def _impact_refs(record, known_ids):
     from .relation_refs import relation_endpoints
     refs = _explicit_refs(record, known_ids)
     # Only declared authority coordinates count; prose and historical judgments do not.
-    for key in ("formal_result_id", "exposition_id", "assessment_id", "kind_definition_id",
-                "trust_environment_id"):
+    for key in READ_REFERENCE_ID_FIELDS:
         if isinstance(record.get(key), str):
             refs.add(record[key])
     # Evidence locators use _explicit_refs' existing record filter. Unlike a
@@ -244,7 +231,7 @@ def _impact_refs(record, known_ids):
 
 def plan_impact(instance, runtime, roots, declared_impact, *, sensitive=False, excluded_dependents=()):
     from .knowledge_records import usable_links
-    records = _impact_records(instance, runtime)
+    records = _basis_records(instance, runtime)
     roots, declared = set(roots), set(declared_impact)
     excluded = set(excluded_dependents)
     if not roots or roots - set(records):
@@ -297,7 +284,7 @@ def _confirmed_impact(plan, confirmation):
 def _apply_impact_effects(instance, runtime, affected, roots, *, reason, impact_digest, in_place=False):
     # in_place is for callers that already hold their own copies of both views.
     output, new_runtime = (instance, runtime) if in_place else (deepcopy(instance), deepcopy(runtime))
-    records = _impact_records(output, new_runtime)
+    records = _basis_records(output, new_runtime)
     semantic_only = all(records[rid].get('family') in {'identity_assessments', 'assessment_uses'} for rid in roots)
     for rid in sorted(affected):
         record = records[rid]
@@ -609,6 +596,7 @@ def register_environment(instance: dict, toolchain: dict,
 
 def begin_transition(instance: dict, new_env_id: str) -> dict:
     from . import knowledge_records as kr
+    from .formal import FORMAL_EVIDENCE_FIELDS, lean_source_sha256
     environments = instance.get("trust_environments", {})
     if new_env_id not in environments or environments[new_env_id].get("status") == "invalid":
         raise ValueError("unknown or invalid transition environment")
@@ -623,13 +611,10 @@ def begin_transition(instance: dict, new_env_id: str) -> dict:
         verification = formal.get("verification", {})
         targets.append({"id": kid, "formal_result_id": formal["id"],
             "exposition_id": record["exposition_id"],
-            "source_sha256": hashlib.sha256(formal["lean_code"].encode()).hexdigest(),
+            "source_sha256": lean_source_sha256(formal["lean_code"]),
             "basis": {"id": kid, "sha256": _hash(record), "status": _status(record)},
             "formal_basis": kr.record_digest(formal), "exposition_basis": kr.record_digest(instance["expositions"][record["exposition_id"]]),
-            "declaration_evidence": deepcopy(verification.get("declaration_evidence")),
-            "dependency_closure": deepcopy(verification.get("dependency_closure")),
-            "dependency_evidence": deepcopy(verification.get("dependency_evidence")),
-            "axioms": deepcopy(verification.get("axioms")),
+            **{field: deepcopy(verification.get(field)) for field in FORMAL_EVIDENCE_FIELDS},
             "previous_environment_ids": [formal.get("trust_environment_id")]})
     return {"id": new_id("TR"), "from_environment": old_env_id, "to_environment": new_env_id,
             "targets": targets, "results": {}, "status": "checking"}
@@ -747,13 +732,9 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None) -> di
                 or _hash(record) != target["basis"]["sha256"] or kr.record_digest(formal) != target["formal_basis"]
                 or kr.record_digest(exposition) != target["exposition_basis"]):
             raise ValueError("transition basis changed: " + kid)
-        if result.get("source_sha256") != target["source_sha256"] or result.get("toolchain") != environment.get("toolchain"):
-            raise ValueError("transition source or environment mismatch: " + kid)
-        if result.get("declarations") != formal.get("declaration_names"):
-            raise ValueError("transition declarations mismatch")
-        axioms = {a for values in result.get("axioms", {}).values() for a in values}
-        if "sorryAx" in axioms or axioms - set(environment.get("allowed_axioms", [])):
-            raise ValueError("transition contains unapproved axioms")
+        # This checks source, toolchain, declarations and axioms. formal is unchanged
+        # since begin_transition (record_digest above covers lean_code), so its
+        # source hash is target["source_sha256"].
         kr.validate_formal_evidence(formal, result, environment)
         comparison = compare_formal_results(target, result)
         comparisons[kid] = comparison

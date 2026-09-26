@@ -4,12 +4,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.repository import exact_content_hash
 from test_categories import test_group
-from do_math.engine import ResearchEngine, DEFAULT_CONFIG
+from do_math.engine import DEFAULT_CONFIG
+from do_math.repository import ResearchRepository
+from research_fixtures import bare_engine
 from do_math import execution_profiles, reporting
 from do_math.session_slots import SessionSlots
 
@@ -17,12 +19,11 @@ from do_math.session_slots import SessionSlots
 @test_group('unit')
 class GoalAuditFlowRepairTests(unittest.TestCase):
     def host(self):
-        e = ResearchEngine.__new__(ResearchEngine)
-        e.instance = {'id': 'IN-1', 'config': {'goal_auditors': 2}, 'goal_judgments': []}
-        e.runtime = {'executions': {}, 'queue': [], 'waiting_actions': {}, 'history': [],
-                     'events': [], 'pending_events': [], 'tasks': {}, 'activities': {}, 'reservations': {}}
+        e = bare_engine({'id': 'IN-1', 'config': {'goal_auditors': 2}, 'goal_judgments': []},
+                        {'executions': {}, 'queue': [], 'waiting_actions': {}, 'history': [],
+                         'events': [], 'pending_events': [], 'tasks': {}, 'activities': {}, 'reservations': {}})
         e.runtime['last_observed_utc'] = e._lifecycle_now().isoformat()
-        e._goal_basis_key = lambda: 'basis'
+        e._goal_basis_key = create_autospec(e._goal_basis_key, return_value='basis')
         return e
 
     def seal(self, e, slot=0, **changes):
@@ -60,7 +61,6 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
 
     def test_recovery_confirms_termination_before_using_original_seal_without_recollection(self):
         import hashlib
-        from types import SimpleNamespace
         from do_math.repository import canonical_json
         from do_math.contracts import schema_reference
         e = self.host()
@@ -69,8 +69,8 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
         e.instance['workspace'] = str(Path('.').resolve())
         ex = e.runtime['executions']['EX-original']
         ex.update(status='stopping', stop_phase='terminating', actor_kind='ai',
-            process={'job_name': 'fixture-job'}, result_ref='original-result', input_bundle='original-input',
-            capacity={'local_termination': 'confirmed'}, submission_intent={})
+            result_ref='original-result', input_bundle='original-input',
+            capacity={'local_termination': 'confirmed', 'process': {'job_name': 'fixture-job'}}, submission_intent={})
         artifacts, refs = {}, []
         output, extensions = {'summary': 'original'}, {}
         schema_ref = schema_reference({'type': 'object'})
@@ -89,8 +89,10 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
         ex['submission_receipt'] = {'state': 'accepted', 'execution_id': ex['id'],
                                     'payload': {'submission_check': {'artifacts': refs}}}
         e.runtime['integrations'] = {'IB-one': {'execution_id': ex['id'], 'members': ['output']}}
-        e.store = SimpleNamespace(read=lambda path, snapshot: artifacts[path], git_dir="fixture-git")
-        e._slots = SessionSlots(e.runtime, e.instance)
+        e.store = create_autospec(ResearchRepository, instance=True)
+        e.store.read.side_effect = lambda path, snapshot: artifacts[path]
+        e.store.git_dir = "fixture-git"
+        e._session_slots = create_autospec(e._session_slots, return_value=SessionSlots(e.runtime, e.instance))
         with patch.object(e, '_save'), patch('do_math.windows_job.named_job_empty', return_value=True), \
                 patch('do_math.engine.collect_outputs', side_effect=AssertionError('must retain original files')):
             e._recover_disappeared()
@@ -225,10 +227,10 @@ class DispatchResourceRepairTests(unittest.TestCase):
         from test_governance_engine import CentralGovernanceTests
         e, _, _ = CentralGovernanceTests().host()
         e.instance['workspace'] = str(Path('.').resolve())
-        e.instance['config']['session_limits']['operations'] = {m: 0 for m in e.instance['config']['tier_models'].values()}
+        e.instance['config']['session_limits']['work'] = {m: 0 for m in e.instance['config']['tier_models'].values()}
         e.instance.update(execution_profiles.build_profiles(e.instance['config']))
-        e.runtime.update(status='waiting', queue=[{'id': 'AC-wait', 'role': 'research_preparation',
-            'profile_ref': deepcopy(e.instance['role_profile_refs']['research_preparation'][0]),
+        e.runtime.update(status='waiting', queue=[{'id': 'AC-wait', 'role': 'goal_audit',
+            'profile_ref': deepcopy(e.instance['role_profile_refs']['goal_audit'][0]),
             'dispatch_wait': {'kind': 'capacity', 'next_owner': 'user'}}])
         original = deepcopy(e.runtime['queue'][0]['profile_ref'])
         request = {'origin': 'user', 'config': {'session_limits': deepcopy(DEFAULT_CONFIG['session_limits'])}}

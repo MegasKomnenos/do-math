@@ -51,23 +51,18 @@ class ClaudeTests(unittest.TestCase):
                 prompt=prompt, output_schema={}, workspace=workspace, evidence_dir=root / "evidence",
                 timeout_seconds=1, execution_id="EX-codex-lock", profile=profile,
                 launch_ticket=dispatched_launch('EX-codex-lock',profile),
-                input_seal=execution_profiles.prompt_seal(prompt), claude_only_assigned_model=True)
+                input_seal=execution_profiles.prompt_seal(prompt))
             request = codex_worker.load_request(root / "evidence/request.json")
             self.assertNotIn("claude_only_assigned_model", request)
             self.assertEqual(request["profile_ref"], execution_profiles.profile_ref(profile))
             self.assertEqual(result["status"], "completed")
 
     def test_model_lock_is_opt_in_and_reaches_only_claude(self):
-        from do_math.engine import ResearchEngine
-        from types import SimpleNamespace
-        from do_math.execution_profiles import build_profiles
+        from do_math.execution_profiles import build_profiles, runner_tools
         pinned = {**DEFAULT_CONFIG, "claude_only_assigned_model": True, "scholarly_enabled": False}
         profile = next(p for p in build_profiles(pinned)["execution_profiles"].values() if p["role"] == "maintenance")
-        arguments = {"profile": profile}
-        runner_context = SimpleNamespace(runner=Mock(), instance={"config": {
-            **DEFAULT_CONFIG, "claude_only_assigned_model": False, "scholarly_enabled": True}})
-        ResearchEngine._runner_tools(runner_context, arguments)
-        self.assertTrue(arguments["claude_only_assigned_model"])
+        # The runner reads the lock from this pinned edition, not from the current configuration.
+        self.assertTrue(runner_tools(profile)["claude_only_assigned_model"])
         self.assertFalse(DEFAULT_CONFIG["claude_only_assigned_model"])
         with self.assertRaises(ValueError):
             validate_config({"claude_only_assigned_model": "true"})
@@ -162,13 +157,16 @@ class ClaudeTests(unittest.TestCase):
             with self.subTest(events=events):
                 self.assertFalse(adapter.parse_jsonl(stream(*events))["parse_complete"])
 
-    def test_final_output_comparison_preserves_json_types_and_rejects_duplicates(self):
+    def test_final_is_selected_from_the_stream_and_preserved_bytes_must_match_it(self):
         adapter = self.module("claude_adapter").ClaudePrintAdapter("unused")
-        parsed = {"structured_output": {"ok": True}}
-        self.assertEqual(adapter.validate_final(parsed, b'{"ok":true}'), [])
-        for final in (b'{"ok":1}', b'{"ok":false,"ok":true}'):
-            with self.subTest(final=final):
-                self.assertTrue(adapter.validate_final(parsed, final))
+        parsed = adapter.parse_response(stream(INIT, RESULT), {"output_schema_path": "schema.json"})
+        final = adapter.final_bytes(parsed)
+        self.assertEqual(json.loads(final), RESULT["structured_output"])
+        self.assertEqual(adapter.validate_final(parsed, final), [])
+        for changed in (b'{"ok":1}', b'{"ok":false,"ok":true}', b'{"ok":true}'):
+            with self.subTest(final=changed):
+                self.assertTrue(adapter.validate_final(parsed, changed))
+        self.assertIsNone(adapter.final_bytes(adapter.parse_response(stream(INIT), {})))
 
     def test_error_truncation_duplicate_terminal_and_session_mismatch_fail(self):
         adapter = self.module("claude_adapter")
@@ -217,10 +215,9 @@ class ClaudeTests(unittest.TestCase):
         self.assertEqual(runner.claude.run.call_args_list[1].kwargs["model"], "claude-haiku-4-5-20251001")
         runner.codex.run.assert_called_once_with(model="gpt-5.6-sol", prompt="two")
 
-    def test_mixed_models_use_existing_selection_and_separate_slot_pools(self):
+    def test_mixed_models_use_existing_selection_and_per_model_work_slots(self):
         config = {**DEFAULT_CONFIG, "tier_models": {"high": "claude:opus", "medium": "gpt-5.6-sol", "low": "claude:haiku"},
-                  "session_limits": {pool: {"claude:opus": 1, "gpt-5.6-sol": 1, "claude:haiku": 1}
-                                     for pool in ("work", "operations")}}
+                  "session_limits": {"work": {"claude:opus": 1, "gpt-5.6-sol": 1, "claude:haiku": 1}}}
         validate_config(config)
         self.assertEqual(selection(config, {"role": "research_plan"}, {}, {})["model"], "claude:opus")
         self.assertEqual(selection(config, {"role": "task_contract_review"}, {}, {})["model"], "gpt-5.6-sol")
@@ -229,17 +226,18 @@ class ClaudeTests(unittest.TestCase):
         runtime = {"executions": {}, "reservations": {}}
         with tempfile.TemporaryDirectory() as d:
             slots = SessionSlots( runtime=runtime, instance=state)
-            def acquire(eid, pool, model):
-                role = "research_work" if pool == "work" else "research_plan"
+            def acquire(eid, role, model):
                 profile = next(p for p in state["execution_profiles"].values()
                                if p["role"] == role and p.get("ai", {}).get("model") == model)
-                return slots.acquire(eid, pool, model, profile=profile, execution={"id": eid, "role": role})
-            self.assertTrue(acquire("one", "work", "claude:opus"))
-            self.assertFalse(acquire("two", "work", "claude:opus"))
-            self.assertTrue(acquire("three", "operations", "claude:opus"))
-            self.assertTrue(acquire("four", "work", "gpt-5.6-sol"))
+                return slots.acquire(eid, profile=profile,
+                                     execution={"id": eid, "role": role, "status": "queued"})
+            self.assertTrue(acquire("one", "research_work", "claude:opus"))
+            self.assertFalse(acquire("two", "research_work", "claude:opus"))
+            # An operational role reserves no work slot of its model.
+            self.assertTrue(acquire("three", "research_plan", "claude:opus"))
+            self.assertTrue(acquire("four", "research_work", "gpt-5.6-sol"))
             self.assertTrue(slots.release("one"))
-            self.assertTrue(acquire("two", "work", "claude:opus"))
+            self.assertTrue(acquire("two", "research_work", "claude:opus"))
 
 
 if __name__ == "__main__":

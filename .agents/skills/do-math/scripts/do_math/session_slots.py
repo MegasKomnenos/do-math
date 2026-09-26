@@ -2,44 +2,36 @@
 
 The repository writer lock and single CAS own admission. Local Job evidence
 settles local capacity; it proves neither remote termination nor provider use.
+Only work roles reserve a model slot. Operational AI roles are admitted on
+their pinned model without a slot; host limits still bound every capped role.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 import json
-import os
-from pathlib import Path
+import math
 import time
 
-
-def _lock(path: Path):
-    stream = path.open("a+b")
-    if path.stat().st_size == 0:
-        stream.write(b"0"); stream.flush()
-    stream.seek(0)
-    try:
-        if os.name == "nt":
-            import msvcrt
-            msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
-        else:
-            import fcntl
-            fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
-        stream.close()
-        return None
-    return stream
+# Admission wait kinds recorded in a queued request's ``dispatch_wait``.
+PROVIDER_WAIT = 'provider_limit'
+# Slot waits: the instance is capacity_waiting when every queued request has one.
+SLOT_WAITS = frozenset({'capacity', 'host_capacity'})
+# Resource waits: a changed resource configuration may release them.
+RESOURCE_WAITS = SLOT_WAITS | {'resource_unclassified'}
+# Every admission wait, as status reports show scheduling waits.
+ADMISSION_WAITS = RESOURCE_WAITS | {PROVIDER_WAIT}
 
 
-def _unlock(stream):
-    if stream is None:
-        return
-    stream.seek(0)
-    if os.name == "nt":
-        import msvcrt
-        msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
-    else:
-        import fcntl
-        fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
-    stream.close()
+def held_reservations(runtime: dict, owner_ids=None) -> list:
+    """Reservations still held, optionally only those owned by ``owner_ids``."""
+    return [row for row in runtime.get('reservations', {}).values()
+            if row['state'] == 'held' and (owner_ids is None or row['owner_id'] in owner_ids)]
+
+
+def quiescence(runtime: dict) -> dict:
+    """Unended executions and held reservations; an instance is quiescent when both are empty."""
+    return {'pending_executions': [e['id'] for e in runtime.get('executions', {}).values() if e['status'] != 'ended'],
+            'held_reservations': [row['id'] for row in held_reservations(runtime)]}
 
 
 class SessionSlots:
@@ -63,78 +55,45 @@ class SessionSlots:
         if self.observer:
             raise ValueError("a read-only slot observer cannot mutate reservations")
 
-    def admission_check(self, profile, *, current_time=None):
-        """Evaluate the actual admission calculation on detached ledger data.
+    def _gate(self, provider):
+        return self.runtime.get("provider_waits", {}).get("PW-" + provider) if provider else None
 
-        A ready result is not a reservation. The real acquire repeats the check
-        while publishing its execution and reservations under the writer lock.
+    def provider_wait(self, profile, *, current_time=None):
+        """The admission wait while this profile's provider gate is closed, else None."""
+        from .execution_profiles import profile_ref
+        from .provider_wait import gate_open, utc
+        current = time.time() if current_time is None else current_time
+        ai = profile.get("ai", {})
+        gate = self._gate(ai.get("provider"))
+        if gate is None or gate_open(gate, current):
+            return None
+        return {'kind': PROVIDER_WAIT, 'model': ai["model"], 'profile_ref': profile_ref(profile),
+                'provider': ai["provider"], 'retry_at': utc(gate['retry_at']),
+                'reason': 'provider admission is waiting for reobservation', 'next_owner': 'scheduler'}
+
+    def _admission(self, profile, execution_id, current):
+        """The one admission calculation shared by the check and the real acquire.
+
+        Returns the registered profile and the reservation records to publish,
+        or None after recording ``admission_wait``. Nothing is written.
         """
-        from copy import deepcopy
-        from .repository import new_id
-        runtime = {"executions": {},
-                   "reservations": dict(self.runtime.get("reservations", {})),
-                   "provider_waits": deepcopy(self.runtime.get("provider_waits", {}))}
-        candidate = {"id": new_id("EX"), "role": profile["role"], "status": "queued"}
-        slots = SessionSlots(runtime, self.instance)
-        allowed = slots.acquire(
-            candidate["id"], profile["budget_kind"], profile.get("ai", {}).get("model"),
-            profile=profile, execution=candidate, current_time=current_time)
-        return {'allowed': allowed, 'wait': deepcopy(slots.admission_wait)}
-
-    def configure(self, limits):
-        self._writable()
-        from .execution_profiles import build_profiles
-        authored = build_profiles({**self.instance["config"], "session_limits": limits})
-        if self.instance.get("host_capacity_ref") and authored.get("host_capacity_ref") != self.instance["host_capacity_ref"]:
-            raise ValueError("session reconfiguration cannot drop or change the adopted host constraint")
-        # Old immutable profiles remain available to already admitted executions.
-        self.instance.setdefault("execution_profiles", {}).update(authored["execution_profiles"])
-        self.instance.setdefault("capacity_constraints", {}).update(authored["capacity_constraints"])
-        self.instance["role_profile_refs"] = authored["role_profile_refs"]
-        if authored.get("host_capacity_ref"):
-            self.instance["host_capacity_ref"] = authored["host_capacity_ref"]
-        else:
-            self.instance.pop('host_capacity_ref', None)
-
-    def acquire(self, execution_id, pool, model, *, profile=None, execution=None, provider=None,
-                current_time=None):
-        self._writable()
+        from .execution_profiles import (resolve_profile, profile_ref, job_resource_limits,
+                                         validate_host_constraint, UNCAPPED_ROLES)
+        from .budget import plan_reservations, BudgetConflict
         self.admission_wait = None
-        from copy import deepcopy
-        from .execution_profiles import (bind_execution, resolve_profile, profile_ref,
-                                         job_resource_limits, validate_host_constraint)
-        from .budget import plan_reservations, BudgetConflict, ReservationPlan
-        if profile is None or execution is None:
-            raise ValueError("Git admission requires the selected profile and starting execution")
         profile = resolve_profile(self.instance["execution_profiles"], profile_ref(profile))
         approved_host = self.instance.get("host_capacity_ref")
         uncapped_lean = (profile['actor_kind']=='machine'
-                        and profile['role'] in {'formal_check','trust_check','trust_activate'}
+                        and profile['role'] in UNCAPPED_ROLES
                         and profile.get('host_resources') is None)
         if profile.get("host_capacity_refs", []) != ([approved_host] if approved_host and not uncapped_lean else []):
             raise ValueError("execution profile must bind the instance's current adopted host constraint")
-        if profile["budget_kind"] != pool or profile.get("ai", {}).get("model") != model:
-            raise ValueError("admission differs from the pinned profile")
-        if execution.get("id") != execution_id:
-            raise ValueError("execution identity differs from admission")
-        existing = self.runtime.get("executions", {}).get(execution_id)
-        if existing is not None and (existing is not execution or "capacity" in existing
-                                     or existing.get("status") not in {"queued", "starting"}):
-            raise ValueError("execution IDs are single-use; only the registered unreserved execution can be admitted")
-        current = time.time() if current_time is None else current_time
         job_resource_limits(profile)  # Reject a profile bound to another host before any mutation.
         ai = profile.get("ai", {})
-        expected_provider = ai.get("provider")
-        if provider is not None and provider != expected_provider:
-            raise ValueError("provider differs from profile")
-        provider = expected_provider
-        gate = self.runtime.get("provider_waits", {}).get("PW-" + provider) if provider else None
-        if gate and (gate["state"] == "checking" or gate["state"] == "waiting" and gate["retry_at"] > current):
-            from .provider_wait import utc
-            self.admission_wait = {'kind': 'provider_limit', 'budget_kind': pool, 'model': model,
-                'profile_ref': profile_ref(profile), 'provider': provider, 'retry_at': utc(gate['retry_at']),
-                'reason': 'provider admission is waiting for reobservation', 'next_owner': 'scheduler'}
-            return False
+        model = ai.get("model")
+        self.admission_wait = self.provider_wait(profile, current_time=current)
+        if self.admission_wait is not None:
+            return None
         # A new capacity edition must still count executions reserved under older
         # editions of the same model. Limits are not independent resource pools.
         constraints = self.instance["capacity_constraints"]
@@ -142,7 +101,7 @@ class SessionSlots:
         reservations = {rid: dict(row) for rid, row in self.runtime.get("reservations", {}).items()}
         capacity_refs = list(ai.get("capacity_refs", []))
         adopted = self.instance.get("role_profile_refs")
-        if adopted and ai:
+        if adopted and capacity_refs:
             # An execution keeps its immutable profile, but a new reservation
             # must obey the currently adopted limit for the same resource.
             active_constraints = set()
@@ -154,19 +113,16 @@ class SessionSlots:
 
             def current_ref(reference):
                 previous = constraints[reference]
-                if previous["kind"] == "concurrency":
-                    matches = [cid for cid in active_constraints if constraints[cid]["kind"] == "concurrency"
-                               and constraints[cid]["model"] == previous["model"]]
-                else:
-                    matches = [reference]
+                matches = [cid for cid in active_constraints if constraints[cid]["kind"] == "concurrency"
+                           and constraints[cid]["model"] == previous["model"]]
                 return matches[0] if len(matches) == 1 else None
 
             capacity_refs = [current_ref(ref) for ref in capacity_refs]
             if None in capacity_refs:
-                self.admission_wait = {"kind": "capacity", "budget_kind": pool, "model": model,
+                self.admission_wait = {"kind": "capacity", "model": model,
                     "profile_ref": profile_ref(profile), "reason": "pinned profile has no current adopted accounting constraint",
                     "next_owner": "user"}
-                return False
+                return None
         refs = capacity_refs
         accounting_profile = deepcopy(profile)
         if ai:
@@ -194,69 +150,97 @@ class SessionSlots:
             demands.extend({"id": "RS-" + execution_id + "-host-" + unit,
                 "constraint_id": ref, "unit": unit, "amount": amount}
                 for unit, amount in profile["host_resources"]["demands"].items())
-        request = {"budget_kind": pool, "owner_kind": "execution", "owner_id": execution_id,
+        if not demands:
+            return profile, ()
+        request = {"owner_kind": "execution", "owner_id": execution_id,
                    "purpose": "normal", "authority_refs": [profile_ref(profile)],
                    "reobserve": {"on": "local_termination_barrier"}, "demands": demands}
         try:
-            plan = (plan_reservations({"reservations": reservations},
-                                     {"constraints": list(constraints.values())}, accounting_profile, request)
-                    if demands else ReservationPlan((), False))
+            records = plan_reservations({"reservations": reservations},
+                                        {"constraints": list(constraints.values())}, accounting_profile, request)
         except BudgetConflict as error:
             kind, owner = {'concurrency': ('capacity', 'scheduler'),
                            'host': ('host_capacity', 'operations')}.get(
                                error.constraint_kind, ('resource_unclassified', 'operations'))
             constraint = constraints.get(error.constraint_id, {})
-            if error.constraint_kind == 'concurrency' and (
-                    constraint.get(pool + '_slots') == 0 or constraint.get('total_slots') == 0):
+            if error.constraint_kind == 'concurrency' and constraint.get('work_slots') == 0:
                 owner = 'user'
-            self.admission_wait = {'kind': kind, 'budget_kind': pool, 'model': model,
+            self.admission_wait = {'kind': kind, 'model': model,
                 'profile_ref': profile_ref(profile), 'constraint_id': error.constraint_id,
                 'constraint_kind': error.constraint_kind, 'reason': str(error), 'next_owner': owner}
+            return None
+        return profile, records
+
+    def admission_check(self, profile, *, current_time=None):
+        """Evaluate the admission calculation without writing the ledger.
+
+        A ready result is not a reservation. The real acquire repeats the check
+        while publishing its execution and reservations under the writer lock.
+        """
+        current = time.time() if current_time is None else current_time
+        allowed = self._admission(profile, "EX-admission-check", current) is not None
+        return {'allowed': allowed, 'wait': deepcopy(self.admission_wait)}
+
+    def acquire(self, execution_id, *, profile, execution, current_time=None):
+        """Admit one registered execution on its pinned profile, or record the wait."""
+        self._writable()
+        from .execution_profiles import bind_execution
+        from .execution_lifecycle import transition_execution
+        from .launch import ticket
+        from datetime import datetime, timezone
+        if execution.get("id") != execution_id:
+            raise ValueError("execution identity differs from admission")
+        existing = self.runtime.get("executions", {}).get(execution_id)
+        if existing is not None and (existing is not execution or "capacity" in existing
+                                     or existing.get("status") not in {"queued", "starting"}):
+            raise ValueError("execution IDs are single-use; only the registered unreserved execution can be admitted")
+        current = time.time() if current_time is None else current_time
+        admitted = self._admission(profile, execution_id, current)
+        if admitted is None:
             return False
+        profile, records = admitted
         candidate = deepcopy(execution)
         bind_execution(candidate, profile)
-        from .launch import ticket
         candidate['launch_ticket'] = ticket(execution_id, profile)
-        if "actor_kind" in candidate:
-            from .execution_lifecycle import transition_execution
-            from datetime import datetime, timezone
-            admitted_at = (datetime.now(timezone.utc) if current_time is None
-                           else datetime.fromtimestamp(current, timezone.utc))
-            transition_execution(candidate, "starting", at=admitted_at.isoformat())
-        else:
-            candidate["status"] = "starting"
-        candidate["capacity"] = {"reservation_ids": [r["id"] for r in plan.records],
+        admitted_at = (datetime.now(timezone.utc) if current_time is None
+                       else datetime.fromtimestamp(current, timezone.utc))
+        transition_execution(candidate, "starting", at=admitted_at.isoformat())
+        provider = profile.get("ai", {}).get("provider")
+        candidate["capacity"] = {"reservation_ids": [r["id"] for r in records],
                                  "provider": provider, "process": None, "local_termination": "unknown"}
-        self.runtime.setdefault("reservations", {}).update({r["id"]: r for r in plan.records})
+        self.runtime.setdefault("reservations", {}).update({r["id"]: r for r in records})
         self.runtime.setdefault("executions", {})[execution_id] = candidate
+        gate = self._gate(provider)
         if gate and gate["state"] == "waiting":
             gate.update(state="checking", probe_owner=execution_id, probe_started_at=int(current))
         execution.clear()
         execution.update(candidate)
         self.runtime["executions"][execution_id] = execution
-        self.admission_wait = None
         return True
 
-    def started(self, execution_id, identity):
+    def started(self, execution_id, identity, *, at):
+        """Record the started named Job, its running transition and start time."""
         self._writable()
-        from copy import deepcopy
+        from .launch import validate
+        from .execution_lifecycle import transition_execution
         execution = self.runtime["executions"][execution_id]
         capacity = execution["capacity"]
-        from .launch import validate
         launch = validate(execution['launch_ticket'], execution_id=execution_id)
         if launch['kind'] != 'native_job' or identity.get('job_name') != launch['job_name']:
             raise ValueError('started Job differs from the published launch ticket')
         if capacity["process"] is not None:
             if capacity["process"] == identity:
-                return
+                return execution
             raise ValueError("execution process identity is already fixed")
-        if not identity.get("job_name"):
-            raise ValueError("started execution requires the named local Job")
         capacity["process"] = deepcopy(identity)
+        transition_execution(execution, "running", at=at)
+        execution["started_at"] = at
+        return execution
 
     def release(self, execution_id, *, reason="local runner returned after termination"):
         self._writable()
         from .budget import settle_reservation
+        from .launch import termination_confirmed
         execution = self.runtime.get("executions", {}).get(execution_id)
         if not execution or "capacity" not in execution:
             return False
@@ -264,24 +248,19 @@ class SessionSlots:
         if capacity["local_termination"] == "confirmed":
             return True
         identity = capacity["process"]
-        from .launch import termination_confirmed
+        # The launch ticket, not missing process metadata, establishes the
+        # barrier; for a native Job it already requires the named Job empty.
+        # A suspended root may exist before on_started is saved.
         if not execution.get('launch_ticket') or not termination_confirmed(execution['launch_ticket']):
             capacity['local_termination'] = 'unknown'
             return False
-        if identity:
-            from .windows_job import named_job_empty
-            if named_job_empty(identity["job_name"]) is not True:
-                capacity["local_termination"] = "unknown"
-                return False
-        # The launch ticket, not missing process metadata, established the
-        # barrier above. A suspended root may exist before on_started is saved.
         evidence = [{"execution_id": execution_id, "job_name": identity.get("job_name") if identity else None,
                      "kind": "local_job_empty" if identity else "never_resumed", "reason": reason}]
         updates = {}
         for rid in capacity["reservation_ids"]:
             record = self.runtime["reservations"][rid]
             updates[rid] = settle_reservation({"reservations": self.runtime["reservations"]}, rid,
-                confirmed_consumed=0, returned=record["reserved"], evidence_refs=evidence).record
+                confirmed_consumed=0, returned=record["reserved"], evidence_refs=evidence)
         self.runtime["reservations"].update(updates)
         capacity["local_termination"] = "confirmed"
         for gate in self.runtime.get("provider_waits", {}).values():
@@ -290,15 +269,26 @@ class SessionSlots:
                 gate.update(state="waiting", probe_owner=None, probe_started_at=None)
         return True
 
-    def provider_result(self, execution_id, provider, *, failure=None, response_observed=True,
-                        current_time=None, initial_seconds=300, maximum_seconds=7200):
+    def provider_result_from_run(self, execution_id, result, config, *, current_time=None):
+        """Apply one runner result to the gate of the execution's admitted provider.
+
+        Only a provider_limit failure closes the gate. The probe owner reopens
+        it when the provider answered at all: a completed call, or a reported
+        failed or completed turn.
+        """
         self._writable()
         from .provider_wait import retry_time
-        import math
         current = time.time() if current_time is None else current_time
+        initial_seconds = config["provider_retry_initial_seconds"]
+        maximum_seconds = config["provider_retry_max_seconds"]
         execution = self.runtime.get("executions", {}).get(execution_id, {})
-        if execution.get("capacity", {}).get("provider") != provider:
+        provider = execution.get("capacity", {}).get("provider")
+        if provider is None:
             raise ValueError("provider result has no matching admitted execution")
+        parsed = result.get("execution", {}).get("collect", {}).get("jsonl", {})
+        failure = result.get("failure") if result.get("error_kind") == "provider_limit" else None
+        response_observed = result.get("status") == "completed" or bool(
+            parsed.get("turn_failed") or parsed.get("turn_completed"))
         rows = self.runtime.setdefault("provider_waits", {})
         row = rows.get("PW-" + provider)
         if failure is not None:
@@ -326,33 +316,29 @@ class SessionSlots:
                     {"provider": provider, "state": "available", "generation": 0})
 
     def provider_snapshot(self, *, current_time=None):
-        from copy import deepcopy
-        from .provider_wait import utc
+        from .provider_wait import gate_open, utc
         current = time.time() if current_time is None else current_time
         rows = deepcopy(self.runtime.get("provider_waits", {}))
         for row in rows.values():
-            row["due"] = row["state"] == "waiting" and row["retry_at"] <= current
+            row["open"] = gate_open(row, current)
             row["retry_at"] = utc(row["retry_at"])
             row["probe_started_at"] = utc(row["probe_started_at"])
         return {"observed_at": utc(current), "source": "git_runtime", "providers": {row["provider"]: row for row in rows.values()}}
 
     def snapshot(self):
+        """Work slots of each currently adopted model; operational roles hold none."""
         constraints = self.instance["capacity_constraints"]
         active_refs = {ref["id"] for refs in self.instance.get("role_profile_refs", {}).values() for ref in refs}
         active_constraints = {ref for pid in active_refs for ref in self.instance["execution_profiles"][pid].get("ai", {}).get("capacity_refs", [])}
-        result = {"work": {}, "operations": {}}
-        for cid in active_constraints:
-            constraint = constraints[cid]
-            for pool in result:
-                result[pool][constraint["model"]] = {"limit": constraint[pool + "_slots"], "used": 0, "execution_ids": []}
-        for row in self.runtime.get("reservations", {}).values():
-            if row["state"] != "held" or row["unit"] != "execution":
+        result = {constraints[cid]["model"]: {"limit": constraints[cid]["work_slots"], "used": 0, "execution_ids": []}
+                  for cid in active_constraints}
+        for row in held_reservations(self.runtime):
+            if row["unit"] != "execution":
                 continue
             model = constraints[row["constraint_id"]]["model"]
-            cell = result[row["budget_kind"]].setdefault(model, {"limit": 0, "used": 0, "execution_ids": []})
+            cell = result.setdefault(model, {"limit": 0, "used": 0, "execution_ids": []})
             cell["used"] += row["reserved"]
             cell["execution_ids"].append(row["owner_id"])
-        for pool in result.values():
-            for cell in pool.values():
-                cell["available"] = max(0, cell["limit"] - cell["used"])
+        for cell in result.values():
+            cell["available"] = max(0, cell["limit"] - cell["used"])
         return result

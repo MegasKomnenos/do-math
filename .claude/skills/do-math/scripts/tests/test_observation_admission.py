@@ -68,9 +68,9 @@ class ObservationAdmissionTests(unittest.TestCase):
     def test_active_wait_rebinds_review_but_reprepares_a_tasks_fixed_profile(self):
         from types import MethodType
         from do_math.engine import ResearchEngine
-        from test_lifecycle_engine import AdapterDouble
+        from research_fixtures import FixtureAdapter
         from unittest.mock import patch
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=AdapterDouble()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
             engine = FakeEngine(root)
             engine.activate()
             engine._execution_profile = MethodType(ResearchEngine._execution_profile, engine)
@@ -95,15 +95,14 @@ class ObservationAdmissionTests(unittest.TestCase):
 @test_group('integration')
 class PublicObservationAdmissionTests(unittest.TestCase):
     def test_public_default_init_rejects_unready_adoption_then_accepts_configured_edition(self):
-        import subprocess
-        from do_math.engine import initialize, ResearchEngine, control
+        from do_math.engine import ResearchEngine, control
+        from research_fixtures import new_instance
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            repository = root / 'repo'; repository.mkdir()
-            subprocess.run(['git', '-C', str(repository), 'init', '-q'], check=True)
-            created = initialize(repository, goal='Preserve this original', workspace=root / 'work',
+            repository = root / 'repo'
+            instance_id = new_instance(repository, goal='Preserve this original', workspace=root / 'work',
                 config={'scholarly_enabled': False, 'operator_enabled': False, 'lean_command': ['test-lean']})
-            engine = ResearchEngine(repository, created['instance_id'])
+            engine = ResearchEngine(repository, instance_id)
             old = deepcopy(engine.instance['role_profile_refs']['research_work'][0])
             request = control(repository, engine.instance['id'], 'decision', config={'change': {
                 'kind': 'initialization', 'adopt_current_config': True, 'profile_refs': [old]}})

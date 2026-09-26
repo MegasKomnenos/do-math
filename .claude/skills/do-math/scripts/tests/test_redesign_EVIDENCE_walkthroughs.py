@@ -15,9 +15,10 @@ from test_redesign_EVIDENCE import (engine_fixture, reviewed_task, task_fixture,
     accept_knowledge, audit_goal, apply_plan, plan_fixture, TIME)
 from do_math import knowledge, knowledge_io, knowledge_records as kr, planning, review_cycle as review
 from do_math import contracts
-from do_math import questions, activities
+from do_math import questions
 from do_math.context_store import fit_context, read_source
 from do_math.observations import ObservationTracker
+from research_fixtures import write_checkpoint
 from do_math.repository import new_id
 from do_math.engine import _repository, query_records, read_record
 
@@ -76,7 +77,7 @@ def activate_relation(e, token):
 
 def rule(threshold=2):
     return {'id': 'R-attempts', 'operator': 'counter_gte', 'subject': {'kind': 'counter', 'id': 'attempts'},
-            'basis': {'source': 'execution_events', 'unit': 'count'}, 'threshold': threshold,
+            'basis': {'source': 'checkpoint', 'unit': 'count'}, 'threshold': threshold,
             'required_evidence': ['EV-attempts'], 'repeat_interval': 2}
 
 
@@ -138,6 +139,10 @@ class DesignWalkthroughs(unittest.TestCase):
         from jsonschema import Draft202012Validator
         self.assertEqual(list(Draft202012Validator(contracts.TASK_CANDIDATE).iter_errors(proposal)), [])
         e.runtime['executions']['EX-prep'] = {'id': 'EX-prep', 'role': 'research_preparation', 'status': 'ended', 'input_snapshot': e.head, 'extensions': {}}
+        # The preparation's issued input names what its task inputs may cite; this proposal cites none.
+        from unittest.mock import create_autospec
+        e._issued_input = create_autospec(e._issued_input, return_value=(
+            {'available_input_refs': [], 'supplied_record_ids': []}, None))
         e._apply(preparation, {'candidates': [proposal], 'summary': 'Different lens', 'questions': []}, 'EX-prep')
         created = next(t for t in e.runtime['tasks'].values() if t['id'] != old['id'])
         self.assertEqual(created['status'], 'planned')
@@ -193,22 +198,16 @@ class DesignWalkthroughs(unittest.TestCase):
     def test_w05_waiting_task_keeps_obligations_and_other_work_can_proceed(self):
         e = engine_fixture(); waiting = reviewed_task(e, 'TK-waiting'); peer = reviewed_task(e, 'TK-independent')
         waiting['status'] = 'waiting'
-        activity = activities.open_activity(e.runtime, activity_id='AY-wait', activity_kind='research',
-            owner_ref=waiting['id'], input_refs=[waiting['id']], opened_at=TIME)
         question = questions.link(e.runtime, execution_id='EX-old', field='questions/0', owner='user',
             targets=[waiting['id']], reason='Approve external scope?', blocks=True)
-        questions.sync_activity_wait(e.runtime, activity['id'], [question['id']], at=TIME)
         before = deepcopy(waiting['completion_obligations'])
         e.runtime['executions']['EX-old'] = {'id': 'EX-old', 'role': 'research_work', 'status': 'ended',
                                            'outcome': 'waiting', 'action': {'target': waiting['id']}}
         self.assertNotEqual(planning.task_ready(waiting, e.instance, e.runtime)['state'], 'ready')
         self.assertEqual(planning.task_ready(peer, e.instance, e.runtime)['state'], 'ready')
-        self.assertEqual(activity['status'], 'waiting')
         with self.assertRaises(ValueError):
             questions.resolve_user(e.runtime, [question['id']], resolution_ref='DC-unrelated', affected_ids=[peer['id']])
         questions.resolve_user(e.runtime, [question['id']], resolution_ref='DC-answer', affected_ids=[waiting['id']])
-        questions.sync_activity_wait(e.runtime, activity['id'], [question['id']], at=TIME)
-        self.assertEqual(activity['status'], 'ready')
         self.assertEqual(question['resolution_ref'], 'DC-answer')
         next_action = {'id': 'AC-resume', 'role': 'research_work', 'target': waiting['id'],
                        'continuation_of': 'EX-old', 'resolution_ref': 'DC-answer'}
@@ -265,7 +264,8 @@ class DesignWalkthroughs(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             tracker = ObservationTracker('EX-repeat', Path(directory), {
                 'self_check_revision': 1, 'observation_rules': [rule()], 'self_check_response_window_seconds': 5}, clock=clock)
-            due = next(r for r in tracker.observe({'type': 'tick', 'counters': {'attempts': 2}}) if r['kind'] == 'self_check_due')
+            write_checkpoint(directory, counters={'attempts': 2})
+            due = next(r for r in tracker.observe({'type': 'tick'}) if r['kind'] == 'self_check_due')
             receipt = self_check(tracker, due, 'defect')
             self.assertEqual(receipt['followup']['kind'], 'operational_review_due')
             self.assertIn(due['id'], receipt['followup']['basis_refs'])
@@ -308,12 +308,14 @@ class DesignWalkthroughs(unittest.TestCase):
             workspace = Path(directory)
             tracker = ObservationTracker('EX-adapt', workspace, {
                 'self_check_revision': 1, 'observation_rules': [rule()], 'self_check_response_window_seconds': 5}, clock=clock)
-            due = next(r for r in tracker.observe({'type': 'tick', 'counters': {'attempts': 2}}) if r['kind'] == 'self_check_due')
+            write_checkpoint(workspace, counters={'attempts': 2})
+            due = next(r for r in tracker.observe({'type': 'tick'}) if r['kind'] == 'self_check_due')
             deadline = due['deadline_offset_ms']
             # A valid response may adapt rules. A free-standing file must not
             # erase obligations. Leave the first obligation open while a second
             # real boundary supplies the response that changes the rules.
-            second = next(r for r in tracker.observe({'type': 'tick', 'counters': {'attempts': 4}}) if r['kind'] == 'self_check_due')
+            write_checkpoint(workspace, counters={'attempts': 4})
+            second = next(r for r in tracker.observe({'type': 'tick'}) if r['kind'] == 'self_check_due')
             receipt = self_check(tracker, second, rule_proposal={'current_revision': 1,
                 'reason': 'Next search stage uses a larger batch', 'rules': [rule(6)]})
             self.assertEqual(receipt['rule_update']['kind'], 'observation_rules_accepted')
@@ -393,6 +395,9 @@ class DesignWalkthroughs(unittest.TestCase):
             state.update(id=identifier, feature_version=5, sources=[])
             runtime = deepcopy(archived_runtime)
             runtime['trust_bindings'] = deepcopy(e.runtime['trust_bindings'])
+            # Every stored state passes the current lifecycle gate.
+            from research_fixtures import current_state
+            state, runtime = current_state(state, runtime)
             head = store.initialize(state, runtime)
             found = query_records(root, identifier, kind='knowledge', snapshot=head)
             self.assertEqual(found['snapshot'], head)

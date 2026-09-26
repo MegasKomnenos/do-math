@@ -19,7 +19,8 @@ from do_math import execution_profiles
 from do_math.engine import ResearchEngine
 from do_math.repository import ResearchRepository, canonical_json, new_id
 from test_engine import ScriptedRunner, formal_ok
-from test_lifecycle_engine import AdapterDouble, FakeEngine
+from test_lifecycle_engine import FakeEngine
+from research_fixtures import FixtureAdapter, bare_engine
 
 
 ENTRYPOINT = SCRIPTS / "do_math.py"
@@ -34,14 +35,14 @@ class InputRecoveryPublicTests(unittest.TestCase):
         self.repo.mkdir()
         workspace.mkdir()
         subprocess.run(["git", "-C", str(self.repo), "init", "-q"], check=True)
-        adapter = patch("do_math.initialization.adapter_for", return_value=AdapterDouble())
+        adapter = patch("do_math.initialization.adapter_for", return_value=FixtureAdapter())
         adapter.start()
         self.addCleanup(adapter.stop)
         seed = FakeEngine(workspace, config={'tool_review_window_seconds': 60,
                                             'self_check_response_window_seconds': 5})
         seed.activate()
         seed.runtime["queue"] = []
-        seed.runtime.update(active_execution=None, processed_controls=[], reservations={},
+        seed.runtime.update(processed_controls=[], reservations={},
                             provider_waits={}, updated_at=seed.runtime["last_observed_utc"],
                             next_research_reconsider_at="2100-01-01T00:00:00+00:00")
         self.identifier = new_id("RI")
@@ -73,7 +74,7 @@ class InputRecoveryPublicTests(unittest.TestCase):
             profile = execution_profiles.resolve_profile(engine.instance["execution_profiles"], reference)
             if profile["actor_kind"] != "ai":
                 continue
-            evidence = execution_profiles.capability_evidence(profile, AdapterDouble().describe(),
+            evidence = execution_profiles.capability_evidence(profile, FixtureAdapter().describe(),
                 observed_at=engine.runtime["last_observed_utc"])
             evidence_store[evidence["id"]] = evidence
         engine._save()
@@ -240,11 +241,10 @@ class InputRecoveryMarkerUnitTests(unittest.TestCase):
         self.assertIsNone(ResearchEngine._pending_input_overflow_retry(failed))
 
     def test_preexisting_user_resolution_is_preserved_when_retry_input_fits(self):
-        engine = object.__new__(ResearchEngine)
         prior_history = [{"resolution_ref": "DE-user", "affected_ids": ["AC-held"]}]
-        engine.runtime = {"question_links": [{
+        engine = bare_engine(runtime={"question_links": [{
             "id": "QU-overflow", "status": "resolved", "resolution_ref": "DE-user",
-            "unresolved_target_ids": [], "resolution_history": deepcopy(prior_history)}]}
+            "unresolved_target_ids": [], "resolution_history": deepcopy(prior_history)}]})
 
         disposition = engine._resolve_input_overflow_question("QU-overflow", execution_id="EX-retry",
             kind="input_overflow_retry_resolved", evidence={"action_id": "AC-held"})

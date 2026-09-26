@@ -2,11 +2,18 @@
 from copy import deepcopy
 
 from . import knowledge, planning
+from .file_io import parse_utc
 from .repository import exact_content_hash
 
 
+def regeneration_time_valid(regenerate_after, observed_at) -> bool:
+    """A regeneration time must be a zoned time strictly after the machine observation.
+
+    Malformed times raise ValueError."""
+    return parse_utc(regenerate_after) > parse_utc(observed_at)
+
+
 def capture_targets(instance, runtime, identifiers, *, required=False, source_ref=None):
-    planning._records(instance,runtime)
     result = {}
     for identifier in identifiers:
         if identifier in runtime.get("tasks", {}):
@@ -77,10 +84,7 @@ def submission_errors(output, extensions, context):
         if disposition != "revised" and identifier in task_writes | knowledge_writes:
             issue("revision_resolutions", "an authored revision must have disposition revised: " + identifier)
         if disposition == "unchanged":
-            task = tasks.get(identifier, {})
-            required = declared[identifier].get("required") or task.get("revision_requested") or any(
-                review.get("revision") == task.get("revision") and review.get("decision") != "approved" for review in task.get("reviews", []))
-            if required:
+            if declared[identifier].get("required") or planning.revision_required(tasks.get(identifier, {})):
                 issue("revision_resolutions", "a required revision or rejected contract cannot be cancelled as unchanged")
         if disposition == "delegated":
             title = row.get("task_title")
@@ -190,7 +194,7 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
     if not all(isinstance(s,str) and s.strip() for s in (lineage_id,event_ref,outcome,reason)):
         raise ValueError('repetition needs its lineage, actual event, outcome and reason')
     if regenerate_after:
-        if not observed_at or planning._utc(regenerate_after) <= planning._utc(observed_at):
+        if not observed_at or not regeneration_time_valid(regenerate_after, observed_at):
             raise ValueError('regeneration time must follow the machine observation')
     row={'kind':'task_repetition','lineage':lineage,'lineage_id':lineage_id,'event_ref':event_ref,
          'outcome':outcome,'owner':owner,'reason':reason}
@@ -222,8 +226,8 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
             current=max((r.get('version',0) for r in history if r.get('lineage')==lineage and r.get('lineage_id')==lineage_id),default=0)
             if row['baseline_revision']!=current:raise ValueError('continuation cannot invent a future version baseline')
     if owner == 'user' and outcome not in {'accepted','contracts_preserved','continued'}:
-        questions=[q for q in runtime.get('question_links',[]) if q.get('owner')=='user' and q.get('status')=='open'
-                   and q.get('id')==decision_ref and lineage_id in q.get('target_ids',[])]
+        from .questions import open_links
+        questions=[q for q in open_links(runtime,'user') if q.get('id')==decision_ref and lineage_id in q.get('target_ids',[])]
         if not questions:
             raise ValueError('user-owned change requires an existing scoped user question')
     history.append(row)
@@ -317,10 +321,9 @@ def continue_repetition(instance, runtime, change, decision):
         del runtime['waiting_actions'][action['id']]
         if not any(a.get('id') == action['id'] for a in runtime.setdefault('queue', [])):
             runtime['queue'].append(deepcopy(action))
-    from .questions import resolve_user
+    from .questions import open_links, resolve_user
     question_field = f"{runtime['history'].index(hold)}/question"
-    questions = [q['id'] for q in runtime.get('question_links', []) if q.get('status') == 'open'
-        and q.get('owner') == 'user' and q.get('origin_execution_id') == hold['event_ref']
+    questions = [q['id'] for q in open_links(runtime, 'user') if q.get('origin_execution_id') == hold['event_ref']
         and q.get('source_kind') == 'history' and q.get('origin_field') == question_field]
     if questions:
         resolve_user(runtime, questions, resolution_ref=decision['id'], affected_ids=[hold['event_ref']])
@@ -382,9 +385,8 @@ def record_execution_outcome(instance, runtime, action, output, execution_id, *,
         observed_at = execution.get('observed_at') or execution.get('started_at')
         regenerate_after = output.get('regenerate_after') if not preserved else None
         if regenerate_after:
-            from .governance import timestamp
             try:
-                if not observed_at or timestamp(regenerate_after) <= timestamp(observed_at):
+                if not observed_at or not regeneration_time_valid(regenerate_after, observed_at):
                     regenerate_after = None
             except (ValueError, TypeError, AttributeError):
                 regenerate_after = None

@@ -8,17 +8,23 @@ def open_links(runtime, owner=None):
     return [row for row in runtime.get("question_links", []) if row["status"] == "open" and (owner is None or row["owner"] == owner)]
 
 
-def user_waits(action, instance, runtime):
+def open_targets(row):
+    """The question targets that no applied resolution has covered yet."""
+    return row["unresolved_target_ids"]
+
+
+def user_waits(action, instance, runtime, *, records=None):
+    """records may carry planning.record_index() of this same state."""
     if action.get("role") in {"intent_interpretation", "operational_review", "maintenance"}:
         return []
     from .planning import action_read_ids
-    reads = set() if action.get("role") == "research_plan" else action_read_ids(action, instance, runtime)
+    reads = set() if action.get("role") == "research_plan" else action_read_ids(action, instance, runtime, records=records)
     targets = reads | {action.get("target"), action.get("id"), instance.get("id")}
     retry = action.get("input_overflow_retry", {})
     retry_question = retry.get("question_id") if retry.get("state", "pending") == "pending" else None
-    return [{"kind": "user_decision", "question_id": row["id"], "target_ids": row.get("unresolved_target_ids", row["target_ids"]), "next_owner": "user"}
+    return [{"kind": "user_decision", "question_id": row["id"], "target_ids": open_targets(row), "next_owner": "user"}
             for row in open_links(runtime, "user") if row["id"] != retry_question and row.get("blocks", False)
-            and targets & set(row.get("unresolved_target_ids", row["target_ids"]))]
+            and targets & set(open_targets(row))]
 
 
 def link(runtime, *, execution_id, field, owner, targets, source_ref=None, reason=None, blocks=False, checked_by=None):
@@ -43,6 +49,33 @@ def link(runtime, *, execution_id, field, owner, targets, source_ref=None, reaso
     return row
 
 
+def close(row, *, kind, resolution_ref, affected_ids, status="resolved", evidence=None):
+    """The only resolving transition: resolve affected targets, closing the question with its last one.
+
+    Every closing path appends the same history entry shape."""
+    remaining = set(open_targets(row)) - set(affected_ids)
+    row["unresolved_target_ids"] = [target for target in row["target_ids"] if target in remaining]
+    entry = {"kind": kind, "resolution_ref": resolution_ref,
+             "affected_ids": sorted(set(affected_ids) & set(row["target_ids"]))}
+    if evidence is not None:
+        entry["evidence"] = deepcopy(evidence)
+    row.setdefault("resolution_history", []).append(entry)
+    if not remaining:
+        row.update(status=status, resolution_ref=resolution_ref)
+
+
+def resolution_error(row, role):
+    """Why an AI extension cannot resolve this question row now; None when it can.
+
+    Submission checks call this on the fixed input, and application calls it again
+    because another execution may have closed the question in between."""
+    if not row or row["status"] != "open" or row["owner"] not in {"research", "operations"}:
+        return "only distinct open research or operations questions can be resolved by an AI extension"
+    if row["owner"] == "operations" and role not in {"operational_review", "maintenance"}:
+        return "an operations question requires an operational role"
+    return None
+
+
 def resolve_user(runtime, identifiers, *, resolution_ref, affected_ids):
     questions = {row["id"]: row for row in runtime.get("question_links", [])}
     if not isinstance(identifiers, list) or len(identifiers) != len(set(identifiers)):
@@ -51,14 +84,10 @@ def resolve_user(runtime, identifiers, *, resolution_ref, affected_ids):
         row = questions.get(identifier)
         if not row or row["owner"] != "user" or row["status"] != "open":
             raise ValueError("user decision must name an open user question: " + str(identifier))
-        if not set(row.get("unresolved_target_ids", row["target_ids"])) & set(affected_ids):
+        if not set(open_targets(row)) & set(affected_ids):
             raise ValueError("the applied decision does not affect the question target: " + identifier)
     for identifier in identifiers:
-        row = questions[identifier]
-        remaining = set(row.get("unresolved_target_ids", row["target_ids"])) - set(affected_ids)
-        row["unresolved_target_ids"] = [target for target in row["target_ids"] if target in remaining]
-        row.setdefault("resolution_history", []).append({"resolution_ref": resolution_ref, "affected_ids": sorted(set(affected_ids) & set(row["target_ids"]))})
-        if not remaining: row.update(status="resolved", resolution_ref=resolution_ref)
+        close(questions[identifier], kind="user_decision", resolution_ref=resolution_ref, affected_ids=affected_ids)
 
 
 def validate_extensions(output, extensions, context):
@@ -83,32 +112,10 @@ def validate_extensions(output, extensions, context):
     seen = set()
     for resolution in extensions.get("question_resolutions", []):
         identifier = resolution["question_id"]
-        row = questions.get(identifier)
-        owner = row.get("owner") if row else None
-        if identifier in seen or not row or row["status"] != "open" or owner not in {"research", "operations"}:
-            errors.append({"path": "question_resolutions", "message": "only distinct open research or operations questions can be resolved by an AI extension"})
-        if owner == "operations" and role not in {"operational_review", "maintenance"}:
-            errors.append({"path": "question_resolutions", "message": "an operations question requires an operational role"})
+        # A repeated ID is rejected like an unknown one.
+        error = resolution_error(None if identifier in seen else questions.get(identifier), role)
+        if error:
+            errors.append({"path": "question_resolutions", "message": error})
         seen.add(identifier)
     return errors
 
-
-def sync_activity_wait(runtime, activity_id, question_ids, *, at):
-    """Only ACTIVITIES owns the transition; questions supply its exact condition."""
-    from .activities import wait_for, resume_activity
-    rows = {row["id"]:row for row in runtime.get("question_links", [])}
-    if not isinstance(question_ids, list) or any(q not in rows for q in question_ids): raise ValueError("activity question does not resolve")
-    activity = runtime.get("activities", {}).get(activity_id)
-    if activity is None: raise ValueError("question wait activity is absent")
-    pending = [q for q in question_ids if rows[q]["status"] == "open" and rows[q].get("blocks") and rows[q]["owner"] == "user"]
-    previous = activity.get("waiting", {})
-    if pending:
-        condition = {"kind":"user_questions", "question_ids":sorted(pending)}
-        if activity["status"] == "waiting" and previous.get("condition", {}).get("kind") != "user_questions":
-            raise ValueError("question wait cannot replace another owner's condition")
-        return wait_for(runtime,activity_id,reason="Necessary user decisions remain",condition=condition,next_owner="user",at=at)
-    if activity["status"] == "waiting" and previous.get("condition", {}).get("kind") == "user_questions":
-        waiting_ids = previous["condition"]["question_ids"]
-        if any(rows.get(q, {}).get("status", "open") == "open" for q in waiting_ids): return activity
-        return resume_activity(runtime,activity_id,condition=previous["condition"],at=at)
-    return activity

@@ -109,7 +109,7 @@ class GitStateStoreTests(unittest.TestCase):
             # A writer outside the lock is still refused by that final CAS.
             outside = GitStateStore(self.repository, INSTANCE_ID)
             moved = outside.publish(later.head, {'runtime/state.json': b'{"state": "moved"}\n'})
-            with self.assertRaises(GitStateStoreConflict):
+            with self.assertRaisesRegex(GitStateStoreConflict, 'publish compare-and-swap'):
                 self.store.publish(later.head, {'runtime/state.json': b'{"state": "lost"}\n'})
         self.assertEqual(self.store.read_snapshot().head, moved.head)
 
@@ -161,7 +161,8 @@ class GitStateStoreTests(unittest.TestCase):
         initial = self.store.publish(None, self.initial_changes())
         later = self.store.publish(initial.head, {"runtime/state.json": b'{"state": "running"}\n'})
 
-        self.assertEqual(later.research_tree, initial.research_tree)
+        research_tree = lambda commit: git(self.repository, "rev-parse", f"{commit}:research").strip()
+        self.assertEqual(research_tree(later.head), research_tree(initial.head))
         self.assertEqual(self.store.read_bytes(initial.head, "runtime/state.json"), self.initial_changes()["runtime/state.json"])
         self.assertEqual(self.store.read_bytes(later.head, "runtime/state.json"), b'{"state": "running"}\n')
 

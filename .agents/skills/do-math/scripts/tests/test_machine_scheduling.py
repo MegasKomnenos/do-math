@@ -49,13 +49,14 @@ class MachineSchedulingTests(unittest.TestCase):
         runtime={'tasks':{},'executions':{},'reservations':{}}
         slots=SessionSlots(runtime,instance)
         held=selected['research_work']
-        self.assertTrue(slots.acquire('EX-held',held['budget_kind'],held['ai']['model'],
+        self.assertTrue(slots.acquire('EX-held',
             profile=held,execution={'id':'EX-held','role':'research_work','status':'queued'}))
         scheduler=SimpleNamespace(instance=instance,runtime=runtime,
             _action_lifecycle_gate=lambda action:None,
             _revision_dispatch_waits=lambda action:[],
             _selected_action_current=lambda action,**kwargs:True,
             _evaluation_context=lambda:{},
+            _admissible=lambda action,profile:SchedulerMixin._admissible(scheduler,action,profile),
             _execution_profile=lambda action:profiles.resolve_profile(instance['execution_profiles'],action['profile_ref']))
         queue=[{'id':'AC-big','role':'formal_check','profile_ref':profiles.profile_ref(big)},
                {'id':'AC-small','role':'trust_check','profile_ref':profiles.profile_ref(small)}]

@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import do_math.engine as engine_module
 from do_math.engine import ResearchEngine, initialize, control
 from do_math.repository import canonical_json
-from research_fixtures import local_job_runner, await_stop, planning_model_assessments, supply_observation_rules, read_fixture_context
+from research_fixtures import bare_engine, local_job_runner, await_stop, planning_model_assessments, supply_observation_rules, read_fixture_context
 from research_fixtures import (charter_change, policy_change, candidate as v5_candidate, contract_review, disposition, assessment,
                          intent_response, seal_response, submit_intent, activate, install_adapter_fixture, bind_candidates)
 from test_engine import ScriptedRunner, formal_ok
@@ -307,8 +307,7 @@ class PurposeRunner:
 class PurposeFixtureContractTests(unittest.TestCase):
     def test_goal_fixture_declares_the_empty_additional_audit_population(self):
         from do_math.contracts import schema_for
-        engine = object.__new__(ResearchEngine)
-        engine.instance = {'governance': {}}
+        engine = bare_engine({'governance': {}})
         action = {'role': 'goal_audit'}
         context = {'action': action, 'additional_audit_input': [], 'eligible_knowledge': [
             {'id': 'KN-goal', 'links': ['fixture-link'], 'identity_assessments': [{'decision': 'match'}]}]}
@@ -341,7 +340,7 @@ class PurposeFixtureContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             fitted = prepare_role_input({'action': {'role': 'research_plan'}, 'resources': {},
-                'ready_task_ids': [], 'knowledge_catalog': [], 'ongoing_preparation': [],
+                'ready_task_ids': [], 'knowledge_catalog': [],
                 'tasks': deepcopy(list(runtime['tasks'].values()))},
                 instance=instance, runtime=runtime, role='research_plan', profile=profile,
                 snapshot='a'*40, workspace=workspace, activity_id='AC-1')
@@ -445,8 +444,8 @@ class ActiveStateHarness(PurposeHarness):
 
     def make(self, **config):
         from state_fixtures import active_engine
-        from test_lifecycle_engine import AdapterDouble
-        self.enterContext(patch('do_math.initialization.adapter_for', return_value=AdapterDouble()))
+        from research_fixtures import FixtureAdapter
+        self.enterContext(patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()))
         runner = PurposeRunner()
         engine = active_engine(self.repo, self.root / ('work-' + str(len(self.engines))),
             config=config, runner=runner, formal_verifier=formal_fixture)
@@ -587,7 +586,8 @@ class PurposeEngineTests(PurposeHarness):
         self.assertTrue(work and all(timeout is None for timeout in work))
         self.assertTrue(operations and all(timeout <= 30 for timeout in operations))
 
-    def test_live_continue_preserves_checkpoint_and_uses_operating_budget(self):
+    def test_live_continue_preserves_checkpoint_and_reserves_no_work_slot(self):
+        from do_math.execution_profiles import resolve_profile
         engine, runner = self.make(observation='continue',  )
         self.drive(engine, predicate=lambda e: any(
             row['disposition']['kind'] == 'continue' and row['target_execution_id'] in e.runtime['checkpoints']
@@ -595,10 +595,14 @@ class PurposeEngineTests(PurposeHarness):
         live = [e for e in engine.runtime['executions'].values() if e['role'] == 'operational_review' and e['action'].get('live')]
         self.assertEqual(len(live), 1)
         parent = engine.runtime['executions'][live[0]['action']['target']]
-        self.assertEqual(parent['budget_kind'], 'work')
-        self.assertEqual(live[0]['budget_kind'], 'operations')
+        profiles = engine.instance['execution_profiles']
+        # The worker's profile reserves a model work slot; the live operational
+        # review's profile reserves none and so no model slot ever bounds it.
+        self.assertTrue(resolve_profile(profiles, parent['execution_profile_ref'])['ai']['capacity_refs'])
+        self.assertEqual(resolve_profile(profiles, live[0]['execution_profile_ref'])['ai']['capacity_refs'], [])
         self.assertEqual(live[0]['outcome'], 'output_accepted')
-        self.assertIsNone(engine.status()['budget']['operations']['limit'])
+        self.assertFalse([row for row in engine.runtime.get('reservations', {}).values()
+                          if row['owner_id'] == live[0]['id'] and row['unit'] == 'execution'])
         self.assertEqual(engine.runtime['checkpoints'][parent['id']]['kind'], 'worker_checkpoint')
         self.assertTrue(any(r['target_execution_id'] == parent['id'] and r['disposition']['kind'] == 'continue'
                             for r in engine.runtime['operational_dispositions'].values()))
@@ -607,12 +611,15 @@ class PurposeEngineTests(PurposeHarness):
         engine, runner = self.make(observation='continue', )
         self.drive(engine, predicate=lambda e: any(ex['role'] == 'research_work' and ex.get('outcome') == 'output_accepted'
                                                  for ex in e.runtime['executions'].values()))
-        work = [ex for ex in engine.runtime['executions'].values() if ex.get('budget_kind') == 'work']
+        from do_math.execution_profiles import WORK_ROLES, resolve_profile
+        work = [ex for ex in engine.runtime['executions'].values() if ex['role'] in WORK_ROLES]
         operating = [ex for ex in engine.runtime['executions'].values() if ex['role'] == 'operational_review']
         self.assertEqual(len(work), 2)
         self.assertEqual(len(operating), 1)
         self.assertEqual(operating[0]['outcome'], 'output_accepted')
-        self.assertEqual(operating[0]['budget_kind'], 'operations')
+        # The operational review holds no work slot, so exhausted work slots cannot block it.
+        self.assertEqual(resolve_profile(engine.instance['execution_profiles'],
+                                         operating[0]['execution_profile_ref'])['ai']['capacity_refs'], [])
 
     def test_large_history_uses_exact_context_source_files_without_losing_work(self):
         engine, runner = self.make('catalog')
@@ -704,8 +711,11 @@ class GitPurposeTests(PurposeHarness):
         self.assertTrue(all(e.get('outcome') in {'output_accepted', 'verified'} for e in runtime['executions'].values()))
         for execution in runtime['executions'].values():
             if execution.get('input_bundle'):
-                raw = engine.store.read(f"runtime/artifacts/{execution['input_bundle']}/input.txt", snapshot)
-                self.assertEqual(hashlib.sha256(raw).hexdigest(), execution['input_sha256'])
+                # The role input manifest names the archived prompt and its digest.
+                prompt = execution['input_manifest']['prompt']
+                self.assertEqual(prompt['artifact_ref'], f"runtime/artifacts/{execution['input_bundle']}/input.txt")
+                raw = engine.store.read(prompt['artifact_ref'], snapshot)
+                self.assertEqual(hashlib.sha256(raw).hexdigest(), prompt['sha256'])
         self.assertEqual(runner.work_order, ['A'])
         report = os.environ.get('DO_MATH_PURPOSE_TEST_REPORT')
         if report:

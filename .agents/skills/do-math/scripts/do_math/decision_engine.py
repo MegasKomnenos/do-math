@@ -4,6 +4,7 @@ from copy import deepcopy
 from . import planning, submission
 from .input_basis import capture_decision_basis, decision_basis_changes, CurrentnessChanged
 from .repository import exact_content_hash, new_id
+from .session_slots import held_reservations
 
 
 class DecisionEngineMixin:
@@ -12,15 +13,17 @@ class DecisionEngineMixin:
         for claim in execution.get("extensions", {}).get("action_resolutions", []):
             identifier = claim["action_id"]
             entry = self.runtime.get("waiting_actions", {}).get(identifier)
-            if not entry or entry.get("kind") not in {"output_validation", "execution_failure"}:
+            if not entry:
                 raise ValueError("action resolution requires a current failed action")
             evidence_id = execution_id if claim["evidence_execution_id"] == "current" else claim["evidence_execution_id"]
             evidence = self.runtime["executions"].get(evidence_id, {})
-            previous, current = entry["action"], evidence.get("action", {})
-            keys = ("role", "stage", "slot", "round", "review_cycle_id", "assessment_targets", "observation_rule_targets", "live")
-            same_target = previous.get("target") == current.get("target") or previous.get("target") in current.get("revision_targets", {})
-            accepted = evidence.get("outcome") == "output_accepted" or (accepting_current and evidence_id == execution_id)
-            if not accepted or not same_target or not all(previous.get(key) == current.get(key) for key in keys):
+            previous = entry["action"]
+            # The producer ran the same check on its fixed blocked_actions row.
+            errors = submission.action_resolution_errors(submission.blocked_action_row(identifier, entry),
+                                                         evidence.get("action", {}))
+            if errors:
+                raise ValueError(errors[0])
+            if not (evidence.get("outcome") == "output_accepted" or (accepting_current and evidence_id == execution_id)):
                 raise ValueError("resolution evidence must be an accepted execution of the same judgment scope")
             # Current output was validated immediately before this atomic apply;
             # its own accepted edits are not concurrent premise changes.
@@ -48,9 +51,7 @@ class DecisionEngineMixin:
                     and not any(row.get("owner_activity_id") == activity_id for row in pending)
                     and all(self.runtime["executions"][eid]["status"] == "ended"
                             for eid in activity["assigned_execution_ids"])
-                    and not any(row.get("owner_id") in activity["assigned_execution_ids"]
-                                and row.get("state") == "held"
-                                for row in self.runtime.get("reservations", {}).values())
+                    and not held_reservations(self.runtime, activity["assigned_execution_ids"])
                     and all(isinstance(row, dict) and row.get("action_id") == identifier
                             for row in [*activity["unresolved"], *activity["followups"]])):
                 from .activities import finish_activity
@@ -163,7 +164,7 @@ class DecisionEngineMixin:
                     action['model_assessment'] = deepcopy(assessment)
                     try:
                         selection(instance['config'], action, runtime['tasks'], instance['knowledge'],
-                                  profiles=instance['execution_profiles'])
+                                  instance=instance)
                     except ValueError as error:
                         raise ValueError('Selected task ' + task['id'] + ' cannot meet the plan model requirement '
                             'with its allowed profiles; defer or revise its contract: ' + str(error)) from error

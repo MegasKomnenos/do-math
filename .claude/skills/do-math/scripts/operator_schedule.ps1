@@ -4,22 +4,23 @@ param(
     [Parameter(Mandatory=$true)][string]$Instance,
     [Parameter(Mandatory=$true)][string]$Workspace,
     [Parameter(Mandatory=$true)][string]$Python,
-    [Parameter(Mandatory=$true)][string]$Entrypoint,
     [Parameter(Mandatory=$true)][string]$OperatorTask,
     [Parameter(Mandatory=$true)][string]$EngineTask,
     [Parameter(Mandatory=$true)][string]$WakeTask,
     [string]$WakeAt,
     [string]$WakeKey,
-    [Parameter(Mandatory=$true)][ValidateRange(1,2147483647)][int]$IntervalSeconds,
-    [Parameter(Mandatory=$true)][ValidateRange(1,2147483647)][int]$OperatorTimeoutSeconds
+    # Only install registers tasks with an interval and an operator time limit.
+    [Nullable[int]]$IntervalSeconds,
+    [Nullable[int]]$OperatorTimeoutSeconds
 )
 
 $ErrorActionPreference = 'Stop'
+# The bootstrap beside this adapter: the live installation, or the frozen supervisor that called it.
+$liveBootstrap = Join-Path $PSScriptRoot 'operator_bootstrap.py'
 
-function Task-Arguments([string]$Mode) {
-    $bootstrap = Join-Path (Split-Path -Parent $Entrypoint) 'operator_bootstrap.py'
+function Task-Arguments([string]$Mode, [string]$Bootstrap) {
     $bootstrapMode = if ($Mode -eq 'engine') { 'run-engine' } else { $Mode }
-    return '"' + $bootstrap + '" ' + $bootstrapMode + ' --repository "' + $Repository + '" --instance "' + $Instance + '" --workspace "' + $Workspace + '"'
+    return '"' + $Bootstrap + '" ' + $bootstrapMode + ' --repository "' + $Repository + '" --instance "' + $Instance + '" --workspace "' + $Workspace + '"'
 }
 
 function Task-View([string]$Name) {
@@ -37,8 +38,8 @@ function Task-View([string]$Name) {
 }
 
 if ($Action -eq 'install') {
-    $liveBootstrap = Join-Path (Split-Path -Parent $Entrypoint) 'operator_bootstrap.py'
-    $installationRoot = Split-Path -Parent (Split-Path -Parent $Entrypoint)
+    if ($null -eq $IntervalSeconds -or $null -eq $OperatorTimeoutSeconds) { throw 'install requires IntervalSeconds and OperatorTimeoutSeconds.' }
+    $installationRoot = Split-Path -Parent $PSScriptRoot
     # An explicit pipeline makes PowerShell wait for GUI executables such as
     # pythonw.exe and collect their stdout and exit code before proceeding.
     $frozenText = & $Python $liveBootstrap --freeze --installation-root $installationRoot --workspace $Workspace | Out-String
@@ -46,7 +47,7 @@ if ($Action -eq 'install') {
     if ($null -eq $freezeExitCode -or $freezeExitCode -ne 0) { throw 'Could not freeze the supervisor installation.' }
     if ([string]::IsNullOrWhiteSpace($frozenText)) { throw 'Supervisor freeze returned no JSON.' }
     $frozen = $frozenText | ConvertFrom-Json
-    $Entrypoint = [string]$frozen.entrypoint
+    $frozenBootstrap = [string]$frozen.entrypoint
     $principal = New-ScheduledTaskPrincipal -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) -LogonType Interactive -RunLevel Limited
     $operatorSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -Hidden -ExecutionTimeLimit (New-TimeSpan -Seconds ($OperatorTimeoutSeconds + 300))
     $engineSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -Hidden -ExecutionTimeLimit ([TimeSpan]::Zero)
@@ -55,8 +56,8 @@ if ($Action -eq 'install') {
     if ($null -ne $previousOperator) { $operatorSettings.Enabled = $previousOperator.Settings.Enabled }
     if ($null -ne $previousEngine) { $engineSettings.Enabled = $previousEngine.Settings.Enabled }
     $trigger = New-ScheduledTaskTrigger -Once -At ((Get-Date).AddSeconds($IntervalSeconds)) -RepetitionInterval (New-TimeSpan -Seconds $IntervalSeconds)
-    $operatorAction = New-ScheduledTaskAction -Execute $Python -Argument (Task-Arguments 'check') -WorkingDirectory $Workspace
-    $engineAction = New-ScheduledTaskAction -Execute $Python -Argument (Task-Arguments 'engine') -WorkingDirectory $Workspace
+    $operatorAction = New-ScheduledTaskAction -Execute $Python -Argument (Task-Arguments 'check' $frozenBootstrap) -WorkingDirectory $Workspace
+    $engineAction = New-ScheduledTaskAction -Execute $Python -Argument (Task-Arguments 'engine' $frozenBootstrap) -WorkingDirectory $Workspace
     Register-ScheduledTask -TaskName $OperatorTask -InputObject (New-ScheduledTask -Action $operatorAction -Trigger $trigger -Settings $operatorSettings -Principal $principal -Description 'Model-free do-math supervisor with failure-only recovery.') -Force | Out-Null
     Register-ScheduledTask -TaskName $EngineTask -InputObject (New-ScheduledTask -Action $engineAction -Settings $engineSettings -Principal $principal -Description 'Independent do-math engine started by its operator.') -Force | Out-Null
 }
@@ -77,7 +78,7 @@ elseif ($Action -eq 'schedule-wake') {
     if ($wakeTime -le (Get-Date)) { $wakeTime = (Get-Date).AddSeconds(5) }
     $settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -Hidden -ExecutionTimeLimit (New-TimeSpan -Seconds 120)
     $trigger = New-ScheduledTaskTrigger -Once -At $wakeTime
-    $wakeAction = New-ScheduledTaskAction -Execute $Python -Argument (Task-Arguments 'wake') -WorkingDirectory $Workspace
+    $wakeAction = New-ScheduledTaskAction -Execute $Python -Argument (Task-Arguments 'wake' $liveBootstrap) -WorkingDirectory $Workspace
     Register-ScheduledTask -TaskName $WakeTask -InputObject (New-ScheduledTask -Action $wakeAction -Trigger $trigger -Settings $settings -Principal $principal -Description $WakeKey) -Force | Out-Null
 }
 elseif ($Action -eq 'cancel-wake') {

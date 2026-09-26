@@ -258,9 +258,9 @@ class ReassessmentGitTests(unittest.TestCase):
                 output.update(scope_complete=True, scope_assessment=scope)
             eid = new_id('EX')
             execution = execution_lifecycle.create_execution(execution_id=eid, owner_activity_id=cycle['owner_activity_id'],
-                actor_kind='ai', input_manifest={'proposal_digest': cycle['proposal_digest']},
+                actor_kind='ai', input_manifest={'proposal_digest': cycle['proposal_digest'], 'prompt': {'sha256': 'a' * 64}},
                 profile_ref=profile_ref(fixture.profile), created_at='2026-09-20T00:00:00Z')
-            execution.update(role='identity_review', action=copy.deepcopy(action), input_snapshot=engine.head, input_sha256='a' * 64)
+            execution.update(role='identity_review', action=copy.deepcopy(action), input_snapshot=engine.head)
             self.assertEqual(engine._admit_review_execution(action, execution)['disposition'], 'admitted')
             activities.assign_execution(engine.runtime, cycle['owner_activity_id'], execution)
             for status in ('starting', 'running'):

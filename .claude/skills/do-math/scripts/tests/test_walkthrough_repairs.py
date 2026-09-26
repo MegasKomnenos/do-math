@@ -5,32 +5,32 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import create_autospec
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.repository import exact_content_hash
 
 from do_math import governance as gov, planning, submission, task_contracts
+from research_fixtures import bare_engine
 
 
 class WalkthroughRepairs(unittest.TestCase):
     def test_processed_rejection_cannot_erase_a_fresh_equal_or_changed_assessment(self):
-        from do_math.scheduler import SchedulerMixin
         from do_math.model_policy import assessment_basis, LIMITS
         from test_redesign_TASKS import approved_fixture
         from test_model_assessment_flow import rating
         from research_fixtures import prepared_rule_conditions
-        class Host(SchedulerMixin):
-            pass
         for unchanged in (False, True):
             with self.subTest(unchanged=unchanged):
                 task, instance, runtime = approved_fixture()
                 rules = prepared_rule_conditions([task['id']])[0]['observation_rules']
                 task['initial_observation_rules'] = deepcopy(rules)
                 instance['config'] = {'session_limits': deepcopy(LIMITS)}
-                task.update(academic_requirement_id='R', revision_requested={'execution_id': 'REJECT'},
+                task.update(academic_requirement_id='R', revision_requested={'revision': task['revision'], 'source': 'REJECT',
+                    'reason': 'task contract review returned revision_required'},
                     model_assessment=rating())
                 task['reviews'] = [{**assessment_basis(task), 'decision': 'revision_required', 'execution_id': 'REJECT'}]
-                host = Host(); host.instance = instance; host.runtime = runtime
+                host = bare_engine(instance, runtime)
                 host._ensure_model_assessments()
                 revised = rating() if unchanged else {**rating(), 'importance': 'high'}
                 task['model_assessment'] = deepcopy(revised)
@@ -158,8 +158,8 @@ class WalkthroughRepairs(unittest.TestCase):
         host._apply_governance_intent(check, {'bundle_sha256': bundle['sha256'], 'decision': 'approved',
             'scope_complete': True, 'unit_ids': ['U'], 'question_ids': ['Q-domain'], 'findings': []}, 'CHECK')
         self.assertEqual(len(host.runtime['waiting_actions']), 1)
-        host._capability_requirements = lambda ref: {'satisfied': True}
-        host._lifecycle_now = lambda: datetime.now(timezone.utc)
+        host._capability_requirements = create_autospec(host._capability_requirements, return_value={'satisfied': True})
+        host._lifecycle_now = create_autospec(host._lifecycle_now, side_effect=lambda: datetime.now(timezone.utc))
         with patch('do_math.initialization.grant_current', return_value=True):
             for _ in range(3):
                 LifecycleEngineMixin._queue_initial_intent(host)
@@ -187,9 +187,11 @@ class WalkthroughRepairs(unittest.TestCase):
                 'interpretation': 'The domain needs a user decision', 'owner_kind': 'charter',
                 'owner_ref': 'CH1', 'payload': {}, 'decision_refs': [], 'question_refs': ['Q-domain']}]}
         gov.validate_import_units(instance, {}, source, output)
-        self.assertEqual(submission._intent_import_issues(output, {'user_request': {'text': source['text']}}), [])
+        # The producer runs the same check over its fixed input.
+        context = {'user_request': {'text': source['text']}, 'original_source': source, 'instance_id': instance['id']}
+        self.assertEqual(submission._intent_import_issues(output, context), [])
         output['import_units'][0]['question_refs'] = ['output/questions/0']
-        self.assertTrue(submission._intent_import_issues(output, {'user_request': {'text': source['text']}}))
+        self.assertTrue(submission._intent_import_issues(output, context))
 
     def test_primary_and_extension_dependencies_are_preserved(self):
         candidate = {'dependencies': ['TK-existing']}
@@ -198,8 +200,6 @@ class WalkthroughRepairs(unittest.TestCase):
             {'dependencies': ['new task', 'TK-existing']}, {'new task': 'TK-new'}), ['TK-existing', 'TK-new'])
 
     def test_engine_preserves_primary_dependency_when_extension_only_sets_condition(self):
-        from types import SimpleNamespace
-        from do_math.scheduler import SchedulerMixin
         from do_math.engine import ResearchEngine
         from test_redesign_TASKS import approved_fixture
         from research_fixtures import candidate
@@ -208,13 +208,11 @@ class WalkthroughRepairs(unittest.TestCase):
         proposal['dependencies'] = [prior['id']]
         runtime.update(cycles=0, executions={'EX-prepare': {'status': 'ended', 'extensions': {
             'task_conditions': [{'task_title': 'Followup', 'occurrence_condition': {'op': 'always'}}]}}})
-        class Host(SchedulerMixin, SimpleNamespace):
-            pass
-        host = Host(instance=instance, runtime=runtime,
-            _record_output_questions=lambda *args, **kwargs: None, _evaluation_context=lambda: {},
-            _available_inputs=lambda: [], _governance=lambda: gov.governance_view(instance))
-        host._enqueue = lambda role, target=None, **fields: runtime['queue'].append(
-            {'id': gov.new_id('AC'), 'role': role, 'target': target, **fields})
+        host = bare_engine(instance, runtime)
+        host._record_output_questions = create_autospec(host._record_output_questions, return_value=None)
+        host._evaluation_context = create_autospec(host._evaluation_context, return_value={})
+        host._issued_input = create_autospec(host._issued_input, return_value=({}, None))
+        host._governance = create_autospec(host._governance, side_effect=lambda: gov.governance_view(instance))
         ResearchEngine._apply(host, {'role': 'research_preparation'}, {'candidates': [proposal]}, 'EX-prepare')
         applied = next(t for t in runtime['tasks'].values() if t.get('title') == 'Followup')
         self.assertEqual(applied['dependencies'], [prior['id']])
@@ -242,6 +240,56 @@ class WalkthroughRepairs(unittest.TestCase):
             conditions = [value] if 'op' in value else [row['occurrence_condition'] for row in value['task_conditions']]
             for condition in conditions:
                 planning.validate_condition(condition)
+
+    def test_readiness_document_tables_match_the_condition_grammar(self):
+        """Operations, record families with their space, and pointers agree with planning."""
+        import re
+        text = (Path(__file__).resolve().parents[2] / 'references' / '과제-착수조건.md').read_text(encoding='utf-8')
+        tables, current = {}, None
+        for line in text.splitlines():
+            if not line.startswith('|'):
+                current = None
+                continue
+            cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+            if current is None:
+                current = tables.setdefault(cells[0], [])
+            elif not set(cells[0]) <= set('-: '):
+                current.append(cells)
+        operations = {}
+        for cells in tables['`op`']:
+            for op in re.findall(r'`([^`]+)`', cells[0]):
+                operations[op] = set(re.findall(r'`([^`]+)`', cells[1]))
+        self.assertEqual(set(operations), set(planning.CONDITION_FIELDS))
+        for op, fields in planning.CONDITION_FIELDS.items():
+            self.assertLessEqual(fields, operations[op], op)
+        listed = text.split('현재 기록 가족은', 1)[1].split('이다.', 1)[0]
+        families = set(re.findall(r'`([^`]+)`', listed))
+        self.assertEqual(families, set(planning.RECORD_FAMILIES))
+        runtime_list = re.search(r'((?:`[^`]+`,\s*)*`[^`]+`)의 space는 `runtime`', text).group(1)
+        runtime = set(re.findall(r'`([^`]+)`', runtime_list))
+        self.assertEqual(runtime, {family for family, (space, _) in planning.RECORD_FAMILIES.items() if space == 'runtime'})
+        self.assertEqual(families - runtime,
+                         {family for family, (space, _) in planning.RECORD_FAMILIES.items() if space == 'research'})
+        pointers = {re.findall(r'`([^`]+)`', cells[0])[0]: set(re.findall(r'`([^`]+)`', cells[1]))
+                    for cells in tables['기록 가족']}
+        self.assertEqual(pointers, {family: set(fields) for family, fields in planning.EXPOSED_FIELDS.items()})
+
+    def test_scope_execution_minimum_in_the_review_contract_matches_the_policy(self):
+        """The documented U+N+4 and U+2N+7 lower bounds are the function the checks run."""
+        import re
+        from do_math.review_policy import minimum_scope_executions
+        text = (Path(__file__).resolve().parents[2] / '계약' / '동일성-검토.md').read_text(encoding='utf-8')
+        formulas = {}
+        for label, rounds in (('한 회차의 하한은', (1,)), ('두 회차 이상의 하한은', (2, 3, 5))):
+            match = re.search(re.escape(label) + r' U\+(\d*)N\+(\d+)', text)
+            self.assertIsNotNone(match, label)
+            formulas[rounds] = (int(match.group(1) or 1), int(match.group(2)))
+        for rounds, (per_slot, fixed) in formulas.items():
+            for round_limit in rounds:
+                for used in (0, 2):
+                    for slots in (1, 3):
+                        self.assertEqual(minimum_scope_executions(slots, round_limit, used),
+                                         used + per_slot * slots + fixed, (round_limit, used, slots))
 
     def test_interpretation_binds_referenced_source_alias(self):
         from test_redesign_GOVERNANCE import DomainGovernanceTests

@@ -1,6 +1,6 @@
 """Installation registry and domain semantic checks for persisted families."""
-from .schemas import *
-from . import domains
+from .schemas import (BOOL, EVIDENCE, NAT, PROFILE_REF, RECORDS, RESEARCH_FIELDS, RUNTIME_FIELDS, TEXT,
+                      array, enum, nullable, obj)
 
 
 def refs(*fields, lists=()):
@@ -69,11 +69,6 @@ def _role_profile_references(selection):
         yield from ((reference["id"], "execution_profiles") for reference in references)
 
 
-def _task_readiness(instance, runtime):
-    from ..task_contracts import readiness_for_task
-    return {key: readiness_for_task(task, instance, runtime) for key, task in runtime.get("tasks", {}).items()}
-
-
 def _lifecycle_references(row):
     if row.get("input_id"):
         yield row["input_id"], "inputs"
@@ -100,17 +95,8 @@ def _academic_assessment_references(value):
         yield row["execution_id"], "executions"
 
 
-def _active_execution_reference(value):
-    if value is not None:
-        yield value, "executions"
-
-
 def _host_capacity_reference(value):
     yield value, "capacity_constraints"
-
-
-def _active_execution_references(value):
-    yield from ((identifier, "executions") for identifier in value)
 
 
 def _trust_binding_references(value):
@@ -120,25 +106,25 @@ def _trust_binding_references(value):
 def install(contract):
     from ..execution_profiles import validate_profile
     from ..budget import _validate_reservation
-    from ..task_contracts import validate_task_contract
+    from ..task_contracts import validate_contract_rules
     from ..knowledge_records import _validate_family_record
     validators = {"execution_profiles": validate_profile, "reservations": _validate_reservation,
-                  "tasks": validate_task_contract}
+                  "tasks": validate_contract_rules}
     validators.update({name: _validate_family_record for name in
                        ("formal_results", "expositions", "identity_assessments", "assessment_uses")})
     research = {"knowledge", "formal_results", "expositions", "identity_assessments", "assessment_uses",
                 "relations", "sources", "kind_definitions", "grants", "decisions", "delegations",
                 "trust_environments", "execution_profiles", "capacity_constraints", "capability_evidence", "goal_judgments", "governance", "governance_sources"}
-    lists = {"relations", "sources", "question_links", "goal_judgments", "external_rejections", "academic_resolution_records", "inputs", "queue", "governance_events"}
+    lists = {"relations", "sources", "question_links", "goal_judgments", "external_rejections", "academic_resolution_records", "inputs", "queue", "governance_events", "events"}
     metadata = {
         "research": {"id", "feature_version", "contract_id", "object_format", "title", "workspace", "created_at",
                      "goal_status", "active_trust_environment", "conversation_loss_policy", "host_capacity_ref"},
-        "runtime": {"feature_version", "contract_id", "status", "cycles", "active_execution", "active_executions",
+        "runtime": {"feature_version", "contract_id", "status", "cycles",
                     "updated_at", "recovery_checked", "last_observed_utc", "event_cursor", "availability",
                     "clock_guard", "resume_lifecycle", "user_pause", "stop_requested", "next_research_reconsider_at"}}
     for name, schema in RECORDS.items():
         contract.register_family("research" if name in research else "runtime", name,
-            shape="events" if name == "events" else "list" if name in lists else "map",
+            shape="list" if name in lists else "map",
             schema=schema, validator=validators.get(name), references=REFERENCES.get(name))
     for root, fields in (("research", RESEARCH_FIELDS), ("runtime", RUNTIME_FIELDS)):
         for name, schema in fields.items():
@@ -152,33 +138,47 @@ def install(contract):
                 reference = {("research", "lifecycle"): _lifecycle_references,
                     ("runtime", "pending_events"): _event_queue_references,
                     ("runtime", "academic_assessments"): _academic_assessment_references,
-                    ("runtime", "active_execution"): _active_execution_reference,
                     ("research", "host_capacity_ref"): _host_capacity_reference,
-                    ("runtime", "active_executions"): _active_execution_references,
                     ("runtime", "trust_bindings"): _trust_binding_references}.get((root, name))
                 contract.register_family(root, name, shape="metadata" if name in metadata[root] else "singleton",
                                          schema=schema, identity=False, references=reference)
-    contract.register_family("runtime", "task_readiness", shape="derived", schema=EVIDENCE,
-                             identity=False, derived=_task_readiness)
-    # Configuration is an authoring input with a closed field vocabulary.
-    text_keys = "effort operator_effort observation_mode".split()
-    int_keys = "call_timeout_seconds reviewers goal_auditors max_input_bytes max_output_repairs review_rounds review_research_limit research_reconsider_seconds observation_interval_seconds plan_settle_seconds max_artifact_bytes operator_interval_seconds operator_timeout_seconds provider_retry_initial_seconds provider_retry_max_seconds finish_notice_seconds self_check_response_window_seconds tool_review_window_seconds contract_revision_limit exhaustion_empty_limit import_rework_limit proposal_version_limit selection_failure_limit".split()
-    config = {**{k: TEXT for k in text_keys}, **{k: NAT for k in int_keys},
-              "no_progress_limit": {"type": "integer", "minimum": 1},
+    contract.register_family("research", "config", shape="singleton", schema=config_schema(), identity=False)
+
+
+EFFORTS = ("minimal", "low", "medium", "high", "xhigh")
+# Settings that must be adopted as positive integers; max_output_repairs may be zero.
+POSITIVE_SETTINGS = tuple("call_timeout_seconds reviewers goal_auditors max_input_bytes review_rounds "
+    "review_research_limit research_reconsider_seconds observation_interval_seconds plan_settle_seconds "
+    "max_artifact_bytes operator_interval_seconds operator_timeout_seconds provider_retry_initial_seconds "
+    "provider_retry_max_seconds finish_notice_seconds self_check_response_window_seconds tool_review_window_seconds "
+    "contract_revision_limit exhaustion_empty_limit import_rework_limit proposal_version_limit "
+    "selection_failure_limit no_progress_limit".split())
+
+
+def config_schema():
+    """The configuration section: the closed key vocabulary with each key's type and range.
+
+    Stored configuration, the configure control shape and engine validation
+    all derive from this one table. Cross-field rules (model policy, retry
+    order, host binding, scholarly server) stay with their owners.
+    """
+    from ..execution_profiles import HOST_ROLES
+    positive = {"type": "integer", "minimum": 1}
+    config = {"effort": enum(*EFFORTS), "operator_effort": enum(*EFFORTS, "max", "ultra"),
+              "observation_mode": enum("event_driven", "periodic"),
+              **{k: positive for k in POSITIVE_SETTINGS}, "max_output_repairs": NAT,
               **{k: BOOL for k in ("operator_enabled", "scholarly_enabled", "claude_only_assigned_model")},
               **{k: {"type": "object", "additionalProperties": TEXT} for k in ("tier_models", "role_tiers")},
-              "session_limits": obj({"work": {"type": "object", "additionalProperties": NAT},
-                                               "operations": {"type": "object", "additionalProperties": NAT}}, ("work", "operations")),
-              "lean_command": nullable(array(TEXT)),
-              "allowed_axioms": array(TEXT), "scholarly_server": nullable(EVIDENCE)}
-    from ..execution_profiles import HOST_ROLES
+              "session_limits": obj({"work": {"type": "object", "additionalProperties": NAT}}, ("work",)),
+              "lean_command": nullable({**array({"type": "string", "minLength": 1}), "minItems": 1}),
+              "allowed_axioms": array({"type": "string", "minLength": 1}), "scholarly_server": nullable(EVIDENCE)}
     host_demands = obj({"jobs": {"const": 1}, "memory_bytes": {"type": "integer", "minimum": 1},
         "cpu_rate_basis_points": {"type": "integer", "minimum": 1, "maximum": 10000}},
         ("jobs", "memory_bytes", "cpu_rate_basis_points"))
     config["host_resources"] = nullable(obj({"constraint": RECORDS["capacity_constraints"],
         "demands_by_role": obj({role: host_demands for role in sorted(HOST_ROLES)})},
         ("constraint", "demands_by_role")))
-    contract.register_family("research", "config", shape="singleton", schema=obj(config), identity=False)
+    return obj(config)
 
 
 def _validate_active_grant(instance, runtime, grant):
@@ -191,38 +191,25 @@ def _prior_rows(state, family):
     return {row.get("id"): row for row in rows if isinstance(row, dict)} if isinstance(rows, list) else rows
 
 
-def resolve_profile(profiles, reference):
-    """Resolve an exact profile reference among already validated profiles.
-
-    StateContract.validate runs validate_profile on every stored profile (or
-    on the parent's equal record), so hashing the profile again for each
-    reference would repeat that check.
-    """
-    if not isinstance(reference, dict) or set(reference) != {"id", "revision", "sha256"}:
-        raise ValueError("profile reference requires exact id, revision and sha256")
-    profile = profiles.get(reference["id"])
-    if profile is None or {key: profile.get(key) for key in reference} != reference:
-        raise ValueError("profile reference is absent or stale")
-    return profile
-
-
-def validate_semantics(instance, runtime, identifiers, parent=None):
-    """Whole-state semantic rules.
+def validate_semantics(instance, runtime, identifiers, parent=None, *, contract):
+    """Whole-state semantic rules of ``contract`` (the calling StateContract).
 
     ``parent`` is an (instance, runtime) pair already validated under the same
     contract. Self-contained hash checks of immutable rows (original input,
     sources, grants, academic seals, observation events, intent imports) are
     not repeated for rows equal to the parent's; cross-record rules always run.
+    Every validated state satisfies the current lifecycle gate, so a loaded
+    state never needs that gate again.
     """
     parent_instance, parent_runtime = parent if parent is not None else ({}, {})
-    if "lifecycle" in instance:
-        from ..preflight import inspect_current_state
-        checked = inspect_current_state(instance, runtime)
-        if not checked["valid"]:
-            raise ValueError("current lifecycle contract: " + str(checked["errors"]))
-        from ..initialization import original_input_bytes
-        if parent_instance.get("lifecycle", {}).get("immutable_input") != instance["lifecycle"]["immutable_input"]:
-            original_input_bytes(instance["lifecycle"]["immutable_input"])
+    from ..preflight import inspect_current_state
+    checked = inspect_current_state(instance, runtime)
+    if not checked["valid"]:
+        raise ValueError("current lifecycle contract: " + str(checked["errors"]))
+    from ..initialization import original_input_bytes
+    if parent_instance.get("lifecycle", {}).get("immutable_input") != instance["lifecycle"]["immutable_input"]:
+        original_input_bytes(instance["lifecycle"]["immutable_input"])
+    from ..execution_profiles import match_profile_ref
     from ..knowledge_records import validate_knowledge_records
     from ..activities import validate_activities
     from ..task_contracts import validate_item_dispositions
@@ -250,12 +237,13 @@ def validate_semantics(instance, runtime, identifiers, parent=None):
     if errors:
         raise ValueError("; ".join(errors))
     for row in runtime.get("executions", {}).values():
-        profile = resolve_profile(instance.get("execution_profiles", {}), row["execution_profile_ref"])
+        profile = match_profile_ref(instance.get("execution_profiles", {}), row["execution_profile_ref"])
         if row.get('capacity'):
             from ..launch import validate as validate_launch
             validate_launch(row.get('launch_ticket'), execution_id=row['id'], profile_sha256=profile['sha256'])
         if row.get("role", profile["role"]) != profile["role"] or row["actor_kind"] != profile["actor_kind"]:
             raise ValueError("execution/profile actor or role mismatch")
+        # The per-record execution state rules; status inspection does not repeat them.
         if row["status"] == "ended" and (not row.get("ended_at") or not row.get("outcome")):
             raise ValueError("ended execution requires termination evidence")
         if (row["status"] == "stopping") != ("stop_phase" in row):
@@ -282,7 +270,7 @@ def validate_semantics(instance, runtime, identifiers, parent=None):
                 raise ValueError("host profile differs from its referenced local constraint")
     for role, references in instance.get("role_profile_refs", {}).items():
         for reference in references:
-            profile = resolve_profile(instance.get("execution_profiles", {}), reference)
+            profile = match_profile_ref(instance.get("execution_profiles", {}), reference)
             if profile["role"] != role:
                 raise ValueError("selected profile belongs to a different role")
     if instance.get("host_capacity_ref"):
@@ -298,7 +286,7 @@ def validate_semantics(instance, runtime, identifiers, parent=None):
                 *(wait["action"] for wait in runtime.get("waiting_actions", {}).values())]:
         selection = row.get("model_selection") or {}
         if selection.get("profile_ref"):
-            profile = resolve_profile(instance.get("execution_profiles", {}), selection["profile_ref"])
+            profile = match_profile_ref(instance.get("execution_profiles", {}), selection["profile_ref"])
             if profile["role"] != row.get("role") or (profile["actor_kind"] == "ai" and profile["ai"]["model"] != selection["model"]):
                 raise ValueError("model selection differs from the pinned role/model profile")
         action = row.get("action", row)
@@ -342,17 +330,15 @@ def validate_semantics(instance, runtime, identifiers, parent=None):
                 if family == "governance_sources" and instance[family][reference].get("origin") != "user":
                     raise ValueError("host constraint authority source is not user-origin")
         if row["kind"] == "concurrency":
-            if any(key not in row for key in ("work_slots", "operations_slots", "total_slots", "accounting_unit")):
-                raise ValueError("concurrency constraint lacks slot limits")
-            if row["work_slots"] + row["operations_slots"] > row["total_slots"]:
-                raise ValueError("capacity pools exceed total")
+            if any(key not in row for key in ("model", "work_slots", "accounting_unit")):
+                raise ValueError("concurrency constraint lacks its model or slot limit")
     for row in instance.get("capability_evidence", {}).values():
-        resolve_profile(instance.get("execution_profiles", {}), row["execution_profile_ref"])
+        match_profile_ref(instance.get("execution_profiles", {}), row["execution_profile_ref"])
     for task in runtime.get("tasks", {}).values():
         for reference in task.get("profile_refs", []):
             if identifiers.get(reference["id"], (None, None))[1] != "execution_profiles":
                 raise ValueError("task profile reference does not identify an execution profile")
-            resolve_profile(instance.get("execution_profiles", {}), reference)
+            match_profile_ref(instance.get("execution_profiles", {}), reference)
         if task.get("assessment"):
             validate_item_dispositions(task, task["assessment"], require_complete=task.get("status") == "completed")
     for row in runtime.get("operational_dispositions", {}).values():
@@ -502,7 +488,7 @@ def validate_semantics(instance, runtime, identifiers, parent=None):
                     raise ValueError("staged review differs from current transition evidence")
         for reference in cycle.get("slot_profiles", {}).values():
             if reference is not None:
-                resolve_profile(instance.get("execution_profiles", {}), reference)
+                match_profile_ref(instance.get("execution_profiles", {}), reference)
         for entry in cycle.get("results", {}).values():
             execution = runtime.get("executions", {}).get(entry.get("execution_id"))
             if not execution or execution.get("role") != "identity_review":
@@ -558,11 +544,10 @@ def validate_semantics(instance, runtime, identifiers, parent=None):
         for identifier, record in basis["references"].items():
             if identifier not in identifiers or record.get("id") != identifier:
                 raise ValueError("delegation frozen reference identity does not resolve")
-            import jsonschema
-            family_name = identifiers[identifier][1]
+            root, family_name = identifiers[identifier][:2]
             if family_name not in RECORDS:
                 raise ValueError("delegation reference is not an independently typed record")
-            jsonschema.Draft202012Validator(RECORDS[family_name]).validate(record)
+            contract.family(root, family_name).checker.validate(record)
         execution_ids = []
         for judgment in application["judgments"].values():
             execution_ids.append(judgment["execution_id"])
@@ -574,25 +559,30 @@ def validate_semantics(instance, runtime, identifiers, parent=None):
     # also routes decisions to queued/deferred action coordinates or supplied
     # input aliases. These namespaces are explicit, not a scan for any 'id'.
     # They do not depend on the question, so build them once per validation.
-    question_targets = set(identifiers) | set(runtime.get("waiting_actions", {})) | set(instance.get("available_input_refs", []))
+    # Input references are derived, never stored; a stored target is valid whatever the host found.
+    from ..task_contracts import available_input_refs
+    question_targets = (set(identifiers) | set(runtime.get("waiting_actions", {}))
+                        | set(available_input_refs(instance, runtime, lean_available=True)))
     for source in instance.get("sources", []):
         question_targets.update(v for v in (source.get("path"), source.get("name")) if v)
+    from ..questions import open_targets
     for question in runtime.get("question_links", []):
         if question["origin_execution_id"] is None and not question.get("source_ref"):
             raise ValueError("nonexecution question requires a preserved source reference")
         # target_ids is immutable routing history. Only still-unresolved
         # coordinates must remain live after a queued/waiting action finishes.
-        if set(question.get("unresolved_target_ids", question["target_ids"])) - question_targets:
+        if set(open_targets(question)) - question_targets:
             raise ValueError("question target does not resolve in a declared namespace")
     for action_id, wait in runtime.get("waiting_actions", {}).items():
         if wait["action"]["id"] != action_id:
             raise ValueError("waiting action key differs from its preserved action")
         if wait.get("question_id") and wait["question_id"] not in identifiers:
             raise ValueError("waiting action question reference is missing")
-        for field, family in (("execution_id", "executions"), ("import_id", "intent_imports"),
-                              ("delegated_to_task_id", "tasks")):
+        for field, family in (("execution_id", "executions"), ("import_id", "intent_imports")):
             if wait.get(field) is not None and identifiers.get(wait[field], (None, None))[1] != family:
                 raise ValueError("waiting action reference does not resolve: " + field)
+        if any(identifiers.get(task_id, (None, None))[1] != "tasks" for task_id in wait.get("delegated_targets", {}).values()):
+            raise ValueError("waiting action reference does not resolve: delegated_targets")
         for identifier, request in wait.get("review_requests", {}).items():
             if identifier != request["integration_id"] or request["producer_execution_id"] not in runtime.get("executions", {}):
                 raise ValueError("held impact request does not bind its original bundle/execution")

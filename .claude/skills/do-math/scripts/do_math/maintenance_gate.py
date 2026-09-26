@@ -42,8 +42,7 @@ def settle(runtime):
                 and execution.get('capacity', {}).get('local_termination') == 'confirmed'):
             transition_execution(execution, 'ended', at=settled_at, outcome='execution_incomplete',
                 reason='publication preserved for maintenance', disposition={'kind':'deferred_publication'})
-    pending = [e['id'] for e in runtime.get('executions', {}).values() if e['status'] != 'ended']
-    held = [r['id'] for r in runtime.get('reservations', {}).values() if r.get('state') == 'held']
-    fence.update(state='blocked' if pending or held else 'quiescent',
-                 pending_executions=pending, held_reservations=held, settled_at=settled_at)
+    from .session_slots import quiescence
+    remaining = quiescence(runtime)
+    fence.update(state='blocked' if any(remaining.values()) else 'quiescent', **remaining, settled_at=settled_at)
     return True

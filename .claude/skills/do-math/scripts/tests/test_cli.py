@@ -144,7 +144,12 @@ class CliTests(unittest.TestCase):
         self.assertEqual(value['result']['inspection']['status'], 'healthy')
         discovery = self.run_cli('--describe')
         self.assertEqual(discovery.returncode, 0, discovery.stdout)
-        self.assertIn('check', json.loads(discovery.stdout)['result']['commands'])
+        described = json.loads(discovery.stdout)['result']
+        self.assertIn('check', described['commands'])
+        # The discovery contract names the fields every actual envelope carries.
+        self.assertEqual(set(described['response_fields'][:-1]), set(value) - {'result'})
+        self.assertEqual(described['inspection_exit_codes'],
+                         {'healthy': 0, 'degraded': 1, 'blocked': 1, 'incomplete': 1})
         request = self.root / 'command.json'
         request.write_text(json.dumps({'schema_version':5,'command':'check','payload':{
             'repository':str(self.repository),'instance':self.instance,'snapshot':self.initial['snapshot'],
@@ -160,6 +165,8 @@ class CliTests(unittest.TestCase):
         historical = self.run_cli('status',*self.instance_args(),'--snapshot',self.initial['snapshot'],'--json')
         self.assertEqual(historical.returncode,0,historical.stdout)
         self.assertEqual(response_body(historical)['snapshot'],self.initial['snapshot'])
+        # Before charter adoption the snapshot view shows the original input's goal, as live status does.
+        self.assertEqual(response_body(historical)['goal'],'Prove a small theorem')
         self.assertIsNone(response_body(historical)['host_observation'])
 
     def test_audit_default_retry_and_explicit_reapplication(self):

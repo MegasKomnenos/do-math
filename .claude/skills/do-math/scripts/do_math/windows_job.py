@@ -456,7 +456,7 @@ class WindowsJob:
             ctypes.byref(user),
         ):
             _raise_last_error("GetProcessTimes")
-        return (int(created.dwHighDateTime) << 32) | int(created.dwLowDateTime)
+        return _filetime(created)
 
     def resume(self) -> None:
         """Start the initially suspended root exactly once."""
@@ -579,6 +579,11 @@ def named_job_empty(name: str) -> bool | None:
         _kernel32.CloseHandle(handle)
 
 
+def _filetime(value) -> int:
+    """One integer form of a FILETIME; owner identity compares its decimal string."""
+    return (int(value.dwHighDateTime) << 32) | int(value.dwLowDateTime)
+
+
 def owner_identity():
     """Bind the launch owner to a host/session and exact native creation time."""
     import platform
@@ -592,7 +597,7 @@ def owner_identity():
     session = _DWORD()
     if not _kernel32.ProcessIdToSessionId(os.getpid(), ctypes.byref(session)):
         _raise_last_error('ProcessIdToSessionId')
-    return {'pid':os.getpid(), 'creation_filetime':str((created.dwHighDateTime << 32) | created.dwLowDateTime),
+    return {'pid':os.getpid(), 'creation_filetime':str(_filetime(created)),
             'host':platform.node(), 'session':session.value}
 
 
@@ -614,7 +619,7 @@ def owner_ended(identity):
         created, ended, kernel, user = (_FILETIME() for _ in range(4))
         if not _kernel32.GetProcessTimes(handle, ctypes.byref(created), ctypes.byref(ended), ctypes.byref(kernel), ctypes.byref(user)):
             return None
-        actual = str((created.dwHighDateTime << 32) | created.dwLowDateTime)
+        actual = str(_filetime(created))
         if actual != identity['creation_filetime']:
             return True
         return _kernel32.WaitForSingleObject(handle, 0) == 0

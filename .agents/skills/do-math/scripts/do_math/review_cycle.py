@@ -9,7 +9,10 @@ import copy
 import hashlib
 import json
 
-from .file_io import json_digest
+import jsonschema
+
+from .contracts import PROFILE_REF, REFS, TEXT
+from .file_io import compact_json_bytes, json_digest
 from .review_policy import build_review_policy, validate_scope_assessment, minimum_scope_executions
 
 
@@ -24,16 +27,12 @@ class ReviewRestorationError(ValueError):
             'retryable': retryable, 'continuity_broken': False}
 
 
-def _bytes(value):
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
-
-
 def review_action(action):
     """Separate a review seat from the enclosing execution's authority fields."""
     fields = ('stage', 'slot', 'round')
     if action.get('replacement_for') is not None:
         fields += ('id', 'replacement_for', 'grant_id', 'grant_sha256', 'continuity_broken',
-                   'budget_kind', 'actor_kind', 'purpose', 'continuity_break_cause')
+                   'actor_kind', 'purpose', 'continuity_break_cause')
     return {name: action[name] for name in fields if name in action}
 
 
@@ -47,7 +46,7 @@ def _array(items):
 
 def stage_schema(stage):
     """The same schema is supplied to producers and checked before acceptance."""
-    string = {"type": "string", "minLength": 1}
+    string = copy.deepcopy(TEXT)
     evidence = _array(string)
     finding = _object({"id": string, "statement": string, "evidence": evidence})
     common = {"proposal_digest": string, "summary": string, "used_sources": evidence,
@@ -56,7 +55,14 @@ def stage_schema(stage):
         common.update(decision={"enum": ["match", "mismatch", "unresolved"]},
                       scope_complete={"type": "boolean"})
     if stage == "scope":
-        common.update(scope_complete={"type": "boolean"}, scope_assessment={"type": "object"})
+        # validate_scope_assessment accepts no selected profile, so the wire does too.
+        slot = _object({"id": string, "perspective": string, "required_source_refs": {**REFS, "minItems": 1}})
+        common.update(scope_complete={"type": "boolean"}, scope_assessment=copy.deepcopy(_object({
+            "assessment_id": string, "policy_id": string, "policy_version": {"const": 5},
+            "required_perspectives": REFS, "initial_slots": {"type": "array", "minItems": 1, "items": slot},
+            "selected_profile_ref": {"anyOf": [{"type": "null"}, PROFILE_REF]},
+            "activity_execution_limit": {"type": "integer", "minimum": 1},
+            "overflow_disposition": {"enum": ["unresolved", "defer"]}})))
     elif stage == "initial":
         common["findings"] = _array(finding)
     elif stage == "organize":
@@ -82,28 +88,11 @@ def stage_schema(stage):
     return _object(common)
 
 
-def _validate(value, schema, path="output"):
-    kind = schema.get("type")
-    types = {"object": dict, "array": list, "string": str, "integer": int, "boolean": bool}
-    if kind and (not isinstance(value, types[kind]) or (kind == "integer" and isinstance(value, bool))):
-        raise ValueError(f"{path}: expected {kind}")
-    if "enum" in schema and value not in schema["enum"]:
-        raise ValueError(f"{path}: invalid value")
-    if kind == "object":
-        if set(schema.get("required", [])) - value.keys():
-            raise ValueError(f"{path}: missing required fields")
-        if schema.get("additionalProperties") is False and value.keys() - schema.get("properties", {}).keys():
-            raise ValueError(f"{path}: unknown fields")
-        for key, child in value.items():
-            if key in schema.get("properties", {}):
-                _validate(child, schema["properties"][key], f"{path}.{key}")
-    elif kind == "array":
-        for i, child in enumerate(value):
-            _validate(child, schema["items"], f"{path}[{i}]")
-    elif kind == "string" and len(value.strip()) < schema.get("minLength", 0):
-        raise ValueError(f"{path}: empty string")
-    elif kind == "integer" and value < schema.get("minimum", value):
-        raise ValueError(f"{path}: below minimum")
+def _check_schema(value, schema, label="output"):
+    """Read a review schema with the JSON Schema validator the producer's check uses."""
+    error = jsonschema.exceptions.best_match(jsonschema.Draft202012Validator(schema).iter_errors(value))
+    if error is not None:
+        raise ValueError(label + "".join(f"/{part}" for part in error.absolute_path) + ": " + error.message)
 
 
 def _unique(values, label):
@@ -180,10 +169,23 @@ def _check_proposal(cycle):
         raise ValueError("sealed proposal changed")
 
 
+def review_authors(cycle):
+    """Every execution that authored this proposal or an earlier revision of its review lineage."""
+    authors = set(cycle.get('producer_execution_ids', [])) | set(cycle['proposal'].get('producer_execution_ids', []))
+    for previous in cycle.get('previous_reviews', []):
+        authors.update(previous['proposal'].get('producer_execution_ids', []))
+    return authors
+
+
 def validate_review_independence(cycle, runtime, execution_id, action, *, excluded_execution_ids=()):
-    """The same ancestry check applies before admission and when replaying results."""
+    """The one ancestry check for admission, live acceptance and sealed replay.
+
+    It follows continuation and context origins transitively, so a reviewer that
+    inherits author or peer context through any number of steps is rejected when
+    its result arrives, not only when the finished review is reconstructed.
+    """
     from .governance import validate_independent_execution
-    authors = set(excluded_execution_ids) | set(cycle['proposal'].get('producer_execution_ids', [])) | set(cycle.get('producer_execution_ids', []))
+    authors = set(excluded_execution_ids) | review_authors(cycle)
     validate_independent_execution(runtime, execution_id, authors)
     pending, visited = [execution_id], set()
     while pending:
@@ -225,7 +227,8 @@ def validate_review_execution(cycle, runtime, execution_id, action, output=None,
         raise ValueError('review result is not bound to its actual accepted execution')
     if 'input_bindings' in cycle and role == 'identity_review':
         binding = cycle['input_bindings'].get(execution_id)
-        if not binding or any(binding.get(k) != execution.get(k) for k in ('input_snapshot', 'input_sha256')):
+        if (not binding or binding.get('input_snapshot') != execution.get('input_snapshot')
+                or binding.get('input_sha256') != execution['input_manifest']['prompt']['sha256']):
             raise ValueError('review input binding does not match the actual execution')
         if (binding.get('proposal_digest') != cycle['proposal_digest'] or binding.get('role_slot_id') != action['slot']
                 or binding.get('profile_ref') != execution.get('execution_profile_ref')
@@ -270,9 +273,9 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
         raise ValueError('review has conflicting closure evidence')
     while next_actions(replay):
         action = next_actions(replay)[0]
-        if (closures or resource) and _key(action) not in cycle['results']:
-            action = next((a for a in next_actions(replay) if _key(a) in cycle['results']), action)
-        key = _key(action)
+        if (closures or resource) and slot_key(action) not in cycle['results']:
+            action = next((a for a in next_actions(replay) if slot_key(a) in cycle['results']), action)
+        key = slot_key(action)
         if resource and key not in cycle['results']:
             if resource['state'] != 'ended':
                 raise ValueError('review resource disposition has not ended')
@@ -301,19 +304,17 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
                 if sources:
                     if research_request_digest(record['question'], cycle['proposal_digest'], sources) != record['request_digest']:
                         raise ValueError('supplemental fixed source digest changed')
-                    from .repository import artifact_verified, verify_artifact
+                    from .repository import sealed_bytes
                     for source in sources:
                         if 'inline' in source:
-                            raw = _bytes(source['inline'])
+                            raw = compact_json_bytes(source['inline'])
                             if len(raw) != source['bytes'] or hashlib.sha256(raw).hexdigest() != source['sha256']:
                                 raise ValueError('supplemental source bytes changed')
-                        elif read_artifact and (git_dir is None or not artifact_verified(git_dir, source['artifact_ref'], source['sha256'], source['bytes'])):
+                        elif read_artifact:
                             # A sealed row is compared once per process (contract S3).
-                            try:
-                                verify_artifact(git_dir, source['artifact_ref'], read_artifact(source['artifact_ref'], source['snapshot']),
-                                                source['sha256'], source['bytes'])
-                            except ValueError as mismatch:
-                                raise ValueError('supplemental source bytes changed') from mismatch
+                            sealed_bytes(git_dir, source['artifact_ref'], source['sha256'], source['bytes'],
+                                         lambda: read_artifact(source['artifact_ref'], source['snapshot']),
+                                         needed=False, error='supplemental source bytes changed')
                     generated.update(source_records=copy.deepcopy(sources), request_digest=record['request_digest'])
                 elif generated['request_digest'] != record['request_digest']:
                     raise ValueError('supplemental request digest changed')
@@ -387,17 +388,24 @@ def identity_assessment(cycle, *, reason):
             'summary': reason}
 
 
+def _manifest_fault(message, entry, position):
+    """Why one transcript message fails its manifest row, or None when it verifies."""
+    if (not isinstance(message, dict) or not {'role', 'content'} <= message.keys()
+            or not isinstance(entry, dict) or not {'sha256', 'bytes', 'index', 'proposal_digest', 'ref'} <= entry.keys()
+            or entry['index'] != position):
+        return 'invalid_manifest'
+    raw = compact_json_bytes(message)
+    if hashlib.sha256(raw).hexdigest() != entry['sha256'] or len(raw) != entry['bytes']:
+        return 'content_mismatch'
+    return None
+
+
 def _verified_transcript(turns, manifests):
     """Pair each message whose original hash still verifies with its manifest; list the rest."""
     verified, omitted = [], []
     for position in range(max(len(turns), len(manifests))):
         if (position < len(turns) and position < len(manifests)
-                and isinstance(turns[position], dict) and {'role', 'content'} <= turns[position].keys()
-                and isinstance(manifests[position], dict)
-                and {'sha256', 'bytes', 'index', 'proposal_digest', 'ref'} <= manifests[position].keys()
-                and manifests[position]['index'] == position
-                and json_digest(turns[position]) == manifests[position].get('sha256')
-                and len(_bytes(turns[position])) == manifests[position].get('bytes')):
+                and _manifest_fault(turns[position], manifests[position], position) is None):
             verified.append((turns[position], manifests[position]))
         else:
             omitted.append(position)
@@ -434,8 +442,8 @@ def _replay_replacement(replay, cycle, action, instance, runtime):
     if (omitted != authorization['omitted_indices'] or omitted != archive['omitted_indices']
             or json_digest(sealed_input) != authorization['sealed_input_sha256']):
         raise ValueError('replacement sealed input changed')
-    replay['blocked_actions'][_key(action)] = index
-    replay['replacement_actions'][_key(action)] = copy.deepcopy(authorization)
+    replay['blocked_actions'][slot_key(action)] = index
+    replay['replacement_actions'][slot_key(action)] = copy.deepcopy(authorization)
     return replay
 
 
@@ -477,7 +485,8 @@ def replacement_authority(instance, runtime, cycle, replacement, execution_id=No
     return authority
 
 
-def _key(action):
+def slot_key(action):
+    """The key of one logical seat in results, blocked and replacement maps."""
     return f"{action['stage']}:{action['round']}:{action['slot']}"
 
 
@@ -495,11 +504,11 @@ def reserved_review_slots(cycle, executions):
         candidates += [{'stage': 'judge', 'slot': slot, 'round': number} for slot in cycle['judge_slots']]
     ranks = {'scope': 0, 'initial': 1, 'organize': 2, 'answer': 3, 'judge': 4}
     current = (cycle['round'], ranks[cycle['phase']])
-    live = {_key(row['action']) for row in executions.values()
+    live = {slot_key(row['action']) for row in executions.values()
             if row.get('status') != 'ended' and row.get('action', {}).get('review_cycle_id') == cycle.get('id')
             and row['action'].get('role') == 'identity_review'}
     return [row for row in candidates if (row['round'], ranks[row['stage']]) >= current
-            and _key(row) not in cycle['results'] and _key(row) not in live]
+            and slot_key(row) not in cycle['results'] and slot_key(row) not in live]
 
 
 def _phase_actions(cycle):
@@ -526,7 +535,7 @@ def next_actions(cycle):
         return []
     pending = []
     for action in _phase_actions(cycle):
-        key = _key(action)
+        key = slot_key(action)
         if key in cycle["results"] or key in cycle.get("deferred_actions", {}):
             continue
         replacement = cycle.get("replacement_actions", {}).get(key)
@@ -615,29 +624,79 @@ def research_request_digest(question, proposal_digest, sources):
 
 
 def research_schema():
-    text = {"type": "string", "minLength": 1}
-    return _object({"summary": copy.deepcopy(text), "used_sources": _array(copy.deepcopy(text)),
-        "questions": _array(copy.deepcopy(text)), "research_request_id": copy.deepcopy(text),
-        "request_digest": copy.deepcopy(text), "outcome": {"enum": ["answered", "unresolved"]},
-        "answer": copy.deepcopy(text), "scope_complete": {"type": "boolean"},
-        "evidence_refs": _array(copy.deepcopy(text))})
+    text = TEXT
+    return copy.deepcopy(_object({"summary": text, "used_sources": _array(text),
+        "questions": _array(text), "research_request_id": text,
+        "request_digest": text, "outcome": {"enum": ["answered", "unresolved"]},
+        "answer": text, "scope_complete": {"type": "boolean"},
+        "evidence_refs": _array(text)}))
+
+
+def research_request_schema():
+    """One fixed investigation request, as installed for producers and replayed by review."""
+    return copy.deepcopy(_object({"id": TEXT, "question": TEXT, "source_refs": {**REFS, "minItems": 1}}))
+
+
+def validate_research_requests(requests):
+    """Shared by the producer's check and review deferral: exact sources, distinct request IDs."""
+    _check_schema(requests, {"type": "array", "minItems": 1, "items": research_request_schema()}, "research_requests")
+    _unique([r["id"] for r in requests], "research request ID")
+
+
+def validate_provisional(proposal_digest, action, output):
+    """A review that requests investigation returns an unresolved provisional result for this proposal."""
+    _check_schema(output, stage_schema(action["stage"]))
+    if output["proposal_digest"] != proposal_digest:
+        raise ValueError("result belongs to another proposal")
+    if action["stage"] in ("initial", "judge") and output["decision"] != "unresolved":
+        raise ValueError("a review requesting investigation must return unresolved provisionally")
+
+
+def validate_research_answer(output):
+    """An answered investigation states complete scope and exact evidence and leaves no question."""
+    if output["outcome"] == "answered" and (not output["scope_complete"] or not output["evidence_refs"] or output["questions"]):
+        raise ValueError("answered investigation requires complete scope, exact evidence and no unresolved question")
+
+
+def classify_research_source(reference, *, proposal, issues, own_source_refs, sources, knowledge_ids):
+    """The one admission rule for a fixed investigation source.
+
+    Returns (kind, value): ('proposal', resolved value), ('issue', public issue),
+    ('transcript', own-slot reference), ('source', supplied source row) or
+    ('knowledge', ID). Each caller passes the records of its own input; the
+    receiver's current knowledge IDs contain the catalog it supplied to the producer.
+    """
+    from .input_basis import aliases
+    if reference == "proposal":
+        return "proposal", proposal
+    if reference.startswith("proposal:"):
+        value = proposal
+        for token in reference.removeprefix("proposal:").replace("/", ".").strip(".").split("."):
+            if not isinstance(value, dict) or token not in value:
+                raise ValueError("unknown proposal source coordinate: " + reference)
+            value = value[token]
+        return "proposal", value
+    if reference.startswith("issue:"):
+        issue_id = reference.removeprefix("issue:")
+        if issue_id not in issues:
+            raise ValueError("unknown public issue source: " + reference)
+        return "issue", issues[issue_id]
+    if reference in own_source_refs:
+        return "transcript", reference
+    source = next((row for row in sources if reference in aliases(row)), None)
+    if source is not None:
+        return "source", source
+    if reference in knowledge_ids:
+        return "knowledge", reference
+    raise ValueError("research source must be a proposal coordinate, public issue, own transcript, "
+                     "supplied source or knowledge ID: " + reference)
 
 
 def defer_for_research(cycle, action, output, requests, execution_id, *, limit=3, budget_available=True):
     """Preserve a provisional response without turning it into a sealed verdict."""
     if action not in next_actions(cycle): raise ValueError("review action is not pending")
-    _validate(output, stage_schema(action["stage"]))
-    if output["proposal_digest"] != cycle["proposal_digest"]: raise ValueError("another proposal")
-    if action["stage"] in ("initial", "judge") and output["decision"] != "unresolved":
-        raise ValueError("a review requesting investigation must return unresolved provisionally")
-    if not isinstance(requests, list) or not requests: raise ValueError("research requests must be a nonempty list")
-    spec = _object({"id": {"type": "string", "minLength": 1}, "question": {"type": "string", "minLength": 1},
-                    "source_refs": _array({"type": "string", "minLength": 1})})
-    for request in requests:
-        _validate(request, spec, "research_request")
-        if not request["source_refs"]: raise ValueError("fixed investigation requires exact source references")
-        _unique(request["source_refs"], "research source")
-    _unique([r["id"] for r in requests], "research request ID")
+    validate_provisional(cycle["proposal_digest"], action, output)
+    validate_research_requests(requests)
     if isinstance(limit, bool) or not isinstance(limit, int) or limit < 0: raise ValueError("invalid research limit")
     used = {entry["execution_id"] for entry in cycle["results"].values()}
     used.update(r["requested_by"] for r in cycle.get("research", {}).values())
@@ -663,7 +722,7 @@ def defer_for_research(cycle, action, output, requests, execution_id, *, limit=3
         n["research"][identifier] = {"id": identifier, **copy.deepcopy(payload), "request_digest": json_digest(payload),
             "action": copy.deepcopy(action), "requested_by": execution_id, "status": "pending", "result": None}
         identifiers.append(identifier)
-    n.setdefault("deferred_actions", {})[_key(action)] = identifiers
+    n.setdefault("deferred_actions", {})[slot_key(action)] = identifiers
     n["history"].append({"event": "review_deferred_for_research", "action": copy.deepcopy(action), "request_ids": identifiers})
     return n
 
@@ -673,13 +732,12 @@ def accept_research_result(cycle, request_id, output, execution_id, source_recor
     request = cycle.get("research", {}).get(request_id)
     if cycle["status"] != "working" or not request or request["status"] != "pending":
         raise ValueError("investigation is not pending")
-    _validate(output, research_schema())
+    _check_schema(output, research_schema())
     if execution_status not in {"completed", "incomplete"} or (execution_status == "incomplete" and output["outcome"] != "unresolved"):
         raise ValueError("an incomplete investigation cannot supply an answered result")
     if output["research_request_id"] != request_id or output["request_digest"] != request["request_digest"]:
         raise ValueError("investigation result belongs to a different fixed question")
-    if output["outcome"] == "answered" and (not output["scope_complete"] or not output["evidence_refs"] or output["questions"]):
-        raise ValueError("answered investigation requires complete scope and exact evidence")
+    validate_research_answer(output)
     used_ids = {entry["execution_id"] for entry in cycle["results"].values()}
     used_ids.update(r["requested_by"] for r in cycle.get("research", {}).values())
     used_ids.update(r["result"]["execution_id"] for r in cycle.get("research", {}).values() if r.get("result"))
@@ -694,7 +752,7 @@ def accept_research_result(cycle, request_id, output, execution_id, source_recor
         "message_id": f"{execution_id}:research-result", "call": "supplemental_research",
         "arguments": {"research_request_id": request_id, "request_digest": request["request_digest"]},
         "content": copy.deepcopy(entry)}])
-    key = _key(request["action"])
+    key = slot_key(request["action"])
     if all(n["research"][rid]["status"] != "pending" for rid in n["deferred_actions"][key]):
         del n["deferred_actions"][key]
     return n
@@ -796,7 +854,8 @@ def _judge(cycle, output):
 
 
 def _validate_content(cycle, action, output):
-    _validate(output, stage_schema(action["stage"]))
+    """Check one stage result; a scope result returns its normalized assessment."""
+    _check_schema(output, stage_schema(action["stage"]))
     if output["proposal_digest"] != cycle["proposal_digest"]:
         raise ValueError("result belongs to another proposal")
     stage = action["stage"]
@@ -814,21 +873,19 @@ def _validate_content(cycle, action, output):
         if cycle.get("retained_reviewer_slots") and not set(cycle["retained_reviewer_slots"]).issubset(
                 {slot["id"] for slot in assessment["initial_slots"]}):
             raise ValueError("new scope assessment cannot remove retained logical slots")
-    elif stage == "initial":
+        return assessment
+    if stage == "initial":
         if output["decision"] == "match" and (findings or output["questions"]):
             raise ValueError("match requires no open findings or questions")
         if output["decision"] == "mismatch" and not findings:
             raise ValueError("mismatch requires findings")
+    return None
 
 
 def validate_visible_output(context, action, output, *, requesting_research=False):
     """Use only the public assignment and this slot's input, never peer votes."""
     if requesting_research:
-        _validate(output, stage_schema(action["stage"]))
-        if output["proposal_digest"] != context["proposal_digest"]:
-            raise ValueError("result belongs to another proposal")
-        if action["stage"] in {"initial", "judge"} and output["decision"] != "unresolved":
-            raise ValueError("a review requesting investigation must return unresolved provisionally")
+        validate_provisional(context["proposal_digest"], action, output)
         return
     _validate_content(context, action, output)
     view = {"issues": copy.deepcopy(context["issues"]), "round": action["round"],
@@ -885,11 +942,10 @@ def _aggregate_judges(cycle, entries):
 
 
 def accept_result(cycle, action, output, execution_id, input_manifest=None):
+    """Seal one stage result. Callers first run validate_review_independence, which
+    rejects every authoring execution of the review lineage and inherited context."""
     if action not in next_actions(cycle):
         raise ValueError("action is not pending")
-    _validate(output, stage_schema(action["stage"]))
-    if output["proposal_digest"] != cycle["proposal_digest"]:
-        raise ValueError("result belongs to another proposal")
     if not isinstance(execution_id, str) or not execution_id:
         raise ValueError("execution ID is required")
     all_results = list(cycle["results"].values())
@@ -901,11 +957,6 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
     research_ids.update(r["requested_by"] for r in research_records)
     if execution_id in {entry["execution_id"] for entry in all_results} | research_ids:
         raise ValueError("execution ID already used")
-    producers = set(cycle["proposal"].get("producer_execution_ids", []))
-    for previous in cycle["previous_reviews"]:
-        producers.update(previous["proposal"].get("producer_execution_ids", []))
-    if execution_id in producers:
-        raise ValueError("author execution cannot review")
     manifest = {} if input_manifest is None else copy.deepcopy(input_manifest)
     if not isinstance(manifest, dict):
         raise ValueError("input manifest must be an object")
@@ -913,7 +964,7 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
         raise ValueError("input manifest belongs to another proposal")
     if manifest.get("role_slot_id", action["slot"]) != action["slot"]:
         raise ValueError("input manifest has another role slot")
-    replacement = cycle.get("replacement_actions", {}).get(_key(action))
+    replacement = cycle.get("replacement_actions", {}).get(slot_key(action))
     if action.get("replacement_for") is not None:
         if replacement is None or replacement.get("action") != action:
             raise ValueError("replacement action is not the recorded authorization")
@@ -925,8 +976,6 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
     origins = [origins] if isinstance(origins, str) else origins
     continued = manifest.get("continuation_of", [])
     continued = [continued] if isinstance(continued, str) else continued
-    if producers.intersection((origins or []) + (continued or [])):
-        raise ValueError("author context cannot be inherited by a reviewer")
     if action["stage"] == "judge":
         forbidden = {e["execution_id"] for e in all_results if e["action"]["stage"] in ("initial", "answer", "organize")}
         forbidden.update(r["result"]["execution_id"] for r in research_records if r.get("result"))
@@ -941,17 +990,15 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
             allowed = {cycle["results"][key]["execution_id"] for key in cycle["sealed"]}
             allowed.update(e["execution_id"] for p in cycle["previous_reviews"] for key, e in p["results"].items() if key in p["sealed"])
             allowed.update(r["result"]["execution_id"] for r in cycle.get("research", {}).values() if r.get("result") and
-                           (r["action"]["slot"] == action["slot"] or _key(r["action"]) in cycle["sealed"]))
+                           (r["action"]["slot"] == action["slot"] or slot_key(r["action"]) in cycle["sealed"]))
             allowed.update(r["result"]["execution_id"] for p in cycle["previous_reviews"] for r in p.get("research", {}).values()
-                           if r.get("result") and (r["action"]["slot"] == action["slot"] or _key(r["action"]) in p["sealed"]))
+                           if r.get("result") and (r["action"]["slot"] == action["slot"] or slot_key(r["action"]) in p["sealed"]))
             if set(manifest[field]) - allowed:
                 raise ValueError("input contains unsealed peer results")
     stage = action["stage"]
-    _validate_content(cycle, action, output)
+    assessment = _validate_content(cycle, action, output)
     n = copy.deepcopy(cycle)
     if stage == "scope":
-        assessment = validate_scope_assessment(output["scope_assessment"], n["review_policy"],
-            executions_used=len(n['execution_accounting']['executions_used']))
         n["scope_assessment"] = assessment
         n["reviewer_slots"] = [slot["id"] for slot in assessment["initial_slots"]]
         n["reviewers"] = len(n["reviewer_slots"])
@@ -966,7 +1013,7 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
         _answer(n, action, output)
     elif stage == "judge":
         _judge(n, output)
-    key = _key(action)
+    key = slot_key(action)
     n["results"][key] = {"action": copy.deepcopy(action), "stage": stage,
         "output": copy.deepcopy(output), "execution_id": execution_id, "manifest": manifest,
         "proposal_digest": n["proposal_digest"]}
@@ -981,8 +1028,8 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
     n = _append_turns(n, action["slot"], [{"role": "assistant", "content": copy.deepcopy(output),
                                          "message_id": f"{execution_id}:assistant"}])
     batch = [a for a in _phase_actions(cycle)]
-    if all(_key(a) in n["results"] for a in batch):
-        keys = [_key(a) for a in batch]
+    if all(slot_key(a) in n["results"] for a in batch):
+        keys = [slot_key(a) for a in batch]
         n["sealed"].extend(keys)
         entries = [n["results"][k] for k in keys]
         n["history"].append({"round": cycle["round"], "stage": stage, "sealed": keys})
@@ -1043,7 +1090,7 @@ def _append_turns(n, slot, messages):
     for message in messages:
         if not isinstance(message, dict) or message.get("role") not in ("system", "user", "assistant", "tool") or "content" not in message:
             raise ValueError("invalid public transcript message")
-        data = _bytes(message)
+        data = compact_json_bytes(message)
         message_id = message.get("message_id")
         if message_id is not None:
             existing = [i for i, entry in enumerate(turns) if entry.get("message_id") == message_id]
@@ -1081,8 +1128,8 @@ def record_recovery_event(cycle, action, event):
                                                "recovery_event": event_index, "owner_activity_id": n.get("owner_activity_id")})
         # A damaged logical slot cannot silently become a new reviewer.  It is
         # held until a current authorization explicitly opens a replacement.
-        n.setdefault("blocked_actions", {})[_key(action)] = event_index
-        n.setdefault('replacement_actions', {}).pop(_key(action), None)
+        n.setdefault("blocked_actions", {})[slot_key(action)] = event_index
+        n.setdefault('replacement_actions', {}).pop(slot_key(action), None)
     return n
 
 
@@ -1094,7 +1141,7 @@ def authorize_record_replacement(cycle, action, instance, *, runtime, grant_id=N
     expected = {key: action.get(key) for key in ('stage', 'slot', 'round')}
     if cycle['status'] != 'working' or expected not in _phase_actions(cycle):
         return {'disposition': 'invalid_action', 'cycle': cycle, 'reason': 'not a current working slot'}
-    key = _key(expected)
+    key = slot_key(expected)
     index = cycle.get('blocked_actions', {}).get(key)
     if index is None:
         return {'disposition': 'not_waiting_for_replacement', 'cycle': cycle}
@@ -1108,7 +1155,7 @@ def authorize_record_replacement(cycle, action, instance, *, runtime, grant_id=N
     request = {'id': prior['action']['id'] if prior else new_id('AC'),
                'role': 'identity_review', 'target': cycle.get('knowledge_id'),
                'review_cycle_id': cycle.get('id'), **expected,
-               'budget_kind': 'work', 'actor_kind': 'ai', 'purpose': 'record_replacement',
+               'actor_kind': 'ai', 'purpose': 'record_replacement',
                'replacement_for': index, 'continuity_break_cause': event['reason']}
     if grant_id is not None:
         request['grant_id'] = grant_id
@@ -1162,12 +1209,11 @@ def validate_transcript(cycle, slot):
         raise ReviewRestorationError('transcript restoration is incomplete', cause_kind='missing_record',
             coordinate={'slot': slot, 'index': min(len(turns), len(manifests))})
     for position, (message, entry) in enumerate(zip(turns, manifests)):
-        if (not isinstance(message, dict) or 'role' not in message or 'content' not in message or
-                not isinstance(entry, dict) or not {'sha256', 'bytes', 'index', 'proposal_digest', 'ref'} <= entry.keys()
-                or entry['index'] != position):
+        fault = _manifest_fault(message, entry, position)
+        if fault == 'invalid_manifest':
             raise ReviewRestorationError('transcript restoration manifest is incomplete', cause_kind='invalid_manifest',
                 coordinate={'slot': slot, 'index': position}, verified_indices=range(position))
-        if json_digest(message) != entry["sha256"] or len(_bytes(message)) != entry['bytes']:
+        if fault == 'content_mismatch':
             raise ReviewRestorationError('transcript bytes changed', cause_kind='content_mismatch',
                 coordinate={'slot': slot, 'index': position}, expected_sha256=entry['sha256'],
                 observed_sha256=json_digest(message), verified_indices=range(position))
@@ -1192,13 +1238,13 @@ def context_for(cycle, action):
             messages.append(copy.deepcopy(message))
     visible = {key: copy.deepcopy(cycle["results"][key]) for key in cycle["sealed"]}
     supplemental = [copy.deepcopy(r) for r in cycle.get("research", {}).values()
-                    if r.get("result") and (r["action"]["slot"] == slot or _key(r["action"]) in cycle["sealed"])]
+                    if r.get("result") and (r["action"]["slot"] == slot or slot_key(r["action"]) in cycle["sealed"])]
     for previous in cycle["previous_reviews"]:
         supplemental.extend({**copy.deepcopy(r), "previous_revision": previous["revision"]}
                             for r in previous.get("research", {}).values() if r.get("result") and
-                            (r["action"]["slot"] == slot or _key(r["action"]) in previous["sealed"]))
+                            (r["action"]["slot"] == slot or slot_key(r["action"]) in previous["sealed"]))
     scope_slot = next((entry for entry in (cycle.get("scope_assessment") or {}).get("initial_slots", []) if entry["id"] == slot), None)
-    replacement = copy.deepcopy(cycle.get("replacement_actions", {}).get(_key(action)))
+    replacement = copy.deepcopy(cycle.get("replacement_actions", {}).get(slot_key(action)))
     return {"proposal": copy.deepcopy(cycle["proposal"]), "proposal_digest": cycle["proposal_digest"],
         **{key: copy.deepcopy(cycle[key]) for key in ('identity_basis', 'policy_ref') if key in cycle},
         "action": copy.deepcopy(action), "reviewer_slots": list(cycle["reviewer_slots"]),

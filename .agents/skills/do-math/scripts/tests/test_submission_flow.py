@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.repository import exact_content_hash
@@ -18,7 +18,8 @@ from do_math.context_store import collect_outputs
 from do_math.control_transport import ControlTransport
 from do_math.git_store import GitStateStore
 from do_math.repository import canonical_json
-from research_fixtures import seal_response
+from do_math.repository import ResearchRepository
+from research_fixtures import bare_engine, seal_response
 
 
 class SubmissionFlowTests(unittest.TestCase):
@@ -51,7 +52,7 @@ class SubmissionFlowTests(unittest.TestCase):
                 return schema_bytes
             raise AssertionError('preview read an unpublished artifact from Git: ' + path)
         engine.store.read.side_effect = read
-        engine._validate_bundle_current = lambda *args, **kwargs: None
+        engine._validate_bundle_current = create_autospec(engine._validate_bundle_current, return_value=None)
         before = canonical_json(engine.runtime)
         (workspace / 'activity-extensions.json').write_bytes(b'{"knowledge_changes": []}')
         preview = engine._preview_submission(execution, {'draft_path': 'draft.json'})
@@ -233,12 +234,9 @@ class SubmissionFlowTests(unittest.TestCase):
             context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024)
         raw = sealed["artifacts"]["output.json"]
         self.draft.write_bytes(canonical_json({"changed": True}))
-        engine = object.__new__(ResearchEngine)
-        engine.head = "sealed-head"
-        engine.runtime = {"status": "running"}
-        engine.instance = {"lifecycle": {"state": "active"}}
-        engine._clock_guard = unittest.mock.Mock(return_value={"usable": True})
-        engine.store = unittest.mock.Mock()
+        engine = bare_engine({"lifecycle": {"state": "active"}}, {"status": "running"}, head="sealed-head",
+                             store=create_autospec(ResearchRepository, instance=True))
+        engine._clock_guard = create_autospec(engine._clock_guard, return_value={"usable": True})
         engine.store.read.return_value = raw
         execution = {"id": "EX-flow", "action": deepcopy(self.context["action"]),
             "submission_intent": {"output_ref": "sealed/output.json",
@@ -256,11 +254,9 @@ class SubmissionFlowTests(unittest.TestCase):
             self.workspace, ".scratch/draft.json", execution_id="EX-flow",
             context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024)
         research.write_bytes(b"later mutation")
-        engine = object.__new__(ResearchEngine)
-        engine.head = "sealed-head"
+        engine = bare_engine(head="sealed-head", store=create_autospec(ResearchRepository, instance=True))
         by_ref = {"sealed/files/" + row["path"]: sealed["artifacts"]["files/" + row["path"]]
                   for row in sealed["manifest"]}
-        engine.store = unittest.mock.Mock()
         engine.store.read.side_effect = lambda ref, _head: by_ref[ref]
         execution = {"submission_intent": {"file_refs": [
             {**row, "artifact_ref": "sealed/files/" + row["path"]} for row in sealed["manifest"]]}}
@@ -340,7 +336,11 @@ class CentralSubmissionHistoryTests(unittest.TestCase):
         self.engine._action_lifecycle_gate(action)
         execution = self.engine._register_execution(action,
             {'id': 'EX-history', 'role': 'maintenance', 'status': 'running'})
-        execution.update(grant_id=action['grant_id'], input_bundle='BA-history-input', input_snapshot=self.engine.head)
+        # A sealed role input names its prompt in the input manifest; the prompt is archived below.
+        prompt = b'Synthetic history prompt'
+        execution.update(grant_id=action['grant_id'], input_bundle='BA-history-input', input_snapshot=self.engine.head,
+                         input_manifest={'prompt': {'artifact_ref': 'runtime/artifacts/BA-history-input/input.txt',
+                                                    'sha256': hashlib.sha256(prompt).hexdigest(), 'bytes': len(prompt)}})
         from do_math.planning import governance_revisions
         execution.update(governance_revisions(self.engine.instance))
         self.workspace = Path(self.engine.instance['workspace']) / 'runs/EX-history/workspace'
@@ -350,7 +350,8 @@ class CentralSubmissionHistoryTests(unittest.TestCase):
             'grants': [deepcopy(self.engine.instance['grants'][action['grant_id']])]}
         self.schema = contracts.schema_for('maintenance')
         submission.install_tools(self.workspace, self.context, self.schema, 1024*1024)
-        self.engine._save({'runtime/artifacts/BA-history-input/input/submission/context.json': canonical_json(self.context),
+        self.engine._save({'runtime/artifacts/BA-history-input/input.txt': prompt,
+                          'runtime/artifacts/BA-history-input/input/submission/context.json': canonical_json(self.context),
                           'runtime/artifacts/BA-history-input/schema.json': canonical_json(self.schema)})
         self.transport = ControlTransport(self.root/'delivery')
         self.binding = self.transport.issue('EX-history', action['grant_id'], workspace=self.workspace)

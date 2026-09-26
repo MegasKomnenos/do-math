@@ -7,14 +7,10 @@ from copy import deepcopy
 import hashlib
 import os
 from pathlib import Path, PurePosixPath
-import stat
 
 from .repository import canonical_json, exact_content_hash
-from .file_io import stat_fingerprint
-from .git_store import PhysicalBoundary
-
-
-_REPARSE_POINT = 0x400
+from .file_io import is_sha256, stat_fingerprint
+from .git_store import PhysicalBoundary, no_reparse, oid_shape
 
 
 class _ChangedDuringRead(OSError):
@@ -35,11 +31,13 @@ def _relative(name: str) -> PurePosixPath:
 
 
 def _is_reparse(path: Path) -> bool:
+    """Whether ``path`` itself (not an ancestor) is a symlink or reparse point."""
+    path = path.absolute()
     try:
-        info = path.lstat()
-    except FileNotFoundError:
-        return False
-    return stat.S_ISLNK(info.st_mode) or bool(getattr(info, "st_file_attributes", 0) & _REPARSE_POINT)
+        no_reparse(path, below=path.parent)
+    except ValueError:
+        return True
+    return False
 
 
 def _safe_path(root: Path, name: str, *, require_input: bool = False) -> Path:
@@ -48,11 +46,7 @@ def _safe_path(root: Path, name: str, *, require_input: bool = False) -> Path:
         raise ValueError("source reference must stay below input/")
     root = _physical_root(root)
     candidate = root.joinpath(*relative.parts)
-    cursor = root
-    for part in relative.parts:
-        cursor /= part
-        if cursor.exists() and _is_reparse(cursor):
-            raise ValueError(f"path crosses a reparse point: {cursor}")
+    no_reparse(candidate, below=root)
     resolved = candidate.resolve(strict=False)
     if not resolved.is_relative_to(root):
         raise ValueError(f"path leaves workspace: {name}")
@@ -61,9 +55,7 @@ def _safe_path(root: Path, name: str, *, require_input: bool = False) -> Path:
 
 def _physical_root(root: Path) -> Path:
     root = Path(os.path.abspath(root))
-    for ancestor in [*reversed(root.parents), root]:
-        if _is_reparse(ancestor):
-            raise ValueError("workspace crosses a reparse point: " + str(ancestor))
+    no_reparse(root)
     return root
 
 
@@ -302,16 +294,10 @@ def restore_continuation(runtime, action, workspace, *, snapshot, read_artifact,
     not a certification that retained work is mathematically complete. With
     ``git_dir``, sealed rows already matched in this process are not hashed again.
     """
-    from .repository import artifact_verified, verify_artifact
+    from .repository import sealed_bytes
 
     def sealed(path, sha256, size, message):
-        raw = read_artifact(path)
-        if git_dir is None or not artifact_verified(git_dir, path, sha256, size):
-            try:
-                verify_artifact(git_dir, path, raw, sha256, size)
-            except ValueError as mismatch:
-                raise ValueError(message) from mismatch
-        return raw
+        return sealed_bytes(git_dir, path, sha256, size, lambda: read_artifact(path), error=message)
     def parent(value):
         return (value.get('continuation_of') or value.get('repair', {}).get('execution_id')
                 or value.get('refresh', {}).get('execution_id') or value.get('recovery', {}).get('execution_id'))
@@ -381,7 +367,7 @@ def restore_continuation(runtime, action, workspace, *, snapshot, read_artifact,
 
 _ROLE_DIRECT = {
     'research_preparation': ('profile_selection', 'tasks', 'ongoing_work', 'knowledge_catalog', 'resources', 'blocked_actions', 'pending_revisions'),
-    'research_plan': ('profile_selection', 'tasks', 'ongoing_work', 'ready_task_ids', 'returned_task_ids', 'knowledge_catalog', 'resources', 'ongoing_preparation', 'input_overflow_requests', 'review_followups'),
+    'research_plan': ('profile_selection', 'tasks', 'ongoing_work', 'ready_task_ids', 'returned_task_ids', 'knowledge_catalog', 'resources', 'input_overflow_requests', 'review_followups'),
     'research_work': ('task',), 'supplemental_research': ('task',),
     'task_contract_review': ('task',), 'identity_review': ('role_review',),
     'goal_audit': ('eligible_knowledge',),
@@ -420,8 +406,10 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     validate_profile(profile)
     if profile['role'] != role or role not in _ROLE_DIRECT:
         raise ValueError('selected profile does not match the input role')
-    if not isinstance(snapshot, str) or len(snapshot) not in (40, 64) or any(c not in '0123456789abcdef' for c in snapshot):
-        raise ValueError('input snapshot must be a fixed Git commit')
+    try:
+        oid_shape(snapshot)
+    except ValueError as error:
+        raise ValueError('input snapshot must be a fixed Git commit') from error
     value = deepcopy(context)
     detail_sources, detail_bytes = [], {}
     def preserve_detail(name, record):
@@ -444,8 +432,8 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
                 row['request'] = {k:deepcopy(request[k]) for k in
                     ('id','instance_id','action','origin','created_at') if k in request}
                 row['request_source_ref'] = reference
-    if 'config' in value or role in {'research_preparation', 'research_plan'}:
-        value.pop('config', None)
+    if role in {'research_preparation', 'research_plan', 'intent_interpretation'}:
+        # The configuration is read from state here; the engine does not project it.
         value['configuration_source'] = preserve_detail('configuration', instance['config'])
     if instance.get('governance'):
         governance_input = governance.governance_view(instance)
@@ -501,6 +489,14 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
              'source_ref': preserve_detail('tasks/' + hashlib.sha256(identifier.encode()).hexdigest(), task)}
             for identifier, task in sorted(reader_tasks.items())]
         task_refs = {row['id']: row['source_ref'] for row in value['task_catalog']}
+        def preparation_fields(execution):
+            # An unfinished preparation also states the editions and targets it was given.
+            action = execution.get('action', {})
+            if execution.get('role') != 'research_preparation':
+                return {}
+            return {'goal_revision': execution.get('goal_revision'), 'policy_revision': execution.get('policy_revision'),
+                    **{key: deepcopy(action.get(key, {})) for key in
+                       ('revision_targets', 'assessment_targets', 'observation_rule_targets')}}
         value['ongoing_work'] = [
             {'execution_id': execution['id'], 'role': execution.get('role'), 'status': execution['status'],
              'target': execution.get('action', {}).get('target'),
@@ -509,7 +505,8 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
              'input_snapshot': execution.get('input_snapshot'),
              'continuation_of': execution.get('continuation_of') or execution.get('action', {}).get('continuation_of'),
              'event_refs': deepcopy(execution.get('action', {}).get('event_refs', [])),
-             'task_source_ref': deepcopy(task_refs.get(execution.get('action', {}).get('target')))}
+             'task_source_ref': deepcopy(task_refs.get(execution.get('action', {}).get('target'))),
+             **preparation_fields(execution)}
             for execution in runtime.get('executions', {}).values() if execution.get('status') != 'ended'
         ] + [
             {'action_id': identifier, 'role': entry.get('action', {}).get('role'),
@@ -571,7 +568,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         value['profile_selection'] = {
             'default_policy': {key: deepcopy(instance['config'][key]) for key in
                 ('role_tiers', 'tier_models', 'effort') if key in instance['config']},
-            'allowed_profiles': [{**{key:p[key] for key in ('id','revision','sha256','role','actor_kind','budget_kind')},
+            'allowed_profiles': [{**{key:p[key] for key in ('id','revision','sha256','role','actor_kind')},
                 **({'ai':{key:p['ai'][key] for key in ('model','tier','effort')}} if p['actor_kind']=='ai' else {})}
                 for p in editions],
             'profiles_ref':selection_profiles_ref,
@@ -657,7 +654,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
                 try:
                     candidate = resolve_profile(instance['execution_profiles'], reference)
                     selection(instance['config'], {**action, 'profile_ref': profile_ref(candidate)},
-                        runtime['tasks'], instance.get('knowledge', {}), profiles=instance['execution_profiles'])
+                        runtime['tasks'], instance.get('knowledge', {}), instance=instance)
                 except ValueError:
                     continue
                 if candidate['id'] == profile['id']:
@@ -682,7 +679,8 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         reference_keys=sorted(k for k in value if k not in required), catalog=catalog)
     manifest.update(feature_version=5, snapshot=snapshot, execution_profile_ref=profile_ref(profile),
         output_contract={'id': schema.get('x-contract-id'), 'sha256': exact_content_hash(schema)},
-        documents=[{'path': doc['path'], 'sha256': hashlib.sha256(doc['content'].encode('utf-8')).hexdigest(),
+        # Role documents carry the digest their prompt header states.
+        documents=[{'path': doc['path'], 'sha256': doc['sha256'],
                     'bytes': len(doc['content'].encode('utf-8'))} for doc in documents],
         prompt={'sha256': hashlib.sha256(prompt.encode('utf-8')).hexdigest(), 'bytes': actual}, required_direct_keys=required,
         private_scope=private_scope)
@@ -691,20 +689,24 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         manifest['candidate_order'] = deepcopy(value['candidate_order'])
     artifacts = dict(detail_bytes)
     if artifact_prefix is not None:
+        # The one archive of this role input: every file sits at its
+        # workspace-relative path below the prefix, and the prompt at input.txt.
         prefix = _relative(artifact_prefix).as_posix()
         if not prefix.startswith('runtime/artifacts/'):
             raise ValueError('role input archive must stay in runtime/artifacts')
+        catalog_files = fitted['catalog_files']
         for row in manifest['direct']:
-            row['artifact_ref'] = prefix + '/input/catalog/' + _catalog_name(row['key'])
-            artifacts[row['artifact_ref']] = canonical_json(value[row['key']])
+            path = catalog['entries'][row['key']]['path']
+            row['artifact_ref'] = prefix + '/' + path
+            artifacts[row['artifact_ref']] = catalog_files[path]
         for row in manifest['references']:
             ref = row['source_ref']
             ref['artifact_ref'] = prefix + '/' + ref['path']
-            artifacts[ref['artifact_ref']] = canonical_json(value[row['key']])
-        for index, (row, doc) in enumerate(zip(manifest['documents'], documents)):
-            row['artifact_ref'] = prefix + '/input/documents/' + str(index) + '.txt'
+            artifacts[ref['artifact_ref']] = catalog_files[ref['path']]
+        for row, doc in zip(manifest['documents'], documents):
+            row['artifact_ref'] = prefix + '/input/implementation/' + doc['path']
             artifacts[row['artifact_ref']] = doc['content'].encode('utf-8')
-        manifest['prompt']['artifact_ref'] = prefix + '/input/prompt.txt'
+        manifest['prompt']['artifact_ref'] = prefix + '/input.txt'
         artifacts[manifest['prompt']['artifact_ref']] = prompt.encode('utf-8')
     validate_role_manifest(manifest)
     fitted.update(manifest=manifest, prompt=prompt, actual_bytes=actual,
@@ -717,7 +719,7 @@ def _candidate_order(ids, snapshot, role, action_id, replay=None):
     algorithm = 'sha256-seed-id-v1'
     basis = {'snapshot': snapshot, 'role': role, 'action_id': action_id}
     seed = replay.get('seed') if isinstance(replay, dict) else os.urandom(32).hex()
-    if not isinstance(seed, str) or len(seed) != 64 or any(c not in '0123456789abcdef' for c in seed):
+    if not is_sha256(seed):
         raise ValueError('candidate order requires a 256-bit seed')
     ordered = sorted(ids, key=lambda identifier: (hashlib.sha256(bytes.fromhex(seed) + b'\0' + identifier.encode()).hexdigest(), identifier))
     result = {'algorithm': algorithm, 'seed': seed, 'basis': basis, 'ids': ordered}
@@ -730,8 +732,10 @@ def validate_role_manifest(manifest):
     if not isinstance(manifest, dict) or manifest.get('feature_version') != 5 or manifest.get('role') not in _ROLE_DIRECT:
         raise ValueError('invalid role input manifest version or role')
     snapshot = manifest.get('snapshot', '')
-    if not isinstance(snapshot, str) or len(snapshot) not in (40, 64) or any(c not in '0123456789abcdef' for c in snapshot):
-        raise ValueError('input manifest requires fixed snapshot')
+    try:
+        oid_shape(snapshot)
+    except ValueError as error:
+        raise ValueError('input manifest requires fixed snapshot') from error
     direct = manifest.get('direct', [])
     keys = [row['key'] for row in direct]
     role_keys = _ROLE_DIRECT[manifest['role']]
@@ -748,8 +752,7 @@ def validate_role_manifest(manifest):
     rows = [*direct, *manifest['documents'], manifest.get('prompt', {}), *manifest.get('detail_sources', [])]
     rows += [row['source_ref'] for row in manifest.get('references', [])]
     for row in rows:
-        digest = row.get('sha256', '')
-        if not isinstance(digest, str) or len(digest) != 64 or any(c not in '0123456789abcdef' for c in digest):
+        if not is_sha256(row.get('sha256')):
             raise ValueError('input component requires exact byte hash')
         if type(row.get('bytes')) is not int or row['bytes'] < 0:
             raise ValueError('input component requires measured byte length')
@@ -766,19 +769,27 @@ def validate_role_manifest(manifest):
 def prefetch_artifacts(paths, read_artifact, read_artifacts=None):
     """Read one fixed snapshot in bulk, retaining per-file failure handling.
 
-    The returned reader belongs only to this inspection. A failed batch is read
-    individually by the caller's existing path, so error order and scope stay local.
+    ``read_artifacts(paths)`` omits paths absent from the snapshot, so reading
+    one of them raises its own ValueError. The returned reader belongs only to
+    this inspection. A batch that fails as a whole is read individually by the
+    caller's existing path, so error order and scope stay local.
     """
     if read_artifacts is None or not paths:
         return read_artifact
     from .git_store import GitStateStoreError
+    wanted = list(dict.fromkeys(paths))
     try:
-        files = read_artifacts(list(dict.fromkeys(paths)))
+        files = read_artifacts(wanted)
     except (GitStateStoreError, OSError, ValueError, TypeError, KeyError):
         return read_artifact
+    wanted = set(wanted)
 
     def read(path):
-        return files[path] if path in files else read_artifact(path)
+        if path in files:
+            return files[path]
+        if path in wanted:
+            raise ValueError('artifact is missing: ' + path)
+        return read_artifact(path)
     return read
 
 
@@ -786,10 +797,12 @@ def verify_manifest_artifacts(manifest, read_artifact, *, read_artifacts=None, a
     """Verify published component bytes; return the exact unavailable bindings.
 
     With ``artifact_sizes`` only presence and stored length are compared; the
-    full-byte comparison belongs to the explicit ``check`` command. With
-    ``git_dir``, rows this process already matched (contract S3) are not read.
+    full-byte comparison belongs to the explicit ``check`` command. Both
+    ``artifact_sizes`` and ``read_artifacts`` omit paths absent from the
+    snapshot. With ``git_dir``, rows this process already matched (contract
+    S3) are not read.
     """
-    from .repository import artifact_verified, verify_artifact
+    from .repository import artifact_verified, sealed_bytes
     validate_role_manifest(manifest)
     missing = []
     rows = [('prompt', manifest['prompt'])]
@@ -802,12 +815,13 @@ def verify_manifest_artifacts(manifest, read_artifact, *, read_artifacts=None, a
         for name, row in rows:
             if not row.get('artifact_ref'):
                 missing.append(name)
+            elif row['artifact_ref'] not in sizes:
+                raise ValueError('input artifact is missing: ' + name)
             elif sizes[row['artifact_ref']] != row['bytes']:
                 raise ValueError('input artifact size differs: ' + name)
         return missing
-    if git_dir is not None:
-        rows = [(name, row) for name, row in rows if not (row.get('artifact_ref') and artifact_verified(
-            git_dir, row['artifact_ref'], row['sha256'], row['bytes']))]
+    rows = [(name, row) for name, row in rows if not (row.get('artifact_ref') and artifact_verified(
+        git_dir, row['artifact_ref'], row['sha256'], row['bytes']))]
     batch = (read_artifacts([row['artifact_ref'] for _, row in rows if row.get('artifact_ref')])
              if read_artifacts is not None else None)
     for name, row in rows:
@@ -815,14 +829,11 @@ def verify_manifest_artifacts(manifest, read_artifact, *, read_artifacts=None, a
         if not path or (read_artifact is None and batch is None):
             missing.append(name)
             continue
-        raw = batch[path] if batch is not None else read_artifact(path)
-        if git_dir is not None:
-            try:
-                verify_artifact(git_dir, path, raw, row['sha256'], row['bytes'])
-            except ValueError as mismatch:
-                raise ValueError('input artifact bytes differ: ' + name) from mismatch
-        elif len(raw) != row['bytes'] or hashlib.sha256(raw).hexdigest() != row['sha256']:
-            raise ValueError('input artifact bytes differ: ' + name)
+        raw = batch.get(path) if batch is not None else read_artifact(path)
+        if raw is None:
+            raise ValueError('input artifact is missing: ' + name)
+        sealed_bytes(git_dir, path, row['sha256'], row['bytes'], None, raw=raw, needed=False,
+                     error='input artifact bytes differ: ' + name)
     return missing
 
 

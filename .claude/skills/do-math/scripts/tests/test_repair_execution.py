@@ -13,15 +13,9 @@ from do_math import activities, execution_lifecycle, execution_profiles
 from do_math.engine import DEFAULT_CONFIG, ResearchEngine
 from do_math.repository import ResearchRepository, canonical_json
 from do_math import repair_execution
+from research_fixtures import bare_engine, current_state
 
 AT = "2026-09-20T00:00:00Z"
-
-
-class RepositoryHost:
-    """Only the ENGINE save facade; all persistence/validation uses the real store."""
-    def _save(self, artifacts=None):
-        self.head = self.store.save_with_state(self.head, self.instance, self.runtime, artifacts=artifacts)[0]
-        self.head, self.instance, self.runtime = self.store.load(self.head)
 
 
 class RepairExecutionTests(unittest.TestCase):
@@ -50,15 +44,14 @@ class RepairExecutionTests(unittest.TestCase):
         repo = root / "repo"
         repo.mkdir()
         subprocess.run(["git", "-C", str(repo), "init", "-q"], check=True)
-        self.host = host = RepositoryHost()
-        host.store = ResearchRepository(repo, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV")
+        self.host = host = bare_engine(store=ResearchRepository(repo, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV"))
         configured = execution_profiles.build_profiles(DEFAULT_CONFIG)
         profiles = configured["execution_profiles"]
-        host.instance = {"feature_version": 5, "workspace": str(root / "private"),
+        host.instance, host.runtime = current_state({"workspace": str(root / "private"),
             "capacity_constraints": configured["capacity_constraints"],
             "execution_profiles": {key: p for key, p in profiles.items()
-                                   if p["role"] in {"research_work", "operational_review"}}}
-        host.runtime = {"feature_version": 5, "executions": {}, "queue": [], "operational_dispositions": {}}
+                                   if p["role"] in {"research_work", "operational_review"}}},
+            {"tasks": {}, "executions": {}, "queue": [], "operational_dispositions": {}})
         for eid, role, aid in [("EX-target", "research_work", "AY-target"),
                                 ("EX-review", "operational_review", "AY-review")]:
             profile = next(p for p in host.instance["execution_profiles"].values() if p["role"] == role)
@@ -110,6 +103,21 @@ class RepairExecutionTests(unittest.TestCase):
         head = host.head
         self.assertEqual(ResearchEngine._complete_operational_disposition(host, result), result)
         self.assertEqual(host.head, head)
+
+
+class InstallationIdentityTests(unittest.TestCase):
+    def test_identity_covers_the_installed_skill_but_not_its_tests(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ('scripts/do_math/a.py', 'scripts/tests/test_a.py', 'examples/case.json'):
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+                (root / name).write_text('one', encoding='utf-8')
+            before = repair_execution.installation_sha256(root)
+            # A regression test alone does not reopen the same failure's automatic repair.
+            (root / 'scripts/tests/test_a.py').write_text('two', encoding='utf-8')
+            self.assertEqual(repair_execution.installation_sha256(root), before)
+            (root / 'examples/case.json').write_text('two', encoding='utf-8')
+            self.assertNotEqual(repair_execution.installation_sha256(root), before)
 
 
 if __name__ == "__main__":

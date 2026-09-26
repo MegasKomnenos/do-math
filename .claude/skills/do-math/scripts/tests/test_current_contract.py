@@ -7,7 +7,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import DEFAULT_CONFIG, initialize, validate_config
-from do_math.execution_profiles import build_profiles
+from do_math.execution_profiles import WORK_ROLES, build_profiles
 from test_categories import test_group
 
 
@@ -28,15 +28,21 @@ class CurrentContractTests(unittest.TestCase):
     def test_model_selection_and_capacity_share_the_current_tier_configuration(self):
         config = deepcopy(DEFAULT_CONFIG)
         config['tier_models'] = {tier: 'fixture-model' for tier in ('low', 'medium', 'high')}
-        config['session_limits'] = {'work': {'fixture-model': 2}, 'operations': {'fixture-model': 1}}
+        config['session_limits'] = {'work': {'fixture-model': 2}}
         config['scholarly_enabled'] = False
         validate_config(config)
         profiles = build_profiles(config)
         constraint, = profiles['capacity_constraints'].values()
-        self.assertEqual((constraint['kind'], constraint['work_slots'], constraint['operations_slots']),
-                         ('concurrency', 2, 1))
-        self.assertTrue(all(profile['ai']['model'] == 'fixture-model'
-                            for profile in profiles['execution_profiles'].values() if profile['actor_kind'] == 'ai'))
+        self.assertEqual((constraint['kind'], constraint['model'], constraint['work_slots']),
+                         ('concurrency', 'fixture-model', 2))
+        ai_profiles = [profile for profile in profiles['execution_profiles'].values() if profile['actor_kind'] == 'ai']
+        self.assertTrue(all(profile['ai']['model'] == 'fixture-model' for profile in ai_profiles))
+        self.assertTrue(all(profile['ai']['capacity_refs'] == ([constraint['id']] if profile['role'] in WORK_ROLES else [])
+                            for profile in ai_profiles))
+        retired = deepcopy(config)
+        retired['session_limits'] = {'work': {'fixture-model': 2}, 'operations': {'fixture-model': 1}}
+        with self.assertRaises(ValueError):
+            validate_config(retired)
 
 
 if __name__ == '__main__':

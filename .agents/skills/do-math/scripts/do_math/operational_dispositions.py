@@ -10,60 +10,22 @@ from copy import deepcopy
 from typing import Any
 
 
-DISPOSITION_KINDS = frozenset({
-    "continue", "repair", "resume", "retry", "task_disposition", "user_decision",
-})
-_COMMON = {"kind", "basis_refs", "next_owner", "reason"}
-_REQUIRED = {
-    "continue": _COMMON | {"next_review"},
-    "repair": _COMMON | {"repair_target", "meaning_preserving", "verification"},
-    "resume": _COMMON | {"checkpoint_ref", "scope"},
-    "retry": _COMMON | {"scope", "replay_safety"},
-    "task_disposition": _COMMON | {"task_id", "task_state", "authority_ref"},
-    "user_decision": _COMMON | {"question", "effect"},
-}
-
-
 def validate_disposition(disposition: dict[str, Any]) -> dict[str, Any]:
-    """Return a detached v5 disposition or raise before any state transition."""
-    if not isinstance(disposition, dict) or disposition.get("kind") not in DISPOSITION_KINDS:
+    """Return a detached v5 disposition or raise before any state transition.
+
+    The producer receives contracts.disposition_schema; this check reads the
+    variant of the same schema that the disposition's kind names.
+    """
+    import jsonschema
+    from .contracts import disposition_schema
+    variants = {row["properties"]["kind"]["const"]: row for row in disposition_schema()["anyOf"]}
+    if not isinstance(disposition, dict) or disposition.get("kind") not in variants:
         raise ValueError("operational disposition kind is unsupported")
-    kind = disposition["kind"]
-    if set(disposition) != _REQUIRED[kind]:
-        raise ValueError("operational disposition fields do not match its kind")
-    if (not isinstance(disposition["basis_refs"], list) or not disposition["basis_refs"] or
-            any(not isinstance(ref, str) or not ref for ref in disposition["basis_refs"]) or
-            len(set(disposition["basis_refs"])) != len(disposition["basis_refs"])):
-        raise ValueError("operational disposition needs distinct basis_refs")
-    for key in ("next_owner", "reason"):
-        if not isinstance(disposition[key], str) or not disposition[key]:
-            raise ValueError("operational disposition needs " + key)
-    if kind == "continue":
-        value = disposition["next_review"]
-        if value is not None and (not isinstance(value, dict) or set(value) != {"at", "reason"} or
-                                  not all(isinstance(value.get(k), str) and value[k] for k in ("at", "reason"))):
-            raise ValueError("continue next_review is null or contains at and reason")
-    elif kind == "repair":
-        if not isinstance(disposition["repair_target"], str) or not disposition["repair_target"]:
-            raise ValueError("repair needs repair_target")
-        if not disposition["repair_target"].startswith("installation:"):
-            raise ValueError("local input damage requires retry with replay_safety; repair is for installation: targets")
-        if not isinstance(disposition["meaning_preserving"], bool) or not isinstance(disposition["verification"], str) or not disposition["verification"]:
-            raise ValueError("repair needs preservation status and verification")
-    elif kind in {"resume", "retry"}:
-        if not isinstance(disposition["scope"], str) or not disposition["scope"]:
-            raise ValueError(kind + " needs scope")
-        key = "checkpoint_ref" if kind == "resume" else "replay_safety"
-        if not isinstance(disposition[key], str) or not disposition[key]:
-            raise ValueError(kind + " needs " + key)
-    elif kind == "task_disposition":
-        if (not isinstance(disposition["task_id"], str) or not disposition["task_id"] or
-                disposition["task_state"] not in {"completed", "incomplete", "closed"} or
-                not isinstance(disposition["authority_ref"], str) or not disposition["authority_ref"]):
-            raise ValueError("task disposition needs task, state and authority")
-    else:
-        if not isinstance(disposition["question"], str) or not disposition["question"] or not isinstance(disposition["effect"], str) or not disposition["effect"]:
-            raise ValueError("user decision needs question and effect")
+    error = jsonschema.exceptions.best_match(
+        jsonschema.Draft202012Validator(variants[disposition["kind"]]).iter_errors(disposition))
+    if error is not None:
+        raise ValueError("operational disposition " + disposition["kind"]
+                         + "".join(f"/{part}" for part in error.absolute_path) + ": " + error.message)
     return deepcopy(disposition)
 
 
@@ -98,8 +60,9 @@ def require_basis_refs(disposition, allowed):
 
 def worker_feedback(disposition: dict[str, Any]) -> dict[str, Any]:
     """Expose only information a worker needs; diagnostics remain with ENGINE."""
+    from .observations import worker_feedback as public_feedback
     checked = validate_disposition(disposition)
-    return {key: checked[key] for key in ("kind", "reason", "next_owner")}
+    return public_feedback({key: checked[key] for key in ("kind", "reason", "next_owner")})
 
 
 def reconcile_recovery(runtime: dict, record: dict) -> bool:

@@ -14,17 +14,16 @@ from test_redesign_GOVERNANCE import charter
 
 class InitialIntentConnectionTests(unittest.TestCase):
     def test_public_initialization_stores_exact_text_and_source_filename(self):
-        from do_math.engine import initialize
         from do_math.repository import ResearchRepository
+        from research_fixtures import new_instance
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)
-            subprocess.run(['git','init','--quiet',str(root/'repo')],check=True,capture_output=True)
             text='e\u0301 and \u212a are exact source text'
             source=root/'e\u0301.txt'
             source.write_bytes(text.encode())
-            result=initialize(root/'repo',goal=text,workspace=root/'work',sources=[source],
+            instance_id=new_instance(root/'repo',goal=text,workspace=root/'work',sources=[source],
                 config={'scholarly_enabled':False,'operator_enabled':False})
-            store=ResearchRepository(root/'repo',result['instance_id'])
+            store=ResearchRepository(root/'repo',instance_id)
             head,instance,_=store.load()
             self.assertEqual(instance['lifecycle']['immutable_input']['text'],text)
             preserved=instance['sources'][0]
@@ -103,7 +102,8 @@ class InitialFailureRetryTests(unittest.TestCase):
         from do_math.engine import ResearchEngine, control
         from do_math.repository import ResearchRepository, new_id
         from do_math import execution_profiles as profiles
-        from test_lifecycle_engine import FakeEngine, AdapterDouble, PublicInitializationRunner
+        from test_lifecycle_engine import FakeEngine, PublicInitializationRunner
+        from research_fixtures import FixtureAdapter
         from research_fixtures import charter_record, install_adapter_fixture
         install_adapter_fixture(self)
         from do_math.initialization import adapter_for
@@ -126,13 +126,13 @@ class InitialFailureRetryTests(unittest.TestCase):
                     seed.instance.setdefault('capability_evidence',{})[evidence['id']]=evidence
             from do_math.model_policy import selection
             initial=selection(seed.instance['config'],{'role':'intent_interpretation'}, {},{},
-                profiles=seed.instance['execution_profiles'])['profile_ref']
+                instance=seed.instance)['profile_ref']
             seed.control('decision',{'change':{'kind':'initialization','adopt_current_config':True,
                 'adopt_current_governance':True,'conversation_loss_policy':'continue_authorized',
                 'external_policy':'disabled','adopt_default_review_policy':True,
                 'profile_refs':[profiles.profile_ref(p) for p in seed.instance['execution_profiles'].values()],
                 'initial_profile_ref':initial,'initial_grant_ids':['GR-init'],'research_grant_ids':['GR-research']}})
-            seed.runtime.update(active_execution=None,processed_controls=[],reservations={},provider_waits={},
+            seed.runtime.update(processed_controls=[],reservations={},provider_waits={},
                 updated_at=seed.runtime['last_observed_utc'])
             identifier=new_id('RI')
             instance=json.loads(json.dumps(seed.instance).replace('RI-test',identifier))

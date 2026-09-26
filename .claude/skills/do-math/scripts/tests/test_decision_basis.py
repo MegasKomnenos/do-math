@@ -74,7 +74,8 @@ class BasisTests(unittest.TestCase):
                     self.assertEqual(owner.runtime['history'][0]['resolved_by'], 'EX-current')
                 else:
                     before = deepcopy(owner.runtime)
-                    with self.assertRaisesRegex(ValueError, 'accepted execution'):
+                    # Unaccepted evidence and a different target both fail the same-scope rule.
+                    with self.assertRaisesRegex(ValueError, 'same judgment scope'):
                         owner._apply_action_resolutions('EX-current', accepting_current=accepting)
                     self.assertEqual(owner.runtime, before)
 

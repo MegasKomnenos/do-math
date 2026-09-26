@@ -4,30 +4,25 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from research_fixtures import scope_assessment
+from research_fixtures import await_stop, scope_assessment
 from do_math import execution_profiles, review_cycle, review_policy, submission
 from do_math.engine import ResearchEngine
-from test_lifecycle_engine import FakeEngine, AdapterDouble
-
-
-class FormalEngine(FakeEngine):
-    _formal = ResearchEngine._formal
-    _formal_steps = ResearchEngine._formal_steps
-    _settle_activity = ResearchEngine._settle_activity
-    _remove_action = ResearchEngine._remove_action
+from test_lifecycle_engine import FakeEngine
+from research_fixtures import FixtureAdapter
+from state_fixtures import owner_calls
 
 
 class FormalContinuationTests(unittest.TestCase):
     def make(self):
-        adapter = patch('do_math.initialization.adapter_for', return_value=AdapterDouble())
+        adapter = patch('do_math.initialization.adapter_for', return_value=FixtureAdapter())
         adapter.start()
         self.addCleanup(adapter.stop)
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
-        engine = FormalEngine(Path(directory.name))
+        engine = FakeEngine(Path(directory.name))
         engine.activate()
         from do_math import knowledge_records
         engine.instance, _ = knowledge_records.create_candidate(engine.instance,
@@ -43,14 +38,23 @@ class FormalContinuationTests(unittest.TestCase):
         engine.runtime['queue'] = [action]
         return engine, action
 
+    def stopped_check(self, arguments):
+        """The check reads its stop flag until the owner's judgment sets it."""
+        if not await_stop(arguments['should_stop'], timeout=5):
+            raise AssertionError('the owner control did not reach the check')
+        return {'status': 'stopped'}
+
+    def run_with_control(self, engine, action, operation):
+        """Start the check, apply the control on the owner, then judge stops as a publication does."""
+        engine.formal_behavior = self.stopped_check
+        with owner_calls(engine) as calls:
+            engine._formal(action)
+            engine.control(operation, {})
+            calls.judge()
+
     def test_pause_resume_retains_one_action_and_reaches_identity_review(self):
         engine, action = self.make()
-        def pause(arguments):
-            engine.control('pause', {})
-            self.assertTrue(arguments['should_stop']())
-            return {'status': 'stopped'}
-        engine.formal_behavior = pause
-        engine._formal(action)
+        self.run_with_control(engine, action, 'pause')
         first = next(e for e in engine.runtime['executions'].values() if e['role'] == 'formal_check')
         self.assertEqual(first['status'], 'ended')
         pending = next(a for a in engine.runtime['queue'] if a['id'] == action['id'])
@@ -60,7 +64,8 @@ class FormalContinuationTests(unittest.TestCase):
         engine.control('resume', {})
         self.assertEqual(sum(a.get('id') == action['id'] for a in engine.runtime['queue']), 1)
         engine.formal_behavior = None
-        engine._formal(pending)
+        with owner_calls(engine):
+            engine._formal(pending)
         attempts = [e for e in engine.runtime['executions'].values() if e['role'] == 'formal_check']
         self.assertEqual(len(attempts), 2)
         self.assertEqual(attempts[-1]['continuation_of'], first['id'])
@@ -69,11 +74,7 @@ class FormalContinuationTests(unittest.TestCase):
 
     def test_close_preserves_the_ended_check_without_continuation(self):
         engine, action = self.make()
-        def close(arguments):
-            engine.control('close', {})
-            return {'status': 'stopped'}
-        engine.formal_behavior = close
-        engine._formal(action)
+        self.run_with_control(engine, action, 'close')
         self.assertFalse(any(a.get('id') == action['id'] for a in engine.runtime['queue']))
         self.assertFalse(engine.runtime['waiting_actions'])
 
@@ -81,11 +82,7 @@ class FormalContinuationTests(unittest.TestCase):
         for changed in ('source', 'trust', 'authority'):
             with self.subTest(changed=changed):
                 engine, action = self.make()
-                def pause(arguments):
-                    engine.control('pause', {})
-                    return {'status': 'stopped'}
-                engine.formal_behavior = pause
-                engine._formal(action)
+                self.run_with_control(engine, action, 'pause')
                 engine.control('resume', {})
                 continuation = next(a for a in engine.runtime['queue'] if a.get('id') == action['id'])
                 if changed == 'source':
@@ -96,7 +93,8 @@ class FormalContinuationTests(unittest.TestCase):
                 else:
                     engine.instance['grants']['GR-research']['status'] = 'revoked'
                 engine.formal_behavior = None
-                engine._formal(continuation)
+                with owner_calls(engine):
+                    engine._formal(continuation)
                 self.assertEqual(len(engine.formal_calls), 1)
 
 
@@ -110,7 +108,7 @@ class ReviewScopeBudgetTests(unittest.TestCase):
         policy = engine._adopted_review_policy()
         limit = review_policy.minimum_scope_executions(2, policy['round_limit'])
         policy['activity_execution_limit'] = limit
-        engine._adopted_review_policy = lambda: deepcopy(policy)
+        engine._adopted_review_policy = create_autospec(engine._adopted_review_policy, side_effect=lambda: deepcopy(policy))
         engine.instance['knowledge']['K2']['scope_assessment'] = scope_assessment(policy, ['one','two'])
         cid = engine._start_identity_review('K2')
         action = next(a for a in engine.runtime['queue'] if a.get('review_cycle_id') == cid)
@@ -169,7 +167,8 @@ class ReviewScopeBudgetTests(unittest.TestCase):
                 engine.knowledge('K2')
                 policy = engine._adopted_review_policy()
                 policy.update(activity_execution_limit=1, overflow_disposition=disposition)
-                engine._adopted_review_policy = lambda: deepcopy(policy)
+                engine._adopted_review_policy = create_autospec(engine._adopted_review_policy,
+                                                                side_effect=lambda: deepcopy(policy))
                 cid = engine._start_identity_review('K2')
                 action = next(a for a in engine.runtime['queue'] if a.get('review_cycle_id') == cid)
                 before = deepcopy(engine.instance['identity_assessments'])
@@ -243,9 +242,8 @@ class HostConfigurationTests(unittest.TestCase):
     def test_unstarted_role_defaults_refresh_while_task_profiles_require_preparation(self):
         from do_math.engine import DEFAULT_CONFIG
         from do_math.initialization import initialize_state
-        from do_math.governance_engine import GovernanceEngineMixin
         from do_math.contracts import task_candidate_record
-        from research_fixtures import candidate
+        from research_fixtures import bare_engine, candidate
         with tempfile.TemporaryDirectory() as directory:
             config = {**deepcopy(DEFAULT_CONFIG), 'scholarly_enabled': False}
             instance, runtime = initialize_state(instance_id='RI-host-change', goal='Test profiles', workspace=Path(directory), config=config, source_input='Test profiles', created_at='2026-09-23T00:00:00Z')
@@ -257,7 +255,7 @@ class HostConfigurationTests(unittest.TestCase):
             task.update(status='planned', results=[], reviews=[])
             runtime['tasks'][task['id']] = task
             runtime['queue'] = [{'id':'AC-default','role':'maintenance','profile_ref':old}]
-            changed, state = GovernanceEngineMixin()._configure_candidate(instance, runtime,
+            changed, state = bare_engine()._configure_candidate(instance, runtime,
                 {'config':{'host_resources':self.configuration()['host_resources']}})
             pending = next(a for a in state['queue'] if a['id']=='AC-default')
             self.assertNotEqual(pending['profile_ref'], old)
@@ -278,23 +276,20 @@ class HostConfigurationTests(unittest.TestCase):
         return settings
 
     def test_public_init_configure_and_removal(self):
-        import subprocess
-        from do_math.engine import initialize
-        from do_math.governance_engine import GovernanceEngineMixin
         from do_math.repository import ResearchRepository
+        from research_fixtures import bare_engine, new_instance
         for sessions in (True,):
             with self.subTest(sessions=sessions), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
-                subprocess.run(['git', '-C', str(root), 'init', '-q'], check=True)
                 settings = self.configuration()
-                created = initialize(root, goal='Temporary configuration test', workspace=root/'workspace', config=settings)
-                store = ResearchRepository(root, created['instance_id'])
+                instance_id = new_instance(root, goal='Temporary configuration test', workspace=root/'workspace', config=settings)
+                store = ResearchRepository(root, instance_id)
                 head, instance, runtime = store.load()
                 host_id = instance['host_capacity_ref']
                 approval = instance['capacity_constraints'][host_id]['authority_refs'][0]
                 self.assertEqual(instance['governance_sources'][approval]['origin'], 'user')
                 self.assertNotEqual(approval, 'configuration:request')
-                host = GovernanceEngineMixin()
+                host = bare_engine()
                 same, state = host._configure_candidate(instance, runtime, {'config': {'host_resources': settings['host_resources']}})
                 self.assertEqual(same['host_capacity_ref'], host_id)
                 with self.assertRaisesRegex(ValueError, 'user'):
@@ -459,7 +454,7 @@ class ReviewOverflowGitTests(unittest.TestCase):
         self.assertEqual(event['reason'], 'review_input_overflow')
         execution = engine.runtime['executions'][event['detail']['execution_id']]
         self.assertEqual((execution['status'], execution['input_preparation']['stage']), ('ended', 'packing'))
-        self.assertNotIn('process', execution)
+        self.assertIsNone(execution.get('capacity', {}).get('process'))
         for entry in execution['input_manifest']['direct']:
             self.assertTrue(engine.store.read(entry['artifact_ref'], engine.head))
         self.assertFalse(any(q.get('blocks') for q in engine.runtime.get('question_links', [])))
@@ -476,7 +471,7 @@ class ReviewOverflowGitTests(unittest.TestCase):
         restored = json.loads((workspace/followup['source_ref']['path']).read_bytes())
         self.assertEqual(restored['proposal_digest'], cycle['proposal_digest'])
         self.assertEqual(restored['history'], cycle['history'])
-        self.assertIn(cid, submission.assessment_reference_ids(fitted['validation_context']))
+        self.assertIn(cid, fitted['validation_context']['supplied_record_ids'])
         restarted = ResearchEngine(self.repo, self.identifier)
         self.assertEqual(restarted.runtime['review_cycles'][cid]['status'], 'unresolved')
 
@@ -498,11 +493,14 @@ class ReviewOverflowGitTests(unittest.TestCase):
         engine._enqueue('formal_check', 'KN-formal-resume')
         engine._save()
         def pause(**arguments):
-            send_control(engine, 'pause', config={})
-            self.assertTrue(arguments['should_stop']())
+            # The owner publishes the pause; that publication sets this check's stop flag.
+            if not await_stop(arguments['should_stop'], timeout=5):
+                raise AssertionError('the published pause did not reach the check')
             return {'status': 'stopped', 'reason': 'Explicit test pause; no Lean process'}
         engine.formal_verifier = pause
-        engine._formal(next(a for a in engine.runtime['queue'] if a['role'] == 'formal_check'))
+        with owner_calls(engine):
+            engine._formal(next(a for a in engine.runtime['queue'] if a['role'] == 'formal_check'))
+            send_control(engine, 'pause', config={})
         first = next(e for e in engine.runtime['executions'].values() if e['role'] == 'formal_check')
         self.assertEqual(first['status'], 'ended')
         restarted = ResearchEngine(self.repo, self.identifier)
@@ -511,7 +509,8 @@ class ReviewOverflowGitTests(unittest.TestCase):
         self.assertEqual(action['continuation_of'], first['id'])
         restarted.formal_verifier = lambda **kw: FakeEngine.verification(restarted,
             kw['source'], kw['declarations'], kw['expected_toolchain'])
-        restarted._formal(action)
+        with owner_calls(restarted):
+            restarted._formal(action)
         final = ResearchEngine(self.repo, self.identifier)
         attempts = [e for e in final.runtime['executions'].values() if e['role'] == 'formal_check']
         self.assertEqual(len(attempts), 2)

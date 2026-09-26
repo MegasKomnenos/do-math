@@ -13,7 +13,6 @@ from contextlib import AbstractContextManager
 import hashlib
 import json
 from copy import deepcopy
-import os
 from pathlib import Path
 import re
 import secrets
@@ -22,8 +21,9 @@ from typing import Any
 
 from .operation_trace import measured
 
-from .events import EventPublisher
-from .git_store import GitStateStore, PhysicalBoundary
+from .events import EventPublisher, check_sequence, event_rows
+from .file_io import is_sha256, reject_constant, unique_pairs
+from .git_store import GitStateStore, PhysicalBoundary, ULID_ALPHABET, ULID_LENGTH, no_reparse
 from .state_contract import STATE_CONTRACT_ID, StateContract, default_state_contract
 
 
@@ -35,22 +35,54 @@ from .state_contract import STATE_CONTRACT_ID, StateContract, default_state_cont
 VERIFIED_ARTIFACTS: dict[tuple[str, str, str], int] = {}
 
 
+def artifact_key(git_dir, path, sha256):
+    """The key of one sealed row of one repository, shared by per-process memos."""
+    return (str(git_dir), path, sha256)
+
+
 def artifact_verified(git_dir, path, sha256, size=None):
-    matched = VERIFIED_ARTIFACTS.get((str(git_dir), path, sha256))
+    if git_dir is None:
+        return False
+    matched = VERIFIED_ARTIFACTS.get(artifact_key(git_dir, path, sha256))
     return matched is not None and (size is None or matched == size)
 
 
 def mark_artifact_verified(git_dir, path, sha256, size):
     """Record a match the caller already established against stored bytes."""
-    VERIFIED_ARTIFACTS[(str(git_dir), path, sha256)] = size
+    VERIFIED_ARTIFACTS[artifact_key(git_dir, path, sha256)] = size
 
 
 def verify_artifact(git_dir, path, raw, sha256, size=None):
-    """Raise unless ``raw`` matches the sealed row; remember the match."""
+    """Raise unless ``raw`` matches the sealed row; remember the match in ``git_dir``."""
     if (not isinstance(raw, bytes) or hashlib.sha256(raw).hexdigest() != sha256
             or (size is not None and len(raw) != size)):
         raise ValueError("artifact evidence missing or hash differs: " + path)
-    mark_artifact_verified(git_dir, path, sha256, len(raw))
+    if git_dir is not None:
+        mark_artifact_verified(git_dir, path, sha256, len(raw))
+
+
+def sealed_bytes(git_dir, path, sha256, size, read, *, raw=None, needed=True, error=None):
+    """Stored artifact bytes, matched against their sealed row once per process (contract S3).
+
+    ``read()`` supplies the stored bytes when ``raw`` is not given. ``size`` is
+    the declared length, or None when the row declares none. A row this process
+    already matched is not hashed again; with ``needed=False`` it is not read
+    either, and the result is ``raw`` (possibly None). Without ``git_dir`` the
+    bytes are compared on every call and no match is remembered. A mismatch
+    raises ``ValueError(error)`` when ``error`` is given, else verify_artifact's.
+    """
+    if artifact_verified(git_dir, path, sha256, size):
+        if raw is None and needed:
+            raw = read()
+        return raw
+    raw = read() if raw is None else raw
+    try:
+        verify_artifact(git_dir, path, raw, sha256, size)
+    except ValueError as mismatch:
+        if error is None:
+            raise
+        raise ValueError(error) from mismatch
+    return raw
 
 
 # Validated snapshot reads shared by every repository object in this process,
@@ -82,9 +114,7 @@ class RepositoryCursorError(ValueError):
 
 
 _PREFIX = re.compile(r"[A-Z][A-Z0-9]{0,7}\Z")
-_CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 _SAFE_INTEGER = (1 << 53) - 1
-_REPARSE_POINT = 0x00000400
 _SURROGATE = re.compile(r"[\ud800-\udfff]")
 
 
@@ -94,8 +124,8 @@ def new_id(prefix: str) -> str:
         raise ValueError("prefix must be a canonical uppercase registry prefix")
     value = ((time.time_ns() // 1_000_000) << 80) | int.from_bytes(secrets.token_bytes(10), "big")
     encoded = ""
-    for _ in range(26):
-        encoded = _CROCKFORD[value & 31] + encoded
+    for _ in range(ULID_LENGTH):
+        encoded = ULID_ALPHABET[value & 31] + encoded
         value >>= 5
     return f"{prefix}-{encoded}"
 
@@ -144,16 +174,21 @@ class ResearchRepository:
     def _read_key(self, head):
         return (str(self.git_dir), head, _contract_key(self.contract))
 
-    def _documents(self, head):
+    def _descriptors(self, head):
+        """The cached (instance, runtime, record descriptors) of ``head``, uncopied.
+
+        A snapshot read validates records without describing them. The exact
+        record rows are rebuilt from the retained bytes the first time a caller
+        asks, and kept with the cache entry.
+        """
         instance, runtime, descriptors, files = self._read_documents(head)
         if descriptors is None:
-            # A self-published entry holds validated state, not record rows.
-            # Rebuild the exact rows from its published bytes when asked.
             records = {path: raw for path, raw in files.items() if not path.startswith("runtime/artifacts/")}
             descriptors = _decode_families(records, self.contract, self._store.object_format,
-                                           read_payload=files.__getitem__, git_dir=self.git_dir)[2]
+                                           read_payload=files.__getitem__, git_dir=self.git_dir,
+                                           describe=True)[2]
             _remember_read(self._read_key(head), (instance, runtime, descriptors, files))
-        return deepcopy((instance, runtime, descriptors))
+        return instance, runtime, descriptors
 
     @measured('snapshot_read_validation')
     def _read_documents(self, head):
@@ -180,12 +215,13 @@ class ResearchRepository:
             return payload_bytes[path]
         read_payload.decoded = {}
         with phase('snapshot_decode', snapshot=head):
-            instance, runtime, descriptors = _decode_families(files, self.contract, self._store.object_format,
-                                                              read_payload=read_payload, git_dir=self.git_dir)
+            instance, runtime, _ = _decode_families(files, self.contract, self._store.object_format,
+                                                    read_payload=read_payload, git_dir=self.git_dir)
         self.contract.validate(instance, runtime)
-        _validate_published_events(runtime)
+        # Stored bytes are outside the trust boundary; the published numbering is checked on read.
+        check_sequence(event_rows(runtime.get("events", [])), runtime.get("event_cursor"))
         self._validate_artifact_evidence(runtime, head)
-        result = (instance, runtime, descriptors, {**files, **payload_bytes})
+        result = (instance, runtime, None, {**files, **payload_bytes})
         _remember_read(key, result)
         return result
 
@@ -210,34 +246,50 @@ class ResearchRepository:
         instance, runtime = deepcopy(self._read_documents(head)[:2])
         return head, instance, runtime
 
+    def view(self, snapshot=None):
+        """Like :meth:`load`, but return the shared validated state without copying it.
+
+        The caller only reads the result; mutating it would corrupt the
+        process-wide snapshot cache.
+        """
+        head = self._resolve_snapshot(snapshot)
+        instance, runtime = self._read_documents(head)[:2]
+        return head, instance, runtime
+
+    def published_state(self, head):
+        """The validated (instance, runtime) this process holds for ``head``, or None.
+
+        A cache lookup only: nothing is read, validated or copied, and the
+        caller only compares the result. None means the entry was evicted.
+        """
+        entry = _VALIDATED_READS.get(self._read_key(head))
+        return None if entry is None else entry[:2]
+
     def validate_candidate(self, instance, runtime, expected_head=None, *, artifacts=None):
         """Pure candidate check, including parent event facts when supplied.
 
         The returned views are detached. Callers reload after publication to
         observe assigned events. No rejected/CAS-losing proposal mutates them.
+        :meth:`save_validated` publishes the result without validating it again.
         """
         return self._validate_candidate(instance, runtime, expected_head, artifacts=artifacts)
 
     @measured('candidate_validation')
-    def _validate_candidate(self, instance, runtime, expected_head=None, *, artifacts=None, parent_state=None):
-        # parent_state is private and supplied only by this save's validated read.
+    def _validate_candidate(self, instance, runtime, expected_head=None, *, artifacts=None):
         if not isinstance(instance, dict) or not isinstance(runtime, dict):
             raise ValueError("instance and runtime must be objects")
         instance = deepcopy(instance)
         runtime = deepcopy(runtime)
         from .payloads import seal_large
         instance, runtime = seal_large(instance), seal_large(runtime)
-        validate_storage_value(instance)
-        validate_storage_value(runtime)
         if instance.get("object_format", self._store.object_format) != self._store.object_format:
             raise ValueError("persisted object_format differs from Git")
         instance["object_format"] = self._store.object_format
+        parent = None
         parent_instance, parent_runtime = {}, {}
         if expected_head is not None:
-            if parent_state is None:
-                parent_state = self._read_documents(expected_head)[:2]
-            parent_instance, parent_runtime = parent_state
-        from .events import event_rows
+            parent_instance, parent_runtime, _, parent_files = self._read_documents(expected_head)
+            parent = (parent_instance, parent_runtime, parent_files)
         previous = {row["id"]: row for row in event_rows(parent_runtime.get("events", []))}
         EventPublisher.assign_sequences_in_place(runtime, published_events=previous)
         # Immutable judgments/profile editions cannot be rewritten under one ID.
@@ -253,16 +305,12 @@ class ResearchRepository:
                 current = instance.get("formal_results", {}).get(identifier)
                 if current is None or any(current.get(k) != v for k, v in row.items() if k not in {"formal_use", "history", "use_history"}):
                     raise ValueError("sealed formal result changed: " + identifier)
-        # Only explicitly derived views are refreshed; authoritative caller
-        # records are neither repaired nor silently discarded.
-        for family in self.contract.families():
-            state = instance if family.root == "research" else runtime
-            if family.shape == "derived" and family.name in state:
-                state[family.name] = family.derived(instance, runtime)
         # The parent was validated under this contract; records it already
         # holds unchanged skip record-local checks (StateContract.validate).
-        self.contract.validate(instance, runtime, parent=parent_state)
-        files = _encode_families(instance, runtime, self.contract, self._store.object_format)
+        self.contract.validate(instance, runtime, parent=parent[:2] if parent else None)
+        # Encoding checks the storage value domain of each record it
+        # serializes; a record equal to the parent's reuses the parent's bytes.
+        files = _encode_families(instance, runtime, self.contract, self._store.object_format, parent=parent)
         supplied = self._snapshot_artifacts(artifacts) or {}
         for path in files.keys() & supplied.keys():
             if files[path] != supplied[path]:
@@ -271,10 +319,30 @@ class ResearchRepository:
         self._validate_artifact_evidence(runtime, expected_head, {**files, **supplied})
         self._store._validate_candidate_paths(set(files) | set(supplied))
         return {"instance": instance, "runtime": runtime, "files": files,
-                "contract": self.contract.manifest(), "valid": True}
+                "contract": self.contract.manifest(), "valid": True, "artifacts": supplied,
+                "basis": {"head": expected_head, "validation_generation": self.contract.validation_generation}}
 
     def save_with_state(self, expected_head, instance, runtime, *, artifacts=None):
         """Validate and atomically publish once, returning the published normalized views."""
+        self._precheck_head(expected_head)
+        candidate = self._validate_candidate(instance, runtime, expected_head, artifacts=artifacts)
+        return self._publish_candidate(expected_head, candidate)
+
+    def save_validated(self, expected_head, candidate):
+        """Publish a :meth:`validate_candidate` result without validating it again.
+
+        The candidate must have been validated against ``expected_head`` under
+        this contract's current validation generation. Any other candidate is
+        validated in full first, as :meth:`save_with_state` would.
+        """
+        self._precheck_head(expected_head)
+        if candidate.get("basis") != {"head": expected_head,
+                                      "validation_generation": self.contract.validation_generation}:
+            candidate = self._validate_candidate(candidate["instance"], candidate["runtime"], expected_head,
+                                                 artifacts=candidate.get("artifacts") or None)
+        return self._publish_candidate(expected_head, candidate)
+
+    def _precheck_head(self, expected_head):
         self._store._validate_oid(expected_head)
         # Without the writer lock, a ref precheck avoids expensive validation
         # against an already stale head. Under it no other do-math writer can
@@ -282,10 +350,9 @@ class ResearchRepository:
         if not self._store._holds_writer_lock and self._store.read_snapshot().head != expected_head:
             from .git_store import GitStateStoreConflict
             raise GitStateStoreConflict("expected head no longer matches the instance ref")
-        artifact_snapshot = self._snapshot_artifacts(artifacts)
-        parent_instance, parent_runtime, _, old_files = self._read_documents(expected_head)
-        candidate = self._validate_candidate(instance, runtime, expected_head, artifacts=artifact_snapshot,
-                                             parent_state=(parent_instance, parent_runtime))
+
+    def _publish_candidate(self, expected_head, candidate):
+        old_files = self._read_documents(expected_head)[3]
         files = candidate["files"]
         # Unreferenced payloads remain immutable Git blobs. They are reusable
         # even when the parent decoder did not need to read them into old_files.
@@ -298,9 +365,7 @@ class ResearchRepository:
             old_files = {**old_files, **existing}
         changes = {p: None for p in old_files if p not in files and not p.startswith('runtime/artifacts/')}
         changes.update({p: raw for p, raw in files.items() if old_files.get(p) != raw})
-        if artifact_snapshot is not None:
-            for path, raw in artifact_snapshot.items():
-                changes[path] = raw
+        changes.update(candidate["artifacts"])
         published = self._store.publish(expected_head, changes)
         self._remember_published(published.head, candidate)
         # The remembered candidate is the shared entry; callers mutate their views.
@@ -365,32 +430,39 @@ class ResearchRepository:
     def load_records(self, snapshot=None):
         """Load one validated snapshot together with its exact persisted record rows."""
         head = self._resolve_snapshot(snapshot)
-        instance, runtime, rows = self._documents(head)
+        instance, runtime, rows = deepcopy(self._descriptors(head))
         return head, instance, runtime, [{**row, "snapshot": head} for row in rows]
 
     def records(self, snapshot=None, *, family=None, root=None):
-        """Enumerate exact persisted record bytes, including singleton authorities."""
-        _, _, _, rows = self.load_records(snapshot)
-        return [row for row in rows
+        """Enumerate exact persisted record bytes, including singleton authorities.
+
+        Only the selected rows are copied.
+        """
+        head = self._resolve_snapshot(snapshot)
+        return [{**deepcopy(row), "snapshot": head} for row in self._descriptors(head)[2]
                 if (family is None or row["family"] == family) and (root is None or row["root"] == root)]
 
     def read_record(self, record_id, snapshot=None):
-        matches = [row for row in self.records(snapshot) if row["id"] == record_id]
+        head = self._resolve_snapshot(snapshot)
+        matches = [row for row in self._descriptors(head)[2] if row["id"] == record_id]
         if len(matches) != 1:
             raise KeyError("record not found: " + str(record_id))
-        return matches[0]
+        return {**deepcopy(matches[0]), "snapshot": head}
 
     def read(self, path: str, snapshot: str | None = None) -> bytes:
         """Read bytes from an exact or current state snapshot."""
         return self._store.read_bytes(self._resolve_snapshot(snapshot), path)
 
-    def read_many(self, paths: list[str], snapshot: str | None = None) -> dict[str, bytes]:
-        """Read exact blobs together without changing their logical paths."""
-        return self._store.read_many(self._resolve_snapshot(snapshot), paths)
+    def read_many(self, paths: list[str], snapshot: str | None = None, *, missing: str = "raise") -> dict[str, bytes]:
+        """Read exact blobs together without changing their logical paths.
 
-    def blob_sizes(self, paths: list[str], snapshot: str | None = None) -> dict[str, int]:
-        """Read stored lengths without blob bytes; a missing path fails the batch."""
-        return self._store.blob_sizes(self._resolve_snapshot(snapshot), list(dict.fromkeys(paths)))
+        ``missing="omit"`` leaves absent paths out instead of failing the batch.
+        """
+        return self._store.read_many(self._resolve_snapshot(snapshot), paths, missing=missing)
+
+    def blob_sizes(self, paths: list[str], snapshot: str | None = None, *, missing: str = "raise") -> dict[str, int]:
+        """Read stored lengths without blob bytes; ``missing`` is as for :meth:`read_many`."""
+        return self._store.blob_sizes(self._resolve_snapshot(snapshot), list(dict.fromkeys(paths)), missing=missing)
 
     def list_files(self, prefix: str, snapshot: str | None = None) -> list[str]:
         """List files below one POSIX state prefix in stable lexical order."""
@@ -487,7 +559,7 @@ class ResearchRepository:
             raise ValueError("prefixes must be a non-empty tuple")
         normalized_prefixes = tuple(_validate_prefix(prefix) for prefix in prefixes)
         destination = Path(destination)
-        _assert_no_reparse_ancestor(destination)
+        no_reparse(destination)
         if destination.exists():
             if not destination.is_dir() or any(destination.iterdir()):
                 raise ValueError("export destination must be absent or an empty directory")
@@ -538,7 +610,7 @@ def _canonical_object(value: Any) -> bytes:
 
 def _decode_object(data: bytes) -> dict[str, Any]:
     try:
-        value = json.loads(data.decode("utf-8"), object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
+        value = json.loads(data.decode("utf-8"), object_pairs_hook=unique_pairs, parse_constant=reject_constant)
     except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
         raise ValueError("stored document is not strict JSON") from error
     if not isinstance(value, dict):
@@ -546,19 +618,6 @@ def _decode_object(data: bytes) -> dict[str, Any]:
     if canonical_json(value) != data:
         raise ValueError("stored document is not canonical JSON")
     return value
-
-
-def _unique_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError(f"duplicate JSON key: {key}")
-        result[key] = value
-    return result
-
-
-def _reject_constant(value: str) -> None:
-    raise ValueError(f"non-finite JSON constant: {value}")
 
 
 def validate_storage_value(value: Any) -> None:
@@ -612,31 +671,13 @@ def _decode_cursor(cursor: str) -> dict[str, Any]:
     try:
         encoded = cursor.encode("ascii")
         data = base64.b64decode(encoded + b"=" * (-len(encoded) % 4), altchars=b"-_", validate=True)
-        value = json.loads(data.decode("utf-8"), object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
+        value = json.loads(data.decode("utf-8"), object_pairs_hook=unique_pairs, parse_constant=reject_constant)
     except (UnicodeError, ValueError, json.JSONDecodeError) as error:
         raise RepositoryCursorError("cursor is malformed") from error
     if (not isinstance(value, dict) or set(value) != {"snapshot", "prefix", "text", "last_path"}
             or any(not isinstance(value[key], str) for key in ("snapshot", "prefix", "text", "last_path"))):
         raise RepositoryCursorError("cursor has an invalid shape")
     return value
-
-
-def _assert_no_reparse_ancestor(path: Path) -> None:
-    candidate = path.absolute()
-    while True:
-        if candidate.exists() and _is_reparse(candidate):
-            raise ValueError(f"export path crosses a reparse point: {candidate}")
-        parent = candidate.parent
-        if parent == candidate:
-            return
-        candidate = parent
-
-
-def _is_reparse(path: Path) -> bool:
-    if path.is_symlink():
-        return True
-    attributes = getattr(os.stat(path, follow_symlinks=False), "st_file_attributes", 0)
-    return bool(attributes & _REPARSE_POINT)
 
 
 def semantic_content_hash(value, projection=None):
@@ -656,37 +697,55 @@ def _envelope(family, value):
     return {"contract_id": STATE_CONTRACT_ID, "family": family, "record": value}
 
 
+_ABSENT = object()
+
+
 @measured('state_encoding')
-def _encode_families(instance, runtime, contract, object_format):
+def _encode_families(instance, runtime, contract, object_format, *, parent=None):
+    """Encode the record-family files of one state.
+
+    ``parent`` is the publication parent's (instance, runtime, files). A record
+    equal to the parent's record at the same family and ID keeps the parent's
+    file bytes: canonical encoding is deterministic, and those bytes were
+    produced by an earlier encoding or checked canonical when read. Only the
+    records serialized here pass the storage value check of ``canonical_json``.
+    """
     from .payloads import encode
     files = {}
     installed = contract.manifest()
-    for root, state in (("research", instance), ("runtime", runtime)):
+    parent_files = parent[2] if parent is not None else {}
+    for index, (root, state) in enumerate((("research", instance), ("runtime", runtime))):
+        parent_state = parent[index] if parent is not None else {}
         containers, metadata = {}, {}
         for name, value in sorted(state.items()):
             family = contract.family(root, name)
             if family.shape == "metadata":
                 containers[name] = {"shape": "metadata"}
-                metadata[name] = deepcopy(value)
+                metadata[name] = value
                 continue
-            if family.shape == "derived":
-                containers[name] = {"shape": "derived"}
-                continue
+            prior = parent_state.get(name, _ABSENT)
             if family.shape == "singleton":
                 identifier = value["id"] if family.identity else "state"
                 entries = [(identifier, value)]
+                prior = {identifier: prior}
                 descriptor = {"shape": "singleton", **({"id": identifier} if family.identity else {})}
-            elif family.shape == "map" or family.shape == "events" and isinstance(value, dict):
-                entries = sorted(value.items()) if family.shape != "events" else list(value.items())
+            elif family.shape == "map":
+                entries = sorted(value.items())
                 descriptor = {"shape": "map", "ids": [k for k, _ in entries]}
             else:
                 entries = [(r["id"], r) for r in value]
                 descriptor = {"shape": "list", "ids": [k for k, _ in entries]}
+                if isinstance(prior, list):
+                    prior = {row["id"]: row for row in prior}
             containers[name] = descriptor
             for identifier, record in entries:
+                path = _record_path(root, name, identifier)
                 envelope, blobs = encode(_envelope(name, record))
                 files.update(blobs)
-                files[_record_path(root, name, identifier)] = canonical_json(envelope)
+                if path in parent_files and isinstance(prior, dict) and prior.get(identifier, _ABSENT) == record:
+                    files[path] = parent_files[path]
+                else:
+                    files[path] = canonical_json(envelope)
         envelope, blobs = encode(_envelope('metadata', metadata))
         files.update(blobs)
         files[f"{root}/_state/metadata.json"] = canonical_json(envelope)
@@ -697,14 +756,19 @@ def _encode_families(instance, runtime, contract, object_format):
     return files
 
 
-def _decode_families(files, contract, object_format, *, read_payload=None, git_dir=None):
+def _decode_families(files, contract, object_format, *, read_payload=None, git_dir=None, describe=False):
+    """Decode one snapshot's record files and check their family layout.
+
+    Returns (research, runtime, descriptors). The descriptors, the exact
+    persisted record rows, are built only with ``describe``; otherwise the
+    third value is None.
+    """
     from .payloads import decode
     if read_payload is None:
         def read_payload(path):
             raise ValueError('immutable payload reader required: ' + path)
     states, descriptors, expected = {}, [], set()
     installed = contract.manifest()
-    derived = []
     for root in ("research", "runtime"):
         manifest_path = f"{root}/_state/manifest.json"
         if manifest_path not in files:
@@ -714,8 +778,7 @@ def _decode_families(files, contract, object_format, *, read_payload=None, git_d
         if (set(manifest) != {"contract", "object_format", "containers"}
                 or not isinstance(declared, dict) or set(declared) != set(installed)
                 or declared.get("contract_id") != installed["contract_id"]
-                or not isinstance(declared.get("sha256"), str)
-                or not re.fullmatch(r"[0-9a-f]{64}", declared["sha256"])):
+                or not is_sha256(declared.get("sha256"))):
             raise ValueError("unsupported stored contract/schema version or manifest")
         # The digest identifies the writer. Validate every layout and record
         # with the installed schema; loading never rewrites saved values.
@@ -738,28 +801,25 @@ def _decode_families(files, contract, object_format, *, read_payload=None, git_d
         if set(metadata) != declared_metadata:
             raise ValueError("metadata fields differ from declared membership: " + repr(sorted(set(metadata) ^ declared_metadata)))
         expected.add(metadata_path)
-        descriptors.append({"root": root, "family": "metadata", "id": None, "path": metadata_path,
-            "bytes": raw_metadata, "sha256": hashlib.sha256(raw_metadata).hexdigest(),
-            "record": {}, "json_pointer": "/record", "payload_refs":deepcopy(envelope.get('payloads', []))})
-        metadata_descriptor = descriptors[-1]
+        if describe:
+            descriptors.append({"root": root, "family": "metadata", "id": None, "path": metadata_path,
+                "bytes": raw_metadata, "sha256": hashlib.sha256(raw_metadata).hexdigest(),
+                "record": {}, "json_pointer": "/record", "payload_refs": envelope.get('payloads', [])})
+            metadata_descriptor = descriptors[-1]
         for name, descriptor in manifest["containers"].items():
             family = contract.family(root, name)
             if family is None or not isinstance(descriptor, dict):
                 raise ValueError("unregistered manifest family: " + name)
             shape = descriptor.get("shape")
-            allowed = {"map", "list"} if family.shape == "events" else {family.shape}
-            if shape not in allowed:
+            if shape != family.shape:
                 raise ValueError("manifest shape differs from registered family: " + name)
             if shape == "metadata":
                 if descriptor != {"shape": "metadata"}:
                     raise ValueError("invalid metadata descriptor: " + name)
-                state[name] = deepcopy(metadata[name])
-                metadata_descriptor["record"][name] = deepcopy(state[name])
-                continue
-            if shape == "derived":
-                if descriptor != {"shape": "derived"}:
-                    raise ValueError("invalid derived descriptor")
-                derived.append(family)
+                # The decoded metadata is this call's own value; no copy is needed.
+                state[name] = metadata[name]
+                if describe:
+                    metadata_descriptor["record"][name] = state[name]
                 continue
             ids = [descriptor.get("id") if family.identity else "state"] if shape == "singleton" else descriptor.get("ids")
             descriptor_keys = ({"shape", "id"} if family.identity else {"shape"}) if shape == "singleton" else {"shape", "ids"}
@@ -781,23 +841,12 @@ def _decode_families(files, contract, object_format, *, read_payload=None, git_d
                 if family.identity and (not isinstance(row, dict) or row.get("id") != identifier):
                     raise ValueError("record path and id differ: " + path)
                 rows.append(row)
-                descriptors.append({"root": root, "family": name,
-                    "id": identifier if family.identity else None, "path": path,
-                    "bytes": raw, "sha256": hashlib.sha256(raw).hexdigest(), "record": deepcopy(row),
-                    "json_pointer": "/record", "payload_refs":deepcopy(envelope.get('payloads', []))})
+                if describe:
+                    descriptors.append({"root": root, "family": name,
+                        "id": identifier if family.identity else None, "path": path,
+                        "bytes": raw, "sha256": hashlib.sha256(raw).hexdigest(), "record": row,
+                        "json_pointer": "/record", "payload_refs": envelope.get('payloads', [])})
             state[name] = rows[0] if shape == "singleton" else dict(zip(ids, rows)) if shape == "map" else rows
     if set(files) != expected:
         raise ValueError("undeclared state files: " + repr(sorted(set(files) - expected)))
-    for family in derived:
-        states[family.root][family.name] = family.derived(states["research"], states["runtime"])
-    return states["research"], states["runtime"], descriptors
-
-
-def _validate_published_events(runtime):
-    from .events import event_rows
-    rows = event_rows(runtime.get("events", []))
-    numbers = [r.get("event_seq") for r in rows]
-    if any(type(n) is not int for n in numbers) or numbers != list(range(1, len(rows) + 1)):
-        raise ValueError("published event sequence is not contiguous")
-    if "event_cursor" in runtime and runtime["event_cursor"] != len(rows):
-        raise ValueError("event cursor differs from published events")
+    return states["research"], states["runtime"], descriptors if describe else None

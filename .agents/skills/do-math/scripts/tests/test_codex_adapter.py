@@ -59,7 +59,7 @@ class CodexWorkerTests(unittest.TestCase):
                        "stdout_path": str(root / "out"), "stderr_path": str(root / "err"), "final_path": str(root / "final"), "status_path": str(root / "status")}
             request_path = root / "request.json"
             request_path.write_text(json.dumps({**request, "codex_argv": [sys.executable, str(root / "fake.py")]}), encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "codex_argv is forbidden"):
+            with self.assertRaisesRegex(ValueError, "unknown worker request fields: codex_argv"):
                 codex_worker.run(request_path)
             request_path.write_text(json.dumps(request), encoding="utf-8")
             captured = {}

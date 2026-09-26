@@ -24,12 +24,12 @@ from do_math.parallel import ModelCalls
 from research_fixtures import charter_change, policy_change
 from state_fixtures import active_engine
 from test_engine import ScriptedRunner
-from test_lifecycle_engine import AdapterDouble
+from research_fixtures import FixtureAdapter
 
 
 class StopFlagHarness(unittest.TestCase):
     def setUp(self):
-        self.enterContext(patch('do_math.initialization.adapter_for', return_value=AdapterDouble()))
+        self.enterContext(patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()))
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
@@ -49,11 +49,10 @@ class StopFlagHarness(unittest.TestCase):
 
     @contextmanager
     def running(self):
-        """One started operations-budget execution whose calculation only reads its flag."""
+        """One started operational-role execution whose calculation only reads its flag."""
         from do_math.windows_job import WindowsJob, process_identity
         e = self.engine
         e._calls = ModelCalls(on_returned=e._local_call_returned, on_observation_error=e._observation_failed)
-        e._stop_deadlines, e._stop_clock = {}, None
         steps = e._call_steps(e.runtime['queue'][0])
         arguments = next(steps)
         job = WindowsJob([sys.executable, '-c', 'import time; time.sleep(600)'],
@@ -103,7 +102,7 @@ class StopFlagHarness(unittest.TestCase):
 
 
 class PreparationStopTests(StopFlagHarness):
-    """One operations-budget preparation: lifecycle, authority, governance and clock reasons."""
+    """One preparation (an operational role): lifecycle, authority, governance and clock reasons."""
 
     def test_pause_publishes_a_stop(self):
         with self.running() as (e, eid, future, reads):

@@ -10,6 +10,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.model_policy import LIMITS
+from do_math.execution_profiles import WORK_ROLES
 from test_engine import common, ScriptedRunner
 from test_model_assessment_flow import candidate
 from test_purpose_engine import PurposeHarness, ActiveStateHarness
@@ -134,7 +135,7 @@ class RunWithoutDeadlineTests(ActiveStateHarness):
             engine.run(max_steps=2)
         self.assertEqual(len(calls), 2)
         for call in calls:
-            if call['profile']['budget_kind'] == 'work':
+            if call['profile']['role'] in WORK_ROLES:
                 self.assertIsNone(call['timeout_seconds'])
             else:
                 self.assertGreater(call['timeout_seconds'], 0)

@@ -192,8 +192,8 @@ class EngineTests(unittest.TestCase):
     def active(self, runner, verifier=formal_ok, **config):
         """Start from validated active state; only the public-initialization test needs make()."""
         from state_fixtures import ACTIVE_LEAN_COMMAND, active_engine
-        from test_lifecycle_engine import AdapterDouble
-        self.enterContext(patch("do_math.initialization.adapter_for", return_value=AdapterDouble()))
+        from research_fixtures import FixtureAdapter
+        self.enterContext(patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()))
         config = {"reviewers": 2, "goal_auditors": 2, "lean_command": list(ACTIVE_LEAN_COMMAND),
                   "scholarly_enabled": False, "operator_enabled": False, "plan_settle_seconds": 1, **config}
         workspace = self.root / ("work-" + str(len(list(self.root.glob("work-*")))))
@@ -317,8 +317,7 @@ class EngineTests(unittest.TestCase):
         crashed = engine._register_execution(action, {'id': 'EX-crash', 'role': action['role'],
             'status': 'queued', 'input_snapshot': engine.head, 'input_manifest': []})
         profile=engine._execution_profile(action)
-        self.assertTrue(engine._provider_admit(action,crashed['id'],profile['budget_kind'],
-            profile['ai']['model'],profile=profile,execution=crashed))
+        self.assertTrue(engine._provider_admit(action,crashed['id'],profile=profile,execution=crashed))
         from do_math.windows_job import WindowsJob, process_identity
         # A separate exited process supplies a real dead owner. The unittest
         # process remains alive and must never count as a crashed launch owner.
@@ -330,11 +329,8 @@ class EngineTests(unittest.TestCase):
         job = WindowsJob([sys.executable, '-c', 'pass'], cwd=self.root,
                          name=crashed['launch_ticket']['job_name'])
         self.addCleanup(job.close)
-        crashed['process'] = {**process_identity(job), 'job_name': job.name}
-        engine._provider_slots().started(crashed['id'],crashed['process'])
-        from do_math.execution_lifecycle import transition_execution
         from do_math.engine import now
-        transition_execution(crashed,'running',at=now())
+        engine._session_slots().started(crashed['id'],{**process_identity(job), 'job_name': job.name},at=now())
         job.resume()
         from types import SimpleNamespace
         from do_math.codex_adapter import CodexExecAdapter
@@ -342,7 +338,6 @@ class EngineTests(unittest.TestCase):
         # Use the real collector barrier with the original ten-second limit.
         self.assertTrue(CodexExecAdapter('fixture-cli').wait_for_termination(SimpleNamespace(job=job), 10))
         self.assertEqual(job.inspect().active_processes, 0)
-        engine.runtime['active_execution'] = crashed['id']
         engine._save()
         ResearchEngine(self.repo, instance, runner=ScriptedRunner()).run(max_steps=1)
         _, _, runtime = ResearchRepository(self.repo, instance).load()

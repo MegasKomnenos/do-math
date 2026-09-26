@@ -7,25 +7,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import hashlib
-import json
 import math
 if __package__:
-    from .file_io import json_digest
+    from .file_io import json_digest, strict_json_loads
 else:  # Direct Python worker inside the Windows Job.
-    from file_io import json_digest
-
-
-def _pairs(pairs):
-    result = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError("duplicate JSON key: " + key)
-        result[key] = value
-    return result
-
-
-def _constant(value):
-    raise ValueError("non-finite JSON number: " + value)
+    from file_io import json_digest, strict_json_loads
 
 
 def _number(value):
@@ -90,10 +76,9 @@ def parse_stream(raw: bytes | None, *, require_structured_output: bool = True) -
             parsed["parsed_bytes"] += len(line)
             continue
         try:
-            event = json.loads(line, object_pairs_hook=_pairs, parse_constant=_constant)
+            event = strict_json_loads(line)
             if not isinstance(event, dict) or not isinstance(event.get("type"), str):
                 raise ValueError("event requires a type")
-            json_digest(event)  # Also reject numeric overflow such as 1e999.
         except (ValueError, UnicodeError):
             errors.append("invalid_jsonl")
             parsed["unparsed_tail_bytes"] = len(raw) - parsed["parsed_bytes"]

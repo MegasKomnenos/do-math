@@ -6,6 +6,9 @@ from datetime import datetime, timezone
 import re
 from typing import Any
 
+from .formal import is_lean_identifier
+from .git_store import is_new_id
+from .planning import record_index
 from .repository import canonical_json, new_id
 from .knowledge import assess_use, _propagate, capture_basis
 from . import knowledge_records
@@ -203,21 +206,40 @@ def _definition_for(instance: dict, family: str, token: str) -> dict:
     return definition
 
 
+def candidate_shape_errors(candidate: dict) -> list[str]:
+    """Shape rules of one knowledge candidate: the producer's submission check and import share them.
+
+    How dependencies are named (new titles in a submission, IDs on import) and
+    whether they exist stay with each caller."""
+    errors = []
+    for field in ("kind", "title", "statement", "explanation", "summary", "lean_code"):
+        if not isinstance(candidate.get(field), str) or (field != "lean_code" and not candidate[field].strip()):
+            errors.append(f"candidate {field} is invalid")
+    declarations, dependencies = candidate.get("declaration_names", []), candidate.get("dependencies", [])
+    if (not isinstance(declarations, list) or any(not isinstance(value, str) or not value for value in declarations)
+            or len(declarations) != len(set(declarations))):
+        errors.append("declaration_names must contain distinct strings")
+    elif not all(is_lean_identifier(value) for value in declarations):
+        errors.append("declaration_names must be Lean identifiers")
+    if (not isinstance(dependencies, list) or any(not isinstance(value, str) or not value for value in dependencies)
+            or len(dependencies) != len(set(dependencies))):
+        errors.append("dependencies must contain distinct references")
+    if isinstance(candidate.get("lean_code"), str) and candidate["lean_code"] and not declarations:
+        errors.append("a formal candidate requires exported declaration names")
+    return errors
+
+
 def validate_insight(instance: dict, runtime: dict, insight: dict) -> None:
     """An incidental candidate needs a registered kind and real evidence refs."""
-    from .input_basis import aliases
-    from .planning import _records
     for field in ("kind", "title", "statement", "summary"):
         _text(insight.get(field), "insight " + field)
     _definition_for(instance, "knowledge", insight["kind"])
     refs = insight.get("evidence_ids", [])
     if not isinstance(refs, list) or any(not isinstance(ref, str) or not ref for ref in refs) or len(refs) != len(set(refs)):
         raise ValueError("insight evidence must contain distinct references")
-    known = set(_records(instance, runtime))
+    known = set(record_index(instance, runtime, source_aliases=True))
     for key in ("inputs", "events", "external_rejections"):
         known.update(row["id"] for row in runtime.get(key, []) if row.get("id"))
-    for source in instance.get("sources", []):
-        known.update(aliases(source))
     unknown = set(refs) - known
     if unknown:
         raise ValueError("unknown insight evidence: " + ", ".join(sorted(unknown)))
@@ -230,31 +252,26 @@ def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_r
         raise ValueError("candidate has unsupported fields")
     if "uncertainty_assessment" in candidate and not isinstance(candidate["uncertainty_assessment"], (str, dict)):
         raise ValueError("uncertainty_assessment must be text or an object")
-    for field in ("kind", "title", "statement", "explanation", "summary", "lean_code"):
-        if not isinstance(candidate.get(field), str) or (field != "lean_code" and not candidate[field].strip()):
-            raise ValueError(f"candidate {field} is invalid")
     output, new_runtime = ensure_ontology(instance), deepcopy(runtime)
-    _definition_for(output, "knowledge", candidate["kind"])
     candidate = deepcopy(candidate)
     reuse_formal = candidate.get("formal_result_ref")
     if reuse_formal:
         formal = output.get("formal_results", {}).get(reuse_formal)
         if not formal or not knowledge_records.formal_usable(output, formal):
             raise ValueError("reused formal result must be current and accepted")
-        if candidate["lean_code"] and candidate["lean_code"] != formal["lean_code"]:
+        if candidate.get("lean_code") and candidate["lean_code"] != formal["lean_code"]:
             raise ValueError("reused formal source differs")
         if candidate.get("declaration_names") and candidate["declaration_names"] != formal["declaration_names"]:
             raise ValueError("reused formal declarations differ")
         candidate.update(lean_code=formal["lean_code"], declaration_names=deepcopy(formal["declaration_names"]))
-    declarations, dependencies = candidate.get("declaration_names", []), candidate.get("dependencies", [])
-    if (not isinstance(declarations, list) or any(not isinstance(value, str) or not value for value in declarations)
-            or len(declarations) != len(set(declarations))):
-        raise ValueError("declaration_names must contain distinct strings")
-    if (not isinstance(dependencies, list) or any(not isinstance(value, str) or not value for value in dependencies)
-            or len(dependencies) != len(set(dependencies))):
-        raise ValueError("dependencies must contain distinct knowledge IDs")
+    # A reused formal result has filled its verified source fields before the shared shape check.
+    errors = candidate_shape_errors(candidate)
+    if errors:
+        raise ValueError(errors[0])
+    definition = _definition_for(output, "knowledge", candidate["kind"])
+    dependencies = candidate.get("dependencies", [])
     record_id = candidate.get("id") or new_id("KN")
-    if not isinstance(record_id, str) or not re.fullmatch(r"KN-[0-7][0-9A-HJKMNP-TV-Z]{25}", record_id):
+    if not isinstance(record_id, str) or not is_new_id("KN", record_id):
         raise ValueError("knowledge ID must be a canonical KN-prefixed ULID")
     if record_id in dependencies:
         raise ValueError("candidate cannot depend on itself")
@@ -265,9 +282,6 @@ def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_r
         raise ValueError("candidate dependencies do not exist: " + ", ".join(missing))
     if record_id in knowledge_records.all_records(output):
         raise ValueError("record ID already exists; revisions require a new ID")
-    if candidate["lean_code"] and not declarations:
-        raise ValueError("a formal candidate requires exported declaration names")
-    definition = _definition_for(output, "knowledge", candidate["kind"])
     constraints = definition.get("constraints", {})
     allowed = constraints.get("allowed_epistemic_statuses")
     if allowed is not None and candidate.get("epistemic_status") not in allowed:
@@ -282,12 +296,11 @@ def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_r
         if any(claim[key] not in output.get("knowledge", {}) for key in ("source", "target")):
             raise ValueError("relation claim requires exact existing endpoints")
         _text(claim["confirmed_scope"], "confirmed_scope")
-    from .input_basis import aliases, capture_sources
+    from .input_basis import capture_sources
     source_refs = candidate.get("source_refs", [])
     if not isinstance(source_refs, list) or any(not isinstance(ref, str) for ref in source_refs):
         raise ValueError("source_refs must be a list of source references")
-    known_sources = set().union(*(aliases(source) for source in output.get("sources", [])))
-    if set(source_refs) - known_sources:
+    if set(source_refs) - set(record_index(output, {}, families=(), source_aliases=True)):
         raise ValueError("required source does not exist")
     output, record_id = knowledge_records.create_candidate(output, {**candidate, "id": record_id},
         source_ref=source_ref, actor_ref=actor_ref)
@@ -335,6 +348,17 @@ def validate_relation(instance: dict, relation: dict) -> dict:
         evidence = [relation["evidence"], *evidence] if isinstance(evidence, list) else [relation["evidence"]]
     if constraints.get("requires_evidence") and not evidence:
         reasons.append("evidence_required")
+    establishing = {}
+    if constraints.get("requires_formal_results") or constraints.get("requires_assessments"):
+        # Effective matching judgments of the named formal results that claim exactly this relation.
+        formal_refs = relation.get("formal_result_refs", [])
+        for assessment_id, assessment in instance.get("identity_assessments", {}).items():
+            claim = assessment.get("relation_claim", {})
+            if (assessment.get("formal_result_id") in formal_refs and assessment.get("decision") == "match"
+                    and isinstance(claim, dict)
+                    and all(claim.get(key) == relation.get(key) for key in ("kind", "source", "target", "confirmed_scope"))
+                    and assess_use(assessment, instance)["valid"]):
+                establishing[assessment_id] = assessment["formal_result_id"]
     if constraints.get("requires_formal_results"):
         refs = relation.get("formal_result_refs", [])
         if not isinstance(refs, list) or not refs:
@@ -344,28 +368,15 @@ def validate_relation(instance: dict, relation: dict) -> dict:
                 record = instance.get("formal_results", {}).get(ref)
                 if not record or not knowledge_records.formal_usable(instance, record):
                     reasons.append(f"formal_result_not_usable:{ref}")
-                claims = [assessment.get("relation_claim", {}) for assessment in instance.get("identity_assessments", {}).values()
-                          if assessment.get("formal_result_id") == ref and assessment.get("decision") == "match"
-                          and assess_use(assessment, instance)["valid"]]
-                if not any(isinstance(claim, dict) and all(claim.get(key) == relation.get(key)
-                        for key in ("kind", "source", "target", "confirmed_scope")) for claim in claims):
+                if ref not in establishing.values():
                     reasons.append(f"formal_result_does_not_establish_this_relation:{ref}")
     if constraints.get("requires_assessments"):
         assessment_refs = relation.get("assessment_refs", [])
         if not isinstance(assessment_refs, list) or not assessment_refs:
             reasons.append("assessment_refs_required")
         else:
-            effective = set()
-            for assessment_id, assessment in instance.get("identity_assessments", {}).items():
-                if assessment.get("formal_result_id") not in relation.get("formal_result_refs", []):
-                    continue
-                claim = assessment.get("relation_claim", {})
-                if (assessment.get("decision") == "match" and assess_use(assessment, instance)["valid"]
-                        and isinstance(claim, dict)
-                        and all(claim.get(key) == relation.get(key) for key in ("kind", "source", "target", "confirmed_scope"))):
-                    effective.add(assessment_id)
             for ref in assessment_refs:
-                if ref not in effective:
+                if ref not in establishing:
                     reasons.append(f"assessment_not_effective:{ref}")
     return {"valid": not reasons, "reasons": reasons, "definition": deepcopy(definition)}
 
@@ -378,7 +389,7 @@ def import_relation(instance: dict, relation: dict, *, source_ref: str,
         raise ValueError("invalid relation: " + ", ".join(result["reasons"]))
     output = ensure_ontology(instance)
     relation_id = relation.get("id") or new_id("RL")
-    if not isinstance(relation_id, str) or not re.fullmatch(r"RL-[0-7][0-9A-HJKMNP-TV-Z]{25}", relation_id):
+    if not isinstance(relation_id, str) or not is_new_id("RL", relation_id):
         raise ValueError("relation ID must be a canonical RL-prefixed ULID")
     old = next((value for value in output.setdefault("relations", []) if value.get("id") == relation_id), None)
     record = {key: deepcopy(value) for key, value in relation.items() if key != "id"}

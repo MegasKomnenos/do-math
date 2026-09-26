@@ -92,7 +92,7 @@ class FormalRuntimeTests(unittest.TestCase):
         self.assertNotIn('resource_limits', invocation)
         runtime = {'executions': {}, 'reservations': {}}
         execution = {'id': 'EX-unlimited', 'role': 'formal_check', 'status': 'queued'}
-        self.assertTrue(SessionSlots(runtime, instance).acquire(execution['id'], profile['budget_kind'], None,
+        self.assertTrue(SessionSlots(runtime, instance).acquire(execution['id'],
             profile=profile, execution=execution))
         self.assertEqual(runtime['reservations'], {})
 

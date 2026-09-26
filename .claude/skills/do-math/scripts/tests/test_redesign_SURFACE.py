@@ -22,6 +22,7 @@ from do_math.repository import new_id
 from do_math.engine import _repository as ResearchRepository
 from do_math.retention import cleanup, cleanup_candidates
 from do_math.state_checks import inspect_state
+from research_fixtures import current_state
 
 
 def surface_state():
@@ -121,7 +122,7 @@ class SurfaceRedesignTests(unittest.TestCase):
                 profile = next(p for p in instance['execution_profiles'].values() if p['role'] == role)
                 fitted = prepare_role_input({'instance_id': instance['id'], 'action': {'id': 'A', 'role': role},
                     'tasks': readers, 'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': ['TK-ready'],
-                    'ongoing_preparation': [], 'blocked_actions': []},
+                    'blocked_actions': []},
                     instance=instance, runtime=runtime, role=role, profile=profile,
                     snapshot='a'*40, workspace=root, activity_id='AC-1', install_submission_tools=True)
                 context = json.loads((root/'input/submission/context.json').read_bytes())
@@ -154,7 +155,7 @@ class SurfaceRedesignTests(unittest.TestCase):
             root = Path(directory)
             fitted = prepare_role_input({'instance_id': instance['id'], 'action': {'id': 'A', 'role': 'research_plan'},
                 'tasks': deepcopy(list(runtime['tasks'].values())),
-                'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': [], 'ongoing_preparation': []}, instance=instance, runtime=runtime, role='research_plan', profile=profile,
+                'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': []}, instance=instance, runtime=runtime, role='research_plan', profile=profile,
                 snapshot='a'*40, workspace=root, activity_id='AC-1', install_submission_tools=True)
             direct = fitted['context']
             self.assertEqual(direct['ready_task_ids'], [])
@@ -189,20 +190,18 @@ class SurfaceRedesignTests(unittest.TestCase):
                     profile=profile,snapshot='a'*40,workspace=root/'missing',activity_id='AC-impact')
 
     def test_audit_engine_cleanup_failure_reaches_snapshot_reporting(self):
-        from do_math.engine import ResearchEngine
-        from unittest.mock import Mock
+        from do_math.repository import ResearchRepository as Repository
+        from unittest.mock import create_autospec
         instance,runtime=surface_state()
         runtime['executions']['EX-1'].update(status='ended',outcome='execution_incomplete')
-        from research_fixtures import dispatched_launch
+        from research_fixtures import bare_engine, dispatched_launch
         ex = runtime['executions']['EX-1']
         ex['launch_ticket'] = {**dispatched_launch(ex['id'], instance['execution_profiles'][ex['execution_profile_ref']['id']]), 'phase':'finished'}
         ex['capacity']={'local_termination':'confirmed'}
         with tempfile.TemporaryDirectory() as directory:
             instance['workspace']=directory
             (Path(directory)/'runs/EX-1').mkdir(parents=True)
-            engine=object.__new__(ResearchEngine)
-            engine.instance,engine.runtime,engine.head=instance,runtime,'a'*40
-            engine.store=Mock()
+            engine=bare_engine(instance,runtime,head='a'*40,store=create_autospec(Repository,instance=True))
             state={'executions':runtime['executions'],'runtime':runtime,'approved_execution_ids':['EX-1'],
                    'protected_references':[],'reference_records':{}}
             with patch.object(engine,'_cleanup_scope',return_value=['EX-1']), \
@@ -241,13 +240,13 @@ class SurfaceRedesignTests(unittest.TestCase):
             self.assertNotIn('results',fitted['context']['tasks'][0])
 
     def test_audit_engine_context_restores_multihop_git_artifact(self):
-        from do_math.engine import initialize, ResearchEngine
+        from do_math.engine import ResearchEngine
+        from research_fixtures import new_instance
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory); repository=root/'repo'; repository.mkdir()
-            subprocess.run(['git','-C',str(repository),'init','-q'],check=True)
-            created=initialize(repository,goal='Preserve resume evidence',workspace=root/'work',
+            instance_id=new_instance(repository,goal='Preserve resume evidence',workspace=root/'work',
                                config={'operator_enabled':False,'scholarly_enabled':False,})
-            engine=ResearchEngine(repository,created['instance_id'])
+            engine=ResearchEngine(repository,instance_id)
             raw=b'ancestral evidence'; ref='runtime/artifacts/EX-a/lemma.txt'
             newer=b'latest lemma'; latest_ref='runtime/artifacts/EX-b/lemma.txt'
             keep_ref='runtime/artifacts/EX-a/keep.txt'
@@ -402,14 +401,42 @@ class SurfaceRedesignTests(unittest.TestCase):
             self.assertEqual(state, original)
             self.assertTrue(run.exists())
 
-    def test_invalid_execution_and_activity_are_actually_inspected(self):
-        result = inspect_state({'feature_version': 5}, {'feature_version': 5, 'executions': {'EX-1': {'id': 'EX-1', 'status': 'teleporting'}}, 'activities': {}}, requested_areas=['tasks_activities_executions'])
-        self.assertTrue(any('status' in f['message'] for f in result['findings']))
-        self.assertTrue(any('activity' in f['message'] for f in result['findings']))
+    def test_invalid_execution_and_activity_are_rejected_by_the_state_contract(self):
+        # Inspection receives loaded states only; loading validates execution
+        # states and activity ownership, so the contract is where they are rejected.
+        from do_math import activities, execution_profiles, knowledge_io, model_policy
+        from do_math.state_contract import default_state_contract
+        profiles = execution_profiles.build_profiles({
+            "session_limits": model_policy.LIMITS, "tier_models": model_policy.MODELS,
+            "observation_mode": "event_driven", "max_input_bytes": 500000,
+            "effort": "medium", "operator_effort": "high", "operator_timeout_seconds": 600,
+            "scholarly_enabled": True, "scholarly_server": None, "claude_only_assigned_model": False})
+        instance, runtime = current_state({"object_format": "sha1", "knowledge": {}, "expositions": {},
+            **{k: v for k, v in profiles.items() if k != "role_profile_refs"}}, {"executions": {}})
+        instance = knowledge_io.ensure_ontology(instance)
+        activity = activities.open_activity(runtime, activity_id="AT-1", activity_kind="research_work",
+            owner_ref="task", input_refs=[], opened_at="2026-09-20T00:00:00Z")
+        profile = next(p for p in profiles["execution_profiles"].values() if p["role"] == "research_work")
+        execution = {"id": "EX-1", "role": "research_work", "actor_kind": "ai", "owner_activity_id": "AT-1",
+            "created_at": "2026-09-20T00:00:00Z", "status": "running", "input_manifest": [], "context_origin": []}
+        execution_profiles.bind_execution(execution, profile)
+        runtime["executions"]["EX-1"] = execution
+        activity["assigned_execution_ids"] = ["EX-1"]
+        contract = default_state_contract()
+        contract.validate(instance, runtime)
+        invalid = deepcopy(runtime)
+        invalid["executions"]["EX-1"]["status"] = "teleporting"
+        with self.assertRaisesRegex(ValueError, "executions/EX-1/status"):
+            contract.validate(instance, invalid)
+        orphan = deepcopy(runtime)
+        orphan["activities"]["AT-1"]["assigned_execution_ids"] = []
+        with self.assertRaisesRegex(ValueError, "EX-1: execution has no matching activity"):
+            contract.validate(instance, orphan)
 
     def test_area_errors_are_not_copied_to_unrelated_areas(self):
-        result = inspect_state({'feature_version': 5, 'sources': [{'sha256': 'bad'}]}, {'feature_version': 5, 'activities': {}, 'executions': {}, 'tasks': {}}, requested_areas=['record_storage', 'tasks_activities_executions'])
-        self.assertFalse(any(f['area'] == 'tasks_activities_executions' and 'sha256' in f['message'] for f in result['findings']))
+        result = inspect_state({'feature_version': 5, 'sources': [{'sha256': 'a' * 64}]}, {'feature_version': 5, 'activities': {}, 'executions': {}, 'tasks': {}}, requested_areas=['record_storage', 'tasks_activities_executions'])
+        self.assertTrue(any(f['area'] == 'record_storage' and 'source[0]: missing name' in f['message'] for f in result['findings']))
+        self.assertFalse(any(f['area'] == 'tasks_activities_executions' and 'source[0]' in f['message'] for f in result['findings']))
 
     def test_descendant_reference_blocks_cleanup(self):
         with tempfile.TemporaryDirectory() as d:
@@ -447,11 +474,14 @@ class SurfaceRedesignTests(unittest.TestCase):
             subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
             identifier = new_id("RI")
             store = ResearchRepository(root, identifier)
-            head = store.initialize({"id": identifier, "feature_version": 5, "sources": [], "knowledge": {}, "trust_environments": {}},
-                                    {"feature_version": 5, "tasks": {}, "executions": {}, "queue": [], "status": "ready", "question_links": []})
+            instance, runtime = surface_state()
+            instance.update(id=identifier, workspace=str(root / "workspace"))
+            runtime["activities"]["AC-1"]["owner_ref"] = identifier
+            head = store.initialize(*current_state(instance, runtime))
             report = snapshot_report(root, identifier, snapshot=head,
                                      host_observation={"budget": {"work": {"used": 0}}, "observed_at": "2026-09-20T00:00:00Z"})
             self.assertEqual(report["snapshot"], head)
+            self.assertEqual(report["goal"], "Prove P")
             self.assertEqual(report["assurance"], ASSURANCE)
             self.assertEqual(report["host_observation"]["observed_at"], "2026-09-20T00:00:00Z")
             human = render_human_report(report)
@@ -467,8 +497,8 @@ class SurfaceRedesignTests(unittest.TestCase):
             subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
             identifier = new_id("RI")
             store = ResearchRepository(root, identifier)
-            head = store.initialize({"id": identifier, "feature_version": 5, "sources": [], "knowledge": {}, "trust_environments": {}},
-                                    {"feature_version": 5, "tasks": {}, "executions": {}, "queue": [], "status": "ready", "question_links": []})
+            head = store.initialize(*current_state({"id": identifier, "sources": [], "knowledge": {}, "trust_environments": {}},
+                                    {"tasks": {}, "executions": {}, "queue": [], "status": "ready", "question_links": []}))
             parser = build_parser()
             query, code = execute(parser.parse_args(["query", "--repository", str(root), "--instance", identifier,
                                                       "--files", "--prefix", "research/", "--limit", "1"]))
@@ -565,8 +595,7 @@ class SurfaceRedesignTests(unittest.TestCase):
             root = Path(d)
             subprocess.run(['git', '-C', str(root), 'init', '-q'], check=True)
             identifier = new_id('RI'); repository = ResearchRepository(root, identifier)
-            instance = {'id': identifier, 'feature_version': 5}
-            runtime = {'feature_version': 5, 'executions': {}, 'activities': {}}
+            instance, runtime = current_state({'id': identifier}, {'executions': {}, 'activities': {}})
             head = repository.initialize(instance, runtime)
             run, state, archive, _ = archived_run(root / 'work')
             archived = repository.save_with_state(head, instance, runtime, artifacts=archive)[0]
@@ -704,7 +733,13 @@ class SurfaceRedesignTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); run, state, archive, reader = archived_run(root)
             state['protected_references'] = {'KN'}
-            records = {'KN': {'dependencies': ['CP']}, 'CP': {'path': 'runs/EX-1/output.txt', 'references': ['KN']}}
+            # retention_inputs lists the references each persisted record holds.
+            from do_math.retention import retention_inputs
+            rows = [{'id': 'KN', 'root': 'research', 'family': 'knowledge',
+                     'record': {'id': 'KN', 'dependencies': ['CP']}},
+                    {'id': 'CP', 'root': 'research', 'family': 'formal_results',
+                     'record': {'id': 'CP', 'path': 'runs/EX-1/output.txt', 'references': ['KN']}}]
+            records, _ = retention_inputs({}, {}, rows)
             result = cleanup_candidates(root, **state, read_artifact=reader, reference_records=records)
             self.assertIn('protected_reference', result[0]['reasons'])
             result = cleanup_candidates(root, **state, read_artifact=reader)

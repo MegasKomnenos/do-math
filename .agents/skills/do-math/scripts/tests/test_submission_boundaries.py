@@ -237,13 +237,16 @@ class AcceptanceTests(unittest.TestCase):
         self.assertFalse(engine.runtime["tasks"][prerequisite_id]["assessment"]["current"])
         self.assertEqual(execution["outcome"], "execution_incomplete")
 
-    def test_exhausted_retry_does_not_stop_a_running_independent_worker(self):
+    def test_failed_request_does_not_stop_a_running_independent_worker(self):
         peer_started = threading.Event()
         observed = {"stopped": False}
         class Runner:
             def run(inner, **args):
                 context = purpose.parse_context(args["prompt"], args["workspace"])
                 args["on_started"]({"pid": 1})
+                if context["action"]["role"] != "research_work":
+                    # The failure's diagnosis is not under test; it ends without stopping anyone.
+                    return {"status": "failed", "output": None, "usage": {}, "error": "diagnosis not under test"}
                 if context["task"]["title"] == "0":
                     if not peer_started.wait(10):
                         raise AssertionError("peer never started")
@@ -260,7 +263,6 @@ class AcceptanceTests(unittest.TestCase):
         engine = self.fixture.engine(Runner(), count=2)
         failed_action = next(a for a in engine.runtime['queue'] if a['role'] == 'research_work'
                              and engine.runtime['tasks'][a['target']]['title'] == '0')
-        failed_action["recovery_attempt"] = 1
         failed_id = failed_action["id"]
         engine._save()
         engine.run(max_steps=2)

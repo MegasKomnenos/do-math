@@ -11,6 +11,7 @@ from .operation_trace import measured
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import hashlib
+import importlib
 import json
 from pathlib import Path
 import subprocess
@@ -22,8 +23,8 @@ import platform
 import shutil
 from typing import Any, Mapping
 
+from do_math.file_io import compact_json_bytes, strict_json_loads
 from do_math.windows_job import WindowsJob, process_identity
-from do_math.codex_worker import sanitized_environment
 from do_math import codex_worker
 
 
@@ -36,7 +37,7 @@ class CodexExecution:
     worker_argv: tuple[str, ...]
     stdout_path: Path
     stderr_path: Path
-    final_path: Path
+    final_path: Path | None
     status_path: Path
     job: WindowsJob
     snapshot_dir: Path
@@ -47,15 +48,13 @@ class CodexExecution:
     stop_receipts: list[dict[str, Any]] = field(default_factory=list)
 
 
-def _read(path: Path) -> bytes | None:
+def _read(path: Path | None) -> bytes | None:
+    if path is None:
+        return None
     try:
         return path.read_bytes()
     except FileNotFoundError:
         return None
-
-
-def _paths(request: Mapping[str, Any]) -> tuple[Path, Path, Path, Path, Path]:
-    return tuple(Path(request[name]) for name in ("prompt_path", "stdout_path", "stderr_path", "final_path", "status_path"))  # type: ignore[return-value]
 
 
 def _parse_jsonl(raw: bytes | None) -> dict[str, Any]:
@@ -63,21 +62,18 @@ def _parse_jsonl(raw: bytes | None) -> dict[str, Any]:
         return {"parsed_bytes": 0, "unparsed_tail_bytes": 0, "events": [], "thread_id": None,
                 "turn_completed": False, "turn_failed": False, "usage": [], "unknown_events": ["stdout_missing"],
                 "parse_complete": False}
-    from .repository import _reject_constant
     events, usage, unknown = [], [], []
     offset = 0
     thread_id = None
     completed = failed = False
+    message = None  # (event index, text) of the latest completed agent message
     for line in raw.splitlines(keepends=True):
         body = line.rstrip(b"\r\n")
         if not body:
             offset += len(line)
             continue
         try:
-            event = json.loads(body, object_pairs_hook=codex_worker._pairs,
-                               parse_constant=_reject_constant)
-            # JSON exponents may overflow to infinity even without a named constant.
-            json.dumps(event, allow_nan=False)
+            event = strict_json_loads(body)
         except (UnicodeError, ValueError):
             unknown.append({"kind": "invalid_jsonl", "offset": offset})
             return {"parsed_bytes": offset, "unparsed_tail_bytes": len(raw) - offset, "events": events,
@@ -97,6 +93,10 @@ def _parse_jsonl(raw: bytes | None) -> dict[str, Any]:
             failed |= event_type == "turn.failed"
             if "usage" in event:
                 usage.append(event["usage"])
+            item = event.get("item")
+            if (event_type == "item.completed" and isinstance(item, dict) and item.get("type") == "agent_message"
+                    and isinstance(item.get("text"), str)):
+                message = (len(events) - 1, item["text"])
         offset += len(line)
     terminals = [index for index, item in enumerate(events) if item in {"turn.completed", "turn.failed"}]
     if not thread_id or len(events) < 3 or events[0] != "thread.started" or events[1] != "turn.started":
@@ -105,17 +105,33 @@ def _parse_jsonl(raw: bytes | None) -> dict[str, Any]:
         unknown.append({"kind": "invalid_terminal_count_or_position"})
     if any(not item.startswith("item.") for item in events[2:-1]):
         unknown.append({"kind": "invalid_event_between_turn_start_and_terminal"})
-    return {"parsed_bytes": len(raw), "unparsed_tail_bytes": 0, "events": events, "thread_id": thread_id,
-            "turn_completed": completed, "turn_failed": failed, "usage": usage, "unknown_events": unknown,
-            "parse_complete": not unknown}
+    parsed = {"parsed_bytes": len(raw), "unparsed_tail_bytes": 0, "events": events, "thread_id": thread_id,
+              "turn_completed": completed, "turn_failed": failed, "usage": usage, "unknown_events": unknown,
+              "parse_complete": not unknown}
+    # The final response is the agent message immediately before the terminal event.
+    if message is not None and message[0] == len(events) - 2:
+        parsed["final_text"] = message[1]
+    return parsed
 
 
 class LocalCLIAdapter:
-    """Shared snapshots, receipts and Windows Job lifetime for CLI workers."""
+    """Snapshots, receipts, Windows Job lifetime and command-surface checks shared by CLI providers.
 
-    worker_module = codex_worker
-    executable_key = "codex_path"
-    parse_output = staticmethod(_parse_jsonl)
+    A provider sets its worker, executable key, command surface, stream parser
+    and the modules whose files identify the implementation it runs.
+    """
+
+    provider: str
+    worker_module: Any
+    executable_key: str
+    # (arguments, flags the output must contain); the last one is the reported help.
+    help_commands: tuple[tuple[tuple[str, ...], tuple[bytes, ...]], ...]
+    surface_capabilities: tuple[str, ...]
+    unknown_capabilities: tuple[str, ...]
+    # Modules loaded by the worker inside its Job or by this collector.
+    identity_modules: tuple[str, ...]
+    # True when the collector derives the final response from the stream instead of a CLI file.
+    final_from_stream = False
 
     def __init__(self, cli_path: str, *, describe_timeout: float = 10.0) -> None:
         self.cli_path = cli_path
@@ -123,18 +139,12 @@ class LocalCLIAdapter:
 
     def capability_identity(self) -> dict:
         """Current local identity, without claiming any behavioral capability."""
+        from . import file_io
         path = Path(shutil.which(self.cli_path) or self.cli_path).resolve()
-        worker = Path(self.worker_module.__file__).resolve()
-        from . import control_transport, windows_job, file_io
         # Digests are recomputed only when a file's fingerprint changes (R22).
-        _file_sha256 = file_io.cached_sha256
-        return {"cli_path": str(path), "cli_sha256": _file_sha256(path) if path.is_file() else None,
-                "worker_sha256": _file_sha256(worker),
-                "windows_job_sha256": _file_sha256(windows_job.__file__),
-                "control_transport_sha256": _file_sha256(control_transport.__file__),
-                'file_io_sha256': _file_sha256(file_io.__file__),
-                "adapter_sha256": _file_sha256(__file__),
-                "provider_adapter_sha256": _file_sha256(sys.modules[type(self).__module__].__file__),
+        return {"cli_path": str(path), "cli_sha256": file_io.cached_sha256(path) if path.is_file() else None,
+                "module_sha256": {name: file_io.cached_sha256(importlib.import_module("do_math." + name).__file__)
+                                  for name in sorted(self.identity_modules)},
                 "host": {"system": platform.system(), "release": platform.release(), "version": platform.version(),
                          "machine": platform.machine(), "node": platform.node(), "python": platform.python_version()}}
 
@@ -146,44 +156,42 @@ class LocalCLIAdapter:
 
     @measured('capability_surface')
     def describe(self) -> dict[str, Any]:
+        def run(arguments):
+            return subprocess.run([self.cli_path, *arguments], check=False, shell=False, capture_output=True,
+                                  timeout=self.describe_timeout, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         try:
-            version_result = subprocess.run([self.cli_path, "--version"], check=False, shell=False,
-                                            capture_output=True, timeout=self.describe_timeout, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-            global_help_result = subprocess.run([self.cli_path, "--help"], check=False, shell=False,
-                                                capture_output=True, timeout=self.describe_timeout, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-            help_result = subprocess.run([self.cli_path, "exec", "--help"], check=False, shell=False,
-                                         capture_output=True, timeout=self.describe_timeout, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            version = run(("--version",))
+            helps = [(run(arguments), flags) for arguments, flags in self.help_commands]
         except (OSError, subprocess.TimeoutExpired) as exc:
             return {"cli_path": self.cli_path, "verified": False, "error_type": type(exc).__name__}
-        version, help_bytes = version_result.stdout, help_result.stdout
-        required = (b"--json", b"--output-last-message", b"--model", b"--sandbox", b"--ephemeral",
-                    b"--ignore-user-config", b"--ignore-rules", b"--skip-git-repo-check", b"--output-schema", b"--config",
-                    b"--strict-config", b"--color", b"--cd")
-        verified = (version_result.returncode == 0 and global_help_result.returncode == 0 and help_result.returncode == 0
-                    and b"--ask-for-approval" in global_help_result.stdout and all(flag in help_bytes for flag in required))
-        return {"scope": "cli_command_surface_only", "identity": self.capability_identity(),
-                "cli_path": self.cli_path, "version_bytes": version, "version_sha256": hashlib.sha256(version).hexdigest(),
+        verified = version.returncode == 0 and all(result.returncode == 0 and all(flag in result.stdout for flag in flags)
+                                                   for result, flags in helps)
+        help_bytes = helps[-1][0].stdout
+        return {"scope": "cli_command_surface_only", "identity": self.capability_identity(), "provider": self.provider,
+                "cli_path": self.cli_path, "version_bytes": version.stdout,
+                "version_sha256": hashlib.sha256(version.stdout).hexdigest(),
                 "exec_help_bytes": help_bytes, "exec_help_sha256": hashlib.sha256(help_bytes).hexdigest(),
-                "verified": verified, "supported": {"jsonl": verified, "model": verified, "structured_output": verified,
-                              "effort_via_config": verified, "sandbox": verified, "local_job_stop": True},
-                "unknown": ["actual_input_bytes", "provider_operation_ids", "remote_termination", "per_call_usage",
-                            "provider_stop_reason", "automatic_compaction_control",
-                            "per_execution_read_isolation", "cross_profile_noninterference"]}
+                "verified": verified,
+                "supported": {**{name: verified for name in self.surface_capabilities}, "local_job_stop": True},
+                "unknown": list(self.unknown_capabilities)}
 
     def start(self, request_path: Path, *, cwd: Path, env: Mapping[str, str], job_name=None) -> CodexExecution:
         request = self.worker_module.load_request(request_path)
-        prompt_path, stdout_path, stderr_path, final_path, status_path = _paths(request)
+        prompt_path, stdout_path, stderr_path, status_path = (Path(request[name]) for name in
+            ("prompt_path", "stdout_path", "stderr_path", "status_path"))
+        final_path = Path(request["final_path"]) if "final_path" in request else None
         if Path(request[self.executable_key]).resolve() != Path(self.cli_path).resolve():
             raise ValueError("request CLI executable differs from adapter executable")
-        paths = [request_path, prompt_path, stdout_path, stderr_path, final_path, status_path]
+        outputs = [path for path in (stdout_path, stderr_path, final_path, status_path) if path is not None]
+        paths = [request_path, prompt_path, *outputs]
         if "output_schema_path" in request:
             paths.append(Path(request["output_schema_path"]))
         if len({path.resolve() for path in paths}) != len(paths):
             raise ValueError("request, prompt, and output paths must be distinct")
-        if any(path.exists() for path in (stdout_path, stderr_path, final_path, status_path)):
+        if any(path.exists() for path in outputs):
             raise FileExistsError("output paths must be newly allocated")
         workspace = Path(request["cwd"]).resolve()
-        if any(path.resolve().is_relative_to(workspace) for path in (stdout_path, stderr_path, final_path, status_path)):
+        if any(path.resolve().is_relative_to(workspace) for path in outputs):
             raise ValueError("worker outputs and status must be outside the model workspace")
         request_raw, prompt_raw = request_path.read_bytes(), prompt_path.read_bytes()
         stage = Path(tempfile.mkdtemp(prefix="do-math-cli-", dir=workspace.parent))
@@ -195,7 +203,7 @@ class LocalCLIAdapter:
             snapshot_schema.write_bytes(schema_bytes); schema_sha256 = hashlib.sha256(schema_bytes).hexdigest()
         worker_request = dict(request); worker_request["prompt_path"] = str(snapshot_prompt)
         if snapshot_schema is not None: worker_request["output_schema_path"] = str(snapshot_schema)
-        snapshot_raw = json.dumps(worker_request, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        snapshot_raw = compact_json_bytes(worker_request)
         snapshot_request = stage / "request.json"; snapshot_request.write_bytes(snapshot_raw)
         worker = Path(self.worker_module.__file__)
         worker_argv = (sys.executable, str(worker), str(snapshot_request))
@@ -207,14 +215,6 @@ class LocalCLIAdapter:
 
     def resume(self, execution: CodexExecution) -> None:
         execution.job.resume()
-
-    def inspect(self, execution: CodexExecution) -> dict[str, Any]:
-        job = execution.job.inspect()
-        raw = _read(execution.stdout_path)
-        return {"job": {**process_identity(execution.job),
-                         "active_processes": job.active_processes, "process_ids": job.process_ids,
-                         "root_signaled": job.root_signaled}, "jsonl": self.parse_output(raw),
-                "worker_status_present": execution.status_path.exists(), "stop_requested": execution.stop_requested}
 
     def stop(self, execution: CodexExecution) -> dict[str, Any]:
         execution.stop_requested = True
@@ -237,30 +237,32 @@ class LocalCLIAdapter:
             time.sleep(0.02)
 
     def collect(self, execution: CodexExecution) -> dict[str, Any]:
-        job_state = execution.job.inspect()
-        barrier = job_state.root_signaled and job_state.active_processes == 0 and job_state.process_ids == ()
-        if not barrier:
-            return {"result": "incomplete", "reasons": ["termination_barrier_unconfirmed"],
-                    "termination_barrier": {"active_processes": job_state.active_processes,
-                    "process_ids": job_state.process_ids, "root_signaled": job_state.root_signaled, "confirmed": False},
-                    "artifacts_read": False, "provider_operation_ids": "unknown", "remote_termination": "unknown"}
         # The private request and prompt snapshots are the bytes hashed at start.
         request_raw, prompt_raw = execution.request_raw, execution.prompt_raw
-        stdout, stderr, final, status_raw = (_read(path) for path in (execution.stdout_path,
-                                             execution.stderr_path, execution.final_path, execution.status_path))
-        status = None
-        if status_raw is not None:
-            try:
-                status = json.loads(status_raw)
-            except (UnicodeDecodeError, json.JSONDecodeError):
-                status = {"state": "invalid_status_json"}
         try:
             request = json.loads(request_raw) if request_raw is not None else {}
             if not isinstance(request, dict):
                 request = {}
         except (ValueError, UnicodeError):
             request = {}
+        job_state = execution.job.inspect()
+        barrier = job_state.root_signaled and job_state.active_processes == 0 and job_state.process_ids == ()
+        if not barrier:
+            return {"result": "incomplete", "reasons": ["termination_barrier_unconfirmed"],
+                    "termination_barrier": {"active_processes": job_state.active_processes,
+                    "process_ids": job_state.process_ids, "root_signaled": job_state.root_signaled, "confirmed": False},
+                    "artifacts_read": False, "provider_operation_ids": "unknown", "remote_termination": "unknown",
+                    "provider_observation": _provider_observation(request, {}, None)}
+        stdout, stderr, final_file, status_raw = (_read(path) for path in (execution.stdout_path,
+                                                  execution.stderr_path, execution.final_path, execution.status_path))
+        status = None
+        if status_raw is not None:
+            try:
+                status = json.loads(status_raw)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                status = {"state": "invalid_status_json"}
         parsed = self.parse_response(stdout, request)
+        final = self.final_bytes(parsed) if self.final_from_stream else final_file
         reasons = []
         if not isinstance(status, dict): reasons.append("worker_status_missing")
         elif status.get("state") == "timeout": reasons.append("max_runtime_elapsed")
@@ -270,14 +272,14 @@ class LocalCLIAdapter:
         elif status.get("request_sha256") != execution.request_sha256: reasons.append("worker_request_hash_mismatch")
         elif status.get("schema_sha256") != execution.schema_sha256: reasons.append("worker_schema_hash_mismatch")
         if isinstance(status, dict):
-            for key in ("execution_id", "profile_ref"):
+            for key in codex_worker.STATUS_BINDING_KEYS:
                 if key in request and status.get(key) != request[key]:
                     reasons.append("worker_" + key + "_mismatch")
         if parsed["turn_failed"]: reasons.append("turn_failed")
         if not parsed["turn_completed"]: reasons.append("turn_completed_missing")
         if not parsed["parse_complete"]: reasons.append("jsonl_parse_incomplete")
         if final is None: reasons.append("final_message_missing")
-        reasons.extend(self.validate_final(parsed, final))
+        else: reasons.extend(self.validate_final(parsed, final))
         return {"source_request": _artifact(request_raw, execution.request_sha256),
                 "source_prompt": _artifact(prompt_raw, execution.prompt_sha256),
                 "host_resources": execution.job.resource_usage() if request.get("resource_limits") is not None else None,
@@ -290,24 +292,58 @@ class LocalCLIAdapter:
                 "process_ids": job_state.process_ids, "root_signaled": job_state.root_signaled, "confirmed": barrier}, "provider_operation_ids": "unknown", "remote_termination": "unknown",
                 "provider_stop_reason": parsed.get("stop_reason", "unknown"),
                 "execution_id": request.get("execution_id"), "profile_ref": request.get("profile_ref"),
-                "provider_observation": {
-                    "execution_id": request.get("execution_id"), "operation_ids": "unknown", "operation_count": "unknown",
-                    "remote_termination": "unknown", "stop_reason": parsed.get("stop_reason", "unknown"),
-                    "usage": parsed.get("usage_total", parsed.get("usage", [])[-1] if parsed.get("usage") else {}),
-                    "usage_scope": "reported_execution_counters_not_invoice",
-                    "model_usage_reported": parsed.get("model_usage_reported", {}),
-                    "model_usage_scope": "last_reported_cumulative_not_added_to_segment_usage",
-                    "evidence_sha256": hashlib.sha256(stdout).hexdigest() if stdout is not None else None}}
+                "provider_observation": _provider_observation(request, parsed, stdout)}
 
     def parse_response(self, raw: bytes | None, request: dict) -> dict:
-        return self.parse_output(raw)
+        raise NotImplementedError
 
-    def validate_final(self, parsed: dict, final: bytes | None) -> list[str]:
-        return []
+    @staticmethod
+    def final_bytes(parsed: dict) -> bytes | None:
+        """The exact final response bytes the stream selected, if any."""
+        if "final_text" in parsed:
+            return parsed["final_text"].encode("utf-8")
+        if "structured_output" in parsed:
+            return json.dumps(parsed["structured_output"], ensure_ascii=False, allow_nan=False).encode("utf-8")
+        return None
+
+    def validate_final(self, parsed: dict, final: bytes) -> list[str]:
+        """The final response must be the stream's own selected completion."""
+        return [] if final == self.final_bytes(parsed) else ["final_response_mismatch"]
+
+    def provider_failure(self, parsed: dict) -> dict | None:
+        """A native admission rejection the provider reported; none by default."""
+        return None
 
 
 class CodexExecAdapter(LocalCLIAdapter):
     """Codex events and command surface with the shared local Job lifecycle."""
+
+    provider = "codex"
+    worker_module = codex_worker
+    executable_key = "codex_path"
+    help_commands = ((("--help",), (b"--ask-for-approval",)),
+                     (("exec", "--help"), (b"--json", b"--output-last-message", b"--model", b"--sandbox", b"--ephemeral",
+                                           b"--ignore-user-config", b"--ignore-rules", b"--skip-git-repo-check",
+                                           b"--output-schema", b"--config", b"--strict-config", b"--color", b"--cd")))
+    surface_capabilities = ("jsonl", "model", "structured_output", "effort_via_config", "sandbox")
+    unknown_capabilities = ("actual_input_bytes", "provider_operation_ids", "remote_termination", "per_call_usage",
+                            "provider_stop_reason", "automatic_compaction_control",
+                            "per_execution_read_isolation", "cross_profile_noninterference")
+    identity_modules = ("codex_worker", "control_transport", "file_io", "windows_job", "scholarly", "codex_adapter")
+
+    def parse_response(self, raw: bytes | None, request: dict) -> dict:
+        return _parse_jsonl(raw)
+
+
+def _provider_observation(request: dict, parsed: dict, stdout: bytes | None) -> dict[str, Any]:
+    """The provider-reported facts of one collection, including an unconfirmed barrier."""
+    return {"execution_id": request.get("execution_id"), "operation_ids": "unknown", "operation_count": "unknown",
+            "remote_termination": "unknown", "stop_reason": parsed.get("stop_reason", "unknown"),
+            "usage": parsed.get("usage_total", parsed.get("usage", [])[-1] if parsed.get("usage") else {}),
+            "usage_scope": "reported_execution_counters_not_invoice",
+            "model_usage_reported": parsed.get("model_usage_reported", {}),
+            "model_usage_scope": "last_reported_cumulative_not_added_to_segment_usage",
+            "evidence_sha256": hashlib.sha256(stdout).hexdigest() if stdout is not None else None}
 
 
 def _artifact(raw: bytes | None, sha256: str | None = None) -> dict[str, Any]:

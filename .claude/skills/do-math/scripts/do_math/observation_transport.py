@@ -1,13 +1,29 @@
 """Trusted local stream batches; provider JSON cannot supply their provenance."""
 from dataclasses import dataclass
 from collections.abc import Callable
+import json
 from pathlib import Path
+
+
+def decode_observation_row(raw: bytes) -> dict:
+    """Decode one nonblank stdout row; an undecodable row is still an observed event."""
+    try:
+        return json.loads(raw)
+    except (UnicodeError, json.JSONDecodeError):
+        return {"type": "unparsed_observation", "bytes": len(raw.rstrip(b"\n"))}
 
 
 @dataclass(frozen=True)
 class ObservationBatch:
+    """Rows decoded from one read of the stream.
+
+    ``rows[i]`` holds the exact bytes of ``events[i]`` at ``offsets[i]``; its
+    stream row number (nonblank rows, from zero) is ``first_row + i``.
+    """
     events: list[dict]
     offsets: list[tuple[int, int]]
+    rows: list[bytes]
+    first_row: int
     received_at: str
     received_monotonic: float
     bytes_received: int

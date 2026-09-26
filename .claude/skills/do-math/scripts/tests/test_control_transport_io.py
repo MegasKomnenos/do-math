@@ -103,7 +103,8 @@ class ControlTransportIoTests(unittest.TestCase):
         for self_check_id in invalid:
             with self.subTest(self_check_id=self_check_id):
                 with self.assertRaisesRegex(ValueError, "safe file name"):
-                    self.transport.request_self_check(self.binding, self_check_id=self_check_id, payload={})
+                    self.transport.request_self_check(self.binding, request={"self_check_id": self_check_id,
+                        "execution_id": self.binding["execution_id"], "payload": {}})
                 with self.assertRaisesRegex(ValueError, "safe file name"):
                     ControlTransport.worker_self_check(self.binding, self_check_id=self_check_id)
 
@@ -128,6 +129,20 @@ class ControlTransportIoTests(unittest.TestCase):
         self.assertIn("transport_id", receipt["reason"])
         self.assertEqual([], published)
         self.assertFalse((outside_endpoint / "outbox" / "safe-request.json").exists())
+
+    def test_pump_reads_only_open_transports_and_close_answers_a_raced_delivery(self):
+        closed = self.transport.issue("EX-closed", "GR-closed")
+        inbox = Path(closed["endpoint"]) / "inbox"
+        raced = {key: closed[key] for key in ("transport_id", "capability", "execution_id", "grant_id")}
+        raced.update(request_id="raced", kind="submit_intent", payload={})
+        (inbox / "raced.json").write_text(json.dumps(raced), encoding="utf-8")
+        self.transport.close(closed, reason="execution ended")
+        self.assertEqual(ControlTransport.worker_receipt(closed, "raced")["state"], "closed")
+        (inbox / "late.json").write_text(json.dumps({**raced, "request_id": "late"}), encoding="utf-8")
+        refuse = lambda _: self.fail("a closed transport's delivery must not publish")
+        self.assertEqual(self.transport.pump(refuse), [])
+        self.assertEqual(ControlTransport(self.root / "transport").pump(refuse), [])
+        self.assertIsNone(ControlTransport.worker_receipt(closed, "late"))
 
     def test_malformed_request_has_queryable_rejection_and_preserves_source(self):
         request_id = "malformed-one"

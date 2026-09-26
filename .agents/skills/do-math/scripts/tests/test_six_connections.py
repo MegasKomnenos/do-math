@@ -9,6 +9,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.context_store import prepare_role_input
+from unittest.mock import create_autospec
 from do_math import planning
 from test_static_review_repairs import context_engine, package
 from test_redesign_SURFACE import surface_state
@@ -42,7 +43,7 @@ class InputConnections(unittest.TestCase):
         self.assertEqual(engine.runtime['review_cycles'][cid]['research'][action['research_request_id']]['status'], 'pending')
         engine.execute({'summary': 'PRIVATE-INITIAL-PEER'})
         research = fitted['context']['review_research']
-        execution = {'id': 'INV-answer', 'role': 'supplemental_research', 'action': action,
+        execution = {'id': 'INV-answer', 'role': 'supplemental_research', 'status': 'running', 'action': action,
             'execution_profile_ref': deepcopy(engine.research_profile), 'actor_kind': 'ai',
             'owner_activity_id': action['owner_activity_id']}
         self.assertEqual(engine._admit_review_execution(action, execution)['disposition'], 'admitted')
@@ -126,14 +127,12 @@ class PlanningConnections(unittest.TestCase):
             input_manifest={}, profile_ref=selected['profile_ref'], created_at='2026-09-23T00:00:00+00:00')
         transition_execution(execution, 'starting', at='2026-09-23T00:00:00+00:00')
         slots = SessionSlots(engine.runtime, engine.instance)
-        self.assertFalse(slots.acquire('EX-no-slot', 'work', selected['model'], profile=profile,
-                                      execution=execution))
+        self.assertFalse(slots.acquire('EX-no-slot', profile=profile, execution=execution))
         self.assertEqual(engine._select_model(action)['tier'], 'high')
 
     def assessment_engine(self, directory):
         from test_lifecycle_engine import FakeEngine
         from test_redesign_TASKS import AssessmentApplicationTests
-        from do_math.engine import ResearchEngine
         from do_math import task_contracts
         fixture = AssessmentApplicationTests()
         instance, runtime, assessment = fixture.fixture()
@@ -145,7 +144,6 @@ class PlanningConnections(unittest.TestCase):
         engine.instance.update({key: value for key, value in instance.items() if key not in {'lifecycle', 'config'}})
         engine.runtime.update(runtime)
         engine.runtime['queue'] = [{'id': 'AC-other', 'role': 'research_preparation'}]
-        engine._enqueue = ResearchEngine._enqueue.__get__(engine)
         return engine
 
     def test_readiness_refresh_requests_reassessment_while_other_work_remains(self):
@@ -230,7 +228,8 @@ class OverflowConnections(unittest.TestCase):
                 'allowed_profile_candidates': [large['id']], 'cause': 'required_role_input',
                 'packed_bytes': small['input']['max_input_bytes'] + 10}}}
         engine.instance['conversation_loss_policy'] = 'continue_authorized'
-        engine._require_action_clock = lambda: '2026-09-23T00:00:00+00:00'
+        engine._require_action_clock = create_autospec(engine._require_action_clock,
+                                                       side_effect=lambda: '2026-09-23T00:00:00+00:00')
         engine._execution_profile = ResearchEngine._execution_profile.__get__(engine)
         return engine, execution_profiles.profile_ref(large)
 
@@ -327,67 +326,67 @@ class OverflowConnections(unittest.TestCase):
 
 class ProviderConnections(unittest.TestCase):
     def test_result_observation_has_no_prepublication_schedule_effect(self):
-        from test_provider_wait import ProviderTests, admit, MODEL, FAILURE
-        from do_math.engine import ResearchEngine
-        from unittest.mock import Mock
+        from test_provider_wait import ProviderTests, admit, FAILURE
+        from research_fixtures import bare_engine
         fixture = ProviderTests()
         fixture.setUp()
         self.addCleanup(fixture.doCleanups)
-        engine = object.__new__(ResearchEngine)
-        engine.store = fixture.repository
+        engine = bare_engine(store=fixture.repository)
         engine.head, engine.instance, engine.runtime = engine.store.load()
-        engine._slots = None
-        self.assertTrue(admit(engine._provider_slots(), engine.instance, engine.runtime, 'EX-limit'))
-        engine._schedule_provider_wake = Mock()
-        engine._provider_outcome('EX-limit', MODEL, {'status': 'failed', 'error_kind': 'provider_limit', 'failure': FAILURE})
+        self.assertTrue(admit(engine._session_slots(), engine.instance, engine.runtime, 'EX-limit'))
+        engine._schedule_provider_wake = create_autospec(engine._schedule_provider_wake)
+        engine._provider_outcome('EX-limit', {'status': 'failed', 'error_kind': 'provider_limit', 'failure': FAILURE})
         engine._schedule_provider_wake.assert_not_called()
 
     def test_saved_wait_drives_wake_and_schedule_failure_is_recoverable(self):
-        from test_provider_wait import ProviderTests, admit, finish, MODEL, FAILURE
-        from do_math.engine import ResearchEngine
+        from test_provider_wait import ProviderTests, admit, finish, report, FAILURE
+        from research_fixtures import bare_engine
         from do_math import scheduled_operator
+        from do_math.session_slots import SessionSlots
         from unittest.mock import patch
         import time
         fixture = ProviderTests()
         fixture.setUp()
         self.addCleanup(fixture.doCleanups)
-        engine = object.__new__(ResearchEngine)
-        engine.store = fixture.repository
+        engine = bare_engine(store=fixture.repository)
         engine.head, engine.instance, engine.runtime = engine.store.load()
         engine.instance['config']['operator_enabled'] = True
-        engine._slots = None
-        slots = engine._provider_slots()
+        engine.runtime['tasks'] = {}  # The product save reads the task table this minimal provider state omits.
+        slots = engine._session_slots()
         self.assertTrue(admit(slots, engine.instance, engine.runtime, 'EX-limit', current=time.time()))
         # Observation is separate from publication; the external effect reads Git.
-        gate = slots.provider_result('EX-limit', 'claude', failure=FAILURE)
-        finish(slots, engine.runtime, 'EX-limit', time.time())
-        engine.runtime['waiting_actions'] = {'AC-held': {'action': {'id': 'AC-held', 'role': 'research_work'},
-            'kind': 'execution_failure', 'failure_kind': 'provider_limit', 'execution_id': 'EX-limit',
-            'reason': 'Synthetic provider limit'}}
+        gate = report(slots, engine.instance, 'EX-limit', time.time(), FAILURE)
+        finish(slots, engine.runtime, 'EX-limit', time.time(), close_activity=False)
+        action = {'id': 'AC-held', 'role': 'research_work',
+                  'profile_ref': deepcopy(engine.instance['role_profile_refs']['research_work'][-1])}
+        engine.runtime['queue'] = [action]
+        engine._requeue_provider_action(action, 'EX-limit', gate)
+        self.assertEqual(engine.runtime['queue'][-1]['dispatch_wait']['kind'], 'provider_limit')
+        def saved_status():
+            _, instance, persisted = engine.store.load()
+            return {**scheduled_operator.supervision_facts(instance, persisted),
+                    'provider_waits': SessionSlots(persisted, instance, observer=True).provider_snapshot()}
         calls = []
         actual = {}
         def schedule(command, **kwargs):
             calls.append((command, kwargs))
             _, _, persisted = engine.store.load()
-            from do_math.provider_wait import timestamp
-            self.assertEqual(persisted['provider_waits']['PW-claude']['retry_at'], timestamp(gate['retry_at']))
-            self.assertIn('AC-held', persisted['waiting_actions'])
+            from do_math.provider_wait import epoch_seconds
+            self.assertEqual(persisted['provider_waits']['PW-claude']['retry_at'], epoch_seconds(gate['retry_at']))
+            self.assertIn('AC-held', [queued['id'] for queued in persisted['queue']])
             if command == 'status':
                 return {'wake': actual.get('wake')}
             if command == 'schedule-wake':
                 actual['wake'] = {'description': kwargs['wake_key'], 'next_run': kwargs['wake_at'], 'state': 'Ready'}
             return {}
-        def save(artifacts=None):
-            engine.head = engine.store.save_with_state(engine.head, engine.instance, engine.runtime, artifacts=artifacts or {})[0]
-        engine._save = save
         with patch.object(scheduled_operator, 'schedule', side_effect=OSError('scheduler unavailable')):
             engine._publish_provider_result()
         _, _, persisted = engine.store.load()
         self.assertEqual(persisted['provider_wake']['status'], 'failed')
-        from do_math.provider_wait import timestamp
-        self.assertEqual(persisted['provider_waits']['PW-claude']['retry_at'], timestamp(gate['retry_at']))
+        from do_math.provider_wait import epoch_seconds
+        self.assertEqual(persisted['provider_waits']['PW-claude']['retry_at'], epoch_seconds(gate['retry_at']))
         with patch.object(scheduled_operator, 'schedule', side_effect=schedule):
-            with patch.object(scheduled_operator, 'read_status', return_value={'status': 'ready'}), patch.object(
+            with patch.object(scheduled_operator, 'read_status', return_value=saved_status()), patch.object(
                     scheduled_operator, 'engine_start_guard', return_value={'outcome': 'provider_waiting'}):
                 observed = scheduled_operator.check(fixture.root, engine.instance['id'], fixture.root)
                 self.assertEqual(observed['provider_wake']['status'], 'scheduled')
@@ -407,7 +406,7 @@ class ProviderConnections(unittest.TestCase):
             self.assertEqual(scheduled_operator.check(fixture.root, engine.instance['id'], fixture.root)['outcome'], 'held')
             self.assertEqual(len(calls), calls_before)
             self.assertEqual(scheduled_operator.reconcile_wake(fixture.root, engine.instance['id'], fixture.root,
-                config=engine.instance['config'], status={'status': 'ready'})['status'], 'held')
+                facts={'status': 'ready'}, providers=engine._provider_status()['providers'])['status'], 'held')
             self.assertEqual(calls[-1][0], 'cancel-wake')
 
 
@@ -454,9 +453,9 @@ class OverflowGitConnection(unittest.TestCase):
         small['input']['max_input_bytes'] = 500000
         small = execution_profiles.seal_profile(small)
         engine.instance['execution_profiles'][small['id']] = small
-        from test_lifecycle_engine import AdapterDouble
+        from research_fixtures import FixtureAdapter
         for profile in (small, large):
-            evidence = execution_profiles.capability_evidence(profile, AdapterDouble().describe(),
+            evidence = execution_profiles.capability_evidence(profile, FixtureAdapter().describe(),
                 observed_at=engine.runtime['last_observed_utc'])
             engine.instance.setdefault('capability_evidence', {})[evidence['id']] = evidence
         task = task_fixture()

@@ -10,27 +10,10 @@ from copy import deepcopy
 
 import jsonschema
 
+from .contracts import MANIFEST_SCHEMA, REFS, TEXT
 from .repository import exact_content_hash
 
 
-TEXT = {"type": "string", "minLength": 1, "pattern": r"\S"}
-REFS = {"type": "array", "items": TEXT, "uniqueItems": True}
-BUNDLE_SCHEMA = {
-    "type": "object", "additionalProperties": False,
-    "properties": {"integration_id": TEXT, "members": {**REFS, "minItems": 1},
-                   "impact_set": REFS, "authority_refs": REFS,
-                   "previous_hashes": {"type": "object", "additionalProperties": TEXT}},
-    "required": ["integration_id", "members", "impact_set", "authority_refs"],
-}
-MANIFEST_SCHEMA = {"type": "array", "minItems": 1, "items": BUNDLE_SCHEMA}
-MANIFEST_SCHEMA["description"] = (
-    "Omit this field for one atomic whole-response bundle when there are no existing-object revisions or partial acceptances to preserve. "
-    "For explicit grouping, declare every state-changing member exactly once. Existing revisions and partial retries require explicit grouping. "
-    "For ordinary research, 'output' owns the report/outcome/questions, "
-    "and 'output/knowledge/N' and 'output/relations/N' own records. Extensions use 'activity-extensions.json/FAMILY/N'. "
-    "Other roles, review research and declared revision work require one bundle with 'output' and all extension members. "
-    "New-object dependencies must stay in one bundle. Independence is the producer's semantic responsibility. "
-    "On a retry with central accepted_response evidence, preserve that base response and omit its already accepted member.")
 PRODUCERS = {"research_work", "supplemental_research"}
 REFERENCE_KEYS = {"dependencies", "inputs", "reuse", "source", "target", "evidence_refs",
                   "formal_result_refs", "assessment_refs", "record_ids", "record_id",
@@ -74,7 +57,7 @@ def bundle_impact_request(instance, runtime, bundle, *, producer_execution_id, i
         raise ValueError("impact request needs its original execution and fixed input snapshot")
     if runtime["executions"][producer_execution_id].get("input_snapshot") != input_snapshot:
         raise ValueError("impact request snapshot differs from its original producer input")
-    records = {rid: row for rid, (_, row) in planning._records(instance, runtime).items()}
+    records = {rid: row for rid, (_, row) in planning.record_index(instance, runtime).items()}
     roots, targets, specifications = set(), set(), []
     changes = bundle["extensions"].get("knowledge_changes", [])
     coordinates = [p for p in bundle["members"] if p.startswith("activity-extensions.json/knowledge_changes/")]
@@ -169,14 +152,15 @@ def validate_impact_review_response(request, output):
 
 
 def require_bundle_impact_review(instance, runtime, bundle, *, producer_execution_id, input_snapshot,
-                                 review_execution_id=None, snapshot=None, read_artifact=None, receiving_execution_id=None):
+                                 review_execution_id=None, snapshot=None, read_artifact=None, receiving_execution_id=None,
+                                 git_dir=None):
     return _reviewed_impact_request(instance, runtime, bundle, producer_execution_id=producer_execution_id,
         input_snapshot=input_snapshot, review_execution_id=review_execution_id, snapshot=snapshot,
-        read_artifact=read_artifact, receiving_execution_id=receiving_execution_id)[1]
+        read_artifact=read_artifact, receiving_execution_id=receiving_execution_id, git_dir=git_dir)[1]
 
 
 def _reviewed_impact_request(instance, runtime, bundle, *, producer_execution_id, input_snapshot,
-                             review_execution_id, snapshot, read_artifact, receiving_execution_id):
+                             review_execution_id, snapshot, read_artifact, receiving_execution_id, git_dir=None):
     """Return the current impact request with the confirmations its reviewed plans require."""
     receiver = receiving_execution_id or producer_execution_id
     seen = set()
@@ -194,7 +178,7 @@ def _reviewed_impact_request(instance, runtime, bundle, *, producer_execution_id
     if review_execution_id is None:
         raise ImpactReviewRequired(request)
     from .governance import validate_independent_execution
-    from .submission import load_json, read_sealed_submission
+    from .submission import issued_input, read_sealed_submission
     validate_independent_execution(runtime, review_execution_id, [producer_execution_id])
     review = runtime["executions"][review_execution_id]
     action = review.get("action", {})
@@ -204,10 +188,10 @@ def _reviewed_impact_request(instance, runtime, bundle, *, producer_execution_id
         raise ValueError("impact review is not the accepted designated current assignment")
     if not snapshot or read_artifact is None or not review.get("input_bundle"):
         raise ValueError("impact review requires sealed input and output artifacts")
-    fixed = load_json(read_artifact(snapshot, "runtime/artifacts/" + review["input_bundle"] + "/input/submission/context.json"))
+    fixed, _ = issued_input(review, snapshot, read_artifact, git_dir=git_dir, with_schema=False)
     if fixed.get("execution_id") != review_execution_id or fixed.get("action") != action:
         raise ValueError("impact review input is not the sealed designated assignment")
-    output = read_sealed_submission(review, snapshot, read_artifact)["output"]
+    output = read_sealed_submission(review, snapshot, read_artifact, git_dir=git_dir)["output"]
     rows = validate_impact_review_response(request, output)
     bundles = list(split_bundles(output, {}, fixed))
     if len(bundles) != 1 or bundles[0]["members"] != ["output"]:
@@ -225,29 +209,22 @@ def _reviewed_impact_request(instance, runtime, bundle, *, producer_execution_id
 
 def apply_reviewed_knowledge_changes(instance, runtime, bundle, *, actor_ref, producer_execution_id,
                                      input_snapshot, review_execution_id=None, snapshot=None, read_artifact=None,
-                                     receiving_execution_id=None):
+                                     receiving_execution_id=None, git_dir=None):
     """Apply the reviewed S0 plans once, then create every replacement candidate."""
     from . import knowledge, knowledge_records
     from .repository import new_id
     request, confirmations = _reviewed_impact_request(instance, runtime, bundle,
         producer_execution_id=producer_execution_id, input_snapshot=input_snapshot,
         review_execution_id=review_execution_id, snapshot=snapshot, read_artifact=read_artifact,
-        receiving_execution_id=receiving_execution_id)
+        receiving_execution_id=receiving_execution_id, git_dir=git_dir)
     plans = request["plans"]
-    coordinates = [p for p in bundle["members"] if p.startswith("activity-extensions.json/knowledge_changes/")]
+    # bundle_impact_request, rerun by _reviewed_impact_request, matched these
+    # coordinates to the changes; import_candidate rejects existing or repeated IDs.
     changes = bundle["extensions"].get("knowledge_changes", [])
-    if len(coordinates) != len(changes):
-        raise ValueError("knowledge change coordinates differ from the reviewed bundle")
     reasons = list(dict.fromkeys(change["reason"] for change in changes))
     output, running = knowledge.apply_reviewed_impacts(instance, runtime, plans, confirmations,
         reason="; ".join(reasons))
-    existing = set(knowledge_records.all_records(output))
     replacement_ids = [change.get("replacement_id") or new_id("KN") for change in changes]
-    if len(replacement_ids) != len(set(replacement_ids)):
-        raise ValueError("knowledge replacement IDs must be globally distinct")
-    reused = existing & set(replacement_ids)
-    if reused:
-        raise ValueError("knowledge replacement ID already exists: " + ", ".join(sorted(reused)))
     reserved = set(replacement_ids)
     for change, replacement_id in zip(changes, replacement_ids):
         output, running = knowledge.replace_knowledge(output, running, change["id"], change["changes"],
@@ -330,14 +307,22 @@ def protocol_output(output, extensions, context):
     return {**output, "integration_bundles": [{"integration_id": identifier, **declaration}]}
 
 
-def inspect_bundles(output, extensions, context):
-    """Check declared structure only; live state is checked again before each CAS."""
+def derived_bundles(output, extensions, context):
+    """The protocol output and its member values, derived once per response; raise on a malformed one."""
+    output = protocol_output(output, extensions, context)
+    return output, member_values(output, extensions, context)
+
+
+def inspect_bundles(output, extensions, context, *, derived=None):
+    """Check declared structure only; live state is checked again before each CAS.
+
+    derived may carry derived_bundles() of these same arguments."""
     if not isinstance(output, dict) or not isinstance(extensions, dict):
         return [issue("integration.manifest", "output" if not isinstance(output, dict) else "activity-extensions.json",
                       "response and extensions must be objects")]
     issues = []
     try:
-        output = protocol_output(output, extensions, context)
+        output = derived[0] if derived else protocol_output(output, extensions, context)
     except (TypeError, ValueError) as error:
         return [issue("integration.manifest", "output/integration_bundles", str(error))]
     manifest = output.get("integration_bundles")
@@ -352,7 +337,7 @@ def inspect_bundles(output, extensions, context):
         issues.append(issue("integration.single_bundle", "output/integration_bundles",
                             "this role response and all extensions are one judgment"))
     try:
-        members = member_values(output, extensions, context)
+        members = derived[1] if derived else member_values(output, extensions, context)
     except (TypeError, ValueError) as error:
         return issues + [issue("integration.members", "activity-extensions.json", str(error))]
     owners = {}
@@ -436,9 +421,9 @@ def inspect_bundles(output, extensions, context):
     return issues
 
 
-def split_bundles(output, extensions, context):
-    output = protocol_output(output, extensions, context)
-    members = member_values(output, extensions, context)
+def split_bundles(output, extensions, context, *, derived=None):
+    """derived may carry derived_bundles() of these same arguments."""
+    output, members = derived or derived_bundles(output, extensions, context)
     for declaration in output["integration_bundles"]:
         bundle = deepcopy(declaration)
         bundle["owns_response"] = "output" in declaration["members"]
@@ -470,18 +455,23 @@ def apply_bundles(instance, runtime, output, extensions, context, *, execution_i
 
     Every callback is mandatory. validate_current must reject stale hashes,
     missing required judgments and revoked permissions, and compute live impact.
-    publish must either complete one Git CAS or raise without publishing.
+    publish receives validate_candidate's result for the same candidate and
+    must either complete one Git CAS or raise without publishing.
     CAS recovery/reloading and external actions belong to ENGINE.
     """
-    issues = inspect_bundles(output, extensions, context) + list(submission_issues)
+    try:
+        derived = derived_bundles(output, extensions, context)
+    except (TypeError, ValueError, AttributeError):
+        derived = None  # inspect_bundles reports the malformed response as a global issue.
+    issues = inspect_bundles(output, extensions, context, derived=derived) + list(submission_issues)
     global_issues = [row for row in issues if not row.get("integration_id")]
     working_instance, working_runtime = deepcopy(instance), deepcopy(runtime)
     results = []
     if global_issues:
         return {"instance": working_instance, "runtime": working_runtime, "bundles": [],
                 "issues": issues, "retry_bundle_ids": [], "status": "returned"}
-    output = protocol_output(output, extensions, context)
-    for bundle in split_bundles(output, extensions, context):
+    output, members = derived
+    for bundle in split_bundles(output, extensions, context, derived=derived):
         ident = bundle["integration_id"]
         local_issues = [row for row in issues if row.get("integration_id") == ident]
         receipt = working_runtime.get("integrations", {}).get(ident)
@@ -503,11 +493,11 @@ def apply_bundles(instance, runtime, output, extensions, context, *, execution_i
                 "id": ident, "execution_id": execution_id, "payload_sha256": bundle["payload_sha256"],
                 "members": deepcopy(bundle["members"]), "input_snapshot": context.get("snapshot")}
             if bundle["owns_response"]:
-                candidate_runtime["integrations"][ident]["response_sha256"] = exact_content_hash(member_values(output, extensions, context)["output"])
+                candidate_runtime["integrations"][ident]["response_sha256"] = exact_content_hash(members["output"])
             stage = "candidate"
-            validate_candidate(candidate_instance, candidate_runtime, bundle)
+            validated = validate_candidate(candidate_instance, candidate_runtime, bundle)
             stage = "publication"
-            publish(candidate_instance, candidate_runtime, bundle)
+            publish(candidate_instance, candidate_runtime, bundle, validated)
         except Exception as error:
             if not local_issues:
                 local_issues = [issue("integration." + stage, "output/integration_bundles", str(error), ident)]

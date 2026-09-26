@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -18,11 +17,6 @@ FORMAT = 1
 _REPARSE_POINT = 0x400
 
 
-def _digest(value):
-    raw = json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    return hashlib.sha256(raw).hexdigest()
-
-
 def _ordinary_path(path: Path):
     for part in (path.absolute(), *path.absolute().parents):
         if not part.exists():
@@ -32,22 +26,16 @@ def _ordinary_path(path: Path):
             raise ValueError("bootstrap path crosses a reparse point: " + str(part))
 
 
-def _source_paths(root: Path):
-    paths = {}
-    for path in sorted(root.rglob("*")):
-        relative = path.relative_to(root)
-        if any(part in {"__pycache__", ".git", ".lake"} for part in relative.parts):
-            continue
-        if relative.parts[:2] == ("scripts", "tests") or path.suffix == ".pyc" or relative.as_posix() in {MANIFEST, MARKS}:
-            continue
+def _source_paths(root: Path, file_io):
+    # The installation file set is file_io's; the snapshot's own markers are not sources.
+    paths = {name: path for name, path in file_io.installation_files(root).items() if name not in {MANIFEST, MARKS}}
+    for path in paths.values():
         _ordinary_path(path)
-        if path.is_file():
-            paths[relative.as_posix()] = path
     return paths
 
 
-def _source_files(root: Path):
-    return {name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in _source_paths(root).items()}
+def _source_files(root: Path, file_io):
+    return {name: file_io.sha256_file(path) for name, path in _source_paths(root, file_io).items()}
 
 
 def _file_io():
@@ -79,13 +67,13 @@ def verify_snapshot(manifest_path: Path):
         raise ValueError("invalid bootstrap manifest")
     if manifest["format"] != FORMAT or not isinstance(manifest["files"], dict):
         raise ValueError("unsupported bootstrap manifest")
+    file_io = _file_io()
     basis = {key: manifest[key] for key in ("format", "installation_root", "files")}
-    if _digest(basis) != manifest["snapshot_sha256"]:
+    if file_io.json_digest(basis) != manifest["snapshot_sha256"]:
         raise ValueError("bootstrap manifest identity mismatch")
     root = manifest_path.parent.resolve(strict=True)
     if root.name != manifest["snapshot_sha256"]:
         raise ValueError("bootstrap directory identity mismatch")
-    file_io = _file_io()
     recorded, settled = _marks(root), {}
     for name, digest in manifest["files"].items():
         relative = PurePosixPath(name)
@@ -102,7 +90,7 @@ def verify_snapshot(manifest_path: Path):
                 raise ValueError("bootstrap file hash mismatch: " + name)
         if file_io.fingerprint_settled(mark):
             settled[name] = stored
-    if set(_source_paths(root)) != set(manifest["files"]):
+    if set(_source_paths(root, file_io)) != set(manifest["files"]):
         raise ValueError("bootstrap snapshot has unlisted or missing files")
     if settled != recorded:
         file_io.write_bytes_atomic(root / MARKS, json.dumps(settled, sort_keys=True).encode("utf-8"))
@@ -117,9 +105,10 @@ def freeze(installation_root: Path, workspace: Path):
     workspace = workspace.resolve()
     if not (installation_root / "scripts/do_math/scheduled_operator.py").is_file():
         raise ValueError("installation has no supervisor")
-    files = _source_files(installation_root)
+    file_io = _file_io()
+    files = _source_files(installation_root, file_io)
     basis = {"format": FORMAT, "installation_root": str(installation_root), "files": files}
-    identity = _digest(basis)
+    identity = file_io.json_digest(basis)
     parent = workspace / "operator/bootstrap"
     _ordinary_path(parent)
     parent.mkdir(parents=True, exist_ok=True)
@@ -136,7 +125,7 @@ def freeze(installation_root: Path, workspace: Path):
             target = staging.joinpath(*PurePosixPath(name).parts)
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
-        if _source_files(staging) != files or _source_files(installation_root) != files:
+        if _source_files(staging, file_io) != files or _source_files(installation_root, file_io) != files:
             raise ValueError("installation changed while freezing supervisor")
         (staging / MANIFEST).write_text(json.dumps({**basis, "snapshot_sha256": identity},
                                                   ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

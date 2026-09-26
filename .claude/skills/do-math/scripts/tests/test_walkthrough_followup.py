@@ -12,11 +12,12 @@ from pathlib import Path
 import tempfile
 import threading
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import create_autospec, patch
 
 from do_math import activities, contracts, governance, integration, knowledge_io, planning, revisions, submission, task_contracts
 from do_math.engine import ResearchEngine, control, now
 from do_math.repository import new_id
+from state_fixtures import owner_calls, start_model_call
 from test_categories import test_group
 from test_knowledge import candidate
 from test_purpose_engine import ActiveStateHarness, theorem
@@ -41,8 +42,8 @@ class RepetitionReceiptTests(unittest.TestCase):
         for valid in (True, False):
             engine = routing_engine()
             engine.instance = knowledge_io.ensure_ontology(engine.instance)
-            engine._apply_queue_plan = Mock()
-            engine._apply_academic_resolutions = Mock()
+            engine._apply_queue_plan = create_autospec(engine._apply_queue_plan)
+            engine._apply_academic_resolutions = create_autospec(engine._apply_academic_resolutions)
             engine.runtime['executions'] = {'EX-old': {'id': 'EX-old', 'status': 'ended'},
                 'EX-current': {'id': 'EX-current', 'status': 'ended', 'extensions': {}}}
             engine.runtime['review_cycles'] = {'RC': {'status': 'completed'}}
@@ -223,10 +224,12 @@ class WalkthroughEngineTests(ActiveStateHarness):
             'config': {'operation': 'import', 'candidate': theorem()}})
         formal = next(a for a in engine.runtime['queue'] if a['role'] == 'formal_check')
         engine._save()
-        engine._formal(formal)
+        with owner_calls(engine):
+            engine._formal(formal)
         engine._start_identity_review(formal['target'])
         scope = next(a for a in engine.runtime['queue'] if a['role'] == 'identity_review')
-        engine._call(scope)
+        with owner_calls(engine):
+            start_model_call(engine, scope)
         engine.runtime['queue'] = [a for a in engine.runtime['queue'] if a['role'] == 'identity_review']
         self.assertEqual({a['slot'] for a in engine.runtime['queue']}, {'initial-0', 'initial-1'})
         release = threading.Event()
@@ -303,7 +306,12 @@ class WalkthroughEngineTests(ActiveStateHarness):
             execution = engine._register_execution(action, {'id': new_id('EX'), 'role': 'research_plan', 'status': 'running'})
             eid = execution['id']
             bundle = new_id('BA')
-            execution.update(grant_id=action['grant_id'], input_snapshot=engine.head, input_bundle=bundle)
+            prefix = 'runtime/artifacts/' + bundle
+            prompt = b'exact sealed prompt'
+            # The role input manifest names the archived prompt saved below.
+            execution.update(grant_id=action['grant_id'], input_snapshot=engine.head, input_bundle=bundle,
+                input_manifest={'prompt': {'artifact_ref': prefix + '/input.txt',
+                    'sha256': hashlib.sha256(prompt).hexdigest(), 'bytes': len(prompt)}})
             execution.update(planning.governance_revisions(engine.instance))
             from do_math.input_basis import capture_decision_basis
             execution['decision_basis'] = capture_decision_basis(engine.instance, engine.runtime, engine._decision_references(action))
@@ -312,9 +320,8 @@ class WalkthroughEngineTests(ActiveStateHarness):
             context = engine._context(action, workspace, execution_id=eid)
             schema = engine._response_schema(action)
             submission.install_tools(workspace, context, schema, engine.instance['config']['max_artifact_bytes'])
-            prefix = 'runtime/artifacts/' + bundle
             engine._save({prefix + '/input/submission/context.json': canonical_json(context),
-                          prefix + '/schema.json': canonical_json(schema), prefix + '/input.txt': b'exact sealed prompt'})
+                          prefix + '/schema.json': canonical_json(schema), prefix + '/input.txt': prompt})
             execution = engine.runtime['executions'][eid]
             result = native_result(execution, context, raw, workspace)
             result = engine._collect_submitted_result(execution, result, context, schema, workspace)
@@ -383,7 +390,13 @@ class WalkthroughEngineTests(ActiveStateHarness):
         from test_native_final_submission import native_result
         from do_math.repository import canonical_json
         bundle = new_id('BA')
+        prefix = 'runtime/artifacts/' + bundle
+        prompt = b'exact sealed prompt'
+        # The role input manifest names the archived prompt saved below; the
+        # owner's pre-write inspection requires it to exist.
         assessor.update(grant_id=review_action['grant_id'], input_snapshot=engine.head, input_bundle=bundle,
+                        input_manifest={'prompt': {'artifact_ref': prefix + '/input.txt',
+                            'sha256': hashlib.sha256(prompt).hexdigest(), 'bytes': len(prompt)}},
                         **planning.governance_revisions(engine.instance))
         from do_math.input_basis import capture_decision_basis
         assessor['decision_basis'] = capture_decision_basis(engine.instance, engine.runtime, engine._decision_references(review_action))
@@ -392,9 +405,8 @@ class WalkthroughEngineTests(ActiveStateHarness):
         context = engine._context(review_action, workspace, execution_id=assessor['id'])
         schema = engine._response_schema(review_action)
         submission.install_tools(workspace, context, schema, engine.instance['config']['max_artifact_bytes'])
-        prefix = 'runtime/artifacts/' + bundle
         engine._save({prefix + '/input/submission/context.json': canonical_json(context),
-                      prefix + '/schema.json': canonical_json(schema), prefix + '/input.txt': b'exact sealed prompt'})
+                      prefix + '/schema.json': canonical_json(schema), prefix + '/input.txt': prompt})
         assessor = engine.runtime['executions'][assessor['id']]
         result = native_result(assessor, context, json.dumps(output).encode(), workspace)
         result = engine._collect_submitted_result(assessor, result, context, schema, workspace)
@@ -431,7 +443,8 @@ class WalkthroughEngineTests(ActiveStateHarness):
             'config': {'operation': 'import', 'candidate': theorem()}})
         formal = next(a for a in engine.runtime['queue'] if a['role'] == 'formal_check')
         engine._save()
-        engine._formal(formal)
+        with owner_calls(engine):
+            engine._formal(formal)
         kid = formal['target']
         engine._start_identity_review(kid)
         action = next(a for a in engine.runtime['queue'] if a['role'] == 'identity_review')
@@ -440,8 +453,8 @@ class WalkthroughEngineTests(ActiveStateHarness):
             if 'review-sources' in path.parts:
                 raise OSError(errno.EBUSY, 'Regression source materialization busy')
             return original(path, *args, **kwargs)
-        with patch.object(Path, 'mkdir', unavailable):
-            engine._call(action)
+        with patch.object(Path, 'mkdir', unavailable), owner_calls(engine):
+            start_model_call(engine, action)
         attempts = [e for e in engine.runtime['executions'].values() if e.get('action', {}).get('id') == action['id']]
         self.assertEqual(len(attempts), 1)
         self.assertEqual(attempts[0]['status'], 'ended')

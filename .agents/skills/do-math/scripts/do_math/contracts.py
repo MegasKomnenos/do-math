@@ -1,7 +1,7 @@
 """Role prompt and output schemas for the Codex CLI adapter.
 
 The ``do-math-cli/5`` output schemas describe newly requested CLI responses.
-They are distinct from the ``do-math-state/5`` persisted-record contract.
+They are distinct from the ``do-math-state/6`` persisted-record contract.
 The engine supplies IDs, hashes, references,
 and persistence bindings after receiving a validated semantic response.
 """
@@ -40,7 +40,7 @@ def task_candidate_record(candidate: dict, *, task_id: str, previous: dict | Non
     This function returns detached contract fields, not a stored lifecycle record.
     """
     import jsonschema
-    from .task_contracts import validate_task_contract
+    from .task_contracts import validate_contract_meaning
     errors = sorted(jsonschema.Draft202012Validator(TASK_CANDIDATE).iter_errors(candidate), key=lambda e: str(e.path))
     if errors:
         raise ValueError("invalid task candidate: " + errors[0].message)
@@ -58,7 +58,8 @@ def task_candidate_record(candidate: dict, *, task_id: str, previous: dict | Non
     record = {**copy.deepcopy(candidate), "id": task_id, "revision": revision}
     if candidate['work_class'] == 'formal' and trust_environment_id is not None:
         record['trust_environment_id'] = trust_environment_id
-    validate_task_contract(record)
+    # TASK_CANDIDATE fixed the shape above; only the meaning conditions remain.
+    validate_contract_meaning(record)
     if previous and previous.get('transferred_obligations'):
         inherited = {row['obligation_id'] for row in previous['transferred_obligations']}
         old_obligations = {row['id']: row for row in previous['completion_obligations']}
@@ -99,13 +100,12 @@ def _schema(extra: dict[str, dict[str, Any]]) -> dict[str, Any]:
 
 def with_integration_schema(schema: dict) -> dict:
     """Use the same envelope for ordinary and domain-owned stage responses."""
-    from .integration import MANIFEST_SCHEMA
     result = copy.deepcopy(schema)
     result["properties"]["integration_bundles"] = copy.deepcopy(MANIFEST_SCHEMA)
     result["properties"]["repair_responses"] = {"type": "array", "items": _object({
         "issue_id": {"type": "string", "minLength": 1},
         "disposition": {"enum": ["resolved", "maintained", "withdrawn"]},
-        "reason": {"type": "string", "minLength": 1, "pattern": r"\S"}})}
+        "reason": TEXT})}
     result["required"] = [key for key in result["required"] if key != "integration_bundles"]
     result["x-contract-id"] = "do-math-cli/5"
     return identify_schema(result)
@@ -119,6 +119,24 @@ KNOWLEDGE = _object({
 RELATION = _object({"kind": STRING, "source": STRING, "target": STRING, "evidence": STRING})
 TEXT = {"type": "string", "minLength": 1, "pattern": r"\S"}
 REFS = {"type": "array", "items": TEXT, "uniqueItems": True}
+# The integration manifest: how a response groups its state-changing members
+# into bundles (integration.py applies it; every role response schema carries it).
+BUNDLE_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "properties": {"integration_id": TEXT, "members": {**REFS, "minItems": 1},
+                   "impact_set": REFS, "authority_refs": REFS,
+                   "previous_hashes": {"type": "object", "additionalProperties": TEXT}},
+    "required": ["integration_id", "members", "impact_set", "authority_refs"],
+}
+MANIFEST_SCHEMA = {"type": "array", "minItems": 1, "items": BUNDLE_SCHEMA}
+MANIFEST_SCHEMA["description"] = (
+    "Omit this field for one atomic whole-response bundle when there are no existing-object revisions or partial acceptances to preserve. "
+    "For explicit grouping, declare every state-changing member exactly once. Existing revisions and partial retries require explicit grouping. "
+    "For ordinary research, 'output' owns the report/outcome/questions, "
+    "and 'output/knowledge/N' and 'output/relations/N' own records. Extensions use 'activity-extensions.json/FAMILY/N'. "
+    "Other roles, review research and declared revision work require one bundle with 'output' and all extension members. "
+    "New-object dependencies must stay in one bundle. Independence is the producer's semantic responsibility. "
+    "On a retry with central accepted_response evidence, preserve that base response and omit its already accepted member.")
 PROFILE_REF = _object({"id": TEXT, "revision": {"type": "integer", "minimum": 1},
                        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}})
 OBLIGATION = _object({"id": TEXT, "claim": TEXT, "judges": {**REFS, "minItems": 1}, "evidence_required": REFS})
@@ -141,29 +159,27 @@ ITEM_DISPOSITION = {"anyOf": [_object({"obligation_id": TEXT, "kind": {"const": 
     "evidence_refs": REFS, **extra}) for kind, extra in (
         ("fulfilled", {}), ("open", {}), ("waived", {"authority_ref": TEXT}),
         ("transferred", {"authority_ref": TEXT, "target_task_id": TEXT, "target_obligation_id": TEXT}))]}
-REVIEW_ITEM = _object({"item_id": TEXT, "decision": {"enum": ["approved", "revision_required", "unresolved"]},
-    "evidence_refs": REFS, "findings": STRINGS, "missing_inputs": REFS, "next_owner": TEXT})
 CONTRACT_REVIEW_ITEMS = ("question_scope", "inputs_reuse", "outputs_obligations_judges", "stage_boundaries", "tools_authority_profiles")
+REVIEW_ITEM = _object({"item_id": {"enum": list(CONTRACT_REVIEW_ITEMS)},
+    "decision": {"enum": ["approved", "revision_required", "unresolved"]},
+    "evidence_refs": REFS, "findings": STRINGS, "missing_inputs": REFS, "next_owner": TEXT})
 PLAN_DISPOSITION = _object({"task_id": TEXT, "kind": {"enum": ["selected", "not_selected", "not_assessable"]},
     "reason": TEXT, "uncertainty": STRING, "parallel_task_ids": REFS, "expected_research_change": STRING,
     "revisit": _object({"event_refs": REFS, "at": {"type": ["string", "null"]}}),
     "missing_inputs": REFS, "next_owner": TEXT})
-SCOPE_ASSESSMENT = _object({"assessment_id": TEXT, "policy_id": TEXT, "policy_version": {"const": 5},
-    "required_perspectives": REFS, "initial_slots": {"type": "array", "minItems": 1, "items": _object({
-        "id": TEXT, "perspective": TEXT, "required_source_refs": {**REFS, "minItems": 1}})},
-    "selected_profile_ref": PROFILE_REF,
-    "activity_execution_limit": {"type": "integer", "minimum": 1},
-    "overflow_disposition": {"enum": ["unresolved", "defer"]}})
 
 
 def disposition_schema():
-    """Field names match operational_dispositions.validate_disposition."""
+    """The operational disposition shape; operational_dispositions.validate_disposition
+    checks this same schema before its meaning conditions."""
     common = {"basis_refs": {**REFS, "minItems": 1,
         "description": "Use canonical entries from admissible_basis_refs. Readable catalog paths and other used_sources are not disposition authority."},
         "next_owner": TEXT, "reason": TEXT}
     variants = {
         "continue": {"next_review": {"anyOf": [{"type": "null"}, _object({"at": TEXT, "reason": TEXT})]}},
-        "repair": {"repair_target": TEXT, "meaning_preserving": {"type": "boolean"}, "verification": TEXT},
+        "repair": {"repair_target": {**TEXT, "pattern": "^installation:",
+            "description": "Repair targets an installation defect; local input damage uses retry with replay_safety."},
+            "meaning_preserving": {"type": "boolean"}, "verification": TEXT},
         "resume": {"checkpoint_ref": TEXT, "scope": TEXT},
         "retry": {"scope": TEXT, "replay_safety": TEXT},
         "task_disposition": {"task_id": TEXT, "task_state": {"enum": ["completed", "incomplete", "closed"]}, "authority_ref": TEXT},
@@ -173,7 +189,8 @@ def disposition_schema():
 
 SCHEMAS = {
     "research_preparation": _schema({"candidates": {"type": "array", "items": TASK_CANDIDATE}}),
-    "task_contract_review": _schema({"item_reviews": {"type": "array", "minItems": 1, "items": REVIEW_ITEM}}),
+    "task_contract_review": _schema({"item_reviews": {"type": "array", "minItems": len(CONTRACT_REVIEW_ITEMS),
+        "maxItems": len(CONTRACT_REVIEW_ITEMS), "items": REVIEW_ITEM}}),
     "research_plan": _schema({"dispositions": {"type": "array", "items": PLAN_DISPOSITION},
         "preparation_requests": STRINGS, "goal_audit": {"type": "boolean"}, "task_assessments": {"type": "array", "items": _object({
             "task_id": STRING, "decision": {"type": "string", "enum": ["completed", "incomplete", "closed"]},
@@ -208,20 +225,11 @@ def action_schema(action: dict) -> dict:
         from .integration import impact_review_response_schema
         return _schema({"report": STRING, "remaining_work": STRINGS,
                         "impact_review": impact_review_response_schema(action['input_basis']['impact_review'])})
-    if action['role'] == 'identity_review' and action.get('stage') == 'scope':
-        from . import review_cycle
-        result = review_cycle.stage_schema('scope')
-        result['properties']['scope_assessment'] = copy.deepcopy(SCOPE_ASSESSMENT)
-        return with_integration_schema(result)
     if action['role'] == 'intent_interpretation':
         from .governance import interpretation_schema
         return with_integration_schema(interpretation_schema(action.get('stage', 'interpret')))
-    if action.get('review_cycle_id'):
-        from . import review_cycle
-        if action['role'] == 'identity_review':
-            return with_integration_schema(review_cycle.stage_schema(action['stage']))
-        if action['role'] == 'supplemental_research':
-            return with_integration_schema(review_cycle.research_schema())
+    # Review seats receive review_cycle.stage_schema or research_schema through
+    # the engine, which binds the live proposal digest and request identity.
     result = schema_for(action['role'])
     if action['role'] == 'research_preparation':
         from .model_policy import preparation_only
@@ -255,6 +263,11 @@ def contract_review_decision(output, required_items=CONTRACT_REVIEW_ITEMS):
 
 def _root(skill_root: Path | None) -> Path:
     return (skill_root or Path(__file__).resolve().parents[2]).resolve()
+
+
+# Installed files outside the role reading map and the do_math package that the
+# supervisor and scheduled tasks run on; part of the executing edition.
+OPERATING_DOCUMENTS = ("계약/독립-운영.md", "scripts/operator_schedule.ps1", "scripts/do_math.py")
 
 
 def reading_map(*, skill_root: Path | None = None) -> dict[str, list[str]]:

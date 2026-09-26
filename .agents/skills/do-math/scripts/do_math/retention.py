@@ -9,23 +9,31 @@ import json
 import os
 from pathlib import Path
 import shutil
-import stat
 
 from .context_store import _read_stable
 from .file_io import file_fingerprint, fingerprint_settled
-from .git_store import PhysicalBoundary
-from .repository import artifact_verified, verify_artifact
+from .git_store import PhysicalBoundary, no_reparse, oid_shape
+from .relation_refs import relation_references
+from .repository import sealed_bytes
+from .task_contracts import CONTEXT_INPUT_REFS, TOOL_INPUT_REFS
+
+
+# The record fields whose values name records, artifacts or paths that a
+# cleanup must keep. This one vocabulary decides every reference a record holds.
+PROTECTED_REFERENCE_KEYS = frozenset({
+    "references", "dependencies", "source_refs", "origin_refs", "input_refs", "inputs", "reuse",
+    "artifact_ref", "path", "checkpoint_ref", "source_ref", "formal_result_id", "exposition_id",
+    "assessment_id", "evidence_refs", "authority_refs", "basis_refs", "record_refs", "result_ref",
+    "formal_result_refs", "assessment_refs"})
+# The fields of a referring object that name its target.
+_TARGET_FIELDS = ("id", "ref", "artifact_ref", "path")
+# Issued semantic references that name no materialized run file.
+_SEMANTIC_ALIASES = CONTEXT_INPUT_REFS | TOOL_INPUT_REFS
 
 
 def _physical(path):
     path = Path(os.path.abspath(path))
-    for part in [*reversed(path.parents), path]:
-        try:
-            info = part.lstat()
-        except FileNotFoundError:
-            continue
-        if stat.S_ISLNK(info.st_mode) or getattr(info, 'st_file_attributes', 0) & 0x400:
-            raise ValueError('path crosses reparse point: ' + str(part))
+    no_reparse(path)
     return path
 
 
@@ -50,25 +58,85 @@ def _strings(value):
             yield from _strings(item)
 
 
-def _references_run(workspace, path, references):
+def _protected_paths(workspace, references):
+    """The physical paths of protected references, resolved once per cleanup check.
+
+    An alias can refer into a run even when its lexical spelling does not.
+    Uncertain/reparse reference paths are refused instead of being followed
+    and treating an external target as a new trusted root.
+    """
+    paths = []
     for reference in _strings(references):
         candidate = Path(reference.replace('\\\\', '/'))
         candidate = candidate if candidate.is_absolute() else Path(workspace) / candidate
-        # An alias can refer into the run even when its lexical spelling does
-        # not. Refuse uncertain/reparse reference paths instead of following
-        # them and treating an external target as a new trusted root.
-        candidate = _physical(candidate)
-        if candidate == path or candidate.is_relative_to(path) or path.is_relative_to(candidate):
-            return True
-    return False
+        paths.append(_physical(candidate))
+    return paths
+
+
+def record_references(value):
+    """The reference strings held under PROTECTED_REFERENCE_KEYS anywhere in ``value``.
+
+    Under such a key a string is a reference, a list contributes its strings
+    and the target fields of its objects, and an object contributes its target
+    fields. Nested values are searched the same way. Task ``reuse`` lists record
+    IDs; grant ``reuse`` is a policy word and names nothing.
+    """
+    result = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in PROTECTED_REFERENCE_KEYS and not (key == "reuse" and isinstance(child, str)):
+                if isinstance(child, str):
+                    result.append(child)
+                elif isinstance(child, list):
+                    for item in child:
+                        if isinstance(item, str):
+                            result.append(item)
+                        elif isinstance(item, dict):
+                            result.extend(item[name] for name in _TARGET_FIELDS if isinstance(item.get(name), str))
+                elif isinstance(child, dict):
+                    result.extend(child[name] for name in _TARGET_FIELDS if isinstance(child.get(name), str))
+            if isinstance(child, (dict, list)):
+                result.extend(record_references(child))
+    elif isinstance(value, list):
+        for child in value:
+            result.extend(record_references(child))
+    return result
+
+
+def retention_inputs(instance, runtime, rows):
+    """The reference records and protected roots of one loaded snapshot.
+
+    ``rows`` are the snapshot's persisted record rows (``load_records``). Each
+    record maps to the references it holds; relations add their authored edges
+    (``relation_refs``). Research records, tasks, question links and review
+    cycles are protected roots, with every reference a waiting action holds.
+    """
+    records = {}
+    for row in rows:
+        if row.get("id"):
+            references = set(record_references(row["record"]))
+            if row["family"] == "relations":
+                references |= relation_references(row["record"])
+            records[row["id"]] = {"references": sorted(references)}
+    for source in instance.get("sources", []):
+        if source.get("id") in records:
+            for alias in (source.get("name"), "source:" + source.get("name", "")):
+                if alias:
+                    records.setdefault(alias, {"references": [source["id"]]})
+    for alias in _SEMANTIC_ALIASES:
+        records.setdefault(alias, {"references": []})
+    protected = [row["id"] for row in rows if row.get("id") and
+                 (row["root"] == "research" or row["family"] in {"tasks", "question_links", "review_cycles"})]
+    protected.extend(record_references(runtime.get("waiting_actions", {})))
+    return records, protected
 
 
 def reference_closure(references, records):
     """Resolve record IDs to their explicit source/reference edges, cycle-safely.
 
     Unknown identifiers are returned, never treated as an empty dependency set.
-    Paths are leaves; records may contain references, dependencies, source_refs,
-    input_refs, artifact_ref, path, or checkpoint_ref.
+    Paths are leaves; each record lists its edges under ``references``
+    (``retention_inputs``).
     """
     pending = list(_strings(references)); seen, paths, unresolved = set(), set(), set()
     while pending:
@@ -77,9 +145,7 @@ def reference_closure(references, records):
             continue
         seen.add(reference)
         if reference in records:
-            row = records[reference]
-            for key in ('references', 'dependencies', 'source_refs', 'input_refs', 'artifact_ref', 'path', 'checkpoint_ref'):
-                pending.extend(_strings(row.get(key, [])))
+            pending.extend(_strings(records[reference].get('references', [])))
         elif '/' in reference or '\\' in reference or ':' in reference:
             paths.add(reference)
         else:
@@ -121,11 +187,9 @@ def _inventory(path, marks=None, contents=None):
 
 
 def _archive_reference(path, snapshot):
-    if (not isinstance(snapshot, str) or len(snapshot) not in (40, 64)
-            or any(c not in '0123456789abcdef' for c in snapshot)
-            or not isinstance(path, str) or not path.startswith('runtime/artifacts/')
-            or any(part in {'', '.', '..'} for part in path.split('/'))
-            or '\\' in path or ':' in path):
+    # Reading the artifact validates the path with the Git state path rules.
+    oid_shape(snapshot)
+    if not isinstance(path, str) or not path.startswith('runtime/artifacts/'):
         raise ValueError('invalid immutable archive reference')
 
 
@@ -141,11 +205,19 @@ def cleanup_candidates(workspace, executions, *, protected_references,
     """
     candidates = []
     references, unresolved = reference_closure(protected_references, reference_records or {})
+    # One unresolvable protected path makes every run ineligible.
+    try:
+        protected_paths, protected_error = _protected_paths(workspace, references), None
+    except (ValueError, OSError) as error:
+        protected_paths, protected_error = [], str(error)
     for identifier, execution in sorted(executions.items()):
         reasons, inventory = ['unresolved_reference: ' + ref for ref in sorted(unresolved)], {}
         try:
             path = _run_path(workspace, identifier)
-            if _references_run(workspace, path, references):
+            if protected_error is not None:
+                raise ValueError(protected_error)
+            if any(candidate == path or candidate.is_relative_to(path) or path.is_relative_to(candidate)
+                   for candidate in protected_paths):
                 reasons.append('protected_reference')
             inventory = _inventory(path, marks)
         except (ValueError, OSError) as error:
@@ -163,9 +235,8 @@ def cleanup_candidates(workspace, executions, *, protected_references,
         else:
             try:
                 _archive_reference(termination['evidence_ref'], termination['snapshot'])
-                receipt = read_artifact(termination['evidence_ref'], termination['snapshot'])
-                if git_dir is None or not artifact_verified(git_dir, termination['evidence_ref'], termination['sha256'], termination['bytes']):
-                    verify_artifact(git_dir, termination['evidence_ref'], receipt, termination['sha256'], termination['bytes'])
+                receipt = sealed_bytes(git_dir, termination['evidence_ref'], termination['sha256'], termination['bytes'],
+                                       lambda: read_artifact(termination['evidence_ref'], termination['snapshot']))
                 fact = json.loads(receipt)
                 if not isinstance(fact, dict) or fact.get('execution_id') != identifier or fact.get('local_terminated') is not True:
                     raise ValueError('termination receipt does not confirm this execution')
@@ -203,8 +274,8 @@ def cleanup_candidates(workspace, executions, *, protected_references,
                     if local in archived:
                         raise ValueError('invalid archive reference')
                     proof = {'sha256': row['sha256'], 'bytes': row['bytes']}
-                    if git_dir is None or not artifact_verified(git_dir, archive, proof['sha256'], proof['bytes']):
-                        verify_artifact(git_dir, archive, read_artifact(archive, snapshot), proof['sha256'], proof['bytes'])
+                    sealed_bytes(git_dir, archive, proof['sha256'], proof['bytes'],
+                                 lambda: read_artifact(archive, snapshot), needed=False)
                     archived[local] = proof
                 except (ValueError, TypeError, KeyError, OSError, RuntimeError) as error:
                     reasons.append('archive_unverified: ' + str(error))

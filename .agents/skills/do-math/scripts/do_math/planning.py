@@ -6,7 +6,13 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 from typing import Any
 
-from .repository import exact_content_hash
+from .activities import ACTIVITY_STATUSES
+from .execution_lifecycle import EXECUTION_STATUSES
+from .external import OPERATION_STATUSES
+from .file_io import is_sha256, parse_utc
+from .governance import GRANT_STATUSES
+from .repository import artifact_key, exact_content_hash, sealed_bytes
+from .task_contracts import LIFECYCLE_STATES
 
 
 CONTRACT_FIELDS = ("id", "revision", "title", "question", "scope", "expected", "description",
@@ -26,6 +32,13 @@ TERMINAL_TASK_STATUSES = frozenset({"completed", "closed"})
 _VALID_ARTIFACTS: dict[tuple[str, str, str], int] = {}
 
 
+def revision_required(task: dict) -> bool:
+    """A contract revision was requested, or a review of the current revision did not approve it."""
+    return bool(task.get("revision_requested")) or any(
+        review.get("revision") == task.get("revision") and review.get("decision") != "approved"
+        for review in task.get("reviews", []))
+
+
 def task_reference_basis(task: dict) -> dict:
     """What a result that only cites a task relied on: its contract, the results it could read and whether it was open.
 
@@ -34,21 +47,6 @@ def task_reference_basis(task: dict) -> dict:
     results = task.get("results", [])
     return {"id": task["id"], "contract_sha256": contract_hash(task), "result_count": len(results),
             "results_sha256": exact_content_hash(results), "terminal": task.get("status") in TERMINAL_TASK_STATUSES}
-
-
-def task_reference_changes(basis: list[dict], tasks: dict) -> list[str]:
-    reasons = []
-    for row in basis:
-        task = tasks.get(row["id"])
-        if task is None:
-            reasons.append("missing:" + row["id"])
-            continue
-        if contract_hash(task) != row["contract_sha256"]:
-            reasons.append("contract_changed:" + row["id"])
-        # Results are append-only; later returns do not change what the producer read.
-        if exact_content_hash(task.get("results", [])[:row["result_count"]]) != row["results_sha256"]:
-            reasons.append("results_changed:" + row["id"])
-    return reasons
 
 
 def condition_refs(condition) -> set[str]:
@@ -61,9 +59,22 @@ def condition_refs(condition) -> set[str]:
     return refs
 
 
-def action_read_ids(action: dict, instance: dict, runtime: dict) -> set[str]:
+# Fields through which one record reads others. Task read closures
+# (action_read_ids) and knowledge impact closures (knowledge._impact_refs)
+# share this table. A list field holds IDs or {"id": ID} references and an ID
+# field holds one ID. A strict list field names records only, so an impact
+# closure reports its unknown values; a lenient one may also name non-record
+# inputs or locators, so an impact closure counts only its known record IDs.
+READ_REFERENCE_FIELDS = {"dependencies": "strict", "inputs": "lenient", "reuse": "lenient",
+                         "basis_refs": "lenient", "authority_refs": "lenient", "profile_refs": "lenient"}
+READ_REFERENCE_ID_FIELDS = ("formal_result_id", "exposition_id", "trust_environment_id",
+                            "kind_definition_id", "assessment_id")
+
+
+def action_read_ids(action: dict, instance: dict, runtime: dict, *, records=None) -> set[str]:
+    """records may carry record_index() of this same state, shared by one evaluation."""
     from .relation_refs import relation_references
-    records = _records(instance, runtime)
+    records = record_index(instance, runtime) if records is None else records
     seeds = {action.get("target"), *action_write_ids(action)} - {None}
     if action.get("role") == "operational_review":
         parent = runtime.get("executions", {}).get(action.get("target"), {})
@@ -82,10 +93,12 @@ def action_read_ids(action: dict, instance: dict, runtime: dict) -> set[str]:
         if identifier not in records:
             continue
         family, record = records[identifier]
-        seeds.update(ref for key in ("inputs", "reuse", "dependencies", "basis_refs", "authority_refs")
-                     if isinstance(record.get(key), list) for ref in record[key] if isinstance(ref, str))
-        seeds.update(ref['id'] for ref in record.get('profile_refs', []) if isinstance(ref, dict) and isinstance(ref.get('id'), str))
-        seeds.update(record[key] for key in ('formal_result_id','exposition_id','trust_environment_id','kind_definition_id','source_ref','assessment_id') if isinstance(record.get(key),str))
+        for key in READ_REFERENCE_FIELDS:
+            if isinstance(record.get(key), list):
+                seeds.update(ref if isinstance(ref, str) else ref['id'] for ref in record[key]
+                             if isinstance(ref, str) or isinstance(ref, dict) and isinstance(ref.get('id'), str))
+        # A reader also follows the provenance source that a record names.
+        seeds.update(record[key] for key in (*READ_REFERENCE_ID_FIELDS, 'source_ref') if isinstance(record.get(key), str))
         if record.get('formal_result_id'):
             seeds.update(r['id'] for r in instance.get('identity_assessments',{}).values()
                          if r.get('formal_result_id')==record['formal_result_id'] and r.get('exposition_id')==record.get('exposition_id'))
@@ -110,11 +123,12 @@ def pending_revisions(runtime: dict) -> list[dict]:
         if action_write_ids(action):
             rows[action.get("id")] = {"action": action, "state": "queued"}
     for identifier, entry in runtime.get("waiting_actions", {}).items():
-        action = {**entry['action'], 'revision_targets': entry.get('revision_targets', entry['action'].get('revision_targets', {}))}
+        action = entry['action']
         if action_write_ids(action) and identifier not in rows:
+            delegated = entry.get("delegated_targets", {})
             rows[identifier] = {"action": action, "state": "waiting",
-                                "delegated_to_task_id": entry.get("delegated_to_task_id"),
-                                "delegated_targets": entry.get("delegated_targets", {})}
+                                "delegated_to_task_id": next(iter(delegated.values()), None),
+                                "delegated_targets": delegated}
     for execution in runtime.get("executions", {}).values():
         action = execution.get("action", {})
         if execution.get("status") != "ended" and action_write_ids(action):
@@ -122,9 +136,10 @@ def pending_revisions(runtime: dict) -> list[dict]:
     return list(rows.values())
 
 
-def revision_waits(action: dict, instance: dict, runtime: dict) -> list[dict]:
+def revision_waits(action: dict, instance: dict, runtime: dict, *, records=None) -> list[dict]:
     """Declared writers wait for existing readers and older writers; new dependent readers wait."""
-    reads = action_read_ids(action, instance, runtime)
+    records = record_index(instance, runtime) if records is None else records
+    reads = action_read_ids(action, instance, runtime, records=records)
     writes = action_write_ids(action)
     role = action.get("role")
     if role in {"operational_review", "intent_interpretation", "maintenance"}:
@@ -136,7 +151,7 @@ def revision_waits(action: dict, instance: dict, runtime: dict) -> list[dict]:
             and e.get("action", {}).get("id") != action.get("id")]
     reasons = []
     for execution in live:
-        overlap = writes & action_read_ids(execution.get("action", {}), instance, runtime)
+        overlap = writes & action_read_ids(execution.get("action", {}), instance, runtime, records=records)
         if overlap:
             reasons.append({"kind": "contract_revision", "execution_id": execution["id"],
                             "record_ids": sorted(overlap), "reason": "existing reader must finish before revision"})
@@ -164,12 +179,13 @@ def revision_waits(action: dict, instance: dict, runtime: dict) -> list[dict]:
 def revision_cycles(instance: dict, runtime: dict) -> list[list[str]]:
     from .revisions import dependency_cycles
     rows = pending_revisions(runtime)
+    records = record_index(instance, runtime)
     graph = {}
     for row in rows:
         action = row["action"]
         if not action.get("id"):
             continue
-        graph[action["id"]] = {"dependencies": [wait["action_id"] for wait in revision_waits(action, instance, runtime) if wait.get("action_id")]}
+        graph[action["id"]] = {"dependencies": [wait["action_id"] for wait in revision_waits(action, instance, runtime, records=records) if wait.get("action_id")]}
     return dependency_cycles(graph)
 
 
@@ -205,28 +221,30 @@ def contract_review_current(review: dict, task: dict, instance: dict, runtime: d
     return {"valid": not reasons, "changes": reasons}
 
 
-def capture_task_basis(task, instance, runtime):
-    """Seal exact non-profile premises; profiles have independent applicability."""
-    records = _records(instance, runtime)
-    refs = action_read_ids({"role": "task_contract_review", "target": task["id"]}, instance, runtime)
+def capture_task_basis(task, instance, runtime, *, records=None):
+    """Seal exact non-profile premises; profiles have independent applicability.
+
+    records may carry record_index() of this same state, shared by one evaluation."""
+    records = record_index(instance, runtime) if records is None else records
+    refs = action_read_ids({"role": "task_contract_review", "target": task["id"]}, instance, runtime, records=records)
     profile_ids = [ref['id'] for ref in task.get('profile_refs', [])]
     refs -= {task["id"], *profile_ids}
     if task.get("trust_environment_id"):
         refs.add(task["trust_environment_id"])
     common = {}
-    from .input_basis import aliases
+    sources = record_index(instance, {}, families=(), source_aliases=True)
+    from .task_contracts import available_input_refs
+    # Configured availability only: host Lean discovery is a readiness fact, not a contract premise.
+    configured = set(available_input_refs(instance, runtime, lean_available=False))
     for ref in sorted(refs):
-        found = records.get(ref)
-        if not found:
-            source = next((s for s in instance.get("sources", []) if ref in aliases(s)), None)
-            found = ("source", source) if source else None
+        found = records.get(ref) or sources.get(ref)
         if found:
             family, record = found
             value = task_reference_basis(record) if family == "task" else record
             # Review append/selection bookkeeping never changes a dependency's contract.
             common[ref] = {"family": family, "sha256": exact_content_hash(value)}
         else:
-            common[ref] = {"available": ref in instance.get("available_input_refs", [])}
+            common[ref] = {"available": ref in configured}
     return {"common": common, "profiles": {ref: exact_content_hash(records[ref][1]) if ref in records else None for ref in profile_ids}}
 
 
@@ -235,25 +253,28 @@ def seal_contract_review(task, output, instance, runtime, *, execution_id):
     from .input_basis import capture_decision_basis, capture_sources
     if execution_id == task.get("producer_execution") or execution_id in task.get("author_execution_ids", []):
         raise ValueError("contract author cannot independently review its contract")
-    refs = action_read_ids({"role": "task_contract_review", "target": task["id"]}, instance, runtime)
+    records = record_index(instance, runtime)
+    refs = action_read_ids({"role": "task_contract_review", "target": task["id"]}, instance, runtime, records=records)
     return {"id": execution_id, "execution_id": execution_id, "revision": task["revision"],
             "decision": contract_review_decision(output), "item_reviews": deepcopy(output["item_reviews"]),
             "contract_sha256": contract_hash(task), **governance_revisions(instance), "inputs_current": True,
             "decision_basis": capture_decision_basis(instance, runtime, refs), "source_basis": capture_sources(instance, list(refs)),
-            "task_basis": capture_task_basis(task, instance, runtime)}
+            "task_basis": capture_task_basis(task, instance, runtime, records=records)}
 
 
 def review_basis_key(task: dict, instance: dict, runtime: dict, *, task_basis=None) -> str:
     from .input_basis import capture_decision_basis
-    refs = action_read_ids({"role": "task_contract_review", "target": task["id"]}, instance, runtime)
+    records = record_index(instance, runtime)
+    refs = action_read_ids({"role": "task_contract_review", "target": task["id"]}, instance, runtime, records=records)
     return exact_content_hash({"contract": contract_hash(task), **governance_revisions(instance),
                   "decision_basis": capture_decision_basis(instance, runtime, refs),
-                  "task_basis": task_basis if task_basis is not None else capture_task_basis(task, instance, runtime)})
+                  "task_basis": task_basis if task_basis is not None else capture_task_basis(task, instance, runtime, records=records)})
 
 
 def ready_task_ids(runtime: dict, instance: dict, *, evaluation_context=None) -> list[str]:
     """The current selection population, derived for v5 rather than cached."""
-    return sorted(tid for tid, task in runtime.get("tasks", {}).items() if task_ready(task, instance, runtime,evaluation_context=evaluation_context)["state"] == "ready")
+    records = _shared_index(instance, runtime)
+    return sorted(tid for tid, task in runtime.get("tasks", {}).items() if task_ready(task, instance, runtime,evaluation_context=evaluation_context, records=records)["state"] == "ready")
 
 
 def validate_plan_submission(output: dict, tasks: dict, ready_ids: list[str]) -> None:
@@ -295,7 +316,7 @@ def validate_condition(condition: dict) -> None:
             raise ValueError("artifact_ref requires snapshot, path, sha256")
         if not all(isinstance(value, str) and value for value in ref.values()):
             raise ValueError("artifact reference values must be text")
-        if len(ref["sha256"]) != 64 or any(c not in "0123456789abcdef" for c in ref["sha256"]):
+        if not is_sha256(ref["sha256"]):
             raise ValueError("artifact hash must be lowercase SHA256")
         path = PurePosixPath(ref["path"])
         if path.is_absolute() or '..' in path.parts or '\\' in ref["path"] or ':' in ref["path"]:
@@ -341,16 +362,16 @@ RECORD_FAMILIES = {"knowledge": ("research", "knowledge"), "governance": ("resea
     "instance": ("research", None)}
 
 LIFECYCLE_VALUES = {
-    'task': {'planned','active','waiting','completed','closed'},
+    'task': LIFECYCLE_STATES,
     'knowledge': {'active','superseded','withdrawn'}, 'exposition': {'active','superseded','withdrawn'},
-    'governance': {'active','superseded','withdrawn'}, 'grant': {'active','revoked','expired'},
+    'governance': {'active','superseded','withdrawn'}, 'grant': GRANT_STATUSES,
     'decision': {'active','revoked','superseded','withdrawn'},
     'source': {'active','superseded','withdrawn'}, 'trust-environment': {'candidate','active','invalid','superseded'},
-    'activity': {'ready','working','waiting','finished'},
-    'execution': {'queued','starting','running','stopping','ended'},
+    'activity': ACTIVITY_STATUSES,
+    'execution': EXECUTION_STATUSES,
     'assessment-use': {'active','suspended','withdrawn'},
     'kind-definition': {'candidate','checked','active','withdrawn'},
-    'external-operation': {'prepared','confirmed','failed','unknown','cancelled'},
+    'external-operation': OPERATION_STATUSES,
     'review-cycle': {'working','completed','unresolved'},
 }
 EXPOSED_FIELDS = {
@@ -366,9 +387,19 @@ EXPOSED_FIELDS = {
 }
 
 
-def _records(instance: dict, runtime: dict) -> dict[str, tuple[str, dict]]:
+def record_index(instance: dict, runtime: dict, *, families=None, source_aliases=False,
+                 question_links=False) -> dict[str, tuple[str, dict]]:
+    """Map record IDs to (family, record): the one population definition of RECORD_FAMILIES.
+
+    families narrows the index to the named RECORD_FAMILIES keys. A duplicate ID
+    raises ValueError. question_links adds question rows as family "question";
+    source_aliases then adds each source alias that no entry already claims as
+    family "source". Neither extra is a condition family or a read-closure seed.
+    """
     found: dict[str, tuple[str, dict]] = {}
     for family, (space, key) in RECORD_FAMILIES.items():
+        if families is not None and family not in families:
+            continue
         if key is None:
             container = [instance] if instance.get("id") else []
         else:
@@ -379,7 +410,25 @@ def _records(instance: dict, runtime: dict) -> dict[str, tuple[str, dict]]:
                 if record["id"] in found:
                     raise ValueError("globally duplicate record ID: " + record["id"])
                 found[record["id"]] = (family, record)
+    if question_links:
+        for row in runtime.get("question_links", []):
+            if row["id"] in found:
+                raise ValueError("globally duplicate record ID: " + row["id"])
+            found[row["id"]] = ("question", row)
+    if source_aliases:
+        from .input_basis import aliases
+        for source in instance.get("sources", []):
+            for alias in aliases(source):
+                found.setdefault(alias, ("source", source))
     return found
+
+
+def _shared_index(instance: dict, runtime: dict):
+    """One index for a loop of readiness evaluations; None lets each evaluation report the error."""
+    try:
+        return record_index(instance, runtime)
+    except (ValueError, TypeError, KeyError):
+        return None
 
 
 def _record_candidates(records: dict[str, tuple[str, dict]], identifier: str, family: str | None = None) -> list[tuple[str, dict]]:
@@ -407,11 +456,13 @@ def _pointer(record: dict, family: str, pointer: str) -> Any:
     return value
 
 
-def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evaluation_context=None) -> dict:
-    """Evaluate a closed readiness AST without treating malformed evidence as true."""
+def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evaluation_context=None, records=None) -> dict:
+    """Evaluate a closed readiness AST without treating malformed evidence as true.
+
+    records may carry record_index() of this same state, shared by one evaluation."""
     basis, errors = [], []
     try:
-        records = _records(instance, runtime)
+        records = record_index(instance, runtime) if records is None else records
         validate_condition(condition)
     except (ValueError, TypeError) as error:
         return {"state": "evaluation_error", "basis": [], "errors": [str(error)]}
@@ -484,18 +535,12 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
                 # Sealed bytes never change: one match and one format check per
                 # (git_dir, path, sha256) serve every later evaluation (contract S3).
                 git_dir = context.get("git_dir")
-                key = (str(git_dir), ref["path"], ref["sha256"])
+                key = artifact_key(git_dir, ref["path"], ref["sha256"])
                 size = _VALID_ARTIFACTS.get(key) if git_dir is not None else None
                 if size is None:
-                    from .repository import artifact_verified, verify_artifact
                     data = context["read_artifact"](ref["snapshot"], ref["path"])
-                    if not isinstance(data, bytes):
-                        raise ValueError("artifact bytes differ from sealed hash")
-                    if git_dir is None or not artifact_verified(git_dir, ref["path"], ref["sha256"], len(data)):
-                        try:
-                            verify_artifact(git_dir, ref["path"], data, ref["sha256"])
-                        except ValueError as mismatch:
-                            raise ValueError("artifact bytes differ from sealed hash") from mismatch
+                    sealed_bytes(git_dir, ref["path"], ref["sha256"], None, None, raw=data, needed=False,
+                                 error="artifact bytes differ from sealed hash")
                     if context["validate_artifact"](ref, data) is not True:
                         raise ValueError("artifact format validation failed")
                     size = len(data)
@@ -529,21 +574,22 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
 
 
 def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_waits=True,
-               action=None, evaluation_context=None) -> dict:
+               action=None, evaluation_context=None, records=None) -> dict:
     """The same live predicate serves population, receipt, and pre-start checks.
 
     include_scheduling_waits=False skips occupancy only, never user/revision gates.
-    The owning request is excluded explicitly using action.id.
+    The owning request is excluded explicitly using action.id. records may carry
+    record_index() of this same state; one index serves the whole evaluation.
     """
     from .task_contracts import validate_task_contract, returned_task_ids
     try:
         validate_task_contract(task)
-        _records(instance, runtime)
+        records = record_index(instance, runtime) if records is None else records
     except (ValueError, TypeError, KeyError) as error:
         return {"state": "evaluation_error", "basis": [], "errors": [str(error)]}
     action = action or {"role": "research_work", "target": task["id"]}
     from .questions import user_waits
-    waits = user_waits(action, instance, runtime)
+    waits = user_waits(action, instance, runtime, records=records)
     if waits:
         return {"state": "not_ready", "basis": [], "errors": ["an explicit user decision is required"], "waits": waits}
     if instance.get("goal_status") == "mathematically_solved" and not task.get("academic_requirement_id"):
@@ -557,21 +603,19 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
     reviews = task.get("reviews", [])
     approved = [r for r in reviews if r.get("revision") == revision and r.get("decision") == "approved" and r.get("inputs_current", True)]
     try:
-        task_basis = capture_task_basis(task, instance, runtime) if approved else None
+        task_basis = capture_task_basis(task, instance, runtime, records=records) if approved else None
         approved = [r for r in approved if contract_review_current(r, task, instance, runtime, task_basis=task_basis)["valid"]]
     except (ValueError, KeyError, TypeError) as error:
         return {"state": "evaluation_error", "basis": [], "errors": [str(error)]}
     if not approved: return {"state": "not_ready", "basis": [], "errors": ["current revision lacks approved contract review"]}
-    waits = revision_waits(action, instance, runtime)
+    waits = revision_waits(action, instance, runtime, records=records)
     if waits:
         return {"state": "not_ready", "basis": [], "errors": ["required record has an unresolved revision"], "waits": waits}
-    records = _records(instance, runtime); missing = []
-    from .input_basis import aliases
-    available=set(instance.get("available_input_refs",[]))
-    for source in [*task.get("inputs",[]),*task.get("reuse",[])]:
-        special={"SKILL.md","GLOSSARY.md","context:goal","context:policy","tool:lean"}
-        if source in special and source not in available: missing.append(source)
-        elif source not in special and source not in records and source not in available and not any(source in aliases(s) for s in instance.get("sources", [])): missing.append(source)
+    from .task_contracts import available_input_refs, unsupplied_task_inputs
+    available = available_input_refs(instance, runtime,
+        lean_available=(evaluation_context or {}).get("lean_available", False))
+    missing = unsupplied_task_inputs([*task.get("inputs", []), *task.get("reuse", [])],
+                                     {*available, *records}, admit_named_sources=False)
     if missing: return {"state": "not_ready", "basis": [], "errors": ["missing inputs: " + ",".join(missing)],
         'waits':[{'kind':'external_event','target_refs':missing,'next_owner':'research_preparation'}]}
     blocked = [dep for dep in {*task.get("dependencies", []), *task.get("reuse", [])}
@@ -615,7 +659,7 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
     from .model_policy import work_profile_selection
     try:
         selected_work = work_profile_selection(instance['config'], task,
-            instance['execution_profiles'], action=action)
+            instance, action=action)
         if selected_work['profile_ref']['id'] not in profiles:
             raise ValueError('required work profile is outside the current contract approval')
     except (ValueError, KeyError) as error:
@@ -645,25 +689,18 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
                                         for w in runtime.get('waiting_actions', {}).values())
             if normal:
                 normal = evaluate_condition(task.get('occurrence_condition', {'op': 'always'}), instance, runtime,
-                    evaluation_context={**(evaluation_context or {}), 'task_id': task['id']})['state'] == 'ready'
+                    evaluation_context={**(evaluation_context or {}), 'task_id': task['id']}, records=records)['state'] == 'ready'
             return {"state": "not_ready", "basis": [], "errors": ["task is occupied or has an unresolved wait"],
                     "waits": [waiting] if waiting else [], 'dispatch_occupied': normal}
         if task.get("status") in {"active", "waiting"} and not action.get("id") and not continuation:
             return {"state": "not_ready", "basis": [], "errors": ["subsequent work needs an explicit continuation basis"]}
     result = evaluate_condition(task.get("occurrence_condition", {"op": "always"}), instance, runtime,
-                                evaluation_context={**(evaluation_context or {}),'task_id':task['id']})
+                                evaluation_context={**(evaluation_context or {}),'task_id':task['id']}, records=records)
     result["profile_ids"] = profiles
     if result['state']=='not_ready' and not result['errors']:
         result['waits']=[{'kind':'condition','target_refs':sorted(condition_refs(task['occurrence_condition'])),'next_owner':'scheduler'}]
     result["basis"].extend(_basis(x) for x in approved if isinstance(x, dict) and "id" in x)
     return result
-
-
-def _utc(value: str) -> datetime:
-    if not isinstance(value, str): raise ValueError("UTC timestamp required")
-    parsed=datetime.fromisoformat(value.replace("Z", "+00:00"))
-    if parsed.tzinfo is None: raise ValueError("naive timestamp forbidden")
-    return parsed.astimezone(timezone.utc)
 
 
 def exhaustion_state(instance, runtime, *, now=None, evaluation_context=None):
@@ -677,7 +714,8 @@ def exhaustion_state(instance, runtime, *, now=None, evaluation_context=None):
     requests += [w.get('action',{}) for w in runtime.get('waiting_actions',{}).values() if w.get('action',{}).get('role') in roles]
     if requests:
         answer['reasons'].append('unfinished_research_requests'); return answer
-    evaluations={tid:task_ready(t,instance,runtime,evaluation_context=evaluation_context) for tid,t in runtime.get('tasks',{}).items() if t.get('status') not in TERMINAL_TASK_STATUSES}
+    records=_shared_index(instance,runtime)
+    evaluations={tid:task_ready(t,instance,runtime,evaluation_context=evaluation_context,records=records) for tid,t in runtime.get('tasks',{}).items() if t.get('status') not in TERMINAL_TASK_STATUSES}
     if any(r['state']=='ready' for r in evaluations.values()):
         answer['reasons'].append('ready_contracts'); return answer
     if any(r['state']=='evaluation_error' for r in evaluations.values()):
@@ -711,8 +749,8 @@ def exhaustion_state(instance, runtime, *, now=None, evaluation_context=None):
             answer.update(reasons=['exhaustion_lineage_hold'],next_owner=hold['next_owner']);return answer
         if not receipt.get('regenerate_after'):
             answer.update(reasons=['regeneration_condition_missing'],next_owner='research_plan');return answer
-        instant=_utc(now) if now else datetime.now(timezone.utc)
-        if instant < _utc(receipt['regenerate_after']):
+        instant=parse_utc(now) if now else datetime.now(timezone.utc)
+        if instant < parse_utc(receipt['regenerate_after']):
             answer.update(reasons=['regeneration_guard'],reobserve_at=receipt['regenerate_after']);return answer
     answer.update(prepare=True,next_owner='research_preparation');return answer
 
@@ -785,7 +823,7 @@ def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None)
         queued['periodic_reconsideration']=True
         seconds=instance.get('config',{}).get('research_reconsider_seconds')
         if type(seconds) is int and seconds>0:
-            runtime['next_research_reconsider_at']=(_utc(now)+timedelta(seconds=seconds)).isoformat()
+            runtime['next_research_reconsider_at']=(parse_utc(now)+timedelta(seconds=seconds)).isoformat()
     return state
 
 
@@ -794,10 +832,10 @@ def _event(kind: str, when: str, target: str | None = None) -> dict:
 
 
 def collect_due_events(instance: dict, runtime: dict, now_iso: str, *, evaluation_context=None) -> list[dict]:
-    now = _utc(now_iso); events = []
+    now = parse_utc(now_iso); events = []
     if instance.get("goal_status") != "mathematically_solved":
         due = runtime.get("next_research_reconsider_at")
-        if due and _utc(due) <= now: events.append(_event("research_reconsider_due", due))
+        if due and parse_utc(due) <= now: events.append(_event("research_reconsider_due", due))
     for task in runtime.get("tasks", {}).values():
         if not isinstance(task, dict): continue
         disposition=task.get('selection_disposition',{})
@@ -805,10 +843,10 @@ def collect_due_events(instance: dict, runtime: dict, now_iso: str, *, evaluatio
         if disposition.get('kind') in {'not_selected','not_assessable'}:
             references={e.get('id') for e in runtime.get('events',[])}
             triggers=sorted(set(revisit.get('event_refs',[])) & references)
-            if (revisit.get('at') and _utc(revisit['at'])<=now) or triggers:
+            if (revisit.get('at') and parse_utc(revisit['at'])<=now) or triggers:
                 event=_event('task_revisit_due',exact_content_hash({'decision':disposition.get('execution_id'),'revisit':revisit,'triggers':triggers}),task.get('id'))
                 event.update(observed_at=now_iso,basis=deepcopy(disposition));events.append(event)
-        if task.get("wake_at") and _utc(task["wake_at"]) <= now: events.append(_event("task_wake_due", task["wake_at"], task.get("id")))
+        if task.get("wake_at") and parse_utc(task["wake_at"]) <= now: events.append(_event("task_wake_due", task["wake_at"], task.get("id")))
         for condition in task.get("due_conditions", []):
             outcome = evaluate_condition(condition, instance, runtime,evaluation_context=evaluation_context)
             key=exact_content_hash(condition); previous=runtime.get("condition_states",{}).get(f"{task.get('id')}:{key}")

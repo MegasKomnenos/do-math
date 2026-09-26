@@ -15,7 +15,6 @@ if str(SCRIPTS) not in sys.path:
 from do_math.budget import (  # noqa: E402
     BudgetConflict,
     BudgetInputError,
-    BudgetReplayConflict,
     plan_reservations,
     settle_reservation,
 )
@@ -26,7 +25,7 @@ class BudgetTests(unittest.TestCase):
         return {
             "constraints": [
                 {"id": "exec", "kind": "concurrency", "accounting_unit": "execution",
-                 "work_slots": 1, "operations_slots": 1, "total_slots": 2},
+                 "work_slots": 1},
                 {"id": "host", "kind": "host", "max_jobs": 1, "memory_bytes": 100,
                  "cpu_rate_basis_points": 10000},
             ]
@@ -39,9 +38,8 @@ class BudgetTests(unittest.TestCase):
             "host_capacity_refs": ["host"],
         }
 
-    def request(self, *, prefix: str = "RR-new", budget_kind: str = "work", host_memory: int = 50) -> dict:
+    def request(self, *, prefix: str = "RR-new", host_memory: int = 50) -> dict:
         return {
-            "budget_kind": budget_kind,
             "owner_kind": "execution",
             "owner_id": "E-01",
             "purpose": "normal",
@@ -58,7 +56,7 @@ class BudgetTests(unittest.TestCase):
     def snapshot(self, reservations: dict | None = None) -> dict:
         return {"reservations": {} if reservations is None else reservations}
 
-    def test_shared_profile_refs_reserve_atomically_and_separate_work_from_operations(self) -> None:
+    def test_shared_profile_refs_reserve_atomically_and_fill_the_work_slot(self) -> None:
         source = self.snapshot()
         before = deepcopy(source)
         budget = self.budget()
@@ -66,14 +64,10 @@ class BudgetTests(unittest.TestCase):
         host["max_jobs"] = 2
         host["memory_bytes"] = 200
         work = plan_reservations(source, budget, self.profile(), self.request())
-        self.assertEqual(len(work.records), 4)
+        self.assertEqual(len(work), 4)
         self.assertEqual(source, before)
 
-        next_snapshot = self.snapshot({record["id"]: record for record in work.records})
-        operations = plan_reservations(
-            next_snapshot, budget, self.profile(), self.request(prefix="RR-ops", budget_kind="operations")
-        )
-        self.assertEqual(len(operations.records), 4)
+        next_snapshot = self.snapshot({record["id"]: record for record in work})
         with self.assertRaises(BudgetConflict):
             plan_reservations(next_snapshot, budget, self.profile(), self.request(prefix="RR-work-2"))
 
@@ -93,47 +87,45 @@ class BudgetTests(unittest.TestCase):
     def test_returned_slot_is_reusable_but_held_slot_remains_occupied(self) -> None:
         returned = {
             "RR-returned": {
-                "id": "RR-returned", "constraint_id": "exec", "unit": "execution", "budget_kind": "work",
+                "id": "RR-returned", "constraint_id": "exec", "unit": "execution",
                 "reserved": 1, "confirmed_consumed": 0, "returned": 1, "state": "settled",
                 "evidence_refs": [{"receipt": "local_job_empty"}],
             },
         }
         held = {
             "RR-held": {
-                "id": "RR-held", "constraint_id": "exec", "unit": "execution", "budget_kind": "work",
+                "id": "RR-held", "constraint_id": "exec", "unit": "execution",
                 "reserved": 1, "confirmed_consumed": 0, "returned": 0, "state": "held",
                 "reobserve": {"kind": "time", "at": "2026-09-14T00:00:00.000Z"},
             },
         }
         allowed = plan_reservations(self.snapshot(returned), self.budget(), self.profile(), self.request())
-        self.assertEqual(len(allowed.records), 4)
+        self.assertEqual(len(allowed), 4)
         with self.assertRaisesRegex(BudgetConflict, "concurrency capacity unavailable: exec"):
             plan_reservations(self.snapshot(held), self.budget(), self.profile(), self.request())
 
-    def test_exact_request_replays_but_changed_request_with_same_id_is_rejected(self) -> None:
+    def test_existing_reservation_id_is_rejected(self) -> None:
         first = plan_reservations(self.snapshot(), self.budget(), self.profile(), self.request())
-        populated = self.snapshot({record["id"]: record for record in first.records})
-        replay = plan_reservations(populated, self.budget(), self.profile(), self.request())
-        self.assertTrue(replay.replayed)
-        self.assertEqual(replay.records, first.records)
-        with self.assertRaises(BudgetReplayConflict):
-            plan_reservations(populated, self.budget(), self.profile(), self.request(host_memory=51))
+        populated = self.snapshot({record["id"]: record for record in first})
+        with self.assertRaisesRegex(BudgetInputError, "reservation ID already exists"):
+            plan_reservations(populated, self.budget(), self.profile(), self.request())
 
     def test_settlement_is_exactly_once_and_requires_full_accounting(self) -> None:
         planned = plan_reservations(self.snapshot(), self.budget(), self.profile(), self.request())
-        records = {record["id"]: record for record in planned.records}
-        settlement = settle_reservation(
+        records = {record["id"]: record for record in planned}
+        with self.assertRaisesRegex(BudgetInputError, "every reserved unit exactly once"):
+            settle_reservation(
+                self.snapshot(records), "RR-new-exec", confirmed_consumed=0, returned=0, evidence_refs=[{"receipt": "x"}]
+            )
+        settled = settle_reservation(
             self.snapshot(records), "RR-new-exec", confirmed_consumed=0, returned=1, evidence_refs=[{"receipt": "x"}]
         )
-        self.assertFalse(settlement.replayed)
-        self.assertEqual(settlement.record["state"], "settled")
-        settled_snapshot = self.snapshot({**records, settlement.record["id"]: settlement.record})
-        self.assertTrue(settle_reservation(
-            settled_snapshot, "RR-new-exec", confirmed_consumed=0, returned=1, evidence_refs=[{"receipt": "x"}]
-        ).replayed)
-        with self.assertRaises(BudgetReplayConflict):
+        self.assertEqual(settled["state"], "settled")
+        self.assertNotIn("reobserve", settled)
+        settled_snapshot = self.snapshot({**records, settled["id"]: settled})
+        with self.assertRaisesRegex(BudgetInputError, "only a held reservation"):
             settle_reservation(
-                settled_snapshot, "RR-new-exec", confirmed_consumed=1, returned=0, evidence_refs=[{"receipt": "x"}]
+                settled_snapshot, "RR-new-exec", confirmed_consumed=0, returned=1, evidence_refs=[{"receipt": "x"}]
             )
 
     def test_unsupported_constraint_kind_is_rejected(self) -> None:

@@ -12,6 +12,7 @@ import jsonschema
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import contracts
 from do_math.contracts import ROLES, reading_map, prompt_documents, render_prompt, schema_for
+from research_fixtures import review_items
 
 
 class ContractTests(unittest.TestCase):
@@ -40,8 +41,10 @@ class ContractTests(unittest.TestCase):
 
     def test_profile_references_use_the_sealed_provider_identity(self):
         reference = {"id": "EP-test", "revision": 1, "sha256": "a" * 64}
+        from do_math import review_cycle
+        scope = review_cycle.stage_schema("scope")["properties"]["scope_assessment"]
         shapes = [contracts.TASK_CANDIDATE["properties"]["profile_refs"]["items"],
-                  contracts.SCOPE_ASSESSMENT["properties"]["selected_profile_ref"]]
+                  scope["properties"]["selected_profile_ref"]]
         for shape in shapes:
             self.assertTrue(jsonschema.Draft202012Validator(shape).is_valid(reference))
             for invalid in ("EP-test", {"id": "EP-test", "version": 1}, {**reference, "sha256": "wrong"}):
@@ -65,8 +68,7 @@ class ContractTests(unittest.TestCase):
         base = {"summary": "Checked", "used_sources": [], "questions": [], "integration_bundles": [
             {"integration_id": "IN-review", "members": ["output"], "impact_set": [], "authority_refs": []}]}
         cases = {
-            "task_contract_review": {"item_reviews": [{"item_id": item, "decision": "approved", "evidence_refs": ["TK-1"],
-                "findings": [], "missing_inputs": [], "next_owner": "research_preparation"} for item in contracts.CONTRACT_REVIEW_ITEMS]},
+            "task_contract_review": review_items(["TK-1"], next_owner="research_preparation"),
             "identity_review": {"decision": "match", "findings": [], "scope_complete": True},
             "goal_audit": {"decision": "satisfied", "reason": "Checked evidence", "scope_complete": True},
             "operational_review": {"disposition": {"kind": "continue", "basis_refs": ["EX-1"],

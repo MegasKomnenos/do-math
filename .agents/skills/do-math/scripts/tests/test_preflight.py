@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.preflight import inspect_bundle
+from do_math.preflight import INSTALLED_DOCUMENTS, inspect_bundle
 from do_math.contracts import reading_map
 
 
@@ -24,8 +24,7 @@ class PersistedPreflightTests(unittest.TestCase):
         self.head=self.store.initialize(self.instance,self.runtime)
 
     def test_good_head_preserves_rejected_raw_not_candidate_state(self):
-        from do_math.preflight import inspect_persisted_state,preserve_rejected_candidate
-        self.assertTrue(inspect_persisted_state(self.store,self.head)['valid'])
+        from do_math.preflight import preserve_rejected_candidate
         _,before_i,before_r=self.store.load(self.head)
         result=preserve_rejected_candidate(self.store,self.head,raw=b'{broken candidate',reason='schema rejection')
         self.assertEqual(self.store.read(result['raw_ref'],result['snapshot']),b'{broken candidate')
@@ -33,10 +32,12 @@ class PersistedPreflightTests(unittest.TestCase):
         self.assertEqual((after_i,after_r),(before_i,before_r))
 
     def test_damaged_head_is_not_rewritten_even_to_preserve_candidate(self):
-        from do_math.preflight import inspect_persisted_state,preserve_rejected_candidate
+        from do_math.preflight import preserve_rejected_candidate
         path=next(row['path'] for row in self.store.records(self.head) if row['family']=='lifecycle')
         damaged=self.store._store.publish(self.head,{path:b'{}\n'}).head
-        self.assertFalse(inspect_persisted_state(self.store,damaged)['valid'])
+        # Loading validates a head; a head that does not load is damaged.
+        with self.assertRaises((ValueError,TypeError,KeyError,OSError,RuntimeError)):
+            self.store.load(damaged)
         with self.assertRaisesRegex(ValueError,'damaged'):
             preserve_rejected_candidate(self.store,damaged,raw=b'raw',reason='candidate rejected')
         self.assertEqual(self.store._store.read_snapshot().head,damaged)
@@ -56,8 +57,7 @@ class PreflightTests(unittest.TestCase):
         self.root = Path(self.temp.name) / "skill"
         source = Path(__file__).resolve().parents[2]
         names = {name for assigned in reading_map(skill_root=source).values() for name in assigned}
-        names.update(("README.md", "references/CLI-실행-계약.md", "계약/독립-운영.md",
-                      "scripts/operator_schedule.ps1", "requirements.txt"))
+        names.update(INSTALLED_DOCUMENTS)
         for name in names:
             destination = self.root / name
             destination.parent.mkdir(parents=True, exist_ok=True)

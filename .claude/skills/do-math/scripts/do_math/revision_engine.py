@@ -42,7 +42,7 @@ class RevisionEngineMixin:
                 else:
                     self._remove_action(action)
                 continue
-            targets = entry.get('revision_targets', action.get('revision_targets', {})) if entry else action.get('revision_targets', {})
+            targets = action.get('revision_targets', {})
             retired = set(targets) & closed
             if not retired:
                 continue
@@ -54,7 +54,6 @@ class RevisionEngineMixin:
                 action.pop('target', None)
             # Merged requests without targets stay queued; only a pure revision retires whole.
             if entry:
-                entry['revision_targets'] = deepcopy(remaining)
                 if not remaining and not action.get('unbound_request'):
                     del self.runtime['waiting_actions'][identifier]
             elif not remaining and not action.get('unbound_request'):
@@ -90,8 +89,7 @@ class RevisionEngineMixin:
         if action.get("role") == "research_preparation" and not preparation_only(action) and not action["revision_targets"] and target in self.runtime["tasks"]:
             task = self.runtime["tasks"][target]
             if task.get("status") not in planning.TERMINAL_TASK_STATUSES:
-                required = bool(task.get("revision_requested")) or any(r.get("revision") == task.get("revision") and r.get("decision") != "approved" for r in task.get("reviews", []))
-                action["revision_targets"] = revisions.capture_targets(self.instance, self.runtime, [target], required=required,
+                action["revision_targets"] = revisions.capture_targets(self.instance, self.runtime, [target], required=planning.revision_required(task),
                     source_ref=action.get("contract_review_execution") or action.get("decision_id"))
         if action.get("role") in {"research_work", "supplemental_research"} and not action.get("review_cycle_id"):
             task = self.runtime["tasks"].get(target, {})
@@ -103,11 +101,12 @@ class RevisionEngineMixin:
             for parent_id, entry in self.runtime.get("waiting_actions", {}).items():
                 if entry.get("kind") != "revision_dependency" or parent_id == action.get("id"):
                     continue
-                shared = set(action["revision_targets"]) & set(entry.get("revision_targets", {}))
+                pending = entry["action"].get("revision_targets", {})
+                shared = set(action["revision_targets"]) & set(pending)
                 shared -= set(entry.get("delegated_targets", {}))
                 for identifier in shared:
                     basis = action["revision_targets"][identifier]
-                    basis["required"] = bool(basis.get("required") or entry["revision_targets"][identifier].get("required"))
+                    basis["required"] = bool(basis.get("required") or pending[identifier].get("required"))
                     reference = {"action_id": parent_id, "reason": entry.get("reason")}
                     if reference not in basis.setdefault("obligation_refs", []):
                         basis["obligation_refs"].append(reference)
@@ -125,7 +124,6 @@ class RevisionEngineMixin:
                     del entry["delegated_targets"][identifier]
                     detached.append({"record_id": identifier, "task_id": task_id})
             if detached:
-                entry["delegated_to_task_id"] = next(iter(entry["delegated_targets"].values()), None)
                 entry.setdefault("delegation_history", []).extend(detached)
                 if self.runtime['status'] not in {'closed', 'completed'}:
                     self._enqueue("research_plan", reason="A delegated task ended or changed while its revision obligation remains: " + parent_id,
@@ -216,7 +214,7 @@ class RevisionEngineMixin:
         for owner in owners:
             entry = self.runtime.get("waiting_actions", {}).get(owner)
             if entry and entry.get("kind") == "revision_dependency":
-                remaining = deepcopy(entry.get("revision_targets", {}))
+                remaining = deepcopy(entry["action"].get("revision_targets", {}))
                 transferred = False
                 for identifier in declared:
                     if identifier not in remaining:
@@ -232,8 +230,7 @@ class RevisionEngineMixin:
                         entry.setdefault("deferrals", {})[identifier] = {"execution_id": execution_id, "reason": resolutions[identifier]["reason"]}
                         unresolved.pop(identifier, None)
                 if remaining:
-                    entry["revision_targets"] = remaining
-                    entry["action"]["revision_targets"] = deepcopy(remaining)
+                    entry["action"]["revision_targets"] = remaining
                     entry["delegated_targets"] = {key: value for key, value in entry.get("delegated_targets", {}).items() if key in remaining}
                 else:
                     self.runtime["history"].append({"kind": "revision_obligation_transferred" if transferred else "revision_obligation_resolved", "action_id": owner,
@@ -241,9 +238,8 @@ class RevisionEngineMixin:
                     del self.runtime["waiting_actions"][owner]
         if unresolved:
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
-                "action": {**deepcopy(action), "revision_targets": deepcopy(unresolved)}, "kind": "revision_dependency",
-                "revision_targets": unresolved, "delegated_targets": delegated,
-                "delegated_to_task_id": next(iter(delegated.values()), None), "execution_id": execution_id,
+                "action": {**deepcopy(action), "revision_targets": unresolved}, "kind": "revision_dependency",
+                "delegated_targets": delegated, "execution_id": execution_id,
                 "reason": "; ".join(resolutions[identifier]["reason"] for identifier in unresolved)}
         elif action["id"] in self.runtime.get("waiting_actions", {}):
             previous = self.runtime["waiting_actions"][action["id"]]

@@ -9,18 +9,25 @@ from copy import deepcopy
 import hashlib
 import json
 
+from .file_io import is_sha256
 from .model_policy import ROLE_TIERS, TIERS
 from .repository import exact_content_hash
 from .provider_wait import provider_for
 from .state_contract import STATE_FORMAT_VERSION
 
+# Only work roles reserve a model slot; operational AI roles run on their pinned
+# model without a reservation, and machine roles use host limits alone.
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
 MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
+# Machine roles that run a Lean command in a native Job.
+LEAN_ROLES = {"formal_check", "trust_check"}
+# Roles without a host resource cap: the approved trust environment bounds them.
+UNCAPPED_ROLES = LEAN_ROLES | {"trust_activate"}
 OBSERVATION_KEYS = ("observation_interval_seconds",
                     "self_check_response_window_seconds", "tool_review_window_seconds")
 WINDOW_KEYS = ("call_timeout_seconds", "finish_notice_seconds")
 PROFILE_ROLES = (set(ROLE_TIERS) - {"independent_operator"}) | MACHINE_ROLES | {"recovery"}
-HOST_ROLES = PROFILE_ROLES - {"formal_check", "trust_check", "trust_activate"}
+HOST_ROLES = PROFILE_ROLES - UNCAPPED_ROLES
 BOUNDARY = {"mode": "instructions", "os_isolation": False, "authenticated_caller": False,
             "rules": ["Use only assigned inputs, allowed queries and your execution workspace.",
                       "Do not read other reviewers' private work or modify central records directly.",
@@ -59,20 +66,22 @@ def validate_profile(profile: dict) -> None:
     if profile.get("feature_version") != STATE_FORMAT_VERSION or type(profile.get("revision")) is not int or profile["revision"] < 1:
         raise ValueError("unsupported profile edition")
     role, actor = profile.get("role"), profile.get("actor_kind")
-    if actor not in {"ai", "machine"} or profile.get("budget_kind") not in {"work", "operations"}:
-        raise ValueError("profile requires an actor and budget kind")
+    if actor not in {"ai", "machine"}:
+        raise ValueError("profile requires an actor")
     if actor == "machine":
         if role not in MACHINE_ROLES or "ai" in profile:
             raise ValueError("machine profile cannot contain AI fields")
         # Lean roles pin only the command; the approved trust environment fixes its identity.
         # Activation reads the toolchain record and needs no machine settings.
         machine = profile.get("machine")
-        if (role in {"formal_check", "trust_check"} and (not isinstance(machine, dict) or set(machine) != {"lean_command"})
-                or role not in {"formal_check", "trust_check"} and machine is not None):
+        if (role in LEAN_ROLES and (not isinstance(machine, dict) or set(machine) != {"lean_command"})
+                or role not in LEAN_ROLES and machine is not None):
             raise ValueError("machine profile settings differ from the role contract")
     elif not isinstance(profile.get("ai"), dict) or not profile["ai"].get("model"):
         raise ValueError("AI profile requires a model")
-    expected_mode = ("deadline_only" if actor == "machine" or profile["budget_kind"] == "operations"
+    elif bool(profile["ai"].get("capacity_refs")) != (role in WORK_ROLES):
+        raise ValueError("only work roles reserve a model slot")
+    expected_mode = ("deadline_only" if actor == "machine" or role not in WORK_ROLES
                      else None if role == "research_work" else "periodic")
     mode = profile.get("observation", {}).get("mode")
     if mode not in {"event_driven", "periodic", "deadline_only"} or expected_mode and mode != expected_mode:
@@ -186,24 +195,21 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
         if HOST_ROLES - set(adopted_host["demands_by_role"]):
             raise ValueError("every capped role needs an explicit host demand in an adopted shared scope")
         constraints[adopted_host["constraint"]["id"]] = deepcopy(adopted_host["constraint"])
-    for model in sorted(set(limits["work"]) | set(limits["operations"])):
-        work, operations = limits["work"].get(model, 0), limits["operations"].get(model, 0)
-        if any(type(n) is not int or n < 0 for n in (work, operations)):
+    for model, work in sorted(limits["work"].items()):
+        if type(work) is not int or work < 0:
             raise ValueError("session capacity must be a nonnegative integer")
-        identifier = "CP-" + exact_content_hash({"model": model, "work": work, "operations": operations})
+        identifier = "CP-" + exact_content_hash({"model": model, "work": work})
         constraints[identifier] = {"id": identifier, "kind": "concurrency", "model": model,
-            "accounting_unit": "execution", "work_slots": work, "operations_slots": operations,
-            "total_slots": work + operations, "scope": "local_execution_not_provider_operations"}
+            "accounting_unit": "execution", "work_slots": work, "scope": "local_execution_not_provider_operations"}
     profiles, refs = {}, {}
     lean = (_lean_contract(config)
-            if selected_roles & {"formal_check", "trust_check"} else None)
+            if selected_roles & LEAN_ROLES else None)
     for role in sorted(selected_roles):
         machine = role in MACHINE_ROLES
-        pool = "work" if role in WORK_ROLES else "operations"
         mode = (config["observation_mode"] if role == "research_work" else
-                "periodic" if pool == "work" else "deadline_only")
+                "periodic" if role in WORK_ROLES else "deadline_only")
         for tier in ((None,) if machine else TIERS):
-            body = {"role": role, "actor_kind": "machine" if machine else "ai", "budget_kind": pool,
+            body = {"role": role, "actor_kind": "machine" if machine else "ai",
                     "boundary": deepcopy(BOUNDARY), "host_capacity_refs": [],
                     "host_capacity_status": "unmeasured_not_enforced",
                     "observation": {"mode": mode, "settings": {k: deepcopy(config[k]) for k in OBSERVATION_KEYS if k in config},
@@ -213,7 +219,7 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
                               "provider_context_capacity": "unknown"},
                     "required_capabilities": [] if machine else ["jsonl", "model", "structured_output"],
                     "capability_evidence_refs": []}
-            if machine and role in {"formal_check", "trust_check"}:
+            if machine and role in LEAN_ROLES:
                 body["machine"] = deepcopy(lean)
             if not machine:
                 model = config["tier_models"][tier]
@@ -223,7 +229,7 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
                 provider = provider_for(model)
                 body["ai"] = {"model": model, "tier": tier, "provider": provider,
                               "effort": config["operator_effort"] if role == "recovery" else config["effort"],
-                              "capacity_refs": [capacity],
+                              "capacity_refs": [capacity] if role in WORK_ROLES else [],
                               "provider_operations": "unknown", "remote_termination": "unknown",
                               "maximum_output_enforced": False,
                               "claude_only_assigned_model": config["claude_only_assigned_model"],
@@ -243,13 +249,44 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
     return result
 
 
-def resolve_profile(profiles: dict, reference: dict) -> dict:
-    if not isinstance(reference, dict) or set(reference) != {"id", "revision", "sha256"}:
+def apply_editions(instance: dict, editions: dict) -> dict:
+    """Adopt built editions; older editions stay registered for admitted executions."""
+    instance.setdefault("execution_profiles", {}).update(editions["execution_profiles"])
+    instance.setdefault("capacity_constraints", {}).update(editions["capacity_constraints"])
+    instance["role_profile_refs"] = editions["role_profile_refs"]
+    if editions.get("host_capacity_ref"):
+        instance["host_capacity_ref"] = editions["host_capacity_ref"]
+    else:
+        instance.pop("host_capacity_ref", None)
+    return instance
+
+
+def validate_profile_ref(reference) -> None:
+    """A sealed profile reference: exactly a nonblank id, a revision >= 1 and a SHA-256."""
+    if (not isinstance(reference, dict) or set(reference) != {"id", "revision", "sha256"}
+            or not isinstance(reference["id"], str) or not reference["id"].strip()
+            or type(reference["revision"]) is not int or reference["revision"] < 1
+            or not is_sha256(reference["sha256"])):
         raise ValueError("profile reference requires exact id, revision and sha256")
+
+
+def match_profile_ref(profiles: dict, reference: dict) -> dict:
+    """The stored profile a reference names, compared by id, revision and sha256.
+
+    Stored profiles passed validate_profile when saved or sealed, so the profile
+    is neither hashed again nor copied. A profile that has not passed through
+    storage or ``seal_profile`` must be checked with validate_profile first.
+    """
+    validate_profile_ref(reference)
     profile = profiles.get(reference["id"])
-    if profile is None or profile_ref(profile) != reference:
+    if profile is None or any(profile.get(key) != reference[key] for key in ("id", "revision", "sha256")):
         raise ValueError("profile reference is absent or stale")
-    return deepcopy(profile)
+    return profile
+
+
+def resolve_profile(profiles: dict, reference: dict) -> dict:
+    """A private copy of the stored profile a reference names."""
+    return deepcopy(match_profile_ref(profiles, reference))
 
 
 def select_profile(profiles: dict, action: dict, selection: dict, allowed_refs=None) -> dict:

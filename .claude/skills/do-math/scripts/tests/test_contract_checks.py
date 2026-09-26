@@ -138,7 +138,7 @@ class ContractCheckTests(unittest.TestCase):
         self.assertIn('must not repeat', self.issues(checks()))
 
     def test_a_boundary_may_not_silently_depend_on_a_sibling_under_revision(self):
-        self.sibling(status="waiting", revision_requested={"reason": "The sibling boundary is under revision"})
+        self.sibling(status="waiting", revision_requested={"revision": 2, "source": "AC-revise", "reason": "The sibling boundary is under revision"})
         self.context["pending_revisions"] = [{"action": {"id": "AC-revise", "revision_targets": {"TK-window": {}}}, "state": "queued"}]
         entry = {"task_id": "TK-window", "revision": 2, "boundary": "k <= T - s", "independent_of_next_revision": False}
         self.assertIn("under revision", self.issues(checks(sibling_boundaries=[entry])))

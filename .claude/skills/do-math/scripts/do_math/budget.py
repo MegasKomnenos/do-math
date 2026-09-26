@@ -8,8 +8,6 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
-from dataclasses import dataclass
-import json
 from typing import Any
 from .state_contract import STATE_FORMAT_VERSION
 
@@ -27,26 +25,6 @@ class BudgetConflict(RuntimeError):
         self.constraint_kind = constraint_kind
 
 
-class BudgetReplayConflict(BudgetInputError):
-    """An existing reservation ID was requested again with different bytes."""
-
-
-@dataclass(frozen=True, slots=True)
-class ReservationPlan:
-    """Records for one all-or-nothing reservation calculation."""
-
-    records: tuple[dict[str, Any], ...]
-    replayed: bool
-
-
-@dataclass(frozen=True, slots=True)
-class SettlementPlan:
-    """One fully accounted reservation record, or an idempotent replay."""
-
-    record: dict[str, Any]
-    replayed: bool
-
-
 _HOST_LIMITS = {
     "jobs": "max_jobs",
     "memory_bytes": "memory_bytes",
@@ -54,37 +32,25 @@ _HOST_LIMITS = {
 }
 
 
-def canonical_record_bytes(record: Mapping[str, Any]) -> bytes:
-    """Return the deterministic bytes used to recognize an idempotent replay."""
-    return json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-
-
 def plan_reservations(
     snapshot: Mapping[str, Any],
     budget: Mapping[str, Any],
     profile: Mapping[str, Any],
     request: Mapping[str, Any],
-) -> ReservationPlan:
+) -> tuple[dict[str, Any], ...]:
     """Calculate all reservations needed by one profile without mutating inputs.
 
     ``snapshot['reservations']`` is the complete caller-selected reservation
-    population for concurrency and host constraints.
+    population for concurrency and host constraints. Reservation IDs derive
+    from a single-use execution ID, so a request never repeats an existing ID.
     """
     reservations = _snapshot_parts(snapshot)
     constraints = _constraints(budget)
     demands, expected_constraints, common = _request_parts(profile, request, constraints)
     _validate_existing_records(reservations)
     records = tuple(_new_record(demand, common) for demand in demands)
-
-    existing_by_id = reservations
-    existing_ids = [record["id"] for record in records if record["id"] in existing_by_id]
-    if existing_ids:
-        if len(existing_ids) != len(records):
-            raise BudgetReplayConflict("a reservation request may not partially replay")
-        for record in records:
-            if canonical_record_bytes(existing_by_id[record["id"]]) != canonical_record_bytes(record):
-                raise BudgetReplayConflict("a reservation ID already exists with different bytes")
-        return ReservationPlan(tuple(deepcopy(existing_by_id[record["id"]]) for record in records), True)
+    if any(record["id"] in reservations for record in records):
+        raise BudgetInputError("a reservation ID already exists")
 
     demands_by_constraint: dict[str, list[dict[str, Any]]] = {}
     for demand in demands:
@@ -96,12 +62,12 @@ def plan_reservations(
         constraint = constraints[constraint_id]
         kind = constraint["kind"]
         if kind == "concurrency":
-            _check_concurrency(constraint, constraint_demands, reservations, common["budget_kind"])
+            _check_concurrency(constraint, constraint_demands, reservations)
         elif kind == "host":
             _check_host(constraint, constraint_demands, reservations)
         else:
             raise BudgetInputError(f"unknown constraint kind: {kind!r}")
-    return ReservationPlan(records, False)
+    return records
 
 
 def settle_reservation(
@@ -111,19 +77,20 @@ def settle_reservation(
     confirmed_consumed: int,
     returned: int,
     evidence_refs: Sequence[Any],
-) -> SettlementPlan:
+) -> dict[str, Any]:
     """Create the one complete actual settlement for a held reservation.
 
-    A settlement must account for the whole reserved amount.  Repeating the
-    identical result is idempotent; any different second result is rejected.
-    Unknown remote use remains ``held`` until a caller has actual evidence and
-    invokes this function.
+    A settlement must account for the whole reserved amount, once. Unknown
+    remote use remains ``held`` until a caller has actual evidence and invokes
+    this function.
     """
     reservations = _snapshot_parts(snapshot)
     if reservation_id not in reservations:
         raise BudgetInputError("reservation_id is absent from the fixed snapshot")
     current = reservations[reservation_id]
     _validate_reservation(current)
+    if current["state"] != "held":
+        raise BudgetInputError("only a held reservation can be settled")
     _nonnegative("confirmed_consumed", confirmed_consumed)
     _nonnegative("returned", returned)
     if confirmed_consumed + returned != current["reserved"]:
@@ -138,11 +105,7 @@ def settle_reservation(
         "evidence_refs": deepcopy(list(evidence_refs)),
     })
     settled.pop("reobserve", None)
-    if current["state"] != "held":
-        if canonical_record_bytes(current) == canonical_record_bytes(settled):
-            return SettlementPlan(deepcopy(current), True)
-        raise BudgetReplayConflict("an already settled reservation cannot be changed")
-    return SettlementPlan(settled, False)
+    return settled
 
 
 def _snapshot_parts(snapshot: Mapping[str, Any]) -> Mapping[str, Mapping[str, Any]]:
@@ -175,23 +138,6 @@ def _request_parts(
 ) -> tuple[tuple[dict[str, Any], ...], set[str], dict[str, Any]]:
     if not isinstance(profile, Mapping) or not isinstance(request, Mapping):
         raise BudgetInputError("profile and request must be mappings")
-    budget_kind = request.get("budget_kind")
-    if budget_kind not in {"work", "operations"}:
-        raise BudgetInputError("request budget_kind must be work or operations")
-    common_names = ("owner_kind", "owner_id", "purpose", "authority_refs", "reobserve")
-    if any(name not in request for name in common_names):
-        raise BudgetInputError("request lacks required reservation fields")
-    if request["owner_kind"] != "execution":
-        raise BudgetInputError("owner_kind must be execution")
-    if not isinstance(request["owner_id"], str) or not request["owner_id"]:
-        raise BudgetInputError("owner_id must be non-empty")
-    if request["purpose"] != "normal":
-        raise BudgetInputError("purpose must be normal")
-    if (not isinstance(request["authority_refs"], Sequence) or isinstance(request["authority_refs"], (str, bytes))
-            or not request["authority_refs"]):
-        raise BudgetInputError("authority_refs must be a sequence")
-    if not isinstance(request["demands"], Sequence) or isinstance(request["demands"], (str, bytes)):
-        raise BudgetInputError("demands must be a sequence")
 
     ai = profile.get("ai", {}) if profile.get("actor_kind") == "ai" else {}
     capacity_refs = _string_set(ai.get("capacity_refs", ()), "capacity_refs")
@@ -245,7 +191,6 @@ def _request_parts(
         elif constraint["kind"] != "host":
             raise BudgetInputError("profile references an unsupported constraint kind")
     return tuple(demands), expected, {
-        "budget_kind": budget_kind,
         "owner_kind": request["owner_kind"],
         "owner_id": request["owner_id"],
         "purpose": request["purpose"],
@@ -264,7 +209,6 @@ def _new_record(demand: Mapping[str, Any], common: Mapping[str, Any]) -> dict[st
         "owner_kind": common["owner_kind"],
         "owner_id": common["owner_id"],
         "purpose": common["purpose"],
-        "budget_kind": common["budget_kind"],
         "reserved": demand["amount"],
         "confirmed_consumed": 0,
         "returned": 0,
@@ -276,18 +220,12 @@ def _new_record(demand: Mapping[str, Any], common: Mapping[str, Any]) -> dict[st
 
 
 def _check_concurrency(
-    constraint: Mapping[str, Any], demands: Sequence[Mapping[str, Any]], reservations: Mapping[str, Mapping[str, Any]], budget_kind: str
+    constraint: Mapping[str, Any], demands: Sequence[Mapping[str, Any]], reservations: Mapping[str, Mapping[str, Any]]
 ) -> None:
     demand = demands[0]
-    own = _outstanding_sum(reservations, constraint["id"], demand["unit"], budget_kind=budget_kind)
-    total = _outstanding_sum(reservations, constraint["id"], demand["unit"])
+    used = _outstanding_sum(reservations, constraint["id"], demand["unit"])
     _nonnegative("work_slots", constraint.get("work_slots"))
-    _nonnegative("operations_slots", constraint.get("operations_slots"))
-    _nonnegative("total_slots", constraint.get("total_slots"))
-    if constraint["work_slots"] + constraint["operations_slots"] > constraint["total_slots"]:
-        raise BudgetInputError("concurrency slots violate work + operations <= total")
-    slice_name = "work_slots" if budget_kind == "work" else "operations_slots"
-    if own + demand["amount"] > constraint[slice_name] or total + demand["amount"] > constraint["total_slots"]:
+    if used + demand["amount"] > constraint["work_slots"]:
         raise BudgetConflict(f"concurrency capacity unavailable: {constraint['id']}",
                              constraint_id=constraint['id'], constraint_kind='concurrency')
 
@@ -321,11 +259,11 @@ def _validate_existing_records(reservations: Mapping[str, Mapping[str, Any]]) ->
 
 
 def _validate_reservation(record: Mapping[str, Any]) -> None:
-    for name in ("id", "constraint_id", "unit", "budget_kind", "state"):
+    for name in ("id", "constraint_id", "unit", "state"):
         if not isinstance(record.get(name), str) or not record[name]:
             raise BudgetInputError(f"reservation lacks valid {name}")
-    if record["budget_kind"] not in {"work", "operations"} or record["state"] not in {"held", "settled"}:
-        raise BudgetInputError("reservation has an invalid budget_kind or state")
+    if record["state"] not in {"held", "settled"}:
+        raise BudgetInputError("reservation has an invalid state")
     for name in ("reserved", "confirmed_consumed", "returned"):
         _nonnegative(name, record.get(name))
     if record["confirmed_consumed"] + record["returned"] > record["reserved"]:
@@ -339,14 +277,11 @@ def _validate_reservation(record: Mapping[str, Any]) -> None:
         raise BudgetInputError("held reservation requires reobserve")
 
 
-def _outstanding_sum(
-    reservations: Mapping[str, Mapping[str, Any]], constraint_id: str, unit: str, *, budget_kind: str | None = None
-) -> int:
+def _outstanding_sum(reservations: Mapping[str, Mapping[str, Any]], constraint_id: str, unit: str) -> int:
     return sum(
         _outstanding(record)
         for record in reservations.values()
         if record["constraint_id"] == constraint_id and record["unit"] == unit
-        and (budget_kind is None or record["budget_kind"] == budget_kind)
     )
 
 

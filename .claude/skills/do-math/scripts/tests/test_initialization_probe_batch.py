@@ -7,16 +7,13 @@ from unittest.mock import Mock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import DEFAULT_CONFIG
 from do_math.execution_profiles import build_profiles, profile_ref
-from do_math.lifecycle_engine import LifecycleEngineMixin
+from research_fixtures import FixtureAdapter, bare_engine
 
 
 class ProbeBatchTests(unittest.TestCase):
     def setUp(self):
-        class Harness(LifecycleEngineMixin):
-            pass
-        self.engine = Harness()
         config = deepcopy(DEFAULT_CONFIG)
-        self.engine.instance = {"lifecycle": {"state": "initializing"}, **build_profiles(config)}
+        self.engine = bare_engine({"lifecycle": {"state": "initializing"}, **build_profiles(config)})
         self.profiles = [p for p in self.engine.instance["execution_profiles"].values() if p["actor_kind"] == "ai"][:2]
 
     def test_activation_batch_reuses_only_the_current_provider_observation(self):
@@ -46,8 +43,7 @@ class ProbeBatchTests(unittest.TestCase):
             self.assertFalse(list(_capability_batch_requirements(self.engine.instance, [bad], at=at))[0]['satisfied'])
 
     def test_batch_preserves_each_profile_and_observed_capability_scope(self):
-        class Adapter:
-            def observation_key(self): return ('fixture',)
+        class Adapter(FixtureAdapter):
             def describe(self):
                 return {"identity": {"host": "fixture"}, "verified": True,
                         "scope": "cli_command_surface_only", "supported": {"jsonl": True, "local_job": True}}
@@ -67,8 +63,7 @@ class ProbeBatchTests(unittest.TestCase):
         self.assertFalse(self.engine.instance.get("capability_evidence"))
 
     def test_failed_later_observation_does_not_publish_partial_evidence(self):
-        class Adapter:
-            def observation_key(self): return ('fixture',)
+        class Adapter(FixtureAdapter):
             def describe(self):
                 return {"identity": {"host": "fixture"}}
         with patch("do_math.initialization.adapter_for", side_effect=[Adapter(), RuntimeError("probe failed")]):
@@ -79,8 +74,7 @@ class ProbeBatchTests(unittest.TestCase):
     def test_active_probe_refreshes_observation_without_adopting_contract(self):
         self.engine.instance["lifecycle"] = {"state": "active", "adoption": {"config_sha256": "saved"}}
         before = deepcopy(self.engine.instance)
-        class Adapter:
-            def observation_key(self): return ('fixture',)
+        class Adapter(FixtureAdapter):
             def describe(self):
                 return {"identity": {"host": "fixture"}, "verified": True,
                         "scope": "cli_command_surface_only", "supported": {"jsonl": True}}

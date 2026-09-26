@@ -4,8 +4,63 @@ Domain owners still check required fields, authority, references and currentness
 These shapes check consumed values before routing or mutation; they do not run
 domain actions or silently convert malformed values to empty objects.
 """
+import base64
+import binascii
+import hashlib
+import re
+from functools import cache
+
 from jsonschema import Draft202012Validator
 from .record_schemas.schemas import PROFILE_REF, RECORDS
+
+# A caller-chosen control request ID; the CLI request schema and ENGINE share it.
+REQUEST_ID_PATTERN = '^[A-Za-z0-9_-]{1,128}$'
+SOURCE_FIELDS = frozenset({'name', 'body_base64', 'sha256', 'bytes'})
+
+
+def control_request_id(instance_id, action, *, text='', config=None, origin='user', idempotency_key=None):
+    """Hash normalized content, not mutable admission state or delivery time.
+
+    A source control is hashed in its normalized name/body/hash/size form.
+    """
+    from .repository import exact_content_hash
+    if idempotency_key is not None and (not isinstance(idempotency_key, str) or not idempotency_key):
+        raise ValueError('idempotency_key must be a nonempty string')
+    value = {'schema_version': 5, 'command': action, 'caller': origin,
+             'payload': {'instance_id': instance_id, 'text': text, 'config': config or {}},
+             'idempotency_key': idempotency_key}
+    return 'UC-' + exact_content_hash(value)
+
+
+def validate_request_id(request_id):
+    if not isinstance(request_id, str) or re.fullmatch(REQUEST_ID_PATTERN, request_id) is None:
+        raise ValueError('request_id must be a safe nonempty ASCII identifier')
+
+
+def normalized_source(name, raw):
+    """The one admitted form of source bytes: exact body, hash and size."""
+    return {'name': name, 'body_base64': base64.b64encode(raw).decode('ascii'),
+            'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+
+
+def normalized_source_bytes(spec):
+    """Return the exact bytes of a normalized source, or raise ValueError.
+
+    ENGINE's public ``control`` checks the source it produced with this rule,
+    and the owner applies the same rule to the inbox copy before import.
+    """
+    if not isinstance(spec, dict) or set(spec) != SOURCE_FIELDS:
+        raise ValueError('normalized source requires exact name, body, hash and size')
+    name = spec['name']
+    if not isinstance(name, str) or name in {'', '.', '..'} or '/' in name or '\\' in name:
+        raise ValueError('source name must be a file name')
+    try:
+        raw = base64.b64decode(spec['body_base64'], validate=True)
+    except (binascii.Error, TypeError) as error:
+        raise ValueError('source body is not strict base64') from error
+    if hashlib.sha256(raw).hexdigest() != spec['sha256'] or len(raw) != spec['bytes']:
+        raise ValueError('source bytes differ from their declared hash or size')
+    return raw
 
 TEXT = {'type': 'string'}
 TEXTS = {'type': 'array', 'items': TEXT}
@@ -62,19 +117,27 @@ CONFIRMATION = {'type': ['object', 'null'], 'properties': {
 EVIDENCE = obj(fields(text='kind operation_id request_sha256 idempotency_key evidence_ref observed_at fact valid_until'))
 IMPORT_APPROVALS = {'type': 'object', 'additionalProperties': obj(
     fields(text='actor source_ref source_sha256 change_sha256'))}
-CONFIG_PATCH = obj({
-    **fields(text='effort operator_effort observation_mode', lists='allowed_axioms'),
-    **{key: INTEGER for key in ('call_timeout_seconds reviewers goal_auditors max_input_bytes max_output_repairs '
-        'review_rounds review_research_limit research_reconsider_seconds observation_interval_seconds '
-        'plan_settle_seconds max_artifact_bytes operator_interval_seconds '
-        'operator_timeout_seconds provider_retry_initial_seconds provider_retry_max_seconds finish_notice_seconds '
-        'tool_review_window_seconds self_check_response_window_seconds no_progress_limit import_rework_limit '
-        'selection_failure_limit exhaustion_empty_limit proposal_version_limit contract_revision_limit').split()},
-    **{key: BOOL for key in ('operator_enabled', 'scholarly_enabled', 'claude_only_assigned_model')},
-    **{key: {'type': 'object', 'additionalProperties': TEXT} for key in ('tier_models', 'role_tiers')},
-    'session_limits': {'type': 'object', 'additionalProperties': {'type': 'object', 'additionalProperties': INTEGER}},
-    'lean_command': {'type': ['array', 'null'], 'items': TEXT},
-    'host_resources': {'type': ['object', 'null']}, 'scholarly_server': {'type': ['object', 'null']}})
+def _json_types(schema):
+    if 'anyOf' in schema:
+        return [kind for part in schema['anyOf'] for kind in _json_types(part)]
+    if 'type' in schema:
+        return [schema['type']]
+    return ['string']  # The configuration enums are strings.
+
+
+@cache
+def _configure_validator():
+    """The configure payload shape: each configuration key with only its JSON type.
+
+    Keys and types come from the stored configuration section. Ranges and
+    nested shapes stay with engine validation, which also resolves aliases
+    such as a host constraint's request authority before storage.
+    """
+    from .record_schemas import config_schema
+    properties = config_schema()['properties']
+    return Draft202012Validator({'type': 'object', 'additionalProperties': False,
+        'properties': {key: {'type': _json_types(schema)} for key, schema in properties.items()}})
+
 
 PAYLOADS = {
     'pause': OBJECT,
@@ -82,7 +145,6 @@ PAYLOADS = {
     'close': OBJECT, 'quiesce': OBJECT,
     'release_quiesce': obj(fields(text='fence_id')),
     'input': {**obj({'responds_to': TEXTS}), 'additionalProperties': False},
-    'configure': CONFIG_PATCH,
     'request': obj({**fields(text='role retry_action', lists='cleanup_execution_ids'),
         'target': {'type': ['string', 'null']},
         'assessment_reassessment': obj({**fields(text='assessment_id assessment_sha256'), 'evidence': OBJECT}),
@@ -95,7 +157,7 @@ PAYLOADS = {
         'declared_impact': {'type': ['array', 'null'], 'items': TEXT}, 'independent_confirmation': CONFIRMATION}),
     'trust': obj({**fields(text='env_id reason', objects='toolchain toolchain_record binding'),
         'operation': {'enum': ['register', 'transition', 'invalidate']}, 'allowed_axioms': TEXTS}),
-    'external': obj({**fields(text='operation id grant_id source_ref target_id purpose subject budget_kind actor_kind result'),
+    'external': obj({**fields(text='operation id grant_id source_ref target_id purpose subject actor_kind result'),
         'request': obj(fields(text='method url body')), 'evidence': EVIDENCE,
         'idempotency_evidence': {'type': ['string', 'null']}}),
     'conversation': obj({**fields(text='operation id disconnect_policy reason'), 'generation': INTEGER,
@@ -124,15 +186,15 @@ def validate_import_approvals(approvals):
 
 
 def validate_config_shape(config):
-    _check(_VALIDATORS['configure'], config, 'config')
+    _check(_configure_validator(), config, 'config')
 
 
 def validate_control_payload(action, text, config):
-    if not isinstance(action, str) or action not in _VALIDATORS:
+    if not isinstance(action, str) or action not in {*_VALIDATORS, 'configure'}:
         raise ValueError('unknown control action')
     if not isinstance(text, str):
         raise ValueError('control text must be a string')
-    _check(_VALIDATORS[action], config, 'config')
+    _check(_configure_validator() if action == 'configure' else _VALIDATORS[action], config, 'config')
     if action == 'trust' and config.get('operation') == 'register':
         from .trust_validation import register_request_errors
         errors = register_request_errors(config)

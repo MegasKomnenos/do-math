@@ -2,15 +2,7 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 
-from .file_io import json_digest
-
-
-def _now(value=None):
-    if value is not None and (not isinstance(value, str) or not value):
-        raise ValueError('delegation time must be a nonempty timestamp string or null')
-    result = datetime.fromisoformat(value.replace("Z", "+00:00")) if value is not None else datetime.now(timezone.utc)
-    if result.tzinfo is None: raise ValueError("delegation time requires timezone")
-    return result
+from .file_io import json_digest, parse_utc
 
 
 def case_basis_reference_ids(case):
@@ -50,7 +42,7 @@ def validate_delegation(delegation, *, now_iso=None):
     if not isinstance(delegation.get("resource_limits", {}), dict): raise ValueError("resource limits must be mapped")
     if any(type(v) not in (int, float) or v < 0 for v in delegation.get("resource_limits", {}).values()):
         raise ValueError("invalid delegation resource limit")
-    if delegation.get("expires_at") and _now(delegation["expires_at"]) <= _now(now_iso): raise ValueError("delegation expired")
+    if delegation.get("expires_at") and parse_utc(delegation["expires_at"]) <= (parse_utc(now_iso) if now_iso is not None else datetime.now(timezone.utc)): raise ValueError("delegation expired")
     return deepcopy(delegation)
 
 
@@ -81,8 +73,8 @@ def _basis(instance, runtime, delegation_id, case, now_iso=None):
         raise ValueError("resource request outside delegation")
     if not isinstance(case.get("effect"), dict) or not case.get("id"): raise ValueError("case must preserve exact proposed effect")
     # Use the same globally unique record population as task/currentness checks.
-    from .planning import _records
-    records = _records(instance, runtime)
+    from .planning import record_index
+    records = record_index(instance, runtime)
     target_record = records.get(target, (None, None))[1]
     if target == instance.get("id"): target_record = {"id": target, "governance": instance.get("governance")}
     if target_record is None: raise ValueError("case target does not resolve")
@@ -115,18 +107,25 @@ def _judgment_input_hash(execution):
     return execution.get("delegation_input_sha256")
 
 
+def _check_judgment(runtime, record, execution_id, output, author_ids):
+    """What one stage judgment satisfies when it is recorded and again when its application is used."""
+    execution = runtime.get("executions", {}).get(execution_id, {})
+    if execution.get("role") != "intent_interpretation" or _judgment_input_hash(execution) != record["input_sha256"]:
+        raise ValueError("judgment execution must bind blind shared input")
+    from .governance import validate_independent_execution
+    validate_independent_execution(runtime, execution_id, author_ids)
+    if output.get("input_sha256") != record["input_sha256"]:
+        raise ValueError("judgment needs current input, verdict, reasons")
+
+
 def record_judgment(runtime, application_id, output, *, execution_id, stage):
     record = runtime["delegation_applications"][application_id]
     if stage not in {"interpret", "check"} or stage in record["judgments"] or record.get("application"):
         raise ValueError("invalid or sealed judgment stage")
-    execution = runtime.get("executions", {}).get(execution_id, {})
-    if execution.get("role") != "intent_interpretation" or _judgment_input_hash(execution) != record["input_sha256"]:
-        raise ValueError("judgment execution must bind blind shared input")
     author_ids = {j["execution_id"] for j in record["judgments"].values()}
     author_ids.update(record["basis"]["original_decision"].get("author_execution_ids", []))
-    from .governance import validate_independent_execution
-    validate_independent_execution(runtime,execution_id,author_ids)
-    if output.get("input_sha256") != record["input_sha256"] or output.get("decision") not in {"within_scope", "outside_scope", "unresolved"} or not isinstance(output.get("reason"), str) or not output["reason"].strip():
+    _check_judgment(runtime, record, execution_id, output, author_ids)
+    if output.get("decision") not in {"within_scope", "outside_scope", "unresolved"} or not isinstance(output.get("reason"), str) or not output["reason"].strip():
         raise ValueError("judgment needs current input, verdict, reasons")
     record["judgments"][stage] = {"execution_id": execution_id, "output": deepcopy(output), "sha256": json_digest(output)}
     return deepcopy(record)
@@ -145,13 +144,9 @@ def _checked(instance, runtime, application_id, now_iso=None):
     from .governance import validate_independent_execution
     validate_independent_execution(runtime,judgments["check"]["execution_id"],[judgments["interpret"]["execution_id"]])
     for judgment in judgments.values():
-        execution = runtime.get("executions", {}).get(judgment["execution_id"], {})
-        validate_independent_execution(runtime, judgment["execution_id"],
+        _check_judgment(runtime, record, judgment["execution_id"], judgment["output"],
             record["basis"]["original_decision"].get("author_execution_ids", []))
-        if (judgment["sha256"] != json_digest(judgment["output"]) or judgment["output"]["decision"] != "within_scope"
-                or judgment["output"].get("input_sha256") != record["input_sha256"]
-                or execution.get("role") != "intent_interpretation"
-                or _judgment_input_hash(execution) != record["input_sha256"]):
+        if judgment["sha256"] != json_digest(judgment["output"]) or judgment["output"]["decision"] != "within_scope":
             raise ValueError("delegation verdict is not current matching judgment")
     return record
 

@@ -52,7 +52,8 @@ class OperatorTests(unittest.TestCase):
             return subprocess.CompletedProcess(argv, 0, '{"operator":"ready"}', "")
 
         result = operator.schedule("install", repository=self.repository, instance=self.instance,
-                                   workspace=self.workspace, interval_seconds=7200, runner=runner)
+                                   workspace=self.workspace, interval_seconds=7200,
+                                   operator_timeout_seconds=5400, runner=runner)
         self.assertEqual(result["operator"], "ready")
         self.assertEqual(len(observed), 1)
         command = observed[0]
@@ -159,7 +160,7 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(result["outcome"], "engine_busy")
         latest = json.loads((self.workspace / "operator" / "latest-engine.json").read_text(encoding="utf-8"))
         self.assertEqual(latest["outcome"], "engine_busy")
-        with patch.object(operator, "read_status", return_value=status), \
+        with patch.object(operator, "read_status", return_value={**status, "provider_waits": {"providers": {}}}), \
              patch.object(operator, "ResearchRepository") as repository, \
              patch.object(operator, "reconcile_wake", return_value={"status": "not_needed"}), \
              patch.object(operator, "schedule", return_value={"engine": {"state": "Ready"}}), \

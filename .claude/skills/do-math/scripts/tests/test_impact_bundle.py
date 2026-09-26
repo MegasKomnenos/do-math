@@ -411,7 +411,8 @@ class ImpactBundleTests(unittest.TestCase):
                 "changes": {"summary": "Also revised"},
             },
         ]
-        with self.assertRaisesRegex(ValueError, "globally distinct"):
+        # import_candidate rejects the second use of one replacement ID.
+        with self.assertRaisesRegex(ValueError, "already exists"):
             integration.apply_reviewed_knowledge_changes(
                 self.instance,
                 self.runtime,

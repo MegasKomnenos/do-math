@@ -34,8 +34,10 @@ class Tests(unittest.TestCase):
                  "next_step": "n", "progress_state": "working", **changes}
         (self.ws / "checkpoint.json").write_text(json.dumps(value), encoding="utf-8")
 
-    def due(self, **event):
-        return next(r for r in self.t.observe({"type": "tick", "counters": {"attempts": 2}, **event}) if r["kind"] == "self_check_due")
+    def due(self):
+        # Counters reach the tracker only through the worker's checkpoint.
+        self.write(counters={"attempts": 2})
+        return next(r for r in self.t.observe({"type": "tick"}) if r["kind"] == "self_check_due")
 
     def test_repeated_checkpoint_reads_reuse_schema_but_recheck_value_and_evidence(self):
         import jsonschema
@@ -215,10 +217,11 @@ class Tests(unittest.TestCase):
         self.assertEqual(self.t.obligations[obligation["id"]]["status"], "open")
 
     def test_normal_defect_indeterminate_followups(self):
+        self.write(counters={"attempts": 2})
         for status, expected in (("normal", "continue"), ("defect", "operational_review_due"), ("indeterminate", "operational_review_due")):
             with self.subTest(status=status):
                 tracker = observations.ObservationTracker(status, self.ws, self.config, clock=self.clock)
-                obligation = next(r for r in tracker.observe({"type": "tick", "counters": {"attempts": 2}}) if r["kind"] == "self_check_due")
+                obligation = next(r for r in tracker.observe({"type": "tick"}) if r["kind"] == "self_check_due")
                 response = response_for(obligation, status, [] if status == "indeterminate" else None)
                 result = tracker.record_self_check_response(response, available_evidence_refs={"EV-1"})
                 self.assertEqual(result["kind"], "self_check_received")
@@ -299,15 +302,27 @@ class Tests(unittest.TestCase):
         self.assertEqual(result["kind"], "self_check_received")
         self.assertEqual(result["rule_update"]["kind"], "observation_rules_rejected")
 
-    def test_invalid_observation_does_not_partially_advance_counters(self):
-        self.t.observe({"type": "tick", "counters": {"attempts": 2}, "iterations": {"E": -1}})
-        self.assertNotIn("attempts", self.t.counters)
+    def test_invalid_checkpoint_counters_do_not_partially_advance(self):
+        self.write(counters={"attempts": 1, "branches": 5})
+        self.t.observe({"type": "tick"})
+        self.write(counters={"attempts": 2, "branches": 4})
+        rows = self.t.observe({"type": "tick"})
+        self.assertTrue(any(r["kind"] == "checkpoint_observation_rejected" for r in rows))
+        self.assertEqual(self.t.counters, {"attempts": 1, "branches": 5})
         self.assertEqual(self.t.obligations, {})
+
+    def test_provider_event_counters_are_not_observation_signals(self):
+        rows = self.t.observe({"type": "tick", "counters": {"attempts": 9}, "iterations": {"E": 9},
+                               "active_duration_ms": 9000, "id": "provider-event"})
+        self.assertEqual(self.t.counters, {})
+        self.assertEqual(self.t.iterations, {})
+        self.assertFalse(any(r["kind"] == "self_check_due" for r in rows))
 
     def test_no_progress_limit_keeps_count_across_rule_replacement(self):
         tracker = observations.ObservationTracker("E", self.ws, {**self.config, "no_progress_limit": 2}, clock=self.clock)
         for count in (2, 4):
-            obligation = next(r for r in tracker.observe({"type": "tick", "counters": {"attempts": count}}) if r["kind"] == "self_check_due")
+            self.write(counters={"attempts": count})
+            obligation = next(r for r in tracker.observe({"type": "tick"}) if r["kind"] == "self_check_due")
             response = {**response_for(obligation), "progress": "no_progress"}
             if count == 2:
                 response["rule_proposal"] = {"current_revision": 0, "reason": "rename", "rules": [rule(id="R-new", repeat_interval=2)]}
@@ -328,19 +343,6 @@ class Tests(unittest.TestCase):
         self.t.observe({"type": "tick"})
         self.assertEqual(self.t.checkpoint_count, 2)
 
-    def test_active_duration_counts_only_observed_progress_intervals(self):
-        self.assertIsNone(self.t._snapshot(0)["active_duration_ms"])
-        self.t.observe({"type": "research_activity_started"})
-        self.clock.value = 2.5
-        self.t.observe({"type": "research_activity_finished"})
-        self.clock.value = 20
-        self.assertEqual(self.t._snapshot(20)["active_duration_ms"], 2500)
-        self.t.observe({"type": "research_activity_started"})
-        self.clock.value = 21
-        self.t.set_execution_status("stopping")
-        self.assertEqual(self.t._snapshot(21)["active_duration_ms"], 3500)
-        self.assertEqual(self.t.observe({"type": "tick"}), [])
-
     def test_self_check_calls_and_checkpoints_do_not_trigger_themselves(self):
         obligation = self.due()
         self.t.obligations[obligation['id']]['status'] = 'answered'
@@ -348,11 +350,12 @@ class Tests(unittest.TestCase):
             "server": "execution_control", "tool": "control_self_check",
             "arguments": {"self_check_id": obligation['id']}}}, evaluate=False)
         self.assertNotIn("SC-CALL", self.t.completed_call_ids)
-        self.write()
+        counted = self.t.checkpoint_count
+        self.write(counters={"attempts": 2}, current_claim="self-check lineage")
         checkpoint = observations.read_checkpoint(self.ws)
         self.t.register_self_check_checkpoint(checkpoint["sha256"])
         self.t.observe({"type": "tick"})
-        self.assertEqual(self.t.checkpoint_count, 0)
+        self.assertEqual(self.t.checkpoint_count, counted)
 
     def test_reminder_is_once_and_does_not_replace_existing_feedback(self):
         self.assertTrue(observations.write_checkpoint_reminder(self.ws))
@@ -375,7 +378,7 @@ class Tests(unittest.TestCase):
         queued = []
         fake = SimpleNamespace(_controls=lambda: None, _check_conversations=lambda: False, _save=lambda *a: None,
             instance={"workspace": str(self.ws)}, runtime={"status": "running"}, _trackers={},
-            _review_observation_source=lambda execution_id, event: None,
+            _review_observation_source=lambda execution_id, batch, index: None,
             _enqueue=lambda *a, **kw: queued.append((a, kw)))
         tracker = observations.ObservationTracker("E", workspace, {"observation_mode": "periodic", "observation_interval_seconds": 300,
                                                   "checkpoint_expected": True}, clock=self.clock)
@@ -391,6 +394,16 @@ class Tests(unittest.TestCase):
         obligation = self.due()
         result = self.t.record_self_check_response(response_for(obligation), available_evidence_refs={"EV-1"})
         self.assertIn("response_boundary_unconfirmed", result["errors"])
+
+    def test_feedback_producers_share_the_public_field_set(self):
+        with self.assertRaisesRegex(ValueError, "private or unknown"):
+            observations.worker_feedback({"kind": "x", "diagnostic": "private"})
+        obligation = self.due()
+        self.assertLessEqual(set(observations.self_check_feedback(obligation)), observations.WORKER_FEEDBACK_FIELDS)
+        request = self.t.issue_self_check(obligation["id"])
+        self.assertEqual(request, observations.self_check_request(self.t.obligations[obligation["id"]]))
+        with self.assertRaisesRegex(ValueError, "nonnegative"):
+            self.t.record_delivery(obligation["id"], source_offset=-1)
 
     def test_explicit_null_repeat_is_not_a_positive_repeat_interval(self):
         with self.assertRaises(ValueError): observations.validate_rules([rule(repeat_interval=None)])

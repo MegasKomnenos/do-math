@@ -13,14 +13,26 @@ from test_purpose_engine import ActiveStateHarness, candidate, common
 
 class FollowupDocumentTests(ActiveStateHarness):
     def test_planning_roles_receive_the_complete_current_settings(self):
+        from do_math.context_store import prepare_role_input
         engine, _ = self.make(observation_interval_seconds=417, review_research_limit=4)
         for role in ("research_preparation", "research_plan"):
-            context = engine._context({"role": role}, self.root / role)
-            self.assertEqual(context.get("config"), engine.instance["config"])
+            workspace = self.root / role
+            context = engine._context({"role": role}, workspace)
+            # The engine projects no raw configuration; the role input preserves it from state.
+            self.assertNotIn("config", context)
+            profile = next(p for p in engine.instance["execution_profiles"].values() if p["role"] == role)
+            fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime, role=role,
+                profile=profile, snapshot=engine.head, workspace=workspace, activity_id="AC-" + role)
+            source = fitted["context"]["configuration_source"]
+            self.assertEqual(json.loads((workspace / source["path"]).read_bytes()), engine.instance["config"])
 
     def test_prepared_observation_rule_reaches_contract_review(self):
         engine, _ = self.make()
+        from unittest.mock import create_autospec
         from do_math.execution_profiles import profile_ref
+        # The preparations' issued inputs fix which task inputs they could name; these name none.
+        engine._issued_input = create_autospec(engine._issued_input, return_value=(
+            {"available_input_refs": [], "supplied_record_ids": []}, None))
         def proposal(title, **kwargs):
             value=candidate(title, **kwargs)
             value['profile_refs']=[profile_ref(p) for p in engine.instance['execution_profiles'].values()
@@ -28,7 +40,7 @@ class FollowupDocumentTests(ActiveStateHarness):
             return value
         rule = {"id": "branches", "operator": "counter_gte", "threshold": 3,
                 "subject": {"kind": "counter", "id": "branches"},
-                "basis": {"source": "execution_events", "unit": "count"},
+                "basis": {"source": "checkpoint", "unit": "count"},
                 "repeat_interval": 3, "required_evidence": ["EV-branch"]}
         engine.runtime["executions"]["EX-preparation"] = {"status": "ended", "input_snapshot": engine.head, "extensions": {"task_conditions": [
             {"task_title": "Bounded branch investigation", "observation_rules": [rule]}]}}

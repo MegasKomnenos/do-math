@@ -7,7 +7,6 @@ only these decoded immutable values can reuse their encoding in memory.
 from copy import deepcopy
 import hashlib
 import json
-import re
 
 LIMIT = 65536
 
@@ -97,7 +96,8 @@ def decode(envelope, read_payload, git_dir=None):
     for canonical encoding again: its path is its digest and bundles are
     immutable.
     """
-    from .repository import canonical_json, _unique_pairs, _reject_constant, artifact_verified, mark_artifact_verified
+    from .file_io import is_sha256, reject_constant, unique_pairs
+    from .repository import canonical_json, artifact_verified, mark_artifact_verified
     if set(envelope) not in ({'contract_id','family','record'}, {'contract_id','family','record','payloads'}):
         raise ValueError('invalid record envelope fields')
     value = deepcopy(envelope['record'])
@@ -106,7 +106,7 @@ def decode(envelope, read_payload, git_dir=None):
     for ref in references:
         if (not isinstance(ref, dict) or set(ref) != {'tokens','path','sha256','bytes'} or not isinstance(ref['tokens'], list)
                 or any(type(t) not in {str,int} or type(t) is int and t < 0 for t in ref['tokens'])
-                or not isinstance(ref['sha256'], str) or not re.fullmatch('[0-9a-f]{64}', ref['sha256'])
+                or not is_sha256(ref['sha256'])
                 or type(ref['bytes']) is not int or ref['bytes'] < LIMIT
                 or ref['path'] != 'runtime/artifacts/payload-' + ref['sha256'] + '/value.json'):
             raise ValueError('invalid immutable payload reference')
@@ -117,7 +117,7 @@ def decode(envelope, read_payload, git_dir=None):
             known = git_dir is not None and artifact_verified(git_dir, ref['path'], ref['sha256'], ref['bytes'])
             if len(raw) != ref['bytes'] or not known and hashlib.sha256(raw).hexdigest() != ref['sha256']:
                 raise ValueError('immutable payload bytes differ')
-            decoded = json.loads(raw, object_pairs_hook=_unique_pairs, parse_constant=_reject_constant)
+            decoded = json.loads(raw, object_pairs_hook=unique_pairs, parse_constant=reject_constant)
             if not known:
                 if canonical_json(decoded) != raw:
                     raise ValueError('noncanonical immutable payload')
@@ -143,13 +143,4 @@ def decode(envelope, read_payload, git_dir=None):
     rebuilt, _ = encode({**{k:envelope[k] for k in ('contract_id','family')}, 'record':seal_large(value)})
     if rebuilt != envelope:
         raise ValueError('record differs from canonical payload encoding')
-    return value
-
-
-def payload_identity_view(value):
-    """The value with each sealed payload replaced by its digest and size."""
-    if hasattr(value, '_payload_bytes'):
-        return ['immutable-payload',value._payload_hash,len(value._payload_bytes)]
-    if isinstance(value, dict): return {k:payload_identity_view(v) for k,v in value.items()}
-    if isinstance(value, list): return [payload_identity_view(v) for v in value]
     return value

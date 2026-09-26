@@ -6,9 +6,9 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.engine import ResearchEngine, control, initialize, _repository
+from do_math.engine import ResearchEngine, control, _repository
 from test_engine import ScriptedRunner
-from research_fixtures import activate, install_adapter_fixture
+from research_fixtures import activate, install_adapter_fixture, new_instance
 from do_math.repository import ResearchRepository
 
 
@@ -19,10 +19,8 @@ class ControlTransitionTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.repo = self.root / "repo"
         self.repo.mkdir()
-        subprocess.run(["git", "-C", str(self.repo), "init", "-q"], check=True)
-        value = initialize(self.repo, goal="control transition fixture", workspace=self.root / "work",
-                           config={"scholarly_enabled": False, "operator_enabled": False, "lean_command": ["test-lean"]})
-        self.iid = value["instance_id"]
+        self.iid = new_instance(self.repo, goal="control transition fixture", workspace=self.root / "work",
+                                config={"scholarly_enabled": False, "operator_enabled": False, "lean_command": ["test-lean"]})
         self.store = _repository(self.repo, self.iid)
 
     def tearDown(self):
@@ -97,7 +95,6 @@ class ControlTransitionTests(unittest.TestCase):
         action = engine.runtime['queue'][0]
         execution = engine._register_execution(action, {'id': 'EX-crashed', 'role': action['role'],
             'status': 'running', 'input_snapshot': engine.head, 'input_manifest': []})
-        engine.runtime['active_execution'] = execution['id']
         engine._save()
         ResearchEngine(self.repo, self.iid, runner=ScriptedRunner()).run(max_steps=1)
         _, _, runtime = self.store.load()
