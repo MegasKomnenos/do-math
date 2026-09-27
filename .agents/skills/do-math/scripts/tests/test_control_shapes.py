@@ -8,7 +8,6 @@ import tempfile
 import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from test_categories import test_group
 import test_query_records as query_fixtures
 from do_math.engine import ResearchEngine, control
 from do_math.repository import canonical_json, exact_content_hash
@@ -31,7 +30,6 @@ BAD_PAYLOADS = [
 ]
 
 
-@test_group('integration')
 class ControlShapeBoundaryTests(unittest.TestCase):
     def setUp(self):
         self.fixture = query_fixtures.QueryRecordTests(); self.fixture.setUp()
@@ -100,7 +98,6 @@ class ControlShapeBoundaryTests(unittest.TestCase):
         self.assertEqual(engine.control_result('UC-after-lease')['effect'], 'applied')
 
 
-@test_group('unit')
 class DomainShapeTests(unittest.TestCase):
     def test_initialization_checks_the_boolean_flags_its_owner_actually_consumes(self):
         from do_math.control_contracts import validate_control_payload

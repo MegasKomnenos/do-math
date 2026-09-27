@@ -956,9 +956,10 @@ def import_input_source(instance, runtime, input_id):
     return preserve_source(identifier, text, origin=request.get('origin', 'user'))
 
 
-def prepare_import(instance, runtime, source, output, *, execution_id, previous_id=None, owner_handlers=None, input_ref=None):
+def prepare_import(instance, runtime, source, output, *, execution_id, input_ref, previous_id=None, owner_handlers=None):
+    """Seal an interpretation of the public input ``input_ref``, whose exact source is ``source``."""
     _require_text(execution_id, "author execution")
-    if input_ref is not None and import_input_source(instance, runtime, input_ref) != source:
+    if import_input_source(instance, runtime, input_ref) != source:
         raise ValueError('source differs from the exact public input')
     validate_import_units(instance, runtime, source, output, owner_handlers=owner_handlers)
     previous = runtime.get("intent_imports", {}).get(previous_id) if previous_id else None
@@ -990,7 +991,7 @@ def prepare_import(instance, runtime, source, output, *, execution_id, previous_
               "owner_basis": _owner_basis(instance, runtime, output, _owner_handlers(owner_handlers)),
               "previous_id": previous_id, "previous_findings": deepcopy(previous.get("check", {}).get("findings", [])) if previous else [],
               "status": "checking"}
-    if input_ref is not None: bundle['input_ref'] = input_ref
+    bundle['input_ref'] = input_ref
     bundle["sha256"] = exact_content_hash(_import_payload(bundle))
     if previous: previous["superseded_by"] = identifier
     runtime.setdefault("intent_imports", {})[identifier] = bundle
@@ -1001,7 +1002,7 @@ def _current_import(instance, runtime, import_id, *, owner_handlers=None):
     bundle = runtime.get("intent_imports", {}).get(import_id)
     if not bundle or bundle.get("superseded_by"): raise ValueError("import is absent or superseded")
     validate_source(bundle["source"])
-    if bundle.get('input_ref') is not None and import_input_source(instance, runtime, bundle['input_ref']) != bundle['source']:
+    if import_input_source(instance, runtime, bundle['input_ref']) != bundle['source']:
         raise ValueError('original public input changed')
     if bundle["sha256"] != exact_content_hash(_import_payload(bundle)): raise ValueError("sealed import changed")
     source = instance.get("governance_sources", {}).get(bundle["source"]["id"])

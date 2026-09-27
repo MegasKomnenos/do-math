@@ -4,7 +4,6 @@ from copy import deepcopy
 from pathlib import Path
 import subprocess
 import sys
-import tempfile
 import threading
 import time
 import unittest
@@ -22,8 +21,60 @@ from do_math.input_basis import capture_decision_basis
 from do_math.repository import new_id
 from do_math.session_slots import SessionSlots
 from test_engine import ScriptedRunner, common, context_from
-from research_fixtures import local_job_runner, new_instance
-from research_fixtures import activate, install_adapter_fixture, candidate, contract_review, producer_result
+from research_fixtures import local_job_runner, restore_template
+from research_fixtures import install_adapter_fixture, candidate, contract_review, producer_result
+from test_lifecycle_engine import initialized_instance
+
+
+def ready_work(root, shared, *, count, public, config):
+    """``restore_template`` build: ``count`` ready tasks whose work a real plan selected and queued.
+
+    By default: validated active state, a real preparation and sealed contract
+    approvals, since public activation and contract review have their own tests.
+    public=True keeps public activation and real reviews for tests whose outcome
+    depends on that state: check() of synthetic initialization executions
+    reports an unexamined role input, and activation leaves queue events.
+    The plan consumes the readiness events; work queued without it would leave
+    them pending, and the engine would schedule another plan for them. With
+    count=0 the queue is left as activation left it. Returns the instance ID.
+    """
+    from research_fixtures import FixtureAdapter, activated_instance
+    from state_fixtures import ACTIVE_LEAN_COMMAND, active_instance
+    base = {"operator_enabled": False, "scholarly_enabled": False}
+    if public:
+        instance_id = activated_instance(root, shared, goal="bounded research",
+                                         config={**base, "lean_command": ["test-lean"], **config})
+    else:
+        instance_id = active_instance(root, shared, config={**base, "lean_command": list(ACTIVE_LEAN_COMMAND), **config})
+    if not count:
+        return instance_id
+    engine = ResearchEngine(root / "repository", instance_id, runner=ScriptedRunner(
+        preparation_candidates=[candidate(str(i)) for i in range(count)],
+        model_rating={"difficulty": "high", "importance": "medium", "reason": "Independent novel fixture approaches"}))
+    with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
+        engine.run(max_steps=1)
+        if public:
+            engine.run(max_steps=count)
+        else:
+            # Seal the approval the review role returns; the engine judges readiness.
+            for task in engine.runtime["tasks"].values():
+                task["reviews"].append(seal_contract_review(task, contract_review({"task": task}),
+                    engine.instance, engine.runtime, execution_id=new_id("EX")))
+            engine._refresh_readiness()
+        if len(engine.runtime["tasks"]) != count:
+            raise AssertionError(engine.runtime["tasks"])
+        if not all(row["state"] == "ready" for row in engine._task_readiness.values()):
+            raise AssertionError(engine._task_readiness)
+        # The sealed approvals answer the queued reviews; the plan then selects every ready task.
+        engine.runtime["queue"] = [a for a in engine.runtime["queue"] if a["role"] != "task_contract_review"]
+        engine._save()
+        engine.run(max_steps=1)
+    queued = sorted((a["role"], a["target"]) for a in engine.runtime["queue"])
+    if queued != sorted(("research_work", tid) for tid in engine.runtime["tasks"]):
+        raise AssertionError(queued)
+    if engine.runtime["pending_events"] != []:
+        raise AssertionError(engine.runtime["pending_events"])
+    return instance_id
 
 
 class ConcurrentRunner:
@@ -141,13 +192,10 @@ class SessionPolicyTests(unittest.TestCase):
 class SlotTests(unittest.TestCase):
     """The Git writer owns admission; observers never reconcile reservations."""
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
-        self.repo = self.root / 'repo'
         limits = {'work': {model: 1 for model in MODELS.values()}}
-        instance_id = new_instance(self.repo, goal='Reservation boundary fixture', workspace=self.root / 'work',
+        self.root, instance_id = restore_template(initialized_instance, goal='Reservation boundary fixture',
             config={'operator_enabled': True, 'scholarly_enabled': False, 'session_limits': limits})
+        self.repo, self.workspace = self.root / 'repository', self.root / 'work-0'
         self.engine = ResearchEngine(self.repo, instance_id, runner=ScriptedRunner())
 
     def slots(self, *, observer=False):
@@ -191,7 +239,7 @@ class SlotTests(unittest.TestCase):
             self.assertTrue(self.slots().release('EX-work'))
             self.assertTrue(self.reserve('EX-next')[0])
             self.engine._save()
-        self.assertFalse(list((self.root / 'work').rglob('*.sqlite*')))
+        self.assertFalse(list(self.workspace.rglob('*.sqlite*')))
 
     def test_saved_reservations_survive_reopen_until_explicit_release(self):
         with self.engine.store.writer_lock():
@@ -270,7 +318,7 @@ class SlotTests(unittest.TestCase):
     def test_regular_supervision_observes_without_creating_an_ai_execution(self):
         from do_math import scheduled_operator
         with patch.object(scheduled_operator, 'ModelRunner', side_effect=AssertionError('unexpected model')):
-            outcome = scheduled_operator.check(self.repo, self.engine.instance['id'], self.root / 'work', probe=True)
+            outcome = scheduled_operator.check(self.repo, self.engine.instance['id'], self.workspace, probe=True)
         self.assertEqual(outcome['outcome'], 'observed')
         self.assertFalse(outcome['model_called'])
         self.assertEqual(self.engine.store.load()[2]['executions'], {})
@@ -278,64 +326,18 @@ class SlotTests(unittest.TestCase):
     def test_recovery_requires_actual_failure_evidence(self):
         from do_math import scheduled_operator
         with self.assertRaisesRegex(ValueError, 'failure evidence'):
-            scheduled_operator.recovery(self.repo, self.engine.instance['id'], self.root / 'work', failure={})
+            scheduled_operator.recovery(self.repo, self.engine.instance['id'], self.workspace, failure={})
 
 
 class ParallelEngineTests(unittest.TestCase):
     def setUp(self):
         install_adapter_fixture(self)
-        self.temp = tempfile.TemporaryDirectory()
-        self.root = Path(self.temp.name)
-        self.repo = self.root / "repo"; self.repo.mkdir()
-        subprocess.run(["git", "-C", str(self.repo), "init", "-q"], check=True)
-
-    def tearDown(self):
-        self.temp.cleanup()
 
     def engine(self, runner, count=3, *, public=False, **config):
-        """Ready tasks with queued work.
-
-        By default: validated active state, a real preparation and sealed contract
-        approvals, since public activation and contract review have their own tests.
-        public=True keeps public activation and real reviews for tests whose outcome
-        depends on that state: check() of synthetic initialization executions
-        reports an unexamined role input, and activation leaves queue events.
-        """
-        desired_limits = config.pop("session_limits", None)
-        if public:
-            result = initialize(self.repo, goal="bounded research", workspace=self.root / "work",
-                                config={"operator_enabled": False, "scholarly_enabled": False, "lean_command": ["test-lean"], **config})
-            engine = ResearchEngine(self.repo, result["instance_id"], runner=runner)
-            activate(engine, self.root, initialization_runner=ScriptedRunner())
-        else:
-            from state_fixtures import ACTIVE_LEAN_COMMAND, active_engine
-            from research_fixtures import FixtureAdapter
-            self.enterContext(patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()))
-            engine = active_engine(self.repo, self.root / "work", runner=runner, config={
-                "operator_enabled": False, "scholarly_enabled": False,
-                "lean_command": list(ACTIVE_LEAN_COMMAND), **config})
-        if count:
-            engine.runner = ScriptedRunner(preparation_candidates=[candidate(str(i)) for i in range(count)],
-                model_rating={"difficulty": "high", "importance": "medium", "reason": "Independent novel fixture approaches"})
-            engine.run(max_steps=1)
-            if public:
-                engine.run(max_steps=count)
-            else:
-                # Seal the approval the review role returns; the engine judges readiness.
-                for task in engine.runtime["tasks"].values():
-                    task["reviews"].append(seal_contract_review(task, contract_review({"task": task}),
-                        engine.instance, engine.runtime, execution_id=new_id("EX")))
-                engine._refresh_readiness()
-            self.assertEqual(len(engine.runtime["tasks"]), count)
-            self.assertTrue(all(row["state"] == "ready" for row in engine._task_readiness.values()))
-        engine.runner = runner
-        engine.runtime["queue"] = []
-        for tid in engine.runtime["tasks"]:
-            engine._enqueue("research_work", tid)
-        engine._save()
-        if desired_limits is not None:
-            self.configure_limits(engine, desired_limits)
-        return engine
+        """A copy of ``ready_work``'s state (see there) with ``runner``; ``config`` includes limits."""
+        self.root, instance_id = restore_template(ready_work, count=count, public=public, config=config)
+        self.repo = self.root / "repository"
+        return ResearchEngine(self.repo, instance_id, runner=runner)
 
     def configure_limits(self, engine, limits):
         from research_fixtures import send_control
@@ -362,7 +364,12 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertEqual(len([e for e in engine.runtime["executions"].values() if e["role"] == "research_work" and e.get("outcome") == "output_accepted"]), 3)
         self.assertEqual(state["budget"][MODELS["high"]]["used"], 0)
         checked = engine.check()
-        self.assertTrue(checked["passed"], checked)
+        self.assertEqual(checked["errors"], [], checked)
+        # Snapshot inspection deliberately leaves live trust files unexamined
+        # (state_checks governance_trust); every other area is clean.
+        self.assertEqual(checked["inspection"]["not_checked"], ["governance_trust"], checked)
+        self.assertEqual({(row["area"], row["status"]) for row in checked["inspection"]["findings"]},
+                         {("governance_trust", "incomplete")}, checked)
 
     def test_unavailable_assigned_model_waits_without_spending_other_model_slots(self):
         limits = deepcopy(LIMITS); limits["work"][MODELS["high"]] = 0
@@ -391,9 +398,12 @@ class ParallelEngineTests(unittest.TestCase):
         engine.runner = ScriptedRunner()
         engine._save()
         engine.run(max_steps=1)
-        engine.runner = runner
-        engine.runtime["queue"] = pending
+        # The changed contract lost its selection; a real plan selects it again under
+        # the new judgment while the high task's selected work waits for its model.
+        engine.runtime["queue"] = [a for a in pending if a["target"] == high] + engine.runtime["queue"]
         engine._save()
+        engine.run(max_steps=1)
+        engine.runner = runner
         engine.run(max_steps=1)
         self.assertEqual(runner.models, [MODELS["low"]])
         self.assertTrue(any(a.get("target") == high for a in engine.runtime["queue"]))
@@ -430,15 +440,22 @@ class ParallelEngineTests(unittest.TestCase):
                     out = common("operational_review")
                     out["disposition"] = {"kind": "continue", "basis_refs": [context["action"]["target"]],
                         "next_owner": "research_work", "reason": "The running target supplied progress evidence", "next_review": None}
+                    # Submit while the target still runs, then release it; releasing first lets
+                    # the target end and the engine reject the review as obsolete.
+                    result = producer_result({"status": "completed", "output": out, "usage": {}, "error": None}, {**kwargs, 'prompt': prompt, 'workspace': workspace, 'model': model, 'on_started': on_started, 'should_stop': should_stop, 'on_observation': on_observation})
                     release.set()
-                    return producer_result({"status": "completed", "output": out, "usage": {}, "error": None}, {**kwargs, 'prompt': prompt, 'workspace': workspace, 'model': model, 'on_started': on_started, 'should_stop': should_stop, 'on_observation': on_observation})
+                    return result
                 with inner.lock:
                     inner.active += 1; inner.peak = max(inner.peak, inner.active)
                 try:
                     on_started()
-                    deadline = time.monotonic() + 20
+                    # A hang guard, as ConcurrentRunner's: dispatching the full pool can take tens of seconds under load.
+                    deadline = time.monotonic() + 120
+                    last_tick = None
                     while not release.is_set():
-                        on_observation({"type": "tick"})
+                        # The real runner's idle cadence (model_runner.observe): one delivery per second.
+                        if last_tick is None or time.monotonic() - last_tick >= 1:
+                            on_observation({"type": "tick"}); last_tick = time.monotonic()
                         if should_stop():
                             return {"status": "stopped", "output": None, "usage": {}, "error": "stopped"}
                         if time.monotonic() > deadline:
@@ -459,12 +476,15 @@ class ParallelEngineTests(unittest.TestCase):
                           if row["owner_id"] == operating[0]["id"] and row["unit"] == "execution"],
                          "an operational role runs beside full work slots without holding one")
         self.assertEqual(operating[0]["model"], MODELS["high"])
-        self.assertIn(operating[0]["outcome"], {"output_accepted", "output_preserved_after_target_change"})
-        if operating[0]['outcome'] == 'output_preserved_after_target_change':
+        # A result collected after its target ended is preserved, not applied (engine result_disposition).
+        if operating[0].get("result_disposition", {}).get("kind") == "preserved_after_target_change":
             self.assertEqual(engine.runtime['executions'][operating[0]['action']['target']]['status'], 'ended')
+        else:
+            self.assertEqual(operating[0]["outcome"], "output_accepted")
 
     def test_planner_queue_order_cancels_only_unstarted_requests_and_preserves_obligations(self):
         engine = self.engine(ConcurrentRunner(), count=3)
+        engine._refresh_readiness()
         first, second, third = deepcopy(engine.runtime["queue"])
         eid = "EX-plan"
         engine.runtime["executions"][eid] = {"input_snapshot": engine.head, "status": "ended", "extensions": {
@@ -479,11 +499,15 @@ class ParallelEngineTests(unittest.TestCase):
 
     def test_model_assessments_flow_from_preparation_through_review_and_planning_to_execution(self):
         assessment = {"difficulty": "low", "importance": "low", "reason": "a local bounded comparison with an explicit method"}
-        result = initialize(self.repo, goal="bounded research", workspace=self.root / "work",
-                            config={"operator_enabled": False, "scholarly_enabled": False, "lean_command": ["test-lean"]})
-        engine = ResearchEngine(self.repo, result["instance_id"], runner=ScriptedRunner(model_rating=assessment))
-        activate(engine, self.root, initialization_runner=ScriptedRunner())
-        engine.run(max_steps=12)
+        # Public activation: check() judges the interpretation executions (see ready_work).
+        engine = self.engine(ScriptedRunner(model_rating=assessment), count=0, public=True)
+        # Every assertion reads the first work execution and the submissions up to it;
+        # the plan, goal audits and repreparation after it assert nothing.
+        for _ in range(12):
+            engine.run(max_steps=1)
+            if any(e["role"] == "research_work" and e["status"] == "ended"
+                   for e in engine.runtime["executions"].values()):
+                break
         tasks = list(engine.runtime["tasks"].values())
         self.assertEqual(tasks[0]["model_assessment"], assessment)
         work = [e for e in engine.runtime["executions"].values() if e["role"] == "research_work"]
@@ -497,18 +521,21 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertEqual(inspection["inspection"]["status"], "incomplete")
 
     def test_failed_live_review_stops_its_parent_and_preserves_independent_work(self):
+        review_failed = threading.Event()
         class Runner:
             @local_job_runner
             def run(inner, *, prompt, on_started, should_stop, on_observation=None, **kwargs):
                 ctx = context_from(prompt, kwargs['workspace'])
                 on_started()
                 if ctx["action"]["role"] == "operational_review":
+                    review_failed.set()
                     return {"status": "failed", "output": None, "usage": {}, "error": "operating model unavailable"}
                 started = time.monotonic()
                 while time.monotonic() - started < 20:
                     if ctx["task"]["title"] == "0":
                         on_observation({"type": "tick"})
-                    elif time.monotonic() - started > 2:
+                    elif review_failed.is_set():
+                        # The independent work returns after the parent's review failed.
                         out = common("research_work")
                         out.update(outcome="submitted", report="independent work finished", checkpoint="done")
                         return producer_result({"status": "completed", "output": out, "usage": {}, "error": None}, {**kwargs, 'prompt': prompt, 'on_started': on_started, 'should_stop': should_stop, 'on_observation': on_observation, 'workspace': kwargs['workspace']})
@@ -546,8 +573,12 @@ class ParallelEngineTests(unittest.TestCase):
         runner = InvalidPreparation()
         # Activation leaves queue events that this queue-order rule meets.
         engine = self.engine(runner, count=0, public=True)
+        # The newer request replaces activation's own preparation and keeps ownership
+        # of its events; unowned events would schedule a plan into this queue.
+        activation = next(a for a in engine.runtime["queue"] if a["role"] == "research_preparation")
         engine.runtime["queue"] = [{"id": "AC-older", "role": "maintenance", "reason": "older operating request"},
-                                   {"id": "AC-preparation", "role": "research_preparation", "reason": "newer operating request"}]
+                                   {"id": "AC-preparation", "role": "research_preparation", "reason": "newer operating request",
+                                    "event_refs": activation["event_refs"]}]
         engine._save()
         # Operational roles hold no model slot; the older request waits on its dispatch check instead.
         dispatchable = engine._dispatchable

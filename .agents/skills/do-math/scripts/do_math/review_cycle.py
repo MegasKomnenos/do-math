@@ -624,12 +624,14 @@ def research_request_digest(question, proposal_digest, sources):
 
 
 def research_schema():
-    text = TEXT
-    return copy.deepcopy(_object({"summary": text, "used_sources": _array(text),
-        "questions": _array(text), "research_request_id": text,
-        "request_digest": text, "outcome": {"enum": ["answered", "unresolved"]},
-        "answer": text, "scope_complete": {"type": "boolean"},
-        "evidence_refs": _array(text)}))
+    # Every field gets its own copy; deepcopy of one shared node keeps it shared.
+    def text():
+        return copy.deepcopy(TEXT)
+    return _object({"summary": text(), "used_sources": _array(text()),
+        "questions": _array(text()), "research_request_id": text(),
+        "request_digest": text(), "outcome": {"enum": ["answered", "unresolved"]},
+        "answer": text(), "scope_complete": {"type": "boolean"},
+        "evidence_refs": _array(text())})
 
 
 def research_request_schema():

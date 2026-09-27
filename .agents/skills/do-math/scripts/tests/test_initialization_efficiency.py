@@ -5,18 +5,17 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import payloads, maintenance_gate
-from do_math.operation_trace import tracing, phase, phase_rows, progress
+from do_math.operation_trace import LIVE_INTERVAL, OperationTrace, tracing, phase, phase_rows, progress
 from do_math.repository import ResearchRepository, canonical_json, new_id
 from research_fixtures import current_state
-from test_categories import test_group
 
 
-@test_group('unit')
 class EfficiencyUnits(unittest.TestCase):
     def test_telemetry_failure_identifies_operation_without_leaking_exception_text(self):
         from do_math.operation_trace import OperationTrace
@@ -25,6 +24,7 @@ class EfficiencyUnits(unittest.TestCase):
             with patch('do_math.operation_trace.atomic_replace',side_effect=PermissionError(13,'private request value')):
                 with self.assertWarns(RuntimeWarning):
                     sink.emit({'event':'started','span_id':'span','phase':'unit'})
+            sink.close()
             observed=progress(directory)['telemetry_errors'][0]
             self.assertEqual(observed['operation'],'replace_live')
             self.assertEqual(observed['errno'],13)
@@ -99,14 +99,52 @@ class EfficiencyUnits(unittest.TestCase):
         self.assertEqual(runtime['user_pause'],{'request_id':'UC-user'})
         self.assertEqual(runtime['status'],'paused')
 
+    def test_live_snapshot_is_throttled_but_never_more_than_one_interval_behind(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sink = OperationTrace(directory)
+            writes = []
+            with patch('do_math.operation_trace.atomic_replace', side_effect=lambda source, target: (
+                    writes.append(json.loads(Path(source).read_text(encoding='utf-8'))), Path(source).replace(target))):
+                for index in range(20):
+                    sink.emit({'event': 'started', 'span_id': f's{index}', 'phase': 'unit'})
+                self.assertEqual(len(writes), 1, 'rows inside one interval share one pending write')
+                deadline = time.monotonic() + 5 * LIVE_INTERVAL
+                while len(writes) < 2 and time.monotonic() < deadline:
+                    time.sleep(0.02)
+                self.assertEqual(len(writes[-1]['active_spans']), 20)
+                sink.emit({'event': 'completed', 'span_id': 's0', 'phase': 'unit'})
+                sink.close()
+                self.assertIsNone(sink.timer)
+                self.assertEqual(len(sink.path.read_text(encoding='utf-8').splitlines()), 21)
+
+    def test_a_timer_that_fires_after_close_does_not_recreate_the_removed_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sink = OperationTrace(directory)
+            sink.emit({'event': 'started', 'span_id': 'a', 'phase': 'unit'})
+            sink.emit({'event': 'started', 'span_id': 'b', 'phase': 'unit'})
+            self.assertIsNotNone(sink.timer, 'the second row inside the interval is pending')
+            sink.close()
+            sink.live.unlink()
+            sink._write_pending()  # the timer had already fired and waited for the lock
+            sink.emit({'event': 'completed', 'span_id': 'a', 'phase': 'unit'})
+            self.assertFalse(sink.live.exists())
+            self.assertEqual(len(sink.path.read_text(encoding='utf-8').splitlines()), 3)
+
     def test_phase_timings_preserve_overlap_and_incomplete_work(self):
         with tempfile.TemporaryDirectory() as directory:
             with tracing(directory):
                 with phase('parent'):
                     with phase('child') as counters:
                         counters.update(completed_files=2,read_bytes=20)
-                    live = progress(directory)['rows']
-                    self.assertEqual([r['phase'] for r in live[0]['active_spans']], ['parent'])
+                    # The snapshot may lag by LIVE_INTERVAL; poll for it, bounded.
+                    deadline = time.monotonic() + 5 * LIVE_INTERVAL
+                    while True:
+                        live = progress(directory)['rows']
+                        phases = [r['phase'] for r in live[0]['active_spans']] if live else None
+                        if phases == ['parent'] or time.monotonic() > deadline:
+                            break
+                        time.sleep(0.02)
+                    self.assertEqual(phases, ['parent'])
             rows=phase_rows(directory)
             self.assertEqual(len(rows),2)
             child=next(r for r in rows if r['phase']=='child')
@@ -119,7 +157,6 @@ class EfficiencyUnits(unittest.TestCase):
             self.assertEqual(len(phase_rows(directory)), 2)
 
 
-@test_group('integration')
 class PayloadStorageTests(unittest.TestCase):
     def test_large_payload_storage_and_cached_parent_remain_exact(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -160,7 +197,6 @@ class PayloadStorageTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'new owner constraint'): repo.load()
 
 
-@test_group('integration')
 class DeferredPublicationTests(unittest.TestCase):
     def test_public_maintenance_fence_survives_restart_and_preserves_user_pause(self):
         from test_input_recovery import InputRecoveryPublicTests

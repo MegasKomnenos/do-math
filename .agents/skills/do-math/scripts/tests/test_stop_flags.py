@@ -8,9 +8,7 @@ transition once. The calculation itself never pumps the owner.
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-import subprocess
 import sys
-import tempfile
 import threading
 import time
 from types import SimpleNamespace
@@ -21,31 +19,119 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import control
 from do_math.execution_lifecycle import record_submission_intent
 from do_math.parallel import ModelCalls
-from research_fixtures import charter_change, policy_change
-from state_fixtures import active_engine
+from do_math.engine import ResearchEngine
+from research_fixtures import charter_change, policy_change, restore_template
+from state_fixtures import active_instance
 from test_engine import ScriptedRunner
 from research_fixtures import FixtureAdapter
 
 
+CONFIG = {'operator_enabled': False, 'scholarly_enabled': False, 'lean_command': ['test-lean'],
+          'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}
+
+
+def apply(engine, repository, action, **kwargs):
+    """The owner pass applies a queued public control; returns its rejection records."""
+    request = control(repository, engine.instance['id'], action, **kwargs)
+    engine._controls(pump=False)
+    return [row for row in engine.runtime['history'] if row.get('kind') == 'rejected_user_control'
+            and row.get('request', {}).get('id') == request['request_id']]
+
+
+def applied(engine, repository, action, **kwargs):
+    rejected = apply(engine, repository, action, **kwargs)
+    if rejected:
+        raise AssertionError('The fixture control was rejected: ' + repr(rejected))
+
+
+def prepare_preparation(engine, root):
+    engine._enqueue('research_preparation', reason='Prepare the bounded stop fixture')
+    engine._save()
+    return {}
+
+
+def prepare_record(engine, root):
+    """A preparation bound to an imported record that cites a source file (``root / 'basis.txt'``)."""
+    repository = root / 'repository'
+    source = root / 'basis.txt'
+    source.write_text('original', encoding='utf-8')
+    applied(engine, repository, 'source', config={'path': str(source)})
+    name = engine.instance['sources'][0]['name']
+    applied(engine, repository, 'knowledge', config={'operation': 'import', 'candidate': {
+        'kind': 'observation', 'title': 'Computation', 'statement': 'The result is one.',
+        'summary': 'A bounded computation.', 'explanation': 'Exact finite computation.',
+        'lean_code': '', 'declaration_names': [], 'dependencies': [], 'source_refs': [name]}})
+    kid = next(iter(engine.instance['knowledge']))
+    engine.runtime['queue'] = []
+    # A preparation bound to the record reads it and, through it, the source.
+    engine._enqueue('research_preparation', kid, reason='Prepare follow-up work on the imported record')
+    engine._save()
+    return {'kid': kid}
+
+
+def prepare_goal_audit(engine, root):
+    engine.runtime['queue'] = []
+    engine._ensure_goal_audit_requests(engine._goal_basis_key(), 'EX-goal-request')
+    engine.runtime['queue'] = [a for a in engine.runtime['queue'] if a['role'] == 'goal_audit'][:1]
+    engine._save()
+    return {}
+
+
+def prepare_work(engine, root):
+    """Research work queued on a reviewed task whose input is an imported record."""
+    from test_redesign_EVIDENCE import reviewed_task
+    from do_math.execution_lifecycle import transition_execution
+    from research_fixtures import prepared_rule_conditions
+    applied(engine, root / 'repository', 'knowledge', config={'operation': 'import', 'candidate': {
+        'kind': 'observation', 'title': 'Input fact', 'statement': 'The result is one.',
+        'summary': 'A bounded computation.', 'explanation': 'Exact finite computation.',
+        'lean_code': '', 'declaration_names': [], 'dependencies': []}})
+    kid = next(iter(engine.instance['knowledge']))
+    grant = next(gid for gid, grant in engine.instance['grants'].items() if 'research_work' in grant.get('roles', []))
+    for identifier, role in (('EX-preparation', 'research_preparation'), ('EX-review-TK-stop', 'task_contract_review')):
+        # The returned producer and reviewer the sealed task records name.
+        execution = engine._register_execution({'id': 'AC-' + identifier, 'role': role},
+                                               {'id': identifier, 'role': role, 'status': 'running'})
+        at = engine._lifecycle_now().isoformat()
+        transition_execution(execution, 'stopping', at=at, stop_phase='terminating')
+        transition_execution(execution, 'ended', at=at, outcome='execution_incomplete')
+    reviewed_task(engine, 'TK-stop', inputs=[kid], authority_refs=[grant],
+                  initial_observation_rules=prepared_rule_conditions(['TK-stop'])[0]['observation_rules'])
+    engine.runtime['queue'] = []
+    engine._enqueue('research_work', 'TK-stop', reason='Work on the reviewed task',
+                    model_assessment={'difficulty': 'low', 'importance': 'low', 'reason': 'Bounded fixture'})
+    engine._save()
+    return {'kid': kid}
+
+
+PREPARE = {'preparation': prepare_preparation, 'record': prepare_record,
+           'goal_audit': prepare_goal_audit, 'work': prepare_work}
+
+
+def waiting_action(root, shared, *, case):
+    """``restore_template`` build: the active state with one AI action waiting to start.
+
+    ``case`` names the action (``PREPARE``). Returns the instance ID and the
+    record IDs the case's tests read. A running call cannot be copied (an executor
+    recovers it), so each test starts the call itself.
+    """
+    identifier = active_instance(root, shared, config=CONFIG)
+    (root / 'work-0' / 'runs').mkdir(exist_ok=True)
+    with patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        engine = ResearchEngine(root / 'repository', identifier, runner=ScriptedRunner())
+        return {'instance_id': identifier, **PREPARE[case](engine, root)}
+
+
 class StopFlagHarness(unittest.TestCase):
+    case = 'preparation'
+
     def setUp(self):
         self.enterContext(patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()))
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
-        self.repo = self.root / 'repo'
-        self.repo.mkdir()
-        subprocess.run(['git', 'init', '-q', str(self.repo)], check=True,
-                       creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
-        self.engine = active_engine(self.repo, self.root / 'work', runner=ScriptedRunner(),
-            config={'operator_enabled': False, 'scholarly_enabled': False, 'lean_command': ['test-lean'],
-                    'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5})
-        (self.root / 'work' / 'runs').mkdir(exist_ok=True)
-        self.prepare()
-
-    def prepare(self):
-        self.engine._enqueue('research_preparation', reason='Prepare the bounded stop fixture')
-        self.engine._save()
+        self.root, value = restore_template(waiting_action, case=self.case)
+        self.repo = self.root / 'repository'
+        self.engine = ResearchEngine(self.repo, value['instance_id'], runner=ScriptedRunner())
+        self.kid = value.get('kid')
+        self.source = self.root / 'basis.txt'
 
     @contextmanager
     def running(self):
@@ -94,11 +180,7 @@ class StopFlagHarness(unittest.TestCase):
 
     def apply(self, action, **kwargs):
         """The owner pass applies a queued public control; its publication judges stops."""
-        request = control(self.repo, self.engine.instance['id'], action, **kwargs)
-        self.engine._controls(pump=False)
-        rejected = [row for row in self.engine.runtime['history'] if row.get('kind') == 'rejected_user_control'
-                    and row.get('request', {}).get('id') == request['request_id']]
-        self.assertEqual(rejected, [])
+        self.assertEqual(apply(self.engine, self.repo, action, **kwargs), [])
 
 
 class PreparationStopTests(StopFlagHarness):
@@ -208,21 +290,7 @@ class PreparationStopTests(StopFlagHarness):
 class RecordStopTests(StopFlagHarness):
     """An execution bound to a record: knowledge and source changes reach it through publication."""
 
-    def prepare(self):
-        e = self.engine
-        self.source = self.root / 'basis.txt'
-        self.source.write_text('original', encoding='utf-8')
-        self.apply('source', config={'path': str(self.source)})
-        name = e.instance['sources'][0]['name']
-        self.apply('knowledge', config={'operation': 'import', 'candidate': {
-            'kind': 'observation', 'title': 'Computation', 'statement': 'The result is one.',
-            'summary': 'A bounded computation.', 'explanation': 'Exact finite computation.',
-            'lean_code': '', 'declaration_names': [], 'dependencies': [], 'source_refs': [name]}})
-        self.kid = next(iter(e.instance['knowledge']))
-        e.runtime['queue'] = []
-        # A preparation bound to the record reads it and, through it, the source.
-        e._enqueue('research_preparation', self.kid, reason='Prepare follow-up work on the imported record')
-        e._save()
+    case = 'record'
 
     def test_knowledge_revision_publishes_a_decision_basis_stop(self):
         with self.running() as (e, eid, future, reads):
@@ -246,12 +314,7 @@ class RecordStopTests(StopFlagHarness):
 class GoalAuditStopTests(StopFlagHarness):
     """A goal audit judges one complete basis; any published basis change stops it."""
 
-    def prepare(self):
-        e = self.engine
-        e.runtime['queue'] = []
-        e._ensure_goal_audit_requests(e._goal_basis_key(), 'EX-goal-request')
-        e.runtime['queue'] = [a for a in e.runtime['queue'] if a['role'] == 'goal_audit'][:1]
-        e._save()
+    case = 'goal_audit'
 
     def test_goal_basis_change_publishes_a_stop_and_is_judged_once_per_head(self):
         with self.running() as (e, eid, future, reads):
@@ -277,30 +340,7 @@ class GoalAuditStopTests(StopFlagHarness):
 class WorkStopTests(StopFlagHarness):
     """Research work on a reviewed task: use conditions and the task contract."""
 
-    def prepare(self):
-        from test_redesign_EVIDENCE import reviewed_task
-        e = self.engine
-        self.apply('knowledge', config={'operation': 'import', 'candidate': {
-            'kind': 'observation', 'title': 'Input fact', 'statement': 'The result is one.',
-            'summary': 'A bounded computation.', 'explanation': 'Exact finite computation.',
-            'lean_code': '', 'declaration_names': [], 'dependencies': []}})
-        self.kid = next(iter(e.instance['knowledge']))
-        grant = next(gid for gid, grant in e.instance['grants'].items() if 'research_work' in grant.get('roles', []))
-        from do_math.execution_lifecycle import transition_execution
-        for identifier, role in (('EX-preparation', 'research_preparation'), ('EX-review-TK-stop', 'task_contract_review')):
-            # The returned producer and reviewer the sealed task records name.
-            execution = e._register_execution({'id': 'AC-' + identifier, 'role': role},
-                                              {'id': identifier, 'role': role, 'status': 'running'})
-            at = e._lifecycle_now().isoformat()
-            transition_execution(execution, 'stopping', at=at, stop_phase='terminating')
-            transition_execution(execution, 'ended', at=at, outcome='execution_incomplete')
-        from research_fixtures import prepared_rule_conditions
-        reviewed_task(e, 'TK-stop', inputs=[self.kid], authority_refs=[grant],
-                      initial_observation_rules=prepared_rule_conditions(['TK-stop'])[0]['observation_rules'])
-        e.runtime['queue'] = []
-        e._enqueue('research_work', 'TK-stop', reason='Work on the reviewed task',
-                   model_assessment={'difficulty': 'low', 'importance': 'low', 'reason': 'Bounded fixture'})
-        e._save()
+    case = 'work'
 
     def test_unusable_input_publishes_a_use_condition_stop(self):
         with self.running() as (e, eid, future, reads):

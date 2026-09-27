@@ -12,14 +12,17 @@ from .operation_trace import measured
 from collections.abc import Iterator, Mapping
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-import json
+from functools import lru_cache
+import hashlib
 import os
 from pathlib import Path
 import re
 import subprocess
 import tempfile
 import stat
+import time
 from typing import Final
+import zlib
 
 from .file_io import os_lock
 
@@ -43,6 +46,22 @@ class StateSnapshot:
     head: str | None
 
 
+@dataclass(frozen=True, slots=True)
+class _Tree:
+    """One state commit's tree: ``name -> (mode, oid)`` per directory (``""`` is the root).
+
+    ``paths`` are its file paths. A publication shares every untouched
+    directory's entries with its parent's ``_Tree``; neither is mutated.
+    """
+
+    commit: str
+    directories: Mapping[str, Mapping[str, tuple[str, str]]]
+    paths: frozenset[str]
+
+
+_FILE_MODE: Final = "100644"
+_TREE_MODE: Final = "40000"
+
 # ULID in Crockford base32: 26 digits, the first at most 7 (48-bit time + 80 random bits).
 ULID_ALPHABET: Final = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 ULID_LENGTH: Final = 26
@@ -60,6 +79,8 @@ def is_new_id(prefix: str, value) -> bool:
     return isinstance(value, str) and re.fullmatch(re.escape(prefix) + "-" + ULID_PATTERN, value) is not None
 
 
+# Pure in its string argument; saves re-checking the same segments on every save.
+@lru_cache(maxsize=65536)
 def check_path_segment(part: str) -> None:
     """Reject one state path segment that a Windows checkout cannot store under that name.
 
@@ -107,16 +128,24 @@ class GitStateStore:
             raise ValueError("repository must be an existing Git work tree or bare repository")
         self.instance_id = instance_id
         self.ref = f"refs/heads/do-math/{instance_id}"
-        facts = self._git_text("rev-parse", "--absolute-git-dir", "--show-object-format").splitlines()
-        if len(facts) != 2:
-            raise GitStateStoreError("git rev-parse did not report the Git directory and object format")
+        facts = self._git_text("rev-parse", "--absolute-git-dir", "--show-object-format",
+                               "--git-path", "objects").splitlines()
+        if len(facts) != 3:
+            raise GitStateStoreError("git rev-parse did not report the Git directory, object format and objects")
         self._git_dir = Path(facts[0]).absolute()
         self._git_boundary = PhysicalBoundary(self._git_dir)
         self.object_format = facts[1].strip()
         if self.object_format not in {"sha1", "sha256"}:
             raise GitStateStoreError(f"unsupported Git object format: {self.object_format!r}")
         self.oid_length = 40 if self.object_format == "sha1" else 64
-        self._listed: tuple[str, frozenset[str]] | None = None
+        # --git-path is relative to the work tree unless Git reports it absolute
+        # (a linked worktree's common directory, GIT_OBJECT_DIRECTORY).
+        self._objects = self.repository / facts[2].strip()
+        # The trees this store last published and last read (see _tree).
+        self._published: _Tree | None = None
+        self._read: _Tree | None = None
+        # Set only while this store holds the writer lock and its own CAS moved the ref.
+        self._held_head: str | None = None
         self._holds_writer_lock = False
 
     def read_snapshot(self) -> StateSnapshot:
@@ -124,8 +153,12 @@ class GitStateStore:
 
         One batch query resolves the ref, its object type and both subtrees.
         Only when the ref line is missing does ``rev-parse`` separate an absent
-        ref from a ref that names a missing object.
+        ref from a ref that names a missing object. Under the writer lock, after
+        this store's own compare-and-swap, no do-math writer can have moved the
+        ref from the commit that CAS installed, so that head is returned unread.
         """
+        if self._held_head is not None:
+            return StateSnapshot(self._held_head)
         names = ("research", "runtime")
         queries = "".join(f"{self.ref}{suffix}\n" for suffix in ("", *(":" + name for name in names)))
         result = self._git("cat-file", "--batch-check=%(objectname) %(objecttype)",
@@ -220,27 +253,101 @@ class GitStateStore:
         if missing not in {"raise", "omit"}:
             raise ValueError('missing must be "raise" or "omit"')
 
-    def _write_blobs(self, changes: Mapping[str, bytes | None]) -> dict[str, str]:
-        values = [(path, raw) for path, raw in changes.items() if raw is not None]
-        if not values:
-            return {}
-        # Numbered private files avoid argv limits and quoting research paths.
-        # --no-filters preserves exactly the bytes previously passed to --stdin.
-        with tempfile.TemporaryDirectory(prefix="do-math-blobs-", dir=self._git_dir) as directory:
-            filenames = []
-            for number, (_, raw) in enumerate(values):
-                file = Path(directory) / str(number)
-                with self._git_boundary.open(file, "xb") as stream:
-                    stream.write(raw)
-                filenames.append(json.dumps(file.as_posix(), ensure_ascii=False))
-            output = self._git("hash-object", "-w", "--no-filters", "--stdin-paths",
-                               input=("\n".join(filenames) + "\n").encode("utf-8")).stdout
-        oids = output.decode("ascii").splitlines()
-        if len(oids) != len(values):
-            raise GitStateStoreError("blob writer returned an incomplete object list")
-        for oid in oids:
-            self._validate_oid(oid)
-        return {path: oid for (path, _), oid in zip(values, oids)}
+    def _write_object(self, kind: bytes, body: bytes) -> str:
+        """Store one loose object as installed Git does by default, returning its OID.
+
+        The OID hashes ``"<kind> <size>\\0"`` and the exact body, so writing is
+        idempotent: an existing loose object is kept, and a concurrent writer of
+        the same object only loses the final rename. Like Git for Windows
+        (``core.fsyncObjectFiles=true`` by default) each new object is flushed
+        before its final name appears; the directory is not, as Git does not.
+        """
+        data = b"%s %d\0" % (kind, len(body)) + body
+        oid = hashlib.new(self.object_format, data).hexdigest()
+        target = self._objects / oid[:2] / oid[2:]
+        if target.exists():
+            return oid
+        target.parent.mkdir(exist_ok=True)
+        # Git's prefix, so ``git prune`` removes a temporary a crash leaves behind.
+        descriptor, temporary = tempfile.mkstemp(prefix="tmp_obj_", dir=target.parent)
+        try:
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(zlib.compress(data, 1))  # core.looseCompression default
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.chmod(temporary, 0o444)  # Git's mode for loose objects (read-only on Windows)
+            try:
+                os.rename(temporary, target)
+            except FileExistsError:
+                pass  # Windows: another writer stored the identical object first
+        finally:
+            if os.path.lexists(temporary):
+                os.chmod(temporary, stat.S_IREAD | stat.S_IWRITE)
+                os.unlink(temporary)
+        return oid
+
+    def _write_tree(self, parent: Mapping[str, Mapping[str, tuple[str, str]]],
+                    changes: Mapping[str, bytes | None]) -> tuple[str, dict[str, dict[str, tuple[str, str]]]]:
+        """Write each changed blob and the trees above it; other subtrees keep their OIDs.
+
+        Returns the root tree OID and the new directory map. A directory left
+        empty disappears from its parent, as it does from Git's index.
+        """
+        directories = dict(parent)
+        touched: set[str] = set()
+
+        def own(directory: str) -> dict[str, tuple[str, str]]:
+            if directory not in touched:
+                touched.add(directory)
+                directories[directory] = dict(directories.get(directory, {}))
+            return directories[directory]
+
+        for path, contents in changes.items():
+            directory, _, name = path.rpartition("/")
+            entries = own(directory)
+            if contents is not None:
+                entries[name] = (_FILE_MODE, self._write_object(b"blob", contents))
+            elif entries.get(name, ("",))[0] != _TREE_MODE:
+                # As in Git's index, deleting a directory's own path removes nothing.
+                entries.pop(name, None)
+            while directory:
+                directory = directory.rpartition("/")[0]
+                own(directory)
+        # Deepest first, so each parent sees its children already rewritten or emptied.
+        for directory in sorted(touched - {""}, key=lambda path: path.count("/"), reverse=True):
+            above, _, name = directory.rpartition("/")
+            if directories[directory]:
+                directories[above][name] = (_TREE_MODE, self._write_tree_object(directories[directory]))
+            else:
+                del directories[directory]
+                if directories[above].get(name, ("",))[0] == _TREE_MODE:
+                    del directories[above][name]
+        return self._write_tree_object(directories[""]), directories
+
+    def _write_tree_object(self, entries: Mapping[str, tuple[str, str]]) -> str:
+        # Git orders entries by name bytes, a subtree's name as if it ended in "/".
+        rows = sorted((name.encode("utf-8") + (b"/" if mode == _TREE_MODE else b""), name, mode, oid)
+                      for name, (mode, oid) in entries.items())
+        return self._write_object(b"tree", b"".join(
+            f"{mode} {name}\0".encode("utf-8") + bytes.fromhex(oid) for _, name, mode, oid in rows))
+
+    def _write_commit(self, tree: str, parent: str | None) -> str:
+        """The commit ``git commit-tree`` wrote for do-math: fixed identity, now, local offset."""
+        seconds = int(time.time())
+        minutes = time.localtime(seconds).tm_gmtoff // 60
+        signature = "do-math <do-math@invalid> %d %s%02d%02d" % (
+            seconds, "-" if minutes < 0 else "+", abs(minutes) // 60, abs(minutes) % 60)
+        parents = f"parent {parent}\n" if parent is not None else ""
+        return self._write_object(b"commit", (
+            f"tree {tree}\n{parents}author {signature}\ncommitter {signature}\n\ndo-math state\n").encode("ascii"))
+
+    def _compare_and_swap(self, new: str, old: str | None, operation: str) -> None:
+        """Move the ref by Git's expected-old-OID update, the only ref move."""
+        updated = self._git("update-ref", self.ref, new, old or "0" * self.oid_length, check=False)
+        if updated.returncode:
+            self._held_head = None
+            raise GitStateStoreConflict(f"state ref changed before the {operation} compare-and-swap")
+        self._held_head = new if self._holds_writer_lock else None
 
     @measured('git_publication')
     def publish(self, expected_head: str | None, changes: Mapping[str, bytes | None]) -> StateSnapshot:
@@ -257,7 +364,8 @@ class GitStateStore:
             self._validate_oid(expected_head)
         normalized_changes = self._validate_changes(changes)
 
-        existing_paths = self._tree_paths(expected_head) if expected_head is not None else set()
+        parent = self._tree(expected_head) if expected_head is not None else None
+        existing_paths = parent.paths if parent is not None else frozenset()
         self._validate_artifact_changes(existing_paths, normalized_changes)
         candidate_paths = set(existing_paths)
         for path, contents in normalized_changes.items():
@@ -269,9 +377,7 @@ class GitStateStore:
         if expected_head is not None and not normalized_changes:
             # A no-op still compares the authoritative ref at the publication
             # boundary, but creates neither blobs nor an empty history commit.
-            updated = self._git("update-ref", self.ref, expected_head, expected_head, check=False)
-            if updated.returncode:
-                raise GitStateStoreConflict("state ref changed before the no-op compare-and-swap")
+            self._compare_and_swap(expected_head, expected_head, "no-op")
             return StateSnapshot(expected_head)
         # The candidate path list decides both subtrees without reading the written tree.
         if not any(path.startswith("research/") for path in candidate_paths):
@@ -279,38 +385,13 @@ class GitStateStore:
         if not any(path.startswith("runtime/") for path in candidate_paths):
             raise ValueError("the state must contain a runtime subtree")
 
-        with self._private_index() as index_environment:
-            if expected_head is None:
-                self._git("read-tree", "--empty", env=index_environment)
-            else:
-                self._git("read-tree", f"{expected_head}^{{tree}}", env=index_environment)
-            index_records = bytearray()
-            blobs = self._write_blobs(normalized_changes)
-            for path, contents in normalized_changes.items():
-                if contents is None:
-                    index_records.extend(f"0 {'0' * self.oid_length}\t{path}".encode("utf-8"))
-                else:
-                    blob = blobs[path]
-                    index_records.extend(f"100644 {blob}\t{path}".encode("utf-8"))
-                index_records.append(0)
-            if index_records:
-                self._git("update-index", "-z", "--index-info", input=bytes(index_records), env=index_environment)
-            tree = self._git("write-tree", env=index_environment).stdout.decode("ascii").strip()
-        self._validate_oid(tree)
-
-        command = ["commit-tree", tree]
-        if expected_head is not None:
-            command.extend(["-p", expected_head])
-        commit = self._git(*command, input=b"do-math state\n").stdout.decode("ascii").strip()
-        self._validate_oid(commit)
-
-        old = expected_head if expected_head is not None else "0" * self.oid_length
-        updated = self._git("update-ref", self.ref, commit, old, check=False)
-        if updated.returncode:
-            raise GitStateStoreConflict("state ref changed before the publish compare-and-swap")
-        # The new tree is the parent tree with exactly these index updates, so
-        # its path list is known without re-enumerating it (ls-tree -r).
-        self._listed = (commit, frozenset(candidate_paths))
+        # Objects are written in this process; only the ref move below runs Git.
+        tree, directories = self._write_tree(parent.directories if parent is not None else {"": {}},
+                                             normalized_changes)
+        commit = self._write_commit(tree, expected_head)
+        self._compare_and_swap(commit, expected_head, "publish")
+        # The new tree is known entry by entry, so it is never enumerated (ls-tree).
+        self._published = _Tree(commit, directories, frozenset(candidate_paths))
         return StateSnapshot(commit)
 
     @contextmanager
@@ -326,6 +407,7 @@ class GitStateStore:
                 yield
             finally:
                 self._holds_writer_lock = False
+                self._held_head = None
 
     def _ref_oid(self) -> str | None:
         """Resolve the ref and validate OID syntax; object kinds are checked by readers."""
@@ -352,22 +434,39 @@ class GitStateStore:
                 raise GitStateStoreError(f"state {name!r} entry must be a tree")
 
     def _tree_paths(self, commit: str) -> frozenset[str]:
+        return self._tree(commit).paths
+
+    def _tree(self, commit: str) -> _Tree:
+        """The tree of ``commit``: kept from this store's last publication or read, else one ls-tree.
+
+        Two slots keep reading an older snapshot from displacing the head the
+        next publication builds on.
+        """
         self._validate_oid(commit)
-        if self._listed is not None and self._listed[0] == commit:
-            return self._listed[1]
-        raw_paths = self._git("ls-tree", "-r", "-z", "--name-only", commit).stdout.split(b"\0")
+        for known in (self._published, self._read):
+            if known is not None and known.commit == commit:
+                return known
+        directories: dict[str, dict[str, tuple[str, str]]] = {"": {}}
         paths: set[str] = set()
-        for raw_path in raw_paths:
-            if not raw_path:
+        for record in self._git("ls-tree", "-r", "-t", "-z", commit).stdout.split(b"\0"):
+            if not record:
                 continue
+            fields, _, raw_path = record.partition(b"\t")
+            mode, kind, oid = fields.decode("ascii").split(" ")
             try:
                 path = raw_path.decode("utf-8")
             except UnicodeDecodeError as error:
                 raise GitStateStoreError("existing state contains a non-UTF-8 path") from error
-            self._validate_path(path)
-            paths.add(path)
-        self._listed = (commit, frozenset(paths))
-        return self._listed[1]
+            if kind == "tree":
+                directories.setdefault(path, {})
+            else:
+                self._validate_path(path)
+                paths.add(path)
+            above, _, name = path.rpartition("/")
+            # ls-tree prints a subtree's mode zero-padded (040000); the tree object stores 40000.
+            directories.setdefault(above, {})[name] = (mode.lstrip("0"), oid)
+        self._read = _Tree(commit, directories, frozenset(paths))
+        return self._read
 
     def _validate_changes(self, changes: Mapping[str, bytes | None]) -> dict[str, bytes | None]:
         if not isinstance(changes, Mapping):
@@ -434,17 +533,6 @@ class GitStateStore:
         if oid_shape(oid) != self.object_format:
             raise ValueError(f"OID must be a lowercase {self.object_format} object ID")
 
-    @contextmanager
-    def _private_index(self) -> Iterator[dict[str, str]]:
-        descriptor, index_path = tempfile.mkstemp(prefix="do-math-index-", dir=self._git_dir)
-        os.close(descriptor)
-        environment = {"GIT_INDEX_FILE": index_path}
-        try:
-            yield environment
-        finally:
-            Path(index_path).unlink(missing_ok=True)
-            Path(f"{index_path}.lock").unlink(missing_ok=True)
-
     def _git_text(self, *arguments: str) -> str:
         return self._git(*arguments).stdout.decode("utf-8").strip()
 
@@ -452,7 +540,6 @@ class GitStateStore:
         self,
         *arguments: str,
         input: bytes | None = None,
-        env: Mapping[str, str] | None = None,
         check: bool = True,
     ) -> subprocess.CompletedProcess[bytes]:
         disabled_hooks = getattr(self, "_git_dir", self.repository) / "do-math-disabled-hooks"
@@ -462,8 +549,6 @@ class GitStateStore:
             "GIT_CONFIG_GLOBAL": os.devnull,
             "GIT_OPTIONAL_LOCKS": "0",
         })
-        if env is not None:
-            environment.update(env)
         completed = subprocess.run(
             [
                 "git", "-C", str(self.repository),

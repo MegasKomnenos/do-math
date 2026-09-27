@@ -982,12 +982,11 @@
       "groups": [
         "execution_recovery"
       ],
-      "rationale": "recover_execution의 no_substantive_action 입력은 start_failed 근거다. 실제 권한 기록 이전 crash를 재현한 증거로 쓰지 않는다.",
+      "rationale": "ResearchEngine._recover_disappeared는 예약 없는 queued 시도를 recover_execution(no_execution_or_reservation)으로 기록한 뒤 end_preparation으로 cancelled 종결하고 같은 요청을 이어 준비한다. start_failed는 입력 준비 실패의 종결이다(test_11). 실제 권한 기록 이전 crash를 재현한 증거로 쓰지 않는다.",
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py::transition_execution",
         ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py::recover_execution",
-        ".claude/skills/do-math/scripts/do_math/engine.py::ResearchEngine._recover_disappeared",
-        ".claude/skills/do-math/scripts/do_math/activities.py::requeue_recovered_execution"
+        ".claude/skills/do-math/scripts/do_math/engine.py::ResearchEngine._recover_disappeared"
       ],
       "evidence": [
         {
@@ -1007,24 +1006,6 @@
             "fixture state/responses; no live model or provider"
           ],
           "observations": []
-        },
-        {
-          "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py::AuditRecoveryTests.test_05_queued_recovery_is_retired_and_requeued_with_exact_lineage",
-          "asserts": "복구 queued 시도를 실제 취소 종결하고 같은 활동·명시 재개 계보의 새 요청을 저장한다.",
-          "boundary": [
-            "Actual local domain/storage APIs; model/provider/OS observations are fixtures unless stated",
-            "Fixed-run outcomes are assertion-scoped, not a whole requirement pass"
-          ],
-          "observations": [
-            {
-              "run_id": "EVIDENCE-owner-assertions-01",
-              "outcome": "passed"
-            },
-            {
-              "run_id": "COVERAGE-recovery-schema-01",
-              "outcome": "passed"
-            }
-          ]
         },
         {
           "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py::AuditRecoveryTests.test_11_preparation_attempt_is_durable_before_input_and_failure",
@@ -1047,7 +1028,8 @@
       ],
       "scope": "전이 및 복구 API의 장벽 사실 소비와 수신 영수증을 검사한다. 호스트/원격 사실은 fixture다.",
       "gaps": [
-        "권한 기록 이전 실제 crash에서 실질 행동 부재와 준비 흔적의 연속성을 공개 ENGINE 경로로 재생한 현행 통합판 전건 검증은 남아 있다."
+        "권한 기록 이전 실제 crash에서 실질 행동 부재와 준비 흔적의 연속성을 공개 ENGINE 경로로 재생한 현행 통합판 전건 검증은 남아 있다.",
+        "현행 소실 복구는 권한 기록 전 queued 시도를 start_failed가 아니라 cancelled로 종결한다(engine.py ResearchEngine._recover_disappeared의 queued 분기). 원천 기대의 start_failed와 이 종결의 대응은 판정되지 않았다."
       ],
       "execution": {
         "state": "partial",
@@ -1069,6 +1051,17 @@
             "LIFECYCLE",
             "STORAGE"
           ]
+        },
+        {
+          "gap_indexes": [
+            1
+          ],
+          "category": "a",
+          "basis": "2라운드 뒤 정적 재판정(작업자 B4): 소실 복구의 queued 분기는 2라운드 전에도 cancelled로 종결했고, 삭제된 activities.requeue_recovered_execution은 제품 호출자가 없었다. 원천 기대와 현행 종결의 차이는 확인된 미연결이다.",
+          "owners": [
+            "ENGINE",
+            "ACTIVITIES"
+          ]
         }
       ]
     },
@@ -1085,8 +1078,7 @@
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py::transition_execution",
         ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py::recover_execution",
-        ".claude/skills/do-math/scripts/do_math/engine.py::ResearchEngine._recover_disappeared",
-        ".claude/skills/do-math/scripts/do_math/activities.py::requeue_recovered_execution"
+        ".claude/skills/do-math/scripts/do_math/engine.py::ResearchEngine._recover_disappeared"
       ],
       "evidence": [
         {
@@ -1106,24 +1098,6 @@
             "fixture state/responses; no live model or provider"
           ],
           "observations": []
-        },
-        {
-          "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py::AuditRecoveryTests.test_05_queued_recovery_is_retired_and_requeued_with_exact_lineage",
-          "asserts": "복구 queued 시도를 실제 취소 종결하고 같은 활동·명시 재개 계보의 새 요청을 저장한다.",
-          "boundary": [
-            "Actual local domain/storage APIs; model/provider/OS observations are fixtures unless stated",
-            "Fixed-run outcomes are assertion-scoped, not a whole requirement pass"
-          ],
-          "observations": [
-            {
-              "run_id": "EVIDENCE-owner-assertions-01",
-              "outcome": "passed"
-            },
-            {
-              "run_id": "COVERAGE-recovery-schema-01",
-              "outcome": "passed"
-            }
-          ]
         }
       ],
       "scope": "전이 및 복구 API의 장벽 사실 소비와 수신 영수증을 검사한다. 호스트/원격 사실은 fixture다.",
@@ -1131,11 +1105,9 @@
         "start_unknown은 stopping/공간·예약 보존을 지시한다. suspended root 공개 전 ENGINE crash 타이밍은 별도다."
       ],
       "execution": {
-        "state": "partial",
-        "run_ids": [
-          "COVERAGE-recovery-schema-01"
-        ],
-        "scope": "현재 완료된 좁은 frozen archive의 assertion 관찰만 요약한다. archive의 source hash가 현행 root와 다를 수 있고 runs가 비어 있으므로 현행 전체 회귀나 기능 완료를 뜻하지 않는다."
+        "state": "not_run",
+        "run_ids": [],
+        "scope": "각 인용 시험의 가장 나중에 동결된 실행만 요약하며 과거 관찰은 evidence.observations에 보존한다. 서로 다른 사본의 부분 통과를 한 판본의 기능 통과로 합치지 않는다."
       },
       "unproven": [
         {
@@ -1604,8 +1576,7 @@
       "rationale": "등록한 가족의 참조 폐쇄와 묶음 사이 새 참조를 검사한다. 새 레코드·관계 동시 작성의 모든 가족 좌표는 추가한다.",
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/state_contract.py::StateContract.validate",
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate",
-        ".claude/skills/do-math/scripts/do_math/events.py::EventPublisher.prepare"
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate"
       ],
       "evidence": [
         {
@@ -2197,8 +2168,7 @@
       "rationale": "StateContract 등록과 실제 저장/읽기 경계에서 거부하는 표본을 연결한다.",
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/state_contract.py::StateContract.validate",
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate",
-        ".claude/skills/do-math/scripts/do_math/events.py::EventPublisher.prepare"
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate"
       ],
       "evidence": [
         {
@@ -3108,8 +3078,7 @@
         ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py::transition_execution",
         ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py::recover_execution",
         ".claude/skills/do-math/scripts/do_math/engine.py::ResearchEngine._recover_disappeared",
-        ".claude/skills/do-math/scripts/do_math/provider_engine.py::ProviderEngineMixin._settle_recovered_execution",
-        ".claude/skills/do-math/scripts/do_math/activities.py::requeue_recovered_execution"
+        ".claude/skills/do-math/scripts/do_math/provider_engine.py::ProviderEngineMixin._settle_recovered_execution"
       ],
       "evidence": [
         {
@@ -3141,24 +3110,6 @@
             {
               "run_id": "EVIDENCE-owner-assertions-01",
               "outcome": "failed"
-            },
-            {
-              "run_id": "COVERAGE-recovery-schema-01",
-              "outcome": "passed"
-            }
-          ]
-        },
-        {
-          "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py::AuditRecoveryTests.test_05_queued_recovery_is_retired_and_requeued_with_exact_lineage",
-          "asserts": "복구 queued 시도를 실제 취소 종결하고 같은 활동·명시 재개 계보의 새 요청을 저장한다.",
-          "boundary": [
-            "Actual local domain/storage APIs; model/provider/OS observations are fixtures unless stated",
-            "Fixed-run outcomes are assertion-scoped, not a whole requirement pass"
-          ],
-          "observations": [
-            {
-              "run_id": "EVIDENCE-owner-assertions-01",
-              "outcome": "passed"
             },
             {
               "run_id": "COVERAGE-recovery-schema-01",
@@ -4030,8 +3981,7 @@
       "rationale": "StateContract 등록과 실제 저장/읽기 경계에서 거부하는 표본을 연결한다.",
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/state_contract.py::StateContract.validate",
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate",
-        ".claude/skills/do-math/scripts/do_math/events.py::EventPublisher.prepare"
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate"
       ],
       "evidence": [
         {
@@ -6539,8 +6489,7 @@
       "rationale": "현재 가족 파일 경로와 ID query를 사용한다. 파일 이동 후 authoritative ID index 재생성 시험은 없다.",
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/state_contract.py::StateContract.validate",
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate",
-        ".claude/skills/do-math/scripts/do_math/events.py::EventPublisher.prepare"
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate"
       ],
       "evidence": [],
       "scope": "StateContract 등록과 실제 저장/읽기 경계에서 거부하는 표본을 연결한다.",
@@ -6578,8 +6527,7 @@
       "rationale": "StateContract 참조 폐쇄와 본문 항해 링크 lint를 구분한 직접 쌍 시험은 없다.",
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/state_contract.py::StateContract.validate",
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate",
-        ".claude/skills/do-math/scripts/do_math/events.py::EventPublisher.prepare"
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate"
       ],
       "evidence": [],
       "scope": "StateContract 등록과 실제 저장/읽기 경계에서 거부하는 표본을 연결한다.",
@@ -8026,8 +7974,7 @@
       "rationale": "unknown field/NFC/float/global ID/contract hash 음성 표본을 연결한다. 중복 raw key·금지 YAML·OID 모든 변형까지 한 시험으로 세지 않는다.",
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/state_contract.py::StateContract.validate",
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate",
-        ".claude/skills/do-math/scripts/do_math/events.py::EventPublisher.prepare"
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate"
       ],
       "evidence": [
         {
@@ -8431,8 +8378,7 @@
       "rationale": "존재하는 schema/registry/describe 이름은 지원 증거가 아니다. 양방향 누락 표본은 이 작업의 coverage checker와 별도의 제품 계약 시험이다.",
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/state_contract.py::StateContract.validate",
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate",
-        ".claude/skills/do-math/scripts/do_math/events.py::EventPublisher.prepare"
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate"
       ],
       "evidence": [],
       "scope": "StateContract 등록과 실제 저장/읽기 경계에서 거부하는 표본을 연결한다.",
@@ -8641,8 +8587,7 @@
       "rationale": "현재 old feature write refusal은 implicit migration 금지다. 읽기 전용 호환·실패 변환의 완전 보존/계획 실행은 별도다.",
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/state_contract.py::StateContract.validate",
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate",
-        ".claude/skills/do-math/scripts/do_math/events.py::EventPublisher.prepare"
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate"
       ],
       "evidence": [],
       "scope": "StateContract 등록과 실제 저장/읽기 경계에서 거부하는 표본을 연결한다.",
@@ -15988,25 +15933,12 @@
               "outcome": "passed"
             }
           ]
-        },
-        {
-          "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_OBSERVATION.py::ObservationRedesignTests.test_missing_active_measurement_is_reported_not_zero_or_wall_time",
-          "asserts": "Unavailable active interval measurement produces observation_unavailable and a followup, never substituted wall-time or zero.",
-          "boundary": [
-            "real Python domain transitions",
-            "fixture responses/clocks; no live provider"
-          ],
-          "observations": [
-            {
-              "run_id": "COVERAGE-execution-integrated-01",
-              "outcome": "passed"
-            }
-          ]
         }
       ],
       "scope": "실제 규칙 평가/교체와 의무 응답을 fake clock/worker payload로 검사한다.",
       "gaps": [
-        "밀리초 안전 경계 B+W·active 시간 제외·3회 no_progress·periodic/explicit 예약·ENGINE 운영 처분의 전 분기 및 실제 모델 비용 절감은 추가 검증 대상이다."
+        "밀리초 안전 경계 B+W·3회 no_progress·periodic/explicit 예약·ENGINE 운영 처분의 전 분기 및 실제 모델 비용 절감은 추가 검증 대상이다.",
+        "대기 구간을 활성 누적에서 제외하라는 요구는 대상 출처가 없어졌다. 2라운드 결정 3이 활성 구간 출처(adapter_active_intervals)와 active_duration_gte를 제거했다."
       ],
       "execution": {
         "state": "partial",
@@ -16034,6 +15966,16 @@
           ],
           "category": "d",
           "basis": "이 항목 중 실제 모델/공급자/Lean 및 연구 효능을 요구하는 절은 이번 대역 검증 범위 밖이다. 남은 로컬 구현·연결 증거 부족(b)과 별개로 유지한다.",
+          "owners": [
+            "MAIN"
+          ]
+        },
+        {
+          "gap_indexes": [
+            1
+          ],
+          "category": "c",
+          "basis": "docs/do-math/경량화-설계-2026-09-26.md 1.4절(결정 3): 한 CLI 세션 안의 활성 시간은 running 이후 경과 시간과 구별되지 않아 활성 구간 출처를 제거했다. 시간 기반 점검은 wall_time_reached와 최대 벽시계 간격이 맡는다.",
           "owners": [
             "MAIN"
           ]
@@ -16783,7 +16725,8 @@
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/state_contract.py::StateContract.validate",
         ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate",
-        ".claude/skills/do-math/scripts/do_math/events.py::EventPublisher.prepare"
+        ".claude/skills/do-math/scripts/do_math/events.py::EventPublisher.assign_sequences_in_place",
+        ".claude/skills/do-math/scripts/do_math/events.py::check_sequence"
       ],
       "evidence": [
         {
@@ -19342,8 +19285,7 @@
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py::transition_execution",
         ".claude/skills/do-math/scripts/do_math/execution_lifecycle.py::recover_execution",
-        ".claude/skills/do-math/scripts/do_math/engine.py::ResearchEngine._recover_disappeared",
-        ".claude/skills/do-math/scripts/do_math/activities.py::requeue_recovered_execution"
+        ".claude/skills/do-math/scripts/do_math/engine.py::ResearchEngine._recover_disappeared"
       ],
       "evidence": [
         {
@@ -19363,24 +19305,6 @@
             "fixture state/responses; no live model or provider"
           ],
           "observations": []
-        },
-        {
-          "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_ACTIVITIES.py::AuditRecoveryTests.test_05_queued_recovery_is_retired_and_requeued_with_exact_lineage",
-          "asserts": "복구 queued 시도를 실제 취소 종결하고 같은 활동·명시 재개 계보의 새 요청을 저장한다.",
-          "boundary": [
-            "Actual local domain/storage APIs; model/provider/OS observations are fixtures unless stated",
-            "Fixed-run outcomes are assertion-scoped, not a whole requirement pass"
-          ],
-          "observations": [
-            {
-              "run_id": "EVIDENCE-owner-assertions-01",
-              "outcome": "passed"
-            },
-            {
-              "run_id": "COVERAGE-recovery-schema-01",
-              "outcome": "passed"
-            }
-          ]
         }
       ],
       "scope": "전이 및 복구 API의 장벽 사실 소비와 수신 영수증을 검사한다. 호스트/원격 사실은 fixture다.",
@@ -19388,11 +19312,9 @@
         "recover_execution의 기계 사실 입력은 있다. 재개 범위 의미가 남을 때 independent recovery check와 새 plan 선택의 실제 소비 경로는 추가한다."
       ],
       "execution": {
-        "state": "partial",
-        "run_ids": [
-          "COVERAGE-recovery-schema-01"
-        ],
-        "scope": "현재 완료된 좁은 frozen archive의 assertion 관찰만 요약한다. archive의 source hash가 현행 root와 다를 수 있고 runs가 비어 있으므로 현행 전체 회귀나 기능 완료를 뜻하지 않는다."
+        "state": "not_run",
+        "run_ids": [],
+        "scope": "각 인용 시험의 가장 나중에 동결된 실행만 요약하며 과거 관찰은 evidence.observations에 보존한다. 서로 다른 사본의 부분 통과를 한 판본의 기능 통과로 합치지 않는다."
       },
       "unproven": [
         {
@@ -19704,8 +19626,7 @@
       "rationale": "자동 옛 기록 변환은 이번 파견의 대상이 아니다. 승인된 schema migration과 최신 runtime 합류 보장은 별도 구현/검증이 필요하다.",
       "implementation": [
         ".claude/skills/do-math/scripts/do_math/state_contract.py::StateContract.validate",
-        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate",
-        ".claude/skills/do-math/scripts/do_math/events.py::EventPublisher.prepare"
+        ".claude/skills/do-math/scripts/do_math/repository.py::ResearchRepository.validate_candidate"
       ],
       "evidence": [],
       "scope": "StateContract 등록과 실제 저장/읽기 경계에서 거부하는 표본을 연결한다.",
@@ -24584,8 +24505,8 @@
       "rationale": "설계 17.3의 독립 시나리오. 도메인 전이를 대역 함수로 대체하지 않는다.",
       "input": "종료한 시도, 정확한 사용자 질문의 대상 과제와 독립 과제",
       "transitions": [
-        "질문 link→활동 user wait·해당 task 차단/peer 허용",
-        "무관한 답변 거부→정확 대상 resolve_user→활동 재개→명시 continuation 착수 조건",
+        "질문 link→해당 task 차단/peer 허용",
+        "무관한 답변 거부→정확 대상 resolve_user→명시 continuation 착수 조건",
         "허가 철회 뒤 차단·의무 불변"
       ],
       "implementation": [
@@ -24593,13 +24514,12 @@
         ".claude/skills/do-math/scripts/do_math/task_contracts.py::validate_plan_dispositions",
         ".claude/skills/do-math/scripts/do_math/planning.py::schedule_reconsideration",
         ".claude/skills/do-math/scripts/do_math/engine.py::ResearchEngine._apply_plan",
-        ".claude/skills/do-math/scripts/do_math/questions.py::resolve_user",
-        ".claude/skills/do-math/scripts/do_math/questions.py::sync_activity_wait"
+        ".claude/skills/do-math/scripts/do_math/questions.py::resolve_user"
       ],
       "evidence": [
         {
           "coordinate": ".claude/skills/do-math/scripts/tests/test_redesign_EVIDENCE_walkthroughs.py::DesignWalkthroughs.test_w05_waiting_task_keeps_obligations_and_other_work_can_proceed",
-          "asserts": "질문 link→활동 user wait·해당 task 차단/peer 허용; 무관한 답변 거부→정확 대상 resolve_user→활동 재개→명시 continuation 착수 조건; 허가 철회 뒤 차단·의무 불변",
+          "asserts": "질문 link→해당 task 차단/peer 허용; 무관한 답변 거부→정확 대상 resolve_user→명시 continuation 착수 조건; 허가 철회 뒤 차단·의무 불변",
           "boundary": [
             "real domain transitions",
             "model/Lean verdicts are fixture responses; no live provider"
@@ -24628,9 +24548,10 @@
           ]
         }
       ],
-      "scope": "질문 link→활동 user wait·해당 task 차단/peer 허용; 무관한 답변 거부→정확 대상 resolve_user→활동 재개→명시 continuation 착수 조건; 허가 철회 뒤 차단·의무 불변",
+      "scope": "질문 link→해당 task 차단/peer 허용; 무관한 답변 거부→정확 대상 resolve_user→명시 continuation 착수 조건; 허가 철회 뒤 차단·의무 불변",
       "gaps": [
-        "질문·활동 대기·응답 후 준비성/허가 재검사는 실행한다. 새 후속 execution의 실제 배정과 원격 미정산 예약의 분리 정산은 포함하지 않는다."
+        "질문·활동 대기·응답 후 준비성/허가 재검사는 실행한다. 새 후속 execution의 실제 배정과 원격 미정산 예약의 분리 정산은 포함하지 않는다.",
+        "질문에 따른 활동 user wait와 응답 뒤 활동 재개는 대상 구현이 없어졌다. 제품 호출자가 없던 questions.sync_activity_wait를 2라운드 결정 6이 삭제했다."
       ],
       "real": [
         "Python domain APIs and state transitions"
@@ -24657,6 +24578,16 @@
             "ENGINE",
             "CORE_TESTS",
             "CORE_TESTS"
+          ]
+        },
+        {
+          "gap_indexes": [
+            1
+          ],
+          "category": "c",
+          "basis": "docs/do-math/경량화-설계-2026-09-26.md 1.5절(결정 6): questions.sync_activity_wait와 그것만 검사하는 시험을 삭제했다. 과제 차단과 재착수 조건은 planning.task_ready가 계속 검사한다.",
+          "owners": [
+            "MAIN"
           ]
         }
       ]

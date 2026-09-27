@@ -22,15 +22,23 @@ from do_math.engine import DEFAULT_CONFIG, _repository, read_record, control
 from do_math.repository import canonical_json
 from do_math import integration
 from do_math.repository import ResearchRepository
-from research_fixtures import bare_engine, current_state, new_instance, write_checkpoint
+from research_fixtures import bare_engine, current_state, git_init, write_checkpoint
 from state_fixtures import owner_calls
+from test_lifecycle_engine import initialized
+
+
+class NoRepository:
+    """The store of an in-memory engine: no Git directory, and nothing to read."""
+    git_dir = None
 
 
 def routing_engine():
-    engine = bare_engine()
+    # Every loaded engine has a store and a configured artifact limit; consumers
+    # read store.git_dir and config['max_artifact_bytes'] without a fallback.
+    engine = bare_engine(store=NoRepository())
     engine.instance = {"id": "RI-test", "knowledge": {}, "relations": [],
                        "goal": "Original approved goal", "policies": "", "goal_status": "unresolved",
-                       "config": {"goal_auditors": 2}}
+                       "config": {"goal_auditors": 2, "max_artifact_bytes": DEFAULT_CONFIG["max_artifact_bytes"]}}
     engine.runtime = {"tasks": {}, "activities": {}, "executions": {}, "queue": [],
                       "questions": [], "question_links": [], "history": [], "inputs": [],
                       "interpretations": {}, "status": "ready"}
@@ -272,7 +280,7 @@ class PersistedConnections(unittest.TestCase):
     def test_new_instance_is_v5_initializing_without_implicit_authority(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            identifier = new_instance(root / "repo", goal="Prove the stated goal", workspace=root / "work",
+            identifier = initialized(root / "repo", goal="Prove the stated goal", workspace=root / "work",
                 config={"scholarly_enabled": False, "operator_enabled": False})
             head, instance, runtime = _repository(root / "repo", identifier).load()
             self.assertEqual(runtime["status"], "initializing")
@@ -676,7 +684,7 @@ class UserControlIdentity(unittest.TestCase):
     def test_git_replay_keeps_original_outcome_and_snapshot_after_close(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            identifier = new_instance(root / "repo", goal="Control replay", workspace=root / "work")
+            identifier = initialized(root / "repo", goal="Control replay", workspace=root / "work")
             first = control(root / "repo", identifier, "pause", text="pause once")
             engine = ResearchEngine(root / "repo", identifier)
             engine.process_controls()
@@ -786,7 +794,7 @@ class PublicGitFlow(unittest.TestCase):
                 return {"status": "completed", "output": output, "usage": {}}
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            identifier = new_instance(root / "repo", goal="Record and assess a bounded observation", workspace=root / "work", config={
+            identifier = initialized(root / "repo", goal="Record and assess a bounded observation", workspace=root / "work", config={
                  "scholarly_enabled": False, "operator_enabled": False, "lean_command": ["fixture-lean"],
                 "observation_mode": "periodic", "tool_review_window_seconds": 600, "self_check_response_window_seconds": 60,
                 "import_rework_limit": 3, "selection_failure_limit": 3, "exhaustion_empty_limit": 3,
@@ -823,7 +831,7 @@ class ControlQueueConnections(unittest.TestCase):
         engine = routing_engine(); engine.head = "parent"
         engine.instance.update(config={**deepcopy(DEFAULT_CONFIG), }, lifecycle={"state": "active"})
         engine.runtime["processed_controls"] = []
-        engine._inbox = create_autospec(engine._inbox, return_value=[request]); engine._save = create_autospec(engine._save); engine._resume_lifecycle = create_autospec(engine._resume_lifecycle)
+        engine._inbox = create_autospec(engine._inbox, return_value=[request]); engine._save = create_autospec(engine._save)
         for name in ("_review_recovery_control", "_knowledge_io_control", "_academic_control", "_apply_extended_control"):
             setattr(engine, name, create_autospec(getattr(engine, name), return_value=False))
         for name in ("_schedule_operational_reviews", "_retry_submission_publications", "_retry_impact_reviews", "_run_pending_operational_repairs"):
@@ -831,7 +839,8 @@ class ControlQueueConnections(unittest.TestCase):
         return engine
 
     def test_every_call_budget_control_produces_stable_queue_identity(self):
-        for action, config in (("input", {}), ("request", {"role": "maintenance"}), ("resume", {})):
+        # resume only restores the lifecycle (lifecycle_engine._resume_lifecycle); it queues no activity.
+        for action, config in (("input", {}), ("request", {"role": "maintenance"})):
             with self.subTest(action=action):
                 engine = self.engine({"id": "UC-one", "action": action, "config": config, "text": "Explicit request"})
                 engine._controls()
@@ -923,7 +932,7 @@ class MachineAdmissionConnections(unittest.TestCase):
         from test_host_resources import fixture
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            subprocess.run(["git", "init", "--quiet", str(root / "repo")], check=True, capture_output=True)
+            git_init(root / "repo")
             instance, profiles, _ = fixture()
             engine = routing_engine()
             engine.instance, engine.runtime = current_state(
@@ -956,7 +965,7 @@ class MaintenanceConnections(unittest.TestCase):
         from do_math.repository import ResearchRepository, new_id
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            subprocess.run(["git", "init", "--quiet", str(root / "repo")], check=True, capture_output=True)
+            git_init(root / "repo")
             engine = routing_engine(); identifier = new_id("RI")
             engine.instance, engine.runtime = current_state(
                 {"id": identifier, "workspace": str(root / "work"), **execution_profiles.build_profiles(DEFAULT_CONFIG)},
@@ -1559,7 +1568,7 @@ class AuditConsumerConnections(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             source = root / "source.txt"; source.write_text("preserved original", encoding="utf-8")
-            identifier = new_instance(root / "repo", goal="Read the preserved source", workspace=root / "work", sources=[source])
+            identifier = initialized(root / "repo", goal="Read the preserved source", workspace=root / "work", sources=[source])
             store = _repository(root / "repo", identifier)
             head, instance, runtime = store.load()
             raw_store = store._store

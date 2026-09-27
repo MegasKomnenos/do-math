@@ -2,17 +2,128 @@
 
 The adapter/Lean facts below are synthetic test evidence. They do not establish
 host capabilities, a real compiler result, or approval by the actual user.
+
+Shared starting states
+======================
+
+Building an active instance through the public path (``activate``: several
+controls plus two interpretation executions) costs tens of seconds, and a Git
+or CLI child process costs a noticeable fraction of a second. A test whose
+subject comes after that path starts from a copy of a state built once per
+process instead.
+
+What to use
+-----------
+``restore_template(build, **parameters)`` returns ``(root, value)``. The first
+call in a process runs ``build(root, shared, **parameters)`` once. Every call,
+the first included, then gives a fresh copy of exactly the bytes that build
+left under ``root``: Git objects and refs, the workspace with its ``runs/``
+outputs and the control inbox, as the product published them. ``value`` is a
+deep copy of what the build returned. Two builds are ready; both put the
+repository at ``root / 'repository'`` and the workspace at ``root / 'work-0'``
+and return the instance ID:
+
+- ``activated_instance`` (keywords ``goal``, ``config``, ``external_policy``,
+  ``review_policy``): public ``initialize`` plus ``activate``, the state
+  ``PurposeHarness.make`` publishes before its first research step.
+- ``state_fixtures.active_instance`` (keywords ``config``, ``external_policy``,
+  ``review_policy``): the validated synthetic state of
+  ``state_fixtures.active_engine``, without interpretation executions.
+
+Then ``ResearchEngine(root / 'repository', instance_id, runner=..., formal_verifier=...)``
+with a new runner. ``test_purpose_engine.ActivatedPurposeHarness`` wraps both
+as ``make`` and ``make_active`` and registers engine and runner for its
+report; a ``PurposeHarness`` subclass moves by changing its base class.
+``test_engine.EngineTests.active`` is the plain form.
+
+Two process helpers replace a child process where the process is not examined:
+``git_init(path)`` for ``git init -q <path>`` and ``run_cli(*arguments, cwd=...)``
+for ``python do_math.py *arguments`` (a ``CompletedProcess`` with text output).
+
+Rules of a copy
+---------------
+- ``root`` is the same path for every copy of one template; that keeps the
+  absolute paths in the state, and the hashes over them, true. A call replaces
+  the previous copy, so a test finishes with one engine before asking for the
+  next. A test may add instances to the copied repository itself.
+- Parameters are JSON values, and every value that shapes the built state is
+  one: goal, config, policies. Set configuration here rather than with a later
+  ``configure`` control, which makes new profile editions that need new
+  capability evidence. Defaults count, so omitting one names the same template.
+- Process-local engine state is not in a copy; set it on the new engine:
+  ``_task_readiness`` is empty until ``run`` (call ``_refresh_readiness()`` to
+  read it before), and clock or method patches (``lifecycle_clock``,
+  ``_solution_basis``) apply to the object they were set on. The product's
+  path-keyed caches are cleared for ``root`` on every restore, so the new
+  engine validates the copied head in full when it loads it.
+- A template lives in one process and is never reused from disk: it carries
+  the installed edition, grant expiries (one day after the build) and the
+  clock high-water. A test whose rule depends on time elapsed since the build
+  uses the public path.
+- The build runs inside the first test that asks for it, and a failed build
+  fails every later test that asks for the same template.
+
+Writing a build
+---------------
+``build(root, shared, **parameters)`` creates everything the state names under
+``root``, except files whose stat fingerprint the state records, such as
+``trust_fixture`` toolchains and records: a copy gets a new creation time, so
+those go under ``shared``, which is never copied or cleared and must only be
+read afterwards. A deeper state is a build that starts from a ready build on
+its own ``root`` (for example ``activated_instance(root, shared, ...)``) and
+then drives an engine with a scripted runner; it returns whatever the tests
+need (instance IDs, a task's copy before a change, an execution ID). End the
+build where no execution is unfinished and nothing is reserved: an executor
+started on the copy recovers every unfinished execution. A test that needs a
+running call copies the state before it and starts the call itself. Formal
+checks on the synthetic state need ``lean_command=list(state_fixtures.ACTIVE_LEAN_COMMAND)``
+in its config; public activation registers the configured command itself.
+
+When to keep the public path or the child process
+--------------------------------------------------
+Keep the public path when the test's subject is that path: initialization,
+activation gates, the interpretation check, probes or trust registration
+during initialization, or the end-to-end connection the dedicated tests keep
+(``test_engine.EngineTests.test_public_initialization_reaches_active_with_distinct_interpretation``,
+``test_purpose_engine.GitPurposeTests.test_actual_temp_git_full_formal_review_and_goal_flow``,
+``test_redesign_ENGINE.PublicGitFlow.test_public_activation_work_receipt_assessment_and_next_plan``).
+Keep it too when the test patches or counts something during activation, or
+reads process-local engine state activation leaves behind. The check: if
+activation broke while still publishing the same final state, should this
+test fail? If yes, it examines the path.
+
+Keep the child process when the process is the subject: exit codes as the
+shell sees them, stdout/stderr encoding, ``pythonw``, Windows Jobs, owner
+identity of another process, background or detached processes, and the
+interpreter's start-up (imports, ``sys.path``, installation freezing). A lock
+held by another descriptor in the same process conflicts as across processes
+(``file_io.os_lock``), so lock contention alone does not need a child.
+
+When a scenario may stop early
+------------------------------
+A ``drive``/``run`` loop may stop at the first state in which every asserted
+value is final: its predicate is what the assertions read. Before stopping
+early, confirm that nothing after that point adds to an asserted count
+("exactly N reviews") and that no fixture check that only runs later is lost
+(a scripted role that raises on a wrong input is a check). Drive to the goal
+when the goal judgment is asserted, is the test's stated claim (its name or
+docstring), or feeds such a fixture check.
 """
 from __future__ import annotations
 
+import atexit
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from contextlib import contextmanager
 from functools import wraps
 import hashlib
 import json
+import os
 from pathlib import Path
+import shutil
+import stat
 import sys
+import tempfile
 import uuid
 from unittest.mock import patch
 
@@ -586,6 +697,166 @@ def activate(engine, root, *, initialization_runner, external_policy="disabled",
     finally:
         engine.runner = previous
     return engine
+
+
+def _no_formal_check(**arguments):
+    raise AssertionError('Public activation ran a formal check; a template build supplies no verifier')
+
+
+def activated_instance(root, shared, *, goal, config, external_policy='disabled', review_policy=None):
+    """``restore_template`` build: public ``initialize`` and ``activate``; returns the instance ID.
+
+    The repository is ``root / 'repository'`` and the workspace ``root / 'work-0'``.
+    The synthetic toolchain goes to ``shared`` so restored copies keep its fingerprint.
+    """
+    from do_math.engine import ResearchEngine, initialize
+    from test_engine import ScriptedRunner
+    repository = git_init(root / 'repository')
+    with patch('do_math.initialization.adapter_for', side_effect=lambda profile: FixtureAdapter()):
+        instance_id = initialize(repository, goal=goal, workspace=root / 'work-0', config=config)['instance_id']
+        engine = ResearchEngine(repository, instance_id, runner=ScriptedRunner(), formal_verifier=_no_formal_check)
+        activate(engine, shared, initialization_runner=ScriptedRunner(), external_policy=external_policy,
+                 review_policy=review_policy)
+    return instance_id
+
+
+_EMPTY_GIT_DIR = []
+
+
+def git_init(path):
+    """Make ``path`` a new empty Git repository, as ``git init -q <path>`` does.
+
+    The first call runs ``git init`` once for this process; every call copies
+    that repository's ``.git`` directory, which names no path of its own.
+    """
+    path = Path(path)
+    if not _EMPTY_GIT_DIR:
+        model = Path(tempfile.mkdtemp(prefix='do-math-empty-git-'))
+        atexit.register(shutil.rmtree, model, True)
+        import subprocess
+        subprocess.run(['git', 'init', '-q', str(model)], check=True)
+        _EMPTY_GIT_DIR.append(model / '.git')
+    path.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(_EMPTY_GIT_DIR[0], path / '.git')
+    return path
+
+
+def run_cli(*arguments, cwd=None):
+    """Run the CLI's ``main`` in this process, as ``python do_math.py *arguments`` would.
+
+    Returns a ``subprocess.CompletedProcess`` with ``returncode`` and text
+    ``stdout``/``stderr``. ``cwd`` is the working directory during the call.
+    Nothing about the process is exercised: stream encoding, interpreter
+    start-up and process-wide state stay those of the test process.
+    """
+    import io
+    import subprocess
+    from contextlib import redirect_stderr, redirect_stdout
+    from do_math.cli import main
+    arguments = [os.fspath(argument) for argument in arguments]
+    stdout, stderr = io.StringIO(), io.StringIO()
+    previous = os.getcwd()
+    try:
+        if cwd is not None:
+            os.chdir(cwd)
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            try:
+                code = main(arguments)
+            except SystemExit as exit:
+                # As the interpreter does: None is success, other non-integers print and fail.
+                code = 0 if exit.code is None else exit.code if isinstance(exit.code, int) else 1
+                if not isinstance(exit.code, (int, type(None))):
+                    print(exit.code, file=sys.stderr)
+    finally:
+        os.chdir(previous)
+    return subprocess.CompletedProcess(['do_math.py', *arguments], code, stdout.getvalue(), stderr.getvalue())
+
+
+def remove_tree(path):
+    """Delete a directory tree, including the read-only object files Git writes."""
+    def writable(function, target, _error):
+        os.chmod(target, stat.S_IWRITE)
+        function(target)
+    shutil.rmtree(path, onexc=writable)
+
+
+def forget_repository_caches(root):
+    """Drop the product's process caches for every Git directory under ``root``.
+
+    These caches are keyed by the Git directory's path and trust that a
+    repository's bundles never change. A restored template reuses one path for
+    a new repository, so its entries must not carry over from an earlier test.
+    """
+    from do_math import planning, repository, submission
+    prefix = os.path.normcase(os.path.join(os.fspath(root), ''))
+    for cache in (repository.VERIFIED_ARTIFACTS, repository._VALIDATED_READS,
+                  planning._VALID_ARTIFACTS, submission._ISSUED_INPUTS):
+        for key in [key for key in cache if os.path.normcase(os.fspath(key[0])).startswith(prefix)]:
+            del cache[key]
+
+
+class _Template:
+    """One built tree, its untouched copy, and the fixed path copies are restored to."""
+
+    def __init__(self, build, parameters):
+        self.base = Path(tempfile.mkdtemp(prefix='do-math-template-')).resolve()
+        atexit.register(self.remove)
+        self.live, self.pristine, self.shared = (self.base / name for name in ('live', 'pristine', 'shared'))
+        self.live.mkdir()
+        self.shared.mkdir()
+        self.value = build(self.live, self.shared, **parameters)
+        shutil.copytree(self.live, self.pristine, symlinks=True)
+        self.used = False
+
+    def restore(self):
+        if self.used:
+            remove_tree(self.live)
+            shutil.copytree(self.pristine, self.live, symlinks=True)
+        self.used = True
+        forget_repository_caches(self.live)
+        return self.live, deepcopy(self.value)
+
+    def remove(self):
+        try:
+            remove_tree(self.base)
+        except OSError:
+            pass
+
+
+_TEMPLATES = {}
+
+
+def restore_template(build, **parameters):
+    """Return ``(root, value)``: a fresh copy of what ``build`` made once in this process.
+
+    ``build(root, shared, **parameters)`` runs on the first call for its
+    parameters. It creates the state under ``root`` and returns ``value``
+    (usually the instance ID). Every call, including the first,
+    then hands out ``root`` holding the exact bytes ``build`` left there, so
+    the Git state, workspace and control inbox are those the product published.
+
+    ``root`` is the same path on every call: that is what keeps the absolute
+    paths inside the state true. A call therefore replaces the previous copy;
+    finish with an engine before asking for the next one. ``shared`` is never
+    copied or cleared. Put there only files the product reads and never writes
+    whose stat fingerprint the state records, such as ``trust_fixture``
+    toolchains: a copy would change their creation time. Parameters must be
+    JSON values; together with ``build``'s name they select the template.
+    """
+    import inspect
+    # Defaults are part of the key, so omitting one names the same template.
+    bound = inspect.signature(build).bind(None, None, **parameters)
+    bound.apply_defaults()
+    parameters = dict(list(bound.arguments.items())[2:])
+    key = (build.__module__, build.__qualname__, json.dumps(parameters, sort_keys=True))
+    template = _TEMPLATES.get(key)
+    if template is None:
+        # A failed build is not retried: each later test would repeat its cost.
+        _TEMPLATES[key] = 'failed'
+        template = _TEMPLATES[key] = _Template(build, parameters)
+    elif template == 'failed':
+        raise AssertionError('This template failed to build earlier in this process: ' + repr(key))
+    return template.restore()
 
 
 def sealed_maintenance_submission(workspace, execution_id):

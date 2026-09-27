@@ -45,7 +45,8 @@ class WorkerTemporaryOutputTests(unittest.TestCase):
                         timeouts.append(options['timeout'])
                         return None, None
 
-                with patch.object(worker.subprocess, 'Popen', Provider):
+                # Both workers launch their CLI through the shared codex_worker.run_cli.
+                with patch.object(codex_worker.subprocess, 'Popen', Provider):
                     self.assertEqual(worker.run(path), 0)
                 self.assertEqual(json.loads((root / 'status.json').read_text())['state'], 'exited')
                 self.assertEqual(timeouts, [None], 'a work request must reach subprocess without a time limit')

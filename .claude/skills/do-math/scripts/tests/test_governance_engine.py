@@ -85,9 +85,9 @@ class CentralGovernanceTests(unittest.TestCase):
 
     def test_initial_later_control_completes_initialization_without_new_check(self):
         h, bundle, request = self.host()
-        h.instance['lifecycle'] = {'input_id': bundle['source']['id']}
+        h.instance['lifecycle'] = {'input_id': bundle['input_ref']}
         h._governance_control(request)
-        self.assertEqual(h.completed_input, bundle['source']['id'])
+        self.assertEqual(h.completed_input, bundle['input_ref'])
         self.assertTrue(h.activation_attempted)
         self.assertFalse(any(a['role'] == 'intent_interpretation' for a in h.runtime['queue']))
 
@@ -108,14 +108,15 @@ class CentralGovernanceTests(unittest.TestCase):
                              for a in h.runtime['queue']))
 
     def test_original_changed_before_later_approval_is_not_applied(self):
+        # Approval rechecks the public input the import interpreted (input_ref).
         h, bundle, request = self.host()
-        h.runtime['inputs'] = [{'id': bundle['source']['id'], 'text': 'A different user original', 'config': {}}]
-        with self.assertRaises(ValueError): h._governance_control(request)
+        h.runtime['inputs'] = [{'id': bundle['input_ref'], 'text': 'A different user original', 'origin': 'user'}]
+        with self.assertRaisesRegex(ValueError, 'original public input changed'): h._governance_control(request)
         self.assertNotIn('CH2', h.instance['governance'])
 
     def test_failed_initial_followup_does_not_publish_partial_control_effect(self):
         h, bundle, request = self.host()
-        h.instance['lifecycle'] = {'input_id': bundle['source']['id']}
+        h.instance['lifecycle'] = {'input_id': bundle['input_ref']}
         def fail(target): raise ValueError('missing initial evidence')
         h._complete_initial_intent = fail
         with self.assertRaises(ValueError): h._governance_control(request)
@@ -132,13 +133,15 @@ class CentralGovernanceTests(unittest.TestCase):
             h.runtime['reservations'] = {}
             patch = {'session_limits': deepcopy(DEFAULT_CONFIG['session_limits'])}
             public_i, public_r = h._configure_candidate(h.instance, h.runtime, {'action': 'configure', 'origin': 'user', 'config': patch})
-            source = gov.preserve_source('CONF', 'Adopt these exact concurrent capacities', origin='user')
+            h.runtime['inputs'].append({'id': 'CONF', 'text': 'Adopt these exact concurrent capacities', 'origin': 'user'})
+            source = gov.import_input_source(h.instance, h.runtime, 'CONF')
             payload = {'kind': 'configuration', 'config': patch}
             output = {'questions': [], 'question_details': [], 'needs_clarification': False, 'import_units': [{
                 'unit_id': 'U', 'source_range': {'start': 0, 'end': len(source['text'])}, 'interpretation': 'Configure capacities',
                 'owner_kind': 'configuration', 'owner_ref': 'I', 'payload': payload, 'decision_refs': [], 'question_refs': []}]}
             handlers = h._governance_owner_handlers()
-            bundle = gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR', owner_handlers=handlers)
+            bundle = gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR', input_ref='CONF',
+                                        owner_handlers=handlers)
             h.runtime['executions']['CHECK'] = {'role': 'intent_interpretation', 'status': 'queued', 'intent_import_sha256': bundle['sha256']}
             bundle = gov.check_import(h.instance, h.runtime, bundle['id'], {'decision': 'approved', 'bundle_sha256': bundle['sha256'],
                 'scope_complete': True, 'unit_ids': ['U'], 'question_ids': [], 'findings': []}, execution_id='CHECK', owner_handlers=handlers)
@@ -176,9 +179,10 @@ class CentralGovernanceTests(unittest.TestCase):
         output = {'questions': [], 'question_details': [], 'needs_clarification': False, 'import_units': [{
             'unit_id': 'U', 'source_range': {'start': 0, 'end': len(text)}, 'interpretation': 'Exact codepoint assertion',
             'owner_kind': 'charter', 'owner_ref': 'CH1', 'payload': {}, 'decision_refs': [], 'question_refs': []}]}
-        gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR')
+        gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR', input_ref='RAW')
         output['import_units'][0]['source_range']['end'] = len(working.decode())
-        with self.assertRaises(ValueError): gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR')
+        with self.assertRaises(ValueError):
+            gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR', input_ref='RAW')
 
     def test_audit_context_schema_binding_and_rejected_missing_results(self):
         from test_redesign_GOVERNANCE import AuditRepairTests

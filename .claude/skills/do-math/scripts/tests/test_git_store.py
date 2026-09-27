@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import random
 import subprocess
 import sys
 import tempfile
@@ -16,21 +17,28 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from do_math.git_store import GitStateStore, GitStateStoreConflict, GitStateStoreError  # noqa: E402
+from do_math.git_store import GitStateStore, GitStateStoreConflict, GitStateStoreError, StateSnapshot  # noqa: E402
 
 
 INSTANCE_ID = "RI-00000000000000000000000000"
 
 
-def git(repository: Path, *arguments: str, input: bytes | None = None) -> bytes:
+def git(repository: Path, *arguments: str, input: bytes | None = None, env: dict[str, str] | None = None) -> bytes:
     completed = subprocess.run(
         ["git", "-C", str(repository), *arguments],
         input=input,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=None if env is None else {**os.environ, **env},
         check=True,
     )
     return completed.stdout
+
+
+def loose_objects(repository: Path) -> set[Path]:
+    objects = Path(git(repository, "rev-parse", "--git-path", "objects").decode().strip())
+    objects = objects if objects.is_absolute() else repository / objects
+    return {path for path in objects.glob("??/*") if not path.name.startswith("tmp_obj_")}
 
 
 class GitStateStoreTests(unittest.TestCase):
@@ -58,9 +66,12 @@ class GitStateStoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             oid_shape("A" * 40)
 
+    def forget_trees(self) -> None:
+        self.store._published = self.store._read = None
+
     def test_tree_cache_reuses_only_immutable_oids(self):
         snapshot = self.store.publish(None, self.initial_changes())
-        self.store._listed = None
+        self.forget_trees()
         with patch.object(self.store, '_git', wraps=self.store._git) as calls:
             first = self.store._tree_paths(snapshot.head)
             second = self.store._tree_paths(snapshot.head)
@@ -75,8 +86,47 @@ class GitStateStoreTests(unittest.TestCase):
             listed = self.store._tree_paths(later.head)
         # The parent list also came from its own publication.
         self.assertEqual(sum(c.args[0] == 'ls-tree' for c in calls.call_args_list), 0)
-        self.store._listed = None
+        # Reading an older snapshot does not displace the tree just published.
+        self.store._tree_paths(first.head)
+        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+            self.store.publish(later.head, {'research/again.json': b'{}\n'})
+        self.assertEqual([c.args[0] for c in calls.call_args_list], ['update-ref'])
+        self.forget_trees()
         self.assertEqual(listed, self.store._tree_paths(later.head))
+
+    def test_publication_writes_objects_in_process_and_moves_the_ref_only_by_cas(self):
+        first = self.store.publish(None, self.initial_changes())
+        before = loose_objects(self.repository)
+        with patch.object(self.store, '_git', wraps=self.store._git) as calls, \
+             patch('do_math.git_store.os.fsync', wraps=os.fsync) as fsync:
+            later = self.store.publish(first.head, {'runtime/state.json': b'{"state": "running"}\n',
+                                                    'research/new/deep.json': b'{}\n'})
+        self.assertEqual([c.args[0] for c in calls.call_args_list], ['update-ref'])
+        # Installed Git for Windows flushes each new loose object (core.fsyncObjectFiles=true).
+        created = loose_objects(self.repository) - before
+        self.assertEqual(fsync.call_count, len(created))
+        self.assertEqual(self.store.read_bytes(later.head, 'research/new/deep.json'), b'{}\n')
+
+    def test_concurrent_writers_of_one_object_all_succeed(self):
+        barrier = threading.Barrier(4)
+        results: list[list[str]] = []
+
+        def write() -> None:
+            barrier.wait()
+            results.append([self.store._write_object(b"blob", b"same bytes %d\n" % number) for number in range(20)])
+
+        threads = [threading.Thread(target=write) for _ in range(4)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(20)
+        self.assertEqual(len(results), 4)
+        self.assertEqual(len({tuple(oids) for oids in results}), 1)
+        listed = git(self.repository, "cat-file", "--batch-check", input="".join(f"{oid}\n" for oid in results[0]).encode())
+        self.assertEqual(listed.decode().split().count("blob"), 20)
+        objects = Path(git(self.repository, "rev-parse", "--git-path", "objects").decode().strip())
+        objects = objects if objects.is_absolute() else self.repository / objects
+        self.assertEqual(list(objects.glob("??/tmp_obj_*")), [])
 
     def test_path_that_is_also_a_directory_is_rejected_before_git_drops_it(self):
         first = self.store.publish(None, {**self.initial_changes(), 'research/a': b'file'})
@@ -106,12 +156,21 @@ class GitStateStoreTests(unittest.TestCase):
             ref_reads = [c for c in calls.call_args_list if c.args[0] in {'rev-parse', 'update-ref'}
                          or c.args[:2] == ('cat-file', '-t')]
             self.assertEqual([c.args[0] for c in ref_reads], ['update-ref'])
+            # Under the lock no do-math writer moves the ref, so the head this
+            # store just published is not read back.
+            with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+                self.assertEqual(self.store.read_snapshot(), StateSnapshot(later.head))
+            self.assertEqual(calls.call_count, 0)
             # A writer outside the lock is still refused by that final CAS.
             outside = GitStateStore(self.repository, INSTANCE_ID)
             moved = outside.publish(later.head, {'runtime/state.json': b'{"state": "moved"}\n'})
             with self.assertRaisesRegex(GitStateStoreConflict, 'publish compare-and-swap'):
                 self.store.publish(later.head, {'runtime/state.json': b'{"state": "lost"}\n'})
-        self.assertEqual(self.store.read_snapshot().head, moved.head)
+            # The failed CAS proves the remembered head stale; it is read again.
+            self.assertEqual(self.store.read_snapshot().head, moved.head)
+        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+            self.assertEqual(self.store.read_snapshot().head, moved.head)
+        self.assertEqual(calls.call_count, 1)
 
     def test_unicode_artifact_path_preserves_the_supplied_code_points(self):
         path = "runtime/artifacts/one/e\u0301.txt"
@@ -120,17 +179,15 @@ class GitStateStoreTests(unittest.TestCase):
         self.assertIn(path, self.store._tree_paths(snapshot.head))
         self.assertNotIn("runtime/artifacts/one/\u00e9.txt", self.store._tree_paths(snapshot.head))
 
-    def test_many_blobs_use_one_hash_process_and_preserve_raw_bytes(self):
+    def test_many_blobs_use_no_hash_process_and_preserve_raw_bytes(self):
         (self.repository / '.gitattributes').write_text('* text eol=lf\n', encoding='utf-8')
         changes = {**self.initial_changes(), **{
             f'runtime/artifacts/batch/자료 {i}.bin': bytes(range(256)) + b'\r\n\x00' + bytes([i])
             for i in range(38)}}
         with patch.object(self.store, '_git', wraps=self.store._git) as calls:
             snapshot = self.store.publish(None, changes)
-        hashes = [c for c in calls.call_args_list if c.args[0] == 'hash-object']
-        self.assertEqual(len(hashes), 1)
-        for path, raw in changes.items():
-            self.assertEqual(self.store.read_bytes(snapshot.head, path), raw)
+        self.assertEqual([c.args[0] for c in calls.call_args_list], ['update-ref'])
+        self.assertEqual(self.store.read_many(snapshot.head, list(changes)), changes)
 
     def test_batch_read_is_exact_and_missing_blob_is_an_error(self):
         changes = {**self.initial_changes(), 'runtime/artifacts/batch/빈 파일': b'',
@@ -342,6 +399,114 @@ class GitStateStoreSha256Tests(unittest.TestCase):
             self.assertEqual(len(snapshot.head), 64)
             with self.assertRaises(ValueError):
                 store.read_bytes("0" * 40, "runtime/state.json")
+
+
+class InProcessObjectsMatchGitPlumbingTests(unittest.TestCase):
+    """Differential check of the in-process writer against Git's own index plumbing."""
+
+    # Names whose order flips at the "/" a subtree name sorts with, plus non-ASCII.
+    NAMES = ("a", "a.b", "a-b", "a0", "b", "é")
+    GIT_DEFAULTS = {"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull}
+
+    @staticmethod
+    def valid(paths) -> bool:
+        directories = {path[:end] for path in paths for end in range(len(path)) if path[end] == "/"}
+        return not directories & set(paths)
+
+    def random_changes(self, rng: random.Random, model: dict[str, bytes]) -> dict[str, bytes | None]:
+        """Adds, edits, deletes (some emptying a directory), directory-path deletes, file<->directory swaps."""
+        proposals: list[dict[str, bytes | None]] = []
+        files = sorted(path for path in model if not path.endswith("/keep"))
+        if files:
+            victim = rng.choice(files)
+            proposals.append({victim: None, victim + "/a": b"file became directory"})
+        directories = sorted({path.rpartition("/")[0] for path in files if path.count("/") >= 2})
+        if directories:
+            replaced = rng.choice(directories)
+            below = {path: None for path in model if path.startswith(replaced + "/")}
+            proposals.append({**below, replaced: b"directory became file"})
+            others = [path for path in directories if path != replaced and not path.startswith(replaced + "/")]
+            if others:
+                proposals.append({rng.choice(others): None})  # names a directory: no file to delete
+        for _ in range(10):
+            roll = rng.random()
+            if files and roll < 0.3:
+                proposals.append({rng.choice(files): None})
+            elif files and roll < 0.5:
+                proposals.append({rng.choice(files): rng.randbytes(rng.randint(0, 24))})
+            else:
+                parts = [rng.choice(("research", "runtime")), *(rng.choice(self.NAMES) for _ in range(rng.randint(1, 3)))]
+                proposals.append({"/".join(parts): rng.randbytes(rng.randint(0, 24))})
+        changes: dict[str, bytes | None] = {}
+        for proposal in proposals:
+            candidate = {**changes, **proposal}
+            paths = {path for path in model if candidate.get(path, model[path]) is not None}
+            paths |= {path for path, raw in candidate.items() if raw is not None}
+            if self.valid(paths):
+                changes = candidate
+        return changes
+
+    def oracle_tree(self, repository: Path, index: dict[str, str], changes: dict[str, bytes | None], width: int) -> str:
+        """Apply the same changes to a persistent index, deletions first, and let Git write the tree."""
+        with tempfile.TemporaryDirectory() as directory:
+            added = [(path, raw) for path, raw in changes.items() if raw is not None]
+            for number, (_, raw) in enumerate(added):
+                (Path(directory) / str(number)).write_bytes(raw)
+            names = "".join(f"{(Path(directory) / str(number)).as_posix()}\n" for number in range(len(added))).encode()
+            oids = git(repository, "hash-object", "--no-filters", "--stdin-paths", input=names).decode().split() if added else []
+        records = [f"0 {'0' * width}\t{path}" for path, raw in changes.items() if raw is None]
+        records += [f"100644 {oid}\t{path}" for (path, _), oid in zip(added, oids)]
+        git(repository, "update-index", "-z", "--index-info", input="".join(record + "\0" for record in records).encode(), env=index)
+        return git(repository, "write-tree", env=index).decode().strip()
+
+    def check(self, object_format: str) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary) / "repository"
+            repository.mkdir()
+            git(repository, "init", "-q", f"--object-format={object_format}")
+            index = {"GIT_INDEX_FILE": str(Path(temporary) / "oracle-index")}
+            rng = random.Random("do-math-" + object_format)
+            store = GitStateStore(repository, INSTANCE_ID)
+            model: dict[str, bytes] = {}
+            head, heads, expected = None, [], []
+            for round_number in range(4):
+                changes = self.random_changes(rng, model)
+                if head is None:
+                    changes.update({"research/keep": b"k", "runtime/keep": b"k"})
+                if round_number == 2:
+                    store = GitStateStore(repository, INSTANCE_ID)  # parent tree read through ls-tree
+                head = store.publish(head, changes).head
+                for path, raw in changes.items():
+                    if raw is None:
+                        model.pop(path, None)
+                    else:
+                        model[path] = raw
+                self.assertEqual(store._tree_paths(head), set(model))
+                heads.append(head)
+                expected.append(self.oracle_tree(repository, index, changes, store.oid_length))
+            trees = git(repository, "rev-parse", *(f"{commit}^{{tree}}" for commit in heads)).decode().split()
+            self.assertEqual(trees, expected)
+            self.assertEqual(store.read_many(head, sorted(model)), model)
+            for commit, parent in ((heads[0], None), (heads[-1], heads[-2])):
+                seconds, zone = git(repository, "cat-file", "commit", commit).decode().split("\ncommitter ")[1].split("\n")[0].split()[-2:]
+                identity = {"GIT_AUTHOR_NAME": "do-math", "GIT_AUTHOR_EMAIL": "do-math@invalid",
+                            "GIT_COMMITTER_NAME": "do-math", "GIT_COMMITTER_EMAIL": "do-math@invalid",
+                            "GIT_AUTHOR_DATE": f"{seconds} {zone}", "GIT_COMMITTER_DATE": f"{seconds} {zone}"}
+                arguments = ["-c", "commit.gpgSign=false", "commit-tree", f"{commit}^{{tree}}", *(["-p", parent] if parent else [])]
+                oracle = git(repository, *arguments, input=b"do-math state\n", env={**self.GIT_DEFAULTS, **identity})
+                self.assertEqual(oracle.decode().strip(), commit)
+            checked = subprocess.run(["git", "-C", str(repository), "fsck", "--strict", "--no-progress"],
+                                     capture_output=True, env={**os.environ, **self.GIT_DEFAULTS})
+            # Only the unborn-HEAD notice may appear; any object finding fails.
+            findings = [line for line in (checked.stdout + checked.stderr).decode().splitlines()
+                        if not line.startswith("notice: HEAD points to an unborn branch")]
+            self.assertEqual((checked.returncode, findings), (0, []))
+
+    def test_sha1_trees_and_commits_match_git(self) -> None:
+        self.check("sha1")
+
+    def test_sha256_trees_and_commits_match_git(self) -> None:
+        self.check("sha256")
 
 
 if __name__ == "__main__":

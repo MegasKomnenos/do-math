@@ -28,11 +28,17 @@ class DiagnosedRecoveryTests(unittest.TestCase):
             read=lambda path, snapshot: b'{"preserved":"actual rejected response"}',
             save_with_state=lambda *a, **k: ('next-head', state, runtime))
         self.provider_results = Mock(return_value={})
+        # The slot double keeps SessionSlots' lifecycle contract: admission moves
+        # the execution to starting and the started Job to running.
+        from do_math.execution_lifecycle import transition_execution
         def acquire(eid, *, profile, execution):
             from do_math.launch import ticket
             execution['launch_ticket'] = ticket(eid, profile)
+            transition_execution(execution, 'starting', at='2026-09-20T00:00:00+00:00')
             return True
-        slots = SimpleNamespace(acquire=acquire, started=lambda *a, **k:None,
+        def started(eid, identity, *, at):
+            transition_execution(runtime['executions'][eid], 'running', at=at)
+        slots = SimpleNamespace(acquire=acquire, started=started,
             release=lambda *a, **k:True, provider_result_from_run=self.provider_results)
         installation = root/'skill'
         installation.mkdir()

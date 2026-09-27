@@ -31,8 +31,10 @@ class Tests(unittest.TestCase):
    root=Path(d); ws=root/'ws'; ws.mkdir(); ev=root/'e'; r=runner.CodexModelRunner('fake'); r._adapter=Adapter(collected)
    return r.run(prompt='x',output_schema={'type':'object','required':['x']},workspace=ws,evidence_dir=ev,model='m',effort='low',timeout_seconds=1)
  def test_completed_only_after_schema(self):
-  x=self.run_with({'result':'output_collected','final':{'raw':b'{"x":1}'},'jsonl':{'usage':{'input_tokens':1}}})
+  # The collector's parsed stream lists one usage row per report (codex_adapter._parse_jsonl).
+  x=self.run_with({'result':'output_collected','final':{'raw':b'{"x":1}'},'jsonl':{'usage':[{'input_tokens':1}]}})
   self.assertEqual(x['status'],'completed')
+  self.assertEqual(x['usage'],{'input_tokens':1})
  def test_invalid_output_fails(self):
   x=self.run_with({'result':'output_collected','final':{'raw':b'{}'},'jsonl':{'usage':{}}})
   self.assertEqual(x['status'],'failed')

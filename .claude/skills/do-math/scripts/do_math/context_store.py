@@ -5,6 +5,7 @@ from .operation_trace import measured
 
 from copy import deepcopy
 import hashlib
+import json
 import os
 from pathlib import Path, PurePosixPath
 
@@ -283,8 +284,21 @@ def build_role_manifest(context: dict, *, workspace: Path, role: str,
             "catalog": catalog["manifest"]}
 
 
-def _encoded_size(value: dict) -> int:
-    return len(canonical_json(value))
+def _member_size(key: str, raw: bytes) -> int:
+    """Bytes the member ``key`` adds to the canonical_json of an object holding it.
+
+    ``raw`` is the canonical_json of the member's value. One level deeper,
+    each interior line break of that encoding gains two spaces; string
+    contents never hold a raw line break because JSON escapes it.
+    """
+    interior_breaks = raw.count(b"\n") - 1
+    return 4 + len(json.dumps(key, ensure_ascii=False).encode("utf-8")) + len(raw) - 1 + 2 * interior_breaks
+
+
+def _object_size(member_sizes) -> int:
+    """Length of canonical_json of an object from its ``_member_size`` values."""
+    sizes = list(member_sizes)
+    return 5 + sum(sizes) + 2 * (len(sizes) - 1) if sizes else 3
 
 
 def restore_continuation(runtime, action, workspace, *, snapshot, read_artifact, checkpoint=None, git_dir=None):
@@ -881,27 +895,33 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
         raise ValueError("mandatory context keys are missing: " + ", ".join(sorted(missing)))
     catalog = write_source_catalog(context, workspace)
     fitted = deepcopy(context)
-    original_bytes = _encoded_size(context)
-    mandatory_bytes = _encoded_size({key: context[key] for key in mandatory_keys})
+    # The catalog holds each member's canonical bytes; object sizes are summed
+    # from them instead of encoding the whole context again for every member.
+    raw = {key: catalog["files"][entry["path"]] for key, entry in catalog["entries"].items()}
+    sizes = {key: _member_size(key, raw[key]) for key in context}
+    original_bytes = _object_size(sizes.values())
+    mandatory_bytes = _object_size(sizes[key] for key in mandatory_keys)
     reductions = []
     # Catalogs that define a comparison universe are never shortened. Their
     # inclusion as required direct input is enforced by prepare_role_input.
     candidates = sorted((key for key in catalog["entries"] if key not in mandatory_keys),
-                        key=lambda key: len(canonical_json(context[key])), reverse=True)
+                        key=lambda key: len(raw[key]), reverse=True)
     reference_only = {'execution_profiles', 'role_profile_refs'} if role in _ROLE_DIRECT else set()
     if role in {'research_work', 'supplemental_research', 'task_contract_review'}:
         reference_only.add('tasks')
     for key in candidates:
         if mandatory_bytes > max_bytes:
             break
-        if key not in reference_only and _encoded_size(fitted) <= max_bytes:
+        if key not in reference_only and _object_size(sizes.values()) <= max_bytes:
             continue
         ref = catalog["entries"][key]
         projected = {"source_ref": ref, "total": len(context[key]) if isinstance(context[key], (dict, list)) else None}
-        if _encoded_size(projected) < _encoded_size(fitted[key]):
+        projected_raw = canonical_json(projected)
+        if len(projected_raw) < len(raw[key]):
             fitted[key] = projected
+            sizes[key] = _member_size(key, projected_raw)
             reductions.append({"key": key, "kind": "source_reference", "source_ref": ref})
-    actual = _encoded_size(fitted)
+    actual = _object_size(sizes.values())
     overflow = None
     if actual > max_bytes:
         overflow = _input_overflow(
@@ -909,7 +929,7 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
             actual_bytes=original_bytes, mandatory_bytes=mandatory_bytes, max_bytes=max_bytes,
             mandatory_keys=mandatory_keys, role=role, profile_id=profile_id, activity_id=activity_id)
         overflow.update(packed_bytes=actual, original_bytes=original_bytes,
-                        component_bytes={key: len(canonical_json(value)) for key, value in context.items()},
+                        component_bytes={key: len(raw[key]) for key in context},
                         unit="utf8_bytes", reductions=deepcopy(reductions),
                         resolution_question={"kind": "input_capacity", "activity_id": activity_id,
                             "role": role, "required_direct_keys": list(mandatory_keys),

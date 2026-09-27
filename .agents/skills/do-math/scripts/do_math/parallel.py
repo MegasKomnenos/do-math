@@ -128,7 +128,10 @@ class ModelCalls:
             self.judging = False
 
     def _apply_observations(self, future):
-        while future.observations:
+        # Apply only the rows queued on entry: a running call keeps appending, and
+        # an unbounded drain would starve the owner loop (dispatch, live reviews,
+        # controls). A returned call appends nothing more, so collect applies all.
+        for _ in range(len(future.observations)):
             function, args = future.observations.popleft()
             if future.observation_failed:
                 continue  # Later rows depend on the one that could not be applied.

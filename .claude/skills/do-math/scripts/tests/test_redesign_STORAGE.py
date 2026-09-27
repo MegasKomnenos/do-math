@@ -1312,16 +1312,17 @@ class StorageRedesignTests(unittest.TestCase):
             "sha256": "a" * 64} for i in range(64)]})
         head = self.repository.initialize(instance, runtime)
         _, instance, runtime = self.repository.load(head)
-        with patch.object(self.repository._store, "_write_blobs", wraps=self.repository._store._write_blobs) as write:
+        # Every blob a publication writes is one of the changes handed to it.
+        with patch.object(self.repository._store, "publish", wraps=self.repository._store.publish) as write:
             same = self.repository.save_with_state(head, instance, runtime)[0]
-        print("STORAGE no-op blob writes:", sum(len(c.args[0]) for c in write.call_args_list), flush=True)
+        print("STORAGE no-op blob writes:", sum(len(c.args[1]) for c in write.call_args_list), flush=True)
         self.assertEqual(same, head)
-        self.assertEqual(sum(len(c.args[0]) for c in write.call_args_list), 0)
+        self.assertEqual(sum(len(c.args[1]) for c in write.call_args_list), 0)
         runtime["status"] = "ready"
-        with patch.object(self.repository._store, "_write_blobs", wraps=self.repository._store._write_blobs) as write:
+        with patch.object(self.repository._store, "publish", wraps=self.repository._store.publish) as write:
             changed = self.repository.save_with_state(head, instance, runtime)[0]
         self.assertNotEqual(changed, head)
-        self.assertLessEqual(sum(len(c.args[0]) for c in write.call_args_list), 2)
+        self.assertLessEqual(sum(len(c.args[1]) for c in write.call_args_list), 2)
 
 
 if __name__ == "__main__":

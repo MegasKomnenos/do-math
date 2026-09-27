@@ -1,30 +1,39 @@
 from pathlib import Path
 import json
-import subprocess
 import sys
-import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, control, _repository
 from test_engine import ScriptedRunner
-from research_fixtures import activate, install_adapter_fixture, new_instance
-from do_math.repository import ResearchRepository
+from test_lifecycle_engine import initialized_instance
+from research_fixtures import install_adapter_fixture, restore_template, run_cli
+from state_fixtures import active_instance
+
+CONFIG = {"scholarly_enabled": False, "operator_enabled": False, "lean_command": ["test-lean"],
+          "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}
 
 
 class ControlTransitionTests(unittest.TestCase):
     def setUp(self):
         install_adapter_fixture(self)
-        self.temp = tempfile.TemporaryDirectory()
-        self.root = Path(self.temp.name)
-        self.repo = self.root / "repo"
-        self.repo.mkdir()
-        self.iid = new_instance(self.repo, goal="control transition fixture", workspace=self.root / "work",
-                                config={"scholarly_enabled": False, "operator_enabled": False, "lean_command": ["test-lean"]})
+
+    def start(self, build, **parameters):
+        """Copy a template state; ``self.repo``, ``self.iid`` and ``self.store`` name it."""
+        self.root, self.iid = restore_template(build, config=CONFIG, **parameters)
+        self.repo = self.root / "repository"
         self.store = _repository(self.repo, self.iid)
 
-    def tearDown(self):
-        self.temp.cleanup()
+    def initializing(self):
+        self.start(initialized_instance, goal="control transition fixture")
+
+    def active_with_preparation(self):
+        """Active state whose queue holds one AI action: a research preparation."""
+        self.start(active_instance)
+        engine = ResearchEngine(self.repo, self.iid, runner=ScriptedRunner())
+        engine._enqueue("research_preparation", reason="Prepare the control transition fixture")
+        engine._save()
+        return engine
 
     def update(self, change):
         head, instance, runtime = self.store.load()
@@ -32,6 +41,7 @@ class ControlTransitionTests(unittest.TestCase):
         self.store.save_with_state(head, instance, runtime)[0]
 
     def test_pause_and_resume_cannot_reopen_a_publicly_closed_instance(self):
+        self.initializing()
         control(self.repo, self.iid, "close")
         engine = ResearchEngine(self.repo, self.iid)
         engine.process_controls()
@@ -47,14 +57,12 @@ class ControlTransitionTests(unittest.TestCase):
         _, _, runtime = self.store.load()
         self.assertEqual(runtime["history"][-1]["kind"], "rejected_user_control")
         self.assertEqual(runtime["history"][-1]["request"]["id"], rejected["request_id"])
-        cli = Path(__file__).resolve().parents[1] / "do_math.py"
-        response = subprocess.run([sys.executable, str(cli), "resume", "--repository", str(self.repo),
-                                   "--instance", self.iid], check=True, capture_output=True, text=True, encoding="utf-8")
+        response = run_cli("resume", "--repository", str(self.repo), "--instance", self.iid)
+        self.assertEqual(response.returncode, 0, response.stdout + response.stderr)
         self.assertEqual(json.loads(response.stdout)["result"]["effect"], "rejected")
 
     def test_stale_request_is_consumed_and_does_not_poison_later_controls(self):
-        engine = ResearchEngine(self.repo, self.iid, runner=ScriptedRunner())
-        activate(engine, self.root, initialization_runner=ScriptedRunner())
+        engine = self.active_with_preparation()
         from do_math.planning import task_ready
         for _ in range(8):
             engine.run(max_steps=1)
@@ -80,6 +88,7 @@ class ControlTransitionTests(unittest.TestCase):
                             and h["request"]["id"] == request["request_id"] for h in runtime["history"]))
 
     def test_request_accepted_before_public_close_does_not_reopen_it(self):
+        self.initializing()
         control(self.repo, self.iid, "request", config={"role": "maintenance"})
         control(self.repo, self.iid, "close")
         engine = ResearchEngine(self.repo, self.iid)
@@ -90,8 +99,7 @@ class ControlTransitionTests(unittest.TestCase):
         self.assertEqual(status["pending_controls"], 0)
 
     def test_crash_marks_owning_activity_unresolved(self):
-        engine = ResearchEngine(self.repo, self.iid, runner=ScriptedRunner())
-        activate(engine, self.root, initialization_runner=ScriptedRunner())
+        engine = self.active_with_preparation()
         action = engine.runtime['queue'][0]
         execution = engine._register_execution(action, {'id': 'EX-crashed', 'role': action['role'],
             'status': 'running', 'input_snapshot': engine.head, 'input_manifest': []})

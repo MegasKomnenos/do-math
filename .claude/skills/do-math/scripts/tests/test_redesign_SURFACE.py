@@ -52,6 +52,13 @@ def surface_state():
     return instance, runtime
 
 
+def stored_surface_state():
+    """surface_state under the current lifecycle gate, as every stored state is."""
+    instance, runtime = surface_state()
+    del runtime['status']
+    return current_state(instance, runtime)
+
+
 def archived_run(root):
     run = root / 'runs/EX-1'
     run.mkdir(parents=True)
@@ -474,10 +481,10 @@ class SurfaceRedesignTests(unittest.TestCase):
             subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
             identifier = new_id("RI")
             store = ResearchRepository(root, identifier)
-            instance, runtime = surface_state()
+            instance, runtime = stored_surface_state()
             instance.update(id=identifier, workspace=str(root / "workspace"))
             runtime["activities"]["AC-1"]["owner_ref"] = identifier
-            head = store.initialize(*current_state(instance, runtime))
+            head = store.initialize(instance, runtime)
             report = snapshot_report(root, identifier, snapshot=head,
                                      host_observation={"budget": {"work": {"used": 0}}, "observed_at": "2026-09-20T00:00:00Z"})
             self.assertEqual(report["snapshot"], head)

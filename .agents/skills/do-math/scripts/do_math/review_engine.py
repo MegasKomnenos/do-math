@@ -1140,8 +1140,10 @@ class ReviewEngineMixin:
     def _review_research_schema(self, action):
         _, request = self._pending_review_research(action)
         schema = research_schema()
-        schema['properties']['research_request_id']['enum'] = [request['id']]
-        schema['properties']['request_digest']['enum'] = [request['request_digest']]
+        fields = schema['properties']
+        # Bind new field nodes; never mutate one that other fields may share.
+        fields['research_request_id'] = {**fields['research_request_id'], 'enum': [request['id']]}
+        fields['request_digest'] = {**fields['request_digest'], 'enum': [request['request_digest']]}
         return schema
 
     def _materialize_research_sources(self, sources, workspace, *, slot=None):

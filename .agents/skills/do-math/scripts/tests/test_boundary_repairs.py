@@ -11,7 +11,6 @@ from do_math.repository import ResearchRepository, new_id
 from do_math.payloads import decode, encode, seal_large
 from do_math.repository import canonical_json
 from research_fixtures import current_state
-from test_categories import test_group
 
 
 class PayloadCodecTests(unittest.TestCase):
@@ -23,7 +22,6 @@ class PayloadCodecTests(unittest.TestCase):
         self.assertEqual(decode(stored, lambda path: blobs[path]), value)
 
 
-@test_group('integration')
 class PayloadPublicationTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()

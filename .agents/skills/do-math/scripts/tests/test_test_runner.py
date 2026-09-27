@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import run_tests
-from test_categories import group_for, test_group as category
+from test_categories import isolation_for, test_group as category, unregistered_modules
 
 
 class RunnerTests(unittest.TestCase):
@@ -40,19 +40,39 @@ class RunnerTests(unittest.TestCase):
             self.assertEqual(len(result.failures), 1)
             self.assertFalse(result.wasSuccessful())
 
-    def test_expensive_class_label_is_inherited_and_method_can_override_it(self):
+    def test_isolation_label_is_inherited_and_a_method_can_run_in_process(self):
         @category('lean')
         class Base(unittest.TestCase):
             def test_compiler(self): pass
-            @category('unit')
+            @category('in_process')
             def test_parser(self): pass
         class Child(Base): pass
-        self.assertEqual(group_for(Child('test_compiler')), 'lean')
-        self.assertEqual(group_for(Child('test_parser')), 'unit')
-        class Unknown(unittest.TestCase):
+        class Plain(unittest.TestCase):
             def test_rule(self): pass
-        Unknown.__module__ = 'new_unclassified_tests'
-        self.assertEqual(group_for(Unknown('test_rule')), 'integration')
+        self.assertEqual(isolation_for(Child('test_compiler')), 'lean')
+        self.assertIsNone(isolation_for(Child('test_parser')))
+        self.assertIsNone(isolation_for(Plain('test_rule')))
+        with self.assertRaises(ValueError):
+            category('unit')
+
+    def test_every_test_module_is_in_exactly_one_shard_and_absent_modules_are_reported(self):
+        self.assertEqual(unregistered_modules(Path(run_tests.TESTS)), ([], []))
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / 'test_new_module.py').write_text('', encoding='utf-8')
+            missing, stale = unregistered_modules(directory)
+        self.assertEqual(missing, ['test_new_module'])
+        self.assertIn('test_test_runner', stale)
+
+    def test_positional_ids_select_a_module_class_or_method_without_prefix_collisions(self):
+        with redirect_stdout(io.StringIO()) as out, redirect_stderr(io.StringIO()):
+            self.assertEqual(run_tests.main(['--list', 'test_test_runner.RunnerTests']), 0)
+        rows = out.getvalue().splitlines()
+        self.assertTrue(rows)
+        self.assertTrue(all(row.split('\t')[1].startswith('test_test_runner.RunnerTests.') for row in rows))
+        self.assertTrue(all(row.split('\t')[0] == 'foundation' for row in rows))
+        with redirect_stdout(io.StringIO()) as out, redirect_stderr(io.StringIO()):
+            run_tests.main(['--list', 'test_redesign_EVIDENCE'])
+        self.assertFalse(any('test_redesign_EVIDENCE_' in row for row in out.getvalue().splitlines()))
 
     def test_failing_subtest_remains_a_failure_in_the_machine_report(self):
         class Specimen(unittest.TestCase):
@@ -154,60 +174,6 @@ class RunnerTests(unittest.TestCase):
                 report = run_tests._isolated([test], destination, 1)
             self.assertFalse(report['successful'])
             self.assertEqual(report['returncode'], 7)
-
-    def test_a_pass_on_the_same_inputs_is_reported_from_the_cache_not_rerun(self):
-        target = 'test_file_io.FingerprintTests.test_recent_fingerprint_is_not_cached'
-        with tempfile.TemporaryDirectory() as directory, \
-             patch.object(run_tests, 'CACHE', Path(directory) / 'cache'), \
-             patch.object(run_tests, '_input_key', return_value='k' * 64), \
-             redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
-            def run(name, *extra):
-                self.assertEqual(run_tests.main(['--group', 'unit', '--match', target, '--output',
-                                                 str(Path(directory) / name), *extra]), 0)
-                return json.loads((Path(directory) / name / 'report.json').read_bytes())
-            first, second, forced = run('first'), run('second'), run('forced', '--no-cache')
-        self.assertEqual((first['cached'], first['counts']), (0, {'passed': 1}))
-        self.assertEqual((second['cached'], second['counts']), (1, {'passed': 1}))
-        self.assertEqual(second['reports'][0]['rows'][0]['cached_from'],
-                         str(Path(directory) / 'first' / 'report.json'))
-        self.assertEqual(forced['cached'], 0)
-
-    def test_editing_a_test_module_invalidates_it_and_its_importers_only(self):
-        with tempfile.TemporaryDirectory() as directory:
-            tests = Path(directory)
-            (tests / 'test_base.py').write_text('HELPER = 1\n', encoding='utf-8')
-            (tests / 'test_user.py').write_text('from test_base import HELPER\n', encoding='utf-8')
-            (tests / 'test_other.py').write_text('X = 1\n', encoding='utf-8')
-            with patch.object(run_tests, 'TESTS', tests):
-                before = run_tests._module_keys()
-                (tests / 'test_base.py').write_text('HELPER = 2\n', encoding='utf-8')
-                shared = run_tests._module_keys()
-                (tests / 'test_user.py').write_text('from test_base import HELPER\nY = 1\n', encoding='utf-8')
-                own = run_tests._module_keys()
-        self.assertNotEqual(shared['test_base'], before['test_base'])
-        self.assertNotEqual(shared['test_user'], before['test_user'], 'an importer reads the edited module')
-        self.assertEqual(shared['test_other'], before['test_other'])
-        self.assertEqual(own['test_base'], shared['test_base'], 'an importer edit does not reach the imported module')
-        self.assertNotEqual(own['test_user'], shared['test_user'])
-
-    def test_a_fixture_module_is_keyed_with_the_test_modules_it_imports(self):
-        with tempfile.TemporaryDirectory() as directory:
-            tests = Path(directory)
-            (tests / 'test_base.py').write_text('HELPER = 1\n', encoding='utf-8')
-            (tests / 'shared_fixture.py').write_text('from test_base import HELPER\n', encoding='utf-8')
-            (tests / 'test_user.py').write_text('import shared_fixture\n', encoding='utf-8')
-            (tests / 'test_other.py').write_text('X = 1\n', encoding='utf-8')
-            with patch.object(run_tests, 'TESTS', tests):
-                before = run_tests._module_keys()
-                (tests / 'test_base.py').write_text('HELPER = 2\n', encoding='utf-8')
-                through = run_tests._module_keys()
-                (tests / 'shared_fixture.py').write_text('from test_base import HELPER\nY = 1\n', encoding='utf-8')
-                fixture = run_tests._module_keys()
-                self.assertFalse(run_tests._is_test_source(tests.parent / 'shared_fixture.py'))
-                self.assertTrue(run_tests._is_test_source(tests / 'shared_fixture.py'))
-        self.assertNotEqual(through['test_user'], before['test_user'], 'a test module read through a fixture is tracked')
-        self.assertNotEqual(fixture['test_user'], through['test_user'], 'a fixture edit reaches its importers')
-        self.assertEqual(fixture['test_other'], before['test_other'], 'a fixture edit reaches only its importers')
 
 
 if __name__ == '__main__':

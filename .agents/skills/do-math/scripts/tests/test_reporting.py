@@ -12,15 +12,7 @@ from do_math.repository import new_id
 from do_math.engine import _repository as ResearchRepository
 from do_math.reporting import timeline, timeline_csv
 from do_math.cli import build_parser, execute
-from research_fixtures import current_state
-from test_redesign_SURFACE import surface_state
-
-
-def stored_surface_state():
-    """surface_state under the current lifecycle gate, as every stored state is."""
-    instance, runtime = surface_state()
-    del runtime['status']
-    return current_state(instance, runtime)
+from test_redesign_SURFACE import stored_surface_state, surface_state
 
 
 class ReportingTests(unittest.TestCase):

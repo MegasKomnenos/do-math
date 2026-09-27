@@ -154,7 +154,7 @@ class GovernanceEngineMixin:
     def _queue_intent_rework(self, bundle, reason):
         author = self.runtime.get('executions', {}).get(bundle['execution_id'], {}).get('action', {})
         fields = {key: deepcopy(author[key]) for key in ('initialization', 'grant_id', 'profile_ref', 'owner_activity_id') if key in author}
-        input_id = bundle.get('input_ref', bundle['source']['id'])
+        input_id = bundle['input_ref']
         current_source = self._governance_input_source(input_id) if any(
             row['id'] == input_id for row in self.runtime.get('inputs', [])) else bundle['source']
         if current_source == bundle['source']:
@@ -176,7 +176,7 @@ class GovernanceEngineMixin:
             self.runtime['queue'].remove(action)
             self.runtime.setdefault('history', []).append({'kind': 'applied_import_supersedes_pending_interpretation',
                 'import_id': import_id, 'action': deepcopy(action)})
-        input_id = bundle.get('input_ref', bundle['source']['id'])
+        input_id = bundle['input_ref']
         if self.instance.get('lifecycle', {}).get('input_id') == input_id:
             self._complete_initial_intent(input_id)
             self._activate_initialization()

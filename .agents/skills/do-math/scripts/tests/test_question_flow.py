@@ -6,14 +6,16 @@ from research_fixtures import local_job_runner
 from do_math.engine import control
 from do_math.repository import canonical_json
 from research_fixtures import producer_result
-from test_purpose_engine import PurposeHarness, common, parse_context
+from test_purpose_engine import ActivatedPurposeHarness, PurposeRunner, common, parse_context
 from test_engine import common as role_output
+from test_review_research import purpose_copy
 
 
-class QuestionFlowTests(PurposeHarness):
+class QuestionFlowTests(ActivatedPurposeHarness):
     def test_answer_closes_only_its_question_and_reaches_the_next_worker(self):
-        engine, _ = self.make(operator_enabled=False, scholarly_enabled=False)
-        self.drive(engine, predicate=lambda e: any(a['role'] == 'research_work' for a in e.runtime['queue']))
+        # From a prepared task: its worker's question route is the subject.
+        engine, _ = purpose_copy(self, PurposeRunner(), until='prepared',
+                                 config=self.fixture_config(operator_enabled=False, scholarly_enabled=False))
         action = next(a for a in engine.runtime['queue'] if a['role'] == 'research_work')
         task = engine.runtime['tasks'][action['target']]
         engine.runtime['queue'] = [action]

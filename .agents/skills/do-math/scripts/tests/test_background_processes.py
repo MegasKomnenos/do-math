@@ -100,7 +100,11 @@ assert store.read_bytes(snap.head,'runtime/artifacts/actual/binary')==raw
                 if direct or injected:
                     calls.append((path.name, node.lineno))
                     self.assertIn('creationflags', {k.arg for k in node.keywords}, calls[-1])
-        self.assertGreaterEqual(len(calls), 14)
+        # The scan must reach every launching module. Both providers share one
+        # capability probe (codex_adapter) and one worker launch (codex_worker.run_cli),
+        # so the product has nine call sites: cli 2, codex_adapter 1, codex_worker 1,
+        # formal 1, git_store 1, scheduled_operator 3.
+        self.assertGreaterEqual(len(calls), 9)
 
     @unittest.skipUnless(os.name == 'nt', 'Windows console semantics')
     def test_pythonw_git_calls_have_no_console_and_preserve_binary_state(self):

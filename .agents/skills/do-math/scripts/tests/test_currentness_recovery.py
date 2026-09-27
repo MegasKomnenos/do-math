@@ -4,24 +4,42 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from research_fixtures import local_job_runner
-from do_math.engine import control
+from research_fixtures import local_job_runner, restore_template
+from do_math.engine import ResearchEngine, control
 from do_math.observations import ObservationTracker, validate_rules
 from do_math.planning import task_ready, contract_hash
 from do_math.input_basis import capture_decision_basis
 from research_fixtures import producer_result, await_control, write_checkpoint
-from test_purpose_engine import ActiveStateHarness, common
+from test_purpose_engine import ActivatedPurposeHarness, PurposeRunner, common, formal_fixture
+
+CURRENTNESS_CONFIG = {'max_input_bytes': 2_000_000,
+    'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5,
+    'scholarly_enabled': False, 'operator_enabled': False}
 
 
-class CurrentnessTests(ActiveStateHarness):
+def plan_ready_instance(root, shared, *, config):
+    """``restore_template`` build: the synthetic active state driven until a plan heads the queue beside a ready task.
+
+    The drive is ``PurposeRunner``'s preparation and contract review (with any
+    model assessment they request). ``_task_readiness`` is process-local, so a
+    test calls ``_refresh_readiness()`` on its engine before reading it.
+    """
+    from state_fixtures import active_instance
+    from test_academic_engine import drive_to
+    instance_id = active_instance(root, shared, config=config)
+    engine = ResearchEngine(root / 'repository', instance_id, runner=PurposeRunner(), formal_verifier=formal_fixture)
+    drive_to(engine, lambda e: e.runtime['queue'] and e.runtime['queue'][0]['role'] == 'research_plan'
+             and bool(e._task_readiness) and any(row['state'] == 'ready' for row in e._task_readiness.values()))
+    return instance_id
+
+
+class CurrentnessTests(ActivatedPurposeHarness):
     def make(self, **config):
-        settings = {'max_input_bytes': 2_000_000,
-            'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5,
-            'scholarly_enabled': False, 'operator_enabled': False}
-        return super().make(**{**settings, **config})
+        return self.make_active(**{**CURRENTNESS_CONFIG, **config})
 
     def test_same_source_is_idempotent_changed_source_preserves_completed_task_history(self):
         engine, runner = self.make()
@@ -49,6 +67,7 @@ class CurrentnessTests(ActiveStateHarness):
         downstream = {**candidate('Downstream'), 'id': 'TK-downstream', 'status': 'planned', 'revision': 1,
             'results': [], 'reviews': [], 'dependencies': [task['id']], 'occurrence_condition': {'op': 'always'},
             'profile_refs': list(task['profile_refs']), 'authority_refs': list(task['authority_refs'])}
+        downstream.pop('revises_task_id')  # A stored task record; the wire candidate's revision link is not stored.
         unfinished_instance = deepcopy(engine.instance)
         unfinished_instance['goal_status'] = 'unsolved'
         downstream['reviews'] = [seal_contract_review(downstream, contract_review({'task': downstream}),
@@ -100,9 +119,10 @@ class CurrentnessTests(ActiveStateHarness):
         self.assertEqual(engine.store.read(entry['artifact_ref']), b'The old input was read.')
 
     def _plan_citing_task_while(self, change):
-        engine, runner = self.make()
-        self.drive(engine, predicate=lambda e: e.runtime['queue'] and e.runtime['queue'][0]['role'] == 'research_plan'
-                   and bool(e._task_readiness) and any(row['state'] == 'ready' for row in e._task_readiness.values()))
+        self.root, instance_id = restore_template(plan_ready_instance, config=CURRENTNESS_CONFIG)
+        engine, runner = self._engine(instance_id, PurposeRunner())
+        engine._refresh_readiness()
+        self.assertEqual(engine.runtime['queue'][0]['role'], 'research_plan')
         task_id = next(tid for tid, row in engine._task_readiness.items() if row['state'] == 'ready')
         answer = runner.answer
         def citing_answer(role, context, workspace):
@@ -111,13 +131,17 @@ class CurrentnessTests(ActiveStateHarness):
                 output['used_sources'] = [*output.get('used_sources', []), task_id]
             return output
         runner.answer = citing_answer
-        class ConcurrentChange:
-            def run(inner, **kwargs):
-                result = runner.run(**kwargs)
+        # The concurrent change is an owner-published state change made after the
+        # plan's input was fixed and before its submission is received. Applying it
+        # on the owner thread keeps the test free of a worker/owner race.
+        receive = engine._receive_submission
+        def changed_then_received(action, *args, **kwargs):
+            if action['role'] == 'research_plan':
                 change(engine.runtime['tasks'][task_id])
-                return result
-        engine.runner = ConcurrentChange()
-        engine.run(max_steps=1)
+                engine._save()
+            return receive(action, *args, **kwargs)
+        with patch.object(engine, '_receive_submission', changed_then_received):
+            engine.run(max_steps=1)
         return engine, task_id, next(e for e in reversed(list(engine.runtime['executions'].values())) if e['role'] == 'research_plan')
 
     def test_cited_task_lifecycle_change_during_plan_does_not_reject_the_plan(self):
@@ -224,7 +248,7 @@ class CurrentnessTests(ActiveStateHarness):
         self.assertTrue((review_workspace / recovery['result_source']['local_path']).is_file())
 
     def test_live_rules_repeat_exact_thresholds_and_preserve_last_valid_update(self):
-        folder = self.root / 'observed'; folder.mkdir()
+        folder = Path(self.enterContext(tempfile.TemporaryDirectory())) / 'observed'; folder.mkdir()
         clock = [0]
         rules = [{'id': 'steps', 'operator': 'counter_gte', 'subject': {'kind': 'counter', 'id': 'attempts'},
                   'basis': {'source': 'checkpoint', 'unit': 'count'}, 'threshold': 2,

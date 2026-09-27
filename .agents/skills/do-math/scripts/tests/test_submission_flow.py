@@ -446,9 +446,12 @@ class CentralSubmissionHistoryTests(unittest.TestCase):
         self.assertEqual(self.engine._submission_check_summary(self.engine.head,missing)['status'],'incomplete')
         with self.assertRaisesRegex(ValueError, 'immutable'):
             self.engine.store._store.publish(self.engine.head, {draft['path']: b'tampered'})
+        # This process already matched the draft, so it does not compare those bytes again
+        # (contract S3). A process without that memo compares them and rejects changed bytes.
         read = self.engine.store.read
-        with patch.object(self.engine.store,'read',side_effect=lambda path,head:
-                          b'tampered' if path==draft['path'] else read(path,head)):
+        with patch.dict('do_math.repository.VERIFIED_ARTIFACTS', clear=True), \
+                patch.object(self.engine.store,'read',side_effect=lambda path,head:
+                             b'tampered' if path==draft['path'] else read(path,head)):
             self.assertEqual(self.engine._submission_check_summary(self.engine.head,self.engine.runtime)['status'],'incomplete')
 
 if __name__ == "__main__":

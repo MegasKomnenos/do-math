@@ -16,7 +16,6 @@ from do_math import trust_inventory as records
 from do_math.repository import exact_content_hash
 from do_math.trust_validation import check_environment, environment_errors, register_request_errors
 from research_fixtures import fixture_setup_lean, trust_environment, trust_fixture, validation_fixture
-from test_categories import test_group
 
 
 def set_birthtime(path, nanoseconds):
@@ -38,7 +37,6 @@ def set_birthtime(path, nanoseconds):
         kernel.CloseHandle(handle)
 
 
-@test_group('unit')
 class ToolchainRecordTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
@@ -280,7 +278,6 @@ class ToolchainRecordTests(unittest.TestCase):
             setup_lean.write_trust_request(result, self.root / 'request.json')
 
 
-@test_group('unit')
 class RepresentativeCompileTests(unittest.TestCase):
     def test_validation_preserves_source_output_and_exact_command(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -323,7 +320,6 @@ class RepresentativeCompileTests(unittest.TestCase):
         self.assertNotIn('LAKE_HOME',supplied)
 
 
-@test_group('unit')
 class ActivationProfileTests(unittest.TestCase):
     def test_lean_roles_pin_only_the_command_and_activation_has_no_machine_settings(self):
         from do_math import execution_profiles as profiles

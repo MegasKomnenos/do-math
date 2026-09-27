@@ -21,7 +21,6 @@ from test_redesign_OBSERVATION import Clock
 from research_fixtures import write_checkpoint
 
 
-@test_group('unit')
 class ObservationCollectionTests(unittest.TestCase):
     def test_owner_distinguishes_preview_and_boundary_from_self_check(self):
         from unittest.mock import create_autospec
@@ -262,7 +261,6 @@ class ObservationCollectionTests(unittest.TestCase):
             self.assertEqual(delivered[0].events, events)
 
 
-@test_group('unit')
 class OperationalInputTests(unittest.TestCase):
     def fixture(self):
         engine = context_engine()
@@ -379,7 +377,6 @@ class OperationalInputTests(unittest.TestCase):
             engine._context(action, Path(directory), execution_id='EX-review')
 
 
-@test_group('unit')
 class CompletionBasisTests(unittest.TestCase):
     def fixture(self):
         fixture = task_fixtures.AssessmentApplicationTests()
@@ -461,7 +458,6 @@ class CompletionBasisTests(unittest.TestCase):
         self.assertFalse(task_scope.assessment_current(runtime['tasks']['TK-1'], instance, runtime))
 
 
-@test_group('unit')
 class SchedulingResponsibilityTests(unittest.TestCase):
     def test_terminal_stale_assessment_gets_one_followup_without_reopening(self):
         from test_six_connections import PlanningConnections

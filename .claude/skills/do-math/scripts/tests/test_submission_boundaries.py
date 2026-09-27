@@ -23,8 +23,10 @@ from do_math.input_basis import capture_decision_basis
 from do_math.repository import canonical_json
 from do_math import submission
 from do_math.control_transport import ControlTransport
-from research_fixtures import await_control
-from state_fixtures import ACTIVE_LEAN_COMMAND
+from research_fixtures import FixtureAdapter, await_control, restore_template
+from state_fixtures import ACTIVE_LEAN_COMMAND, active_instance
+from do_math.engine import ResearchEngine
+from unittest.mock import patch
 from research_fixtures import (candidate, seal_response, bind_candidates, contract_review,
                          disposition, scope_response, assessment, supply_observation_rules)
 
@@ -59,25 +61,53 @@ class CheckedRunner:
         return result
 
 
-class BoundaryFixture(purpose.PurposeHarness):
+def prepared_tasks(root, shared, *, config, count):
+    """``restore_template`` build: validated active state with ``count`` nonformal tasks
+    ``"0"``..., each actually prepared, contract-reviewed and selected by the plan,
+    so that ``count`` ``research_work`` actions are queued. Returns the instance ID.
+
+    Preparation and approval are real applications, never injected ready flags.
+    """
+    runner = purpose.PurposeRunner()
+    original = runner.answer
+    def answer(role, context, workspace):
+        if role != "research_preparation":
+            return original(role, context, workspace)
+        candidates = [candidate(str(i), formal=False) for i in range(count)]
+        (workspace / "activity-extensions.json").write_bytes(canonical_json({
+            "contract_checks": contract_checks(candidates), "model_assessments": [
+                {"task_title": item["title"], "difficulty": "high", "importance": "medium", "reason": "Bounded scenario"}
+                for item in candidates]}))
+        return {**common(role), "candidates": candidates}
+    runner.answer = answer
+    instance_id = active_instance(root, shared, config=config)
+    engine = ResearchEngine(root / "repository", instance_id, runner=runner, formal_verifier=purpose.formal_fixture)
+    with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
+        for _ in range(45):
+            engine.run(max_steps=1)
+            if sum(a["role"] == "research_work" for a in engine.runtime["queue"]) == count:
+                break
+        else:
+            raise AssertionError("The prepared tasks were not queued for work: " + repr(engine.status()))
+    if any(e["status"] != "ended" for e in engine.runtime["executions"].values()):
+        raise AssertionError("A template must not end with unfinished executions")
+    return instance_id
+
+
+class BoundaryFixture(purpose.ActivatedPurposeHarness):
     def engine(self, runner, count=1, **configuration):
-        # Preparation and approval are real applications, never injected ready flags.
-        # Public initialization has separate coverage. Start these boundary
-        # cases from validated active state, then actually prepare and review tasks.
-        engine, bootstrap = purpose.ActiveStateHarness.make(self, **self.fixture_config(**configuration))
+        # Public initialization and the preparation chain have separate coverage.
+        # Start these boundary cases from a copy of validated active state with
+        # ``count`` actually prepared and reviewed tasks (``prepared_tasks``).
+        # A rejected submission is not retried (max_output_repairs=0), as the
+        # currentness cases require; the other cases reach no rejected
+        # submission, so one value lets all cases share their start state.
+        config = self.fixture_config(**{"max_output_repairs": 0, **configuration})
         if count:
-            original = bootstrap.answer
-            def answer(role, context, workspace):
-                if role != "research_preparation":
-                    return original(role, context, workspace)
-                candidates = [candidate(str(i), formal=False) for i in range(count)]
-                (workspace / "activity-extensions.json").write_bytes(canonical_json({
-                    "contract_checks": contract_checks(candidates), "model_assessments": [
-                        {"task_title": item["title"], "difficulty": "high", "importance": "medium", "reason": "Bounded scenario"}
-                        for item in candidates]}))
-                return {**common(role), "candidates": candidates}
-            bootstrap.answer = answer
-            self.drive(engine, predicate=lambda e: sum(a["role"] == "research_work" for a in e.runtime["queue"]) == count)
+            self.root, instance_id = restore_template(prepared_tasks, config=config, count=count)
+            engine, _ = self._engine(instance_id, purpose.PurposeRunner())
+        else:
+            engine, _ = self.make_active(**config)
         engine.runner = CheckedRunner(runner)
         return engine
 
@@ -99,6 +129,7 @@ class AcceptanceTests(unittest.TestCase):
     def setUp(self):
         self.fixture = BoundaryFixture()
         self.fixture.setUp()
+        self.addCleanup(self.fixture.doCleanups)
         self.addCleanup(self.fixture.tearDown)
 
     def test_newly_reported_knowledge_dependencies_bind_the_read_snapshot(self):
@@ -118,7 +149,7 @@ class AcceptanceTests(unittest.TestCase):
                             used = ["input/knowledge/" + kid + ".json"]
                         return returned("research_work", used_sources=used,
                                         knowledge=[note("Derived", dependencies=dependencies)])
-                engine = self.fixture.engine(Runner(), count=1, max_output_repairs=0)
+                engine = self.fixture.engine(Runner(), count=1)
                 control(self.fixture.repo, engine.instance["id"], "knowledge", config={"operation": "import", "candidate": note()})
                 engine.process_controls()
                 kid = next(iter(engine.instance["knowledge"]))
@@ -133,9 +164,13 @@ class AcceptanceTests(unittest.TestCase):
                 self.assertFalse(any(k["title"] == "Derived" for k in engine.instance["knowledge"].values()))
 
     def test_identity_review_ignores_unrelated_source_change_but_checks_required_source(self):
+        import tempfile
+        sources = tempfile.TemporaryDirectory()
+        self.addCleanup(sources.cleanup)
         for required in (False, True):
             with self.subTest(required=required):
-                source = self.fixture.root / ("required.txt" if required else "unrelated.txt")
+                # Outside the engine's root: each engine replaces the previous copy.
+                source = Path(sources.name) / ("required.txt" if required else "unrelated.txt")
                 source.write_text("original", encoding="utf-8")
                 class Runner:
                     def run(inner, **args):
@@ -147,8 +182,7 @@ class AcceptanceTests(unittest.TestCase):
                                         used_sources=["proposal:statement"], decision="match", findings=[], scope_complete=True)
                 # Validated active state without prepared tasks; the formal check
                 # needs the active environment's configured command.
-                engine = self.fixture.engine(Runner(), count=0, max_output_repairs=0,
-                                             lean_command=list(ACTIVE_LEAN_COMMAND))
+                engine = self.fixture.engine(Runner(), count=0, lean_command=list(ACTIVE_LEAN_COMMAND))
                 engine.formal_verifier = formal_ok
                 control(self.fixture.repo, engine.instance["id"], "source", config={"path": str(source)})
                 control(self.fixture.repo, engine.instance["id"], "knowledge", config={"operation": "import", "candidate":
@@ -205,7 +239,7 @@ class AcceptanceTests(unittest.TestCase):
                     h.get("request", {}).get("id") == request_id["request_id"] for h in engine.runtime["history"]),
                     "The concurrent knowledge revision must actually be accepted")
                 return returned("research_work", used_sources=[prerequisite_id])
-        engine = self.fixture.engine(Runner(), count=2, max_output_repairs=0)
+        engine = self.fixture.engine(Runner(), count=2)
         control(self.fixture.repo, engine.instance["id"], "knowledge", config={"operation": "import", "candidate": note()})
         engine.process_controls()
         kid = next(iter(engine.instance["knowledge"]))

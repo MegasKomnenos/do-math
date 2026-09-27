@@ -13,7 +13,7 @@ from do_math.initialization import initialize_state, governance_working_view
 from do_math.trust_validation import AXIOMS
 from do_math import execution_profiles as profiles, knowledge_records as kr, planning
 from do_math.governance import TASK_WORK_ROLES, OPERATING_ROLES
-from research_fixtures import FixtureAdapter, IDENTITY, StateStore, new_instance, review_items
+from research_fixtures import FixtureAdapter, IDENTITY, StateStore, review_items
 from state_fixtures import owner_calls
 
 class FakeEngine(ResearchEngine):
@@ -73,7 +73,8 @@ class FakeEngine(ResearchEngine):
             self._finish_trust_transition(next(reversed(self.runtime['trust_transitions'])),
                 check_environment(self.instance['trust_environments'][eid], self.runtime['trust_bindings'][eid]))
         return eid
-    def activate(self):
+    def activate(self, *, external_policy='explicit_grants', review_policy=None):
+        """Activate through the adoption decision; ``review_policy`` None adopts the default policy."""
         self.grant('GR-init',True); self.grant('GR-research')
         charter={'id':'CH-test','kind':'charter','revision':1,'supersedes':[],
             'content':{'rationale':'Research the stated target','goal':'Prove the target','desired_result':'A proof',
@@ -88,7 +89,8 @@ class FakeEngine(ResearchEngine):
                 self.instance.setdefault('capability_evidence',{})[row['id']]=row
         self.control('decision',{'change':{'kind':'initialization','adopt_current_config':True,
             'adopt_current_governance':True,'conversation_loss_policy':'continue_authorized',
-            'external_policy':'explicit_grants','adopt_default_review_policy':True,
+            'external_policy':external_policy,
+            **({'review_policy':review_policy} if review_policy is not None else {'adopt_default_review_policy':True}),
             'profile_refs':[profiles.profile_ref(p) for p in self.instance['execution_profiles'].values()],
             'initial_grant_ids':['GR-init'],'research_grant_ids':['GR-research']}})
         self.environment('base',True)
@@ -159,6 +161,23 @@ def run_machine(engine,role):
     with owner_calls(engine):
         return engine.machine(role)
 
+def initialized(repository, *, goal, **options):
+    """A new Git repository at ``repository`` with one instance from the public ``initialize``; returns its ID.
+
+    The workspace defaults to ``repository / 'work'``; ``options`` pass to ``initialize``.
+    """
+    from do_math.engine import initialize
+    from research_fixtures import git_init
+    options.setdefault('workspace', Path(repository) / 'work')
+    return initialize(git_init(repository), goal=goal, **options)['instance_id']
+
+def initialized_instance(root, shared, *, goal, config):
+    """``restore_template`` build: the public ``initialize`` alone; returns the instance ID.
+
+    The repository is ``root / 'repository'`` and the workspace ``root / 'work-0'``.
+    """
+    return initialized(root / 'repository', goal=goal, workspace=root / 'work-0', config=config)
+
 class PublicInitializationRunner:
     """Synthetic independent author/checker outputs; real producer/receiver paths."""
     def run(self, *, workspace, on_started, should_stop, control_binding, **kwargs):
@@ -181,75 +200,78 @@ class PublicInitializationRunner:
 
 
 class PublicLifecycleTests(unittest.TestCase):
+    def initializing(self):
+        """A copy of one publicly initialized instance: ``(repository, instance ID)``."""
+        from research_fixtures import restore_template
+        root, instance_id = restore_template(initialized_instance, goal='Preserve this original input',
+                                             config={'scholarly_enabled':False})
+        return root/'repository', instance_id
+
     def test_public_utc_watermark_is_published_only_with_normal_change(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            instance_id = new_instance(root,goal='Observe clock durability',
-                                     config={'scholarly_enabled':False})
-            engine = ResearchEngine(root,instance_id)
-            engine._save()  # Establish any ordinary derived runtime fields first.
-            head = engine.head
-            initial = datetime.fromisoformat(engine.runtime['last_observed_utc'])
-            observed = initial + timedelta(hours=2)
-            engine.lifecycle_clock = lambda: observed.isoformat()
-            engine.lifecycle_monotonic = lambda: 0.
-            engine._require_action_clock()
-            engine._save()
-            self.assertEqual(engine.head,head,'clock observation alone created a commit')
-            engine.instance['title'] = 'Ordinary state update'
-            engine._save()
-            self.assertEqual(engine.runtime['last_observed_utc'],observed.isoformat())
-            restarted = ResearchEngine(root,instance_id)
-            restarted.lifecycle_clock = lambda: (observed-timedelta(microseconds=1)).isoformat()
-            restarted.lifecycle_monotonic = lambda: 0.
-            self.assertEqual(restarted._clock_guard()['reason'],'persisted_utc_regression')
-            # A later rejected sample does not revoke the prior trusted sample.
-            engine.lifecycle_clock = lambda: (observed+timedelta(hours=1)).isoformat()
-            trusted = engine._require_action_clock()
-            engine.lifecycle_clock = lambda: (observed+timedelta(minutes=30)).isoformat()
-            self.assertFalse(engine._clock_guard()['usable'])
-            engine._pause_lifecycle('clock_regression')
-            engine._save()
-            self.assertEqual(engine.store.load()[2]['last_observed_utc'],trusted)
+        root, instance_id = self.initializing()
+        engine = ResearchEngine(root,instance_id)
+        engine._save()  # Establish any ordinary derived runtime fields first.
+        head = engine.head
+        initial = datetime.fromisoformat(engine.runtime['last_observed_utc'])
+        observed = initial + timedelta(hours=2)
+        engine.lifecycle_clock = lambda: observed.isoformat()
+        engine.lifecycle_monotonic = lambda: 0.
+        engine._require_action_clock()
+        engine._save()
+        self.assertEqual(engine.head,head,'clock observation alone created a commit')
+        engine.instance['title'] = 'Ordinary state update'
+        engine._save()
+        self.assertEqual(engine.runtime['last_observed_utc'],observed.isoformat())
+        restarted = ResearchEngine(root,instance_id)
+        restarted.lifecycle_clock = lambda: (observed-timedelta(microseconds=1)).isoformat()
+        restarted.lifecycle_monotonic = lambda: 0.
+        self.assertEqual(restarted._clock_guard()['reason'],'persisted_utc_regression')
+        # A later rejected sample does not revoke the prior trusted sample.
+        engine.lifecycle_clock = lambda: (observed+timedelta(hours=1)).isoformat()
+        trusted = engine._require_action_clock()
+        engine.lifecycle_clock = lambda: (observed+timedelta(minutes=30)).isoformat()
+        self.assertFalse(engine._clock_guard()['usable'])
+        engine._pause_lifecycle('clock_regression')
+        engine._save()
+        self.assertEqual(engine.store.load()[2]['last_observed_utc'],trusted)
 
     def test_public_unicode_original_survives_restart(self):
         from do_math.initialization import original_input_bytes
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); source = 'Cafe\u0301'
-            instance_id = new_instance(root,goal=source,config={'scholarly_enabled':False})
+            instance_id = initialized(root,goal=source,config={'scholarly_enabled':False})
             restarted = ResearchEngine(root,instance_id)
             self.assertEqual(original_input_bytes(restarted.instance['lifecycle']['immutable_input']),source.encode())
 
     def test_public_initializing_pause_resume_preserves_source_and_missing(self):
         from research_fixtures import send_control
-        with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory)
-            instance_id = new_instance(root,goal='Preserve this original input',
-                                   config={'scholarly_enabled':False})
-            engine=ResearchEngine(root,instance_id)
-            source=deepcopy(engine.runtime['inputs'])
-            send_control(engine,'pause',config={})
-            self.assertEqual(engine.runtime['resume_lifecycle'],'initializing')
-            send_control(engine,'resume',config={})
-            resumed=ResearchEngine(root,instance_id)
-            self.assertEqual(resumed.instance['lifecycle']['state'],'initializing')
-            self.assertEqual(resumed.runtime['inputs'],source)
-            self.assertIn('independent_intent',resumed.instance['lifecycle']['activation']['missing'])
-            self.assertNotIn('missing',resumed.runtime['availability'])
-            send_control(resumed,'close',config={})
-            self.assertTrue(resumed.instance['lifecycle']['permanently_closed'])
-            send_control(resumed,'pause',config={})
-            send_control(resumed,'resume',config={})
-            terminal=ResearchEngine(root,instance_id)
-            self.assertEqual(terminal.runtime['status'],'closed')
-            self.assertTrue(terminal.instance['lifecycle']['permanently_closed'])
+        root, instance_id = self.initializing()
+        engine=ResearchEngine(root,instance_id)
+        source=deepcopy(engine.runtime['inputs'])
+        send_control(engine,'pause',config={})
+        self.assertEqual(engine.runtime['resume_lifecycle'],'initializing')
+        send_control(engine,'resume',config={})
+        resumed=ResearchEngine(root,instance_id)
+        self.assertEqual(resumed.instance['lifecycle']['state'],'initializing')
+        self.assertEqual(resumed.runtime['inputs'],source)
+        self.assertIn('independent_intent',resumed.instance['lifecycle']['activation']['missing'])
+        self.assertNotIn('missing',resumed.runtime['availability'])
+        send_control(resumed,'close',config={})
+        self.assertTrue(resumed.instance['lifecycle']['permanently_closed'])
+        send_control(resumed,'pause',config={})
+        send_control(resumed,'resume',config={})
+        terminal=ResearchEngine(root,instance_id)
+        self.assertEqual(terminal.runtime['status'],'closed')
+        self.assertTrue(terminal.instance['lifecycle']['permanently_closed'])
 
     def test_public_call_mode_init_activate_pause_resume_and_persistence(self):
+        # The public initialization and activation through PublicInitializationRunner
+        # are this test's subject, so it keeps the public path.
         from research_fixtures import activate, install_adapter_fixture, send_control
         install_adapter_fixture(self)
         with tempfile.TemporaryDirectory() as directory, patch('do_math.windows_job.named_job_empty',return_value=True):
             root = Path(directory)
-            instance_id = new_instance(root,goal='Prove n + 0 = n',config={
+            instance_id = initialized(root,goal='Prove n + 0 = n',config={
                 'scholarly_enabled':False,
                 'lean_command':['synthetic-lean'],})
             engine = ResearchEngine(root,instance_id,runner=PublicInitializationRunner())
@@ -272,9 +294,12 @@ class PublicLifecycleTests(unittest.TestCase):
             self.assertNotIn('initial_request',resumed.instance['lifecycle'])
 
     def test_public_external_once_credential_resume_persists_attempts(self):
-        import os, subprocess, threading
+        # The subject is how public controls and Git reloads record the two
+        # attempts, not activation: start from the validated active state.
+        import os, threading
         from http.server import HTTPServer
-        from research_fixtures import activate, install_adapter_fixture, send_control
+        from research_fixtures import install_adapter_fixture, restore_template, send_control
+        from state_fixtures import active_instance
         from test_external import H
         class Handler(H):
             count=0
@@ -286,47 +311,44 @@ class PublicLifecycleTests(unittest.TestCase):
         threading.Thread(target=server.serve_forever,daemon=True).start()
         self.addCleanup(server.server_close); self.addCleanup(server.shutdown)
         origin=f'http://127.0.0.1:{server.server_port}'
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.windows_job.named_job_empty',return_value=True):
-            root=Path(directory)
-            instance_id = new_instance(root,goal='Prove n + 0 = n',config={
-                'scholarly_enabled':False,
-                'lean_command':['synthetic-lean'],})
-            engine=ResearchEngine(root,instance_id,runner=PublicInitializationRunner())
-            activate(engine,root,initialization_runner=engine.runner,external_policy='explicit_grants')
-            send_control(engine,'decision',config={'change':{'kind':'grant','grant':{
-                'id':'GR-public-http','kind':'http','reuse':'once','allowed_origins':[origin],
-                'allowed_methods':['POST'],'allowed_path_prefixes':['/effect'],
-                'credential_env':{'X-Test':'LIFECYCLE_AUDIT_TEST_TOKEN'}}}})
-            config={'operation':'prepare','id':'OP-public','grant_id':'GR-public-http',
-                'request':{'method':'POST','url':origin+'/effect','body':'synthetic local request'}}
-            send_control(engine,'external',config=config)
-            action=next(a for a in engine.runtime['queue'] if a['role']=='external_action')
-            with patch.dict(os.environ):
-                os.environ.pop('LIFECYCLE_AUDIT_TEST_TOKEN',None)
-                engine._process_machine_action(action)
-            before=deepcopy(engine.runtime['external_operations']['OP-public'])
-            first=deepcopy(engine.runtime['executions'][before['execution_id']])
-            self.assertEqual(first['status'],'ended'); self.assertEqual(Handler.count,0)
-            resumed=ResearchEngine(root,instance_id)
-            send_control(resumed,'external',config=config,request_id='UC-public-external-credential-resume')
-            action=next(a for a in resumed.runtime['queue'] if a['role']=='external_action')
-            with patch.dict(os.environ,{'LIFECYCLE_AUDIT_TEST_TOKEN':'synthetic-local-token'}):
-                resumed._process_machine_action(action)
-            saved=ResearchEngine(root,instance_id)
-            op=saved.runtime['external_operations']['OP-public']
-            current=saved.runtime['executions'][op['execution_id']]
-            self.assertEqual(Handler.count,1); self.assertEqual(op['status'],'confirmed')
-            self.assertNotIn('waiting_reason',op)
-            for key in ('id','request_sha256','idempotency_key'):
-                self.assertEqual(op[key],before[key])
-            self.assertEqual(saved.runtime['executions'][first['id']],first)
-            self.assertEqual(current['continuation_of'],first['id'])
-            self.assertEqual(current['owner_activity_id'],first['owner_activity_id'])
-            self.assertEqual(current['submission_receipt']['kind'],'machine_output')
-            self.assertEqual(current['outcome'],'output_accepted')
-            for execution in (first,current):
-                times=[datetime.fromisoformat(row['at']) for row in execution['transitions']]
-                self.assertEqual(times,sorted(times))
+        root, instance_id = restore_template(active_instance, config={'scholarly_enabled':False,
+                                                                      'lean_command':['synthetic-lean']})
+        repository = root/'repository'
+        engine=ResearchEngine(repository,instance_id)
+        send_control(engine,'decision',config={'change':{'kind':'grant','grant':{
+            'id':'GR-public-http','kind':'http','reuse':'once','allowed_origins':[origin],
+            'allowed_methods':['POST'],'allowed_path_prefixes':['/effect'],
+            'credential_env':{'X-Test':'LIFECYCLE_AUDIT_TEST_TOKEN'}}}})
+        config={'operation':'prepare','id':'OP-public','grant_id':'GR-public-http',
+            'request':{'method':'POST','url':origin+'/effect','body':'synthetic local request'}}
+        send_control(engine,'external',config=config)
+        action=next(a for a in engine.runtime['queue'] if a['role']=='external_action')
+        with patch.dict(os.environ):
+            os.environ.pop('LIFECYCLE_AUDIT_TEST_TOKEN',None)
+            engine._process_machine_action(action)
+        before=deepcopy(engine.runtime['external_operations']['OP-public'])
+        first=deepcopy(engine.runtime['executions'][before['execution_id']])
+        self.assertEqual(first['status'],'ended'); self.assertEqual(Handler.count,0)
+        resumed=ResearchEngine(repository,instance_id)
+        send_control(resumed,'external',config=config,request_id='UC-public-external-credential-resume')
+        action=next(a for a in resumed.runtime['queue'] if a['role']=='external_action')
+        with patch.dict(os.environ,{'LIFECYCLE_AUDIT_TEST_TOKEN':'synthetic-local-token'}):
+            resumed._process_machine_action(action)
+        saved=ResearchEngine(repository,instance_id)
+        op=saved.runtime['external_operations']['OP-public']
+        current=saved.runtime['executions'][op['execution_id']]
+        self.assertEqual(Handler.count,1); self.assertEqual(op['status'],'confirmed')
+        self.assertNotIn('waiting_reason',op)
+        for key in ('id','request_sha256','idempotency_key'):
+            self.assertEqual(op[key],before[key])
+        self.assertEqual(saved.runtime['executions'][first['id']],first)
+        self.assertEqual(current['continuation_of'],first['id'])
+        self.assertEqual(current['owner_activity_id'],first['owner_activity_id'])
+        self.assertEqual(current['submission_receipt']['kind'],'machine_output')
+        self.assertEqual(current['outcome'],'output_accepted')
+        for execution in (first,current):
+            times=[datetime.fromisoformat(row['at']) for row in execution['transitions']]
+            self.assertEqual(times,sorted(times))
 
 
 class LifecycleTests(unittest.TestCase):

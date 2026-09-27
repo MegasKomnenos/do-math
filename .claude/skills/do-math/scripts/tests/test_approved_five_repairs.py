@@ -15,6 +15,23 @@ from do_math.repository import ResearchRepository, exact_content_hash
 from research_fixtures import bare_engine
 from test_categories import test_group
 
+# ``test_input_recovery.InputRecoveryPublicTests.setUp``'s synthetic activation settings.
+INPUT_RECOVERY_CONFIG = {'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}
+
+
+def restore_input_recovery_state(test):
+    """``InputRecoveryPublicTests.setUp`` from a template: the same validated synthetic active state.
+
+    Sets ``root``, ``repo`` and ``identifier`` on ``test`` as that setUp does and
+    keeps the adapter observation replaced for the test. The workspace is
+    ``root / 'work-0'`` (the instance names it).
+    """
+    from research_fixtures import FixtureAdapter, restore_template
+    from state_fixtures import active_instance
+    test.enterContext(patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()))
+    test.root, test.identifier = restore_template(active_instance, config=INPUT_RECOVERY_CONFIG)
+    test.repo = test.root / 'repository'
+
 
 class WaitOwnershipTests(unittest.TestCase):
     def receive(self, kind, *, creates_wait=True):
@@ -182,7 +199,9 @@ class PartialWithdrawalTests(unittest.TestCase):
         instance, runtime, _ = TaskScopeTests().fixture()
         task = runtime['tasks']['TK-AI']
         task.update(status='waiting', results=[{'execution_id':'EX-work','outcome':'partial'}])
-        assessment = {'decision':'incomplete', 'execution_id':'EX-plan',
+        # A stored assessment is the planner's task assessment plus receiver fields (apply_task_assessments).
+        assessment = {'task_id':task['id'], 'decision':'incomplete', 'reason':'The partial result leaves every obligation open',
+            'execution_id':'EX-plan',
             'item_dispositions':[{'obligation_id':o['id'],'kind':'open','evidence_refs':[]}
                                  for o in task['completion_obligations']], 'unresolved':[]}
         assessment.update(contract_sha256=planning.contract_hash(task), results_sha256=exact_content_hash(task['results']),
@@ -206,14 +225,17 @@ class PartialWithdrawalTests(unittest.TestCase):
         with self.assertRaises(ValueError): task_scope.validate_withdrawal_record(task)
 
     def test_unassessed_new_results_and_protected_scope_are_not_withdrawable(self):
-        for change in ('new_result','stale_assessment','user_required','transferred_obligations'):
+        # Each change is rejected by its own withdrawal rule, not by the stored-record schema.
+        reasons = {'new_result': 'current item dispositions', 'stale_assessment': 'current item dispositions',
+                   'user_required': 'protected obligations', 'transferred_obligations': 'protected obligations'}
+        for change, reason in reasons.items():
             with self.subTest(change=change):
                 instance, runtime, snapshot = self.fixture()
                 task = runtime['tasks']['TK-AI']
                 if change == 'new_result': task['results'].append({'execution_id':'EX-new'})
                 elif change == 'stale_assessment': task['assessment']['current'] = False
                 else: task[change] = True
-                with self.assertRaises(ValueError):
+                with self.assertRaisesRegex(ValueError, reason):
                     task_scope.apply_task_dispositions(instance,runtime,
                         [{'task_id':'TK-AI','disposition':'withdraw','reason':'not authorized'}],
                         execution_id='EX-next', input_tasks=snapshot)
@@ -221,8 +243,11 @@ class PartialWithdrawalTests(unittest.TestCase):
 
 class NativeRepairTests(unittest.TestCase):
     def setUp(self):
+        from test_input_recovery import InputRecoveryPublicTests
         from test_native_final_submission import NativeFinalGitTests
-        NativeFinalGitTests.setUp(self)
+        # The running maintenance execution is registered on a copy of the synthetic active state.
+        with patch.object(InputRecoveryPublicTests, 'setUp', restore_input_recovery_state):
+            NativeFinalGitTests.setUp(self)
 
     def test_normal_malformed_final_routes_back_to_producer(self):
         from test_native_final_submission import native_result
@@ -286,9 +311,8 @@ class InitialDiagnosisTests(unittest.TestCase):
 
 class ResearchAdmissionTests(unittest.TestCase):
     def test_public_task_flow_keeps_observation_and_state_contracts_consistent(self):
-        from test_input_recovery import InputRecoveryPublicTests
         from test_engine import ScriptedRunner
-        InputRecoveryPublicTests.setUp(self)
+        restore_input_recovery_state(self)
         engine = ResearchEngine(self.repo, self.identifier, runner=ScriptedRunner())
         # This is a scheduler/storage integration test with scripted answers,
         # not a test of the AI's reading of role prose (checked separately).

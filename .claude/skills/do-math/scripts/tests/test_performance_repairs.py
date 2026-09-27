@@ -13,7 +13,6 @@ import unittest
 from unittest.mock import Mock, create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from test_categories import test_group as category
 from do_math import contracts, engine as engine_module, repository, submission
 from do_math.context_store import prefetch_artifacts
 from do_math.git_store import GitStateStore, GitStateStoreError, StateSnapshot
@@ -40,9 +39,10 @@ def archived_role_input(bundle, snapshot, files):
     """
     prefix = 'runtime/artifacts/' + bundle + '/'
 
-    def row(path, raw, **fields):
-        files[prefix + path] = raw
-        return {**fields, **artifact(prefix + path, raw)}
+    # A document row carries its own ``path`` field, so the archive location has another name.
+    def row(archived, raw, **fields):
+        files[prefix + archived] = raw
+        return {**fields, **artifact(prefix + archived, raw)}
     return {'feature_version': 5, 'role': 'maintenance', 'snapshot': snapshot,
             'output_contract': {'id': 'do-math-cli/5'}, 'prompt': row('input.txt', b'exact prompt'),
             'direct': [row('input/catalog/' + key + '.json', b'{}\n', key=key)
@@ -60,7 +60,6 @@ def candidate_repository():
     return repo
 
 
-@category('unit')
 class BatchedInspectionTests(unittest.TestCase):
     def inspect(self, refs, single, batch=None):
         return inspect_state(*storage_state(refs), requested_areas=['record_storage'],
@@ -165,7 +164,6 @@ class BatchedInspectionTests(unittest.TestCase):
         engine.store.read.assert_not_called()
 
 
-@category('unit')
 class ImpactReviewRetryTests(unittest.TestCase):
     def test_sealed_bytes_are_read_only_after_every_requested_review_ended(self):
         engine = bare_engine(head='a' * 40)
@@ -189,7 +187,6 @@ class ImpactReviewRetryTests(unittest.TestCase):
         engine._hold_unreadable_impact_submission.assert_called_once()
 
 
-@category('unit')
 class SealedArtifactTests(unittest.TestCase):
     def test_a_sealed_row_is_hashed_once_and_matched_rows_are_not_reread(self):
         import uuid
@@ -223,7 +220,6 @@ class SealedArtifactTests(unittest.TestCase):
         self.assertEqual((read.call_count, validate.call_count), (1, 1))
 
 
-@category('unit')
 class ToolDiscoveryTests(unittest.TestCase):
     def test_lean_is_rediscovered_at_most_once_per_second(self):
         engine = bare_engine()
@@ -246,11 +242,67 @@ class ToolDiscoveryTests(unittest.TestCase):
         # Freshly edited files are not yet settled; age every fingerprint for this check.
         with patch.object(file_io, 'RACY_NS', 0):
             baseline = engine_module.ResearchEngine._installation_manifest()
-            with patch.object(file_io, 'sha256_file', side_effect=AssertionError('unchanged file was rehashed')):
+            # Forget the hashed edition so the full walk runs, not the listing shortcut.
+            with patch.object(engine_module, '_HASHED_INSTALLATION', None), \
+                    patch.object(file_io, 'sha256_file', side_effect=AssertionError('unchanged file was rehashed')):
                 self.assertEqual(engine_module.ResearchEngine._installation_manifest(), baseline)
 
+    def test_control_reuses_one_reader_per_repository_and_instance(self):
+        with patch.object(engine_module, '_CONTROL_READERS', type(engine_module._CONTROL_READERS)()), \
+                patch.object(engine_module, '_repository', side_effect=lambda *args: object()) as create:
+            first = engine_module._control_reader(Path('repo'), 'RI-1')
+            self.assertIs(engine_module._control_reader(Path('repo').absolute(), 'RI-1'), first)
+            self.assertIsNot(engine_module._control_reader(Path('repo'), 'RI-2'), first)
+            self.assertEqual(create.call_count, 2)
+            for index in range(engine_module._CONTROL_READER_LIMIT):
+                engine_module._control_reader(Path('other'), f'RI-{index + 3}')
+            self.assertIsNot(engine_module._control_reader(Path('repo'), 'RI-1'), first)
 
-@category('unit')
+    def test_unchanged_installation_listing_reuses_the_hashed_edition(self):
+        from do_math import file_io
+        with patch.object(file_io, 'RACY_NS', 0), patch.object(engine_module, '_HASHED_INSTALLATION', None):
+            baseline = engine_module.ResearchEngine._installation_manifest()
+            with patch.object(engine_module, 'reading_map', side_effect=AssertionError('role map reread')):
+                self.assertIs(engine_module.ResearchEngine._installation_manifest(), baseline)
+            listing = engine_module._HASHED_INSTALLATION[1]
+            changed = {**listing, 'scripts/do_math/added.py': (1, 1, 1)}
+            with patch.object(engine_module, '_installation_listing', side_effect=[changed, listing]), \
+                    patch.object(engine_module, 'reading_map', wraps=engine_module.reading_map) as rebuilt:
+                self.assertEqual(engine_module.ResearchEngine._installation_manifest(), baseline)
+            self.assertEqual(rebuilt.call_count, 1)
+
+    def test_installation_listing_reports_added_removed_and_rewritten_files(self):
+        import os, tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = root / 'scripts' / 'do_math'
+            (package / 'sub').mkdir(parents=True)
+            (root / 'docs').mkdir()
+            for path in (package / 'a.py', package / 'sub' / 'b.py', root / 'docs' / 'x.md', root / 'SKILL.md'):
+                path.write_text('v1', encoding='utf-8')
+            documents = ('SKILL.md', 'docs/x.md')
+            listing = lambda: engine_module._installation_listing(root, documents)
+            before = listing()
+            self.assertEqual(set(before), {'scripts/do_math/a.py', 'scripts/do_math/sub/b.py', 'SKILL.md', 'docs/x.md'})
+            # Files the manifest never hashes do not move the listing.
+            (package / '__pycache__').mkdir()
+            (package / '__pycache__' / 'a.cpython-312.pyc').write_bytes(b'cache')
+            (root / 'docs' / 'unlisted.md').write_text('other', encoding='utf-8')
+            self.assertEqual(listing(), before)
+            (package / 'new').mkdir()
+            (package / 'new' / 'c.py').write_text('v1', encoding='utf-8')
+            self.assertEqual(set(listing()) - set(before), {'scripts/do_math/new/c.py'})
+            (package / 'new' / 'c.py').unlink()
+            (package / 'sub' / 'b.py').unlink()
+            self.assertEqual(set(before) - set(listing()), {'scripts/do_math/sub/b.py'})
+            for relative in ('docs/x.md', 'scripts/do_math/a.py'):
+                path = root / relative
+                old = listing()[relative]
+                path.write_text('v2', encoding='utf-8')  # same size: only the time moves
+                os.utime(path, ns=(old[1] + 10**9, old[1] + 10**9))
+                self.assertNotEqual(listing()[relative], old, relative)
+
+
 class CandidateCopyTests(unittest.TestCase):
     def test_candidate_numbers_events_without_a_second_whole_state_copy(self):
         instance, runtime = current_state({'title': 'fixture'}, {'events': [{'id': 'EV-1', 'kind': 'created'}]})
@@ -274,7 +326,6 @@ class CandidateCopyTests(unittest.TestCase):
         self.assertEqual((instance, runtime), before)
 
 
-@category('unit')
 class StorageValueTests(unittest.TestCase):
     def test_value_validation_and_serialization_keep_the_same_domain(self):
         for value in (None, True, False, 0, -(2**53 - 1), 2**53 - 1,
@@ -304,7 +355,6 @@ class StorageValueTests(unittest.TestCase):
             candidate_repository().validate_candidate(instance, runtime)
 
 
-@category('unit')
 class SubmissionShapeWorkTests(unittest.TestCase):
     def fixture(self, *, explicit=True):
         context = {'action': {'role': 'maintenance'}, 'execution_id': 'EX-1',
@@ -369,13 +419,13 @@ class SubmissionShapeWorkTests(unittest.TestCase):
         self.assertNotIn('integration_bundles', output)
 
 
-@category('unit')
 class SnapshotMetadataTests(unittest.TestCase):
     REF = 'refs/heads/do-math/RI-fixture'
 
     def store(self, *, length=40, root_type='commit', rows=None, returncode=0, resolved=None):
         store = GitStateStore.__new__(GitStateStore)
         store.ref = self.REF
+        store._held_head = None
         store.object_format = 'sha1' if length == 40 else 'sha256'
         head, research, runtime = ('a' * length, 'b' * length, 'c' * length)
         values = rows if rows is not None else [head + ' ' + root_type, research + ' tree', runtime + ' tree']

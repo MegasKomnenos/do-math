@@ -562,7 +562,8 @@ RECORDS["intent_imports"] = record({"source": RECORDS["governance_sources"],
     "coordinate_unit": enum("unicode_codepoint"), "basis_sha256": HASH, "basis_scope": enum("referenced-v1"), "sha256": HASH,
     "previous_id": nullable(ID), "previous_findings": HISTORY, "status": TEXT,
     "superseded_by": ID, "check": EVIDENCE, "application": EVIDENCE, "owner_basis": mapping(EVIDENCE), "input_ref": ID},
-    ("source", "output", "execution_id", "coordinate_unit", "basis_sha256", "sha256", "previous_id", "previous_findings", "status"))
+    ("source", "output", "execution_id", "coordinate_unit", "basis_sha256", "sha256", "previous_id", "previous_findings", "status",
+     "input_ref"))
 RECORDS["recoveries"] = record({"started_at": TEXT, "execution_ids": REFS,
     "dispositions": array(obj({"execution_id": ID, "fact": TEXT, "next_owner": TEXT,
         "local_termination_confirmed": BOOL, "remote_termination": enum("unknown"),

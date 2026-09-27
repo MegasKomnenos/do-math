@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from .trust_validation import AXIOMS
 
+from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime, timezone
 from functools import cached_property
@@ -37,7 +38,7 @@ from .academic_engine import AcademicEngineMixin
 from .governance_engine import GovernanceEngineMixin
 from .model_runner import ModelRunner
 from .repository import ResearchRepository, canonical_json, exact_content_hash, semantic_content_hash, new_id
-from .repository import mark_artifact_verified, sealed_bytes
+from .repository import mark_artifact_verified, retain_reads, sealed_bytes
 from .state_checks import inspect_state
 from .git_store import GitStateStoreError
 from .scholarly import resolve_scholarly_server, validate_scholarly_server
@@ -58,7 +59,7 @@ from .session_slots import SLOT_WAITS, held_reservations
 from .state_contract import STATE_FORMAT_VERSION, STATE_CONTRACT_ID, default_state_contract
 from . import task_contracts, operational_dispositions, retention, repair_execution
 from .control_transport import ControlTransport, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, SUBMIT_INTENT
-from .file_io import cached_sha256, os_lock, write_bytes_atomic
+from .file_io import cached_sha256, fingerprint_settled, os_lock, stat_fingerprint, write_bytes_atomic
 
 CONTRACT = STATE_CONTRACT_ID
 
@@ -66,6 +67,21 @@ CONTRACT = STATE_CONTRACT_ID
 def _repository(repository: Path, instance_id: str) -> ResearchRepository:
     contract = default_state_contract()
     return ResearchRepository(repository, instance_id, contract=contract)
+
+
+# control() only reads its repository. Keeping one per (repository, instance)
+# spares each in-process call the Git query for its directory and format.
+_CONTROL_READERS: OrderedDict = OrderedDict()
+_CONTROL_READER_LIMIT = 8
+
+
+def _control_reader(repository: Path, instance_id: str) -> ResearchRepository:
+    key = (os.path.normcase(os.path.abspath(repository)), instance_id)
+    store = _CONTROL_READERS.pop(key, None) or _repository(repository, instance_id)
+    _CONTROL_READERS[key] = store
+    while len(_CONTROL_READERS) > _CONTROL_READER_LIMIT:
+        _CONTROL_READERS.popitem(last=False)
+    return store
 
 
 class InputPreparationInterrupted(Exception):
@@ -137,6 +153,44 @@ def _artifact_format_valid(reference, raw):
         return False
     # No installed validator for another format is evidence of validity.
     return False
+
+
+_SKILL_ROOT = Path(__file__).resolve().parents[2]
+# The edition this process last hashed: (documents, listing, manifest).
+_HASHED_INSTALLATION = None
+
+
+def _installation_listing(root, documents):
+    """Fingerprints of the files an installation manifest hashes, from directory listings.
+
+    One ``scandir`` pass per directory below ``scripts/do_math`` and per
+    document directory yields every ``.py`` file and listed document with its
+    (size, modification, birth) fingerprint, without a stat call per file. An
+    added or removed file changes the key set and a rewrite its fingerprint.
+    A Windows directory entry shows a rewrite once its writer closes the file.
+    """
+    rows = {}
+
+    def walk(directory, prefix):
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                if entry.is_dir(follow_symlinks=False):
+                    walk(entry.path, prefix + entry.name + "/")
+                elif entry.name.lower().endswith(".py"):
+                    rows[prefix + entry.name] = stat_fingerprint(entry.stat())
+
+    walk(root / "scripts" / "do_math", "scripts/do_math/")
+    by_directory = {}
+    for relative in documents:
+        parent, _, name = relative.rpartition("/")
+        by_directory.setdefault(parent, {})[os.path.normcase(name)] = relative
+    for parent, names in by_directory.items():
+        with os.scandir(root / parent) as entries:
+            for entry in entries:
+                relative = names.get(os.path.normcase(entry.name))
+                if relative is not None:
+                    rows[relative] = stat_fingerprint(entry.stat())
+    return rows
 
 
 def _evaluation_context_for(store, snapshot, *, lean_available):
@@ -269,7 +323,7 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
         raise ValueError("operator controls are limited to pause, resume, request, configure, source, quiesce, and release_quiesce")
     if request_id is not None:
         validate_request_id(request_id)
-    store = _repository(repository, instance_id)
+    store = _control_reader(repository, instance_id)
     head, instance, runtime = store.load()
     if request_id is not None and idempotency_key is not None:
         raise ValueError("request_id and idempotency_key are mutually exclusive")
@@ -491,14 +545,34 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     @staticmethod
     def _installation_manifest() -> dict:
-        """Hash the installed code and role documents; unchanged files reuse their digests."""
-        root = Path(__file__).resolve().parents[2]
+        """Hash the installed code and role documents; unchanged files reuse their digests.
+
+        While the directory listings of the last hashed edition are unchanged,
+        that edition's manifest is returned without reading the role map,
+        globbing or hashing. The listing is taken before the files are found
+        and hashed, so a later change always differs from it; a listing with a
+        fingerprint too recent to be settled is not reused. Callers only
+        compare or copy the result.
+        """
+        global _HASHED_INSTALLATION
+        root = _SKILL_ROOT
+        if _HASHED_INSTALLATION is not None:
+            documents, listing, manifest = _HASHED_INSTALLATION
+            try:
+                if _installation_listing(root, documents) == listing:
+                    return manifest
+            except OSError:
+                pass  # A removed directory is found or reported by hashing below.
         documents = dict.fromkeys(relative for paths in reading_map(skill_root=root).values() for relative in paths)
         from .contracts import OPERATING_DOCUMENTS
         documents.update(dict.fromkeys(OPERATING_DOCUMENTS))
+        listing = _installation_listing(root, documents)
         paths = [*sorted((root / "scripts" / "do_math").rglob("*.py")), *(root / relative for relative in documents)]
         files = {path.relative_to(root).as_posix(): cached_sha256(path) for path in paths}
-        return {"feature_version": STATE_FORMAT_VERSION, "files": files, "sha256": exact_content_hash(files)}
+        manifest = {"feature_version": STATE_FORMAT_VERSION, "files": files, "sha256": exact_content_hash(files)}
+        if all(fingerprint_settled(fingerprint) for fingerprint in listing.values()):
+            _HASHED_INSTALLATION = (tuple(documents), listing, manifest)
+        return manifest
 
     def _execution_profile(self, action):
         profiles = self.instance["execution_profiles"]
@@ -772,6 +846,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         with phase('state_publish', snapshot=self.head):
             self.head, self.instance, self.runtime = self.store.save_with_state(
                 self.head, self.instance, self.runtime, artifacts=artifacts)
+        git_dir = getattr(self.store, "git_dir", None)
+        if isinstance(git_dir, (str, Path)):
+            # Result acceptance reads each live execution's input snapshot again.
+            retain_reads(git_dir, {execution["input_snapshot"] for execution in self.runtime["executions"].values()
+                                   if execution.get("status") != "ended" and execution.get("input_snapshot")})
         self._evaluate_stops()
 
     def _record_control_result(self, request, *, rejected=False, reason=None, **details):

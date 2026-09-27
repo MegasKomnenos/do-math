@@ -205,6 +205,8 @@ class WalkthroughRepairs(unittest.TestCase):
         from research_fixtures import candidate
         prior, instance, runtime = approved_fixture()
         proposal = candidate('Followup')
+        # The author binds a permitted work profile it was given (research_fixtures.bind_candidates).
+        proposal['profile_refs'] = deepcopy(prior['profile_refs'])
         proposal['dependencies'] = [prior['id']]
         runtime.update(cycles=0, executions={'EX-prepare': {'status': 'ended', 'extensions': {
             'task_conditions': [{'task_title': 'Followup', 'occurrence_condition': {'op': 'always'}}]}}})
@@ -296,7 +298,7 @@ class WalkthroughRepairs(unittest.TestCase):
         instance, runtime, source, output = DomainGovernanceTests().import_fixture()
         instance['sources'] = [{'id': 'SO-table', 'name': 'table.txt', 'path': 'sources/table.txt', 'sha256': 'a'*64}]
         output['used_sources'] = ['source:table.txt']
-        bundle = gov.prepare_import(instance, runtime, source, output, execution_id='AUTHOR')
+        bundle = gov.prepare_import(instance, runtime, source, output, execution_id='AUTHOR', input_ref='IN')
         instance['sources'][0]['sha256'] = 'b'*64
         with self.assertRaisesRegex(ValueError, 'targets changed'):
             gov._current_import(instance, runtime, bundle['id'])
@@ -364,7 +366,9 @@ class WalkthroughRepairs(unittest.TestCase):
         blocks = path.read_text(encoding='utf-8').split('```json\n')[1:]
         grant = next(json.loads(block.split('```')[0])['grant'] for block in blocks
                      if '"id": "GR-research-01"' in block.split('```')[0])
-        grant['status'] = 'active'
+        # The document's expiry is a placeholder the operator replaces with the approved period.
+        self.assertTrue(grant['expires_at'].startswith('<'), grant['expires_at'])
+        grant.update(status='active', expires_at='2026-09-23T00:00:00+00:00')
         self.assertTrue(gov.authorize({'grants': {grant['id']: grant}}, {'role': 'formal_check'},
             at='2026-09-22T00:00:00+00:00')['allowed'])
 

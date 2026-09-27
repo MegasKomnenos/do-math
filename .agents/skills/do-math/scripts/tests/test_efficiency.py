@@ -3,23 +3,43 @@ from copy import deepcopy
 from contextlib import contextmanager
 import hashlib
 from pathlib import Path
-import subprocess
 import sys
-import tempfile
 import unittest
-import time
-import uuid
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine, control
-from research_fixtures import charter_change, policy_change, send_control, candidate
-from state_fixtures import active_engine
+from research_fixtures import charter_change, policy_change, send_control, candidate, restore_template
 from research_fixtures import FixtureAdapter
 from do_math.model_policy import MODELS
 from do_math.planning import contract_hash
 from do_math.input_basis import capture_decision_basis
 from test_engine import ScriptedRunner, context_from
+
+EFFICIENCY_CONFIG = {"operator_enabled": False, "scholarly_enabled": False, "lean_command": ["test-lean"],
+                     "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}
+
+
+def efficiency_instance(root, shared, *, config, charter):
+    """``restore_template`` build: the synthetic active state with one queued, published preparation.
+
+    These tests start after activation. They keep real state publication and
+    the preparation request they exercise, without replaying input approval.
+    ``charter`` also approves academic requirement ``explain`` through a public
+    charter control, which opens a plan for the charter event.
+    """
+    from state_fixtures import active_instance
+    instance_id = active_instance(root, shared, config=config)
+    engine = ResearchEngine(root / "repository", instance_id)
+    (root / "work-0" / "runs").mkdir(exist_ok=True)
+    engine._enqueue("research_preparation", reason="Prepare the bounded efficiency fixture")
+    engine._save()
+    if charter:
+        send_control(engine, "decision", config={"change":
+            charter_change(engine, academic_requirements=[
+                {"id": "explain", "scope": "solution", "criteria": ["explain structure"],
+                 "assessor": "research_plan"}])})
+    return instance_id
 
 
 class EfficiencyTests(unittest.TestCase):
@@ -43,28 +63,17 @@ class EfficiencyTests(unittest.TestCase):
 
     def setUp(self):
         self.enterContext(patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()))
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
-        repo = self.root / "repo"
-        repo.mkdir()
-        subprocess.run(["git", "init", "-q", str(repo)], check=True,
-                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        self.engine = active_engine(repo, self.root / "work", runner=ScriptedRunner(),
-            config={"operator_enabled": False, "scholarly_enabled": False, "lean_command": ["test-lean"],
-                    "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5})
-        # These tests start after activation. Keep real state publication and
-        # the preparation request they exercise, without replaying input approval.
-        (self.root / "work" / "runs").mkdir(exist_ok=True)
-        self.engine._enqueue("research_preparation", reason="Prepare the bounded efficiency fixture")
-        self.engine._save()
+        self.open(charter=False)
+
+    def open(self, *, charter):
+        """Make ``self.engine`` a new engine, with a new ``ScriptedRunner``, on a copy of ``efficiency_instance``."""
+        self.root, instance_id = restore_template(efficiency_instance, config=EFFICIENCY_CONFIG, charter=charter)
+        self.workspace = self.root / "work-0"
+        self.engine = ResearchEngine(self.root / "repository", instance_id, runner=ScriptedRunner())
 
     def startup(self):
+        self.open(charter=True)
         e = self.engine
-        send_control(e, "decision", config={"change":
-            charter_change(e, academic_requirements=[
-                {"id": "explain", "scope": "solution", "criteria": ["explain structure"],
-                 "assessor": "research_plan"}])})
         e._refresh_readiness()
         return next(a for a in e.runtime["queue"] if a["role"] == "research_plan")
 
@@ -149,7 +158,7 @@ class EfficiencyTests(unittest.TestCase):
         e = self.engine
         before_executions = set(e.runtime["executions"])
         before_calls = len(e.runner.prompts)
-        before_runs = set((self.root / "work" / "runs").iterdir())
+        before_runs = set((self.workspace / "runs").iterdir())
         original = e._context
         def prepare(action, workspace, **kwargs):
             context = original(action, workspace, **kwargs)
@@ -167,7 +176,7 @@ class EfficiencyTests(unittest.TestCase):
         self.assertEqual((execution['status'], execution['outcome']), ('ended', 'cancelled'))
         self.assertIsNone(execution.get('started_at'))
         self.assertNotIn('capacity', execution)
-        self.assertEqual(set((self.root / "work" / "runs").iterdir()), before_runs)
+        self.assertEqual(set((self.workspace / "runs").iterdir()), before_runs)
 
     def test_pause_before_model_resume_has_no_checkpoint_grace(self):
         e = self.engine

@@ -50,40 +50,95 @@ def _eligible(key, value):
             or key == 'manifest' and isinstance(value, dict) and 'foundation_profile' in value)
 
 
+_FROZEN = (FrozenDict, FrozenList, FrozenText)
+# Children that can never be sealed and hold nothing to seal.
+_LEAVES = {bool, int, type(None)}
+
+
 def seal_large(value):
+    """Seal large eligible leaves of ``value``; plain dicts and lists change in place.
+
+    The walk visits every node of a state on each save, so leaves that cannot
+    be sealed (scalars, short plain strings) are skipped without a call, and a
+    string already encoded below the limit is not encoded again.
+    """
     from .repository import canonical_json
-    if isinstance(value, (FrozenDict, FrozenList, FrozenText)): return value
-    if isinstance(value, str) and len(value) >= LIMIT // 6:
-        raw = canonical_json(value)
-        return seal(value, raw) if len(raw) >= LIMIT else value
-    if isinstance(value, dict):
-        for key, child in list(value.items()):
-            if isinstance(child, (FrozenDict, FrozenList, FrozenText)):
-                continue
-            if _eligible(key, child):
-                raw = canonical_json(child)
-                if len(raw) >= LIMIT:
-                    value[key] = seal(child, raw)
+
+    def walk(value):
+        if isinstance(value, _FROZEN): return value
+        if isinstance(value, str) and len(value) >= LIMIT // 6:
+            raw = canonical_json(value)
+            return seal(value, raw) if len(raw) >= LIMIT else value
+        if isinstance(value, dict):
+            for key, child in value.items():
+                kind = type(child)
+                if kind in _LEAVES or kind is str and len(child) < LIMIT // 6 or isinstance(child, _FROZEN):
                     continue
-            value[key] = seal_large(child)
-    elif isinstance(value, list):
-        for index, child in enumerate(value): value[index] = seal_large(child)
-    return value
+                if _eligible(key, child):
+                    raw = canonical_json(child)
+                    if len(raw) >= LIMIT:
+                        value[key] = seal(child, raw)
+                        continue
+                    if isinstance(child, str):
+                        continue  # walk would encode it again to the same length
+                sealed = walk(child)
+                if sealed is not child:
+                    value[key] = sealed
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                kind = type(child)
+                if kind in _LEAVES or kind is str and len(child) < LIMIT // 6:
+                    continue
+                sealed = walk(child)
+                if sealed is not child:
+                    value[index] = sealed
+        return value
+
+    return walk(value)
+
+
+_PLAIN = {str, int, bool, type(None)}
 
 
 def encode(envelope):
-    blobs, references = {}, []
-    def visit(value, tokens):
-        if hasattr(value, '_payload_bytes'):
+    """Replace each sealed payload of the record by a reference to its blob.
+
+    Only sealed values carry payload bytes: plain scalars and strings are
+    copied without a call, plain dicts and lists skip the attribute probe, and
+    a payload's coordinate is copied from the walk's path only when found.
+    """
+    blobs, references, tokens = {}, [], []
+    def visit(value):
+        kind = type(value)
+        if kind is not dict and kind is not list and hasattr(value, '_payload_bytes'):
             raw, digest = value._payload_bytes, value._payload_hash
             path = 'runtime/artifacts/payload-' + digest + '/value.json'
             blobs[path] = raw
-            references.append({'tokens':tokens, 'path':path, 'sha256':digest, 'bytes':len(raw)})
+            references.append({'tokens':list(tokens), 'path':path, 'sha256':digest, 'bytes':len(raw)})
             return None
-        if isinstance(value, dict): return {k:visit(value[k], [*tokens,k]) for k in sorted(value)}
-        if isinstance(value, list): return [visit(v, [*tokens,i]) for i,v in enumerate(value)]
+        if isinstance(value, dict):
+            result = {}
+            for key in sorted(value):
+                child = value[key]
+                if type(child) in _PLAIN:
+                    result[key] = child
+                else:
+                    tokens.append(key)
+                    result[key] = visit(child)
+                    tokens.pop()
+            return result
+        if isinstance(value, list):
+            result = []
+            for index, child in enumerate(value):
+                if type(child) in _PLAIN:
+                    result.append(child)
+                else:
+                    tokens.append(index)
+                    result.append(visit(child))
+                    tokens.pop()
+            return result
         return value
-    result = {**envelope, 'record':visit(envelope['record'], [])}
+    result = {**envelope, 'record':visit(envelope['record'])}
     if references: result['payloads'] = references
     return result, blobs
 

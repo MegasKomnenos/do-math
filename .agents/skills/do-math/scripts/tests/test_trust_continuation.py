@@ -63,9 +63,7 @@ def interrupted_activation():
 
 
 import unittest
-from test_categories import test_group
 
-@test_group('integration')
 class TrustContinuationTests(unittest.TestCase):
     def test_interrupted_activation_preserves_explicit_lineage_through_save_and_retry(self):
         result = interrupted_activation()

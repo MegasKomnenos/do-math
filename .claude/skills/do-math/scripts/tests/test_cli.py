@@ -1,4 +1,8 @@
-"""Subprocess checks for the do-math command surface without model execution."""
+"""Checks of the do-math command surface without model execution.
+
+Commands run in this process through ``research_fixtures.run_cli``; the
+help and input-error exit codes are also checked as a child process sees them.
+"""
 
 from __future__ import annotations
 
@@ -19,6 +23,7 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 ENTRYPOINT = SCRIPTS / "do_math.py"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
+from research_fixtures import git_init, restore_template, run_cli
 
 
 def response_body(response):
@@ -27,6 +32,24 @@ def response_body(response):
     assert envelope['exit_code'] == response.returncode
     assert ('result' in envelope) != ('error' in envelope)
     return envelope.get('result', envelope.get('error'))
+
+
+def cli_instance(root, shared):
+    """``restore_template`` build: one instance the CLI's ``init`` created; returns its result.
+
+    The repository is ``root / 'repository'``, the workspace ``root / 'workspace'``,
+    and ``root / 'operator-disabled.json'`` the configuration file ``init`` read.
+    """
+    repository = git_init(root / "repository")
+    configuration = root / "operator-disabled.json"
+    configuration.write_text(json.dumps({"operator_enabled": False}), encoding="utf-8")
+    initialized = run_cli(
+        "init", "--repository", str(repository), "--workspace", str(root / "workspace"),
+        "--goal", "Prove a small theorem", "--title", "Small theorem", "--config-file", str(configuration),
+        cwd=root)
+    if initialized.returncode != 0:
+        raise AssertionError(initialized.stdout + initialized.stderr)
+    return response_body(initialized)
 
 
 class CliTests(unittest.TestCase):
@@ -55,6 +78,11 @@ class CliTests(unittest.TestCase):
         first=self.run_cli(*args)
         self.assertEqual(first.returncode,0,first.stdout)
         original=response_body(first)
+        # The same command with no state change between replays the first receipt.
+        again=self.run_cli(*args)
+        self.assertEqual(again.returncode,0,again.stdout)
+        self.assertEqual(json.loads(again.stdout)['request_id'],json.loads(first.stdout)['request_id'])
+        self.assertEqual(response_body(again)['request_id'],original['request_id'])
         resumed=self.run_cli('resume',*self.instance_args(),'--reason','audit2 resume')
         self.assertEqual(resumed.returncode,0,resumed.stdout)
         self.assertNotEqual(original['snapshot'],response_body(resumed)['snapshot'])
@@ -77,7 +105,7 @@ class CliTests(unittest.TestCase):
     def test_audit2_source_identity_and_effect_use_one_read(self):
         from do_math import cli
         from do_math.engine import control,_repository
-        path=self.root/'raw-source.bin'; original=b'\xfforiginal\r\n'; changed=b'changed after read'
+        path=self.root/'raw-source.bin'; original=b'\xff\x00original\r\n'; changed=b'changed after read'
         path.write_bytes(original)
         read=Path.read_bytes; reads=[]
         def read_then_change(value):
@@ -94,6 +122,8 @@ class CliTests(unittest.TestCase):
         self.assertEqual(reads,[original])
         store=_repository(self.repository,self.instance);head,instance,_=store.load()
         entry=instance['sources'][-1]
+        self.assertEqual(entry['name'],'raw.bin')
+        self.assertEqual(entry['sha256'],hashlib.sha256(original).hexdigest())
         self.assertEqual(store.read(entry['path'],head),original)
         normalized={'name':'raw.bin','body_base64':base64.b64encode(original).decode('ascii'),
                     'sha256':hashlib.sha256(original).hexdigest(),'bytes':len(original)}
@@ -103,6 +133,9 @@ class CliTests(unittest.TestCase):
         alternate=self.root/'same-bytes.bin';alternate.write_bytes(original)
         direct_file=control(self.repository,self.instance,'source',config={'path':str(alternate),'name':'raw.bin'})
         self.assertEqual(direct_file['request_id'],envelope['request_id'])
+        repeated=self.run_cli('source',*self.instance_args(),'--file',str(alternate),'--name','raw.bin')
+        self.assertEqual(repeated.returncode,0,repeated.stdout)
+        self.assertEqual(response_body(repeated)['effect'],'applied')
 
     def test_audit2_pending_and_rejected_receipts_keep_their_meaning(self):
         from do_math.engine import _repository
@@ -169,55 +202,29 @@ class CliTests(unittest.TestCase):
         self.assertEqual(response_body(historical)['goal'],'Prove a small theorem')
         self.assertIsNone(response_body(historical)['host_observation'])
 
-    def test_audit_default_retry_and_explicit_reapplication(self):
-        arguments = ['pause','--repository',str(self.repository),'--instance',self.instance,'--reason','same request']
-        first, second = self.run_cli(*arguments), self.run_cli(*arguments)
-        self.assertEqual(first.returncode,0,first.stdout)
-        self.assertEqual(second.returncode,0,second.stdout)
-        a,b = json.loads(first.stdout),json.loads(second.stdout)
-        self.assertEqual(a['request_id'],b['request_id'])
-        third = self.run_cli(*arguments,'--idempotency-key','apply-again-1')
-        self.assertEqual(third.returncode,0,third.stdout)
-        self.assertNotEqual(a['request_id'],json.loads(third.stdout)['request_id'])
-
     def setUp(self) -> None:
-        self.temporary = tempfile.TemporaryDirectory()
-        self.root = Path(self.temporary.name)
+        self.root, self.initial = restore_template(cli_instance)
         self.repository = self.root / "repository"
-        self.repository.mkdir()
-        subprocess.run(["git", "-C", str(self.repository), "init", "-q"], check=True)
         self.workspace = self.root / "workspace"
         self.operator_disabled = self.root / "operator-disabled.json"
-        self.operator_disabled.write_text(json.dumps({"operator_enabled": False}), encoding="utf-8")
-        initialized = self.run_cli(
-            "init", "--repository", str(self.repository), "--workspace", str(self.workspace),
-            "--goal", "Prove a small theorem", "--title", "Small theorem", "--config-file", str(self.operator_disabled),
-        )
-        self.assertEqual(initialized.returncode, 0, initialized.stdout + initialized.stderr)
-        self.initial = response_body(initialized)
         self.instance = self.initial["instance_id"]
 
-    def tearDown(self) -> None:
-        self.temporary.cleanup()
-
     def run_cli(self, *arguments: str) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
-            [sys.executable, str(ENTRYPOINT), *arguments],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            cwd=self.root,
-        )
+        return run_cli(*arguments, cwd=self.root)
 
     def instance_args(self) -> tuple[str, ...]:
         return ("--repository", str(self.repository), "--instance", self.instance)
 
     def test_help_and_input_error_exit_codes_are_structured(self) -> None:
-        help_result = self.run_cli("--help")
+        # Exit codes as the shell sees them: this test keeps the child process.
+        def process(*arguments):
+            return subprocess.run([sys.executable, str(ENTRYPOINT), *arguments], stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, text=True, cwd=self.root)
+        help_result = process("--help")
         self.assertEqual(help_result.returncode, 0)
         self.assertIn("init", help_result.stdout)
         self.assertIn("request", help_result.stdout)
-        invalid = self.run_cli("init", "--repository", str(self.repository), "--workspace", str(self.workspace))
+        invalid = process("init", "--repository", str(self.repository), "--workspace", str(self.workspace))
         self.assertEqual(invalid.returncode, 2)
         self.assertEqual(response_body(invalid)["kind"], "input_error")
 
@@ -267,26 +274,6 @@ class CliTests(unittest.TestCase):
         self.assertIn('maintenance', [a['role'] for a in runtime['queue']])
         self.assertNotIn('research_preparation', [a['role'] for a in runtime['queue']])
         self.assertFalse(runtime["executions"], "request must not start a model execution")
-
-    def test_retry_action_is_a_distinct_request_mode(self) -> None:
-        from do_math import cli
-        parser = cli.build_parser()
-        retry = parser.parse_args(("request", *self.instance_args(), "--retry-action", "AC-held"))
-        self.assertEqual(retry.retry_action, "AC-held")
-        self.assertIsNone(retry.role)
-        with self.assertRaises(cli.CliInputError):
-            parser.parse_args(("request", *self.instance_args(), "--role", "maintenance",
-                               "--retry-action", "AC-held"))
-        with self.assertRaises(cli.CliInputError):
-            parser.parse_args(("request", *self.instance_args(), "--role", "maintenance",
-                               "--text", "inspect state"))
-        schema = cli.describe_commands(parser, 'request')['commands']['request']['payload_schema']
-        self.assertIn('reason', schema['properties'])
-        self.assertNotIn('text', schema['properties'])
-        with self.assertRaises(cli.CliInputError):
-            cli._json_arguments(parser, {'schema_version': 5, 'command': 'request',
-                'payload': {'repository': str(self.repository), 'instance': self.instance,
-                            'role': 'maintenance', 'text': 'inspect state'}})
 
     def test_retry_action_reaches_the_public_control_inbox_idempotently(self) -> None:
         first = self.run_cli("request", *self.instance_args(), "--retry-action", "AC-held",
@@ -345,6 +332,27 @@ class CliTests(unittest.TestCase):
 
 
 class CliBoundaryTests(unittest.TestCase):
+    def test_retry_action_is_a_distinct_request_mode(self) -> None:
+        from do_math import cli
+        parser = cli.build_parser()
+        instance_args = ("--repository", ".", "--instance", "RI-test")
+        retry = parser.parse_args(("request", *instance_args, "--retry-action", "AC-held"))
+        self.assertEqual(retry.retry_action, "AC-held")
+        self.assertIsNone(retry.role)
+        with self.assertRaises(cli.CliInputError):
+            parser.parse_args(("request", *instance_args, "--role", "maintenance",
+                               "--retry-action", "AC-held"))
+        with self.assertRaises(cli.CliInputError):
+            parser.parse_args(("request", *instance_args, "--role", "maintenance",
+                               "--text", "inspect state"))
+        schema = cli.describe_commands(parser, 'request')['commands']['request']['payload_schema']
+        self.assertIn('reason', schema['properties'])
+        self.assertNotIn('text', schema['properties'])
+        with self.assertRaises(cli.CliInputError):
+            cli._json_arguments(parser, {'schema_version': 5, 'command': 'request',
+                'payload': {'repository': '.', 'instance': 'RI-test',
+                            'role': 'maintenance', 'text': 'inspect state'}})
+
     def test_query_rejects_unused_filters_before_reading_in_both_interfaces(self):
         from do_math import cli
         base = ['query', '--repository', '.', '--instance', 'RI-test']
@@ -482,20 +490,31 @@ class CliBoundaryTests(unittest.TestCase):
             self.assertEqual(json.loads(output.getvalue())['result']['submission_checks'],{'evidence':'preserved'})
 
     def test_audit_normalized_control_identity_at_public_boundary(self):
+        # The CLI passes the command's identity inputs to ENGINE's control, which
+        # derives the request ID (control_contracts.control_request_id), and reports
+        # the ID control returns: the same command repeats one ID, a new key makes another.
         from do_math import cli
-        ids = []
-        def admit(*args, **kwargs):
-            ids.append(kwargs.get('request_id'))
-            return {'request_id': kwargs.get('request_id') or 'random-'+str(len(ids)), 'accepted':True}
+        from do_math.control_contracts import control_request_id
+        forwarded, ids = [], []
+        def admit(repository, instance, action, **kwargs):
+            forwarded.append(kwargs)
+            ids.append(kwargs['request_id'] or control_request_id(instance, action, text=kwargs['text'],
+                config=kwargs['config'], origin=kwargs['origin'], idempotency_key=kwargs['idempotency_key']))
+            return {'request_id': ids[-1], 'accepted': True}
+        reported = []
         with patch.object(cli,'control',side_effect=admit), patch.object(cli,'ResearchEngine') as engine:
             engine.return_value.process_controls.return_value={'status':'paused','snapshot':'a'*40}
             engine.return_value.control_result.return_value=None
             engine.return_value.runtime={'history':[]}
             for extra in ([], [], ['--idempotency-key','again']):
-                with redirect_stdout(io.StringIO()):
+                output = io.StringIO()
+                with redirect_stdout(output):
                     code=cli.main(['pause','--repository','.','--instance','RI-test','--reason','P',*extra])
                 self.assertEqual(code,0)
-        self.assertIsNotNone(ids[0])
+                reported.append(json.loads(output.getvalue())['request_id'])
+        self.assertEqual([row['request_id'] for row in forwarded], [None, None, None])
+        self.assertEqual([row['idempotency_key'] for row in forwarded], [None, None, 'again'])
+        self.assertEqual(reported, ids)
         self.assertEqual(ids[0],ids[1])
         self.assertNotEqual(ids[0],ids[2])
 

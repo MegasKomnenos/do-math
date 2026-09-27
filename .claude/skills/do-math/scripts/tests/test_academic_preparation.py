@@ -15,12 +15,10 @@ from do_math.submission import payload_issues
 from test_engine import common
 import test_model_assessment_flow as assessment_tests
 from test_model_assessment_flow import rating
-from test_purpose_engine import ActiveStateHarness, PurposeRunner
+from test_purpose_engine import ActivatedPurposeHarness, PurposeRunner
 from research_fixtures import candidate, prepared_rule_conditions, seal_response
-from test_categories import test_group
 
 
-@test_group('unit')
 class RuleSubmissionTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -92,7 +90,7 @@ class RuleSubmissionTests(unittest.TestCase):
         self.assertEqual(runtime['queue'], [])
 
 
-class RulePreparationFlowTests(ActiveStateHarness):
+class RulePreparationFlowTests(ActivatedPurposeHarness):
     def prepare(self):
         engine = assessment_tests.AssessmentFlowTests.prepare_engine(self)
         engine.runtime['queue'] = []

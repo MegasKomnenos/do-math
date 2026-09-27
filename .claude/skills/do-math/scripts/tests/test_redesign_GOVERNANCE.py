@@ -20,7 +20,7 @@ from do_math import governance as gov, questions
 from copy import deepcopy
 from unittest.mock import create_autospec
 
-from research_fixtures import bare_engine, review_items
+from research_fixtures import bare_engine, disposition, review_items
 
 
 def charter(identifier="CH1", goal="Prove P"):
@@ -79,8 +79,10 @@ class DomainGovernanceTests(unittest.TestCase):
             gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S")
 
     def import_fixture(self):
-        i = self.initial(); rt = {"tasks": {}, "executions": {}, "queue": [], "status": "ready"}
-        s = gov.preserve_source("IN", "A choice", origin="user", revision=1)
+        """An interpretation of the public input ``IN``; ``s`` is that input's exact source."""
+        i = self.initial(); rt = {"tasks": {}, "executions": {}, "queue": [], "status": "ready",
+                                  "inputs": [{"id": "IN", "text": "A choice", "origin": "user"}]}
+        s = gov.import_input_source(i, rt, "IN")
         unit = {"unit_id": "U", "source_range": {"start": 0, "end": 8}, "interpretation": "Ask a choice",
                 "owner_kind": "charter", "owner_ref": "CH1", "payload": {}, "decision_refs": ["D"], "question_refs": ["Q"]}
         output = {"import_units": [unit], "questions": ["Which scope?"], "needs_clarification": True,
@@ -92,8 +94,8 @@ class DomainGovernanceTests(unittest.TestCase):
     def test_import_holes_and_self_check_are_rejected_and_questions_still_checked(self):
         i, rt, s, output = self.import_fixture()
         bad = deepcopy(output); bad["import_units"][0]["source_range"]["end"] = 7
-        with self.assertRaises(ValueError): gov.prepare_import(i, rt, s, bad, execution_id="E1")
-        bundle = gov.prepare_import(i, rt, s, output, execution_id="E1")
+        with self.assertRaises(ValueError): gov.prepare_import(i, rt, s, bad, execution_id="E1", input_ref="IN")
+        bundle = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN")
         rt["executions"]["E2"] = {"role":"intent_interpretation", "intent_import_sha256":bundle["sha256"]}
         check = {"bundle_sha256": bundle["sha256"], "decision": "approved", "scope_complete": True,
                  "unit_ids": ["U"], "question_ids": ["Q"], "findings": []}
@@ -105,14 +107,14 @@ class DomainGovernanceTests(unittest.TestCase):
 
     def test_import_reauthor_requires_current_failed_parent_and_repair_coordinates(self):
         i, rt, s, out = self.import_fixture()
-        b = gov.prepare_import(i, rt, s, out, execution_id="E1")
+        b = gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN")
         rt["executions"]["E2"] = {"role":"intent_interpretation", "intent_import_sha256":b["sha256"]}
         gov.check_import(i, rt, b["id"], {"bundle_sha256": b["sha256"], "decision": "revision_required",
             "scope_complete": True, "unit_ids": ["U"], "question_ids": ["Q"], "findings": ["Question incomplete"]}, execution_id="E2")
-        with self.assertRaises(ValueError): gov.prepare_import(i, rt, s, out, execution_id="E3", previous_id=b["id"])
+        with self.assertRaises(ValueError): gov.prepare_import(i, rt, s, out, execution_id="E3", input_ref="IN", previous_id=b["id"])
         out["repair"] = {"previous_sha256": b["sha256"], "changed_unit_ids": ["U"], "actions": ["Add scope option"]}
         out["question_details"][0]["options"].append({"text":"Change scope", "effect":"Ask for a replacement charter"})
-        newer = gov.prepare_import(i, rt, s, out, execution_id="E3", previous_id=b["id"])
+        newer = gov.prepare_import(i, rt, s, out, execution_id="E3", input_ref="IN", previous_id=b["id"])
         self.assertEqual(newer["previous_id"], b["id"])
         with self.assertRaises(ValueError): gov.apply_import(i, rt, b["id"])
 
@@ -120,7 +122,7 @@ class DomainGovernanceTests(unittest.TestCase):
         i, rt, source, output = self.import_fixture()
         rt['tasks']['T'] = {'id': 'T', 'revision': 1, 'status': 'planned', 'question': 'Original task'}
         output['used_sources'] = ['T']
-        bundle = gov.prepare_import(i, rt, source, output, execution_id='AUTHOR')
+        bundle = gov.prepare_import(i, rt, source, output, execution_id='AUTHOR', input_ref="IN")
         rt['executions']['CHECK'] = {'role': 'intent_interpretation', 'intent_import_sha256': bundle['sha256']}
         rt['tasks']['T']['question'] = 'A different task under the same nominal revision'
         with self.assertRaises(ValueError):
@@ -140,12 +142,12 @@ class DomainGovernanceTests(unittest.TestCase):
         replacement = charter("CH2", "Prove Q"); replacement["supersedes"] = ["CH1"]
         output.update(questions=[], question_details=[], needs_clarification=False)
         unit = output["import_units"][0]; unit.update(owner_ref="CH2", question_refs=[], payload={"kind": "charter", "record": replacement})
-        b = gov.prepare_import(i, rt, s, output, execution_id="E1")
+        b = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN")
         rt["executions"]["E2"] = {"role":"intent_interpretation", "intent_import_sha256":b["sha256"]}
         gov.check_import(i, rt, b["id"], {"bundle_sha256": b["sha256"], "decision": "approved", "scope_complete": True,
                                       "unit_ids": ["U"], "question_ids": [], "findings": []}, execution_id="E2")
         with self.assertRaises(ValueError): gov.apply_import(i, rt, b["id"])
-        approvals = {"U": {"actor": "user", "source_ref": "IN", "source_sha256": s["sha256"], "change_sha256": exact_content_hash(unit["payload"])}}
+        approvals = {"U": {"actor": "user", "source_ref": s["id"], "source_sha256": s["sha256"], "change_sha256": exact_content_hash(unit["payload"])}}
         changed, state, event = gov.apply_import(i, rt, b["id"], approvals=approvals)
         self.assertEqual(gov.governance_view(changed)["goal"], "Prove Q")
         self.assertEqual(event["status"], "applied")
@@ -204,12 +206,16 @@ class DomainGovernanceTests(unittest.TestCase):
         i = self.initial(); i["goal_status"] = "mathematically_solved"
         basis = solution_basis("CH1", [{"id": "K"}])
         rt = {"external_rejections": [{"id": "RJ", "solution_basis": basis, "text": "Missing argument"}],
-              "executions": {"E": {"role": "research_plan", "input_solution_basis": basis}},
-              "artifacts": {"EV": {"id": "EV", "text": "Full response"}}}
-        academic.record_resolution(i, rt, basis, {"id": "RJ", "decision": "resolved", "evidence": "Response addresses objection", "evidence_refs": ["EV"]}, execution_id="E")
-        self.assertEqual(academic.unresolved_rejections(i, rt, basis), [])
-        rt["artifacts"]["EV"]["text"] = "changed"
-        self.assertEqual(len(academic.unresolved_rejections(i, rt, basis)), 1)
+              "executions": {"E": {"role": "research_plan", "input_solution_basis": basis}}}
+        # Artifact evidence is not a state record family; the engine resolves it
+        # from stored bytes (academic_engine._academic_evidence).
+        ref = "runtime/artifacts/BA-response/response.md"
+        stored = {ref: b"Full response"}
+        academic.record_resolution(i, rt, basis, {"id": "RJ", "decision": "resolved", "evidence": "Response addresses objection", "evidence_refs": [ref]},
+                                   execution_id="E", resolve_evidence=stored.get)
+        self.assertEqual(academic.unresolved_rejections(i, rt, basis, resolve_evidence=stored.get), [])
+        stored[ref] = b"changed"
+        self.assertEqual(len(academic.unresolved_rejections(i, rt, basis, resolve_evidence=stored.get)), 1)
 
     def test_initialization_cannot_rebind_another_immutable_original(self):
         source = gov.preserve_source("S", "P", origin="user")
@@ -224,14 +230,14 @@ class DomainGovernanceTests(unittest.TestCase):
 
     def test_import_check_must_resolve_a_real_execution_and_bound_input(self):
         i, rt, s, output = self.import_fixture()
-        bundle = gov.prepare_import(i, rt, s, output, execution_id="E1")
+        bundle = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN")
         with self.assertRaises(ValueError):
             gov.check_import(i, rt, bundle["id"], {"bundle_sha256":bundle["sha256"], "decision":"approved", "scope_complete":True,
                             "unit_ids":["U"], "question_ids":["Q"], "findings":[]}, execution_id="FAKE")
 
     def test_import_reapplication_is_idempotent(self):
         i, rt, s, output = self.import_fixture()
-        b = gov.prepare_import(i, rt, s, output, execution_id="E1")
+        b = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN")
         rt["executions"]["E2"] = {"role":"intent_interpretation", "intent_import_sha256":b["sha256"]}
         gov.check_import(i, rt, b["id"], {"bundle_sha256":b["sha256"], "decision":"approved", "scope_complete":True,
                          "unit_ids":["U"], "question_ids":["Q"], "findings":[]}, execution_id="E2")
@@ -257,11 +263,16 @@ class DomainGovernanceTests(unittest.TestCase):
         h._record_output_questions({"role":"research_plan"},{"questions":["Optional priority?"]},"E")
         self.assertEqual(questions.user_waits({"role":"research_plan"}, h.instance, h.runtime), [])
         one=questions.link(h.runtime,execution_id="A",field="questions/0",owner="research",targets=["I"])
+        from do_math.repository import ResearchRepository
+        evidence="runtime/artifacts/BA-answer/answer.md"
         h.runtime["executions"]["E"]["extensions"]={"question_resolutions":[
-            {"question_id":one["id"],"disposition":"resolved","evidence_refs":["EV"],"reason":"answered"},
-            {"question_id":"missing","disposition":"resolved","evidence_refs":["EV"],"reason":"bad"}]}
-        h.runtime["artifacts"]={"EV":{"id":"EV","answer":"evidence"}}
-        with self.assertRaises(ValueError):h._apply_question_resolutions("E")
+            {"question_id":one["id"],"disposition":"resolved","evidence_refs":[evidence],"reason":"answered"},
+            {"question_id":"missing","disposition":"resolved","evidence_refs":[evidence],"reason":"bad"}]}
+        # Artifact evidence resolves through the engine's store read, not a runtime family.
+        h.store=create_autospec(ResearchRepository, instance=True)
+        h.store.read_many.side_effect=lambda refs, head: {ref: b"evidence" for ref in refs if ref == evidence}
+        with self.assertRaisesRegex(ValueError, "only distinct open research or operations questions"):
+            h._apply_question_resolutions("E")
         self.assertEqual(one["status"],"open")
 
     def test_reconciliation_cannot_assert_success_from_unbound_text(self):
@@ -313,11 +324,11 @@ class DomainGovernanceTests(unittest.TestCase):
         with self.assertRaises(ValueError):apply_goal_assurance(i,decision="unsupported_assurance",basis="B",judgments=[{"decision":"satisfied"}])
 
     def test_import_repair_cannot_claim_unchanged_units_were_changed(self):
-        i,rt,s,out=self.import_fixture();b=gov.prepare_import(i,rt,s,out,execution_id="E1")
+        i,rt,s,out=self.import_fixture();b=gov.prepare_import(i,rt,s,out,execution_id="E1", input_ref="IN")
         rt["executions"]["E2"]={"role":"intent_interpretation","intent_import_sha256":b["sha256"]}
         gov.check_import(i,rt,b["id"],{"bundle_sha256":b["sha256"],"decision":"revision_required","scope_complete":True,"unit_ids":["U"],"question_ids":["Q"],"findings":["Correct interpretation"]},execution_id="E2")
         out["repair"]={"previous_sha256":b["sha256"],"changed_unit_ids":["U"],"actions":["Claim repaired"]}
-        with self.assertRaises(ValueError):gov.prepare_import(i,rt,s,out,execution_id="E3",previous_id=b["id"])
+        with self.assertRaises(ValueError):gov.prepare_import(i,rt,s,out,execution_id="E3", input_ref="IN",previous_id=b["id"])
 
     def test_academic_file_evidence_is_resolved_at_snapshot_not_from_its_name(self):
         from do_math import academic
@@ -352,7 +363,7 @@ class DomainGovernanceTests(unittest.TestCase):
         gov.validate_governance_state(i)
 
     def test_resumed_author_session_is_not_an_independent_import_check(self):
-        i,rt,s,out=self.import_fixture();b=gov.prepare_import(i,rt,s,out,execution_id="E1")
+        i,rt,s,out=self.import_fixture();b=gov.prepare_import(i,rt,s,out,execution_id="E1", input_ref="IN")
         rt["executions"]["E2"]={"role":"intent_interpretation","intent_import_sha256":b["sha256"],"continuation_of":"E1"}
         with self.assertRaises(ValueError):gov.check_import(i,rt,b["id"],{"bundle_sha256":b["sha256"],"decision":"approved","scope_complete":True,
                               "unit_ids":["U"],"question_ids":["Q"],"findings":[]},execution_id="E2")
@@ -372,7 +383,7 @@ class DomainGovernanceTests(unittest.TestCase):
         other=deepcopy(out["import_units"][0]);other.update(unit_id="V",source_range={"start":4,"end":8},question_refs=[])
         out["import_units"][0]["source_range"]["end"]=4;out["import_units"].append(other)
         out["question_details"][0]["source_unit_ids"]=["V"]
-        with self.assertRaises(ValueError):gov.prepare_import(i,rt,s,out,execution_id="E1")
+        with self.assertRaises(ValueError):gov.prepare_import(i,rt,s,out,execution_id="E1", input_ref="IN")
 
     def test_final_goal_record_cannot_rely_on_unresolved_formal_references(self):
         from do_math.academic import apply_goal_assurance
@@ -381,7 +392,7 @@ class DomainGovernanceTests(unittest.TestCase):
             judgments=[{"decision":"satisfied","current":True,"formal_result_refs":["MISSING"]}])
 
     def test_advisory_question_does_not_leave_import_waiting_for_a_decision(self):
-        i,rt,s,out=self.import_fixture();b=gov.prepare_import(i,rt,s,out,execution_id="E1")
+        i,rt,s,out=self.import_fixture();b=gov.prepare_import(i,rt,s,out,execution_id="E1", input_ref="IN")
         rt["executions"]["E2"]={"role":"intent_interpretation","intent_import_sha256":b["sha256"]}
         gov.check_import(i,rt,b["id"],{"bundle_sha256":b["sha256"],"decision":"approved","scope_complete":True,
                          "unit_ids":["U"],"question_ids":["Q"],"findings":[]},execution_id="E2")
@@ -389,7 +400,7 @@ class DomainGovernanceTests(unittest.TestCase):
         self.assertEqual(result["status"],"applied")
         self.assertEqual(state["question_links"][0]["status"],"open")
         i,rt,s,out=self.import_fixture();out["question_details"][0]["blocks"]=True
-        b=gov.prepare_import(i,rt,s,out,execution_id="E1")
+        b=gov.prepare_import(i,rt,s,out,execution_id="E1", input_ref="IN")
         rt["executions"]["E2"]={"role":"intent_interpretation","intent_import_sha256":b["sha256"]}
         gov.check_import(i,rt,b["id"],{"bundle_sha256":b["sha256"],"decision":"approved","scope_complete":True,
                          "unit_ids":["U"],"question_ids":["Q"],"findings":[]},execution_id="E2")
@@ -528,10 +539,12 @@ class AcademicConsumerTests(unittest.TestCase):
         from do_math.engine import DEFAULT_CONFIG
         config = {**deepcopy(DEFAULT_CONFIG),
                   'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}
-        profile = next(p for p in build_profiles(config)['execution_profiles'].values()
-                       if p['role'] == 'research_work')
+        # Adopt every research_work tier edition, as initialization does: an
+        # unassessed work task requires the high tier (model_policy.selection).
+        built = build_profiles(config, roles={'research_work'})
         h.instance.update(goal_status='mathematically_solved', knowledge={}, sources=[], config=config,
-            execution_profiles={profile['id']: profile}, role_profile_refs={'research_work': [profile_ref(profile)]},
+            execution_profiles=built['execution_profiles'],
+            role_profile_refs={'research_work': built['role_profile_refs']['research_work']},
             grants={'G': {'id': 'G', 'kind': 'local', 'status': 'active', 'roles': ['research_work'],
                           'source_ref': 'S', 'reuse': 'reusable', 'resource_limits': {}}})
         h.runtime = {'status': 'ready', 'tasks': {}, 'executions': {}, 'queue': [], 'inputs': [],
@@ -563,8 +576,9 @@ class AcademicConsumerTests(unittest.TestCase):
         task['results'] = [{'execution_id': 'WORK', 'report': 'Synthetic returned manuscript'}]
         h.runtime['executions'].update(WORK={'id': 'WORK', 'role': 'research_work', 'status': 'ended', 'action': {'target': tid}},
             PLAN={'id': 'PLAN', 'role': 'research_plan', 'status': 'ended', 'input_solution_basis': deepcopy(h.basis)})
-        assessment = {'task_id': tid, 'decision': decision, 'item_dispositions': [
-            {'obligation_id': o['id'], 'kind': kind, 'evidence_refs': ['WORK']} for o in task['completion_obligations']]}
+        assessment = {'task_id': tid, 'decision': decision, 'reason': 'Synthetic assessment of the returned manuscript',
+            'item_dispositions': [{'obligation_id': o['id'], 'kind': kind, 'evidence_refs': ['WORK']}
+                                  for o in task['completion_obligations']], 'unresolved': []}
         h.instance, h.runtime = apply_task_assessments(h.instance, h.runtime, [assessment],
             execution_id='PLAN', input_tasks=deepcopy(h.runtime['tasks']))
         return h, h.runtime['tasks'][tid], assessment
@@ -615,8 +629,8 @@ class AcademicConsumerTests(unittest.TestCase):
         h.store.read.side_effect = lambda path, snapshot: json.dumps({'snapshot': 'before-work', 'tasks': list(first[1]['tasks'].values()), 'ready_task_ids': [tid]}).encode()
         h.head = 'before-work'
         h._evaluation_context = create_autospec(h._evaluation_context, side_effect=lambda snapshot=None: {'snapshot': snapshot})
-        ResearchEngine._apply_plan(h, {'dispositions': [{'task_id': tid, 'kind': 'selected', 'reason': 'Current academic work',
-            'next_owner': 'research_work', 'expected_research_change': 'Complete the manuscript'}],
+        ResearchEngine._apply_plan(h, {'dispositions': [{**disposition(tid), 'reason': 'Current academic work',
+            'expected_research_change': 'Complete the manuscript'}],
             'task_assessments': [], 'goal_audit': False}, 'SELECT')
         task = h.runtime['tasks'][tid]
         self.assertEqual(task['status'], 'active')
@@ -629,8 +643,9 @@ class AcademicConsumerTests(unittest.TestCase):
         h.store.view.side_effect = lambda snapshot: (snapshot, *deepcopy(returned))
         h.store.read.side_effect = lambda path, snapshot: json.dumps({'snapshot': 'after-work', 'tasks': list(returned[1]['tasks'].values()), 'ready_task_ids': []}).encode()
         h.head = 'after-work'
-        assessment = {'task_id': tid, 'decision': 'completed', 'item_dispositions': [
-            {'obligation_id': o['id'], 'kind': 'fulfilled', 'evidence_refs': ['WORK']} for o in task['completion_obligations']]}
+        assessment = {'task_id': tid, 'decision': 'completed', 'reason': 'Synthetic assessment of the returned manuscript',
+            'item_dispositions': [{'obligation_id': o['id'], 'kind': 'fulfilled', 'evidence_refs': ['WORK']}
+                                  for o in task['completion_obligations']], 'unresolved': []}
         ResearchEngine._apply_plan(h, {'dispositions': [], 'task_assessments': [assessment], 'goal_audit': False}, 'PLAN')
         self.assertEqual(h.runtime['tasks'][tid]['status'], 'completed')
         self.assertEqual(h._academic_status()['status'], 'completed')
@@ -655,9 +670,9 @@ class AcademicConsumerTests(unittest.TestCase):
         h.instance, h.runtime, decision = gov.apply_decision(h.instance, h.runtime, change, source_ref='S')
         self.assertEqual(h.runtime['tasks'][task['id']], before)
         h.runtime['executions']['PLAN'] = {'id': 'PLAN', 'role': 'research_plan', 'status': 'ended', 'input_solution_basis': h.basis}
-        assessment = {'task_id': task['id'], 'decision': 'closed', 'item_dispositions': [
-            {'obligation_id': row['id'], 'kind': 'waived', 'authority_ref': decision['id'], 'evidence_refs': ['WORK']}
-            for row in task['completion_obligations']]}
+        assessment = {'task_id': task['id'], 'decision': 'closed', 'reason': 'Synthetic waiver of every obligation',
+            'item_dispositions': [{'obligation_id': row['id'], 'kind': 'waived', 'authority_ref': decision['id'],
+                                   'evidence_refs': ['WORK']} for row in task['completion_obligations']], 'unresolved': []}
         h.instance, h.runtime = apply_task_assessments(h.instance, h.runtime, [assessment],
             execution_id='PLAN', input_tasks=deepcopy(h.runtime['tasks']))
         h._record_academic_assessment(h.runtime['tasks'][task['id']], assessment, 'PLAN')
@@ -762,7 +777,7 @@ class AuditRepairTests(unittest.TestCase):
         output.update(questions=[], question_details=[], needs_clarification=False)
         output['import_units'][0].update(owner_kind=kind, owner_ref=payload.get('record', {}).get('id', 'I'),
                                         payload=payload, question_refs=[])
-        bundle = gov.prepare_import(i, rt, source, output, execution_id='E1', owner_handlers=handlers)
+        bundle = gov.prepare_import(i, rt, source, output, execution_id='E1', input_ref="IN", owner_handlers=handlers)
         rt['executions']['E2'] = {'role': 'intent_interpretation', 'intent_import_sha256': bundle['sha256']}
         bundle = gov.check_import(i, rt, bundle['id'], {'bundle_sha256': bundle['sha256'], 'decision': 'approved',
             'scope_complete': True, 'unit_ids': ['U'], 'question_ids': [], 'findings': []}, execution_id='E2',
@@ -807,9 +822,9 @@ class AuditRepairTests(unittest.TestCase):
         output['repair'] = {'previous_sha256': bundle['sha256'], 'changed_unit_ids': [],
                             'actions': ['Re-evaluate the changed governing premise']}
         with self.assertRaises(ValueError):
-            gov.prepare_import(i, rt, bundle['source'], output, execution_id='NEW', previous_id=bundle['id'])
+            gov.prepare_import(i, rt, bundle['source'], output, execution_id='NEW', input_ref="IN", previous_id=bundle['id'])
         i['decisions']['D']['revoked'] = True
-        reopened = gov.prepare_import(i, rt, bundle['source'], output, execution_id='NEW', previous_id=bundle['id'])
+        reopened = gov.prepare_import(i, rt, bundle['source'], output, execution_id='NEW', input_ref="IN", previous_id=bundle['id'])
         self.assertEqual(reopened['status'], 'checking')
         self.assertNotEqual(reopened['basis_sha256'], bundle['basis_sha256'])
         self.assertEqual(rt['intent_imports'][bundle['id']]['check'], bundle['check'])
@@ -826,7 +841,7 @@ class AuditRepairTests(unittest.TestCase):
         output.update(questions=[], question_details=[], needs_clarification=False)
         output['import_units'][0].update(owner_kind='configuration', owner_ref='I', question_refs=[],
             payload={'kind': 'configuration', 'config': {'call_timeout_seconds': 0}})
-        with self.assertRaises(ValueError): gov.prepare_import(i, rt, source, output, execution_id='E1', owner_handlers=handlers)
+        with self.assertRaises(ValueError): gov.prepare_import(i, rt, source, output, execution_id='E1', input_ref="IN", owner_handlers=handlers)
 
     def test_once_http_operation_and_its_execution_share_logical_case(self):
         grant = {'id': 'G', 'status': 'active', 'reuse': 'once'}

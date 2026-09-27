@@ -1,20 +1,27 @@
-"""Fixed-question review investigations through the real engine and pure cycle."""
+"""Fixed-question review investigations through the real engine and pure cycle.
+
+The engine tests start from ``purpose_state``: the task chain before a review
+has no subject here, so it runs once per process and each test gets a copy.
+"""
 from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.engine import ResearchEngine
 from do_math.repository import canonical_json
 from do_math.review_cycle import (start_review, next_actions, context_for, defer_for_research,
     accept_research_result, accept_result)
-from test_purpose_engine import PurposeHarness, PurposeRunner, common, formal_fixture, EXPLANATION, parse_context
+from test_purpose_engine import ActivatedPurposeHarness, PurposeRunner, common, formal_fixture, EXPLANATION, parse_context
 from test_review_engine import FakeEngine
 from do_math import knowledge_records as kr
 from do_math.execution_profiles import resolve_profile
-from research_fixtures import local_job_runner, send_control
+from research_fixtures import FixtureAdapter, local_job_runner, restore_template, send_control
+from state_fixtures import ACTIVE_LEAN_COMMAND, active_instance
 import tempfile
 
 
@@ -22,6 +29,48 @@ def signed_formal_fixture(**kwargs):
     result = formal_fixture(**kwargs)
     result['declaration_signatures'] = {'add_zero_fixture': '(n : Nat) -> n + 0 = n'}
     return result
+
+
+_STOPS = {'prepared': lambda engine: any(a['role'] == 'research_work' for a in engine.runtime['queue']),
+          'review': lambda engine: bool(engine.runtime['review_cycles'])}
+
+
+def purpose_state(root, shared, *, config, until, review_policy=None, external_policy='disabled', signed=True):
+    """``restore_template`` build: synthetic active state advanced by ``PurposeRunner('direct')``.
+
+    ``until='prepared'``: task A is prepared, its contract approved and the plan
+    selected it; its ``research_work`` is queued. ``until='review'``: A's work
+    returned the theorem, its formal check passed and its identity review cycle
+    opened; the scope review is queued with whatever else the flow queued.
+    ``signed`` checks formally with ``signed_formal_fixture``, else ``formal_fixture``.
+    Formal checks need ``lean_command=list(ACTIVE_LEAN_COMMAND)`` in ``config``.
+    Returns the instance ID.
+    """
+    instance_id = active_instance(root, shared, config=config, external_policy=external_policy,
+                                  review_policy=review_policy)
+    engine = ResearchEngine(root / 'repository', instance_id, runner=PurposeRunner(),
+                            formal_verifier=signed_formal_fixture if signed else formal_fixture)
+    with patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        for _ in range(45):
+            engine.run(max_steps=1)
+            if _STOPS[until](engine):
+                break
+            if engine.runtime['status'] in {'paused', 'closed', 'waiting'}:
+                raise AssertionError('The purpose flow stopped before ' + until + ': ' + repr(engine.status()))
+        else:
+            raise AssertionError('The purpose flow did not reach ' + until + ': ' + repr(engine.status()))
+    unfinished = [e['id'] for e in engine.runtime['executions'].values() if e['status'] != 'ended']
+    if unfinished:
+        raise AssertionError('A template must not end with unfinished executions: ' + repr(unfinished))
+    return instance_id
+
+
+def purpose_copy(test, runner, *, until, config, **build):
+    """Engine and ``runner`` on a fresh copy of ``purpose_state`` for an ``ActivatedPurposeHarness`` test."""
+    test.root, instance_id = restore_template(purpose_state, until=until, config=config, **build)
+    engine, runner = test._engine(instance_id, runner)
+    engine.formal_verifier = signed_formal_fixture if build.get('signed', True) else formal_fixture
+    return engine, runner
 
 
 class InvestigationRunner(PurposeRunner):
@@ -79,23 +128,23 @@ class InvestigationRunner(PurposeRunner):
         return super().answer(role, context, workspace)
 
 
-class ReviewResearchEngineTests(PurposeHarness):
+class ReviewResearchEngineTests(ActivatedPurposeHarness):
+    def review(self, runner, *, review_policy=None, **config):
+        """``runner`` on a copy of the state whose identity review cycle just opened."""
+        # Formal checks on the synthetic state use its active environment's command.
+        return purpose_copy(self, runner, until='review', review_policy=review_policy,
+                            config=self.fixture_config(lean_command=list(ACTIVE_LEAN_COMMAND), **config))
+
     def make_research(self, *, repeat=False, batch=False, **config):
         from do_math.review_policy import build_review_policy
         policy = build_review_policy(reviewer_count=2, max_rounds=config.get('review_rounds', 2))
         # This scenario authorizes investigation and the deferred slot's replay,
         # in addition to the final review calls reserved by the base policy.
         policy['activity_execution_limit'] += 2 * config.get('review_research_limit', 3)
-        engine, previous_runner = self.make(review_policy=policy, **config)
-        runner = InvestigationRunner(repeat=repeat, batch=batch)
-        engine.runner = runner
-        engine.formal_verifier = signed_formal_fixture
-        self.runners[-1] = runner
-        return engine, runner
+        return self.review(InvestigationRunner(repeat=repeat, batch=batch), review_policy=policy, **config)
 
     def test_common_document_overflow_waits_without_reconstructing_the_proposal(self):
         engine, runner = self.make_research()
-        self.drive(engine, predicate=lambda e: bool(e.runtime['review_cycles']))
         action = next(a for a in engine.runtime['queue'] if a['role'] == 'identity_review')
         knowledge_id = action['target']
         before = deepcopy(engine.instance['knowledge'][knowledge_id])
@@ -124,8 +173,7 @@ class ReviewResearchEngineTests(PurposeHarness):
         self.assertIn(knowledge_id, question['target_ids'])
 
     def test_confirmed_withdrawal_closes_before_the_round_cap(self):
-        engine, runner = self.make('dispute', review_rounds=3)
-        engine.formal_verifier = signed_formal_fixture
+        engine, runner = self.review(PurposeRunner('dispute'), review_rounds=3)
         self.drive(engine, predicate=lambda e: any(c['decision'] == 'match'
             for c in e.runtime['review_cycles'].values()))
         cycle = next(iter(engine.runtime['review_cycles'].values()))
@@ -285,7 +333,9 @@ class ReviewResearchEngineTests(PurposeHarness):
         self.assertNotEqual(engine.runtime['status'], 'paused')
         self.assertFalse(cycle['deferred_actions'])
         self.assertTrue(any(a['slot'] == 'initial-0' for a in next_actions(cycle)))
-        self.assertEqual(next(iter(cycle['research'].values()))['result']['output']['outcome'], 'unresolved')
+        request = next(iter(cycle['research'].values()))
+        self.assertEqual(request['status'], 'unresolved')
+        self.assertEqual(request['result']['output']['outcome'], 'unresolved')
 
 
 class SplitReviewResearchTests(unittest.TestCase):
@@ -302,7 +352,12 @@ class SplitReviewResearchTests(unittest.TestCase):
             'research_request_id': research['id'], 'request_digest': research['request_digest'],
             'outcome': 'answered', 'answer': 'The declared evidence is complete', 'scope_complete': True,
             'evidence_refs': [research['sources'][0]['ref']]}
-        issues = submission._payload_issues(output, engine._review_research_schema(action), context, {}, workspace)
+        schema = engine._review_research_schema(action)
+        # The same answer citing only its fixed source passes: the receiver's
+        # schema binds the request identity without constraining other fields.
+        assigned = {**output, 'used_sources': [research['sources'][0]['ref']]}
+        self.assertEqual(submission._payload_issues(assigned, schema, context, {}, workspace), [])
+        issues = submission._payload_issues(output, schema, context, {}, workspace)
         self.assertTrue(any(row['path'] == 'output/used_sources/0' and 'fixed source set' in row['message']
                             for row in issues), issues)
         execution = {'id': 'INV-unassigned', 'role': 'supplemental_research', 'action': action,
@@ -327,9 +382,11 @@ class SplitReviewResearchTests(unittest.TestCase):
         context = engine._prepare_review_context(action, engine.root / 'deferred')['context']
         requests = [{'id': 'domain', 'question': 'Which kernel constants does this exact declaration depend on?',
                      'source_refs': ['proposal:formal.dependency_closure', 'proposal:lean_code']}]
+        # A started review execution carries the manifest of the prompt it was given.
         engine.runtime['executions']['INV-request'] = {'id': 'INV-request', 'role': 'identity_review',
             'status': 'running', 'action': action, 'actor_kind': 'ai', 'owner_activity_id': action['owner_activity_id'],
             'execution_profile_ref': deepcopy(engine.profile),
+            'input_manifest': {'prompt': {'sha256': 'deferred-prompt-hash'}},
             'extensions': {'research_requests': requests}}
         output = {'proposal_digest': context['proposal_digest'], 'summary': 'Need a fixed-source comparison',
             'used_sources': [], 'questions': [], 'decision': 'unresolved', 'scope_complete': False, 'findings': []}

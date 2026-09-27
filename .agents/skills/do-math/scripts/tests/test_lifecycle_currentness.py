@@ -7,12 +7,13 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.knowledge import capture_basis, validate_basis
 from do_math.engine import ResearchEngine
-from test_purpose_engine import PurposeHarness
-from research_fixtures import send_control
-import tempfile
+from test_purpose_engine import ActivatedPurposeHarness, PurposeRunner
+from research_fixtures import send_control, restore_template
 
 
-class CurrentnessTests(PurposeHarness):
+class CurrentnessTests(ActivatedPurposeHarness):
+    """Both start from copies of templates: the public activation, and the real solution after it."""
+
     def test_live_conversation_guard_expires_without_new_scheduler_activity(self):
         from datetime import datetime
         from do_math.repository import new_id
@@ -37,8 +38,10 @@ class CurrentnessTests(PurposeHarness):
 
     def test_goal_dependency_detects_changed_relation_endpoint_even_when_proof_record_is_unchanged(self):
         from do_math.knowledge_io import import_candidate
-        engine, _ = self.make()
-        self.drive(engine)
+        from test_academic_engine import solved_instance
+        # PurposeHarness.make and drive to mathematically_solved, built once per process.
+        self.root, instance_id = restore_template(solved_instance, criteria=None)
+        engine, _ = self._engine(instance_id, PurposeRunner())
         proof_id = next(iter(engine.instance['knowledge']))
         endpoint_ids = []
         for label in ('left endpoint', 'right endpoint'):

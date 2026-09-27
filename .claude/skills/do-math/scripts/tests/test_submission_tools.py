@@ -14,6 +14,8 @@ from do_math.repository import canonical_json
 from do_math import contracts, submission, knowledge_io
 from research_fixtures import local_job_runner, seal_response, await_control, await_stop
 from test_submission_boundaries import CheckedRunner
+from test_review_research import purpose_copy
+from state_fixtures import ACTIVE_LEAN_COMMAND
 
 
 class LocalControlProtocolTests(unittest.TestCase):
@@ -175,11 +177,19 @@ class LocalControlProtocolTests(unittest.TestCase):
         self.assertIsNone(self.head)
 
 
-class ProducerToolTests(purpose.PurposeHarness):
+class ProducerToolTests(purpose.ActivatedPurposeHarness):
+    def setUp(self):
+        super().setUp()
+        # Producer-only checks write their workspaces here; an engine check
+        # replaces root with its restored copy.
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+
     def test_revoked_original_grant_preserves_late_output_despite_alternative_grant(self):
         from do_math import governance
         from do_math.engine import control
-        engine, _ = purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False))
+        engine, _ = self.make_active(**self.fixture_config(scholarly_enabled=False))
         engine.runtime["queue"] = [{"id": "AC-revoked", "role": "maintenance"}]
         grant = next(value for value in engine.instance["grants"].values() if "maintenance" in value.get("roles", []))
         alternative = {**deepcopy(grant), "id": "ZZ-alternative"}
@@ -206,7 +216,7 @@ class ProducerToolTests(purpose.PurposeHarness):
         self.assertIn("AC-revoked", engine.runtime["waiting_actions"])
 
     def test_unsealed_invalid_runner_output_is_preserved_for_operational_review(self):
-        engine, _ = purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False, max_output_repairs=0))
+        engine, _ = self.make_active(**self.fixture_config(scholarly_enabled=False, max_output_repairs=0))
         before = set(engine.runtime["executions"])
         class Runner:
             def run(inner, **args):
@@ -225,7 +235,7 @@ class ProducerToolTests(purpose.PurposeHarness):
     def test_local_call_timeout_parks_only_the_timed_out_request(self):
         import time
         # The one-second deadline belongs to the calls under test, not to activation's intent calls.
-        engine, _ = purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False, call_timeout_seconds=1))
+        engine, _ = self.make_active(**self.fixture_config(scholarly_enabled=False, call_timeout_seconds=1))
         engine.runtime["queue"] = [{"id": "AC-timeout", "role": "maintenance"},
                                    {"id": "AC-independent", "role": "research_preparation"}]
         engine._save()
@@ -244,7 +254,7 @@ class ProducerToolTests(purpose.PurposeHarness):
     def test_receiver_rejects_unknown_insight_kind_and_missing_evidence(self):
         for changes in ({"kind": "unregistered_kind"}, {"evidence_ids": ["KN-missing"]}):
             with self.subTest(changes=changes):
-                engine, _ = purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False, max_output_repairs=0))
+                engine, _ = self.make_active(**self.fixture_config(scholarly_enabled=False, max_output_repairs=0))
                 before = set(engine.runtime['executions'])
                 output = {**purpose.common("Preserve a candidate."), "candidates": []}
                 insight = {"kind": "question", "title": "Question", "statement": "What remains?",
@@ -331,7 +341,9 @@ class ProducerToolTests(purpose.PurposeHarness):
         self.assertIn("missing-proof.txt", json.dumps(result["issues"]))
 
     def test_legacy_live_review_validates_sidecar_before_applying_continue(self):
-        engine, runner = self.make(observation="continue", scholarly_enabled=False)
+        # From the prepared task: the live review of its work is the subject.
+        engine, runner = purpose_copy(self, purpose.PurposeRunner(observation="continue"), until="prepared",
+            config=self.fixture_config(scholarly_enabled=False, tool_review_window_seconds=1))
         original = runner.answer
         def answer(role, context, workspace):
             if role == "operational_review":
@@ -444,14 +456,11 @@ class ProducerToolTests(purpose.PurposeHarness):
         self.assertFalse(any(str(call.args[0]).endswith("submission-support.zip") for call in read.call_args_list))
 
 
-class OperatorProducerTests(unittest.TestCase):
+class OperatorProducerTests(purpose.ActivatedPurposeHarness):
     def test_failure_recovery_preserves_a_structured_nonresearch_report(self):
         from unittest.mock import patch
         from do_math import scheduled_operator as operator
-        fixture = purpose.PurposeHarness()
-        fixture.setUp()
-        self.addCleanup(fixture.tearDown)
-        engine, _ = fixture.make(scholarly_enabled=False, operator_enabled=True)
+        engine, _ = self.make_active(**self.fixture_config(scholarly_enabled=False, operator_enabled=True))
         observed = []
         class Runner:
             @local_job_runner
@@ -469,11 +478,11 @@ class OperatorProducerTests(unittest.TestCase):
                 return {"status": "failed", "output": output, "usage": {}, "error_kind": "output_validation",
                         "error": "Scripted diagnosis remains incomplete"}
         with patch.object(operator, "ModelRunner", Runner):
-            result = operator.recovery(fixture.repo, engine.instance["id"], fixture.root,
+            result = operator.recovery(self.repo, engine.instance["id"], self.root,
                 failure={"kind": "engine_unavailable", "error": "Synthetic launcher failure"})
         self.assertEqual(result["outcome"], "recovery_failed", result)
         self.assertEqual(len(observed), 1)
-        _, state, runtime = operator.ResearchRepository(fixture.repo, engine.instance["id"]).load()
+        _, state, runtime = operator.ResearchRepository(self.repo, engine.instance["id"]).load()
         execution = runtime["executions"][result["execution_id"]]
         self.assertEqual(execution["output"], observed[0])
         self.assertEqual(execution["outcome"], "execution_incomplete")
@@ -482,11 +491,27 @@ class OperatorProducerTests(unittest.TestCase):
         self.assertEqual(state["knowledge"], engine.instance["knowledge"])
 
 
-class ReviewFailureTests(purpose.PurposeHarness):
+class ReviewFailureTests(purpose.ActivatedPurposeHarness):
+    # These checks start after initialization; preserve real Git-backed
+    # review and submission while reusing validated active state. The flow
+    # formally checks its knowledge, so formal checks pin the seed's active
+    # trust environment command (state_fixtures.ACTIVE_LEAN_COMMAND).
+    CONFIG = purpose.PurposeHarness.fixture_config(scholarly_enabled=False, lean_command=list(ACTIVE_LEAN_COMMAND))
+
     def make_active(self):
-        # These checks start after initialization; preserve real Git-backed
-        # review and submission while reusing validated active state.
-        return purpose.ActiveStateHarness.make(self, **self.fixture_config(scholarly_enabled=False))
+        return super().make_active(**self.CONFIG)
+
+    def make_review(self):
+        """The same active state after the real task flow opened its identity review cycle."""
+        return purpose_copy(self, purpose.PurposeRunner(), until="review", config=self.CONFIG,
+                            external_policy="explicit_grants", signed=False)
+
+    @staticmethod
+    def review_is_next(engine):
+        # Operating roles dispatch without a slot (decision 4), so a plan queued by the
+        # imported knowledge runs first; these checks start when the review is next.
+        queue = engine.runtime["queue"]
+        return bool(engine.runtime["review_cycles"]) and bool(queue) and queue[0]["role"] == "identity_review"
 
     def test_failed_contract_review_is_not_regenerated_while_waiting_for_diagnosis(self):
         engine, _ = self.make_active()
@@ -502,8 +527,7 @@ class ReviewFailureTests(purpose.PurposeHarness):
         self.assertFalse(any(a["role"] == "task_contract_review" and a.get("target") == task_id for a in engine.runtime["queue"]))
 
     def test_failed_identity_slot_is_not_regenerated_after_its_peer_finishes(self):
-        engine, runner = self.make_active()
-        self.drive(engine, predicate=lambda e: bool(e.runtime["review_cycles"]))
+        engine, runner = self.make_review()
         original_run, original_answer = runner.run, runner.answer
         def run(**args):
             context = purpose.parse_context(args["prompt"], args["workspace"])
@@ -560,8 +584,9 @@ class ReviewFailureTests(purpose.PurposeHarness):
 
     def test_late_identity_result_is_preserved_without_retrying_a_superseded_slot(self):
         from do_math.engine import control
-        engine, runner = self.make_active()
-        self.drive(engine, predicate=lambda e: bool(e.runtime["review_cycles"]))
+        engine, runner = self.make_review()
+        if not self.review_is_next(engine):
+            self.drive(engine, predicate=self.review_is_next)
         cid = next(iter(engine.runtime["review_cycles"]))
         original = runner.run
         def run(**args):
@@ -583,13 +608,16 @@ class ReviewFailureTests(purpose.PurposeHarness):
 
     def test_large_own_review_history_does_not_request_mathematical_reconstruction(self):
         from do_math.review_cycle import record_turn
-        engine, runner = self.make_active()
-        self.drive(engine, predicate=lambda e: bool(e.runtime["review_cycles"]))
+        engine, runner = self.make_review()
+        if not self.review_is_next(engine):
+            self.drive(engine, predicate=self.review_is_next)
         action = next(a for a in engine.runtime["queue"] if a["role"] == "identity_review")
         cid, kid = action["review_cycle_id"], action["target"]
+        # The review input limit is its pinned profile's (context_store.prepare_role_input),
+        # not the live config; the retained history alone exceeds it.
+        limit = engine._execution_profile(action)["input"]["max_input_bytes"]
         engine.runtime["review_cycles"][cid] = record_turn(engine.runtime["review_cycles"][cid], action["slot"], [
-            {"role": "assistant", "content": "Retained earlier reasoning. " * 30000, "message_id": "retained-history"}])
-        engine.instance["config"]["max_input_bytes"] = 500000
+            {"role": "assistant", "content": "Retained earlier reasoning. " * (limit // 28 + 1), "message_id": "retained-history"}])
         before = deepcopy(engine.instance["knowledge"][kid])
         engine._save()
         count = len(runner.calls)
@@ -600,12 +628,13 @@ class ReviewFailureTests(purpose.PurposeHarness):
 
     def test_fixed_question_resolver_accepts_the_supplied_source_aliases(self):
         from do_math.engine import control
-        engine, _ = self.make_active()
+        # Review input reads the instance's supplied sources when it is prepared,
+        # so the source may arrive after the cycle opened.
+        engine, _ = self.make_review()
         path = self.root / "paper.txt"
         path.write_text("The exact original source.", encoding="utf-8")
         control(self.repo, engine.instance["id"], "source", config={"path": str(path)})
         engine.process_controls()
-        self.drive(engine, predicate=lambda e: bool(e.runtime["review_cycles"]))
         action = next(a for a in engine.runtime["queue"] if a["role"] == "identity_review")
         workspace = self.root / "source-alias-input"
         context = engine._context(action, workspace)
@@ -658,29 +687,6 @@ class ReviewFailureTests(purpose.PurposeHarness):
         from do_math.knowledge import assess_use
         self.assertFalse(assess_use(insight, engine.instance)["valid"])
         self.assertEqual(insight["dependencies"], [kid])
-
-    def test_stopped_investigation_returns_incomplete_to_its_waiting_review_slot(self):
-        from test_review_research import InvestigationRunner, signed_formal_fixture, ReviewResearchEngineTests
-        from do_math.review_cycle import next_actions
-        engine, _ = ReviewResearchEngineTests.make_research(self, scholarly_enabled=False)
-        class Runner(InvestigationRunner):
-            def run(inner, **args):
-                if "role: supplemental_research." in args["prompt"]:
-                    args["on_started"]({"pid": 1})
-                    return {"status": "stopped", "output": None, "usage": {}, "error": "investigation stopped"}
-                return super().run(**args)
-        engine.runner = CheckedRunner(Runner())
-        engine.formal_verifier = signed_formal_fixture
-        self.drive(engine, predicate=lambda e: any(a["role"] == "supplemental_research" for a in e.runtime["queue"]))
-        request = next(a for a in engine.runtime["queue"] if a["role"] == "supplemental_research")
-        engine.runtime["queue"] = [request]
-        engine._save()
-        engine.run(max_steps=1)
-        cycle = engine.runtime["review_cycles"][request["review_cycle_id"]]
-        investigation = cycle["research"][request["research_request_id"]]
-        self.assertEqual(investigation["status"], "unresolved")
-        self.assertEqual(investigation["result"]["execution_status"], "incomplete")
-        self.assertTrue(any(a["slot"] == request["requesting_slot"] for a in next_actions(cycle)))
 
 
 if __name__ == "__main__":

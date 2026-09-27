@@ -16,6 +16,7 @@ from copy import deepcopy
 from pathlib import Path
 import re
 import secrets
+import threading
 import time
 from typing import Any
 
@@ -24,6 +25,9 @@ from .operation_trace import measured
 from .events import EventPublisher, check_sequence, event_rows
 from .file_io import is_sha256, reject_constant, unique_pairs
 from .git_store import GitStateStore, PhysicalBoundary, ULID_ALPHABET, ULID_LENGTH, no_reparse
+# payloads imports this module only inside its functions, so a module-level
+# import is acyclic; canonical_json and its value check run on every node.
+from .payloads import FrozenDict, FrozenText, decode, encode, seal_large
 from .state_contract import STATE_CONTRACT_ID, StateContract, default_state_contract
 
 
@@ -102,11 +106,92 @@ def _contract_key(contract):
     return (contract, digest, contract.validation_generation)
 
 
+# Heads kept beyond the limit, per git directory: the input snapshots of live
+# executions, which result acceptance reads again after later publications.
+_RETAINED_READS: dict[str, frozenset] = {}
+
+
+def retain_reads(git_dir, heads):
+    """Keep the validated reads of ``heads`` outside the LRU bound until the next call."""
+    _RETAINED_READS[str(git_dir)] = frozenset(heads)
+
+
 def _remember_read(key, entry):
     _VALIDATED_READS[key] = entry
     _VALIDATED_READS.move_to_end(key)
-    while len(_VALIDATED_READS) > _VALIDATED_READ_LIMIT:
-        _VALIDATED_READS.popitem(last=False)
+    unretained = [k for k in _VALIDATED_READS if k[1] not in _RETAINED_READS.get(k[0], ())]
+    for old in unretained[:max(0, len(unretained) - _VALIDATED_READ_LIMIT)]:
+        del _VALIDATED_READS[old]
+
+
+# Artifact facts this process wrote or read, keyed by (git directory, path):
+# [head where the path was known to exist, length, bytes or None]. Existing
+# artifact bundles never change and no publication removes them
+# (git_store._validate_artifact_changes), so a fact known at a head holds at
+# every later head this process published from it (_PUBLISHED_PARENTS).
+# Bytes are held up to _ARTIFACT_BYTES_LIMIT; lengths stay while rows fit.
+_ARTIFACT_FACTS: OrderedDict = OrderedDict()
+_PUBLISHED_PARENTS: OrderedDict = OrderedDict()
+_ARTIFACT_ROW_LIMIT = 4096
+_ARTIFACT_BYTES_LIMIT = 64 << 20
+_LINEAGE_LIMIT = 1024
+_artifact_lock = threading.Lock()
+_held_bytes = 0
+
+
+def _descends(git_dir, snapshot, head):
+    """True when ``snapshot`` is ``head`` or a later head this process published from it."""
+    current = snapshot
+    for _ in range(_LINEAGE_LIMIT):
+        if current == head:
+            return True
+        current = _PUBLISHED_PARENTS.get((git_dir, current))
+        if current is None:
+            return False
+    return False
+
+
+def _known_artifact(git_dir, path, snapshot):
+    """The [head, length, bytes] row for ``path`` when it holds at ``snapshot``, else None."""
+    with _artifact_lock:
+        row = _ARTIFACT_FACTS.get((git_dir, path))
+        if row is None or not _descends(git_dir, snapshot, row[0]):
+            return None
+        _ARTIFACT_FACTS.move_to_end((git_dir, path))
+        return row
+
+
+def _learn_artifact(git_dir, path, head, size, raw=None):
+    global _held_bytes
+    with _artifact_lock:
+        old = _ARTIFACT_FACTS.pop((git_dir, path), None)
+        if old is not None and old[2] is not None:
+            _held_bytes -= len(old[2])
+            if raw is None and old[1] == size:
+                raw = old[2]
+        _ARTIFACT_FACTS[(git_dir, path)] = [head, size, raw]
+        if raw is not None:
+            _held_bytes += len(raw)
+        for key in list(_ARTIFACT_FACTS):
+            if len(_ARTIFACT_FACTS) <= _ARTIFACT_ROW_LIMIT and _held_bytes <= _ARTIFACT_BYTES_LIMIT:
+                break
+            if len(_ARTIFACT_FACTS) > _ARTIFACT_ROW_LIMIT:
+                dropped = _ARTIFACT_FACTS.pop(key)
+            else:
+                dropped = _ARTIFACT_FACTS[key]
+                _ARTIFACT_FACTS[key] = [dropped[0], dropped[1], None]
+            if dropped[2] is not None:
+                _held_bytes -= len(dropped[2])
+
+
+def _learn_publication(git_dir, parent, head, artifacts):
+    with _artifact_lock:
+        if parent is not None and parent != head:  # a no-op publication keeps its head
+            _PUBLISHED_PARENTS[(git_dir, head)] = parent
+            while len(_PUBLISHED_PARENTS) > _LINEAGE_LIMIT:
+                _PUBLISHED_PARENTS.popitem(last=False)
+    for path, raw in artifacts.items():
+        _learn_artifact(git_dir, path, head, len(raw), raw)
 
 
 class RepositoryCursorError(ValueError):
@@ -132,7 +217,6 @@ def new_id(prefix: str) -> str:
 
 def canonical_json(value: Any) -> bytes:
     """Encode a finite JSON value deterministically without changing Unicode."""
-    from .payloads import FrozenDict, FrozenText
     if isinstance(value, (FrozenDict, FrozenText)) and hasattr(value, '_payload_bytes'):
         return value._payload_bytes
     validate_storage_value(value)
@@ -280,7 +364,6 @@ class ResearchRepository:
             raise ValueError("instance and runtime must be objects")
         instance = deepcopy(instance)
         runtime = deepcopy(runtime)
-        from .payloads import seal_large
         instance, runtime = seal_large(instance), seal_large(runtime)
         if instance.get("object_format", self._store.object_format) != self._store.object_format:
             raise ValueError("persisted object_format differs from Git")
@@ -368,6 +451,7 @@ class ResearchRepository:
         changes.update(candidate["artifacts"])
         published = self._store.publish(expected_head, changes)
         self._remember_published(published.head, candidate)
+        _learn_publication(str(self.git_dir), expected_head, published.head, candidate["artifacts"])
         # The remembered candidate is the shared entry; callers mutate their views.
         return published.head, deepcopy(candidate["instance"]), deepcopy(candidate["runtime"])
 
@@ -450,8 +534,22 @@ class ResearchRepository:
         return {**deepcopy(matches[0]), "snapshot": head}
 
     def read(self, path: str, snapshot: str | None = None) -> bytes:
-        """Read bytes from an exact or current state snapshot."""
-        return self._store.read_bytes(self._resolve_snapshot(snapshot), path)
+        """Read bytes from an exact or current state snapshot.
+
+        Artifact bytes this process wrote or read at this snapshot, or at an
+        earlier head it published this snapshot from, are not read again.
+        """
+        head = self._resolve_snapshot(snapshot)
+        if not isinstance(path, str) or not path.startswith("runtime/artifacts/"):
+            return self._store.read_bytes(head, path)
+        self._store._validate_path(path)
+        git_dir = str(self.git_dir)
+        row = _known_artifact(git_dir, path, head)
+        if row is not None and row[2] is not None:
+            return row[2]
+        raw = self._store.read_bytes(head, path)
+        _learn_artifact(git_dir, path, head, len(raw), raw)
+        return raw
 
     def read_many(self, paths: list[str], snapshot: str | None = None, *, missing: str = "raise") -> dict[str, bytes]:
         """Read exact blobs together without changing their logical paths.
@@ -461,8 +559,28 @@ class ResearchRepository:
         return self._store.read_many(self._resolve_snapshot(snapshot), paths, missing=missing)
 
     def blob_sizes(self, paths: list[str], snapshot: str | None = None, *, missing: str = "raise") -> dict[str, int]:
-        """Read stored lengths without blob bytes; ``missing`` is as for :meth:`read_many`."""
-        return self._store.blob_sizes(self._resolve_snapshot(snapshot), list(dict.fromkeys(paths)), missing=missing)
+        """Read stored lengths without blob bytes; ``missing`` is as for :meth:`read_many`.
+
+        Artifact lengths this process already knows at this snapshot (see
+        :meth:`read`) are not asked of Git again.
+        """
+        head = self._resolve_snapshot(snapshot)
+        wanted = list(dict.fromkeys(paths))
+        git_dir = str(self.git_dir)
+        known = {}
+        for path in wanted:
+            if isinstance(path, str) and path.startswith("runtime/artifacts/"):
+                row = _known_artifact(git_dir, path, head)
+                if row is not None:
+                    self._store._validate_path(path)
+                    known[path] = row[1]
+        rest = [path for path in wanted if path not in known]
+        sizes = self._store.blob_sizes(head, rest, missing=missing)
+        for path, size in sizes.items():
+            if path.startswith("runtime/artifacts/"):
+                _learn_artifact(git_dir, path, head, size)
+        return {path: known[path] if path in known else sizes[path]
+                for path in wanted if path in known or path in sizes}
 
     def list_files(self, prefix: str, snapshot: str | None = None) -> list[str]:
         """List files below one POSIX state prefix in stable lexical order."""
@@ -621,8 +739,36 @@ def _decode_object(data: bytes) -> dict[str, Any]:
 
 
 def validate_storage_value(value: Any) -> None:
-    """Validate the exact storage value domain without constructing JSON bytes."""
-    from .payloads import FrozenDict, FrozenText
+    """Validate the exact storage value domain without constructing JSON bytes.
+
+    Plain ``dict``, ``list`` and ``str`` values, nearly every node of a state,
+    take a direct path with the same rules; string leaves are checked in
+    place, and an ASCII string holds no surrogate. Other types (subclasses,
+    sealed payloads) fall through to the general rules.
+    """
+    kind = type(value)
+    if kind is dict:
+        for key, item in value.items():
+            if type(key) is not str:
+                if not isinstance(key, str):
+                    raise ValueError("JSON object keys must be strings")
+                validate_storage_value(key)
+            elif not key.isascii() and _SURROGATE.search(key):
+                raise ValueError("JSON strings cannot contain surrogate code points")
+            if type(item) is str:
+                if not item.isascii() and _SURROGATE.search(item):
+                    raise ValueError("JSON strings cannot contain surrogate code points")
+            else:
+                validate_storage_value(item)
+        return
+    if kind is list:
+        for item in value:
+            validate_storage_value(item)
+        return
+    if kind is str:
+        if not value.isascii() and _SURROGATE.search(value):
+            raise ValueError("JSON strings cannot contain surrogate code points")
+        return
     if isinstance(value, (FrozenDict, FrozenText)) and hasattr(value, '_payload_bytes'):
         return  # Sealing validated exact bytes and these values cannot be edited.
     if value is None or isinstance(value, (bool, str)):
@@ -710,7 +856,6 @@ def _encode_families(instance, runtime, contract, object_format, *, parent=None)
     produced by an earlier encoding or checked canonical when read. Only the
     records serialized here pass the storage value check of ``canonical_json``.
     """
-    from .payloads import encode
     files = {}
     installed = contract.manifest()
     parent_files = parent[2] if parent is not None else {}
@@ -763,7 +908,6 @@ def _decode_families(files, contract, object_format, *, read_payload=None, git_d
     persisted record rows, are built only with ``describe``; otherwise the
     third value is None.
     """
-    from .payloads import decode
     if read_payload is None:
         def read_payload(path):
             raise ValueError('immutable payload reader required: ' + path)

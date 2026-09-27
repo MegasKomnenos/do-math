@@ -59,6 +59,8 @@ class WalkthroughRepairs(unittest.TestCase):
         wire = candidate()
         wire['completion_obligations'][0]['evidence_requirements'] = ['Code and exact output for the full stated range']
         task = contracts.task_candidate_record(wire, task_id='TK-new')
+        # The engine stores the contract without the wire-only revision pointer.
+        del task['revises_task_id']
         assessment = {'decision':'completed', 'item_dispositions':[
             {'obligation_id':'OB-argument','kind':'fulfilled','evidence_refs':['EX-newly-created']}], 'unresolved':[]}
         task_contracts.validate_item_dispositions(task, assessment)

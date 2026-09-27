@@ -8,10 +8,8 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import DEFAULT_CONFIG, initialize, validate_config
 from do_math.execution_profiles import WORK_ROLES, build_profiles
-from test_categories import test_group
 
 
-@test_group('unit')
 class CurrentContractTests(unittest.TestCase):
     def test_retired_configuration_is_rejected_before_creating_an_instance(self):
         for patch in ({'session_limits': None}, {'work_calls': 10}, {'operations_calls': None},

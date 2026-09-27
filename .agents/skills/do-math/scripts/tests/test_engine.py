@@ -7,7 +7,6 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 import jsonschema
 
@@ -19,7 +18,8 @@ from do_math.engine import ResearchEngine, control, initialize, validate_config 
 from do_math.repository import ResearchRepository  # noqa: E402
 from research_fixtures import local_job_runner, planning_model_assessments, supply_observation_rules, read_fixture_context
 from research_fixtures import (activate, install_adapter_fixture, candidate, contract_review, disposition,
-                         assessment, intent_response, seal_response, submit_intent, bind_candidates)
+                         assessment, intent_response, seal_response, submit_intent, bind_candidates,
+                         git_init, restore_template)
 
 
 def context_from(prompt: str, workspace=None) -> dict:
@@ -177,8 +177,8 @@ def formal_fail(**_): return {"status": "failed", "reason": "mock formal failure
 class EngineTests(unittest.TestCase):
     def setUp(self):
         install_adapter_fixture(self)
-        self.temp = tempfile.TemporaryDirectory(); self.root = Path(self.temp.name); self.repo = self.root / "repo"; self.repo.mkdir()
-        subprocess.run(["git", "-C", str(self.repo), "init", "-q"], check=True)
+        self.temp = tempfile.TemporaryDirectory(); self.root = Path(self.temp.name)
+        self.repo = git_init(self.root / "repo")
 
     def tearDown(self): self.temp.cleanup()
 
@@ -190,15 +190,17 @@ class EngineTests(unittest.TestCase):
         return engine, init["instance_id"]
 
     def active(self, runner, verifier=formal_ok, **config):
-        """Start from validated active state; only the public-initialization test needs make()."""
-        from state_fixtures import ACTIVE_LEAN_COMMAND, active_engine
-        from research_fixtures import FixtureAdapter
-        self.enterContext(patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()))
+        """Start from a copy of validated active state; only the public-initialization test needs make().
+
+        The copy replaces the previous one (``research_fixtures.restore_template``),
+        so finish with an earlier engine before asking for the next.
+        """
+        from state_fixtures import ACTIVE_LEAN_COMMAND, active_instance
         config = {"reviewers": 2, "goal_auditors": 2, "lean_command": list(ACTIVE_LEAN_COMMAND),
                   "scholarly_enabled": False, "operator_enabled": False, "plan_settle_seconds": 1, **config}
-        workspace = self.root / ("work-" + str(len(list(self.root.glob("work-*")))))
-        engine = active_engine(self.repo, workspace, config=config, runner=runner, formal_verifier=verifier)
-        return engine, engine.instance["id"]
+        self.root, instance_id = restore_template(active_instance, config=config)
+        self.repo = self.root / "repository"
+        return ResearchEngine(self.repo, instance_id, runner=runner, formal_verifier=verifier), instance_id
 
     def assert_persisted_state_clean(self, engine):
         checked = engine.check()

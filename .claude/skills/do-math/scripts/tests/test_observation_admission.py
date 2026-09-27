@@ -11,10 +11,8 @@ from do_math.execution_profiles import build_profiles, profile_ref
 from do_math.initialization import initialize_state, activation_requirements
 from do_math.observations import observation_settings_errors, tracker_config
 from test_lifecycle_engine import FakeEngine
-from test_categories import test_group
 
 
-@test_group('unit')
 class ObservationAdmissionTests(unittest.TestCase):
     def test_default_bootstrap_reports_exact_missing_settings_before_activation(self):
         with tempfile.TemporaryDirectory() as root:
@@ -92,7 +90,6 @@ class ObservationAdmissionTests(unittest.TestCase):
             self.assertTrue(any(a['role'] == 'research_preparation' and a.get('target') == task['id'] for a in engine.runtime['queue']))
 
 
-@test_group('integration')
 class PublicObservationAdmissionTests(unittest.TestCase):
     def test_public_default_init_rejects_unready_adoption_then_accepts_configured_edition(self):
         from do_math.engine import ResearchEngine, control

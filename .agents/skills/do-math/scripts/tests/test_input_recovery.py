@@ -5,9 +5,7 @@ from copy import deepcopy
 import json
 import os
 from pathlib import Path
-import subprocess
 import sys
-import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -17,79 +15,108 @@ if str(SCRIPTS) not in sys.path:
 
 from do_math import execution_profiles
 from do_math.engine import ResearchEngine
-from do_math.repository import ResearchRepository, canonical_json, new_id
+from do_math.repository import canonical_json
 from test_engine import ScriptedRunner, formal_ok
-from test_lifecycle_engine import FakeEngine
-from research_fixtures import FixtureAdapter, bare_engine
+from research_fixtures import FixtureAdapter, bare_engine, restore_template, run_cli
+from state_fixtures import active_instance
 
 
-ENTRYPOINT = SCRIPTS / "do_math.py"
+# The active state every test here starts from (state_fixtures.active_instance).
+ACTIVE_CONFIG = {'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}
+
+
+def active_repository():
+    """A copy of the validated active state: ``(root, repository, instance ID)``."""
+    root, identifier = restore_template(active_instance, config=ACTIVE_CONFIG)
+    return root, root / "repository", identifier
+
+
+def cli(root: Path, *arguments: str) -> dict:
+    """The public command's result; the command must succeed."""
+    completed = run_cli(*arguments, cwd=root)
+    if completed.returncode != 0:
+        raise AssertionError(completed.stdout + completed.stderr)
+    envelope = json.loads(completed.stdout)
+    if envelope["exit_code"] != 0:
+        raise AssertionError(envelope)
+    return envelope["result"]
+
+
+def apply_limit(root: Path, repository: Path, identifier: str, limit: int, request_id: str) -> ResearchEngine:
+    """Configure ``max_input_bytes`` publicly and record the new profiles' capability evidence."""
+    config = root / (request_id + ".json")
+    config.write_bytes(canonical_json({"max_input_bytes": limit}))
+    accepted = cli(root, "configure", "--repository", str(repository), "--instance", identifier,
+                   "--config-file", str(config), "--request-id", request_id)
+    if not accepted["accepted"]:
+        raise AssertionError(accepted)
+    engine = ResearchEngine(repository, identifier, runner=ScriptedRunner(), formal_verifier=formal_ok)
+    engine.process_controls()
+    evidence_store = engine.instance.setdefault("capability_evidence", {})
+    for reference in engine.instance["role_profile_refs"]["maintenance"]:
+        profile = execution_profiles.resolve_profile(engine.instance["execution_profiles"], reference)
+        if profile["actor_kind"] != "ai":
+            continue
+        evidence = execution_profiles.capability_evidence(profile, FixtureAdapter().describe(),
+            observed_at=engine.runtime["last_observed_utc"])
+        evidence_store[evidence["id"]] = evidence
+    engine._save()
+    return engine
+
+
+def overflowed_maintenance(root, shared):
+    """``restore_template`` build: a public maintenance request held by its first input overflow.
+
+    From the validated active state, a public ``configure`` sets ``max_input_bytes``
+    to 1, a public ``request`` queues maintenance, and one engine step holds it.
+    Returns the instance ID.
+    """
+    from unittest.mock import patch
+    identifier = active_instance(root, shared, config=ACTIVE_CONFIG)
+    repository = root / "repository"
+    with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
+        apply_limit(root, repository, identifier, 1, "UC-limit-small")
+        requested = cli(root, "request", "--repository", str(repository), "--instance", identifier,
+                        "--role", "maintenance", "--reason", "Check the installed recovery boundary",
+                        "--request-id", "UC-maintenance")
+        if not requested["accepted"]:
+            raise AssertionError(requested)
+        ResearchEngine(repository, identifier, runner=ScriptedRunner(), formal_verifier=formal_ok).run(max_steps=1)
+    return identifier
 
 
 class InputRecoveryPublicTests(unittest.TestCase):
     def setUp(self) -> None:
-        temporary = tempfile.TemporaryDirectory()
-        self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name)
-        self.repo, workspace = self.root / "repository", self.root / "workspace"
-        self.repo.mkdir()
-        workspace.mkdir()
-        subprocess.run(["git", "-C", str(self.repo), "init", "-q"], check=True)
+        """A copy of the validated active state; other modules borrow this setUp.
+
+        Sets ``root``, ``repo`` and ``identifier``.
+        """
         adapter = patch("do_math.initialization.adapter_for", return_value=FixtureAdapter())
         adapter.start()
         self.addCleanup(adapter.stop)
-        seed = FakeEngine(workspace, config={'tool_review_window_seconds': 60,
-                                            'self_check_response_window_seconds': 5})
-        seed.activate()
-        seed.runtime["queue"] = []
-        seed.runtime.update(processed_controls=[], reservations={},
-                            provider_waits={}, updated_at=seed.runtime["last_observed_utc"],
-                            next_research_reconsider_at="2100-01-01T00:00:00+00:00")
-        self.identifier = new_id("RI")
-        self.instance = json.loads(json.dumps(seed.instance).replace("RI-test", self.identifier))
-        self.runtime = json.loads(json.dumps(seed.runtime).replace("RI-test", self.identifier))
-        ResearchRepository(self.repo, self.identifier).initialize(self.instance, self.runtime)
+        self.root, self.repo, self.identifier = active_repository()
+
+    def overflowed(self) -> None:
+        """Replace the copy with ``overflowed_maintenance``'s state."""
+        self.root, self.identifier = restore_template(overflowed_maintenance)
+        self.repo = self.root / "repository"
 
     def cli(self, *arguments: str) -> dict:
-        completed = subprocess.run([sys.executable, str(ENTRYPOINT), *arguments],
-            cwd=self.root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
-        envelope = json.loads(completed.stdout)
-        self.assertEqual(envelope["exit_code"], 0)
-        return envelope["result"]
+        return cli(self.root, *arguments)
 
     def instance_args(self, identifier: str) -> tuple[str, ...]:
         return "--repository", str(self.repo), "--instance", identifier
 
     def apply_limit(self, identifier: str, limit: int, request_id: str) -> ResearchEngine:
-        config = self.root / (request_id + ".json")
-        config.write_bytes(canonical_json({"max_input_bytes": limit}))
-        accepted = self.cli("configure", *self.instance_args(identifier),
-                            "--config-file", str(config), "--request-id", request_id)
-        self.assertTrue(accepted["accepted"])
-        engine = ResearchEngine(self.repo, identifier, runner=ScriptedRunner(), formal_verifier=formal_ok)
-        engine.process_controls()
-        evidence_store = engine.instance.setdefault("capability_evidence", {})
-        for reference in engine.instance["role_profile_refs"]["maintenance"]:
-            profile = execution_profiles.resolve_profile(engine.instance["execution_profiles"], reference)
-            if profile["actor_kind"] != "ai":
-                continue
-            evidence = execution_profiles.capability_evidence(profile, FixtureAdapter().describe(),
-                observed_at=engine.runtime["last_observed_utc"])
-            evidence_store[evidence["id"]] = evidence
-        engine._save()
-        return engine
+        return apply_limit(self.root, self.repo, identifier, limit, request_id)
 
     def test_public_retry_replays_refails_resolves_and_rejects_after_close(self):
+        self.overflowed()
         identifier = self.identifier
 
-        engine = self.apply_limit(identifier, 1, "UC-limit-small")
-        requested = self.cli("request", *self.instance_args(identifier), "--role", "maintenance",
-                             "--reason", "Check the installed recovery boundary",
-                             "--request-id", "UC-maintenance")
-        self.assertTrue(requested["accepted"])
+        # The copied state is the first overflow: a public configure (limit 1),
+        # a public maintenance request and one engine step.
         engine = ResearchEngine(self.repo, identifier, runner=ScriptedRunner(), formal_verifier=formal_ok)
-        engine.run(max_steps=1)
         self.assertEqual(len(engine.runtime.get("input_overflows", [])), 1, {
             "status": engine.runtime["status"], "queue": engine.runtime["queue"],
             "waiting_actions": engine.runtime.get("waiting_actions", {}),
@@ -146,10 +173,8 @@ class InputRecoveryPublicTests(unittest.TestCase):
         self.cli("close", *self.instance_args(identifier), "--reason", "Boundary test complete")
         engine = ResearchEngine(self.repo, identifier, runner=ScriptedRunner(), formal_verifier=formal_ok)
         engine.process_controls()
-        closed = subprocess.run([sys.executable, str(ENTRYPOINT), "request",
-            *self.instance_args(identifier), "--retry-action", action_id,
-            "--request-id", "UC-retry-closed"], cwd=self.root, text=True,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        closed = run_cli("request", *self.instance_args(identifier), "--retry-action", action_id,
+                         "--request-id", "UC-retry-closed", cwd=self.root)
         self.assertEqual(closed.returncode, 2, closed.stdout + closed.stderr)
         rejected = json.loads(closed.stdout)["error"]
         self.assertIn("closed/completed", rejected["message"])
@@ -183,13 +208,10 @@ class InputRecoveryPublicTests(unittest.TestCase):
             destination.write_bytes(canonical_json(report))
 
     def test_resolved_retry_marker_survives_provider_deferral_and_repreparation(self):
+        self.overflowed()
         identifier = self.identifier
 
-        engine = self.apply_limit(identifier, 1, "UC-marker-limit-small")
-        self.cli("request", *self.instance_args(identifier), "--role", "maintenance",
-                 "--reason", "Reproduce retry marker lifetime", "--request-id", "UC-marker-action")
         engine = ResearchEngine(self.repo, identifier, runner=ScriptedRunner(), formal_verifier=formal_ok)
-        engine.run(max_steps=1)
         action_id, held = next(iter(engine.runtime["waiting_actions"].items()))
         question_id = held["question_id"]
 

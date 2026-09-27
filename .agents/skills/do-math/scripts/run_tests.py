@@ -1,18 +1,14 @@
-"""Sequential grouped unittest runner with owned, bounded Lean/resource workers.
+"""Sequential shard-by-shard unittest runner with owned, bounded Lean/resource workers.
 
-Normal unittest discovery is still supported but does not impose these outer
-process deadlines. This runner never changes the product's Lean time limits.
+Tests are selected by ID or module (positional), by shard (``--shard``), or all
+shards when neither is given. Every selected test runs; there is no result cache.
+Shards and the isolation labels live in ``tests/test_categories.py``; a test
+module missing from ``SHARDS`` stops the run. When and what to run is in
+``tests/시험-지침.md``.
 
-A unit or integration test that already passed on the same inputs is not run
-again: its pass is reported from the result cache with the report it came from.
-The inputs are split in two. The shared key covers everything but the Python
-modules in tests/ (product code, documents, the repository's docs/do-math,
-Python and git versions); any edit there invalidates all entries. A test
-module's key covers its own file and every tests/ module it imports,
-transitively, shared fixtures included, so editing a test or a fixture re-runs
-only the tests that read it.
-Failures are never cached. Lean and resource tests depend on host toolchains
-and processes and always run. ``--no-cache`` forces execution.
+Lean and resource tests run per class in an owned Windows Job with a per-phase
+deadline. Normal unittest discovery still works but imposes no outer deadlines.
+This runner never changes the product's Lean time limits.
 """
 from __future__ import annotations
 
@@ -25,60 +21,17 @@ import json
 import math
 import os
 from pathlib import Path
-import re
-import subprocess
 import sys
 import tempfile
 import time
 import unittest
 import uuid
 
-from test_categories import GROUPS, group_for
+from test_categories import SHARDS, isolation_for, shard_for, unregistered_modules
 from do_math.file_io import write_bytes_atomic, read_bytes_shared
 
 SCRIPTS = Path(__file__).resolve().parent
 TESTS = SCRIPTS / 'tests'
-CACHE = Path(tempfile.gettempdir()) / 'do-math-test-cache'
-CACHED_GROUPS = frozenset({'unit', 'integration'})
-
-
-MODULE_IMPORT = re.compile(r'^\s*(?:from|import)\s+(\w+)', re.M)
-
-
-def _is_test_source(path):
-    return path.parent == TESTS and path.suffix == '.py'
-
-
-def _module_keys():
-    """Per tests/ module: its own bytes and those of every tests/ module it imports, transitively."""
-    sources = {path.stem: path.read_bytes() for path in TESTS.glob('*.py')}
-    imports = {name: set(MODULE_IMPORT.findall(raw.decode('utf-8'))) & sources.keys() for name, raw in sources.items()}
-    keys = {}
-    for name in sources:
-        seen, pending = set(), [name]
-        while pending:
-            current = pending.pop()
-            if current not in seen:
-                seen.add(current)
-                pending.extend(imports[current])
-        keys[name] = hashlib.sha256(b''.join(hashlib.sha256(sources[n]).digest() for n in sorted(seen))).hexdigest()
-    return keys
-
-
-def _input_key():
-    """Content key of everything a unit or integration test may read, except the tests/ modules."""
-    skill = SCRIPTS.parent
-    files = {}
-    for base, name in ((skill, 'skill'), (skill.parents[2] / 'docs' / 'do-math', 'docs')):
-        for path in sorted(base.rglob('*')) if base.is_dir() else ():
-            if path.is_file() and '__pycache__' not in path.parts and not _is_test_source(path):
-                files[name + '/' + path.relative_to(base).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
-    try:
-        git = subprocess.run(['git', '--version'], capture_output=True, text=True).stdout.strip()
-    except OSError:
-        git = None
-    raw = json.dumps({'files': files, 'python': sys.version, 'git': git}, sort_keys=True).encode()
-    return hashlib.sha256(raw).hexdigest()
 
 
 def _write_json(path, value):
@@ -310,101 +263,85 @@ def _edition():
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--group', action='append', choices=('all', *GROUPS), help='repeat to combine; default: all')
+    parser.add_argument('tests', nargs='*', help='test IDs or modules; default: every shard')
+    parser.add_argument('--shard', action='append', choices=tuple(SHARDS), help='repeat to combine')
     parser.add_argument('--match', action='append', default=[], help='test-ID glob; repeat for alternatives')
     parser.add_argument('--list', action='store_true', help='discover and list without running tests')
     parser.add_argument('--timeout', type=float, default=300, help='seconds per isolated test/fixture phase (default: 300)')
     parser.add_argument('--output', type=Path, help='new or empty results directory; default: a unique temporary directory')
-    parser.add_argument('--no-cache', action='store_true',
-                        help='run every selected test even if it already passed on the same inputs')
     parser.add_argument('--worker', type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.worker:
         return _worker(args.worker)
     if not math.isfinite(args.timeout) or args.timeout <= 0:
         parser.error('--timeout must be finite and positive')
-    groups = set(args.group or ['all'])
-    if 'all' in groups:
-        groups = set(GROUPS)
+    missing, stale = unregistered_modules(TESTS)
+    if missing or stale:
+        print('tests/test_categories.py SHARDS is out of date. Unregistered: ' + (', '.join(missing) or '-')
+              + '. Listed but absent: ' + (', '.join(stale) or '-'), file=sys.stderr)
+        return 2
     before = _edition()
     loader = unittest.TestLoader()
     discovered = list(flatten(loader.discover(str(TESTS), pattern='test_*.py')))
     if loader.errors:
         print('\n'.join(loader.errors), file=sys.stderr)
         return 2
-    selected = [test for test in discovered if group_for(test) in groups and
-                (not args.match or any(fnmatch.fnmatchcase(test.id(), pattern) for pattern in args.match))]
+    selected = [test for test in discovered
+                if (not args.shard or shard_for(test) in args.shard)
+                and (not args.tests or any(test.id() == name or test.id().startswith(name + '.') for name in args.tests))
+                and (not args.match or any(fnmatch.fnmatchcase(test.id(), pattern) for pattern in args.match))]
     if not selected:
         print('No tests selected; no pass was established.', file=sys.stderr)
         return 2
     if args.list:
         for test in selected:
-            print(group_for(test) + '\t' + test.id())
+            print(shard_for(test) + '\t' + test.id())
         return 0
     directory = args.output.resolve() if args.output else Path(tempfile.mkdtemp(prefix='do-math-tests-'))
     if directory.exists() and any(directory.iterdir()):
         parser.error('--output must be new or empty; previous evidence is never overwritten')
     directory.mkdir(parents=True, exist_ok=True)
-    key = None if args.no_cache else _input_key()
-    modules = _module_keys() if key else {}
-    passes = (_read_json(CACHE / f'{key}.json') or {}) if key else {}
-    def cached(test):
-        entry = passes.get(test.id())
-        return entry is not None and entry['module'] == modules.get(test.id().split('.', 1)[0])
-    reports = []
-    for group in GROUPS:
-        tests = [test for test in selected if group_for(test) == group]
+    reports, shard_seconds = [], {}
+    for shard in SHARDS:
+        tests = [test for test in selected if shard_for(test) == shard]
         if not tests:
             continue
-        if group in CACHED_GROUPS:
-            hits = [test for test in tests if cached(test)]
-            if hits:
-                print(f'[{group}] {len(hits)} tests passed earlier on the same inputs (cached)', flush=True)
-                reports.append({'group': group, 'cached': True, 'complete': True, 'successful': True,
-                                'rows': [{'id': test.id(), 'outcome': 'passed', 'seconds': 0, 'details': [],
-                                          'cached_from': passes[test.id()]['report']} for test in hits]})
-            tests = [test for test in tests if not cached(test)]
-            if not tests:
-                continue
-        print(f'[{group}] {len(tests)} tests', flush=True)
-        if group in {'lean', 'resource'}:
-            classes = defaultdict(list)
-            for test in tests:
+        started = time.monotonic()
+        print(f'[{shard}] {len(tests)} tests', flush=True)
+        in_process = [test for test in tests if isolation_for(test) is None]
+        if in_process:
+            reports.append({'shard': shard, **_run_suite(in_process, directory / shard)})
+        classes = defaultdict(list)
+        for test in tests:
+            if isolation_for(test) is not None:
                 classes[type(test)].append(test)
-            for index, members in enumerate(classes.values()):
-                print('  isolated: ' + members[0].id().rsplit('.', 1)[0], flush=True)
-                report = _isolated(members, directory / f'{group}-{index:03}', args.timeout)
-                print('  ' + str(dict(Counter(row['outcome'] for row in report['rows'] if not row.get('fixture')))), flush=True)
-                reports.append({'group': group, **report})
-        else:
-            reports.append({'group': group, **_run_suite(tests, directory / group)})
-        _write_json(directory / 'report.json', {'complete': False, 'reports': reports})
+        for index, members in enumerate(classes.values()):
+            print('  isolated: ' + members[0].id().rsplit('.', 1)[0], flush=True)
+            report = _isolated(members, directory / f'{shard}-isolated-{index:03}', args.timeout)
+            print('  ' + str(dict(Counter(row['outcome'] for row in report['rows'] if not row.get('fixture')))), flush=True)
+            reports.append({'shard': shard, **report})
+        shard_seconds[shard] = round(time.monotonic() - started, 1)
+        _write_json(directory / 'report.json', {'complete': False, 'shard_seconds': shard_seconds, 'reports': reports})
     after = _edition()
     changed = sorted(path for path in before.keys() | after.keys() if before.get(path) != after.get(path))
     rows = [row for report in reports for row in report['rows']]
     result = {'complete': all(report['complete'] for report in reports),
         'successful': not changed and all(report['successful'] for report in reports),
         'selected': [test.id() for test in selected], 'discovered': len(discovered),
-        'groups': sorted(groups), 'counts': dict(Counter(row['outcome'] for row in rows if not row.get('fixture'))),
+        'shards': sorted(args.shard or []), 'tests': args.tests,
+        'shard_seconds': shard_seconds, 'total_seconds': round(sum(shard_seconds.values()), 1),
+        'counts': dict(Counter(row['outcome'] for row in rows if not row.get('fixture'))),
         'fixture_counts': dict(Counter(row['outcome'] for row in rows if row.get('fixture'))),
         'source_sha256': before, 'changed_during_run': changed, 'reports': reports,
         'slowest': sorted((row for row in rows if not row.get('fixture')),
                           key=lambda row: row['seconds'], reverse=True)[:20]}
-    result['cached'] = sum(len(report['rows']) for report in reports if report.get('cached'))
     _write_json(directory / 'report.json', result)
-    if key and not changed and _input_key() == key:
-        # Only passes on inputs that stayed the same for the whole run are reusable.
-        # ponytail: concurrent runs on one key may drop each other's entries; that only costs a rerun.
-        stable = _module_keys()
-        fresh = {row['id']: {'module': modules[module], 'report': str(directory / 'report.json')}
-                 for report in reports if report['group'] in CACHED_GROUPS and not report.get('cached')
-                 for row in report['rows'] if row['outcome'] == 'passed' and not row.get('fixture')
-                 for module in [row['id'].split('.', 1)[0]] if stable.get(module) == modules.get(module)}
-        if fresh:
-            _write_json(CACHE / f'{key}.json', {**passes, **fresh})
-    print(json.dumps({name: result[name] for name in ('complete', 'successful', 'counts', 'cached')}, ensure_ascii=False))
+    print(json.dumps({name: result[name] for name in ('complete', 'successful', 'counts', 'shard_seconds', 'total_seconds')},
+                     ensure_ascii=False))
     for row in result['slowest']:
         print(f"{row['seconds']:9.3f}s {row['outcome']:18} {row['id']}")
+    if changed:
+        print('Files changed during the run, so this is not a pass: ' + ', '.join(changed), file=sys.stderr)
     print('Report: ' + str(directory / 'report.json'))
     return 0 if result['successful'] else 1
 

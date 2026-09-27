@@ -375,6 +375,26 @@ class PurposeFixtureContractTests(unittest.TestCase):
         self.assertEqual(identified['TK-selected']['difficulty'], 'high')
         self.assertEqual(identified['TK-selected']['importance'], 'medium')
 
+    def test_restored_template_is_an_independent_copy_of_the_published_state(self):
+        from do_math import repository
+        from do_math.repository import ResearchRepository
+        from research_fixtures import restore_template
+        from state_fixtures import active_instance
+        config = PurposeHarness.fixture_config()
+        root, instance_id = restore_template(active_instance, config=config)
+        head, instance, runtime = ResearchRepository(root / 'repository', instance_id).load()
+        self.assertEqual(Path(instance['workspace']), root / 'work-0')
+        control(root / 'repository', instance_id, 'pause', text='Change only this copy')
+        ResearchEngine(root / 'repository', instance_id, runner=PurposeRunner()).process_controls()
+        self.assertNotEqual(ResearchRepository(root / 'repository', instance_id).load()[0], head)
+        again = restore_template(active_instance, config=config)
+        self.assertEqual(again, (root, instance_id))
+        # The next load validates the restored head in full: no entry of the earlier copy remains.
+        prefix = os.path.normcase(str(root))
+        self.assertFalse([key for key in repository._VALIDATED_READS if os.path.normcase(key[0]).startswith(prefix)])
+        self.assertEqual(ResearchRepository(root / 'repository', instance_id).load(), (head, instance, runtime))
+        self.assertFalse(list((root / 'work-0' / 'control' / instance_id).glob('*.json')))
+
     def test_plan_fixture_does_not_invent_a_missing_selected_task_assessment(self):
         output = {'dispositions': [{'task_id': 'TK-missing', 'kind': 'selected'}]}
         with self.assertRaisesRegex(AssertionError, 'without its supplied model assessment'):
@@ -454,7 +474,45 @@ class ActiveStateHarness(PurposeHarness):
         return engine, runner
 
 
-class PurposeEngineTests(PurposeHarness):
+class ActivatedPurposeHarness(PurposeHarness):
+    """``PurposeHarness`` whose instances are copies of templates built once per process.
+
+    ``make`` hands out the state ``PurposeHarness.make`` publishes through the
+    public activation, restored byte for byte (``research_fixtures.restore_template``);
+    ``make_active`` does the same for ``ActiveStateHarness.make``'s synthetic
+    active state. Only the engine object is new, as after a restart. Each call
+    replaces the previous copy, so a test holds one live instance at a time.
+    """
+
+    def setUp(self):
+        self.runners = []
+        self.engines = []
+        install_adapter_fixture(self)
+
+    def _engine(self, instance_id, runner):
+        self.repo = self.root / 'repository'
+        engine = ResearchEngine(self.repo, instance_id, runner=runner, formal_verifier=formal_fixture)
+        runner.pause_sender = lambda: control(self.repo, instance_id, 'pause', text='Stop the current research after preserving its checkpoint')
+        self.runners.append(runner)
+        self.engines.append(engine)
+        return engine, runner
+
+    def make(self, scenario='direct', *, observation=None, external_policy='disabled', review_policy=None, **config):
+        from research_fixtures import activated_instance, restore_template
+        if observation in {'continue', 'stop'}:
+            config.setdefault('tool_review_window_seconds', 1)
+        self.root, instance_id = restore_template(activated_instance, goal=GOAL,
+            config=self.fixture_config(**config), external_policy=external_policy, review_policy=review_policy)
+        return self._engine(instance_id, PurposeRunner(scenario, observation=observation))
+
+    def make_active(self, **config):
+        from research_fixtures import restore_template
+        from state_fixtures import active_instance
+        self.root, instance_id = restore_template(active_instance, config=config)
+        return self._engine(instance_id, PurposeRunner())
+
+
+class PurposeEngineTests(ActivatedPurposeHarness):
     def test_task_dependency_extension_blocks_A_until_B_completed_then_solves_goal(self):
         engine, runner = self.make('dependency')
         self.drive(engine)
@@ -467,7 +525,10 @@ class PurposeEngineTests(PurposeHarness):
         self.assertTrue(any(ex['role'] == 'formal_check' for ex in engine.runtime['executions'].values()))
 
     def test_objection_judgment_answer_and_final_approval_use_real_engine(self):
+        from do_math.knowledge_records import usable_links
         engine, runner = self.make('dispute')
+        # Runs to the goal: the goal audit fixture checks that, after the
+        # withdrawn objection, it receives only the final matching assessment.
         self.drive(engine)
         reviews = [call for call in runner.calls if call['role'] == 'identity_review']
         self.assertEqual([call['action']['stage'] for call in reviews], ['scope', 'initial', 'initial', 'organize', 'judge', 'judge', 'judge', 'answer', 'judge', 'judge', 'judge'])
@@ -475,7 +536,6 @@ class PurposeEngineTests(PurposeHarness):
         self.assertEqual(set(reviews[2]['context']['role_review']['completed_results']), {'scope:1:scope'})
         self.assertFalse(any(entry['action']['stage'] == 'judge' for entry in reviews[5]['context']['role_review']['completed_results'].values()))
         item = next(item for item in engine.instance['knowledge'].values() if item['title'] == 'Natural zero identity')
-        from do_math.knowledge_records import usable_links
         links = usable_links(engine.instance, item['id'])
         self.assertTrue(links)
         final = engine.instance['identity_assessments'][links[0]['assessment_id']]
@@ -572,7 +632,7 @@ class PurposeEngineTests(PurposeHarness):
 
     def test_work_budget_execution_is_not_bounded_by_operations_call_timeout(self):
         # The rule starts after initialization; public activation has its own test.
-        engine, runner = ActiveStateHarness.make(self, **self.fixture_config(call_timeout_seconds=30))
+        engine, runner = self.make_active(**self.fixture_config(call_timeout_seconds=30))
         seen = []
         original = runner.run
         def recording_run(**arguments):
@@ -589,9 +649,10 @@ class PurposeEngineTests(PurposeHarness):
     def test_live_continue_preserves_checkpoint_and_reserves_no_work_slot(self):
         from do_math.execution_profiles import resolve_profile
         engine, runner = self.make(observation='continue',  )
+        # Both families first appear with their first record; earlier steps have neither.
         self.drive(engine, predicate=lambda e: any(
-            row['disposition']['kind'] == 'continue' and row['target_execution_id'] in e.runtime['checkpoints']
-            for row in e.runtime['operational_dispositions'].values()))
+            row['disposition']['kind'] == 'continue' and row['target_execution_id'] in e.runtime.get('checkpoints', {})
+            for row in e.runtime.get('operational_dispositions', {}).values()))
         live = [e for e in engine.runtime['executions'].values() if e['role'] == 'operational_review' and e['action'].get('live')]
         self.assertEqual(len(live), 1)
         parent = engine.runtime['executions'][live[0]['action']['target']]
@@ -677,7 +738,7 @@ class PurposeEngineTests(PurposeHarness):
         from do_math import knowledge
         from state_fixtures import ACTIVE_LEAN_COMMAND
         # The rule starts after initialization; public activation has its own test.
-        engine, _ = ActiveStateHarness.make(self, **self.fixture_config(
+        engine, _ = self.make_active(**self.fixture_config(
             plan_settle_seconds=1, lean_command=list(ACTIVE_LEAN_COMMAND)))
         self.drive(engine, predicate=lambda e: any(usable_links(e.instance, kid) for kid in e.instance['knowledge']))
         kid = next(iter(engine.instance['knowledge']))

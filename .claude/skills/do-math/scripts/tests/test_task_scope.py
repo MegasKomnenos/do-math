@@ -28,7 +28,8 @@ class EngineIntegrationTest(unittest.TestCase):
         }
         engine.head='fixed-input'
         engine.store=create_autospec(ResearchRepository,instance=True)
-        engine.store.load.side_effect=lambda snapshot:('fixed-input',{},deepcopy(engine.runtime))
+        # The engine reads the planner's fixed input snapshot without copying it (ResearchRepository.view).
+        engine.store.view.side_effect=lambda snapshot:('fixed-input',{},deepcopy(engine.runtime))
         engine.runtime["executions"]["EX-plan"] = {
             "id": "EX-plan", "role": "research_plan", "status": "ended",
             "input_snapshot": engine.head,
@@ -127,8 +128,14 @@ class TaskScopeTests(unittest.TestCase):
         from do_math.submission import payload_issues
         from research_fixtures import seal_response
         from test_engine import common
+        from do_math.knowledge import content_hash
+        # A disposition revises an existing task, so the fixed input supplies that task
+        # with its content hash, as the engine's task views do.
+        task = {**task_contract(), "id": "TK-AI", "status": "planned", "producer_execution": "EX-prep",
+                "results": [], "reviews": []}
         context = {"action": {"role": "research_preparation"}, "budget_unit": "concurrent_sessions",
-                   "tasks": [], "knowledge_catalog": [], "kind_definitions": {}, "sources": []}
+                   "tasks": [{**task, "content_sha256": content_hash(task)}], "knowledge_catalog": [],
+                   "kind_definitions": {}, "sources": []}
 
         def issues(dispositions):
             with tempfile.TemporaryDirectory() as directory:

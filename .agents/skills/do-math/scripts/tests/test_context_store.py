@@ -107,6 +107,19 @@ class ContextStoreTests(unittest.TestCase):
    fitted=store.fit_context(context,max_bytes=1200,workspace=root,mandatory_keys=['goal','action']);self.assertIsNone(fitted['overflow']);self.assertLessEqual(fitted['actual_bytes'],1200);self.assertTrue(fitted['reductions'])
    task_reduction=next(x for x in fitted['reductions'] if x['key']=='tasks');self.assertEqual(json.loads(store.read_source(root,task_reduction['source_ref'],limit=10**7)['bytes']),context['tasks'])
    ref=next(x for x in fitted['manifest'] if x['key']=='recent_history');raw=store.read_source(root,ref,limit=10**7);self.assertEqual(json.loads(raw['bytes']),context['recent_history'])
+ def test_packed_sizes_equal_the_canonical_bytes_of_the_packed_context(self):
+  from do_math.repository import canonical_json
+  nested={'deep':[{'a':[1,[2,{}],[]],'b':'\u00e9\u2028'}],'empty':{}}
+  contexts=[{'goal':'g','empty_list':[],'empty_map':{},'text':'line\none','nested':nested,'numbers':list(range(30))},
+            {'goal':'g'},{'goal':'x'*1000,'recent_history':[1,2,3],'tasks':[{'id':'T','detail':'y'*500}]}]
+  for index,context in enumerate(contexts):
+   for limit in (10,300,10**6):
+    with self.subTest(context=index,limit=limit),tempfile.TemporaryDirectory() as d:
+     got=store.fit_context(context,max_bytes=limit,workspace=Path(d),mandatory_keys=['goal'])
+     self.assertEqual(got['actual_bytes'],len(canonical_json(got['context'])))
+     self.assertEqual(got['original_bytes'],len(canonical_json(context)))
+     if got['overflow']:
+      self.assertEqual(got['overflow']['mandatory_bytes'],len(canonical_json({'goal':context['goal']})))
  def test_mandatory_overflow_reports_size_without_reduction(self):
   with tempfile.TemporaryDirectory() as d:
    context={'goal':'x'*1000,'recent_history':[1,2,3]};got=store.fit_context(context,max_bytes=100,workspace=Path(d),mandatory_keys=['goal']);self.assertEqual(got['overflow']['reason'],'mandatory_context_exceeds_limit');self.assertEqual(got['context']['goal'],context['goal'])

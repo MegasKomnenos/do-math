@@ -45,6 +45,42 @@ class ResearchRepositoryTests(unittest.TestCase):
         self.assertEqual(set(result['files']),set(files))
         for name,raw in files.items():self.assertEqual((self.root/'batched'/name).read_bytes(),raw)
 
+    def test_published_artifacts_are_not_read_again_at_later_heads_only(self):
+        path, raw = "runtime/artifacts/BA-known/input.txt", b"archived input\n"
+        head, instance, runtime = self.repository.load()
+        before = head
+        written = self.repository.save_with_state(head, instance, runtime, artifacts={path: raw})[0]
+        instance["title"] = "later"
+        later = self.repository.save_with_state(written, instance, runtime)[0]
+        store = self.repository._store
+        with patch.object(store, "read_bytes", side_effect=AssertionError("Git read")), \
+                patch.object(store, "blob_sizes", wraps=store.blob_sizes) as sizes:
+            for snapshot in (written, later):
+                self.assertEqual(self.repository.read(path, snapshot), raw)
+                self.assertEqual(self.repository.blob_sizes([path], snapshot), {path: len(raw)})
+        self.assertEqual([call.args[1] for call in sizes.call_args_list], [[], []])
+        # A head that precedes the artifact still asks Git, which reports it absent.
+        self.assertEqual(self.repository.blob_sizes([path], before, missing="omit"), {})
+        with self.assertRaises(Exception):
+            self.repository.read(path, before)
+
+    def test_live_input_snapshots_stay_validated_beyond_the_read_bound(self):
+        from do_math import repository as module
+        head, instance, runtime = self.repository.load()
+        pinned = head
+        module.retain_reads(self.repository.git_dir, {pinned})
+        try:
+            for index in range(module._VALIDATED_READ_LIMIT + 2):
+                instance["title"] = f"title {index}"
+                head = self.repository.save_with_state(head, instance, runtime)[0]
+            self.assertIsNotNone(self.repository.published_state(pinned))
+            module.retain_reads(self.repository.git_dir, set())
+            instance["title"] = "released"
+            self.repository.save_with_state(head, instance, runtime)
+            self.assertIsNone(self.repository.published_state(pinned))
+        finally:
+            module.retain_reads(self.repository.git_dir, set())
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)

@@ -295,7 +295,7 @@ class HostConfigurationTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'user'):
                     host._configure_candidate(instance, runtime, {'origin': 'operator', 'config': {'host_resources': None}})
                 held = deepcopy(runtime)
-                held['executions']['EX-live'] = {'status': 'queued'}
+                held['executions']['EX-live'] = {'id': 'EX-live', 'status': 'queued'}
                 with self.assertRaisesRegex(ValueError, 'stopped'):
                     host._configure_candidate(instance, held, {'config': {'host_resources': None}})
                 removed, state = host._configure_candidate(instance, runtime, {'config': {'host_resources': None}})

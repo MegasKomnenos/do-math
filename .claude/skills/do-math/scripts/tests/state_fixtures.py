@@ -8,6 +8,7 @@ Each call creates independent state in the caller's temporary repository.
 from contextlib import contextmanager
 from copy import deepcopy
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 from do_math.engine import ResearchEngine
@@ -19,14 +20,22 @@ from do_math.repository import ResearchRepository, new_id
 ACTIVE_LEAN_COMMAND = ('synthetic-lean', 'base')
 
 
-def active_engine(repository, workspace, *, config=None, runner=None, formal_verifier=None):
+def active_engine(repository, workspace, *, config=None, runner=None, formal_verifier=None, trust_root=None,
+                  external_policy='explicit_grants', review_policy=None):
+    """``trust_root`` (default: ``workspace``) receives the synthetic toolchain files.
+
+    ``external_policy`` and ``review_policy`` go to the adoption decision, as in
+    ``research_fixtures.activate``; ``review_policy`` None adopts the default.
+    """
     from test_lifecycle_engine import FakeEngine
     from research_fixtures import FixtureAdapter
 
     workspace.mkdir(parents=True, exist_ok=True)
     with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
         seed = FakeEngine(workspace, config=config)
-        seed.activate()
+        if trust_root is not None:
+            seed.root = Path(trust_root)
+        seed.activate(external_policy=external_policy, review_policy=review_policy)
     seed.runtime.update(processed_controls=[], reservations={},
                         provider_waits={}, updated_at=seed.runtime["last_observed_utc"],
                         next_research_reconsider_at="2100-01-01T00:00:00+00:00")
@@ -36,13 +45,27 @@ def active_engine(repository, workspace, *, config=None, runner=None, formal_ver
     return ResearchEngine(repository, identifier, runner=runner, formal_verifier=formal_verifier)
 
 
+def active_instance(root, shared, *, config, external_policy='explicit_grants', review_policy=None):
+    """``restore_template`` build of the ``active_engine`` state; returns the instance ID.
+
+    The repository is ``root / 'repository'`` and the workspace ``root / 'work-0'``.
+    The synthetic toolchain goes to ``shared`` so restored copies keep its fingerprint.
+    """
+    from research_fixtures import git_init
+    repository = root / "repository"
+    git_init(repository)
+    return active_engine(repository, root / "work-0", config=config, trust_root=shared,
+                         external_policy=external_policy, review_policy=review_policy).instance["id"]
+
+
 @contextmanager
 def owner_calls(engine):
     """Run the calls started inside the block on ModelCalls, as the scheduler does.
 
     The engine has no synchronous call path: machine steps and model calls
     start on ``engine._calls``. Leaving the block answers their callbacks,
-    collects every call and resumes its continuation once.
+    receives their control transport requests (a submission intent waits for
+    its receipt), collects every call and resumes its continuation once.
     """
     from do_math.parallel import ModelCalls
     calls = engine._calls = ModelCalls(on_returned=engine._local_call_returned,
@@ -52,6 +75,9 @@ def owner_calls(engine):
         while calls.futures:
             calls.wait(0.05)
             calls.pump()
+            # The owner loop pumps the transport every pass (engine._controls).
+            if engine._transport is not None:
+                engine._transport.pump(engine._publish_control_request)
             calls.collect()
     finally:
         calls.close()

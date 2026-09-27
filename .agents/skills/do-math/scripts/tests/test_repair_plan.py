@@ -8,7 +8,6 @@ from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.repository import exact_content_hash
-from test_categories import test_group
 from do_math.engine import DEFAULT_CONFIG
 from do_math.repository import ResearchRepository
 from research_fixtures import bare_engine
@@ -16,7 +15,6 @@ from do_math import execution_profiles, reporting
 from do_math.session_slots import SessionSlots
 
 
-@test_group('unit')
 class GoalAuditFlowRepairTests(unittest.TestCase):
     def host(self):
         e = bare_engine({'id': 'IN-1', 'config': {'goal_auditors': 2}, 'goal_judgments': []},
@@ -183,7 +181,6 @@ class GoalAuditFlowRepairTests(unittest.TestCase):
         self.assertEqual(len(e.runtime['pending_events']), 1)
 
 
-@test_group('unit')
 class DispatchResourceRepairTests(unittest.TestCase):
     def state(self, **changes):
         config = {**deepcopy(DEFAULT_CONFIG), **changes}
@@ -249,7 +246,6 @@ class DispatchResourceRepairTests(unittest.TestCase):
         self.assertEqual(paused['status'], 'paused')
 
 
-@test_group('unit')
 class ReadinessCopyRepairTests(unittest.TestCase):
     def test_historical_judgment_cannot_override_changed_governance_or_sources(self):
         from test_redesign_GOVERNANCE import DomainGovernanceTests

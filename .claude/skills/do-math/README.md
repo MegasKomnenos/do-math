@@ -525,23 +525,20 @@ python .agents/skills/do-math/scripts/probe_cli.py --skill-only
 
 이 검사는 스킬 폴더 안의 문서와 코드만 읽으며 모델을 호출하지 않는다. `scope="installed_skill_structure"`, `status="verified"`는 역할 읽기 대응표의 문서와 운영 문서를 읽었고 역할 출력 스키마의 형식 검사를 통과했다는 뜻이다. 문서 내용의 정확성, 실행 환경이나 연구 성능까지 검증한 결과는 아니다.
 
-회귀 검사는 `run_tests.py`로 실행한다. 실행기는 unittest discovery로 `scripts/tests/test_*.py`를 수집하고 기본으로 전체를 순차 실행한다. 실제 Lean·부하 검사는 Windows Job이 소유한 별도 프로세스에서 실행한다. 별도 프로세스에서 실행하는 검사는 같은 클래스의 공통 준비를 한 번 수행하며, 각 검사와 그 준비·종료 단계의 제한 시간은 기본 300초다. `--timeout`으로 초 단위 상한을 바꿀 수 있다. 이 값은 테스트 실행기의 운영 기본값이며 제품 Lean의 무제한 계산 계약을 바꾸지 않는다.
+회귀 검사는 `run_tests.py`로 실행한다. 언제 어떤 범위를 돌리고 새 시험을 어떻게 쓰는지는 `scripts/tests/시험-지침.md`가 정한다. 실행기는 unittest discovery로 `scripts/tests/test_*.py`를 수집해 조각(shard) 단위로 순차 실행하며, 결과 캐시 없이 선택한 시험을 항상 실제로 실행한다. 조각과 각 조각에 속한 모듈의 정본은 `scripts/test_categories.py`의 `SHARDS`이고, 여기에 등록되지 않은 시험 모듈이 있으면 실행하지 않고 오류로 끝난다. 실제 Lean·자원 검사(`test_group('lean')`, `test_group('resource')`)는 Windows Job이 소유한 별도 프로세스에서 클래스 단위로 실행한다. 별도 프로세스의 각 검사와 그 준비·종료 단계의 제한 시간은 기본 300초이며 `--timeout`으로 바꿀 수 있다. 이 값은 테스트 실행기의 운영 기본값이며 제품 Lean의 무제한 계산 계약을 바꾸지 않는다.
 
 ```powershell
-python .agents/skills/do-math/scripts/run_tests.py --output 임시/do-math-tests-all
+python .agents/skills/do-math/scripts/run_tests.py
+python .agents/skills/do-math/scripts/run_tests.py --shard lifecycle --shard review
+python .agents/skills/do-math/scripts/run_tests.py test_git_store test_engine.EngineTests.test_crash_recovery_and_artifact_immutability
+python .agents/skills/do-math/scripts/run_tests.py --match "*performance_save*" --list
 ```
 
-`--group unit`은 순수 규칙과 임시 파일 중심의 검사, `integration`은 실제 저장·프로세스 등 통합 검사, `lean`은 실제 컴파일러 검사, `resource`는 CPU·메모리·큰 출력 부하 검사, `archive`는 과거 실행 증거의 전체 무결성 검사다. `--group`을 반복해 조합할 수 있으며 생략하면 모두 실행한다. `--match`는 테스트 ID의 glob으로 선택하고 `--list`는 수집 결과만 표시한다. 선택 결과가 없으면 실패로 끝난다.
+인자가 없으면 모든 조각을, `--shard`는 지정한 조각을, 위치 인자는 지정한 모듈·클래스·메서드를 실행한다. `--match`는 그 안에서 테스트 ID의 glob으로 거르고 `--list`는 실행하지 않고 조각 이름과 테스트 ID를 표시한다. 선택 결과가 없으면 실패로 끝난다.
 
-```powershell
-python .agents/skills/do-math/scripts/run_tests.py --group unit --output 임시/do-math-tests-unit
-python .agents/skills/do-math/scripts/run_tests.py --group lean --timeout 600 --output 임시/do-math-tests-lean
-python .agents/skills/do-math/scripts/run_tests.py --match "*test_performance_save*" --list
-```
+결과 디렉터리는 `--output`으로 새 경로나 빈 디렉터리를 지정한다. 생략하면 고유한 임시 디렉터리를 만들고 마지막 줄 `Report:`에 경로를 출력한다. `report.json`은 테스트별 결과·시간, 조각별 시간(`shard_seconds`)과 합계, 느린 검사 목록, 코드 판본과 실행 중 변경 여부를 기록한다. 실행 중 코드가 바뀌면 통과로 기록하지 않는다. 격리 실행의 stdout·stderr와 진행 기록도 남긴다. 격리 작업자의 임시 파일은 해당 결과 디렉터리의 `scratch/` 아래에 만들므로, 강제 종료로 정리되지 않은 Lean 입력·출력도 그곳에서 찾을 수 있다. 시간 초과 때에는 해당 Job의 자식까지 종료하고, 같은 작업자에서 끝내지 못한 검사는 미실행으로 기록하며 다음 검사를 계속한다. 부분 실행을 전체 통과로 표시하지 않는다. 격리하지 않는 검사에는 이 프로세스 시간 상한을 적용하지 않는다.
 
-결과 디렉터리는 새 경로나 빈 디렉터리를 지정한다. 생략하면 고유한 임시 디렉터리를 만든다. `report.json`은 테스트별 결과·시간, 느린 검사 목록, 코드 판본과 실행 중 변경 여부를 기록한다. 격리 실행의 stdout·stderr와 진행 기록도 남긴다. 격리 작업자의 임시 파일은 해당 결과 디렉터리의 `scratch/` 아래에 만들므로, 강제 종료로 정리되지 않은 Lean 입력·출력도 그곳에서 찾을 수 있다. 시간 초과 때에는 해당 Job의 자식까지 종료하고, 같은 작업자에서 끝내지 못한 검사는 미실행으로 기록하며 다른 검사 그룹을 계속한다. 부분 실행을 전체 통과로 표시하지 않는다. 일반 `integration`·`unit`·`archive` 그룹에는 이 프로세스 시간 상한을 적용하지 않는다.
-
-기존 `python -m unittest discover -s .agents/skills/do-math/scripts/tests -p "test_*.py"`도 사용할 수 있지만, 그룹 선택·시간 보고·외부 프로세스 종료 관리는 제공하지 않는다. 새 실제 Lean·부하 테스트에는 `test_categories.test_group`으로 그룹을 명시한다. 분류하지 않은 새 테스트는 보수적으로 `integration`에 들어간다. 일부 시험 파일은 직접 실행해도 시험을 시작하지 않으므로 파일별 종료 코드만으로 회귀 검사를 완료했다고 판단하지 않는다.
+`python -m unittest discover -s .agents/skills/do-math/scripts/tests -p "test_*.py"`도 사용할 수 있지만 조각 선택·시간 보고·외부 프로세스 종료 관리는 제공하지 않는다. 일부 시험 파일은 직접 실행해도 시험을 시작하지 않으므로 파일별 종료 코드만으로 회귀 검사를 완료했다고 판단하지 않는다.
 
 실제 Codex·Claude·Lean·HTTP·Windows 프로세스가 필요한 검사는 각 시험의 환경 조건과 실행 결과를 확인한다. 검증 결과는 검사한 판본, 사례, 통과·실패·미실행 범위와 함께 보존하고, 해석 기준은 [CLI 실행 계약](references/CLI-실행-계약.md)의 「검증 근거의 해석」을 따른다.
 

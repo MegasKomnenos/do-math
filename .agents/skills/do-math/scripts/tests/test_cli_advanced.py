@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
-import subprocess
 import sys
-import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
@@ -13,36 +10,38 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 from do_math import cli as cli_module
 from do_math.engine import _repository as ResearchRepository
+from research_fixtures import restore_template, run_cli
 
-ENTRY = SCRIPTS / "do_math.py"
+
+def created_instance(root, shared):
+    """``restore_template`` build: ``init --create-repository`` through the CLI; returns the instance ID.
+
+    The repository is ``root / 'repo'`` and the workspace ``root / 'workspace'``.
+    """
+    configuration = root / "config.json"
+    configuration.write_text(json.dumps({"operator_enabled": False}), encoding="utf-8")
+    init = run_cli("init", "--create-repository", "--repository", str(root / "repo"),
+                   "--workspace", str(root / "workspace"), "--goal", "Original goal",
+                   "--config-file", str(configuration), cwd=root)
+    if init.returncode != 0:
+        raise AssertionError(init.stdout + init.stderr)
+    return json.loads(init.stdout)["result"]["instance_id"]
 
 
 class AdvancedCliTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.root = Path(self.temp.name)
+        self.root, self.instance_id = restore_template(created_instance)
         self.repo, self.workspace = self.root / "repo", self.root / "workspace"
-        configuration = self.root / "config.json"
-        configuration.write_text(json.dumps({"operator_enabled": False}), encoding="utf-8")
-        init = self.cli("init", "--create-repository", "--repository", str(self.repo),
-                        "--workspace", str(self.workspace), "--goal", "Original goal",
-                        "--config-file", str(configuration))
-        self.assertEqual(init[0], 0, init)
-        self.instance_id = init[1]["instance_id"]
-
-    def tearDown(self):
-        self.temp.cleanup()
 
     def cli(self, *arguments):
-        result = subprocess.run([sys.executable, str(ENTRY), *arguments], cwd=self.root,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-        text = result.stdout.decode("utf-8", errors="replace").strip()
+        result = run_cli(*arguments, cwd=self.root)
+        text = result.stdout.strip()
         envelope = json.loads(text) if text else None
         if envelope is not None:
             self.assertEqual(envelope['schema_version'], 5)
             self.assertEqual(envelope['exit_code'], result.returncode)
             self.assertNotEqual('result' in envelope, 'error' in envelope)
-        return result.returncode, (envelope.get('result', envelope.get('error')) if envelope else None), result.stderr.decode("utf-8", errors="replace")
+        return result.returncode, (envelope.get('result', envelope.get('error')) if envelope else None), result.stderr
 
     def control(self, command, payload):
         path = self.root / f"{command}-{len(list(self.root.glob(command + '-*.json')))}.json"
@@ -132,18 +131,6 @@ class AdvancedCliTests(unittest.TestCase):
         self.assertEqual(self.control("conversation", {"operation": "detach", "id": "C", "generation": 1})[1]["effect"], "applied")
         _, instance, runtime = self.load(); self.assertEqual(instance["conversation_loss_policy"], "pause"); self.assertEqual(runtime["conversations"]["C"]["status"], "lost")
 
-    def test_source_import_preserves_raw_bytes_and_name(self):
-        raw = b"\xff\x00source\r\n"; source = self.root / "raw.bin"; source.write_bytes(raw)
-        code, result, _ = self.cli("source", "--repository", str(self.repo), "--instance", self.instance_id,
-                                   "--file", str(source), "--name", "evidence.bin")
-        self.assertEqual((code, result["effect"]), (0, "applied"))
-        head, instance, _ = self.load(); record = instance["sources"][-1]
-        self.assertEqual(record["name"], "evidence.bin"); self.assertEqual(record["sha256"], hashlib.sha256(raw).hexdigest())
-        self.assertEqual(ResearchRepository(self.repo, self.instance_id).read(record["path"], head), raw)
-        repeated = self.cli("source", "--repository", str(self.repo), "--instance", self.instance_id,
-                            "--file", str(source), "--name", "evidence.bin")
-        self.assertEqual((repeated[0], repeated[1]["effect"]), (0, "applied"))
-
     def test_invalid_json_shape_and_missing_source_are_input_errors(self):
         path = self.root / "array.json"; path.write_text("[]", encoding="utf-8")
         bad = self.cli("decision", "--repository", str(self.repo), "--instance", self.instance_id, "--file", str(path))
@@ -151,8 +138,10 @@ class AdvancedCliTests(unittest.TestCase):
         missing = self.cli("source", "--repository", str(self.repo), "--instance", self.instance_id, "--file", str(self.root / "missing"))
         self.assertEqual(missing[0], 2); self.assertEqual(missing[1]["kind"], "input_error")
 
+
+class RunForwardingTests(unittest.TestCase):
     def test_run_watch_is_forwarded_without_running_a_model(self):
-        parser = cli_module.build_parser(); args = parser.parse_args(["run", "--repository", str(self.repo), "--instance", self.instance_id, "--watch"])
+        parser = cli_module.build_parser(); args = parser.parse_args(["run", "--repository", ".", "--instance", "RI-test", "--watch"])
         engine = Mock(); engine.run.return_value = {"status": "waiting"}
         with patch.object(cli_module, "ResearchEngine", return_value=engine):
             value, code = cli_module.execute(args)

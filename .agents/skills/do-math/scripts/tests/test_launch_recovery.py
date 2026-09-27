@@ -10,10 +10,8 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.launch import ticket, termination_confirmed, validate
 from do_math.windows_job import WindowsJob, owner_identity, owner_ended
-from test_categories import test_group
 
 
-@test_group('integration')
 @unittest.skipUnless(os.name == 'nt', 'Windows launch contract')
 class LaunchRecoveryTests(unittest.TestCase):
     def test_current_owner_and_foreign_session_are_not_dead(self):

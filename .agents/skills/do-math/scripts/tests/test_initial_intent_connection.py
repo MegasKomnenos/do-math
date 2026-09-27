@@ -149,7 +149,7 @@ class InitialFailureRetryTests(unittest.TestCase):
             self.assertEqual(predecessor['status'],'ended')
             self.assertIsNone(predecessor.get('started_at'))
             failure_state=deepcopy(engine.runtime)
-            for change in ('live','source','grant','reservation'):
+            for change in ('live','source','grant','termination'):
                 with self.subTest(rejected=change):
                     engine.runtime=deepcopy(failure_state)
                     saved_instance=deepcopy(engine.instance)
@@ -160,7 +160,9 @@ class InitialFailureRetryTests(unittest.TestCase):
                     elif change=='grant':
                         engine.instance['grants']['GR-init']['status']='revoked'
                     else:
-                        engine.runtime['reservations']['RS-live']={'owner_id':predecessor['id'],'state':'held'}
+                        # Only SessionSlots.release confirms local termination, and it settles the
+                        # execution's reservations first; unconfirmed termination still holds them.
+                        engine.runtime['executions'][predecessor['id']]['capacity']['local_termination']='unknown'
                     with self.assertRaises(ValueError):
                         engine._retry_input_overflow_action({'id':'UC-negative','config':{'retry_action':aid}})
                     self.assertIn(aid,engine.runtime['waiting_actions'])

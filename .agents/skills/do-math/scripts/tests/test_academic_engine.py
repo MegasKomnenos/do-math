@@ -2,7 +2,11 @@
 
 These tests use the temporary Git repository and scripted runner from the
 purpose-engine suite.  They verify engine orchestration, not a model judgment
-or a Lean invocation.
+or a Lean invocation.  Their starting states are copies of templates built
+once per process (``research_fixtures.restore_template``): the public
+activation, the state after the real mathematical solution (``solved_instance``)
+and a synthetic solved premise with published requirements
+(``requirement_change_instance``).
 """
 from __future__ import annotations
 
@@ -16,11 +20,16 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from do_math.engine import control
+from do_math.engine import ResearchEngine, control
 from do_math import external as external_module
 from do_math.repository import canonical_json
-from research_fixtures import charter_change, policy_change, send_control, assessment
-from test_purpose_engine import PurposeHarness, PurposeRunner
+from research_fixtures import charter_change, policy_change, send_control, assessment, restore_template
+from test_purpose_engine import GOAL, ActivatedPurposeHarness, PurposeHarness, PurposeRunner, formal_fixture
+
+# The mathematical premise of the synthetic requirement-change states.
+SYNTHETIC_BASIS = {"goal_ref": "synthetic-solution", "records": []}
+# The requirement approved before the real solution; test_model_assessment_flow shares this solved state.
+SOLVED_REQUIREMENT_CRITERIA = ["draft account", "cite reviewed equality"]
 
 
 def requirement(criteria: list[str], *, required_inputs=None, external_effects=None) -> dict:
@@ -71,7 +80,71 @@ class AcademicRunner(PurposeRunner):
         return super().answer(role, context, workspace)
 
 
-class AcademicEngineTests(PurposeHarness):
+def academic_tasks(engine):
+    return [task for task in engine.runtime["tasks"].values() if task.get("academic_requirement_id") == "writeup"]
+
+
+def drive_to(engine, predicate, limit=45):
+    """``PurposeHarness.drive`` for a template build, which has no test case to fail."""
+    for _ in range(limit):
+        engine.run(max_steps=1)
+        if predicate(engine):
+            return
+        if engine.runtime["status"] in {"paused", "closed", "waiting"}:
+            raise AssertionError("Workflow stopped before its fixture outcome: " + repr(engine.status()))
+    raise AssertionError("Fixture did not finish within its bounded scenario: " + repr(engine.status()))
+
+
+def solved_instance(root, shared, *, criteria):
+    """``restore_template`` build: public activation, then the real mathematical solution.
+
+    This is ``PurposeHarness.make`` followed by ``drive`` to ``mathematically_solved``.
+    ``criteria`` None solves without academic requirements, so the runtime completes.
+    A list approves requirement ``writeup`` with those criteria first, so the
+    solution generates its academic task through the real path and the runtime
+    stays open. ``AcademicRunner`` answers like ``PurposeRunner`` until an
+    academic task or an academic rejection exists.
+    """
+    from research_fixtures import FixtureAdapter, activated_instance
+    instance_id = activated_instance(root, shared, goal=GOAL, config=PurposeHarness.fixture_config())
+    engine = ResearchEngine(root / "repository", instance_id, runner=AcademicRunner(), formal_verifier=formal_fixture)
+    with patch("do_math.initialization.adapter_for", side_effect=lambda profile: FixtureAdapter()):
+        if criteria is not None:
+            send_control(engine, "decision", config={"change": charter_change(engine,
+                academic_requirements=[requirement(criteria)])})
+        drive_to(engine, lambda current: current.instance["goal_status"] == "mathematically_solved")
+    return instance_id
+
+
+def requirement_change_instance(root, shared, *, completed):
+    """``restore_template`` build: synthetic active state, solved premise, published requirement ``writeup``.
+
+    Mathematical proof construction is covered by ``solved_instance``. Only that
+    premise is synthetic (``_solution_basis`` returns ``SYNTHETIC_BASIS``, a
+    process-local patch each test sets again on its engine); controls, followup
+    and storage are real. ``completed`` adds requirement ``remaining``, which
+    keeps the instance open for public requirement changes, and completes the
+    ``writeup`` task through the real assessment rules.
+    """
+    from state_fixtures import active_instance, complete_academic_task
+    instance_id = active_instance(root, shared, config={})
+    engine = ResearchEngine(root / "repository", instance_id)
+    with patch.object(engine, "_solution_basis", return_value=SYNTHETIC_BASIS):
+        engine.instance["goal_status"] = "mathematically_solved"
+        engine._save()
+        requirements = [requirement(["draft account"])]
+        if completed:
+            requirements.append({**requirement(["Independent remaining account"]), "id": "remaining"})
+        send_control(engine, "decision", config={"change": charter_change(engine,
+            academic_requirements=requirements)})
+        engine._ensure_academic_followup()
+        engine._save()
+        if completed:
+            complete_academic_task(engine, academic_tasks(engine)[0], SYNTHETIC_BASIS)
+    return instance_id
+
+
+class AcademicEngineTests(ActivatedPurposeHarness):
     def make(self, *args, **kwargs):
         kwargs.setdefault('plan_settle_seconds', 1)  # This suite tests academic obligations, not review batching latency.
         engine, _ = super().make(*args, **kwargs)
@@ -80,35 +153,23 @@ class AcademicEngineTests(PurposeHarness):
         self.runners[-1] = runner
         return engine, runner
 
+    def restore(self, build, **parameters):
+        """A copy of ``build``'s template, opened by a new engine with a new ``AcademicRunner``."""
+        self.root, instance_id = restore_template(build, **parameters)
+        return self._engine(instance_id, AcademicRunner(**getattr(self, "runner_options", {})))
+
     def _set_requirements(self, engine, criteria, decision_id, **extra):
         send_control(engine, "decision", config={"change": charter_change(engine, academic_requirements=[requirement(criteria, **extra)])})
 
     def _academic_tasks(self, engine):
-        return [task for task in engine.runtime["tasks"].values() if task.get("academic_requirement_id") == "writeup"]
+        return academic_tasks(engine)
 
     def _requirement_change_fixture(self, *, completed=False):
-        from state_fixtures import active_engine, complete_academic_task
-        engine = active_engine(self.repo, self.root / "academic-change")
-        self.engines.append(engine)
-        # Mathematical proof construction is covered by the end-to-end test.
-        # Only that premise is synthetic; controls, followup and storage are real.
-        basis = {"goal_ref": "synthetic-solution", "records": []}
-        self.enterContext(patch.object(engine, "_solution_basis", return_value=basis))
-        engine.instance["goal_status"] = "mathematically_solved"
-        engine._save()
-        requirements = [requirement(["draft account"])]
+        engine, _ = self.restore(requirement_change_instance, completed=completed)
+        self.enterContext(patch.object(engine, "_solution_basis", return_value=SYNTHETIC_BASIS))
         if completed:
-            # The whole instance must remain open for public requirement changes.
-            requirements.append({**requirement(["Independent remaining account"]), "id": "remaining"})
-        send_control(engine, "decision", config={"change": charter_change(engine,
-            academic_requirements=requirements)})
-        engine._ensure_academic_followup()
-        engine._save()
-        if completed:
-            complete_academic_task(engine, self._academic_tasks(engine)[0], basis)
             self.assertEqual(engine.runtime["status"], "ready")
             self.assertTrue(self._academic_tasks(engine)[0]["assessment"]["current"])
-        engine.head, engine.instance, engine.runtime = engine.store.load()
         return engine
 
     def _publish_followup(self, engine):
@@ -117,10 +178,8 @@ class AcademicEngineTests(PurposeHarness):
         engine.head, engine.instance, engine.runtime = engine.store.load()
 
     def test_explicit_requirement_blocks_runtime_completion_until_independent_assessment(self):
-        engine, runner = self.make()
-        self._set_requirements(engine, ["draft account", "cite reviewed equality"], "academic-v1")
-
-        self.drive(engine, predicate=lambda current: current.instance["goal_status"] == "mathematically_solved")
+        # The template approves the requirement, then drives the real solution to mathematically_solved.
+        engine, runner = self.restore(solved_instance, criteria=SOLVED_REQUIREMENT_CRITERIA)
         tasks = self._academic_tasks(engine)
         self.assertEqual(len(tasks), 1)
         task = tasks[0]
@@ -235,8 +294,7 @@ class AcademicEngineTests(PurposeHarness):
         self.assertEqual(engine.store.load()[2]["tasks"], before)
 
     def test_external_rejection_keeps_formal_solution_and_requires_planner_evidence_to_clear(self):
-        engine, _ = self.make()
-        self.drive(engine)
+        engine, _ = self.restore(solved_instance, criteria=None)  # The real solution; the runtime completed.
         knowledge = next(iter(engine.instance["knowledge"].values()))
         formal_before = deepcopy(engine.instance["formal_results"][knowledge["formal_result_id"]])
         self.assertEqual(engine.runtime["status"], "completed")
@@ -391,8 +449,8 @@ class AcademicEngineTests(PurposeHarness):
 
 class AcademicTaskPersistenceTests(unittest.TestCase):
     def setUp(self):
-        from test_input_recovery import InputRecoveryPublicTests
-        InputRecoveryPublicTests.setUp(self)
+        from test_approved_five_repairs import restore_input_recovery_state
+        restore_input_recovery_state(self)
 
     def test_user_requirement_task_keeps_charter_provenance_without_invented_execution(self):
         from do_math.engine import ResearchEngine

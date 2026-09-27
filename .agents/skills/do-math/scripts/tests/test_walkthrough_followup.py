@@ -18,14 +18,12 @@ from do_math import activities, contracts, governance, integration, knowledge_io
 from do_math.engine import ResearchEngine, control, now
 from do_math.repository import new_id
 from state_fixtures import owner_calls, start_model_call
-from test_categories import test_group
 from test_knowledge import candidate
-from test_purpose_engine import ActiveStateHarness, theorem
+from test_purpose_engine import ActivatedPurposeHarness, theorem
 import test_redesign_ENGINE
 from test_redesign_ENGINE import routing_engine
 
 
-@test_group('unit')
 class RepetitionReceiptTests(unittest.TestCase):
     def test_dependency_impact_keeps_execution_and_activity_receipts_unchanged(self):
         from do_math import knowledge
@@ -216,9 +214,9 @@ class RepetitionReceiptTests(unittest.TestCase):
         self.assertEqual([a['role'] for a in runtime['queue']], ['formal_check'])
 
 
-class WalkthroughEngineTests(ActiveStateHarness):
+class WalkthroughEngineTests(ActivatedPurposeHarness):
     def test_failed_review_slot_keeps_its_live_sibling_running(self):
-        engine, runner = self.make()
+        engine, runner = self.make_active()
         engine.runtime['queue'] = []
         engine._knowledge_io_control({'action': 'knowledge', 'id': new_id('UC'),
             'config': {'operation': 'import', 'candidate': theorem()}})
@@ -267,7 +265,7 @@ class WalkthroughEngineTests(ActiveStateHarness):
 
     def test_empty_preparation_preserves_machine_time_and_opens_one_due_regeneration(self):
         from test_engine import ScriptedRunner
-        engine, _ = self.make()
+        engine, _ = self.make_active()
         engine.runtime['queue'] = []
         engine._enqueue('research_preparation', reason='No usable candidate in this fixture')
         engine.runner = ScriptedRunner(preparation_candidates=[])
@@ -292,7 +290,7 @@ class WalkthroughEngineTests(ActiveStateHarness):
         from test_native_final_submission import native_result
         from do_math.repository import canonical_json
         from do_math.execution_lifecycle import transition_execution
-        engine, _ = self.make(selection_failure_limit=3)
+        engine, _ = self.make_active(selection_failure_limit=3)
         engine.runtime['queue'] = []
         for index, (raw, expected) in enumerate(((b'{broken', 'output_parse'),
                 (b'{"summary":"Missing plan fields"}', 'output_schema'),
@@ -352,7 +350,7 @@ class WalkthroughEngineTests(ActiveStateHarness):
         return execution
 
     def test_public_continue_releases_exact_hold_and_replay_is_idempotent(self):
-        engine, _ = self.make(selection_failure_limit=1)
+        engine, _ = self.make_active(selection_failure_limit=1)
         target = self.seed_plan(engine)
         action = activities.continue_activity(engine.runtime, target['id'], at=now(), reason='Retry held plan')
         lineage = action['repetition_bases']['selection_failure']
@@ -376,7 +374,7 @@ class WalkthroughEngineTests(ActiveStateHarness):
             governance.apply_decision(engine.instance, engine.runtime, stale, source_ref=stored['source_ref'])
 
     def test_operational_retry_is_idempotent_and_waits_for_user_at_the_limit(self):
-        engine, _ = self.make(selection_failure_limit=1)
+        engine, _ = self.make_active(selection_failure_limit=1)
         target = self.seed_plan(engine)
         lineage = target['action']['repetition_bases']['selection_failure']
         revisions.record_repetition(engine.instance, engine.runtime, lineage='selection_failure',
@@ -437,7 +435,7 @@ class WalkthroughEngineTests(ActiveStateHarness):
         self.assertFalse(any(r.get('kind') == 'repetition_repair_authorized' for r in engine.runtime['history']))
 
     def test_review_materialization_failure_ends_preparation_and_saves_recovery(self):
-        engine, _ = self.make()
+        engine, _ = self.make_active()
         engine.runtime['queue'] = []
         engine._knowledge_io_control({'action': 'knowledge', 'id': new_id('UC'),
             'config': {'operation': 'import', 'candidate': theorem()}})

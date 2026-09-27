@@ -10,10 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import activities, retention
 from do_math.repository import ResearchRepository
 from research_fixtures import bare_engine
-from test_categories import test_group
 
 
-@test_group('unit')
 class CompletionSettlementTests(unittest.TestCase):
     def engine(self):
         engine = bare_engine()
@@ -124,7 +122,6 @@ class CompletionSettlementTests(unittest.TestCase):
                     engine._save.assert_called_once()
 
 
-@test_group('unit')
 class CleanupInterruptionTests(unittest.TestCase):
     def test_later_exact_deletion_resolves_an_interrupted_attempt(self):
         runtime = {'history': []}

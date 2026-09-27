@@ -13,7 +13,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.file_io import json_digest
 from do_math.observations import _raw_json
 from do_math.repository import canonical_json, exact_content_hash
-from test_categories import test_group
 
 
 # State-tree values: strings, safe integers, nesting and empty values only.
@@ -64,7 +63,6 @@ def old_rules_digest(rules):
     return hashlib.sha256(json.dumps(rules, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
 
-@test_group('unit')
 class DigestCharacterizationTests(unittest.TestCase):
     def test_state_value_identity_matches_removed_helpers(self):
         for value in STATE_VALUES:

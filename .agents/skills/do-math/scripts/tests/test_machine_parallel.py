@@ -83,7 +83,6 @@ class Host(FakeEngine):
         return {'id': new_id('AC'), 'role': 'formal_check', 'target': kid}
 
 
-@test_group('unit')
 class MachineSchedulerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -208,7 +207,6 @@ class MachineSchedulerTests(unittest.TestCase):
     def test_trust_revoked_authority_rejects_late_result(self):
         self.run_case(trust=True, cancel='revoke')
 
-    @test_group('integration')
     def test_machine_artifacts_publish_to_real_immutable_git_bundles(self):
         import subprocess
         from do_math.git_store import GitStateStore
@@ -321,7 +319,7 @@ class MachineSchedulerTests(unittest.TestCase):
 
 @test_group('resource')
 class CallManagerTests(unittest.TestCase):
-    @test_group('unit')
+    @test_group('in_process')
     def test_collection_releases_finished_threads_but_retains_a_live_call(self):
         calls = ModelCalls()
         release = threading.Event()
@@ -361,7 +359,7 @@ class CallManagerTests(unittest.TestCase):
         self.assertEqual(calls.threads, [])
         self.assertEqual(calls.futures, {})
 
-    @test_group('unit')
+    @test_group('in_process')
     def test_admission_transition_preserves_native_utc_precision(self):
         from datetime import datetime, timezone
         from do_math.execution_lifecycle import create_execution
@@ -406,7 +404,7 @@ class CallManagerTests(unittest.TestCase):
         self.assertTrue(any(r.get('status') == 'failed' for r in seen))
         self.assertFalse(any(t.is_alive() for t in calls.threads))
 
-    @test_group('unit')
+    @test_group('in_process')
     def test_owner_wait_wakes_on_a_returned_call_not_its_bound(self):
         calls = ModelCalls()
         def continuation():
@@ -424,7 +422,7 @@ class CallManagerTests(unittest.TestCase):
         self.assertGreaterEqual(time.monotonic() - started, .15, 'nothing pending: the bound paces the owner')
         calls.close()
 
-    @test_group('unit')
+    @test_group('in_process')
     def test_stop_flag_reads_never_wait_for_the_owner(self):
         calls = ModelCalls()
         judged = []
@@ -445,7 +443,7 @@ class CallManagerTests(unittest.TestCase):
         self.assertEqual(judged, ['judged'], 'the judgment runs on the owner, once at start')
         calls.close()
 
-    @test_group('unit')
+    @test_group('in_process')
     def test_owner_judgment_sets_the_flag_once_and_stops_the_calculation(self):
         calls = ModelCalls()
         owner = threading.get_ident()
@@ -474,7 +472,7 @@ class CallManagerTests(unittest.TestCase):
         self.assertEqual(judgments, [False, False, True])
         calls.close()
 
-    @test_group('unit')
+    @test_group('in_process')
     def test_failed_judgment_fails_only_its_own_call(self):
         calls = ModelCalls()
         returned = []
@@ -501,7 +499,7 @@ class CallManagerTests(unittest.TestCase):
         self.assertIn('stop judgment failed: KeyError', returned[0]['error'])
         calls.close()
 
-    @test_group('unit')
+    @test_group('in_process')
     def test_observations_queue_without_waiting_and_apply_before_collection(self):
         failures, applied, order = [], [], []
         calls = ModelCalls(on_observation_error=lambda eid, error: failures.append((eid, str(error))))
@@ -536,6 +534,38 @@ class CallManagerTests(unittest.TestCase):
             calls.collect(); time.sleep(.01)
         self.assertEqual(failures, [('EX-failed-observation', 'unapplied observation')])
         self.assertEqual(order[-1], ('collected', {'status': 'stopped'}))
+        calls.close()
+
+    @test_group('in_process')
+    def test_one_pump_applies_only_the_rows_queued_before_it(self):
+        # A call producing faster than the owner applies must not hold the owner
+        # inside one pump (dispatch, live reviews, controls); the rest waits a pass.
+        calls = ModelCalls()
+        release, applied, emit = threading.Event(), [], []
+        def continuation():
+            applied.append(('collected', (yield)))
+        generator = continuation(); next(generator)
+        def observe(item):
+            applied.append(item)
+            if not release.is_set() and item < 50:
+                emit[0](item + 2)  # The call keeps producing while the owner applies.
+        def produce(on_observation, should_stop):
+            emit.append(on_observation)
+            on_observation(0); on_observation(1)
+            release.wait(5)
+            return {'status': 'completed'}
+        future = calls.start_call(generator, produce, {'on_observation': observe, 'should_stop': lambda: False},
+                                  execution_id='EX-streaming')
+        until = time.monotonic() + 5
+        while len(future.observations) < 2 and time.monotonic() < until:
+            time.sleep(.01)
+        calls.pump()
+        self.assertEqual(applied, [0, 1])
+        self.assertEqual([args for _, args in future.observations], [(2,), (3,)])
+        release.set()
+        future.result(timeout=5)
+        self.assertEqual(calls.collect(), 1)
+        self.assertEqual(applied, [0, 1, 2, 3, ('collected', {'status': 'completed'})])
         calls.close()
 
     @unittest.skipUnless(os.name == 'nt', 'Windows Job required')

@@ -12,7 +12,6 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 from do_math.repository import exact_content_hash
 import check_coverage
-from test_categories import test_group as category
 from do_math import contracts, execution_profiles, governance, knowledge, knowledge_io, knowledge_records as kr, planning
 from do_math.engine import DEFAULT_CONFIG
 from do_math.task_scope import apply_task_dispositions
@@ -298,7 +297,6 @@ class TraceabilityCheckerTests(unittest.TestCase):
         errors = check_coverage.validate_data(trace, self.source, ROOT, SOURCE)
         self.assertTrue(any(expected in error for error in errors), errors)
 
-    @category('archive')
     def test_full_trace_is_structurally_valid_not_an_execution_pass(self):
         self.assertEqual(check_coverage.validate(TRACE, SOURCE, ROOT), [])
 

@@ -8,10 +8,8 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math.file_io import atomic_replace, cached_sha256, fingerprint_settled, file_fingerprint, read_bytes_shared, shared_reader, write_bytes_atomic
 from do_math.repository import VERIFIED_ARTIFACTS, artifact_verified, verify_artifact
 import hashlib, os, time
-from test_categories import test_group
 
 
-@test_group('unit')
 class MetadataPublicationTests(unittest.TestCase):
     def test_reader_keeps_one_version_without_blocking_atomic_replacement(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -61,7 +59,6 @@ class MetadataPublicationTests(unittest.TestCase):
                              {'a','다른이름🌐.json','long-name-'*10+'.json'})
 
 
-@test_group('unit')
 class FingerprintTests(unittest.TestCase):
     def test_fingerprint_change_alone_triggers_rehash(self):
         with tempfile.TemporaryDirectory() as directory, patch('do_math.file_io.RACY_NS',0):

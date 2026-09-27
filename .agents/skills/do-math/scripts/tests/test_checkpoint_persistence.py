@@ -8,7 +8,6 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from test_categories import test_group
 import test_currentness_recovery as currentness_fixtures
 from research_fixtures import local_job_runner, dispatched_launch
 from do_math.observation_transport import ObservationBatch
@@ -20,7 +19,6 @@ CHECKPOINT = {'current_claim': 'original evidence', 'evidence_paths': ['proof.tx
     'next_step': 'continue', 'progress_state': 'working'}
 
 
-@test_group('unit')
 class FinalCheckpointCaptureTests(unittest.TestCase):
     def test_final_capture_owns_exact_raw_and_input_evidence_independently_of_submission_outputs(self):
         from do_math.observations import preserve_checkpoint
@@ -68,7 +66,6 @@ class FinalCheckpointCaptureTests(unittest.TestCase):
             self.assertEqual(artifacts, {})
 
 
-@test_group('integration')
 class CheckpointPersistenceTests(unittest.TestCase):
     def setUp(self):
         self.fixture = currentness_fixtures.CurrentnessTests()

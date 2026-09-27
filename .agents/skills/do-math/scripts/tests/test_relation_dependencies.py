@@ -4,13 +4,11 @@ from pathlib import Path
 import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from test_categories import test_group
 from do_math import planning, questions, revisions, task_scope, submission
 import test_query_records as query_fixtures
 from test_redesign_TASKS import approved_fixture, approve
 
 
-@test_group('integration')
 class RelationReadTests(unittest.TestCase):
     def test_indirect_endpoints_obey_both_revision_directions_and_question_gates(self):
         fixture = query_fixtures.QueryRecordTests(); fixture.setUp()
@@ -43,7 +41,6 @@ class RelationReadTests(unittest.TestCase):
         self.assertEqual(questions.user_waits(reader, instance, runtime), [])
 
 
-@test_group('unit')
 class RelationEvidenceTests(unittest.TestCase):
     def test_impact_analysis_does_not_turn_evidence_file_locators_into_record_dependencies(self):
         from do_math.knowledge import plan_impact
