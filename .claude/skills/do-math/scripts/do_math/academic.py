@@ -2,45 +2,32 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from functools import lru_cache
 import hashlib
-from typing import Any
 
-from .file_io import json_digest
+from .repository import exact_content_hash
+from .file_io import distinct_texts
 
 
-def _strings(value: Any, label: str) -> list[str]:
-    if not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value) or len(value) != len(set(value)):
-        raise ValueError(f"{label} must contain distinct nonempty references")
-    return list(value)
+@lru_cache(maxsize=None)
+def _requirement_checker():
+    """The checker of the stored requirement shape, built once; the schema is a constant."""
+    from jsonschema import Draft202012Validator
+    from .record_schemas.schemas import ACADEMIC_REQUIREMENT
+    return Draft202012Validator(ACADEMIC_REQUIREMENT)
 
 
 def _requirement(value: dict) -> dict:
-    if set(value) - {"id", "scope", "assessor", "criteria", "required_inputs", "external_effects"}:
-        raise ValueError("unsupported academic requirement fields")
-    if not all(isinstance(value.get(key), str) and value[key].strip() for key in ("id", "scope")):
-        raise ValueError("invalid academic requirement")
-    if value.get("assessor") != "research_plan":
-        raise ValueError("academic requirement assessor must be research_plan")
-    criteria = _strings(value.get("criteria"), "academic criteria")
-    if not criteria: raise ValueError("academic criteria must not be empty")
-    effects = value.get("external_effects", [])
-    if not isinstance(effects, list):
-        raise ValueError("academic external_effects must be a list")
-    normalized_effects = []
-    for effect in effects:
-        if isinstance(effect, dict) and set(effect) - {"id", "scope", "grant_id"}:
-            raise ValueError("unsupported academic external effect fields")
-        if not isinstance(effect, dict) or not all(isinstance(effect.get(key), str) and effect[key].strip() for key in ("id", "scope")):
-            raise ValueError("invalid academic external effect")
-        grant_id = effect.get("grant_id")
-        if grant_id is not None and (not isinstance(grant_id, str) or not grant_id.strip()):
-            raise ValueError("academic external effect grant_id must be a nonempty string or null")
-        normalized_effects.append({"id": effect["id"], "scope": effect["scope"], "grant_id": grant_id})
-    if len({effect["id"] for effect in normalized_effects}) != len(normalized_effects):
+    """The stored shape (record_schemas), then distinct effect IDs and the defaults."""
+    from .state_contract import validate_record
+    validate_record(_requirement_checker(), value, "academic requirement")
+    effects = [{"id": effect["id"], "scope": effect["scope"], "grant_id": effect.get("grant_id")}
+               for effect in value.get("external_effects", [])]
+    if len({effect["id"] for effect in effects}) != len(effects):
         raise ValueError("academic external effects need distinct IDs")
-    return {"id": value["id"], "scope": value["scope"], "criteria": criteria,
-            "assessor": "research_plan", "required_inputs": _strings(value.get("required_inputs", []), "academic required_inputs"),
-            "external_effects": normalized_effects}
+    return {"id": value["id"], "scope": value["scope"], "criteria": list(value["criteria"]),
+            "assessor": "research_plan", "required_inputs": list(value.get("required_inputs", [])),
+            "external_effects": effects}
 
 
 def requirement_record(requirements: list[dict]) -> dict:
@@ -51,13 +38,59 @@ def requirement_record(requirements: list[dict]) -> dict:
     if len({item["id"] for item in items}) != len(items):
         raise ValueError("requirements need distinct IDs")
     record = {"items": items}
-    return {**record, "sha256": json_digest(record)}
+    return {**record, "sha256": exact_content_hash(record)}
 
 
 def solution_basis(goal_ref: str, records: list[dict]) -> dict:
     if not isinstance(goal_ref, str) or not goal_ref or not records:
         raise ValueError("solution basis needs goal and records")
-    return {"goal_ref": goal_ref, "records": [{"id": record["id"], "sha256": json_digest(record)} for record in records]}
+    return {"goal_ref": goal_ref, "records": [{"id": record["id"], "sha256": exact_content_hash(record)} for record in records]}
+
+
+def current_solution_basis(instance, runtime):
+    """The current goal judgments' solution basis, or None when the goal is not currently solved.
+
+    A pure function of state: the engine, the status report and the state checks share it.
+    governance and the knowledge modules import this module, so they are read on first use."""
+    if instance.get("goal_status") != "mathematically_solved":
+        return None
+    group = instance.get("goal_assessment_basis")
+    judgments = [j for j in instance.get("goal_judgments", []) if j.get("basis") == group]
+    if not judgments or any(not j.get("current", True) for j in judgments):
+        return None
+    from . import knowledge
+    if any(not knowledge.validate_basis(j.get("record_basis", []), instance, runtime)["valid"] for j in judgments):
+        return None
+    ids = sorted({ref for j in judgments for ref in j.get("dependencies", []) if ref in instance["knowledge"]})
+    from .knowledge_records import usable_links, all_records
+    if not ids or any(not usable_links(instance, kid) for kid in ids):
+        return None
+    support = all_records(instance)
+    pending, visited, support_ids = list(ids), set(), set()
+    while pending:
+        kid = pending.pop()
+        if kid in visited:
+            continue
+        visited.add(kid)
+        record = instance["knowledge"][kid]
+        support_ids.add(record["kind_definition_id"])
+        pending.extend(record.get("dependencies", []))
+        for link in usable_links(instance, kid):
+            support_ids.update(link.values())
+    for ref in list(support_ids):
+        env = support.get(ref, {}).get("trust_environment_id")
+        if env:
+            support_ids.add(env)
+    records = [support[ref] for ref in sorted(visited | support_ids)]
+    records += [{"id": j["execution_id"], **j} for j in judgments]
+    from .governance import governance_view
+    charter = governance_view(instance).get("charter")
+    goal_ref = (exact_content_hash({"content": {key: value for key, value in charter["content"].items()
+                                              if key != "academic_requirements"}, "document": charter.get("document")})
+                if charter else str(instance.get("goal_revision", 1)))
+    # Academic requirements have their own edition binding; changing them
+    # alone cannot retroactively change the mathematical solution evidence.
+    return solution_basis(goal_ref + ":" + str(group), records)
 
 
 def criterion_obligations(task_id, requirement):
@@ -71,7 +104,7 @@ def assessment_current(instance, runtime, record):
     task = runtime.get("tasks", {}).get(record.get("task_id"), {})
     from .task_scope import assessment_current as task_assessment_current
     applied = task.get("assessment", {})
-    return (record.get("task_assessment_sha256") == json_digest(applied)
+    return (record.get("task_assessment_sha256") == exact_content_hash(applied)
             and applied.get("execution_id") == record.get("execution_id")
             and task_assessment_current(task, instance, runtime))
 
@@ -172,7 +205,7 @@ def evidence_record(instance, runtime, identifier, resolve_evidence=None):
 
 
 def _evidence_hash(value):
-    return hashlib.sha256(value).hexdigest() if isinstance(value, bytes) else json_digest(value)
+    return hashlib.sha256(value).hexdigest() if isinstance(value, bytes) else exact_content_hash(value)
 
 
 def record_resolution(instance, runtime, basis, resolution, *, execution_id, resolve_evidence=None):
@@ -183,14 +216,14 @@ def record_resolution(instance, runtime, basis, resolution, *, execution_id, res
     if execution.get("role") != "research_plan" or execution.get("input_solution_basis") != basis: raise ValueError("planner execution lacks current solution input")
     if resolution.get("decision") not in {"resolved", "unresolved"} or not isinstance(resolution.get("evidence"), str) or not resolution["evidence"].strip():
         raise ValueError("resolution requires verdict and actual assessment")
-    refs = _strings(resolution.get("evidence_refs"), "resolution evidence refs")
+    refs = distinct_texts(resolution.get("evidence_refs"), "resolution evidence refs")
     if not refs: raise ValueError("resolution needs resolvable evidence")
-    record = {"rejection_id": rejection["id"], "rejection_sha256": json_digest(rejection), "solution_basis": deepcopy(basis),
+    record = {"rejection_id": rejection["id"], "rejection_sha256": exact_content_hash(rejection), "solution_basis": deepcopy(basis),
               "requirements_sha256": current_requirements(instance).get("sha256"), "execution_id": execution_id,
               "decision": resolution["decision"], "evidence": resolution["evidence"],
               "evidence_refs": refs, "evidence_hashes": {ref:_evidence_hash(evidence_record(instance, runtime, ref, resolve_evidence)) for ref in refs}}
-    record["id"] = "AR-" + json_digest(record)[:24]
-    record["sha256"] = json_digest(record)
+    record["id"] = "AR-" + exact_content_hash(record)[:24]
+    record["sha256"] = exact_content_hash(record)
     records = runtime.setdefault("academic_resolution_records", [])
     if not any(r.get("id") == record["id"] for r in records): records.append(record)
     return deepcopy(record)
@@ -204,9 +237,9 @@ def unresolved_rejections(instance, runtime, basis, *, resolve_evidence=None):
         record = matches[-1] if matches else {}
         try:
             valid = (bool(record) and record.get("decision") == "resolved" and record.get("solution_basis") == basis
-                     and record.get("rejection_sha256") == json_digest(rejection)
+                     and record.get("rejection_sha256") == exact_content_hash(rejection)
                      and record.get("requirements_sha256") == current_requirements(instance).get("sha256")
-                     and record.get("sha256") == json_digest({k:v for k,v in record.items() if k != "sha256"})
+                     and record.get("sha256") == exact_content_hash({k:v for k,v in record.items() if k != "sha256"})
                      and runtime.get("executions", {}).get(record.get("execution_id"), {}).get("input_solution_basis") == basis
                      and bool(record.get("evidence_refs"))
                      and all(_evidence_hash(evidence_record(instance, runtime, ref, resolve_evidence)) == record["evidence_hashes"][ref] for ref in record["evidence_refs"]))

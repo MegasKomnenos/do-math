@@ -18,7 +18,8 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 from .repository import exact_content_hash
-from .file_io import fingerprint_json, sha256_file, stat_fingerprint
+from .file_io import fingerprint_json, os_lock, sha256_file, stat_fingerprint
+from .trust_validation import RECORD_ID_PATTERN
 
 SMOKE = 'import Mathlib\nexample (n : Nat) : n + 0 = n := by rfl\nexample : (2 : ℝ) + 2 = 4 := by norm_num\n'
 CORE_SMOKE = 'example (n : Nat) : n + 0 = n := by rfl\nexample : True := True.intro\n'
@@ -53,7 +54,7 @@ RECORD_SCHEMA = {'type': 'object', 'additionalProperties': False,
     'required': ['schema', 'id', 'identity', 'identity_sha256', 'baselines', 'checks'],
     'properties': {
         'schema': {'const': SCHEMA},
-        'id': {'type': 'string', 'pattern': '^TC-[0-9a-f]{64}$'},
+        'id': {'type': 'string', 'pattern': RECORD_ID_PATTERN},
         'identity': {'type': 'object'},
         'identity_sha256': _HASH,
         'baselines': {'type': 'array', 'minItems': 1, 'items': _BASELINE},
@@ -144,6 +145,11 @@ def new_baseline(fingerprint, content, validation):
             'validation': validation, 'validation_sha256': validation_sha256(validation)}
 
 
+def record_path(directory, record_id):
+    """The file of one toolchain record: <record ID>.json in its records directory."""
+    return Path(directory) / (record_id + '.json')
+
+
 def record_id(identity, content_sha256):
     return 'TC-' + exact_content_hash({'identity_sha256': exact_content_hash(identity), 'content_sha256': content_sha256})
 
@@ -209,27 +215,21 @@ def write_record(path, record):
 
 @contextmanager
 def writer_lock(directory):
-    """Exclude other record writers; a lock left by a killed writer is removed by hand."""
+    """Exclude other record writers with the OS lock of ``directory/.lock``; ``OSError`` while another holds it.
+
+    The OS releases the lock when its holder ends, so a killed writer leaves nothing to remove.
+    """
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
-    lock = directory / '.lock'
-    try:
-        with lock.open('x', encoding='utf-8') as stream:
-            stream.write(str(os.getpid()))
-    except FileExistsError:
-        raise RuntimeError('another toolchain record writer holds ' + str(lock)
-                           + '; remove it only after confirming no setup_lean.py is running') from None
-    try:
+    with os_lock(directory / '.lock', blocking=False):
         yield
-    finally:
-        lock.unlink()
 
 
 def records_for(directory, identity):
     """Record files in a records directory that describe exactly this identity."""
     wanted = exact_content_hash(identity)
     found = []
-    for path in sorted(Path(directory).glob('TC-*.json')):
+    for path in sorted(Path(directory).glob(record_path('', 'TC-*').name)):
         record = read_record(path)
         if record['identity_sha256'] == wanted:
             found.append((path, record))

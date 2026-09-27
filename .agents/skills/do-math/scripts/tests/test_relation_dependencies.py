@@ -5,24 +5,23 @@ import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import planning, questions, revisions, task_scope, submission
-import test_query_records as query_fixtures
-from test_redesign_TASKS import approved_fixture, approve
+from engine_fixtures import start_query_repository
+from record_fixtures import approved_task, approve_task
 
 
 class RelationReadTests(unittest.TestCase):
     def test_indirect_endpoints_obey_both_revision_directions_and_question_gates(self):
-        fixture = query_fixtures.QueryRecordTests(); fixture.setUp()
-        self.addCleanup(fixture.tearDown)
-        _, stored, _ = fixture.repository.load(fixture.old_head)
-        task, instance, runtime = approved_fixture()
+        start_query_repository(self)
+        _, stored, _ = self.repository.load(self.old_head)
+        task, instance, runtime = approved_task()
         for family in ('knowledge', 'formal_results', 'expositions', 'identity_assessments',
                        'assessment_uses', 'kind_definitions', 'relations'):
             instance[family] = deepcopy(stored[family])
-        task['inputs'].append(fixture.relation_id)
-        approve(task, instance, runtime)
+        task['inputs'].append(self.relation_id)
+        approve_task(task, instance, runtime)
         self.assertEqual(planning.task_ready(task, instance, runtime)['state'], 'ready')
         reader = {'id': 'AC-reader', 'role': 'research_work', 'target': task['id']}
-        for endpoint in fixture.kids:
+        for endpoint in self.kids:
             with self.subTest(endpoint=endpoint):
                 writer = {'id': 'AC-writer', 'role': 'research_preparation',
                     'revision_targets': revisions.capture_targets(instance, runtime, [endpoint])}
@@ -59,10 +58,10 @@ class RelationEvidenceTests(unittest.TestCase):
             self.assertEqual(set(submission.reported_references(output, extensions)), expected)
 
     def test_relation_judgment_edges_keep_formal_and_assessment_use_current(self):
-        from test_walkthrough_contract_repairs import WalkthroughRepairs
+        from record_fixtures import specialist_assessment
         for field in ('formal_result_refs', 'assessment_refs', 'evidence_refs'):
             with self.subTest(field=field):
-                instance, runtime, _, kid, aid = WalkthroughRepairs().specialist_fixture()
+                instance, runtime, _, kid, aid = specialist_assessment()
                 task = runtime['tasks']['TK-1']
                 formal_id = instance['knowledge'][kid]['formal_result_id']
                 relation = {'id': 'RL-proof', 'kind': 'supports', 'source': kid, 'target': kid,
@@ -78,8 +77,8 @@ class RelationEvidenceTests(unittest.TestCase):
                 self.assertNotEqual(before, task_scope.assessment_basis(task, assessment, instance, runtime))
 
     def test_relation_endpoints_still_bind_submitted_content_not_later_review_bookkeeping(self):
-        from test_research_reliability import CompletionBasisTests
-        instance, runtime = CompletionBasisTests().fixture()
+        from record_fixtures import completed_with_knowledge
+        instance, runtime = completed_with_knowledge()
         task = runtime['tasks']['TK-1']
         instance['relations'] = [{'id': 'RL-content', 'kind': 'supports', 'source': 'KN-proof', 'target': 'KN-proof'}]
         assessment = {'item_dispositions': [{'evidence_refs': ['RL-content']}], 'unresolved': []}

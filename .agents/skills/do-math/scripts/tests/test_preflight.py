@@ -8,6 +8,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.preflight import INSTALLED_DOCUMENTS, inspect_bundle
 from do_math.contracts import reading_map
+from research_fixtures import git_init
 
 
 class PersistedPreflightTests(unittest.TestCase):
@@ -17,14 +18,14 @@ class PersistedPreflightTests(unittest.TestCase):
         from do_math.initialization import initialize_state
         self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         root=Path(self.temp.name)
-        subprocess.run(['git','init','-q',str(root)],check=True,capture_output=True)
+        git_init(root)
         identifier=new_id('RI')
         self.store=ResearchRepository(root,identifier)
         self.instance,self.runtime=initialize_state(instance_id=identifier,goal='G',workspace=root/'work',config={},source_input='Original request')
         self.head=self.store.initialize(self.instance,self.runtime)
 
     def test_good_head_preserves_rejected_raw_not_candidate_state(self):
-        from do_math.preflight import preserve_rejected_candidate
+        from do_math.lifecycle_engine import preserve_rejected_candidate
         _,before_i,before_r=self.store.load(self.head)
         result=preserve_rejected_candidate(self.store,self.head,raw=b'{broken candidate',reason='schema rejection')
         self.assertEqual(self.store.read(result['raw_ref'],result['snapshot']),b'{broken candidate')
@@ -32,8 +33,8 @@ class PersistedPreflightTests(unittest.TestCase):
         self.assertEqual((after_i,after_r),(before_i,before_r))
 
     def test_damaged_head_is_not_rewritten_even_to_preserve_candidate(self):
-        from do_math.preflight import preserve_rejected_candidate
-        path=next(row['path'] for row in self.store.records(self.head) if row['family']=='lifecycle')
+        from do_math.lifecycle_engine import preserve_rejected_candidate
+        path=next(row['path'] for row in self.store.load_records(self.head)[3] if row['family']=='lifecycle')
         damaged=self.store._store.publish(self.head,{path:b'{}\n'}).head
         # Loading validates a head; a head that does not load is damaged.
         with self.assertRaises((ValueError,TypeError,KeyError,OSError,RuntimeError)):
@@ -43,11 +44,12 @@ class PersistedPreflightTests(unittest.TestCase):
         self.assertEqual(self.store._store.read_snapshot().head,damaged)
 
     def test_malformed_or_naive_high_water_is_rejected(self):
-        from do_math.preflight import inspect_current_state
+        from do_math.record_schemas import validate_lifecycle
         for value in ('not-a-time','2026-09-20T00:00:00','2026-09-20T09:00:00+09:00'):
             with self.subTest(value=value):
                 self.runtime['last_observed_utc']=value
-                self.assertFalse(inspect_current_state(self.instance,self.runtime)['valid'])
+                with self.assertRaisesRegex(ValueError,'high-water'):
+                    validate_lifecycle(self.instance,self.runtime)
 
 
 class PreflightTests(unittest.TestCase):

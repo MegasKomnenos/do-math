@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 import json
 import os
 from pathlib import Path
@@ -12,7 +11,9 @@ import sys
 import tempfile
 import unittest
 import base64
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
+import hashlib
+from copy import deepcopy
 
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -26,7 +27,15 @@ from do_math.repository import (  # noqa: E402
     canonical_json,
     new_id,
 )
-from research_fixtures import current_state  # noqa: E402
+from research_fixtures import bare_engine, current_state, git_init  # noqa: E402
+from do_math import repository
+from do_math.state_checks import inspect_state
+
+
+def candidate_repository(test):
+    """A repository over the installed contract in a new empty Git repository; candidate validation never reaches it."""
+    return repository.ResearchRepository(git_init(Path(test.enterContext(tempfile.TemporaryDirectory()))),
+                                         'RI-01ARZ3NDEKTSV4RRFFQ69G5FAV')
 
 
 INSTANCE_ID = "RI-00000000000000000000000000"
@@ -86,9 +95,7 @@ class ResearchRepositoryTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.repository_path = self.root / "repository"
         self.repository_path.mkdir()
-        import subprocess
-
-        subprocess.run(["git", "-C", str(self.repository_path), "init", "-q"], check=True)
+        git_init(self.repository_path)
         self.repository = ResearchRepository(self.repository_path, INSTANCE_ID)
         self.initial_head = self.repository.initialize(*current_state({"title": "instance"}))
 
@@ -111,6 +118,7 @@ class ResearchRepositoryTests(unittest.TestCase):
         winner = self.repository.save_with_state(self.initial_head, *current_state({"title": "instance"}, {"status": "running"}))[0]
         with self.assertRaises(GitStateStoreConflict):
             second.save_with_state(self.initial_head, *current_state({"title": "instance"}, {"status": "paused"}))[0]
+        self.assertEqual(self.repository.load()[0], winner)
         self.assertEqual(self.repository.load(winner)[2]["status"], "running")
 
     def test_new_artifact_bundle_is_saved_with_state_and_existing_bundle_is_immutable(self) -> None:
@@ -170,15 +178,12 @@ class ResearchRepositoryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.repository.list_files("../")
 
-    def test_duplicate_json_and_nonfinite_values_are_rejected(self) -> None:
+    def test_duplicate_json_keys_are_rejected_on_load(self) -> None:
         bad_head = self.repository._store.publish(self.initial_head, {
             "research/_state/metadata.json": b'{"name":"first","name":"second"}\n',
         }).head
         with self.assertRaises(ValueError):
             self.repository.load(bad_head)
-        for value in (math.nan, math.inf, -math.inf):
-            with self.subTest(value=value), self.assertRaises(ValueError):
-                canonical_json({"value": value})
 
     def test_export_refuses_nonempty_or_reparse_destination_and_preserves_prefix(self) -> None:
         destination = self.root / "export"
@@ -219,7 +224,7 @@ class ValidatedReadReuseTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
-        subprocess.run(["git", "-C", str(self.root), "init", "-q"], check=True)
+        git_init(self.root)
         self.identifier = new_id("RI")
         self.repository = ResearchRepository(self.root, self.identifier)
         # The large original input is stored as a sealed payload blob.
@@ -253,7 +258,7 @@ class ValidatedReadReuseTests(unittest.TestCase):
         self.assertEqual(loaded_runtime["cycles"], 1)
         saved_runtime["cycles"] = 99  # returned views are detached from the shared entry
         self.assertEqual(self.repository.load(new_head)[2]["cycles"], 1)
-        rows = self.repository.records(new_head, family="lifecycle")
+        rows = [row for row in self.repository.load_records(new_head)[3] if row["family"] == "lifecycle"]
         self.assertEqual(len(rows), 1)
         outside = self.outside_head(new_head, "BA-outside")
         stack, decode, validate = self.counters()
@@ -268,10 +273,8 @@ class ValidatedReadReuseTests(unittest.TestCase):
             ResearchRepository(self.root, self.identifier).load(outside)
             ResearchRepository(self.root, self.identifier).load(outside)
             self.assertEqual(decode.call_count, 1)
-            from do_math.state_contract import StateContract
-            custom = StateContract.default()
-            custom.register_family("research", "sources", shape="list", validator=lambda record: None)
-            ResearchRepository(self.root, self.identifier, contract=custom).load(outside)
+            from research_fixtures import installed_contract
+            ResearchRepository(self.root, self.identifier, contract=installed_contract()).load(outside)
             self.assertEqual(decode.call_count, 2)  # another contract is another validation
 
     def test_payload_bytes_are_hashed_once_per_repository(self):
@@ -302,11 +305,14 @@ class ValidatedReadReuseTests(unittest.TestCase):
 
     def test_unchanged_records_skip_record_local_and_immutable_hash_checks(self):
         from do_math import governance, initialization
-        from do_math.state_contract import StateContract
+        from research_fixtures import installed_contract, with_validator
         checked = []
-        contract = StateContract.default()
-        contract.register_family("research", "governance_sources", shape="map",
-                                 validator=lambda record: checked.append(record["id"]))
+        contract = installed_contract()
+        installed = contract.family("research", "governance_sources").validator
+        def counted(record):
+            checked.append(record["id"])
+            installed(record)
+        with_validator(contract, "research", "governance_sources", counted)
         repository = ResearchRepository(self.root, self.identifier, contract=contract)
         head, instance, runtime = repository.load()
         instance["governance_sources"]["GS-1"] = governance.preserve_source("GS-1", "first", origin="user")
@@ -314,16 +320,195 @@ class ValidatedReadReuseTests(unittest.TestCase):
         self.assertEqual(checked, ["GS-1"])
         instance["governance_sources"]["GS-2"] = governance.preserve_source("GS-2", "second", origin="user")
         runtime["cycles"] = 1
-        with patch.object(governance, "validate_source", wraps=governance.validate_source) as source, \
-             patch.object(initialization, "original_input_bytes", wraps=initialization.original_input_bytes) as original:
+        with patch.object(initialization, "original_input_bytes", wraps=initialization.original_input_bytes) as original:
             head, instance, runtime = repository.save_with_state(head, instance, runtime)
         self.assertEqual(checked, ["GS-1", "GS-2"])
-        self.assertEqual([call.args[0]["id"] for call in source.call_args_list], ["GS-2"])
         self.assertEqual(original.call_count, 0)
         instance["governance_sources"]["GS-3"] = {**governance.preserve_source("GS-3", "third", origin="user"),
                                                   "sha256": "0" * 64}
         with self.assertRaisesRegex(ValueError, "immutable source"):
             repository.save_with_state(head, instance, runtime)
+
+
+class SaveWithStateTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        self.repository_path = self.root / "repository"
+        self.repository_path.mkdir()
+        git_init(self.repository_path)
+        self.repository = ResearchRepository(self.repository_path, INSTANCE_ID)
+        self.initial_head = self.repository.initialize(*current_state({"title": "instance"}))
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def test_unchanged_state_is_noop_and_returns_normalized_reload_views(self) -> None:
+        head, instance, runtime = self.repository.load()
+        saved_head, saved_instance, saved_runtime = self.repository.save_with_state(head, instance, runtime)
+        reloaded_head, reloaded_instance, reloaded_runtime = self.repository.load(saved_head)
+        self.assertEqual(saved_head, head)
+        self.assertEqual((saved_head, saved_instance, saved_runtime),
+                         (reloaded_head, reloaded_instance, reloaded_runtime))
+
+    def test_changed_state_writes_the_same_canonical_files_and_returns_reload_views(self) -> None:
+        head, instance, runtime = self.repository.load()
+        changed_runtime = {**runtime, "status": "running"}
+        expected = self.repository.validate_candidate(instance, changed_runtime, head)
+        saved_head, saved_instance, saved_runtime = self.repository.save_with_state(head, instance, changed_runtime)
+        stored = self.repository._store.read_many(saved_head, sorted(expected["files"]))
+        self.assertNotEqual(saved_head, head)
+        self.assertEqual(stored, expected["files"])
+        self.assertEqual((saved_head, saved_instance, saved_runtime), self.repository.load(saved_head))
+
+    def test_regular_save_still_rejects_invalid_input(self) -> None:
+        head, instance, runtime = self.repository.load()
+        invalid_runtime = {**runtime, "status": float("nan")}
+        with self.assertRaises(ValueError):
+            self.repository.save_with_state(head, instance, invalid_runtime)[0]
+        self.assertEqual(self.repository.load()[0], head)
+
+    def test_save_reads_parent_family_bytes_once_and_preserves_reload_equivalence(self) -> None:
+        head, instance, runtime = self.repository.load()
+        with patch.object(self.repository._store, 'read_many', wraps=self.repository._store.read_many) as reads:
+            saved = self.repository.save_with_state(head, instance, {**runtime, 'status': 'running'})
+        self.assertEqual(len([call for call in reads.call_args_list if call.args[0] == head]), 0)
+        self.assertEqual(saved, self.repository.load(saved[0]))
+
+    def test_save_rereads_only_new_artifact_evidence(self) -> None:
+        head, instance, runtime = self.repository.load()
+        ref, raw = "runtime/artifacts/AB-evidence/notes.txt", b"checkpoint evidence"
+        runtime["checkpoints"] = {"EX-evidence": {"evidence_files": [{"path": "notes.txt",
+            "artifact_ref": ref, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}]}}
+        head = self.repository.save_with_state(head, instance, runtime, artifacts={ref: raw})[0]
+        head, instance, runtime = self.repository.load(head)
+        with patch.object(self.repository._store, 'read_many', wraps=self.repository._store.read_many) as reads:
+            saved = self.repository.save_with_state(head, instance, {**runtime, 'status': 'running'})
+        self.assertFalse(any(ref in call.args[1] for call in reads.call_args_list))
+        self.assertEqual(saved, self.repository.load(saved[0]))
+        changed = deepcopy(saved[2])
+        changed["checkpoints"]["EX-evidence"]["evidence_files"][0]["bytes"] += 1
+        with self.assertRaisesRegex(ValueError, "artifact evidence"):
+            self.repository.save_with_state(saved[0], saved[1], changed)
+
+    def test_reused_parent_bytes_still_reject_a_damaged_previous_snapshot(self) -> None:
+        head, instance, runtime = self.repository.load()
+        damaged = self.repository._store.publish(head, {'runtime/_state/metadata.json': b'{}\n'}).head
+        with patch.object(self.repository._store, 'publish', wraps=self.repository._store.publish) as publish:
+            with self.assertRaises(ValueError):
+                self.repository.save_with_state(damaged, instance, runtime)
+        publish.assert_not_called()
+        self.assertEqual(self.repository._store.read_snapshot().head, damaged)
+
+    def test_stale_head_is_rejected_before_artifact_shape(self) -> None:
+        head, instance, runtime = self.repository.load()
+        self.repository.save_with_state(head, instance, {**runtime, "status": "running"})
+        with self.assertRaises(GitStateStoreConflict):
+            self.repository.save_with_state(
+                head, instance, runtime, artifacts={"outside-artifacts.txt": b"not allowed"}
+            )
+
+    def test_artifact_bytes_and_namespace_are_checked_by_the_same_save_call(self) -> None:
+        head, instance, runtime = self.repository.load()
+        artifact_path = "runtime/artifacts/AB-01/output.txt"
+        artifact_bytes = b"sealed artifact bytes"
+        saved_head, _, _ = self.repository.save_with_state(
+            head, instance, runtime, artifacts={artifact_path: artifact_bytes}
+        )
+        self.assertEqual(self.repository.read(artifact_path, saved_head), artifact_bytes)
+        reloaded_head, reloaded_instance, reloaded_runtime = self.repository.load(saved_head)
+        with self.assertRaises(ValueError):
+            self.repository.save_with_state(
+                reloaded_head,
+                deepcopy(reloaded_instance),
+                deepcopy(reloaded_runtime),
+                artifacts={"outside-artifacts.txt": b"not allowed"},
+            )
+        self.assertEqual(self.repository.load()[0], saved_head)
+
+
+class CandidateCopyTests(unittest.TestCase):
+    def test_candidate_numbers_events_without_a_second_whole_state_copy(self):
+        instance, runtime = current_state({'title': 'fixture'}, {'events': [{'id': 'EV-1', 'kind': 'created'}]})
+        before = deepcopy((instance, runtime))
+        with patch.object(repository, 'deepcopy', wraps=deepcopy) as copies:
+            candidate = candidate_repository(self).validate_candidate(instance, runtime)
+        # One copy of each root; event numbering works on that detached copy.
+        self.assertEqual([call.args[0] for call in copies.call_args_list], [instance, runtime])
+        self.assertEqual((instance, runtime), before)
+        self.assertEqual(candidate['runtime']['events'][0]['event_seq'], 1)
+        candidate['runtime']['events'][0]['kind'] = 'changed returned candidate'
+        self.assertEqual((instance, runtime), before)
+
+    def test_late_event_failure_never_numbers_the_callers_original(self):
+        instance, runtime = current_state(runtime={'events': [
+            {'id': 'EV-1', 'kind': 'created'},
+            {'id': 'EV-2', 'kind': 'queued', 'event_seq': 99}]})
+        before = deepcopy((instance, runtime))
+        with self.assertRaisesRegex(ValueError, 'contiguous'):
+            candidate_repository(self).validate_candidate(instance, runtime)
+        self.assertEqual((instance, runtime), before)
+
+
+class StorageValueTests(unittest.TestCase):
+    def test_value_validation_and_serialization_keep_the_same_domain(self):
+        for value in (None, True, False, 0, -(2**53 - 1), 2**53 - 1,
+                      {'e\u0301': ['한글', '😀', 1], 'é': None}):
+            with self.subTest(value=value):
+                self.assertIsNone(repository.validate_storage_value(value))
+                self.assertIsInstance(repository.canonical_json(value), bytes)
+        invalid = [0.0, float('nan'), float('inf'), float('-inf'), 2**53, -(2**53), '\ud800',
+                   {1: 'non-string key'}, {'\udfff': 1}, b'raw', (1,), {'nested': [0.5]}]
+        for value in invalid:
+            with self.subTest(value=repr(value)):
+                with self.assertRaises(ValueError) as checked:
+                    repository.validate_storage_value(value)
+                with self.assertRaises(ValueError) as encoded:
+                    repository.canonical_json(value)
+                self.assertEqual(str(checked.exception), str(encoded.exception))
+        self.assertNotEqual(repository.canonical_json(True), repository.canonical_json(1))
+        self.assertNotEqual(repository.canonical_json({'a': [2, 1]}), repository.canonical_json({'a': [1, 2]}))
+
+    def test_inspection_builds_no_json_bytes_and_publication_checks_the_value_domain(self):
+        instance, runtime = {'sources': []}, {'executions': {'EX-1': {'id': 'EX-1', 'output_files': []}}}
+        with patch.object(repository, 'canonical_json', side_effect=AssertionError('unused serialization')):
+            self.assertEqual(inspect_state(instance, runtime, requested_areas=['record_storage'])['status'], 'healthy')
+        # The storage value domain belongs to loading and publication: each
+        # record serialized for a candidate passes the storage value check.
+        instance, runtime = current_state(runtime={'provider_wake': {'measured': float('nan')}})
+        with self.assertRaisesRegex(ValueError, 'floating-point'):
+            candidate_repository(self).validate_candidate(instance, runtime)
+
+    def test_a_float_equal_to_the_parent_integer_is_still_rejected(self):
+        # 1.0 == 1, so the record equals its parent's and skips its schema check
+        # and serialization; sealing the candidate rejects the float first.
+        with tempfile.TemporaryDirectory() as directory:
+            store = repository.ResearchRepository(git_init(directory), repository.new_id('RI'))
+            head = store.initialize(*current_state(runtime={'provider_wake': {'measured': 1}}))
+            _, instance, runtime = store.load(head)
+            runtime['provider_wake']['measured'] = 1.0
+            with self.assertRaisesRegex(ValueError, 'floating-point'):
+                store.save_with_state(head, instance, runtime)
+            self.assertEqual(store.load()[0], head)
+
+
+class SealedArtifactReadTests(unittest.TestCase):
+    def test_a_sealed_row_is_hashed_once_and_matched_rows_are_not_reread(self):
+        import uuid
+        raw = b'sealed bytes'
+        digest = hashlib.sha256(raw).hexdigest()
+        path = 'runtime/artifacts/BA-sealed/output.json'
+        engine = bare_engine(head='a' * 40, store=create_autospec(repository.ResearchRepository, instance=True))
+        engine.store.git_dir = 'git-' + uuid.uuid4().hex
+        engine.store.read.return_value = raw
+        with self.assertRaisesRegex(ValueError, 'differs from its record'):
+            engine._sealed_bytes(path, 'b' * 64, len(raw))
+        self.assertEqual(engine._sealed_bytes(path, digest, len(raw)), raw)
+        with patch.object(repository.hashlib, 'sha256', side_effect=AssertionError('matched row rehashed')):
+            self.assertEqual(engine._sealed_bytes(path, digest, len(raw)), raw)
+            engine.store.read.reset_mock()
+            self.assertIsNone(engine._sealed_bytes(path, digest, len(raw), needed=False))
+        engine.store.read.assert_not_called()
 
 
 if __name__ == "__main__":

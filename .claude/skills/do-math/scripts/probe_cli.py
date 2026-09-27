@@ -4,10 +4,9 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import sys
 import uuid
 
-from do_math.engine import json_safe
+from do_math.payloads import json_safe
 from do_math.model_runner import ModelRunner
 from do_math.preflight import inspect_bundle
 from do_math.observations import read_checkpoint

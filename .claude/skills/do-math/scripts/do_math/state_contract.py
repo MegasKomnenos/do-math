@@ -1,7 +1,7 @@
-"""Installed, explicit feature-five storage contract, distinct from wire schemas."""
+"""Installed, explicit storage contract, distinct from wire schemas."""
 from __future__ import annotations
 from copy import deepcopy
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from functools import cached_property, lru_cache
 import re
 from typing import Callable
@@ -11,22 +11,14 @@ import jsonschema
 from .file_io import json_digest
 from .git_store import check_path_segment
 
-STATE_FORMAT_VERSION = 5
-STATE_CONTRACT_ID = "do-math-state/6"
+# The one stored contract identifier: the root manifest of each snapshot names
+# it, and loading accepts no other. Records carry no version marker of their own.
+STATE_CONTRACT_ID = "do-math-state/7"
 # A record ID names its file research/<family>/<id>.json, so it excludes path
 # separators and ':'. The validator also applies the Git path segment rule
 # (git_store.check_path_segment), which refuses Windows device names.
 RECORD_ID = r"[A-Za-z0-9][A-Za-z0-9_.-]*"
 _ABSENT = object()
-
-
-def check_schema(schema):
-    """Meta-schema check for a schema from outside the product.
-
-    Built-in family schemas are product constants; their well-formedness is a
-    test (test_state_contract_registration), not a check at every process start.
-    """
-    jsonschema.Draft202012Validator.check_schema(schema)
 
 
 @dataclass(frozen=True)
@@ -46,21 +38,16 @@ class RegisteredFamily:
 
 
 class StateContract:
+    """Record families with their schemas, record validators and references.
+
+    Families are registered while the contract is built (record_schemas.install)
+    and never after its first use: validated reads are cached per contract
+    object (repository._VALIDATED_READS), and the manifest digest is computed once.
+    """
+
     def __init__(self):
         self._families = {}
-        self.validation_generation = 0
-        # Generation at which this contract equals the installed default;
-        # None for contracts built by hand.
-        self.installed_generation = None
         self._manifest = None
-
-    @classmethod
-    def default(cls):
-        # Installation validates every built-in schema. Keep that validated
-        # template, but give each repository an independent mutable contract.
-        contract = deepcopy(_default_template(cls))
-        contract.installed_generation = contract.validation_generation
-        return contract
 
     def register_family(self, root, name, *, shape="map", schema=None,
                         validator=None, references=None, identity=True):
@@ -70,36 +57,15 @@ class StateContract:
             raise ValueError("invalid family shape")
         if shape == "metadata" and identity:
             raise ValueError("metadata fields cannot allocate independent record identities")
-        existing = self.family(root, name)
-        if existing is not None:
-            # Existing owner adapters may repeat registration of an installed
-            # family. They may not redefine its schema or physical layout.
-            if schema is not None or shape != existing.shape:
-                raise ValueError("record family already registered: " + name)
-            if validator is not None:
-                prior = existing.validator
-                def combined(record):
-                    if prior:
-                        prior(record)
-                    validator(record)
-                existing = replace(existing, validator=combined)
-            if references is not None:
-                prior_refs = existing.references
-                def all_references(record):
-                    if prior_refs:
-                        yield from prior_refs(record)
-                    yield from references(record)
-                existing = replace(existing, references=all_references)
-            self._families[root, name] = existing
-            self.validation_generation += 1
-            return
+        if self.family(root, name) is not None:
+            raise ValueError("record family already registered: " + name)
         if schema is None:
             raise ValueError("explicit record schema is required: " + name)
         schema = deepcopy(schema)
         if (shape in {"map", "list"} or identity) and (schema.get("type") != "object" or schema.get("additionalProperties") is not False):
             raise ValueError("record schema must reject unknown fields: " + name)
         self._families[root, name] = RegisteredFamily(root, name, shape, schema, validator, references, identity)
-        self.validation_generation += 1
+        self._manifest = None
 
     def family(self, root, name):
         return self._families.get((root, name))
@@ -108,18 +74,15 @@ class StateContract:
         return tuple(self._families[key] for key in sorted(self._families))
 
     def manifest(self):
-        """Describe the installed schema; its digest identifies the writer.
+        """Describe the registered schemas; its digest identifies the writer.
 
-        Families change only through register_family, which advances the
-        validation generation, so the digest is computed once per generation.
+        The digest is computed once; only register_family resets it.
         """
-        if self._manifest is None or self._manifest[0] != self.validation_generation:
+        if self._manifest is None:
             families = [{"root": f.root, "name": f.name, "shape": f.shape, "identity": f.identity,
                          "schema": f.schema} for f in self.families()]
-            payload = {"contract_id": STATE_CONTRACT_ID, "families": families}
-            digest = json_digest(payload)
-            self._manifest = (self.validation_generation, digest)
-        return {"contract_id": STATE_CONTRACT_ID, "sha256": self._manifest[1]}
+            self._manifest = json_digest({"contract_id": STATE_CONTRACT_ID, "families": families})
+        return {"contract_id": STATE_CONTRACT_ID, "sha256": self._manifest}
 
     def validate(self, instance, runtime, parent=None):
         """Pure schema and relationship validation; no ID/time allocation.
@@ -129,6 +92,15 @@ class StateContract:
         ID skips the record-local checks (schema and family validator), whose
         result depends on the record alone. Relations, identity uniqueness and
         semantic rules are still checked over the whole state.
+
+        Equality is Python ``==``, under which ``1 == 1.0 == True``. A float
+        cannot pass: payloads.seal_large rejects every float of a candidate
+        before this comparison. A bool swapped for an equal integer (or back)
+        in a record otherwise equal to the parent's is an accepted gap: it
+        skips that record's schema check and keeps the parent's bytes
+        (repository._encode_families). A type-strict comparison would walk
+        every node in Python, about 27 times the cost of ``==`` on a 3.6 MB
+        state, twice per save.
         """
         rows, identifiers = [], {}
         for index, (root, state) in enumerate((("research", instance), ("runtime", runtime))):
@@ -165,8 +137,10 @@ class StateContract:
                         if family.validator:
                             family.validator(deepcopy(record))
                     if family.identity:
+                        # The family schema holds the RECORD_ID pattern; the
+                        # path segment rule adds what a pattern cannot say.
                         identifier = record.get("id") if isinstance(record, dict) else None
-                        if not isinstance(identifier, str) or not re.fullmatch(RECORD_ID, identifier):
+                        if not isinstance(identifier, str):
                             raise ValueError(name + " requires a path-safe record id")
                         try:
                             check_path_segment(identifier)
@@ -196,8 +170,17 @@ class StateContract:
         return identifiers
 
 
+@lru_cache(maxsize=1)
 def default_state_contract():
-    return StateContract.default()
+    """The installed contract, built once per process and shared by every repository.
+
+    Nothing registers a family after installation, so the shared object never
+    changes. A test that needs another family builds its own StateContract.
+    """
+    from .record_schemas import install
+    contract = StateContract()
+    install(contract)
+    return contract
 
 
 def validate_record(checker, record, label):
@@ -206,21 +189,3 @@ def validate_record(checker, record, label):
     if errors:
         location = "/".join(str(part) for part in errors[0].absolute_path)
         raise ValueError(f"{label}/{location}: {errors[0].message}")
-
-
-@lru_cache(maxsize=None)
-def installed_checker(root, name):
-    """The schema checker of one installed default family, built once per process.
-
-    It is built apart from the shared template, so the copies that
-    StateContract.default() makes do not carry a validator.
-    """
-    return jsonschema.Draft202012Validator(_default_template(StateContract).family(root, name).schema)
-
-
-@lru_cache(maxsize=16)
-def _default_template(contract_type):
-    from .record_schemas import install
-    contract = contract_type()
-    install(contract)
-    return contract

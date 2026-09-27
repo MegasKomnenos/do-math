@@ -3,7 +3,6 @@
 The scheduler, Git snapshots and Git reservations are real. Model replies are
 scripted to make the otherwise nondeterministic failure ordering reproducible.
 """
-from copy import deepcopy
 import json
 from pathlib import Path
 import sys
@@ -12,53 +11,19 @@ import time
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from research_fixtures import local_job_runner
-import test_purpose_engine as purpose
-from test_engine import common, contract_checks, formal_ok
+import purpose_fixtures as purpose
+from purpose_fixtures import CheckedRunner
+from runner_fixtures import common, contract_checks, formal_ok
 from do_math.engine import control
 from do_math.knowledge import assess_use, revise_knowledge
 from do_math.context_store import fit_context
 from do_math.planning import contract_hash
-from do_math.input_basis import capture_decision_basis
 from do_math.repository import canonical_json
-from do_math import submission
-from do_math.control_transport import ControlTransport
 from research_fixtures import FixtureAdapter, await_control, restore_template
 from state_fixtures import ACTIVE_LEAN_COMMAND, active_instance
 from do_math.engine import ResearchEngine
 from unittest.mock import patch
-from research_fixtures import (candidate, seal_response, bind_candidates, contract_review,
-                         disposition, scope_response, assessment, supply_observation_rules)
-
-
-class CheckedRunner:
-    """Script only the model answer; use actual producer and control protocols."""
-    def __init__(self, runner):
-        self.runner = runner
-
-    @local_job_runner
-    def run(self, **args):
-        ctx = purpose.parse_context(args["prompt"], args["workspace"])
-        if ctx["action"].get("stage") == "scope" and ctx["action"]["role"] == "identity_review":
-            args["on_started"]({"fixture": "scope response"})
-            result = {"status": "completed", "output": {**common("identity_review"), **scope_response(ctx)}, "usage": {}}
-        else:
-            result = self.runner.run(**args)
-        output = result.get("output")
-        if output is not None:
-            bind_candidates(output, ctx)
-            if "integration_bundles" not in output:
-                seal_response(output, ctx, args["workspace"])
-            draft = args["workspace"] / ".scratch/submission.json"
-            draft.parent.mkdir(exist_ok=True)
-            draft.write_bytes(canonical_json(output))
-            check = submission.producer_check(args["workspace"], draft)
-            binding = args["control_binding"]
-            payload = {"draft_path": check["raw_output_path"]}
-            request_id = "submit-" + check["id"]
-            ControlTransport.worker_submit(binding, request_id=request_id, kind="submit_intent", payload=payload)
-            ControlTransport.wait_receipt(binding, request_id, 60)  # The owner receives it on its next pass.
-        return result
+from research_fixtures import candidate, contract_review, disposition, assessment, supply_observation_rules
 
 
 def prepared_tasks(root, shared, *, config, count):

@@ -55,13 +55,6 @@ def _goal_errors(instance: dict, runtime: dict, errors: list[str]) -> None:
         _error(errors, "goal", "completed runtime lacks complete current agreeing audits")
 
 
-def state_errors(instance: dict, runtime: dict) -> list[str]:
-    """Return persisted cross-record consistency errors without mutating inputs."""
-    if not isinstance(instance, dict) or not isinstance(runtime, dict):
-        return ["state: instance and runtime must be objects"]
-    return [f['message'] for f in inspect_state(instance, runtime)['findings'] if f['status'] == 'blocked']
-
-
 # These are inspection domains, not additional lifecycle state.  A domain can
 # be incomplete because the selected implementation has not supplied its
 # checker yet; that must never be rendered as a successful inspection.
@@ -227,7 +220,6 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
         if envs:
             omitted('shared toolchain records and installed files (persisted snapshot inspection only)')
     elif area == 'tasks_activities_executions':
-        from .execution_lifecycle import OUTCOMES
         from .task_contracts import validate_item_dispositions
         for identifier, task in runtime.get('tasks', {}).items():
             if task.get('scope_disposition', {}).get('kind') == 'withdraw':
@@ -247,14 +239,12 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
                     if disposition.get('target_obligation_id') not in {r['id'] for r in target.get('completion_obligations', [])}:
                         defect('transferred obligation target is absent', identifier)
         for identifier, execution in runtime.get('executions', {}).items():
-            if execution.get('status') == 'ended' and execution.get('outcome') not in OUTCOMES:
-                defect('ended execution lacks closed outcome or timestamp', identifier)
             for reservation_id in execution.get('capacity', {}).get('reservation_ids', []):
                 reservation = runtime.get('reservations', {}).get(reservation_id)
                 if not reservation or reservation.get('owner_id') != identifier:
                     defect('execution reservation does not resolve to its owner', identifier)
-        checked.append('execution outcomes, task transfers and execution reservation owners')
-        from .budget import _outstanding_sum
+        checked.append('task transfers and execution reservation owners')
+        from .budget import outstanding_sum
         for identifier, constraint in instance.get('capacity_constraints', {}).items():
             if constraint.get('kind') != 'concurrency':
                 continue
@@ -262,7 +252,7 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
                 reservations = runtime.get('reservations', {})
                 units = {r['unit'] for r in reservations.values() if r['constraint_id'] == c['id']}
                 for unit in units:
-                    if _outstanding_sum(reservations, c['id'], unit) > c['work_slots']:
+                    if outstanding_sum(reservations.values(), c['id'], unit) > c['work_slots']:
                         raise ValueError('reservation ledger exceeds work capacity')
             run('reservation work capacity', capacity, identifier)
         for identifier, operation in runtime.get('external_operations', {}).items():
@@ -275,13 +265,7 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
                 for field in ('grant_id', 'request_sha256', 'source_ref'):
                     if execution.get(field) != operation.get(field):
                         defect('external execution ' + field + ' differs from ledger', identifier)
-            if status == 'unknown' and operation.get('succeeded') is not None:
-                defect('unknown external effect has a definitive success value', identifier)
-            if status == 'cancelled' and operation.get('transmitted') is not False and operation.get('reconciliation', {}).get('evidence', {}).get('fact') != 'not_transmitted':
-                defect('cancelled external effect was not confirmed untransmitted', identifier)
-            if operation.get('handling') == 'reconciled' and not operation.get('reconciliation', {}).get('evidence', {}).get('evidence_ref'):
-                defect('reconciled handling lacks external effect evidence', identifier)
-        checked.append('external effect facts')
+        checked.append('external execution mappings')
     elif area == 'mathematical_effect':
         from .knowledge_records import formal_usable
         for identifier, formal in instance.get('formal_results', {}).items():
@@ -294,7 +278,7 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
                 return errors
             run('solved goal complete current agreeing audits', audits, 'goal')
         if runtime.get('status') == 'completed':
-            from .academic_engine import current_solution_basis
+            from .academic import current_solution_basis
             artifact_refs = [ref for record in runtime.get('academic_resolution_records', [])
                              for ref in record.get('evidence_refs', []) if ref.startswith('runtime/artifacts/')]
             if artifact_refs and read_artifact is None:

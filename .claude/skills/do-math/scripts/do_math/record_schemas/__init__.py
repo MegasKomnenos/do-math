@@ -1,6 +1,7 @@
 """Installation registry and domain semantic checks for persisted families."""
 from .schemas import (BOOL, EVIDENCE, NAT, PROFILE_REF, RECORDS, RESEARCH_FIELDS, RUNTIME_FIELDS, TEXT,
                       array, enum, nullable, obj)
+from ..file_io import json_copy
 
 
 def refs(*fields, lists=()):
@@ -46,7 +47,7 @@ REFERENCES = {
     "observation_facts": refs(("execution_id", "executions")),
     "self_check_obligations": refs(("execution_id", "executions")),
     "self_check_responses": refs(("execution_id", "executions")),
-    "operational_dispositions": refs(("execution_id", "executions"), ("source_execution_id", "executions")),
+    "operational_dispositions": refs(("execution_id", "executions")),
     "control_receipts": refs(("execution_id", "executions")),
     "recoveries": refs(lists=(("execution_ids", "executions"),)),
     "reservations": refs(("constraint_id", "capacity_constraints"), ("owner_id", "executions")),
@@ -54,7 +55,7 @@ REFERENCES = {
         ("assessment_id", "identity_assessments"), ("transition_id", "trust_transitions"), lists=(("assessment_use_ids", "assessment_uses"), ("producer_execution_ids", "executions"))),
     "goal_judgments": refs(("execution_id", "executions"), lists=(("formal_result_refs", "formal_results"),
         ("assessment_refs", "identity_assessments"), ("dependencies", "knowledge|tasks"))),
-    "events": refs(("subject_ref", None), ("execution_id", "executions"), ("activity_id", "activities"), lists=(("record_refs", None),)),
+    "events": refs(("execution_id", "executions"), ("activity_id", "activities"), lists=(("record_refs", None),)),
     "governance": refs(("approval_ref", "decisions"), ("source_ref", "governance_sources"), ("superseded_by", "governance"), lists=(("supersedes", "governance"),)),
     "trust_transitions": refs(("from_environment", "trust_environments"), ("to_environment", "trust_environments")),
     "academic_resolution_records": _academic_references,
@@ -105,21 +106,20 @@ def _trust_binding_references(value):
 
 def install(contract):
     from ..execution_profiles import validate_profile
-    from ..budget import _validate_reservation
-    from ..task_contracts import validate_contract_rules
-    from ..knowledge_records import _validate_family_record
-    validators = {"execution_profiles": validate_profile, "reservations": _validate_reservation,
-                  "tasks": validate_contract_rules}
-    validators.update({name: _validate_family_record for name in
-                       ("formal_results", "expositions", "identity_assessments", "assessment_uses")})
+    from ..budget import validate_reservation
+    from ..governance import validate_source
+    from ..task_contracts import validate_contract_meaning
+    validators = {"execution_profiles": validate_profile, "reservations": validate_reservation,
+                  "tasks": validate_contract_meaning, "governance_sources": validate_source,
+                  **RECORD_RULES}
     research = {"knowledge", "formal_results", "expositions", "identity_assessments", "assessment_uses",
                 "relations", "sources", "kind_definitions", "grants", "decisions", "delegations",
                 "trust_environments", "execution_profiles", "capacity_constraints", "capability_evidence", "goal_judgments", "governance", "governance_sources"}
     lists = {"relations", "sources", "question_links", "goal_judgments", "external_rejections", "academic_resolution_records", "inputs", "queue", "governance_events", "events"}
     metadata = {
-        "research": {"id", "feature_version", "contract_id", "object_format", "title", "workspace", "created_at",
+        "research": {"id", "object_format", "title", "workspace", "created_at",
                      "goal_status", "active_trust_environment", "conversation_loss_policy", "host_capacity_ref"},
-        "runtime": {"feature_version", "contract_id", "status", "cycles",
+        "runtime": {"status", "cycles",
                     "updated_at", "recovery_checked", "last_observed_utc", "event_cursor", "availability",
                     "clock_guard", "resume_lifecycle", "user_pause", "stop_requested", "next_research_reconsider_at"}}
     for name, schema in RECORDS.items():
@@ -141,7 +141,8 @@ def install(contract):
                     ("research", "host_capacity_ref"): _host_capacity_reference,
                     ("runtime", "trust_bindings"): _trust_binding_references}.get((root, name))
                 contract.register_family(root, name, shape="metadata" if name in metadata[root] else "singleton",
-                                         schema=schema, identity=False, references=reference)
+                                         schema=schema, validator=validators.get(name), identity=False,
+                                         references=reference)
     contract.register_family("research", "config", shape="singleton", schema=config_schema(), identity=False)
 
 
@@ -178,7 +179,7 @@ def config_schema():
     config["host_resources"] = nullable(obj({"constraint": RECORDS["capacity_constraints"],
         "demands_by_role": obj({role: host_demands for role in sorted(HOST_ROLES)})},
         ("constraint", "demands_by_role")))
-    return obj(config)
+    return json_copy(obj(config))
 
 
 def _validate_active_grant(instance, runtime, grant):
@@ -186,41 +187,171 @@ def _validate_active_grant(instance, runtime, grant):
     validate_grant_source(instance, grant)
 
 
-def _prior_rows(state, family):
-    rows = state.get(family, {})
-    return {row.get("id"): row for row in rows if isinstance(row, dict)} if isinstance(rows, list) else rows
+# Record-local rules: each reads one record and nothing else, so install
+# registers it as its family's validator. StateContract.validate runs it for a
+# record that differs from the parent's and skips it for an equal one, the one
+# skip rule for these checks. Rules over several records stay in validate_semantics.
+
+def _immutable_input_rules(lifecycle):
+    from ..initialization import original_input_bytes
+    original_input_bytes(lifecycle["immutable_input"])
+
+
+def _execution_rules(row):
+    if row["status"] == "ended" and (not row.get("ended_at") or not row.get("outcome")):
+        raise ValueError("ended execution requires termination evidence")
+    if (row["status"] == "stopping") != ("stop_phase" in row):
+        raise ValueError("stop_phase belongs exactly to stopping executions")
+    if row.get("outcome") == "output_accepted" and not row.get("submission_receipt"):
+        raise ValueError("accepted output lacks submission receipt")
+    if row.get("execution_window", {}).get("execution_id", row["id"]) != row["id"]:
+        raise ValueError("execution window belongs to a different execution")
+    if row.get("authority_revocation"):
+        receipt = row.get("submission_receipt", {})
+        if (not isinstance(row.get("submission_intent", {}).get("manifest"), list)
+                or receipt.get("state") != "accepted" or receipt.get("kind") not in {"submit_intent", "native_final"}
+                or receipt.get("execution_id") != row["id"]
+                or row["authority_revocation"]["receipt_id"] != (receipt.get("id") or receipt.get("request_id"))):
+            raise ValueError("submission authority revocation differs from its actual receipt")
+
+
+def _external_operation_rules(row):
+    from ..external import request_binding_current
+    if not request_binding_current(row):
+        raise ValueError("external operation request/key differs from sealed bytes")
+    if row.get("retry_evidence"):
+        proof = row["retry_evidence"]
+        if proof["request_sha256"] != row["request_sha256"] or proof["idempotency_key"] != row["idempotency_key"]:
+            raise ValueError("external retry evidence differs from the operation")
+    evidence = row.get("reconciliation", {}).get("evidence", {})
+    if row["status"] == "confirmed" and row.get("succeeded") is not True:
+        raise ValueError("confirmed external operation requires success evidence")
+    if row["status"] == "failed" and row.get("effect_absent") is not True:
+        raise ValueError("failed external operation requires effect-absence evidence")
+    if row["status"] == "unknown" and row.get("succeeded") is not None:
+        raise ValueError("unknown external effect has a definitive success value")
+    if row["status"] == "cancelled" and row.get("transmitted") is not False and evidence.get("fact") != "not_transmitted":
+        raise ValueError("cancelled external effect was not confirmed untransmitted")
+    if row.get("handling") == "reconciled" and not evidence.get("evidence_ref"):
+        raise ValueError("reconciled handling lacks external effect evidence")
+
+
+def _operational_disposition_rules(row):
+    from ..operational_dispositions import validate_disposition
+    validate_disposition(row["disposition"])
+
+
+def _academic_seal_rules(row):
+    from ..repository import exact_content_hash
+    if (not row["evidence_refs"] or set(row["evidence_refs"]) != set(row["evidence_hashes"])
+            or row["sha256"] != exact_content_hash({k: v for k, v in row.items() if k != "sha256"})):
+        raise ValueError("academic resolution seal/evidence binding is invalid")
+
+
+def _nonfinite(token):
+    raise ValueError("nonfinite raw observation")
+
+
+def _observation_fact_rules(row):
+    import hashlib
+    import json
+    if "event_json" in row:
+        json.loads(row["event_json"], parse_constant=_nonfinite)
+        if hashlib.sha256(row["event_json"].encode()).hexdigest() != row["event_sha256"]:
+            raise ValueError("observation event bytes hash mismatch")
+
+
+def _capability_evidence_rules(row):
+    from ..repository import exact_content_hash
+    if row["id"] != "CE-" + exact_content_hash({k: v for k, v in row.items() if k != "id"}):
+        raise ValueError("capability evidence ID differs from its content")
+
+
+def _intent_import_rules(bundle):
+    from ..governance import _import_payload, validate_source
+    from ..repository import exact_content_hash
+    validate_source(bundle["source"])
+    if exact_content_hash(_import_payload(bundle)) != bundle["sha256"]:
+        raise ValueError("sealed intent import hash mismatch")
+
+
+def _delegation_application_rules(application):
+    from ..delegations import case_basis_reference_ids
+    from ..repository import exact_content_hash
+    basis = application["basis"]
+    if exact_content_hash(basis) != application["input_sha256"]:
+        raise ValueError("delegation application basis hash mismatch")
+    if set(basis["references"]) != set(case_basis_reference_ids(basis["case"])):
+        raise ValueError("delegation frozen references differ from declared case basis")
+    judgments = application["judgments"].values()
+    if any(exact_content_hash(judgment["output"]) != judgment["sha256"] for judgment in judgments):
+        raise ValueError("delegation judgment provenance mismatch")
+    execution_ids = [judgment["execution_id"] for judgment in judgments]
+    if len(execution_ids) != len(set(execution_ids)):
+        raise ValueError("delegation judgments must use distinct executions")
+
+
+RECORD_RULES = {"lifecycle": _immutable_input_rules, "executions": _execution_rules,
+                "external_operations": _external_operation_rules,
+                "operational_dispositions": _operational_disposition_rules,
+                "academic_resolution_records": _academic_seal_rules, "observation_facts": _observation_fact_rules,
+                "intent_imports": _intent_import_rules, "delegation_applications": _delegation_application_rules,
+                "capability_evidence": _capability_evidence_rules}
+
+
+def validate_lifecycle(instance, runtime):
+    """The lifecycle rules of one whole state; the schema fixes the state values.
+
+    A state has a lifecycle and a runtime status, a permanently closed
+    instance only the closed status, and a persisted UTC high-water mark.
+    """
+    lifecycle, status = instance.get("lifecycle"), runtime.get("status")
+    if lifecycle is None or status is None:
+        raise ValueError("current lifecycle contract: the lifecycle and the runtime status are required")
+    if lifecycle.get("permanently_closed") and status != "closed":
+        raise ValueError("current lifecycle contract: a permanently closed instance cannot have a live projection")
+    observed = runtime.get("last_observed_utc")
+    from ..file_io import parse_utc
+    try:
+        if observed is None or not observed.endswith(("Z", "+00:00")):
+            raise ValueError("UTC offset required")
+        parse_utc(observed)
+    except ValueError as error:
+        raise ValueError("current lifecycle contract: the persisted UTC high-water is absent or invalid") from error
 
 
 def validate_semantics(instance, runtime, identifiers, parent=None, *, contract):
     """Whole-state semantic rules of ``contract`` (the calling StateContract).
 
     ``parent`` is an (instance, runtime) pair already validated under the same
-    contract. Self-contained hash checks of immutable rows (original input,
-    sources, grants, academic seals, observation events, intent imports) are
-    not repeated for rows equal to the parent's; cross-record rules always run.
-    Every validated state satisfies the current lifecycle gate, so a loaded
-    state never needs that gate again.
+    contract. Record-local rules are family validators (RECORD_RULES), which
+    StateContract.validate skips for records equal to the parent's. Rules here
+    read several records and always run, with two exceptions that compare the
+    records they read with the parent's: the active grant check and the
+    transition hash of a finished staged review. Every validated state
+    satisfies the lifecycle rules, so a loaded state never needs them again.
     """
-    parent_instance, parent_runtime = parent if parent is not None else ({}, {})
-    from ..preflight import inspect_current_state
-    checked = inspect_current_state(instance, runtime)
-    if not checked["valid"]:
-        raise ValueError("current lifecycle contract: " + str(checked["errors"]))
-    from ..initialization import original_input_bytes
-    if parent_instance.get("lifecycle", {}).get("immutable_input") != instance["lifecycle"]["immutable_input"]:
-        original_input_bytes(instance["lifecycle"]["immutable_input"])
-    from ..execution_profiles import match_profile_ref
-    from ..knowledge_records import validate_knowledge_records
     from ..activities import validate_activities
-    from ..task_contracts import validate_item_dispositions
-    from ..operational_dispositions import validate_disposition
-    from ..governance import validate_governance_state, validate_source
+    from ..execution_profiles import match_profile_ref, validate_host_constraint
+    from ..formal import compare_formal_results
+    from ..governance import validate_governance_state
+    from ..knowledge import _hash
+    from ..knowledge_io import _BUILTINS, _RELATION_FIELDS, validate_relation
+    from ..knowledge_records import _assessment_basis, validate_formal_evidence, validate_knowledge_records
+    from ..launch import validate as validate_launch
+    from ..observations import validate_rules
+    from ..questions import open_targets
+    from ..repository import exact_content_hash
+    from ..review_cycle import (_check_proposal, identity_assessment, staged_review_candidate,
+                                validate_resource_disposition)
+    from ..review_policy import build_review_policy
+    from ..task_contracts import available_input_refs, validate_item_dispositions
+    from ..trust_validation import environment_errors
+    parent_instance, parent_runtime = parent if parent is not None else ({}, {})
+    validate_lifecycle(instance, runtime)
     if "governance" in instance:
         validate_governance_state(instance)
     sources, prior_sources = instance.get("governance_sources", {}), parent_instance.get("governance_sources", {})
-    for identifier, source in sources.items():
-        if prior_sources.get(identifier) != source:
-            validate_source(source)
     prior_grants, prior_decisions = parent_instance.get("grants", {}), parent_instance.get("decisions", {})
     for identifier, grant in instance.get("grants", {}).items():
         # The grant check reads only the grant, its source and its decision.
@@ -230,7 +361,6 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
                 or prior_decisions.get(grant.get("decision_id")) != instance.get("decisions", {}).get(grant.get("decision_id"))):
             _validate_active_grant(instance, runtime, grant)
     if instance.get("review_policy"):
-        from ..review_policy import build_review_policy
         build_review_policy(instance["review_policy"])
     validate_knowledge_records(instance)
     errors = validate_activities(runtime)
@@ -239,26 +369,9 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
     for row in runtime.get("executions", {}).values():
         profile = match_profile_ref(instance.get("execution_profiles", {}), row["execution_profile_ref"])
         if row.get('capacity'):
-            from ..launch import validate as validate_launch
             validate_launch(row.get('launch_ticket'), execution_id=row['id'], profile_sha256=profile['sha256'])
         if row.get("role", profile["role"]) != profile["role"] or row["actor_kind"] != profile["actor_kind"]:
             raise ValueError("execution/profile actor or role mismatch")
-        # The per-record execution state rules; status inspection does not repeat them.
-        if row["status"] == "ended" and (not row.get("ended_at") or not row.get("outcome")):
-            raise ValueError("ended execution requires termination evidence")
-        if (row["status"] == "stopping") != ("stop_phase" in row):
-            raise ValueError("stop_phase belongs exactly to stopping executions")
-        if row.get("outcome") == "output_accepted" and not row.get("submission_receipt"):
-            raise ValueError("accepted output lacks submission receipt")
-        if row.get("execution_window", {}).get("execution_id", row["id"]) != row["id"]:
-            raise ValueError("execution window belongs to a different execution")
-        if row.get("authority_revocation"):
-            receipt = row.get("submission_receipt", {})
-            if (not isinstance(row.get("submission_intent", {}).get("manifest"), list)
-                    or receipt.get("state") != "accepted" or receipt.get("kind") not in {"submit_intent", "native_final"}
-                    or receipt.get("execution_id") != row["id"]
-                    or row["authority_revocation"]["receipt_id"] != (receipt.get("id") or receipt.get("request_id"))):
-                raise ValueError("submission authority revocation differs from its actual receipt")
     for profile in instance.get("execution_profiles", {}).values():
         ids = profile.get("ai", {}).get("capacity_refs", []) + profile.get("host_capacity_refs", [])
         if set(ids) - set(instance.get("capacity_constraints", {})):
@@ -278,7 +391,6 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
             raise ValueError("adopted host capacity reference names another constraint kind")
     authored_host = instance.get("config", {}).get("host_resources")
     if authored_host:
-        from ..execution_profiles import validate_host_constraint
         validate_host_constraint(authored_host["constraint"])
         if instance.get("capacity_constraints", {}).get(authored_host["constraint"]["id"]) != authored_host["constraint"]:
             raise ValueError("host authoring input differs from the registered constraint edition")
@@ -305,7 +417,6 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
             # This validates the historical scope, not present permission to
             # delete. ENGINE rechecks current grants and retention closure.
         if action.get("stage") == "impact_review":
-            from ..knowledge import _hash
             request = action["input_basis"]["impact_review"]
             if request["producer_execution_id"] not in runtime.get("executions", {}):
                 raise ValueError("impact review original execution is missing")
@@ -321,7 +432,6 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
                 raise ValueError("reservation authority reference does not resolve")
     for row in instance.get("capacity_constraints", {}).values():
         if row["kind"] == "host":
-            from ..execution_profiles import validate_host_constraint
             validate_host_constraint(row)
             for reference in row["authority_refs"]:
                 family = identifiers.get(reference, (None, None))[1]
@@ -341,28 +451,6 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
             match_profile_ref(instance.get("execution_profiles", {}), reference)
         if task.get("assessment"):
             validate_item_dispositions(task, task["assessment"], require_complete=task.get("status") == "completed")
-    for row in runtime.get("operational_dispositions", {}).values():
-        validate_disposition(row["disposition"])
-    from ..file_io import json_digest
-    prior_academic = _prior_rows(parent_runtime, "academic_resolution_records")
-    for row in runtime.get("academic_resolution_records", []):
-        if prior_academic.get(row.get("id")) == row:
-            continue
-        if (not row["evidence_refs"] or set(row["evidence_refs"]) != set(row["evidence_hashes"])
-                or row["sha256"] != json_digest({k: v for k, v in row.items() if k != "sha256"})):
-            raise ValueError("academic resolution seal/evidence binding is invalid")
-    from ..external import request_binding_current
-    for row in runtime.get("external_operations", {}).values():
-        if not request_binding_current(row):
-            raise ValueError("external operation request/key differs from sealed bytes")
-        if row.get("retry_evidence"):
-            proof = row["retry_evidence"]
-            if proof["request_sha256"] != row["request_sha256"] or proof["idempotency_key"] != row["idempotency_key"]:
-                raise ValueError("external retry evidence differs from the operation")
-        if row["status"] == "confirmed" and row.get("succeeded") is not True:
-            raise ValueError("confirmed external operation requires success evidence")
-        if row["status"] == "failed" and row.get("effect_absent") is not True:
-            raise ValueError("failed external operation requires effect-absence evidence")
     for row in runtime.get("self_check_responses", {}).values():
         if row["kind"] == "self_check_rejected":
             continue  # Invalid incoming IDs remain raw rejection evidence.
@@ -371,24 +459,13 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
             raise ValueError("self-check response references unknown obligation")
         if obligation["execution_id"] != row["execution_id"]:
             raise ValueError("self-check response execution differs from obligation")
-    import hashlib
-    import json
-    prior_facts = parent_runtime.get("observation_facts", {})
-    for identifier, row in runtime.get("observation_facts", {}).items():
-        if "event_json" in row and prior_facts.get(identifier) != row:
-            json.loads(row["event_json"], parse_constant=lambda x: (_ for _ in ()).throw(ValueError("nonfinite raw observation")))
-            if hashlib.sha256(row["event_json"].encode()).hexdigest() != row["event_sha256"]:
-                raise ValueError("observation event bytes hash mismatch")
-    from ..knowledge_io import validate_relation, _RELATION_FIELDS
     for relation in instance.get("relations", []):
         if relation.get("status", "active") == "active":
             checked = validate_relation(instance, {k: v for k, v in relation.items() if k in _RELATION_FIELDS})
             if not checked["valid"]:
                 raise ValueError("invalid relation semantics: " + ", ".join(checked["reasons"]))
-    from ..observations import validate_rules
     for rules in runtime.get("task_observation_rules", {}).values():
         validate_rules(rules, allow_empty=True)
-    from ..knowledge_records import validate_formal_evidence, _assessment_basis
     for formal in instance.get("formal_results", {}).values():
         evidence = formal["verification"]
         if formal["publication_state"] != "candidate" and not evidence:
@@ -413,7 +490,6 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
                        and t["exposition_id"] == previous["exposition_id"]]
             if len(targets) != 1 or transition.get("status") not in {"active", "activated"}:
                 raise ValueError("identity continuity requires the actual activated transition")
-            from ..formal import compare_formal_results
             target = targets[0]
             comparison = compare_formal_results(target, transition.get("results", {}).get(target["id"], {}))
             formal = instance["formal_results"][assessment["formal_result_id"]]
@@ -454,38 +530,41 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
                         or exposition.get("supersedes") != cycle.get("proposal", {}).get("exposition_id")
                         or exposition.get("formal_result_id") != formal["id"]):
                     raise ValueError("staged identity assessment differs from its activated transition")
-            from ..review_engine import ReviewEngineMixin
-            source = ReviewEngineMixin._identity_assessment(cycle, reason=assessment.get("summary", ""))
+            source = identity_assessment(cycle, reason=assessment.get("summary", ""))
             if any(assessment.get(key) != value for key, value in source.items()):
                 raise ValueError("identity assessment does not reproduce the sealed review result")
         elif assessment["decision"] == "match":
             raise ValueError("identity match requires a sealed review cycle")
-    from ..review_cycle import _check_proposal, validate_resource_disposition
-    for cycle in runtime.get("review_cycles", {}).values():
+    prior_cycles = parent_runtime.get("review_cycles", {})
+    prior_transitions = parent_runtime.get("trust_transitions", {})
+    for identifier, cycle in runtime.get("review_cycles", {}).items():
         _check_proposal(cycle)
         validate_resource_disposition(cycle, runtime, instance=instance)
         if cycle.get("staged_candidate") is not None or cycle.get("transition_id") is not None:
-            from ..repository import exact_content_hash
             staged = cycle.get("staged_candidate", {})
             transition = runtime.get("trust_transitions", {}).get(cycle.get("transition_id"), {})
             target = next((row for row in transition.get("targets", []) if row["id"] == cycle.get("knowledge_id")), None)
             environment = staged.get("target_environment", {})
-            verification = {key: value for key, value in transition.get("results", {}).get(cycle.get("knowledge_id"), {}).items()
-                            if key not in {"id", "identity_review"}}
+            pending = transition.get("status") in {"checking", "ready"}
+            # The transition hash reads only the cycle and its transition. A
+            # finished review whose two records equal the parent's keeps the
+            # parent's result; a pending one is reproduced below regardless.
+            rehash = (pending or prior_cycles.get(identifier) != cycle
+                      or prior_transitions.get(cycle.get("transition_id")) != transition)
             if (target is None or environment.get("id") != transition.get("to_environment")
                     or environment.get("id") not in instance.get("trust_environments", {})
-                    or staged.get("proposal") != cycle["proposal"] or staged.get("identity_basis") != cycle.get("identity_basis")
-                    or staged.get("transition_basis") != exact_content_hash({"transition_id": transition["id"], "target": target,
-                        "verification": verification, "target_environment": environment, "from_environment": transition["from_environment"]})):
+                    or staged.get("proposal") != cycle["proposal"] or staged.get("identity_basis") != cycle.get("identity_basis")):
                 raise ValueError("staged review does not bind its actual transition target/environment")
+            if rehash:
+                verification = {key: value for key, value in transition.get("results", {}).get(cycle.get("knowledge_id"), {}).items()
+                                if key not in {"id", "identity_review"}}
+                if staged.get("transition_basis") != exact_content_hash({"transition_id": transition["id"], "target": target,
+                        "verification": verification, "target_environment": environment, "from_environment": transition["from_environment"]}):
+                    raise ValueError("staged review does not bind its actual transition target/environment")
             # Pending reviews must reproduce the current producer. Historical
             # cycles retain their frozen candidate after atomic activation.
-            if transition["status"] in {"checking", "ready"}:
-                from ..review_engine import ReviewEngineMixin
-                owner = ReviewEngineMixin()
-                owner.instance, owner.runtime = instance, runtime
-                if owner._staged_review_candidate(transition["id"], cycle["knowledge_id"]) != staged:
-                    raise ValueError("staged review differs from current transition evidence")
+            if pending and staged_review_candidate(instance, runtime, transition["id"], cycle["knowledge_id"]) != staged:
+                raise ValueError("staged review differs from current transition evidence")
         for reference in cycle.get("slot_profiles", {}).values():
             if reference is not None:
                 match_profile_ref(instance.get("execution_profiles", {}), reference)
@@ -501,14 +580,12 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
         env = instance.get("trust_environments", {}).get(instance["active_trust_environment"])
         if env is None or env.get("status") != "active":
             raise ValueError("active trust environment reference is not active")
-        from ..trust_validation import environment_errors
         errors = environment_errors(env, runtime.get("trust_bindings", {}).get(instance["active_trust_environment"]))
         if errors:
             raise ValueError("active trust environment contract: " + "; ".join(errors))
     current_kinds = set()
     for definition in instance.get("kind_definitions", {}).values():
         if definition.get("builtin"):
-            from ..knowledge_io import _BUILTINS
             if not any(all(definition.get(k) == builtin[k] for k in ("family", "token", "meaning", "constraints")) for builtin in _BUILTINS):
                 raise ValueError("builtin kind differs from installed definition")
         if definition["status"] != "withdrawn":
@@ -524,48 +601,26 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
         if definition["constraints"].get("mathematical_claim") and not all(
             definition["constraints"].get(k) for k in ("requires_formal_results", "requires_assessments")):
             raise ValueError("mathematical relation kind cannot waive formal evidence")
-    from ..governance import _import_payload
-    from ..repository import exact_content_hash
-    prior_imports = parent_runtime.get("intent_imports", {})
-    for identifier, bundle in runtime.get("intent_imports", {}).items():
-        if prior_imports.get(identifier) == bundle:
-            continue
-        validate_source(bundle["source"])
-        if exact_content_hash(_import_payload(bundle)) != bundle["sha256"]:
-            raise ValueError("sealed intent import hash mismatch")
-    from ..delegations import case_basis_reference_ids
-    from ..file_io import json_digest
     for application in runtime.get("delegation_applications", {}).values():
-        if json_digest(application["basis"]) != application["input_sha256"]:
-            raise ValueError("delegation application basis hash mismatch")
-        basis = application["basis"]
-        if set(basis["references"]) != set(case_basis_reference_ids(basis["case"])):
-            raise ValueError("delegation frozen references differ from declared case basis")
-        for identifier, record in basis["references"].items():
+        for identifier, record in application["basis"]["references"].items():
             if identifier not in identifiers or record.get("id") != identifier:
                 raise ValueError("delegation frozen reference identity does not resolve")
             root, family_name = identifiers[identifier][:2]
             if family_name not in RECORDS:
                 raise ValueError("delegation reference is not an independently typed record")
             contract.family(root, family_name).checker.validate(record)
-        execution_ids = []
-        for judgment in application["judgments"].values():
-            execution_ids.append(judgment["execution_id"])
-            if judgment["execution_id"] not in runtime.get("executions", {}) or json_digest(judgment["output"]) != judgment["sha256"]:
-                raise ValueError("delegation judgment provenance mismatch")
-        if len(execution_ids) != len(set(execution_ids)):
-            raise ValueError("delegation judgments must use distinct executions")
+        if any(judgment["execution_id"] not in runtime.get("executions", {})
+               for judgment in application["judgments"].values()):
+            raise ValueError("delegation judgment provenance mismatch")
     # Question scopes are not restricted to record IDs: the actual owner
     # also routes decisions to queued/deferred action coordinates or supplied
     # input aliases. These namespaces are explicit, not a scan for any 'id'.
     # They do not depend on the question, so build them once per validation.
     # Input references are derived, never stored; a stored target is valid whatever the host found.
-    from ..task_contracts import available_input_refs
     question_targets = (set(identifiers) | set(runtime.get("waiting_actions", {}))
                         | set(available_input_refs(instance, runtime, lean_available=True)))
     for source in instance.get("sources", []):
         question_targets.update(v for v in (source.get("path"), source.get("name")) if v)
-    from ..questions import open_targets
     for question in runtime.get("question_links", []):
         if question["origin_execution_id"] is None and not question.get("source_ref"):
             raise ValueError("nonexecution question requires a preserved source reference")

@@ -1,5 +1,0 @@
-{
-  "verdict": "accept",
-  "alignment": "보완판에서도 독해자는 합의의 무거운 것 셋(세 층의 대상·시점·책임자, 실행 중 금지 사항과 이유, 새 시험의 시작 상태와 종료 지점)을 중심으로 재구성했고, 추가한 통합 확인 실행 조건(Lean 도구 모음·로컬 보관소)과 병렬 묶음 규칙, 기계 전체 동시 실행 한도를 가벼운 것으로 정확히 읽었다. difficulties 0건. uncertainties 셋(조각 목록, fixture 인자, 로컬 절대 경로와 기준 커밋)은 원고가 SHARDS·research_fixtures docstring·로컬 환경에 의도적으로 맡긴 내용이다.",
-  "findings": []
-}

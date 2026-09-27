@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import hashlib
 from typing import Any
 
-from .file_io import is_sha256, parse_utc
+from .file_io import distinct_texts, is_sha256, json_copy, parse_utc, require_text
 from .repository import exact_content_hash, new_id
 from .academic import requirement_record
 from .execution_profiles import WORK_ROLES as _SLOT_WORK_ROLES
@@ -31,16 +31,24 @@ INTERPRETATION_DECISIONS = ("approved", "revision_required", "unresolved")
 GRANT_LIST_FIELDS = ("included_targets", "excluded_targets", "subjects", "execution_kinds", "purposes")
 # The states of one grant: created active, then revoked by a decision or expired by time.
 GRANT_STATUSES = frozenset({"active", "revoked", "expired"})
+# The states of one governance record edition.
+GOVERNANCE_STATUSES = frozenset({"active", "superseded"})
+
+
+def source_record(text: str) -> dict:
+    """The exact-original record ``{text, sha256, bytes}`` of ``text``'s UTF-8 bytes."""
+    raw = text.encode("utf-8")
+    return {"text": text, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}
 
 
 def preserve_source(identifier: str, text: str, *, origin: str, revision: int = 1) -> dict:
     """Preserve exact input, not a normalized or interpreted substitute."""
-    _require_text(identifier, "source id"); _require_text(text, "source text"); _require_text(origin, "origin")
+    require_text(identifier, "source id"); require_text(text, "source text"); require_text(origin, "origin")
     if type(revision) is not int or revision < 1:
         raise ValueError("source revision must be positive")
-    raw = text.encode("utf-8")
+    record = source_record(text)
     return {"id": identifier, "text": text, "origin": origin, "revision": revision,
-            "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}
+            "sha256": record["sha256"], "bytes": record["bytes"]}
 
 
 def validate_source(source: dict) -> None:
@@ -50,63 +58,57 @@ def validate_source(source: dict) -> None:
         raise ValueError("immutable source bytes or revision changed")
 
 
-def _strings(value, label, *, nonempty=False):
-    if not isinstance(value, list) or any(not isinstance(v, str) or not v.strip() for v in value) or len(set(value)) != len(value) or (nonempty and not value):
-        raise ValueError(label + " requires distinct nonempty strings")
-    return value
-
-
 def validate_governance_record(record: dict) -> None:
     if not isinstance(record, dict) or record.get("kind") not in GOVERNANCE_KINDS:
         raise ValueError("unsupported governance record kind")
-    _require_text(record.get("id"), "record id")
+    require_text(record.get("id"), "record id")
     if type(record.get("revision")) is not int or record["revision"] < 1:
         raise ValueError("governance revision must be positive")
-    _strings(record.get("supersedes"), "supersedes")
+    distinct_texts(record.get("supersedes"), "supersedes")
     if record["id"] in record["supersedes"]: raise ValueError("self supersession")
     c = record.get("content")
     if not isinstance(c, dict): raise ValueError("governance content required")
     kind = record["kind"]
     if kind == "charter":
         for key in ("rationale", "goal", "desired_result", "evidence_boundary", "decision_authority"):
-            _require_text(c.get(key), key)
+            require_text(c.get(key), key)
         if c["decision_authority"] != "user": raise ValueError("charter authority cannot create a new decision owner")
         for key in ("success_criteria", "partial_success_criteria", "included_scope", "excluded_scope", "priorities", "preferences", "stop_conditions"):
-            _strings(c.get(key), key, nonempty=key in {"success_criteria", "included_scope"})
+            distinct_texts(c.get(key), key, nonempty=key in {"success_criteria", "included_scope"})
         requirement_record(c.get("academic_requirements"))
     elif kind == "policy":
-        _require_text(c.get("rule_id"), "rule id"); _require_text(c.get("text"), "rule text")
-        _strings(c.get("scope"), "rule scope", nonempty=True)
-        _strings(c.get("reason_refs"), "rule reasons", nonempty=True)
-        _strings(c.get("audit_refs"), "rule audits")
+        require_text(c.get("rule_id"), "rule id"); require_text(c.get("text"), "rule text")
+        distinct_texts(c.get("scope"), "rule scope", nonempty=True)
+        distinct_texts(c.get("reason_refs"), "rule reasons", nonempty=True)
+        distinct_texts(c.get("audit_refs"), "rule audits")
     elif kind == "research_context":
         terms = c.get("terms")
         if not isinstance(terms, list) or not terms: raise ValueError("context terms required")
         seen = set()
         for term in terms:
             if not isinstance(term, dict): raise ValueError("context term must be an object")
-            for key in ("term", "definition", "boundary"): _require_text(term.get(key), key)
+            for key in ("term", "definition", "boundary"): require_text(term.get(key), key)
             if term["term"] in seen: raise ValueError("duplicate context term")
             seen.add(term["term"])
-            _strings(term.get("avoid_synonyms"), "avoided synonyms")
-            _strings(term.get("record_refs"), "definition references")
+            distinct_texts(term.get("avoid_synonyms"), "avoided synonyms")
+            distinct_texts(term.get("record_refs"), "definition references")
     else:
-        _strings(c.get("scope"), "audit scope", nonempty=True)
-        _strings(c.get("required_inputs"), "audit inputs", nonempty=True)
-        _require_text(c.get("assessor"), "audit assessor")
+        distinct_texts(c.get("scope"), "audit scope", nonempty=True)
+        distinct_texts(c.get("required_inputs"), "audit inputs", nonempty=True)
+        require_text(c.get("assessor"), "audit assessor")
         mapping = c.get("verdict_mapping")
         if not isinstance(mapping, dict) or not mapping or any(not k or v not in {"satisfied", "not_satisfied", "unresolved"} for k, v in mapping.items()):
             raise ValueError("audit needs explicit universal verdict mapping")
     if "document" in record:
         document = record["document"]
         if not isinstance(document, dict): raise ValueError("document reference required")
-        _require_text(document.get("ref"), "document ref")
+        require_text(document.get("ref"), "document ref")
         if not is_sha256(document.get("sha256")): raise ValueError("document bytes hash required")
 
 
 def _install_record(instance, record, approval_ref, source_ref):
     validate_governance_record(record)
-    records = instance.setdefault("governance", {})
+    records = instance["governance"]
     identifier, kind = record["id"], record["kind"]
     if identifier in records: raise ValueError("governance ID is immutable")
     for old_id in record["supersedes"]:
@@ -127,26 +129,25 @@ def initialize_governance(instance, source, approval, records, *, approval_sourc
     immutable = instance.get("lifecycle", {}).get("immutable_input")
     if immutable and any(immutable.get(k) != source[k] for k in ("text", "sha256", "bytes")):
         raise ValueError("initial charter source differs from initialization immutable input")
-    if instance.get("governance"): raise ValueError("governance is already initialized")
+    if instance["governance"]: raise ValueError("governance is already initialized")
     approval_source = source if approval_source is None else approval_source
     validate_source(approval_source)
     if not isinstance(approval, dict) or approval.get("actor") != "user" or approval.get("source_ref") != approval_source["id"] or approval.get("source_sha256") != approval_source["sha256"]:
         raise ValueError("initialization requires actual user approval of the immutable input")
     if approval.get("input_source_ref", approval["source_ref"]) != source["id"] or approval.get("input_source_sha256",approval["source_sha256"]) != source["sha256"]:
         raise ValueError("approval does not bind the original initialization input")
-    _require_text(approval.get("id"), "approval id")
+    require_text(approval.get("id"), "approval id")
     if not records or len({r["id"] for r in records}) != len(records) or approval.get("record_hashes") != {r["id"]: exact_content_hash(r) for r in records}:
         raise ValueError("approval must bind the exact proposed records")
     result = deepcopy(instance)
-    if source["id"] in result.get("governance_sources", {}) and result["governance_sources"][source["id"]] != source:
+    if source["id"] in result["governance_sources"] and result["governance_sources"][source["id"]] != source:
         raise ValueError("source ID already bound")
-    if approval["id"] in result.get("decisions", {}): raise ValueError("initial approval ID already exists")
-    result.setdefault("governance_sources", {})[source["id"]] = deepcopy(source)
+    if approval["id"] in result["decisions"]: raise ValueError("initial approval ID already exists")
+    result["governance_sources"][source["id"]] = deepcopy(source)
     if approval_source["id"] in result["governance_sources"] and result["governance_sources"][approval_source["id"]] != approval_source:
         raise ValueError("approval original source ID already bound")
     result["governance_sources"][approval_source["id"]] = deepcopy(approval_source)
-    result.setdefault("decisions", {})[approval["id"]] = deepcopy(approval)
-    result.setdefault("grants", {})
+    result["decisions"][approval["id"]] = deepcopy(approval)
     for record in records: _install_record(result, record, approval["id"], source["id"])
     if sum(r["kind"] == "charter" for r in records) != 1: raise ValueError("initialization needs exactly one approved charter")
     result["governance_approval"] = {"decision_ref": approval["id"], "source_ref": source["id"], "source_sha256": source["sha256"]}
@@ -170,8 +171,6 @@ def governance_view(instance):
 
 def validate_governance_state(instance):
     """Domain validation callable before publication, independent of file layout."""
-    if any(k in instance for k in ("goal", "policies", "goal_revision", "policy_revision", "academic_requirements")):
-        raise ValueError("parallel governance authority in feature 5")
     if instance.get("goal_status", "unsolved") not in {"unsolved", "mathematically_solved"}: raise ValueError("unsupported final goal assurance")
     known = set(instance.get("governance", {})) | set(instance.get("decisions", {}))
     for family in ("knowledge", "formal_results", "expositions", "research_records"):
@@ -187,14 +186,14 @@ def validate_governance_state(instance):
             approved_hash = exact_content_hash(approval["change"]["record"])
         approval_source = instance.get("governance_sources", {}).get(approval.get("source_ref"))
         validate_source(approval_source)
-        if (approval.get("actor") != "user" or approval.get("revoked")
+        if (approval.get("actor") != "user"
                 or approval.get("input_source_ref",approval.get("source_ref")) != source["id"]
                 or approval.get("input_source_sha256",approval.get("source_sha256")) != source["sha256"]
                 or approval.get("source_sha256") != approval_source["sha256"]):
             raise ValueError("record lacks actual source-bound user approval")
         if exact_content_hash(proposal) != record.get("content_sha256") or approved_hash != exact_content_hash(proposal):
             raise ValueError("governance content differs from approved proposal")
-        if record.get("status") not in {"active", "superseded"}: raise ValueError("invalid governance lifecycle")
+        if record.get("status") not in GOVERNANCE_STATUSES: raise ValueError("invalid governance lifecycle")
         if record["status"] == "superseded":
             successor = instance["governance"].get(record.get("superseded_by"), {})
             if record["id"] not in successor.get("supersedes", []) or successor.get("kind") != record["kind"]:
@@ -271,7 +270,7 @@ def evaluate_goal_audits(instance, runtime, execution_id, results):
         raise ValueError("additional audit result identity differs")
     mapped = []
     for row in results:
-        _require_text(row.get("reason"), "audit reason")
+        require_text(row.get("reason"), "audit reason")
         evaluation = evaluate_additional_audit(instance, row["audit_ref"], row.get("verdict"),
             assessor=row.get("assessor"), input_hashes=row.get("input_hashes", {}), runtime=runtime)
         mapped.append({**evaluation, "execution_id": execution_id, "reason": row["reason"]})
@@ -290,7 +289,7 @@ def validate_goal_additional_audits(instance, judgments, *, runtime=None):
                 assessor=row.get("assessor"), input_hashes=row.get("input_hashes", {}), runtime=runtime)
             if any(row.get(key) != value for key, value in actual.items()) or row.get("execution_id") != judgment.get("execution_id"):
                 raise ValueError("additional audit mapping or judgment binding changed")
-            _require_text(row.get("reason"), "audit reason")
+            require_text(row.get("reason"), "audit reason")
             if actual["decision"] != "satisfied": raise ValueError("additional audit does not establish goal satisfaction")
 
 
@@ -299,7 +298,7 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
     validate_source(instance.get("governance_sources", {}).get(source_ref))
     result, state = deepcopy(instance), deepcopy(runtime)
     decision_id = change.get("decision_id") or new_id("DC")
-    old = result.setdefault("decisions", {}).get(decision_id)
+    old = result["decisions"].get(decision_id)
     if old:
         if old.get("change") != change or old.get("source_ref") != source_ref: raise ValueError("decision ID reused")
         return result, state, old
@@ -343,15 +342,6 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
 def timestamp(value: str | None = None) -> datetime:
     """A stored zoned time as UTC; None means the current time."""
     return datetime.now(timezone.utc) if value is None else parse_utc(value)
-
-
-def ensure_governance(instance: dict) -> dict:
-    result = deepcopy(instance)
-    result.setdefault("governance", {})
-    result.setdefault("governance_sources", {})
-    result.setdefault("decisions", {})
-    result.setdefault("grants", {})
-    return result
 
 
 def grant_case_id(action, runtime):
@@ -459,20 +449,14 @@ def authorize(instance: dict, action: dict, at: str | None = None, *, runtime: d
             "expires_at": grant.get("expires_at"), "checkpoint_allowed": grant.get("checkpoint_allowed", False)}
 
 
-def _require_text(value: Any, label: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{label} must be nonempty text")
-    return value
-
-
 def validate_grant_source(instance, grant):
     """Resolve the exact preserved approval, not an origin label or caller claim."""
     source = instance.get("governance_sources", {}).get(grant.get("source_ref"))
     validate_source(source)
     decision = instance.get("decisions", {}).get(grant.get("decision_id"), {})
-    if (decision.get("actor") != "user" or decision.get("kind") != "grant" or decision.get("revoked")
-            or decision.get("status", "active") != "active" or decision.get("source_ref") != source["id"]
-            or decision.get("source_sha256", source["sha256"]) != source["sha256"]):
+    if (decision.get("actor") != "user" or decision.get("kind") != "grant"
+            or decision.get("source_ref") != source["id"]
+            or decision["source_sha256"] != source["sha256"]):
         raise ValueError("grant lacks current source-bound user approval")
     approved = normalized_grant(decision.get("change", {}).get("grant", {}), gid=grant["id"],
                                 created_at=decision["created_at"], source_ref=source["id"], decision_id=decision["id"])
@@ -549,7 +533,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         raise ValueError("a preserved user decision is required")
     if change.get("kind") in GOVERNANCE_KINDS:
         return _apply_domain_decision(instance, runtime, change, source_ref, actor, at)
-    instance, runtime = ensure_governance(instance), deepcopy(runtime)
+    instance, runtime = deepcopy(instance), deepcopy(runtime)
     validate_source(instance.get("governance_sources", {}).get(source_ref, {}))
     when = timestamp(at).isoformat()
     kind = change.get("kind")
@@ -588,7 +572,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         spec = normalized_grant(spec, gid=gid, created_at=when, source_ref=source_ref, decision_id=decision_id)
         if spec["reuse"] not in {"once", "reusable"}: raise ValueError("grant reuse must be explicit once or reusable")
         for field in GRANT_LIST_FIELDS:
-            _strings(spec[field], field)
+            distinct_texts(spec[field], field)
         if spec.get("resource_limits"):
             raise ValueError("resource limits require an enforcing reservation contract; unsupported limits cannot be granted")
         if spec.get("valid_from"): timestamp(spec["valid_from"])
@@ -596,7 +580,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
             raise ValueError("grant has an empty effective interval")
         instance["grants"][gid] = spec
         replaces = change.get("replaces", [])
-        _strings(replaces, "replaced grants")
+        distinct_texts(replaces, "replaced grants")
         for old_id in replaces:
             previous = instance["grants"].get(old_id)
             if previous is None or old_id == gid or previous["status"] != "active": raise ValueError("replacement requires distinct active grants")
@@ -625,7 +609,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         delegation.update(source_ref=source_ref, decision_id=decision_id, created_at=when)
         delegation = validate_delegation(delegation, now_iso=when)
         original = instance["decisions"].get(delegation["original_decision_id"], {})
-        if original.get("actor") != "user" or original.get("kind") != delegation["decision_kind"] or original.get("revoked"):
+        if original.get("actor") != "user" or original.get("kind") != delegation["decision_kind"]:
             raise ValueError("delegation must bind an actual current user decision of the same kind")
         instance.setdefault("delegations", {})
         if delegation["id"] in instance["delegations"]:
@@ -642,13 +626,13 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         instance['decisions'][decision_id] = event
         continue_repetition(instance, runtime, change, event)
     elif kind == "question_answer":
-        _require_text(change.get("text"), "answer text")
+        require_text(change.get("text"), "answer text")
         identifiers = change.get("resolves_questions", [])
         if not identifiers:
             raise ValueError("a question answer must identify its questions")
         by_id = {row["id"]: row for row in runtime.get("question_links", [])}
         targets = change.get("target_ids")
-        _strings(targets, "answer affected targets", nonempty=True)
+        distinct_texts(targets, "answer affected targets", nonempty=True)
         for identifier in identifiers:
             if identifier not in by_id:
                 raise ValueError("unknown question: " + str(identifier))
@@ -668,10 +652,10 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
             raise ValueError("scope approval must bind the exact task contract edition")
         disposition = change.get("disposition")
         if disposition not in {"revise", "waive", "transfer"}:
-            raise ValueError("v5 scope approval requires revise, waive or transfer of named obligations")
-        reason = _require_text(change.get("reason"), "scope reason")
+            raise ValueError("scope approval requires revise, waive or transfer of named obligations")
+        reason = require_text(change.get("reason"), "scope reason")
         if disposition in {"waive", "transfer"}:
-            ids = _strings(change.get("obligation_ids"), "approved obligations", nonempty=True)
+            ids = distinct_texts(change.get("obligation_ids"), "approved obligations", nonempty=True)
             if set(ids) - {row["id"] for row in task["completion_obligations"]}:
                 raise ValueError("scope approval names an unknown obligation")
             if disposition == "transfer":
@@ -752,7 +736,7 @@ def register_import_owner(handlers, kind, *, apply, validate, basis, contract=No
     apply(i,r,unit,approval) returns the two roots using that same owner contract.
     ENGINE supplies configuration's existing configure consumer through this API.
     """
-    _require_text(kind, "import owner kind")
+    require_text(kind, "import owner kind")
     if kind in DECISION_OWNER_KINDS:
         raise ValueError("cannot replace a governance authority owner")
     if kind in handlers: raise ValueError("import owner already registered")
@@ -800,14 +784,14 @@ def _validate_knowledge_import(instance, runtime, unit):
 
 def _knowledge_import_basis(instance, runtime, unit):
     from .planning import record_index
-    from .knowledge_io import _lookup_definition, ensure_ontology
+    from .knowledge_io import lookup_definition, ensure_ontology
     from .input_basis import capture_sources
     candidate = unit["payload"].get("record", {})
     records = record_index(instance, runtime)
     refs = {unit["owner_ref"], *candidate.get("dependencies", [])}
     if candidate.get("formal_result_ref"): refs.add(candidate["formal_result_ref"])
     return {"records": {ref: deepcopy(records.get(ref, (None, None))[1]) for ref in sorted(refs)},
-            "kind_definition": deepcopy(_lookup_definition(ensure_ontology(instance), "knowledge", candidate.get("kind", ""))),
+            "kind_definition": deepcopy(lookup_definition(ensure_ontology(instance), "knowledge", candidate.get("kind", ""))),
             "source_basis": capture_sources(instance, candidate.get("source_refs", []))}
 
 
@@ -834,7 +818,7 @@ def register_configuration_owner(handlers, *, apply):
     pending selections). It must not dispatch external effects during staging.
     """
     def validate(instance, runtime, unit):
-        from .engine import validate_config
+        from .configuration import validate_config
         patch = unit["payload"].get("config")
         if unit["owner_ref"] != instance["id"] or not isinstance(patch, dict):
             raise ValueError("configuration import must bind this instance and an explicit config patch")
@@ -878,7 +862,7 @@ def validate_import_units(instance, runtime, source, output, *, owner_handlers=N
     cursor = 0; seen = set(); referenced_questions = set()
     for unit in units:
         if not isinstance(unit, dict): raise ValueError("import unit must be an object")
-        identifier = _require_text(unit.get("unit_id"), "unit id")
+        identifier = require_text(unit.get("unit_id"), "unit id")
         if identifier in seen: raise ValueError("duplicate meaning unit")
         seen.add(identifier)
         span = unit.get("source_range", {})
@@ -886,12 +870,12 @@ def validate_import_units(instance, runtime, source, output, *, owner_handlers=N
         if type(start) is not int or type(end) is not int or start != cursor or end <= start or end > len(source["text"]):
             raise ValueError("source coverage gap, overlap, or invalid coordinate")
         cursor = end
-        _require_text(unit.get("interpretation"), "interpretation")
-        _require_text(unit.get("owner_ref"), "owner ref")
+        require_text(unit.get("interpretation"), "interpretation")
+        require_text(unit.get("owner_ref"), "owner ref")
         if unit.get("owner_kind") not in known_owners: raise ValueError("owner has no registered domain handler")
         if not isinstance(unit.get("payload"), dict): raise ValueError("unit payload must be an object")
-        _strings(unit.get("decision_refs"), "decision references")
-        _strings(unit.get("question_refs"), "question references")
+        distinct_texts(unit.get("decision_refs"), "decision references")
+        distinct_texts(unit.get("question_refs"), "question references")
         if set(unit["decision_refs"]) - set(decisions): raise ValueError("existing decision does not resolve")
         if set(unit["question_refs"]) - set(qids): raise ValueError("unit question does not resolve")
         referenced_questions.update(unit["question_refs"])
@@ -925,16 +909,16 @@ def validate_import_units(instance, runtime, source, output, *, owner_handlers=N
         if type(index) is not int or not 0 <= index < len(output.get("questions", [])) or index in indices: raise ValueError("invalid question coordinate")
         indices.add(index)
         if type(q.get("blocks")) is not bool: raise ValueError("question must state whether the decision blocks work")
-        _strings(q.get("target_ids"), "question targets", nonempty=q["blocks"])
+        distinct_texts(q.get("target_ids"), "question targets", nonempty=q["blocks"])
         if set(q["target_ids"]) - known_targets: raise ValueError("question affects an unknown target")
-        _require_text(q.get("reason"), "decision need")
-        _strings(q.get("source_unit_ids"), "question source units", nonempty=True)
+        require_text(q.get("reason"), "decision need")
+        distinct_texts(q.get("source_unit_ids"), "question source units", nonempty=True)
         if set(q["source_unit_ids"]) - seen: raise ValueError("question source unit missing")
         actual_units = {unit["unit_id"] for unit in units if q["id"] in unit["question_refs"]}
         if set(q["source_unit_ids"]) != actual_units: raise ValueError("question coordinates contradict unit ownership")
         if not isinstance(q.get("options"), list): raise ValueError("question options and effects must be explicit")
         for option in q["options"]:
-            _require_text(option.get("text"), "option"); _require_text(option.get("effect"), "option effect")
+            require_text(option.get("text"), "option"); require_text(option.get("effect"), "option effect")
     if indices != set(range(len(output.get("questions", [])))): raise ValueError("all questions require source and impact details")
     if bool(details) != output.get("needs_clarification"): raise ValueError("clarification and question records disagree")
 
@@ -958,7 +942,7 @@ def import_input_source(instance, runtime, input_id):
 
 def prepare_import(instance, runtime, source, output, *, execution_id, input_ref, previous_id=None, owner_handlers=None):
     """Seal an interpretation of the public input ``input_ref``, whose exact source is ``source``."""
-    _require_text(execution_id, "author execution")
+    require_text(execution_id, "author execution")
     if import_input_source(instance, runtime, input_ref) != source:
         raise ValueError('source differs from the exact public input')
     validate_import_units(instance, runtime, source, output, owner_handlers=owner_handlers)
@@ -986,7 +970,6 @@ def prepare_import(instance, runtime, source, output, *, execution_id, input_ref
     if known and known != source: raise ValueError("source identity reused with different bytes")
     identifier = new_id("IM")
     bundle = {"id": identifier, "source": deepcopy(source), "output": deepcopy(output), "execution_id": execution_id,
-              "coordinate_unit": "unicode_codepoint", "basis_scope": "referenced-v1",
               "basis_sha256": _import_basis(instance, runtime, output),
               "owner_basis": _owner_basis(instance, runtime, output, _owner_handlers(owner_handlers)),
               "previous_id": previous_id, "previous_findings": deepcopy(previous.get("check", {}).get("findings", [])) if previous else [],
@@ -1024,7 +1007,7 @@ def _current_import(instance, runtime, import_id, *, owner_handlers=None):
 def check_import(instance, runtime, import_id, output, *, execution_id, owner_handlers=None):
     bundle = _current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
     if bundle.get("check"): raise ValueError("check is sealed; reauthor instead")
-    _require_text(execution_id, "checker execution")
+    require_text(execution_id, "checker execution")
     validate_independent_execution(runtime,execution_id,[bundle["execution_id"]])
     execution = runtime.get("executions", {}).get(execution_id, {})
     if execution.get("role") != "intent_interpretation" or execution.get("intent_import_sha256") != bundle["sha256"]:
@@ -1034,9 +1017,9 @@ def check_import(instance, runtime, import_id, output, *, execution_id, owner_ha
     if type(output.get("scope_complete")) is not bool: raise ValueError("scope completeness required")
     for field, expected in (("unit_ids", [u["unit_id"] for u in bundle["output"]["import_units"]]),
                             ("question_ids", [q["id"] for q in bundle["output"].get("question_details", [])])):
-        _strings(output.get(field), field)
+        distinct_texts(output.get(field), field)
         if output["scope_complete"] and set(output[field]) != set(expected): raise ValueError("check must cover all meaning units and questions")
-    _strings(output.get("findings"), "check findings")
+    distinct_texts(output.get("findings"), "check findings")
     if output["decision"] == "revision_required" and not output["findings"]: raise ValueError("failed check needs repair findings")
     check = {**deepcopy(output), "execution_id": execution_id}
     check["sha256"] = exact_content_hash(check)
@@ -1045,16 +1028,38 @@ def check_import(instance, runtime, import_id, output, *, execution_id, owner_ha
     return deepcopy(bundle)
 
 
+def execution_lineage(runtime, execution_id, fields=("continuation_of", "context_origin"), *, revisit_error=None):
+    """Yield (ID, execution) for execution_id and each execution its ``fields`` reach, depth first.
+
+    Each ID is yielded once. The execution is None for an ID with no record, and its
+    links are not followed; the caller decides whether that rejects or ends its
+    judgment. With ``revisit_error``, reaching an ID again raises ValueError with it.
+    """
+    executions = runtime.get("executions", {})
+    pending, seen = [execution_id], set()
+    while pending:
+        identifier = pending.pop()
+        if identifier in seen:
+            if revisit_error:
+                raise ValueError(revisit_error)
+            continue
+        seen.add(identifier)
+        row = executions.get(identifier)
+        yield identifier, row
+        for field in fields if row is not None else ():
+            values = row.get(field) or []
+            pending.extend([values] if isinstance(values, str) else values)
+
+
 def validate_independent_execution(runtime, execution_id, author_ids):
     """Logical execution independence, not OS isolation or same-user authentication."""
     execution=runtime.get("executions",{}).get(execution_id,{})
     if not execution or execution_id in author_ids: raise ValueError("independent checker execution required")
-    cursor=execution;seen=set()
-    while cursor.get("continuation_of"):
-        predecessor=cursor["continuation_of"]
-        if predecessor in author_ids or predecessor in seen: raise ValueError("checker resumes an author lineage")
-        seen.add(predecessor);cursor=runtime.get("executions",{}).get(predecessor,{})
-        if not cursor: raise ValueError("checker continuation lineage does not resolve")
+    for predecessor, row in execution_lineage(runtime, execution_id, ("continuation_of",),
+                                              revisit_error="checker resumes an author lineage"):
+        if predecessor == execution_id: continue
+        if predecessor in author_ids: raise ValueError("checker resumes an author lineage")
+        if not row: raise ValueError("checker continuation lineage does not resolve")
     for author_id in author_ids:
         author=runtime.get("executions",{}).get(author_id,{})
         for field in ("provider_session_id","conversation_id"):
@@ -1091,7 +1096,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
         raise ValueError("checker input evidence no longer resolves")
     result, state = deepcopy(instance), deepcopy(runtime)
     validate_import_units(result, state, bundle["source"], bundle["output"], owner_handlers=owner_handlers)
-    result.setdefault("governance_sources", {})[bundle["source"]["id"]] = deepcopy(bundle["source"])
+    result["governance_sources"][bundle["source"]["id"]] = deepcopy(bundle["source"])
     from .questions import link
     for q in bundle["output"].get("question_details", []):
         row = link(state, execution_id=bundle["execution_id"], field=f"output/questions/{q['question_index']}", owner="user",
@@ -1136,15 +1141,17 @@ def apply_import_control(instance, runtime, request, *, owner_handlers=None):
     spec = request.get("config", {})
     if request.get("action") != "decision" or request.get("origin", "user") != "user" or spec.get("kind") != "import_approval":
         raise ValueError("import approval requires an explicit user decision control")
-    bundle = _current_import(instance, runtime, spec.get("import_id"), owner_handlers=owner_handlers)
+    # apply_import checks that the bundle is current; here only its sealed coordinates are compared.
+    bundle = runtime.get("intent_imports", {}).get(spec.get("import_id"))
+    if not bundle: raise ValueError("import is absent")
     if spec.get("bundle_sha256") != bundle["sha256"] or spec.get("check_sha256") != bundle.get("check", {}).get("sha256"):
         raise ValueError("approval does not name the exact sealed interpretation and check")
     required = {u["unit_id"]: exact_content_hash(u["payload"]) for u in bundle["output"]["import_units"] if u["payload"]}
     if spec.get("unit_hashes") != required: raise ValueError("approval must bind every exact proposed change")
     source = preserve_source(request["id"], request.get("text", ""), origin="user")
-    _require_text(source["text"], "approval original")
+    require_text(source["text"], "approval original")
     result = deepcopy(instance)
-    existing = result.setdefault("governance_sources", {}).get(source["id"])
+    existing = result["governance_sources"].get(source["id"])
     if existing is not None and existing != source: raise ValueError("approval source identity reused")
     result["governance_sources"][source["id"]] = source
     approvals = {uid: {"actor": "user", "source_ref": source["id"], "source_sha256": source["sha256"],
@@ -1188,4 +1195,4 @@ def interpretation_schema(stage: str) -> dict:
         repair_fields = {"previous_sha256":string,"changed_unit_ids":{"type":"array","items":string,"uniqueItems":True},
                          "actions":{"type":"array","items":string,"minItems":1}}
         fields["repair"] = {"type":"object","additionalProperties":False,"properties":repair_fields,"required":list(repair_fields)}
-    return {"type": "object", "additionalProperties": False, "properties": fields, "required": required}
+    return json_copy({"type": "object", "additionalProperties": False, "properties": fields, "required": required})

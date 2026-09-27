@@ -7,7 +7,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit, unquote
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from .file_io import json_digest, parse_utc
+from .file_io import parse_utc
+from .repository import exact_content_hash
 
 # The states of one external operation; its EX execution reports the same set.
 OPERATION_STATUSES = frozenset({"prepared", "confirmed", "failed", "unknown", "cancelled"})
@@ -16,7 +17,7 @@ OPERATION_STATUSES = frozenset({"prepared", "confirmed", "failed", "unknown", "c
 def idempotency_key(operation_id: str, request_sha256: str) -> str: return hashlib.sha256((operation_id + request_sha256).encode()).hexdigest()
 def request_binding_current(operation: dict) -> bool:
     """The stored request bytes and idempotency key still bind this operation ID."""
-    digest = json_digest(operation.get("request"))
+    digest = exact_content_hash(operation.get("request"))
     return operation.get("request_sha256") == digest and operation.get("idempotency_key") == idempotency_key(operation.get("id", ""), digest)
 
 def _retry_evidence_bound(operation: dict, evidence: dict) -> bool:
@@ -46,7 +47,7 @@ def prepare_operation(request: dict, grant_id: str, source_ref: str, operation_i
     parsed=_url(request)
     if not isinstance(grant_id,str) or not isinstance(source_ref,str) or not grant_id or not source_ref: raise ValueError("grant and source refs required")
     normalized={"method":request["method"],"url":parsed.geturl(),"body":_body(request)}
-    digest=json_digest(normalized); oid=operation_id or hashlib.sha256((grant_id+source_ref+digest).encode()).hexdigest()[:24]
+    digest=exact_content_hash(normalized); oid=operation_id or hashlib.sha256((grant_id+source_ref+digest).encode()).hexdigest()[:24]
     scope = {key: value for key, value in {"target_id": target_id, "purpose": purpose, "subject": subject,
              "actor_kind": actor_kind}.items() if value is not None}
     if any(not isinstance(value, str) or not value.strip() for value in scope.values()):

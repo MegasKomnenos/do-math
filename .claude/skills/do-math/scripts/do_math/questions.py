@@ -3,6 +3,11 @@ from copy import deepcopy
 
 from .repository import new_id
 
+# Who answers a question: the user, the research roles or the operational roles.
+QUESTION_OWNERS = frozenset({"user", "research", "operations"})
+# The roles that own operations questions.
+OPERATIONS_ROLES = frozenset({"operational_review", "maintenance"})
+
 
 def open_links(runtime, owner=None):
     return [row for row in runtime.get("question_links", []) if row["status"] == "open" and (owner is None or row["owner"] == owner)]
@@ -28,7 +33,7 @@ def user_waits(action, instance, runtime, *, records=None):
 
 
 def link(runtime, *, execution_id, field, owner, targets, source_ref=None, reason=None, blocks=False, checked_by=None):
-    if owner not in {"user", "research", "operations"} or type(blocks) is not bool:
+    if owner not in QUESTION_OWNERS or type(blocks) is not bool:
         raise ValueError("question owner and blocking decision required")
     if not isinstance(targets, list) or any(not isinstance(t, str) or not t for t in targets) or (blocks and not targets):
         raise ValueError("blocking questions require explicit affected targets")
@@ -69,9 +74,9 @@ def resolution_error(row, role):
 
     Submission checks call this on the fixed input, and application calls it again
     because another execution may have closed the question in between."""
-    if not row or row["status"] != "open" or row["owner"] not in {"research", "operations"}:
+    if not row or row["status"] != "open" or row["owner"] not in QUESTION_OWNERS - {"user"}:
         return "only distinct open research or operations questions can be resolved by an AI extension"
-    if row["owner"] == "operations" and role not in {"operational_review", "maintenance"}:
+    if row["owner"] == "operations" and role not in OPERATIONS_ROLES:
         return "an operations question requires an operational role"
     return None
 

@@ -16,6 +16,10 @@ from .record_schemas.schemas import PROFILE_REF, RECORDS
 # A caller-chosen control request ID; the CLI request schema and ENGINE share it.
 REQUEST_ID_PATTERN = '^[A-Za-z0-9_-]{1,128}$'
 SOURCE_FIELDS = frozenset({'name', 'body_base64', 'sha256', 'bytes'})
+# Resource capacity and model allocation settings. Only a user decision changes
+# them: public configure admission and inbox application both refuse the operator.
+USER_DECISION_SETTINGS = ('session_limits', 'tier_models', 'role_tiers', 'claude_only_assigned_model',
+                          'host_resources')
 
 
 def control_request_id(instance_id, action, *, text='', config=None, origin='user', idempotency_key=None):
@@ -109,7 +113,7 @@ DECISION = obj({**fields(text='kind operation decision_id grant_id delegation_id
     **fields(text='conversation_loss_policy external_policy')})
 RELATION = obj(fields(text='id kind source target evidence confirmed_scope',
     lists='evidence_refs formal_result_refs assessment_refs'))
-CANDIDATE = obj({**fields(text='id kind title statement explanation summary lean_code confirmed_scope epistemic_status selection_relevance formal_result_ref',
+CANDIDATE = obj({**fields(text='id kind title statement explanation summary lean_code confirmed_scope epistemic_status selection_relevance',
     lists='declaration_names dependencies origin_refs source_refs'),
     'relation_claim': {'anyOf': [RELATION, {'type': 'null'}]}, 'formal_result_ref': TIME})
 CONFIRMATION = {'type': ['object', 'null'], 'properties': {

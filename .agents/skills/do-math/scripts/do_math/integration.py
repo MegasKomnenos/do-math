@@ -10,11 +10,12 @@ from copy import deepcopy
 
 import jsonschema
 
-from .contracts import MANIFEST_SCHEMA, REFS, TEXT
+from .contracts import MANIFEST_SCHEMA, REFS, TEXT, closed_object
+from .execution_profiles import RESEARCH_PRODUCER_ROLES
+from .file_io import json_copy
 from .repository import exact_content_hash
 
 
-PRODUCERS = {"research_work", "supplemental_research"}
 REFERENCE_KEYS = {"dependencies", "inputs", "reuse", "source", "target", "evidence_refs",
                   "formal_result_refs", "assessment_refs", "record_ids", "record_id",
                   "source_refs", "origin_refs", "target_ids", "authority_refs",
@@ -114,15 +115,13 @@ def bundle_impact_request(instance, runtime, bundle, *, producer_execution_id, i
 
 def impact_review_response_schema(request):
     """A producer can reject or leave unresolved every explicitly assigned scope."""
-    def obj(fields):
-        return {"type": "object", "additionalProperties": False, "properties": fields, "required": list(fields)}
     alternatives = []
     for scope, plan in request["plans"].items():
-        alternatives.append(obj({"scope": {"const": scope}, "plan_digest": {"const": plan["digest"]},
+        alternatives.append(closed_object({"scope": {"const": scope}, "plan_digest": {"const": plan["digest"]},
             "decision": {"enum": ["approve", "reject", "unresolved"]}, "affected_ids": REFS, "reason": TEXT}))
     if not alternatives:
         raise ValueError("impact review must name an actual plan")
-    schema = obj({**{key: {"const": request[key]} for key in
+    schema = closed_object({**{key: {"const": request[key]} for key in
         ("integration_id", "payload_sha256", "producer_execution_id", "input_snapshot")},
         "plan_decisions": {"type": "array", "minItems": len(alternatives), "maxItems": len(alternatives),
                            "items": {"oneOf": alternatives}}})
@@ -133,7 +132,7 @@ def impact_review_response_schema(request):
         "Use unresolved when essential evidence or scope is uncertain, and reject an unjustified disposition. "
         "Do not approve solely because hashes match. This judgment grants no new mathematical result, "
         "user authority or external-effect permission; it only resolves this held bundle's impact gate.")
-    return schema
+    return json_copy(schema)
 
 
 def validate_impact_review_response(request, output):
@@ -188,7 +187,7 @@ def _reviewed_impact_request(instance, runtime, bundle, *, producer_execution_id
         raise ValueError("impact review is not the accepted designated current assignment")
     if not snapshot or read_artifact is None or not review.get("input_bundle"):
         raise ValueError("impact review requires sealed input and output artifacts")
-    fixed, _ = issued_input(review, snapshot, read_artifact, git_dir=git_dir, with_schema=False)
+    fixed, _ = issued_input(review, snapshot, read_artifact, with_schema=False)
     if fixed.get("execution_id") != review_execution_id or fixed.get("action") != action:
         raise ValueError("impact review input is not the sealed designated assignment")
     output = read_sealed_submission(review, snapshot, read_artifact, git_dir=git_dir)["output"]
@@ -234,9 +233,10 @@ def apply_reviewed_knowledge_changes(instance, runtime, bundle, *, actor_ref, pr
     return output, running
 
 
-def _split_research(context):
+def split_research(context):
+    """Ordinary task research, whose knowledge and relation records form independent bundles."""
     action = context.get("action", {})
-    return (action.get("role") in PRODUCERS and not action.get("review_cycle_id")
+    return (action.get("role") in RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id")
             and not action.get("revision_targets"))
 
 
@@ -245,7 +245,7 @@ def member_values(output, extensions, context):
     base = {key: deepcopy(value) for key, value in output.items()
             if key not in {"integration_bundles", "repair_responses"}}
     members = {}
-    if _split_research(context):
+    if split_research(context):
         for family in ("knowledge", "relations"):
             for index, value in enumerate(base.pop(family, [])):
                 members[f"output/{family}/{index}"] = value
@@ -333,7 +333,7 @@ def inspect_bundles(output, extensions, context, *, derived=None):
     ids = [row["integration_id"] for row in manifest]
     if len(set(ids)) != len(ids):
         issues.append(issue("integration.members", "output/integration_bundles", "integration IDs must be unique"))
-    if not _split_research(context) and len(manifest) != 1:
+    if not split_research(context) and len(manifest) != 1:
         issues.append(issue("integration.single_bundle", "output/integration_bundles",
                             "this role response and all extensions are one judgment"))
     try:
@@ -348,7 +348,7 @@ def inspect_bundles(output, extensions, context, *, derived=None):
             owners[coordinate] = bundle["integration_id"]
     accepted_response = context.get("accepted_response")
     already_owned = set()
-    if accepted_response and _split_research(context):
+    if accepted_response and split_research(context):
         if ("output" in owners or exact_content_hash(members["output"]) != accepted_response.get("response_sha256")):
             issues.append(issue("integration.response_replay", "output",
                                 "accepted response must be unchanged and must not be reassigned"))
@@ -427,7 +427,7 @@ def split_bundles(output, extensions, context, *, derived=None):
     for declaration in output["integration_bundles"]:
         bundle = deepcopy(declaration)
         bundle["owns_response"] = "output" in declaration["members"]
-        if _split_research(context):
+        if split_research(context):
             sliced = deepcopy(members["output"])
             for family in ("knowledge", "relations"):
                 sliced[family] = [deepcopy(members[path]) for path in declaration["members"]

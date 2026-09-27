@@ -16,8 +16,8 @@ from do_math.parallel import ModelCalls
 from do_math.execution_lifecycle import transition_execution
 from do_math.repository import ResearchRepository, new_id
 from do_math import knowledge_records
-from test_lifecycle_engine import FakeEngine
-from research_fixtures import FixtureAdapter, await_stop
+from engine_fixtures import FakeEngine
+from research_fixtures import FixtureAdapter, await_stop, git_init
 from state_fixtures import owner_calls
 from test_categories import test_group
 
@@ -43,12 +43,13 @@ class Host(FakeEngine):
     def storage_double(self):
         self.store = create_autospec(ResearchRepository, instance=True)
         self.store.load.side_effect = lambda snapshot=None: (
-            'fixture-head', deepcopy(self.saves[-1]['instance']), deepcopy(self.saves[-1]['runtime']))
+            self.head, deepcopy(self.saves[-1]['instance']), deepcopy(self.saves[-1]['runtime']))
 
     def _save(self, artifacts=None):
         if threading.get_ident() != self.owner_thread:
             raise AssertionError('engine mutation escaped the owner thread')
         super()._save(artifacts)
+        self.head = 'fixture-head-' + str(len(self.saves))  # A publication moves the head.
         self._evaluate_stops()  # The real publication point judges stops after every save.
 
     def _controls(self, *, pump=True):
@@ -215,7 +216,7 @@ class MachineSchedulerTests(unittest.TestCase):
                 root = Path(self.temp.name) / str(trust); root.mkdir()
                 self.host = Host(root)
                 repo = root / 'repo'; repo.mkdir()
-                subprocess.run(['git', '-C', str(repo), 'init', '-q'], check=True)
+                git_init(repo)
                 store = GitStateStore(repo, new_id('RI'))
                 head = store.publish(None, {'research/state.json': b'{}', 'runtime/state.json': b'{}'}).head
                 save = self.host._save
@@ -317,9 +318,7 @@ class MachineSchedulerTests(unittest.TestCase):
         self.assertIn('retained compiler evidence', local.read_text(encoding='utf-8'))
 
 
-@test_group('resource')
 class CallManagerTests(unittest.TestCase):
-    @test_group('in_process')
     def test_collection_releases_finished_threads_but_retains_a_live_call(self):
         calls = ModelCalls()
         release = threading.Event()
@@ -359,13 +358,12 @@ class CallManagerTests(unittest.TestCase):
         self.assertEqual(calls.threads, [])
         self.assertEqual(calls.futures, {})
 
-    @test_group('in_process')
     def test_admission_transition_preserves_native_utc_precision(self):
         from datetime import datetime, timezone
         from do_math.execution_lifecycle import create_execution
         from do_math.execution_profiles import build_profiles, profile_ref
         from do_math.session_slots import SessionSlots
-        from do_math.engine import DEFAULT_CONFIG
+        from do_math.configuration import DEFAULT_CONFIG
         instant = datetime(2026, 9, 23, 0, 0, 0, 997259, tzinfo=timezone.utc)
         class Clock(datetime):
             @classmethod
@@ -380,6 +378,7 @@ class CallManagerTests(unittest.TestCase):
             self.assertTrue(SessionSlots(runtime, instance).acquire(execution['id'], profile=profile, execution=execution))
         self.assertEqual(execution['transitions'][-1]['at'], instant.isoformat())
 
+    @test_group('resource')
     def test_close_sets_every_stop_flag_and_fails_pending_start_callbacks(self):
         calls = ModelCalls()
         seen = []
@@ -404,7 +403,6 @@ class CallManagerTests(unittest.TestCase):
         self.assertTrue(any(r.get('status') == 'failed' for r in seen))
         self.assertFalse(any(t.is_alive() for t in calls.threads))
 
-    @test_group('in_process')
     def test_owner_wait_wakes_on_a_returned_call_not_its_bound(self):
         calls = ModelCalls()
         def continuation():
@@ -422,7 +420,6 @@ class CallManagerTests(unittest.TestCase):
         self.assertGreaterEqual(time.monotonic() - started, .15, 'nothing pending: the bound paces the owner')
         calls.close()
 
-    @test_group('in_process')
     def test_stop_flag_reads_never_wait_for_the_owner(self):
         calls = ModelCalls()
         judged = []
@@ -443,7 +440,6 @@ class CallManagerTests(unittest.TestCase):
         self.assertEqual(judged, ['judged'], 'the judgment runs on the owner, once at start')
         calls.close()
 
-    @test_group('in_process')
     def test_owner_judgment_sets_the_flag_once_and_stops_the_calculation(self):
         calls = ModelCalls()
         owner = threading.get_ident()
@@ -472,7 +468,6 @@ class CallManagerTests(unittest.TestCase):
         self.assertEqual(judgments, [False, False, True])
         calls.close()
 
-    @test_group('in_process')
     def test_failed_judgment_fails_only_its_own_call(self):
         calls = ModelCalls()
         returned = []
@@ -499,7 +494,6 @@ class CallManagerTests(unittest.TestCase):
         self.assertIn('stop judgment failed: KeyError', returned[0]['error'])
         calls.close()
 
-    @test_group('in_process')
     def test_observations_queue_without_waiting_and_apply_before_collection(self):
         failures, applied, order = [], [], []
         calls = ModelCalls(on_observation_error=lambda eid, error: failures.append((eid, str(error))))
@@ -536,7 +530,6 @@ class CallManagerTests(unittest.TestCase):
         self.assertEqual(order[-1], ('collected', {'status': 'stopped'}))
         calls.close()
 
-    @test_group('in_process')
     def test_one_pump_applies_only_the_rows_queued_before_it(self):
         # A call producing faster than the owner applies must not hold the owner
         # inside one pump (dispatch, live reviews, controls); the rest waits a pass.
@@ -568,6 +561,7 @@ class CallManagerTests(unittest.TestCase):
         self.assertEqual(applied, [0, 1, 2, 3, ('collected', {'status': 'completed'})])
         calls.close()
 
+    @test_group('resource')
     @unittest.skipUnless(os.name == 'nt', 'Windows Job required')
     def test_failed_start_publication_never_resumes_the_real_job(self):
         from do_math.formal import _job_run
@@ -581,6 +575,7 @@ class CallManagerTests(unittest.TestCase):
                          Path(root), on_started=reject)
             self.assertFalse(marker.exists())
 
+    @test_group('resource')
     @unittest.skipUnless(os.name == 'nt', 'Windows Job required')
     def test_real_job_cancellation_uses_owner_judgment_and_collects_once(self):
         from do_math.formal import _job_run

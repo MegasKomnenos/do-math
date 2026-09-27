@@ -116,7 +116,7 @@ def record_installation(command, records_dir, evidence_root):
             if record['baselines'][-1]['fingerprint']['sha256'] == fingerprint['sha256'] and not records.usable_errors(record):
                 return _summary(path, record, status='recorded', created=False)
         content = records.content_hashes(identity, fingerprint['files'])
-        path = Path(records_dir) / (records.record_id(identity, content['sha256']) + '.json')
+        path = records.record_path(records_dir, records.record_id(identity, content['sha256']))
         if path.exists():
             raise Refused({'status': 'rerecord_required', 'record_path': str(path),
                 'reason': 'the installed bytes match this record but its metadata or check history changed; '
@@ -129,7 +129,7 @@ def record_installation(command, records_dir, evidence_root):
 def resolve_record(records_dir, record_id, identity):
     """The named record, or the only record of the identity (a callable observes it on demand)."""
     if record_id is not None:
-        path = Path(records_dir) / (record_id + '.json')
+        path = records.record_path(records_dir, record_id)
         return path, records.read_record(path)
     candidates = records.records_for(records_dir, identity())
     if len(candidates) != 1:

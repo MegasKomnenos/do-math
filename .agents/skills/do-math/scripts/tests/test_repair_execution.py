@@ -1,19 +1,18 @@
-"""Current installation handoff and shared real Git retry fixture."""
-from copy import deepcopy
-import hashlib
+"""Repair execution: the installation repair handoff and its routing, and retries of ended attempts over real Git."""
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
+from copy import deepcopy
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math import activities, execution_lifecycle, execution_profiles
-from do_math.engine import DEFAULT_CONFIG, ResearchEngine
-from do_math.repository import ResearchRepository, canonical_json
+from do_math import activities, execution_lifecycle
+from do_math.engine import ResearchEngine
 from do_math import repair_execution
-from research_fixtures import bare_engine, current_state
+from engine_fixtures import start_repair_host
+from record_fixtures import installation_repair_state
+from research_fixtures import bare_engine
 
 AT = "2026-09-20T00:00:00Z"
 
@@ -38,51 +37,7 @@ class RepairExecutionTests(unittest.TestCase):
         self.assertEqual(stored['executions']['EX-next']['continuation_of'],'EX-target')
 
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        root = Path(self.temp.name)
-        repo = root / "repo"
-        repo.mkdir()
-        subprocess.run(["git", "-C", str(repo), "init", "-q"], check=True)
-        self.host = host = bare_engine(store=ResearchRepository(repo, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV"))
-        configured = execution_profiles.build_profiles(DEFAULT_CONFIG)
-        profiles = configured["execution_profiles"]
-        host.instance, host.runtime = current_state({"workspace": str(root / "private"),
-            "capacity_constraints": configured["capacity_constraints"],
-            "execution_profiles": {key: p for key, p in profiles.items()
-                                   if p["role"] in {"research_work", "operational_review"}}},
-            {"tasks": {}, "executions": {}, "queue": [], "operational_dispositions": {}})
-        for eid, role, aid in [("EX-target", "research_work", "AY-target"),
-                                ("EX-review", "operational_review", "AY-review")]:
-            profile = next(p for p in host.instance["execution_profiles"].values() if p["role"] == role)
-            activities.open_activity(host.runtime, activity_id=aid, activity_kind=role,
-                owner_ref="engine", input_refs=[], opened_at=AT)
-            execution = execution_lifecycle.create_execution(execution_id=eid, owner_activity_id=aid,
-                actor_kind="ai", input_manifest={}, profile_ref=execution_profiles.profile_ref(profile), created_at=AT)
-            execution.update(role=role, action={"id": "AC-" + eid, "role": role, "owner_activity_id": aid})
-            activities.assign_execution(host.runtime, aid, execution)
-            execution_lifecycle.transition_execution(execution, "ended", at=AT, outcome="cancelled")
-        self.raw = b"sealed mathematical input\n"
-        self.digest = hashlib.sha256(self.raw).hexdigest()
-        self.relative = "input/catalog/tasks.json"
-        target = host.runtime["executions"]["EX-target"]
-        target["input_bundle"] = "BA-target"
-        target["input_manifest"] = {"catalog": [{"path": self.relative, "sha256": self.digest, "bytes": len(self.raw)}],
-                                    "execution_profile_ref": target["execution_profile_ref"]}
-        self.source = "runtime/artifacts/BA-target/" + self.relative
-        self.destination = root / "private/runs/EX-target/workspace" / self.relative
-        self.destination.parent.mkdir(parents=True)
-        self.destination.write_bytes(b"damaged")
-        self.record = {"id": "OD-repair", "execution_id": "EX-review", "target_execution_id": "EX-target",
-            "created_at": AT, "status": "pending", "disposition": {
-                "kind": "retry", "basis_refs": ["EX-target"], "next_owner": "engine",
-                "reason": "Use a fresh workspace for the unfinished activity",
-                "scope": "Same unfinished activity", "replay_safety": "No external effects"}}
-        host.runtime["operational_dispositions"][self.record["id"]] = deepcopy(self.record)
-        host.runtime["executions"]["EX-review"]["action"]["target"] = "EX-target"
-        host.head = host.store.initialize(host.instance, host.runtime)
-        host._save({self.source: self.raw,
-                    "runtime/artifacts/BA-target/manifest.json": canonical_json(target["input_manifest"])})
+        start_repair_host(self)
 
     def test_installation_repair_handoff_preserves_failure_and_is_idempotent(self):
         host = self.host
@@ -118,6 +73,120 @@ class InstallationIdentityTests(unittest.TestCase):
             self.assertEqual(repair_execution.installation_sha256(root), before)
             (root / 'examples/case.json').write_text('two', encoding='utf-8')
             self.assertNotEqual(repair_execution.installation_sha256(root), before)
+
+
+class InstallationRepairRoutingTests(unittest.TestCase):
+    """Installation repair: routing a receiver defect to diagnosis, the repair request, and the work around it."""
+
+    def test_repeated_submission_return_stops_producer_and_opens_one_diagnosis(self):
+        from do_math.repair_execution import route_submission_return
+        opened = []
+        engine = bare_engine({'config':{'max_output_repairs':1}}, {'queue':[], 'waiting_actions':{}})
+        engine._enqueue = create_autospec(engine._enqueue, side_effect=lambda *a, **k: opened.append((a, k)))
+        action = {'id':'AC-producer','role':'research_plan'}
+        received = {'retry_bundle_ids':['IN-failed'], 'bundles':[], 'issues':[{'rule_id':'application'}]}
+        route_submission_return(engine, action, received, 'EX-first', {'summary':'preserved'})
+        retry = engine.runtime['queue'].pop()
+        self.assertEqual(retry['repair_attempt'], 1)
+        route_submission_return(engine, retry, received, 'EX-second', {'summary':'preserved'})
+        self.assertEqual(engine.runtime['queue'], [])
+        self.assertEqual(opened[0][0], ('operational_review','EX-second'))
+        wait = engine.runtime['waiting_actions']['AC-producer']
+        self.assertEqual(wait['action']['repair']['execution_id'], 'EX-second')
+        self.assertEqual(wait['detail']['issues'], received['issues'])
+        # Failed diagnostic output itself cannot open recursive diagnostics forever.
+        route_submission_return(engine, {**retry,'role':'operational_review'}, received, 'EX-op', {})
+        self.assertEqual(len(opened), 1)
+        engine.instance['config']['max_output_repairs'] = 0
+        route_submission_return(engine, {'id':'AC-zero','role':'research_plan'}, received, 'EX-zero', {})
+        self.assertEqual(engine.runtime['queue'], [])
+        self.assertIn('AC-zero', engine.runtime['waiting_actions'])
+
+    def test_installation_request_requires_accepted_diagnosis_and_keeps_stable_identity(self):
+        from do_math.repair_execution import installation_failure
+        runtime, record = installation_repair_state()
+        before = installation_failure(runtime, record)
+        record['result']['installation_repair'].update(status='failed', attempted_by='EX-repair')
+        record['status'] = 'installation_repair_waiting'
+        self.assertEqual(installation_failure(runtime, record), before)
+        runtime['executions']['EX-failed']['contract_sha256'] = 'changed-contract'
+        self.assertNotEqual(installation_failure(runtime, record)['failure_sha256'], before['failure_sha256'])
+        runtime['executions']['EX-diagnosis']['outcome'] = 'execution_incomplete'
+        with self.assertRaises(ValueError): installation_failure(runtime, record)
+
+    def test_unattempted_installation_diagnosis_is_not_starved_by_an_old_wait(self):
+        from do_math.repair_execution import pending_installation_repair
+        runtime, record = installation_repair_state()
+        record['status'] = 'installation_repair_waiting'
+        fresh = {**deepcopy(record),'id':'OD-fresh','status':'installation_repair_pending'}
+        runtime['operational_dispositions'][fresh['id']] = fresh
+        self.assertEqual(pending_installation_repair(runtime)['id'], 'OD-fresh')
+
+    def test_pending_installation_repair_prevents_a_redundant_engine_start(self):
+        from do_math import scheduled_operator as operator
+        with tempfile.TemporaryDirectory() as directory, patch.object(operator,'read_status',return_value={
+                'status':'ready','installation_repair':{'id':'OD-pending'}}):
+            result = operator.engine_start_guard(Path(directory)/'repo','RI-test',Path(directory)/'work')
+            self.assertEqual(result['outcome'],'installation_repair_waiting')
+
+    def test_scheduler_drains_existing_calls_without_dispatching_new_work_during_installation_repair(self):
+        from do_math.parallel import ModelCalls
+        runtime, _ = installation_repair_state()
+        runtime['queue'] = [{'id':'AC-independent','role':'research_work'}]
+        calls = create_autospec(ModelCalls, instance=True)
+        calls.futures = {'existing':object()}
+        calls.collect.side_effect = lambda: calls.futures.clear() if calls.collect.call_count == 2 else None
+        def dispatchable(action): raise AssertionError('new work must not be dispatched')
+        host = bare_engine({'workspace':'.','id':'RI-test','config':{}}, runtime)
+        host._controls = create_autospec(host._controls)
+        host._check_installation = create_autospec(host._check_installation)
+        host._save = create_autospec(host._save)
+        host._settle_stops = create_autospec(host._settle_stops)  # stop judgment is not this rule
+        host._dispatchable = create_autospec(host._dispatchable, side_effect=dispatchable)
+        with patch('do_math.scheduler.ModelCalls',return_value=calls), patch('do_math.scheduler.time.sleep'):
+            host._run_parallel()
+        self.assertEqual(calls.collect.call_count,2)
+        self.assertTrue(calls.close.called)
+        self.assertEqual(runtime['status'],'waiting')
+        self.assertEqual(runtime['queue'],[{'id':'AC-independent','role':'research_work'}])
+
+    def test_supervisor_routes_diagnosed_live_engine_defect_and_probe_stays_read_only(self):
+        from do_math import scheduled_operator as operator
+        from types import SimpleNamespace
+        runtime, record = installation_repair_state()
+        # The engine status carries the pending diagnosis; probe reads its snapshot only.
+        status = {'status':'ready','snapshot':'head','operator_enabled':True,
+                  'installation_repair':deepcopy(record)}
+        repository = SimpleNamespace(load=lambda snapshot: (snapshot,{'config':{'operator_enabled':True}},runtime))
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(operator,'read_status',return_value=status), \
+                patch.object(operator,'ResearchRepository',return_value=repository), \
+                patch.object(operator,'recovery',return_value={'outcome':'routed'}) as recover, \
+                patch.object(operator,'schedule') as schedule:
+            args = (Path(directory)/'repo', 'RI-test', Path(directory)/'work')
+            probed = operator.check(*args,probe=True)
+            self.assertEqual(probed['outcome'],'installation_repair_pending')
+            self.assertEqual(probed['failure']['diagnosis_id'],record['id'])
+            recover.assert_not_called(); schedule.assert_not_called()
+            self.assertEqual(operator.check(*args)['outcome'],'routed')
+            # Recovery rereads the pending diagnosis under its own lock.
+            recover.assert_called_once_with(*args)
+            operator.hold(args[2],reason='user hold')
+            recover.reset_mock()
+            self.assertEqual(operator.check(*args)['outcome'],'held')
+            recover.assert_not_called()
+
+    def test_installation_repair_continues_latest_rejected_bundles_without_resetting_count(self):
+        from do_math.repair_execution import resume_installation_repair
+        runtime, record = installation_repair_state()
+        action = resume_installation_repair(runtime, record, repaired_by='EX-repair', at='2026-09-22T01:00:00Z')
+        self.assertEqual(action['repair']['execution_id'],'EX-failed')
+        self.assertEqual(action['repair_attempt'],2)
+        self.assertEqual(action['continuation_of'],'EX-failed')
+        self.assertEqual(runtime['waiting_actions'],{})
+        self.assertEqual(record['status'],'applied')
+        self.assertEqual(runtime['activities']['AY-work']['status'],'waiting')
+        self.assertEqual(runtime['queue'],[action])
 
 
 if __name__ == "__main__":

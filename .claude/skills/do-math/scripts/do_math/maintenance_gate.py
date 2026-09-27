@@ -32,6 +32,7 @@ def settle(runtime):
     if not fence:
         return False
     from .execution_lifecycle import transition_execution
+    from .session_slots import local_termination_confirmed
     from datetime import datetime, timezone
     settled_at = datetime.now(timezone.utc).isoformat()
     publication = {w.get('execution_id') for w in runtime.get('waiting_actions', {}).values()
@@ -39,7 +40,7 @@ def settle(runtime):
     for identifier in publication:
         execution = runtime.get('executions', {}).get(identifier)
         if (execution and execution['status'] == 'stopping'
-                and execution.get('capacity', {}).get('local_termination') == 'confirmed'):
+                and local_termination_confirmed(execution)):
             transition_execution(execution, 'ended', at=settled_at, outcome='execution_incomplete',
                 reason='publication preserved for maintenance', disposition={'kind':'deferred_publication'})
     from .session_slots import quiescence

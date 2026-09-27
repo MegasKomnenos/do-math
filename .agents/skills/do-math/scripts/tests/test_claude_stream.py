@@ -34,9 +34,9 @@ def noop():
 class StreamTests(unittest.TestCase):
     def test_native_usage_metadata_fits_the_execution_storage_contract(self):
         from jsonschema import Draft202012Validator, ValidationError
-        from do_math.engine import json_safe
+        from do_math.payloads import json_safe
         from do_math.record_schemas import RECORDS
-        from test_redesign_SURFACE import surface_state
+        from record_fixtures import surface_state
         parsed = parse_stream(stream(INIT, RESULT))
         self.assertTrue(parsed['turn_completed'])
         _, runtime = surface_state()

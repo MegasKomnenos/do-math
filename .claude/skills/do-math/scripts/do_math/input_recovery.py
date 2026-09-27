@@ -1,7 +1,7 @@
 """Fixed planning choices for existing input-overflow obligations."""
 from copy import deepcopy
 
-from .execution_profiles import profile_ref, resolve_profile
+from .execution_profiles import profile_ref, match_profile_ref
 from .model_policy import selection
 from .planning import contract_hash
 
@@ -20,7 +20,7 @@ def overflow_requests(instance, runtime):
         allowed = []
         for reference in task.get('profile_refs', []):
             try:
-                profile = resolve_profile(instance['execution_profiles'], reference)
+                profile = match_profile_ref(instance['execution_profiles'], reference)
                 ref = profile_ref(profile)
                 if profile['id'] not in candidates:
                     continue

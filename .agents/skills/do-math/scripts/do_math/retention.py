@@ -4,17 +4,18 @@ The caller holds the instance writer lock and supplies current state again at
 deletion time. This is not a security boundary against hostile same-user writes.
 """
 from __future__ import annotations
+from copy import deepcopy
 import hashlib
 import json
 import os
 from pathlib import Path
 import shutil
 
-from .context_store import _read_stable
-from .file_io import file_fingerprint, fingerprint_settled
-from .git_store import PhysicalBoundary, no_reparse, oid_shape
+from .context_store import read_stable
+from .file_io import file_fingerprint, fingerprint_settled, no_reparse
+from .git_store import PhysicalBoundary, oid_shape
 from .relation_refs import relation_references
-from .repository import sealed_bytes
+from .repository import canonical_json, sealed_bytes
 from .task_contracts import CONTEXT_INPUT_REFS, TOOL_INPUT_REFS
 
 
@@ -177,13 +178,35 @@ def _inventory(path, marks=None, contents=None):
             if known is not None and known[0] == mark:
                 result[relative] = dict(known[1])
                 continue
-            data = _read_stable(file, boundary=boundary)
+            data = read_stable(file, boundary=boundary)
             result[relative] = {'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data)}
             if contents is not None:
                 contents[relative] = data
             if marks is not None and fingerprint_settled(mark) and file_fingerprint(file) == mark:
                 marks[file] = (mark, dict(result[relative]))
     return result
+
+
+def archive_run(workspace, identifier, execution, prefix, marks=None):
+    """The archive of one locally terminated run below ``prefix``.
+
+    Returns the artifact bytes to publish, the retention manifest rows and the
+    termination evidence row. The archive holds exactly the bytes the inventory
+    hashed, so the caller may record every row as matched once it is published.
+    """
+    contents = {}
+    inventory = _inventory(_run_path(workspace, identifier), marks, contents)
+    artifacts, manifest = {}, []
+    for relative, proof in inventory.items():
+        ref = prefix + '/files/' + relative
+        artifacts[ref] = contents[relative]
+        manifest.append({'path': relative, 'artifact_ref': ref, **proof})
+    receipt = canonical_json({'execution_id': identifier, 'local_terminated': True,
+        'basis': deepcopy(execution['capacity']), 'remote_termination': 'not_established'})
+    ref = prefix + '/termination.json'
+    artifacts[ref] = receipt
+    return artifacts, manifest, {'local_terminated': True, 'evidence_ref': ref,
+        'sha256': hashlib.sha256(receipt).hexdigest(), 'bytes': len(receipt)}
 
 
 def _archive_reference(path, snapshot):
@@ -242,8 +265,8 @@ def cleanup_candidates(workspace, executions, *, protected_references,
                     raise ValueError('termination receipt does not confirm this execution')
             except (TypeError, ValueError, KeyError, OSError, RuntimeError) as error:
                 reasons.append('termination_unverified: ' + str(error))
-        if execution.get('recovery_pending') or execution.get('checkpoint_required') or execution.get('recovery_disposition') in {'preserve_space_and_reservations', 'reconcile_local_and_remote', 'retain_for_recheck'}:
-            reasons.append('recovery_pending')
+        # A recovery disposition lives only until the execution ends (execution_lifecycle.transition_execution),
+        # so an ended execution holds no recovery marker; pending recovery is read from the runtime below.
         if runtime is None:
             reasons.append('current_recovery_and_reservations_unexamined')
         else:
@@ -251,7 +274,7 @@ def cleanup_candidates(workspace, executions, *, protected_references,
                 if reservation.get('owner_id') == identifier and reservation.get('state') != 'settled':
                     reasons.append('unsettled_reservation')
             for waiting in runtime.get('waiting_actions', {}).values():
-                if identifier in set(_strings(waiting)) and not waiting.get('resolved'):
+                if identifier in set(_strings(waiting)):
                     reasons.append('recovery_pending')
             for recovery in runtime.get('recoveries', {}).values():
                 if identifier in recovery.get('execution_ids', []) and not recovery.get('finished_at'):

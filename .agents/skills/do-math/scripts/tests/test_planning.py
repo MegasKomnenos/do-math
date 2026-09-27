@@ -1,11 +1,14 @@
-"""Feature-five condition and planning regressions; no persisted-ready fixtures."""
+"""Planning: conditions, readiness and plan inputs; no persisted-ready fixtures."""
 from copy import deepcopy
 import sys
 import unittest
 from pathlib import Path
+import hashlib
+import json
+from unittest.mock import Mock, patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math import planning
-from test_redesign_TASKS import approved_fixture, approve
+from record_fixtures import approved_task, approve_task
 
 
 class ActivityConditionTests(unittest.TestCase):
@@ -26,19 +29,19 @@ class ActivityConditionTests(unittest.TestCase):
             planning.validate_condition({**condition, 'pointer': '/role'})
 class PlanningTests(unittest.TestCase):
     def setUp(self):
-        self.task,self.instance,self.runtime=approved_fixture()
-        self.instance['knowledge']={'K':{'id':'K','lifecycle':'active','value':1}}
+        self.task,self.instance,self.runtime=approved_task()
+        self.instance['knowledge']={'K':{'id':'K','lifecycle':'active','kind':'lemma'}}
 
     def condition(self,op='record_exists',**changes):
         return dict(op=op,space='research',family='knowledge',record_id='K',**changes)
 
     def test_conditions_and_errors_preserve_basis(self):
-        condition={'op':'all','args':[self.condition(),self.condition('record_field_equals',pointer='/value',value=1)]}
+        condition={'op':'all','args':[self.condition(),self.condition('record_field_equals',pointer='/kind',value='lemma')]}
         before=deepcopy(self.instance)
         result=planning.evaluate_condition(condition,self.instance,self.runtime)
         self.assertEqual(result['state'],'ready');self.assertEqual(len(result['basis']),2)
         self.assertEqual(before,self.instance)
-        self.instance['knowledge']['K']['value']=True
+        self.instance['knowledge']['K']['kind']='theorem'
         self.assertEqual(planning.evaluate_condition(condition,self.instance,self.runtime)['state'],'not_ready')
         changed=planning.evaluate_condition(self.condition(),self.instance,self.runtime)
         self.assertNotEqual(changed['basis'][0]['sha256'],result['basis'][0]['sha256'])
@@ -49,12 +52,37 @@ class PlanningTests(unittest.TestCase):
         result=planning.evaluate_condition(self.condition(),self.instance,self.runtime)
         self.assertEqual(result['state'],'not_ready');self.assertIn('absencequery',result['basis'][0])
 
+    def test_instance_conditions_and_bases_read_one_projection_of_either_instance_form(self):
+        from do_math.initialization import governance_working_view
+        editions=planning.governance_revisions(self.instance)
+        self.task['occurrence_condition']={'op':'record_field_equals','space':'research','family':'instance',
+            'record_id':self.instance['id'],'pointer':'/goal_revision','value':editions['goal_revision']}
+        approve_task(self.task,self.instance,self.runtime)
+        view=governance_working_view(self.instance)
+        self.assertEqual(planning.task_ready(self.task,self.instance,self.runtime)['state'],'ready')
+        self.assertEqual(planning.task_ready(self.task,view,self.runtime),planning.task_ready(self.task,self.instance,self.runtime))
+        basis=planning.capture_task_basis(self.task,self.instance,self.runtime)
+        self.assertEqual(planning.capture_task_basis(self.task,view,self.runtime),basis)
+        # The instance record is its projection, not the whole research state.
+        self.instance['knowledge']['K']['kind']='theorem'
+        self.assertEqual(planning.capture_task_basis(self.task,self.instance,self.runtime),basis)
+
+    def test_artifact_condition_grammar_is_the_reader_prefix_and_state_segments(self):
+        import hashlib
+        from do_math.git_store import ARTIFACT_ROOT
+        ref={'snapshot':'SN-1','sha256':hashlib.sha256(b'x').hexdigest()}
+        planning.validate_condition({'op':'artifact_valid','artifact_ref':{**ref,'path':ARTIFACT_ROOT+'BA-1/proof.txt'}})
+        for path in ('out/proof.txt',ARTIFACT_ROOT+'BA-1/../proof.txt',ARTIFACT_ROOT+'BA-1/con.txt',
+                     ARTIFACT_ROOT+'BA-1/a:b.txt',ARTIFACT_ROOT):
+            with self.subTest(path=path),self.assertRaises(ValueError):
+                planning.validate_condition({'op':'artifact_valid','artifact_ref':{**ref,'path':path}})
+
     def test_task_ready_rechecks_reviews_inputs_and_conditions(self):
         self.assertEqual(planning.task_ready(self.task,self.instance,self.runtime)['state'],'ready')
         self.task['reviews'][0]['revision']=2
         self.assertEqual(planning.task_ready(self.task,self.instance,self.runtime)['state'],'not_ready')
         self.task['occurrence_condition']=self.condition('record_lifecycle_is',value='withdrawn')
-        approve(self.task,self.instance,self.runtime)
+        approve_task(self.task,self.instance,self.runtime)
         self.assertEqual(planning.task_ready(self.task,self.instance,self.runtime)['state'],'not_ready')
 
     def test_contract_hash_only_changes_for_contract_fields(self):
@@ -76,6 +104,7 @@ class PlanningTests(unittest.TestCase):
                     waiting_actions={}, events=[], pending_events=[],
                     next_research_reconsider_at='2026-09-24T00:00:00Z')
                 original = deepcopy(supplement)
+                planning.record_due_events(self.instance, runtime, '2026-09-25T00:00:00Z')
                 planning.schedule_reconsideration(self.instance, runtime,
                     now='2026-09-25T00:00:00Z')
                 self.assertEqual(supplement, original)
@@ -85,39 +114,34 @@ class PlanningTests(unittest.TestCase):
                 due = [e['id'] for e in runtime['events'] if e['kind'] == 'research_reconsider_due']
                 self.assertEqual(general[0]['event_refs'], due)
                 self.assertTrue(general[0]['periodic_reconsideration'])
+                planning.record_due_events(self.instance, runtime, '2026-09-25T00:00:01Z')
                 planning.schedule_reconsideration(self.instance, runtime,
                     now='2026-09-25T00:00:01Z')
                 self.assertEqual(len(runtime['queue']), 2)
 
     def test_due_events_are_unique_and_paused_preserves_pending(self):
         self.runtime['next_research_reconsider_at']='2026-01-01T00:00:00Z'
-        self.task.update(wake_at='2026-01-01T00:00:00Z',due_conditions=[{'op':'always'}],newinput=True)
+        self.task.update(newinput='RQ-source')
         events=planning.collect_due_events(self.instance,self.runtime,'2026-01-02T00:00:00Z')
-        self.assertEqual(sorted(e['kind'] for e in events),['research_reconsider_due','task_condition_due','task_new_input','task_wake_due'])
+        self.assertEqual(sorted(e['kind'] for e in events),['research_reconsider_due','task_new_input'])
         self.assertEqual(len(events),len({e['id'] for e in events}))
         self.runtime['status']='paused'
-        result=planning.apply_event_schedule(self.instance,self.runtime,'2026-01-02T00:00:00Z')
-        self.assertTrue(result['runtime']['pending_events'])
-        self.assertFalse(planning.apply_event_schedule(result['instance'],result['runtime'],'2026-01-02T00:00:00Z')['events'])
+        recorded=planning.record_due_events(self.instance,self.runtime,'2026-01-02T00:00:00Z')
+        self.assertEqual(self.runtime['pending_events'],[e['id'] for e in recorded])
+        self.assertEqual(planning.record_due_events(self.instance,self.runtime,'2026-01-02T00:00:00Z'),[])
 
-    def test_condition_state_storage_accepts_each_actual_evaluation_result(self):
-        from jsonschema import Draft202012Validator
-        from do_math.record_schemas import RUNTIME_FIELDS
-        validator = Draft202012Validator(RUNTIME_FIELDS['condition_states'])
-        cases = [({'op': 'always'}, 'ready'),
-                 ({'op': 'record_exists', 'space': 'research', 'family': 'source',
-                   'record_id': 'SO-missing'}, 'not_ready'),
-                 ({'op': 'unsupported'}, 'evaluation_error')]
-        for condition, expected in cases:
-            with self.subTest(expected=expected):
-                runtime = deepcopy(self.runtime)
-                runtime['tasks'][self.task['id']]['due_conditions'] = [condition]
-                scheduled = planning.apply_event_schedule(self.instance, runtime, '2026-09-24T00:00:00Z')
-                states = scheduled['runtime']['condition_states']
-                self.assertEqual(list(states.values()), [expected])
-                validator.validate(states)
-        for obsolete in ('blocked', 'unknown', 'unavailable'):
-            self.assertTrue(list(validator.iter_errors({'condition': obsolete})))
+    def test_one_input_request_is_one_event_across_observations_and_scheduling(self):
+        self.task.update(newinput='RQ-source')
+        first=planning.record_due_events(self.instance,self.runtime,'2026-01-02T00:00:00Z')
+        self.assertEqual([(e['kind'],e['request_id']) for e in first],[('task_new_input','RQ-source')])
+        self.assertEqual(planning.record_due_events(self.instance,self.runtime,'2026-01-02T00:00:05Z'),[])
+        planning.schedule_reconsideration(self.instance,self.runtime,now='2026-01-02T00:00:05Z')
+        inputs=[e for e in self.runtime['events'] if e['kind']=='task_new_input']
+        self.assertEqual([e['id'] for e in inputs],[first[0]['id']])
+        self.assertEqual(self.runtime['pending_events'].count(first[0]['id']),1)
+        self.task.update(newinput='RQ-later')
+        later=planning.record_due_events(self.instance,self.runtime,'2026-01-02T00:00:09Z')
+        self.assertEqual([e['request_id'] for e in later],['RQ-later'])
 
     def test_source_arrival_and_trust_transition_are_machine_conditions(self):
         condition={'op':'all','args':[
@@ -130,33 +154,11 @@ class PlanningTests(unittest.TestCase):
         self.instance['trust_environments']['TE-1']['status']='invalid'
         self.assertEqual(planning.evaluate_condition(condition,self.instance,self.runtime)['state'],'not_ready')
 
-    def test_condition_rearms_after_false_without_repeating_while_true(self):
-        conditions = [self.condition('record_field_equals', pointer='/value', value=1),
-                      self.condition('record_lifecycle_is', value='active')]
-        self.task['due_conditions'] = conditions
-        first = planning.apply_event_schedule(self.instance, self.runtime, '2026-09-24T00:00:00Z')
-        self.assertEqual(len(first['events']), 2)
-        original_events = deepcopy(first['events'])
-        instance, runtime = first['instance'], first['runtime']
-        runtime['pending_events'] = []
-        instance['knowledge']['K'].update(value=0, lifecycle='withdrawn')
-        false = planning.apply_event_schedule(instance, runtime, '2026-09-24T00:00:01Z')
-        self.assertEqual(false['events'], [])
-        instance, runtime = false['instance'], false['runtime']
-        instance['knowledge']['K'].update(value=1, lifecycle='active')
-        again = planning.apply_event_schedule(instance, runtime, '2026-09-24T00:00:02Z')
-        self.assertEqual(len(again['events']), 2)
-        self.assertEqual(len({row['id'] for row in again['runtime']['events']}), 4)
-        self.assertEqual(again['runtime']['events'][:2], original_events)
-        self.assertEqual(set(again['runtime']['pending_events']), {row['id'] for row in again['events']})
-        repeated = planning.apply_event_schedule(again['instance'], again['runtime'], '2026-09-24T00:00:03Z')
-        self.assertEqual(repeated['events'], [])
-
     def test_relation_condition_rechecks_its_proof_after_import(self):
         from do_math import knowledge_io
-        from test_redesign_KNOWLEDGE import KnowledgeRedesign
+        from knowledge_fixtures import verified_knowledge
         from do_math import knowledge_records as kr
-        i,r,kid,aid=KnowledgeRedesign().verified()
+        i,r,kid,aid=verified_knowledge()
         template=next(t for t in knowledge_io.relation_templates() if t['token']=='formally_implies')
         i,_=knowledge_io.register_kind_definition(i,template,source_ref='source',actor_ref='producer')
         i=knowledge_io.check_kind_definition(i,'relation','formally_implies',check_ref='check',actor_ref='reviewer')
@@ -200,3 +202,158 @@ class ConditionIndexTests(unittest.TestCase):
         self.assertEqual(result['state'], 'evaluation_error')
         self.assertIn('another family', result['errors'][0])
 if __name__=='__main__':unittest.main(verbosity=2)
+
+
+class ArtifactConditionTests(unittest.TestCase):
+    def test_artifact_condition_reads_and_validates_a_sealed_artifact_once(self):
+        import uuid
+        from do_math import planning
+        raw = b'{"result": true}'
+        ref = {'snapshot': 'a' * 40, 'path': 'runtime/artifacts/BA-cond/result.json',
+               'sha256': hashlib.sha256(raw).hexdigest()}
+        read, validate = Mock(return_value=raw), Mock(return_value=True)
+        context = {'snapshot': 'b' * 40, 'read_artifact': read, 'validate_artifact': validate,
+                   'git_dir': 'git-' + uuid.uuid4().hex, 'now': '2026-09-26T00:00:00+00:00'}
+        condition = {'op': 'artifact_valid', 'artifact_ref': ref}
+        for _ in range(3):
+            self.assertEqual(planning.evaluate_condition(condition, {}, {}, evaluation_context=context)['state'], 'ready')
+        self.assertEqual((read.call_count, validate.call_count), (1, 1))
+
+    def test_artifact_verdict_belongs_to_its_validator_and_needs_no_repository(self):
+        from do_math import planning
+        raw = b'{"result": true}'
+        ref = {'snapshot': 'a' * 40, 'path': 'runtime/artifacts/BA-verdict/result.json',
+               'sha256': hashlib.sha256(raw).hexdigest()}
+        read, accept, reject = Mock(return_value=raw), Mock(return_value=True), Mock(return_value=False)
+        condition = {'op': 'artifact_valid', 'artifact_ref': ref}
+        for validate, state in ((accept, 'ready'), (reject, 'evaluation_error'), (accept, 'ready'), (reject, 'evaluation_error')):
+            context = {'snapshot': 'b' * 40, 'read_artifact': read, 'validate_artifact': validate,
+                       'git_dir': None, 'now': '2026-09-26T00:00:00+00:00'}
+            self.assertEqual(planning.evaluate_condition(condition, {}, {}, evaluation_context=context)['state'], state)
+        # Without a repository the bytes are matched every time; each verdict is computed once.
+        self.assertEqual((read.call_count, accept.call_count, reject.call_count), (4, 1, 1))
+
+
+class ReadinessCopyTests(unittest.TestCase):
+    def test_historical_judgment_cannot_override_changed_governance_or_sources(self):
+        from record_fixtures import domain_governance, governance_import
+        from do_math import planning, task_scope
+        instance = domain_governance()
+        instance['sources'] = [{'name': 'source', 'path': 'source.txt', 'sha256': 'a'*64}]
+        instance['knowledge'] = {'KN-one': {'id': 'KN-one', 'task_id': 'TK-one'}}
+        judgment = {'id': 'GJ-one', 'decision': 'satisfied', 'scope_complete': True, 'current': True,
+            'dependencies': ['KN-one'], 'record_basis': [], **planning.governance_revisions(instance),
+            'source_basis': deepcopy(instance['sources'])}
+        instance['goal_judgments'] = [judgment]
+        def judge():
+            return task_scope.designated_judgment({'id': 'TK-one'}, {'judges': ['goal_audit']},
+                                                  {'evidence_refs': ['GJ-one']}, instance, {})
+        with patch('do_math.knowledge_records.usable_links', return_value=[{'assessment_id': 'AS-one'}]):
+            self.assertEqual(judge(), 'GJ-one')
+            instance['sources'][0]['sha256'] = 'b'*64
+            self.assertIsNone(judge())
+            instance['sources'][0]['sha256'] = 'a'*64
+            judgment['goal_revision'] = 'old-edition'
+            self.assertIsNone(judge())
+
+    def test_borrowed_inputs_and_copied_results_match_prior_evaluation(self):
+        from record_fixtures import approved_task
+        from do_math.planning import task_ready
+        task, instance, runtime = approved_task()
+        for scenario in ('ready', 'waiting', 'missing', 'invalid'):
+            with self.subTest(scenario=scenario):
+                value, state, working = deepcopy((task, instance, runtime))
+                working['tasks'][value['id']] = value
+                if scenario == 'waiting':
+                    value['waiting'] = {'kind': 'external_event', 'next_owner': 'user', 'reason': 'wait'}
+                elif scenario == 'missing':
+                    value['inputs'].append('SO-missing')
+                elif scenario == 'invalid':
+                    value['occurrence_condition'] = {'op': 'unknown'}
+                before = deepcopy((value, state, working))
+                old = task_ready(deepcopy(value), deepcopy(state), deepcopy(working))
+                result = deepcopy(task_ready(value, state, working))
+                self.assertEqual(result, old)
+                self.assertEqual((value, state, working), before)
+                if scenario == 'waiting':
+                    self.assertIn(value['waiting'], result['waits'])
+                    result['waits'][0]['reason'] = 'changed by result consumer'
+                    self.assertEqual(value['waiting']['reason'], 'wait')
+
+
+class ReadinessConditionTests(unittest.TestCase):
+    def test_required_certification_condition_tracks_current_identity_effect(self):
+        from knowledge_fixtures import verified_knowledge
+        instance, runtime, kid, _ = verified_knowledge()
+        condition = {'op': 'record_field_equals', 'space': 'research', 'family': 'knowledge',
+            'record_id': kid, 'pointer': '/usable_as_k', 'value': True}
+        self.assertEqual(planning.evaluate_condition(condition, instance, runtime)['state'], 'ready')
+        for use in instance['assessment_uses'].values():
+            use['status'] = 'suspended'
+        self.assertEqual(planning.evaluate_condition(condition, instance, runtime)['state'], 'not_ready')
+        with self.assertRaises(ValueError):
+            planning.validate_condition({**condition, 'value': 1})
+
+    def test_documented_readiness_examples_match_the_live_grammar(self):
+        import re
+        path = Path(__file__).resolve().parents[2] / 'references' / '과제-착수조건.md'
+        blocks = re.findall(r'```json\s+(.*?)```', path.read_text(encoding='utf-8'), re.S)
+        self.assertGreaterEqual(len(blocks), 2)
+        for block in blocks:
+            value = json.loads(block)
+            conditions = [value] if 'op' in value else [row['occurrence_condition'] for row in value['task_conditions']]
+            for condition in conditions:
+                planning.validate_condition(condition)
+
+    def test_readiness_document_tables_match_the_condition_grammar(self):
+        """Operations, record families with their space, and pointers agree with planning."""
+        import re
+        text = (Path(__file__).resolve().parents[2] / 'references' / '과제-착수조건.md').read_text(encoding='utf-8')
+        tables, current = {}, None
+        for line in text.splitlines():
+            if not line.startswith('|'):
+                current = None
+                continue
+            cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+            if current is None:
+                current = tables.setdefault(cells[0], [])
+            elif not set(cells[0]) <= set('-: '):
+                current.append(cells)
+        operations = {}
+        for cells in tables['`op`']:
+            for op in re.findall(r'`([^`]+)`', cells[0]):
+                operations[op] = set(re.findall(r'`([^`]+)`', cells[1]))
+        self.assertEqual(set(operations), set(planning.CONDITION_FIELDS))
+        for op, fields in planning.CONDITION_FIELDS.items():
+            self.assertLessEqual(fields, operations[op], op)
+        listed = text.split('현재 기록 가족은', 1)[1].split('이다.', 1)[0]
+        families = set(re.findall(r'`([^`]+)`', listed))
+        self.assertEqual(families, set(planning.RECORD_FAMILIES))
+        runtime_list = re.search(r'((?:`[^`]+`,\s*)*`[^`]+`)의 space는 `runtime`', text).group(1)
+        runtime = set(re.findall(r'`([^`]+)`', runtime_list))
+        self.assertEqual(runtime, {family for family, (space, _) in planning.RECORD_FAMILIES.items() if space == 'runtime'})
+        self.assertEqual(families - runtime,
+                         {family for family, (space, _) in planning.RECORD_FAMILIES.items() if space == 'research'})
+        pointers = {re.findall(r'`([^`]+)`', cells[0])[0]: set(re.findall(r'`([^`]+)`', cells[1]))
+                    for cells in tables['기록 가족']}
+        self.assertEqual(pointers, {family: set(fields) for family, fields in planning.EXPOSED_FIELDS.items()})
+
+    def test_nonformal_research_reuse_is_ready_but_not_certified(self):
+        from record_fixtures import approved_task, approve_task
+        from do_math.knowledge import assess_use
+        from do_math.knowledge_records import create_candidate
+        task, instance, runtime = approved_task()
+        instance.setdefault('kind_definitions', {})['KD-observation'] = {'id': 'KD-observation', 'status': 'active'}
+        instance, kid = create_candidate(instance, {'id': 'KN-computation', 'kind': 'observation',
+            'kind_definition_id': 'KD-observation', 'statement': 'Computed n=1 through 20',
+            'explanation': 'Bounded exact computation', 'summary': 'Finite evidence', 'dependencies': []},
+            source_ref='SO-1', actor_ref='EX-compute')
+        task['reuse'] = [kid]
+        approve_task(task, instance, runtime)
+        self.assertFalse(assess_use(instance['knowledge'][kid], instance)['valid'])
+        self.assertEqual(planning.task_ready(task, instance, runtime)['state'], 'ready')
+        for field, value in [('lifecycle', 'withdrawn'), ('use_suspended', True), ('kind_use_suspended', True)]:
+            changed = deepcopy(instance)
+            changed['knowledge'][kid][field] = value
+            approve_task(task, changed, runtime)
+            self.assertEqual(planning.task_ready(task, changed, runtime)['state'], 'not_ready', field)

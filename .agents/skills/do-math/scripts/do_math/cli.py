@@ -12,17 +12,22 @@ import sys
 from typing import Any
 
 from .claude_adapter import provider_adapter
+from .contracts import RESPONSE_CONTRACT_ID
 from .control_contracts import REQUEST_ID_PATTERN
-from .engine import ResearchEngine, control, initialize, json_safe
+from .engine import ResearchEngine, control, initialize, query_records, read_record
 from .git_store import GitStateStoreConflict, GitStateStoreError, GitStateStoreLockError
-from .engine import _repository as ResearchRepository
+from .payloads import json_safe
 from . import scheduled_operator
-from .file_io import unique_pairs
-from .repository import canonical_json, exact_content_hash
+from .file_io import strict_json_loads
+from .repository import ResearchRepository, canonical_json, exact_content_hash
 from .state_checks import inspection_exit_code
 
 # Envelope fields every response carries, before its ``result`` or ``error``.
 RESPONSE_FIELDS = ('schema_version', 'response_contract', 'request_id', 'command', 'exit_code')
+# The JSON wire version of requests, responses and ``--describe``.
+WIRE_VERSION = 5
+# The exit code of each error kind ``main`` reports; ``--describe`` publishes this table.
+ERROR_EXIT_CODES = {'input_error': 2, 'tool_error': 5, 'contract_error': 5}
 
 
 class CliInputError(ValueError):
@@ -37,7 +42,7 @@ class _Parser(argparse.ArgumentParser):
 def _json_document(path: str) -> tuple[dict[str, Any], str]:
     try:
         text = Path(path).read_bytes().decode("utf-8")
-        value = json.loads(text, object_pairs_hook=unique_pairs)
+        value = strict_json_loads(text)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
         raise CliInputError(f"cannot read JSON file {path}: {error}") from error
     if not isinstance(value, dict):
@@ -269,7 +274,7 @@ def _schedule_failure(result: dict[str, Any], error: Exception, repository: Path
                  + " operator " + mode + " --repository " + quote(repository.resolve())
                  + " --instance " + quote(instance))
     result["operator_schedule"] = {"status": "failed", "error": str(error), "reconcile": reconcile}
-    return result, 5
+    return result, ERROR_EXIT_CODES['tool_error']
 
 
 def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
@@ -304,7 +309,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
                                                                  until_active=args.until_active), 0
     if command == 'select-profile':
         from .model_policy import selection
-        from .execution_profiles import resolve_profile
+        from .execution_profiles import match_profile_ref
         head, instance, runtime = ResearchRepository(args.repository, args.instance).load(args.snapshot)
         if args.role not in instance['role_profile_refs']:
             raise CliInputError('unknown execution role')
@@ -313,10 +318,9 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         selected = selection(instance['config'], {'role':args.role, 'target':args.task},
                              runtime['tasks'], instance['knowledge'], instance=instance)
         return {'snapshot':head, 'selection':selected,
-                'profile':resolve_profile(instance['execution_profiles'], selected['profile_ref'])}, 0
+                'profile':match_profile_ref(instance['execution_profiles'], selected['profile_ref'])}, 0
     if command == 'prepare-import-approval':
         from .governance import import_approval_draft
-        from .repository import canonical_json
         engine = ResearchEngine(args.repository, args.instance)
         engine.head, engine.instance, engine.runtime = engine.store.load(args.snapshot)
         value = import_approval_draft(engine.instance, engine.runtime, args.import_id,
@@ -327,13 +331,10 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
                 'decision':value, 'effect':'draft_only'}, 0
     if command == "status":
         from .reporting import snapshot_report, render_human_report
-        if args.snapshot is None:
-            status = ResearchEngine(args.repository, args.instance).status()
-            return (status if args.json else _human_status(status)), 0
-        status = snapshot_report(args.repository, args.instance, snapshot=args.snapshot)
-        if args.json:
-            return status, 0
-        return render_human_report(status), 0
+        # The current head with this host's observations, or one stored snapshot without them.
+        status = (ResearchEngine(args.repository, args.instance).status() if args.snapshot is None
+                  else snapshot_report(args.repository, args.instance, snapshot=args.snapshot))
+        return (status if args.json else render_human_report(status)), 0
     if command == 'quiesce':
         return _control(args, 'quiesce', text=args.reason), 0
     if command == 'release-quiesce':
@@ -398,7 +399,6 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
             raise CliInputError("--prefix requires --files")
         if args.direction is not None and args.related_to is None:
             raise CliInputError("--direction requires --related-to")
-        from .engine import query_records
         return query_records(args.repository, args.instance, snapshot=args.snapshot, kind=args.kind, text=args.text,
                              limit=args.limit, cursor=args.cursor, related_to=args.related_to,
                              direction=args.direction if args.direction is not None else "both"), 0
@@ -424,7 +424,6 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
                 return {"path": args.path, "snapshot": resolved_snapshot, "size": len(raw),
                         "base64": base64.b64encode(raw).decode("ascii"), "sha256": provenance["sha256"],
                         "provenance": provenance}, 0
-        from .engine import read_record
         return read_record(args.repository, args.instance, args.id, snapshot=args.snapshot), 0
     if command == "export":
         prefixes = ("research/", "runtime/") if args.all else ("research/",)
@@ -483,55 +482,13 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     raise CliInputError("unknown command")
 
 
-def _human_status(status: dict[str, Any]) -> str:
-    from .reporting import display_time
-    budget = status["budget"]
-    budget_text = "work sessions: " + ", ".join(f"{model} {row['used']}/{row['limit']}" for model, row in budget.items())
-    tasks = status["tasks"]
-    assurance = status["assurance"]
-    task_text = ", ".join(f"{task['id']}={task['status']}" for task in tasks) or "none"
-    unknown = ", ".join(f"{key}={value}" for key, value in assurance.items())
-    lines = [
-        f"goal: {status['goal']}",
-        f"goal_status: {status['goal_status']}",
-        f"status: {status['status']}  snapshot: {status['snapshot']}",
-        budget_text,
-        f"tasks: {task_text}",
-        "observed (Asia/Seoul): " + str(display_time(status.get('research_observed_at')) or 'unknown'),
-        f"unknown or bounded scope: {unknown}",
-    ]
-    summary=status.get('operating_summary',{})
-    blocker=summary.get('primary_blocker')
-    if blocker:
-        lines.append('blocking: '+str(blocker['kind'])+' next='+str(blocker.get('next_owner')))
-    if summary.get('lifecycle')=='initializing':
-        lines.append('initialization missing: '+', '.join(summary.get('initialization',{}).get('missing',[])))
-    for task in tasks:
-        waits = ', '.join(row.get('kind', 'unknown') for row in task.get('waits', [])) or 'none'
-        lines.append(f"  {task['id']} revision={task.get('revision', 'unknown')} stage={task['status']} "
-                     f"assessment_pending={str(task.get('assessment_pending', False)).lower()} "
-                     f"active_records={','.join(task.get('active_execution_ids', [])) or 'none'} "
-                     f"queued={','.join(str(value) for value in task.get('selected_actions', [])) or 'none'} "
-                     f"waits={waits} next={task.get('next_owner') or 'none'}")
-    for name, gate in status.get('provider_waits', {}).get('providers', {}).items():
-        lines.append(f"provider {name}: {gate['state']} retry={display_time(gate.get('retry_at')) or 'unknown'} generation={gate['generation']}")
-    if status.get('inspection'):
-        from .reporting import render_human_report
-        lines.append(render_human_report(status))
-    else:
-        lines.append('inspection: not supplied; research effectiveness: not evaluated')
-        from .reporting import render_dispatch_waits
-        lines.extend(render_dispatch_waits(status))
-    return '\n'.join(lines)
-
-
 def _command_parsers(parser):
     return next(action.choices for action in parser._actions if isinstance(action,argparse._SubParsersAction))
 
 
 def _request_schema(parser):
     return {'type':'object','required':['schema_version','command','payload'],'additionalProperties':False,
-        'properties':{'schema_version':{'type':'integer','const':5},
+        'properties':{'schema_version':{'type':'integer','const':WIRE_VERSION},
             'command':{'type':'string','enum':list(_command_parsers(parser))},
             'caller':{'type':'string','enum':['user','operator']},'payload':{'type':'object'},
             'request_id':{'type':'string','pattern':REQUEST_ID_PATTERN},
@@ -574,12 +531,13 @@ def describe_commands(parser, command=None):
         commands[name] = {'payload_schema':schema,'exclusive_groups':groups}
     if command is not None and not commands:
         raise CliInputError('unknown command for --describe')
-    return {'schema_version':5,'commands':commands,'request_schema':_request_schema(parser),
-        'request_fields':['schema_version','command','caller','payload','request_id','idempotency_key'],
+    request_schema = _request_schema(parser)
+    return {'schema_version':WIRE_VERSION,'commands':commands,'request_schema':request_schema,
+        'request_fields':list(request_schema['properties']),
         'response_fields':[*RESPONSE_FIELDS,'result OR error'],
         'inspection_exit_codes':{status:inspection_exit_code({'status':status})
                                  for status in ('healthy','degraded','blocked','incomplete')},
-        'error_exit_codes':{'input_error':2,'tool_error':5,'contract_error':5},
+        'error_exit_codes':dict(ERROR_EXIT_CODES),
         'caller_authority':'caller is a declared origin, not strong authentication'}
 
 
@@ -632,9 +590,16 @@ def _emit(value, *, command=None, request_id=None, code=0, error=False, force_js
     if isinstance(value, str) and not force_json:
         print(value)
     else:
-        fields = dict(zip(RESPONSE_FIELDS, (5, 'do-math-cli/5', request_id, command, code)))
+        fields = dict(zip(RESPONSE_FIELDS, (WIRE_VERSION, RESPONSE_CONTRACT_ID, request_id, command, code)))
         envelope = {**fields, 'error' if error else 'result': value}
         print(json.dumps(json_safe(envelope), ensure_ascii=False, sort_keys=True))
+
+
+def _fail(kind, error, next_owner, retryable, command, request_id) -> int:
+    code = ERROR_EXIT_CODES[kind]
+    _emit({'kind': kind, 'message': str(error), 'next_owner': next_owner, 'retryable': retryable},
+          command=command, request_id=request_id, code=code, error=True)
+    return code
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -665,22 +630,15 @@ def main(argv: list[str] | None = None) -> int:
             result, code = execute(args)
         finally:
             identifier = getattr(args, '_resolved_request_id', identifier)
-    except CliInputError as error:
-        _emit({"kind": "input_error", "message": str(error), 'next_owner': 'user', 'retryable': False}, command=command,request_id=identifier,code=2,error=True)
-        return 2
-    except ValueError as error:
-        _emit({"kind": "input_error", "message": str(error), 'next_owner': 'user', 'retryable': False}, command=command,request_id=identifier,code=2,error=True)
-        return 2
+    except ValueError as error:  # includes CliInputError
+        return _fail('input_error', error, 'user', False, command, identifier)
     except (TypeError, KeyError) as error:
-        _emit({'kind': 'contract_error', 'message': str(error), 'next_owner': 'maintenance', 'retryable': False}, command=command,request_id=identifier,code=5,error=True)
-        return 5
+        return _fail('contract_error', error, 'maintenance', False, command, identifier)
     except (GitStateStoreConflict, GitStateStoreError, OSError, subprocess.SubprocessError) as error:
-        _emit({"kind": "tool_error", "message": str(error), 'next_owner': 'operator',
-               'retryable': isinstance(error, (GitStateStoreConflict, GitStateStoreLockError))}, command=command,request_id=identifier,code=5,error=True)
-        return 5
-    except RuntimeError as error:
-        _emit({'kind': 'contract_error', 'message': str(error), 'next_owner': 'maintenance', 'retryable': False}, command=command,request_id=identifier,code=5,error=True)
-        return 5
+        return _fail('tool_error', error, 'operator', isinstance(error, (GitStateStoreConflict, GitStateStoreLockError)),
+                     command, identifier)
+    except RuntimeError as error:  # after the store errors, which are RuntimeErrors
+        return _fail('contract_error', error, 'maintenance', False, command, identifier)
     if isinstance(result,dict):
         identifier = result.get('request_id',identifier)
     _emit(result,command=command,request_id=identifier,code=code,force_json=force_json)

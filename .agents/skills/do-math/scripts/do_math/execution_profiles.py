@@ -13,11 +13,13 @@ from .file_io import is_sha256
 from .model_policy import ROLE_TIERS, TIERS
 from .repository import exact_content_hash
 from .provider_wait import provider_for
-from .state_contract import STATE_FORMAT_VERSION
 
 # Only work roles reserve a model slot; operational AI roles run on their pinned
 # model without a reservation, and machine roles use host limits alone.
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
+# Roles whose output is task research, and the roles that prepare and plan tasks.
+RESEARCH_PRODUCER_ROLES = frozenset({"research_work", "supplemental_research"})
+PLANNING_ROLES = frozenset({"research_preparation", "research_plan"})
 MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
 # Machine roles that run a Lean command in a native Job.
 LEAN_ROLES = {"formal_check", "trust_check"}
@@ -26,7 +28,7 @@ UNCAPPED_ROLES = LEAN_ROLES | {"trust_activate"}
 OBSERVATION_KEYS = ("observation_interval_seconds",
                     "self_check_response_window_seconds", "tool_review_window_seconds")
 WINDOW_KEYS = ("call_timeout_seconds", "finish_notice_seconds")
-PROFILE_ROLES = (set(ROLE_TIERS) - {"independent_operator"}) | MACHINE_ROLES | {"recovery"}
+PROFILE_ROLES = set(ROLE_TIERS) | MACHINE_ROLES
 HOST_ROLES = PROFILE_ROLES - UNCAPPED_ROLES
 BOUNDARY = {"mode": "instructions", "os_isolation": False, "authenticated_caller": False,
             "rules": ["Use only assigned inputs, allowed queries and your execution workspace.",
@@ -46,7 +48,6 @@ def seal_profile(body: dict) -> dict:
     value.pop("id", None)
     value.pop("sha256", None)
     value.setdefault("revision", 1)
-    value.setdefault("feature_version", STATE_FORMAT_VERSION)
     digest = exact_content_hash(value)
     value.update(id="EP-" + digest, sha256=digest)
     validate_profile(value)
@@ -54,7 +55,7 @@ def seal_profile(body: dict) -> dict:
 
 
 def profile_ref(profile: dict) -> dict:
-    validate_profile(profile)
+    """The reference of a stored or sealed profile; the profile is not hashed again."""
     return {key: profile[key] for key in ("id", "revision", "sha256")}
 
 
@@ -63,7 +64,7 @@ def validate_profile(profile: dict) -> None:
     digest = exact_content_hash(body)
     if profile.get("sha256") != digest or profile.get("id") != "EP-" + digest:
         raise ValueError("execution profile content differs from its immutable identity")
-    if profile.get("feature_version") != STATE_FORMAT_VERSION or type(profile.get("revision")) is not int or profile["revision"] < 1:
+    if type(profile.get("revision")) is not int or profile["revision"] < 1:
         raise ValueError("unsupported profile edition")
     role, actor = profile.get("role"), profile.get("actor_kind")
     if actor not in {"ai", "machine"}:
@@ -148,7 +149,6 @@ def validate_host_constraint(constraint: dict) -> None:
 
 
 def with_host_resources(profile: dict, constraint: dict, demands: dict) -> dict:
-    validate_profile(profile)
     validate_host_constraint(constraint)
     _host_amounts(demands, demand=True)
     body = deepcopy(profile)
@@ -161,13 +161,30 @@ def with_host_resources(profile: dict, constraint: dict, demands: dict) -> dict:
 def job_resource_limits(profile: dict) -> dict | None:
     """Exact per-execution Job settings, never the shared approval ceiling."""
     import platform
-    validate_profile(profile)
     host = profile.get("host_resources")
     if host is None:
         return None
     if host["host_id"] != platform.node():
         raise ValueError("profile host differs from this local host")
     return {key: host["demands"][key] for key in ("memory_bytes", "cpu_rate_basis_points")}
+
+
+def validate_host_resources(host) -> None:
+    """The configuration's host section: one approved constraint and a demand for exactly the capped roles.
+
+    Before binding, the constraint may still carry its request authority alias.
+    """
+    if not isinstance(host, dict) or set(host) != {"constraint", "demands_by_role"}:
+        raise ValueError("host authoring requires an approved constraint and explicit demands_by_role")
+    validate_host_constraint(host["constraint"])
+    if not isinstance(host['demands_by_role'], dict):
+        raise ValueError('host demands_by_role must be an object')
+    for demands in host['demands_by_role'].values():
+        _host_amounts(demands, demand=True)
+    if HOST_ROLES - set(host["demands_by_role"]):
+        raise ValueError("every capped role needs an explicit host demand in an adopted shared scope")
+    if set(host['demands_by_role']) - HOST_ROLES:
+        raise ValueError('host demands must name capped roles only')
 
 
 def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
@@ -180,24 +197,12 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
     if not selected_roles <= PROFILE_ROLES:
         raise ValueError("profile authoring requires supported roles")
     limits = config["session_limits"]
-    if not isinstance(limits, dict):
-        raise ValueError("session_limits must be a mapping")
     constraints = {}
     adopted_host = config.get("host_resources")
     if adopted_host is not None:
-        if not isinstance(adopted_host, dict) or set(adopted_host) != {"constraint", "demands_by_role"}:
-            raise ValueError("host authoring requires an approved constraint and explicit demands_by_role")
-        validate_host_constraint(adopted_host["constraint"])
-        if not isinstance(adopted_host['demands_by_role'], dict):
-            raise ValueError('host demands_by_role must be an object')
-        for demands in adopted_host['demands_by_role'].values():
-            _host_amounts(demands, demand=True)
-        if HOST_ROLES - set(adopted_host["demands_by_role"]):
-            raise ValueError("every capped role needs an explicit host demand in an adopted shared scope")
+        validate_host_resources(adopted_host)
         constraints[adopted_host["constraint"]["id"]] = deepcopy(adopted_host["constraint"])
     for model, work in sorted(limits["work"].items()):
-        if type(work) is not int or work < 0:
-            raise ValueError("session capacity must be a nonnegative integer")
         identifier = "CP-" + exact_content_hash({"model": model, "work": work})
         constraints[identifier] = {"id": identifier, "kind": "concurrency", "model": model,
             "accounting_unit": "execution", "work_slots": work, "scope": "local_execution_not_provider_operations"}
@@ -243,8 +248,6 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
             refs.setdefault(role, []).append(profile_ref(profile))
     result = {"execution_profiles": profiles, "capacity_constraints": constraints, "role_profile_refs": refs}
     if adopted_host is not None:
-        if set(adopted_host['demands_by_role']) - HOST_ROLES:
-            raise ValueError('host demands must name capped roles only')
         result["host_capacity_ref"] = adopted_host["constraint"]["id"]
     return result
 
@@ -290,12 +293,12 @@ def resolve_profile(profiles: dict, reference: dict) -> dict:
 
 
 def select_profile(profiles: dict, action: dict, selection: dict, allowed_refs=None) -> dict:
+    """The one stored profile the action may use; like ``match_profile_ref``, not a copy."""
     requested = action.get("profile_ref") or selection.get("profile_ref")
-    allowed = None if allowed_refs is None else [profile_ref(resolve_profile(profiles, r)) for r in allowed_refs]
-    candidates = ([resolve_profile(profiles, requested)] if requested else
-                  [resolve_profile(profiles, ref)
-                   for ref in {ref["id"]: ref for ref in allowed}.values()] if allowed is not None else
-                  [resolve_profile(profiles, profile_ref(p)) for p in profiles.values()])
+    allowed = None if allowed_refs is None else [profile_ref(match_profile_ref(profiles, r)) for r in allowed_refs]
+    candidates = ([match_profile_ref(profiles, requested)] if requested else
+                  [profiles[ref["id"]] for ref in {ref["id"]: ref for ref in allowed}.values()]
+                  if allowed is not None else list(profiles.values()))
     candidates = [p for p in candidates if p["role"] == action["role"]
                   and (p["actor_kind"] == "machine" or p["ai"]["model"] == selection["model"])
                   and (requested or p.get("ai", {}).get("tier") is None or not selection.get("tier")
@@ -317,7 +320,6 @@ def bind_execution(execution: dict, profile: dict) -> dict:
 
 
 def runtime_config(profile: dict) -> dict:
-    validate_profile(profile)
     window = profile["window"]
     return deepcopy({**window, **profile["observation"]["settings"],
                      "observation_mode": profile["observation"]["mode"],
@@ -331,7 +333,6 @@ def _lean_contract(config: dict) -> dict:
 
 def machine_invocation(profile: dict, *, trust_environment: dict, on_started=None) -> dict:
     """Use the frozen command/deadline with the separately approved trust edition."""
-    validate_profile(profile)
     machine = profile.get("machine", {})
     command = machine.get("lean_command")
     if profile["actor_kind"] != "machine" or not command:
@@ -350,7 +351,6 @@ def machine_invocation(profile: dict, *, trust_environment: dict, on_started=Non
 
 
 def runner_tools(profile: dict) -> dict:
-    validate_profile(profile)
     return deepcopy({key: profile["ai"][key] for key in ("scholarly_server", "claude_only_assigned_model")})
 
 
@@ -386,7 +386,6 @@ def structural_failure_evidence(profile: dict, identity: dict, *, observed_at: s
 
 
 def boundary_prompt(profile: dict) -> str:
-    validate_profile(profile)
     return "\n\nExecution boundary (instructions; not OS isolation):\n" + "\n".join(profile["boundary"]["rules"])
 
 

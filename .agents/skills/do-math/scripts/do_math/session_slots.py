@@ -28,6 +28,11 @@ def held_reservations(runtime: dict, owner_ids=None) -> list:
             if row['state'] == 'held' and (owner_ids is None or row['owner_id'] in owner_ids)]
 
 
+def local_termination_confirmed(execution: dict) -> bool:
+    """The execution's admitted capacity was returned after its local termination was confirmed."""
+    return execution.get('capacity', {}).get('local_termination') == 'confirmed'
+
+
 def quiescence(runtime: dict) -> dict:
     """Unended executions and held reservations; an instance is quiescent when both are empty."""
     return {'pending_executions': [e['id'] for e in runtime.get('executions', {}).values() if e['status'] != 'ended'],
@@ -77,11 +82,11 @@ class SessionSlots:
         Returns the registered profile and the reservation records to publish,
         or None after recording ``admission_wait``. Nothing is written.
         """
-        from .execution_profiles import (resolve_profile, profile_ref, job_resource_limits,
+        from .execution_profiles import (match_profile_ref, profile_ref, job_resource_limits,
                                          validate_host_constraint, UNCAPPED_ROLES)
         from .budget import plan_reservations, BudgetConflict
         self.admission_wait = None
-        profile = resolve_profile(self.instance["execution_profiles"], profile_ref(profile))
+        profile = match_profile_ref(self.instance["execution_profiles"], profile_ref(profile))
         approved_host = self.instance.get("host_capacity_ref")
         uncapped_lean = (profile['actor_kind']=='machine'
                         and profile['role'] in UNCAPPED_ROLES
@@ -97,8 +102,8 @@ class SessionSlots:
         # A new capacity edition must still count executions reserved under older
         # editions of the same model. Limits are not independent resource pools.
         constraints = self.instance["capacity_constraints"]
-        # Rebase only each row's constraint ID; nested evidence stays read-only.
-        reservations = {rid: dict(row) for rid, row in self.runtime.get("reservations", {}).items()}
+        # Rebase only each held row's constraint ID; nested evidence stays read-only.
+        held = [dict(row) for row in held_reservations(self.runtime)]
         capacity_refs = list(ai.get("capacity_refs", []))
         adopted = self.instance.get("role_profile_refs")
         if adopted and capacity_refs:
@@ -124,15 +129,13 @@ class SessionSlots:
                     "next_owner": "user"}
                 return None
         refs = capacity_refs
-        accounting_profile = deepcopy(profile)
-        if ai:
-            accounting_profile["ai"]["capacity_refs"] = capacity_refs
+        accounting_profile = {**profile, "ai": {**ai, "capacity_refs": capacity_refs}} if ai else profile
         host_refs = profile.get("host_capacity_refs", [])
         for ref in host_refs:
             validate_host_constraint(constraints[ref])
             if any(profile["host_resources"][k] != constraints[ref][k] for k in ("scope", "host_id")):
                 raise ValueError("profile and approved host scope differ")
-        for row in reservations.values():
+        for row in held:
             previous = constraints.get(row["constraint_id"], {})
             for ref in refs + host_refs:
                 constraint = constraints[ref]
@@ -143,21 +146,8 @@ class SessionSlots:
                              and previous.get("host_id") == constraint.get("host_id"))
                 if same_model or same_host:
                     row["constraint_id"] = ref
-        demands = [{"id": "RS-" + execution_id + "-" + str(i), "constraint_id": ref,
-                    "unit": constraints[ref]["accounting_unit"], "amount": 1}
-                   for i, ref in enumerate(refs)]
-        for ref in host_refs:
-            demands.extend({"id": "RS-" + execution_id + "-host-" + unit,
-                "constraint_id": ref, "unit": unit, "amount": amount}
-                for unit, amount in profile["host_resources"]["demands"].items())
-        if not demands:
-            return profile, ()
-        request = {"owner_kind": "execution", "owner_id": execution_id,
-                   "purpose": "normal", "authority_refs": [profile_ref(profile)],
-                   "reobserve": {"on": "local_termination_barrier"}, "demands": demands}
         try:
-            records = plan_reservations({"reservations": reservations},
-                                        {"constraints": list(constraints.values())}, accounting_profile, request)
+            records = plan_reservations(held, constraints, accounting_profile, owner_id=execution_id)
         except BudgetConflict as error:
             kind, owner = {'concurrency': ('capacity', 'scheduler'),
                            'host': ('host_capacity', 'operations')}.get(
@@ -221,11 +211,10 @@ class SessionSlots:
     def started(self, execution_id, identity, *, at):
         """Record the started named Job, its running transition and start time."""
         self._writable()
-        from .launch import validate
         from .execution_lifecycle import transition_execution
         execution = self.runtime["executions"][execution_id]
         capacity = execution["capacity"]
-        launch = validate(execution['launch_ticket'], execution_id=execution_id)
+        launch = execution['launch_ticket']
         if launch['kind'] != 'native_job' or identity.get('job_name') != launch['job_name']:
             raise ValueError('started Job differs from the published launch ticket')
         if capacity["process"] is not None:
@@ -259,8 +248,8 @@ class SessionSlots:
         updates = {}
         for rid in capacity["reservation_ids"]:
             record = self.runtime["reservations"][rid]
-            updates[rid] = settle_reservation({"reservations": self.runtime["reservations"]}, rid,
-                confirmed_consumed=0, returned=record["reserved"], evidence_refs=evidence)
+            updates[rid] = settle_reservation(record, confirmed_consumed=0, returned=record["reserved"],
+                                              evidence_refs=evidence)
         self.runtime["reservations"].update(updates)
         capacity["local_termination"] = "confirmed"
         for gate in self.runtime.get("provider_waits", {}).values():
@@ -323,7 +312,7 @@ class SessionSlots:
             row["open"] = gate_open(row, current)
             row["retry_at"] = utc(row["retry_at"])
             row["probe_started_at"] = utc(row["probe_started_at"])
-        return {"observed_at": utc(current), "source": "git_runtime", "providers": {row["provider"]: row for row in rows.values()}}
+        return {"observed_at": utc(current), "providers": {row["provider"]: row for row in rows.values()}}
 
     def snapshot(self):
         """Work slots of each currently adopted model; operational roles hold none."""

@@ -1,5 +1,5 @@
 ---
-id: M-0350
+worker_id: W-git
 layer: 1
 title: do-math 상태 게시의 객체 쓰기를 프로세스 안으로 옮기고 참조 이동만 Git CAS로 남김
 convention_version: 27

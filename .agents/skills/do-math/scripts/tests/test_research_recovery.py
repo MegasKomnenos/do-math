@@ -1,18 +1,27 @@
-"""Regressions for contract replacement and recovery, using temporary Git stores."""
-from copy import deepcopy
-from concurrent.futures import ThreadPoolExecutor
+"""Recovery of research work: contract replacement, retries, diagnoses, operational dispositions and repairs.
+
+Git-backed tests use temporary repositories; the rest run on in-memory engines."""
+import hashlib
 import json
-from pathlib import Path
 import sys
+import tempfile
 import unittest
-from unittest.mock import patch
+from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
+from pathlib import Path
+from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from research_fixtures import local_job_runner, await_stop, restore_template
-from do_math.engine import ResearchEngine, control
-from research_fixtures import charter_change, producer_result, disposition, send_control
+from do_math import activities, contracts, execution_profiles, operational_dispositions, repair_execution
+from do_math.configuration import DEFAULT_CONFIG
+from do_math.engine import control, ResearchEngine
+from do_math.repository import ResearchRepository
+from engine_fixtures import context_engine, initial_failure_engine, package, routing_engine, start_repair_host
+from purpose_fixtures import ActivatedPurposeHarness, candidate, common, formal_fixture, PurposeRunner
+from record_fixtures import surface_state
+from research_fixtures import (await_stop, bare_engine, charter_change, disposition, local_job_runner,
+                               producer_result, restore_template, send_control)
 from state_fixtures import active_instance
-from test_purpose_engine import ActivatedPurposeHarness, PurposeRunner, candidate, common, formal_fixture
 
 
 def empty_plan(**changes):
@@ -93,8 +102,8 @@ def paused_limited_recovery(root, shared, *, config):
 
 class RecoveryStorageConnectionTests(unittest.TestCase):
     def test_operational_retry_producer_survives_actual_git_storage(self):
-        from test_input_recovery import active_repository
-        from do_math.engine import now
+        from state_fixtures import active_repository
+        from do_math.file_io import now
         from do_math.execution_lifecycle import transition_execution
         _, self.repo, self.identifier = active_repository()
         engine = ResearchEngine(self.repo, self.identifier)
@@ -275,7 +284,7 @@ class RecoveryRoutingTests(RecoveryHarness):
         self.assertEqual(orders, list(range(orders[0], orders[0] + 4)))
 
     def test_preparation_cannot_replace_a_user_academic_requirement_contract(self):
-        from test_academic_engine import requirement
+        from purpose_fixtures import requirement
         engine, _ = self.active()
         # This test concerns authoring authority; full proof construction has
         # separate end-to-end coverage. Keep this premise explicitly synthetic.
@@ -517,6 +526,426 @@ class LimitedRecoveryCallTests(ActivatedPurposeHarness):
                 self.assertEqual(engine.runtime['status'], 'paused')
                 self.assertEqual(engine.instance['lifecycle']['state'], 'paused')
                 self.assertIn('user_pause', engine.runtime)
+
+
+class InitialDiagnosisTests(unittest.TestCase):
+    def test_exhausted_initial_repairs_have_a_reachable_diagnostic_owner(self):
+        from do_math.repair_execution import route_submission_return
+        requests = []
+        engine = bare_engine({'lifecycle':{'state':'initializing'}, 'config':{'max_output_repairs':1}},
+            {'queue':[], 'waiting_actions':{}})
+        engine._enqueue = create_autospec(engine._enqueue, side_effect=lambda *a, **kw: requests.append((a,kw)))
+        action = {'id':'AC-original','role':'intent_interpretation','target':'UI-original','repair_attempt':1}
+        route_submission_return(engine,action,{'retry_bundle_ids':[],'bundles':[],'issues':[]},'EX-bad',None)
+        self.assertEqual(requests[0][0], ('maintenance','EX-bad'))
+        self.assertTrue(requests[0][1]['initial_submission_diagnosis'])
+
+    def test_diagnosis_and_bound_rules_fit_the_persisted_contract(self):
+        import jsonschema
+        from do_math.record_schemas import RECORDS
+        action = {'id':'AC-diagnose','role':'maintenance','target':'EX-bad', 'initial_submission_diagnosis':True}
+        jsonschema.Draft202012Validator(RECORDS['queue']).validate(action)
+        retry = {'id':'AC-original','role':'intent_interpretation','diagnosis_attempt':1}
+        jsonschema.Draft202012Validator(RECORDS['queue']).validate(retry)
+        self.assertIn('observation_rules', RECORDS['executions']['properties'])
+
+    def test_diagnosis_retry_preserves_the_original_and_is_bounded(self):
+        from do_math.repair_execution import apply_initial_diagnosis, continue_initial_retries, route_submission_return
+        with tempfile.TemporaryDirectory() as directory:
+            engine, action, wait = initial_failure_engine(Path(directory), 'output_validation')
+            engine._save = create_autospec(engine._save)
+            diagnostic = {'target': 'EX-bad', 'initial_submission_diagnosis': True}
+            apply_initial_diagnosis(engine, diagnostic,
+                {'initial_submission_diagnosis':{'decision':'retry','guidance':'Return the missing required field'}}, 'EX-diagnosis')
+            self.assertEqual(engine.runtime['queue'], [])
+            engine.runtime['executions']['EX-diagnosis'] = {'id': 'EX-diagnosis', 'role': 'maintenance',
+                'status': 'ended', 'outcome': 'output_accepted', 'action': diagnostic}
+            continue_initial_retries(engine)
+            self.assertTrue(engine.runtime['queue'], engine.runtime['waiting_actions'])
+            retry = engine.runtime['queue'].pop()
+            self.assertEqual(retry['target'], 'UI-original')
+            self.assertEqual(retry['owner_activity_id'], 'AY-original')
+            self.assertEqual(retry['diagnosis_attempt'], 1)
+            route_submission_return(engine,retry,{'retry_bundle_ids':[],'bundles':[],'issues':[]},'EX-again',None)
+            self.assertEqual(engine.runtime['queue'], [])
+
+
+class RetryEffectTests(unittest.TestCase):
+    def test_retry_waits_for_unknown_effect_from_an_ancestor(self):
+        engine = routing_engine()
+        engine.runtime['executions'] = {
+            'EX-original': {'id': 'EX-original', 'status': 'ended', 'action': {}},
+            'EX-later': {'id': 'EX-later', 'status': 'ended', 'continuation_of': 'EX-original', 'action': {}}}
+        engine.runtime['external_operations'] = {'EO-one': {
+            'status': 'unknown', 'producer_executions': ['EX-original']}}
+        record = {'id': 'OD', 'execution_id': 'EX-review', 'target_execution_id': 'EX-later',
+                  'disposition': {'kind': 'retry'}}
+        with self.assertRaisesRegex(ValueError, 'reconciliation'):
+            engine._complete_operational_disposition(record)
+        self.assertEqual(engine.runtime['queue'], [])
+
+
+class RecoveryOwnershipTests(unittest.TestCase):
+    def runtime(self, status='running', *, successor=True):
+        target={'id':'EX-old','status':'ended','owner_activity_id':'AY-one',
+                'action':{'id':'AC-one','role':'research_plan'},'error':'returned'}
+        runtime={'executions':{'EX-old':target},'activities':{},'queue':[],'operational_dispositions':{}}
+        if successor:
+            runtime['executions']['EX-new']={'id':'EX-new','status':status,'owner_activity_id':'AY-one',
+                'continuation_of':'EX-old','action':{'id':'AC-one','role':'research_plan'}}
+        return runtime
+
+    def record(self, kind='retry'):
+        return {'id':'OD-one','status':'applied','target_execution_id':'EX-old',
+                'disposition':{'kind':kind}}
+
+    def test_live_and_ended_successors_supersede_old_retry_and_resume(self):
+        for kind in ('retry','resume'):
+            for status in ('starting','running','ended'):
+                with self.subTest(kind=kind,status=status):
+                    runtime=self.runtime(status)
+                    record=self.record(kind)
+                    self.assertTrue(operational_dispositions.reconcile_recovery(runtime,record))
+                    self.assertEqual(record['status'],'superseded')
+                    self.assertEqual(runtime['queue'],[])
+                    self.assertEqual(runtime['executions']['EX-old']['error'],'returned')
+
+    def test_unrelated_success_cannot_supersede_failure(self):
+        runtime=self.runtime('ended')
+        runtime['executions']['EX-new']['owner_activity_id']='AY-other'
+        self.assertIsNone(activities.successor_state(runtime,'EX-old'))
+        self.assertFalse(operational_dispositions.reconcile_recovery(runtime,self.record()))
+
+    def test_queued_continuation_already_owns_recovery(self):
+        runtime=self.runtime(successor=False)
+        runtime['queue']=[{'id':'AC-one','continuation_of':'EX-old','owner_activity_id':'AY-one'}]
+        before=deepcopy(runtime)
+        self.assertTrue(operational_dispositions.reconcile_recovery(runtime,self.record()))
+        self.assertEqual(runtime,before)
+
+    def test_task_continuation_does_not_discharge_a_separate_installation_defect(self):
+        runtime=self.runtime()
+        runtime['executions']['EX-other']={'id':'EX-other','status':'ended','owner_activity_id':'AY-other'}
+        old={**self.record('repair'),'status':'installation_repair_pending'}
+        current={**old,'id':'OD-other','target_execution_id':'EX-other'}
+        runtime['operational_dispositions']={old['id']:old,current['id']:current}
+        self.assertEqual(repair_execution.pending_installation_repair(runtime),old)
+        self.assertFalse(operational_dispositions.reconcile_recovery(runtime,old))
+
+    def test_successful_installation_repair_preserves_the_existing_continuation(self):
+        runtime=self.runtime()
+        record={**self.record('repair'),'status':'installation_repair_pending'}
+        result=repair_execution.resume_installation_repair(runtime,record,repaired_by='EX-repair',at='2026-09-25T00:00:00Z')
+        self.assertIsNone(result)
+        self.assertEqual(runtime['queue'],[])
+        self.assertEqual(record['status'],'applied')
+        self.assertEqual(record['result']['installation_repair']['successor']['live_execution_ids'],['EX-new'])
+
+    def test_already_applied_retry_keeps_its_receipt(self):
+        record={**self.record(),'result':{'continuation_action_id':'AC-one'}}
+        self.assertFalse(operational_dispositions.reconcile_recovery(self.runtime(),record))
+        self.assertEqual(record['status'],'applied')
+
+
+AT = '2026-09-22T00:00:00+00:00'
+
+
+class RecoveryBoundaryTests(unittest.TestCase):
+    def test_restart_finishes_an_accepted_retry_after_target_termination_once(self):
+        start_repair_host(self)
+        host = self.host
+        target = host.runtime['executions']['EX-target']
+        target.pop('input_bundle')
+        target['pending_operational_disposition'] = 'OD-repair'
+        record = host.runtime['operational_dispositions']['OD-repair']
+        record.update(status='awaiting_termination', disposition={'kind': 'retry', 'reason': 'Restart after ended target',
+            'scope': 'Same unfinished activity', 'replay_safety': 'No external effects',
+            'basis_refs': ['EX-target'], 'next_owner': 'engine'})
+        host.runtime['status'] = 'paused'
+        host._save()  # Reloaded state models interruption after the target ended.
+        host._complete_operational_disposition = lambda row: ResearchEngine._complete_operational_disposition(host, row)
+        ResearchEngine._run_pending_operational_repairs(host)
+        self.assertEqual(host.runtime['queue'], [])
+        host.runtime['status'] = 'ready'; host._save()
+        ResearchEngine._run_pending_operational_repairs(host)
+        ResearchEngine._run_pending_operational_repairs(host)
+        _, _, saved = host.store.load()
+        self.assertEqual(len(saved['queue']), 1)
+        self.assertEqual(saved['operational_dispositions']['OD-repair']['status'], 'applied')
+        self.assertNotIn('pending_operational_disposition', saved['executions']['EX-target'])
+
+    def test_initial_diagnosis_receives_the_original_role_contract_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            engine, action, wait = initial_failure_engine(root)
+            adopted, _ = surface_state()
+            engine.instance.update({key: adopted[key] for key in ('governance', 'governance_sources')})
+            engine.runtime['executions']['EX-bad']['input_bundle'] = 'BA-original'
+            prefix = 'runtime/artifacts/BA-original'
+            originals = {prefix + '/input.txt': b'Original role contract and fixed prompt',
+                prefix + '/schema.json': b'{"type":"object"}',
+                prefix + '/input/submission/context.json': b'{"fixed":"original input"}'}
+            # The role input manifest names the archived prompt.
+            prompt = originals[prefix + '/input.txt']
+            engine.runtime['executions']['EX-bad']['input_manifest'] = {'prompt': {
+                'artifact_ref': prefix + '/input.txt', 'sha256': hashlib.sha256(prompt).hexdigest(), 'bytes': len(prompt)}}
+            engine.store.read.side_effect = lambda ref, head: originals[ref]
+            engine.store.read_many.side_effect = lambda refs, head: {ref: originals[ref] for ref in refs}
+            engine._documents = {'maintenance': contracts.prompt_documents('maintenance')}
+            engine._preparation_checkpoint = create_autospec(engine._preparation_checkpoint, side_effect=lambda: None)
+            engine._session_slots = create_autospec(engine._session_slots)
+            engine._academic_status = create_autospec(engine._academic_status, side_effect=lambda: {})
+            workspace = root / 'diagnosis'
+            context = engine._context({'id': 'AC-diagnosis', 'role': 'maintenance', 'target': 'EX-bad',
+                                       'initial_submission_diagnosis': True}, workspace)
+            materials = context['initial_submission_diagnosis']['materials']
+            self.assertEqual({row['artifact_ref'] for row in materials}, set(originals))
+            for row in materials:
+                raw = (workspace / row['local_path']).read_bytes()
+                self.assertEqual(raw, originals[row['artifact_ref']])
+                self.assertEqual(hashlib.sha256(raw).hexdigest(), row['sha256'])
+
+    def test_retry_queue_and_disposition_publish_together_and_replay_is_noop(self):
+        start_repair_host(self)
+        host = self.host
+        target = host.runtime['executions']['EX-target']
+        target.pop('input_bundle')  # This case isolates queue/CAS publication.
+        record = host.runtime['operational_dispositions']['OD-repair']
+        record.update(status='pending', disposition={'kind': 'retry', 'reason': 'Use fresh input',
+            'scope': 'Same unfinished activity', 'replay_safety': 'No external effects',
+            'basis_refs': ['EX-target'], 'next_owner': 'engine'})
+        host._save()
+        before = host.head
+        record = host.runtime['operational_dispositions']['OD-repair']
+        ResearchEngine._complete_operational_disposition(host, record)
+        self.assertEqual(host.store.load()[2]['queue'], [])
+        host._save()
+        after, _, saved = host.store.load()
+        self.assertNotEqual(after, before)
+        self.assertEqual(saved['operational_dispositions']['OD-repair']['status'], 'applied')
+        self.assertEqual(saved['operational_dispositions']['OD-repair']['result']['continuation_action_id'], saved['queue'][0]['id'])
+        ResearchEngine._complete_operational_disposition(host, host.runtime['operational_dispositions']['OD-repair'])
+        self.assertEqual(len(host.runtime['queue']), 1)
+        self.assertEqual(self.destination.read_bytes(), b'damaged')
+
+    def test_initial_failure_kinds_and_stages_reach_one_authorized_followup(self):
+        for kind in ('output_validation', 'execution_failure', 'submission_failure'):
+            for stage in ('interpret', 'check'):
+                with self.subTest(kind=kind, stage=stage), tempfile.TemporaryDirectory() as directory:
+                    engine, action, wait = initial_failure_engine(Path(directory), kind, stage)
+                    original = deepcopy(engine.instance['lifecycle']['immutable_input'])
+                    repair_execution.route_failed_action(engine, action, 'EX-bad', reason='Diagnose actual failure')
+                    diagnostic = engine.runtime['queue'].pop()
+                    self.assertEqual(diagnostic['role'], 'maintenance')
+                    engine._action_lifecycle_gate(diagnostic)
+                    engine.runtime['executions']['EX-diagnosis'] = {'id': 'EX-diagnosis', 'role': 'maintenance',
+                        'status': 'running', 'action': diagnostic}
+                    repair_execution.apply_initial_diagnosis(engine, diagnostic,
+                        {'initial_submission_diagnosis': {'decision': 'retry', 'guidance': 'Use the preserved contract'}}, 'EX-diagnosis')
+                    self.assertEqual(engine.runtime['queue'], [], 'candidate application cannot publish a native recovery')
+                    engine._save = create_autospec(engine._save)
+                    engine.runtime['executions']['EX-diagnosis'] = {'id': 'EX-diagnosis', 'role': 'maintenance',
+                        'status': 'ended', 'outcome': 'output_accepted', 'action': diagnostic}
+                    repair_execution.continue_initial_retries(engine)
+                    self.assertTrue(engine.runtime['queue'], engine.runtime['waiting_actions'])
+                    retry = engine.runtime['queue'].pop()
+                    self.assertEqual(retry['stage'], stage)
+                    self.assertEqual(retry['owner_activity_id'], 'AY-original')
+                    self.assertEqual(retry['continuation_of'], 'EX-bad')
+                    self.assertEqual(retry['diagnosis_attempt'], 1)
+                    self.assertEqual(engine.instance['lifecycle']['immutable_input'], original)
+                    if kind == 'output_validation':
+                        self.assertEqual(retry['repair']['retry_bundle_ids'], ['IN-pending'])
+                    repair_execution.route_submission_return(engine, retry,
+                        {'retry_bundle_ids': [], 'bundles': [], 'issues': []}, 'EX-again', None)
+                    self.assertEqual(engine.runtime['queue'], [])
+
+    def test_failed_diagnosed_retry_is_recorded_once_and_remains_storable(self):
+        from do_math.record_schemas import RUNTIME_FIELDS
+        from jsonschema import Draft202012Validator
+        with tempfile.TemporaryDirectory() as directory:
+            engine, action, wait = initial_failure_engine(Path(directory))
+            diagnostic = {'id': 'AC-diagnosis', 'role': 'maintenance', 'target': 'EX-bad', 'initial_submission_diagnosis': True}
+            repair_execution.apply_initial_diagnosis(engine, diagnostic,
+                {'initial_submission_diagnosis': {'decision': 'retry', 'guidance': 'Retry original input'}}, 'EX-diagnosis')
+            engine.runtime['executions']['EX-diagnosis'] = {'id': 'EX-diagnosis', 'role': 'maintenance',
+                'status': 'ended', 'outcome': 'output_accepted', 'action': diagnostic}
+            engine.instance['grants']['GR-init']['status'] = 'revoked'
+            engine._save = create_autospec(engine._save)
+            repair_execution.continue_initial_retries(engine)
+            repair_execution.continue_initial_retries(engine)
+            self.assertIn('retry_error', wait['diagnosis'])
+            self.assertEqual(engine.runtime['queue'], [])
+            engine._save.assert_called_once()
+            Draft202012Validator(RUNTIME_FIELDS['waiting_actions']).validate(engine.runtime['waiting_actions'])
+
+    def test_initial_diagnosis_does_not_bypass_termination_source_or_authority(self):
+        for changed in ('termination', 'source', 'grant'):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as directory:
+                engine, action, wait = initial_failure_engine(Path(directory))
+                if changed == 'termination':
+                    engine.runtime['executions']['EX-bad']['capacity']['local_termination'] = 'unknown'
+                elif changed == 'source':
+                    engine.runtime['inputs'][0]['text'] = 'changed'
+                else:
+                    engine.instance['grants']['GR-init']['status'] = 'revoked'
+                with self.assertRaises(ValueError):
+                    engine._continue_initial_execution(wait, request_id='EX-diagnosis',
+                        diagnosis={'decision': 'retry', 'guidance': 'Retry'})
+                self.assertEqual(engine.runtime['queue'], [])
+
+
+    def test_retry_keeps_pending_bundles_and_never_restores_old_input(self):
+        from do_math import activities, execution_lifecycle, execution_profiles
+        engine = context_engine()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fitted, fixed = package(engine, root, 'research_work')
+            artifacts = engine._input_artifacts('BA-plan', contracts.schema_for('research_work'), fitted, root)
+            engine.store.read.side_effect = lambda path, head: artifacts[path]
+            profile = next(p for p in engine.instance['execution_profiles'].values() if p['role'] == 'research_work')
+            activities.open_activity(engine.runtime, activity_id='AY-work', activity_kind='research_work',
+                                    owner_ref='engine', input_refs=[], opened_at=AT)
+            target = execution_lifecycle.create_execution(execution_id='EX-work', owner_activity_id='AY-work',
+                actor_kind='ai', input_manifest=fitted['manifest'], profile_ref=execution_profiles.profile_ref(profile), created_at=AT)
+            target.update(role='research_work', input_bundle='BA-plan', action={'id': 'AC-work',
+                'role': 'research_work', 'owner_activity_id': 'AY-work'})
+            activities.assign_execution(engine.runtime, 'AY-work', target)
+            execution_lifecycle.transition_execution(target, 'starting', at=AT)
+            execution_lifecycle.transition_execution(target, 'stopping', at=AT, stop_phase='terminating')
+            execution_lifecycle.transition_execution(target, 'ended', at=AT, outcome='execution_incomplete')
+            activities.wait_for(engine.runtime, 'AY-work', reason='returned', condition={'action_ids': ['AC-work']},
+                                next_owner='operations', at=AT)
+            engine.runtime['waiting_actions']['AC-work'] = {'execution_id': 'EX-work',
+                'action': {**target['action'], 'repair': {'execution_id': 'EX-work', 'retry_bundle_ids': ['IN-left'],
+                    'previous_output': {}, 'bundle_results': [], 'issues': []}}}
+            record = {'id': 'OD-retry', 'target_execution_id': 'EX-work', 'status': 'pending',
+                'disposition': {'kind': 'retry', 'reason': 'Fresh input copy', 'scope': 'Remaining bundles',
+                    'replay_safety': 'Applied bundles stay recorded', 'next_owner': 'engine', 'basis_refs': ['EX-work']}}
+            engine.runtime['operational_dispositions'] = {record['id']: record}
+            damaged = root / 'input/submission/context.json'; damaged.write_bytes(b'damaged')
+            engine._complete_operational_disposition(record)
+            engine._complete_operational_disposition(record)
+            self.assertEqual(damaged.read_bytes(), b'damaged')
+            self.assertEqual(len(engine.runtime['queue']), 1)
+            retry = engine.runtime['queue'][0]
+            self.assertEqual(retry['repair']['retry_bundle_ids'], ['IN-left'])
+            self.assertEqual(record['result']['continuation_action_id'], retry['id'])
+            self.assertNotIn('AC-work', engine.runtime['waiting_actions'])
+            fresh = root / 'next'
+            context = engine._context(retry, fresh, execution_id='EX-next')
+            self.assertEqual(context['previous_execution']['id'], 'EX-work')
+            self.assertTrue((fresh / 'input/implementation/SKILL.md').is_file())
+            self.assertEqual(damaged.read_bytes(), b'damaged')
+
+
+class ExecutionConnections(unittest.TestCase):
+    def test_retry_retains_activity_with_explicit_parent_and_profile(self):
+        engine = routing_engine()
+        engine.instance["config"] = deepcopy(DEFAULT_CONFIG)
+        engine.instance.update(execution_profiles.build_profiles(engine.instance["config"]))
+        engine._select_model = create_autospec(engine._select_model, return_value={"model": DEFAULT_CONFIG["tier_models"]["medium"]})
+        action = {"id": "AC-work", "role": "research_work", "lineage_id": "AC-work"}
+        first = engine._register_execution(action, {"id": "EX-first", "role": "research_work",
+            "status": "starting", "created_at": "2026-09-20T00:00:00+00:00", "input_manifest": []})
+        first["status"] = "ended"
+        first["outcome"] = "execution_incomplete"
+        retry_action = {**action, "continuation_of": first["id"]}
+        second = engine._register_execution(retry_action, {"id": "EX-second", "role": "research_work",
+            "status": "starting", "created_at": "2026-09-20T00:01:00+00:00", "input_manifest": []})
+        self.assertEqual(first["owner_activity_id"], second["owner_activity_id"])
+        self.assertEqual(second["continuation_of"], first["id"])
+        self.assertEqual(first["execution_profile_ref"], second["execution_profile_ref"])
+        self.assertEqual(len(engine.runtime["activities"]), 1)
+        self.assertEqual(activities.validate_activities(engine.runtime), [])
+
+    def test_missing_explicit_continuation_does_not_infer_from_same_target(self):
+        engine = routing_engine()
+        engine.instance["config"] = deepcopy(DEFAULT_CONFIG)
+        engine.instance.update(execution_profiles.build_profiles(engine.instance["config"]))
+        action = {"id": "AC-machine", "role": "formal_check", "target": "KN-one"}
+        engine.runtime["executions"]["EX-unrelated"] = {"id": "EX-unrelated", "role": "formal_check",
+            "status": "ended", "action": {"target": "KN-one"}, "owner_activity_id": "AY-unrelated"}
+        row = engine._register_execution(action, {"id": "EX-new", "role": "formal_check", "status": "running",
+            "created_at": "2026-09-20T00:00:00+00:00", "input_manifest": []})
+        self.assertIsNone(row["continuation_of"])
+        self.assertNotEqual(row["owner_activity_id"], "AY-unrelated")
+        self.assertNotIn("model", row)
+
+
+class FinalBoundaryConnections(unittest.TestCase):
+    def test_operational_completion_and_transfer_use_real_task_domain_validation(self):
+        from record_fixtures import transfer_assessment, apply_assessment
+        from do_math import planning
+        instance, runtime, assessment = transfer_assessment()
+        assessment["decision"] = "closed"
+        for obligation in runtime["tasks"]["TK-1"]["completion_obligations"]:
+            obligation["judges"] = ["operational_review"]
+        instance["decisions"]["DC-1"]["change"]["contract_sha256"] = planning.contract_hash(runtime["tasks"]["TK-1"])
+        runtime["executions"].pop("EX-plan")
+        runtime["executions"].update({"EX-work": {"id": "EX-work", "role": "research_work", "status": "ended", "action": {"target": "TK-1"}},
+            "EX-review": {"id": "EX-review", "role": "operational_review", "input_snapshot": "input", "output": {"task_assessments": [assessment]}}})
+        engine = routing_engine(); engine.instance, engine.runtime = instance, runtime
+        engine.store = create_autospec(ResearchRepository, instance=True); engine.store.view.return_value = ("input", deepcopy(instance), deepcopy(runtime))
+        engine._evaluation_context = create_autospec(engine._evaluation_context, return_value={})
+        record = {"id": "OD-one", "execution_id": "EX-review", "target_execution_id": "EX-work",
+            "disposition": {"kind": "task_disposition", "task_id": "TK-1", "task_state": "closed", "authority_ref": "DC-1"}}
+        engine.runtime["operational_dispositions"] = {record["id"]: record}
+        before = deepcopy((engine.instance, engine.runtime))
+        engine.instance["decisions"]["DC-1"]["source_sha256"] = "b" * 64
+        with self.assertRaisesRegex(ValueError, "current"):
+            engine._complete_operational_disposition(record)
+        self.assertNotEqual(engine.runtime["tasks"]["TK-1"]["status"], "closed")
+        engine.instance, engine.runtime = before
+        engine._complete_operational_disposition(engine.runtime["operational_dispositions"]["OD-one"])
+        self.assertEqual(engine.runtime["tasks"]["TK-1"]["status"], "closed")
+        self.assertEqual(engine.runtime["tasks"]["TK-2"]["completion_obligations"][-1]["id"], "OB-inherited")
+        self.assertEqual(engine.runtime["tasks"]["TK-2"]["reviews"], [])
+
+    def test_paused_initialization_reads_original_input_but_active_corruption_fails(self):
+        engine = routing_engine()
+        engine.instance.update(governance={}, lifecycle={"state": "paused", "input_id": "UC-one", "immutable_input": {"ref": "UC-one"}})
+        engine.runtime.update(resume_lifecycle="initializing", inputs=[{"id": "UC-one", "config": {"goal": "Original goal"}}])
+        self.assertEqual(engine._governance()["goal"], "Original goal")
+        self.assertEqual(engine._governance()["status"], "unadopted_input")
+        engine.instance["governance"] = {"GD-policy": {"kind": "policy", "status": "active"}}
+        self.assertEqual(engine._governance()["goal"], "Original goal")
+        engine.instance["lifecycle"]["state"] = "active"
+        with self.assertRaisesRegex(ValueError, "charter"):
+            engine._governance()
+
+    def test_operational_task_disposition_uses_authoritative_item_assessment(self):
+        engine = routing_engine()
+        assessment = {"task_id": "TK-one", "decision": "completed", "reason": "All obligations assessed", "item_dispositions": [], "unresolved": []}
+        engine.runtime["tasks"]["TK-one"] = {"id": "TK-one", "status": "active"}
+        engine.runtime["executions"] = {"EX-work": {"id": "EX-work", "status": "ended", "action": {"target": "TK-one"}},
+            "EX-review": {"input_snapshot": "input", "output": {"task_assessments": [assessment]}}}
+        engine.store = create_autospec(ResearchRepository, instance=True); engine.store.view.return_value = ("input", {}, {"tasks": {"TK-one": {"id": "TK-one"}}})
+        engine._evaluation_context = create_autospec(engine._evaluation_context, return_value={"snapshot": "current"})
+        record = {"id": "OD-one", "execution_id": "EX-review", "target_execution_id": "EX-work", "disposition": {"kind": "task_disposition", "task_id": "TK-one", "task_state": "completed", "authority_ref": "designated obligation judge"}}
+        completed = deepcopy(engine.runtime); completed["tasks"]["TK-one"]["status"] = "completed"
+        with patch("do_math.engine.task_scope.apply_task_assessments", return_value=(engine.instance, completed)) as apply:
+            engine._complete_operational_disposition(record)
+        self.assertEqual(apply.call_args.args[2], [assessment])
+        self.assertEqual(apply.call_args.kwargs["execution_id"], "EX-review")
+        self.assertEqual(apply.call_args.kwargs["evaluation_context"], {"snapshot": "current"})
+        self.assertEqual(engine.runtime["tasks"]["TK-one"]["status"], "completed")
+
+
+class OperationalRepairCandidateTests(unittest.TestCase):
+    def test_operational_repair_candidate_never_mutates_files_or_publishes(self):
+        engine = routing_engine(); engine._save = create_autospec(engine._save)
+        engine.runtime["executions"] = {"EX-target": {"id": "EX-target", "status": "ended"}}
+        proposal = {"kind": "repair", "basis_refs": ["EX-target"], "next_owner": "engine", "reason": "Restore input",
+                    "repair_target": "input/catalog/task.json", "meaning_preserving": True, "verification": "sha256:" + "a" * 64}
+        with patch("do_math.engine.repair_execution.complete_repair") as effect:
+            # The disposition schema admits only installation: repair targets.
+            with self.assertRaisesRegex(ValueError, 'repair/repair_target'):
+                engine._apply_operational_disposition({"target": "EX-target"}, proposal, "EX-review")
+            effect.assert_not_called()
+        engine._save.assert_not_called()
+        self.assertFalse(engine.runtime.get('operational_dispositions'))
+        self.assertEqual(engine.runtime["queue"], [])
 
 
 if __name__ == '__main__':

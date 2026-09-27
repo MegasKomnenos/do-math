@@ -11,24 +11,25 @@ from functools import lru_cache
 import hashlib
 import io
 import json
-import os
 from pathlib import Path
 import re
 import sys
 import zipfile
 
 import jsonschema
-from .file_io import atomic_replace
+from .file_io import atomic_replace, json_copy
 
 from . import knowledge_io, planning, review_cycle
-from .context_store import collect_outputs, materialize_inputs, read_source, _safe_path, _excluded, _read_stable, _is_reparse, _relative
+from .context_store import collect_outputs, materialize_inputs, read_source, safe_path, is_excluded, read_stable, is_reparse, relative_path
 from .git_store import ULID_PATTERN
+from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
 from .external import prepare_operation, validate_operation
 from .model_policy import ASSESSMENT_SCHEMA, assessment_key, validate_assessments, preparation_only
 from .observations import read_checkpoint, validate_rule_proposal, CHECKPOINT_SCHEMA, CHECKPOINT_MAX_BYTES, RULES_MAX_BYTES
 from .file_io import reject_constant, unique_pairs
 from .repository import canonical_json, exact_content_hash
-from .contracts import REFS, TEXT
+from .contracts import REFS, TEXT, closed_object
+from .questions import QUESTION_OWNERS
 from .task_contracts import CONTEXT_INPUT_REFS
 from . import integration
 
@@ -41,7 +42,7 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact, *, git
     """Read the exact bytes accepted by the central submission receipt.
 
     With the repository's ``git_dir``, a sealed row this process already matched
-    (contract S3) is not hashed again.
+    (이음새-정본.md §3) is not hashed again.
     """
     from .repository import sealed_bytes
     identifier = execution.get("id", "<unknown>")
@@ -59,7 +60,7 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact, *, git
         if not isinstance(path, str) or not path:
             raise SealedSubmissionError(f"execution {identifier}: missing sealed {field} at {path!r}")
         try:
-            raw = read_artifact(snapshot, path)
+            raw = read_artifact(path, snapshot)
         except (OSError, ValueError, KeyError) as error:
             raise SealedSubmissionError(f"execution {identifier}: cannot read {field} at {path}: {error}") from error
         if not isinstance(raw, bytes):
@@ -95,7 +96,7 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact, *, git
         raise SealedSubmissionError(f"execution {identifier}: sealed check_ref at {intent['check_ref']} is not capture eligible")
     if not check['passed']:
         try:
-            context, schema = issued_input(execution, snapshot, read_artifact, git_dir=git_dir)
+            context, schema = issued_input(execution, snapshot, read_artifact)
             if (check['input_hashes'] != _check_hashes(result['output'], schema, context, result['extensions'])
                     or not capture_eligible(result['output'], result['extensions'], context, check['issues'])):
                 raise ValueError('partial candidate differs from its fixed input or independent bundle structure')
@@ -105,123 +106,120 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact, *, git
     return result
 
 
+# Parsed issued input files keyed by the SHA-256 of their bytes: the key names
+# the exact content, so it holds for any repository or path (이음새-정본.md §3).
 _ISSUED_INPUTS: dict = {}
 _ISSUED_INPUT_LIMIT = 32
 
 
-def issued_input(execution: dict, snapshot: str, read_artifact, *, git_dir=None,
+def issued_input(execution: dict, snapshot: str, read_artifact, *,
                  with_schema: bool = True) -> tuple[dict, dict | None]:
     """The fixed validation context and output schema this execution received.
 
     The engine writes both into the immutable input bundle (engine._input_artifacts);
-    this is the one reader. With the repository's git_dir path, a parsed file is kept
-    for this process (contract S3: bundles never change) and callers get copies.
-    A git_dir that is not a filesystem path (a test double or label) is not cached.
+    this is the one reader. The bytes are read on every call (the repository
+    keeps recent artifact bytes); a file parsed before in this process is not
+    parsed again, and callers get copies.
     """
     def issued(relative):
-        path = "runtime/artifacts/" + execution["input_bundle"] + "/" + relative
-        key = (os.fspath(git_dir), path) if isinstance(git_dir, os.PathLike) else None
-        value = _ISSUED_INPUTS.get(key) if key is not None else None
+        raw = read_artifact("runtime/artifacts/" + execution["input_bundle"] + "/" + relative, snapshot)
+        key = hashlib.sha256(raw).digest()
+        value = _ISSUED_INPUTS.get(key)
         if value is None:
-            value = load_json(read_artifact(snapshot, path))
-            if key is not None:
-                if len(_ISSUED_INPUTS) >= _ISSUED_INPUT_LIMIT:
-                    _ISSUED_INPUTS.pop(next(iter(_ISSUED_INPUTS)))
-                _ISSUED_INPUTS[key] = value
+            value = load_json(raw)
+            if len(_ISSUED_INPUTS) >= _ISSUED_INPUT_LIMIT:
+                _ISSUED_INPUTS.pop(next(iter(_ISSUED_INPUTS)))
+            _ISSUED_INPUTS[key] = value
         return deepcopy(value)
     return issued("input/submission/context.json"), issued("schema.json") if with_schema else None
 
 
-PRODUCERS = {"research_work", "supplemental_research"}
-PLANNERS = {"research_preparation", "research_plan"}
+# The contract of the nonauthoritative candidate preview response (preview_submission).
+PREVIEW_CONTRACT_ID = "do-math-candidate-preview/5"
+
 EXTENSION_ROLES = {
-    "revision_requests": {*PRODUCERS, *PLANNERS, "operational_review"}, "revision_resolutions": {*PRODUCERS, "research_preparation"},
-    "action_resolutions": {*PLANNERS, "operational_review"},
+    "revision_requests": {*RESEARCH_PRODUCER_ROLES, *PLANNING_ROLES, "operational_review"}, "revision_resolutions": {*RESEARCH_PRODUCER_ROLES, "research_preparation"},
+    "action_resolutions": {*PLANNING_ROLES, "operational_review"},
     "input_overflow_resolutions": {"research_plan"},
-    "task_conditions": {"research_preparation"}, "contract_checks": {"research_preparation"}, "task_dispositions": PLANNERS,
+    "task_conditions": {"research_preparation"}, "contract_checks": {"research_preparation"}, "task_dispositions": PLANNING_ROLES,
     "research_insights": {"research_preparation", "research_plan", "research_work",
         "supplemental_research", "identity_review", "task_contract_review", "goal_audit",
         "operational_review", "intent_interpretation", "maintenance"},
-    "external_requests": PRODUCERS, "knowledge_changes": {*PRODUCERS, "research_preparation"},
-    "kind_definitions": {*PRODUCERS, "research_preparation"},
-    "knowledge_metadata": PRODUCERS, "relations": PRODUCERS, "observation_rules": PRODUCERS,
+    "external_requests": RESEARCH_PRODUCER_ROLES, "knowledge_changes": {*RESEARCH_PRODUCER_ROLES, "research_preparation"},
+    "kind_definitions": {*RESEARCH_PRODUCER_ROLES, "research_preparation"},
+    "knowledge_metadata": RESEARCH_PRODUCER_ROLES, "relations": RESEARCH_PRODUCER_ROLES, "observation_rules": RESEARCH_PRODUCER_ROLES,
     "research_requests": {"identity_review"}, "academic_resolutions": {"research_plan"},
-    "model_assessments": PLANNERS, "model_assessment_deferrals": {"research_preparation"}, "queued_requests": {"research_plan"},
+    "model_assessments": PLANNING_ROLES, "model_assessment_deferrals": {"research_preparation"}, "queued_requests": {"research_plan"},
     "observation_rule_deferrals": {"research_preparation"},
 }
 for _family in ("question_routes", "question_resolutions"):
     EXTENSION_ROLES[_family] = set(EXTENSION_ROLES["research_insights"])
 
 
-def _object(properties, required=None):
-    return {"type": "object", "properties": properties, "additionalProperties": False,
-            "required": list(properties) if required is None else required}
-
-
 def extension_schema(action: dict) -> dict:
     """The installed schema describes only families available to this role."""
     from .contracts import PROFILE_REF
     kind = TEXT
-    claim = _object({"kind": TEXT, "source": TEXT, "target": TEXT, "confirmed_scope": TEXT})
-    relation = _object({"id": TEXT, "kind": TEXT, "source": TEXT, "target": TEXT, "evidence": TEXT,
+    claim = closed_object({"kind": TEXT, "source": TEXT, "target": TEXT, "confirmed_scope": TEXT})
+    relation = closed_object({"id": TEXT, "kind": TEXT, "source": TEXT, "target": TEXT, "evidence": TEXT,
         "evidence_refs": REFS, "formal_result_refs": REFS, "assessment_refs": REFS,
         "confirmed_scope": TEXT}, ["kind", "source", "target"])
     shapes = {
-        "input_overflow_resolutions": _object({"action_id": TEXT, "profile_ref": PROFILE_REF, "reason": TEXT}),
-        "task_conditions": _object({"task_id": TEXT, "task_title": TEXT, "dependencies": REFS,
+        "input_overflow_resolutions": closed_object({"action_id": TEXT, "profile_ref": PROFILE_REF, "reason": TEXT}),
+        "task_conditions": closed_object({"task_id": TEXT, "task_title": TEXT, "dependencies": REFS,
             "knowledge_revision_targets": REFS,
             "occurrence_condition": {"type": "object"}, "observation_rules": {"type": "array"}}, []),
-        "contract_checks": _object({"task_title": TEXT,
-            "symbols": {"type": "array", "items": _object({"symbol": TEXT, "meaning": TEXT})},
-            "outcome_branches": {"type": "array", "minItems": 2, "items": _object({"outcome": TEXT, "completion": TEXT})},
-            "sibling_boundaries": {"type": "array", "items": _object({"task_id": TEXT, "revision": {"type": "integer", "minimum": 1},
+        "contract_checks": closed_object({"task_title": TEXT,
+            "symbols": {"type": "array", "items": closed_object({"symbol": TEXT, "meaning": TEXT})},
+            "outcome_branches": {"type": "array", "minItems": 2, "items": closed_object({"outcome": TEXT, "completion": TEXT})},
+            "sibling_boundaries": {"type": "array", "items": closed_object({"task_id": TEXT, "revision": {"type": "integer", "minimum": 1},
                 "boundary": TEXT, "independent_of_next_revision": {"type": "boolean"}})}}),
-        "task_dispositions": _object({"task_id": TEXT, "disposition": {"const": "withdraw"}, "reason": TEXT}),
-        "research_insights": _object({"kind": kind, "title": TEXT, "statement": TEXT, "summary": TEXT,
+        "task_dispositions": closed_object({"task_id": TEXT, "disposition": {"const": "withdraw"}, "reason": TEXT}),
+        "research_insights": closed_object({"kind": kind, "title": TEXT, "statement": TEXT, "summary": TEXT,
             "explanation": TEXT, "evidence_ids": REFS},
             ["kind", "title", "statement", "summary"]),
-        "external_requests": _object({"id": TEXT, "request": {"type": "object"}, "grant_id": {"type": ["string", "null"]},
+        "external_requests": closed_object({"id": TEXT, "request": {"type": "object"}, "grant_id": {"type": ["string", "null"]},
             "purpose": TEXT, "academic_effect_id": TEXT}, ["request", "purpose"]),
-        "knowledge_changes": _object({"id": TEXT,
+        "knowledge_changes": closed_object({"id": TEXT,
             "replacement_id": {"type": "string", "pattern": "^KN-" + ULID_PATTERN + "$"},
             "changes": {"type": "object", "minProperties": 1},
             "reason": TEXT, "impact_set": REFS}, ["id", "changes", "reason", "impact_set"]),
-        "kind_definitions": _object({"family": {"enum": ["knowledge", "relation"]}, "token": TEXT,
-            "meaning": TEXT, "constraints": _object({
+        "kind_definitions": closed_object({"family": {"enum": ["knowledge", "relation"]}, "token": TEXT,
+            "meaning": TEXT, "constraints": closed_object({
                 "mathematical_claim": {"type": "boolean"}, "requires_evidence": {"type": "boolean"},
                 "requires_formal_results": {"type": "boolean"}, "requires_assessments": {"type": "boolean"},
                 "allowed_epistemic_statuses": {**REFS, "minItems": 1},
                 "required_fields": {**REFS, "minItems": 1}}, [])}),
-        "knowledge_metadata": _object({"title": TEXT, "relation_claim": claim, "confirmed_scope": TEXT,
+        "knowledge_metadata": closed_object({"title": TEXT, "relation_claim": claim, "confirmed_scope": TEXT,
             "epistemic_status": TEXT, "selection_relevance": TEXT,
             "uncertainty_assessment": {"type": ["string", "object"]}}, ["title"]),
         "relations": relation,
         "observation_rules": {"type": "object"},
         "research_requests": review_cycle.research_request_schema(),
-        "academic_resolutions": _object({"id": TEXT, "decision": {"enum": ["resolved", "unresolved"]},
+        "academic_resolutions": closed_object({"id": TEXT, "decision": {"enum": ["resolved", "unresolved"]},
             "evidence": TEXT, "evidence_refs": {**REFS, "minItems": 1, "uniqueItems": True}}),
-        "model_assessments": _object({assessment_key(action): TEXT,
+        "model_assessments": closed_object({assessment_key(action): TEXT,
             **ASSESSMENT_SCHEMA["properties"]}),
-        "model_assessment_deferrals": _object({"task_id": TEXT, "reason": TEXT}),
-        "observation_rule_deferrals": _object({'task_id': TEXT, 'reason': TEXT,
+        "model_assessment_deferrals": closed_object({"task_id": TEXT, "reason": TEXT}),
+        "observation_rule_deferrals": closed_object({'task_id': TEXT, 'reason': TEXT,
             'missing_inputs': {**REFS, 'minItems': 1},
             'next_owner': {'enum': ['user', 'research_preparation', 'research_plan', 'maintenance']}}),
-        "queued_requests": _object({"request_id": TEXT, "decision": {"enum": ["keep", "cancel"]}, "reason": TEXT}),
-        "revision_requests": _object({"record_ids": {**REFS, "minItems": 1}, "reason": TEXT}),
-        "revision_resolutions": _object({"record_id": TEXT, "disposition": {"enum": ["revised", "unchanged", "deferred", "delegated"]},
+        "queued_requests": closed_object({"request_id": TEXT, "decision": {"enum": ["keep", "cancel"]}, "reason": TEXT}),
+        "revision_requests": closed_object({"record_ids": {**REFS, "minItems": 1}, "reason": TEXT}),
+        "revision_resolutions": closed_object({"record_id": TEXT, "disposition": {"enum": ["revised", "unchanged", "deferred", "delegated"]},
             "reason": TEXT, "task_title": TEXT}, ["record_id", "disposition", "reason"]),
-        "question_routes": _object({"question_index": {"type": "integer", "minimum": 0},
-            "owner": {"enum": ["user", "research", "operations"]}, "target_ids": REFS, "reason": TEXT,
+        "question_routes": closed_object({"question_index": {"type": "integer", "minimum": 0},
+            "owner": {"enum": sorted(QUESTION_OWNERS)}, "target_ids": REFS, "reason": TEXT,
             "blocks": {"type": "boolean"}}, ["question_index", "owner", "target_ids", "reason"]),
-        "question_resolutions": _object({"question_id": TEXT, "disposition": {"enum": ["resolved", "superseded"]},
+        "question_resolutions": closed_object({"question_id": TEXT, "disposition": {"enum": ["resolved", "superseded"]},
             "evidence_refs": {**REFS, "minItems": 1}, "reason": TEXT}),
-        "action_resolutions": _object({"action_id": TEXT, "evidence_execution_id": TEXT, "reason": TEXT}),
+        "action_resolutions": closed_object({"action_id": TEXT, "evidence_execution_id": TEXT, "reason": TEXT}),
     }
     allowed = {name for name, roles in EXTENSION_ROLES.items() if action["role"] in roles}
     if preparation_only(action):
         allowed &= {"model_assessments", "model_assessment_deferrals", 'task_conditions', 'observation_rule_deferrals'}
         if 'observation_rule_targets' in action:
-            shapes['task_conditions'] = _object({'task_id': TEXT, 'observation_rules': {'type': 'array', 'minItems': 1}})
+            shapes['task_conditions'] = closed_object({'task_id': TEXT, 'observation_rules': {'type': 'array', 'minItems': 1}})
         else:
             allowed -= {'task_conditions', 'observation_rule_deferrals'}
     else:
@@ -231,7 +229,7 @@ def extension_schema(action: dict) -> dict:
         allowed.clear()
     if not action.get("review_cycle_id"):
         allowed.discard("research_requests")
-    return _object({name: {"type": "array", "items": shapes[name]} for name in sorted(allowed)}, [])
+    return json_copy(closed_object({name: {"type": "array", "items": shapes[name]} for name in sorted(allowed)}, []))
 
 
 def load_json(raw: bytes):
@@ -248,7 +246,7 @@ def load_extensions(raw: bytes):
 
 
 def read_extensions(workspace: Path) -> dict:
-    path = _safe_path(workspace, "activity-extensions.json")
+    path = safe_path(workspace, "activity-extensions.json")
     return load_extensions(path.read_bytes()) if path.exists() else {}
 
 
@@ -533,14 +531,8 @@ def _validate_reference(reference, context, workspace, *, known, locators, candi
     if reference in known:
         return
     proposal = context.get("proposal") or context.get("role_review", {}).get("proposal")
-    if reference == "proposal" and proposal is not None:
-        return
-    if reference.startswith("proposal:") and proposal is not None:
-        value = proposal
-        for token in reference.removeprefix("proposal:").replace("/", ".").strip(".").split("."):
-            if not isinstance(value, dict) or token not in value:
-                raise ValueError("unknown proposal source coordinate: " + reference)
-            value = value[token]
+    if (reference == "proposal" or reference.startswith("proposal:")) and proposal is not None:
+        review_cycle.proposal_value(proposal, reference)
         return
     if reference.startswith("issue:") and reference.removeprefix("issue:") in context.get("role_review", {}).get("issues", {}):
         return
@@ -549,9 +541,9 @@ def _validate_reference(reference, context, workspace, *, known, locators, candi
     if reference in locators:
         return
     name = reference.removeprefix("workspace:")
-    path = _safe_path(workspace, name)
+    path = safe_path(workspace, name)
     relative = Path(name)
-    if relative.parts[0] != "input" and _excluded(relative):
+    if relative.parts[0] != "input" and is_excluded(relative):
         raise ValueError("reference must identify supplied input or a preserved workspace file: " + reference +
                          "; use an exact reference_catalog value or workspace:<preserved-file>")
     exists = path.is_file() if relative.parts[0] == "input" or candidate_files is None else name in candidate_files
@@ -629,8 +621,8 @@ def fixed_research_reference_path(reference, source_refs):
     if not isinstance(reference, str) or not reference.startswith('workspace:'):
         raise ValueError('investigation evidence is outside its fixed source set')
     name = reference.removeprefix('workspace:')
-    relative = _relative(name)
-    if _excluded(relative):
+    relative = relative_path(name)
+    if is_excluded(relative):
         raise ValueError('evidence must be a collectable workspace file: ' + name)
     return name
 
@@ -748,11 +740,11 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                                       previous=prior)
                 require(item['title'] not in tasks, 'candidate title cannot collide with an existing task ID')
                 if 'execution_profiles' in context:
-                    from .execution_profiles import resolve_profile
+                    from .execution_profiles import match_profile_ref
                     from .observations import observation_settings_errors
                     registry = {p['id']: p for p in context['execution_profiles']}
                     for reference in item['profile_refs']:
-                        errors = observation_settings_errors(resolve_profile(registry, reference))
+                        errors = observation_settings_errors(match_profile_ref(registry, reference))
                         require(not errors, 'candidate requires prepared observation profiles: ' + json.dumps(errors))
                 from .task_contracts import unsupplied_task_inputs
                 missing = unsupplied_task_inputs([*item["inputs"], *item["reuse"]], {
@@ -813,10 +805,6 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                     issues.append(_issue(f"activity-extensions.json/contract_checks/{index}", message, rule_id))
     if action["role"] == "research_plan":
         check("output", lambda: planning.validate_plan_submission(output, tasks, context.get("ready_task_ids", [])))
-    if action["role"] == "identity_review" and action.get("stage") == "scope":
-        from .review_policy import validate_scope_assessment
-        check("output/scope_assessment", lambda: validate_scope_assessment(output["scope_assessment"],
-            context["role_review"]["review_policy"], executions_used=context['role_review']['scope_executions_used']))
     if action["role"] == "task_contract_review":
         from .contracts import contract_review_decision
         check("output/item_reviews", lambda: contract_review_decision(output))
@@ -837,7 +825,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             require(definition["token"] not in {row["token"] for row in definitions.get(family, [])}, "kind token already exists")
             definitions.setdefault(family, []).append(definition)
         check(f"activity-extensions.json/kind_definitions/{index}", check_kind)
-    if action["role"] in PRODUCERS and not action.get("review_cycle_id"):
+    if action["role"] in RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id"):
         if owns_response:
             check("output/report", lambda: require(bool(output["report"].strip()), "report must state the actual scope and outcome"))
         for index, item in enumerate(output["knowledge"]):
@@ -930,7 +918,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         rows = extensions.get(family, [])
         check("activity-extensions.json/" + family, lambda rows=rows, key=key: require(
             len({row[key] for row in rows}) == len(rows), "entries must identify distinct targets"))
-    if action["role"] in PLANNERS:
+    if action["role"] in PLANNING_ROLES:
         check("activity-extensions.json/model_assessments", lambda: validate_assessments(
             action, output, extensions))
     if 'observation_rule_targets' in action:
@@ -999,7 +987,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             for number, ref in enumerate(entry["source_refs"]):
                 check(f"activity-extensions.json/research_requests/{index}/source_refs/{number}",
                       lambda ref=ref: validate_research_reference(ref, context), "submission.research_source")
-    if action["role"] == "identity_review" and action.get("review_cycle_id") and action.get("stage") != "scope":
+    if action["role"] == "identity_review" and action.get("review_cycle_id"):
         domain_output = {key: value for key, value in output.items() if key not in {"integration_bundles", "repair_responses"}}
         check("output", lambda: review_cycle.validate_visible_output(context["role_review"], action, domain_output,
                     requesting_research=bool(extensions.get("research_requests"))))
@@ -1011,7 +999,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                 def source(ref=ref):
                     name = fixed_research_reference_path(ref, {s['ref'] for s in research['sources']})
                     if name is not None:
-                        path = _safe_path(workspace, name)
+                        path = safe_path(workspace, name)
                         present = path.is_file() if candidate_files is None else name in candidate_files
                         require(present, 'evidence must be a collectable workspace file: ' + name)
                 check(f'output/{field}/{index}', source)
@@ -1030,14 +1018,20 @@ def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, 
     if not isinstance(output, dict) or not isinstance(extensions, dict):
         return original_schema_issues()
     envelope = "integration_bundles" in schema.get("properties", {})
-    issues = integration.inspect_bundles(output, extensions, context) if envelope else []
+    derived = None
+    if envelope:
+        try:
+            derived = integration.derived_bundles(output, extensions, context)
+        except (TypeError, ValueError):
+            pass  # inspect_bundles reports the malformed response as a global issue.
+    issues = integration.inspect_bundles(output, extensions, context, derived=derived) if envelope else []
     if any(not row.get("integration_id") for row in issues):
         return original_schema_issues() + issues
     if envelope:
-        output = integration.protocol_output(output, extensions, context)
-    if envelope and integration._split_research(context):
+        output = derived[0]
+    if envelope and integration.split_research(context):
         schema_issues = original_schema_issues()
-        for bundle in integration.split_bundles(output, extensions, context):
+        for bundle in integration.split_bundles(output, extensions, context, derived=derived):
             sliced = {**bundle["output"], "integration_bundles": output["integration_bundles"]}
             if "repair_responses" in output:
                 sliced["repair_responses"] = output["repair_responses"]
@@ -1123,10 +1117,10 @@ def _workspace_checks(context, workspace, candidate=None):
             except (ValueError, TypeError, OSError) as error:
                 issues.append(_issue("checkpoint.json/evidence_paths", str(error), "checkpoint.reference"))
     rules = files["files"].get("observation-rules.json") if candidate is not None else None
-    rules_path = _safe_path(workspace, "observation-rules.json")
+    rules_path = safe_path(workspace, "observation-rules.json")
     if rules is not None or (candidate is None and rules_path.exists()):
         try:
-            rules = rules if candidate is not None else _read_stable(rules_path)
+            rules = rules if candidate is not None else read_stable(rules_path)
             if len(rules) > limits.get("observation_rules_bytes", RULES_MAX_BYTES):
                 raise ValueError("observation rules exceed the supplied byte limit")
             proposal = load_json(rules)
@@ -1150,7 +1144,7 @@ def capture_eligible(output, extensions, context, issues):
     """A whole immutable candidate may contain independently returnable members."""
     if not issues:
         return True
-    if (not integration._split_research(context) or not isinstance(output, dict)
+    if (not integration.split_research(context) or not isinstance(output, dict)
             or not isinstance(output.get('integration_bundles'), list)
             or len(output['integration_bundles']) < 2):
         return False
@@ -1180,10 +1174,35 @@ def captured_check(check):
     eligible = check['capture_eligible']
     if type(eligible) is not bool or (passed and not eligible):
         raise ValueError('invalid machine capture eligibility')
-    if eligible and not passed and (not integration._split_research({'action': check['check_subject']})
+    if eligible and not passed and (not integration.split_research({'action': check['check_subject']})
             or any(not row.get('integration_id') for row in check['issues'])):
         raise ValueError('partial capture requires exclusively local independent bundle issues')
     return eligible
+
+
+# The action fields a machine check is about; its failure key hashes them (_failure_key).
+CHECK_SUBJECT_FIELDS = ("id", "role", "target", "stage", "slot", "review_cycle_id", "revision_targets")
+# What no machine check decides; the installed submission contract states the same list.
+NOT_MACHINE_CHECKED = ("mathematical_meaning", "Lean", "application_time_currentness",
+                       "final_authority_and_provenance", "kind_semantic_approval")
+
+
+def _check_subject(context):
+    return {key: deepcopy(context.get("action", {}).get(key)) for key in CHECK_SUBJECT_FIELDS}
+
+
+def _failed_check(mode, context, raw, error, phase, execution_id):
+    """The check record of a candidate that could not be read or parsed."""
+    return {"contract_id": "do-math-machine-check/5", "mode": mode, "passed": False,
+            "execution_id": execution_id,
+            "tool_sha256": context.get("submission_contract", {}).get("tool_sha256"),
+            "check_subject": _check_subject(context), "input_snapshot": context.get("snapshot"),
+            "input_hashes": {"raw_output": hashlib.sha256(raw).hexdigest()} if raw is not None else {},
+            "issues": [_issue("submission", str(error), 'submission.parse'
+                if phase == 'parse' and isinstance(error, (ValueError, TypeError)) else 'submission.read')], "repairs": [],
+            "check_order": ["read_or_parse"], "comparison": {"status": "no_previous_check"},
+            "not_checked": ["schema", "payload_semantics", "integration_structure", "artifact_preservation",
+                            *NOT_MACHINE_CHECKED]}
 
 
 def check_submission(output, schema, context, extensions, workspace, *, mode,
@@ -1196,14 +1215,12 @@ def check_submission(output, schema, context, extensions, workspace, *, mode,
     workspace_issues, files = _workspace_checks(context, workspace, candidate)
     issues.extend(workspace_issues)
     hashes = _check_hashes(output, schema, context, extensions)
-    skipped = ["mathematical_meaning", "Lean", "application_time_currentness", "final_authority_and_provenance",
-               "kind_semantic_approval"]
+    skipped = list(NOT_MACHINE_CHECKED)
     if any(row["rule_id"].startswith("schema.") for row in issues):
         skipped.extend(["payload_semantics", "integration_structure"])
     from .contracts import schema_reference
     result = {"contract_id": "do-math-machine-check/5", "tool_sha256": tool_sha256,
-              "check_subject": {key: deepcopy(context.get("action", {}).get(key)) for key in
-                                ("id", "role", "target", "stage", "slot", "review_cycle_id", "revision_targets")},
+              "check_subject": _check_subject(context),
               "schema_ref": schema_reference(schema),
               "mode": mode, "execution_id": execution_id, "input_snapshot": context.get("snapshot"),
               "input_hashes": hashes, "check_order": ["schema", "payload_semantics", "integration_structure", "repair_coverage"],
@@ -1238,10 +1255,18 @@ def preview_submission(output, schema, context, extensions, workspace, *, execut
 
     ENGINE supplies its actual pure candidate callbacks. No publisher is supplied
     and neither copied projections nor private exception text leave this function.
+    A sealed ``check`` that is not capture-eligible is answered from its own
+    issues without applying a candidate; ``output`` and ``extensions`` may then be None.
     """
+    not_checked = ["mathematical_meaning", "Lean", "future_application_currentness"]
     check = deepcopy(check) if check is not None else check_submission(
         output, schema, context, extensions, workspace, mode="preview",
         execution_id=execution_id, tool_sha256=tool_sha256, previous=previous)
+    response = {"contract_id": PREVIEW_CONTRACT_ID, "check_id": check["id"],
+                "schema_ref": check["schema_ref"], "input_hashes": check["input_hashes"], "authoritative": False}
+    if check.get("capture_eligible") is False:
+        return {**response, "passed": False, "issues": deepcopy(check["issues"]), "bundles": [],
+                "not_checked": ["candidate_application", *not_checked]}
     candidate = integration.preview_bundles(instance, runtime, output, extensions, context,
         execution_id=execution_id, apply_bundle=apply_bundle, validate_current=validate_current,
         validate_candidate=validate_candidate, submission_issues=check["issues"])
@@ -1256,13 +1281,10 @@ def preview_submission(output, schema, context, extensions, workspace, *, execut
                 "integration.id_reuse"} else "integration.candidate"
             public_issues.append(integration.issue(stage, "output/integration_bundles",
                 "Candidate cannot pass this stage with the current admissible evidence.", row.get("integration_id")))
-    return {"contract_id": "do-math-candidate-preview/5", "check_id": check["id"],
-        "schema_ref": check["schema_ref"], "input_hashes": check["input_hashes"],
-        "passed": not public_issues, "issues": public_issues,
+    return {**response, "passed": not public_issues, "issues": public_issues,
         "bundles": [{"integration_id": row["integration_id"], "status": row["status"]}
                     for row in candidate["bundles"]],
-        "not_checked": ["mathematical_meaning", "Lean", "future_application_currentness"],
-        "authoritative": False}
+        "not_checked": not_checked}
 
 
 def _failure_key(record, issue):
@@ -1357,7 +1379,7 @@ def read_producer_checks(workspace, check_id, *, boundary=None):
             raise ValueError("invalid or cyclic producer check chain")
         seen.add(check_id)
         boundary = boundary or PhysicalBoundary(workspace)
-        row = _validated_check(_read_stable(_safe_path(workspace, "checks/" + check_id + ".json"), boundary=boundary),
+        row = _validated_check(read_stable(safe_path(workspace, "checks/" + check_id + ".json"), boundary=boundary),
                                check_id)
         if row.get("mode") != "producer" or type(row.get("producer_sequence")) is not int:
             raise ValueError("producer check lacks an explicit sequence")
@@ -1381,7 +1403,7 @@ def summarize_snapshot_checks(seals, *, snapshot, read_artifact, history_window,
     """Derive diagnostics from central checks in immutable publication order.
 
     With the repository's ``git_dir``, check artifacts this process already
-    matched (contract S3) are read but not hashed again.
+    matched (이음새-정본.md §3) are read but not hashed again.
     """
     from .repository import sealed_bytes
     if not isinstance(snapshot, str) or not snapshot or type(history_window) is not int or history_window < 0:
@@ -1401,7 +1423,7 @@ def summarize_snapshot_checks(seals, *, snapshot, read_artifact, history_window,
             if not entry['path'].startswith('runtime/artifacts/') or entry['path'] in artifacts:
                 raise ValueError('central check artifact coordinate differs')
             raw = sealed_bytes(git_dir, entry['path'], entry['sha256'], entry['bytes'],
-                               lambda: read_artifact(snapshot, entry['path']),
+                               lambda: read_artifact(entry['path'], snapshot),
                                error='central check artifact hash or size differs')
             artifacts[entry['path']] = raw
         raw = artifacts[evidence['check_ref']]
@@ -1470,7 +1492,7 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
         "extensions_schema_path": "input/submission/extensions.schema.json",
         "limits": {"max_artifact_bytes": max_artifact_bytes, "checkpoint_bytes": CHECKPOINT_MAX_BYTES,
                    "observation_rules_bytes": RULES_MAX_BYTES},
-        "scratch_directory": ".scratch", "not_checked": ["mathematical_meaning", "Lean", "application_time_currentness", "final_authority_and_provenance"]}
+        "scratch_directory": ".scratch", "not_checked": list(NOT_MACHINE_CHECKED)}
     context["submission_contract"] = contract
     files["submission/context.json"] = canonical_json(context)
     files["submission/schema.json"] = canonical_json(schema)
@@ -1482,9 +1504,9 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
 def producer_check(workspace, draft):
     """Serialize local checks; immutable predecessors, not timestamps, own order."""
     workspace = Path(workspace).resolve()
-    directory = _safe_path(workspace, "checks")
+    directory = safe_path(workspace, "checks")
     directory.mkdir(parents=True, exist_ok=True)
-    lock = _safe_path(workspace, "checks/.producer-lock")
+    lock = safe_path(workspace, "checks/.producer-lock")
     try:
         handle = lock.open("x")
     except FileExistsError as error:
@@ -1493,13 +1515,13 @@ def producer_check(workspace, draft):
         with handle:
             from .git_store import PhysicalBoundary
             boundary = PhysicalBoundary(workspace)  # one root proof for this check's reads
-            head = _safe_path(workspace, "checks/.producer-head")
-            history = (read_producer_checks(workspace, load_json(_read_stable(head, boundary=boundary))["check_id"],
+            head = safe_path(workspace, "checks/.producer-head")
+            history = (read_producer_checks(workspace, load_json(read_stable(head, boundary=boundary))["check_id"],
                                             boundary=boundary) if head.exists() else [])
             result = _producer_check(workspace, draft, history)
-            _validated_check(_read_stable(_safe_path(workspace, "checks/" + result["id"] + ".json"), boundary=boundary),
+            _validated_check(read_stable(safe_path(workspace, "checks/" + result["id"] + ".json"), boundary=boundary),
                              result["id"])
-            pending = _safe_path(workspace, "checks/.producer-head.pending")
+            pending = safe_path(workspace, "checks/.producer-head.pending")
             pending.write_bytes(canonical_json({"check_id": result["id"]}))
             atomic_replace(pending, head)
             return result
@@ -1522,7 +1544,7 @@ def _producer_check(workspace, draft, history):
         if not draft.is_relative_to(workspace):
             raise ValueError("submission draft must be inside this workspace")
         relative = draft.relative_to(workspace).as_posix()
-        raw = _read_stable(_safe_path(workspace, relative))
+        raw = read_stable(safe_path(workspace, relative))
         phase = 'parse'
         output = load_json(raw)
         extensions = read_extensions(workspace)
@@ -1537,19 +1559,9 @@ def _producer_check(workspace, draft, history):
             execution_id=context.get("execution_id") or context.get("action", {}).get("execution_id"),
             tool_sha256=tool_hash, previous=history[-1] if history else None)
     except (ValueError, TypeError, KeyError, OSError) as error:
-        result = {"contract_id": "do-math-machine-check/5", "mode": "producer", "passed": False,
-            "execution_id": context.get("execution_id"),
-            "tool_sha256": context.get("submission_contract", {}).get("tool_sha256"),
-            "input_snapshot": context.get("snapshot"),
-            "input_hashes": {"raw_output": hashlib.sha256(raw).hexdigest()} if raw is not None else {},
-            "issues": [_issue("submission", str(error), 'submission.parse'
-                if phase == 'parse' and isinstance(error, (ValueError, TypeError)) else 'submission.read')], "repairs": [],
-            "check_order": ["read_or_parse"], "comparison": {"status": "no_previous_check"},
-            "not_checked": ["schema", "payload_semantics", "integration_structure", "artifact_preservation",
-                            "mathematical_meaning", "Lean", "application_time_currentness", "final_authority_and_provenance"]}
+        result = _failed_check("producer", context, raw, error, phase, context.get("execution_id"))
     from .contracts import schema_reference
-    result["check_subject"] = {key: deepcopy(context.get("action", {}).get(key)) for key in
-                               ("id", "role", "target", "stage", "slot", "review_cycle_id")}
+    result["check_subject"] = _check_subject(context)
     result["producer_sequence"] = len(history) + 1
     result["previous_producer_check_id"] = history[-1]["id"] if history else None
     result["repairs"] = _repair_links(history, result)
@@ -1558,7 +1570,7 @@ def _producer_check(workspace, draft, history):
         result.update(output_sha256=hashlib.sha256(raw).hexdigest(), raw_output_path=relative)
     result["id"] = "MC-" + exact_content_hash({key: value for key, value in result.items() if key != "id"})[:24]
     try:
-        check_path = _safe_path(workspace, "checks/" + result["id"] + ".json")
+        check_path = safe_path(workspace, "checks/" + result["id"] + ".json")
         check_path.parent.mkdir(parents=True, exist_ok=True)
         check_path.write_bytes(canonical_json(result))
     except (ValueError, OSError) as error:
@@ -1590,8 +1602,8 @@ def seal_submission(workspace, draft=None, *, execution_id, context, schema, max
             if not draft_path.is_relative_to(workspace):
                 raise ValueError("submission draft must be inside this workspace")
             relative = draft_path.relative_to(workspace).as_posix()
-            raw = _read_stable(_safe_path(workspace, relative))
-            captured = {} if _excluded(Path(relative)) else {relative: raw}
+            raw = read_stable(safe_path(workspace, relative))
+            captured = {} if is_excluded(Path(relative)) else {relative: raw}
         collected = (deepcopy(captured_outputs) if captured_outputs is not None else
                      collect_outputs(workspace, max_bytes=max_artifact_bytes, captured_files=captured))
         extension_raw = collected["files"].get("activity-extensions.json", canonical_json({}))
@@ -1605,18 +1617,7 @@ def seal_submission(workspace, draft=None, *, execution_id, context, schema, max
         if check['issues'] and collected.get('complete'):
             check['failure_kind'] = 'output_validation'
     except (ValueError, TypeError, KeyError, OSError) as error:
-        check = {"contract_id": "do-math-machine-check/5", "mode": "receiver", "passed": False,
-            "execution_id": execution_id, "tool_sha256": context.get("submission_contract", {}).get("tool_sha256"),
-            "check_subject": {key: deepcopy(context.get("action", {}).get(key)) for key in
-                              ("id", "role", "target", "stage", "slot", "review_cycle_id", "revision_targets")},
-            "input_snapshot": context.get("snapshot"),
-            "input_hashes": {"raw_output": hashlib.sha256(raw).hexdigest()} if raw is not None else {},
-            "issues": [_issue("submission", str(error), 'submission.parse'
-                if phase == 'parse' and isinstance(error, (ValueError, TypeError)) else 'submission.read')], "repairs": [],
-            "check_order": ["read_or_parse"], "comparison": {"status": "no_previous_check"},
-            "not_checked": ["schema", "payload_semantics", "integration_structure", "artifact_preservation",
-                            "mathematical_meaning", "Lean", "application_time_currentness", "final_authority_and_provenance"],
-            "schema_ref": None, "files": []}
+        check = {**_failed_check("receiver", context, raw, error, phase, execution_id), "files": []}
         from .contracts import schema_reference
         check["schema_ref"] = schema_reference(schema)
         if phase == 'parse' and isinstance(error, (ValueError, TypeError)) and collected.get('complete'):
@@ -1649,7 +1650,7 @@ def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
     if not isinstance(wait_seconds, (int, float)) or isinstance(wait_seconds, bool) or not 0 <= wait_seconds < float("inf"):
         raise ValueError("wait_seconds must be a finite nonnegative caller budget")
     workspace = Path(workspace).resolve()
-    context = load_json(_read_stable(_safe_path(workspace, "input/submission/context.json")))
+    context = load_json(read_stable(safe_path(workspace, "input/submission/context.json")))
     binding = binding or context.get("control_binding")
     if not isinstance(binding, dict) or binding.get("execution_id") != context.get("execution_id"):
         raise ValueError("draft has no matching execution control binding")
@@ -1657,7 +1658,7 @@ def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
     if not draft_path.is_relative_to(workspace):
         raise ValueError("submission draft must be inside this workspace")
     relative = draft_path.relative_to(workspace).as_posix()
-    _safe_path(workspace, relative)
+    safe_path(workspace, relative)
     payload = {"draft_path": relative}
     # A locator is mutable; a corrected draft at the same path is a new call.
     # Query the returned request_id to resume waiting on the existing call.

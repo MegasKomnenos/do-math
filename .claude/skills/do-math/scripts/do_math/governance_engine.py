@@ -7,6 +7,8 @@ from copy import deepcopy
 from pathlib import Path
 
 from . import governance, academic, knowledge, knowledge_records, execution_profiles
+from .configuration import validate_config
+from .control_contracts import USER_DECISION_SETTINGS
 from .repository import new_id, canonical_json, exact_content_hash
 
 
@@ -21,7 +23,7 @@ def bind_host_configuration(instance, config, *, origin):
     raw = canonical_json({'host_resources': host})
     identifier = 'GS-host-' + exact_content_hash({'host_resources': host})
     source = governance.preserve_source(identifier, raw.decode('utf-8'), origin='user')
-    sources = instance.setdefault('governance_sources', {})
+    sources = instance['governance_sources']
     if identifier in sources and sources[identifier] != source:
         raise ValueError('host configuration source identity changed')
     sources[identifier] = source
@@ -37,7 +39,6 @@ def bind_host_configuration(instance, config, *, origin):
 class GovernanceEngineMixin:
     def _configure_candidate(self, instance, runtime, request):
         """Single transition for public configure and checked configuration units."""
-        from .engine import validate_config, DEFAULT_CONFIG
         from .scholarly import resolve_scholarly_server
         from .session_slots import RESOURCE_WAITS, quiescence
         patch = request.get('config', {})
@@ -48,14 +49,13 @@ class GovernanceEngineMixin:
         validate_config(candidate)
         result, state = deepcopy(instance), deepcopy(runtime)
         candidate = bind_host_configuration(result, candidate, origin=request.get('origin', 'user'))
-        protected = ('session_limits', 'tier_models', 'role_tiers', 'claude_only_assigned_model', 'host_resources')
-        if request.get('origin', 'user') == 'operator' and any(candidate.get(k) != current.get(k) for k in protected):
+        if request.get('origin', 'user') == 'operator' and any(candidate.get(k) != current.get(k)
+                                                               for k in USER_DECISION_SETTINGS):
             raise ValueError('resource settings require a user decision at application time')
         host_changed = candidate.get('host_resources') != current.get('host_resources')
         if host_changed and (self._executor_running or self._calls is not None
                 or self._live_execution_ids or any(quiescence(runtime).values())):
             raise ValueError('host resource changes require a stopped executor with no live execution or held reservation')
-        validate_config(candidate)
         if candidate['scholarly_enabled']:
             candidate['scholarly_server'] = resolve_scholarly_server(candidate['scholarly_server'], start=Path.cwd())
         editions = execution_profiles.build_profiles(candidate)
@@ -67,7 +67,6 @@ class GovernanceEngineMixin:
             if pending.get('id') not in live: pending.pop('model_selection', None)
         if host_changed:
             from . import revisions
-            waiting = [row['action'] for row in state.get('waiting_actions', {}).values()]
             def without_host(profile):
                 return {key: value for key, value in profile.items() if key not in
                     {'id', 'sha256', 'host_resources', 'host_capacity_refs', 'host_capacity_status'}}
@@ -78,7 +77,7 @@ class GovernanceEngineMixin:
                 if (cycle.get('scope_assessment') or cycle.get('slot_profiles')
                         or cycle.get('execution_accounting', {}).get('executions_used')):
                     continue
-                original = execution_profiles.resolve_profile(result['execution_profiles'], pending['profile_ref'])
+                original = execution_profiles.match_profile_ref(result['execution_profiles'], pending['profile_ref'])
                 replacements = [profile for profile in editions['execution_profiles'].values()
                                 if without_host(profile) == without_host(original)]
                 if len(replacements) == 1:
@@ -89,7 +88,7 @@ class GovernanceEngineMixin:
             for tid, task in state.get('tasks', {}).items():
                 if task.get('status') in {'completed', 'closed'}:
                     continue
-                profiles = [execution_profiles.resolve_profile(result['execution_profiles'], ref)
+                profiles = [execution_profiles.match_profile_ref(result['execution_profiles'], ref)
                             for ref in task.get('profile_refs', [])]
                 if any(profile.get('host_capacity_refs', []) != ([result['host_capacity_ref']]
                         if result.get('host_capacity_ref') else []) for profile in profiles):
@@ -98,9 +97,8 @@ class GovernanceEngineMixin:
                 state['queue'].insert(0, {'id': new_id('AC'), 'role': 'research_preparation',
                     'reason': 'Reprepare task profile contracts for the newly adopted host resources',
                     'revision_targets': revisions.capture_targets(result, state, affected)})
-        resources_changed = any(candidate.get(key) != current.get(key) for key in protected)
+        resources_changed = any(candidate.get(key) != current.get(key) for key in USER_DECISION_SETTINGS)
         if state.get('status') in {'waiting', 'capacity_waiting'} and resources_changed:
-            live = {e.get('action', {}).get('id') for e in state['executions'].values() if e['status'] != 'ended'}
             for action in state['queue']:
                 if (action.get('id') not in live and action.get('dispatch_wait', {}).get('kind') in RESOURCE_WAITS):
                     action.pop('dispatch_wait', None)
@@ -181,7 +179,7 @@ class GovernanceEngineMixin:
             self._complete_initial_intent(input_id)
             self._activate_initialization()
         elif self.instance.get('lifecycle', {}).get('state') != 'initializing':
-            self._enqueue('research_preparation', reason='checked user information', import_id=import_id)
+            self._enqueue('research_preparation', reason='checked user information')
         self._resume_import_question_waits()
 
     def _resume_import_question_waits(self):
@@ -204,8 +202,7 @@ class GovernanceEngineMixin:
         if request['action'] == 'configure':
             self.instance, self.runtime = self._configure_candidate(self.instance, self.runtime, request)
             return True
-        spec = request.get('config', {})
-        change = spec.get('change', spec)
+        change = request.get('config', {}).get('change', {})
         if request['action'] != 'decision' or change.get('kind') != 'import_approval': return False
         normalized = {**request, 'config': change}
         bundle = self.runtime.get('intent_imports', {}).get(change.get('import_id'))
@@ -223,8 +220,7 @@ class GovernanceEngineMixin:
 
     def _reject_governance_import(self, request, reason):
         """Stage reauthor routing before ENGINE records its one rejection result."""
-        spec = request.get('config', {})
-        change = spec.get('change', spec)
+        change = request.get('config', {}).get('change', {})
         if request.get('action') == 'decision' and change.get('kind') == 'import_approval':
             bundle = self.runtime.get('intent_imports', {}).get(change.get('import_id'))
             if bundle and not bundle.get('superseded_by') and bundle.get('application', {}).get('status') != 'applied':
@@ -408,7 +404,7 @@ class GovernanceEngineMixin:
             'basis': action['basis'], 'required': action['required'], 'formal_result_refs': sorted({r['formal_result_id'] for r in links}),
             'assessment_refs': sorted({r['assessment_id'] for r in links}), 'dependencies': dependencies,
             'record_basis': knowledge.capture_basis(self.instance, self.runtime, dependencies), 'basis_is_conservative': not bool(cited),
-            'goal_revision': view.get('goal_revision', 1), 'policy_revision': view.get('policy_revision', 1), 'current': True,
+            'goal_revision': view['goal_revision'], 'policy_revision': view['policy_revision'], 'current': True,
             'source_basis': deepcopy(self.runtime['executions'][execution_id].get('source_basis', [])), 'additional_audits': mapped}
         judgments = [j for j in self.instance['goal_judgments'] if j['basis'] == action['basis']] + [judgment]
         if (any(type(j.get('required')) is not int or j['required'] != required

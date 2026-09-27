@@ -12,7 +12,7 @@
 - [기존 연구 조회·제어](#existing-control): 지정된 인스턴스의 상태를 읽거나 입력·정지·재개 요청의 효과를 확인한다.
 - [직접 전진·수동 운전](#manual-run): 해당 절의 적용 조건을 확인한 뒤 허가된 범위를 직접 실행한다.
 
-역할 응답 스키마는 `do-math-cli/5`, 저장 계약은 `do-math-state/6`이다. 중앙 실행기, 설치 manifest와 역할별 소비자는 이 판본을 함께 사용하며 다른 판본의 필드를 섞지 않는다.
+역할 응답 스키마는 `do-math-cli/5`, 저장 계약은 `do-math-state/7`이다. 중앙 실행기, 설치 manifest와 역할별 소비자는 이 판본을 함께 사용하며 다른 판본의 필드를 섞지 않는다.
 
 역할 응답 계약은 후보 준비, 항목별 작업 계약 검토, 연구 계획의 전건 처분, 생산자 선언 편입 묶음과 독립 동일성 검토의 범위 계획을 정의한다. 각 기능이 무엇을 보증하는지는 서로 다르며, 명령 성공·스키마 통과·실행 종료는 형식 타당성·해설 동일성·목표 충족을 대신하지 않는다.
 
@@ -242,14 +242,16 @@ JSON status에서 먼저 볼 필드는 다음과 같다.
 | `tasks` | 과제 ID·제목·현재 CLI 단계 |
 | `knowledge` | 현재 사용 가능한 `K` 수와 `formal_results`, `expositions`, `identity_assessments`의 기록 수. 기록 수를 성공 판정 수로 읽지 않는다 |
 | `questions` | 사용자 입력이나 결정을 기다리는 질문 |
-| `budget` | 작업 슬롯의 모델별 동시 세션 한도·점유·여유. 운영 역할은 슬롯을 점유하지 않는다 |
-| `pending_controls` | inbox에 접수됐지만 아직 적용되지 않은 제어 수 |
+| `budget` | 작업 슬롯의 모델별 동시 세션 한도·점유·여유. 운영 역할은 슬롯을 점유하지 않는다. 현재 조회에서만 값이 있다 |
+| `pending_controls` | inbox에 접수됐지만 아직 적용되지 않은 제어 수. 현재 조회에서만 값이 있다 |
 | `user_pause` | 명시적 사용자 재개를 기다리는 정지의 요청 ID·이유·시각 |
 | `waiting_actions` | 해소되지 않은 행동의 역할·대상·실패 종류·이유·실행 ID 요지 |
 | `external_operations` | 외부 HTTP operation의 원장 상태 |
 | `active_trust_environment` | 현재 CLI가 활성으로 기록한 신뢰 환경 ID |
 | `academic_validation` | 현재 해결 근거와 학술 요구에 상대적인 후속 상태 |
 | `assurance` | 읽기·공급자·사용량·형식·검토에 관해 실제 제공하는 보증의 범위 |
+
+`status --snapshot OID --json`은 과거 snapshot에 대해 같은 필드를 돌려준다. 다만 조회 순간에 이 호스트에서 관측하는 필드(`research_observed_at`, `research_wake_reasons`, `operation_progress`, `pending_controls`, `budget`, `provider_waits`)는 과거 snapshot에서 null이다. 사람용 텍스트도 두 조회가 같은 렌더러를 쓰며, 관측하지 않은 필드를 `not observed`로 적는다.
 
 수량과 상태 문자열만으로 수학적 결론을 판단하지 않는다. 필요한 기록은 `query`와 `read`로 정확한 snapshot에서 확인한다.
 
@@ -323,26 +325,7 @@ python .agents/skills/do-math/scripts/do_math.py input `
 
 ### 구조화된 사용자 결정
 
-목표·정책·grant·과제 범위·학술 요구처럼 효과가 정해진 변경은 JSON 객체를 파일로 만든 뒤 `decision --file`로 보낸다. 목표와 학술 요구 변경은 현행 헌장 전체를 읽어 `kind="charter"`의 새 `record`로 작성한다. 정책은 다음 구조를 사용한다. 예시의 ID·범위·근거·문면은 실제 승인한 값으로 바꾸고, 기존 정책을 대체하면 그 활성 ID를 `supersedes`에 넣는다.
-
-```json
-{
-  "kind": "policy",
-  "record": {
-    "id": "PO-source-evidence",
-    "kind": "policy",
-    "revision": 1,
-    "supersedes": [],
-    "content": {
-      "rule_id": "source-evidence",
-      "text": "사용한 문헌은 내부 보존 사본과 정확한 절 좌표를 남긴다.",
-      "scope": ["연구 수행"],
-      "reason_refs": ["CH-실제-현행-헌장-ID"],
-      "audit_refs": []
-    }
-  }
-}
-```
+목표·정책·grant·과제 범위·학술 요구처럼 효과가 정해진 변경은 JSON 객체를 파일로 만든 뒤 `decision --file`로 보낸다. 목표와 학술 요구 변경은 현행 헌장 전체를 읽어 `kind="charter"`의 새 `record`로 작성한다. 정책 결정의 구조와 예시는 [CLI 실행 계약](references/CLI-실행-계약.md)의 「목표와 정책」 절에 있다. 예시의 ID·범위·근거·문면은 실제 승인한 값으로 바꾸고, 기존 정책을 대체하면 그 활성 ID를 `supersedes`에 넣는다.
 
 ```powershell
 python .agents/skills/do-math/scripts/do_math.py decision `
@@ -455,7 +438,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 ### 독립 운영의 설정과 정지
 
-`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 정상 감독·연구 엔진 작업을 다시 맞추고 `operator uninstall`은 그 인스턴스의 연구·정기 감독·일회성 wake 예약을 제거한다. 운영 주기와 기한은 `configure`의 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_effort`로 바꾼다. `operator_effort`, `tier_models`와 `role_tiers.independent_operator`은 실패 시 설치 복구 AI에 적용된다. 정상 감독에는 모델 배정이 없다. 예약 작업의 주기와 기한은 예약을 설치할 때 현재 설정에서 읽어 등록하며, 다른 예약 동작은 이 값을 다시 읽지 않는다. 즉시 적용된 운영 설정 변경은 CLI가 예약에 반영한다. 제어가 아직 대기 중이면 운전자는 적용을 확인한 뒤 같은 인스턴스에서 `operator install`로 예약을 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
+`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 정상 감독·연구 엔진 작업을 다시 맞추고 `operator uninstall`은 그 인스턴스의 연구·정기 감독·일회성 wake 예약을 제거한다. 운영 주기와 기한은 `configure`의 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_effort`로 바꾼다. `operator_effort`, `tier_models`와 `role_tiers.recovery`는 실패 시 설치 복구 AI에 적용된다. 정상 감독에는 모델 배정이 없다. 예약 작업의 주기와 기한은 예약을 설치할 때 현재 설정에서 읽어 등록하며, 다른 예약 동작은 이 값을 다시 읽지 않는다. 즉시 적용된 운영 설정 변경은 CLI가 예약에 반영한다. 제어가 아직 대기 중이면 운전자는 적용을 확인한 뒤 같은 인스턴스에서 `operator install`로 예약을 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
 
 연구 예약의 Windows 실행 제한은 무제한을 뜻하는 `PT0S`다. 운영 담당 예약에는 `operator_timeout_seconds`에 종료 여유를 더한 유한 제한을 적용한다. 여유의 크기는 [CLI 실행 계약](references/CLI-실행-계약.md#config-list)의 독립 운영 설정 설명을 따른다. 기존 설치를 갱신할 때는 같은 인스턴스에서 `operator install`을 사용하고 `operator status`의 `execution_limit`을 확인한다. 재설치는 기존 예약의 Disabled 상태를 보존하며 HOLD나 사용자 정지를 해제하지 않는다.
 
@@ -484,28 +467,19 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 ## 오류와 반환 코드
 
-모든 명령은 기본적으로 JSON을 반환한다. `status`는 `--json`이 없을 때 사람이 읽는 텍스트를, `timeline --format csv`는 CSV 텍스트를 반환한다.
-
-| 종료 코드 | 뜻 |
-|---|---|
-| `0` | 명령 처리가 끝났다. 제어 요청은 `effect`를 확인해야 하며 다른 수학·완료 판단을 뜻하지 않는다 |
-| `1` | `check`가 결함을 찾았거나 `profile`이 요청한 표면을 확인하지 못했다 |
-| `2` | 명령 인자, JSON, 대상 ID·상태 또는 요청 계약이 잘못됐다. 응답 `kind`는 `input_error`다 |
-| `5` | Git 저장·저장소 작업, OS 또는 subprocess 도구 오류이면 응답 `kind`는 `tool_error`다. `run`이 다른 실행기가 보유한 writer lock을 얻지 못한 경우도 여기에 속하며, 이때는 그 실행기가 끝난 뒤 다시 실행한다. 제어 명령의 lock 경합은 오류가 아니라 exit 0과 `lock="busy"`로 반환한다. 구현이 요청을 처리하지 못한 내부 계약 오류이면 `kind`는 `contract_error`이고 `next_owner`는 `maintenance`다. `init`·`configure`가 상태를 저장했으나 예약 등록에 실패한 경우에도 exit 5이며, 이때는 `result.operator_schedule`에 `status="failed"`와 그대로 실행할 재조정 명령이 들어 있다 |
-
-제어 명령은 구문이 맞아도 접수 뒤 전제가 바뀌면 exit 0과 `effect="rejected"`, `reason`을 반환할 수 있다. `accepted=true`는 inbox 접수를 뜻하고 적용·실행·성공과 다르다.
+종료 코드, JSON 응답 봉투와 제어 요청의 공통 반환 필드는 [CLI 실행 계약의 종료 코드](references/CLI-실행-계약.md#exit-codes)가 정한다. exit 0은 명령 처리가 끝났다는 뜻일 뿐이다. 제어 요청은 `accepted`가 inbox 접수를, `effect`가 실제 적용이나 거부를 알려 주므로 `effect`와 `reason`으로 결과를 확인한다.
 
 ## 현재 지원 범위
 
-판본 5는 인스턴스별 Git ref와 writer lock, 기록군 저장, 활동·다중 실행 수명, 불변 프로필, 구조화 작업 의무·처분, 편입 묶음, 독립 동일성 검토의 범위 계획과 자기 점검 규칙을 정의한다. 각 명령과 역할의 성공은 그 소비자가 실제로 검사·적용한 범위에만 효력이 있다. 스키마 적합, 로컬 생산자 검사, 중앙 미리보기, 제출 의도 접수, 저장 적용, 형식 검사와 독립 의미 판정은 서로 다른 증거다.
+현행 구현은 인스턴스별 Git ref와 writer lock, 기록군 저장, 활동·다중 실행 수명, 불변 프로필, 구조화 작업 의무·처분, 편입 묶음, 독립 동일성 검토의 범위 계획과 자기 점검 규칙을 정의한다. 각 명령과 역할의 성공은 그 소비자가 실제로 검사·적용한 범위에만 효력이 있다. 스키마 적합, 로컬 생산자 검사, 중앙 미리보기, 제출 의도 접수, 저장 적용, 형식 검사와 독립 의미 판정은 서로 다른 증거다.
 
 새 인스턴스의 AI 예산은 작업 역할 실행이 모델별 작업 슬롯을 점유하는 로컬 동시 점유로 계산하며, 운영 역할은 슬롯 없이 배정된다. Codex의 turn usage와 Claude의 최종 result usage는 보존하지만 공급자 내부 호출별 ID·예약·원격 종료를 보증하지 않는다. 현재 기본 Windows 실행은 Codex의 `danger-full-access`·승인 정책 `never`, Claude의 `bypassPermissions`로 기존 사용자 권한을 쓴다. Windows Job은 로컬 프로세스 수명과 자손 종료를 관리하지만 모든 host 파일·network·credential 접근을 차단하지 않는다. 별도 세션·작업 공간과 동료 결과 비제공은 입력 경계를 만들지만 통계적 독립성이나 강한 OS 격리의 증거가 아니다.
 
-## 기능 판본과 결과의 시각을 확인한다
+## 저장 계약과 결과의 시각을 확인한다
 
-판본 5 저장소는 세분된 기록군과 사건을 권위 있는 Git 상태로 공개한다. 구현·저장 계약을 바꾸면 현행 계약으로 새 인스턴스를 초기화한다. 필요한 과거 산출은 정확한 출처·실제 확인 범위를 가진 새 입력으로 제공한다. 이전 runtime·queue·승인·질문을 변환해 재개하거나 옛 거부를 소급 수락하지 않으며, 설치본 수리로 기존 HOLD를 해제하지 않는다.
+저장소는 세분된 기록군과 사건을 권위 있는 Git 상태로 공개한다. 구현·저장 계약을 바꾸면 현행 계약으로 새 인스턴스를 초기화한다. 필요한 과거 산출은 정확한 출처·실제 확인 범위를 가진 새 입력으로 제공한다. 이전 runtime·queue·승인·질문을 변환해 재개하거나 옛 거부를 소급 수락하지 않으며, 설치본 수리로 기존 HOLD를 해제하지 않는다.
 
-`status --json`은 한 Git snapshot에서 과제 단계, 선택된 미시작 요청, 저장된 실행·예약·슬롯 예산·`provider_waits`, 마지막 수락 결과, 미해소 의무와 대기 이유를 함께 재구성한다. 이 snapshot은 저장된 원장 상태를 일관되게 보여 주지만 조회 순간의 호스트 프로세스나 공급자의 현재 상태를 원자적으로 관찰한 값은 아니다. 실제 프로세스·예약 작업·별도 운영 로그를 함께 볼 때에는 각 관측 시각과 범위를 구별한다. 열린 사용자 질문은 `questions`, 출처·소유·대상·해소는 `question_links`, 실패 의무는 `waiting_actions`에서 확인한다.
+`status --json`은 한 Git snapshot에서 과제 단계, 선택된 미시작 요청, 저장된 실행·예약, 마지막 수락 결과, 미해소 의무와 대기 이유를 함께 재구성한다. 슬롯 예산·`provider_waits`처럼 조회 순간에 관측하는 필드는 그 snapshot 위에 덧붙인 현재 관측이다. snapshot은 저장된 원장 상태를 일관되게 보여 주지만 조회 순간의 호스트 프로세스나 공급자의 현재 상태를 원자적으로 관찰한 값은 아니다. 실제 프로세스·예약 작업·별도 운영 로그를 함께 볼 때에는 각 관측 시각과 범위를 구별한다. 열린 사용자 질문은 `questions`, 출처·소유·대상·해소는 `question_links`, 실패 의무는 `waiting_actions`에서 확인한다.
 
 고정 snapshot의 실행 시각과 계보는 다음 명령으로 내보낸다. JSON은 원시 UTC와 현지 날짜·UTC offset을 함께 보존하고 CSV도 같은 실행 행을 사용한다. 과거에 기록하지 않은 시각은 null 또는 빈 셀이다.
 
@@ -525,20 +499,7 @@ python .agents/skills/do-math/scripts/probe_cli.py --skill-only
 
 이 검사는 스킬 폴더 안의 문서와 코드만 읽으며 모델을 호출하지 않는다. `scope="installed_skill_structure"`, `status="verified"`는 역할 읽기 대응표의 문서와 운영 문서를 읽었고 역할 출력 스키마의 형식 검사를 통과했다는 뜻이다. 문서 내용의 정확성, 실행 환경이나 연구 성능까지 검증한 결과는 아니다.
 
-회귀 검사는 `run_tests.py`로 실행한다. 언제 어떤 범위를 돌리고 새 시험을 어떻게 쓰는지는 `scripts/tests/시험-지침.md`가 정한다. 실행기는 unittest discovery로 `scripts/tests/test_*.py`를 수집해 조각(shard) 단위로 순차 실행하며, 결과 캐시 없이 선택한 시험을 항상 실제로 실행한다. 조각과 각 조각에 속한 모듈의 정본은 `scripts/test_categories.py`의 `SHARDS`이고, 여기에 등록되지 않은 시험 모듈이 있으면 실행하지 않고 오류로 끝난다. 실제 Lean·자원 검사(`test_group('lean')`, `test_group('resource')`)는 Windows Job이 소유한 별도 프로세스에서 클래스 단위로 실행한다. 별도 프로세스의 각 검사와 그 준비·종료 단계의 제한 시간은 기본 300초이며 `--timeout`으로 바꿀 수 있다. 이 값은 테스트 실행기의 운영 기본값이며 제품 Lean의 무제한 계산 계약을 바꾸지 않는다.
-
-```powershell
-python .agents/skills/do-math/scripts/run_tests.py
-python .agents/skills/do-math/scripts/run_tests.py --shard lifecycle --shard review
-python .agents/skills/do-math/scripts/run_tests.py test_git_store test_engine.EngineTests.test_crash_recovery_and_artifact_immutability
-python .agents/skills/do-math/scripts/run_tests.py --match "*performance_save*" --list
-```
-
-인자가 없으면 모든 조각을, `--shard`는 지정한 조각을, 위치 인자는 지정한 모듈·클래스·메서드를 실행한다. `--match`는 그 안에서 테스트 ID의 glob으로 거르고 `--list`는 실행하지 않고 조각 이름과 테스트 ID를 표시한다. 선택 결과가 없으면 실패로 끝난다.
-
-결과 디렉터리는 `--output`으로 새 경로나 빈 디렉터리를 지정한다. 생략하면 고유한 임시 디렉터리를 만들고 마지막 줄 `Report:`에 경로를 출력한다. `report.json`은 테스트별 결과·시간, 조각별 시간(`shard_seconds`)과 합계, 느린 검사 목록, 코드 판본과 실행 중 변경 여부를 기록한다. 실행 중 코드가 바뀌면 통과로 기록하지 않는다. 격리 실행의 stdout·stderr와 진행 기록도 남긴다. 격리 작업자의 임시 파일은 해당 결과 디렉터리의 `scratch/` 아래에 만들므로, 강제 종료로 정리되지 않은 Lean 입력·출력도 그곳에서 찾을 수 있다. 시간 초과 때에는 해당 Job의 자식까지 종료하고, 같은 작업자에서 끝내지 못한 검사는 미실행으로 기록하며 다음 검사를 계속한다. 부분 실행을 전체 통과로 표시하지 않는다. 격리하지 않는 검사에는 이 프로세스 시간 상한을 적용하지 않는다.
-
-`python -m unittest discover -s .agents/skills/do-math/scripts/tests -p "test_*.py"`도 사용할 수 있지만 조각 선택·시간 보고·외부 프로세스 종료 관리는 제공하지 않는다. 일부 시험 파일은 직접 실행해도 시험을 시작하지 않으므로 파일별 종료 코드만으로 회귀 검사를 완료했다고 판단하지 않는다.
+회귀 검사는 `python .agents/skills/do-math/scripts/run_tests.py`로 실행하며, 언제 무엇을 어떻게 돌리는지와 실행기의 선택 인자·결과 보고·시간 상한은 [시험 지침](scripts/tests/시험-지침.md)을 따른다. 실행기가 격리 시험에 두는 시간 상한은 시험 운용의 기본값이며 제품 Lean의 무제한 계산 계약을 바꾸지 않는다.
 
 실제 Codex·Claude·Lean·HTTP·Windows 프로세스가 필요한 검사는 각 시험의 환경 조건과 실행 결과를 확인한다. 검증 결과는 검사한 판본, 사례, 통과·실패·미실행 범위와 함께 보존하고, 해석 기준은 [CLI 실행 계약](references/CLI-실행-계약.md)의 「검증 근거의 해석」을 따른다.
 

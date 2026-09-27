@@ -1,4 +1,4 @@
-"""Pure, fixed-snapshot budget calculations for the do-math reservation contract."""
+"""Pure reservation arithmetic of one execution's pinned profile."""
 
 from __future__ import annotations
 
@@ -18,125 +18,79 @@ from do_math.budget import (  # noqa: E402
     plan_reservations,
     settle_reservation,
 )
+from do_math.session_slots import held_reservations  # noqa: E402
+
+RESERVE = {"jobs": 0, "memory_bytes": 0, "cpu_rate_basis_points": 0}
 
 
 class BudgetTests(unittest.TestCase):
-    def budget(self) -> dict:
+    def constraints(self, *, work_slots: int = 1, max_jobs: int = 1, memory_bytes: int = 100,
+                    reserve: dict | None = None) -> dict:
         return {
-            "constraints": [
-                {"id": "exec", "kind": "concurrency", "accounting_unit": "execution",
-                 "work_slots": 1},
-                {"id": "host", "kind": "host", "max_jobs": 1, "memory_bytes": 100,
-                 "cpu_rate_basis_points": 10000},
-            ]
+            "exec": {"id": "exec", "kind": "concurrency", "accounting_unit": "execution",
+                     "work_slots": work_slots},
+            "host": {"id": "host", "kind": "host", "max_jobs": max_jobs, "memory_bytes": memory_bytes,
+                     "cpu_rate_basis_points": 10000, "control_reserve": reserve or dict(RESERVE)},
         }
 
-    def profile(self) -> dict:
+    def profile(self, *, host_memory: int = 50) -> dict:
         return {
-            "actor_kind": "ai",
+            "id": "EP-1", "revision": 1, "sha256": "0" * 64, "actor_kind": "ai",
             "ai": {"capacity_refs": ["exec"]},
             "host_capacity_refs": ["host"],
+            "host_resources": {"constraint_id": "host", "demands": {
+                "jobs": 1, "memory_bytes": host_memory, "cpu_rate_basis_points": 5000}},
         }
 
-    def request(self, *, prefix: str = "RR-new", host_memory: int = 50) -> dict:
-        return {
-            "owner_kind": "execution",
-            "owner_id": "E-01",
-            "purpose": "normal",
-            "authority_refs": [{"ref_kind": "record", "record_id": "P-01"}],
-            "reobserve": {"kind": "time", "at": "2026-09-14T00:00:00.000Z"},
-            "demands": [
-                {"id": f"{prefix}-exec", "constraint_id": "exec", "unit": "execution", "amount": 1},
-                {"id": f"{prefix}-host-jobs", "constraint_id": "host", "unit": "jobs", "amount": 1},
-                {"id": f"{prefix}-host-memory", "constraint_id": "host", "unit": "memory_bytes", "amount": host_memory},
-                {"id": f"{prefix}-host-cpu", "constraint_id": "host", "unit": "cpu_rate_basis_points", "amount": 5000},
-            ],
-        }
+    def test_one_profile_reserves_its_work_slot_and_host_demands_atomically(self) -> None:
+        constraints = self.constraints(max_jobs=2, memory_bytes=200)
+        before = deepcopy(constraints)
+        work = plan_reservations([], constraints, self.profile(), owner_id="EX-1")
+        self.assertEqual(sorted((r["constraint_id"], r["unit"], r["reserved"]) for r in work),
+                         [("exec", "execution", 1), ("host", "cpu_rate_basis_points", 5000),
+                          ("host", "jobs", 1), ("host", "memory_bytes", 50)])
+        self.assertTrue(all(r["state"] == "held" and r["owner_id"] == "EX-1"
+                            and r["authority_refs"] == [{"id": "EP-1", "revision": 1, "sha256": "0" * 64}]
+                            for r in work))
+        self.assertEqual(constraints, before)
+        with self.assertRaisesRegex(BudgetConflict, "concurrency capacity unavailable: exec"):
+            plan_reservations(work, constraints, self.profile(), owner_id="EX-2")
 
-    def snapshot(self, reservations: dict | None = None) -> dict:
-        return {"reservations": {} if reservations is None else reservations}
+    def test_a_profile_without_capacities_reserves_nothing(self) -> None:
+        profile = {"id": "EP-2", "revision": 1, "sha256": "1" * 64, "actor_kind": "machine"}
+        self.assertEqual(plan_reservations([], self.constraints(), profile, owner_id="EX-1"), ())
 
-    def test_shared_profile_refs_reserve_atomically_and_fill_the_work_slot(self) -> None:
-        source = self.snapshot()
-        before = deepcopy(source)
-        budget = self.budget()
-        host = next(item for item in budget["constraints"] if item["id"] == "host")
-        host["max_jobs"] = 2
-        host["memory_bytes"] = 200
-        work = plan_reservations(source, budget, self.profile(), self.request())
-        self.assertEqual(len(work), 4)
-        self.assertEqual(source, before)
-
-        next_snapshot = self.snapshot({record["id"]: record for record in work})
-        with self.assertRaises(BudgetConflict):
-            plan_reservations(next_snapshot, budget, self.profile(), self.request(prefix="RR-work-2"))
-
-    def test_failure_does_not_create_partial_records(self) -> None:
-        budget = self.budget()
-        next(item for item in budget["constraints"] if item["id"] == "exec")["work_slots"] = 0
-        source = self.snapshot()
-        before = deepcopy(source)
-        with self.assertRaises(BudgetConflict):
-            plan_reservations(source, budget, self.profile(), self.request())
-        self.assertEqual(source, before)
-
-    def test_host_capacity_is_checked_separately(self) -> None:
-        with self.assertRaises(BudgetConflict):
-            plan_reservations(self.snapshot(), self.budget(), self.profile(), self.request(host_memory=101))
+    def test_host_capacity_is_checked_separately_and_keeps_the_control_reserve(self) -> None:
+        with self.assertRaisesRegex(BudgetConflict, "host capacity unavailable: host/memory_bytes"):
+            plan_reservations([], self.constraints(), self.profile(host_memory=101), owner_id="EX-1")
+        reserve = {**RESERVE, "memory_bytes": 60}
+        with self.assertRaisesRegex(BudgetConflict, "host capacity unavailable: host/memory_bytes"):
+            plan_reservations([], self.constraints(reserve=reserve), self.profile(), owner_id="EX-1")
 
     def test_returned_slot_is_reusable_but_held_slot_remains_occupied(self) -> None:
-        returned = {
-            "RR-returned": {
-                "id": "RR-returned", "constraint_id": "exec", "unit": "execution",
-                "reserved": 1, "confirmed_consumed": 0, "returned": 1, "state": "settled",
-                "evidence_refs": [{"receipt": "local_job_empty"}],
-            },
-        }
-        held = {
-            "RR-held": {
-                "id": "RR-held", "constraint_id": "exec", "unit": "execution",
-                "reserved": 1, "confirmed_consumed": 0, "returned": 0, "state": "held",
-                "reobserve": {"kind": "time", "at": "2026-09-14T00:00:00.000Z"},
-            },
-        }
-        allowed = plan_reservations(self.snapshot(returned), self.budget(), self.profile(), self.request())
+        returned = {"id": "RR-returned", "owner_id": "EX-0", "constraint_id": "exec", "unit": "execution",
+                    "reserved": 1, "confirmed_consumed": 0, "returned": 1, "state": "settled",
+                    "evidence_refs": [{"receipt": "local_job_empty"}]}
+        held = {**returned, "id": "RR-held", "returned": 0, "state": "held", "evidence_refs": [],
+                "reobserve": {"on": "local_termination_barrier"}}
+        runtime = {"reservations": {row["id"]: row for row in (returned, held)}}
+        self.assertEqual(held_reservations(runtime), [held])
+        allowed = plan_reservations([], self.constraints(), self.profile(), owner_id="EX-1")
         self.assertEqual(len(allowed), 4)
         with self.assertRaisesRegex(BudgetConflict, "concurrency capacity unavailable: exec"):
-            plan_reservations(self.snapshot(held), self.budget(), self.profile(), self.request())
-
-    def test_existing_reservation_id_is_rejected(self) -> None:
-        first = plan_reservations(self.snapshot(), self.budget(), self.profile(), self.request())
-        populated = self.snapshot({record["id"]: record for record in first})
-        with self.assertRaisesRegex(BudgetInputError, "reservation ID already exists"):
-            plan_reservations(populated, self.budget(), self.profile(), self.request())
+            plan_reservations(held_reservations(runtime), self.constraints(), self.profile(), owner_id="EX-1")
 
     def test_settlement_is_exactly_once_and_requires_full_accounting(self) -> None:
-        planned = plan_reservations(self.snapshot(), self.budget(), self.profile(), self.request())
-        records = {record["id"]: record for record in planned}
+        record = next(r for r in plan_reservations([], self.constraints(), self.profile(), owner_id="EX-1")
+                      if r["constraint_id"] == "exec")
         with self.assertRaisesRegex(BudgetInputError, "every reserved unit exactly once"):
-            settle_reservation(
-                self.snapshot(records), "RR-new-exec", confirmed_consumed=0, returned=0, evidence_refs=[{"receipt": "x"}]
-            )
-        settled = settle_reservation(
-            self.snapshot(records), "RR-new-exec", confirmed_consumed=0, returned=1, evidence_refs=[{"receipt": "x"}]
-        )
+            settle_reservation(record, confirmed_consumed=0, returned=0, evidence_refs=[{"receipt": "x"}])
+        settled = settle_reservation(record, confirmed_consumed=0, returned=1, evidence_refs=[{"receipt": "x"}])
         self.assertEqual(settled["state"], "settled")
         self.assertNotIn("reobserve", settled)
-        settled_snapshot = self.snapshot({**records, settled["id"]: settled})
+        self.assertEqual(record["state"], "held")
         with self.assertRaisesRegex(BudgetInputError, "only a held reservation"):
-            settle_reservation(
-                settled_snapshot, "RR-new-exec", confirmed_consumed=0, returned=1, evidence_refs=[{"receipt": "x"}]
-            )
-
-    def test_unsupported_constraint_kind_is_rejected(self) -> None:
-        budget = self.budget()
-        budget["constraints"].append({"id": "tokens", "kind": "cumulative"})
-        profile = self.profile()
-        profile["ai"]["capacity_refs"].append("tokens")
-        request = self.request()
-        request["demands"].append({"id": "RR-new-tokens", "constraint_id": "tokens", "unit": "tokens", "amount": 1})
-        with self.assertRaisesRegex(BudgetInputError, "unsupported constraint kind"):
-            plan_reservations(self.snapshot(), budget, profile, request)
+            settle_reservation(settled, confirmed_consumed=0, returned=1, evidence_refs=[{"receipt": "x"}])
 
 
 if __name__ == "__main__":

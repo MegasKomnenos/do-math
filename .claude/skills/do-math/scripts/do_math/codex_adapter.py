@@ -1,8 +1,9 @@
-"""Observable local lifetime adapter for ``codex exec``.
+"""Local CLI adapters: the lifetime base every provider shares, and ``codex exec``.
 
-Codex CLI has no documented provider-response identifier, remote cancellation,
-or per-call usage surface.  This module records those facts as unknown instead
-of inferring them from a killed local process.
+``LocalCLIAdapter`` and ``CLIExecution`` serve both providers. Codex CLI has no
+documented provider-response identifier, remote cancellation, or per-call usage
+surface; its adapter records those facts as unknown instead of inferring them
+from a killed local process.
 """
 from __future__ import annotations
 from .operation_trace import measured
@@ -25,13 +26,12 @@ from typing import Any, Mapping
 
 from do_math.file_io import compact_json_bytes, strict_json_loads
 from do_math.windows_job import WindowsJob, process_identity
-from do_math import codex_worker
+from do_math import cli_worker, codex_worker
 
 
 @dataclass
-class CodexExecution:
-    request_path: Path
-    prompt_path: Path
+class CLIExecution:
+    """One started worker Job and the request and prompt bytes hashed at its start."""
     request_sha256: str
     prompt_sha256: str
     worker_argv: tuple[str, ...]
@@ -40,11 +40,9 @@ class CodexExecution:
     final_path: Path | None
     status_path: Path
     job: WindowsJob
-    snapshot_dir: Path
     schema_sha256: str | None
     request_raw: bytes
     prompt_raw: bytes
-    stop_requested: bool = False
     stop_receipts: list[dict[str, Any]] = field(default_factory=list)
 
 
@@ -133,15 +131,21 @@ class LocalCLIAdapter:
     # True when the collector derives the final response from the stream instead of a CLI file.
     final_from_stream = False
 
-    def __init__(self, cli_path: str, *, describe_timeout: float = 10.0) -> None:
+    # Seconds each ``describe`` command may run.
+    describe_timeout = 10.0
+
+    def __init__(self, cli_path: str) -> None:
         self.cli_path = cli_path
-        self.describe_timeout = describe_timeout
+
+    def worker_options(self, evidence_dir: Path) -> dict[str, Any]:
+        """The provider's worker request fields for one call that writes under ``evidence_dir``."""
+        return {self.executable_key: self.cli_path}
 
     def capability_identity(self) -> dict:
         """Current local identity, without claiming any behavioral capability."""
         from . import file_io
         path = Path(shutil.which(self.cli_path) or self.cli_path).resolve()
-        # Digests are recomputed only when a file's fingerprint changes (R22).
+        # Digests are recomputed only when a file's fingerprint changes (이음새-정본.md §2).
         return {"cli_path": str(path), "cli_sha256": file_io.cached_sha256(path) if path.is_file() else None,
                 "module_sha256": {name: file_io.cached_sha256(importlib.import_module("do_math." + name).__file__)
                                   for name in sorted(self.identity_modules)},
@@ -175,7 +179,7 @@ class LocalCLIAdapter:
                 "supported": {**{name: verified for name in self.surface_capabilities}, "local_job_stop": True},
                 "unknown": list(self.unknown_capabilities)}
 
-    def start(self, request_path: Path, *, cwd: Path, env: Mapping[str, str], job_name=None) -> CodexExecution:
+    def start(self, request_path: Path, *, cwd: Path, env: Mapping[str, str], job_name=None) -> CLIExecution:
         request = self.worker_module.load_request(request_path)
         prompt_path, stdout_path, stderr_path, status_path = (Path(request[name]) for name in
             ("prompt_path", "stdout_path", "stderr_path", "status_path"))
@@ -209,15 +213,14 @@ class LocalCLIAdapter:
         worker_argv = (sys.executable, str(worker), str(snapshot_request))
         job = WindowsJob(worker_argv, cwd=cwd, env=self.worker_module.sanitized_environment(env),
                          name=job_name or "Local\\DoMath-" + uuid.uuid4().hex, resource_limits=request.get("resource_limits"))
-        return CodexExecution(snapshot_request, snapshot_prompt, hashlib.sha256(snapshot_raw).hexdigest(), hashlib.sha256(prompt_raw).hexdigest(), worker_argv,
-                              stdout_path, stderr_path, final_path, status_path, job, stage, schema_sha256,
-                              snapshot_raw, prompt_raw)
+        return CLIExecution(hashlib.sha256(snapshot_raw).hexdigest(), hashlib.sha256(prompt_raw).hexdigest(), worker_argv,
+                            stdout_path, stderr_path, final_path, status_path, job, schema_sha256,
+                            snapshot_raw, prompt_raw)
 
-    def resume(self, execution: CodexExecution) -> None:
+    def resume(self, execution: CLIExecution) -> None:
         execution.job.resume()
 
-    def stop(self, execution: CodexExecution) -> dict[str, Any]:
-        execution.stop_requested = True
+    def stop(self, execution: CLIExecution) -> dict[str, Any]:
         execution.job.terminate()
         receipt = {"accepted": True, "operation": "TerminateJobObject",
                    "observed_at": datetime.now(timezone.utc).isoformat(),
@@ -225,7 +228,7 @@ class LocalCLIAdapter:
         execution.stop_receipts.append(receipt)
         return receipt
 
-    def wait_for_termination(self, execution: CodexExecution, timeout: float | None) -> bool:
+    def wait_for_termination(self, execution: CLIExecution, timeout: float | None) -> bool:
         """Observe the Job barrier; a signaled root alone is insufficient."""
         deadline = None if timeout is None else time.monotonic() + timeout
         while True:
@@ -236,15 +239,10 @@ class LocalCLIAdapter:
                 return False
             time.sleep(0.02)
 
-    def collect(self, execution: CodexExecution) -> dict[str, Any]:
-        # The private request and prompt snapshots are the bytes hashed at start.
+    def collect(self, execution: CLIExecution) -> dict[str, Any]:
+        # The private request and prompt snapshots are the bytes ``start`` wrote and hashed.
         request_raw, prompt_raw = execution.request_raw, execution.prompt_raw
-        try:
-            request = json.loads(request_raw) if request_raw is not None else {}
-            if not isinstance(request, dict):
-                request = {}
-        except (ValueError, UnicodeError):
-            request = {}
+        request = json.loads(request_raw)
         job_state = execution.job.inspect()
         barrier = job_state.root_signaled and job_state.active_processes == 0 and job_state.process_ids == ()
         if not barrier:
@@ -272,7 +270,7 @@ class LocalCLIAdapter:
         elif status.get("request_sha256") != execution.request_sha256: reasons.append("worker_request_hash_mismatch")
         elif status.get("schema_sha256") != execution.schema_sha256: reasons.append("worker_schema_hash_mismatch")
         if isinstance(status, dict):
-            for key in codex_worker.STATUS_BINDING_KEYS:
+            for key in cli_worker.STATUS_BINDING_KEYS:
                 if key in request and status.get(key) != request[key]:
                     reasons.append("worker_" + key + "_mismatch")
         if parsed["turn_failed"]: reasons.append("turn_failed")
@@ -329,7 +327,15 @@ class CodexExecAdapter(LocalCLIAdapter):
     unknown_capabilities = ("actual_input_bytes", "provider_operation_ids", "remote_termination", "per_call_usage",
                             "provider_stop_reason", "automatic_compaction_control",
                             "per_execution_read_isolation", "cross_profile_noninterference")
-    identity_modules = ("codex_worker", "control_transport", "file_io", "windows_job", "scholarly", "codex_adapter")
+    identity_modules = ("cli_worker", "codex_worker", "control_transport", "file_io", "windows_job", "scholarly",
+                        "codex_adapter")
+
+    def worker_options(self, evidence_dir: Path) -> dict[str, Any]:
+        # The adopted local permission mode: existing user permissions, approval never.
+        # Codex writes its own final message file; the collector compares it with the stream.
+        return {**super().worker_options(evidence_dir), "sandbox": "danger-full-access",
+                "approval_policy": "never", "windows_sandbox": "unelevated",
+                "final_path": str(evidence_dir / "final.txt")}
 
     def parse_response(self, raw: bytes | None, request: dict) -> dict:
         return _parse_jsonl(raw)

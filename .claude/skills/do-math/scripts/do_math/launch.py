@@ -72,7 +72,6 @@ def validate_start(value, **binding):
 
 
 def termination_confirmed(value, *, recovering=False):
-    validate(value)
     ended = windows_job.owner_ended(value['owner'])
     if ended is None:
         return False

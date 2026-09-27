@@ -6,29 +6,27 @@ worker only runs the CLI and records its status.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 import sys
 
 try:
-    from do_math.codex_worker import _ENV_ALLOWLIST, check_common_request, run_cli, validate_execution_binding
+    from do_math.cli_worker import allowed_environment, check_common_request, run_cli
     from do_math.control_transport import CONTROL_SERVER, ControlTransport
-    from do_math.file_io import unique_pairs
+    from do_math.file_io import strict_json_loads
     from do_math.scholarly import validate_scholarly_server
 except ModuleNotFoundError:  # Direct Python worker inside the Windows Job.
-    from codex_worker import _ENV_ALLOWLIST, check_common_request, run_cli, validate_execution_binding
+    from cli_worker import allowed_environment, check_common_request, run_cli
     from control_transport import CONTROL_SERVER, ControlTransport
-    from file_io import unique_pairs
+    from file_io import strict_json_loads
     from scholarly import validate_scholarly_server
 
 
 def sanitized_environment(source=None):
-    allowed = (_ENV_ALLOWLIST - {"CODEX_HOME"}) | {"CLAUDE_CONFIG_DIR", "CLAUDE_CODE_GIT_BASH_PATH"}
-    return {k: v for k, v in (os.environ if source is None else source).items() if k.upper() in allowed}
+    return allowed_environment(source, frozenset({"CLAUDE_CONFIG_DIR", "CLAUDE_CODE_GIT_BASH_PATH"}))
 
 
 def load_request(path: Path) -> dict:
-    request = check_common_request(json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_pairs),
+    request = check_common_request(strict_json_loads(path.read_text(encoding="utf-8")),
                                    required=frozenset({"claude_path"}),
                                    optional=frozenset({"claude_only_assigned_model"}))
     if "output_schema_path" not in request and "control_binding" not in request:
@@ -43,7 +41,7 @@ def load_request(path: Path) -> dict:
 
 
 def build_argv(request: dict) -> list[str]:
-    validate_execution_binding(request)
+    """The Claude print command for a request ``load_request`` has checked."""
     settings = {"disableAllHooks": True, "autoMemoryEnabled": False}
     if request.get("claude_only_assigned_model", False):
         model = request["model"]
@@ -67,7 +65,7 @@ def build_argv(request: dict) -> list[str]:
             "--strict-mcp-config", "--mcp-config", json.dumps({"mcpServers": servers}, ensure_ascii=False),
             "--permission-mode", "bypassPermissions"]
     if "output_schema_path" in request:
-        schema = json.loads(Path(request["output_schema_path"]).read_text(encoding="utf-8"), object_pairs_hook=unique_pairs)
+        schema = strict_json_loads(Path(request["output_schema_path"]).read_text(encoding="utf-8"))
         if schema.get("$schema") == "https://json-schema.org/draft/2020-12/schema":
             schema.pop("$schema")
         schema.pop("x-contract-id", None)

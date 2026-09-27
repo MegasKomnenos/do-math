@@ -2,8 +2,6 @@
 from copy import deepcopy
 
 from . import planning, revisions
-from .input_basis import CurrentnessChanged
-from .repository import new_id
 
 
 class RevisionEngineMixin:

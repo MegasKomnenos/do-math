@@ -25,8 +25,9 @@ class ClaudePrintAdapter(LocalCLIAdapter):
     surface_capabilities = ("jsonl", "model", "structured_output")
     unknown_capabilities = ("remote_termination", "per_execution_read_isolation", "provider_operation_ids",
                             "automatic_compaction_control", "provider_operation_count", "provider_maximum_output")
-    identity_modules = ("claude_worker", "codex_worker", "control_transport", "file_io", "windows_job", "scholarly",
-                        "codex_adapter", "claude_adapter", "claude_stream")
+    # The collector imports codex_adapter, which holds the shared base and the ADAPTERS entry for Codex.
+    identity_modules = ("claude_worker", "cli_worker", "codex_worker", "control_transport", "file_io", "windows_job",
+                        "scholarly", "codex_adapter", "claude_adapter", "claude_stream")
     # The worker writes no final file; the collector selects the final from the stream once.
     final_from_stream = True
 

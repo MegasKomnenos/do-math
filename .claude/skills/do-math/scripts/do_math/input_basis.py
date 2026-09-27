@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from .file_io import json_digest
 from .repository import exact_content_hash
+
+# The state of a registered source; a replaced source moves into the history of its successor.
+SOURCE_STATUSES = frozenset({"active"})
 
 
 def aliases(source: dict) -> set[str]:
@@ -35,16 +37,16 @@ def capture_review_input_basis(cycle: dict) -> dict:
     """Freeze the non-proposal inputs that make a review result interpretable."""
     fields = ("review_policy", "scope_assessment", "owner_activity_id", "activity_execution_limit",
               "identity_basis", "policy_ref", "publication_premises")
-    values = {field: deepcopy(cycle.get(field)) for field in fields}
-    return {"version": 5, "values": values, "sha256": json_digest(values)}
+    return {"values": {field: deepcopy(cycle.get(field)) for field in fields}}
 
 
 def review_input_basis_changes(basis: dict, cycle: dict) -> list[dict]:
-    """Report precise policy/scope/profile drift; do not infer semantic equivalence."""
-    if not isinstance(basis, dict) or basis.get("version") != 5 or not isinstance(basis.get("values"), dict):
-        return [{"field": "review_input_basis", "reason": "missing_or_unsupported_basis", "next": "refresh_review"}]
-    if basis.get('sha256') != json_digest(basis['values']):
-        return [{'field': 'review_input_basis', 'reason': 'basis_digest_changed', 'next': 'refresh_review'}]
+    """Report precise policy/scope/profile drift; do not infer semantic equivalence.
+
+    The basis is part of the validated stored cycle, so only its presence is checked.
+    """
+    if not isinstance(basis, dict) or not isinstance(basis.get("values"), dict):
+        return [{"field": "review_input_basis", "reason": "missing_basis", "next": "refresh_review"}]
     current = capture_review_input_basis(cycle)["values"]
     changes = []
     for field in current:
@@ -71,13 +73,13 @@ def capture_decision_basis(instance: dict, runtime: dict, refs) -> dict:
             records.append({"kind": "task", **row})
         elif identifier in instance.get("knowledge", {}):
             records.append({"kind": "knowledge", **knowledge.decision_reference(instance["knowledge"][identifier], instance)})
-    return {"version": 1, "records": records, "sources": capture_sources(instance, list(refs))}
+    return {"records": records, "sources": capture_sources(instance, list(refs))}
 
 
 def decision_basis_changes(basis: dict, instance: dict, runtime: dict) -> list[dict]:
     from . import knowledge, planning
-    if not isinstance(basis, dict) or basis.get("version") != 1:
-        return [{"id": None, "field": "decision_basis", "reason": "missing_or_unsupported_basis"}]
+    if not isinstance(basis, dict) or not isinstance(basis.get("records"), list):
+        return [{"id": None, "field": "decision_basis", "reason": "missing_basis"}]
     changes = []
     def add(identifier, field, before, after):
         changes.append({"id": identifier, "field": field, "before": before, "after": after, "next": "refresh_decision"})

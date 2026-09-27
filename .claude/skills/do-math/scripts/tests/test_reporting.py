@@ -2,23 +2,25 @@ import csv
 import io
 import json
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.repository import new_id
-from do_math.engine import _repository as ResearchRepository
-from do_math.reporting import timeline, timeline_csv
+from do_math.repository import ResearchRepository
+from do_math.reporting import ASSURANCE, render_human_report, snapshot_report, timeline, timeline_csv
 from do_math.cli import build_parser, execute
-from test_redesign_SURFACE import stored_surface_state, surface_state
+from record_fixtures import stored_surface_state, surface_state
+from research_fixtures import git_init
+from do_math import reporting
 
 
 class ReportingTests(unittest.TestCase):
     def test_claude_usage_projection_survives_git_and_timeline(self):
         from do_math.claude_stream import parse_stream
-        from do_math.engine import json_safe
+        from do_math.payloads import json_safe
         from do_math.execution_profiles import execution_observation
         rows = [
             {"type": "system", "subtype": "init", "session_id": "fixture"},
@@ -34,7 +36,7 @@ class ReportingTests(unittest.TestCase):
         projected = json_safe({key: parsed[key] for key in keys})
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
+            git_init(root)
             identifier = new_id("RI")
             store = ResearchRepository(root, identifier)
             instance, runtime = stored_surface_state()
@@ -59,8 +61,7 @@ class ReportingTests(unittest.TestCase):
 
     def test_status_reports_artifact_presence_and_length_in_one_batch_without_bytes(self):
         import hashlib
-        from types import SimpleNamespace
-        from unittest.mock import Mock, patch
+        from unittest.mock import create_autospec, patch
         from do_math.reporting import snapshot_report
         from do_math.git_store import GitStateStoreError
         instance, runtime = surface_state()
@@ -79,11 +80,11 @@ class ReportingTests(unittest.TestCase):
                 raise GitStateStoreError('batch size did not return a blob')
             return {path: stored[path] for path in requested if path in stored}
 
-        store = SimpleNamespace(load=Mock(return_value=(head, instance, runtime)),
-            read=Mock(side_effect=AssertionError('status reads no artifact bytes')),
-            read_many=Mock(side_effect=AssertionError('status reads no artifact bytes')),
-            blob_sizes=Mock(side_effect=sizes))
-        with patch('do_math.reporting._repository', return_value=store):
+        store = create_autospec(ResearchRepository, instance=True)
+        store.load.return_value = (head, instance, runtime)
+        store.read.side_effect = store.read_many.side_effect = AssertionError('status reads no artifact bytes')
+        store.blob_sizes.side_effect = sizes
+        with patch('do_math.reporting.ResearchRepository', return_value=store):
             report = snapshot_report(Path('.'), 'RI-test', requested_areas=['record_storage'])
             self.assertEqual(report['inspection']['status'], 'healthy')
             store.blob_sizes.assert_called_once_with(paths, head, missing='omit')
@@ -96,8 +97,7 @@ class ReportingTests(unittest.TestCase):
         self.assertEqual(blocked & set(paths), {paths[0], paths[1]})
     def test_timeline_preserves_explicit_continuation_and_pending_successor(self):
         from copy import deepcopy
-        from types import SimpleNamespace
-        from unittest.mock import patch
+        from unittest.mock import create_autospec, patch
         pending = {'id': 'AC-work', 'role': 'research_work', 'continuation_of': 'EX-second'}
         runtime = {'executions': {
             'EX-first': {'id': 'EX-first', 'status': 'ended', 'action': {'id': 'AC-work'}},
@@ -105,8 +105,9 @@ class ReportingTests(unittest.TestCase):
                           'action': {'id': 'AC-work', 'continuation_of': 'EX-first'}}},
             'queue': [pending, {'id': 'AC-other', 'role': 'maintenance', 'continuation_of': 'EX-unrelated'}]}
         before = deepcopy(runtime)
-        store = SimpleNamespace(load=lambda snapshot: ('a' * 40, {}, runtime))
-        with patch('do_math.reporting._repository', return_value=store):
+        store = create_autospec(ResearchRepository, instance=True)
+        store.load.side_effect = lambda snapshot=None: ('a' * 40, {}, runtime)
+        with patch('do_math.reporting.ResearchRepository', return_value=store):
             value = timeline(Path('.'), 'RI-test', snapshot='a' * 40)
         rows = {row['id']: row for row in value['rows']}
         self.assertIsNone(rows['EX-first']['continuation_of'])
@@ -121,7 +122,7 @@ class ReportingTests(unittest.TestCase):
     def test_fixed_snapshot_preserves_unknown_times_and_crosses_the_kst_date(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            subprocess.run(['git', '-C', str(root), 'init', '-q'], check=True)
+            git_init(root)
             identifier = new_id('RI')
             store = ResearchRepository(root, identifier)
             instance, runtime = stored_surface_state()
@@ -148,6 +149,78 @@ class ReportingTests(unittest.TestCase):
             actual, code = execute(args)
             self.assertEqual(code, 0)
             self.assertEqual(actual, timeline_csv(value))
+
+    def test_non_task_wait_projection_is_detached_and_printable(self):
+        runtime = {'executions': {}, 'queue': [{'id': 'AC-prep', 'role': 'research_preparation',
+            'dispatch_wait': {'kind': 'capacity', 'constraint_id': 'BC-old', 'next_owner': 'user'}}]}
+        rows = reporting.dispatch_waits(runtime)
+        text = '\n'.join(reporting.render_dispatch_waits({'tasks': [], 'dispatch_waits': rows}))
+        self.assertIn('AC-prep', text)
+        self.assertIn('capacity', text)
+        self.assertIn('BC-old', text)
+        rows[0]['wait']['kind'] = 'changed'
+        self.assertEqual(runtime['queue'][0]['dispatch_wait']['kind'], 'capacity')
+        runtime['executions']['EX-live'] = {'status': 'running', 'action': {'id': 'AC-prep'}}
+        self.assertEqual(reporting.dispatch_waits(runtime), [])
+
+
+class StatusSnapshotTests(unittest.TestCase):
+    def test_engine_cleanup_failure_reaches_snapshot_reporting(self):
+        from do_math.repository import ResearchRepository as Repository
+        from unittest.mock import create_autospec
+        instance,runtime=surface_state()
+        runtime['executions']['EX-1'].update(status='ended',outcome='execution_incomplete')
+        from research_fixtures import bare_engine, dispatched_launch
+        ex = runtime['executions']['EX-1']
+        ex['launch_ticket'] = {**dispatched_launch(ex['id'], instance['execution_profiles'][ex['execution_profile_ref']['id']]), 'phase':'finished'}
+        ex['capacity']={'local_termination':'confirmed'}
+        with tempfile.TemporaryDirectory() as directory:
+            instance['workspace']=directory
+            (Path(directory)/'runs/EX-1').mkdir(parents=True)
+            engine=bare_engine(instance,runtime,head='a'*40,store=create_autospec(Repository,instance=True))
+            state={'executions':runtime['executions'],'runtime':runtime,'approved_execution_ids':['EX-1'],
+                   'protected_references':[],'reference_records':{}}
+            with patch.object(engine,'_cleanup_scope',return_value=['EX-1']), \
+                 patch.object(engine,'_retention_state',return_value=state), \
+                 patch.object(engine,'_save'), \
+                 patch('do_math.retention._inventory',side_effect=PermissionError('cannot inspect files')):
+                result=engine._maintenance_cleanup({},'EX-maint')
+            self.assertEqual(result['status'],'degraded')
+            self.assertEqual(runtime['history'][-1]['kind'],'maintenance_cleanup')
+            engine.store.load.return_value=('a'*40,instance,runtime)
+            with patch('do_math.reporting.ResearchRepository',return_value=engine.store):
+                report=snapshot_report(Path(directory),'IN-1',requested_areas=['record_storage'])
+            self.assertTrue(any(row['status']=='degraded' and 'cannot inspect files' in row['message']
+                                for row in report['inspection']['findings']))
+            self.assertEqual(report['cleanup_failures'][0]['next_owner'],'maintenance')
+            self.assertIn('degraded',render_human_report(report))
+            self.assertTrue((Path(directory)/'runs/EX-1').exists())
+
+    def test_json_and_human_status_share_one_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            git_init(root)
+            identifier = new_id("RI")
+            store = ResearchRepository(root, identifier)
+            instance, runtime = stored_surface_state()
+            instance.update(id=identifier, workspace=str(root / "workspace"))
+            runtime["activities"]["AC-1"]["owner_ref"] = identifier
+            head = store.initialize(instance, runtime)
+            budget = {"work-model": {"limit": 1, "used": 0, "execution_ids": []}}
+            report = snapshot_report(root, identifier, snapshot=head, host_observation={
+                "budget": budget, "research_observed_at": "2026-09-20T00:00:00Z"})
+            self.assertEqual(report["snapshot"], head)
+            self.assertEqual(report["goal"], "Prove P")
+            self.assertEqual(report["assurance"], ASSURANCE)
+            self.assertEqual(report["research_observed_at"], "2026-09-20T00:00:00Z")
+            self.assertEqual(report["budget"], budget)
+            self.assertIsNone(report["pending_controls"], "an unobserved host field stays unobserved")
+            human = render_human_report(report)
+            self.assertIn(head, human)
+            self.assertIn("inspection:", human)
+            self.assertIn("work-model 0/1", human)
+            with self.assertRaisesRegex(ValueError, "unknown fields: observed_at"):
+                snapshot_report(root, identifier, snapshot=head, host_observation={"observed_at": "2026-09-20T00:00:00Z"})
 
 
 if __name__ == '__main__':

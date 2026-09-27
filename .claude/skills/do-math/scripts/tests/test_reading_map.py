@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math.contracts import prompt_documents, render_prompt
-from test_purpose_engine import ActiveStateHarness
+from purpose_fixtures import ActivatedPurposeHarness
 
 
 class ReadingMapTests(unittest.TestCase):
@@ -25,11 +25,12 @@ class ReadingMapTests(unittest.TestCase):
         (self.root/'references/모델과-실행예산.md').write_text('Select a model from difficulty and importance, then wait for its slot.',encoding='utf-8')
         (self.root/'references/지식-저작과-재사용.md').write_text('Apply the existing result only within its actual assumptions.',encoding='utf-8')
         (self.root/'references/학술자료-활용.md').write_text('Read the original rendered equation before criticizing its transcription.',encoding='utf-8')
+        (self.root/'references/자기-점검.md').write_text('Answer each due self-check rule with its evidence.',encoding='utf-8')
 
     def test_declared_shared_procedures_are_supplied_in_reading_order(self):
         documents=prompt_documents('research_work',skill_root=self.root)
-        self.assertEqual([d['path'] for d in documents],['SKILL.md','GLOSSARY.md','references/공통-실행.md','references/모델과-실행예산.md',
-                                                        'references/지식-저작과-재사용.md','references/학술자료-활용.md','계약/연구-수행.md'])
+        self.assertEqual([d['path'] for d in documents],['SKILL.md','GLOSSARY.md','references/공통-실행.md','references/지식-저작과-재사용.md',
+                                                        'references/학술자료-활용.md','references/자기-점검.md','계약/연구-수행.md'])
         for document in documents:
             raw=(self.root/document['path']).read_bytes()
             self.assertEqual(document['content'].encode('utf-8'),raw)
@@ -37,6 +38,21 @@ class ReadingMapTests(unittest.TestCase):
         prompt=render_prompt('research_work',{'question':'Use the documented assumption'},skill_root=self.root)
         self.assertIn('Apply the existing result only within its actual assumptions.',prompt)
         self.assertNotIn('For research_plan:',prompt,'another role must not receive a separately maintained copy of planning rules')
+        self.assertNotIn('Select a model from difficulty and importance',prompt,'model selection rules go only to the roles that assess models')
+
+    def test_role_rows_add_their_references_after_the_common_documents(self):
+        common=['SKILL.md','GLOSSARY.md','references/공통-실행.md','references/지식-저작과-재사용.md','references/학술자료-활용.md']
+        expected={'research_preparation':['references/모델과-실행예산.md','references/과제-착수조건.md','계약/후보-준비.md'],
+                  'research_plan':['references/모델과-실행예산.md','계약/연구-계획.md'],
+                  'task_contract_review':['references/모델과-실행예산.md','references/과제-착수조건.md','계약/작업-계약-검토.md'],
+                  'operational_review':['references/자기-점검.md','계약/운영-점검.md'],
+                  'intent_interpretation':['references/입력-소비자.md','계약/의도-해석.md'],
+                  'goal_audit':['계약/목표-감사.md']}
+        for name in ('references/과제-착수조건.md','references/입력-소비자.md'):
+            (self.root/name).write_text('Role reference.',encoding='utf-8')
+        for role,paths in expected.items():
+            with self.subTest(role=role):
+                self.assertEqual([d['path'] for d in prompt_documents(role,skill_root=self.root)],common+paths)
 
     def test_changing_the_declared_role_path_changes_the_supplied_document(self):
         text=(self.root/'SKILL.md').read_text(encoding='utf-8')
@@ -57,9 +73,9 @@ class ReadingMapTests(unittest.TestCase):
                 with self.assertRaises(ValueError): prompt_documents('research_work',skill_root=self.root)
 
 
-class DocumentContextTests(ActiveStateHarness):
+class DocumentContextTests(ActivatedPurposeHarness):
     def test_declared_documents_have_recoverable_input_copies(self):
-        engine,_=self.make()
+        engine,_=self.make_active()
         workspace=self.root/'preview';workspace.mkdir()
         context=engine._context({'role':'research_preparation'},workspace)
         self.assertIn('implementation_documents',context)
@@ -71,7 +87,7 @@ class DocumentContextTests(ActiveStateHarness):
             self.assertEqual(hashlib.sha256(raw).hexdigest(),row['sha256'])
 
     def test_installed_reference_changes_are_part_of_the_version_check(self):
-        engine,_=self.make()
+        engine,_=self.make_active()
         files=engine._installation_manifest()['files']
         self.assertIn('references/공통-실행.md',files)
         self.assertIn('references/지식-저작과-재사용.md',files)

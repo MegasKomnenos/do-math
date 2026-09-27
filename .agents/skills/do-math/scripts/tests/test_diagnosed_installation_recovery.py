@@ -10,8 +10,8 @@ from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import scheduled_operator as operator, execution_profiles, repair_execution
-from do_math.engine import DEFAULT_CONFIG
-import test_walkthrough_contract_repairs as fixtures
+from do_math.configuration import DEFAULT_CONFIG
+from record_fixtures import installation_repair_state
 
 
 class DiagnosedRecoveryTests(unittest.TestCase):
@@ -19,11 +19,11 @@ class DiagnosedRecoveryTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
-        runtime, diagnosis = fixtures.WalkthroughRepairs().installation_fixture()
+        runtime, diagnosis = installation_repair_state()
         configured = execution_profiles.build_profiles(DEFAULT_CONFIG)
         profile = next(p for p in configured['execution_profiles'].values() if p['role'] == 'recovery')
         state = {**configured, 'config':dict(DEFAULT_CONFIG), 'id':'RI-fixture'}
-        repository = SimpleNamespace(_store=SimpleNamespace(_git_dir=root),
+        repository = SimpleNamespace(git_dir=root,
             writer_lock=lambda: nullcontext(), load=lambda: ('head',state,runtime),
             read=lambda path, snapshot: b'{"preserved":"actual rejected response"}',
             save_with_state=lambda *a, **k: ('next-head', state, runtime))

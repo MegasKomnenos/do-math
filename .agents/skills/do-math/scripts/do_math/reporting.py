@@ -8,6 +8,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .provider_wait import epoch_seconds
+from .repository import ResearchRepository
 from .session_slots import ADMISSION_WAITS
 from .state_checks import inspect_state
 
@@ -16,12 +17,6 @@ from .state_checks import inspect_state
 ASSURANCE = {"read_scope": "instructions_and_selected_inputs", "provider_operations": "not_observed",
              "token_usage": "CLI_reported_after_execution", "formal": "Lean_and_axiom_check",
              "review": "fresh_sessions_without_peer_results_in_inputs"}
-
-
-def _repository(repository, instance_id):
-    # Use the same installed domain-family registry as the central executor.
-    from .engine import _repository
-    return _repository(repository, instance_id)
 
 
 def _zone(name):
@@ -75,7 +70,7 @@ def task_status(instance, runtime):
                 waiting.append(action['dispatch_wait'])
         readiness = None
         if not executions and task.get('status') not in planning.TERMINAL_TASK_STATUSES:
-            readiness = task_contracts.readiness_for_task(task, instance, runtime, include_scheduling_waits=False)
+            readiness = planning.task_ready(task, instance, runtime, include_scheduling_waits=False)
             if readiness['state'] != 'ready':
                 waiting.append({'kind': 'contract_review' if 'current revision lacks approved contract review' in readiness['errors'] else 'required_input',
                                 'errors': readiness['errors']})
@@ -146,56 +141,138 @@ def operating_summary(instance, runtime):
                   for g in instance.get('grants',{}).values()]}
 
 
+# Status fields a caller observes on this host at query time. A persisted
+# snapshot cannot truthfully hold a live slot count or a clock-dependent
+# judgment, so a status projection without an observation shows them as None.
+OBSERVED_FIELDS = ("research_observed_at", "research_wake_reasons", "operation_progress",
+                   "pending_controls", "budget", "provider_waits")
+
+
+def status_report(store, head, instance, runtime, *, observation=None, requested_areas=None) -> dict:
+    """The one status projection: every field of the persisted snapshot at ``head``.
+
+    ``observation`` holds the OBSERVED_FIELDS the caller observed now; each
+    field it omits is None. ``store`` reads the snapshot's artifacts.
+    """
+    from .academic import academic_status
+    from .academic import current_solution_basis
+    from .execution_profiles import WORK_ROLES
+    from .initialization import governance_or_initial_view
+    from .knowledge_records import knowledge_view
+    from .question_engine import question_view, user_questions
+    from .retention import pending_cleanup_failures
+    from .scheduled_operator import supervision_facts
+    from .session_slots import SLOT_WAITS
+    observed = dict.fromkeys(OBSERVED_FIELDS)
+    unknown = set(observation or {}) - set(OBSERVED_FIELDS)
+    if unknown:
+        raise ValueError("status observation has unknown fields: " + ", ".join(sorted(unknown)))
+    observed.update(observation or {})
+    governance_view = governance_or_initial_view(instance, runtime)
+    executions = list(runtime.get("executions", {}).values())
+    live = [e["id"] for e in executions if e["status"] != "ended"]
+    waits = dispatch_waits(runtime)
+    questions = question_view(instance, runtime, lambda refs: store.read_many(refs, head))
+    return {"instance_id": instance["id"], "snapshot": head, "title": instance.get("title"),
+            "operating_summary": operating_summary(instance, runtime),
+            # Deriving check diagnostics reads every sealed check artifact; ``check`` does it.
+            "submission_checks": {"status": "not_evaluated",
+                "reason": "status reports persisted records; check derives submission check diagnostics"},
+            "goal": governance_view["goal"], "goal_status": instance.get("goal_status"),
+            "status": runtime.get("status"), "active_execution": live[0] if live else None,
+            "pending_actions": len(runtime.get("queue", [])), "cycles": runtime.get("cycles"),
+            "tasks": task_status(instance, runtime), "dispatch_waits": waits,
+            "knowledge": {"K": sum(row["usable"] for row in knowledge_view(instance)),
+                          "formal_results": len(instance.get("formal_results", {})),
+                          "expositions": len(instance.get("expositions", {})),
+                          "identity_assessments": len(instance.get("identity_assessments", {}))},
+            "inspection": inspect_state(instance, runtime, snapshot=head, requested_areas=requested_areas,
+                read_artifact=lambda path: store.read(path, head),
+                read_artifacts=lambda paths: store.read_many(paths, head, missing="omit"),
+                artifact_sizes=lambda paths: store.blob_sizes(paths, head, missing="omit")),
+            "budget_unit": "concurrent_sessions",
+            "active_executions": live,
+            "execution_attempts": {"work": sum(e.get("role") in WORK_ROLES for e in executions),
+                                   "operations": sum(e.get("role") not in WORK_ROLES for e in executions)},
+            "capacity_waiting": [{k: a[k] for k in ('role', 'target', 'model_selection')}
+                                 for a in waits if a['wait']['kind'] in SLOT_WAITS],
+            "usage": [e.get("usage", {}) for e in executions if e.get("usage")],
+            "latest_results": list(runtime.get("activities", {}).values())[-5:],
+            "questions": user_questions(questions),
+            "question_links": questions,
+            "operational_notices": deepcopy(runtime.get("questions", [])),
+            # user_pause, conversation_lost, model_policy_violation, maintenance_fence,
+            # installation_repair and operator_enabled: the facts supervision decides on.
+            **supervision_facts(instance, runtime),
+            "waiting_actions": {aid: {"role": entry["action"].get("role"),
+                "target": entry["action"].get("target"), "kind": entry.get("kind"),
+                "reason": entry.get("reason"), "execution_id": entry.get("execution_id"),
+                "failure_kind": entry.get("failure_kind")}
+                for aid, entry in runtime.get("waiting_actions", {}).items()},
+            "grants": [{"id": g["id"], "kind": g.get("kind"), "status": g.get("status"), "expires_at": g.get("expires_at")}
+                       for g in instance.get("grants", {}).values()],
+            "pending_events": runtime.get("pending_events", []),
+            "observations": runtime.get("observations", {}),
+            "checkpoints": runtime.get("checkpoints", {}),
+            "external_operations": list(runtime.get("external_operations", {}).values()),
+            "active_trust_environment": instance.get("active_trust_environment"),
+            "academic_validation": ({"status": "initialization_incomplete"}
+                if governance_view.get("status") == "unadopted_input" else
+                academic_status(instance, runtime, current_solution_basis(instance, runtime),
+                                resolve_evidence=lambda ref: store.read_many([ref], head).get(ref))),
+            "cleanup_failures": pending_cleanup_failures(runtime),
+            "assurance": deepcopy(ASSURANCE),
+            **observed}
+
+
 def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None = None,
                     host_observation: dict | None = None, requested_areas=None) -> dict:
-    """Build the JSON status projection from exactly one persisted snapshot.
+    """The status projection of one persisted snapshot (``status_report``).
 
     Host observations are deliberately caller-supplied and separately dated:
     a live slot count cannot truthfully be represented as historical snapshot
-    state.
+    state. Without ``host_observation`` the OBSERVED_FIELDS are None.
     """
-    store = _repository(repository, instance_id)
+    store = ResearchRepository(repository, instance_id)
     head, instance, runtime = store.load(snapshot)
-    inspection = inspect_state(instance, runtime, snapshot=head, requested_areas=requested_areas,
-                               read_artifact=lambda path: store.read(path, head),
-                               read_artifacts=lambda paths: store.read_many(paths, head, missing="omit"),
-                               artifact_sizes=lambda paths: store.blob_sizes(paths, head, missing="omit"))
-    observation = host_observation if isinstance(host_observation, dict) else None
-    from .initialization import governance_or_initial_view
-    goal = governance_or_initial_view(instance, runtime)['goal']
-    from .retention import pending_cleanup_failures
-    from .repair_execution import pending_installation_repair
-    return {"instance_id": instance_id, "snapshot": head, "goal": goal, "goal_status": instance.get("goal_status"), "status": runtime.get('status'),
-            'operating_summary':operating_summary(instance,runtime),
-            "pending_actions": len(runtime.get('queue', [])),
-            "installation_repair": pending_installation_repair(runtime),
-            "maintenance_fence": deepcopy(runtime.get('maintenance_fence')),
-            "tasks": task_status(instance, runtime), "dispatch_waits": dispatch_waits(runtime), "inspection": inspection,
-            "cleanup_failures": pending_cleanup_failures(runtime),
-            "assurance": deepcopy(ASSURANCE), "host_observation": observation,
-            "research_effectiveness": {"status": "not_evaluated",
-                                         "reason": "implementation checks do not measure research effectiveness"}}
+    return status_report(store, head, instance, runtime, observation=host_observation,
+                         requested_areas=requested_areas)
 
 
 def render_human_report(report: dict) -> str:
-    """Render a snapshot_report without reopening state or deriving new facts."""
+    """Render a status report without reopening state or deriving new facts."""
     inspection = report["inspection"]
-    lines = [f"snapshot: {report['snapshot']}", f"goal: {report.get('goal') or 'unknown'}",
+    tasks = report["tasks"]
+    budget = report.get("budget")
+    lines = [f"goal: {report.get('goal') or 'unknown'}",
              f"goal_status: {report.get('goal_status') or 'unknown'}",
+             f"status: {report.get('status')}  snapshot: {report['snapshot']}",
+             "work sessions: " + (", ".join(f"{model} {row['used']}/{row['limit']}" for model, row in budget.items())
+                                  if budget is not None else "not observed"),
+             "tasks: " + (", ".join(f"{task['id']}={task['status']}" for task in tasks) or "none"),
+             "observed (Asia/Seoul): " + str(display_time(report['research_observed_at'])
+                                             if report.get('research_observed_at') else 'not observed'),
+             "unknown or bounded scope: " + ", ".join(f"{key}={value}" for key, value in report["assurance"].items()),
              f"inspection: {inspection['status']} ({inspection['checked_scope']})"]
-    blocker=report.get('operating_summary',{}).get('primary_blocker')
+    summary = report.get('operating_summary', {})
+    blocker = summary.get('primary_blocker')
     if blocker:
         lines.append('blocking: '+str(blocker['kind'])+' next='+str(blocker.get('next_owner')))
+    if summary.get('lifecycle') == 'initializing':
+        lines.append('initialization missing: '+', '.join(summary.get('initialization', {}).get('missing', [])))
     for finding in inspection["findings"]:
         lines.append(f"  {finding['area']}: {finding['status']} — {finding['message']} (next: {finding['next_owner']})")
-    for task in report["tasks"]:
+    for task in tasks:
         waits = ', '.join(row.get('kind', 'unknown') for row in task.get('waits', [])) or 'none'
-        lines.append(f"task {task['id']}: {task['status']} assessment_pending={str(task.get('assessment_pending', False)).lower()} "
+        lines.append(f"  {task['id']} revision={task.get('revision', 'unknown')} stage={task['status']} "
+                     f"assessment_pending={str(task.get('assessment_pending', False)).lower()} "
+                     f"active_records={','.join(task.get('active_execution_ids', [])) or 'none'} "
+                     f"queued={','.join(str(value) for value in task.get('selected_actions', [])) or 'none'} "
                      f"waits={waits} next={task.get('next_owner') or 'none'}")
+    for name, gate in (report.get('provider_waits') or {}).get('providers', {}).items():
+        lines.append(f"provider {name}: {gate['state']} retry={display_time(gate.get('retry_at')) or 'unknown'} "
+                     f"generation={gate['generation']}")
     lines.extend(render_dispatch_waits(report))
-    if report.get("host_observation") is not None:
-        lines.append("host observation: " + str(report["host_observation"].get("observed_at") or "time not supplied"))
-    lines.append("research effectiveness: not evaluated")
     return "\n".join(lines)
 
 
@@ -208,7 +285,7 @@ def render_dispatch_waits(report):
 
 
 def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name="Asia/Seoul", include_operations=False):
-    store = _repository(repository, instance_id)
+    store = ResearchRepository(repository, instance_id)
     head, instance, runtime = store.load(snapshot)
     zone = _zone(timezone_name)
     rows = []

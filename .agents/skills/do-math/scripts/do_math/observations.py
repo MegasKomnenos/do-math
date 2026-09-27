@@ -12,10 +12,10 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
-from .context_store import _excluded, _safe_path
+from .context_store import is_excluded, read_stable, safe_path
 from .control_transport import (CONTROL_SERVER, RECEIPT_TOOL, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE,
-                                SELF_CHECK_RESPONSE_SCHEMA, SELF_CHECK_TOOL, SUBMIT_TOOL, self_check_request_id)
-from .file_io import is_sha256, parse_utc, reject_constant, unique_pairs
+                                SELF_CHECK_TOOL, SUBMIT_TOOL, self_check_request_id, self_check_response_errors)
+from .file_io import is_sha256, parse_utc, strict_json_loads
 from .repository import validate_storage_value
 from .file_io import read_bytes_shared, write_bytes_atomic, file_fingerprint, fingerprint_settled
 
@@ -37,7 +37,7 @@ _RULE_FIELDS = {"id", "operator", "subject", "basis", "threshold", "repeat_inter
 # feedback through ``worker_feedback`` so that a stray field fails before ENGINE saves.
 WORKER_FEEDBACK_FIELDS = frozenset({
     "kind", "reason", "errors", "obligation_id", "execution_id", "rule_revision", "due",
-    "deadline_offset_ms", "rejected_rule_reasons", "active_revision", "active_rules_sha256",
+    "deadline_offset_ms", "active_revision", "active_rules_sha256",
     "previous_rules_sha256", "previous_rules_preserved", "next_owner"})
 
 
@@ -75,15 +75,14 @@ CHECKPOINT_SCHEMA = {
 Draft202012Validator.check_schema(CHECKPOINT_SCHEMA)
 _CHECKPOINT_VALIDATOR = Draft202012Validator(CHECKPOINT_SCHEMA)
 
-def validate_rule_proposal(proposal: dict, *, current_revision: int,
-                           allowed_subjects: set[str] | None = None) -> list[dict]:
+def validate_rule_proposal(proposal: dict, *, current_revision: int) -> list[dict]:
     if not isinstance(proposal, dict) or set(proposal) != {"current_revision", "reason", "rules"}:
         raise ValueError("rule proposal requires current_revision, reason and rules")
     if type(proposal["current_revision"]) is not int or proposal["current_revision"] != current_revision:
         raise ValueError("rule proposal revision is stale")
     if not isinstance(proposal["reason"], str) or not proposal["reason"].strip():
         raise ValueError("rule proposal needs a reason")
-    return validate_rules(proposal["rules"], allowed_subjects=allowed_subjects)
+    return validate_rules(proposal["rules"])
 
 
 def _json_safe(value: Any) -> Any:
@@ -248,8 +247,7 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def validate_rules(rules: list[dict], *, allowed_subjects: set[str] | None = None,
-                   allow_empty: bool = False) -> list[dict]:
+def validate_rules(rules: list[dict], *, allow_empty: bool = False) -> list[dict]:
     if not isinstance(rules, list) or len(rules) > 16 or (not rules and not allow_empty):
         raise ValueError("observation rules must be a nonempty list of at most 16 rules")
     seen = set()
@@ -269,8 +267,6 @@ def validate_rules(rules: list[dict], *, allowed_subjects: set[str] | None = Non
             raise ValueError("rule subject must contain exactly kind and id")
         if subject.get("kind") != spec["subject_kind"] or not isinstance(subject.get("id"), str) or not subject["id"]:
             raise ValueError("rule subject is incompatible with its operator")
-        if allowed_subjects is not None and subject["id"] not in allowed_subjects:
-            raise ValueError("rule subject is not available to this execution")
         if basis != {"source": spec["source"], "unit": spec["unit"]}:
             raise ValueError("rule basis of " + operator + " must be source " + spec["source"] + " in " + spec["unit"])
         evidence = rule.get("required_evidence")
@@ -343,8 +339,10 @@ def validate_execution_rules(rules: list[dict], *, bindings: list[dict], executi
 
 
 def evaluate_rules(rules: list[dict], snapshot: dict, *, consumed_boundaries: dict[str, int] | None = None) -> list[dict]:
-    """Evaluate all rules against one accumulated observation snapshot."""
-    validate_rules(rules, allow_empty=True)
+    """Evaluate already validated rules against one accumulated observation snapshot.
+
+    The tracker validates its rules when it is created and when they are replaced.
+    """
     consumed = consumed_boundaries or {}
     calls = set(snapshot.get("completed_call_ids", []))
     boundaries = set(snapshot.get("safe_boundary_ids", []))
@@ -395,14 +393,13 @@ def read_checkpoint(workspace: Path) -> dict:
         if file_fingerprint(path) != before:
             return {"status": "being_written"}
         digest = hashlib.sha256(raw).hexdigest()
-        value = json.loads(raw.decode("utf-8-sig"), object_pairs_hook=unique_pairs,
-                           parse_constant=reject_constant)
+        value = strict_json_loads(raw.decode("utf-8-sig"))
         validate_storage_value(value)
         _CHECKPOINT_VALIDATOR.validate(value)
         for reference in value["evidence_paths"]:
-            evidence = _safe_path(workspace, reference)
+            evidence = safe_path(workspace, reference)
             relative = Path(reference)
-            if (relative.parts[0] != "input" and _excluded(relative)) or not evidence.is_file():
+            if (relative.parts[0] != "input" and is_excluded(relative)) or not evidence.is_file():
                 raise ValueError("checkpoint evidence is unavailable or excluded from preservation: " + reference)
         return {"status": "valid", "value": value, "sha256": digest, "raw": raw, "observed_at": utc_now()}
     except Exception as error:
@@ -411,18 +408,17 @@ def read_checkpoint(workspace: Path) -> dict:
 
 def capture_checkpoint_files(workspace, checkpoint, *, max_bytes):
     """Capture only named evidence with stable reads, preserving explicit omissions."""
-    from .context_store import _read_stable
     from .git_store import PhysicalBoundary
     files, omitted, total = {}, [], 0
     boundary = None
     for name in dict.fromkeys(checkpoint['evidence_paths']):
         try:
-            path = _safe_path(workspace, name)
+            path = safe_path(workspace, name)
             if total + path.stat().st_size > max_bytes:
                 raise ValueError('checkpoint evidence exceeds artifact byte limit')
             # One proof of the workspace root serves every evidence read.
             boundary = boundary or PhysicalBoundary(workspace)
-            raw = _read_stable(path, boundary=boundary)
+            raw = read_stable(path, boundary=boundary)
             if total + len(raw) > max_bytes:
                 raise ValueError('checkpoint evidence exceeds artifact byte limit')
             files[name] = raw
@@ -448,9 +444,7 @@ class ObservationTracker:
         self.research_self_checks = config.get("research_self_checks", self.mode == "event_driven")
         if self.mode == "deadline_only" and (self.research_self_checks or config.get("observation_rules")):
             raise ValueError("deadline_only cannot carry research self-check rules")
-        self.allowed_subjects = config.get("observation_subjects")
-        self.rules = validate_rules(config.get("observation_rules", []), allowed_subjects=self.allowed_subjects,
-                                    allow_empty=not self.research_self_checks)
+        self.rules = validate_rules(config.get("observation_rules", []), allow_empty=not self.research_self_checks)
         self.rule_bindings = config.get("observation_rule_bindings")
         if config.get("observation_profile_ref") or self.rule_bindings is not None:
             self.rules = validate_execution_rules(self.rules, bindings=self.rule_bindings, execution_id=execution_id)
@@ -462,10 +456,9 @@ class ObservationTracker:
         self.rule_file_mark = self.checkpoint_mark = None
         self.consumed_rules: dict[str, int] = {}
         self.obligations: dict[str, dict] = {}
-        self.responses: list[dict] = []
+        self.response_count = 0
         self.fact_sequence = 0
         self.checkpoint_count = 0
-        self.last_checkpoint = None
         self.seen_checkpoints: set[str] = set()
         self.self_check_checkpoints: set[str] = set()
         self.checkpoint_reminded = False
@@ -500,7 +493,7 @@ class ObservationTracker:
         self.observation_source = None
         self.live_observation = True
 
-    def _fact(self, kind: str, event: dict, when: float) -> dict:
+    def fact(self, kind: str, event: dict, when: float) -> dict:
         self.fact_sequence += 1
         raw = _raw_json(event)
         result = {"kind": kind, "id": f"OF-{self.execution_id}-{self.fact_sequence}",
@@ -556,8 +549,7 @@ class ObservationTracker:
         if (self.live_observation and call_id not in self.self_check_call_ids
                 and call_id not in self.boundary_call_ids and call_id not in self.control_calls):
             for obligation in self.obligations.values():
-                after_delivery = (self.observation_source is None or
-                    obligation.get('acknowledged_source_offset') is not None and
+                after_delivery = (obligation.get('acknowledged_source_offset') is not None and
                     self.observation_source['start_offset'] >= max(obligation['delivered_source_offset'],
                                                                    obligation['acknowledged_source_offset']))
                 if after_delivery and obligation["status"] == "open" and obligation["deadline_offset_ms"] is not None:
@@ -666,7 +658,7 @@ class ObservationTracker:
                     self._acknowledge_poll(block.get('tool_use_id'), block.get('content'))
 
     def _acknowledge_poll(self, call_id, result):
-        if self.observation_source is None or call_id not in self.self_check_polls:
+        if call_id not in self.self_check_polls:
             return
         if isinstance(result, dict) and result.get('isError'):
             return
@@ -788,8 +780,8 @@ class ObservationTracker:
             if digest == self.rule_proposal_digest: return []
             self.rule_proposal_digest = digest
             if len(raw) > RULES_MAX_BYTES: raise ValueError("observation rules exceed 64 KiB")
-            proposal = json.loads(raw.decode("utf-8-sig"))
-            validate_rule_proposal(proposal, current_revision=self.rule_revision, allowed_subjects=self.allowed_subjects)
+            proposal = strict_json_loads(raw.decode("utf-8-sig"))
+            validate_rule_proposal(proposal, current_revision=self.rule_revision)
             raise ValueError("rule replacement requires rule_proposal in a valid self-check response")
         except (ValueError, TypeError, OSError, UnicodeError, json.JSONDecodeError) as error:
             reason = f"{type(error).__name__}: {error}"
@@ -804,7 +796,7 @@ class ObservationTracker:
     def _replace_rules(self, proposal: dict) -> dict:
         before = self.rules_digest
         try:
-            rules = validate_rule_proposal(proposal, current_revision=self.rule_revision, allowed_subjects=self.allowed_subjects)
+            rules = validate_rule_proposal(proposal, current_revision=self.rule_revision)
             if self.rule_bindings is not None:
                 rules = validate_execution_rules(rules, bindings=self.rule_bindings, execution_id=self.execution_id)
             digest = hashlib.sha256(_raw_json(rules).encode()).hexdigest()
@@ -849,11 +841,12 @@ class ObservationTracker:
         obligation_id = response.get("obligation_id") if isinstance(response, dict) else None
         obligation = self.obligations.get(obligation_id) if isinstance(obligation_id, str) else None
         errors = []
-        import jsonschema
         try:
-            jsonschema.validate(response, SELF_CHECK_RESPONSE_SCHEMA)
+            # The one response check the worker's sender also runs (이음새-정본.md §6).
+            if self_check_response_errors(response):
+                raise ValueError("self-check response does not match its schema")
             _json_safe({key: value for key, value in response.items() if key != "rule_proposal"})
-        except (jsonschema.ValidationError, ValueError, TypeError):
+        except (ValueError, TypeError):
             errors.append("invalid_response_schema")
         if obligation is None: errors.append("unknown_obligation")
         if self.execution_status != "running": errors.append("execution_not_running")
@@ -890,7 +883,7 @@ class ObservationTracker:
                 if available_evidence_refs is None: errors.append("evidence_currentness_unverified")
                 elif not supplied.issubset(available_evidence_refs): errors.append("evidence_not_current")
         record = {"kind": "self_check_rejected" if errors else "self_check_received",
-                  "id": f"SR-{self.execution_id}-{len(self.responses) + 1}", "receipt_ref": receipt_id,
+                  "id": f"SR-{self.execution_id}-{self.response_count + 1}", "receipt_ref": receipt_id,
                   "execution_id": self.execution_id,
                   "obligation_id": obligation_id if isinstance(obligation_id, str) else None,
                   "response_json": _raw_json(response),
@@ -924,11 +917,16 @@ class ObservationTracker:
             record.update(next_self_check_offset_ms=self.next_self_check_offset_ms, no_progress_count=self.no_progress_count)
             if "rule_proposal" in response:
                 record["rule_update"] = self._replace_rules(response["rule_proposal"])
-        self.responses.append(record)
+        self.response_count += 1
         return deepcopy(record)
 
-    def observe(self, event: dict, *, source=None, evaluate=True, live=True) -> list[dict]:
-        when, emitted = (self.clock() if source is None else source['received_monotonic']), []
+    def observe(self, event: dict, *, source: dict, evaluate=True, live=True) -> list[dict]:
+        """Apply one stream row (or a tick at ``source``'s offset) received as ``source`` describes.
+
+        ``source`` is the runner batch's row coordinate and receipt time
+        (``ObservationBatch.source``); a tick carries the batch's end offset.
+        """
+        when, emitted = source['received_monotonic'], []
         if when < self.last_clock:
             return [{"kind": "observation_clock_error", "execution_id": self.execution_id,
                      "reason": "monotonic clock regressed", "next_owner": "engine"}]
@@ -943,7 +941,7 @@ class ObservationTracker:
                             "reason": str(error), "next_owner": "adapter", "observed_at": utc_now(),
                             "followup": {"kind": "operational_review_due", "trigger": "observation_error", "next_owner": "operational_review"}
                             if self.mode != "deadline_only" else None})
-        if event.get("type") != "tick": emitted.append(self._fact("observation_fact", event, when))
+        if event.get("type") != "tick": emitted.append(self.fact("observation_fact", event, when))
         if not evaluate or not self.live_observation:
             # Replaying a terminated stream preserves its order and facts; it
             # cannot start a new wall clock, poll a future checkpoint or oblige
@@ -954,7 +952,6 @@ class ObservationTracker:
         emitted.extend(self._rule_file_events())
         checkpoint = self._changed_checkpoint()
         if checkpoint["status"] == "valid" and checkpoint["sha256"] not in self.seen_checkpoints:
-            self.last_checkpoint = checkpoint["sha256"]
             self.seen_checkpoints.add(checkpoint["sha256"])
             self_check_only = checkpoint["sha256"] in self.self_check_checkpoints
             if not self_check_only: self.checkpoint_count += 1
@@ -1066,7 +1063,7 @@ class ObservationTracker:
         self.last_review = self.clock()
 
 
-def self_check_feedback(obligation: dict, rejected_rule_reasons: list[dict] | None = None) -> dict:
+def self_check_feedback(obligation: dict) -> dict:
     if not isinstance(obligation, dict) or obligation.get("kind") != "self_check_due":
         raise ValueError("self-check feedback requires a self_check_due obligation")
     due = obligation.get("due")
@@ -1075,8 +1072,7 @@ def self_check_feedback(obligation: dict, rejected_rule_reasons: list[dict] | No
     return worker_feedback({"obligation_id": obligation["id"], "execution_id": obligation["execution_id"],
             "rule_revision": obligation["rule_revision"],
             "due": [{key: item[key] for key in ("rule_id", "operator", "subject", "required_evidence")} for item in due],
-            "deadline_offset_ms": obligation.get("deadline_offset_ms"),
-            "rejected_rule_reasons": _json_safe(rejected_rule_reasons or [])})
+            "deadline_offset_ms": obligation.get("deadline_offset_ms")})
 
 
 def self_check_request(obligation: dict) -> dict:
@@ -1100,7 +1096,7 @@ def publish_worker_feedback(workspace: Path, feedback: dict) -> None:
     """
     encoded = json.dumps(_json_safe(worker_feedback(feedback)), ensure_ascii=False)
     control = _control_root(workspace)
-    destination = _safe_path(control, "observation-feedback.json")
+    destination = safe_path(control, "observation-feedback.json")
     write_bytes_atomic(destination, encoded.encode("utf-8"))
 
 

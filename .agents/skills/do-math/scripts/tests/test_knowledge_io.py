@@ -1,16 +1,9 @@
 """Authored import and ontology contracts using the v5 authoritative families."""
 from copy import deepcopy
 import unittest
-from test_knowledge import candidate, fixture, add, seal, revise
+from knowledge_fixtures import activate_kind, add_knowledge, knowledge_candidate, knowledge_graph, revise_knowledge
 from do_math import knowledge_io as io, knowledge_records as kr
 from do_math.repository import new_id
-
-
-def activate(state, token, family='relation', definition=None):
-    definition = definition or next(t for t in io.relation_templates() if t['token'] == token)
-    state, _ = io.register_kind_definition(state, definition, source_ref='source', actor_ref='author')
-    state = io.check_kind_definition(state, family, token, check_ref='check:fixture', actor_ref='checker')
-    return io.activate_kind_definition(state, family, token, approval_ref='approval:fixture', actor_ref='reviewer')
 
 
 class KnowledgeIoTests(unittest.TestCase):
@@ -19,16 +12,16 @@ class KnowledgeIoTests(unittest.TestCase):
         import jsonschema
         for value in ('Not a proof', {'claim': 'Not a proof', 'scope': 'finite search only'}):
             with self.subTest(accepted=value):
-                ins, _, kid = io.import_candidate({}, {}, candidate(uncertainty_assessment=value), source_ref='s', actor_ref='u')
+                ins, _, kid = io.import_candidate({}, {}, knowledge_candidate(uncertainty_assessment=value), source_ref='s', actor_ref='u')
                 self.assertEqual(ins['knowledge'][kid]['uncertainty_assessment'], value)
                 schema = default_state_contract().family('research', 'knowledge').schema
                 self.assertEqual(list(jsonschema.Draft202012Validator(schema).iter_errors(ins['knowledge'][kid])), [])
         for value in (None, [], 7, False):
             with self.subTest(rejected=value), self.assertRaises(ValueError):
-                io.import_candidate({}, {}, candidate(uncertainty_assessment=value), source_ref='s', actor_ref='u')
+                io.import_candidate({}, {}, knowledge_candidate(uncertainty_assessment=value), source_ref='s', actor_ref='u')
     def test_candidate_import_is_not_usable_and_queues_formal_check(self):
         before = {}
-        ins, run, kid = io.import_candidate(before, {}, candidate(), source_ref='source', actor_ref='user')
+        ins, run, kid = io.import_candidate(before, {}, knowledge_candidate(), source_ref='source', actor_ref='user')
         record = ins['knowledge'][kid]
         self.assertEqual(record['lifecycle'], 'active')
         self.assertNotIn('formal', record)
@@ -45,18 +38,18 @@ class KnowledgeIoTests(unittest.TestCase):
         self.assertEqual(run['queue'][-1]['role'], 'formal_check')
         self.assertEqual(before, {})
         ai, _, aid = io.import_candidate({}, {'executions': {'EX-author': {'id': 'EX-author'}}},
-                                         candidate(), source_ref='source', actor_ref='EX-author')
+                                         knowledge_candidate(), source_ref='source', actor_ref='EX-author')
         authored = ai['knowledge'][aid]
         for row in (authored, ai['expositions'][authored['exposition_id']],
                     ai['formal_results'][authored['formal_result_id']]):
             self.assertEqual(row['producer_execution'], 'EX-author')
 
     def test_same_id_import_rejected_explicit_revision_preserves_old_authorities(self):
-        ins, run, ids = fixture()
+        ins, run, ids = knowledge_graph()
         kid = ids['a']
         with self.assertRaises(ValueError):
-            io.import_candidate(ins, run, candidate(id=kid), source_ref='source', actor_ref='user')
-        changed, queued = revise(ins, run, kid, {'statement': 'Rephrased True'})
+            io.import_candidate(ins, run, knowledge_candidate(id=kid), source_ref='source', actor_ref='user')
+        changed, queued = revise_knowledge(ins, run, kid, {'statement': 'Rephrased True'})
         replacement = next(row for row in changed['knowledge'].values() if row.get('supersedes') == kid)
         self.assertNotEqual(replacement['id'], kid)
         self.assertEqual(replacement['formal_result_id'], ins['knowledge'][kid]['formal_result_id'])
@@ -67,14 +60,14 @@ class KnowledgeIoTests(unittest.TestCase):
 
     def test_unknown_kind_requires_candidate_check_and_activation(self):
         definition = dict(family='knowledge', token='computational_lemma', meaning='A bounded computational lemma.', constraints={})
-        with self.assertRaises(ValueError): io.import_candidate({}, {}, candidate(kind=definition['token']), source_ref='s', actor_ref='u')
+        with self.assertRaises(ValueError): io.import_candidate({}, {}, knowledge_candidate(kind=definition['token']), source_ref='s', actor_ref='u')
         ins, token = io.register_kind_definition({}, definition, source_ref='s', actor_ref='u')
-        with self.assertRaises(ValueError): io.import_candidate(ins, {}, candidate(kind=token), source_ref='s', actor_ref='u')
+        with self.assertRaises(ValueError): io.import_candidate(ins, {}, knowledge_candidate(kind=token), source_ref='s', actor_ref='u')
         with self.assertRaises(ValueError): io.activate_kind_definition(ins, 'knowledge', token, approval_ref='a', actor_ref='u')
         ins = io.check_kind_definition(ins, 'knowledge', token, check_ref='check', actor_ref='checker')
-        with self.assertRaises(ValueError): io.import_candidate(ins, {}, candidate(kind=token), source_ref='s', actor_ref='u')
+        with self.assertRaises(ValueError): io.import_candidate(ins, {}, knowledge_candidate(kind=token), source_ref='s', actor_ref='u')
         ins = io.activate_kind_definition(ins, 'knowledge', token, approval_ref='approval', actor_ref='reviewer')
-        ins, _, kid = io.import_candidate(ins, {}, candidate(kind=token), source_ref='s', actor_ref='u')
+        ins, _, kid = io.import_candidate(ins, {}, knowledge_candidate(kind=token), source_ref='s', actor_ref='u')
         self.assertEqual(ins['knowledge'][kid]['kind'], token)
 
     def test_relation_claim_endpoint_basis_matches_the_storage_contract(self):
@@ -86,13 +79,13 @@ class KnowledgeIoTests(unittest.TestCase):
         endpoints = []
         for title in ('Source endpoint', 'Target endpoint'):
             ins, run, kid = io.import_candidate(ins, run,
-                candidate(title=title, lean_code='', declaration_names=[]),
+                knowledge_candidate(title=title, lean_code='', declaration_names=[]),
                 source_ref='fixture', actor_ref='user')
             endpoints.append(kid)
-        ins = activate(ins, 'formally_implies')
+        ins = activate_kind(ins, 'formally_implies')
         claim = dict(kind='formally_implies', source=endpoints[0],
                      target=endpoints[1], confirmed_scope='True implies True')
-        ins, run, proof = io.import_candidate(ins, run, candidate(relation_claim=claim),
+        ins, run, proof = io.import_candidate(ins, run, knowledge_candidate(relation_claim=claim),
             source_ref='fixture', actor_ref='user')
         expected = knowledge.capture_basis(ins, run, endpoints)
         self.assertEqual(ins['knowledge'][proof]['relation_endpoint_basis'], expected)
@@ -111,15 +104,15 @@ class KnowledgeIoTests(unittest.TestCase):
                 jsonschema.validate({**ins['knowledge'][proof], 'relation_endpoint_basis': basis}, schema)
 
     def test_missing_dependency_is_rejected_without_mutation(self):
-        ins, run, _ = fixture()
+        ins, run, _ = knowledge_graph()
         before = deepcopy(ins)
         with self.assertRaises(ValueError):
-            io.import_candidate(ins, run, candidate(dependencies=[new_id('KN')]), source_ref='s', actor_ref='u')
+            io.import_candidate(ins, run, knowledge_candidate(dependencies=[new_id('KN')]), source_ref='s', actor_ref='u')
         self.assertEqual(ins, before)
 
     def test_research_analogy_is_distinct_from_mathematical_connection(self):
-        ins, run, ids = fixture()
-        for token in ('analogous_to', 'formally_implies'): ins = activate(ins, token)
+        ins, run, ids = knowledge_graph()
+        for token in ('analogous_to', 'formally_implies'): ins = activate_kind(ins, token)
         analogy = dict(kind='analogous_to', source=ids['a'], target=ids['b'], evidence='Same recurrence shape')
         self.assertTrue(io.validate_relation(ins, analogy)['valid'])
         ins, rid = io.import_relation(ins, analogy, source_ref='s', actor_ref='u')
@@ -128,15 +121,15 @@ class KnowledgeIoTests(unittest.TestCase):
 
     def test_mathematical_relation_requires_match_in_addition_to_active_use(self):
         from do_math.knowledge import assess_use
-        from test_knowledge import evidence
+        from knowledge_fixtures import formal_evidence
         for decision in ("mismatch", "unresolved"):
             with self.subTest(decision=decision):
-                ins, run, ids = fixture()
-                ins = activate(ins, "formally_implies")
+                ins, run, ids = knowledge_graph()
+                ins = activate_kind(ins, "formally_implies")
                 claim = dict(kind="formally_implies", source=ids["a"], target=ids["b"],
                              confirmed_scope="True implies True")
-                ins, run, proof, _ = add(ins, run, verified=False, relation_claim=claim)
-                ins = kr.record_formal_result(ins, proof, evidence(ins, proof), "TE-old", runtime=run)
+                ins, run, proof, _ = add_knowledge(ins, run, verified=False, relation_claim=claim)
+                ins = kr.record_formal_result(ins, proof, formal_evidence(ins, proof), "TE-old", runtime=run)
                 ins, negative = kr.record_identity_assessment(ins, proof,
                     {"decision": decision, "basis": kr.identity_basis(ins, proof)},
                     "policy:fixture", runtime=run)
@@ -158,13 +151,13 @@ class KnowledgeIoTests(unittest.TestCase):
                 self.assertTrue(io.validate_relation(ins, relation)["valid"])
 
     def test_mathematical_relation_requires_exact_formal_identity_and_current_endpoints(self):
-        ins, run, ids = fixture()
-        ins = activate(ins, 'formally_implies')
+        ins, run, ids = knowledge_graph()
+        ins = activate_kind(ins, 'formally_implies')
         claim = dict(kind='formally_implies', source=ids['a'], target=ids['b'], confirmed_scope='True implies True')
         relation = {**claim, 'evidence': 'proof', 'formal_result_refs': [ins['knowledge'][ids['a']]['formal_result_id']],
                     'assessment_refs': [ids['aa']]}
         self.assertFalse(io.validate_relation(ins, relation)['valid'])
-        ins, run, proof, assessment = add(ins, run, relation_claim=claim)
+        ins, run, proof, assessment = add_knowledge(ins, run, relation_claim=claim)
         relation.update(formal_result_refs=[ins['knowledge'][proof]['formal_result_id']], assessment_refs=[assessment])
         self.assertTrue(io.validate_relation(ins, relation)['valid'])
         changed, rid = io.import_relation(ins, relation, source_ref='s', actor_ref='u')
@@ -174,8 +167,8 @@ class KnowledgeIoTests(unittest.TestCase):
         self.assertFalse(io.validate_relation(ins, relation)['valid'])
 
     def test_relation_revision_keeps_id_and_history(self):
-        ins, run, ids = fixture()
-        ins = activate(ins, 'supports')
+        ins, run, ids = knowledge_graph()
+        ins = activate_kind(ins, 'supports')
         first = dict(id=new_id('RL'), kind='supports', source=ids['a'], target=ids['b'], evidence='e1')
         ins, rid = io.import_relation(ins, first, source_ref='s1', actor_ref='u')
         ins, again = io.import_relation(ins, {**first, 'evidence': 'e2'}, source_ref='s2', actor_ref='u')

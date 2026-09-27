@@ -11,14 +11,10 @@ from unittest.mock import patch
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
-from do_math import codex_worker
-from do_math.codex_adapter import CodexExecAdapter, CodexExecution, _parse_jsonl
+from do_math import claude_worker, cli_worker, codex_worker
+from do_math.codex_adapter import CLIExecution, CodexExecAdapter, _parse_jsonl
 from do_math.windows_job import JobInspection
-
-
-class _FakeJob:
-    def __init__(self, state): self.state = state
-    def inspect(self): return self.state
+from provider_fixtures import FakeJob
 
 
 class CodexWorkerTests(unittest.TestCase):
@@ -69,7 +65,7 @@ class CodexWorkerTests(unittest.TestCase):
                 def communicate(self, input=None, timeout=None): captured["stdin"] = input; return b"", b""
             old = os.environ.get("OPENAI_API_KEY"); os.environ["OPENAI_API_KEY"] = "must-not-pass"
             try:
-                with patch.object(codex_worker.subprocess, "Popen", Process):
+                with patch.object(cli_worker.subprocess, "Popen", Process):
                     self.assertEqual(codex_worker.run(request_path), 0)
             finally:
                 if old is None: os.environ.pop("OPENAI_API_KEY", None)
@@ -95,6 +91,11 @@ class CodexWorkerTests(unittest.TestCase):
             request = {"codex_path": "x", "prompt_path": "p", "cwd": "c", "model": "m", "effort": "low",
                        "sandbox": "read-only", "approval_policy": "never", "max_runtime_seconds": float("nan"),
                        "stdout_path": "o", "stderr_path": "e", "final_path": "f", "status_path": "s"}
+            path.write_text(json.dumps(request), encoding="utf-8")
+            # The request file is parsed strictly: a named non-finite constant never reaches the field checks.
+            with self.assertRaisesRegex(ValueError, "non-finite JSON constant"):
+                codex_worker.load_request(path)
+            request["max_runtime_seconds"] = 0
             path.write_text(json.dumps(request), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "max_runtime"):
                 codex_worker.load_request(path)
@@ -122,6 +123,12 @@ class CodexWorkerTests(unittest.TestCase):
         result = __import__("subprocess").run([sys.executable, str(worker)], capture_output=True, timeout=10)
         self.assertNotIn(b"No module named", result.stderr)
         self.assertIn(b"usage: codex_worker.py REQUEST.json", result.stderr)
+
+    def test_claude_worker_remains_importable_as_its_direct_job_root(self):
+        worker = Path(claude_worker.__file__)
+        result = __import__("subprocess").run([sys.executable, str(worker)], capture_output=True, timeout=10)
+        self.assertNotIn(b"No module named", result.stderr)
+        self.assertIn(b"usage: claude_worker.py REQUEST.json", result.stderr)
 
     def test_unknown_worker_request_field_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -171,9 +178,9 @@ class CodexWorkerTests(unittest.TestCase):
             stdout.write_bytes(b'{"type":"turn.completed"}\nbroken')
             stderr.write_bytes(b""); final.write_bytes(b"final")
             status.write_text('{"state":"exited","cli_exit_code":0}', encoding="utf-8")
-            execution = CodexExecution(request, prompt, __import__("hashlib").sha256(b"{}").hexdigest(),
-                                       __import__("hashlib").sha256(b"p").hexdigest(), ("worker",), stdout, stderr, final, status,
-                                       _FakeJob(JobInspection(0, (), True)), root, None, b"{}", b"p")
+            execution = CLIExecution(__import__("hashlib").sha256(b"{}").hexdigest(),
+                                     __import__("hashlib").sha256(b"p").hexdigest(), ("worker",), stdout, stderr, final, status,
+                                     FakeJob(JobInspection(0, (), True)), None, b"{}", b"p")
             result = CodexExecAdapter(sys.executable).collect(execution)
             self.assertEqual(result["result"], "incomplete")
             self.assertIn("jsonl_parse_incomplete", result["reasons"])
@@ -186,9 +193,9 @@ class CodexWorkerTests(unittest.TestCase):
             stdout.write_bytes(b""); stderr.write_bytes(b""); final.write_bytes(b"final")
             status.write_text('{"state":"exited","cli_exit_code":0}', encoding="utf-8")
             # The private snapshot files are absent: collection uses the bytes hashed at start.
-            execution = CodexExecution(request, prompt, hashlib.sha256(b"{}").hexdigest(),
-                                       hashlib.sha256(b"p").hexdigest(), ("worker",), stdout, stderr, final, status,
-                                       _FakeJob(JobInspection(0, (), True)), root, None, b"{}", b"p")
+            execution = CLIExecution(hashlib.sha256(b"{}").hexdigest(),
+                                     hashlib.sha256(b"p").hexdigest(), ("worker",), stdout, stderr, final, status,
+                                     FakeJob(JobInspection(0, (), True)), None, b"{}", b"p")
             result = CodexExecAdapter(sys.executable).collect(execution)
         self.assertNotIn("source_request_changed", result["reasons"])
         self.assertEqual(result["source_request"], {"present": True, "bytes": 2,
@@ -201,8 +208,8 @@ class CodexWorkerTests(unittest.TestCase):
             request, prompt, stdout, stderr, final, status = (root / name for name in ("r", "p", "o", "e", "f", "s"))
             for path in (request, prompt, stdout, stderr, final): path.write_bytes(b"old")
             status.write_text('{"state":"timeout","runner_stop_required":true}', encoding="utf-8")
-            execution = CodexExecution(request, prompt, "x", "y", ("worker",), stdout, stderr, final, status,
-                                       _FakeJob(JobInspection(1, (99,), True)), root, None, b"old", b"old")
+            execution = CLIExecution("x", "y", ("worker",), stdout, stderr, final, status,
+                                     FakeJob(JobInspection(1, (99,), True)), None, b"{}", b"old")
             result = CodexExecAdapter(sys.executable).collect(execution)
             self.assertFalse(result["artifacts_read"])
             self.assertIn("termination_barrier_unconfirmed", result["reasons"])

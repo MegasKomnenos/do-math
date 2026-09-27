@@ -1,4 +1,4 @@
-"""Closed record shapes for the feature-5 producers installed with this skill.
+"""Closed record shapes for the producers installed with this skill.
 
 Each family's schema is defined once, in its final form. Open dictionaries
 occur only in explicitly named raw evidence or domain payload fields. They are
@@ -11,14 +11,24 @@ from copy import deepcopy as _deepcopy
 from ..activities import ACTIVITY_STATUSES as _ACTIVITY_STATUSES
 from ..contracts import (PLAN_DISPOSITION as _PLAN_DISPOSITION, TEXT as _NONEMPTY_TEXT,
                          schema_for as _schema_for)
-from ..execution_lifecycle import EXECUTION_STATUSES as _EXECUTION_STATUSES, STOP_PHASES as _STOP_PHASES
+from ..execution_lifecycle import (EXECUTION_STATUSES as _EXECUTION_STATUSES, OUTCOMES as _OUTCOMES,
+                                   STOP_PHASES as _STOP_PHASES)
 from ..execution_profiles import OBSERVATION_KEYS as _OBSERVATION_KEYS, WINDOW_KEYS as _WINDOW_KEYS
 from ..external import OPERATION_STATUSES as _OPERATION_STATUSES
-from ..governance import GRANT_STATUSES as _GRANT_STATUSES, interpretation_schema as _interpretation_schema
+from ..governance import (GOVERNANCE_STATUSES as _GOVERNANCE_STATUSES, GRANT_STATUSES as _GRANT_STATUSES,
+                          interpretation_schema as _interpretation_schema)
+from ..input_basis import SOURCE_STATUSES as _SOURCE_STATUSES
+from ..knowledge_io import KIND_STATUSES as _KIND_STATUSES
+from ..knowledge_records import (ASSESSMENT_USE_STATUSES as _ASSESSMENT_USE_STATUSES,
+                                 RECORD_LIFECYCLES as _RECORD_LIFECYCLES)
 from ..model_policy import ASSESSMENT_SCHEMA as _ASSESSMENT_SCHEMA, TIERS as _TIERS
 from ..observations import CHECKPOINT_SCHEMA as _CHECKPOINT_SCHEMA
-from ..state_contract import STATE_FORMAT_VERSION, STATE_CONTRACT_ID, RECORD_ID
+from ..questions import QUESTION_OWNERS as _QUESTION_OWNERS
+from ..review_cycle import CYCLE_STATUSES as _CYCLE_STATUSES
+from ..state_contract import RECORD_ID
 from ..task_contracts import LIFECYCLE_STATES as _LIFECYCLE_STATES, REPEAT_LINEAGES as _REPEAT_LINEAGES
+from ..trust_validation import (BINDING_SCHEMA as _BINDING_SCHEMA, ENVIRONMENT_PROPERTIES as _ENVIRONMENT_PROPERTIES,
+                                ENVIRONMENT_REQUIRED as _ENVIRONMENT_REQUIRED)
 
 TEXT = {"type": "string"}
 ID = {"type": "string", "minLength": 1, "pattern": "^" + RECORD_ID + "$"}
@@ -56,8 +66,8 @@ def mapping(value):
 
 REFS = array(ID, True)
 HISTORY = array(EVIDENCE)
-PROFILE_REF = obj({"id": ID, "revision": NAT, "sha256": HASH}, ("id", "revision", "sha256"))
-LIFECYCLE = enum("active", "superseded", "withdrawn")
+PROFILE_REF = obj({"id": ID, "revision": {"type": "integer", "minimum": 1}, "sha256": HASH}, ("id", "revision", "sha256"))
+LIFECYCLE = enum(*sorted(_RECORD_LIFECYCLES))
 COMMON = {"family": TEXT, "producer_execution": TEXT, "origin_refs": array(TEXT), "created_at": TEXT,
           "updated_at": TEXT, "supersedes": nullable(ID), "history": HISTORY}
 
@@ -65,7 +75,7 @@ COMMON = {"family": TEXT, "producer_execution": TEXT, "origin_refs": array(TEXT)
 _SOLUTION_BASIS = obj({"goal_ref": TEXT, "records": array(obj({"id": ID, "sha256": HASH}, ("id", "sha256")))},
                       ("goal_ref", "records"))
 _IDENTITY_BASIS = obj({"formal": HASH, "exposition": HASH}, ("formal", "exposition"))
-_EXTERNAL_EFFECT = obj({"id": TEXT, "scope": TEXT, "grant_id": nullable(ID)}, ("id", "scope"))
+_EXTERNAL_EFFECT = obj({"id": _NONEMPTY_TEXT, "scope": _NONEMPTY_TEXT, "grant_id": nullable(ID)}, ("id", "scope"))
 _RECORD_TASK = obj({"record_id": ID, "task_id": ID}, ("record_id", "task_id"))
 _HOST_AMOUNTS = obj({"jobs": NAT, "memory_bytes": NAT,
     "cpu_rate_basis_points": {"type": "integer", "minimum": 0, "maximum": 10000}},
@@ -151,18 +161,20 @@ _ACTION["allOf"] = [{"if": {"properties": {"stage": {"const": "impact_review"}},
         "input_basis": obj({"impact_review": _IMPACT_REQUEST}, ("impact_review",))}, "required": ["input_basis"]}}]
 
 RECORDS = {}
-_REQUIREMENT = obj({"id": TEXT, "scope": TEXT, "assessor": enum("research_plan"),
-    "criteria": array(TEXT, True), "required_inputs": array(TEXT, True),
+# The one shape of an academic requirement; academic.requirement_record adds
+# the rules across items (distinct requirement and effect IDs).
+ACADEMIC_REQUIREMENT = obj({"id": _NONEMPTY_TEXT, "scope": _NONEMPTY_TEXT, "assessor": enum("research_plan"),
+    "criteria": {**array(_NONEMPTY_TEXT, True), "minItems": 1}, "required_inputs": array(_NONEMPTY_TEXT, True),
     "external_effects": array(_EXTERNAL_EFFECT)},
     ("id", "scope", "assessor", "criteria"))
 RECORDS["governance"] = record({"kind": enum("charter", "policy", "research_context", "additional_audit"),
     "revision": {"type": "integer", "minimum": 1}, "supersedes": REFS,
     "content": obj({**{k: TEXT for k in ("rationale", "goal", "desired_result", "evidence_boundary", "decision_authority", "rule_id", "text", "assessor")},
         **{k: array(TEXT, True) for k in ("success_criteria", "partial_success_criteria", "included_scope", "excluded_scope", "priorities", "preferences", "stop_conditions", "scope", "reason_refs", "audit_refs", "required_inputs")},
-        "academic_requirements": array(_REQUIREMENT), "verdict_mapping": mapping(enum("satisfied", "not_satisfied", "unresolved")),
+        "academic_requirements": array(ACADEMIC_REQUIREMENT), "verdict_mapping": mapping(enum("satisfied", "not_satisfied", "unresolved")),
         "terms": array(obj({"term": TEXT, "definition": TEXT, "boundary": TEXT, "avoid_synonyms": array(TEXT), "record_refs": REFS},
                            ("term", "definition", "boundary", "avoid_synonyms", "record_refs")))}),
-    "document": obj({"ref": TEXT, "sha256": HASH}, ("ref", "sha256")), "status": enum("active", "superseded"),
+    "document": obj({"ref": TEXT, "sha256": HASH}, ("ref", "sha256")), "status": enum(*sorted(_GOVERNANCE_STATUSES)),
     "approval_ref": ID, "source_ref": ID, "content_sha256": HASH, "superseded_by": ID},
     ("kind", "revision", "supersedes", "content", "status", "approval_ref", "source_ref", "content_sha256"))
 RECORDS["governance_sources"] = record({"text": TEXT, "origin": TEXT, "revision": NAT, "sha256": HASH, "bytes": NAT},
@@ -175,21 +187,23 @@ RECORDS["knowledge"] = record({**COMMON,
     "relation_endpoint_basis": array(obj({"id": ID, "sha256": HASH, "status": TEXT}, ("id", "sha256", "status"))),
     "revision": NAT,
     "review_cycle_id": ID, "previous_review_cycle_id": ID, "use_suspended": BOOL,
-    "change_reasons": HISTORY, "impact_plan": EVIDENCE,
     "withdrawal_reason": TEXT, "withdrawn_by": TEXT,
     "kind_definition_id": ID, "kind_use_suspended": BOOL, "imported_at": TEXT, "imported_by": TEXT, "source_ref": TEXT,
     "revision_reason": TEXT, "use_suspensions": HISTORY, "use_suspension_reasons": array(TEXT), "actor_ref": TEXT,
     "task_id": ID}, ("lifecycle", "exposition_id", "formal_result_id"))
-RECORDS["formal_results"] = record({**COMMON, "lean_code": TEXT, "declaration_names": array(TEXT, True),
+RECORDS["formal_results"] = record({**COMMON, "family": {"const": "formal_results"},
+    "lean_code": TEXT, "declaration_names": array(TEXT, True),
     "dependencies": REFS, "publication_state": enum("candidate", "accepted", "rejected"),
     "formal_use": enum("active", "suspended", "withdrawn"), "verification": EVIDENCE,
     "trust_environment_id": ID, "transition_id": ID, "use_history": HISTORY},
-    ("lean_code", "declaration_names", "publication_state", "formal_use", "verification"))
-RECORDS["expositions"] = record({**COMMON, "formal_result_id": nullable(ID), "lifecycle": LIFECYCLE,
+    ("family", "lean_code", "declaration_names", "publication_state", "formal_use", "verification"))
+RECORDS["expositions"] = record({**COMMON, "family": {"const": "expositions"},
+    "formal_result_id": nullable(ID), "lifecycle": LIFECYCLE,
     "items": array(obj({"id": TEXT, "kind": enum("definitions", "assumptions", "statement", "explanation", "summary"),
                         "text": TEXT, "declaration_refs": array(TEXT)}, ("id", "kind", "text", "declaration_refs"))),
-    "relation_claim": EVIDENCE}, ("formal_result_id", "lifecycle", "items"))
-RECORDS["identity_assessments"] = record({**COMMON, "formal_result_id": ID, "exposition_id": ID,
+    "relation_claim": EVIDENCE}, ("family", "formal_result_id", "lifecycle", "items"))
+RECORDS["identity_assessments"] = record({**COMMON, "family": {"const": "identity_assessments"},
+    "formal_result_id": ID, "exposition_id": ID,
     "decision": enum("match", "mismatch", "unresolved"), "basis": _IDENTITY_BASIS,
     "policy_ref": TEXT, "scope_complete": BOOL, "execution_ids": REFS, "review_cycle_id": ID,
     "summary": TEXT, "findings": HISTORY, "relation_claim": EVIDENCE, "proposal_digest": HASH,
@@ -197,32 +211,32 @@ RECORDS["identity_assessments"] = record({**COMMON, "formal_result_id": ID, "exp
     "transition_id": ID, "transition_basis": HASH, "reviewed_identity_basis": EVIDENCE,
     "continuity_comparison": obj({"equivalent": BOOL, "missing": array(TEXT), "changed": array(TEXT),
         "requires_identity_review": BOOL}, ("equivalent", "missing", "changed", "requires_identity_review"))},
-    ("formal_result_id", "exposition_id", "decision", "basis", "policy_ref"))
-RECORDS["assessment_uses"] = record({**COMMON, "assessment_id": ID,
-    "status": enum("active", "suspended", "withdrawn"),
+    ("family", "formal_result_id", "exposition_id", "decision", "basis", "policy_ref"))
+RECORDS["assessment_uses"] = record({**COMMON, "family": {"const": "assessment_uses"}, "assessment_id": ID,
+    "status": enum(*sorted(_ASSESSMENT_USE_STATUSES)),
     "environment_revalidation": obj({"environment_id": ID, "reason": TEXT}, ("environment_id", "reason")),
-    "use_history": HISTORY}, ("assessment_id", "status", "history"))
+    "use_history": HISTORY}, ("family", "assessment_id", "status", "history"))
 RECORDS["relations"] = record({"kind": TEXT, "source": ID, "target": ID,
     "evidence": TEXT, "evidence_refs": array(TEXT), "formal_result_refs": REFS, "assessment_refs": REFS,
     "confirmed_scope": TEXT, "status": TEXT, "lifecycle": LIFECYCLE, "created_at": TEXT,
-    "source_ref": TEXT, "actor_ref": TEXT, "origin_refs": array(TEXT), "endpoint_basis": EVIDENCE,
+    "source_ref": TEXT, "actor_ref": TEXT, "origin_refs": array(TEXT),
     "source_basis": HISTORY, "history": HISTORY,
     "kind_definition_id": ID, "authority": enum("mathematical_connection", "research_connection"),
     "revision": NAT, "imported_at": TEXT, "imported_by": TEXT, "use_history": HISTORY}, ("kind", "source", "target"))
 RECORDS["sources"] = record({"name": TEXT, "path": TEXT, "sha256": HASH, "bytes": NAT,
-    "status": TEXT, "revision": NAT, "history": HISTORY, "created_at": TEXT, "source_ref": TEXT,
-    "replaced_by": ID, "revoked_at": TEXT}, ("path", "sha256"))
+    "status": enum(*sorted(_SOURCE_STATUSES)), "revision": NAT, "history": HISTORY, "created_at": TEXT, "source_ref": TEXT},
+    ("path", "sha256"))
 RECORDS["kind_definitions"] = record({"family": enum("knowledge", "relation"), "token": TEXT, "meaning": TEXT,
-    "status": enum("candidate", "checked", "active", "withdrawn"), "builtin": BOOL,
+    "status": enum(*sorted(_KIND_STATUSES)), "builtin": BOOL,
     "constraints": obj({**{k: BOOL for k in ("mathematical_claim", "requires_evidence", "requires_formal_results", "requires_assessments")},
         "required_fields": array(TEXT, True), "allowed_epistemic_statuses": array(TEXT, True)}),
     "source_ref": TEXT, "actor_ref": TEXT, "created_at": TEXT, "history": HISTORY,
-    "check": EVIDENCE, "checks": HISTORY, "activation": EVIDENCE, "withdrawal": EVIDENCE,
+    "check": EVIDENCE, "checks": HISTORY, "activation": EVIDENCE,
     "supersedes": ID,
     **{key: TEXT for key in ("check_ref", "checked_by", "approval_ref", "activated_by", "withdrawn_reason", "withdrawn_by")}},
     ("family", "token", "meaning", "status", "constraints"))
 RECORDS["events"] = record({"kind": TEXT, "event_seq": {"type": "integer", "minimum": 1},
-    "at": TEXT, "created_at": TEXT, "actor_ref": TEXT, "subject_ref": ID, "record_refs": REFS,
+    "at": TEXT, "created_at": TEXT, "actor_ref": TEXT, "record_refs": REFS,
     "execution_id": ID, "activity_id": ID, "reason": TEXT, "from": TEXT, "to": TEXT,
     "evidence_refs": array(TEXT),
     "opened_at": TEXT, "target": nullable(TEXT), "source_ref": nullable(TEXT),
@@ -262,18 +276,18 @@ RECORDS["executions"] = record({"owner_activity_id": ID, "actor_kind": enum("ai"
     "input_manifest": {"type": ["object", "array", "string"]}, "execution_profile_ref": PROFILE_REF,
     "created_at": TEXT, "status": enum(*sorted(_EXECUTION_STATUSES)),
     "continuation_of": nullable(ID), "context_origin": REFS, "role": TEXT, "action": _ACTION,
-    "transitions": HISTORY, "ended_at": TEXT, "outcome": TEXT, "result_disposition": {"type": ["string", "object", "null"]},
+    "transitions": HISTORY, "ended_at": TEXT, "outcome": enum(*sorted(_OUTCOMES)), "result_disposition": {"type": ["string", "object", "null"]},
     "stop_phase": enum(*sorted(_STOP_PHASES)), "submission_intent": EVIDENCE, "submission_receipt": EVIDENCE,
-    "recovery": HISTORY, "recovery_disposition": TEXT, "grant_id": ID,
+    "recovery_disposition": TEXT, "grant_id": ID,
     "model": TEXT, "effort": TEXT, "model_decisions": EVIDENCE,
-    "input_snapshot": TEXT, "input_bundle": TEXT, "input_bytes": NAT,
+    "input_snapshot": TEXT, "input_bundle": TEXT,
     "input_preparation_milliseconds": NAT, "artifact_bundle": TEXT, "result_ref": TEXT, "raw_result_ref": TEXT,
     "output_files": HISTORY, "output": EVIDENCE, "error": {"type": ["string", "object", "null"]},
     "usage": EVIDENCE, "provider_observation": EVIDENCE, "pid": NAT,
     "conversation_id": nullable(TEXT), "started_at": TEXT, "stop_requested": {"type": ["string", "boolean"]},
     "after_stop": EVIDENCE, "runner": EVIDENCE, "workspace": TEXT,
-    "parent_execution_id": nullable(ID), "resume_from": nullable(ID), "profile_ref": PROFILE_REF,
-    "initialization_id": TEXT, "input_basis": EVIDENCE, "submission_check": EVIDENCE,
+    "parent_execution_id": nullable(ID), "profile_ref": PROFILE_REF,
+    "input_basis": EVIDENCE, "submission_check": EVIDENCE,
     "additional_audit_input": array(_AUDIT_INPUT), "source_ref": TEXT,
     "operation_id": ID, "request_sha256": HASH,
     "effect_status": enum(*sorted(_OPERATION_STATUSES)),
@@ -282,12 +296,12 @@ RECORDS["executions"] = record({"owner_activity_id": ID, "actor_kind": enum("ai"
     "capacity": obj({"provider": nullable(TEXT), "reservation_ids": REFS,
         "process": nullable(EVIDENCE), "local_termination": enum("unknown", "confirmed")}),
     **{key: TEXT for key in ("submission_check_ref", "submitted_output_ref", "submitted_extensions_ref",
-        "formal_status", "error_kind", "input_published_at", "finished_at", "started", "return_reason", "observed_at",
+        "formal_status", "error_kind", "input_published_at", "finished_at", "started", "observed_at",
         "stop_observed_at", "preserved_reason")},
     **{key: HASH for key in ("intent_import_sha256", "contract_sha256", "academic_requirements_sha256", "delegation_input_sha256")},
     **{key: EVIDENCE for key in ("safe_boundary_report", "extensions", "integration_result", "control_transport",
         "decision_basis", "operational_continuation", "input_solution_basis",
-        "termination", "collection", "currentness", "provider_execution", "failure", "protocol")},
+        "termination", "collection", "currentness", "failure")},
     **{key: HISTORY for key in ("source_basis", "input_reductions", "currentness_changes")},
     "input_metrics": _METRICS,
     "validity_basis": array(obj({"id": ID, "sha256": HASH, "status": nullable(TEXT)}, ("id", "sha256", "status"))),
@@ -299,7 +313,7 @@ RECORDS["executions"] = record({"owner_activity_id": ID, "actor_kind": enum("ai"
     "reported_models": array(TEXT, True),
     "model_selection": nullable(_MODEL_SELECTION), "integration_id": ID, "goal_revision": NAT,
     "policy_revision": {"type": ["integer", "string"]}, "pending_operational_disposition": ID,
-    "return_code": nullable(INTEGER), "elapsed_milliseconds": NAT, "outputs_complete": BOOL,
+    "outputs_complete": BOOL,
     "stop_reason": {"type": ["string", "boolean"]},
     "authority_revocation": obj({"scope": enum("execution_research"), "reason": enum("submission_intent"),
         "at": TEXT, "receipt_id": ID}, ("scope", "reason", "at", "receipt_id")),
@@ -344,20 +358,20 @@ RECORDS["tasks"] = record({"question": _NONEMPTY_TEXT, "status": enum(*sorted(_L
     **{k: array({"type": "string", "minLength": 1}, True) for k in ("inputs", "basis_refs")},
     **{k: REFS for k in ("reuse", "dependencies", "authority_refs")},
     "profile_refs": array(PROFILE_REF, True),
-    "title": TEXT, "work_class": TEXT, "revision": {"type": "integer", "minimum": 1}, "created_at": TEXT, "created_by": TEXT,
+    "title": TEXT, "work_class": TEXT, "revision": {"type": "integer", "minimum": 1}, "created_at": TEXT,
     "description": _NONEMPTY_TEXT,
     "results": HISTORY, "reviews": HISTORY, "assessment": _ASSESSMENT, "occurrence_condition": EVIDENCE,
     "waiting": EVIDENCE, "waiting_reason": EVIDENCE, "contract_review": EVIDENCE,
-    "source_basis": HISTORY, "knowledge_basis": EVIDENCE, "model_assessment": EVIDENCE,
-    "revision_history": HISTORY, "revision_requested": EVIDENCE, "change_reasons": HISTORY,
-    "scope_disposition": EVIDENCE, "pending_withdrawal": EVIDENCE,
+    "source_basis": HISTORY, "model_assessment": EVIDENCE,
+    "revision_history": HISTORY, "revision_requested": EVIDENCE,
+    "scope_disposition": EVIDENCE,
     "academic_requirement_id": _NONEMPTY_TEXT,
-    "selected_by": ID, "deferred_reason": TEXT, "tools": array(TEXT), "stages": HISTORY,
+    "selected_by": ID, "deferred_reason": TEXT, "tools": array(TEXT),
     "progress": HISTORY, "proposal_version": NAT, "contract_revision": NAT,
     "initial_observation_rules": HISTORY,
-    "newinput": {"anyOf": [BOOL, ID]}, "wake_at": TEXT, "due_conditions": HISTORY, "solution_basis": _SOLUTION_BASIS,
+    "newinput": ID, "solution_basis": _SOLUTION_BASIS,
     "requirements_sha256": HASH, "governance_revision_required": obj({"decision_ref": ID, "record_ref": ID}, ("decision_ref", "record_ref")),
-    "feature_version": {"const": STATE_FORMAT_VERSION}, "trust_environment_id": ID,
+    "trust_environment_id": ID,
     "producer_execution": ID, "author_execution_ids": REFS, "revision_request_action_id": ID,
     "knowledge_revision_targets": REFS, "selection_disposition": _SELECTION,
     "assessment_history": array(_ASSESSMENT),
@@ -372,7 +386,7 @@ RECORDS["tasks"] = record({"question": _NONEMPTY_TEXT, "status": enum(*sorted(_L
         "assessment": _ASSESSMENT_SCHEMA, "contract_review_execution": ID},
         ("revision", "contract_sha256", "assessment", "contract_review_execution")))},
     ("question", "scope", "expected", "progress_criteria", "completion_obligations", "revision"))
-RECORDS["execution_profiles"] = record({"revision": NAT, "feature_version": {"const": STATE_FORMAT_VERSION}, "sha256": HASH,
+RECORDS["execution_profiles"] = record({"revision": NAT, "sha256": HASH,
     "role": TEXT, "actor_kind": enum("ai", "machine"),
     "boundary": obj({"mode": TEXT, "os_isolation": BOOL, "authenticated_caller": BOOL, "rules": array(TEXT)},
                     ("mode", "os_isolation", "authenticated_caller", "rules")),
@@ -394,13 +408,13 @@ RECORDS["execution_profiles"] = record({"revision": NAT, "feature_version": {"co
     "host_resources": obj({"constraint_id": ID, "scope": enum("instance_on_host"), "host_id": TEXT,
         "demands": _HOST_AMOUNTS}, ("constraint_id", "scope", "host_id", "demands")),
     "machine": obj({"lean_command": nullable(array(TEXT))}, ("lean_command",))},
-    ("revision", "feature_version", "sha256", "role", "actor_kind", "boundary", "observation", "window", "input"))
+    ("revision", "sha256", "role", "actor_kind", "boundary", "observation", "window", "input"))
 RECORDS["capacity_constraints"] = record({"kind": enum("concurrency", "host"),
     "model": TEXT, "accounting_unit": TEXT, "work_slots": NAT,
     "scope": TEXT, "max_jobs": NAT, "memory_bytes": NAT, "cpu_rate_basis_points": NAT,
     "host_id": TEXT, "control_reserve": _HOST_AMOUNTS,
     "authority_refs": REFS}, ("kind",))
-RECORDS["reservations"] = record({"schema_version": {"const": STATE_FORMAT_VERSION}, "constraint_id": ID, "unit": TEXT,
+RECORDS["reservations"] = record({"constraint_id": ID, "unit": TEXT,
     "authority_refs": array({"type": ["string", "object"]}), "owner_kind": enum("execution"),
     "owner_id": ID, "purpose": enum("normal"),
     "reserved": NAT, "confirmed_consumed": NAT, "returned": NAT, "state": enum("held", "settled"),
@@ -416,25 +430,26 @@ RECORDS["grants"] = record({"kind": enum("local", "http"), "status": enum(*sorte
     "allowed_origins": array(TEXT), "allowed_methods": array(TEXT), "allowed_path_prefixes": array(TEXT),
     "credential_env": {"type": "object", "additionalProperties": TEXT},
     "included_targets": REFS, "excluded_targets": REFS, "reuse": TEXT, "initialization_only": BOOL,
-    "expired_at": TEXT, "expiry_event_ref": ID, "used_by": REFS, "uses": HISTORY,
+    "expired_at": TEXT, "expiry_event_ref": ID, "uses": HISTORY,
     "replaced_by": ID, "academic_only": BOOL, "requires_academic": BOOL,
     "excluded_origins": array(TEXT, True), "excluded_path_prefixes": array(TEXT, True),
     **{key: array(TEXT, True) for key in ("execution_kinds", "purposes", "subjects")}}, ("kind", "status", "source_ref"))
 # Initialization approval and later user decisions are two explicit variants.
 RECORDS["decisions"] = {**record({"kind": TEXT, "change": EVIDENCE, "source_ref": TEXT, "actor": {"const": "user"},
-    "created_at": TEXT, "affected": REFS, "initial_registration": BOOL,
+    "created_at": TEXT, "affected": REFS,
     "grant_id": ID, "delegation_id": ID,
-    "source_sha256": HASH, "record_hashes": mapping(HASH), "revoked": BOOL,
-    "coverage": HISTORY, "intent_check_ref": ID, "intent_check": EVIDENCE,
+    "source_sha256": HASH, "record_hashes": mapping(HASH),
+    "coverage": HISTORY, "intent_check": EVIDENCE,
     "input_source_ref": ID, "input_source_sha256": HASH,
-    "author_execution_ids": REFS, "status": TEXT, "revoked_at": TEXT}, ("source_ref", "actor")),
+    "author_execution_ids": REFS}, ("source_ref", "actor")),
     "anyOf": [{"required": ["record_hashes", "source_sha256"]}, {"required": ["kind", "change"]}]}
 RECORDS["delegations"] = record({"status": enum("active", "revoked", "withdrawn"), "decision_kind": TEXT,
     "original_decision_id": ID, "included_targets": REFS, "excluded_targets": REFS, "external_effects": array(TEXT),
     "expires_at": nullable(TEXT), "source_ref": TEXT, "decision_id": ID, "created_at": TEXT,
     "resource_limits": mapping(NAT)},
     ("status", "decision_kind", "original_decision_id", "included_targets", "excluded_targets", "external_effects", "expires_at"))
-RECORDS["question_links"] = record({"origin_execution_id": nullable(ID), "origin_field": TEXT, "owner": TEXT,
+RECORDS["question_links"] = record({"origin_execution_id": nullable(ID), "origin_field": TEXT,
+    "owner": enum(*sorted(_QUESTION_OWNERS)),
     "target_ids": REFS, "status": enum("open", "resolved", "superseded"), "resolution_ref": nullable(ID),
     "source_ref": TEXT, "routing_reason": TEXT,
     "unresolved_target_ids": REFS, "blocks": BOOL,
@@ -460,7 +475,7 @@ RECORDS["external_operations"] = record({"request": obj({"method": TEXT, "url": 
         ("task_id", "requirement_id", "effect_id", "solution_basis", "requirements_sha256"))},
     ("request", "request_sha256", "grant_id", "source_ref", "status", "idempotency_key", "attempts"))
 RECORDS["observation_facts"] = {**record({"kind": TEXT, "execution_id": ID, "event": EVIDENCE,
-    "observed_at": TEXT, "monotonic_seconds": {"type": "string", "pattern": r"^-?\d+(\.\d+)?$"},
+    "observed_at": TEXT,
     "elapsed_ms": NAT, "event_json": TEXT, "event_sha256": HASH, "monotonic_offset_ms": NAT,
     "source": obj({'stream': {'const': 'stdout.jsonl'}, 'start_offset': NAT, 'end_offset': NAT,
                    'received_at': TEXT, 'received_offset_ms': NAT},
@@ -468,11 +483,11 @@ RECORDS["observation_facts"] = {**record({"kind": TEXT, "execution_id": ID, "eve
     ("kind", "execution_id", "observed_at")),
     "oneOf": [{"required": ["event"]}, {"required": ["event_json", "event_sha256", "monotonic_offset_ms"]}]}
 RECORDS["self_check_obligations"] = record({"kind": TEXT, "execution_id": ID, "rule_revision": NAT,
-    "due": HISTORY, "opened_at": TEXT, "deadline_monotonic": nullable(TEXT), "status": enum("open", "answered", "closed"),
+    "due": HISTORY, "opened_at": TEXT, "status": enum("open", "answered", "closed"),
     "response_ref": TEXT, "opened_offset_ms": NAT, "deadline_offset_ms": nullable(NAT),
     "observed_at": TEXT, "rules_sha256": HASH, "snapshot": EVIDENCE,
     "consumed_boundaries": mapping(NAT), "response_availability": enum("available", "awaiting_safe_boundary"),
-    "missed_reason": TEXT, "safe_boundary_ref": TEXT, "closed_at": TEXT, "close_reason": TEXT,
+    "missed_reason": TEXT,
     "delivered_source_offset": NAT, "delivered_at": TEXT, 'delivered_request_sha256': HASH,
     'acknowledged_source_offset': NAT, 'acknowledged_call_id': TEXT},
     ("kind", "execution_id", "rule_revision", "due", "opened_offset_ms", "deadline_offset_ms", "status", "observed_at"))
@@ -485,19 +500,14 @@ RECORDS["self_check_responses"] = record({"kind": TEXT, "execution_id": ID, "obl
     "next_self_check_offset_ms": nullable(NAT), "no_progress_count": NAT},
     ("kind", "execution_id", "obligation_id", "observed_at", "response_json", "received_offset_ms"))
 RECORDS["operational_dispositions"] = record({"execution_id": ID, "disposition": EVIDENCE,
-    "source_execution_id": ID, "created_at": TEXT, "status": TEXT, "target_execution_id": ID,
+    "created_at": TEXT, "status": TEXT, "target_execution_id": ID,
     "obligation_ids": REFS, "applied_at": TEXT, "result": EVIDENCE, "error": TEXT}, ("execution_id", "disposition"))
 RECORDS["control_receipts"] = record({"request_id": ID, "execution_id": ID, "kind": TEXT, "state": TEXT,
     "payload": EVIDENCE, "received_at": TEXT, "grant_id": ID, "reason": TEXT,
     "request_sha256": HASH, "snapshot": TEXT, "publication_id": ID, "payload_sha256": HASH,
     "transport_id": TEXT, "request": EVIDENCE, "parent_snapshot": TEXT}, ("execution_id", "kind", "state"))
-# The identity copied from one shared toolchain record and that record's file.
-# The accepted baseline is the runtime trust binding, outside this record.
-RECORDS["trust_environments"] = record({"status": enum("registered", "active", "superseded", "invalid"),
-    "toolchain": EVIDENCE, "allowed_axioms": array(TEXT), "source_ref": TEXT,
-    "toolchain_record": obj({"path": TEXT, "id": TEXT}, ("path", "id")),
-    "validation_receipt": EVIDENCE, "invalidated_reason": TEXT},
-    ("status", "toolchain", "allowed_axioms", "source_ref", "toolchain_record"))
+# trust_validation owns the environment record shape and its runtime binding.
+RECORDS["trust_environments"] = record(_ENVIRONMENT_PROPERTIES, _ENVIRONMENT_REQUIRED)
 _REVIEW_BINDING = obj({"role_slot_id": TEXT, "profile_ref": nullable(PROFILE_REF), "input_sha256": nullable(HASH),
     "input_snapshot": TEXT, "proposal_digest": HASH, "restored_messages": HISTORY,
     "request": EVIDENCE, "visible_execution_ids": REFS, "delegation_authority": EVIDENCE},
@@ -506,9 +516,9 @@ RECORDS["review_cycles"] = record({
     **{k: EVIDENCE for k in ("proposal", "review_policy", "execution_accounting", "results", "turns", "transcript_manifest", "issues", "findings", "deferred_actions", "research")},
     **{k: HISTORY for k in ("history", "previous_reviews", "followup", "recovery_events")},
     **{k: array(TEXT) for k in ("reviewer_slots", "requested_reviewer_slots", "retained_reviewer_slots", "judge_slots", "required_source_refs", "sealed")},
-    **{k: NAT for k in ("revision", "reviewers", "judges", "max_rounds", "round", "activity_execution_limit")},
+    **{k: NAT for k in ("revision", "max_rounds", "round", "activity_execution_limit")},
     "proposal_digest": HASH, "review_lineage_id": TEXT, "scope_assessment": nullable(EVIDENCE),
-    "owner_activity_id": nullable(ID), "phase": TEXT, "status": TEXT, "decision": nullable(TEXT),
+    "owner_activity_id": nullable(ID), "phase": TEXT, "status": enum(*sorted(_CYCLE_STATUSES)), "decision": nullable(TEXT),
     "knowledge_id": ID, "producer_execution": ID,
     "input_snapshot": TEXT, "producer_execution_ids": REFS,
     "transition_id": ID, "staged_candidate": obj({"proposal": EVIDENCE,
@@ -548,8 +558,7 @@ RECORDS["trust_transitions"] = record({"from_environment": nullable(ID), "to_env
         "axioms": nullable(mapping(array(TEXT))), "previous_environment_ids": array(nullable(ID))},
         ("id", "formal_result_id", "exposition_id", "source_sha256", "basis", "formal_basis", "exposition_basis"))),
     "results": mapping(EVIDENCE), "status": enum("checking", "ready", "active", "activated", "failed", "withdrawn"),
-    "source_ref": TEXT, "created_at": TEXT, "activated_at": TEXT, "semantic_pending": REFS,
-    "semantic_results": mapping(EVIDENCE), "history": HISTORY}, ("from_environment", "to_environment", "targets", "results", "status"))
+    "source_ref": TEXT, "created_at": TEXT, "activated_at": TEXT, "history": HISTORY}, ("from_environment", "to_environment", "targets", "results", "status"))
 RECORDS["external_rejections"] = record({"actor": TEXT, "text": TEXT, "source_ref": TEXT,
     "created_at": TEXT, "solution_basis": _SOLUTION_BASIS, "resolved": BOOL}, ("actor", "text", "source_ref", "solution_basis", "resolved"))
 RECORDS["academic_resolution_records"] = record({"rejection_id": ID, "rejection_sha256": HASH,
@@ -559,16 +568,15 @@ RECORDS["academic_resolution_records"] = record({"rejection_id": ID, "rejection_
     ("rejection_id", "rejection_sha256", "solution_basis", "requirements_sha256", "execution_id", "decision", "evidence", "evidence_refs", "evidence_hashes", "sha256"))
 RECORDS["intent_imports"] = record({"source": RECORDS["governance_sources"],
     "output": _interpretation_schema("interpret"), "execution_id": ID,
-    "coordinate_unit": enum("unicode_codepoint"), "basis_sha256": HASH, "basis_scope": enum("referenced-v1"), "sha256": HASH,
+    "basis_sha256": HASH, "sha256": HASH,
     "previous_id": nullable(ID), "previous_findings": HISTORY, "status": TEXT,
     "superseded_by": ID, "check": EVIDENCE, "application": EVIDENCE, "owner_basis": mapping(EVIDENCE), "input_ref": ID},
-    ("source", "output", "execution_id", "coordinate_unit", "basis_sha256", "sha256", "previous_id", "previous_findings", "status",
+    ("source", "output", "execution_id", "basis_sha256", "sha256", "previous_id", "previous_findings", "status",
      "input_ref"))
 RECORDS["recoveries"] = record({"started_at": TEXT, "execution_ids": REFS,
     "dispositions": array(obj({"execution_id": ID, "fact": TEXT, "next_owner": TEXT,
         "local_termination_confirmed": BOOL, "remote_termination": enum("unknown"),
-        "reservation_reconciled": BOOL, "disposition": TEXT,
-        "process_alive": BOOL, "workspace_preserved": BOOL, "reason": TEXT}, ("execution_id",))),
+        "disposition": TEXT, "reason": TEXT}, ("execution_id",))),
     "finished_at": TEXT}, ("started_at", "execution_ids", "dispositions"))
 RECORDS["provider_waits"] = record({"provider": enum("codex", "claude"), "generation": NAT,
     "state": enum("waiting", "checking", "available"), "retry_at": nullable(NAT), "attempts": NAT,
@@ -600,28 +608,29 @@ RECORDS["queue"] = _ACTION
 # Scalar and singleton state are enumerated explicitly; unknown top-level keys
 # never acquire a storage location based on their run-time Python shape.
 RESEARCH_FIELDS = {
-    "id": ID, "feature_version": {"const": STATE_FORMAT_VERSION}, "contract_id": {"const": STATE_CONTRACT_ID},
+    "id": ID,
     "object_format": enum("sha1", "sha256"), "title": TEXT,
     "workspace": TEXT, "created_at": TEXT, "goal_status": TEXT,
     "active_trust_environment": nullable(ID),
     "conversation_loss_policy": TEXT, "governance_approval": {"type": ["boolean", "object"]},
     "goal_assessment_basis": TEXT,
     "role_profile_refs": {"type": "object", "additionalProperties": array(PROFILE_REF)},
-    "lifecycle": obj({"state": TEXT, "immutable_input": obj({"text": TEXT, "sha256": HASH, "bytes": NAT},
+    "lifecycle": obj({"state": enum("initializing", "active", "paused"),
+        "immutable_input": obj({"text": TEXT, "sha256": HASH, "bytes": NAT},
         ("text", "sha256", "bytes")),
-        "initial_profile_id": nullable(ID), "required_capabilities": array(TEXT), "requires_initial_profile": BOOL,
-        "activation": obj({"completed": array(TEXT), "missing": array(TEXT), "observation_errors": HISTORY}), "resume_state": TEXT,
+        "required_capabilities": array(TEXT),
+        "activation": obj({"completed": array(TEXT), "missing": array(TEXT), "observation_errors": HISTORY}),
         "permanently_closed": BOOL, "history": HISTORY,
         "adoption": obj({"governance_sha256": HASH, "config_sha256": HASH, "review_policy_sha256": HASH,
             "external_policy": {"type": ["string", "object"]}, "profile_refs": array(PROFILE_REF),
             "initial_profile_ref": PROFILE_REF, "research_grant_ids": REFS, "initial_grant_ids": REFS, "source_refs": array(TEXT)}),
         "intent_check": obj({"input_sha256": HASH, "interpretation_execution_id": ID, "check_execution_id": ID},
                             ("input_sha256", "interpretation_execution_id", "check_execution_id")),
-        "input_id": ID, "activated_at": TEXT, "closed_at": TEXT}, ("state", "immutable_input")),
-    "review_policy": obj({"id": ID, "version": {"const": STATE_FORMAT_VERSION},
+        "input_id": ID, "activated_at": TEXT}, ("state", "immutable_input")),
+    "review_policy": obj({"id": ID,
         "required_perspectives": array(TEXT, True), "minimum_initial_slots": NAT, "judge_slots": array(TEXT, True),
         "round_limit": NAT, "activity_execution_limit": NAT, "overflow_disposition": enum("unresolved", "defer")},
-        ("id", "version", "required_perspectives", "minimum_initial_slots", "judge_slots", "round_limit", "activity_execution_limit", "overflow_disposition")),
+        ("id", "required_perspectives", "minimum_initial_slots", "judge_slots", "round_limit", "activity_execution_limit", "overflow_disposition")),
     "host_capacity_ref": ID,
 }
 _CHECKPOINT = obj({"kind": TEXT, "status": TEXT, "checkpoint": _CHECKPOINT_SCHEMA, "value": _CHECKPOINT_SCHEMA,
@@ -649,24 +658,22 @@ _OBSERVATION = obj({"kind": TEXT, "execution_id": ID, "observed_at": TEXT,
     "elapsed_ms": NAT, "next_owner": TEXT, "checkpoint_status": TEXT,
     "proposal_sha256": nullable(HASH), "previous_rules_sha256": HASH, "active_rules_sha256": HASH,
     "active_revision": NAT, "rules": array(_RULE), "rule_revision": NAT,
-    "started_offset_ms": NAT, "due_offset_ms": NAT, "evidence_refs": array(TEXT)}, ("kind", "execution_id", "observed_at"))
-RUNTIME_FIELDS = {"feature_version": {"const": STATE_FORMAT_VERSION}, "contract_id": {"const": STATE_CONTRACT_ID}, "status": TEXT,
+    "evidence_refs": array(TEXT)}, ("kind", "execution_id", "observed_at"))
+RUNTIME_FIELDS = {"status": enum("initializing", "ready", "running", "paused", "waiting", "capacity_waiting",
+                                  "completed", "closed"),
     "cycles": NAT, "updated_at": TEXT,
     "processed_controls": REFS, "questions": array(TEXT), "history": HISTORY,
     "recovery_checked": BOOL, "last_observed_utc": TEXT, "event_cursor": NAT,
     "availability": obj({"state": TEXT, "reason": TEXT, "next_owner": TEXT}, ("state",)),
-    "clock_guard": obj({"state": TEXT, "observed_at": TEXT, "reason": TEXT, "high_water": TEXT,
+    "clock_guard": obj({"state": TEXT, "observed_at": TEXT, "reason": TEXT,
         "usable": BOOL, "observed_utc": TEXT, "last_observed_utc": TEXT, "expected_at_least": TEXT}),
     "pending_events": REFS,
     "user_pause": {"type": ["boolean", "object"]}, "stop_requested": {"type": ["boolean", "string"]},
-    "next_research_reconsider_at": nullable(TEXT), "installation": EVIDENCE,
-    "interpretation_history": HISTORY, "implementation_history": HISTORY,
+    "next_research_reconsider_at": nullable(TEXT),
     "model_policy_violation": EVIDENCE, "provider_wake": EVIDENCE,
     "pending_knowledge_impacts": HISTORY, "permission_requests": HISTORY,
     # Per trust environment: the toolchain-record baseline whose fingerprint was last accepted.
-    "trust_bindings": {"type": "object", "additionalProperties": obj({"baseline": NAT,
-        "fingerprint_sha256": HASH, "content_sha256": HASH, "validation_sha256": HASH},
-        ("baseline", "fingerprint_sha256", "content_sha256", "validation_sha256"))},
+    "trust_bindings": mapping(_BINDING_SCHEMA),
     # These assessments have no producer ID. Their enclosing list is one typed
     # singleton until GOVERNANCE introduces independent assessment identities.
     "academic_assessments": array(obj({"requirement_id": TEXT, "solution_basis": _SOLUTION_BASIS, "requirements_sha256": HASH,
@@ -680,7 +687,6 @@ RUNTIME_FIELDS = {"feature_version": {"const": STATE_FORMAT_VERSION}, "contract_
         'state':enum('draining','blocked','quiescent'), 'created_at':TEXT,
         'pending_executions':REFS,'held_reservations':REFS,'settled_at':TEXT},
         ('request_id','origin','reason','state','created_at')),
-    "condition_states": mapping(enum("ready", "not_ready", "evaluation_error")),
     "lost_conversation_generations": mapping(NAT), "resume_lifecycle": TEXT,
     "extended_controls": mapping(obj({"action": TEXT, "source_ref": TEXT, "status": TEXT,
         "request": EVIDENCE, "result": EVIDENCE, "processed_at": TEXT})),
@@ -690,7 +696,7 @@ RUNTIME_FIELDS = {"feature_version": {"const": STATE_FORMAT_VERSION}, "contract_
         ("proposal_digest", "proposal", "request", "slot", "visible_execution_ids", "workspace", "supplied_sources", "source_snapshot"))),
     "waiting_actions": mapping(obj({"action": _ACTION, "reason": nullable(TEXT), "kind": TEXT,
         "execution_id": ID, "detail": EVIDENCE, "condition": EVIDENCE, "next_owner": TEXT,
-        "waiting_reason": EVIDENCE, "waiting_since": TEXT,
+        "waiting_reason": EVIDENCE,
         "question_id": ID,
         'diagnosis': obj({'execution_id': ID, 'decision': enum('retry', 'wait'), 'guidance': TEXT, 'retry_error': TEXT},
                          ('execution_id', 'decision', 'guidance')),

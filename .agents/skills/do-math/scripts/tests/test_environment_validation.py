@@ -116,8 +116,16 @@ class ToolchainRecordTests(unittest.TestCase):
         lake.write_bytes(b'replaced by an update')
         self.assertEqual(toolchain_identity_errors(self.request['toolchain']),
                          ['approved toolchain file changed: ' + str(lake)])
-        moved = {**self.request['toolchain'], 'verifier_path': str(self.root / 'formal.py')}
-        self.assertIn('approved checker is not the running checker', toolchain_identity_errors(moved))
+        # The checker is its running bytes: a copy elsewhere is the same checker,
+        # other recorded bytes are not.
+        copy = self.root / 'formal.py'
+        copy.write_bytes(Path(self.request['toolchain']['verifier_path']).read_bytes())
+        moved = {**self.request['toolchain'], 'verifier_path': str(copy)}
+        lake_changed = 'approved toolchain file changed: ' + str(lake)
+        self.assertEqual(toolchain_identity_errors(moved), [lake_changed])
+        copy.write_bytes(b'another checker')
+        other = {**moved, 'verifier_sha256': hashlib.sha256(b'another checker').hexdigest()}
+        self.assertEqual(toolchain_identity_errors(other), ['approved checker is not the running checker', lake_changed])
         project = self.root / 'project'
         project.mkdir()
         (project / 'lean-toolchain').write_text('leanprover/lean4:v4.32.0\n', encoding='utf-8')
@@ -183,7 +191,7 @@ class ToolchainRecordTests(unittest.TestCase):
         with records.writer_lock(self.record_path.parent):
             # Instances only read the record; a running writer never blocks them.
             self.assertEqual(check_environment(self.environment, self.binding)['status'], 'verified')
-            with self.assertRaisesRegex(RuntimeError, 'another toolchain record writer'):
+            with self.assertRaises(OSError):
                 self.rerecord()
         result = setup_lean.check_contents(self.record_path.parent, self.request['toolchain_record']['id'], None)
         self.assertEqual((result['status'], result['check']['baseline']), ('passed', 0))
@@ -323,7 +331,7 @@ class RepresentativeCompileTests(unittest.TestCase):
 class ActivationProfileTests(unittest.TestCase):
     def test_lean_roles_pin_only_the_command_and_activation_has_no_machine_settings(self):
         from do_math import execution_profiles as profiles
-        from do_math.engine import DEFAULT_CONFIG
+        from do_math.configuration import DEFAULT_CONFIG
         built = profiles.build_profiles({**DEFAULT_CONFIG, 'lean_command': ['synthetic-lean']})
         by_role = {p['role']: p for p in built['execution_profiles'].values() if p['actor_kind'] == 'machine'}
         self.assertNotIn('machine', by_role['trust_activate'])

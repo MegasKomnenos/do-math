@@ -4,7 +4,7 @@ import argparse
 import json
 import tempfile
 
-from .context_store import _safe_path
+from .context_store import safe_path
 from .formal import verify_lean
 from .submission import load_json
 
@@ -18,7 +18,7 @@ def main(argv=None):
     try:
         context = load_json((workspace / 'input/submission/context.json').read_bytes())
         settings = context['formal_verifier']
-        source = _safe_path(workspace, args.source).read_bytes().decode('utf-8')
+        source = safe_path(workspace, args.source).read_bytes().decode('utf-8')
         stopped = lambda: (workspace / '.control' / 'stop-request.json').exists()
         if stopped():
             result = {'status': 'stopped', 'reason': 'stop requested before compilation'}

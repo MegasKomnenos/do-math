@@ -7,11 +7,15 @@ from __future__ import annotations
 
 from copy import deepcopy
 from collections import Counter
-from typing import Any
+
+from .file_io import require_text
+
+from .contracts import ITEM_DISPOSITION
 
 
 LIFECYCLE_STATES = frozenset({"planned", "active", "waiting", "completed", "closed"})
-DISPOSITION_KINDS = frozenset({"fulfilled", "open", "waived", "transferred"})
+# The item disposition kinds, as the wire schema ITEM_DISPOSITION defines them.
+DISPOSITION_KINDS = frozenset(option["properties"]["kind"]["const"] for option in ITEM_DISPOSITION["anyOf"])
 REPEAT_LINEAGES = ("import_rework", "selection_failure", "exhaustion_empty", "proposal_version", "contract_revision")
 # Governance views every role receives; like tool references they name no file.
 CONTEXT_INPUT_REFS = frozenset({"context:goal", "context:policy"})
@@ -62,11 +66,6 @@ def prepared_dependencies(candidate, condition, titles=None):
         [*candidate.get('dependencies', []), *condition.get('dependencies', [])]))
 
 
-def _text(value: Any, name: str) -> None:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{name} must be nonempty text")
-
-
 def _distinct_ids(rows: list[dict], name: str) -> None:
     values = [row.get("id") for row in rows if isinstance(row, dict)]
     if len(values) != len(rows) or any(not isinstance(value, str) or not value for value in values) or len(values) != len(set(values)):
@@ -90,20 +89,6 @@ def validate_contract_meaning(task: dict) -> None:
         raise ValueError('profile_refs must identify distinct profiles')
 
 
-def validate_contract_rules(task: dict) -> None:
-    """The stored contract rules its schema cannot state: sealed profile editions, then the meaning.
-
-    The storage gate runs this after the stored task schema (record_schemas).
-    """
-    from .execution_profiles import validate_profile_ref
-    for ref in task.get('profile_refs', []):
-        try:
-            validate_profile_ref(ref)
-        except ValueError as error:
-            raise ValueError('profile_refs require exact id, revision and sha256') from error
-    validate_contract_meaning(task)
-
-
 def validate_task_contract(task: dict) -> None:
     """A stored or engine-built contract in memory: the stored task schema, then its rules.
 
@@ -113,9 +98,9 @@ def validate_task_contract(task: dict) -> None:
     checked by the wire TASK_CANDIDATE and validate_contract_meaning instead
     (contracts.task_candidate_record).
     """
-    from .state_contract import installed_checker, validate_record
-    validate_record(installed_checker("runtime", "tasks"), task, "task")
-    validate_contract_rules(task)
+    from .state_contract import default_state_contract, validate_record
+    validate_record(default_state_contract().family("runtime", "tasks").checker, task, "task")
+    validate_contract_meaning(task)
 
 
 def judge_coverage_errors(role: str, execution_id: str, task: dict, assessment: dict, families: dict) -> list[str]:
@@ -188,7 +173,7 @@ def validate_item_dispositions(task: dict, assessment: dict, *, require_complete
         unresolved_ids.add(identifier)
         if not isinstance(row["missing_inputs"], list) or not row["missing_inputs"] or any(not isinstance(v,str) or not v for v in row['missing_inputs']):
             raise ValueError("unresolved inspection needs missing inputs")
-        _text(row["next_owner"], "unresolved.next_owner")
+        require_text(row["next_owner"], "unresolved.next_owner")
     for identifier, row in rows.items():
         obligation = obligations[identifier]
         required = set(obligation.get("evidence_required", []))
@@ -222,12 +207,6 @@ def remaining_obligations(task: dict, assessment: dict | None = None) -> list[st
     return sorted(obligations - closed)
 
 
-def readiness_for_task(task: dict, instance: dict, runtime: dict, **kwargs) -> dict:
-    """Derived task readiness.  No task/status mutation or cache is produced."""
-    from .planning import task_ready
-    return task_ready(task, instance, runtime, **kwargs)
-
-
 def returned_task_ids(tasks):
     from .planning import contract_hash
     from .repository import exact_content_hash
@@ -243,14 +222,9 @@ def selected_task_ids(plan):
 
 
 def validate_plan_dispositions(plan: dict, tasks: dict, ready_ids: list[str]) -> None:
-    if 'dispositions' not in plan:
-        raise ValueError('plan requires one dispositions array')
+    """The meaning of a plan the research_plan wire schema has already shaped (PLAN_DISPOSITION)."""
     if set(ready_ids)-set(tasks):
         raise ValueError('ready population names an unknown task')
-    for field in ('dispositions','task_assessments'):
-        rows=plan.get(field,[])
-        if not isinstance(rows,list) or any(not isinstance(row,dict) or not isinstance(row.get('task_id'),str) for row in rows):
-            raise ValueError(field+' must contain identified task rows')
     supplied = [row['task_id'] for row in plan['dispositions']]
     counts = Counter(supplied)
     if len(supplied) != len(counts) or set(counts) != set(ready_ids):
@@ -259,12 +233,8 @@ def validate_plan_dispositions(plan: dict, tasks: dict, ready_ids: list[str]) ->
             f"unexpected={sorted(set(counts) - set(ready_ids))}; "
             f"duplicate={sorted(identifier for identifier, count in counts.items() if count > 1)}")
     for row in plan['dispositions']:
-        if row.get('kind') not in {'selected', 'not_selected', 'not_assessable'}:
-            raise ValueError('unknown candidate disposition')
-        for key in ('reason', 'next_owner'):
-            _text(row.get(key), key)
         if row['kind'] == 'selected':
-            _text(row.get('expected_research_change'), 'expected_research_change')
+            require_text(row.get('expected_research_change'), 'expected_research_change')
         else:
             revisit = row.get('revisit', {})
             if not revisit.get('event_refs') and not revisit.get('at'):
@@ -277,18 +247,16 @@ def validate_plan_dispositions(plan: dict, tasks: dict, ready_ids: list[str]) ->
         parallel = row.get('parallel_task_ids', [])
         if len(parallel) != len(set(parallel)) or set(parallel) - set(tasks) or row['task_id'] in parallel:
             raise ValueError('parallel references must identify distinct other tasks')
-    assessments = plan.get('task_assessments', [])
+    assessments = plan['task_assessments']
     assessed = [row['task_id'] for row in assessments]
     if len(assessed) != len(set(assessed)) or set(assessed) != set(returned_task_ids(tasks)):
         raise ValueError('plan must assess every returned task exactly once')
     if set(selected_task_ids(plan)) & set(assessed):
         raise ValueError('returned tasks require disposition before a later selection')
-    for assessment in plan.get("task_assessments", []):
-        task = tasks.get(assessment.get("task_id"))
+    for assessment in assessments:
+        task = tasks.get(assessment["task_id"])
         if task is None:
             raise ValueError("assessment names an unknown task")
-        if assessment.get('decision') not in {'completed', 'incomplete', 'closed'}:
-            raise ValueError('unknown completion decision')
         validate_item_dispositions(task, assessment, require_complete=assessment.get("decision") in {"completed", "closed"})
 
 

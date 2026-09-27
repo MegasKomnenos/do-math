@@ -13,11 +13,31 @@ from .file_io import file_fingerprint, fingerprint_json, is_sha256
 
 AXIOMS = ('propext', 'Classical.choice', 'Quot.sound')
 _AXIOM_SET = frozenset(AXIOMS)
-ENVIRONMENT_FIELDS = {'id', 'status', 'toolchain', 'allowed_axioms', 'source_ref', 'toolchain_record'}
-OPTIONAL_FIELDS = {'validation_receipt', 'invalidated_reason'}
+_HASH = {'type': 'string', 'pattern': '^[0-9a-f]{64}$'}
+# The ID of one shared toolchain record; its file is trust_inventory.record_path.
+RECORD_ID_PATTERN = '^TC-[0-9a-f]{64}$'
+_RECORD_ID = re.compile(RECORD_ID_PATTERN)
+# The runtime binding: the accepted baseline of the record and its digests.
 BINDING_FIELDS = ('baseline', 'fingerprint_sha256', 'content_sha256', 'validation_sha256')
+BINDING_SCHEMA = {'type': 'object', 'additionalProperties': False, 'required': list(BINDING_FIELDS),
+                  'properties': {'baseline': {'type': 'integer', 'minimum': 0},
+                                 **{key: _HASH for key in BINDING_FIELDS[1:]}}}
+# The stored environment record: its state, the identity copied from one
+# toolchain record and that record's file. The accepted baseline is the
+# runtime binding above, outside this record. The storage schema and
+# environment_errors both use these names.
+ENVIRONMENT_STATUSES = frozenset({'registered', 'active', 'superseded', 'invalid'})
+ENVIRONMENT_PROPERTIES = {
+    'status': {'enum': sorted(ENVIRONMENT_STATUSES)}, 'toolchain': {'type': 'object'},
+    'allowed_axioms': {'type': 'array', 'items': {'type': 'string'}}, 'source_ref': {'type': 'string'},
+    'toolchain_record': {'type': 'object', 'additionalProperties': False, 'required': ['path', 'id'],
+                         'properties': {'path': {'type': 'string'},
+                                        'id': {'type': 'string', 'pattern': RECORD_ID_PATTERN}}},
+    'validation_receipt': {'type': 'object'}, 'invalidated_reason': {'type': 'string'}}
+ENVIRONMENT_REQUIRED = ('status', 'toolchain', 'allowed_axioms', 'source_ref', 'toolchain_record')
+_ENVIRONMENT_FIELDS = {'id', *ENVIRONMENT_REQUIRED}
+_OPTIONAL_FIELDS = set(ENVIRONMENT_PROPERTIES) - _ENVIRONMENT_FIELDS
 REGISTER_FIELDS = {'operation', 'toolchain', 'allowed_axioms', 'toolchain_record', 'binding'}
-_RECORD_ID = re.compile('TC-[0-9a-f]{64}')
 
 
 def binding_errors(binding):
@@ -29,10 +49,11 @@ def binding_errors(binding):
 
 
 def record_reference_errors(reference):
+    from .trust_inventory import record_path
     if (not isinstance(reference, dict) or set(reference) != {'path', 'id'}
             or not isinstance(reference['path'], str) or not Path(reference['path']).is_absolute()
             or not isinstance(reference['id'], str) or not _RECORD_ID.fullmatch(reference['id'])
-            or Path(reference['path']).name != reference['id'] + '.json'):
+            or Path(reference['path']) != record_path(Path(reference['path']).parent, reference['id'])):
         return ['toolchain_record requires the absolute path of <record ID>.json and that ID']
     return []
 
@@ -43,13 +64,14 @@ def environment_errors(environment, binding):
     if not isinstance(environment, dict):
         return ['trust environment absent']
     errors = []
-    if not ENVIRONMENT_FIELDS <= set(environment) or set(environment) - ENVIRONMENT_FIELDS - OPTIONAL_FIELDS:
+    if not _ENVIRONMENT_FIELDS <= set(environment) or set(environment) - _ENVIRONMENT_FIELDS - _OPTIONAL_FIELDS:
         errors.append('trust environment fields differ from the current contract')
     errors.extend(identity_errors(environment.get('toolchain')))
     if not environment.get('source_ref'):
         errors.append('trust environment has no explicit adoption')
     axioms = environment.get('allowed_axioms')
-    if not isinstance(axioms, list) or any(not isinstance(a, str) for a in axioms) or set(axioms) != _AXIOM_SET:
+    if (not isinstance(axioms, list) or any(not isinstance(a, str) for a in axioms)
+            or len(axioms) != len(_AXIOM_SET) or set(axioms) != _AXIOM_SET):
         errors.append('foundation axiom profile differs')
     errors.extend(record_reference_errors(environment.get('toolchain_record')))
     errors.extend(binding_errors(binding))

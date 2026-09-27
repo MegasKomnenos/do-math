@@ -6,13 +6,13 @@ import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math.contracts import task_candidate_record
 from do_math.execution_profiles import build_profiles,profile_ref
-from do_math.engine import DEFAULT_CONFIG
-from test_redesign_ENGINE import routing_engine
-from research_fixtures import candidate, disposition
+from do_math.configuration import DEFAULT_CONFIG
+from engine_fixtures import routing_engine
+from research_fixtures import bare_engine, candidate, disposition
 
 
 class ModelMetadataBoundaryTests(unittest.TestCase):
-    def test_plan_receiver_uses_the_authored_dispositions_without_a_legacy_projection(self):
+    def test_plan_receiver_records_model_decisions_without_changing_the_authored_dispositions(self):
         engine = routing_engine()
         engine.instance['config'] = deepcopy(DEFAULT_CONFIG)
         rating = {'difficulty': 'low', 'importance': 'medium', 'reason': 'The supplied bounded contract'}
@@ -82,6 +82,37 @@ class ModelMetadataBoundaryTests(unittest.TestCase):
         self.assertEqual(engine.runtime['executions']['EX-prepare']['model_decisions'],
                          {item['title']:rating})
         self.assertEqual(contract['title'],item['title'])
+
+    def test_processed_rejection_cannot_erase_a_fresh_equal_or_changed_assessment(self):
+        from do_math.model_policy import assessment_basis, LIMITS
+        from record_fixtures import approved_task
+        from runner_fixtures import rating
+        from research_fixtures import prepared_rule_conditions
+        for unchanged in (False, True):
+            with self.subTest(unchanged=unchanged):
+                task, instance, runtime = approved_task()
+                rules = prepared_rule_conditions([task['id']])[0]['observation_rules']
+                task['initial_observation_rules'] = deepcopy(rules)
+                instance['config'] = {'session_limits': deepcopy(LIMITS)}
+                task.update(academic_requirement_id='R', revision_requested={'revision': task['revision'], 'source': 'REJECT',
+                    'reason': 'task contract review returned revision_required'},
+                    model_assessment=rating())
+                task['reviews'] = [{**assessment_basis(task), 'decision': 'revision_required', 'execution_id': 'REJECT'}]
+                host = bare_engine(instance, runtime)
+                host._ensure_model_assessments()
+                revised = rating() if unchanged else {**rating(), 'importance': 'high'}
+                task['model_assessment'] = deepcopy(revised)
+                task['initial_observation_rules'] = deepcopy(rules)
+                runtime['queue'] = [{'id': 'NEW-REVIEW', 'role': 'task_contract_review', 'target': task['id']}]
+                for _ in range(3):
+                    host._ensure_model_assessments()
+                self.assertEqual(task['model_assessment'], revised)
+                self.assertEqual(len(task['model_assessment_history']), 1)
+                self.assertEqual([a['id'] for a in runtime['queue']], ['NEW-REVIEW'])
+                task['reviews'].append({**assessment_basis(task), 'decision': 'unresolved', 'execution_id': 'REJECT-NEW'})
+                host._ensure_model_assessments()
+                self.assertNotIn('model_assessment', task)
+                self.assertEqual(len(task['model_assessment_history']), 2)
 
 
 if __name__=='__main__': unittest.main()

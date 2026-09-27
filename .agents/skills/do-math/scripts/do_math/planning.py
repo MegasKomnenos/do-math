@@ -10,9 +10,13 @@ from .activities import ACTIVITY_STATUSES
 from .execution_lifecycle import EXECUTION_STATUSES
 from .external import OPERATION_STATUSES
 from .file_io import is_sha256, parse_utc
-from .governance import GRANT_STATUSES
-from .repository import artifact_key, exact_content_hash, sealed_bytes
+from .git_store import ARTIFACT_ROOT, check_path_segment
+from .governance import GOVERNANCE_STATUSES, GRANT_STATUSES
+from .input_basis import SOURCE_STATUSES
+from .repository import VERIFIED_ARTIFACTS, artifact_key, exact_content_hash, sealed_bytes
+from .review_cycle import CYCLE_STATUSES
 from .task_contracts import LIFECYCLE_STATES
+from .trust_validation import ENVIRONMENT_STATUSES
 
 
 CONTRACT_FIELDS = ("id", "revision", "title", "question", "scope", "expected", "description",
@@ -27,9 +31,10 @@ def contract_hash(task: dict) -> str:
 
 
 TERMINAL_TASK_STATUSES = frozenset({"completed", "closed"})
-# (git_dir, artifact path, sha256) -> byte length of a sealed artifact that passed
-# its format validation in this process; the key matches repository.VERIFIED_ARTIFACTS.
-_VALID_ARTIFACTS: dict[tuple[str, str, str], int] = {}
+# (format validator, artifact path, sha256) -> its verdict. The verdict is a function
+# of the validator, the name and the bytes only; whether a repository holds those
+# bytes is repository.VERIFIED_ARTIFACTS' fact. Pure, so no repository clears it.
+_VALID_ARTIFACTS: dict[tuple, bool] = {}
 
 
 def revision_required(task: dict) -> bool:
@@ -196,6 +201,20 @@ def governance_revisions(instance: dict) -> dict:
     return {key: view[key] for key in ('goal_revision', 'policy_revision')}
 
 
+def instance_record(instance: dict) -> dict:
+    """The instance family's one record: its ID, goal status and governance editions.
+
+    Conditions and task bases see this projection whether a caller holds the stored
+    instance or a governance working view, so both give one readiness and one seal.
+    Before a unique approved charter the editions do not exist and are absent."""
+    record = {key: instance[key] for key in ("id", "goal_status") if key in instance}
+    try:
+        record.update(governance_revisions(instance))
+    except ValueError:  # no unique approved charter yet
+        pass
+    return record
+
+
 def contract_review_current(review: dict, task: dict, instance: dict, runtime: dict, *, task_basis=None) -> dict:
     """task_basis may carry capture_task_basis() of this task and state, shared across its reviews."""
     from .input_basis import decision_basis_changes, sources_current
@@ -310,7 +329,6 @@ def validate_condition(condition: dict) -> None:
     elif op == "not":
         validate_condition(condition["arg"])
     elif op == "artifact_valid":
-        from pathlib import PurePosixPath
         ref = condition["artifact_ref"]
         if not isinstance(ref, dict) or set(ref) != {"snapshot", "path", "sha256"}:
             raise ValueError("artifact_ref requires snapshot, path, sha256")
@@ -318,9 +336,11 @@ def validate_condition(condition: dict) -> None:
             raise ValueError("artifact reference values must be text")
         if not is_sha256(ref["sha256"]):
             raise ValueError("artifact hash must be lowercase SHA256")
-        path = PurePosixPath(ref["path"])
-        if path.is_absolute() or '..' in path.parts or '\\' in ref["path"] or ':' in ref["path"]:
-            raise ValueError("artifact path must remain inside the snapshot")
+        # The reader accepts only archived artifacts; each segment follows the state path rule.
+        if not ref["path"].startswith(ARTIFACT_ROOT):
+            raise ValueError("artifact path must name an archived artifact under " + ARTIFACT_ROOT)
+        for part in ref["path"].split("/"):
+            check_path_segment(part)
     else:
         for name in fields[op] - {"value"}:
             if not isinstance(condition[name], str) or not condition[name].strip():
@@ -336,7 +356,7 @@ def validate_condition(condition: dict) -> None:
         if "family" in condition and RECORD_FAMILIES[condition["family"]][0] != condition["space"]:
             raise ValueError("condition family is outside the requested space")
         if op == "record_lifecycle_is":
-            values = LIFECYCLE_VALUES.get(condition['family'],set())
+            values = lifecycle_values().get(condition['family'],set())
             if condition["value"] not in values:
                 raise ValueError("value is not a lifecycle value of this family")
         if op=='record_field_equals':
@@ -345,7 +365,7 @@ def validate_condition(condition: dict) -> None:
                 raise ValueError('pointer is not an exposed machine field')
             if pointer == '/usable_as_k' and type(condition['value']) is not bool:
                 raise ValueError('usable_as_k comparison requires a boolean')
-            if pointer in {'/status','/lifecycle'} and condition['value'] not in LIFECYCLE_VALUES.get(family,set()):
+            if pointer in {'/status','/lifecycle'} and condition['value'] not in lifecycle_values().get(family,set()):
                 raise ValueError('value is not a lifecycle value of this family')
 
 
@@ -361,24 +381,32 @@ RECORD_FAMILIES = {"knowledge": ("research", "knowledge"), "governance": ("resea
     "external-operation": ("runtime", "external_operations"), "review-cycle": ("runtime", "review_cycles"),
     "instance": ("research", None)}
 
-LIFECYCLE_VALUES = {
-    'task': LIFECYCLE_STATES,
-    'knowledge': {'active','superseded','withdrawn'}, 'exposition': {'active','superseded','withdrawn'},
-    'governance': {'active','superseded','withdrawn'}, 'grant': GRANT_STATUSES,
-    'decision': {'active','revoked','superseded','withdrawn'},
-    'source': {'active','superseded','withdrawn'}, 'trust-environment': {'candidate','active','invalid','superseded'},
-    'activity': ACTIVITY_STATUSES,
-    'execution': EXECUTION_STATUSES,
-    'assessment-use': {'active','suspended','withdrawn'},
-    'kind-definition': {'candidate','checked','active','withdrawn'},
-    'external-operation': OPERATION_STATUSES,
-    'review-cycle': {'working','completed','unresolved'},
-}
+
+def lifecycle_values():
+    """The condition grammar's state values per family: the owners' constants,
+    which the storage schema also uses. The knowledge-family owners import this
+    module, so their constants are read on first use."""
+    from .knowledge_io import KIND_STATUSES
+    from .knowledge_records import ASSESSMENT_USE_STATUSES, RECORD_LIFECYCLES
+    return {
+        'task': LIFECYCLE_STATES,
+        'knowledge': RECORD_LIFECYCLES, 'exposition': RECORD_LIFECYCLES,
+        'governance': GOVERNANCE_STATUSES, 'grant': GRANT_STATUSES,
+        'source': SOURCE_STATUSES, 'trust-environment': ENVIRONMENT_STATUSES,
+        'activity': ACTIVITY_STATUSES,
+        'execution': EXECUTION_STATUSES,
+        'assessment-use': ASSESSMENT_USE_STATUSES,
+        'kind-definition': KIND_STATUSES,
+        'external-operation': OPERATION_STATUSES,
+        'review-cycle': CYCLE_STATUSES,
+    }
+
+
 EXPOSED_FIELDS = {
     'goal-judgment': {'/decision', '/current'},
-    'knowledge': {'/lifecycle','/kind','/value','/kind_use_suspended','/usable_as_k'}, 'task': {'/status','/revision'},
+    'knowledge': {'/lifecycle','/kind','/kind_use_suspended','/usable_as_k'}, 'task': {'/status','/revision'},
     'activity': {'/status','/activity_kind'}, 'execution': {'/status','/role','/outcome','/stop_phase'},
-    'governance': {'/status','/lifecycle'}, 'grant': {'/status'}, 'decision': {'/kind'},
+    'governance': {'/status'}, 'grant': {'/status'}, 'decision': {'/kind'},
     'external-operation': {'/status','/http_status','/succeeded'}, 'source': {'/status','/revision','/sha256'},
     'trust-environment': {'/status'}, 'review-cycle': {'/status','/decision','/phase'},
     'instance': {'/goal_status','/goal_revision','/policy_revision'},
@@ -401,7 +429,7 @@ def record_index(instance: dict, runtime: dict, *, families=None, source_aliases
         if families is not None and family not in families:
             continue
         if key is None:
-            container = [instance] if instance.get("id") else []
+            container = [instance_record(instance)] if instance.get("id") else []
         else:
             container = (instance if space == "research" else runtime).get(key, {})
         values = container.values() if isinstance(container, dict) else container if isinstance(container, list) else []
@@ -532,20 +560,18 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
                 context, ref = evaluation_context or {}, node["artifact_ref"]
                 if not context.get("snapshot") or not callable(context.get("read_artifact")) or not callable(context.get("validate_artifact")):
                     raise ValueError("artifact requires a fixed-snapshot reader and format validator")
-                # Sealed bytes never change: one match and one format check per
-                # (git_dir, path, sha256) serve every later evaluation (contract S3).
-                git_dir = context.get("git_dir")
-                key = artifact_key(git_dir, ref["path"], ref["sha256"])
-                size = _VALID_ARTIFACTS.get(key) if git_dir is not None else None
-                if size is None:
-                    data = context["read_artifact"](ref["snapshot"], ref["path"])
-                    sealed_bytes(git_dir, ref["path"], ref["sha256"], None, None, raw=data, needed=False,
-                                 error="artifact bytes differ from sealed hash")
-                    if context["validate_artifact"](ref, data) is not True:
-                        raise ValueError("artifact format validation failed")
-                    size = len(data)
-                    if git_dir is not None:
-                        _VALID_ARTIFACTS[key] = size
+                # Sealed bytes never change: this repository matches them once
+                # (이음새-정본.md §3) and a known verdict needs no bytes at all.
+                git_dir, verdict = context.get("git_dir"), (context["validate_artifact"], ref["path"], ref["sha256"])
+                valid = _VALID_ARTIFACTS.get(verdict)
+                data = sealed_bytes(git_dir, ref["path"], ref["sha256"], None,
+                                    lambda: context["read_artifact"](ref["path"], ref["snapshot"]),
+                                    needed=valid is None, error="artifact bytes differ from sealed hash")
+                if valid is None:
+                    valid = _VALID_ARTIFACTS[verdict] = context["validate_artifact"](ref, data) is True
+                if not valid:
+                    raise ValueError("artifact format validation failed")
+                size = len(data) if data is not None else VERIFIED_ARTIFACTS[artifact_key(git_dir, ref["path"], ref["sha256"])]
                 basis.append({"artifact_ref": deepcopy(ref), "bytes": size})
                 return "ready"
             candidates = _record_candidates(records, node.get("record_id"), node.get("family"))
@@ -627,7 +653,7 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
     if blocked: return {"state": "not_ready", "basis": [], "errors": ["blocked dependencies: " + ",".join(blocked)]}
     from .task_scope import assessment_current
     for dep in task.get('dependencies',[]):
-        if records[dep][0]=='task' and not assessment_current(records[dep][1],instance,runtime,evaluation_context=evaluation_context):
+        if records[dep][0]=='task' and not assessment_current(records[dep][1],instance,runtime,evaluation_context=evaluation_context,records=records):
             return {'state':'not_ready','basis':[],'errors':['dependency lacks a current completion assessment: '+dep]}
     from .knowledge import assess_research_use
     for ref in task.get("reuse", []):
@@ -640,12 +666,11 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
     if not any(grant["allowed"] for grant in grants):
         return {"state": "not_ready", "basis": [], "errors": ["no contract authority permits this work"],
             'waits':[{'kind':'permission','target_refs':task.get('authority_refs',[]),'next_owner':'governance'}]}
-    from .execution_profiles import validate_profile, profile_ref, resolve_profile
+    from .execution_profiles import profile_ref, match_profile_ref
     profiles = []
     for ref in task.get("profile_refs", []):
         try:
-            profile = resolve_profile(instance.get('execution_profiles', {}), ref)
-            validate_profile(profile)
+            profile = match_profile_ref(instance.get('execution_profiles', {}), ref)
         except ValueError:
             continue
         if profile.get('role') != action['role']:
@@ -680,7 +705,7 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
         waiting = task.get("waiting")
         continuation=bool(waiting and waiting.get('kind')=='research_followup' and
                           waiting.get('basis_ref')==task.get('assessment',{}).get('execution_id') and
-                          assessment_current(task,instance,runtime,evaluation_context=evaluation_context))
+                          assessment_current(task,instance,runtime,evaluation_context=evaluation_context,records=records))
         if occupied or queued or (waiting and not continuation):
             normal = bool(occupied or queued) and (not waiting or continuation)
             normal = normal and all(e.get('role', e.get('action', {}).get('role')) in
@@ -721,14 +746,14 @@ def exhaustion_state(instance, runtime, *, now=None, evaluation_context=None):
     if any(r['state']=='evaluation_error' for r in evaluations.values()):
         answer.update(reasons=['readiness_evaluation_error'],next_owner='operational_review'); return answer
     observed_waits=[w for result in evaluations.values() for w in result.get('waits',[]) if w.get('kind') in
-                    {'external_event','user_decision','permission','time','condition'}]
+                    {'external_event','user_decision','permission','condition'}]
     if observed_waits:
         answer.update(reasons=['external_waits'],next_owner=observed_waits[0].get('next_owner'),waiting_basis=observed_waits);return answer
     from .task_contracts import returned_task_ids
     if returned_task_ids(runtime.get('tasks',{})):
         answer.update(reasons=['returned_work_requires_assessment'],next_owner='research_plan');return answer
     unfinished=[t for t in runtime.get('tasks',{}).values() if t.get('status') not in TERMINAL_TASK_STATUSES]
-    external=[t for t in unfinished if t.get('waiting',{}).get('kind') in {'external_event','user_decision','assessment_input','permission','time','condition'}]
+    external=[t for t in unfinished if t.get('waiting',{}).get('kind') in {'external_event','user_decision','assessment_input','permission','condition'}]
     if external:
         answer.update(reasons=['external_waits'],next_owner=external[0]['waiting'].get('next_owner')); return answer
     if any(a.get('role') in {'research_preparation','task_contract_review'} for a in runtime.get('queue',[])) or any(
@@ -762,7 +787,7 @@ def research_wake_reasons(instance, runtime, *, now, evaluation_context=None):
             or runtime.get('user_pause') or instance.get('goal_status') == 'mathematically_solved'):
         return []
     reasons = [{'kind': event['kind'], 'event_id': event['id']}
-               for event in collect_due_events(instance, runtime, now, evaluation_context=evaluation_context)]
+               for event in collect_due_events(instance, runtime, now)]
     state = exhaustion_state(instance, {**runtime, 'status': 'active'},
                              now=now, evaluation_context=evaluation_context)
     from .questions import user_waits
@@ -772,11 +797,10 @@ def research_wake_reasons(instance, runtime, *, now, evaluation_context=None):
 
 
 def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None):
-    """Preserve due/exhaustion reasons, coalescing only unstarted preparation."""
+    """Assign preserved due events and exhaustion reasons, coalescing only unstarted preparation.
+
+    Due events are recorded beforehand by record_due_events, their one collection path."""
     from .repository import new_id
-    due = collect_due_events(instance,runtime,now,evaluation_context=evaluation_context)
-    runtime.setdefault('events',[]).extend(due)
-    runtime.setdefault('pending_events',[]).extend(e['id'] for e in due if e['id'] not in runtime.get('pending_events',[]))
     state=exhaustion_state(instance,runtime,now=now,evaluation_context=evaluation_context)
     if runtime.get('status')!='active' or instance.get('goal_status')=='mathematically_solved': return state
     exhaustion_event=None
@@ -789,7 +813,7 @@ def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None)
             runtime['events'].append(exhaustion_event)
     pending=[e for e in runtime.get('events',[]) if e['id'] in runtime.get('pending_events',[]) and not e.get('assigned_to')]
     periodic=[e['id'] for e in pending if e.get('kind')=='research_reconsider_due']
-    selection_events=[e['id'] for e in pending if e.get('kind') in {'task_revisit_due','task_condition_due','task_new_input','task_wake_due'}]
+    selection_events=[e['id'] for e in pending if e.get('kind') in {'task_revisit_due','task_new_input'}]
     if periodic or state['prepare']:
         role='research_preparation'
     else:
@@ -821,17 +845,18 @@ def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None)
         bind_repetition_bases(instance,runtime,queued)
     if periodic:
         queued['periodic_reconsideration']=True
-        seconds=instance.get('config',{}).get('research_reconsider_seconds')
-        if type(seconds) is int and seconds>0:
-            runtime['next_research_reconsider_at']=(parse_utc(now)+timedelta(seconds=seconds)).isoformat()
+        seconds=instance['config']['research_reconsider_seconds']
+        runtime['next_research_reconsider_at']=(parse_utc(now)+timedelta(seconds=seconds)).isoformat()
     return state
 
 
-def _event(kind: str, when: str, target: str | None = None) -> dict:
-    seed = f"{kind}|{when}|{target or ''}"; return {"id": hashlib.sha256(seed.encode()).hexdigest()[:24], "kind": kind, "at": when, "target": target}
+def _event(kind: str, when: str, target: str | None = None, *, key: str | None = None) -> dict:
+    """A due event whose ID is derived from key (default: when), so one cause is one event."""
+    seed = f"{kind}|{when if key is None else key}|{target or ''}"
+    return {"id": hashlib.sha256(seed.encode()).hexdigest()[:24], "kind": kind, "at": when, "target": target}
 
 
-def collect_due_events(instance: dict, runtime: dict, now_iso: str, *, evaluation_context=None) -> list[dict]:
+def collect_due_events(instance: dict, runtime: dict, now_iso: str) -> list[dict]:
     now = parse_utc(now_iso); events = []
     if instance.get("goal_status") != "mathematically_solved":
         due = runtime.get("next_research_reconsider_at")
@@ -846,28 +871,21 @@ def collect_due_events(instance: dict, runtime: dict, now_iso: str, *, evaluatio
             if (revisit.get('at') and parse_utc(revisit['at'])<=now) or triggers:
                 event=_event('task_revisit_due',exact_content_hash({'decision':disposition.get('execution_id'),'revisit':revisit,'triggers':triggers}),task.get('id'))
                 event.update(observed_at=now_iso,basis=deepcopy(disposition));events.append(event)
-        if task.get("wake_at") and parse_utc(task["wake_at"]) <= now: events.append(_event("task_wake_due", task["wake_at"], task.get("id")))
-        for condition in task.get("due_conditions", []):
-            outcome = evaluate_condition(condition, instance, runtime,evaluation_context=evaluation_context)
-            key=exact_content_hash(condition); previous=runtime.get("condition_states",{}).get(f"{task.get('id')}:{key}")
-            if outcome["state"] == "ready" and previous != "ready":
-                event = _event("task_condition_due", key + "|" + now_iso, task.get("id"))
-                event["at"] = now_iso
-                events.append(event)
-        if task.get("newinput"): events.append(_event("task_new_input", now_iso, task.get("id")))
+        if task.get("newinput"):
+            # One input request is one event however often its task is observed.
+            event = _event("task_new_input", now_iso, task.get("id"), key=task["newinput"])
+            event["request_id"] = task["newinput"]
+            events.append(event)
     existing = {event.get("id") for event in runtime.get("events", [])}
     return [event for event in events if event["id"] not in existing]
 
 
-def apply_event_schedule(instance: dict, runtime: dict, now_iso: str, *, evaluation_context=None) -> dict:
-    """Return a deep-copied runtime with due events preserved once; paused does not consume them.
+def record_due_events(instance: dict, runtime: dict, now_iso: str) -> list[dict]:
+    """Preserve each due event once in runtime, in place, and return the new ones.
 
-    Scheduling only reads the instance, so the caller's instance is returned without a copy."""
-    new_runtime = deepcopy(runtime)
-    events = collect_due_events(instance, new_runtime, now_iso,evaluation_context=evaluation_context)
-    new_runtime.setdefault("events", []).extend(events)
-    new_runtime.setdefault("pending_events", []).extend(event["id"] for event in events if event["id"] not in new_runtime.get("pending_events", []))
-    states=new_runtime.setdefault("condition_states",{})
-    for task in new_runtime.get("tasks",{}).values():
-        for condition in task.get("due_conditions",[]): states[f"{task.get('id')}:{exact_content_hash(condition)}"]=evaluate_condition(condition,instance,new_runtime,evaluation_context=evaluation_context)["state"]
-    return {"instance": instance, "runtime": new_runtime, "events": events}
+    This is the one collection path; paused research keeps them pending."""
+    events = collect_due_events(instance, runtime, now_iso)
+    runtime.setdefault("events", []).extend(events)
+    pending = runtime.setdefault("pending_events", [])
+    pending.extend(event["id"] for event in events if event["id"] not in pending)
+    return events

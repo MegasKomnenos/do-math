@@ -2,7 +2,8 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 
-from .file_io import json_digest, parse_utc
+from .file_io import parse_utc
+from .repository import exact_content_hash
 
 
 def case_basis_reference_ids(case):
@@ -40,7 +41,7 @@ def validate_delegation(delegation, *, now_iso=None):
             raise ValueError("invalid delegation " + key)
     if not delegation["included_targets"]: raise ValueError("delegation needs explicit included scope")
     if not isinstance(delegation.get("resource_limits", {}), dict): raise ValueError("resource limits must be mapped")
-    if any(type(v) not in (int, float) or v < 0 for v in delegation.get("resource_limits", {}).values()):
+    if any(type(v) is not int or v < 0 for v in delegation.get("resource_limits", {}).values()):
         raise ValueError("invalid delegation resource limit")
     if delegation.get("expires_at") and parse_utc(delegation["expires_at"]) <= (parse_utc(now_iso) if now_iso is not None else datetime.now(timezone.utc)): raise ValueError("delegation expired")
     return deepcopy(delegation)
@@ -50,9 +51,9 @@ def _basis(instance, runtime, delegation_id, case, now_iso=None):
     delegation = validate_delegation(instance.get("delegations", {}).get(delegation_id), now_iso=now_iso)
     original = instance.get("decisions", {}).get(delegation["original_decision_id"], {})
     approval = instance.get("decisions", {}).get(delegation["decision_id"], {})
-    if original.get("actor") != "user" or original.get("kind") != delegation["decision_kind"] or original.get("revoked") or original.get("status", "active") != "active":
-        raise ValueError("original decision is absent, revoked, or incompatible")
-    if approval.get("actor") != "user" or approval.get("revoked") or approval.get("status", "active") != "active":
+    if original.get("actor") != "user" or original.get("kind") != delegation["decision_kind"]:
+        raise ValueError("original decision is absent or incompatible")
+    if approval.get("actor") != "user":
         raise ValueError("delegation has no current user approval")
     approved = approval.get("change", {}).get("delegation")
     declared = {k:v for k,v in delegation.items() if k not in {"source_ref", "decision_id", "created_at"}}
@@ -69,7 +70,7 @@ def _basis(instance, runtime, delegation_id, case, now_iso=None):
     effects, resources = case.get("external_effects"), case.get("resources")
     if not isinstance(effects, list) or any(x not in delegation["external_effects"] for x in effects): raise ValueError("external effect outside delegation")
     limits = delegation.get("resource_limits", {})
-    if not isinstance(resources, dict) or any(k not in limits or type(v) not in (int, float) or v < 0 or v > limits[k] for k, v in resources.items()):
+    if not isinstance(resources, dict) or any(k not in limits or type(v) is not int or v < 0 or v > limits[k] for k, v in resources.items()):
         raise ValueError("resource request outside delegation")
     if not isinstance(case.get("effect"), dict) or not case.get("id"): raise ValueError("case must preserve exact proposed effect")
     # Use the same globally unique record population as task/currentness checks.
@@ -87,7 +88,7 @@ def _basis(instance, runtime, delegation_id, case, now_iso=None):
 
 def prepare_application(instance, runtime, delegation_id, case, *, now_iso=None):
     basis = _basis(instance, runtime, delegation_id, case, now_iso)
-    input_sha = json_digest(basis)
+    input_sha = exact_content_hash(basis)
     identifier = "DA-" + input_sha[:24]
     record = {"id": identifier, "delegation_id": delegation_id, "basis": basis, "input_sha256": input_sha, "judgments": {}}
     existing = runtime.setdefault("delegation_applications", {}).get(identifier)
@@ -127,7 +128,7 @@ def record_judgment(runtime, application_id, output, *, execution_id, stage):
     _check_judgment(runtime, record, execution_id, output, author_ids)
     if output.get("decision") not in {"within_scope", "outside_scope", "unresolved"} or not isinstance(output.get("reason"), str) or not output["reason"].strip():
         raise ValueError("judgment needs current input, verdict, reasons")
-    record["judgments"][stage] = {"execution_id": execution_id, "output": deepcopy(output), "sha256": json_digest(output)}
+    record["judgments"][stage] = {"execution_id": execution_id, "output": deepcopy(output), "sha256": exact_content_hash(output)}
     return deepcopy(record)
 
 
@@ -137,8 +138,8 @@ def _checked(instance, runtime, application_id, now_iso=None):
     basis = _basis(instance, runtime, record["delegation_id"], record["basis"]["case"], now_iso)
     receipt = record.get("application", {})
     expected = receipt.get("post_basis_sha256",record["input_sha256"])
-    if receipt and receipt.get("sha256") != json_digest({k:v for k,v in receipt.items() if k != "sha256"}): raise ValueError("delegation receipt changed")
-    if json_digest(basis) != expected or json_digest(record["basis"]) != record["input_sha256"]: raise ValueError("delegation application stale")
+    if receipt and receipt.get("sha256") != exact_content_hash({k:v for k,v in receipt.items() if k != "sha256"}): raise ValueError("delegation receipt changed")
+    if exact_content_hash(basis) != expected or exact_content_hash(record["basis"]) != record["input_sha256"]: raise ValueError("delegation application stale")
     judgments = record["judgments"]
     if set(judgments) != {"interpret", "check"} or len({j["execution_id"] for j in judgments.values()}) != 2: raise ValueError("two independent judgments required")
     from .governance import validate_independent_execution
@@ -146,7 +147,7 @@ def _checked(instance, runtime, application_id, now_iso=None):
     for judgment in judgments.values():
         _check_judgment(runtime, record, judgment["execution_id"], judgment["output"],
             record["basis"]["original_decision"].get("author_execution_ids", []))
-        if judgment["sha256"] != json_digest(judgment["output"]) or judgment["output"]["decision"] != "within_scope":
+        if judgment["sha256"] != exact_content_hash(judgment["output"]) or judgment["output"]["decision"] != "within_scope":
             raise ValueError("delegation verdict is not current matching judgment")
     return record
 
@@ -170,7 +171,7 @@ def apply_application(instance, runtime, application_id, *, apply_effect, now_is
         if result.get(family) != instance.get(family): raise ValueError("delegated application cannot alter authority")
     receipt = {"status": "applied", "application_id": application_id, "input_sha256": record["input_sha256"],
                "original_decision_id": record["basis"]["original_decision"]["id"], "effect": deepcopy(record["basis"]["case"]["effect"])}
-    receipt["post_basis_sha256"] = json_digest(_basis(result,state,record["delegation_id"],record["basis"]["case"],now_iso))
-    receipt["sha256"] = json_digest(receipt)
+    receipt["post_basis_sha256"] = exact_content_hash(_basis(result,state,record["delegation_id"],record["basis"]["case"],now_iso))
+    receipt["sha256"] = exact_content_hash(receipt)
     state["delegation_applications"][application_id]["application"] = receipt
     return result, state, receipt

@@ -24,7 +24,7 @@ import time
 from typing import Final
 import zlib
 
-from .file_io import os_lock
+from .file_io import no_reparse, os_lock
 
 
 class GitStateStoreError(RuntimeError):
@@ -67,6 +67,8 @@ ULID_ALPHABET: Final = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 ULID_LENGTH: Final = 26
 ULID_PATTERN: Final = f"[0-7][{ULID_ALPHABET}]{{{ULID_LENGTH - 1}}}"
 _HEX = re.compile(r"[0-9a-f]+\Z")
+# Archived artifacts live under this prefix; an existing bundle there never changes.
+ARTIFACT_ROOT: Final = "runtime/artifacts/"
 _WINDOWS_RESERVED: Final = {
     "CON", "PRN", "AUX", "NUL",
     *(f"COM{number}" for number in range(1, 10)),
@@ -128,6 +130,10 @@ class GitStateStore:
             raise ValueError("repository must be an existing Git work tree or bare repository")
         self.instance_id = instance_id
         self.ref = f"refs/heads/do-math/{instance_id}"
+        # Until Git reports its directory, the work tree stands in for it in
+        # _git (the disabled hooks path and the boundary re-proved on error).
+        self._git_dir = self.repository
+        self._git_boundary = self._repository_boundary
         facts = self._git_text("rev-parse", "--absolute-git-dir", "--show-object-format",
                                "--git-path", "objects").splitlines()
         if len(facts) != 3:
@@ -509,7 +515,7 @@ class GitStateStore:
         existing_bundles = {
             path.split("/")[2]
             for path in existing_paths
-            if path.startswith("runtime/artifacts/") and len(path.split("/")) >= 4
+            if path.startswith(ARTIFACT_ROOT) and len(path.split("/")) >= 4
         }
         for path in changes:
             parts = path.split("/")
@@ -542,7 +548,7 @@ class GitStateStore:
         input: bytes | None = None,
         check: bool = True,
     ) -> subprocess.CompletedProcess[bytes]:
-        disabled_hooks = getattr(self, "_git_dir", self.repository) / "do-math-disabled-hooks"
+        disabled_hooks = self._git_dir / "do-math-disabled-hooks"
         environment = os.environ.copy()
         environment.update({
             "GIT_CONFIG_NOSYSTEM": "1",
@@ -554,7 +560,6 @@ class GitStateStore:
                 "git", "-C", str(self.repository),
                 "-c", "user.name=do-math",
                 "-c", "user.email=do-math@invalid",
-                "-c", "commit.gpgSign=false",
                 "-c", f"core.hooksPath={disabled_hooks}",
                 *arguments,
             ],
@@ -569,26 +574,11 @@ class GitStateStore:
             # A moved or remounted repository surfaces as a Git error; report
             # the changed boundary rather than only the Git symptom.
             self._repository_boundary.check()
-            if hasattr(self, "_git_boundary"):
-                self._git_boundary.check()
+            self._git_boundary.check()
         if check and completed.returncode:
             detail = completed.stderr.decode("utf-8", "replace").strip()
             raise GitStateStoreError(f"git {' '.join(arguments)} failed: {detail}")
         return completed
-
-
-def no_reparse(path: Path, *, below: Path | None = None) -> None:
-    """Reject reparse components of ``path``, stopping at ``below`` when given."""
-    candidate = path.absolute()
-    for part in (candidate, *candidate.parents):
-        if part == below:
-            return
-        try:
-            value = part.lstat()
-        except FileNotFoundError:
-            continue
-        if stat.S_ISLNK(value.st_mode) or getattr(value, "st_file_attributes", 0) & 0x400:
-            raise ValueError("physical path crosses a reparse point or symlink: " + str(part))
 
 
 def _windows_handle_facts(handle):

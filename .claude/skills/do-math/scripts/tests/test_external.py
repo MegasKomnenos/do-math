@@ -1,17 +1,13 @@
 from __future__ import annotations
-import os,sys,threading,time,unittest
-from http.server import BaseHTTPRequestHandler,HTTPServer
+import os, sys, threading, unittest
+from http.server import HTTPServer
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from do_math.file_io import json_digest
+from do_math.repository import exact_content_hash
 from do_math.external import *
 from do_math import external
-class H(BaseHTTPRequestHandler):
- def do_POST(self):
-  self.rfile.read(int(self.headers.get('Content-Length','0')));body=b'ok';self.send_response(201);self.send_header('Content-Length',str(len(body)));self.end_headers();self.wfile.write(body)
- def do_GET(self): self.send_response(302);self.send_header('Location','http://evil/');self.send_header('Content-Length','0');self.end_headers()
- def log_message(self,*a):pass
+from provider_fixtures import HTTPFixtureHandler
 class Tests(unittest.TestCase):
  def test_method_body_contract_matches_preparation_validation_and_http_bytes(self):
   grant={**self.grant,'allowed_methods':['GET','POST','PUT','DELETE'],'credential_env':{}}
@@ -35,7 +31,7 @@ class Tests(unittest.TestCase):
       self.assertEqual(sent.data,b'\xc3\xa9' if body == 'é' else None)
      if method in ('GET','DELETE'):
       old={**operation,'request':{**operation['request'],'body':'legacy'}}
-      old['request_sha256']=json_digest(old['request'])
+      old['request_sha256']=exact_content_hash(old['request'])
       old['idempotency_key']=__import__('hashlib').sha256((old['id']+old['request_sha256']).encode()).hexdigest()
       calls=[]
       with self.assertRaises(ValueError):execute_operation(old,grant,persist=lambda _:True,
@@ -43,7 +39,7 @@ class Tests(unittest.TestCase):
       self.assertEqual(calls,[])
 
  def setUp(self):
-  self.server=HTTPServer(('127.0.0.1',0),H);threading.Thread(target=self.server.serve_forever,daemon=True).start();time.sleep(.02);self.origin=f'http://127.0.0.1:{self.server.server_port}'
+  self.server=HTTPServer(('127.0.0.1',0),HTTPFixtureHandler);threading.Thread(target=self.server.serve_forever,daemon=True).start();self.origin=f'http://127.0.0.1:{self.server.server_port}'
   self.grant={'id':'G','status':'active','expires_at':None,'allowed_origins':[self.origin],'allowed_methods':['POST','GET'],'allowed_path_prefixes':['/ok'],'credential_env':{'X-Key':'EXT_TEST_KEY'}}
   self.enterContext(patch.dict(os.environ, {'EXT_TEST_KEY': 'secret'}))
  def tearDown(self):self.server.shutdown();self.server.server_close()

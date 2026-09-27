@@ -1,18 +1,20 @@
 """A checkpoint and its named evidence remain accessible through termination."""
-from copy import deepcopy
-from pathlib import Path
+import hashlib
+import json
 import sys
 import tempfile
 import time
 import unittest
+from copy import deepcopy
+from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import test_currentness_recovery as currentness_fixtures
-from research_fixtures import local_job_runner, dispatched_launch
 from do_math.observation_transport import ObservationBatch
 from do_math.observations import ObservationTracker
 from do_math.repository import canonical_json
+from purpose_fixtures import ActivatedPurposeHarness, CURRENTNESS_CONFIG
+from research_fixtures import dispatched_launch, local_job_runner
 
 CHECKPOINT = {'current_claim': 'original evidence', 'evidence_paths': ['proof.txt'],
     'attempts': ['original checked'], 'remaining_work': ['continue'],
@@ -66,13 +68,10 @@ class FinalCheckpointCaptureTests(unittest.TestCase):
             self.assertEqual(artifacts, {})
 
 
-class CheckpointPersistenceTests(unittest.TestCase):
+class CheckpointPersistenceTests(ActivatedPurposeHarness):
     def setUp(self):
-        self.fixture = currentness_fixtures.CurrentnessTests()
-        self.fixture.setUp()
-        self.addCleanup(self.fixture.doCleanups)
-        self.addCleanup(self.fixture.tearDown)
-        self.engine, _ = self.fixture.make()
+        super().setUp()
+        self.engine, _ = self.make_active(**CURRENTNESS_CONFIG)
 
     def test_ended_review_receives_the_original_checkpoint_evidence(self):
         engine, captured = self.engine, {}
@@ -84,7 +83,7 @@ class CheckpointPersistenceTests(unittest.TestCase):
                 (workspace / 'proof.txt').write_bytes(b'original evidence')
                 (workspace / 'checkpoint.json').write_bytes(canonical_json(CHECKPOINT))
                 kwargs['on_observation'](ObservationBatch([], [], [], 0, '2026-09-25T00:00:00Z',
-                    time.monotonic(), 0, 0, kwargs['evidence_dir'] / 'stdout.jsonl', lambda: False))
+                    time.monotonic(), 0, kwargs['evidence_dir'] / 'stdout.jsonl', lambda: False))
                 # Observations are queued; the owner applies them on its next pass.
                 until = time.monotonic() + 60
                 while kwargs['execution_id'] not in engine.runtime.get('checkpoints', {}) and time.monotonic() < until:
@@ -99,7 +98,7 @@ class CheckpointPersistenceTests(unittest.TestCase):
         self.assertEqual(final['sha256'], captured['sha256'])
         self.assertEqual(final.get('evidence_files'), captured['evidence_files'])
         review = next(a for a in engine.runtime['queue'] if a['role'] == 'operational_review')
-        workspace = self.fixture.root / 'review'
+        workspace = self.root / 'review'
         context = engine._context(review, workspace)
         files = context['operational_evidence']['checkpoint_files']
         self.assertEqual(len(files), 1)
@@ -125,7 +124,7 @@ class CheckpointPersistenceTests(unittest.TestCase):
         engine._save()
         tracker = ObservationTracker(execution['id'], workspace, {'observation_mode': 'deadline_only'})
         engine._observe_running(execution['id'], tracker, ObservationBatch([], [], [], 0, '2026-09-25T00:00:00Z',
-            time.monotonic(), 0, 0, workspace / 'stdout.jsonl', lambda: False))
+            time.monotonic(), 0, workspace / 'stdout.jsonl', lambda: False))
         previous = deepcopy(engine.runtime['checkpoints'][execution['id']])
         (workspace / 'checkpoint.json').write_bytes(b'{interrupted write')
         with patch('do_math.windows_job.named_job_empty', return_value=True), \
@@ -138,8 +137,25 @@ class CheckpointPersistenceTests(unittest.TestCase):
         self.assertEqual(final['final_observation']['checkpoint_status'], 'invalid')
         restored = engine.store.load()[2]['checkpoints'][execution['id']]
         self.assertEqual(restored, final)
-        context = engine._context({'role': 'operational_review', 'target': execution['id']}, self.fixture.root / 'review')
+        context = engine._context({'role': 'operational_review', 'target': execution['id']}, self.root / 'review')
         self.assertEqual(context['operational_evidence']['checkpoint_status'], 'preserved')
+
+
+class CheckpointPreservationTests(unittest.TestCase):
+    def test_collected_checkpoint_keeps_exact_resume_reference(self):
+        from do_math.observations import preserve_checkpoint
+        value = {'current_claim': 'Partial claim', 'evidence_paths': [], 'attempts': ['Compared the definitions'],
+                 'remaining_work': ['Finish the argument'], 'next_step': 'Check the remaining case',
+                 'progress_state': 'working', 'counters': {}}
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            raw = json.dumps(value).encode()
+            (workspace / 'checkpoint.json').write_bytes(raw)
+            checkpoint, artifacts = preserve_checkpoint(workspace,
+                artifact_prefix='runtime/artifacts/BA/checkpoint', max_bytes=4096)
+        self.assertEqual(checkpoint['kind'], 'worker_checkpoint')
+        self.assertEqual(artifacts[checkpoint['artifact_ref']], raw)
+        self.assertEqual(checkpoint['sha256'], hashlib.sha256(raw).hexdigest())
 
 
 if __name__ == '__main__':

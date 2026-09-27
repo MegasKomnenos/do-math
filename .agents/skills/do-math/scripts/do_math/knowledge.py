@@ -9,8 +9,8 @@ from copy import deepcopy
 import re
 from typing import Any
 
-from .repository import exact_content_hash, new_id, semantic_content_hash
-from .input_basis import capture_sources, sources_current
+from .file_io import require_text
+from .repository import exact_content_hash, new_id
 from .planning import READ_REFERENCE_FIELDS, READ_REFERENCE_ID_FIELDS, record_index
 
 
@@ -18,12 +18,7 @@ def _hash(record: Any) -> str:
     if isinstance(record, dict) and record.get('family') in {'formal_results', 'expositions'}:
         from .knowledge_records import record_digest
         return record_digest(record)
-    return semantic_content_hash(record)
-
-
-def _require_text(value: str, name: str) -> None:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{name} must be nonempty")
+    return exact_content_hash(record)
 
 
 # planning.RECORD_FAMILIES keys whose records a basis row or an impact closure can name.
@@ -49,7 +44,7 @@ def capture_basis(instance: dict, runtime: dict, record_ids: list[str]) -> list[
     basis = []
     records = _basis_records(instance, runtime)
     for record_id in record_ids:
-        _require_text(record_id, "record ID")
+        require_text(record_id, "record ID")
         record = records.get(record_id)
         if record is None:
             raise ValueError(f"unknown record ID: {record_id}")
@@ -86,10 +81,10 @@ def validate_basis(basis: list[dict], instance: dict, runtime: dict) -> dict:
 # Bookkeeping has no authored mathematical meaning. Unknown fields remain in
 # the projection, so adding a new author field cannot silently weaken checks.
 _DECISION_BOOKKEEPING = frozenset({
-    "id", "revision", "status", "lifecycle", "history", "reviews", "review_history",
-    "use_history", "verified_at", "created_at", "updated_at", "formal", "identity_assessment",
-    "review_cycle_id", "previous_review_cycle_id", "producer_execution", "producer_execution_ids",
-    "source_ref", "actor_ref", "task_id", "required_reviews", "use_suspended", "use_suspensions",
+    "id", "revision", "status", "lifecycle", "history", "reviews",
+    "use_history", "created_at", "updated_at",
+    "review_cycle_id", "previous_review_cycle_id", "producer_execution",
+    "source_ref", "actor_ref", "task_id", "use_suspended", "use_suspensions",
     "use_suspension_reasons", "source_basis", "relation_endpoint_basis",
 })
 
@@ -336,7 +331,7 @@ def _apply_impact_effects(instance, runtime, affected, roots, *, reason, impact_
 
 def apply_reviewed_impacts(instance, runtime, plans, confirmations, *, reason):
     """Apply one already-current S0 decision set without recomputing an S1 plan."""
-    _require_text(reason, "reason")
+    require_text(reason, "reason")
     if not isinstance(plans, dict) or not plans:
         raise ValueError("reviewed impacts require at least one named plan")
     affected, roots = set(), set()
@@ -351,7 +346,7 @@ def apply_reviewed_impacts(instance, runtime, plans, confirmations, *, reason):
 
 
 def apply_impact(instance, runtime, plan, *, reason, independent_confirmation=None):
-    _require_text(reason, "reason")
+    require_text(reason, "reason")
     current = plan_impact(instance, runtime, plan["roots"], plan["declared_impact"], sensitive=plan["sensitive"])
     if current != plan:
         raise ValueError("impact plan is stale or altered")
@@ -362,7 +357,7 @@ def apply_impact(instance, runtime, plan, *, reason, independent_confirmation=No
 def _apply_current_plan(instance, runtime, plan, *, reason, independent_confirmation=None, in_place=False):
     # For a plan the caller has just computed from these same views. A supplied
     # or stored plan goes through apply_impact, which recomputes it first.
-    _require_text(reason, "reason")
+    require_text(reason, "reason")
     affected = _confirmed_impact(plan, independent_confirmation)
     return _apply_impact_effects(instance, runtime, affected, set(plan["roots"]),
         reason=reason, impact_digest=plan["digest"], in_place=in_place)
@@ -490,7 +485,7 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
                       reserved_dependency_ids=()) -> tuple[dict, dict]:
     """Create one replacement after its bundle's impact disposition is complete."""
     from . import knowledge_records as kr
-    _require_text(reason, "reason"); _require_text(actor_ref, "actor_ref")
+    require_text(reason, "reason"); require_text(actor_ref, "actor_ref")
     validate_changes(changes)
     permitted = {"kind", "title", "statement", "explanation", "summary", "definitions", "assumptions",
                  "lean_code", "declaration_names", "dependencies", "source_refs", "origin_refs",
@@ -555,7 +550,7 @@ def revise_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: 
 
 def invalidate_knowledge(instance, runtime, knowledge_id, *, reason, actor_ref,
                          declared_impact=None, independent_confirmation=None):
-    _require_text(reason, "reason"); _require_text(actor_ref, "actor_ref")
+    require_text(reason, "reason"); require_text(actor_ref, "actor_ref")
     plan = plan_impact(instance, runtime, [knowledge_id], declared_impact or [])
     output, new_runtime = _apply_current_plan(instance, runtime, plan, reason=reason,
                                               independent_confirmation=independent_confirmation)
@@ -564,7 +559,7 @@ def invalidate_knowledge(instance, runtime, knowledge_id, *, reason, actor_ref,
 
 
 def suspend_for_source_change(instance, runtime, knowledge_id, *, source_name, reason, actor_ref):
-    _require_text(source_name, "source_name"); _require_text(reason, "reason"); _require_text(actor_ref, "actor_ref")
+    require_text(source_name, "source_name"); require_text(reason, "reason"); require_text(actor_ref, "actor_ref")
     output, new_runtime = deepcopy(instance), deepcopy(runtime)
     record = output["knowledge"][knowledge_id]
     xid = record["exposition_id"]
@@ -578,20 +573,6 @@ def suspend_for_source_change(instance, runtime, knowledge_id, *, source_name, r
                         "source_name": source_name, "actor_ref": actor_ref})
     _propagate(output, new_runtime, {knowledge_id}, reason)
     return output, new_runtime
-
-
-def register_environment(instance: dict, toolchain: dict,
-                         allowed_axioms: list[str]) -> tuple[dict, str]:
-    if not isinstance(toolchain, dict) or not toolchain:
-        raise ValueError("toolchain must be a nonempty object")
-    if (not isinstance(allowed_axioms, list) or len(allowed_axioms) != len(set(allowed_axioms))
-            or any(not isinstance(item, str) or not item for item in allowed_axioms)):
-        raise ValueError("allowed_axioms must contain distinct nonempty strings")
-    output = deepcopy(instance); environment_id = new_id("TE")
-    output.setdefault("trust_environments", {})[environment_id] = {
-        "id": environment_id, "toolchain": deepcopy(toolchain),
-        "allowed_axioms": list(allowed_axioms), "status": "registered"}
-    return output, environment_id
 
 
 def begin_transition(instance: dict, new_env_id: str) -> dict:
@@ -795,7 +776,7 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None) -> di
 
 def invalidate_environment(instance, runtime, env_id, reason, *, affected_constants=None,
                            scope_evidence=None) -> tuple[dict, dict]:
-    _require_text(reason, "reason")
+    require_text(reason, "reason")
     output, new_runtime = deepcopy(instance), deepcopy(runtime)
     environment = output.get("trust_environments", {}).get(env_id)
     if environment is None:

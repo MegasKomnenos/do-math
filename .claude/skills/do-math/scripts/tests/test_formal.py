@@ -1,15 +1,18 @@
-import os,subprocess,sys,tempfile,unittest
 import hashlib
-from unittest.mock import patch, Mock
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from test_categories import test_group as category
-from do_math.formal import project_source_identity, verify_lean, is_lean_identifier, portable_bin, toolchain_root, compare_formal_results
-from do_math import formal
+from unittest.mock import Mock, patch
 
-def actual_command():
- # Explicit portable compiler coverage; Mathlib readiness is checked separately.
- return [os.environ.get('DO_MATH_KNOWLEDGE_TEST_LEAN', str(portable_bin(toolchain_root())/'lean.exe'))]
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from do_math import formal
+from do_math.formal import compare_formal_results, is_lean_identifier, project_source_identity, verify_lean
+from provider_fixtures import actual_command
+from test_categories import test_group as category
+
 class T(unittest.TestCase):
  def test_project_preparation_honors_stop_before_starting_git(self):
   with tempfile.TemporaryDirectory() as d, patch('do_math.formal.subprocess.Popen',side_effect=AssertionError('must stop before Git')):
@@ -93,11 +96,8 @@ class T(unittest.TestCase):
     'version':'fixture','version_exit':0,'project':{'manifest_hashes':{'lakefile.toml':digest(manifest)},
      'source_identity':project_source_identity(project),'search_paths':[]}}
    manifest.write_bytes(b'name = "changed"\n')
-   run_job=formal._job_run
-   def only_git(command,*args,**kwargs):
-    self.assertEqual(command[0],'git','changed project must not start the compiler')
-    return run_job(command,*args,**kwargs)
-   with patch('do_math.formal._job_run',side_effect=only_git):
+   # Git runs directly; any Job would be the compiler or the Lake environment.
+   with patch('do_math.formal._job_run',side_effect=AssertionError('changed project must not start the compiler')):
     result=verify_lean(source='theorem x : True := True.intro',declarations=['x'],
      workspace=root,lean_command=command,expected_toolchain=expected)
    self.assertEqual(result['status'],'rejected')
@@ -246,4 +246,36 @@ class T(unittest.TestCase):
     (project/'lake-manifest.json').write_text('{"packages":[]}',encoding='utf8')
     formal._project_identity(command,workspace=root)
     self.assertEqual(run.call_count,2,'a changed project input is observed again')
+
+
+class ToolchainContractTests(unittest.TestCase):
+    @category('lean')
+    def test_inspection_matches_actual_formal_verifier(self):
+        from do_math.formal import inspect_toolchain, toolchain_errors, verify_lean, portable_bin, toolchain_root
+        command = [str(portable_bin(toolchain_root()) / 'lean.exe')]
+        if not Path(command[0]).is_file():
+            self.skipTest('portable Lean is not installed')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            observed = inspect_toolchain(command, root)
+            self.assertEqual(toolchain_errors(observed), [])
+            result = verify_lean(source='theorem repair_probe : True := True.intro', declarations=['repair_probe'],
+                workspace=root, lean_command=command, expected_toolchain=observed)
+            self.assertEqual(result['status'], 'verified', result)
+            self.assertEqual(result['toolchain'], observed)
+
+    def test_registration_rejects_the_incomplete_document_toolchain(self):
+        from do_math.trust_validation import environment_errors, register_request_errors
+        from research_fixtures import trust_environment, trust_fixture
+        with tempfile.TemporaryDirectory() as directory:
+            request=trust_fixture(Path(directory),['test-lean'])
+            environment, binding = trust_environment(request, source_ref='UC-adopt')
+            self.assertEqual(environment_errors(environment, binding),[])
+            del environment['toolchain']['verifier_sha256']
+            del request['toolchain']['verifier_sha256']
+            errors = environment_errors(environment, binding)
+            self.assertIn('toolchain.verifier_sha256 is missing', register_request_errors(request))
+        self.assertTrue(any('verifier_sha256' in error for error in errors), errors)
+
+
 if __name__=='__main__':unittest.main()

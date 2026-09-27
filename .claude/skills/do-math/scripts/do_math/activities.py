@@ -9,14 +9,10 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from .file_io import require_text
+
 
 ACTIVITY_STATUSES = frozenset({"ready", "working", "waiting", "finished"})
-
-
-def _text(value: Any, field: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{field} must be a nonempty string")
-    return value
 
 
 def _references(value: Any, field: str) -> list[Any]:
@@ -43,13 +39,13 @@ def open_activity(runtime: dict, *, activity_id: str, activity_kind: str, owner_
                   input_refs: list[Any], opened_at: str, stage: str | None = None,
                   execution_limit: int | None = None) -> dict:
     """Create an activity, or return its exact idempotent prior declaration."""
-    _text(activity_id, "activity_id")
-    _text(activity_kind, "activity_kind")
-    _text(opened_at, "opened_at")
+    require_text(activity_id, "activity_id")
+    require_text(activity_kind, "activity_kind")
+    require_text(opened_at, "opened_at")
     if owner_ref is None:
         raise ValueError("owner_ref is required")
     if stage is not None:
-        _text(stage, "stage")
+        require_text(stage, "stage")
     if execution_limit is not None and (isinstance(execution_limit, bool) or not isinstance(execution_limit, int) or execution_limit < 1):
         raise ValueError("execution_limit must be a positive integer or null")
     record = {
@@ -86,7 +82,7 @@ def assign_execution(runtime: dict, activity_id: str, execution: dict, *, stage:
         raise ValueError("a finished activity cannot receive another execution")
     if activity["status"] == "waiting":
         raise ValueError("resolve the recorded activity wait before assigning an execution")
-    execution_id = _text(execution.get("id"), "execution.id")
+    execution_id = require_text(execution.get("id"), "execution.id")
     if execution.get("owner_activity_id") != activity_id:
         raise ValueError("execution owner_activity_id differs from activity")
     if stage is not None and activity.get("stage") not in {None, stage}:
@@ -111,7 +107,7 @@ def bind_action(runtime: dict, action: dict, activity_id: str) -> dict:
     activity = _activities(runtime).get(activity_id)
     if activity is None or activity["status"] == "finished":
         raise ValueError("action requires an existing unfinished activity")
-    action_id = _text(action.get("id"), "action.id")
+    action_id = require_text(action.get("id"), "action.id")
     queued = [row for row in runtime.get("queue", []) if row.get("id") == action_id]
     if len(queued) > 1:
         raise ValueError("action has duplicate queued requests")
@@ -158,15 +154,15 @@ def continue_activity(runtime: dict, execution_id: str, *, at: str, reason: str,
     checkpoint remains keyed by continuation_of; it is not evidence that a new
     conversation has inherited the old context.
     """
-    _text(at, "at")
-    _text(reason, "reason")
-    _text(next_owner, "next_owner")
+    require_text(at, "at")
+    require_text(reason, "reason")
+    require_text(next_owner, "next_owner")
     execution = _executions(runtime)[execution_id]
     if execution["status"] != "ended":
         raise ValueError("only an ended execution can request continuation")
     activity = _activities(runtime)[execution["owner_activity_id"]]
     action = deepcopy(execution.get("action", {}))
-    action_id = _text(action.get("id"), "execution.action.id")
+    action_id = require_text(action.get("id"), "execution.action.id")
     live = [eid for eid in activity["assigned_execution_ids"] if _executions(runtime)[eid]["status"] != "ended"]
     if live:
         raise ValueError("continuation requires the activity's current attempts to end")
@@ -203,8 +199,8 @@ def wait_for(runtime: dict, activity_id: str, *, reason: str, condition: Any,
         raise ValueError(f"unknown activity {activity_id}")
     if activity["status"] == "finished":
         raise ValueError("a finished activity cannot wait")
-    _text(reason, "reason")
-    _text(at, "at")
+    require_text(reason, "reason")
+    require_text(at, "at")
     if condition is None or next_owner is None:
         raise ValueError("condition and next_owner are required")
     executions = _executions(runtime)
@@ -227,7 +223,7 @@ def resume_activity(runtime: dict, activity_id: str, *, condition: Any, at: str)
         raise ValueError("only a waiting activity can resume")
     if activity["waiting"].get("condition") != condition:
         raise ValueError("the resolved condition differs from the recorded wait")
-    _text(at, "at")
+    require_text(at, "at")
     activity["status"] = "ready"
     activity["resumed_at"] = at
     activity.pop("waiting", None)
@@ -240,7 +236,7 @@ def finish_activity(runtime: dict, activity_id: str, *, result_refs: list[Any], 
     activity = _activities(runtime).get(activity_id)
     if activity is None:
         raise ValueError(f"unknown activity {activity_id}")
-    _text(at, "at")
+    require_text(at, "at")
     executions = _executions(runtime)
     live = [eid for eid in activity["assigned_execution_ids"]
             if executions.get(eid, {}).get("status") != "ended"]
@@ -270,13 +266,7 @@ def validate_activities(runtime: dict) -> list[str]:
         if not isinstance(activity, dict) or activity.get("id") != activity_id:
             errors.append(f"{activity_id}: invalid activity record")
             continue
-        if activity.get("status") not in ACTIVITY_STATUSES:
-            errors.append(f"{activity_id}: invalid activity status")
-        assigned = activity.get("assigned_execution_ids")
-        if not isinstance(assigned, list) or len(assigned) != len(set(assigned)):
-            errors.append(f"{activity_id}: assigned execution IDs are invalid")
-            continue
-        for execution_id in assigned:
+        for execution_id in activity["assigned_execution_ids"]:
             execution = executions.get(execution_id)
             if execution is None or execution.get("owner_activity_id") != activity_id:
                 errors.append(f"{activity_id}: execution binding is invalid for {execution_id}")

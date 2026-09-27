@@ -2,7 +2,7 @@
 
 Tests are selected by ID or module (positional), by shard (``--shard``), or all
 shards when neither is given. Every selected test runs; there is no result cache.
-Shards and the isolation labels live in ``tests/test_categories.py``; a test
+Shards and the isolation labels live in ``test_categories.py`` beside this runner; a test
 module missing from ``SHARDS`` stops the run. When and what to run is in
 ``tests/시험-지침.md``.
 
@@ -277,7 +277,7 @@ def main(argv=None):
         parser.error('--timeout must be finite and positive')
     missing, stale = unregistered_modules(TESTS)
     if missing or stale:
-        print('tests/test_categories.py SHARDS is out of date. Unregistered: ' + (', '.join(missing) or '-')
+        print('scripts/test_categories.py SHARDS is out of date. Unregistered: ' + (', '.join(missing) or '-')
               + '. Listed but absent: ' + (', '.join(stale) or '-'), file=sys.stderr)
         return 2
     before = _edition()
@@ -290,6 +290,12 @@ def main(argv=None):
                 if (not args.shard or shard_for(test) in args.shard)
                 and (not args.tests or any(test.id() == name or test.id().startswith(name + '.') for name in args.tests))
                 and (not args.match or any(fnmatch.fnmatchcase(test.id(), pattern) for pattern in args.match))]
+    unknown = [name for name in args.tests or []
+               if not any(test.id() == name or test.id().startswith(name + '.') for test in discovered)]
+    if unknown:
+        # A mistyped ID would otherwise drop out silently and read as a pass.
+        print('No test matches: ' + ', '.join(unknown), file=sys.stderr)
+        return 2
     if not selected:
         print('No tests selected; no pass was established.', file=sys.stderr)
         return 2

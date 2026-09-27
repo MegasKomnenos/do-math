@@ -1,13 +1,15 @@
 """Central governance hooks; Git tests distinguish assembly from live wiring."""
-from copy import deepcopy
-import importlib.util
-from pathlib import Path
 import sys
 import unittest
+from copy import deepcopy
+from pathlib import Path
 from unittest.mock import create_autospec
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.engine import ResearchEngine
 from do_math.repository import exact_content_hash
-from research_fixtures import bare_engine, new_instance
+from engine_fixtures import goal_audit_host, governance_host, intent_import, intent_verdict, routing_engine
+from research_fixtures import governance_start, new_instance
 
 
 class CentralGovernanceTests(unittest.TestCase):
@@ -49,31 +51,8 @@ class CentralGovernanceTests(unittest.TestCase):
         changed['grants']['GR-old']['roles'].append('research_work')
         self.assertNotEqual(gov._import_basis(changed, {}, output), original)
 
-    def mixin(self):
-        self.assertIsNotNone(importlib.util.find_spec('do_math.governance_engine'),
-                             'No central governance consumer exists')
-        from do_math.governance_engine import GovernanceEngineMixin
-        return GovernanceEngineMixin
-
-    def host(self):
-        from test_redesign_GOVERNANCE import AuditRepairTests
-        from do_math.engine import DEFAULT_CONFIG
-        i, rt, bundle, request = AuditRepairTests().checked_import()
-        self.mixin()
-        h = bare_engine(i, rt)
-        h._complete_initial_intent = create_autospec(h._complete_initial_intent,
-            side_effect=lambda target: setattr(h, 'completed_input', target))
-        h._activate_initialization = create_autospec(h._activate_initialization,
-            side_effect=lambda: setattr(h, 'activation_attempted', True))
-        rt.setdefault('events', [])
-        rt.setdefault('pending_events', [])
-        for execution in rt['executions'].values(): execution.setdefault('status', 'queued')
-        i['config'] = {**deepcopy(DEFAULT_CONFIG),  'scholarly_enabled': False}
-        # Config addition is not a premise of this charter import.
-        return h, bundle, request
-
     def test_exact_later_control_applies_once_and_queues_followup(self):
-        h, bundle, request = self.host()
+        h, bundle, request = governance_host()
         self.assertTrue(h._governance_control(request))
         self.assertEqual(h.instance['governance']['CH2']['content']['goal'], 'Prove Q')
         queue = deepcopy(h.runtime['queue'])
@@ -84,7 +63,7 @@ class CentralGovernanceTests(unittest.TestCase):
                             for a in queue))
 
     def test_initial_later_control_completes_initialization_without_new_check(self):
-        h, bundle, request = self.host()
+        h, bundle, request = governance_host()
         h.instance['lifecycle'] = {'input_id': bundle['input_ref']}
         h._governance_control(request)
         self.assertEqual(h.completed_input, bundle['input_ref'])
@@ -92,15 +71,15 @@ class CentralGovernanceTests(unittest.TestCase):
         self.assertFalse(any(a['role'] == 'intent_interpretation' for a in h.runtime['queue']))
 
     def test_stale_approval_rejects_and_routes_to_reauthor(self):
-        h, bundle, request = self.host()
-        h.instance['decisions']['D']['revoked'] = True
+        h, bundle, request = governance_host()
+        h.instance['decisions']['D']['source_sha256'] = '0' * 64
         with self.assertRaises(ValueError): h._governance_control(request)
         self.assertNotIn('CH2', h.instance['governance'])
         self.assertTrue(any(a.get('previous_import_id') == bundle['id'] for a in h.runtime['queue']))
 
     def test_corrected_exact_approval_cancels_unstarted_recheck_of_same_seal(self):
-        h, bundle, request = self.host()
-        wrong = deepcopy(request); wrong['config']['check_sha256'] = '0' * 64
+        h, bundle, request = governance_host()
+        wrong = deepcopy(request); wrong['config']['change']['check_sha256'] = '0' * 64
         with self.assertRaises(ValueError): h._governance_control(wrong)
         self.assertTrue(any(a.get('previous_import_id') == bundle['id'] for a in h.runtime['queue']))
         h._governance_control(request)
@@ -109,13 +88,13 @@ class CentralGovernanceTests(unittest.TestCase):
 
     def test_original_changed_before_later_approval_is_not_applied(self):
         # Approval rechecks the public input the import interpreted (input_ref).
-        h, bundle, request = self.host()
+        h, bundle, request = governance_host()
         h.runtime['inputs'] = [{'id': bundle['input_ref'], 'text': 'A different user original', 'origin': 'user'}]
         with self.assertRaisesRegex(ValueError, 'original public input changed'): h._governance_control(request)
         self.assertNotIn('CH2', h.instance['governance'])
 
     def test_failed_initial_followup_does_not_publish_partial_control_effect(self):
-        h, bundle, request = self.host()
+        h, bundle, request = governance_host()
         h.instance['lifecycle'] = {'input_id': bundle['input_ref']}
         def fail(target): raise ValueError('missing initial evidence')
         h._complete_initial_intent = fail
@@ -125,9 +104,9 @@ class CentralGovernanceTests(unittest.TestCase):
 
     def test_import_configuration_uses_same_profile_and_slot_transition(self):
         import tempfile
-        from do_math.engine import DEFAULT_CONFIG
+        from do_math.configuration import DEFAULT_CONFIG
         from do_math import governance as gov
-        h, _, _ = self.host()
+        h, _, _ = governance_host()
         with tempfile.TemporaryDirectory() as directory:
             h.instance['workspace'] = directory
             h.runtime['reservations'] = {}
@@ -145,17 +124,17 @@ class CentralGovernanceTests(unittest.TestCase):
             h.runtime['executions']['CHECK'] = {'role': 'intent_interpretation', 'status': 'queued', 'intent_import_sha256': bundle['sha256']}
             bundle = gov.check_import(h.instance, h.runtime, bundle['id'], {'decision': 'approved', 'bundle_sha256': bundle['sha256'],
                 'scope_complete': True, 'unit_ids': ['U'], 'question_ids': [], 'findings': []}, execution_id='CHECK', owner_handlers=handlers)
-            request = {'id': 'CONF-APPROVE', 'action': 'decision', 'origin': 'user', 'text': 'Approve exact capacities', 'config': {
+            request = {'id': 'CONF-APPROVE', 'action': 'decision', 'origin': 'user', 'text': 'Approve exact capacities', 'config': {'change': {
                 'kind': 'import_approval', 'import_id': bundle['id'], 'bundle_sha256': bundle['sha256'],
-                'check_sha256': bundle['check']['sha256'], 'unit_hashes': {'U': exact_content_hash(payload)}}}
+                'check_sha256': bundle['check']['sha256'], 'unit_hashes': {'U': exact_content_hash(payload)}}}}
             h._governance_control(request)
             for field in ('config', 'execution_profiles', 'capacity_constraints', 'role_profile_refs'):
                 self.assertEqual(h.instance[field], public_i[field])
             self.assertEqual(h.runtime['reservations'], public_r['reservations'])
 
     def test_configuration_rejects_operator_resources(self):
-        from do_math.engine import DEFAULT_CONFIG
-        h, _, _ = self.host()
+        from do_math.configuration import DEFAULT_CONFIG
+        h, _, _ = governance_host()
         before = deepcopy(h.instance)
         limits = deepcopy(DEFAULT_CONFIG['session_limits'])
         limits['work'] = {model: count + 1 for model, count in limits['work'].items()}
@@ -166,7 +145,7 @@ class CentralGovernanceTests(unittest.TestCase):
     def test_nfd_original_reaches_actual_context_and_coverage(self):
         import hashlib, unicodedata
         from do_math import governance as gov
-        h, _, _ = self.host()
+        h, _, _ = governance_host()
         text = 'Prove that e\u0301 has two code points.'
         raw = text.encode(); working = unicodedata.normalize('NFC', text).encode()
         h.instance['lifecycle'] = {'input_id': 'RAW', 'immutable_input': {
@@ -185,9 +164,9 @@ class CentralGovernanceTests(unittest.TestCase):
             gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR', input_ref='RAW')
 
     def test_audit_context_schema_binding_and_rejected_missing_results(self):
-        from test_redesign_GOVERNANCE import AuditRepairTests
-        h, _, _ = self.host()
-        h.instance, h.runtime = AuditRepairTests().audited()
+        from record_fixtures import checked_import, audited_governance
+        h, _, _ = governance_host()
+        h.instance, h.runtime = audited_governance()
         action = {'role': 'goal_audit'}
         context = h._governance_context(action, {})
         self.assertEqual(context['additional_audit_input'][0]['audit']['id'], 'AU')
@@ -205,7 +184,7 @@ class CentralGovernanceTests(unittest.TestCase):
                             exact_content_hash({'statement': '\u00e9 has two codepoints'}))
 
     def test_import_source_and_public_input_have_distinct_global_identity(self):
-        h, bundle, _ = self.host()
+        h, bundle, _ = governance_host()
         source = bundle['source']
         h.runtime['inputs'] = [{'id': source['id'], 'text': source['text'], 'origin': source['origin'], 'config': {}}]
         created = h._apply_governance_intent({'id': 'AC-NEW', 'role': 'intent_interpretation',
@@ -214,26 +193,8 @@ class CentralGovernanceTests(unittest.TestCase):
         self.assertNotEqual(created['source']['id'], source['id'])
         self.assertEqual(created['source']['sha256'], source['sha256'])
 
-    def audit_host(self):
-        from test_redesign_GOVERNANCE import AuditRepairTests
-        h, _, _ = self.host()
-        h.instance, h.runtime = AuditRepairTests().audited()
-        h.instance.update(knowledge={}, goal_judgments=[])
-        h.runtime.update(events=[], pending_events=[], last_observed_utc='2020-01-01T00:00:00Z')
-        h._goal_basis_key = create_autospec(h._goal_basis_key, return_value='B')
-        action = {'role': 'goal_audit', 'basis': 'B', 'slot': 0, 'required': 1}
-        execution = {'id': 'AUDITOR', 'role': 'goal_audit', 'action': deepcopy(action), 'status': 'ended'}
-        h._bind_governance_input(action, execution, h._governance_context(action, {}))
-        h.runtime['executions']['AUDITOR'] = execution
-        output = {'decision': 'satisfied', 'scope_complete': True, 'used_sources': [],
-            'summary': 'Ordinary goal verdict cannot override audit', 'questions': [], 'findings': [],
-            'additional_audits': [{'audit_ref': 'AU', 'assessor': 'goal_audit', 'verdict': 'partial',
-                'reason': 'Only part of the approved scope has evidence',
-                'input_hashes': execution['additional_audit_input'][0]['input_hashes']}]}
-        return h, action, output
-
     def test_actual_goal_consumer_stores_mapping_not_generic_satisfied(self):
-        h, action, output = self.audit_host()
+        h, action, output = goal_audit_host()
         judgment = h._apply_governance_goal_audit(action, output, 'AUDITOR')
         self.assertEqual(judgment['decision'], 'satisfied')
         self.assertEqual(judgment['additional_audits'][0]['decision'], 'not_satisfied')
@@ -247,7 +208,7 @@ class CentralGovernanceTests(unittest.TestCase):
     def test_actual_goal_consumer_rejects_missing_wrong_and_stale_audit_before_append(self):
         for mutation in ('missing', 'wrong_hash', 'wrong_assessor', 'stale'):
             with self.subTest(mutation=mutation):
-                h, action, output = self.audit_host()
+                h, action, output = goal_audit_host()
                 if mutation == 'missing': output.pop('additional_audits')
                 elif mutation == 'wrong_hash': output['additional_audits'][0]['input_hashes'] = {'CH1': '0' * 64}
                 elif mutation == 'wrong_assessor': output['additional_audits'][0]['assessor'] = 'producer-claim'
@@ -261,7 +222,7 @@ class CentralGovernanceTests(unittest.TestCase):
         from research_fixtures import trust_environment, trust_fixture
         for verdict, expected in [('partial', False), ('pass', True)]:
             with self.subTest(verdict=verdict):
-                h, action, output = self.audit_host()
+                h, action, output = goal_audit_host()
                 h.instance['knowledge'] = {'K': {'id': 'K', 'statement': 'fixture only'}}
                 h.instance['formal_results'] = {'FR': {'id': 'FR'}}
                 old_judgment = {'id': 'GJ-old', 'basis': 'old', 'slot': 0, 'required': 1,
@@ -297,12 +258,12 @@ class CentralGovernanceTests(unittest.TestCase):
     def test_raw_initial_charter_compares_lossless_input_not_nfc_projection(self):
         import hashlib, unicodedata
         from do_math import governance as gov
-        from test_redesign_GOVERNANCE import charter
+        from research_fixtures import charter
         text = 'e\u0301 has two codepoints'; raw = text.encode(); work = unicodedata.normalize('NFC', text).encode()
         source = gov.preserve_source('S', text, origin='user')
         record = charter()
-        instance = {'id': 'I', 'feature_version': 5, 'lifecycle': {'immutable_input': {
-            'text': text, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}}}
+        instance = governance_start({'id': 'I', 'lifecycle': {'immutable_input': {
+            'text': text, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}}})
         approval = {'id': 'D', 'actor': 'user', 'source_ref': 'S', 'source_sha256': source['sha256'],
                     'record_hashes': {'CH1': exact_content_hash(record)}}
         result = gov.initialize_governance(instance, source, approval, [record])
@@ -313,19 +274,12 @@ class CentralGovernanceTests(unittest.TestCase):
 
 
 class PublicGitGovernanceTests(unittest.TestCase):
-    def engine_type(self):
-        from do_math.engine import ResearchEngine
-        from do_math.governance_engine import GovernanceEngineMixin
-        self.assertTrue(issubclass(ResearchEngine, GovernanceEngineMixin),
-                        'The installed engine must own the governance transition')
-        return ResearchEngine
-
     def initialized(self, root, goal='User approves P'):
-        from do_math.engine import DEFAULT_CONFIG
+        from do_math.configuration import DEFAULT_CONFIG
         instance_id = new_instance(root, goal=goal, workspace=root/'work', config={
             'scholarly_enabled': False, 'session_limits': deepcopy(DEFAULT_CONFIG['session_limits']),
              })
-        return self.engine_type()(root, instance_id)
+        return ResearchEngine(root, instance_id)
 
     def execution_fixture(self, engine, eid, role, target=None):
         aid = 'ACT-' + eid
@@ -340,7 +294,8 @@ class PublicGitGovernanceTests(unittest.TestCase):
 
     def test_public_configure_preserves_original_result_after_other_control_and_reload(self):
         import tempfile
-        from do_math.engine import control, DEFAULT_CONFIG
+        from do_math.engine import control
+        from do_math.configuration import DEFAULT_CONFIG
         def capacity(count):
             limits = deepcopy(DEFAULT_CONFIG['session_limits'])
             limits['work'] = {model: count for model in limits['work']}
@@ -355,7 +310,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
             self.assertEqual(original['config']['session_limits'], capacity(12)['session_limits'])
             control(root, iid, 'configure', config=capacity(14), request_id='configure-second')
             engine.process_controls()
-            restarted = self.engine_type()(root, iid)
+            restarted = ResearchEngine(root, iid)
             replay = control(root, iid, 'configure', config=capacity(12), request_id='configure-first')
             self.assertEqual(replay['snapshot'], original['snapshot'])
             self.assertEqual(replay['config']['session_limits'], capacity(12)['session_limits'])
@@ -376,7 +331,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
         import tempfile
         from do_math import governance as gov
         from do_math.engine import control
-        from test_redesign_GOVERNANCE import charter
+        from research_fixtures import charter
         from do_math.repository import new_id
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); engine = self.initialized(root)
@@ -413,7 +368,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
             engine._apply_governance_intent({'id': 'AC-CHECKER', 'role': 'intent_interpretation', 'stage': 'check',
                 'target': 'input-Q', 'import_id': bundle['id']}, check, 'CHECKER')
             engine._save()
-            engine = self.engine_type()(root, iid)
+            engine = ResearchEngine(root, iid)
             sealed = deepcopy(engine.runtime['intent_imports'][bundle['id']]['check'])
             spec = {'kind': 'import_approval', 'import_id': bundle['id'], 'bundle_sha256': bundle['sha256'],
                 'check_sha256': sealed['sha256'], 'unit_hashes': {'U': exact_content_hash(output['import_units'][0]['payload'])}}
@@ -429,7 +384,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
                         config={'change': spec}, request_id='stale-premise-approval')
                 engine.process_controls()
                 self.assertEqual(engine.control_result('stale-premise-approval')['effect'], 'rejected')
-                restarted = self.engine_type()(root, iid)
+                restarted = ResearchEngine(root, iid)
                 self.assertNotIn('CH2', restarted.instance['governance'])
                 self.assertEqual(restarted.runtime['intent_imports'][bundle['id']]['check'], sealed)
                 self.assertTrue(any(a.get('previous_import_id') == bundle['id'] for a in restarted.runtime['queue']))
@@ -442,7 +397,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
             rejected_replay = control(root, iid, 'decision', text='Wrong sealed reference',
                                       config={'change': wrong}, request_id='wrong-approval')
             self.assertEqual(rejected_replay['snapshot'], rejected['snapshot'])
-            engine = self.engine_type()(root, iid)
+            engine = ResearchEngine(root, iid)
             import io, json
             from contextlib import redirect_stdout
             from do_math import cli
@@ -456,7 +411,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
             self.assertEqual(code, 0, response.getvalue())
             result = json.loads(response.getvalue())['result']
             self.assertEqual(result['effect'], 'applied')
-            restarted = self.engine_type()(root, iid)
+            restarted = ResearchEngine(root, iid)
             self.assertTrue(any(row['text'] == approval_text
                 for row in restarted.instance['governance_sources'].values()))
             if scenario == 'configuration':
@@ -472,7 +427,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
     def test_public_audit_contract_and_actual_goal_judgment_survive_git_reload(self):
         import tempfile
         from do_math.engine import control
-        from test_redesign_GOVERNANCE import charter
+        from research_fixtures import charter
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); engine = self.initialized(root)
             iid = engine.instance['id']
@@ -546,9 +501,9 @@ class PublicGitGovernanceTests(unittest.TestCase):
             ex['submission_receipt'] = {'state': 'accepted', 'execution_id': 'AUDITOR',
                                         'payload': {'submission_check': {'artifacts': refs}}}
             from do_math.submission import read_sealed_submission
-            read_sealed_submission(ex, engine.head, lambda snapshot, path: artifacts[path])
+            read_sealed_submission(ex, engine.head, lambda path, snapshot: artifacts[path])
             engine._save(artifacts)
-            restarted = self.engine_type()(root, iid)
+            restarted = ResearchEngine(root, iid)
             self.assertEqual(restarted.instance['goal_judgments'][0]['additional_audits'][0]['decision'], 'not_satisfied')
             self.assertNotEqual(restarted.runtime['status'], 'completed')
             self.assertEqual(restarted.runtime['executions']['AUDITOR']['additional_audit_input'], context['additional_audit_input'])
@@ -559,7 +514,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
                 self.assertEqual(restarted.runtime['waiting_actions'][action['id']]['kind'], 'submission_publication',
                                  restarted.runtime['waiting_actions'][action['id']])
                 restarted._retry_submission_publications()
-            final = self.engine_type()(root, iid)
+            final = ResearchEngine(root, iid)
             self.assertEqual(final.runtime['executions']['AUDITOR']['outcome'], 'output_accepted')
             self.assertEqual(final.runtime['activities']['ACT-AUDITOR']['status'], 'finished')
             self.assertEqual(final.runtime['executions']['AUDITOR']['result_ref'], result_ref)
@@ -572,7 +527,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             text = 'Prove that e\u0301 contains two Unicode codepoints.'
             root = Path(directory); engine = self.initialized(root, goal=text)
-            engine = self.engine_type()(root, engine.instance['id'])
+            engine = ResearchEngine(root, engine.instance['id'])
             context = engine._governance_context({'role': 'intent_interpretation',
                 'target': engine.instance['lifecycle']['input_id']}, {})
             self.assertEqual(context['user_request']['text'], text)
@@ -586,12 +541,82 @@ class PublicGitGovernanceTests(unittest.TestCase):
             iid = engine.instance['id']; text = 'e\u0301 is a two-codepoint literal'
             control(root, iid, 'input', text=text, request_id='literal-input')
             engine.process_controls()
-            restarted = self.engine_type()(root, iid)
+            restarted = ResearchEngine(root, iid)
             context = restarted._governance_context({'role': 'intent_interpretation', 'target': 'literal-input'}, {})
             self.assertEqual(context['original_source']['text'], text)
             self.assertEqual(context['user_request']['text'], text)
             with self.assertRaises(ValueError):
                 control(root, iid, 'input', text='\u00e9 is a two-codepoint literal', request_id='literal-input')
+
+
+class ApprovalDraftTests(unittest.TestCase):
+    def test_exact_draft_reaches_existing_consumer_without_mutating_source_state(self):
+        from record_fixtures import checked_import, audited_governance
+        from do_math import governance
+        instance,runtime,bundle,request=checked_import()
+        before=deepcopy((instance,runtime))
+        draft=governance.import_approval_draft(instance,runtime,bundle['id'])
+        self.assertEqual(draft,request['config'])
+        self.assertEqual((instance,runtime),before)
+        updated,state,receipt=governance.apply_import_control(instance,runtime,{**request,'config':draft})
+        self.assertEqual(receipt['status'],'applied')
+        broken=deepcopy(runtime)
+        broken['intent_imports'][bundle['id']]['check']['scope_complete']=False
+        with self.assertRaises(ValueError):
+            governance.import_approval_draft(instance,broken,bundle['id'])
+
+
+class IntentConnections(unittest.TestCase):
+    def test_clarification_still_receives_independent_check(self):
+        engine = routing_engine()
+        bundle, action = intent_import(engine, clarification=True)
+        self.assertEqual(action["stage"], "check")
+        self.assertEqual(action["import_id"], bundle["id"])
+        self.assertEqual(engine.runtime["question_links"], [])
+        engine._record_output_questions.assert_not_called()
+
+    def test_failed_check_returns_to_authoring_with_findings(self):
+        engine = routing_engine()
+        bundle, action = intent_import(engine)
+        engine._apply(action, intent_verdict(bundle, "revision_required", False), "EX-check")
+        retry = engine.runtime["queue"][0]
+        self.assertEqual(retry["stage"], "interpret")
+        self.assertEqual(retry["lineage_id"], "AC-root")
+        self.assertEqual(retry["previous_import_id"], bundle["id"])
+        self.assertEqual(retry["intent_repair"]["findings"], ["Missing second clause"])
+        self.assertEqual(engine.runtime["questions"], [])
+
+    def test_check_cannot_apply_unresolved_proposed_changes(self):
+        engine = routing_engine()
+        bundle, action = intent_import(engine, clarification=True,
+            payload={"kind": "charter", "record": {"id": "CH-one"}})
+        engine._apply(action, intent_verdict(bundle), "EX-check")
+        self.assertEqual(engine.instance["goal"], "Original approved goal")
+        self.assertEqual(engine.runtime["intent_imports"][bundle["id"]]["application"]["status"], "awaiting_decision")
+        self.assertEqual(len(engine.runtime["question_links"]), 1)
+        self.assertFalse(any(a["role"] == "research_preparation" for a in engine.runtime["queue"]))
+
+
+class GovernanceOwnerConnections(unittest.TestCase):
+    def test_control_applies_actual_checked_import_and_records_one_public_result(self):
+        from engine_fixtures import goal_audit_host, governance_host
+        host, bundle, request = governance_host()
+        engine = routing_engine(); engine.instance, engine.runtime = host.instance, host.runtime
+        engine.runtime.update(status="ready", history=[], processed_controls=[])
+        for execution in engine.runtime["executions"].values():
+            execution.setdefault("status", "ended")
+        engine.head = "fixed-parent"
+        engine._inbox = create_autospec(engine._inbox, return_value=[request]); engine._save = create_autospec(engine._save)
+        for name in ("_review_recovery_control", "_knowledge_io_control", "_academic_control", "_apply_extended_control"):
+            setattr(engine, name, create_autospec(getattr(engine, name), return_value=False))
+        for name in ("_schedule_operational_reviews", "_retry_submission_publications", "_retry_impact_reviews", "_run_pending_operational_repairs"):
+            setattr(engine, name, create_autospec(getattr(engine, name)))
+        engine._controls()
+        self.assertEqual(engine.instance["governance"]["CH2"]["content"]["goal"], "Prove Q")
+        self.assertEqual(engine.runtime["intent_imports"][bundle["id"]]["application"]["status"], "applied")
+        self.assertEqual(len([h for h in engine.runtime["history"] if h.get("kind") == "user_control"]), 1)
+        engine._save.assert_called_once()
+        engine._apply_extended_control.assert_not_called()
 
 
 if __name__ == '__main__': unittest.main()

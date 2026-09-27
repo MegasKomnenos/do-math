@@ -10,8 +10,8 @@ import os
 from pathlib import Path, PurePosixPath
 
 from .repository import canonical_json, exact_content_hash
-from .file_io import is_sha256, stat_fingerprint
-from .git_store import PhysicalBoundary, no_reparse, oid_shape
+from .file_io import is_sha256, no_reparse, stat_fingerprint
+from .git_store import PhysicalBoundary, oid_shape
 
 
 class _ChangedDuringRead(OSError):
@@ -22,7 +22,7 @@ class _PhysicalBoundaryError(ValueError):
     pass
 
 
-def _relative(name: str) -> PurePosixPath:
+def relative_path(name: str) -> PurePosixPath:
     if not isinstance(name, str) or not name or "\\" in name or ":" in name:
         raise ValueError("path must be a nonempty relative POSIX path")
     path = PurePosixPath(name)
@@ -31,7 +31,7 @@ def _relative(name: str) -> PurePosixPath:
     return path
 
 
-def _is_reparse(path: Path) -> bool:
+def is_reparse(path: Path) -> bool:
     """Whether ``path`` itself (not an ancestor) is a symlink or reparse point."""
     path = path.absolute()
     try:
@@ -41,8 +41,8 @@ def _is_reparse(path: Path) -> bool:
     return False
 
 
-def _safe_path(root: Path, name: str, *, require_input: bool = False) -> Path:
-    relative = _relative(name)
+def safe_path(root: Path, name: str, *, require_input: bool = False) -> Path:
+    relative = relative_path(name)
     if require_input and (not relative.parts or relative.parts[0] != "input"):
         raise ValueError("source reference must stay below input/")
     root = _physical_root(root)
@@ -60,7 +60,7 @@ def _physical_root(root: Path) -> Path:
     return root
 
 
-def _read_stable(path: Path, *, boundary: PhysicalBoundary | None = None) -> bytes:
+def read_stable(path: Path, *, boundary: PhysicalBoundary | None = None) -> bytes:
     # The boundary proves its root once (a caller reading many files passes
     # one). Reading compares the same descriptor's metadata before and after,
     # so a file written while it is read is not taken as one version.
@@ -84,15 +84,15 @@ def materialize_inputs(workspace: Path, documents: dict[str, bytes]) -> dict:
         raise TypeError("documents must be a path-to-bytes object")
     workspace = _physical_root(workspace)
     workspace.mkdir(parents=True, exist_ok=True)
-    if _is_reparse(workspace):
+    if is_reparse(workspace):
         raise ValueError("workspace must not be a reparse point")
     planned: list[tuple[str, Path, bytes]] = []
     for name, data in documents.items():
-        relative = _relative(name)
+        relative = relative_path(name)
         if not isinstance(data, bytes):
             raise TypeError(f"document must be bytes: {name}")
         logical = PurePosixPath("input") / relative
-        target = _safe_path(workspace, logical.as_posix(), require_input=True)
+        target = safe_path(workspace, logical.as_posix(), require_input=True)
         if target.exists():
             raise FileExistsError(f"input path already exists: {logical.as_posix()}")
         planned.append((logical.as_posix(), target, data))
@@ -106,7 +106,7 @@ def materialize_inputs(workspace: Path, documents: dict[str, bytes]) -> dict:
     return {"input_root": "input", "manifest": manifest}
 
 
-def _excluded(relative: PurePosixPath) -> bool:
+def is_excluded(relative: PurePosixPath) -> bool:
     return bool(relative.parts and (relative.parts[0] in {"input", ".git", ".scratch", ".control", "checks"}
                                     or "__pycache__" in relative.parts))
 
@@ -117,7 +117,7 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
         raise ValueError("max_bytes must be a nonnegative integer")
     if not isinstance(required_paths, list):
         raise TypeError("required_paths must be a list")
-    required = {_relative(name).as_posix() for name in required_paths}
+    required = {relative_path(name).as_posix() for name in required_paths}
     workspace = _physical_root(workspace)
     files: dict[str, bytes] = {}
     manifest: list[dict] = []
@@ -132,12 +132,12 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
     if not isinstance(captured_files, dict):
         raise TypeError("captured_files must be a path-to-bytes object")
     for name, data in sorted(captured_files.items()):
-        relative = _relative(name)
-        if _excluded(relative):
+        relative = relative_path(name)
+        if is_excluded(relative):
             raise ValueError("captured research file is excluded: " + name)
         if not isinstance(data, bytes):
             raise TypeError("captured research file must be bytes: " + name)
-        _safe_path(workspace, name)
+        safe_path(workspace, name)
         if total_bytes + len(data) > max_bytes:
             omitted.append({"path": name, "reason": "max_bytes_exceeded", "bytes": len(data),
                             "required": name in required})
@@ -160,9 +160,9 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
         for dirname in sorted(dirnames):
             path = base / dirname
             relative = PurePosixPath(path.relative_to(workspace).as_posix())
-            if _excluded(relative):
+            if is_excluded(relative):
                 continue
-            if _is_reparse(path):
+            if is_reparse(path):
                 reason = "outside_symlink" if not path.resolve(strict=False).is_relative_to(workspace) else "reparse_directory"
                 omitted.append({"path": relative.as_posix(), "reason": reason})
                 continue
@@ -172,17 +172,17 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
             path = base / filename
             relative = PurePosixPath(path.relative_to(workspace).as_posix())
             name = relative.as_posix()
-            if _excluded(relative):
+            if is_excluded(relative):
                 continue
             if name in captured_files:
                 continue
             seen.add(name)
-            if _is_reparse(path):
+            if is_reparse(path):
                 reason = "outside_symlink" if not path.resolve(strict=False).is_relative_to(workspace) else "reparse_file"
                 omitted.append({"path": name, "reason": reason, "required": name in required})
                 continue
             try:
-                data = _read_stable(path, boundary=boundary)
+                data = read_stable(path, boundary=boundary)
             except _PhysicalBoundaryError as error:
                 omitted.append({"path": name, "reason": "physical_boundary", "error": str(error),
                                 "error_type": type(error).__name__, "required": name in required})
@@ -222,7 +222,7 @@ def write_source_catalog(context: dict, workspace: Path) -> dict:
         raise TypeError("context must be an object")
     workspace = _physical_root(workspace)
     workspace.mkdir(parents=True, exist_ok=True)
-    if _is_reparse(workspace):
+    if is_reparse(workspace):
         raise ValueError("workspace must not be a reparse point")
     entries: dict[str, dict] = {}
     manifest: list[dict] = []
@@ -230,11 +230,11 @@ def write_source_catalog(context: dict, workspace: Path) -> dict:
     boundary = None
     for key in sorted(context):
         logical = "input/catalog/" + _catalog_name(key)
-        target = _safe_path(workspace, logical, require_input=True)
+        target = safe_path(workspace, logical, require_input=True)
         data = canonical_json(context[key])
         if target.exists():
             boundary = boundary or PhysicalBoundary(workspace)  # one root proof per catalog
-            if _read_stable(target, boundary=boundary) != data:
+            if read_stable(target, boundary=boundary) != data:
                 raise FileExistsError(f"catalog path contains different bytes: {logical}")
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -341,7 +341,7 @@ def restore_continuation(runtime, action, workspace, *, snapshot, read_artifact,
         if checkpoint:
             checkpoint()
         for entry in execution.get('output_files', []):
-            logical = _relative(entry['path']).as_posix()
+            logical = relative_path(entry['path']).as_posix()
             latest[logical] = {**deepcopy(entry), 'execution_id': execution['id'], 'snapshot': snapshot}
         stage = {'execution_id': execution['id'], 'outcome': execution.get('outcome'),
                  'error': execution.get('error'),
@@ -416,8 +416,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     This function never fetches another seat's private records.
     """
     from . import contracts, governance, task_contracts
-    from .execution_profiles import validate_profile, profile_ref, prepare_prompt
-    validate_profile(profile)
+    from .execution_profiles import profile_ref, prepare_prompt
     if profile['role'] != role or role not in _ROLE_DIRECT:
         raise ValueError('selected profile does not match the input role')
     try:
@@ -432,7 +431,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         materialize_inputs(workspace, {logical: raw})
         ref = {'path': 'input/' + logical, 'snapshot': snapshot, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
         if artifact_prefix is not None:
-            ref['artifact_ref'] = _relative(artifact_prefix).as_posix() + '/' + ref['path']
+            ref['artifact_ref'] = relative_path(artifact_prefix).as_posix() + '/' + ref['path']
             detail_bytes[ref['artifact_ref']] = raw
         detail_sources.append(ref)
         return deepcopy(ref)
@@ -640,13 +639,14 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     fitted = fit_context(value, max_bytes=max(1, limit - overhead), workspace=workspace,
                          mandatory_keys=required, role=role, profile_id=profile['id'], activity_id=activity_id)
     prompt = render(fitted['context'])
-    original_prompt = render(value)
     actual = len(prompt.encode('utf-8'))
     if actual > limit:
+        # Only the overflow record reports the unreduced prompt's size.
+        original_bytes = len(render(value).encode('utf-8'))
         overflow = fitted['overflow'] or _input_overflow('rendered_prompt_exceeds_limit',
-            actual_bytes=len(original_prompt.encode('utf-8')), mandatory_bytes=0, max_bytes=limit,
+            actual_bytes=original_bytes, mandatory_bytes=0, max_bytes=limit,
             mandatory_keys=required, role=role, profile_id=profile['id'], activity_id=activity_id)
-        overflow.update(original_bytes=len(original_prompt.encode('utf-8')), actual_bytes=len(original_prompt.encode('utf-8')),
+        overflow.update(original_bytes=original_bytes, actual_bytes=original_bytes,
                         packed_bytes=actual, limit_bytes=limit, unit='utf8_bytes',
                         prompt_metrics=contracts.prompt_metrics(prompt, fitted['context'], schema, documents))
         overflow.setdefault('resolution_question', {'kind': 'input_capacity', 'activity_id': activity_id,
@@ -662,18 +662,17 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
             overflow['without_restored_dialogue_bytes'] = current_bytes
         alternatives = []
         if role == 'research_work' and base_bytes <= limit:
-            from .execution_profiles import resolve_profile
+            from .execution_profiles import match_profile_ref
             from .model_policy import selection
             for reference in value.get('task', {}).get('profile_refs', []):
                 try:
-                    candidate = resolve_profile(instance['execution_profiles'], reference)
+                    candidate = match_profile_ref(instance['execution_profiles'], reference)
                     selection(instance['config'], {**action, 'profile_ref': profile_ref(candidate)},
                         runtime['tasks'], instance.get('knowledge', {}), instance=instance)
                 except ValueError:
                     continue
                 if candidate['id'] == profile['id']:
                     continue
-                validate_profile(candidate)
                 if candidate['role'] == role and candidate.get('input', {}).get('unit') == 'utf8_bytes' and candidate['input']['max_input_bytes'] >= actual:
                     alternatives.append(candidate['id'])
         overflow['allowed_profile_candidates'] = alternatives
@@ -691,7 +690,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
                'manifest': fitted['manifest']}
     manifest = build_role_manifest(value, workspace=workspace, role=role, direct_keys=required,
         reference_keys=sorted(k for k in value if k not in required), catalog=catalog)
-    manifest.update(feature_version=5, snapshot=snapshot, execution_profile_ref=profile_ref(profile),
+    manifest.update(snapshot=snapshot, execution_profile_ref=profile_ref(profile),
         output_contract={'id': schema.get('x-contract-id'), 'sha256': exact_content_hash(schema)},
         # Role documents carry the digest their prompt header states.
         documents=[{'path': doc['path'], 'sha256': doc['sha256'],
@@ -705,7 +704,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     if artifact_prefix is not None:
         # The one archive of this role input: every file sits at its
         # workspace-relative path below the prefix, and the prompt at input.txt.
-        prefix = _relative(artifact_prefix).as_posix()
+        prefix = relative_path(artifact_prefix).as_posix()
         if not prefix.startswith('runtime/artifacts/'):
             raise ValueError('role input archive must stay in runtime/artifacts')
         catalog_files = fitted['catalog_files']
@@ -723,8 +722,9 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         manifest['prompt']['artifact_ref'] = prefix + '/input.txt'
         artifacts[manifest['prompt']['artifact_ref']] = prompt.encode('utf-8')
     validate_role_manifest(manifest)
-    fitted.update(manifest=manifest, prompt=prompt, actual_bytes=actual,
-                  original_bytes=len(original_prompt.encode('utf-8')), artifacts=artifacts,
+    # fit_context's original_bytes measures the context JSON; nothing reads it here.
+    fitted.pop('original_bytes')
+    fitted.update(manifest=manifest, prompt=prompt, actual_bytes=actual, artifacts=artifacts,
                   validation_context=validation_context)
     return fitted
 
@@ -743,8 +743,8 @@ def _candidate_order(ids, snapshot, role, action_id, replay=None):
 
 
 def validate_role_manifest(manifest):
-    if not isinstance(manifest, dict) or manifest.get('feature_version') != 5 or manifest.get('role') not in _ROLE_DIRECT:
-        raise ValueError('invalid role input manifest version or role')
+    if not isinstance(manifest, dict) or manifest.get('role') not in _ROLE_DIRECT:
+        raise ValueError('invalid role input manifest role')
     snapshot = manifest.get('snapshot', '')
     try:
         oid_shape(snapshot)
@@ -758,7 +758,8 @@ def validate_role_manifest(manifest):
     required = {'snapshot', 'governance', 'execution_profile', 'action', *role_keys}
     if len(keys) != len(set(keys)) or not (required | set(manifest.get('required_direct_keys', []))) <= set(keys):
         raise ValueError('required direct input is missing or duplicated')
-    if manifest.get('output_contract', {}).get('id') != 'do-math-cli/5':
+    from .contracts import RESPONSE_CONTRACT_ID
+    if manifest.get('output_contract', {}).get('id') != RESPONSE_CONTRACT_ID:
         raise ValueError('input does not bind the current response contract')
     paths = [doc['path'] for doc in manifest.get('documents', [])]
     if any(paths.count(path) != 1 for path in ('SKILL.md', 'GLOSSARY.md')):
@@ -771,7 +772,7 @@ def validate_role_manifest(manifest):
         if type(row.get('bytes')) is not int or row['bytes'] < 0:
             raise ValueError('input component requires measured byte length')
     for ref in manifest.get('references', []):
-        _relative(ref['source_ref']['path'])
+        relative_path(ref['source_ref']['path'])
     order = manifest.get('candidate_order')
     if manifest['role'] in {'research_preparation', 'research_plan'}:
         if not isinstance(order, dict) or len(order.get('ids', [])) != len(set(order.get('ids', []))):
@@ -813,8 +814,8 @@ def verify_manifest_artifacts(manifest, read_artifact, *, read_artifacts=None, a
     With ``artifact_sizes`` only presence and stored length are compared; the
     full-byte comparison belongs to the explicit ``check`` command. Both
     ``artifact_sizes`` and ``read_artifacts`` omit paths absent from the
-    snapshot. With ``git_dir``, rows this process already matched (contract
-    S3) are not read.
+    snapshot. With ``git_dir``, rows this process already matched (이음새-정본.md
+    §3) are not read.
     """
     from .repository import artifact_verified, sealed_bytes
     validate_role_manifest(manifest)
@@ -948,12 +949,12 @@ def read_source(workspace: Path, ref: dict, offset: int = 0,
     try:
         if not isinstance(ref, dict) or not isinstance(ref.get("path"), str):
             raise ValueError("source ref must contain a path")
-        path = _safe_path(workspace, ref["path"], require_input=True)
+        path = safe_path(workspace, ref["path"], require_input=True)
         if not path.exists():
             return {"status": "missing", "path": ref["path"], "bytes": b"",
                     "sha256": None, "range": {"start": offset, "end": offset, "total": 0},
                     "truncated": False, "reason": "source_missing"}
-        data = _read_stable(path, boundary=PhysicalBoundary(_physical_root(workspace)))
+        data = read_stable(path, boundary=PhysicalBoundary(_physical_root(workspace)))
         digest = hashlib.sha256(data).hexdigest()
         if "sha256" in ref and ref["sha256"] != digest:
             raise ValueError("source hash differs from reference")

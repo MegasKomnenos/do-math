@@ -2,6 +2,13 @@
 
 Family files are authoritative. Read and publication share the installed
 schema/relationship contract; model selection and activation remain elsewhere.
+
+The process-wide caches below (VERIFIED_ARTIFACTS, _VALIDATED_READS,
+_RETAINED_READS, _ARTIFACT_FACTS, _PUBLISHED_PARENTS) are used only by the
+thread that owns the repositories. Worker threads (parallel.py) take only the
+pure functions canonical_json and exact_content_hash from this module and hand
+their results back to the owning thread, so no cache takes a lock. A worker
+thread that reads a repository would need synchronization for all of them.
 """
 
 from __future__ import annotations
@@ -16,18 +23,17 @@ from copy import deepcopy
 from pathlib import Path
 import re
 import secrets
-import threading
 import time
 from typing import Any
 
 from .operation_trace import measured
 
 from .events import EventPublisher, check_sequence, event_rows
-from .file_io import is_sha256, reject_constant, unique_pairs
-from .git_store import GitStateStore, PhysicalBoundary, ULID_ALPHABET, ULID_LENGTH, no_reparse
+from .file_io import is_sha256, no_reparse, reject_constant, unique_pairs
+from .git_store import GitStateStore, PhysicalBoundary, ULID_ALPHABET, ULID_LENGTH
 # payloads imports this module only inside its functions, so a module-level
 # import is acyclic; canonical_json and its value check run on every node.
-from .payloads import FrozenDict, FrozenText, decode, encode, seal_large
+from .payloads import FrozenText, decode, encode, seal_large
 from .state_contract import STATE_CONTRACT_ID, StateContract, default_state_contract
 
 
@@ -66,7 +72,7 @@ def verify_artifact(git_dir, path, raw, sha256, size=None):
 
 
 def sealed_bytes(git_dir, path, sha256, size, read, *, raw=None, needed=True, error=None):
-    """Stored artifact bytes, matched against their sealed row once per process (contract S3).
+    """Stored artifact bytes, matched against their sealed row once per process (이음새-정본.md §3).
 
     ``read()`` supplies the stored bytes when ``raw`` is not given. ``size`` is
     the declared length, or None when the row declares none. A row this process
@@ -90,20 +96,14 @@ def sealed_bytes(git_dir, path, sha256, size, read, *, raw=None, needed=True, er
 
 
 # Validated snapshot reads shared by every repository object in this process,
-# keyed by (git directory, commit, contract key). A commit's bytes never
-# change, so an entry stays valid for its contract; the bound limits memory.
-# Entries come from a full read of a head, or from this process's own
-# publication, whose candidate was validated before the ref moved.
+# keyed by (git directory, commit, contract). A commit's bytes never change
+# and a contract does not change after its first use (state_contract), so an
+# entry stays valid; the bound limits memory. Repositories share the installed
+# contract object and so its entries. Entries come from a full read of a head,
+# or from this process's own publication, whose candidate was validated
+# before the ref moved.
 _VALIDATED_READS: OrderedDict = OrderedDict()
 _VALIDATED_READ_LIMIT = 4
-
-
-def _contract_key(contract):
-    """Contracts left as installed share entries; any other contract is its own key."""
-    digest = contract.manifest()["sha256"]
-    if contract.validation_generation == contract.installed_generation:
-        return ("installed", digest)
-    return (contract, digest, contract.validation_generation)
 
 
 # Heads kept beyond the limit, per git directory: the input snapshots of live
@@ -135,7 +135,6 @@ _PUBLISHED_PARENTS: OrderedDict = OrderedDict()
 _ARTIFACT_ROW_LIMIT = 4096
 _ARTIFACT_BYTES_LIMIT = 64 << 20
 _LINEAGE_LIMIT = 1024
-_artifact_lock = threading.Lock()
 _held_bytes = 0
 
 
@@ -153,43 +152,40 @@ def _descends(git_dir, snapshot, head):
 
 def _known_artifact(git_dir, path, snapshot):
     """The [head, length, bytes] row for ``path`` when it holds at ``snapshot``, else None."""
-    with _artifact_lock:
-        row = _ARTIFACT_FACTS.get((git_dir, path))
-        if row is None or not _descends(git_dir, snapshot, row[0]):
-            return None
-        _ARTIFACT_FACTS.move_to_end((git_dir, path))
-        return row
+    row = _ARTIFACT_FACTS.get((git_dir, path))
+    if row is None or not _descends(git_dir, snapshot, row[0]):
+        return None
+    _ARTIFACT_FACTS.move_to_end((git_dir, path))
+    return row
 
 
 def _learn_artifact(git_dir, path, head, size, raw=None):
     global _held_bytes
-    with _artifact_lock:
-        old = _ARTIFACT_FACTS.pop((git_dir, path), None)
-        if old is not None and old[2] is not None:
-            _held_bytes -= len(old[2])
-            if raw is None and old[1] == size:
-                raw = old[2]
-        _ARTIFACT_FACTS[(git_dir, path)] = [head, size, raw]
-        if raw is not None:
-            _held_bytes += len(raw)
-        for key in list(_ARTIFACT_FACTS):
-            if len(_ARTIFACT_FACTS) <= _ARTIFACT_ROW_LIMIT and _held_bytes <= _ARTIFACT_BYTES_LIMIT:
-                break
-            if len(_ARTIFACT_FACTS) > _ARTIFACT_ROW_LIMIT:
-                dropped = _ARTIFACT_FACTS.pop(key)
-            else:
-                dropped = _ARTIFACT_FACTS[key]
-                _ARTIFACT_FACTS[key] = [dropped[0], dropped[1], None]
-            if dropped[2] is not None:
-                _held_bytes -= len(dropped[2])
+    old = _ARTIFACT_FACTS.pop((git_dir, path), None)
+    if old is not None and old[2] is not None:
+        _held_bytes -= len(old[2])
+        if raw is None and old[1] == size:
+            raw = old[2]
+    _ARTIFACT_FACTS[(git_dir, path)] = [head, size, raw]
+    if raw is not None:
+        _held_bytes += len(raw)
+    for key in list(_ARTIFACT_FACTS):
+        if len(_ARTIFACT_FACTS) <= _ARTIFACT_ROW_LIMIT and _held_bytes <= _ARTIFACT_BYTES_LIMIT:
+            break
+        if len(_ARTIFACT_FACTS) > _ARTIFACT_ROW_LIMIT:
+            dropped = _ARTIFACT_FACTS.pop(key)
+        else:
+            dropped = _ARTIFACT_FACTS[key]
+            _ARTIFACT_FACTS[key] = [dropped[0], dropped[1], None]
+        if dropped[2] is not None:
+            _held_bytes -= len(dropped[2])
 
 
 def _learn_publication(git_dir, parent, head, artifacts):
-    with _artifact_lock:
-        if parent is not None and parent != head:  # a no-op publication keeps its head
-            _PUBLISHED_PARENTS[(git_dir, head)] = parent
-            while len(_PUBLISHED_PARENTS) > _LINEAGE_LIMIT:
-                _PUBLISHED_PARENTS.popitem(last=False)
+    if parent is not None and parent != head:  # a no-op publication keeps its head
+        _PUBLISHED_PARENTS[(git_dir, head)] = parent
+        while len(_PUBLISHED_PARENTS) > _LINEAGE_LIMIT:
+            _PUBLISHED_PARENTS.popitem(last=False)
     for path, raw in artifacts.items():
         _learn_artifact(git_dir, path, head, len(raw), raw)
 
@@ -217,7 +213,7 @@ def new_id(prefix: str) -> str:
 
 def canonical_json(value: Any) -> bytes:
     """Encode a finite JSON value deterministically without changing Unicode."""
-    if isinstance(value, (FrozenDict, FrozenText)) and hasattr(value, '_payload_bytes'):
+    if isinstance(value, FrozenText) and hasattr(value, '_payload_bytes'):
         return value._payload_bytes
     validate_storage_value(value)
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False) + "\n").encode("utf-8")
@@ -240,13 +236,6 @@ class ResearchRepository:
         """Repository identity for process-wide caches such as VERIFIED_ARTIFACTS."""
         return self._store._git_dir
 
-    def register_family(self, root: str, name: str, **kwargs: Any) -> None:
-        """Register a family owner before that family is persisted."""
-        if kwargs.get("schema") is not None:
-            from .state_contract import check_schema
-            check_schema(kwargs["schema"])
-        self.contract.register_family(root, name, **kwargs)
-
     def initialize(self, instance, runtime):
         if self._store.read_snapshot().head is not None:
             raise ValueError("the instance ref already has an initial state")
@@ -256,7 +245,7 @@ class ResearchRepository:
         return head
 
     def _read_key(self, head):
-        return (str(self.git_dir), head, _contract_key(self.contract))
+        return (str(self.git_dir), head, self.contract)
 
     def _descriptors(self, head):
         """The cached (instance, runtime, record descriptors) of ``head``, uncopied.
@@ -403,24 +392,29 @@ class ResearchRepository:
         self._store._validate_candidate_paths(set(files) | set(supplied))
         return {"instance": instance, "runtime": runtime, "files": files,
                 "contract": self.contract.manifest(), "valid": True, "artifacts": supplied,
-                "basis": {"head": expected_head, "validation_generation": self.contract.validation_generation}}
+                "basis": {"head": expected_head}}
 
-    def save_with_state(self, expected_head, instance, runtime, *, artifacts=None):
-        """Validate and atomically publish once, returning the published normalized views."""
+    def save_with_state(self, expected_head, instance, runtime, *, artifacts=None, retain=None):
+        """Validate and atomically publish once, returning the published normalized views.
+
+        ``retain`` names the heads whose validated reads stay cached after this
+        publication (``retain_reads``); None leaves the retained set unchanged.
+        """
         self._precheck_head(expected_head)
         candidate = self._validate_candidate(instance, runtime, expected_head, artifacts=artifacts)
-        return self._publish_candidate(expected_head, candidate)
+        published = self._publish_candidate(expected_head, candidate)
+        if retain is not None:
+            retain_reads(self.git_dir, retain)
+        return published
 
     def save_validated(self, expected_head, candidate):
         """Publish a :meth:`validate_candidate` result without validating it again.
 
-        The candidate must have been validated against ``expected_head`` under
-        this contract's current validation generation. Any other candidate is
-        validated in full first, as :meth:`save_with_state` would.
+        The candidate must have been validated against ``expected_head``. Any
+        other candidate is validated in full first, as :meth:`save_with_state` would.
         """
         self._precheck_head(expected_head)
-        if candidate.get("basis") != {"head": expected_head,
-                                      "validation_generation": self.contract.validation_generation}:
+        if candidate.get("basis") != {"head": expected_head}:
             candidate = self._validate_candidate(candidate["instance"], candidate["runtime"], expected_head,
                                                  artifacts=candidate.get("artifacts") or None)
         return self._publish_candidate(expected_head, candidate)
@@ -516,15 +510,6 @@ class ResearchRepository:
         head = self._resolve_snapshot(snapshot)
         instance, runtime, rows = deepcopy(self._descriptors(head))
         return head, instance, runtime, [{**row, "snapshot": head} for row in rows]
-
-    def records(self, snapshot=None, *, family=None, root=None):
-        """Enumerate exact persisted record bytes, including singleton authorities.
-
-        Only the selected rows are copied.
-        """
-        head = self._resolve_snapshot(snapshot)
-        return [{**deepcopy(row), "snapshot": head} for row in self._descriptors(head)[2]
-                if (family is None or row["family"] == family) and (root is None or row["root"] == root)]
 
     def read_record(self, record_id, snapshot=None):
         head = self._resolve_snapshot(snapshot)
@@ -716,14 +701,11 @@ class ResearchRepository:
         self._store._validate_oid(snapshot)
         return snapshot
 
-    def _git(self, *arguments: str):
-        return self._store._git(*arguments)
-
-
-def _canonical_object(value: Any) -> bytes:
-    if not isinstance(value, dict):
-        raise TypeError("instance and runtime values must be JSON objects")
-    return canonical_json(value)
+    def first_descendant(self, parent: str, head: str) -> str | None:
+        """The commit on ``head``'s first-parent line whose parent is ``parent``, if any."""
+        self._store._validate_oid(parent)
+        commits = self._store._git("rev-list", "--first-parent", "--reverse", parent + ".." + head).stdout.decode().splitlines()
+        return commits[0] if commits else None
 
 
 def _decode_object(data: bytes) -> dict[str, Any]:
@@ -769,7 +751,7 @@ def validate_storage_value(value: Any) -> None:
         if not value.isascii() and _SURROGATE.search(value):
             raise ValueError("JSON strings cannot contain surrogate code points")
         return
-    if isinstance(value, (FrozenDict, FrozenText)) and hasattr(value, '_payload_bytes'):
+    if isinstance(value, FrozenText) and hasattr(value, '_payload_bytes'):
         return  # Sealing validated exact bytes and these values cannot be edited.
     if value is None or isinstance(value, (bool, str)):
         if isinstance(value, str) and _SURROGATE.search(value):
@@ -826,15 +808,6 @@ def _decode_cursor(cursor: str) -> dict[str, Any]:
     return value
 
 
-def semantic_content_hash(value, projection=None):
-    """Hash an explicitly selected semantic projection, distinct from file bytes."""
-    if projection is not None:
-        if not isinstance(value, Mapping) or any(key not in value for key in projection):
-            raise ValueError("semantic projection fields must exist")
-        value = {key: value[key] for key in projection}
-    return exact_content_hash(value)
-
-
 def _record_path(root, name, identifier):
     return f"{root}/{name}/{identifier}.json"
 
@@ -854,7 +827,8 @@ def _encode_families(instance, runtime, contract, object_format, *, parent=None)
     equal to the parent's record at the same family and ID keeps the parent's
     file bytes: canonical encoding is deterministic, and those bytes were
     produced by an earlier encoding or checked canonical when read. Only the
-    records serialized here pass the storage value check of ``canonical_json``.
+    records serialized here pass the storage value check of ``canonical_json``;
+    the equality and its accepted bool/integer gap are StateContract.validate's.
     """
     files = {}
     installed = contract.manifest()

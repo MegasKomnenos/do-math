@@ -8,7 +8,7 @@ import jsonschema
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import contracts, execution_profiles, review_cycle, review_policy
-from do_math.engine import DEFAULT_CONFIG
+from do_math.configuration import DEFAULT_CONFIG
 from research_fixtures import bare_engine, scope_response
 
 
@@ -61,19 +61,31 @@ class ScopeWireTests(unittest.TestCase):
         jsonschema.Draft202012Validator(review_cycle.stage_schema("scope")).validate(body)
         review_policy.validate_scope_assessment(body["scope_assessment"], self.policy)
 
-    def test_submission_checks_scope_against_the_seat_policy(self):
+    def test_submission_checks_scope_with_the_conditions_the_review_accepts(self):
         from do_math import submission
         import tempfile
-        context = {'action': {'role': 'identity_review', 'stage': 'scope',
-                   'review_cycle_id': 'RC-fixture'},
-                   'role_review': {'review_policy': self.policy, 'scope_executions_used': 1}}
+        cycle = review_cycle.start_review({'revision': 1}, 2, max_rounds=2, policy=self.policy)
+        cycle['execution_accounting']['executions_used'] = ['EX-scope']
+        action = review_cycle.next_actions(cycle)[0]
+        context = {'action': {'role': 'identity_review', 'review_cycle_id': 'RC-fixture', **action},
+                   'role_review': review_cycle.context_for(cycle, action)}
+        seat = review_cycle.stage_schema("scope")
+        seat["properties"]["proposal_digest"] = {**seat["properties"]["proposal_digest"], "enum": [cycle["proposal_digest"]]}
+        wire = contracts.with_integration_schema(seat)
+        response = {**deepcopy(self.response), 'proposal_digest': cycle['proposal_digest']}
         with tempfile.TemporaryDirectory() as directory:
-            issues = submission._payload_issues(self.response, self.wire, context, {}, Path(directory))
-            self.assertFalse([row for row in issues if row['path'] == 'output/scope_assessment'], issues)
-            changed = deepcopy(self.response)
-            changed['scope_assessment']['policy_id'] = 'RP-other'
-            issues = submission._payload_issues(changed, self.wire, context, {}, Path(directory))
-            self.assertTrue(any(row['path'] == 'output/scope_assessment' for row in issues), issues)
+            self.assertEqual(submission._payload_issues(response, wire, context, {}, Path(directory)), [])
+            other_policy = deepcopy(response)
+            other_policy['scope_assessment']['policy_id'] = 'RP-other'
+            incomplete = {**deepcopy(response), 'scope_complete': False}
+            open_question = {**deepcopy(response), 'questions': ['Which domain is intended?']}
+            for label, changed in (('policy', other_policy), ('scope_complete', incomplete), ('questions', open_question)):
+                with self.subTest(changed=label):
+                    issues = submission._payload_issues(changed, wire, context, {}, Path(directory))
+                    self.assertEqual([row['path'] for row in issues], ['output'], issues)
+                    with self.assertRaises(ValueError):
+                        review_cycle.accept_result(cycle, action, {key: value for key, value in changed.items()
+                                                                   if key != 'integration_bundles'}, 'EX-scope-result')
 
     def test_wire_rejects_missing_proposal_binding_and_invalid_scope_details(self):
         for missing in ("proposal_digest", "scope_complete"):
@@ -92,7 +104,7 @@ class ExpandedScopeRevisionTests(unittest.TestCase):
         from unittest.mock import create_autospec, patch
         policy = review_policy.build_review_policy(reviewer_count=2, max_rounds=2)
         slots = ['initial-0', 'initial-1', 'specialist']
-        scope = {'assessment_id': 'SA-expanded', 'policy_id': policy['id'], 'policy_version': 5,
+        scope = {'assessment_id': 'SA-expanded', 'policy_id': policy['id'],
             'required_perspectives': [], 'initial_slots': [
                 {'id': slot, 'perspective': 'full proposal', 'required_source_refs': ['proposal']}
                 for slot in slots], 'selected_profile_ref': None,

@@ -1,9 +1,16 @@
-"""Validated starting states for tests whose subject is after initialization.
+"""Validated starting states for tests whose subject is after initialization, and owner-loop helpers.
 
-Synthetic adapter, trust and interpretation evidence is assembled by the
-existing lifecycle fixture. Real repository validation/publication is retained;
-this helper does not establish that the public initialization workflow works.
-Each call creates independent state in the caller's temporary repository.
+``active_engine`` assembles synthetic adapter, trust and interpretation
+evidence with ``engine_fixtures.FakeEngine`` and publishes the result through
+the real repository validation; it does not establish that the public
+initialization workflow works. ``active_instance`` is its template build
+(``research_fixtures.restore_template``). ``active_repository()`` is a copy of
+that state with ``ACTIVE_CONFIG``; ``start_active_copy(test)`` gives a test
+such a copy with the adapter observation replaced.
+
+``owner_calls(engine)`` and ``start_model_call(engine, action)`` run machine
+steps and model calls as the scheduler's owner loop does.
+``complete_academic_task`` completes a task with a synthetic returned report.
 """
 from contextlib import contextmanager
 from copy import deepcopy
@@ -27,7 +34,7 @@ def active_engine(repository, workspace, *, config=None, runner=None, formal_ver
     ``external_policy`` and ``review_policy`` go to the adoption decision, as in
     ``research_fixtures.activate``; ``review_policy`` None adopts the default.
     """
-    from test_lifecycle_engine import FakeEngine
+    from engine_fixtures import FakeEngine
     from research_fixtures import FixtureAdapter
 
     workspace.mkdir(parents=True, exist_ok=True)
@@ -58,6 +65,31 @@ def active_instance(root, shared, *, config, external_policy='explicit_grants', 
                          external_policy=external_policy, review_policy=review_policy).instance["id"]
 
 
+# The settings of the copy most tests start from (``active_repository``).
+ACTIVE_CONFIG = {'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}
+
+
+def active_repository():
+    """A copy of the validated active state with ``ACTIVE_CONFIG``: ``(root, repository, instance ID)``.
+
+    It is ``restore_template(active_instance, config=ACTIVE_CONFIG)``; the
+    workspace is ``root / 'work-0'`` (the instance names it).
+    """
+    from research_fixtures import restore_template
+    root, identifier = restore_template(active_instance, config=ACTIVE_CONFIG)
+    return root, root / "repository", identifier
+
+
+def start_active_copy(test):
+    """Give ``test`` an ``active_repository`` copy: sets ``root``, ``repo`` and ``identifier``.
+
+    The adapter observation stays replaced by ``FixtureAdapter`` until the test ends.
+    """
+    from research_fixtures import FixtureAdapter
+    test.enterContext(patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()))
+    test.root, test.repo, test.identifier = active_repository()
+
+
 @contextmanager
 def owner_calls(engine):
     """Run the calls started inside the block on ModelCalls, as the scheduler does.
@@ -85,7 +117,12 @@ def owner_calls(engine):
 
 
 def start_model_call(engine, action):
-    """Begin one AI action's call as the scheduler does; use inside ``owner_calls``."""
+    """Begin one AI action's call as the scheduler does; use inside ``owner_calls``.
+
+    The scheduler passes the action's lifecycle gate (``_dispatchable``) in the
+    pass that starts it, so this passes the same gate first.
+    """
+    engine._action_lifecycle_gate(action)
     generator = engine._call_steps(action)
     try:
         arguments = next(generator)

@@ -5,6 +5,8 @@ from copy import deepcopy
 from typing import Any
 
 from .control_transport import SUBMIT_INTENT
+from .file_io import require_text
+from .session_slots import local_termination_confirmed
 
 # Acceptance receipt kinds. A control submission's receipt keeps its request
 # kind (control_transport.SUBMIT_INTENT); the others name their own receiver.
@@ -20,26 +22,20 @@ _EDGES = {"queued": {"starting", "ended"}, "starting": {"running", "stopping"},
           "running": {"stopping"}, "stopping": {"ended"}, "ended": set()}
 
 
-def _nonempty(value: Any, field: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{field} must be a nonempty string")
-    return value
-
-
 def create_execution(*, execution_id: str, owner_activity_id: str, actor_kind: str,
                      input_manifest: Any, profile_ref: Any, created_at: str,
                      continuation_of: str | None = None,
                      context_origin: list[str] | None = None) -> dict:
     """Create a queued attempt.  Continuation is explicit, never inferred."""
-    _nonempty(execution_id, "execution_id")
-    _nonempty(owner_activity_id, "owner_activity_id")
-    _nonempty(created_at, "created_at")
+    require_text(execution_id, "execution_id")
+    require_text(owner_activity_id, "owner_activity_id")
+    require_text(created_at, "created_at")
     if actor_kind not in {"ai", "machine"}:
         raise ValueError("actor_kind must be ai or machine")
     if input_manifest is None or profile_ref is None:
         raise ValueError("input_manifest and profile_ref are required")
     if continuation_of is not None:
-        _nonempty(continuation_of, "continuation_of")
+        require_text(continuation_of, "continuation_of")
         if continuation_of == execution_id:
             raise ValueError("an execution cannot continue itself")
     if context_origin is not None and (not isinstance(context_origin, list) or
@@ -58,7 +54,7 @@ def transition_execution(execution: dict, target: str, *, at: str, reason: str |
     current = execution.get("status")
     if current not in EXECUTION_STATUSES or target not in EXECUTION_STATUSES:
         raise ValueError("execution status is invalid")
-    _nonempty(at, "at")
+    require_text(at, "at")
     if target != current and target not in _EDGES[current]:
         raise ValueError(f"illegal execution transition {current} -> {target}")
     if target == "stopping":
@@ -92,6 +88,8 @@ def transition_execution(execution: dict, target: str, *, at: str, reason: str |
         execution["stop_phase"] = stop_phase
     elif target == "ended":
         execution.pop("stop_phase", None)
+        # A recovery disposition governs an unfinished execution; the outcome replaces it.
+        execution.pop("recovery_disposition", None)
         execution.update(ended_at=at, outcome=outcome, result_disposition=deepcopy(disposition))
     return execution
 
@@ -117,11 +115,11 @@ def record_submission_intent(execution: dict, intent: dict, receipt: dict, *, at
         raise ValueError("a different submission intent or receipt was already recorded")
     recovery = (receipt.get('kind') == NATIVE_FINAL_RECEIPT and receipt.get('recovery_request_id')
         and execution.get('status') == 'ended' and execution.get('outcome') == 'execution_incomplete'
-        and execution.get('capacity', {}).get('local_termination') == 'confirmed')
+        and local_termination_confirmed(execution))
     if execution.get("status") != "running" and not recovery:
         raise ValueError("submission intent requires a running execution or explicit terminated recovery")
-    at = _nonempty(at or receipt.get("received_at"), "submission receipt time")
-    receipt_id = _nonempty(receipt.get("id") or receipt.get("request_id"), "receipt identity")
+    at = require_text(at or receipt.get("received_at"), "submission receipt time")
+    receipt_id = require_text(receipt.get("id") or receipt.get("request_id"), "receipt identity")
     candidate = deepcopy(execution)
     candidate["submission_intent"] = deepcopy(intent)
     candidate["submission_receipt"] = deepcopy(receipt)
@@ -142,8 +140,8 @@ def begin_preparation(execution: dict, *, at: str, stage: str = "context") -> di
     """
     if execution.get("status") != "queued":
         raise ValueError("input preparation requires a queued execution")
-    _nonempty(at, "at")
-    _nonempty(stage, "stage")
+    require_text(at, "at")
+    require_text(stage, "stage")
     previous = execution.get("input_preparation", {})
     execution["input_preparation"] = {"stage": stage, "started_at": previous.get("started_at", at),
                                       "updated_at": at}
@@ -154,7 +152,7 @@ def end_preparation(execution: dict, *, at: str, stage: str, reason: str, cancel
     """Preserve failure/interruption facts before private input is discarded."""
     if type(cancelled) is not bool:
         raise ValueError("cancelled must be boolean")
-    _nonempty(reason, "reason")
+    require_text(reason, "reason")
     candidate = deepcopy(execution)
     begin_preparation(candidate, at=at, stage=stage)
     if candidate.get("capacity"):
@@ -195,39 +193,33 @@ def release_or_hold(execution: dict, slots, *, at: str) -> bool:
     return False
 
 
-def recover_execution(execution: dict, observation: dict, *, at: str) -> dict:
-    """Apply only the disposition justified by a recovery observation.
+def recover_execution(execution: dict, *, at: str) -> dict:
+    """Move a started execution that a new executor found unfinished to its barrier.
 
-    The caller supplies adapter/Job observations.  This function never probes a
-    provider or guesses remote completion.
+    Its state alone decides the disposition. This function never probes a
+    provider or guesses remote completion; ``end_recovered`` ends it once the
+    caller has confirmed the local termination barrier.
     """
-    if not isinstance(observation, dict):
-        raise ValueError("recovery observation must be a dictionary")
-    _nonempty(at, "at")
+    require_text(at, "at")
     state = execution.get("status")
-    fact = observation.get("fact")
-    if state not in EXECUTION_STATUSES:
-        raise ValueError("execution status is invalid")
-    execution.setdefault("recovery", []).append({"at": at, "observation": deepcopy(observation)})
-    if state == "queued" and fact == "no_execution_or_reservation":
-        execution["recovery_disposition"] = "retain_for_recheck"
-    elif state == "starting" and fact == "start_unknown":
+    if state == "starting":
         drive_to_termination(execution, at=at, reason="recovery cannot establish start")
         execution["recovery_disposition"] = "preserve_space_and_reservations"
-    elif state == "running" and fact == "previous_engine_lost":
+    elif state == "running":
         drive_to_termination(execution, at=at, reason="previous engine lost")
         execution["recovery_disposition"] = "reconcile_local_and_remote"
-    elif state == "stopping" and execution.get("stop_phase") == "checkpointing" and fact == "engine_restarted":
+    elif state == "stopping" and execution.get("stop_phase") == "checkpointing":
         drive_to_termination(execution, at=at, reason="checkpointing cannot continue after recovery")
         execution["recovery_disposition"] = "preserve_received_checkpoint"
-    elif state == "stopping" and fact == "termination_barrier_pending":
+    elif state == "stopping":
         execution["recovery_disposition"] = "preserve_space_and_reservations"
-    elif state == "stopping" and fact == "termination_barrier_confirmed":
-        outcome = observation.get("outcome", "execution_incomplete")
-        transition_execution(execution, "ended", at=at, reason="recovery confirmed termination barrier",
-                             outcome=outcome, disposition=observation.get("disposition", "preserved_for_followup"))
-    elif state == "ended":
-        execution["recovery_disposition"] = "continue_non_execution_followup"
     else:
-        raise ValueError(f"observation {fact!r} is not valid for {state}")
+        raise ValueError(f"a {state} execution has no recovery disposition")
     return execution
+
+
+def end_recovered(execution: dict, *, at: str, outcome: str, disposition: Any) -> dict:
+    """End an unfinished execution whose local termination barrier recovery confirmed."""
+    drive_to_termination(execution, at=at, reason="recovery local termination reconciliation")
+    return transition_execution(execution, "ended", at=at, reason="recovery confirmed termination barrier",
+                                outcome=outcome, disposition=disposition)

@@ -2,6 +2,7 @@
 from copy import deepcopy
 
 from . import planning, submission
+from .execution_profiles import RESEARCH_PRODUCER_ROLES
 from .input_basis import capture_decision_basis, decision_basis_changes, CurrentnessChanged
 from .repository import exact_content_hash, new_id
 from .session_slots import held_reservations
@@ -62,7 +63,7 @@ class DecisionEngineMixin:
                     at=self._lifecycle_now().isoformat())
 
     def _execution_requirement_changes(self, action, *, evaluation_context=None):
-        if action.get("role") not in {"research_work", "supplemental_research"} or action.get("review_cycle_id"):
+        if action.get("role") not in RESEARCH_PRODUCER_ROLES or action.get("review_cycle_id"):
             return []
         task = self.runtime["tasks"].get(action.get("target"))
         if not task or task.get("status") in planning.TERMINAL_TASK_STATUSES:

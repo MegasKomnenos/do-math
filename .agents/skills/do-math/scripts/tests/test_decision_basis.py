@@ -6,16 +6,13 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.input_basis import capture_decision_basis, decision_basis_changes
 from do_math import integration, planning, revisions
-from research_fixtures import candidate, contract_review, charter_record
-from do_math.governance import initialize_governance, preserve_source
-from do_math.repository import exact_content_hash
+from research_fixtures import approved_governance, bare_engine, candidate, contract_review, charter_record
 from do_math.knowledge_records import create_candidate
 
 
 class BasisTests(unittest.TestCase):
     def test_current_resolution_commits_only_with_its_complete_bundle(self):
-        from do_math.decision_engine import DecisionEngineMixin
-        owner = DecisionEngineMixin()
+        owner = bare_engine()
         action = {'id': 'AC-current', 'role': 'research_plan', 'target': 'A'}
         output = {'summary': 'Resolve the prior failure', 'used_sources': [], 'questions': [],
                   'dispositions': [], 'task_assessments': [], 'preparation_requests': [], 'goal_audit': False}
@@ -50,7 +47,6 @@ class BasisTests(unittest.TestCase):
         self.assertEqual(replay['runtime']['history'], accepted['runtime']['history'])
 
     def test_current_resolution_requires_its_validated_bundle_and_same_scope(self):
-        from do_math.decision_engine import DecisionEngineMixin
         for accepting, evidence_id, target, allowed in (
             (False, 'current', 'A', False),
             (True, 'current', 'A', True),
@@ -58,8 +54,7 @@ class BasisTests(unittest.TestCase):
             (True, 'EX-other', 'A', False),
         ):
             with self.subTest(accepting=accepting, evidence=evidence_id, target=target):
-                owner = DecisionEngineMixin()
-                owner.instance = {}
+                owner = bare_engine({})
                 claim = {'action_id': 'AC-failed', 'evidence_execution_id': evidence_id,
                          'reason': 'The validated current judgment discharges the same obligation'}
                 owner.runtime = {'history': [], 'waiting_actions': {'AC-failed': {
@@ -82,13 +77,9 @@ class BasisTests(unittest.TestCase):
     def setUp(self):
         # Explicit synthetic approval is an input to this domain-level test.
         # No engine lifecycle or activation evidence is injected.
-        source = preserve_source("UI-basis-fixture", "Preserve approved task premises", origin="user")
-        charter = charter_record(source["text"])
-        self.instance = initialize_governance(
-            {"feature_version": 5, "knowledge": {}, "sources": []}, source,
-            {"id": "DC-basis-fixture", "actor": "user", "source_ref": source["id"],
-             "source_sha256": source["sha256"], "record_hashes": {charter["id"]: exact_content_hash(charter)}},
-            [charter])
+        text = "Preserve approved task premises"
+        self.instance = approved_governance({"knowledge": {}, "sources": []}, [charter_record(text)],
+                                            source=("UI-basis-fixture", text), approval_id="DC-basis-fixture")
         self.runtime = {"tasks": {"A": {**candidate("A"), "id": "A", "revision": 1, "question": "original", "status": "planned", "results": [{"report": "first"}], "inputs": []}}, "queue": [], "executions": {}, "waiting_actions": {}}
 
     def test_task_bookkeeping_and_appended_results_are_not_content_changes(self):

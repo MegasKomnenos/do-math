@@ -26,7 +26,6 @@ class ObservationBatch:
     first_row: int
     received_at: str
     received_monotonic: float
-    bytes_received: int
     end_offset: int
     stream_path: Path
     is_terminated: Callable[[], bool]

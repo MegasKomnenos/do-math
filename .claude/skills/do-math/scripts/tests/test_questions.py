@@ -1,10 +1,12 @@
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import create_autospec
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math import questions
-from do_math.question_engine import QuestionEngineMixin
+from do_math import governance as gov, questions
+from research_fixtures import bare_engine
+from record_fixtures import domain_governance
 
 
 class QuestionTests(unittest.TestCase):
@@ -56,8 +58,7 @@ class QuestionTests(unittest.TestCase):
         class Store:
             def read_many(inner, refs, head):
                 return {refs[0]: b'{"resolution_question":{"question":"Choose an authorized larger profile."}}'}
-        reader = QuestionEngineMixin()
-        reader.store, reader.head, reader.instance = Store(), "H", {"decisions": {}}
+        reader = bare_engine({"decisions": {}}, head="H", store=Store())
         reader.runtime = {"question_links": [{
             "id": "QU-overflow", "origin_execution_id": "EX-overflow",
             "origin_field": "resolution_question/question",
@@ -70,8 +71,7 @@ class QuestionTests(unittest.TestCase):
 
     def test_review_questions_include_pending_research_without_a_result(self):
         # A limit closure can publish while another slot's fixed question is still pending.
-        owner = QuestionEngineMixin()
-        owner.runtime = {"question_links": []}
+        owner = bare_engine(runtime={"question_links": []})
         cycle = {"id": "RC-closed", "knowledge_id": "KN-reviewed", "followup": [], "research": {
             "EX-a:first": {"status": "pending", "question": "Is the binder fixed?", "result": None},
             "EX-b:second": {"status": "unresolved", "question": "Which domain?",
@@ -88,7 +88,7 @@ class RepetitionQuestionTests(unittest.TestCase):
         from copy import deepcopy
         from do_math import revisions
         from do_math.governance import preserve_source
-        host = QuestionEngineMixin()
+        host = bare_engine()
         host.instance = {'id': 'I', 'config': {'selection_failure_limit': 1},
             'governance_sources': {'S': preserve_source('S', 'Authorize the exact continuation.', origin='user')},
             'decisions': {}}
@@ -163,8 +163,7 @@ class QuestionRouteWireTests(unittest.TestCase):
                     route['blocks'] = blocking
                 extensions = {'question_routes': [route]}
                 validator.validate(extensions)
-                owner = QuestionEngineMixin()
-                owner.instance = {'id': 'I', 'decisions': {}}
+                owner = bare_engine({'id': 'I', 'decisions': {}})
                 owner.runtime = {'tasks': {'A': {'id': 'A'}, 'B': {'id': 'B'}},
                     'question_links': [], 'executions': {'EX-route': {
                         'artifact_bundle': 'BA-route', 'extensions': extensions}}}
@@ -183,5 +182,48 @@ class QuestionRouteWireTests(unittest.TestCase):
                 self.assertEqual(waits('A'), [])
         route['blocks'] = 'true'
         self.assertTrue(list(validator.iter_errors({'question_routes': [route]})))
+
+
+class GovernanceQuestionTests(unittest.TestCase):
+    def test_question_advice_does_not_block_and_partial_target_answer_does_not_erase_wait(self):
+        rt = {}; row = questions.link(rt, execution_id="E", field="questions/0", owner="user", targets=["I"], blocks=False)
+        self.assertEqual(questions.user_waits({"role": "research_preparation"}, {"id": "I"}, rt), [])
+        blocking = questions.link(rt, execution_id="E", field="questions/1", owner="user", targets=["A", "B"], blocks=True)
+        questions.resolve_user(rt, [blocking["id"]], resolution_ref="D", affected_ids=["A"])
+        self.assertEqual(blocking["status"], "open")
+        self.assertEqual(blocking["unresolved_target_ids"], ["B"])
+
+    def test_question_mixin_publishes_advice_without_global_wait_and_resolves_atomically(self):
+        h=bare_engine();h.instance={"id":"I"}
+        h.runtime={"executions":{"E":{"id":"E","role":"research_plan","artifact_bundle":"B", "extensions":{"question_routes":[{"question_index":0,"owner":"user","target_ids":["I"],"blocks":False,"reason":"optional"}]}}}}
+        h._record_output_questions({"role":"research_plan"},{"questions":["Optional priority?"]},"E")
+        self.assertEqual(questions.user_waits({"role":"research_plan"}, h.instance, h.runtime), [])
+        one=questions.link(h.runtime,execution_id="A",field="questions/0",owner="research",targets=["I"])
+        from do_math.repository import ResearchRepository
+        evidence="runtime/artifacts/BA-answer/answer.md"
+        h.runtime["executions"]["E"]["extensions"]={"question_resolutions":[
+            {"question_id":one["id"],"disposition":"resolved","evidence_refs":[evidence],"reason":"answered"},
+            {"question_id":"missing","disposition":"resolved","evidence_refs":[evidence],"reason":"bad"}]}
+        # Artifact evidence resolves through the engine's store read, not a runtime family.
+        h.store=create_autospec(ResearchRepository, instance=True)
+        from do_math.git_store import GitStateStoreError
+        stored={evidence: b"evidence"}
+        def read_many(refs, head, *, missing="raise"):
+            # The store contract: "omit" leaves absent paths out; "raise" fails the batch.
+            if missing == "raise" and any(ref not in stored for ref in refs):
+                raise GitStateStoreError("batch read did not return a blob")
+            return {ref: stored[ref] for ref in refs if ref in stored}
+        h.store.read_many.side_effect=read_many
+        with self.assertRaisesRegex(ValueError, "only distinct open research or operations questions"):
+            h._apply_question_resolutions("E")
+        self.assertEqual(one["status"],"open")
+
+    def test_actual_answer_preserves_other_affected_targets(self):
+        i=domain_governance();rt={"tasks":{"A":{"id":"A"},"B":{"id":"B"}},"executions":{},"queue":[]}
+        q=questions.link(rt,execution_id="E",field="q/0",owner="user",targets=["A","B"],blocks=True)
+        _,updated,_=gov.apply_decision(i,rt,{"kind":"question_answer","text":"Answer A", "target_ids":["A"],"resolves_questions":[q["id"]]},source_ref="S")
+        self.assertEqual(updated["question_links"][0]["unresolved_target_ids"],["B"])
+
+
 if __name__ == "__main__":
     unittest.main()

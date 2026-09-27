@@ -4,6 +4,7 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timezone
 
+from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
 from .planning import contract_hash
 from .repository import exact_content_hash
 
@@ -44,7 +45,7 @@ def _validate(task: dict, snapshot_task: dict, runtime: dict, task_id: str, inst
     if not isinstance(producer_id, str) or not isinstance(producer, dict) or producer.get("role") != "research_preparation":
         raise ValueError("task is not attributable to a research preparation execution: " + task_id)
     for identifier, execution in runtime.get("executions", {}).items():
-        if identifier == actor_execution_id and execution.get('role') in {'research_preparation', 'research_plan'}:
+        if identifier == actor_execution_id and execution.get('role') in PLANNING_ROLES:
             continue
         if not _task_execution(execution, task_id):
             continue
@@ -148,22 +149,11 @@ def validate_withdrawal_record(task):
 
 
 def decision_is_current(decision, instance, runtime, *, evaluation_context=None):
-    """Check the preserved user source, scope edition, and effect of a decision."""
-    from .file_io import parse_utc
-    from .input_basis import sources_current, aliases
+    """Check the preserved user source and effect of a decision."""
+    from .input_basis import aliases
     if decision.get('actor') != 'user' or not decision.get('source_ref') or not isinstance(decision.get('change'), dict):
         return False
-    if (decision.get('revoked') or decision.get('status', 'active') != 'active'
-            or decision.get('lifecycle', 'active') != 'active' or decision.get('current') is False):
-        return False
     context = evaluation_context or {}
-    now = parse_utc(context['now']) if context.get('now') else datetime.now(timezone.utc)
-    if decision.get('expires_at') and parse_utc(decision['expires_at']) <= now:
-        return False
-    if decision.get('valid_from') and parse_utc(decision['valid_from']) > now:
-        return False
-    if decision.get('source_basis') and not sources_current(decision['source_basis'], instance):
-        return False
     preserved = instance.get('governance_sources',{}).get(decision['source_ref'])
     source = next((s for s in instance.get('sources', []) if decision['source_ref'] in aliases(s)), None)
     if preserved:
@@ -182,11 +172,6 @@ def decision_is_current(decision, instance, runtime, *, evaluation_context=None)
             return False
     else:
         return False
-    if any(decision.get(key) is not None for key in ('goal_revision', 'policy_revision')):
-        from .planning import governance_revisions
-        editions = governance_revisions(instance)
-        if any(decision.get(key) is not None and decision[key] != value for key, value in editions.items()):
-            return False
     return True
 
 
@@ -209,10 +194,15 @@ def validate_disposition_authority(task, row, instance, runtime, *, evaluation_c
     return authority
 
 
-def assessment_basis(task, assessment, instance, runtime):
+def assessment_basis(task, assessment, instance, runtime, *, records=None):
+    """Content hashes of everything an assessment's evidence reaches.
+
+    records is planning.record_index(instance, runtime) when the caller already built it.
+    """
     from .planning import record_index,task_reference_basis,condition_refs
     from .relation_refs import relation_references, relation_evidence_references
-    records=record_index(instance,runtime)
+    if records is None:
+        records=record_index(instance,runtime)
     refs={ref for row in assessment.get('item_dispositions',[]) for ref in row.get('evidence_refs',[])}
     refs.update(row['authority_ref'] for row in assessment.get('item_dispositions',[]) if row.get('authority_ref'))
     refs.update(ref for row in assessment.get('unresolved',[]) for ref in row['missing_inputs'])
@@ -289,11 +279,11 @@ def assessment_basis(task, assessment, instance, runtime):
     return result
 
 
-def assessment_current(task,instance,runtime,*,evaluation_context=None):
+def assessment_current(task,instance,runtime,*,evaluation_context=None,records=None):
     assessment=task.get('assessment',{})
     if (not assessment or assessment.get('current') is False or assessment.get('contract_sha256')!=contract_hash(task)
         or assessment.get('results_sha256')!=exact_content_hash(task.get('results',[]))
-        or assessment.get('basis')!=assessment_basis(task,assessment,instance,runtime)):
+        or assessment.get('basis')!=assessment_basis(task,assessment,instance,runtime,records=records)):
         return False
     from .task_contracts import validate_item_dispositions
     try:
@@ -320,17 +310,21 @@ def assessment_current(task,instance,runtime,*,evaluation_context=None):
 
 
 def refresh_task_assessments(instance,runtime,*,evaluation_context=None):
+    from .planning import record_index
     changed=[]
+    records=None  # one record index for every assessment this refresh checks
     live = {row.get('action', {}).get('target') for row in runtime.get('executions', {}).values()
-            if row.get('status') != 'ended' and row.get('role') in {'research_work', 'supplemental_research'}}
+            if row.get('status') != 'ended' and row.get('role') in RESEARCH_PRODUCER_ROLES}
     for task in runtime.get('tasks',{}).values():
         # Keep the recorded basis until work ends, so the next refresh still
         # observes this change and requests assessment of the complete results.
-        if task['id'] in live:
+        if task['id'] in live or not task.get('assessment') or task['assessment'].get('current') is False:
             continue
-        if task.get('assessment') and task['assessment'].get('current') is not False and not assessment_current(task,instance,runtime,evaluation_context=evaluation_context):
+        if records is None:
+            records=record_index(instance,runtime)
+        if not assessment_current(task,instance,runtime,evaluation_context=evaluation_context,records=records):
             assessment = task['assessment']
-            previous, current = assessment.get('basis', {}), assessment_basis(task, assessment, instance, runtime)
+            previous, current = assessment.get('basis', {}), assessment_basis(task, assessment, instance, runtime, records=records)
             refs = sorted(ref for ref in previous.keys() | current.keys() if previous.get(ref) != current.get(ref))
             assessment.update(current=False, invalidated_reason=(
                 'Completion evidence changed: ' + ', '.join(refs) if refs else
@@ -390,15 +384,11 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
     if not actor or actor.get('role') not in {'research_plan', 'operational_review'}:
         raise ValueError('completion requires a designated independent assessor execution')
     ids = [a['task_id'] for a in assessments]
-    if len(ids) != len(set(ids)):
-        raise ValueError('duplicate task assessment')
     tasks = new_runtime['tasks']
     transfers = []
     records = record_index(new_instance, new_runtime)
     families = {identifier: family for identifier, (family, _) in records.items()}
     for assessment in assessments:
-        if assessment.get('decision') not in {'completed','closed','incomplete'}:
-            raise ValueError('unknown completion decision')
         task = tasks[assessment['task_id']]
         old = input_tasks.get(task['id'])
         if not old or contract_hash(old) != contract_hash(task) or exact_content_hash(old.get('results', [])) != exact_content_hash(task.get('results', [])):
@@ -408,7 +398,7 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
         if execution_id in {task.get('producer_execution'), *task.get('author_execution_ids', [])}:
             raise ValueError('contract author cannot assess its own obligations')
         if any(e.get('status') != 'ended' and e.get('action', {}).get('target') == task['id']
-               and e.get('role') in {'research_work', 'supplemental_research'} for e in new_runtime.get('executions', {}).values()):
+               and e.get('role') in RESEARCH_PRODUCER_ROLES for e in new_runtime.get('executions', {}).values()):
             raise ValueError('work execution must end before completion assessment')
         validate_item_dispositions(task, assessment, require_complete=assessment['decision'] in {'completed','closed'})
         coverage = judge_coverage_errors(actor['role'], execution_id, task, assessment, families)
@@ -466,7 +456,7 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
             task.setdefault('assessment_history', []).append(deepcopy(task['assessment']))
         task['assessment'] = {**deepcopy(assessment), 'execution_id':execution_id, 'contract_sha256':contract_hash(task),
                               'results_sha256':exact_content_hash(task['results']), 'current':True,
-                              'basis':assessment_basis(task,assessment,new_instance,new_runtime)}
+                              'basis':assessment_basis(task,assessment,new_instance,new_runtime,records=records)}
         task['assessment']['specialist_support'] = {
             row['obligation_id']: designated_judgment(task,
                 next(o for o in task['completion_obligations'] if o['id'] == row['obligation_id']), row, new_instance, new_runtime)

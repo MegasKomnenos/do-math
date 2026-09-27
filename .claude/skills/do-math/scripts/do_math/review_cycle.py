@@ -11,9 +11,14 @@ import json
 
 import jsonschema
 
-from .contracts import PROFILE_REF, REFS, TEXT
-from .file_io import compact_json_bytes, json_digest
-from .review_policy import build_review_policy, validate_scope_assessment, minimum_scope_executions
+from .contracts import REFS, TEXT, closed_object
+from .file_io import compact_json_bytes, json_copy, json_digest
+from .repository import exact_content_hash
+from .review_policy import SCOPE_ASSESSMENT, build_review_policy, validate_scope_assessment, minimum_scope_executions
+
+
+# The states of one review cycle.
+CYCLE_STATUSES = frozenset({"working", "completed", "unresolved"})
 
 
 class ReviewRestorationError(ValueError):
@@ -36,42 +41,31 @@ def review_action(action):
     return {name: action[name] for name in fields if name in action}
 
 
-def _object(properties):
-    return {"type": "object", "properties": properties, "required": list(properties), "additionalProperties": False}
-
-
 def _array(items):
     return {"type": "array", "items": items}
 
 
 def stage_schema(stage):
     """The same schema is supplied to producers and checked before acceptance."""
-    string = copy.deepcopy(TEXT)
+    string = TEXT
     evidence = _array(string)
-    finding = _object({"id": string, "statement": string, "evidence": evidence})
+    finding = closed_object({"id": string, "statement": string, "evidence": evidence})
     common = {"proposal_digest": string, "summary": string, "used_sources": evidence,
               "questions": evidence}
     if stage in ("initial", "judge"):
         common.update(decision={"enum": ["match", "mismatch", "unresolved"]},
                       scope_complete={"type": "boolean"})
     if stage == "scope":
-        # validate_scope_assessment accepts no selected profile, so the wire does too.
-        slot = _object({"id": string, "perspective": string, "required_source_refs": {**REFS, "minItems": 1}})
-        common.update(scope_complete={"type": "boolean"}, scope_assessment=copy.deepcopy(_object({
-            "assessment_id": string, "policy_id": string, "policy_version": {"const": 5},
-            "required_perspectives": REFS, "initial_slots": {"type": "array", "minItems": 1, "items": slot},
-            "selected_profile_ref": {"anyOf": [{"type": "null"}, PROFILE_REF]},
-            "activity_execution_limit": {"type": "integer", "minimum": 1},
-            "overflow_disposition": {"enum": ["unresolved", "defer"]}})))
+        common.update(scope_complete={"type": "boolean"}, scope_assessment=SCOPE_ASSESSMENT)
     elif stage == "initial":
         common["findings"] = _array(finding)
     elif stage == "organize":
-        ref = _object({"stage": {"enum": ["initial", "judge", "answer"]},
+        ref = closed_object({"stage": {"enum": ["initial", "judge", "answer"]},
                        "round": {"type": "integer", "minimum": 1}, "slot": string, "id": string})
-        common["issues"] = _array(_object({"id": string, "finding_refs": _array(ref),
+        common["issues"] = _array(closed_object({"id": string, "finding_refs": _array(ref),
                                           "answer_role_slot_id": string}))
     elif stage == "answer":
-        common["answers"] = _array(_object({"issue_id": string,
+        common["answers"] = _array(closed_object({"issue_id": string,
             "disposition": {"enum": ["maintain", "revise", "split", "withdraw"]},
             "statement": string, "evidence": evidence}))
         answer_finding = copy.deepcopy(finding)
@@ -79,13 +73,13 @@ def stage_schema(stage):
         answer_finding["required"].append("parent_issue_ids")
         common["new_findings"] = _array(answer_finding)
     elif stage == "judge":
-        common["issue_verdicts"] = _array(_object({"issue_id": string,
+        common["issue_verdicts"] = _array(closed_object({"issue_id": string,
             "decision": {"enum": ["approved", "rejected", "unresolved"]},
             "reason": string, "evidence": evidence}))
         common["new_findings"] = _array(finding)
     else:
         raise ValueError("unknown review stage")
-    return _object(common)
+    return json_copy(closed_object(common))
 
 
 def _check_schema(value, schema, label="output"):
@@ -112,7 +106,12 @@ def _slots(value, prefix):
 
 
 def start_review(proposal, reviewers, judges=3, max_rounds=3, previous=None, *, policy=None,
-                 scope_assessment=None, owner_activity_id=None):
+                 scope_assessment=None):
+    """Open a finite review cycle; with scope_assessment it begins at its initial slots.
+
+    The engine always opens at the scope stage. A given scope_assessment is the
+    replay of an accepted scope (validate_sealed_review) or a test's start state.
+    """
     if not isinstance(proposal, dict) or proposal.get("revision") is None:
         raise ValueError("proposal requires an exact revision")
     reviewer_slots, requested_judges = _slots(reviewers, "initial"), _slots(judges, "judge")
@@ -125,7 +124,7 @@ def start_review(proposal, reviewers, judges=3, max_rounds=3, previous=None, *, 
     actual_reviewer_slots = [slot["id"] for slot in assessment["initial_slots"]] if assessment else []
     judge_slots, max_rounds = list(policy["judge_slots"]), policy["round_limit"]
     _unique(actual_reviewer_slots + judge_slots + ["scope", "organize"], "role slot")
-    digest = json_digest(proposal)
+    digest = exact_content_hash(proposal)
     previous_reviews, turns, manifests = [], {}, {}
     lineage = proposal.get("review_lineage_id", digest)
     if previous is not None:
@@ -147,14 +146,14 @@ def start_review(proposal, reviewers, judges=3, max_rounds=3, previous=None, *, 
         previous_reviews[-1]["research"] = copy.deepcopy(previous.get("research", {}))
     return {"proposal": copy.deepcopy(proposal), "proposal_digest": digest,
         "revision": proposal["revision"], "review_lineage_id": lineage,
-        "reviewers": len(actual_reviewer_slots), "requested_reviewer_slots": reviewer_slots,
+        "requested_reviewer_slots": reviewer_slots,
         "retained_reviewer_slots": list(previous["reviewer_slots"]) if previous is not None else [],
-        "judges": 3, "reviewer_slots": actual_reviewer_slots,
+        "reviewer_slots": actual_reviewer_slots,
         "judge_slots": judge_slots, "max_rounds": max_rounds, "round": 1,
-        "review_policy": policy, "scope_assessment": assessment, "owner_activity_id": owner_activity_id,
+        "review_policy": policy, "scope_assessment": assessment, "owner_activity_id": None,
         "activity_execution_limit": assessment["activity_execution_limit"] if assessment else policy["activity_execution_limit"],
         "required_source_refs": sorted({ref for slot in assessment["initial_slots"] for ref in slot["required_source_refs"]}) if assessment else [],
-        "execution_accounting": {"executions_used": [], "reserved_execution_slots": []},
+        "execution_accounting": {"executions_used": []},
         "phase": "initial" if assessment is not None else "scope", "status": "working", "decision": None,
         "results": {}, "sealed": [], "turns": turns, "transcript_manifest": manifests,
         "issues": {}, "findings": {}, "pending_findings": [], "answer_requests": [],
@@ -165,7 +164,7 @@ def start_review(proposal, reviewers, judges=3, max_rounds=3, previous=None, *, 
 
 
 def _check_proposal(cycle):
-    if json_digest(cycle["proposal"]) != cycle["proposal_digest"] or cycle["revision"] != cycle["proposal"]["revision"]:
+    if exact_content_hash(cycle["proposal"]) != cycle["proposal_digest"] or cycle["revision"] != cycle["proposal"]["revision"]:
         raise ValueError("sealed proposal changed")
 
 
@@ -184,23 +183,14 @@ def validate_review_independence(cycle, runtime, execution_id, action, *, exclud
     inherits author or peer context through any number of steps is rejected when
     its result arrives, not only when the finished review is reconstructed.
     """
-    from .governance import validate_independent_execution
+    from .governance import execution_lineage, validate_independent_execution
     authors = set(excluded_execution_ids) | review_authors(cycle)
     validate_independent_execution(runtime, execution_id, authors)
-    pending, visited = [execution_id], set()
-    while pending:
-        eid = pending.pop()
+    for eid, row in execution_lineage(runtime, execution_id):
         if eid in authors:
             raise ValueError('review inherited original author context')
-        if eid in visited:
-            continue
-        visited.add(eid)
-        row = runtime.get('executions', {}).get(eid)
         if row is None:
             raise ValueError('review context lineage does not resolve')
-        for field in ('continuation_of', 'context_origin'):
-            values = row.get(field) or []
-            pending.extend([values] if isinstance(values, str) else values)
         origin_action = row.get('action', {})
         if eid != execution_id and origin_action.get('review_cycle_id') == cycle.get('id'):
             if origin_action.get('slot', origin_action.get('requesting_slot')) != action.get('slot', action.get('requesting_slot')):
@@ -210,12 +200,18 @@ def validate_review_independence(cycle, runtime, execution_id, action, *, exclud
 def validate_review_execution(cycle, runtime, execution_id, action, output=None, *, instance=None, excluded_execution_ids=(), allow_incomplete=False):
     """Check actual ancestry, assignment and input/profile bindings, not an AI claim."""
     validate_review_independence(cycle, runtime, execution_id, action, excluded_execution_ids=excluded_execution_ids)
+    return validate_review_binding(cycle, runtime, execution_id, action, output, instance=instance,
+                                   allow_incomplete=allow_incomplete)
+
+
+def validate_review_binding(cycle, runtime, execution_id, action, output=None, *, instance=None, allow_incomplete=False):
+    """The assignment, input and profile bindings of one review execution, apart from its ancestry."""
     execution = runtime['executions'][execution_id]
     actual = execution.get('action', {})
     role = action.get('role', 'identity_review')
     if instance is not None:
-        from .execution_profiles import resolve_profile
-        profile = resolve_profile(instance.get('execution_profiles', {}), execution.get('execution_profile_ref'))
+        from .execution_profiles import match_profile_ref
+        profile = match_profile_ref(instance.get('execution_profiles', {}), execution.get('execution_profile_ref'))
         if profile['role'] != role or execution.get('actor_kind') != 'ai' or profile['actor_kind'] != 'ai':
             raise ValueError('review execution profile does not belong to its actual AI role')
     if (execution.get('role') != role or actual.get('review_cycle_id') != cycle.get('id')
@@ -294,30 +290,25 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
                 raise ValueError('supplemental request has no preserved provisional response')
             provisional = messages[0]['content']
             validate_review_execution(cycle, runtime, requester, action, provisional['provisional_result'], instance=instance, excluded_execution_ids=excluded_execution_ids)
+            sources = [cycle['research'].get(f"{requester}:{request['id']}", {}).get('source_records', [])
+                       for request in provisional['research_requests']]
             replay = defer_for_research(replay, action, provisional['provisional_result'], provisional['research_requests'], requester,
-                                        limit=len(cycle['research']))
+                                        sources, limit=len(cycle['research']))
+            from .repository import sealed_bytes
             for record in records:
                 generated = replay['research'].get(record['id'])
                 if generated is None or any(generated.get(k) != record.get(k) for k in ('question', 'source_refs', 'proposal_digest', 'action', 'requested_by')):
                     raise ValueError('fixed supplemental request changed')
-                sources = record.get('source_records', [])
-                if sources:
-                    if research_request_digest(record['question'], cycle['proposal_digest'], sources) != record['request_digest']:
-                        raise ValueError('supplemental fixed source digest changed')
-                    from .repository import sealed_bytes
-                    for source in sources:
-                        if 'inline' in source:
-                            raw = compact_json_bytes(source['inline'])
-                            if len(raw) != source['bytes'] or hashlib.sha256(raw).hexdigest() != source['sha256']:
-                                raise ValueError('supplemental source bytes changed')
-                        elif read_artifact:
-                            # A sealed row is compared once per process (contract S3).
-                            sealed_bytes(git_dir, source['artifact_ref'], source['sha256'], source['bytes'],
-                                         lambda: read_artifact(source['artifact_ref'], source['snapshot']),
-                                         needed=False, error='supplemental source bytes changed')
-                    generated.update(source_records=copy.deepcopy(sources), request_digest=record['request_digest'])
-                elif generated['request_digest'] != record['request_digest']:
+                if generated['request_digest'] != record['request_digest']:
                     raise ValueError('supplemental request digest changed')
+                for source in record['source_records']:
+                    if 'inline' in source:
+                        inline_source_bytes(source, error='supplemental source bytes changed')
+                    elif read_artifact:
+                        # A sealed row is compared once per process (이음새-정본.md §3).
+                        sealed_bytes(git_dir, source['artifact_ref'], source['sha256'], source['bytes'],
+                                     lambda: read_artifact(source['artifact_ref'], source['snapshot']),
+                                     needed=False, error='supplemental source bytes changed')
                 result = record.get('result')
                 if not result:
                     raise ValueError('supplemental investigation is incomplete')
@@ -335,7 +326,9 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
                 raise ValueError('review closure lacks its actual provisional response')
             provisional = messages[0]['content']
             validate_review_execution(cycle, runtime, eid, action, provisional['provisional_result'], instance=instance, excluded_execution_ids=excluded_execution_ids)
-            limit = (instance or {}).get('config', {}).get('review_research_limit', 3)
+            if instance is None:
+                raise ValueError('review closure replay requires its governing configuration')
+            limit = instance['config']['review_research_limit']
             if limit != closure['limit']:
                 raise ValueError('review closure limit no longer matches its governing configuration')
             available = closure['budget_available']
@@ -347,8 +340,9 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
                 reserved = reserved_review_slots(replay, projected)
                 if len(used) + len(provisional['research_requests']) + len(reserved) <= cycle['activity_execution_limit']:
                     raise ValueError('review budget closure is not exhausted')
+            # A closed request binds no sources: the closure is decided before any request is recorded.
             replay = defer_for_research(replay, action, provisional['provisional_result'], provisional['research_requests'], eid,
-                                        limit=limit, budget_available=available)
+                                        [[] for _ in provisional['research_requests']], limit=limit, budget_available=available)
             if replay['status'] == 'working':
                 raise ValueError('review closure is not justified by its limits')
             break
@@ -373,6 +367,62 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
     for slot in cycle['turns']:
         validate_transcript(cycle, slot)
     return replay
+
+
+PROPOSAL_FIELDS = ('id', 'revision', 'formal_result_id', 'exposition_id', 'definitions', 'assumptions', 'statement', 'explanation', 'summary', 'lean_code',
+                    'declaration_names', 'dependencies', 'relation_claim', 'relation_endpoint_basis', 'confirmed_scope', 'epistemic_status')
+_FORMAL_FIELDS = ('status', 'source_sha256', 'declarations', 'axioms', 'toolchain',
+                  'artifact_ref', 'execution_id', 'trust_environment_id', 'allowed_axioms')
+_FORMAL_FIELDS += ('declaration_signatures', 'signature_hash')
+_FORMAL_FIELDS += ('dependency_closure', 'declaration_evidence', 'dependency_evidence')
+
+
+def review_proposal(instance, knowledge_id):
+    """The reviewed projection of one knowledge record (the proposal a review cycle seals)."""
+    from . import knowledge_records as kr
+    item = kr.proposal_view(instance, knowledge_id)
+    result = {name: copy.deepcopy(item.get(name, [] if name in ('declaration_names', 'dependencies') else ''))
+              for name in PROPOSAL_FIELDS}
+    result['formal'] = {name: copy.deepcopy(item['formal'][name]) for name in _FORMAL_FIELDS if name in item.get('formal', {})}
+    result['revision'] = item.get('revision', 1)
+    return result
+
+
+def staged_review_candidate(instance, runtime, transition_id, knowledge_id):
+    """The staged review input of one pending transition target, computed from the state alone.
+
+    Validates the staged evidence through domain APIs without publishing a
+    formal result. The engine starts and resumes staged reviews with it, and
+    the storage contract reproduces it for every pending transition.
+    """
+    from . import knowledge_records as kr
+    from .knowledge import validate_basis
+    from .repository import exact_content_hash
+    transition = runtime['trust_transitions'][transition_id]
+    if transition.get('status') not in {'checking', 'ready'}:
+        raise ValueError('staged transition is no longer reviewable')
+    target = next((row for row in transition['targets'] if row['id'] == knowledge_id), None)
+    if target is None:
+        raise ValueError('staged review target is not in the transition')
+    record = instance['knowledge'][knowledge_id]
+    formal = instance['formal_results'][target['formal_result_id']]
+    exposition = instance['expositions'][record['exposition_id']]
+    if (not validate_basis([target['basis']], instance, runtime)['valid'] or kr.record_digest(formal) != target['formal_basis']
+            or kr.record_digest(exposition) != target['exposition_basis']
+            or instance.get('active_trust_environment') != transition['from_environment']):
+        raise ValueError('staged source basis changed')
+    verification = {key: copy.deepcopy(value) for key, value in transition['results'][knowledge_id].items()
+                    if key not in {'id', 'identity_review'}}
+    environment = instance['trust_environments'][transition['to_environment']]
+    if verification.get('status') != 'verified' or environment.get('status') == 'invalid':
+        raise ValueError('staged verification or target environment is not eligible for review')
+    kr.validate_formal_evidence(formal, verification, environment)
+    view = kr.formal_overlay(instance, formal['id'], verification=verification,
+                             trust_environment_id=transition['to_environment'])
+    return {'proposal': review_proposal(view, knowledge_id), 'identity_basis': kr.identity_basis(view, knowledge_id),
+            'transition_basis': exact_content_hash({'transition_id': transition_id, 'target': target,
+                'verification': verification, 'target_environment': environment, 'from_environment': transition['from_environment']}),
+            'target_environment': copy.deepcopy(environment)}
 
 
 def identity_assessment(cycle, *, reason):
@@ -440,7 +490,7 @@ def _replay_replacement(replay, cycle, action, instance, runtime):
     verified, omitted = _verified_transcript(archive['turns'], archive['manifest'])
     sealed_input = _replacement_sealed_input(replay, [manifest for _, manifest in verified])
     if (omitted != authorization['omitted_indices'] or omitted != archive['omitted_indices']
-            or json_digest(sealed_input) != authorization['sealed_input_sha256']):
+            or exact_content_hash(sealed_input) != authorization['sealed_input_sha256']):
         raise ValueError('replacement sealed input changed')
     replay['blocked_actions'][slot_key(action)] = index
     replay['replacement_actions'][slot_key(action)] = copy.deepcopy(authorization)
@@ -450,7 +500,6 @@ def _replay_replacement(replay, cycle, action, instance, runtime):
 def replacement_authority(instance, runtime, cycle, replacement, execution_id=None):
     """One authority check for live admission/acceptance and sealed reconstruction."""
     from .governance import authorize_review_replacement
-    from .repository import exact_content_hash
     binding = cycle.get('input_bindings', {}).get(execution_id, {})
     consumed = binding.get('delegation_authority') or cycle.get('execution_accounting', {}).get(
         'admissions', {}).get(execution_id, {}).get('delegation_authority')
@@ -601,12 +650,12 @@ def validate_resource_disposition(cycle, runtime, *, read_artifact=None, instanc
         if any(ref not in pinned for ref in detail['profile_refs']):
             raise ValueError('review host change refers to a profile outside the frozen review')
         if instance is not None:
-            from .execution_profiles import resolve_profile
+            from .execution_profiles import match_profile_ref
             approved = detail['adopted_host_ref']
             if approved is not None and instance['capacity_constraints'][approved]['kind'] != 'host':
                 raise ValueError('review host change names no adopted host constraint')
             expected = [approved] if approved else []
-            if any(resolve_profile(instance['execution_profiles'], ref).get('host_capacity_refs', []) == expected
+            if any(match_profile_ref(instance['execution_profiles'], ref).get('host_capacity_refs', []) == expected
                    for ref in detail['profile_refs']):
                 raise ValueError('review pinned profile already matches the host configuration')
     else:
@@ -618,25 +667,35 @@ def validate_resource_disposition(cycle, runtime, *, read_artifact=None, instanc
 
 def research_request_digest(question, proposal_digest, sources):
     """Bind a fixed investigation to its question, proposal edition and exact source bytes."""
-    from .repository import exact_content_hash
     return exact_content_hash({'question': question, 'proposal_digest': proposal_digest,
         'sources': [{key: source[key] for key in ('ref', 'sha256', 'bytes')} for source in sources]})
 
 
+def inline_source_row(reference, value):
+    """A fixed investigation source held inline in state: its value and its exact compact bytes."""
+    raw = compact_json_bytes(value)
+    return {'ref': reference, 'inline': copy.deepcopy(value), 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+
+
+def inline_source_bytes(source, *, error='inline source differs from its record'):
+    """The exact bytes of an inline source row; ValueError(error) when they differ from the row."""
+    raw = compact_json_bytes(source['inline'])
+    if len(raw) != source['bytes'] or hashlib.sha256(raw).hexdigest() != source['sha256']:
+        raise ValueError(error)
+    return raw
+
+
 def research_schema():
-    # Every field gets its own copy; deepcopy of one shared node keeps it shared.
-    def text():
-        return copy.deepcopy(TEXT)
-    return _object({"summary": text(), "used_sources": _array(text()),
-        "questions": _array(text()), "research_request_id": text(),
-        "request_digest": text(), "outcome": {"enum": ["answered", "unresolved"]},
-        "answer": text(), "scope_complete": {"type": "boolean"},
-        "evidence_refs": _array(text())})
+    return json_copy(closed_object({"summary": TEXT, "used_sources": _array(TEXT),
+        "questions": _array(TEXT), "research_request_id": TEXT,
+        "request_digest": TEXT, "outcome": {"enum": ["answered", "unresolved"]},
+        "answer": TEXT, "scope_complete": {"type": "boolean"},
+        "evidence_refs": _array(TEXT)}))
 
 
 def research_request_schema():
     """One fixed investigation request, as installed for producers and replayed by review."""
-    return copy.deepcopy(_object({"id": TEXT, "question": TEXT, "source_refs": {**REFS, "minItems": 1}}))
+    return json_copy(closed_object({"id": TEXT, "question": TEXT, "source_refs": {**REFS, "minItems": 1}}))
 
 
 def validate_research_requests(requests):
@@ -660,6 +719,17 @@ def validate_research_answer(output):
         raise ValueError("answered investigation requires complete scope, exact evidence and no unresolved question")
 
 
+def proposal_value(proposal, reference):
+    """The value a proposal coordinate names: "proposal" itself or "proposal:<field.path>" ("/" or ".")."""
+    value = proposal
+    if reference != "proposal":
+        for token in reference.removeprefix("proposal:").replace("/", ".").strip(".").split("."):
+            if not isinstance(value, dict) or token not in value:
+                raise ValueError("unknown proposal source coordinate: " + reference)
+            value = value[token]
+    return value
+
+
 def classify_research_source(reference, *, proposal, issues, own_source_refs, sources, knowledge_ids):
     """The one admission rule for a fixed investigation source.
 
@@ -669,15 +739,8 @@ def classify_research_source(reference, *, proposal, issues, own_source_refs, so
     receiver's current knowledge IDs contain the catalog it supplied to the producer.
     """
     from .input_basis import aliases
-    if reference == "proposal":
-        return "proposal", proposal
-    if reference.startswith("proposal:"):
-        value = proposal
-        for token in reference.removeprefix("proposal:").replace("/", ".").strip(".").split("."):
-            if not isinstance(value, dict) or token not in value:
-                raise ValueError("unknown proposal source coordinate: " + reference)
-            value = value[token]
-        return "proposal", value
+    if reference == "proposal" or reference.startswith("proposal:"):
+        return "proposal", proposal_value(proposal, reference)
     if reference.startswith("issue:"):
         issue_id = reference.removeprefix("issue:")
         if issue_id not in issues:
@@ -694,11 +757,16 @@ def classify_research_source(reference, *, proposal, issues, own_source_refs, so
                      "supplied source or knowledge ID: " + reference)
 
 
-def defer_for_research(cycle, action, output, requests, execution_id, *, limit=3, budget_available=True):
-    """Preserve a provisional response without turning it into a sealed verdict."""
+def defer_for_research(cycle, action, output, requests, execution_id, sources, *, limit, budget_available=True):
+    """Preserve a provisional response without turning it into a sealed verdict.
+
+    sources holds each request's sealed source rows in request order, and the
+    request_digest binds them (research_request_digest).
+    """
     if action not in next_actions(cycle): raise ValueError("review action is not pending")
     validate_provisional(cycle["proposal_digest"], action, output)
     validate_research_requests(requests)
+    if len(sources) != len(requests): raise ValueError("each research request needs its sealed source rows")
     if isinstance(limit, bool) or not isinstance(limit, int) or limit < 0: raise ValueError("invalid research limit")
     used = {entry["execution_id"] for entry in cycle["results"].values()}
     used.update(r["requested_by"] for r in cycle.get("research", {}).values())
@@ -716,12 +784,13 @@ def defer_for_research(cycle, action, output, requests, execution_id, *, limit=3
         _finish(n, "unresolved", "Required investigation cannot fit the remaining review resources")
         return n
     identifiers = []
-    for request in requests:
+    for request, rows in zip(requests, sources):
         identifier = f"{execution_id}:{request['id']}"
         if identifier in n.setdefault("research", {}): raise ValueError("research request execution was already used")
-        payload = {"question": request["question"], "source_refs": request["source_refs"],
-                   "proposal_digest": n["proposal_digest"]}
-        n["research"][identifier] = {"id": identifier, **copy.deepcopy(payload), "request_digest": json_digest(payload),
+        n["research"][identifier] = {"id": identifier, "question": request["question"],
+            "source_refs": copy.deepcopy(request["source_refs"]), "proposal_digest": n["proposal_digest"],
+            "source_records": copy.deepcopy(rows),
+            "request_digest": research_request_digest(request["question"], n["proposal_digest"], rows),
             "action": copy.deepcopy(action), "requested_by": execution_id, "status": "pending", "result": None}
         identifiers.append(identifier)
     n.setdefault("deferred_actions", {})[slot_key(action)] = identifiers
@@ -764,7 +833,7 @@ def _add_findings(cycle, action, output):
     findings = output.get("findings", output.get("new_findings", []))
     for finding in findings:
         ref = {**{k: action[k] for k in ('stage', 'slot', 'round')}, 'id': finding['id']}
-        key = json_digest(ref)
+        key = exact_content_hash(ref)
         cycle["findings"][key] = {"ref": ref, "finding": copy.deepcopy(finding)}
         cycle["pending_findings"].append(key)
     # Questions and uncompleted scope must remain explicit input to organization.
@@ -773,7 +842,7 @@ def _add_findings(cycle, action, output):
         questions.append("Required initial review scope or judgment remains unresolved.")
     for i, question in enumerate(questions):
         ref = {**{k: action[k] for k in ('stage', 'slot', 'round')}, 'id': f'__question_{i}'}
-        key = json_digest(ref)
+        key = exact_content_hash(ref)
         cycle["findings"][key] = {"ref": ref, "finding": {"id": ref["id"],
             "statement": question, "evidence": output["used_sources"]}}
         cycle["pending_findings"].append(key)
@@ -794,7 +863,7 @@ def _organize(cycle, output):
         refs = issue["finding_refs"]
         if not refs:
             raise ValueError("issue requires original finding references")
-        keys = [json_digest(ref) for ref in refs]
+        keys = [exact_content_hash(ref) for ref in refs]
         if any(key not in cycle["pending_findings"] for key in keys):
             raise ValueError("organizer forged or reused an original finding")
         _unique(keys, "finding reference")
@@ -892,7 +961,7 @@ def validate_visible_output(context, action, output, *, requesting_research=Fals
     _validate_content(context, action, output)
     view = {"issues": copy.deepcopy(context["issues"]), "round": action["round"],
             "answer_requests": list(context["answer_requests"]), "reviewer_slots": context["reviewer_slots"],
-            "pending_findings": [json_digest(row["ref"]) for row in context["pending_findings"]], "history": []}
+            "pending_findings": [exact_content_hash(row["ref"]) for row in context["pending_findings"]], "history": []}
     if action["stage"] == "organize":
         _organize(view, output)
     elif action["stage"] == "answer":
@@ -1003,7 +1072,6 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
     if stage == "scope":
         n["scope_assessment"] = assessment
         n["reviewer_slots"] = [slot["id"] for slot in assessment["initial_slots"]]
-        n["reviewers"] = len(n["reviewer_slots"])
         n["activity_execution_limit"] = assessment["activity_execution_limit"]
         n["required_source_refs"] = sorted({ref for slot in assessment["initial_slots"] for ref in slot["required_source_refs"]})
         n["phase"] = "initial"
@@ -1194,7 +1262,7 @@ def authorize_record_replacement(cycle, action, instance, *, runtime, grant_id=N
         'action': replacement, 'recovery_event': index, 'grant_id': authority['grant_id'],
         'grant_sha256': authority['grant_sha256'], 'authority_request': request,
         'authority': copy.deepcopy(authority), 'delegation_id': delegation_id, 'case': copy.deepcopy(case),
-        'sealed_input_sha256': json_digest(sealed_input), 'omitted_indices': omitted}
+        'sealed_input_sha256': exact_content_hash(sealed_input), 'omitted_indices': omitted}
     n.setdefault('history', []).append({'event': 'replacement_authorized', 'action': expected,
                                        'recovery_event': index, 'grant_id': authority['grant_id']})
     return {'disposition': 'replacement_ready', 'cycle': n, 'action': copy.deepcopy(replacement),

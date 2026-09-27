@@ -1,14 +1,17 @@
-from pathlib import Path
 import sys
+import unittest
+from pathlib import Path
+from unittest.mock import create_autospec
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from research_fixtures import local_job_runner
+from do_math import integration
 from do_math.engine import control
-from do_math.repository import canonical_json
-from research_fixtures import producer_result
-from test_purpose_engine import ActivatedPurposeHarness, PurposeRunner, common, parse_context
-from test_engine import common as role_output
-from test_review_research import purpose_copy
+from do_math.question_engine import QuestionEngineMixin
+from do_math.repository import canonical_json, ResearchRepository
+from engine_fixtures import context_engine
+from purpose_fixtures import ActivatedPurposeHarness, parse_context, purpose_copy, PurposeRunner
+from research_fixtures import bare_engine, local_job_runner, producer_result
+from runner_fixtures import common as role_output
 
 
 class QuestionFlowTests(ActivatedPurposeHarness):
@@ -53,6 +56,77 @@ class QuestionFlowTests(ActivatedPurposeHarness):
         self.assertEqual(answered['resolution']['change']['text'], 'Use option one.')
         self.assertEqual(next(row for row in context['question_links'] if row['id'] == research['id'])['status'], 'open')
         self.assertEqual(engine.status()['questions'], [])
+
+
+class QuestionSourceTests(unittest.TestCase):
+    def test_accepted_maintenance_question_reads_its_single_sealed_source(self):
+        engine = context_engine()
+        action = {'id': 'AC-sealed-question', 'role': 'maintenance'}
+        ref = 'runtime/artifacts/BA-sealed/submission/output.json'
+        engine.runtime['executions']['EX-sealed-question'] = {
+            'id': 'EX-sealed-question', 'role': 'maintenance', 'status': 'ended',
+            'action': action, 'submission_intent': {'output_ref': ref}}
+        output = {**role_output('maintenance'), 'questions': ['Which result should be used?']}
+        engine._record_output_questions(action, output, 'EX-sealed-question')
+        engine._record_output_questions(action, output, 'EX-sealed-question')
+        self.assertEqual(len(engine.runtime['question_links']), 1)
+        self.assertEqual(engine.runtime['question_links'][0]['source_ref'], ref)
+        engine.store.read_many.side_effect = lambda paths, snapshot: {ref: canonical_json(output)}
+        self.assertEqual(engine._question_view()[0]['text'], 'Which result should be used?')
+
+    def test_running_maintenance_question_preview_uses_captured_candidate_only(self):
+        engine = context_engine()
+        action = {'id': 'AC-preview-question', 'role': 'maintenance'}
+        execution_id = 'EX-preview-question'
+        engine.runtime['executions'][execution_id] = {
+            'id': execution_id, 'role': 'maintenance', 'status': 'running', 'action': action}
+        output = {**role_output('maintenance'), 'questions': ['Which condition needs a decision?']}
+        context = {'action': action, 'snapshot': engine.head, 'execution_id': execution_id}
+        ref = 'runtime/artifacts/preview/' + execution_id + '/output.json'
+        artifacts = {ref: canonical_json(output)}
+        before = canonical_json(engine.runtime)
+        preview = integration.preview_bundles(engine.instance, engine.runtime, output, {}, context,
+            execution_id=execution_id,
+            apply_bundle=lambda instance, runtime, bundle: engine._apply_bundle_candidate(
+                instance, runtime, bundle, action=action, execution_id=execution_id,
+                extensions={}, question_source_ref=ref),
+            validate_current=lambda *_: None,
+            validate_candidate=lambda instance, runtime, bundle: engine._validate_bundle_candidate(
+                instance, runtime, bundle, artifacts=artifacts))
+        self.assertEqual(preview['status'], 'accepted', preview['issues'])
+        self.assertEqual(canonical_json(engine.runtime), before)
+        self.assertEqual(engine.store.validate_candidate.call_count, 1)
+        self.assertEqual(preview['runtime']['question_links'][0]['source_ref'], ref)
+        self.assertNotIn('artifact_bundle', engine.runtime['executions'][execution_id])
+
+    def test_operational_question_uses_exact_execution_or_sealed_source_coordinate(self):
+        engine = bare_engine()
+        engine.instance = {'decisions': {}}
+        engine.head = 'fixed'
+        engine.store = create_autospec(ResearchRepository, instance=True)
+        engine.store.read_many.return_value = {'sealed-output.json': canonical_json({
+            'disposition': {'question': 'Question from the sealed response'}})}
+        engine.runtime = {'executions': {
+            'EX-current': {'id': 'EX-current', 'role': 'operational_review',
+                           'output': {'disposition': {'question': 'Choose the next action'}}},
+            'EX-missing': {'id': 'EX-missing', 'role': 'operational_review', 'output': {}}},
+            'question_links': [
+                {'id': 'QU-current', 'origin_execution_id': 'EX-current',
+                 'origin_field': 'output/disposition/question', 'owner': 'user', 'status': 'open'},
+                {'id': 'QU-wrong', 'origin_execution_id': 'EX-current',
+                 'origin_field': 'disposition/question', 'owner': 'user', 'status': 'open'},
+                {'id': 'QU-missing', 'origin_execution_id': 'EX-missing',
+                 'origin_field': 'output/disposition/question', 'owner': 'user', 'status': 'open'},
+                {'id': 'QU-sealed', 'origin_execution_id': 'EX-current', 'source_ref': 'sealed-output.json',
+                 'origin_field': 'disposition/question', 'owner': 'user', 'status': 'open'}]}
+        view = {row['id']: row for row in QuestionEngineMixin._question_view(engine)}
+        self.assertEqual(view['QU-current']['text'], 'Choose the next action')
+        self.assertEqual(view['QU-sealed']['text'], 'Question from the sealed response')
+        for identifier in ('QU-wrong', 'QU-missing'):
+            self.assertIsNone(view[identifier]['text'])
+            self.assertEqual(view[identifier]['source_status'], 'unavailable')
+        self.assertEqual(QuestionEngineMixin._user_questions(engine),
+                         ['Choose the next action', 'Question from the sealed response'])
 
 
 if __name__ == '__main__':

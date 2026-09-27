@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path, PurePosixPath
 import shutil
 import sys
@@ -14,23 +13,15 @@ MANIFEST = "bootstrap-manifest.json"
 # Settled fingerprints of verified files; a cache beside the manifest, not identity.
 MARKS = "bootstrap-fingerprints.json"
 FORMAT = 1
-_REPARSE_POINT = 0x400
-
-
-def _ordinary_path(path: Path):
-    for part in (path.absolute(), *path.absolute().parents):
-        if not part.exists():
-            continue
-        info = part.lstat()
-        if part.is_symlink() or getattr(info, "st_file_attributes", 0) & _REPARSE_POINT:
-            raise ValueError("bootstrap path crosses a reparse point: " + str(part))
 
 
 def _source_paths(root: Path, file_io):
     # The installation file set is file_io's; the snapshot's own markers are not sources.
+    # The root is proved once; each file only below it.
+    file_io.no_reparse(root)
     paths = {name: path for name, path in file_io.installation_files(root).items() if name not in {MANIFEST, MARKS}}
     for path in paths.values():
-        _ordinary_path(path)
+        file_io.no_reparse(path, below=root)
     return paths
 
 
@@ -61,13 +52,14 @@ def verify_snapshot(manifest_path: Path):
     beside the manifest. Later starts compare fingerprints (accidental-change
     threat model, design D1) and hash a file again only when it differs.
     """
-    _ordinary_path(manifest_path)
+    file_io = _file_io()
+    # Proves the snapshot root and its ancestors; files are checked below the root.
+    file_io.no_reparse(manifest_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if not isinstance(manifest, dict) or set(manifest) != {"format", "installation_root", "files", "snapshot_sha256"}:
         raise ValueError("invalid bootstrap manifest")
     if manifest["format"] != FORMAT or not isinstance(manifest["files"], dict):
         raise ValueError("unsupported bootstrap manifest")
-    file_io = _file_io()
     basis = {key: manifest[key] for key in ("format", "installation_root", "files")}
     if file_io.json_digest(basis) != manifest["snapshot_sha256"]:
         raise ValueError("bootstrap manifest identity mismatch")
@@ -80,7 +72,7 @@ def verify_snapshot(manifest_path: Path):
         if relative.is_absolute() or relative.as_posix() != name or ".." in relative.parts or "\\" in name:
             raise ValueError("invalid bootstrap file path")
         target = root.joinpath(*relative.parts)
-        _ordinary_path(target)
+        file_io.no_reparse(target, below=root)
         if not target.resolve(strict=True).is_relative_to(root) or not target.is_file():
             raise ValueError("bootstrap file escaped its snapshot")
         mark = file_io.file_fingerprint(target)
@@ -99,18 +91,18 @@ def verify_snapshot(manifest_path: Path):
 
 def freeze(installation_root: Path, workspace: Path):
     """Publish a content-addressed runtime copy; no research state or tasks change."""
-    _ordinary_path(installation_root)
-    _ordinary_path(workspace)
+    file_io = _file_io()
+    file_io.no_reparse(installation_root)
+    file_io.no_reparse(workspace)
     installation_root = installation_root.resolve(strict=True)
     workspace = workspace.resolve()
     if not (installation_root / "scripts/do_math/scheduled_operator.py").is_file():
         raise ValueError("installation has no supervisor")
-    file_io = _file_io()
     files = _source_files(installation_root, file_io)
     basis = {"format": FORMAT, "installation_root": str(installation_root), "files": files}
     identity = file_io.json_digest(basis)
     parent = workspace / "operator/bootstrap"
-    _ordinary_path(parent)
+    file_io.no_reparse(parent)
     parent.mkdir(parents=True, exist_ok=True)
     destination = parent / identity
     if destination.exists():
@@ -136,7 +128,7 @@ def freeze(installation_root: Path, workspace: Path):
     finally:
         if staging.exists():
             # Only the fresh staging directory created above can be removed.
-            _ordinary_path(staging)
+            file_io.no_reparse(staging)
             if staging.resolve().parent != parent.resolve() or not staging.name.startswith(".building-"):
                 raise ValueError("invalid bootstrap staging cleanup target")
             shutil.rmtree(staging)

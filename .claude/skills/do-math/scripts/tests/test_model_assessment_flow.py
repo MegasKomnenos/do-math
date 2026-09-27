@@ -20,22 +20,18 @@ from research_fixtures import local_job_runner, restore_template
 from do_math.contracts import schema_for
 from do_math.engine import ResearchEngine
 from do_math.model_policy import LIMITS, MODELS
-from do_math.execution_profiles import profile_ref
 from do_math.planning import contract_hash
 from do_math.repository import canonical_json
 from do_math.submission import payload_issues
-from research_fixtures import charter_change, policy_change, producer_result, contract_review, prepared_rule_conditions
-from test_engine import common, context_from
-from test_purpose_engine import ActivatedPurposeHarness, PurposeHarness, PurposeRunner
+from research_fixtures import producer_result, contract_review, prepared_rule_conditions
+from runner_fixtures import common, context_from, rating
+from purpose_fixtures import (ASSESSMENT_CONFIG, ActivatedPurposeHarness, PurposeRunner,
+                              assessment_preparation_instance, prepared_assessment_engine)
 
 
 def candidate(title="one"):
     from research_fixtures import candidate as task_candidate
     return task_candidate(title)
-
-
-def rating(**identity):
-    return {**identity, "difficulty": "low", "importance": "medium", "reason": "A bounded check of one supplied identity."}
 
 
 class AssessmentSubmissionTests(unittest.TestCase):
@@ -54,9 +50,9 @@ class AssessmentSubmissionTests(unittest.TestCase):
             supply_observation_rules(self.output['candidates'], extensions)
         (self.workspace / 'activity-extensions.json').write_bytes(canonical_json(extensions))
         output = deepcopy(self.output)
-        from do_math.repository import semantic_content_hash
+        from do_math.repository import exact_content_hash
         for task in self.context['tasks']:
-            task.setdefault('content_sha256', semantic_content_hash(task))
+            task.setdefault('content_sha256', exact_content_hash(task))
         seal_response(output, self.context, self.workspace)
         return payload_issues(output, schema_for("research_preparation"), self.context, extensions, self.workspace)
 
@@ -69,7 +65,7 @@ class AssessmentSubmissionTests(unittest.TestCase):
         self.assertTrue(self.issues({}))
 
     def test_exact_coverage_is_accepted_and_duplicates_and_foreign_targets_are_rejected(self):
-        from test_engine import contract_checks
+        from runner_fixtures import contract_checks
         self.assertEqual(self.issues({"model_assessments": [rating(task_title="one"), rating(task_title="two")],
                                       "contract_checks": contract_checks(self.output["candidates"])}), [])
         for titles in (("one", "one"), ("one", "foreign")):
@@ -109,44 +105,6 @@ class AssessmentSubmissionTests(unittest.TestCase):
         self.assertEqual(self.issues(valid), [])
         self.assertTrue(self.issues({"model_assessments": [rating(task_id="TK-one")]}))
         self.assertTrue(self.issues({**valid, "model_assessments": [rating(task_id="TK-one"), rating(task_id="TK-two")]}))
-
-
-ASSESSMENT_CONFIG = PurposeHarness.fixture_config(scholarly_enabled=False, operator_enabled=False,
-                                                  session_limits=deepcopy(LIMITS))
-
-
-def assessment_preparation_instance(root, shared, *, config):
-    """``restore_template`` build: two academic tasks of requirement ``r`` without model assessments.
-
-    The validated synthetic active state supplies grants; a public charter
-    control supplies the requirement and its pending event history. The tasks
-    and their contract reviews are injected, and the published readiness has
-    replaced the reviews with one assessment-only preparation.
-    """
-    from research_fixtures import send_control
-    from state_fixtures import active_instance
-    from do_math.academic import current_requirements
-    instance_id = active_instance(root, shared, config=config)
-    engine = ResearchEngine(root / "repository", instance_id)
-    send_control(engine, "decision", config={"change": charter_change(engine, academic_requirements=[
-        {"id": "r", "scope": "solution", "criteria": ["Explain the supplied argument"], "assessor": "research_plan"}])})
-    requirement_hash = current_requirements(engine.instance)["sha256"]
-    engine.runtime["queue"] = []
-    for number in (1, 2):
-        tid = f"TK-academic-{number}"
-        engine.runtime["tasks"][tid] = {**candidate(str(number)), "id": tid, "revision": 1, "feature_version": 5,
-            "status": "planned", "academic_requirement_id": "r",
-            "requirements_sha256": requirement_hash, "results": [], "reviews": [], "dependencies": [],
-            "occurrence_condition": {"op": "always"},
-            "initial_observation_rules": prepared_rule_conditions([tid])[0]['observation_rules']}
-        engine.runtime["tasks"][tid]["profile_refs"] = deepcopy(engine.instance["role_profile_refs"]["research_work"])
-        engine.runtime["tasks"][tid]["authority_refs"] = [g["id"] for g in engine.instance["grants"].values()
-            if g.get("kind") == "local" and g.get("status") == "active" and "research_work" in g.get("roles", [])]
-        engine.runtime["tasks"][tid].pop("revises_task_id")
-        engine._enqueue("task_contract_review", tid)
-    engine._refresh_readiness()
-    engine._save()
-    return instance_id
 
 
 class RejectingRunner:
@@ -189,9 +147,7 @@ def rejected_assessment_instance(root, shared, *, config, decision):
 
 class AssessmentFlowTests(ActivatedPurposeHarness):
     def prepare_engine(self):
-        self.root, instance_id = restore_template(assessment_preparation_instance, config=ASSESSMENT_CONFIG)
-        engine, _ = self._engine(instance_id, PurposeRunner())
-        return engine
+        return prepared_assessment_engine(self)
 
     def test_missing_academic_assessments_are_batched_before_any_contract_review(self):
         engine = self.prepare_engine()
@@ -376,10 +332,10 @@ class AssessmentFlowTests(ActivatedPurposeHarness):
 
     def test_real_academic_generation_enters_assessment_preparation_on_session_conversion(self):
         from do_math.engine import control
-        from test_academic_engine import SOLVED_REQUIREMENT_CRITERIA, solved_instance
+        from purpose_fixtures import SOLVED_REQUIREMENT_CRITERIA, solved_instance
         # The template approves an academic requirement, then drives the real solution, which generates its task.
-        self.root, instance_id = restore_template(solved_instance, criteria=SOLVED_REQUIREMENT_CRITERIA)
-        engine, _ = self._engine(instance_id, PurposeRunner())
+        self.root, solved = restore_template(solved_instance, criteria=SOLVED_REQUIREMENT_CRITERIA)
+        engine, _ = self._engine(solved["instance_id"], PurposeRunner())
         academic = {tid: t for tid, t in engine.runtime["tasks"].items() if t.get("academic_requirement_id")}
         self.assertTrue(academic)
         control(self.repo, engine.instance["id"], "configure", config={"session_limits": deepcopy(LIMITS)})

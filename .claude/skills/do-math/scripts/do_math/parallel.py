@@ -64,7 +64,7 @@ class ModelCalls:
         if execution_id is not None:
             if not isinstance(execution_id, str) or not execution_id:
                 raise ValueError("execution_id must be a nonempty string")
-            if any(getattr(future, "execution_id", None) == execution_id for future in self.futures):
+            if any(future.execution_id == execution_id for future in self.futures):
                 raise ValueError("an execution already has an active call")
         future = Future()
         future.execution_id = execution_id
@@ -72,6 +72,7 @@ class ModelCalls:
         future.judge = arguments.get("should_stop")
         future.observations = deque()
         future.observation_failed = False
+        future.judge_error = None
         if "should_stop" in arguments:
             arguments["should_stop"] = future.stop.is_set
         if "on_started" in arguments:
@@ -109,7 +110,7 @@ class ModelCalls:
         try:
             stop = future.judge()
         except Exception as error:
-            # As before, a failing judgment fails its own call, not the owner.
+            # A failing judgment fails its own call, not the owner.
             future.judge_error, stop = error, True
         if stop:
             future.stop.set()
@@ -179,7 +180,7 @@ class ModelCalls:
                     result = future.result()
                 except Exception as error:
                     result = failed_result(error)
-                error = getattr(future, "judge_error", None)
+                error = future.judge_error
                 if error is not None and isinstance(result, dict):
                     result = {**result, "status": "failed",
                               "error": f"stop judgment failed: {type(error).__name__}: {error}"}

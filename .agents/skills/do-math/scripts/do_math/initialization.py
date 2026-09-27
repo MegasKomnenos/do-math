@@ -2,12 +2,9 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import hashlib
-from pathlib import Path
 
-from .state_contract import STATE_FORMAT_VERSION, STATE_CONTRACT_ID
-from .execution_profiles import resolve_profile
-from .governance import grant_time_reason, timestamp
+from .execution_profiles import match_profile_ref
+from .governance import grant_time_reason, source_record, timestamp
 from .repository import exact_content_hash, new_id
 
 INITIAL_ROLES = {"intent_interpretation", "maintenance"}
@@ -15,12 +12,12 @@ INITIAL_ROLES = {"intent_interpretation", "maintenance"}
 
 def original_input_bytes(record):
     """Return and verify the one exact UTF-8 representation of immutable input."""
-    if not isinstance(record.get('text'), str):
+    text = record.get('text')
+    if not isinstance(text, str):
         raise ValueError('immutable input text is missing')
-    raw = record['text'].encode('utf-8')
-    if record.get('sha256') != hashlib.sha256(raw).hexdigest() or record.get('bytes') != len(raw):
+    if any(record.get(key) != value for key, value in source_record(text).items()):
         raise ValueError('immutable input bytes or hash differs')
-    return raw
+    return text.encode('utf-8')
 
 
 def adapter_for(profile):
@@ -32,7 +29,7 @@ def capability_requirements(instance, reference, required=(), *, current_identit
     """Use exact profile/host/implementation evidence, never profile booleans."""
     missing = sorted(set(required))
     try:
-        profile = resolve_profile(instance.get("execution_profiles", {}), reference)
+        profile = match_profile_ref(instance.get("execution_profiles", {}), reference)
         missing = sorted(set(required) | set(profile.get("required_capabilities", [])))
         if profile["actor_kind"] == "machine":
             return {"satisfied": not missing, "missing": missing, "profile_ref": reference, "evidence_refs": []}
@@ -40,7 +37,6 @@ def capability_requirements(instance, reference, required=(), *, current_identit
         current_time = timestamp(at)
         evidence = [row for row in instance.get("capability_evidence", {}).values()
                     if row.get("execution_profile_ref") == reference and row.get("identity") == identity
-                    and row.get('id') == 'CE-' + exact_content_hash({key: value for key, value in row.items() if key != 'id'})
                     and timestamp(row["observed_at"]) <= current_time]
         # The most recent observation supersedes older contradictory claims.
         evidence.sort(key=lambda row: (timestamp(row["observed_at"]), row["id"]))
@@ -66,7 +62,7 @@ def _capability_batch_requirements(instance, references, *, at=None):
     identities = {}
     for reference in references:
         try:
-            profile = resolve_profile(instance.get("execution_profiles", {}), reference)
+            profile = match_profile_ref(instance.get("execution_profiles", {}), reference)
             identity = None
             if profile["actor_kind"] == "ai":
                 adapter = adapter_for(profile)
@@ -111,15 +107,15 @@ def initial_intent_evidence(instance, runtime, *, owner_handlers=None):
     from .governance import _current_import, validate_independent_execution
     lifecycle = instance['lifecycle']
     original = lifecycle['immutable_input']
-    original_bytes = original_input_bytes(original)
-    original_sha256 = hashlib.sha256(original_bytes).hexdigest()
+    original_input_bytes(original)
+    original_sha256 = original['sha256']
     for row in reversed(list(runtime.get('intent_imports', {}).values())):
         if row.get('input_ref') != lifecycle.get('input_id') or row.get('superseded_by'):
             continue
         bundle = _current_import(instance, runtime, row['id'], owner_handlers=owner_handlers)
         check, application = bundle.get('check', {}), bundle.get('application', {})
         expected_units = {u['unit_id'] for u in bundle['output']['import_units'] if u['payload']}
-        if (bundle['source']['sha256'] != original_sha256 or bundle['source']['text'].encode('utf-8') != original_bytes
+        if (bundle['source']['sha256'] != original_sha256 or bundle['source']['text'] != original['text']
                 or any(q.get('blocks') for q in bundle['output'].get('question_details', [])) or bundle['status'] != 'approved'
                 or check.get('decision') != 'approved' or check.get('scope_complete') is not True
                 or check.get('bundle_sha256') != bundle['sha256']
@@ -183,7 +179,6 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
     references = adoption.get("profile_refs", [])
     if not references:
         missing.append("profiles")
-    from .execution_profiles import resolve_profile
     from .observations import observation_settings_errors
     observation_errors = []
     # Dispatch uses role_profile_refs after activation; a narrow bootstrap
@@ -192,7 +187,7 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
     checked_profiles = set()
     for ref in selected:
         try:
-            profile = resolve_profile(instance['execution_profiles'], ref)
+            profile = match_profile_ref(instance['execution_profiles'], ref)
         except (ValueError, KeyError, TypeError):
             missing.append('profiles')
             continue
@@ -237,28 +232,26 @@ def initialize_state(*, instance_id, goal, workspace, config, source_input,
     if not isinstance(source_input, str) or not source_input.strip():
         raise ValueError("initialization requires the original nonempty input")
     when = timestamp(created_at).isoformat()
-    raw = source_input.encode('utf-8')
+    original = source_record(source_input)
     input_id = new_id('UI')
-    instance = {"id": instance_id, "feature_version": STATE_FORMAT_VERSION, "title": title or goal[:80],
-        'contract_id': STATE_CONTRACT_ID,
+    instance = {"id": instance_id, "title": title or goal[:80],
         "config": deepcopy(config),
         "workspace": str(workspace), "created_at": when, "knowledge": {}, "relations": [],
         "sources": [], "goal_judgments": [], "goal_status": "unsolved", "grants": {}, "decisions": {},
         "governance": {}, "governance_sources": {},
         "trust_environments": {}, "active_trust_environment": None,
-        "lifecycle": {"state": "initializing", "immutable_input": {
-            "text": source_input, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)},
+        "lifecycle": {"state": "initializing", "immutable_input": original,
             'input_id': input_id,
             "adoption": {}, "activation": {}}}
-    runtime = {"feature_version": STATE_FORMAT_VERSION, "status": "initializing",
-        'contract_id': STATE_CONTRACT_ID,
+    runtime = {"status": "initializing",
         "availability": {"state": "blocked", "reason": "initialization_incomplete"},
         "tasks": {}, "executions": {}, "activities": {}, "queue": [], "history": [],
-        "inputs": [{'id': input_id, 'text': source_input, 'sha256': hashlib.sha256(raw).hexdigest(),
+        "inputs": [{'id': input_id, 'text': source_input, 'sha256': original['sha256'],
                     'config': {'goal': goal}, 'created_at': when}],
         "questions": [], "question_links": [], "events": [], "pending_events": [],
-        "last_observed_utc": when, "recovery_checked": False,
+        "cycles": 0, "processed_controls": [], "reservations": {}, "provider_waits": {},
+        "updated_at": when, "last_observed_utc": when, "recovery_checked": False,
         "review_cycles": {}, "external_operations": {}, "trust_transitions": {}, "conversations": {},
-        "checkpoints": {}, "observations": {}, "condition_states": {}, "extended_controls": {}}
+        "checkpoints": {}, "observations": {}, "extended_controls": {}}
     instance["lifecycle"]["activation"]["missing"] = activation_requirements(instance, runtime, at=when)["missing"]
     return instance, runtime

@@ -13,7 +13,7 @@ ROLE_TIERS = {"research_preparation": "high", "research_plan": "high",
               "task_contract_review": "medium", "identity_review": "high",
               "goal_audit": "high", "operational_review": "medium",
               "intent_interpretation": "high", "maintenance": "medium",
-              "independent_operator": "high"}
+              "recovery": "high"}
 ASSESSMENT_SCHEMA = {"type": "object", "additionalProperties": False,
     "properties": {"difficulty": {"type": "string", "enum": list(TIERS)},
                    "importance": {"type": "string", "enum": list(TIERS)},
@@ -88,12 +88,9 @@ def validate_policy(config: dict) -> None:
     roles = config["role_tiers"]
     if not isinstance(roles, dict) or set(roles) - set(ROLE_TIERS) or any(t not in TIERS for t in roles.values()):
         raise ValueError("role_tiers contains an unknown role or tier")
-    limits = config["session_limits"]
-    if not isinstance(limits, dict) or set(limits) != {"work"}:
-        raise ValueError("session_limits requires exactly the work model map")
-    values = limits["work"]
-    if not isinstance(values, dict) or any(not isinstance(m, str) or not m.strip()
-            or isinstance(n, bool) or not isinstance(n, int) or n < 0 for m, n in values.items()):
+    # The configuration schema fixes session_limits to one work map of nonnegative integers.
+    values = config["session_limits"]["work"]
+    if any(not m.strip() for m in values):
         raise ValueError("session_limits.work must map model names to nonnegative integers")
     if set(models.values()) - set(values):
         raise ValueError("session_limits.work must explicitly include every tier model, including zero capacity")
@@ -123,7 +120,7 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, insta
     result = {"tier": tier, "model": config["tier_models"][tier],
               "assessment": deepcopy(requirement), "reason": reason}
     if instance is not None:
-        from .execution_profiles import select_profile, profile_ref, resolve_profile
+        from .execution_profiles import select_profile, profile_ref, match_profile_ref
         profiles = instance["execution_profiles"]
         # A task's allowlist governs its work attempts. Reviewers and other
         # decision roles use their own adopted role profiles, while still
@@ -132,7 +129,7 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, insta
                    if role in {"research_work", "supplemental_research"}
                    and not action.get("review_cycle_id") else None)
         if action.get("profile_ref"):
-            explicit = resolve_profile(profiles, action["profile_ref"])
+            explicit = match_profile_ref(profiles, action["profile_ref"])
             if explicit["actor_kind"] == "ai":
                 pinned = explicit["ai"]
                 if (

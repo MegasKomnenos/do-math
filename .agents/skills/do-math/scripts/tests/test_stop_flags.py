@@ -22,7 +22,7 @@ from do_math.parallel import ModelCalls
 from do_math.engine import ResearchEngine
 from research_fixtures import charter_change, policy_change, restore_template
 from state_fixtures import active_instance
-from test_engine import ScriptedRunner
+from runner_fixtures import ScriptedRunner
 from research_fixtures import FixtureAdapter
 
 
@@ -79,7 +79,7 @@ def prepare_goal_audit(engine, root):
 
 def prepare_work(engine, root):
     """Research work queued on a reviewed task whose input is an imported record."""
-    from test_redesign_EVIDENCE import reviewed_task
+    from engine_fixtures import reviewed_task
     from do_math.execution_lifecycle import transition_execution
     from research_fixtures import prepared_rule_conditions
     applied(engine, root / 'repository', 'knowledge', config={'operation': 'import', 'candidate': {

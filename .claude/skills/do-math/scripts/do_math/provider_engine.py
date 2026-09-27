@@ -16,8 +16,6 @@ def record_model_policy_violation(runtime, execution_id, model, result):
 class ProviderEngineMixin:
     def _session_slots(self):
         """A fresh ledger view over the engine's current state; it holds no state of its own."""
-        if not {"execution_profiles", "capacity_constraints"}.issubset(self.instance):
-            raise ValueError("provider admission requires feature-5 execution profiles")
         return SessionSlots(self.runtime, self.instance)
 
     def _settle_recovered_execution(self, execution_id, *, at,
@@ -29,15 +27,13 @@ class ProviderEngineMixin:
         provider termination. Already ended executions may still need settlement.
         Only an admitted execution has a launch barrier whose end can be confirmed.
         """
-        from .execution_lifecycle import drive_to_termination, recover_execution
+        from .execution_lifecycle import end_recovered
         execution = self.runtime["executions"][execution_id]
         if not execution.get("capacity"):
             return False
         candidate = deepcopy(execution)
         if candidate["status"] != "ended":
-            drive_to_termination(candidate, at=at, reason="recovery local termination reconciliation")
-            recover_execution(candidate, {"fact": "termination_barrier_confirmed", "outcome": outcome,
-                                           "disposition": disposition or "preserved_for_followup"}, at=at)
+            end_recovered(candidate, at=at, outcome=outcome, disposition=disposition or "preserved_for_followup")
         if not self._session_slots().release(execution_id, reason="recovery local termination confirmed"):
             return False
         candidate["capacity"] = deepcopy(execution["capacity"])
@@ -46,16 +42,13 @@ class ProviderEngineMixin:
         return True
 
     def _provider_status(self):
-        if not {"execution_profiles", "capacity_constraints"}.issubset(self.instance):
-            return {"source": "uninitialized_feature_5_runtime", "providers": {}}
         return SessionSlots(self.runtime, self.instance, observer=True).provider_snapshot()
 
     def _provider_admit(self, action, execution_id, *, profile, execution):
-        """Reserve a feature-5 profile and its starting execution together.
+        """Reserve a registered profile's capacity and its starting execution together.
 
         ENGINE must save the candidate runtime through its single CAS before the
-        corresponding runner starts.  This method deliberately has no legacy
-        model-only or SQLite admission path.
+        corresponding runner starts.
         """
         slots = self._session_slots()
         admitted = slots.acquire(execution_id, profile=profile, execution=execution)
@@ -92,11 +85,11 @@ class ProviderEngineMixin:
     def _requeue_provider_action(self, action, execution_id, gate):
         """A provider-limited request waits in the queue for its gate, like any admission wait."""
         from .activities import wait_for
-        from .execution_profiles import resolve_profile
+        from .execution_profiles import match_profile_ref
         self._remove_action(action)
         restored = {**deepcopy(action), "recovery": {"execution_id": execution_id,
                     "reason": "provider admission retry", "provider_generation": gate.get("generation")}}
-        profile = resolve_profile(self.instance["execution_profiles"], action["profile_ref"])
+        profile = match_profile_ref(self.instance["execution_profiles"], action["profile_ref"])
         wait = SessionSlots(self.runtime, self.instance, observer=True).provider_wait(profile)
         if wait is not None:
             restored["dispatch_wait"] = wait

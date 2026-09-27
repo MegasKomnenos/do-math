@@ -11,11 +11,11 @@ from unittest.mock import create_autospec
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math import planning,revisions
 from research_fixtures import bare_engine
-from test_redesign_TASKS import approved_fixture,approve,disposition
+from record_fixtures import approved_task, task_disposition
 
 
 def owner_harness():
-    task,instance,runtime=approved_fixture()
+    task,instance,runtime=approved_task()
     runtime['waiting_actions']={}
     return bare_engine(instance,runtime)
 
@@ -101,7 +101,7 @@ class RevisionObligationTests(unittest.TestCase):
 
     def test_plan_selection_and_predispatch_use_actual_current_input(self):
         h=owner_harness();h.runtime['executions']['EX-plan']={'id':'EX-plan','role':'research_plan','status':'ended'}
-        plan={'dispositions':[disposition('TK-1')],'task_assessments':[],'preparation_requests':[]}
+        plan={'dispositions':[task_disposition('TK-1')],'task_assessments':[],'preparation_requests':[]}
         h._apply_task_plan(plan,'EX-plan',deepcopy(h.runtime['tasks']),['TK-1'])
         action=next(a for a in h.runtime['queue'] if a['role']=='research_work')
         self.assertTrue(h._selected_action_current(action))

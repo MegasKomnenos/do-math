@@ -1,5 +1,5 @@
 ---
-id: M-0351
+worker_id: W-fix
 layer: 1
 title: do-math 시험의 시작 상태를 프로세스당 한 번 만들고 같은 절대 경로에 복원하는 공유 기반
 convention_version: 27

@@ -7,10 +7,9 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from test_redesign_TASKS import task as task_contract
+from record_fixtures import task_contract, withdraw_prepared, withdrawable_task
 from research_fixtures import bare_engine
 from do_math.planning import contract_hash
-from do_math.task_scope import apply_task_dispositions
 
 
 class EngineIntegrationTest(unittest.TestCase):
@@ -44,28 +43,9 @@ class EngineIntegrationTest(unittest.TestCase):
 
 
 class TaskScopeTests(unittest.TestCase):
-    def fixture(self):
-        task = {**task_contract(),"id": "TK-AI", "title": "AI proposal", "revision": 3, "status": "planned",
-                "producer_execution": "EX-prep",
-                "results": [], "reviews": [{"decision": "approved"}], "dependencies": []}
-        runtime = {"tasks": {task["id"]: deepcopy(task), "TK-dependent": {
-            "id": "TK-dependent", "status": "waiting", "dependencies": [task["id"]]}},
-            "executions": {"EX-prep": {"id": "EX-prep", "role": "research_preparation", "status": "ended",
-                                           "action": {"role": "research_preparation"}}},
-            "queue": [{"id": "AC-review", "role": "task_contract_review", "target": task["id"]},
-                      {"id": "AC-other", "role": "research_plan"}],
-            "waiting_actions": {"AC-work": {"action": {"id": "AC-work", "role": "research_work", "target": task["id"]}}},
-            "history": []}
-        return {}, runtime, {task["id"]: deepcopy(task)}
-
-    def withdraw(self, runtime, snapshot):
-        return apply_task_dispositions({}, runtime, [{"task_id": "TK-AI", "disposition": "withdraw",
-            "reason": "The prepared task is superseded by a narrower current direction."}],
-            execution_id="EX-plan", input_tasks=snapshot)
-
     def test_withdrawal_preserves_contract_and_cancels_only_prestart_actions(self):
-        instance, runtime, snapshot = self.fixture()
-        _, changed = self.withdraw(runtime, snapshot)
+        instance, runtime, snapshot = withdrawable_task()
+        _, changed = withdraw_prepared(runtime, snapshot)
         task = changed["tasks"]["TK-AI"]
         self.assertEqual(task["status"], "closed")
         self.assertEqual(task['completion_obligations'],snapshot['TK-AI']['completion_obligations'])
@@ -82,23 +62,23 @@ class TaskScopeTests(unittest.TestCase):
         self.assertEqual(runtime["tasks"]["TK-AI"]["status"], "planned")
 
     def test_selected_unstarted_withdrawal_excludes_only_its_authorizing_execution(self):
-        _, runtime, snapshot = self.fixture()
+        _, runtime, snapshot = withdrawable_task()
         runtime['tasks']['TK-AI']['status'] = 'active'
         runtime['executions']['EX-plan'] = {'id': 'EX-plan', 'role': 'research_preparation',
             'status': 'stopping', 'action': {'target': 'TK-AI'}}
-        _, changed = self.withdraw(runtime, snapshot)
+        _, changed = withdraw_prepared(runtime, snapshot)
         self.assertEqual(changed['tasks']['TK-AI']['status'], 'closed')
         runtime['executions']['EX-other'] = {**runtime['executions']['EX-plan'], 'id': 'EX-other'}
         with self.assertRaisesRegex(ValueError, 'live execution'):
-            self.withdraw(runtime, snapshot)
+            withdraw_prepared(runtime, snapshot)
         del runtime['executions']['EX-other']
         runtime['executions']['EX-plan']['role'] = 'research_work'
         with self.assertRaisesRegex(ValueError, 'live execution'):
-            self.withdraw(runtime, snapshot)
+            withdraw_prepared(runtime, snapshot)
 
     def test_terminal_assessment_cannot_withdraw_even_without_results(self):
         from do_math.task_scope import validate_withdrawal_scope
-        _, runtime, snapshot = self.fixture()
+        _, runtime, snapshot = withdrawable_task()
         for decision in ('completed', 'closed'):
             with self.subTest(decision=decision), self.assertRaisesRegex(ValueError, 'terminal'):
                 validate_withdrawal_scope(runtime['tasks']['TK-AI'], snapshot['TK-AI'],
@@ -115,10 +95,10 @@ class TaskScopeTests(unittest.TestCase):
             lambda runtime, snap: runtime["tasks"]["TK-AI"].update(status="closed"),
         ):
             with self.subTest(mutation=mutation):
-                instance, runtime, snapshot = self.fixture()
+                instance, runtime, snapshot = withdrawable_task()
                 mutation(runtime, snapshot)
                 with self.assertRaises(ValueError):
-                    self.withdraw(runtime, snapshot)
+                    withdraw_prepared(runtime, snapshot)
 
     def test_submission_rejects_nonwithdraw_and_duplicate_requests(self):
         """The sealed extension schema and the submission check own disposition shape and distinct targets."""
@@ -127,7 +107,7 @@ class TaskScopeTests(unittest.TestCase):
         from do_math.repository import canonical_json
         from do_math.submission import payload_issues
         from research_fixtures import seal_response
-        from test_engine import common
+        from runner_fixtures import common
         from do_math.knowledge import content_hash
         # A disposition revises an existing task, so the fixed input supplies that task
         # with its content hash, as the engine's task views do.
@@ -153,14 +133,14 @@ class TaskScopeTests(unittest.TestCase):
                             and "distinct targets" in row["message"] for row in duplicate))
 
     def test_partial_work_requires_item_disposition_and_preserves_results_on_rejection(self):
-        _, runtime, snapshot = self.fixture()
+        _, runtime, snapshot = withdrawable_task()
         runtime["tasks"]["TK-AI"].update(status="waiting", results=[{"id": "R-partial", "outcome": "partial"}])
         runtime["executions"]["EX-work"] = {"id": "EX-work", "role": "research_work", "status": "ended",
             "action": {"target": "TK-AI"}, "outcome": "output_accepted"}
         snapshot["TK-AI"].update(status="waiting")
 
         with self.assertRaisesRegex(ValueError,'item dispositions'):
-            self.withdraw(runtime, snapshot)
+            withdraw_prepared(runtime, snapshot)
 
         task = runtime["tasks"]["TK-AI"]
         self.assertEqual(task["status"], "waiting")
@@ -168,7 +148,7 @@ class TaskScopeTests(unittest.TestCase):
         self.assertEqual(runtime["executions"]["EX-work"]["outcome"], "output_accepted")
 
 
-class SourceCorrectionRegressionTest(unittest.TestCase):
+class SourceCorrectionTest(unittest.TestCase):
     def test_same_source_bytes_can_revise_a_misread_claim_and_suspend_dependents(self):
         """A corrected reading changes knowledge, not the immutable source bytes."""
         from types import SimpleNamespace

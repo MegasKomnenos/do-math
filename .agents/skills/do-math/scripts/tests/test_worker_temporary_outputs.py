@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math import claude_worker, codex_worker
+from do_math import claude_worker, cli_worker, codex_worker
 from do_math.context_store import collect_outputs
 
 
@@ -45,8 +45,8 @@ class WorkerTemporaryOutputTests(unittest.TestCase):
                         timeouts.append(options['timeout'])
                         return None, None
 
-                # Both workers launch their CLI through the shared codex_worker.run_cli.
-                with patch.object(codex_worker.subprocess, 'Popen', Provider):
+                # Both workers launch their CLI through the shared cli_worker.run_cli.
+                with patch.object(cli_worker.subprocess, 'Popen', Provider):
                     self.assertEqual(worker.run(path), 0)
                 self.assertEqual(json.loads((root / 'status.json').read_text())['state'], 'exited')
                 self.assertEqual(timeouts, [None], 'a work request must reach subprocess without a time limit')

@@ -1,60 +1,21 @@
 """Native bytes use central capture; provider responses are explicit fixtures."""
-from copy import deepcopy
-import hashlib
 import json
-from pathlib import Path
 import sys
 import unittest
+from copy import deepcopy
+from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math import submission
-from do_math.model_runner import verified_native_final
 from do_math.codex_adapter import _artifact
-import test_submission_flow as submission_tests
-
-
-def native_result(execution, context, raw, workspace):
-    """Pure protocol fixture; actual Job coverage is a separate connected test."""
-    from do_math.launch import ticket
-    execution['launch_ticket'] = {**ticket(execution['id'], {'sha256':execution['execution_profile_ref']['sha256'],
-        'actor_kind':'ai','role':execution.get('role','maintenance')}), 'phase':'finished'}
-    prompt = b'exact sealed prompt'
-    request = {'execution_id': execution['id'], 'profile_ref': execution['execution_profile_ref'],
-        'cwd': str(workspace), 'codex_path': 'fixture-cli',
-        'control_binding': {'execution_id': execution['id'], 'grant_id': execution['grant_id']}}
-    request_raw = json.dumps(request).encode()
-    identity = {'request_sha256': hashlib.sha256(request_raw).hexdigest(),
-        'pid': 123, 'creation_filetime': 134345064658094591, 'job_name': execution['launch_ticket']['job_name'], 'execution_id': execution['id'],
-        'profile_ref': execution['execution_profile_ref']}
-    # The role input manifest carries the sealed prompt digest the provider received.
-    manifest = execution.get('input_manifest')
-    if not isinstance(manifest, dict):
-        manifest = execution['input_manifest'] = {}
-    manifest['prompt'] = {**manifest.get('prompt', {}),
-                          'sha256': hashlib.sha256(prompt).hexdigest(), 'bytes': len(prompt)}
-    execution['capacity'] = {'local_termination': 'confirmed',
-        'process': {**identity, 'creation_filetime': str(identity['creation_filetime'])}}
-    stream = b''.join(json.dumps(row, ensure_ascii=False).encode() + b'\n' for row in [
-        {'type': 'thread.started', 'thread_id': 'thread'}, {'type': 'turn.started'},
-        {'type': 'item.completed', 'item': {'id': 'message', 'type': 'agent_message', 'text': raw.decode()}},
-        {'type': 'turn.completed', 'usage': {}}])
-    collect = {'result': 'output_collected', 'reasons': [], 'source_request': _artifact(request_raw),
-        'source_prompt': _artifact(prompt), 'stdout': _artifact(stream), 'stderr': _artifact(b''),
-        'final': _artifact(raw), 'execution_id': execution['id'], 'profile_ref': execution['execution_profile_ref'],
-        'worker_status': {'state': 'exited', 'cli_exit_code': 0, 'request_sha256': identity['request_sha256'],
-            'stdin_sha256': execution['input_manifest']['prompt']['sha256'], 'schema_sha256': None,
-            'execution_id': execution['id'], 'profile_ref': execution['execution_profile_ref']},
-        'termination_barrier': {'confirmed': True, 'root_signaled': True, 'active_processes': 0, 'process_ids': []},
-        'stop_receipts': [], 'process_identity': {'pid': 123, 'creation_filetime': identity['creation_filetime']}}
-    return {'status': 'completed', 'output': None, 'collection': 'provider_evidence_only',
-        'execution_id': execution['id'], 'profile_ref': execution['execution_profile_ref'],
-        'execution': {'started': identity, 'collect': collect}}
+from do_math.model_runner import verified_native_final
+from engine_fixtures import native_result, start_native_final, submit_history
 
 
 def job_native_result(case, execution, context, raw, workspace):
     """Real Windows Job and adapter collector; only CLI response generation is scripted."""
     import os, uuid
     from do_math.windows_job import WindowsJob, process_identity
-    from do_math.codex_adapter import CodexExecAdapter, CodexExecution
+    from do_math.codex_adapter import CLIExecution, CodexExecAdapter
     result = native_result(execution, context, raw, workspace)
     collected = result['execution']['collect']
     evidence = workspace.parent / 'native-evidence'; evidence.mkdir()
@@ -68,10 +29,9 @@ def job_native_result(case, execution, context, raw, workspace):
     execution['launch_ticket']['phase'] = 'dispatched'
     execution['capacity']['local_termination'] = 'unknown'
     job = WindowsJob(argv, cwd=evidence, env=os.environ, name=execution['launch_ticket']['job_name'])
-    native = CodexExecution(evidence/'request.json', evidence/'prompt.txt',
-        collected['source_request']['sha256'], collected['source_prompt']['sha256'], argv,
+    native = CLIExecution(collected['source_request']['sha256'], collected['source_prompt']['sha256'], argv,
         evidence/'stdout.jsonl', evidence/'stderr.txt', evidence/'final.txt', evidence/'status.json',
-        job, evidence, None, collected['source_request']['raw'], collected['source_prompt']['raw'])
+        job, None, collected['source_request']['raw'], collected['source_prompt']['raw'])
     adapter = CodexExecAdapter('fixture-cli')
     try:
         early = adapter.collect(native)
@@ -101,13 +61,13 @@ class NativeFinalProtocolTests(unittest.TestCase):
         self.result = native_result(self.execution, self.context, self.raw, Path('C:/workspace'))
 
     def test_verified_native_stream_retains_exact_bytes_and_serialized_evidence(self):
-        from do_math.engine import json_safe
+        from do_math.payloads import json_safe
         for value in [self.result, json_safe(self.result)]:
             self.assertEqual(verified_native_final(value, self.execution, self.context), self.raw)
 
     def test_collected_digests_are_compared_as_records_without_rehashing(self):
         from unittest.mock import patch
-        from do_math.engine import json_safe
+        from do_math.payloads import json_safe
         serialized = json_safe(self.result)
         with patch('hashlib.sha256', side_effect=AssertionError('collection already hashed these bytes')):
             for value in [self.result, serialized]:
@@ -141,11 +101,7 @@ class NativeFinalProtocolTests(unittest.TestCase):
 
 class NativeFinalGitTests(unittest.TestCase):
     def setUp(self):
-        submission_tests.CentralSubmissionHistoryTests.setUp(self)
-        from do_math.input_basis import capture_decision_basis
-        self.engine.runtime['executions']['EX-history']['decision_basis'] = capture_decision_basis(
-            self.engine.instance, self.engine.runtime, [])
-    submit = submission_tests.CentralSubmissionHistoryTests.submit
+        start_native_final(self)
 
     def test_native_capture_git_reload_summary_and_early_seal_precedence(self):
         from do_math.engine import ResearchEngine
@@ -174,7 +130,7 @@ class NativeFinalGitTests(unittest.TestCase):
         self.assertEqual(applied['status'], 'accepted', applied)
 
     def test_rejected_native_final_leaves_explicit_retry_to_the_existing_fresh_execution_path(self):
-        from do_math.engine import json_safe
+        from do_math.payloads import json_safe
         from do_math.repository import canonical_json
         execution = self.engine.runtime['executions']['EX-history']
         result = native_result(execution, self.context, b'{malformed', self.workspace)
@@ -195,7 +151,7 @@ class NativeFinalGitTests(unittest.TestCase):
 
     def test_explicit_early_seal_precedes_different_final_and_damage_never_falls_back(self):
         from unittest.mock import patch
-        _, receipt = self.submit('CT-early', json.dumps(self.output, ensure_ascii=False).encode())
+        _, receipt = submit_history(self, 'CT-early', json.dumps(self.output, ensure_ascii=False).encode())
         self.assertEqual(receipt['state'], 'accepted', receipt)
         execution = self.engine.runtime['executions']['EX-history']
         result = {'status': 'completed', 'output': {'summary': 'alternate'}, 'collection': 'provider_evidence_only'}
@@ -203,7 +159,7 @@ class NativeFinalGitTests(unittest.TestCase):
         self.assertEqual(collected['output'], self.output)
         head = self.engine.head
         from do_math import repository
-        # Sealed rows are matched once per process (contract S3); damage is found by a
+        # Sealed rows are matched once per process (이음새-정본.md §3); damage is found by a
         # process that has not matched the row yet, modelled by an empty match set.
         with patch.object(self.engine.store, 'read', return_value=b'{"summary":"damaged"}'), \
                 patch.dict(repository.VERIFIED_ARTIFACTS, clear=True):
@@ -265,5 +221,27 @@ class NativeFinalGitTests(unittest.TestCase):
         head = self.engine.head
         self.engine._collect_submitted_result(self.engine.runtime['executions']['EX-history'], result, self.context, self.schema, self.workspace)
         self.assertEqual(self.engine.head, head)
+
+
+class NativeRepairTests(unittest.TestCase):
+    def setUp(self):
+        # The running maintenance execution is registered on a copy of the synthetic active state.
+        start_native_final(self)
+
+    def test_normal_malformed_final_routes_back_to_producer(self):
+        execution = self.engine.runtime['executions']['EX-history']
+        raw = b'{"report":'
+        result = native_result(execution, self.context, raw, self.workspace)
+        received = self.engine._collect_submitted_result(execution, result, self.context, self.schema, self.workspace)
+        self.assertEqual(received['error_kind'], 'output_validation')
+        from do_math.execution_lifecycle import transition_execution
+        transition_execution(self.engine.runtime['executions'][execution['id']], 'stopping',
+                             at='2026-09-22T12:00:00+00:00', stop_phase='terminating')
+        self.engine._receive_submission(self.context['action'], received, execution['id'], self.context, self.schema, self.workspace)
+        retry = next(a for a in self.engine.runtime['queue'] if a.get('continuation_of') == execution['id'])
+        self.assertEqual(retry['role'], self.context['action']['role'])
+        self.assertEqual(retry['repair_attempt'], 1)
+        self.assertEqual(self.engine.store.read(retry['repair']['raw_output_ref'], self.engine.head), raw)
+
 
 if __name__ == '__main__': unittest.main()

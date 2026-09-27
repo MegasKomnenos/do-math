@@ -1,7 +1,36 @@
-"""Explicit v5 inputs; all authority and persistence still pass through the engine.
+"""Shared test fixtures: synthetic inputs, process helpers and shared starting states.
 
-The adapter/Lean facts below are synthetic test evidence. They do not establish
-host capabilities, a real compiler result, or approval by the actual user.
+All authority and persistence still pass through the engine. The adapter and
+Lean facts here are synthetic test evidence. They do not establish host
+capabilities, a real compiler result, or approval by the actual user.
+
+Fixture modules
+===============
+A test module takes its fixtures from these modules, never from another test
+module. Each module's docstring lists what it holds.
+
+- ``research_fixtures`` (this module): inputs every area uses (task
+  candidates, review outputs, charters and their approval, trust environments,
+  observation rules, clocks and batches), the in-process ``git_init``,
+  ``run_cli`` and ``cli_result``, public activation (``activate``) and the
+  shared starting states below.
+- ``state_fixtures``: the validated synthetic active state (``active_instance``,
+  ``active_repository``, ``start_active_copy``) and the owner-loop helpers
+  (``owner_calls``, ``start_model_call``).
+- ``engine_fixtures``: engine doubles over in-memory state (``FakeEngine``,
+  ``routing_engine``, ``context_engine``) and Git-backed engine start states
+  (``start_submission_history``, ``start_query_repository``).
+- ``runner_fixtures``: ``ScriptedRunner`` and the role outputs it writes.
+- ``purpose_fixtures``: the purpose scenario (``PurposeRunner``), its harnesses
+  and the builds that drive it.
+- ``record_fixtures``: records for pure domain functions (governance, task
+  contracts, submissions).
+- ``knowledge_fixtures``: knowledge candidates and their synthetic formal evidence.
+- ``review_fixtures``: identity review doubles, cycles and harnesses.
+- ``provider_fixtures``: provider adapters, host resources and external services.
+
+A fixture that one test module uses stays in that module as a module function.
+Before a second module uses it, it moves to the fixture module of its area.
 
 Shared starting states
 ======================
@@ -19,22 +48,46 @@ call in a process runs ``build(root, shared, **parameters)`` once. Every call,
 the first included, then gives a fresh copy of exactly the bytes that build
 left under ``root``: Git objects and refs, the workspace with its ``runs/``
 outputs and the control inbox, as the product published them. ``value`` is a
-deep copy of what the build returned. Two builds are ready; both put the
-repository at ``root / 'repository'`` and the workspace at ``root / 'work-0'``
-and return the instance ID:
+deep copy of what the build returned. Every build puts the repository at
+``root / 'repository'`` and the workspace at ``root / 'work-0'``. These builds
+are shared (keywords in parentheses):
 
-- ``activated_instance`` (keywords ``goal``, ``config``, ``external_policy``,
-  ``review_policy``): public ``initialize`` plus ``activate``, the state
-  ``PurposeHarness.make`` publishes before its first research step.
-- ``state_fixtures.active_instance`` (keywords ``config``, ``external_policy``,
+- ``state_fixtures.active_instance`` (``config``, ``external_policy``,
   ``review_policy``): the validated synthetic state of
-  ``state_fixtures.active_engine``, without interpretation executions.
+  ``state_fixtures.active_engine``, without interpretation executions;
+  returns the instance ID.
+- ``activated_instance`` (``goal``, ``config``, ``external_policy``,
+  ``review_policy``): public ``initialize`` plus ``activate``, the published
+  state before the first research step; returns the instance ID.
+- ``engine_fixtures.initialized_instance`` (``goal``, ``config``): the public
+  ``initialize`` alone; returns the instance ID.
+- ``purpose_fixtures.solved_instance`` (``criteria``): public activation driven
+  by the purpose scenario to the mathematical solution, with academic
+  requirement ``writeup`` approved first when ``criteria`` is a list; returns
+  ``{'instance_id', 'head', 'work_order'}``.
+- ``purpose_fixtures.purpose_state`` (``config``, ``until``,
+  ``review_policy``, ``external_policy``, ``signed``): the synthetic active
+  state driven until task ``A``'s work is queued (``until='prepared'``) or its
+  identity review opens (``'review'``); returns the instance ID.
+- ``purpose_fixtures.assessment_preparation_instance`` (``config``): two
+  academic tasks of requirement ``r`` awaiting model assessment; returns the
+  instance ID.
+
+The other builds serve one test module each and stay there, each with its
+state in its docstring: ``requirement_change_instance`` (``test_academic_engine``),
+``cli_instance`` (``test_cli``), ``created_instance`` (``test_cli_advanced``),
+``plan_ready_instance`` (``test_currentness``), ``efficiency_instance``
+(``test_engine``), ``overflowed_maintenance`` (``test_input_recovery``),
+``rejected_assessment_instance`` (``test_model_assessment_flow``),
+``reviewed_task``, ``parked_failed_plan`` and ``paused_limited_recovery``
+(``test_research_recovery``), ``ready_work`` (``test_session_scheduler``),
+``waiting_action`` (``test_stop_flags``) and ``prepared_tasks``
+(``test_submission_boundaries``).
 
 Then ``ResearchEngine(root / 'repository', instance_id, runner=..., formal_verifier=...)``
-with a new runner. ``test_purpose_engine.ActivatedPurposeHarness`` wraps both
-as ``make`` and ``make_active`` and registers engine and runner for its
-report; a ``PurposeHarness`` subclass moves by changing its base class.
-``test_engine.EngineTests.active`` is the plain form.
+with a new runner. ``purpose_fixtures.ActivatedPurposeHarness`` wraps the first
+two as ``make_active`` and ``make``. ``test_engine.EngineTests.active`` is the
+plain form.
 
 Two process helpers replace a child process where the process is not examined:
 ``git_init(path)`` for ``git init -q <path>`` and ``run_cli(*arguments, cwd=...)``
@@ -53,9 +106,7 @@ Rules of a copy
 - Process-local engine state is not in a copy; set it on the new engine:
   ``_task_readiness`` is empty until ``run`` (call ``_refresh_readiness()`` to
   read it before), and clock or method patches (``lifecycle_clock``,
-  ``_solution_basis``) apply to the object they were set on. The product's
-  path-keyed caches are cleared for ``root`` on every restore, so the new
-  engine validates the copied head in full when it loads it.
+  ``_solution_basis``) apply to the object they were set on.
 - A template lives in one process and is never reused from disk: it carries
   the installed edition, grant expiries (one day after the build) and the
   clock high-water. A test whose rule depends on time elapsed since the build
@@ -85,8 +136,9 @@ Keep the public path when the test's subject is that path: initialization,
 activation gates, the interpretation check, probes or trust registration
 during initialization, or the end-to-end connection the dedicated tests keep
 (``test_engine.EngineTests.test_public_initialization_reaches_active_with_distinct_interpretation``,
-``test_purpose_engine.GitPurposeTests.test_actual_temp_git_full_formal_review_and_goal_flow``,
-``test_redesign_ENGINE.PublicGitFlow.test_public_activation_work_receipt_assessment_and_next_plan``).
+``test_engine.PublicGitFlow.test_public_activation_work_receipt_assessment_and_next_plan``, and
+the ``purpose_fixtures.solved_instance`` build, which ``test_purpose_engine.SolvedPurposeTests``
+reads).
 Keep it too when the test patches or counts something during activation, or
 reads process-local engine state activation leaves behind. The check: if
 activation broke while still publishing the same final state, should this
@@ -124,7 +176,6 @@ import shutil
 import stat
 import sys
 import tempfile
-import uuid
 from unittest.mock import patch
 
 from do_math.contracts import CONTRACT_REVIEW_ITEMS, ROLES
@@ -145,29 +196,60 @@ def bare_engine(instance=None, runtime=None, *, head="fixture-head", store=None,
     every attribute a loaded engine has. ``_save`` compares the state with what
     ``store`` holds for ``head`` (``published_state``); a fixture head the store
     never published holds nothing, so the first ``_save`` publishes to ``store``.
+    Without a ``store`` the engine gets the in-memory ``StateStore`` double.
     """
     from do_math.engine import ResearchEngine
     engine = object.__new__(ResearchEngine)
     engine._init_process_state()
     engine.instance, engine.runtime, engine.head = instance, runtime, head
-    engine.store, engine.runner, engine.formal_verifier = store, runner, formal_verifier
+    engine.store = StateStore(engine) if store is None else store
+    engine.runner, engine.formal_verifier = runner, formal_verifier
     return engine
 
 
 def current_state(instance=None, runtime=None):
     """The smallest (instance, runtime) the current state contract accepts, plus the caller's fields.
 
-    Every validated state passes the lifecycle gate (``preflight.inspect_current_state``):
-    feature version 5, a lifecycle with its exact original input, a live runtime
-    status and a UTC clock high-water. Storage tests extend this with the
-    families they examine.
+    Every validated state passes the lifecycle rules (``record_schemas.validate_lifecycle``):
+    a lifecycle with its exact original input, a runtime status and a UTC clock
+    high-water. Storage tests extend this with the families they examine.
     """
     raw = b"fixture input"
-    base_instance = {"feature_version": 5, "lifecycle": {"state": "initializing", "immutable_input": {
+    base_instance = {"lifecycle": {"state": "initializing", "immutable_input": {
         "text": raw.decode(), "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}}}
-    base_runtime = {"feature_version": 5, "status": "initializing",
+    base_runtime = {"status": "initializing",
                     "last_observed_utc": "2026-01-01T00:00:00+00:00"}
     return {**base_instance, **(instance or {})}, {**base_runtime, **(runtime or {})}
+
+
+def governance_start(instance=None):
+    """``instance`` with the empty governance families ``initialization.initialize_state`` gives every instance.
+
+    A domain test that calls a governance function on a small instance starts here
+    instead of relying on the function to create these families.
+    """
+    return {"governance": {}, "governance_sources": {}, "decisions": {}, "grants": {}, **(instance or {})}
+
+
+def installed_contract():
+    """A new StateContract holding the installed families, for a test that adds to it.
+
+    Repositories share default_state_contract(), which never gains a family,
+    so a test registers extra families on a contract of its own.
+    """
+    from do_math.record_schemas import install
+    from do_math.state_contract import StateContract
+    contract = StateContract()
+    install(contract)
+    return contract
+
+
+def with_validator(contract, root, name, validator):
+    """Give one family of a test-owned ``contract`` this record validator in place of its own."""
+    from dataclasses import replace
+    contract._families[root, name] = replace(contract.family(root, name), validator=validator)
+    contract._manifest = None
+    return contract
 
 
 class StateStore:
@@ -177,8 +259,12 @@ class StateStore:
     reads the engine's current state as that head's published state,
     ``published_state`` holds no cached state (so ``_save`` always publishes),
     and ``save_with_state`` publishes a candidate as the next head and keeps a
-    copy in ``published``. Any other repository use fails as it would without a store.
+    copy in ``published``. It has no Git directory (``git_dir`` is None), so no
+    process cache records its reads. Any other repository use fails as it would
+    without a store.
     """
+    git_dir = None
+
     def __init__(self, engine):
         self.engine = engine
         self.published = []
@@ -189,7 +275,11 @@ class StateStore:
     def load(self, snapshot=None):
         return self.engine.head, deepcopy(self.engine.instance), deepcopy(self.engine.runtime)
 
-    def save_with_state(self, expected_head, instance, runtime, *, artifacts=None):
+    def read(self, path, snapshot=None):
+        # The engine passes this reader to consumers; no artifact is stored here.
+        raise AssertionError("an in-memory engine double stores no artifact: " + path)
+
+    def save_with_state(self, expected_head, instance, runtime, *, artifacts=None, retain=None):
         self.published.append({"instance": deepcopy(instance), "runtime": deepcopy(runtime),
                                "artifacts": dict(artifacts or {})})
         return f"{expected_head}+{len(self.published)}", deepcopy(instance), deepcopy(runtime)
@@ -201,10 +291,9 @@ def new_instance(repository, *, goal, workspace=None, **options):
     ``workspace`` defaults to ``repository / 'work'``; ``options`` pass to ``initialize``.
     Returns the new instance ID.
     """
-    import subprocess
     from do_math.engine import initialize
     repository = Path(repository)
-    subprocess.run(["git", "init", "-q", str(repository)], check=True)
+    git_init(repository)
     return initialize(repository, goal=goal, workspace=repository / "work" if workspace is None else workspace,
                       **options)["instance_id"]
 
@@ -284,7 +373,7 @@ def scope_response(context):
         raise AssertionError("The explicit fixture only defines two independent perspectives")
     return {"proposal_digest": review["proposal_digest"], "scope_complete": True,
         "scope_assessment": {"assessment_id": "fixture-full-scope", "policy_id": policy["id"],
-            "policy_version": policy["version"], "required_perspectives": list(policy["required_perspectives"]),
+            "required_perspectives": list(policy["required_perspectives"]),
             "initial_slots": [{"id": "initial-" + str(i), "perspective": perspective,
                                "required_source_refs": ["proposal"]} for i, perspective in enumerate(perspectives)],
             "selected_profile_ref": profile_ref(context["execution_profile"]),
@@ -314,6 +403,44 @@ def planning_model_assessments(output, context):
     return assessments
 
 
+class Clock:
+    """A settable clock for an ``ObservationTracker``: each call returns ``value``."""
+    def __init__(self): self.value = 0
+    def __call__(self): return self.value
+
+
+def observation_rule(operator="counter_gte", subject_kind="counter", subject_id="attempts", threshold=2, **changes):
+    """One observation rule ``R-1`` on ``subject_id``; its basis is ``operator``'s own source and unit.
+
+    The default counts ``attempts`` from the worker checkpoint; ``changes``
+    replace fields (``id``, ``required_evidence``, ``basis``) or add
+    ``repeat_interval``.
+    """
+    from do_math.observations import OPERATORS
+    value = {
+        "id": "R-1", "operator": operator, "subject": {"kind": subject_kind, "id": subject_id},
+        "basis": {"source": OPERATORS[operator]["source"], "unit": OPERATORS[operator]["unit"]},
+        "threshold": threshold, "required_evidence": ["EV-1"],
+    }
+    value.update(changes)
+    return value
+
+
+def self_check_response(obligation, status="normal", evidence=None):
+    """The worker's answer to a delivered self-check ``obligation``: every due rule gets ``status``.
+
+    ``evidence`` replaces each rule's required evidence references; an
+    ``indeterminate`` answer names that evidence as missing.
+    """
+    return {"obligation_id": obligation["id"], "execution_id": obligation["execution_id"],
+            "rule_revision": obligation["rule_revision"], "progress": "progress",
+            "attempts": ["checked actual artifact"], "next_method": "continue proof",
+            "rule_results": [{"rule_id": row["rule_id"], "status": status,
+                "evidence_refs": evidence if evidence is not None else row["required_evidence"],
+                "missing_evidence_refs": row["required_evidence"] if status == "indeterminate" else [],
+                "reason": "artifact comparison"} for row in obligation["due"]]}
+
+
 def supply_observation_rules(candidates, extensions):
     """Declare an explicit checkpoint-counter policy for the scripted short task."""
     if not candidates:
@@ -324,11 +451,8 @@ def supply_observation_rules(candidates, extensions):
         if row is None:
             row = {'task_title': candidate['title']}
             conditions.append(row)
-        row.setdefault('observation_rules', [{
-            'id': 'fixture-attempts', 'operator': 'counter_gte',
-            'subject': {'kind': 'counter', 'id': 'attempts'},
-            'basis': {'source': 'checkpoint', 'unit': 'count'}, 'threshold': 10,
-            'required_evidence': ['checkpoint.json']}])
+        row.setdefault('observation_rules', [observation_rule(
+            threshold=10, id='fixture-attempts', required_evidence=['checkpoint.json'])])
 
 
 def write_checkpoint(workspace, *, counters=None, iteration=None, claim="fixture progress"):
@@ -340,6 +464,47 @@ def write_checkpoint(workspace, *, counters=None, iteration=None, claim="fixture
     if iteration is not None:
         value["iteration"] = iteration
     Path(workspace, "checkpoint.json").write_text(json.dumps(value), encoding="utf-8")
+
+
+def observe(tracker, event, **options):
+    """``tracker.observe`` of ``event`` as the next one-byte stream row, received at the tracker's clock.
+
+    A runner delivers every row with its stream coordinate (``ObservationBatch.source``);
+    this gives a unit test that same coordinate without a stream file.
+    """
+    previous = tracker.observation_source
+    start = previous["end_offset"] if previous is not None else 0
+    source = {"stream": "stdout.jsonl", "start_offset": start, "end_offset": start + 1,
+              "received_at": datetime.now(timezone.utc).isoformat(), "received_monotonic": tracker.clock()}
+    return tracker.observe(event, source=source, **options)
+
+
+def acknowledge(tracker, obligation_id):
+    """Deliver an open self-check request and observe the worker's successful poll of it.
+
+    After this, a research action the tracker observes violates the open request.
+    """
+    from do_math.control_transport import CONTROL_SERVER, SELF_CHECK_TOOL
+    request = tracker.issue_self_check(obligation_id)
+    previous = tracker.observation_source
+    tracker.record_delivery(obligation_id, source_offset=previous["end_offset"] if previous is not None else 0)
+    poll = {"type": "item.completed", "item": {"id": "poll-" + obligation_id, "type": "mcp_tool_call",
+            "server": CONTROL_SERVER, "tool": SELF_CHECK_TOOL, "arguments": {"self_check_id": obligation_id},
+            "status": "completed", "result": {"content": [{"type": "text", "text": json.dumps(request)}]}}}
+    observe(tracker, poll, evaluate=False)
+    assert tracker.obligations[obligation_id].get("acknowledged_call_id") == "poll-" + obligation_id
+
+
+def observation_batch(events=(), *, received_monotonic, stream_path, start=0, terminated=False):
+    """The runner's batch of ``events`` as consecutive JSON rows starting at stream offset ``start``."""
+    from do_math.observation_transport import ObservationBatch
+    rows = [json.dumps(event).encode("utf-8") + b"\n" for event in events]
+    offsets, position = [], start
+    for row in rows:
+        offsets.append((position, position + len(row)))
+        position += len(row)
+    return ObservationBatch(list(events), offsets, rows, 0, datetime.now(timezone.utc).isoformat(),
+                            received_monotonic, position, Path(stream_path), lambda: terminated)
 
 
 def prepared_rule_conditions(task_ids):
@@ -627,15 +792,38 @@ def policy_change(engine, text):
             "audit_refs": []}}}
 
 
+def charter(identifier="CH1", goal="Prove P", **content):
+    """A charter record proposing ``goal``; ``content`` replaces its other content fields. It grants no approval."""
+    return {"id": identifier, "kind": "charter", "revision": 1, "supersedes": [],
+            "content": {"rationale": "Research P", "goal": goal, "desired_result": "A proof",
+                        "success_criteria": ["P proved"], "partial_success_criteria": ["Cases settled"],
+                        "included_scope": ["P"], "excluded_scope": [], "priorities": ["P"],
+                        "preferences": [], "evidence_boundary": "Proof, not preference",
+                        "academic_requirements": [], "decision_authority": "user", "stop_conditions": [], **content}}
+
+
 def charter_record(goal):
     """Author explicit synthetic charter content; this grants no approval."""
-    return {"id": "CH-fixture", "kind": "charter", "revision": 1, "supersedes": [],
-        "content": {"rationale": "Exercise the explicit synthetic research scenario", "goal": goal,
-            "desired_result": "A proof of the supplied mathematical goal", "success_criteria": [goal],
-            "partial_success_criteria": ["Record an explicit unresolved obligation"],
-            "included_scope": [goal], "excluded_scope": [], "priorities": ["Proof"], "preferences": [],
-            "evidence_boundary": "Synthetic model and compiler inputs in a temporary repository",
-            "academic_requirements": [], "decision_authority": "user", "stop_conditions": []}}
+    return charter("CH-fixture", goal, rationale="Exercise the explicit synthetic research scenario",
+        desired_result="A proof of the supplied mathematical goal", success_criteria=[goal],
+        partial_success_criteria=["Record an explicit unresolved obligation"], included_scope=[goal],
+        priorities=["Proof"], evidence_boundary="Synthetic model and compiler inputs in a temporary repository")
+
+
+def approved_governance(instance, records, *, source=("S", "User approves P"), approval_id="D"):
+    """``instance`` with ``records`` adopted by one explicit synthetic user approval.
+
+    ``source`` is the preserved user text ``(ID, text)``; the approval
+    ``approval_id`` binds its hash and each record's exact content hash, as
+    ``governance.initialize_governance`` requires. ``instance`` gains the empty
+    governance families first (``governance_start``).
+    """
+    from do_math import governance
+    from do_math.repository import exact_content_hash
+    preserved = governance.preserve_source(*source, origin="user")
+    approval = {"id": approval_id, "actor": "user", "source_ref": preserved["id"], "source_sha256": preserved["sha256"],
+                "record_hashes": {record["id"]: exact_content_hash(record) for record in records}}
+    return governance.initialize_governance(governance_start(instance), preserved, approval, records)
 
 
 def activate(engine, root, *, initialization_runner, external_policy="disabled", review_policy=None):
@@ -710,7 +898,7 @@ def activated_instance(root, shared, *, goal, config, external_policy='disabled'
     The synthetic toolchain goes to ``shared`` so restored copies keep its fingerprint.
     """
     from do_math.engine import ResearchEngine, initialize
-    from test_engine import ScriptedRunner
+    from runner_fixtures import ScriptedRunner
     repository = git_init(root / 'repository')
     with patch('do_math.initialization.adapter_for', side_effect=lambda profile: FixtureAdapter()):
         instance_id = initialize(repository, goal=goal, workspace=root / 'work-0', config=config)['instance_id']
@@ -772,27 +960,23 @@ def run_cli(*arguments, cwd=None):
     return subprocess.CompletedProcess(['do_math.py', *arguments], code, stdout.getvalue(), stderr.getvalue())
 
 
+def cli_result(root, *arguments):
+    """The public command's ``result`` run with ``run_cli`` in ``root``; the command must succeed."""
+    completed = run_cli(*arguments, cwd=root)
+    if completed.returncode != 0:
+        raise AssertionError(completed.stdout + completed.stderr)
+    envelope = json.loads(completed.stdout)
+    if envelope["exit_code"] != 0:
+        raise AssertionError(envelope)
+    return envelope["result"]
+
+
 def remove_tree(path):
     """Delete a directory tree, including the read-only object files Git writes."""
     def writable(function, target, _error):
         os.chmod(target, stat.S_IWRITE)
         function(target)
     shutil.rmtree(path, onexc=writable)
-
-
-def forget_repository_caches(root):
-    """Drop the product's process caches for every Git directory under ``root``.
-
-    These caches are keyed by the Git directory's path and trust that a
-    repository's bundles never change. A restored template reuses one path for
-    a new repository, so its entries must not carry over from an earlier test.
-    """
-    from do_math import planning, repository, submission
-    prefix = os.path.normcase(os.path.join(os.fspath(root), ''))
-    for cache in (repository.VERIFIED_ARTIFACTS, repository._VALIDATED_READS,
-                  planning._VALID_ARTIFACTS, submission._ISSUED_INPUTS):
-        for key in [key for key in cache if os.path.normcase(os.fspath(key[0])).startswith(prefix)]:
-            del cache[key]
 
 
 class _Template:
@@ -813,7 +997,6 @@ class _Template:
             remove_tree(self.live)
             shutil.copytree(self.pristine, self.live, symlinks=True)
         self.used = True
-        forget_repository_caches(self.live)
         return self.live, deepcopy(self.value)
 
     def remove(self):
@@ -885,7 +1068,31 @@ def sealed_maintenance_submission(workspace, execution_id):
 def scope_assessment(policy, slots):
     """Explicit synthetic full-proposal scope authored by the fixture reviewer."""
     return {"assessment_id": "fixture-full-proposal-scope", "policy_id": policy["id"],
-        "policy_version": policy["version"], "required_perspectives": policy["required_perspectives"],
+        "required_perspectives": policy["required_perspectives"],
         "initial_slots": [{"id": slot, "perspective": slot, "required_source_refs": ["proposal"]} for slot in slots],
         "selected_profile_ref": None, "activity_execution_limit": policy["activity_execution_limit"],
         "overflow_disposition": policy["overflow_disposition"]}
+
+
+def start_scoped_review(engine, knowledge_id, assessment, previous_cycle_id=None):
+    """Open a review whose scope stage the fixture has already settled with ``assessment``.
+
+    The engine opens every review at its scope stage. A test about the later
+    stages takes the cycle it opened and gives it the scope that the pure
+    ``start_review(..., scope_assessment=...)`` path gives, as sealed replay does,
+    instead of running a scope execution; it returns the cycle ID.
+    """
+    from do_math.input_basis import capture_review_input_basis
+    from do_math.review_cycle import start_review
+    cycle_id = engine._start_identity_review(knowledge_id, previous_cycle_id)
+    cycle = engine.runtime['review_cycles'][cycle_id]
+    previous = engine.runtime['review_cycles'][previous_cycle_id] if previous_cycle_id else None
+    scoped = start_review(cycle['proposal'], cycle['requested_reviewer_slots'], cycle['judge_slots'],
+                          cycle['max_rounds'], previous, policy=cycle['review_policy'], scope_assessment=assessment)
+    cycle.update({key: scoped[key] for key in ('scope_assessment', 'reviewer_slots', 'activity_execution_limit',
+                                               'required_source_refs', 'phase')})
+    cycle['review_input_basis'] = capture_review_input_basis(cycle)
+    engine.runtime['queue'][:] = [action for action in engine.runtime['queue']
+                                  if action.get('review_cycle_id') != cycle_id]
+    engine._queue_identity_actions(knowledge_id, cycle_id)
+    return cycle_id

@@ -1,38 +1,48 @@
 """Claude stream validation and routing at the same local execution boundary."""
 from __future__ import annotations
 
-import importlib
-import importlib.util
 import json
 from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math import model_runner
-from do_math.engine import DEFAULT_CONFIG, validate_config
+from do_math import claude_adapter, claude_worker, model_runner
+from do_math.configuration import DEFAULT_CONFIG, validate_config
 from do_math.model_policy import selection
 from do_math.session_slots import SessionSlots
 from do_math.observations import ObservationTracker
+from research_fixtures import observe
+from provider_fixtures import CLAUDE_INIT, CLAUDE_RESULT, claude_stream
 
 
-def stream(*events):
-    return b"".join(json.dumps(event).encode() + b"\n" for event in events)
-
-
-INIT = {"type": "system", "subtype": "init", "session_id": "session-one"}
-RESULT = {"type": "result", "subtype": "success", "is_error": False,
-          "session_id": "session-one", "structured_output": {"ok": True},
-          "usage": {"input_tokens": 7, "output_tokens": 3}}
+def routed_requests(calls):
+    """(provider, worker request) for each ``(model, claude_only_assigned_model)`` run of one runner."""
+    from provider_fixtures import Adapter
+    runner = model_runner.ModelRunner()
+    adapters = {provider: Adapter({"result": "output_collected", "final": {"raw": b"{}"}, "jsonl": {}}, provider)
+                for provider in runner.adapters}
+    runner.adapters.update(adapters)
+    requests = []
+    for model, lock in calls:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); workspace = root / "workspace"; workspace.mkdir()
+            for adapter in adapters.values():
+                adapter.__dict__.pop("request", None)
+            runner.run(model=model, prompt="fixture", output_schema={}, workspace=workspace,
+                       evidence_dir=root / "evidence", effort="low", timeout_seconds=1,
+                       claude_only_assigned_model=lock)
+            requests.extend((provider, adapter.request) for provider, adapter in adapters.items()
+                            if "request" in adapter.__dict__)
+    return requests
 
 
 class ClaudeTests(unittest.TestCase):
     def test_claude_lock_in_pinned_profile_keeps_codex_request_valid(self):
         from do_math import codex_worker, execution_profiles
-        from test_model_runner import Adapter
+        from provider_fixtures import Adapter, runner_with
         config = {**DEFAULT_CONFIG, "claude_only_assigned_model": True,
                   "scholarly_enabled": False}
         profile = next(p for p in execution_profiles.build_profiles(config)["execution_profiles"].values()
@@ -42,9 +52,7 @@ class ClaudeTests(unittest.TestCase):
             root = Path(directory)
             workspace = root / "workspace"
             workspace.mkdir()
-            runner = model_runner.ModelRunner(codex_path="fixture-cli")
-            runner.codex._adapter = Adapter({"result": "output_collected",
-                                            "final": {"raw": b"{}"}, "jsonl": {}})
+            runner = runner_with(Adapter({"result": "output_collected", "final": {"raw": b"{}"}, "jsonl": {}}))
             prompt = execution_profiles.prepare_prompt("fixture", profile)
             from research_fixtures import dispatched_launch
             result = runner.run(model=profile["ai"]["model"], effort=profile["ai"]["effort"],
@@ -66,14 +74,11 @@ class ClaudeTests(unittest.TestCase):
         self.assertFalse(DEFAULT_CONFIG["claude_only_assigned_model"])
         with self.assertRaises(ValueError):
             validate_config({"claude_only_assigned_model": "true"})
-        runner = model_runner.ModelRunner()
-        runner.claude = Mock()
-        runner.codex = Mock()
-        runner.run(model="claude-opus-5", claude_only_assigned_model=True)
-        runner.claude.run.assert_called_once_with(model="claude-opus-5", claude_only_assigned_model=True)
-        runner.run(model="gpt-5.6-sol", claude_only_assigned_model=True)
-        runner.codex.run.assert_called_once_with(model="gpt-5.6-sol")
-        worker = self.module("claude_worker")
+        requests = routed_requests([("claude-opus-5", True), ("gpt-5.6-sol", True)])
+        self.assertEqual([(provider, request["model"], request.get("claude_only_assigned_model"))
+                          for provider, request in requests],
+                         [("claude", "claude-opus-5", True), ("codex", "gpt-5.6-sol", None)])
+        worker = claude_worker
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "schema.json"
             path.write_text('{"type":"object"}', encoding="utf-8")
@@ -95,7 +100,7 @@ class ClaudeTests(unittest.TestCase):
     def test_role_schemas_reach_claude_without_unsupported_meta_schema(self):
         from do_math.contracts import ROLES, schema_for
         from jsonschema import Draft7Validator
-        worker = self.module("claude_worker")
+        worker = claude_worker
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "schema.json"
             for role in ROLES:
@@ -114,11 +119,11 @@ class ClaudeTests(unittest.TestCase):
     def test_claude_tools_and_messages_feed_progress_observation(self):
         with tempfile.TemporaryDirectory() as d:
             tracker = ObservationTracker("one", Path(d), {"observation_mode": "periodic", "research_self_checks": False})
-            facts = tracker.observe({"type": "assistant", "message": {"content": [
+            facts = observe(tracker, {"type": "assistant", "message": {"content": [
                 {"type": "text", "text": "Checking the computation."},
                 {"type": "tool_use", "id": "tool-one", "name": "Bash", "input": {"command": "python proof.py"}}]}})
             self.assertIn("tool-one", tracker.pending_tools)
-            tracker.observe({"type": "user", "message": {"content": [
+            observe(tracker, {"type": "user", "message": {"content": [
                 {"type": "tool_result", "tool_use_id": "tool-one", "content": "verified"}]}})
             self.assertEqual(tracker.completed_call_ids, {"tool-one"})
             self.assertFalse(tracker.pending_tools)
@@ -133,55 +138,50 @@ class ClaudeTests(unittest.TestCase):
             self.fail(str(error))
         self.assertEqual(args.provider, "claude")
 
-    def module(self, name):
-        name = "do_math." + name
-        self.assertIsNotNone(importlib.util.find_spec(name), "Claude CLI support is missing")
-        return importlib.import_module(name)
-
     def test_native_success_extracts_structured_output_and_usage(self):
-        adapter = self.module("claude_adapter")
-        parsed = adapter.parse_jsonl(stream(INIT, {"type": "rate_limit_event"}, RESULT))
+        adapter = claude_adapter
+        parsed = adapter.parse_jsonl(claude_stream(CLAUDE_INIT, {"type": "rate_limit_event"}, CLAUDE_RESULT))
         self.assertTrue(parsed["parse_complete"])
         self.assertTrue(parsed["turn_completed"])
         self.assertEqual(parsed["structured_output"], {"ok": True})
-        self.assertEqual(parsed["usage"], [RESULT["usage"]])
+        self.assertEqual(parsed["usage"], [CLAUDE_RESULT["usage"]])
 
     def test_rate_notification_can_precede_init_but_work_cannot(self):
-        adapter = self.module("claude_adapter")
+        adapter = claude_adapter
         # Observed with Claude 2.1.274 while connecting scholarly MCP.
         notification = {"type": "rate_limit_event", "session_id": "session-one"}
-        self.assertTrue(adapter.parse_jsonl(stream(notification, INIT, RESULT))["parse_complete"])
-        for events in (({"type": "assistant"}, INIT, RESULT),
-                       ({**notification, "session_id": "other"}, INIT, RESULT),
-                       ({**INIT, "session_id": 7}, {**RESULT, "session_id": 7})):
+        self.assertTrue(adapter.parse_jsonl(claude_stream(notification, CLAUDE_INIT, CLAUDE_RESULT))["parse_complete"])
+        for events in (({"type": "assistant"}, CLAUDE_INIT, CLAUDE_RESULT),
+                       ({**notification, "session_id": "other"}, CLAUDE_INIT, CLAUDE_RESULT),
+                       ({**CLAUDE_INIT, "session_id": 7}, {**CLAUDE_RESULT, "session_id": 7})):
             with self.subTest(events=events):
-                self.assertFalse(adapter.parse_jsonl(stream(*events))["parse_complete"])
+                self.assertFalse(adapter.parse_jsonl(claude_stream(*events))["parse_complete"])
 
     def test_final_is_selected_from_the_stream_and_preserved_bytes_must_match_it(self):
-        adapter = self.module("claude_adapter").ClaudePrintAdapter("unused")
-        parsed = adapter.parse_response(stream(INIT, RESULT), {"output_schema_path": "schema.json"})
+        adapter = claude_adapter.ClaudePrintAdapter("unused")
+        parsed = adapter.parse_response(claude_stream(CLAUDE_INIT, CLAUDE_RESULT), {"output_schema_path": "schema.json"})
         final = adapter.final_bytes(parsed)
-        self.assertEqual(json.loads(final), RESULT["structured_output"])
+        self.assertEqual(json.loads(final), CLAUDE_RESULT["structured_output"])
         self.assertEqual(adapter.validate_final(parsed, final), [])
         for changed in (b'{"ok":1}', b'{"ok":false,"ok":true}', b'{"ok":true}'):
             with self.subTest(final=changed):
                 self.assertTrue(adapter.validate_final(parsed, changed))
-        self.assertIsNone(adapter.final_bytes(adapter.parse_response(stream(INIT), {})))
+        self.assertIsNone(adapter.final_bytes(adapter.parse_response(claude_stream(CLAUDE_INIT), {})))
 
     def test_error_truncation_duplicate_terminal_and_session_mismatch_fail(self):
-        adapter = self.module("claude_adapter")
-        for raw in (stream(INIT), stream(INIT, RESULT, RESULT),
-                    stream(INIT, RESULT) + b'{"type":',
-                    stream(INIT, {**RESULT, "session_id": "another"}),
-                    stream(RESULT), stream(INIT, RESULT, {"type": "assistant"})):
+        adapter = claude_adapter
+        for raw in (claude_stream(CLAUDE_INIT), claude_stream(CLAUDE_INIT, CLAUDE_RESULT, CLAUDE_RESULT),
+                    claude_stream(CLAUDE_INIT, CLAUDE_RESULT) + b'{"type":',
+                    claude_stream(CLAUDE_INIT, {**CLAUDE_RESULT, "session_id": "another"}),
+                    claude_stream(CLAUDE_RESULT), claude_stream(CLAUDE_INIT, CLAUDE_RESULT, {"type": "assistant"})):
             with self.subTest(raw=raw):
                 self.assertFalse(adapter.parse_jsonl(raw)["parse_complete"])
-        parsed = adapter.parse_jsonl(stream(INIT, {**RESULT, "subtype": "error_max_turns", "is_error": True}))
+        parsed = adapter.parse_jsonl(claude_stream(CLAUDE_INIT, {**CLAUDE_RESULT, "subtype": "error_max_turns", "is_error": True}))
         self.assertTrue(parsed["turn_failed"])
         self.assertFalse(parsed["turn_completed"])
 
     def test_worker_uses_login_stdin_schema_and_only_configured_mcp(self):
-        worker = self.module("claude_worker")
+        worker = claude_worker
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             schema = root / "schema.json"
@@ -204,16 +204,12 @@ class ClaudeTests(unittest.TestCase):
         self.assertEqual(env, {"PATH": "ok", "USERPROFILE": "login", "CLAUDE_CONFIG_DIR": "config"})
 
     def test_router_dispatches_claude_and_codex_without_mutating_shared_runner(self):
-        self.assertTrue(hasattr(model_runner, "ModelRunner"), "provider routing is missing")
-        runner = model_runner.ModelRunner()
-        runner.codex = Mock()
-        runner.claude = Mock()
-        runner.run(model="claude:haiku", prompt="one")
-        runner.run(model="gpt-5.6-sol", prompt="two")
-        runner.run(model="claude-haiku-4-5-20251001", prompt="three")
-        self.assertEqual(runner.claude.run.call_args_list[0].kwargs["model"], "haiku")
-        self.assertEqual(runner.claude.run.call_args_list[1].kwargs["model"], "claude-haiku-4-5-20251001")
-        runner.codex.run.assert_called_once_with(model="gpt-5.6-sol", prompt="two")
+        requests = routed_requests([("claude:haiku", None), ("gpt-5.6-sol", None), ("claude-haiku-4-5-20251001", None)])
+        # Each call reaches its provider's adapter; a Claude CLI receives the name without ``claude:``.
+        self.assertEqual([(provider, request["model"]) for provider, request in requests],
+                         [("claude", "haiku"), ("codex", "gpt-5.6-sol"), ("claude", "claude-haiku-4-5-20251001")])
+        with self.assertRaisesRegex(ValueError, "requires a Claude model name"):
+            routed_requests([("claude:", None)])
 
     def test_mixed_models_use_existing_selection_and_per_model_work_slots(self):
         config = {**DEFAULT_CONFIG, "tier_models": {"high": "claude:opus", "medium": "gpt-5.6-sol", "low": "claude:haiku"},

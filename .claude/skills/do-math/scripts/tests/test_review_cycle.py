@@ -3,23 +3,11 @@ import json
 import sys
 import unittest
 from pathlib import Path
+import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.review_cycle import (start_review, next_actions, stage_schema, accept_result, context_for, record_turn,
                                   validate_review_independence)
-
-
-def scoped_start(proposal, reviewers, judges=3, max_rounds=3, previous=None):
-    slots = [f"initial-{index}" for index in range(reviewers)] if isinstance(reviewers, int) else list(reviewers)
-    judge_slots = [f"judge-{index}" for index in range(judges)] if isinstance(judges, int) else list(judges)
-    policy = {"id": "test-policy-v5", "version": 5, "required_perspectives": [],
-              "minimum_initial_slots": len(slots), "judge_slots": judge_slots, "round_limit": max_rounds,
-              "activity_execution_limit": len(slots) + max_rounds * (len(slots) + 4), "overflow_disposition": "unresolved"}
-    assessment = {"assessment_id": "test-scope", "policy_id": policy["id"], "policy_version": 5,
-                  "required_perspectives": [], "initial_slots": [
-                      {"id": slot, "perspective": slot, "required_source_refs": ["proposal"]} for slot in slots],
-                  "selected_profile_ref": None, "activity_execution_limit": policy["activity_execution_limit"],
-                  "overflow_disposition": "unresolved"}
-    return start_review(proposal, reviewers, judges, max_rounds, previous, policy=policy, scope_assessment=assessment)
+from review_fixtures import deferred_research_cycle, grant_replacement, research_answer, review_stage_output, ReviewFakeEngine, scoped_start
 
 
 class ReviewCycleTests(unittest.TestCase):
@@ -32,23 +20,9 @@ class ReviewCycleTests(unittest.TestCase):
     def start(self, **kw):
         return scoped_start({'revision': 'r1', 'proof': 'original', 'producer_execution_ids': ['author']}, reviewers=2, **kw)
 
-    def output(self, cycle, stage, **changes):
-        result = dict(proposal_digest=cycle['proposal_digest'], summary='Complete review evidence', used_sources=['proposal:1'], questions=[])
-        if stage == 'initial':
-            result.update(decision='match', scope_complete=True, findings=[])
-        elif stage == 'organize':
-            result['issues'] = [dict(id=f'i{j}', finding_refs=[x['ref']], answer_role_slot_id=x['ref']['slot'] if x['ref']['stage'] in ('initial', 'answer') else 'initial-0') for j, x in enumerate(context_for(cycle, next_actions(cycle)[0])['pending_findings'], start=len(cycle['issues']))]
-        elif stage == 'answer':
-            action = next_actions(cycle)[0]
-            result.update(answers=[dict(issue_id=i, disposition='maintain', statement='The objection still applies', evidence=['proposal:1']) for i in context_for(cycle, action)['answer_requests']], new_findings=[])
-        elif stage == 'judge':
-            result.update(decision='mismatch', scope_complete=True, issue_verdicts=[dict(issue_id=i, decision='approved', reason='Proof at precise source coordinate', evidence=['proposal:1']) for i in cycle['issues']], new_findings=[])
-        result.update(changes)
-        return result
-
     def submit(self, cycle, **changes):
         action = next_actions(cycle)[0]
-        return accept_result(cycle, action, self.output(cycle, action['stage'], **changes), f"e-{len(cycle['results'])}")
+        return accept_result(cycle, action, review_stage_output(cycle, action['stage'], **changes), f"e-{len(cycle['results'])}")
 
     def disputed(self, **kw):
         cycle = self.start(**kw)
@@ -97,7 +71,7 @@ class ReviewCycleTests(unittest.TestCase):
         cycle = self.start()
         cycle = self.submit(cycle, decision='mismatch', findings=[dict(id='f1', statement='finding one', evidence=['proposal:1'])])
         cycle = self.submit(cycle, decision='mismatch', findings=[dict(id='f1', statement='finding two same local ID', evidence=['proposal:2'])])
-        valid = self.output(cycle, 'organize')
+        valid = review_stage_output(cycle, 'organize')
         for mutate in ('omit', 'forge', 'duplicate', 'owner'):
             output = copy.deepcopy(valid)
             if mutate == 'omit': output['issues'].pop()
@@ -235,7 +209,7 @@ class ReviewCycleTests(unittest.TestCase):
         self.assertEqual(cycle['reviewer_slots'], old['reviewer_slots'])
         self.assertEqual(cycle['turns'], old['turns'])
         with self.assertRaisesRegex(ValueError, 'another proposal'):
-            accept_result(cycle, next_actions(cycle)[0], self.output(old, 'initial'), 'fresh')
+            accept_result(cycle, next_actions(cycle)[0], review_stage_output(old, 'initial'), 'fresh')
         with self.assertRaises(ValueError):
             scoped_start({'revision': 'r2'}, reviewers=1, previous=old)
         with self.assertRaises(ValueError):
@@ -255,7 +229,7 @@ class ReviewCycleTests(unittest.TestCase):
                 validate_review_independence(cycle, runtime, execution_id, action)
         first = self.submit(cycle)
         with self.assertRaises(ValueError):
-            accept_result(first, next_actions(first)[0], self.output(first, 'initial'), 'e-0')
+            accept_result(first, next_actions(first)[0], review_stage_output(first, 'initial'), 'e-0')
         cycle['proposal']['proof'] = 'mutated'
         with self.assertRaises(ValueError): next_actions(cycle)
 
@@ -284,22 +258,123 @@ class ReviewCycleTests(unittest.TestCase):
     def test_manifest_peer_and_judge_origin_checks(self):
         cycle = self.start()
         with self.assertRaisesRegex(ValueError, 'input manifest must be an object'):
-            accept_result(cycle, next_actions(cycle)[0], self.output(cycle, 'initial'), 'review', [])
+            accept_result(cycle, next_actions(cycle)[0], review_stage_output(cycle, 'initial'), 'review', [])
         cycle = self.submit(self.start())
         with self.assertRaisesRegex(ValueError, 'unsealed peer'):
-            accept_result(cycle, next_actions(cycle)[0], self.output(cycle, 'initial'), 'e2', {'visible_execution_ids': ['e-0']})
+            accept_result(cycle, next_actions(cycle)[0], review_stage_output(cycle, 'initial'), 'e2', {'visible_execution_ids': ['e-0']})
         cycle = self.disputed()
         with self.assertRaisesRegex(ValueError, 'judge cannot inherit'):
-            accept_result(cycle, next_actions(cycle)[0], self.output(cycle, 'judge'), 'judge-new', {'continuation_of': 'e-0'})
+            accept_result(cycle, next_actions(cycle)[0], review_stage_output(cycle, 'judge'), 'judge-new', {'continuation_of': 'e-0'})
         cycle = self.submit(cycle)
         with self.assertRaisesRegex(ValueError, "another slot's conversation"):
-            accept_result(cycle, next_actions(cycle)[0], self.output(cycle, 'judge'), 'judge-new', {'continuation_of': 'e-3'})
+            accept_result(cycle, next_actions(cycle)[0], review_stage_output(cycle, 'judge'), 'judge-new', {'continuation_of': 'e-3'})
 
     def test_stage_schema_is_specific(self):
         self.assertIn('findings', stage_schema('initial')['required'])
         self.assertIn('issue_verdicts', stage_schema('judge')['required'])
         self.assertNotIn('decision', stage_schema('organize')['properties'])
         with self.assertRaises(ValueError): stage_schema('invented')
+
+
+class SealedReplayTests(unittest.TestCase):
+    def test_budget_closed_investigation_is_verified_unresolved_not_an_unfinished_vote(self):
+        from do_math.review_cycle import start_review, next_actions, defer_for_research, validate_sealed_review
+        scoped = scoped_start({'revision': 1}, reviewers=2)
+        cycle = start_review({'revision': 1}, reviewers=2, policy=scoped['review_policy'], scope_assessment=scoped['scope_assessment'])
+        cycle['id'] = 'RC-cap'
+        action = next_actions(cycle)[0]
+        output = {'proposal_digest': cycle['proposal_digest'], 'summary': 'A fixed question remains',
+            'used_sources': [], 'questions': [], 'decision': 'unresolved', 'scope_complete': False, 'findings': []}
+        requests = [{'id': 'r', 'question': 'Which domain is intended?', 'source_refs': ['proposal']}]
+        cycle = defer_for_research(cycle, action, output, requests, 'requester', [[]], limit=0)
+        runtime = {'executions': {'requester': {'id': 'requester', 'role': 'identity_review', 'status': 'ended',
+            'outcome': 'output_accepted', 'output': output, 'action': {**action, 'review_cycle_id': cycle['id']}}}}
+        from do_math.configuration import DEFAULT_CONFIG
+        from do_math.execution_profiles import build_profiles, profile_ref
+        config = {**copy.deepcopy(DEFAULT_CONFIG), 'review_research_limit': 0}
+        instance = {'config': config, **build_profiles(config)}
+        profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'identity_review')
+        runtime['executions']['requester'].update(actor_kind='ai', execution_profile_ref=profile_ref(profile))
+        result = validate_sealed_review(cycle, runtime, instance=instance)
+        self.assertEqual((result['status'], result['decision']), ('unresolved', 'unresolved'))
+        instance['config']['review_research_limit'] = 3
+        with self.assertRaisesRegex(ValueError, 'closure|limit'):
+            validate_sealed_review(cycle, runtime, instance=instance)
+
+    def test_authorized_replacement_keeps_full_authority_and_sealed_input(self):
+        from do_math.review_cycle import validate_sealed_review, record_recovery_event
+        with tempfile.TemporaryDirectory() as directory:
+            engine = ReviewFakeEngine(directory)
+            grant_replacement(engine)
+            cid = engine.start('K1')
+            action = engine.pending()
+            cycle = engine.runtime['review_cycles'][cid]
+            short = {k: action[k] for k in ('stage', 'slot', 'round')}
+            engine.runtime['review_cycles'][cid] = record_recovery_event(cycle, short,
+                {'reason': 'lost exact public transcript', 'retryable': False, 'preserved_range': {'slot': action['slot']}})
+            engine._authorize_review_replacement(action, grant_id='GR-review')
+            while any(a['role'] == 'identity_review' for a in engine.runtime['queue']):
+                engine.execute()
+            cycle = engine.runtime['review_cycles'][cid]
+            self.assertIn('sealed_input_sha256', cycle['replacement_receipts'][0]['authorization'])
+            self.assertEqual(validate_sealed_review(cycle, engine.runtime, instance=engine.instance)['decision'], 'match')
+            cycle['replacement_receipts'][0]['authorization']['sealed_input_sha256'] = 'changed'
+            with self.assertRaisesRegex(ValueError, 'sealed input changed'):
+                validate_sealed_review(cycle, engine.runtime, instance=engine.instance)
+
+    def test_previous_review_must_resolve_to_its_actual_preserved_cycle(self):
+        from do_math.review_cycle import start_review, accept_result, next_actions, validate_sealed_review
+        runtime = {'executions': {}, 'review_cycles': {}}
+        previous = None
+        for revision in (1, 2):
+            seed = scoped_start({'revision': revision}, reviewers=2)
+            cycle = start_review({'revision': revision}, reviewers=2, previous=previous,
+                policy=seed['review_policy'], scope_assessment=seed['scope_assessment'])
+            cid = 'cycle-' + str(revision)
+            cycle['id'] = cid
+            while next_actions(cycle):
+                action = next_actions(cycle)[0]
+                output = review_stage_output(cycle, action['stage'])
+                eid = cid + ':' + action['slot']
+                runtime['executions'][eid] = {'id': eid, 'role': 'identity_review', 'status': 'ended',
+                    'outcome': 'output_accepted', 'output': output, 'action': {**action, 'review_cycle_id': cid}}
+                cycle = accept_result(cycle, action, output, eid)
+            runtime['review_cycles'][cid] = cycle
+            previous = cycle
+        self.assertEqual(validate_sealed_review(cycle, runtime)['decision'], 'match')
+        forged = copy.deepcopy(cycle)
+        next(iter(forged['results'].values()))['stage'] = 'judge'
+        with self.assertRaisesRegex(ValueError, 'sealed evidence'):
+            validate_sealed_review(forged, runtime)
+        del runtime['review_cycles']['cycle-1']
+        with self.assertRaisesRegex(ValueError, 'preserved cycle'):
+            validate_sealed_review(cycle, runtime)
+
+    def test_fixed_private_research_is_replayed_before_requesters_final_vote(self):
+        from do_math.review_cycle import accept_research_result, accept_result, next_actions, validate_sealed_review
+        cycle, action = deferred_research_cycle()
+        cycle['id'] = 'RC-research'
+        provisional = cycle['turns'][action['slot']][0]['content']['provisional_result']
+        rid = next(iter(cycle['research']))
+        answer = research_answer(cycle)
+        runtime = {'executions': {
+            'requester': {'id': 'requester', 'role': 'identity_review', 'status': 'ended', 'outcome': 'output_accepted',
+                          'output': provisional, 'action': {**action, 'review_cycle_id': cycle['id']}},
+            'investigator': {'id': 'investigator', 'role': 'supplemental_research', 'status': 'ended', 'outcome': 'output_accepted',
+                             'output': answer, 'action': {'role': 'supplemental_research', 'research_request_id': rid, 'review_cycle_id': cycle['id']}}
+        }}
+        cycle = accept_research_result(cycle, rid, answer, 'investigator')
+        while next_actions(cycle):
+            pending = next_actions(cycle)[0]
+            output = review_stage_output(cycle, pending['stage'])
+            eid = pending['slot']
+            runtime['executions'][eid] = {'id': eid, 'role': 'identity_review', 'status': 'ended', 'outcome': 'output_accepted',
+                'output': output, 'action': {**pending, 'review_cycle_id': cycle['id']}}
+            cycle = accept_result(cycle, pending, output, eid)
+        self.assertEqual(validate_sealed_review(cycle, runtime)['decision'], 'match')
+        runtime['executions']['investigator']['output']['request_digest'] = 'forged'
+        with self.assertRaisesRegex(ValueError, 'actual accepted execution'):
+            validate_sealed_review(cycle, runtime)
 
 
 if __name__ == '__main__':

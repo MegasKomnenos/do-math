@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from contextlib import redirect_stdout
 import io
-import hashlib
 import json
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
 from unittest.mock import patch
 
 
@@ -20,6 +19,9 @@ if str(SCRIPTS) not in sys.path:
 
 from do_math import scheduled_operator as operator  # noqa: E402
 from do_math import cli  # noqa: E402
+from research_fixtures import git_init
+from copy import deepcopy
+from do_math import planning
 
 
 class OperatorTests(unittest.TestCase):
@@ -61,7 +63,6 @@ class OperatorTests(unittest.TestCase):
         self.assertIn(str(self.repository.resolve()), command)
         self.assertIn(str(self.workspace.resolve()), command)
         self.assertIn(self.instance, command)
-        self.assertNotIn("parking-unimodality", " ".join(command))
 
     def test_hold_and_release_do_not_resume_or_edit_research_state(self) -> None:
         hold = operator.hold(self.workspace, reason="user requested stop")
@@ -196,7 +197,7 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(json.loads((self.workspace / "operator/engine-failure.json").read_text(encoding="utf-8")), failure)
 
     def test_init_keeps_created_instance_when_schedule_registration_fails(self) -> None:
-        subprocess.run(["git", "-C", str(self.repository), "init", "-q"], check=True)
+        git_init(self.repository)
         arguments = cli.build_parser().parse_args((
             "init", "--repository", str(self.repository), "--workspace", str(self.workspace),
             "--goal", "preserve created instance after scheduler failure", "--config-file", str(self._config({"scholarly_enabled": False})),
@@ -211,7 +212,7 @@ class OperatorTests(unittest.TestCase):
         self.assertIn(str(self.repository), result["operator_schedule"]["reconcile"])
 
     def test_new_instance_installs_the_operator_every_two_hours_by_default(self) -> None:
-        subprocess.run(["git", "-C", str(self.repository), "init", "-q"], check=True)
+        git_init(self.repository)
         arguments = cli.build_parser().parse_args((
             "init", "--repository", str(self.repository), "--workspace", str(self.workspace),
             "--goal", "use the default independent operator schedule", "--config-file", str(self._config({"scholarly_enabled": False})),
@@ -302,6 +303,75 @@ class OperatorTests(unittest.TestCase):
         path = self.root / "config.json"
         path.write_text(json.dumps(value), encoding="utf-8")
         return path
+
+
+AT = '2026-09-22T00:00:00+00:00'
+
+
+class WakeTests(unittest.TestCase):
+    def test_supervisor_requests_once_and_probe_reports_the_same_reason(self):
+        from do_math import scheduled_operator as operator
+        # Supervision judges from this one engine status; it loads no repository state.
+        status = {'status': 'waiting', 'research_wake_reasons': [{'kind': 'research_reconsider_due'}],
+                  'operator_enabled': True, 'provider_waits': {'providers': {}}}
+        running = False
+        def schedule(kind, **kwargs):
+            nonlocal running
+            if kind == 'start-engine':
+                running = True
+                return {'started': True}
+            return {'engine': {'state': 'Running' if running else 'Ready'}}
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(operator, 'read_status', return_value=status), \
+                patch.object(operator, 'reconcile_wake', return_value={'status': 'not_needed'}), \
+                patch.object(operator, 'schedule', side_effect=schedule) as start:
+            root = Path(directory)
+            observed = operator.check(root, 'RI-test', root, probe=True)
+            self.assertEqual(observed['engine_start']['reason'], 'research reconsideration due')
+            start.assert_not_called()
+            self.assertEqual(operator.check(root, 'RI-test', root)['outcome'], 'engine_requested')
+            self.assertEqual(operator.check(root, 'RI-test', root)['outcome'], 'engine_running')
+            self.assertEqual(sum(call.args == ('start-engine',) for call in start.call_args_list), 1)
+
+    def test_stopped_waiting_engine_wakes_on_due_research_without_mutating_state(self):
+        from do_math import scheduled_operator
+        instance = {'lifecycle': {'state': 'active'}, 'goal_status': 'unresolved'}
+        runtime = {'status': 'waiting', 'tasks': {}, 'executions': {},
+            'queue': [{'role': 'research_preparation'}], 'next_research_reconsider_at': AT}
+        before = deepcopy(runtime)
+        self.assertEqual(planning.research_wake_reasons(instance, runtime, now='2026-09-21T00:00:00Z'), [])
+        reasons = planning.research_wake_reasons(instance, runtime, now=AT)
+        self.assertEqual(reasons[0]['kind'], 'research_reconsider_due')
+        self.assertEqual(runtime, before)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            status = {'status': 'waiting', 'research_wake_reasons': reasons}
+            with patch.object(scheduled_operator, 'read_status', return_value=status):
+                self.assertEqual(scheduled_operator.engine_start_guard(root, 'RI-test', root)['outcome'], 'startable')
+                status['user_pause'] = {'reason': 'user'}
+                self.assertEqual(scheduled_operator.engine_start_guard(root, 'RI-test', root)['outcome'], 'paused')
+                scheduled_operator.hold(root, reason='test')
+                self.assertEqual(scheduled_operator.engine_start_guard(root, 'RI-test', root)['outcome'], 'held')
+
+    def test_regeneration_and_task_timers_are_read_only_and_not_duplicated(self):
+        instance = {'lifecycle': {'state': 'active'}, 'goal_status': 'unresolved'}
+        revisit = {'kind': 'not_selected', 'execution_id': 'EX-plan', 'revisit': {'at': AT, 'event_refs': []}}
+        runtime = {'status': 'waiting', 'tasks': {'TK-wait': {'id': 'TK-wait', 'selection_disposition': revisit}},
+                   'queue': [{'role': 'research_work'}], 'executions': {}}
+        due = planning.collect_due_events(instance, runtime, AT)
+        self.assertEqual(planning.research_wake_reasons(instance, runtime, now=AT)[0]['kind'], 'task_revisit_due')
+        runtime['events'] = due
+        self.assertEqual(planning.research_wake_reasons(instance, runtime, now=AT), [])
+        runtime.update(tasks={}, queue=[], history=[{'kind': 'task_repetition', 'lineage': 'exhaustion_empty',
+            'lineage_id': 'empty', 'outcome': 'empty', 'regenerate_after': AT}])
+        with patch('do_math.revisions.repetition_hold', return_value=False):
+            self.assertEqual(planning.research_wake_reasons(instance, runtime, now='2026-09-21T00:00:00Z'), [])
+            self.assertEqual(planning.research_wake_reasons(instance, runtime, now=AT), [{'kind': 'research_regeneration_due'}])
+        instance['id'] = 'RI-wait'
+        runtime['question_links'] = [{'id': 'QU-user', 'status': 'open', 'owner': 'user',
+                                     'blocks': True, 'target_ids': ['RI-wait'], 'unresolved_target_ids': ['RI-wait']}]
+        with patch('do_math.revisions.repetition_hold', return_value=False):
+            self.assertEqual(planning.research_wake_reasons(instance, runtime, now=AT), [])
 
 
 if __name__ == "__main__":

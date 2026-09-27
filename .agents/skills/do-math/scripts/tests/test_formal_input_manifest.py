@@ -2,7 +2,6 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import sys
-import subprocess
 import tempfile
 import unittest
 
@@ -10,7 +9,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import execution_profiles
 from do_math.context_store import prepare_role_input
 from do_math.formal import project_source_identity
-from test_redesign_SURFACE import surface_state
+from record_fixtures import surface_state
+from research_fixtures import git_init
 
 
 class FormalInputManifestTests(unittest.TestCase):
@@ -24,7 +24,7 @@ class FormalInputManifestTests(unittest.TestCase):
             base = Path(directory)
             project = base / 'project'
             project.mkdir()
-            subprocess.run(['git', '-C', str(project), 'init', '-q'], check=True)
+            git_init(project)
             (project / 'lakefile.toml').write_text('name = "test"\n', encoding='utf-8')
             for index in range(40):
                 (project / f'Module{index}.lean').write_text(f'-- source {index}\n', encoding='utf-8')

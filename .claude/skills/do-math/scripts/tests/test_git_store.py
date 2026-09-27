@@ -10,7 +10,7 @@ import tempfile
 import threading
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -18,6 +18,11 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from do_math.git_store import GitStateStore, GitStateStoreConflict, GitStateStoreError, StateSnapshot  # noqa: E402
+from research_fixtures import git_init  # noqa: E402
+
+
+def git_result(returncode, stdout=b'', stderr=b''):
+    return subprocess.CompletedProcess(['git'], returncode, stdout, stderr)
 
 
 INSTANCE_ID = "RI-00000000000000000000000000"
@@ -46,7 +51,7 @@ class GitStateStoreTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.repository = Path(self.temporary.name) / "repository"
         self.repository.mkdir()
-        git(self.repository, "init", "-q")
+        git_init(self.repository)
         self.store = GitStateStore(self.repository, INSTANCE_ID)
 
     def tearDown(self) -> None:
@@ -193,7 +198,6 @@ class GitStateStoreTests(unittest.TestCase):
         changes = {**self.initial_changes(), 'runtime/artifacts/batch/빈 파일': b'',
                    'runtime/artifacts/batch/바이너리': b'\x00\xff\n\r\nblob missing\n'}
         snapshot = self.store.publish(None, changes)
-        self.assertTrue(callable(getattr(self.store, 'read_many', None)), 'batch read is required')
         with patch.object(self.store, '_git', wraps=self.store._git) as calls:
             values = self.store.read_many(snapshot.head, list(changes))
         self.assertEqual(values, changes)
@@ -341,7 +345,6 @@ class GitStateStoreTests(unittest.TestCase):
 
     def test_physical_file_boundary_checks_opened_handle(self):
         from do_math import git_store
-        self.assertTrue(hasattr(git_store, "PhysicalBoundary"))
         boundary = git_store.PhysicalBoundary(self.repository)
         file = self.repository / "boundary.bin"
         with boundary.open(file, "xb") as stream:
@@ -463,7 +466,10 @@ class InProcessObjectsMatchGitPlumbingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             repository = Path(temporary) / "repository"
             repository.mkdir()
-            git(repository, "init", "-q", f"--object-format={object_format}")
+            if object_format == "sha1":
+                git_init(repository)
+            else:
+                git(repository, "init", "-q", f"--object-format={object_format}")
             index = {"GIT_INDEX_FILE": str(Path(temporary) / "oracle-index")}
             rng = random.Random("do-math-" + object_format)
             store = GitStateStore(repository, INSTANCE_ID)
@@ -507,6 +513,65 @@ class InProcessObjectsMatchGitPlumbingTests(unittest.TestCase):
 
     def test_sha256_trees_and_commits_match_git(self) -> None:
         self.check("sha256")
+
+
+class SnapshotMetadataTests(unittest.TestCase):
+    INSTANCE = 'RI-01ARZ3NDEKTSV4RRFFQ69G5FAV'
+    REF = 'refs/heads/do-math/' + INSTANCE
+
+    def setUp(self):
+        self.repository = git_init(Path(self.enterContext(tempfile.TemporaryDirectory())))
+
+    def store(self, *, length=40, root_type='commit', rows=None, returncode=0, resolved=None):
+        """A store over an empty repository whose later Git calls answer with the given metadata."""
+        store = GitStateStore(self.repository, self.INSTANCE)
+        store.object_format = 'sha1' if length == 40 else 'sha256'
+        head, research, runtime = ('a' * length, 'b' * length, 'c' * length)
+        values = rows if rows is not None else [head + ' ' + root_type, research + ' tree', runtime + ' tree']
+        if resolved is None:
+            resolved = git_result(0, (head + '\n').encode())
+        # One batch query; rev-parse (``resolved``) runs only when the ref line is missing.
+        store._git = create_autospec(store._git, side_effect=[
+            git_result(returncode, ('\n'.join(values) + '\n').encode()), resolved])
+        return store, head
+
+    def test_one_batch_reads_the_ref_and_both_subtrees(self):
+        for length in (40, 64):
+            with self.subTest(length=length):
+                store, head = self.store(length=length)
+                self.assertEqual(store.read_snapshot(), StateSnapshot(head))
+                self.assertEqual(store._git.call_count, 1)
+                request = store._git.call_args
+                self.assertEqual(request.args, ('cat-file', '--batch-check=%(objectname) %(objecttype)'))
+                self.assertEqual(request.kwargs['input'],
+                                 f'{self.REF}\n{self.REF}:research\n{self.REF}:runtime\n'.encode())
+
+    def test_absent_ref_is_none_but_corrupt_ref_is_rejected(self):
+        missing = [self.REF + suffix + ' missing' for suffix in ('', ':research', ':runtime')]
+        store, _ = self.store(rows=missing, resolved=git_result(1))
+        self.assertEqual(store.read_snapshot(), StateSnapshot(None))
+        self.assertEqual([call.args[0] for call in store._git.call_args_list], ['cat-file', 'rev-parse'])
+        store, _ = self.store(rows=missing, resolved=git_result(1, stderr=b'bad ref'))
+        with self.assertRaisesRegex(GitStateStoreError, 'cannot resolve'):
+            store.read_snapshot()
+
+    def test_wrong_or_incomplete_metadata_never_returns_a_snapshot(self):
+        head, tree, ref = 'a' * 40, 'b' * 40, self.REF
+        cases = [([head + ' blob', ref + ':research missing', ref + ':runtime missing'], 'commit'),
+                 ([ref + ' missing'], 'unreadable'),
+                 ([head + ' commit extra', tree + ' tree', tree + ' tree'], 'invalid state commit'),
+                 ([head + ' commit', ref + ':research missing', tree + ' tree'], 'research'),
+                 ([head + ' commit', tree + ' blob', tree + ' tree'], 'tree'),
+                 ([head + ' commit', tree + ' tree'], 'incomplete'),
+                 ([head + ' commit', tree + ' tree', tree + ' tree', tree + ' tree'], 'incomplete')]
+        for rows, message in cases:
+            with self.subTest(rows=rows):
+                store, _ = self.store(rows=rows)
+                with self.assertRaisesRegex(GitStateStoreError, message):
+                    store.read_snapshot()
+        store, _ = self.store(returncode=1)
+        with self.assertRaises(GitStateStoreError):
+            store.read_snapshot()
 
 
 if __name__ == "__main__":

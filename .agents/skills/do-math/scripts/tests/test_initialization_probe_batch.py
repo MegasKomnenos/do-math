@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.engine import DEFAULT_CONFIG
+from do_math.configuration import DEFAULT_CONFIG
 from do_math.execution_profiles import build_profiles, profile_ref
 from research_fixtures import FixtureAdapter, bare_engine
 
@@ -90,8 +90,8 @@ class ProbeBatchTests(unittest.TestCase):
 
 class ActiveProbePublicTests(unittest.TestCase):
     def setUp(self):
-        from test_input_recovery import InputRecoveryPublicTests
-        InputRecoveryPublicTests.setUp(self)
+        from state_fixtures import start_active_copy
+        start_active_copy(self)
 
     def test_user_refreshes_exact_active_profile_and_other_authority_is_rejected(self):
         from do_math.engine import ResearchEngine, control

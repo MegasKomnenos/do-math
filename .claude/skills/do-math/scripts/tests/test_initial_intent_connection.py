@@ -1,15 +1,14 @@
 from pathlib import Path
 import hashlib
-import subprocess
 import sys
 import tempfile
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from do_math.repository import exact_content_hash
 from do_math import governance as gov
-from do_math.initialization import initialize_state, initial_intent_evidence
-from test_redesign_GOVERNANCE import charter
+from do_math.initialization import initial_intent_evidence
+from research_fixtures import git_init
+from record_fixtures import applied_initial_intent
 
 
 class InitialIntentConnectionTests(unittest.TestCase):
@@ -31,55 +30,31 @@ class InitialIntentConnectionTests(unittest.TestCase):
             self.assertIn(source.name,preserved['path'])
             self.assertEqual(store.read(preserved['path'],head),source.read_bytes())
 
-    def applied(self, text):
-        instance,runtime=initialize_state(instance_id='RI-case',goal=text,workspace=Path(tempfile.gettempdir()),config={},source_input=text)
-        source=gov.preserve_source('GS-adoption',text,origin='user')
-        records=[charter()]
-        approval={'id':'DC-adopt','actor':'user','source_ref':source['id'],'source_sha256':source['sha256'],
-                  'record_hashes':{r['id']:exact_content_hash(r) for r in records}}
-        instance=gov.initialize_governance(instance,source,approval,records)
-        input_id=instance['lifecycle']['input_id']
-        source=gov.import_input_source(instance,runtime,input_id)
-        output={'summary':'Preserve exact original','used_sources':[],'questions':[],
-                'needs_clarification':False,'question_details':[],
-                'import_units':[{'unit_id':'IU-goal','source_range':{'start':0,'end':len(text)},
-                    'interpretation':text,'owner_kind':'charter','owner_ref':records[0]['id'],
-                    'payload':{},'decision_refs':[],'question_refs':[]}]}
-        runtime['executions']['EX-author']={'id':'EX-author','role':'intent_interpretation'}
-        bundle=gov.prepare_import(instance,runtime,source,output,execution_id='EX-author',input_ref=input_id)
-        runtime['executions']['EX-check']={'id':'EX-check','role':'intent_interpretation','intent_import_sha256':bundle['sha256']}
-        gov.check_import(instance,runtime,bundle['id'],{'bundle_sha256':bundle['sha256'],
-            'decision':'approved','scope_complete':True,'unit_ids':['IU-goal'],'question_ids':[],'findings':[]},execution_id='EX-check')
-        instance,runtime,receipt=gov.apply_import(instance,runtime,bundle['id'])
-        self.assertEqual(receipt['status'],'applied')
-        self.assertNotEqual(source['id'],input_id)
-        return instance,runtime,bundle['id']
-
     def test_applied_import_uses_original_input_reference_and_exact_bytes(self):
         for text in ['A mathematical goal','e\u0301 and \u212a are exact source text']:
             with self.subTest(text=text):
-                instance,runtime,_=self.applied(text)
+                instance,runtime,_=applied_initial_intent(text)
                 evidence=initial_intent_evidence(instance,runtime)
                 self.assertEqual(evidence,{'input_sha256':hashlib.sha256(text.encode()).hexdigest(),
                     'interpretation_execution_id':'EX-author','check_execution_id':'EX-check'})
 
     def test_changed_input_or_unapplied_result_cannot_complete_initialization(self):
-        instance,runtime,bid=self.applied('A mathematical goal')
+        instance,runtime,bid=applied_initial_intent('A mathematical goal')
         runtime['intent_imports'][bid].pop('application')
         with self.assertRaises(ValueError): initial_intent_evidence(instance,runtime)
-        instance,runtime,bid=self.applied('A mathematical goal')
+        instance,runtime,bid=applied_initial_intent('A mathematical goal')
         runtime['intent_imports'][bid]['input_ref']='UI-other'
         with self.assertRaises(ValueError): initial_intent_evidence(instance,runtime)
 
     def test_initial_grants_wait_for_activation_to_open_research(self):
-        instance,runtime,_=self.applied('A mathematical goal')
+        instance,runtime,_=applied_initial_intent('A mathematical goal')
         instance,runtime,_=gov.apply_decision(instance,runtime,{'kind':'grant','grant':{
             'id':'GR-work','kind':'local','roles':['research_work'],'reuse':'reusable'}},source_ref='GS-adoption')
         self.assertEqual(runtime['queue'],[])
         self.assertEqual(instance['grants']['GR-work']['status'],'active')
 
     def test_grant_change_is_plan_basis_and_not_the_plan_execution_authority(self):
-        instance,runtime,_=self.applied('A mathematical goal')
+        instance,runtime,_=applied_initial_intent('A mathematical goal')
         instance['lifecycle']['state']='active'
         instance,runtime,_=gov.apply_decision(instance,runtime,{'kind':'grant','grant':{
             'id':'GR-plan','kind':'local','roles':['research_plan'],'reuse':'reusable'}},source_ref='GS-adoption')
@@ -102,7 +77,7 @@ class InitialFailureRetryTests(unittest.TestCase):
         from do_math.engine import ResearchEngine, control
         from do_math.repository import ResearchRepository, new_id
         from do_math import execution_profiles as profiles
-        from test_lifecycle_engine import FakeEngine, PublicInitializationRunner
+        from engine_fixtures import FakeEngine, PublicInitializationRunner
         from research_fixtures import FixtureAdapter
         from research_fixtures import charter_record, install_adapter_fixture
         install_adapter_fixture(self)
@@ -112,7 +87,7 @@ class InitialFailureRetryTests(unittest.TestCase):
                 raise ValueError('synthetic pre-start binding failure')
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory); workspace=root/'work'; workspace.mkdir()
-            repo=root/'repo'; subprocess.run(['git','init','-q',str(repo)],check=True)
+            repo=root/'repo'; git_init(repo)
             seed=FakeEngine(workspace, {'scholarly_enabled':False, 'operator_enabled':False,
                 'tool_review_window_seconds':60, 'self_check_response_window_seconds':5,
                 })

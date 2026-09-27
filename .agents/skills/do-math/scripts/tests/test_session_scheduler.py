@@ -1,29 +1,34 @@
+"""Scheduling: session slots and provider admission, when plans open or wait, call timeouts, and machine reservations."""
 from __future__ import annotations
 
-from copy import deepcopy
-from pathlib import Path
+import hashlib
+import os
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import unittest
-import os
 import uuid
-import inspect
-import json
+from copy import deepcopy
+from pathlib import Path
 from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.engine import ResearchEngine, initialize, control, DEFAULT_CONFIG
-from do_math.model_policy import LIMITS, MODELS, assessment_tier, selection, validate_policy
-from do_math.planning import contract_hash, seal_contract_review
-from do_math.input_basis import capture_decision_basis
+from do_math import execution_profiles
+from do_math.configuration import DEFAULT_CONFIG
+from do_math.engine import control, initialize, ResearchEngine
+from do_math.execution_profiles import WORK_ROLES
+from do_math.model_policy import assessment_tier, LIMITS, MODELS, selection, validate_policy
+from do_math.planning import seal_contract_review
 from do_math.repository import new_id
 from do_math.session_slots import SessionSlots
-from test_engine import ScriptedRunner, common, context_from
-from research_fixtures import local_job_runner, restore_template
-from research_fixtures import install_adapter_fixture, candidate, contract_review, producer_result
-from test_lifecycle_engine import initialized_instance
+from engine_fixtures import initialized_instance, reassessment_engine, routing_engine
+from purpose_fixtures import ActivatedPurposeHarness
+from research_fixtures import (candidate, contract_review, current_state, git_init, install_adapter_fixture,
+                               local_job_runner, observation_batch, producer_result, restore_template)
+from runner_fixtures import common, context_from, ScriptedRunner
+from state_fixtures import start_active_copy
 
 
 def ready_work(root, shared, *, count, public, config):
@@ -171,10 +176,15 @@ class SessionPolicyTests(unittest.TestCase):
         validate_policy(config)
 
     def test_bad_capacity_and_missing_tier_model_are_rejected(self):
+        from do_math.configuration import validate_config
+        # The configuration schema owns the capacity range; the policy owns cross-field rules.
         for value in (-1, True, None, 1.5):
             config = deepcopy(DEFAULT_CONFIG)
             config["session_limits"]["work"][MODELS["high"]] = value
-            with self.assertRaises(ValueError): validate_policy(config)
+            with self.assertRaisesRegex(ValueError, "config/session_limits/work"): validate_config(config)
+        config = deepcopy(DEFAULT_CONFIG)
+        config["session_limits"]["work"][" "] = 1
+        with self.assertRaises(ValueError): validate_policy(config)
         for tier in ("low", "medium", "high"):
             config = deepcopy(DEFAULT_CONFIG)
             del config["tier_models"][tier]
@@ -187,6 +197,25 @@ class SessionPolicyTests(unittest.TestCase):
         self.assertEqual((review["tier"], review["model"]), ("medium", MODELS["medium"]))
         unassessed = selection(config, {"role": "research_work"}, {}, {})
         self.assertEqual((unassessed["tier"], unassessed["model"]), ("high", MODELS["high"]))
+
+
+class OwnerRescanTests(unittest.TestCase):
+    def test_owner_rejudges_after_a_state_change_or_its_time_bound_but_not_after_an_observation(self):
+        import state_fixtures
+        from do_math.scheduler import OWNER_RESCAN_SECONDS
+        root, instance_id = restore_template(state_fixtures.active_instance, config={})
+        engine = ResearchEngine(root / "repository", instance_id)
+        with patch("do_math.scheduler.time.monotonic", return_value=100.0) as clock:
+            self.assertTrue(engine._scan_due())
+            self.assertFalse(engine._scan_due(), "an unchanged state was judged again")
+            engine.runtime["history"].append({"kind": "fixture_observation"})
+            engine._publish_observation()
+            self.assertFalse(engine._scan_due(), "an observation publication made the owner judge again")
+            engine.runtime["history"].append({"kind": "fixture_change"})
+            self.assertTrue(engine._scan_due())
+            self.assertFalse(engine._scan_due())
+            clock.return_value = 100.0 + OWNER_RESCAN_SECONDS
+            self.assertTrue(engine._scan_due())
 
 
 class SlotTests(unittest.TestCase):
@@ -212,7 +241,7 @@ class SlotTests(unittest.TestCase):
         from do_math.execution_profiles import profile_ref
         from do_math.execution_lifecycle import create_execution, transition_execution
         from do_math.activities import open_activity, assign_execution
-        from do_math.engine import now
+        from do_math.file_io import now
         action = {'id': 'AC-' + eid, 'role': role, 'profile_ref': profile_ref(profile)}
         activity = open_activity(e.runtime, activity_id='AY-' + eid, activity_kind=role,
             owner_ref=e.instance['id'], input_refs=[], opened_at=now())
@@ -285,9 +314,9 @@ class SlotTests(unittest.TestCase):
         program = "\n".join([
             'import sys', 'from pathlib import Path',
             'sys.path.insert(0, sys.argv[1])',
-            'from do_math.engine import _repository',
+            'from do_math.repository import ResearchRepository',
             'try:',
-            ' with _repository(Path(sys.argv[2]),sys.argv[3]).writer_lock(): print("acquired")',
+            ' with ResearchRepository(Path(sys.argv[2]),sys.argv[3]).writer_lock(): print("acquired")',
             'except Exception as error: print(type(error).__name__)'])
         with self.engine.store.writer_lock():
             child = subprocess.run([sys.executable, '-c', program, str(Path(__file__).resolve().parents[1]),
@@ -299,7 +328,7 @@ class SlotTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'requires a Windows Job')
     def test_slot_waits_for_actual_named_job_termination(self):
         from do_math.windows_job import WindowsJob, named_job_empty
-        from do_math.engine import now
+        from do_math.file_io import now
         name = 'Local\\DoMath-test-' + uuid.uuid4().hex
         with self.engine.store.writer_lock():
             self.assertTrue(self.reserve('EX-job')[0])
@@ -453,9 +482,11 @@ class ParallelEngineTests(unittest.TestCase):
                     deadline = time.monotonic() + 120
                     last_tick = None
                     while not release.is_set():
-                        # The real runner's idle cadence (model_runner.observe): one delivery per second.
+                        # The real runner's idle cadence (model_runner.observe): one empty batch per second.
                         if last_tick is None or time.monotonic() - last_tick >= 1:
-                            on_observation({"type": "tick"}); last_tick = time.monotonic()
+                            on_observation(observation_batch(received_monotonic=time.monotonic(),
+                                stream_path=Path(kwargs["evidence_dir"]) / "stdout.jsonl"))
+                            last_tick = time.monotonic()
                         if should_stop():
                             return {"status": "stopped", "output": None, "usage": {}, "error": "stopped"}
                         if time.monotonic() > deadline:
@@ -533,7 +564,9 @@ class ParallelEngineTests(unittest.TestCase):
                 started = time.monotonic()
                 while time.monotonic() - started < 20:
                     if ctx["task"]["title"] == "0":
-                        on_observation({"type": "tick"})
+                        # An empty runner batch is the idle tick.
+                        on_observation(observation_batch(received_monotonic=time.monotonic(),
+                            stream_path=Path(kwargs["evidence_dir"]) / "stdout.jsonl"))
                     elif review_failed.is_set():
                         # The independent work returns after the parent's review failed.
                         out = common("research_work")
@@ -588,6 +621,304 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertEqual(runner.roles, ["research_preparation"])
         self.assertEqual([a["id"] for a in engine.runtime["queue"]], ["AC-older", "AC-preparation"])
         self.assertEqual(engine.runtime["queue"][1]["repair_attempt"], 1)
+
+
+class ResearchAdmissionTests(unittest.TestCase):
+    def test_public_task_flow_keeps_observation_and_state_contracts_consistent(self):
+        from runner_fixtures import ScriptedRunner
+        start_active_copy(self)
+        engine = ResearchEngine(self.repo, self.identifier, runner=ScriptedRunner())
+        # This is a scheduler/storage integration test with scripted answers,
+        # not a test of the AI's reading of role prose (checked separately).
+        engine._documents = {role: [dict(document, content='Synthetic fixture: ' + document['path'],
+            sha256=hashlib.sha256(('Synthetic fixture: ' + document['path']).encode()).hexdigest())
+            for document in documents] for role, documents in engine._documents.items()}
+        engine.instance, engine.runtime = engine._configure_candidate(engine.instance, engine.runtime,
+            {'origin':'user', 'config':{'tool_review_window_seconds':60,
+                'self_check_response_window_seconds':5, 'plan_settle_seconds':1}})
+        from research_fixtures import FixtureAdapter
+        for profile in engine.instance['execution_profiles'].values():
+            if profile['actor_kind'] == 'ai':
+                evidence = execution_profiles.capability_evidence(profile, FixtureAdapter().describe(),
+                    observed_at=engine._lifecycle_now().isoformat())
+                engine.instance.setdefault('capability_evidence', {})[evidence['id']] = evidence
+        engine._enqueue('research_preparation', reason='Exercise task admission after the approved initial fixture')
+        engine._save()
+        admit = engine._provider_admit
+        def checked_admission(*args, **kwargs):
+            accepted = admit(*args, **kwargs)
+            self.assertTrue(accepted, {'reason':(args[0].get('dispatch_wait') or {}).get('kind'),
+                'resources':engine._session_slots().snapshot(), 'reservations':engine.runtime.get('reservations'),
+                'profile':kwargs['profile']})
+            return accepted
+        engine._provider_admit = create_autospec(engine._provider_admit, side_effect=checked_admission)
+        # Readiness events may open an extra plan; a step counts an action,
+        # not one of the four conceptual research phases.
+        engine.run(max_steps=8)
+        work = [e for e in engine.runtime['executions'].values() if e['role']=='research_work']
+        self.assertTrue(work, {'tasks':engine.runtime['tasks'], 'queue':engine.runtime['queue'],
+                              'waits':engine.runtime.get('waiting_actions'), 'history':engine.runtime['history'][-5:]})
+        self.assertTrue(work[0]['observation_rules'])
+        report = engine.check()
+        self.assertEqual(report['errors'], [])
+        # This fixture supplies synthetic initial interpretations without input
+        # manifests. Persisted-state inspection also cannot inspect live Lean.
+        self.assertEqual(report['inspection']['status'], 'incomplete', report)
+        self.assertEqual({row['message'] for row in report['inspection']['findings']}, {
+            'shared toolchain records and installed files (persisted snapshot inspection only) not examined',
+            'EX-check: role input manifest not examined', 'EX-interpret: role input manifest not examined'})
+
+
+class PlanAfterPreparationTests(ActivatedPurposeHarness):
+    def prepare(self, candidates, *, ready_candidate=False):
+        # The validated active state has no queued action and no pending event,
+        # so nothing but the tested preparation can open a plan. (Public activation
+        # leaves reconsideration events that a plan would first have to consume.)
+        engine, _ = self.make_active(**self.fixture_config(
+            scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS)))
+        self.assertEqual(engine.runtime["queue"], [])
+        self.assertFalse(engine.runtime.get("pending_events"))
+        if ready_candidate:
+            engine.runner = ScriptedRunner(preparation_candidates=[candidate("deferred")])
+            engine._enqueue("research_preparation", reason="Prepare a task that will await a decision")
+            engine._save()
+            engine.run(max_steps=2)
+            self.assertTrue(any(row["state"] == "ready" for row in engine._task_readiness.values()))
+        # Isolate the preparation trigger from previously queued plans. The task
+        # and its approval remain actual receiver-created records.
+        engine.runtime["queue"] = []
+        engine._enqueue("research_preparation", reason="Explicit regression preparation")
+        engine.runner = ScriptedRunner(preparation_candidates=candidates)
+        engine._save()
+        engine.run(max_steps=1)
+        return engine
+
+    def plans(self, engine):
+        return [a for a in engine.runtime["queue"] if a["role"] == "research_plan"]
+
+    def test_new_contracts_awaiting_review_do_not_open_a_plan_with_nothing_to_decide(self):
+        engine = self.prepare([candidate("one")])
+        self.assertTrue(any(a["role"] == "task_contract_review" for a in engine.runtime["queue"]))
+        self.assertEqual(self.plans(engine), [])
+
+    def test_preparation_still_opens_a_plan_when_a_ready_task_awaits_a_decision(self):
+        engine = self.prepare([candidate("one")], ready_candidate=True)
+        self.assertEqual(len(self.plans(engine)), 1)
+
+    def test_preparation_without_any_pending_review_still_opens_a_plan(self):
+        engine = self.prepare([])
+        self.assertEqual(len(self.plans(engine)), 1, self.plans(engine))
+
+
+class DuplicateContractReviewTests(ActivatedPurposeHarness):
+    def test_a_running_review_of_the_same_contract_is_not_doubled_when_its_outside_premises_move(self):
+        engine, _ = self.make_active(**self.fixture_config(
+            scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS)))
+        engine.runner = ScriptedRunner(preparation_candidates=[candidate("window")])
+        engine._enqueue("research_preparation", reason="Prepare the contract under review")
+        engine._save()
+        engine.run(max_steps=1)
+        running = next(a for a in engine.runtime["queue"] if a["role"] == "task_contract_review")
+        from do_math.repository import new_id
+        from do_math.file_io import now
+        execution = engine._register_execution(running, {"id": new_id("EX"),
+            "role": "task_contract_review", "status": "running", "created_at": now(), "input_snapshot": engine.head})
+        before_id = running["id"]
+        engine._refresh_readiness()
+        reviews = [a for a in engine.runtime["queue"] if a["role"] == "task_contract_review"]
+        self.assertEqual([a["id"] for a in reviews], [before_id],
+                         "the finished review's own currentness check decides whether another review is needed")
+
+
+class PlanSettleTests(ActivatedPurposeHarness):
+    def setUp(self):
+        super().setUp()
+        self.engine, _ = self.make_active(scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS))
+        self.engine.runtime["queue"] = []
+
+    def queue(self, plan, review=True):
+        self.engine.runtime["queue"] = [plan, *([{"id": "AC-review", "role": "task_contract_review", "target": "TK-x"}] if review else [])]
+        return plan
+
+    def test_a_plan_waits_for_pending_contract_reviews_so_nearby_approvals_share_one_decision(self):
+        plan = self.queue({"id": "AC-plan", "role": "research_plan"})
+        self.assertFalse(self.engine._dispatchable(plan))
+        self.assertEqual(plan["dispatch_wait"]["kind"], "plan_settle")
+        self.queue(plan, review=False)
+        self.assertTrue(self.engine._dispatchable(plan))
+
+    def test_the_settle_wait_ends_at_its_configured_limit(self):
+        from datetime import datetime, timedelta, timezone
+        self.assertEqual(self.engine.instance["config"]["plan_settle_seconds"], 300)
+        started = (datetime.now(timezone.utc) - timedelta(seconds=301)).isoformat()
+        plan = self.queue({"id": "AC-plan", "role": "research_plan", "settle_started_at": started})
+        self.assertTrue(self.engine._dispatchable(plan), "a slow review must not hold the first ready task for long")
+
+    def test_an_explicitly_requested_plan_does_not_settle(self):
+        plan = self.queue({"id": "AC-plan", "role": "research_plan", "requested_by": "UC-user"})
+        self.assertTrue(self.engine._dispatchable(plan))
+
+
+class RunWithoutDeadlineTests(ActivatedPurposeHarness):
+    def test_elapsed_time_does_not_block_the_next_execution_and_work_calls_have_no_timeout(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        import time
+        import do_math.engine as engine_module
+        import do_math.scheduler as scheduler
+        engine, _ = self.make_active(scholarly_enabled=False, operator_enabled=False,
+            session_limits=deepcopy(LIMITS))
+        engine.runtime['queue'] = []
+        engine._enqueue('research_preparation', reason='Prepare a contract for the deadline regression')
+        engine._save()
+        scripted = ScriptedRunner(preparation_candidates=[candidate('deadline regression')])
+        clock = [0.0]
+        calls = []
+        class Runner:
+            def run(self, **arguments):
+                calls.append(arguments)
+                result = scripted.run(**arguments)
+                clock[0] += 10000
+                return result
+        engine.runner = Runner()
+        observed_clock = SimpleNamespace(monotonic=lambda: time.monotonic() + clock[0], sleep=time.sleep)
+        with patch.object(scheduler, 'time', observed_clock), patch.object(engine_module, 'time', observed_clock):
+            engine.run(max_steps=2)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual({call['profile']['role'] in WORK_ROLES for call in calls}, {True, False})
+        for call in calls:
+            if call['profile']['role'] in WORK_ROLES:
+                self.assertIsNone(call['timeout_seconds'])
+            else:
+                self.assertGreater(call['timeout_seconds'], 0)
+                self.assertLessEqual(call['timeout_seconds'], call['profile']['window']['call_timeout_seconds'])
+        self.assertNotEqual(engine.runtime['status'], 'paused')
+
+
+class SchedulingResponsibilityTests(unittest.TestCase):
+    def test_terminal_stale_assessment_gets_one_followup_without_reopening(self):
+        with tempfile.TemporaryDirectory() as directory:
+            engine = reassessment_engine(directory)
+            task = engine.runtime['tasks']['TK-1']
+            task['status'] = 'closed'
+            task['assessment'].update(current=False, invalidated_reason='source corrected')
+            engine._refresh_readiness(); engine._refresh_readiness()
+            self.assertEqual(task['status'], 'closed')
+            events = [e for e in engine.runtime['events'] if e['kind'] == 'task_assessment_invalidated']
+            self.assertEqual(len(events), 1)
+            self.assertEqual(events[0]['target'], 'TK-1')
+            self.assertTrue(any(events[0]['id'] in a.get('event_refs', []) for a in engine.runtime['queue']))
+
+    def test_initial_preparation_owns_initial_events_until_accepted(self):
+        from engine_fixtures import FakeEngine
+        from research_fixtures import FixtureAdapter
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+            engine = FakeEngine(directory); engine.activate()
+            engine.instance['lifecycle']['state'] = 'initializing'
+            engine.runtime['status'] = 'initializing'
+            engine._lifecycle_event('trust_environment_activated')
+            engine._activate_initialization()
+            first = next(a for a in engine.runtime['queue'] if a['role'] == 'research_preparation')
+            self.assertEqual(set(first.get('event_refs', [])), set(engine.runtime['pending_events']))
+            engine._refresh_readiness()
+            self.assertFalse(any(a['role'] == 'research_plan' for a in engine.runtime['queue']))
+            self.assertTrue(engine.runtime['pending_events'], 'Assignment is not consumption')
+
+    def test_normal_dispatch_occupancy_does_not_request_a_new_plan(self):
+        from engine_fixtures import FakeEngine
+        from research_fixtures import FixtureAdapter
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+            engine = FakeEngine(directory); engine.activate(); task = engine.task()
+            engine._refresh_readiness()
+            engine.runtime['queue'] = [{'id': 'AC-work', 'role': 'research_work', 'target': task['id']}]
+            engine.runtime['pending_events'] = []
+            engine._refresh_readiness()
+            self.assertFalse(any(a['role'] == 'research_plan' for a in engine.runtime['queue']))
+            self.assertTrue(engine._task_readiness[task['id']].get('dispatch_occupied'))
+            engine.instance['grants']['GR-research']['status'] = 'revoked'
+            engine._refresh_readiness()
+            self.assertTrue(any(a['role'] == 'research_plan' for a in engine.runtime['queue']),
+                            'Actual authority loss during occupancy still needs planning')
+
+
+class MachineAdmissionConnections(unittest.TestCase):
+    def fixture(self):
+        from provider_fixtures import host_capacity_fixture
+        instance, selected, _ = host_capacity_fixture()
+        engine = routing_engine(); engine.instance.update(instance)
+        engine._execution_profile = create_autospec(engine._execution_profile, return_value=selected["formal_check"])
+        engine._admit_review_execution = create_autospec(engine._admit_review_execution, return_value={"disposition": "not_applicable"})
+        engine._save = create_autospec(engine._save)
+        return engine
+
+    def test_common_machine_admission_reserves_before_start_and_refuses_without_execution(self):
+        engine = self.fixture()
+        for index in range(3):
+            action = {"id": f"AC-machine-{index}", "role": "formal_check", "target": "KN-one"}
+            execution = engine._register_execution(action, {"id": f"EX-machine-{index}", "status": "running", "role": "formal_check"})
+            self.assertEqual(execution["status"], "starting")
+            self.assertEqual(len(execution["capacity"]["reservation_ids"]), 3)
+            self.assertIsNone(execution["capacity"]["provider"])
+        action = {"id": "AC-refused", "role": "formal_check", "target": "KN-one"}
+        engine.runtime["queue"].append(action)
+        self.assertIsNone(engine._register_execution(action, {"id": "EX-refused", "status": "running", "role": "formal_check"}))
+        self.assertNotIn("EX-refused", engine.runtime["executions"])
+        self.assertEqual(engine.runtime["activities"][action["owner_activity_id"]]["status"], "waiting")
+        self.assertEqual(len(engine.runtime["reservations"]), 9)
+        engine._local_call_returned("EX-machine-0", {"launch_not_created":True})
+        self.assertTrue(engine._session_slots().release("EX-machine-0", reason="explicit local start failure"))
+        retry = engine._register_execution(action, {"id": "EX-retry", "status": "running", "role": "formal_check"})
+        self.assertEqual(retry["status"], "starting")
+
+    def test_machine_callback_seals_process_before_resume_and_keeps_uncertain_capacity(self):
+        engine = self.fixture()
+        execution = engine._register_execution({"id": "AC-one", "role": "formal_check"},
+            {"id": "EX-one", "status": "running", "role": "formal_check"})
+        identity = {"job_name": execution["launch_ticket"]["job_name"], "pid": 17, "creation_filetime": "12345"}
+        def published():
+            self.assertEqual(execution["capacity"]["process"], identity)
+            self.assertEqual(execution["status"], "running")
+        engine._save.side_effect = published
+        engine._machine_started("EX-one", identity)
+        engine._save.assert_called_once()
+        from do_math.execution_lifecycle import release_or_hold
+        with patch("do_math.windows_job.named_job_empty", return_value=False):
+            self.assertFalse(release_or_hold(execution, engine._session_slots(), at="2026-09-20T00:00:01+00:00"))
+        self.assertEqual(execution["status"], "stopping")
+        self.assertEqual(execution["error"],
+                         "Local Job termination is unconfirmed; capacity and output remain held for recovery.")
+        self.assertTrue(all(row["state"] != "settled" for row in engine.runtime["reservations"].values()))
+
+    def test_actual_git_snapshot_binds_machine_reservations_and_start_identity(self):
+        from do_math.repository import ResearchRepository, new_id
+        from provider_fixtures import host_capacity_fixture
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            git_init(root / "repo")
+            instance, profiles, _ = host_capacity_fixture()
+            engine = routing_engine()
+            engine.instance, engine.runtime = current_state(
+                {**instance, "id": new_id("RI"), "workspace": str(root / "work")},
+                {"executions": {}, "activities": {}, "tasks": {}, "queue": [], "history": []})
+            engine.instance["role_profile_refs"]["formal_check"] = [execution_profiles.profile_ref(profiles["formal_check"])]
+            engine.store = ResearchRepository(root / "repo", engine.instance["id"])
+            engine.head = engine.store.initialize(engine.instance, engine.runtime)
+            with engine.store.writer_lock():
+                engine._register_execution({"id": "AC-machine", "role": "formal_check"},
+                    {"id": "EX-machine", "role": "formal_check", "status": "running"})
+                engine._save()
+                admitted = engine.head
+                _, _, staged = engine.store.load(admitted)
+                self.assertEqual(staged["executions"]["EX-machine"]["status"], "starting")
+                self.assertEqual(len(staged["reservations"]), 3)
+                # The Job identity is a double; both pre-resume publications and
+                # the host reservation records use actual schema and Git CAS.
+                identity = {"job_name": engine.runtime["executions"]["EX-machine"]["launch_ticket"]["job_name"], "pid": 29, "creation_filetime": "123456789012345678"}
+                engine._machine_started("EX-machine", identity)
+                _, _, started = engine.store.load(engine.head)
+                self.assertNotEqual(engine.head, admitted)
+                self.assertEqual(started["executions"]["EX-machine"]["capacity"]["process"], identity)
+                self.assertEqual(started["executions"]["EX-machine"]["status"], "running")
 
 
 if __name__ == "__main__":

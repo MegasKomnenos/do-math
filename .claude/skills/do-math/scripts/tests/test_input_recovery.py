@@ -1,12 +1,11 @@
-"""Public input-overflow recovery against one actual temporary Git instance."""
+"""Input-overflow recovery: the planner's profile choice and the public retry, in memory and against a temporary Git instance."""
 from __future__ import annotations
 
-from copy import deepcopy
 import json
-import os
-from pathlib import Path
 import sys
 import unittest
+from copy import deepcopy
+from pathlib import Path
 from unittest.mock import patch
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -16,37 +15,22 @@ if str(SCRIPTS) not in sys.path:
 from do_math import execution_profiles
 from do_math.engine import ResearchEngine
 from do_math.repository import canonical_json
-from test_engine import ScriptedRunner, formal_ok
-from research_fixtures import FixtureAdapter, bare_engine, restore_template, run_cli
-from state_fixtures import active_instance
-
-
-# The active state every test here starts from (state_fixtures.active_instance).
-ACTIVE_CONFIG = {'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}
-
-
-def active_repository():
-    """A copy of the validated active state: ``(root, repository, instance ID)``."""
-    root, identifier = restore_template(active_instance, config=ACTIVE_CONFIG)
-    return root, root / "repository", identifier
-
-
-def cli(root: Path, *arguments: str) -> dict:
-    """The public command's result; the command must succeed."""
-    completed = run_cli(*arguments, cwd=root)
-    if completed.returncode != 0:
-        raise AssertionError(completed.stdout + completed.stderr)
-    envelope = json.loads(completed.stdout)
-    if envelope["exit_code"] != 0:
-        raise AssertionError(envelope)
-    return envelope["result"]
+from runner_fixtures import ScriptedRunner, formal_ok
+from research_fixtures import FixtureAdapter, bare_engine, cli_result, restore_template, run_cli
+from state_fixtures import ACTIVE_CONFIG, active_instance, start_active_copy
+from do_math import planning
+from engine_fixtures import context_engine
+from engine_fixtures import package
+from unittest.mock import create_autospec
+import hashlib
+import tempfile
 
 
 def apply_limit(root: Path, repository: Path, identifier: str, limit: int, request_id: str) -> ResearchEngine:
     """Configure ``max_input_bytes`` publicly and record the new profiles' capability evidence."""
     config = root / (request_id + ".json")
     config.write_bytes(canonical_json({"max_input_bytes": limit}))
-    accepted = cli(root, "configure", "--repository", str(repository), "--instance", identifier,
+    accepted = cli_result(root, "configure", "--repository", str(repository), "--instance", identifier,
                    "--config-file", str(config), "--request-id", request_id)
     if not accepted["accepted"]:
         raise AssertionError(accepted)
@@ -76,7 +60,7 @@ def overflowed_maintenance(root, shared):
     repository = root / "repository"
     with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
         apply_limit(root, repository, identifier, 1, "UC-limit-small")
-        requested = cli(root, "request", "--repository", str(repository), "--instance", identifier,
+        requested = cli_result(root, "request", "--repository", str(repository), "--instance", identifier,
                         "--role", "maintenance", "--reason", "Check the installed recovery boundary",
                         "--request-id", "UC-maintenance")
         if not requested["accepted"]:
@@ -87,14 +71,7 @@ def overflowed_maintenance(root, shared):
 
 class InputRecoveryPublicTests(unittest.TestCase):
     def setUp(self) -> None:
-        """A copy of the validated active state; other modules borrow this setUp.
-
-        Sets ``root``, ``repo`` and ``identifier``.
-        """
-        adapter = patch("do_math.initialization.adapter_for", return_value=FixtureAdapter())
-        adapter.start()
-        self.addCleanup(adapter.stop)
-        self.root, self.repo, self.identifier = active_repository()
+        start_active_copy(self)
 
     def overflowed(self) -> None:
         """Replace the copy with ``overflowed_maintenance``'s state."""
@@ -102,7 +79,7 @@ class InputRecoveryPublicTests(unittest.TestCase):
         self.repo = self.root / "repository"
 
     def cli(self, *arguments: str) -> dict:
-        return cli(self.root, *arguments)
+        return cli_result(self.root, *arguments)
 
     def instance_args(self, identifier: str) -> tuple[str, ...]:
         return "--repository", str(self.repo), "--instance", identifier
@@ -182,31 +159,6 @@ class InputRecoveryPublicTests(unittest.TestCase):
         self.assertEqual(engine.runtime["status"], "closed")
         self.assertEqual(engine.runtime["queue"], [])
 
-        report_path = os.environ.get("INPUT_RECOVERY_REPORT")
-        if report_path:
-            report = {
-                "repository_kind": "actual temporary Git",
-                "external_doubles": ["model replies", "Lean verifier", "CLI capability response"],
-                "instance_id": identifier,
-                "action_id": action_id,
-                "overflow_count": len(engine.runtime["input_overflows"]),
-                "question_ids": [first_question_id, second_question_id],
-                "public_question_text": public_question["text"],
-                "same_request_replayed": replay["replayed"],
-                "retry_event_counts": {kind: sum(row.get("kind") == kind for row in engine.runtime["history"])
-                    for kind in ("input_overflow_retry_started", "input_overflow_retry_failed",
-                                 "input_overflow_retry_resolved")},
-                "resolved_profile_ref": resolved["profile_ref"],
-                "resolved_prompt_bytes": resolved["prompt_bytes"],
-                "resolved_limit_bytes": resolved["limit_bytes"],
-                "closed_retry": {"exit_code": closed.returncode, "message": rejected["message"]},
-                "final_status": engine.runtime["status"],
-                "final_snapshot": engine.head,
-            }
-            destination = Path(report_path)
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_bytes(canonical_json(report))
-
     def test_resolved_retry_marker_survives_provider_deferral_and_repreparation(self):
         self.overflowed()
         identifier = self.identifier
@@ -275,6 +227,220 @@ class InputRecoveryMarkerUnitTests(unittest.TestCase):
         self.assertEqual(disposition, "already_resolved")
         self.assertEqual(question["resolution_ref"], "DE-user")
         self.assertEqual(question["resolution_history"], prior_history)
+
+
+class OverflowConnections(unittest.TestCase):
+    def fixture(self):
+        from do_math import activities, execution_profiles
+        from do_math.engine import ResearchEngine
+        from record_fixtures import approved_task, approve_task
+        task, instance, runtime = approved_task()
+        engine = context_engine(instance, runtime)
+        config = engine.instance['config']
+        profiles = execution_profiles.build_profiles(config)
+        engine.store.read.return_value = b'source'
+        engine.instance['sources'][0]['sha256'] = hashlib.sha256(b'source').hexdigest()
+        engine.instance.update(profiles)
+        small = execution_profiles.resolve_profile(profiles['execution_profiles'], profiles['role_profile_refs']['research_work'][0])
+        large = deepcopy(small)
+        large['input']['max_input_bytes'] *= 2
+        large = execution_profiles.seal_profile(large)
+        engine.instance['execution_profiles'][large['id']] = large
+        task['profile_refs'] = [execution_profiles.profile_ref(small), execution_profiles.profile_ref(large)]
+        task['status'] = 'active'
+        engine.runtime['tasks'][task['id']] = task
+        approve_task(task, engine.instance, engine.runtime)
+        action = {'id': 'AC-held', 'role': 'research_work', 'target': task['id'],
+            'owner_activity_id': 'AY-held', 'grant_id': 'GR-1',
+            'selected_contract_sha256': planning.contract_hash(task), 'profile_ref': execution_profiles.profile_ref(small),
+            'model_assessment': {'difficulty': 'low', 'importance': 'low', 'reason': 'Bounded work'}}
+        activities.open_activity(engine.runtime, activity_id='AY-held', activity_kind='research_work',
+            owner_ref='AC-held', input_refs=[task['id']], opened_at='2026-09-23T00:00:00+00:00')
+        activities.wait_for(engine.runtime, 'AY-held', reason='input_overflow',
+            condition={'action_ids': ['AC-held']}, next_owner='research_plan', at='2026-09-23T00:00:00+00:00')
+        engine.runtime['waiting_actions'] = {'AC-held': {'kind': 'input_overflow', 'action': action,
+            'question_id': 'QU-held', 'next_owner': 'research_plan', 'detail': {
+                'allowed_profile_candidates': [large['id']], 'cause': 'required_role_input',
+                'packed_bytes': small['input']['max_input_bytes'] + 10}}}
+        engine.instance['conversation_loss_policy'] = 'continue_authorized'
+        engine._require_action_clock = create_autospec(engine._require_action_clock,
+                                                       side_effect=lambda: '2026-09-23T00:00:00+00:00')
+        engine._execution_profile = ResearchEngine._execution_profile.__get__(engine)
+        return engine, execution_profiles.profile_ref(large)
+
+    def test_overflow_choices_are_supplied_without_changing_ready_population(self):
+        engine, reference = self.fixture()
+        with tempfile.TemporaryDirectory() as directory:
+            fitted, fixed = package(engine, Path(directory))
+        self.assertEqual(fixed['ready_task_ids'], [])
+        item = fitted['context']['input_overflow_requests'][0]
+        self.assertEqual(item['action_id'], 'AC-held')
+        self.assertEqual(item['owner_activity_id'], 'AY-held')
+        self.assertEqual(item['allowed_profile_refs'], [reference])
+
+    def test_planner_extension_accepts_exact_choice_and_requeues_same_obligation(self):
+        from do_math import submission
+        import jsonschema
+        engine, reference = self.fixture()
+        choice = {'action_id': 'AC-held', 'profile_ref': reference, 'reason': 'Required evidence fits'}
+        extension = {'input_overflow_resolutions': [choice]}
+        jsonschema.validate(extension, submission.extension_schema({'role': 'research_plan'}))
+        with tempfile.TemporaryDirectory() as directory:
+            _, fixed = package(engine, Path(directory))
+        engine._apply_input_overflow_resolutions([choice], fixed, 'EX-plan')
+        action = next(a for a in engine.runtime['queue'] if a['id'] == 'AC-held')
+        self.assertEqual(action['owner_activity_id'], 'AY-held')
+        self.assertEqual(action['profile_ref'], reference)
+        self.assertEqual(action['model_assessment']['difficulty'], 'low')
+        self.assertEqual(action['input_overflow_retry']['request_id'], 'EX-plan')
+        self.assertEqual(action['input_overflow_retry']['state'], 'pending')
+        self.assertNotIn('AC-held', engine.runtime['waiting_actions'])
+
+    def test_stale_contract_or_unoffered_profile_cannot_release_wait(self):
+        for mutation in ('contract', 'profile', 'question', 'review'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as directory:
+                engine, reference = self.fixture()
+                _, fixed = package(engine, Path(directory))
+                choice = {'action_id': 'AC-held', 'profile_ref': reference, 'reason': 'Fits'}
+                if mutation == 'contract':
+                    engine.runtime['tasks']['TK-1']['revision'] += 1
+                elif mutation == 'profile':
+                    choice['profile_ref'] = engine.instance['role_profile_refs']['research_plan'][0]
+                elif mutation == 'question':
+                    engine.runtime['waiting_actions']['AC-held']['question_id'] = 'QU-new-failure'
+                else:
+                    engine.runtime['waiting_actions']['AC-held']['action']['role'] = 'identity_review'
+                with self.assertRaises(ValueError):
+                    engine._apply_input_overflow_resolutions([choice], fixed, 'EX-plan')
+                self.assertIn('AC-held', engine.runtime['waiting_actions'])
+
+    def test_shared_submission_check_rejects_duplicate_and_unoffered_choices(self):
+        from do_math import contracts, submission
+        from do_math.repository import canonical_json
+        from runner_fixtures import common
+        from research_fixtures import seal_response
+        engine, reference = self.fixture()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _, fixed = package(engine, root)
+            choice = {'action_id': 'AC-held', 'profile_ref': reference, 'reason': 'Fits required evidence'}
+            for mode in ('valid', 'duplicate', 'profile', 'unknown'):
+                row = deepcopy(choice)
+                if mode == 'profile': row['profile_ref'] = engine.instance['role_profile_refs']['research_plan'][0]
+                if mode == 'unknown': row['action_id'] = 'AC-unknown'
+                extensions = {'input_overflow_resolutions': [row, row] if mode == 'duplicate' else [row]}
+                (root / 'activity-extensions.json').write_bytes(canonical_json(extensions))
+                output = common('research_plan')
+                seal_response(output, fixed, root)
+                issues = submission.payload_issues(output, contracts.schema_for('research_plan'), fixed, extensions, root)
+                self.assertEqual(bool(issues), mode != 'valid', (mode, issues))
+
+    def test_same_integration_receipt_prevents_duplicate_retry(self):
+        from do_math import integration
+        from runner_fixtures import common
+        engine, reference = self.fixture()
+        with tempfile.TemporaryDirectory() as directory:
+            _, fixed = package(engine, Path(directory))
+        extension = {'input_overflow_resolutions': [{'action_id': 'AC-held', 'profile_ref': reference, 'reason': 'Fits'}]}
+        calls = []
+        def apply(instance, runtime, bundle):
+            calls.append(bundle['integration_id'])
+            engine.instance, engine.runtime = instance, runtime
+            engine._apply_input_overflow_resolutions(bundle['extensions']['input_overflow_resolutions'], fixed, 'EX-plan')
+        callbacks = {'apply_bundle': apply, 'validate_candidate': lambda *args: None,
+                     'validate_current': lambda *args: None, 'publish': lambda *args: None}
+        first = integration.apply_bundles(engine.instance, engine.runtime, common('research_plan'), extension, fixed,
+                                         execution_id='EX-plan', **callbacks)
+        self.assertEqual(first['status'], 'accepted', first['issues'])
+        second = integration.apply_bundles(first['instance'], first['runtime'], common('research_plan'), extension, fixed,
+                                          execution_id='EX-plan', **callbacks)
+        self.assertEqual(second['bundles'][0]['status'], 'already_accepted', second['issues'])
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(len([a for a in second['runtime']['queue'] if a['id'] == 'AC-held']), 1)
+
+
+class OverflowGitConnection(unittest.TestCase):
+    def test_plan_choice_repackages_original_work_and_reaches_runner(self):
+        from state_fixtures import start_active_copy
+        from do_math.engine import ResearchEngine
+        from do_math import execution_profiles
+        from do_math.repository import canonical_json
+        from record_fixtures import task_contract as task_fixture, approve_task
+        from runner_fixtures import common, context_from
+        from research_fixtures import local_job_runner, producer_result
+        start_active_copy(self)
+        calls = []
+        class Runner:
+            @local_job_runner
+            def run(self, **arguments):
+                context = context_from(arguments['prompt'])
+                calls.append(deepcopy(context['action']))
+                role = context['action']['role']
+                output = common(role)
+                if role == 'research_plan':
+                    row = context['input_overflow_requests'][0]
+                    extension = {'input_overflow_resolutions': [{'action_id': row['action_id'],
+                        'profile_ref': row['allowed_profile_refs'][0], 'reason': 'The complete input fits this allowed profile'}]}
+                    (arguments['workspace'] / 'activity-extensions.json').write_bytes(canonical_json(extension))
+                elif role == 'research_work':
+                    output.update(outcome='submitted', report='Read the complete assigned input and preserved the result.')
+                else:
+                    raise AssertionError('Unexpected role: ' + role)
+                arguments['on_started']({'fixture': 'overflow response'})
+                return producer_result({'status': 'completed', 'output': output, 'usage': {}}, arguments)
+        engine = ResearchEngine(self.repo, self.identifier, runner=Runner())
+        reference = engine.instance['role_profile_refs']['research_work'][-1]
+        large = execution_profiles.resolve_profile(engine.instance['execution_profiles'], reference)
+        large['input']['max_input_bytes'] = 2000000
+        large['observation']['settings'].update(tool_review_window_seconds=60, self_check_response_window_seconds=5)
+        large = execution_profiles.seal_profile(large)
+        reference = execution_profiles.profile_ref(large)
+        engine.instance['execution_profiles'][large['id']] = large
+        small = deepcopy(large)
+        small['input']['max_input_bytes'] = 500000
+        small = execution_profiles.seal_profile(small)
+        engine.instance['execution_profiles'][small['id']] = small
+        from research_fixtures import FixtureAdapter
+        for profile in (small, large):
+            evidence = execution_profiles.capability_evidence(profile, FixtureAdapter().describe(),
+                observed_at=engine.runtime['last_observed_utc'])
+            engine.instance.setdefault('capability_evidence', {})[evidence['id']] = evidence
+        task = task_fixture()
+        task.update(title='Fixed input recovery', status='active', work_class='nonformal', inputs=[], reuse=[], dependencies=[], basis_refs=[],
+            authority_refs=['GR-research'], profile_refs=[execution_profiles.profile_ref(small), reference],
+            model_assessment={'difficulty': 'high', 'importance': 'high', 'reason': 'Preserve the assigned requirement'},
+            question='Inspect the following fixed evidence: ' + 'required evidence ' * 40000, results=[])
+        from research_fixtures import supply_observation_rules
+        extensions = {}
+        supply_observation_rules([task], extensions)
+        task['initial_observation_rules'] = extensions['task_conditions'][0]['observation_rules']
+        engine.runtime['tasks'] = {task['id']: task}
+        approve_task(task, engine.instance, engine.runtime)
+        action = {'id': 'AC-overflow-work', 'role': 'research_work', 'target': task['id'],
+            'profile_ref': execution_profiles.profile_ref(small), 'grant_id': 'GR-research',
+            'selected_contract_sha256': planning.contract_hash(task), 'model_assessment': deepcopy(task['model_assessment'])}
+        engine.runtime['queue'] = [action]
+        engine._save()
+        engine.run(max_steps=1)
+        self.assertEqual(calls, [])
+        held = engine.runtime['waiting_actions'][action['id']]
+        self.assertEqual(held['next_owner'], 'research_plan', held)
+        owner, question = held['action']['owner_activity_id'], held['question_id']
+        engine.run(max_steps=1)
+        self.assertEqual([row['role'] for row in calls], ['research_plan'])
+        retry = next(row for row in engine.runtime['queue'] if row['id'] == action['id'])
+        self.assertEqual(retry['profile_ref'], reference)
+        self.assertEqual(retry['owner_activity_id'], owner)
+        self.assertEqual(next(q for q in engine.runtime['question_links'] if q['id'] == question)['status'], 'open')
+        engine.run(max_steps=1)
+        self.assertEqual([row['role'] for row in calls], ['research_plan', 'research_work'])
+        self.assertEqual(calls[-1]['profile_ref'], reference)
+        self.assertEqual(calls[-1]['owner_activity_id'], owner)
+        self.assertEqual(next(q for q in engine.runtime['question_links'] if q['id'] == question)['status'], 'resolved')
+        attempts = [e for e in engine.runtime['executions'].values() if e.get('action', {}).get('id') == action['id']]
+        self.assertEqual(len(attempts), 2)
+        self.assertEqual(len({e['id'] for e in attempts}), 2)
+        self.assertTrue(any(e.get('outcome') == 'output_accepted' for e in attempts))
 
 
 if __name__ == "__main__":

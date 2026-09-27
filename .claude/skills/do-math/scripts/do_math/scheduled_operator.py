@@ -17,10 +17,6 @@ from typing import Any, Callable
 import uuid
 from copy import deepcopy
 
-if __package__ in {None, ""}:  # Direct launcher survives engine/CLI import failures.
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    __package__ = "do_math"
-
 from .repository import ResearchRepository
 from .model_runner import ModelRunner
 from .model_policy import selection
@@ -33,9 +29,9 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 SKILL_ROOT = SCRIPTS.parent
 # Frozen bootstrap overrides this after importing the verified supervisor.
 LIVE_INSTALLATION_ROOT = SKILL_ROOT
-# The adapter finds operator_bootstrap.py beside itself; its ValidateSet is the action list.
+# The adapter finds operator_bootstrap.py beside itself. Its ValidateSet is the one
+# action list: an unsupported action fails there and ``schedule`` raises its error.
 SCHEDULE_SCRIPT = SCRIPTS / "operator_schedule.ps1"
-SCHEDULE_ACTIONS = ("install", "uninstall", "status", "start-engine", "start-operator", "schedule-wake", "cancel-wake")
 # Supervision blockers in priority order; the first present one decides.
 # ``held`` is the local HOLD file and ``disabled`` the operator setting.
 SUPERVISION_BLOCKS = ('held', 'disabled', 'user_pause', 'maintenance', 'model_policy',
@@ -56,10 +52,15 @@ OPERATOR_SCHEMA = {
 
 
 def repair_report_schema(*, diagnosed=False):
+    """The CLI output schema of a repair run, in OPERATOR_SCHEMA's keywords only.
+
+    No preserved run shows a provider accepting other keywords here. The prompt
+    names the allowed values; collect_repair_verification judges them on receipt.
+    """
     schema = deepcopy(OPERATOR_SCHEMA)
     if diagnosed:
-        schema['properties'].update(repair_outcome={'enum':['repaired','unresolved']},
-            verification_evidence={'type':'array','items':{'type':'string','minLength':1}})
+        schema['properties'].update(repair_outcome={'type':'string'},
+            verification_evidence={'type':'array','items':{'type':'string'}})
         schema['required'].extend(['repair_outcome','verification_evidence'])
     return schema
 
@@ -83,12 +84,10 @@ def collect_repair_verification(output, workspace):
 
 
 def _json(path: Path, value: dict[str, Any]) -> None:
-    from .file_io import write_bytes_atomic
+    from .file_io import bytes_evidence, write_bytes_atomic
     def evidence_default(item):
         if isinstance(item, bytes):
-            import base64
-            return {"sha256": hashlib.sha256(item).hexdigest(), "text": item.decode("utf-8", "replace"),
-                    "base64": base64.b64encode(item).decode("ascii")}
+            return bytes_evidence(item)
         if isinstance(item, Path):
             return str(item)
         raise TypeError("unsupported supervisor evidence: " + type(item).__name__)
@@ -127,8 +126,6 @@ def schedule(
     Only ``install`` uses the configured interval and operator timeout;
     configuration validation already checked their ranges.
     """
-    if action not in SCHEDULE_ACTIONS:
-        raise ValueError("unsupported schedule action")
     if action == "install" and (interval_seconds is None or operator_timeout_seconds is None):
         raise ValueError("install requires the configured operator interval and timeout")
     names = task_names(repository, instance)
@@ -487,7 +484,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                             "execution_id": execution["id"]}
             maintenance = ExitStack()
             try:
-                maintenance.enter_context(os_lock(repo._store._git_dir / "do-math-installation-maintenance.lock", blocking=False))
+                maintenance.enter_context(os_lock(repo.git_dir / "do-math-installation-maintenance.lock", blocking=False))
             except OSError:
                 return {"outcome": "recovery_waiting", "reason": "installation maintenance is already active"}
             try:
@@ -504,7 +501,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                             'failure_sha256': failure_identity, 'installation_sha256': installation_sha256}
                         for e in runtime.get('executions', {}).values()):
                     return {'outcome': 'recovery_waiting', 'reason': 'same failure and installation already attempted'}
-                chosen = selection(config, {"role": "independent_operator"}, {}, {})
+                chosen = selection(config, {"role": "recovery"}, {}, {})
                 profile = select_profile(state["execution_profiles"], {"role": "recovery"}, chosen,
                                          allowed_refs=state["role_profile_refs"]["recovery"])
                 from .initialization import adapter_for, capability_requirements
@@ -695,7 +692,3 @@ def main(argv=None):
         result = run_engine(args.repository, args.instance, args.workspace)
     print(json.dumps(result, ensure_ascii=False))
     return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

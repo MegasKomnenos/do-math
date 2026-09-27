@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import tempfile
 import time
 
@@ -179,6 +180,16 @@ def fingerprint_settled(fingerprint):
     return time.time_ns()-max(fingerprint[1],fingerprint[2])>RACY_NS
 
 
+def json_copy(value):
+    """A copy of a JSON value in which no container is shared with ``value`` or within itself.
+
+    ``copy.deepcopy`` keeps a node that occurs twice in ``value`` as one shared
+    node of the copy. Schema builders return this copy, so a caller may change
+    any node in place without changing another field or a module global.
+    """
+    return json.loads(json.dumps(value))
+
+
 def compact_json_bytes(value):
     """Compact sorted UTF-8 JSON, for values outside the state tree.
 
@@ -192,6 +203,13 @@ def compact_json_bytes(value):
 def json_digest(value):
     """SHA-256 of ``compact_json_bytes(value)``."""
     return hashlib.sha256(compact_json_bytes(value)).hexdigest()
+
+
+def bytes_evidence(raw):
+    """Bytes recorded in JSON evidence: their SHA-256, a lossy UTF-8 reading and the exact base64."""
+    import base64
+    return {"sha256": hashlib.sha256(raw).hexdigest(), "text": raw.decode("utf-8", "replace"),
+            "base64": base64.b64encode(raw).decode("ascii")}
 
 
 def unique_pairs(pairs):
@@ -223,6 +241,26 @@ _SHA256=re.compile(r"[0-9a-f]{64}")
 def is_sha256(value):
     """Lowercase 64-digit hexadecimal: the shape of a SHA-256 digest."""
     return isinstance(value,str) and _SHA256.fullmatch(value) is not None
+
+
+def require_text(value, label):
+    """``value`` when it is a string with a non-whitespace character; otherwise ``ValueError``."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{label} must be nonempty text")
+    return value
+
+
+def distinct_texts(value, label, *, nonempty=False):
+    """``value`` as a new list when it is a list of distinct nonempty texts (and, with ``nonempty``, not empty)."""
+    if (not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value)
+            or len(set(value)) != len(value) or (nonempty and not value)):
+        raise ValueError(f"{label} requires {'a nonempty list of ' if nonempty else ''}distinct nonempty strings")
+    return list(value)
+
+
+def now() -> str:
+    """The current UTC time as an ISO string, the form ``parse_utc`` reads."""
+    return datetime.now(timezone.utc).isoformat()
 
 
 def parse_utc(value):
@@ -262,6 +300,24 @@ def cached_sha256(path):
     if file_fingerprint(key)==before and fingerprint_settled(before):
         _hashed[key]=(before,value)
     return value
+
+
+def no_reparse(path, *, below=None):
+    """Reject a symlink or reparse point at ``path`` or an ancestor, stopping at ``below`` when given.
+
+    Absent components are skipped. Here, not in git_store, because the frozen
+    operator bootstrap may import only this module before its snapshot is verified.
+    """
+    candidate = Path(path).absolute()
+    for part in (candidate, *candidate.parents):
+        if part == below:
+            return
+        try:
+            value = part.lstat()
+        except FileNotFoundError:
+            continue
+        if stat.S_ISLNK(value.st_mode) or getattr(value, "st_file_attributes", 0) & 0x400:
+            raise ValueError("physical path crosses a reparse point or symlink: " + str(part))
 
 
 def installation_files(root):

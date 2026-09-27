@@ -7,50 +7,34 @@ only these decoded immutable values can reuse their encoding in memory.
 from copy import deepcopy
 import hashlib
 import json
+from pathlib import Path
+from typing import Any
+
+from .file_io import bytes_evidence
 
 LIMIT = 65536
-
-
-class FrozenDict(dict):
-    def __deepcopy__(self, memo): return self
-    def _deny(self, *args, **kwargs): raise TypeError('sealed payload is immutable; author a new value')
-    __setitem__ = __delitem__ = clear = pop = popitem = setdefault = update = __ior__ = _deny
-
-
-class FrozenList(list):
-    def __deepcopy__(self, memo): return self
-    def _deny(self, *args, **kwargs): raise TypeError('sealed payload is immutable; author a new value')
-    __setitem__ = __delitem__ = append = clear = extend = insert = pop = remove = reverse = sort = __iadd__ = __imul__ = _deny
 
 
 class FrozenText(str):
     def __deepcopy__(self, memo): return self
 
 
-def frozen(value):
-    if isinstance(value, dict): return FrozenDict({k:frozen(v) for k,v in value.items()})
-    if isinstance(value, list): return FrozenList(frozen(v) for v in value)
-    return value
-
-
 def seal(value, raw=None, digest=None):
-    """Freeze ``value`` with its canonical bytes; ``digest`` is their SHA-256 when already known."""
+    """Seal the string ``value`` with its canonical bytes; ``digest`` is their SHA-256 when already known."""
     from .repository import canonical_json
     raw = canonical_json(value) if raw is None else raw
-    result = FrozenText(value) if isinstance(value, str) else frozen(value)
+    result = FrozenText(value)
     result._payload_bytes = raw
     result._payload_hash = digest or hashlib.sha256(raw).hexdigest()
     return result
 
 
-def _eligible(key, value):
-    # Immutable source text and trust manifests; mutable task/history arrays are
-    # never frozen as a whole. The same payload can appear in several records.
-    return (isinstance(value, str) and len(value) >= LIMIT // 6
-            or key == 'manifest' and isinstance(value, dict) and 'foundation_profile' in value)
+def _eligible(value):
+    # Only large strings (source and document text) are sealed; mutable task
+    # and history containers never are. One payload can appear in several records.
+    return isinstance(value, str) and len(value) >= LIMIT // 6
 
 
-_FROZEN = (FrozenDict, FrozenList, FrozenText)
 # Children that can never be sealed and hold nothing to seal.
 _LEAVES = {bool, int, type(None)}
 
@@ -60,27 +44,25 @@ def seal_large(value):
 
     The walk visits every node of a state on each save, so leaves that cannot
     be sealed (scalars, short plain strings) are skipped without a call, and a
-    string already encoded below the limit is not encoded again.
+    string already encoded below the limit is not encoded again. It rejects a
+    float, which the storage value domain excludes: a record equal to its
+    parent's under ``==`` (``1.0 == 1``) is neither schema-checked nor
+    serialized again (StateContract.validate, repository._encode_families).
     """
     from .repository import canonical_json
 
     def walk(value):
-        if isinstance(value, _FROZEN): return value
-        if isinstance(value, str) and len(value) >= LIMIT // 6:
+        if isinstance(value, FrozenText): return value
+        if isinstance(value, float):
+            raise ValueError("JSON floating-point numbers are not permitted")
+        if _eligible(value):
             raw = canonical_json(value)
             return seal(value, raw) if len(raw) >= LIMIT else value
         if isinstance(value, dict):
             for key, child in value.items():
                 kind = type(child)
-                if kind in _LEAVES or kind is str and len(child) < LIMIT // 6 or isinstance(child, _FROZEN):
+                if kind in _LEAVES or kind is str and len(child) < LIMIT // 6 or isinstance(child, FrozenText):
                     continue
-                if _eligible(key, child):
-                    raw = canonical_json(child)
-                    if len(raw) >= LIMIT:
-                        value[key] = seal(child, raw)
-                        continue
-                    if isinstance(child, str):
-                        continue  # walk would encode it again to the same length
                 sealed = walk(child)
                 if sealed is not child:
                     value[key] = sealed
@@ -178,9 +160,9 @@ def decode(envelope, read_payload, git_dir=None):
                     raise ValueError('noncanonical immutable payload')
                 if git_dir is not None:
                     mark_artifact_verified(git_dir, ref['path'], ref['sha256'], len(raw))
+            if not _eligible(decoded):
+                raise ValueError('payload is not an externalized immutable field')
             cache[key] = seal(decoded, raw, ref['sha256'])  # matched above or earlier
-        if not _eligible(ref['tokens'][-1] if ref['tokens'] else 'manifest', cache[key]):
-            raise ValueError('payload is not an externalized immutable field')
         parent = value
         try:
             if not ref['tokens']:
@@ -198,4 +180,23 @@ def decode(envelope, read_payload, git_dir=None):
     rebuilt, _ = encode({**{k:envelope[k] for k in ('contract_id','family')}, 'record':seal_large(value)})
     if rebuilt != envelope:
         raise ValueError('record differs from canonical payload encoding')
+    return value
+
+
+def json_safe(value: Any) -> Any:
+    """A JSON-safe projection of a reported value: bytes, paths, unsafe integers and floats made explicit."""
+    if isinstance(value, bytes):
+        return bytes_evidence(value)
+    if isinstance(value, dict):
+        return {str(k): json_safe(v) for k, v in value.items()}
+    if isinstance(value, (tuple, list)):
+        return [json_safe(v) for v in value]
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, int) and not isinstance(value, bool) and abs(value) > (1 << 53) - 1:
+        return str(value)
+    if isinstance(value, float):
+        # Opaque provider reports retain their original artifact bytes. State
+        # projections represent decimals explicitly without integer rounding.
+        return {"reported_decimal": repr(value)}
     return value

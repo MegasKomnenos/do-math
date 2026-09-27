@@ -1,202 +1,28 @@
 """Feature-five lifecycle integration; CLI/Lean probes are explicit test doubles."""
-from copy import deepcopy
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
-from unittest.mock import create_autospec, patch
 import hashlib
 import sys
 import tempfile
 import unittest
+from copy import deepcopy
+from datetime import datetime, timedelta
+from pathlib import Path
+from unittest.mock import create_autospec, Mock, patch
+
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from do_math.engine import ResearchEngine, DEFAULT_CONFIG
-from do_math.initialization import initialize_state, governance_working_view
-from do_math.trust_validation import AXIOMS
-from do_math import execution_profiles as profiles, knowledge_records as kr, planning
-from do_math.governance import TASK_WORK_ROLES, OPERATING_ROLES
-from research_fixtures import FixtureAdapter, IDENTITY, StateStore, review_items
+from do_math import execution_profiles as profiles
+from do_math.configuration import DEFAULT_CONFIG
+from do_math.engine import read_record, ResearchEngine
+from do_math.initialization import initialize_state
+from do_math.repository import ResearchRepository
+from engine_fixtures import FakeEngine, initialized, initialized_instance, PublicInitializationRunner
+from research_fixtures import FixtureAdapter, IDENTITY
 from state_fixtures import owner_calls
 
-class FakeEngine(ResearchEngine):
-    """The product engine over in-memory state; a save records a copy.
-
-    Its store is the in-memory ``StateStore`` double: a rejected extended
-    control preserves the rejected request on the current head through it.
-    """
-    def __init__(self,root,config=None):
-        self._init_process_state()
-        self.store=StateStore(self); self.runner=None
-        self.root=Path(root); self.current_time=datetime.now(timezone.utc)
-        self.lifecycle_clock=lambda:self.current_time.isoformat()
-        self.lifecycle_monotonic=lambda:0.
-        config={**deepcopy(DEFAULT_CONFIG), 'tool_review_window_seconds':60,
-                'self_check_response_window_seconds':5, **(config or {})}
-        config.update(research_reconsider_seconds=60)
-        self.instance,self.runtime=initialize_state(instance_id='RI-test',goal='Prove the target',
-            workspace=root,config=config,source_input='Original user request',
-            created_at=self.current_time.isoformat())
-        self.instance.update(profiles.build_profiles(config))
-        self.runtime.update(cycles=0,waiting_actions={})
-        self.head='fixture-head'; self.saves=[]; self.formal_calls=[]; self.formal_behavior=None
-        self.formal_verifier=self.verify
-    def _execution_profile(self,action):
-        refs=self.runtime['tasks'].get(action.get('target'),{}).get('profile_refs')
-        if refs and not action.get('profile_ref'):
-            return profiles.resolve_profile(self.instance['execution_profiles'],refs[0])
-        return profiles.resolve_profile(self.instance['execution_profiles'],
-            action.get('profile_ref') or self.instance['role_profile_refs'][action['role']][0])
-    def _controls(self, *, pump=True): pass
-    def _save(self,artifacts=None):
-        self.saves.append({'instance':deepcopy(self.instance),'runtime':deepcopy(self.runtime),'artifacts':deepcopy(artifacts or {})})
-    def _ensure_model_assessments(self): return set()
-    def control(self,action,config,request_id=None):
-        return self._apply_extended_control({'id':request_id or 'UI-'+str(len(self.runtime['extended_controls'])),
-                                            'action':action,'config':config})
-    def grant(self,identifier,initial=False,http=None):
-        grant=http or {'kind':'local','roles':['intent_interpretation'] if initial else sorted(TASK_WORK_ROLES|OPERATING_ROLES),
-            'reuse':'reusable','expires_at':(self.current_time+timedelta(days=1)).isoformat()}
-        self.control('decision',{'change':{'kind':'grant','grant':{'id':identifier,**grant}}})
-    def environment(self,name,active=False):
-        from research_fixtures import trust_fixture
-        request=trust_fixture(self.root/name,['synthetic-lean',name])
-        chain=request['toolchain']
-        self._trust_control(request,'UI-env-'+name)
-        eid=next(eid for eid,e in self.instance['trust_environments'].items() if e['toolchain']==chain)
-        # Explicit synthetic profile edition for this synthetic toolchain.
-        configured = profiles.build_profiles({**self.instance['config'], 'lean_command':chain['configured_command']})
-        for profile in configured['execution_profiles'].values():
-            if profile['role'] == 'trust_check':
-                self.instance['execution_profiles'][profile['id']] = profile
-                self.instance['role_profile_refs']['trust_check'] = [profiles.profile_ref(profile)]
-        if active:
-            self._trust_control({'operation':'transition','env_id':eid},'UI-transition-'+name)
-            from do_math.trust_validation import check_environment
-            self._finish_trust_transition(next(reversed(self.runtime['trust_transitions'])),
-                check_environment(self.instance['trust_environments'][eid], self.runtime['trust_bindings'][eid]))
-        return eid
-    def activate(self, *, external_policy='explicit_grants', review_policy=None):
-        """Activate through the adoption decision; ``review_policy`` None adopts the default policy."""
-        self.grant('GR-init',True); self.grant('GR-research')
-        charter={'id':'CH-test','kind':'charter','revision':1,'supersedes':[],
-            'content':{'rationale':'Research the stated target','goal':'Prove the target','desired_result':'A proof',
-                'success_criteria':['Target proved'],'partial_success_criteria':['Cases settled'],
-                'included_scope':['Target'],'excluded_scope':[],'priorities':['Proof'],'preferences':[],
-                'evidence_boundary':'Proof evidence','academic_requirements':[],
-                'decision_authority':'user','stop_conditions':[]}}
-        self.control('decision',{'change':{'kind':'initialization','operation':'governance','records':[charter]}})
-        for p in self.instance['execution_profiles'].values():
-            if p['actor_kind']=='ai':
-                row=profiles.capability_evidence(p,FixtureAdapter().describe(),observed_at=self.current_time.isoformat())
-                self.instance.setdefault('capability_evidence',{})[row['id']]=row
-        self.control('decision',{'change':{'kind':'initialization','adopt_current_config':True,
-            'adopt_current_governance':True,'conversation_loss_policy':'continue_authorized',
-            'external_policy':external_policy,
-            **({'review_policy':review_policy} if review_policy is not None else {'adopt_default_review_policy':True}),
-            'profile_refs':[profiles.profile_ref(p) for p in self.instance['execution_profiles'].values()],
-            'initial_grant_ids':['GR-init'],'research_grant_ids':['GR-research']}})
-        self.environment('base',True)
-        iid=self.instance['lifecycle']['input_id']
-        from do_math import governance
-        from research_fixtures import intent_response
-        source = governance.import_input_source(self.instance, self.runtime, iid)
-        author_action = {'id':'AC-interpret', 'role':'intent_interpretation', 'target':iid, 'stage':'interpret'}
-        author = self._register_execution(author_action, {'id':'EX-interpret','role':'intent_interpretation','status':'running'})
-        output = intent_response({'action':author_action,'user_request':source,
-                                  'governance':governance.governance_view(self.instance)})
-        bundle = governance.prepare_import(self.instance, self.runtime, source, output,
-                                           execution_id=author['id'], input_ref=iid)
-        checker_action = {'id':'AC-check','role':'intent_interpretation','target':iid,'stage':'check','import_id':bundle['id']}
-        checker = self._register_execution(checker_action, {'id':'EX-check','role':'intent_interpretation','status':'running',
-                                                          'intent_import_sha256':bundle['sha256']})
-        verdict = intent_response({'action':checker_action,'interpretation_to_check':bundle,
-                                   'governance':governance.governance_view(self.instance)})
-        governance.check_import(self.instance, self.runtime, bundle['id'], verdict, execution_id=checker['id'])
-        self.instance, self.runtime, _ = governance.apply_import(self.instance, self.runtime, bundle['id'])
-        for eid in (author['id'], checker['id']):
-            self._end_machine_execution(self.runtime['executions'][eid], outcome='execution_incomplete', disposition={'kind':'test_fixture'})
-        self._complete_initial_intent(iid)
-        result=self._activate_initialization()
-        if not result['activated']: raise AssertionError(result)
-        self.runtime['queue'].clear(); self.runtime['pending_events'].clear()
-    def verification(self,source,declarations,chain):
-        return {'status':'verified','source_sha256':hashlib.sha256(source.encode()).hexdigest(),
-            'declarations':declarations,'toolchain':deepcopy(chain),'allowed_axioms':sorted(AXIOMS),
-            'axioms':{d:[] for d in declarations},'declaration_evidence':{d:{'type':'Eq Nat 1 1'} for d in declarations},
-            'dependency_closure':{d:[] for d in declarations},'dependency_evidence':{d:{} for d in declarations}}
-    def verify(self,**args):
-        self.formal_calls.append(args)
-        if self.formal_behavior: return self.formal_behavior(args)
-        return self.verification(args['source'],args['declarations'],args['expected_toolchain'])
-    def knowledge(self,kid,env_id=None,dependencies=None):
-        env_id=env_id or self.instance['active_trust_environment']; source='theorem '+kid.lower()+' : 1 = 1 := rfl'
-        self.instance,_=kr.create_candidate(self.instance,{'id':kid,'kind':'lemma','statement':'One equals one',
-            'summary':'Reflexivity','lean_code':source,'declaration_names':[kid.lower()],'dependencies':dependencies or []},
-            source_ref='UI-source',actor_ref='EX-author')
-        result=self.verification(source,[kid.lower()],self.instance['trust_environments'][env_id]['toolchain'])
-        self.instance=kr.record_formal_result(self.instance,kid,result,env_id,runtime=self.runtime)
-        self.instance,_=kr.record_identity_assessment(self.instance,kid,
-            {'decision':'match','basis':kr.identity_basis(self.instance,kid)},'review-policy',runtime=self.runtime)
-        return self.instance['knowledge'][kid]
-    def task(self,task_id='T1',approved=True,condition=None,inputs=None):
-        t={'id':task_id,'revision':1,'status':'planned','question':'Derive result',
-           'scope':{'included':['derive'],'excluded':['publish']},
-           'expected':{'outputs':['proof'],'research_change':'resolve target'},
-           'progress_criteria':[{'id':'PG-'+task_id,'claim':'advance','evidence_required':[]}],
-           'completion_obligations':[{'id':'OB-'+task_id,'claim':'derive','judges':['task_assessor'],'evidence_required':[]}],
-           'work_class':'nonformal','inputs':inputs or [],'reuse':[],'dependencies':[],
-           'occurrence_condition':condition or {'op':'always'},'results':[],'producer_execution':'EX-author',
-           'profile_refs':[profiles.profile_ref(next(p for p in self.instance['execution_profiles'].values() if p['role']=='research_work' and p['ai']['tier']=='high'))],
-           'authority_refs':['GR-research'],'basis_refs':['context:goal'],'reviews':[]}
-        self.runtime['tasks'][task_id]=t
-        if approved: self.approve(t)
-        return t
-    def approve(self,t,decision='approved'):
-        output=review_items(['context:goal'],decision=decision)
-        t['reviews']=[planning.seal_contract_review(t,output,governance_working_view(self.instance),self.runtime,execution_id='EX-review')]
-    def machine(self,role):
-        a=next(a for a in self.runtime['queue'] if a['role']==role)
-        self._process_machine_action(a); return a
 
 def run_machine(engine,role):
     """Process one queued machine action and finish its calculation, as the owner loop does."""
     with owner_calls(engine):
         return engine.machine(role)
-
-def initialized(repository, *, goal, **options):
-    """A new Git repository at ``repository`` with one instance from the public ``initialize``; returns its ID.
-
-    The workspace defaults to ``repository / 'work'``; ``options`` pass to ``initialize``.
-    """
-    from do_math.engine import initialize
-    from research_fixtures import git_init
-    options.setdefault('workspace', Path(repository) / 'work')
-    return initialize(git_init(repository), goal=goal, **options)['instance_id']
-
-def initialized_instance(root, shared, *, goal, config):
-    """``restore_template`` build: the public ``initialize`` alone; returns the instance ID.
-
-    The repository is ``root / 'repository'`` and the workspace ``root / 'work-0'``.
-    """
-    return initialized(root / 'repository', goal=goal, workspace=root / 'work-0', config=config)
-
-class PublicInitializationRunner:
-    """Synthetic independent author/checker outputs; real producer/receiver paths."""
-    def run(self, *, workspace, on_started, should_stop, control_binding, **kwargs):
-        import json
-        from do_math import submission
-        from do_math.repository import canonical_json
-        from research_fixtures import intent_response, seal_response
-        context = json.loads((workspace/'input/submission/context.json').read_bytes())
-        if context['action']['role'] != 'intent_interpretation':
-            raise AssertionError('No research is authorized by the initialization fixture')
-        on_started({'job_name':kwargs['launch_ticket']['job_name']})
-        output = seal_response(intent_response(context), context, workspace)
-        (workspace/'draft.json').write_bytes(canonical_json(output))
-        delivery = submission.request_control(workspace, 'draft.json', kind='submit_intent', wait_seconds=0, binding=control_binding)
-        # The owner loop receives the request on its next pass. submit_intent closes
-        # further research authority; the flag it sets is the expected barrier.
-        from do_math.control_transport import ControlTransport
-        ControlTransport.wait_receipt(control_binding, delivery['request_id'], 60)
-        return {'status':'completed','output':output,'usage':{},'error':None}
 
 
 class PublicLifecycleTests(unittest.TestCase):
@@ -300,8 +126,8 @@ class PublicLifecycleTests(unittest.TestCase):
         from http.server import HTTPServer
         from research_fixtures import install_adapter_fixture, restore_template, send_control
         from state_fixtures import active_instance
-        from test_external import H
-        class Handler(H):
+        from provider_fixtures import HTTPFixtureHandler
+        class Handler(HTTPFixtureHandler):
             count=0
             def do_POST(self):
                 Handler.count+=1
@@ -410,7 +236,21 @@ class LifecycleTests(unittest.TestCase):
         self.assertNotIn(event['id'],e.runtime['pending_events'])
         self.assertIn(other['id'],e.runtime['pending_events'])
         self.assertEqual(next(row for row in e.runtime['events'] if row['id']==event['id']),original)
-    def test_empty_queue_uses_goal_exhaustion_not_legacy_cycle_limit(self):
+    def test_one_input_request_is_one_event_and_its_consumption_keeps_a_later_request(self):
+        e=self.engine; tid=e.task()['id']; task=lambda: e.runtime['tasks'][tid]
+        task()['newinput']='RQ-one'
+        e._refresh_readiness(); e.current_time+=timedelta(seconds=5); e._refresh_readiness()
+        inputs=[row for row in e.runtime['events'] if row['kind']=='task_new_input']
+        self.assertEqual([row['request_id'] for row in inputs],['RQ-one'])
+        self.assertEqual(e.runtime['pending_events'].count(inputs[0]['id']),1)
+        task()['newinput']='RQ-two'
+        ResearchEngine._consume_action_events(e,{'event_refs':[inputs[0]['id']]},'EX-accepted-plan')
+        self.assertEqual(task()['newinput'],'RQ-two')
+        e._refresh_readiness()
+        later=next(row for row in e.runtime['events'] if row.get('request_id')=='RQ-two')
+        ResearchEngine._consume_action_events(e,{'event_refs':[later['id']]},'EX-accepted-plan')
+        self.assertNotIn('newinput',task())
+    def test_empty_queue_prepares_from_goal_exhaustion_regardless_of_cycle_count(self):
         e=self.engine; e.runtime['cycles']=1000
         e._refresh_readiness()
         preparation=next((a for a in e.runtime['queue'] if a['role']=='research_preparation'),None)
@@ -553,6 +393,10 @@ class LifecycleTests(unittest.TestCase):
             self.assertEqual(e.runtime['trust_bindings'][eid],request['binding'])
         changed={**request,'binding':{**request['binding'],'fingerprint_sha256':'0'*64}}
         with self.assertRaisesRegex(ValueError,'differs from its toolchain record'): e._trust_control(changed,'UI-shared-bad')
+        registered=dict(e.instance['trust_environments'])
+        duplicated={**request,'allowed_axioms':[*request['allowed_axioms'],request['allowed_axioms'][0]]}
+        with self.assertRaisesRegex(ValueError,'foundation axiom profile differs'): e._trust_control(duplicated,'UI-shared-dup')
+        self.assertEqual(e.instance['trust_environments'],registered)
     def test_rerecorded_baseline_is_followed_once_with_an_event(self):
         import os, setup_lean
         from research_fixtures import fixture_setup_lean
@@ -592,7 +436,7 @@ class LifecycleTests(unittest.TestCase):
             self.assertFalse(e._dispatchable(a))
             self.assertEqual(a['dispatch_wait']['kind'],'task_readiness')
 
-    def test_task_artifact_context_reaches_refresh_schedule_and_dispatch(self):
+    def test_task_artifact_context_reaches_refresh_and_dispatch(self):
         from do_math.repository import ResearchRepository
         e=self.engine; raw=b'{"valid":true}'
         path='runtime/artifacts/EX-evidence/result.json'
@@ -600,17 +444,16 @@ class LifecycleTests(unittest.TestCase):
         e.store.read.return_value=raw; e.store.git_dir=None
         condition={'op':'artifact_valid','artifact_ref':{'snapshot':'sealed-evidence',
             'path':path,'sha256':hashlib.sha256(raw).hexdigest()}}
-        t=e.task(condition=condition); t['due_conditions']=[condition]; e.approve(t)
+        t=e.task(condition=condition); e.approve(t)
         e._refresh_readiness()
         self.assertEqual(e._task_readiness[t['id']]['state'],'ready')
-        self.assertTrue(any(row['kind']=='task_condition_due' for row in e.runtime['events']))
         a={'id':'AC-artifact','role':'research_work','target':t['id']}
         e.runtime['queue']=[a]
         with patch.object(e,'_revision_dispatch_waits',autospec=True,return_value=[]), patch.object(e,'_selected_action_current',autospec=True,return_value=True) as selected, patch.object(e,'_provider_status',autospec=True,return_value={'providers':{}}):
             self.assertTrue(e._dispatchable(a))
             context=selected.call_args.kwargs['evaluation_context']
             self.assertTrue(callable(context['validate_artifact']))
-            self.assertEqual(context['read_artifact']('sealed-evidence',path),raw)
+            self.assertEqual(context['read_artifact'](path,'sealed-evidence'),raw)
         self.assertTrue(all(call.args==(path,'sealed-evidence') for call in e.store.read.call_args_list))
 
     def test_stop_and_resume_trust_check_preserves_attempt_lineage(self):
@@ -664,6 +507,12 @@ class LifecycleTests(unittest.TestCase):
             'evidence_ref':'remote-admin-log','operation_id':op['id'],'request_sha256':op['request_sha256'],
             'idempotency_key':op['idempotency_key'],'fact':'effect_absent','observed_at':e.current_time.isoformat()}})
         e.control('external',{'operation':'retry','id':op['id'],'grant_id':'GR-http'})
+        # The new attempt is not the reconciled one: its handling goes with its reconciliation.
+        retried=e.runtime['external_operations'][op['id']]
+        self.assertEqual(retried['status'],'prepared')
+        self.assertNotIn('handling',retried); self.assertNotIn('reconciliation',retried)
+        from do_math.record_schemas import RECORD_RULES
+        RECORD_RULES['external_operations'](retried)  # the storage rules of one operation record
         e.machine('external_action'); self.assertEqual(Handler.count,2)
         attempts=[row for row in e.runtime['executions'].values() if row['role']=='external_action']
         self.assertEqual(attempts[0]['owner_activity_id'],attempts[1]['owner_activity_id'])
@@ -715,10 +564,20 @@ class LifecycleTests(unittest.TestCase):
         def controls(*, pump=True):
             count[0]+=1
             if count[0]==4: e.instance['grants']['GR-http']['status']='revoked'
-        e._controls=create_autospec(e._controls,side_effect=controls)
+        # The external stop judgment applies the inbox (a revoking control) before each send step.
+        e._apply_inbox=create_autospec(e._apply_inbox,side_effect=controls)
         with patch('do_math.external._http') as transport:
             e.machine('external_action'); transport.assert_not_called()
         self.assertEqual(e.runtime['external_operations'][op['id']]['status'],'cancelled')
+
+    def test_failure_before_any_send_step_is_an_untransmitted_cancellation(self):
+        e=self.engine; op=self.http('http://127.0.0.1:1/effect')
+        with patch('do_math.external_engine.execute_operation',side_effect=ValueError('grant is inactive')):
+            e.machine('external_action')
+        op=e.store.load()[2]['external_operations'][op['id']]
+        self.assertEqual((op['status'],op['transmitted'],op['succeeded']),('cancelled',False,False))
+        from do_math.record_schemas import RECORD_RULES
+        RECORD_RULES['external_operations'](op)  # the storage rules of one operation record
 
     def test_session_capacity_reads_git_reservations_not_sqlite(self):
         e=self.engine; resources=e._session_resources()
@@ -738,7 +597,9 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(e.instance['goal_status'],'unsolved')
         self.assertFalse(e.instance['goal_judgments'][0]['current'])
 
-class Audit2LifecycleTests(unittest.TestCase):
+class LifecycleBoundaryTests(unittest.TestCase):
+    """Clock, trust, limited-recovery and close boundaries of the lifecycle, on in-memory engines."""
+
     def test_event_uses_the_clock_sample_that_passed_the_guard(self):
         with tempfile.TemporaryDirectory() as root:
             e = FakeEngine(root)
@@ -771,7 +632,6 @@ class Audit2LifecycleTests(unittest.TestCase):
                 if False: yield
             e._call_steps=create_autospec(e._call_steps,side_effect=executor_double)
             e._check_installation=create_autospec(e._check_installation)
-            e._available_inputs=create_autospec(e._available_inputs,return_value=[])
             e._provider_status=create_autospec(e._provider_status,return_value={'providers':{}})
             e._selected_action_current=create_autospec(e._selected_action_current,return_value=True)
             e._revision_dispatch_waits=create_autospec(e._revision_dispatch_waits,return_value=[])
@@ -797,13 +657,14 @@ class Audit2LifecycleTests(unittest.TestCase):
             self.assertEqual([x['id'] for x in e.runtime['executions'].values() if x['status']!='ended'],[])
 
     def test_terminal_marker_cannot_have_live_projection(self):
-        from do_math.preflight import inspect_current_state
+        from do_math.record_schemas import validate_lifecycle
         with tempfile.TemporaryDirectory() as root:
             e = FakeEngine(root)
             e.instance['lifecycle']['permanently_closed'] = True
-            self.assertFalse(inspect_current_state(e.instance,e.runtime)['valid'])
+            with self.assertRaisesRegex(ValueError, 'permanently closed'):
+                validate_lifecycle(e.instance,e.runtime)
             e.runtime['status'] = 'closed'
-            self.assertTrue(inspect_current_state(e.instance,e.runtime)['valid'])
+            validate_lifecycle(e.instance,e.runtime)
 
     def test_scheduler_runs_only_approved_machine_recovery_and_stays_paused(self):
         with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
@@ -820,7 +681,6 @@ class Audit2LifecycleTests(unittest.TestCase):
                 'expires_at':(e.current_time+timedelta(minutes=5)).isoformat()}})
             e.runtime['queue'].insert(0,{'id':'AC-general','role':'research_preparation'})
             e._check_installation=create_autospec(e._check_installation)
-            e._available_inputs=create_autospec(e._available_inputs,return_value=[])
             e._selected_action_current=create_autospec(e._selected_action_current,return_value=True)
             e._revision_dispatch_waits=create_autospec(e._revision_dispatch_waits,return_value=[])
             e._run_parallel(max_steps=1)
@@ -896,6 +756,16 @@ class Audit2LifecycleTests(unittest.TestCase):
             self.assertFalse(e._limited_recovery_allowed(action))
             self.assertTrue(e._execution_stop_requested(action))
 
+    def test_limited_recovery_refuses_unbound_requests_and_surfaces_check_defects(self):
+        with tempfile.TemporaryDirectory() as root:
+            e = FakeEngine(root)
+            with patch.object(e, '_check_limited_recovery', side_effect=AssertionError('unbound request checked')):
+                self.assertFalse(e._limited_recovery_allowed({'id': 'AC-plain', 'role': 'maintenance'}))
+            bound = {'id': 'AC-bound', 'role': 'maintenance', 'repair': {'limited_recovery': {'source_ref': 'UC-one'}}}
+            with patch.object(e, '_check_limited_recovery', side_effect=KeyError('defect')):
+                with self.assertRaises(KeyError):
+                    e._limited_recovery_allowed(bound)
+
     def test_closed_pause_cannot_reopen(self):
         with tempfile.TemporaryDirectory() as root:
             e = FakeEngine(root)
@@ -948,7 +818,9 @@ class Audit2LifecycleTests(unittest.TestCase):
             self.assertFalse(outcome['satisfied'])
             self.assertIn('atomic_local_job', outcome['missing'])
 
-class AuditRepairTests(unittest.TestCase):
+class GrantAndExternalEffectTests(unittest.TestCase):
+    """Grant adoption and selection, initial queueing, and external HTTP effects and their controls."""
+
     setUp = LifecycleTests.setUp
 
     def test_machine_records_use_registered_schema_and_existing_source_provenance(self):
@@ -979,7 +851,7 @@ class AuditRepairTests(unittest.TestCase):
                 if execution['role'].startswith('trust_'):
                     self.assertEqual(execution['result_ref'],execution['submission_receipt']['evidence_ref'])
 
-    def test_11_ambiguous_adopted_grants_are_not_selected_by_order(self):
+    def test_ambiguous_adopted_grants_are_not_selected_by_order(self):
         e=self.engine; e.grant('GR-other')
         e.instance['lifecycle']['adoption']['research_grant_ids']=['GR-other','GR-research']
         action={'id':'AC-ambiguous','role':'research_preparation'}
@@ -990,7 +862,7 @@ class AuditRepairTests(unittest.TestCase):
         e._action_lifecycle_gate(selected)
         self.assertEqual(selected['grant_id'],'GR-research')
 
-    def test_11_initial_queue_does_not_manufacture_explicit_grant_choice(self):
+    def test_initial_queue_does_not_manufacture_explicit_grant_choice(self):
         e=self.engine; e.grant('GR-init-other',True)
         lifecycle=e.instance['lifecycle']
         lifecycle.update(state='initializing'); lifecycle.pop('intent_check',None)
@@ -1005,7 +877,7 @@ class AuditRepairTests(unittest.TestCase):
         e._action_lifecycle_gate(action)
         self.assertEqual(action['grant_id'],'GR-init')
 
-    def test_11_initial_queue_treats_held_input_overflow_as_the_same_request(self):
+    def test_initial_queue_treats_held_input_overflow_as_the_same_request(self):
         e=self.engine
         lifecycle=e.instance['lifecycle']
         lifecycle.update(state='initializing'); lifecycle.pop('intent_check',None)
@@ -1019,7 +891,7 @@ class AuditRepairTests(unittest.TestCase):
         self.assertEqual(e.runtime['queue'],[],
             'a held initial request must not be regenerated under a new action ID')
 
-    def test_11_retry_reuses_the_exact_held_action_and_current_authority(self):
+    def test_retry_reuses_the_exact_held_action_and_current_authority(self):
         from do_math import activities, questions
         e=self.engine
         action={'id':'AC-held-overflow','role':'research_preparation'}
@@ -1064,7 +936,7 @@ class AuditRepairTests(unittest.TestCase):
                     'initial_grant_ids':['GR-narrow'],'research_grant_ids':['GR-narrow']}})
             self.assertEqual(initial.instance['grants'],before)
 
-    def test_11_unique_eligible_grant_within_adoption_and_explicit_denial(self):
+    def test_unique_eligible_grant_within_adoption_and_explicit_denial(self):
         e=self.engine; e.grant('GR-other')
         e.instance['grants']['GR-other']['included_targets']=['different']
         e.instance['lifecycle']['adoption']['research_grant_ids']=['GR-other','GR-research']
@@ -1085,7 +957,7 @@ class AuditRepairTests(unittest.TestCase):
                 'request':{'method':'POST','url':origin+'/effect','body':'test'}}
         return config
 
-    def test_12_scoped_http_control_preserves_exact_envelope(self):
+    def test_scoped_http_control_preserves_exact_envelope(self):
         e=self.engine
         scope={'included_targets':['TARGET'],'purposes':['publish'],'subjects':['publisher'],
                'execution_kinds':['machine']}
@@ -1100,7 +972,7 @@ class AuditRepairTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             e.control('external',{**config,**fields,'purpose':'different'})
 
-    def test_13_once_http_first_send_and_distinct_request(self):
+    def test_once_http_first_send_and_distinct_request(self):
         e=self.engine; config=self.prepare_http(once=True)
         e.control('external',config)
         with patch('do_math.external._http',return_value={'http_status':201,'body':b'ok'}) as send:
@@ -1108,7 +980,7 @@ class AuditRepairTests(unittest.TestCase):
         self.assertEqual(e.runtime['external_operations'][config['id']]['status'],'confirmed')
         with self.assertRaises(ValueError): e.control('external',{**config,'id':'OP-other'})
 
-    def test_13_once_unknown_send_cannot_be_replayed_without_evidence(self):
+    def test_once_unknown_send_cannot_be_replayed_without_evidence(self):
         e=self.engine; config=self.prepare_http(once=True)
         e.control('external',config)
         action=next(a for a in e.runtime['queue'] if a['role']=='external_action')
@@ -1122,7 +994,7 @@ class AuditRepairTests(unittest.TestCase):
             e._run_external_action(action); send.assert_not_called()
         self.assertEqual(e.runtime['external_operations'][config['id']]['execution_id'],before['execution_id'])
 
-    def test_12_academic_control_binds_current_real_prerequisite(self):
+    def test_academic_control_binds_current_real_prerequisite(self):
         from do_math.academic import current_requirements, solution_basis
         e=self.engine; config=self.prepare_http(scope={'requires_academic':True})
         e._solution_basis=create_autospec(e._solution_basis,side_effect=lambda: solution_basis('synthetic-goal-evidence',
@@ -1141,11 +1013,11 @@ class AuditRepairTests(unittest.TestCase):
             e.machine('external_action'); send.assert_not_called()
         self.assertEqual(e.runtime['external_operations'][config['id']]['status'],'cancelled')
 
-    def test_16_credential_resume_has_new_attempt_receipt_and_cleared_wait(self):
+    def test_credential_resume_has_new_attempt_receipt_and_cleared_wait(self):
         import os,time,threading
         from http.server import HTTPServer
-        from test_external import H
-        class Handler(H):
+        from provider_fixtures import HTTPFixtureHandler
+        class Handler(HTTPFixtureHandler):
             count=0
             def do_POST(self):
                 Handler.count+=1
@@ -1190,5 +1062,28 @@ class AuditRepairTests(unittest.TestCase):
             self.assertTrue(all(datetime.fromisoformat(row['at']).utcoffset() == timedelta(0)
                                 for row in transitions))
             self.assertEqual(execution['ended_at'], transitions[-1]['at'])
+
+
+class PersistedConnections(unittest.TestCase):
+    def test_new_instance_is_v5_initializing_without_implicit_authority(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            identifier = initialized(root / "repo", goal="Prove the stated goal", workspace=root / "work",
+                config={"scholarly_enabled": False, "operator_enabled": False})
+            head, instance, runtime = ResearchRepository(root / "repo", identifier).load()
+            self.assertEqual(runtime["status"], "initializing")
+            self.assertEqual(runtime["queue"], [])
+            self.assertEqual(instance["grants"], {})
+            profile_id = next(iter(instance["execution_profiles"]))
+            found = read_record(root / "repo", instance["id"], profile_id, snapshot=head)
+            raw = ResearchRepository(root / "repo", instance["id"]).read(found["path"], head)
+            self.assertEqual(found["sha256"], hashlib.sha256(raw).hexdigest())
+            self.assertEqual(found["bytes"], len(raw))
+            self.assertEqual(found["snapshot"], head)
+            engine = ResearchEngine(root / "repo", instance["id"], runner=Mock())
+            status = engine.run(max_steps=1)
+            self.assertEqual(status["status"], "initializing")
+            engine.runner.run.assert_not_called()
+
 
 if __name__=='__main__': unittest.main()

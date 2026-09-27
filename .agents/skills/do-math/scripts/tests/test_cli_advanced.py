@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 from do_math import cli as cli_module
-from do_math.engine import _repository as ResearchRepository
+from do_math.repository import ResearchRepository
 from research_fixtures import restore_template, run_cli
 
 
@@ -55,7 +55,7 @@ class AdvancedCliTests(unittest.TestCase):
         return ResearchRepository(self.repo, self.instance_id).load()
 
     def charter(self, identifier='CH-1', supersedes=(), goal='New goal'):
-        from test_redesign_SURFACE import surface_state
+        from record_fixtures import surface_state
         instance, _ = surface_state()
         record = instance['governance']['CH-1']
         record = {k: record[k] for k in ('id', 'kind', 'revision', 'supersedes', 'content')}

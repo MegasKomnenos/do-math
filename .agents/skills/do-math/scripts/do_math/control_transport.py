@@ -20,10 +20,10 @@ import time
 from typing import Any, Callable
 if __package__:
     from .file_io import (compact_json_bytes, read_bytes_shared, file_fingerprint, fingerprint_settled,
-                          json_digest, write_bytes_atomic)
+                          json_digest, require_text, write_bytes_atomic)
 else:
     from file_io import (compact_json_bytes, read_bytes_shared, file_fingerprint, fingerprint_settled,
-                         json_digest, write_bytes_atomic)
+                         json_digest, require_text, write_bytes_atomic)
 
 
 # Control vocabulary shared by the workers, the MCP server and the observers.
@@ -76,8 +76,9 @@ _WINDOWS_DEVICE_NAMES = frozenset(
 
 
 def _require_text(value: Any, name: str) -> str:
-    if not isinstance(value, str) or not value.strip() or "\0" in value:
-        raise ValueError(f"{name} must be a nonempty NUL-free string")
+    """Nonempty text (``file_io.require_text``) that a transport file or path can also carry: no NUL."""
+    if "\0" in require_text(value, name):
+        raise ValueError(f"{name} must be NUL-free")
     return value
 
 
@@ -152,12 +153,11 @@ class ControlTransport:
         self.root = None if root is None else Path(root).resolve()
         self._publish = publish
         self._capabilities: dict[str, dict] = {}
-        self._receipts: dict[str, dict] = {}
+        self._receipts: dict[tuple[str | None, str], dict] = {}  # (transport_id, request_id) -> receipt
         self._pump_cache: dict[Path, tuple[tuple, dict]] = {}
         # Only open transports can receive new deliveries; a pump reads their inboxes alone.
-        self._open: set[str] = set()
-        if self.root is not None and self.root.is_dir():
-            self._open = {path.parent.name for path in self.root.glob("*/binding.json") if _is_open(path.parent)}
+        # The set is read from disk at the first pump: commands that never pump read no transport.
+        self._open: set[str] | None = None
 
     def issue(self, execution_id: str, grant_id: str, *, workspace: Path | str | None = None) -> dict:
         _require_text(execution_id, "execution_id")
@@ -174,7 +174,8 @@ class ControlTransport:
                 (endpoint / name).mkdir(parents=True, exist_ok=True)
             _atomic_json(endpoint / "binding.json", binding)
             _atomic_json(endpoint / "state.json", {"state": "open"})
-            self._open.add(transport_id)
+            if self._open is not None:
+                self._open.add(transport_id)
         self._capabilities[transport_id] = deepcopy(binding)
         return deepcopy(binding)
 
@@ -218,7 +219,11 @@ class ControlTransport:
             raise ValueError("control request must be an object")
         request_id = _require_file_name(request.get("request_id"), "request_id")
         request_sha256 = json_digest(request)
-        previous = self._receipt(request_id)
+        try:
+            sender = _require_file_name(request.get("transport_id"), "transport_id")
+        except ValueError:
+            sender = None
+        previous = self._receipt(request_id, sender)
         if previous is not None:
             if previous.get("request_sha256") != request_sha256:
                 raise ValueError("request_id was reused with different content")
@@ -256,6 +261,10 @@ class ControlTransport:
             raise ValueError("a memory-only transport has no inbox to pump")
         if limit is not None and (isinstance(limit, bool) or not isinstance(limit, int) or limit < 1):
             raise ValueError("limit must be a positive integer or null")
+        if self._open is None:
+            # issue and close keep state.json current, so this scan sees every earlier issue and close.
+            self._open = ({path.parent.name for path in self.root.glob("*/binding.json") if _is_open(path.parent)}
+                          if self.root.is_dir() else set())
         paths = [path for transport_id in sorted(self._open)
                  for path in sorted((self.root / transport_id / "inbox").glob("*.json"))]
         return self._pump_paths(paths[:limit], publish)
@@ -295,22 +304,21 @@ class ControlTransport:
         _atomic_json(endpoint / "state.json", state)
         # A delivery that raced the close gets its closed receipt now; later pumps skip this transport.
         inbox = sorted((endpoint / "inbox").glob("*.json"))
+        unsettled = []
         for path in inbox:
             try:
                 self._pump_paths([path], None)
-            except ValueError:
-                pass  # A changed redelivery keeps the receipt it already has.
-        self._open.discard(endpoint.name)
+            except ValueError as error:
+                # A changed redelivery keeps the receipt it already has; the closed state records why.
+                unsettled.append({"source": "inbox/" + path.name, "reason": str(error)})
+        if unsettled:
+            state["unsettled_deliveries"] = unsettled
+            _atomic_json(endpoint / "state.json", state)
+        if self._open is not None:
+            self._open.discard(endpoint.name)
         for path in inbox:
             self._pump_cache.pop(path, None)
         return state
-
-    def receipt(self, request_id: str) -> dict | None:
-        _require_file_name(request_id, "request_id")
-        return self._receipt(request_id)
-
-    def records(self) -> list[dict]:
-        return [deepcopy(value) for value in self._receipts.values()]
 
     def request_self_check(self, binding: dict, *, request: dict) -> dict:
         """Deliver the issued request object; the tracker hashes this same object."""
@@ -334,8 +342,8 @@ class ControlTransport:
         if existing != request:
             raise ValueError("self_check_id was reused with different content")
         if binding.get('workspace'):
-            from .context_store import _safe_path
-            surface = _safe_path(Path(binding['workspace']), '.control/self-checks/' + self_check_id + '.json')
+            from .context_store import safe_path
+            surface = safe_path(Path(binding['workspace']), '.control/self-checks/' + self_check_id + '.json')
             if not _create_json_once(surface, request) and _json(surface) != request:
                 raise ValueError('workspace self-check notice differs from its issued request')
         return request
@@ -436,7 +444,7 @@ class ControlTransport:
         for key in fields:
             if key in decision:
                 receipt[key] = deepcopy(decision[key])
-        self._receipts[request["request_id"]] = deepcopy(receipt)
+        self._receipts[(request["transport_id"], request["request_id"])] = deepcopy(receipt)
         binding = self._binding(request)
         if binding.get("endpoint"):
             _atomic_json(self._endpoint(binding) / "outbox" / (request["request_id"] + ".json"), receipt)
@@ -447,12 +455,12 @@ class ControlTransport:
         receipt = {"request_id": request["request_id"], "request_sha256": json_digest(request),
                    "kind": request.get("kind"), "execution_id": request.get("execution_id"),
                    "state": "rejected", "reason": reason}
-        self._receipts[request["request_id"]] = deepcopy(receipt)
         transport_id = request.get("transport_id")
         try:
             safe_transport_id = _require_file_name(transport_id, "transport_id")
         except ValueError:
             safe_transport_id = None
+        self._receipts[(safe_transport_id, request["request_id"])] = deepcopy(receipt)
         binding = self._capabilities.get(safe_transport_id) if safe_transport_id is not None else None
         if binding is None and self.root is not None and safe_transport_id is not None:
             binding = _json(self.root / safe_transport_id / "binding.json")
@@ -477,15 +485,33 @@ class ControlTransport:
             return existing
         raise ValueError("request_id was already received with different content")
 
-    def _receipt(self, request_id: str) -> dict | None:
+    def _receipt(self, request_id: str, transport_id: str | None = None) -> dict | None:
+        """The receipt of ``request_id``: the sender's own first, then any transport's.
+
+        Request IDs are unique across the instance's transports, so another
+        transport's receipt for the ID rejects a reuse. The sender's own receipt
+        is read first: a rejection another transport earned for reusing this ID
+        must not stand in for the sender's receipt when the sender redelivers.
+        """
         _require_file_name(request_id, "request_id")
-        entry = self._receipts.get(request_id)
-        if entry is not None:
-            return deepcopy(entry)
-        if self.root is None:
+        name = request_id + ".json"
+        if transport_id is not None:
+            entry = self._receipts.get((transport_id, request_id))
+            if entry is not None:
+                return deepcopy(entry)
+            if self.root is not None and os.path.exists(self.root / transport_id / "outbox" / name):
+                return _json(self.root / transport_id / "outbox" / name)
+        for (_, known_id), entry in self._receipts.items():
+            if known_id == request_id:
+                return deepcopy(entry)
+        if self.root is None or not self.root.is_dir():
             return None
-        matches = list(self.root.glob("*/outbox/" + request_id + ".json"))
-        return _json(matches[0]) if matches else None
+        # A new ID is checked against every outbox by one existence test per transport.
+        for entry in os.scandir(self.root):
+            path = Path(entry.path) / "outbox" / name
+            if os.path.exists(path):
+                return _json(path)
+        return None
 
     def _binding(self, request: dict) -> dict:
         transport_id = _require_file_name(request["transport_id"], "transport_id")
@@ -520,6 +546,8 @@ def _mcp_result(value: Any) -> dict:
 
 
 def _mcp_server(binding: dict) -> int:
+    # Tool input schemas keep the node shapes preserved provider runs accepted; the
+    # exact answer shape is described in text and checked by self_check_response_errors.
     tools = [
         {"name": "submit_draft", "description": "Validate and submit one workspace-relative draft; internal checks and hashes are derived automatically.",
          "inputSchema": {"type": "object", "properties": {"draft_path": {"type": "string"}, "preview": {"type": "boolean"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["draft_path"]}},
@@ -527,8 +555,9 @@ def _mcp_server(binding: dict) -> int:
          "inputSchema": {"type": "object", "properties": {"request_id": {"type": "string"}, "kind": {"enum": sorted(REQUEST_KINDS)}, "payload": {"type": "object"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["request_id", "kind", "payload"]}},
         {"name": RECEIPT_TOOL, "description": "Read or wait for the central receipt using a caller-provided duration.",
          "inputSchema": {"type": "object", "properties": {"request_id": {"type": "string"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["request_id"]}},
-        {"name": SELF_CHECK_TOOL, "description": "Poll or answer a central self-check request.",
-         "inputSchema": {"type": "object", "properties": {"self_check_id": {"type": "string"}, "response": SELF_CHECK_RESPONSE_SCHEMA}, "required": ["self_check_id"]}}
+        {"name": SELF_CHECK_TOOL, "description": "Poll or answer a central self-check request. Omit response to poll. "
+            "An answer's response must match this JSON Schema: " + json.dumps(SELF_CHECK_RESPONSE_SCHEMA, sort_keys=True),
+         "inputSchema": {"type": "object", "properties": {"self_check_id": {"type": "string"}, "response": {"type": "object"}}, "required": ["self_check_id"]}}
     ]
     for line in sys.stdin:
         message = {}

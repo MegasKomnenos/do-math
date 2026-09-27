@@ -40,18 +40,21 @@ class RunnerTests(unittest.TestCase):
             self.assertEqual(len(result.failures), 1)
             self.assertFalse(result.wasSuccessful())
 
-    def test_isolation_label_is_inherited_and_a_method_can_run_in_process(self):
+    def test_isolation_label_is_inherited_and_a_method_label_overrides_its_class(self):
         @category('lean')
         class Base(unittest.TestCase):
             def test_compiler(self): pass
-            @category('in_process')
-            def test_parser(self): pass
+            @category('resource')
+            def test_job(self): pass
         class Child(Base): pass
         class Plain(unittest.TestCase):
             def test_rule(self): pass
+            @category('resource')
+            def test_process(self): pass
         self.assertEqual(isolation_for(Child('test_compiler')), 'lean')
-        self.assertIsNone(isolation_for(Child('test_parser')))
+        self.assertEqual(isolation_for(Child('test_job')), 'resource')
         self.assertIsNone(isolation_for(Plain('test_rule')))
+        self.assertEqual(isolation_for(Plain('test_process')), 'resource')
         with self.assertRaises(ValueError):
             category('unit')
 
@@ -71,8 +74,18 @@ class RunnerTests(unittest.TestCase):
         self.assertTrue(all(row.split('\t')[1].startswith('test_test_runner.RunnerTests.') for row in rows))
         self.assertTrue(all(row.split('\t')[0] == 'foundation' for row in rows))
         with redirect_stdout(io.StringIO()) as out, redirect_stderr(io.StringIO()):
-            run_tests.main(['--list', 'test_redesign_EVIDENCE'])
-        self.assertFalse(any('test_redesign_EVIDENCE_' in row for row in out.getvalue().splitlines()))
+            run_tests.main(['--list', 'test_knowledge'])
+        # test_knowledge_io and test_knowledge_storage share the name as a prefix.
+        rows = out.getvalue().splitlines()
+        self.assertTrue(rows)
+        self.assertTrue(all(row.split('\t')[1].split('.')[0] == 'test_knowledge' for row in rows))
+
+    def test_an_id_that_matches_no_test_refuses_the_whole_selection(self):
+        # A mistyped ID beside valid ones must not drop out and leave the rest to read as a pass.
+        with redirect_stdout(io.StringIO()) as out, redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(run_tests.main(['--list', 'test_test_runner', 'test_no_such_module']), 2)
+        self.assertEqual(out.getvalue(), '')
+        self.assertIn('test_no_such_module', err.getvalue())
 
     def test_failing_subtest_remains_a_failure_in_the_machine_report(self):
         class Specimen(unittest.TestCase):

@@ -5,15 +5,17 @@ this test does not claim to validate authority or process termination.
 """
 from copy import deepcopy
 from pathlib import Path
-from types import SimpleNamespace
 import sys
 import unittest
+from unittest.mock import create_autospec
+import time
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math import execution_profiles as profiles
-from do_math.scheduler import SchedulerMixin
 from do_math.session_slots import SessionSlots
-from test_host_resources import fixture
+from provider_fixtures import host_capacity_fixture
+from research_fixtures import bare_engine
+from do_math.parallel import ModelCalls
 
 
 class MachineSchedulingTests(unittest.TestCase):
@@ -21,25 +23,22 @@ class MachineSchedulingTests(unittest.TestCase):
         from do_math.record_schemas import RECORDS
         from do_math.repository import new_id
         from jsonschema import Draft202012Validator
-        scheduler = SimpleNamespace(instance={'config': {'plan_settle_seconds': 300}},
-            runtime={'queue': [{'role': 'task_contract_review'}]})
+        scheduler = bare_engine({'config': {'plan_settle_seconds': 300}}, {'queue': [{'role': 'task_contract_review'}]})
         action = {'id': new_id('AC'), 'role': 'research_plan'}
-        self.assertTrue(SchedulerMixin._plan_settle_waits(scheduler, action))
+        self.assertTrue(scheduler._plan_settle_waits(action))
         Draft202012Validator(RECORDS['queue']).validate(action)
         self.assertEqual(action['dispatch_wait']['since'], action['settle_started_at'])
 
     def test_operational_review_of_targetless_preparation_has_only_real_references(self):
-        from do_math.decision_engine import DecisionEngineMixin
         runtime = {'tasks': {}, 'executions': {'EX-preparation': {
             'id': 'EX-preparation', 'action': {'role': 'research_preparation'},
             'decision_basis': {'records': [{'id': 'KN-basis', 'sha256': 'a' * 64}]}}}}
-        engine = SimpleNamespace(instance={}, runtime=runtime)
-        refs = DecisionEngineMixin._decision_references(engine,
-            {'role': 'operational_review', 'target': 'EX-preparation'})
+        engine = bare_engine({}, runtime)
+        refs = engine._decision_references({'role': 'operational_review', 'target': 'EX-preparation'})
         self.assertEqual(refs, ['EX-preparation', 'KN-basis'])
 
     def test_blocked_machine_does_not_hide_a_smaller_ready_machine(self):
-        instance,selected,constraint=fixture()
+        instance,selected,constraint=host_capacity_fixture()
         big=profiles.with_host_resources(selected['formal_check'],constraint,
             {'jobs':1,'memory_bytes':384*1024**2,'cpu_rate_basis_points':6000})
         original=next(p for p in instance['execution_profiles'].values() if p['role']=='trust_check')
@@ -51,17 +50,18 @@ class MachineSchedulingTests(unittest.TestCase):
         held=selected['research_work']
         self.assertTrue(slots.acquire('EX-held',
             profile=held,execution={'id':'EX-held','role':'research_work','status':'queued'}))
-        scheduler=SimpleNamespace(instance=instance,runtime=runtime,
-            _action_lifecycle_gate=lambda action:None,
-            _revision_dispatch_waits=lambda action:[],
-            _selected_action_current=lambda action,**kwargs:True,
-            _evaluation_context=lambda:{},
-            _admissible=lambda action,profile:SchedulerMixin._admissible(scheduler,action,profile),
-            _execution_profile=lambda action:profiles.resolve_profile(instance['execution_profiles'],action['profile_ref']))
+        scheduler=bare_engine(instance,runtime)
+        scheduler._execution_profile=create_autospec(scheduler._execution_profile,
+            side_effect=lambda action:profiles.resolve_profile(instance['execution_profiles'],action['profile_ref']))
+        scheduler._action_lifecycle_gate=create_autospec(scheduler._action_lifecycle_gate,
+            side_effect=lambda action:scheduler._execution_profile(action))
+        scheduler._revision_dispatch_waits=create_autospec(scheduler._revision_dispatch_waits,return_value=[])
+        scheduler._selected_action_current=create_autospec(scheduler._selected_action_current,return_value=True)
+        scheduler._evaluation_context=create_autospec(scheduler._evaluation_context,return_value={})
         queue=[{'id':'AC-big','role':'formal_check','profile_ref':profiles.profile_ref(big)},
                {'id':'AC-small','role':'trust_check','profile_ref':profiles.profile_ref(small)}]
         before=deepcopy(runtime)
-        choose=lambda:next((a for a in queue if SchedulerMixin._dispatchable(scheduler,a)),None)
+        choose=lambda:next((a for a in queue if scheduler._dispatchable(a)),None)
         self.assertEqual(choose()['id'],'AC-small')
         self.assertEqual(runtime,before,'readiness must not reserve or create an execution')
         self.assertEqual(queue[0]['dispatch_wait']['kind'],'host_capacity')
@@ -73,3 +73,27 @@ class MachineSchedulingTests(unittest.TestCase):
 
 
 if __name__=='__main__': unittest.main()
+
+
+class ModelCallTests(unittest.TestCase):
+    def test_parallel_call_carries_a_distinct_execution_id(self):
+        events = []
+        class Runner:
+            def run(self, **arguments):
+                arguments["on_started"]({"pid": 7})
+                return {"status": "completed"}
+        def operation():
+            result = yield {"on_started": lambda observed: events.append(observed)}
+            events.append(result)
+        generator = operation(); arguments = next(generator)
+        calls = ModelCalls()
+        try:
+            calls.start_call(generator, Runner().run, arguments, execution_id="EX-1")
+            deadline = time.monotonic() + 10
+            while not calls.collect():
+                self.assertLess(time.monotonic(), deadline,
+                    "EX-1 did not complete; pending callbacks=" + str(calls.events.qsize()))
+                time.sleep(.01)
+        finally:
+            calls.close()
+        self.assertEqual(events, [{"pid": 7}, {"status": "completed"}])

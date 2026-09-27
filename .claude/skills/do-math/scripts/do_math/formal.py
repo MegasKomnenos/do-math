@@ -4,6 +4,7 @@ import hashlib, json, os, re, shutil, subprocess, sys, tempfile, time, traceback
 from pathlib import Path
 from .trust_validation import AXIOMS
 from .file_io import cached_sha256, is_sha256, json_digest
+from .repository import exact_content_hash
 from do_math.windows_job import WindowsJob, process_identity
 
 class VerificationStopped(RuntimeError):
@@ -15,13 +16,20 @@ def _check_stop(should_stop):
         raise VerificationStopped('verification stopped')
 
 
+# The checker's identity is the SHA-256 of the bytes this process runs, read once
+# from the module's own loader: a file path or a zip member of the same bytes is
+# the same checker. Inspection records it; approved identities are compared with it.
+_RUNNING_CHECKER_SHA256 = hashlib.sha256(__loader__.get_data(__file__)).hexdigest()
+
+
 def _git(command, should_stop=None):
-    # Own the process tree and accept cancellation, without a computation deadline.
-    with tempfile.TemporaryDirectory(prefix='do-math-git-') as directory:
-        code,out,err,stopped=_job_run(command,Path(directory),should_stop=should_stop,raw_output=True)
-    if stopped: raise VerificationStopped('project inspection stopped')
+    # A short local read of the trusted project, not untrusted code: no Job or worker.
+    # A stop request is honoured before and after it.
     _check_stop(should_stop)
-    return subprocess.CompletedProcess(command,code,out,err)
+    result = subprocess.run(command, stdin=subprocess.DEVNULL, capture_output=True,
+                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    _check_stop(should_stop)
+    return result
 
 _DEPENDENCY_EXTRACTOR = r'''
 namespace DoMathDependencyAudit
@@ -390,7 +398,7 @@ def inspect_toolchain(command, workspace, *, should_stop=None):
     result = {'executable': str(resolved), 'sha256': cached_sha256(resolved),
         'configured_command': command, 'version': stdout.strip(), 'version_exit': code,
         'project': _project_identity(command,should_stop,workspace=workspace),
-        'verifier_sha256': hashlib.sha256(__loader__.get_data(__file__)).hexdigest(), 'verifier_path':str(Path(__file__).resolve()),
+        'verifier_sha256': _RUNNING_CHECKER_SHA256, 'verifier_path':str(Path(__file__).resolve()),
         'executables': {str(Path(p).resolve()): cached_sha256(Path(p)) for p in command
                         if Path(p).is_file() and Path(p).suffix.lower() in {'.exe', '.dll'}}}
     errors = toolchain_errors(result)
@@ -409,7 +417,7 @@ def toolchain_identity_errors(toolchain, *, should_stop=None):
     errors = toolchain_errors(toolchain)
     if errors:
         return errors
-    if toolchain['verifier_path'] != str(Path(__file__).resolve()):
+    if toolchain['verifier_sha256'] != _RUNNING_CHECKER_SHA256:
         errors.append('approved checker is not the running checker')
     # Pairs, not a mapping: the executable may also appear among the command's
     # files, and each recorded hash must hold on its own.
@@ -531,8 +539,7 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
                         or not isinstance(evidence,dict) or not isinstance(evidence.get('type'),str)
                         or evidence.get('value') is not None and not isinstance(evidence['value'],str)):
                     raise ValueError('invalid dependency evidence')
-                dependency_hashes[name]=hashlib.sha256(json.dumps({'type':evidence['type'],'value':evidence.get('value')},
-                    sort_keys=True,separators=(',',':')).encode()).hexdigest()
+                dependency_hashes[name]=exact_content_hash({'type':evidence['type'],'value':evidence.get('value')})
                 del row
             except (KeyError,TypeError,ValueError,RecursionError):
                 return {**base,'status':'failed','reason':'malformed dependency evidence'}
@@ -568,7 +575,7 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
         if declaration not in axiom_rows: return {**base,'status':'failed','reason':'axiom output missing'}
     base['declaration_signatures']=signatures
     base['axioms']=axiom_rows
-    base['signature_hash']=hashlib.sha256(json.dumps(signatures,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+    base['signature_hash']=exact_content_hash(signatures)
     if forbidden_axioms(axiom_rows, allowed_axioms):
         return {**base,'status':'rejected','reason':'forbidden axiom'}
     if set(extracted)!=selected: return {**base,'status':'failed','reason':'dependency output missing'}
@@ -582,5 +589,5 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
         base['dependency_closure'][declaration]=dependencies
         base['declaration_evidence'][declaration]=row['evidence']
         base.setdefault('dependency_evidence',{})[declaration]={name:dependency_hashes[name] for name in dependencies}
-    base['dependency_hash']=hashlib.sha256(json.dumps(base['dependency_closure'],sort_keys=True,separators=(',',':')).encode()).hexdigest()
+    base['dependency_hash']=exact_content_hash(base['dependency_closure'])
     return {**base,'status':'verified','reason':None,'expression_encoding':'lean-expr-dag/1'}

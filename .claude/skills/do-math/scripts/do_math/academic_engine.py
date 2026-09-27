@@ -2,56 +2,14 @@
 from copy import deepcopy
 
 from . import academic, governance
-from .file_io import json_digest
+from .file_io import now
 from .repository import exact_content_hash, new_id
-
-
-def current_solution_basis(instance, runtime):
-    if instance.get("goal_status") != "mathematically_solved":
-        return None
-    group = instance.get("goal_assessment_basis")
-    judgments = [j for j in instance.get("goal_judgments", []) if j.get("basis") == group]
-    if not judgments or any(not j.get("current", True) for j in judgments):
-        return None
-    from . import knowledge
-    if any(not knowledge.validate_basis(j.get("record_basis", []), instance, runtime)["valid"] for j in judgments):
-        return None
-    ids = sorted({ref for j in judgments for ref in j.get("dependencies", []) if ref in instance["knowledge"]})
-    from .knowledge_records import usable_links, all_records
-    if not ids or any(not usable_links(instance, kid) for kid in ids):
-        return None
-    support = all_records(instance)
-    pending, visited, support_ids = list(ids), set(), set()
-    while pending:
-        kid = pending.pop()
-        if kid in visited:
-            continue
-        visited.add(kid)
-        record = instance["knowledge"][kid]
-        support_ids.add(record["kind_definition_id"])
-        pending.extend(record.get("dependencies", []))
-        for link in usable_links(instance, kid):
-            support_ids.update(link.values())
-    for ref in list(support_ids):
-        env = support.get(ref, {}).get("trust_environment_id")
-        if env:
-            support_ids.add(env)
-    records = [support[ref] for ref in sorted(visited | support_ids)]
-    records += [{"id": j["execution_id"], **j} for j in judgments]
-    charter = governance.governance_view(instance).get("charter")
-    goal_ref = (exact_content_hash({"content": {key: value for key, value in charter["content"].items()
-                                              if key != "academic_requirements"}, "document": charter.get("document")})
-                if charter else str(instance.get("goal_revision", 1)))
-    # Academic requirements have their own edition binding; changing them
-    # alone cannot retroactively change the mathematical solution evidence.
-    return academic.solution_basis(goal_ref + ":" + str(group), records)
 
 
 class AcademicEngineMixin:
     def _settle_goal_completion(self):
         """Close dispatch obligations with evidence, without claiming task success."""
         from . import activities
-        from .engine import now
         pending = {action['id']: {'action': deepcopy(action)} for action in self.runtime['queue']}
         for waiting in self.runtime.get('waiting_actions', {}).values():
             action = waiting['action']
@@ -91,10 +49,10 @@ class AcademicEngineMixin:
                 unresolved=activity['unresolved'], followups=activity['followups'], at=now())
 
     def _academic_evidence(self, ref):
-        return self.store.read_many([ref], self.head).get(ref)
+        return self.store.read_many([ref], self.head, missing="omit").get(ref)
 
     def _solution_basis(self):
-        return current_solution_basis(self.instance, self.runtime)
+        return academic.current_solution_basis(self.instance, self.runtime)
 
     def _academic_status(self):
         return academic.academic_status(self.instance, self.runtime, self._solution_basis(), resolve_evidence=self._academic_evidence)
@@ -125,15 +83,15 @@ class AcademicEngineMixin:
             tid = new_id("TK")
             refs = [r["id"] for r in basis["records"] if r["id"] in self.instance["knowledge"]]
             inputs = list(dict.fromkeys([*(row["id"] for row in basis["records"]), *requirement["required_inputs"]]))
-            from .execution_profiles import profile_ref, resolve_profile
+            from .execution_profiles import profile_ref, match_profile_ref
             from .task_contracts import validate_task_contract
             view = governance.governance_view(self.instance)
-            profiles = [resolve_profile(self.instance.get("execution_profiles", {}), ref)
+            profiles = [match_profile_ref(self.instance.get("execution_profiles", {}), ref)
                         for ref in self.instance.get("role_profile_refs", {}).get("research_work", [])]
             if any(p["role"] != "research_work" for p in profiles):
                 raise ValueError("academic work profile has a different role")
             obligations = academic.criterion_obligations(tid, requirement)
-            task = {"id": tid, "revision": 1, "feature_version": 5,
+            task = {"id": tid, "revision": 1,
                 "title": "Academic validation: " + requirement["id"], "question": requirement["scope"],
                 "scope": {"included": [requirement["scope"]], "excluded": []},
                 "expected": {"outputs": deepcopy(requirement["criteria"]),
@@ -212,7 +170,7 @@ class AcademicEngineMixin:
         result = academic.assess(task["academic_requirement_id"], task["solution_basis"], academic.current_requirements(self.instance),
                                  decision, evidence)
         result.update(execution_id=execution_id, task_id=task["id"], external_effect_receipts=receipts,
-                      task_assessment_sha256=json_digest(applied))
+                      task_assessment_sha256=exact_content_hash(applied))
         records = self.runtime.setdefault("academic_assessments", [])
         if result not in records: records.append(result)
 

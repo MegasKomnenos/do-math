@@ -1,167 +1,43 @@
-from copy import deepcopy
+"""Identity reviews in the engine: cycles, scope budgets, preparation failures, input overflow, impact reviews, reassessment and delegation."""
+import errno
 import hashlib
 import json
-from pathlib import Path
-import subprocess
 import sys
 import tempfile
+import threading
 import unittest
-from unittest.mock import create_autospec
+import uuid
+from copy import deepcopy
+from pathlib import Path
+from unittest.mock import create_autospec, patch
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.repository import exact_content_hash
+from do_math import (execution_profiles, governance, knowledge, knowledge_io, knowledge_records as kr,
+                     review_cycle, review_policy)
+from do_math.configuration import DEFAULT_CONFIG
+from do_math.engine import control, ResearchEngine
+from do_math.file_io import now
+from do_math.repository import canonical_json, exact_content_hash, new_id, ResearchRepository
 from do_math.review_cycle import record_turn
-from do_math.engine import ResearchEngine
-from do_math import knowledge_records as kr, knowledge_io, knowledge, governance
-from do_math.repository import ResearchRepository
-from research_fixtures import bare_engine, current_state
-
-
-def grant_replacement(engine, *, reuse='reusable'):
-    engine.instance.setdefault('governance_sources', {})['SOURCE-review'] = governance.preserve_source(
-        'SOURCE-review', 'Authorize record-based replacement of K1 review.', origin='user')
-    engine.instance, engine.runtime, _ = governance.apply_decision(engine.instance, engine.runtime,
-        {'kind': 'grant', 'decision_id': 'DEC-review', 'grant': {'id': 'GR-review', 'kind': 'local',
-         'roles': ['identity_review'], 'reuse': reuse, 'included_targets': ['K1'],
-         'purposes': ['record_replacement']}}, source_ref='SOURCE-review')
-
-
-class FakeEngine(ResearchEngine):
-    def __init__(self, root, rounds=2):
-        self._init_process_state()
-        source = 'theorem sample : 1 = 1 := rfl'
-        policy = {'id': 'fixture-review-policy-v5', 'version': 5, 'required_perspectives': [],
-                  'minimum_initial_slots': 2, 'judge_slots': ['judge-0', 'judge-1', 'judge-2'],
-                  'round_limit': rounds, 'activity_execution_limit': 24, 'overflow_disposition': 'unresolved'}
-        scope = {'assessment_id': 'fixture-scope', 'policy_id': policy['id'], 'policy_version': 5,
-                 'required_perspectives': [], 'initial_slots': [
-                     {'id': 'initial-0', 'perspective': 'formal', 'required_source_refs': ['proposal']},
-                     {'id': 'initial-1', 'perspective': 'semantic', 'required_source_refs': ['proposal']}],
-                 'selected_profile_ref': None, 'activity_execution_limit': 24, 'overflow_disposition': 'unresolved'}
-        self.instance = {'config': {'reviewers': 2, 'objection_round_limit': rounds,
-                                    'review_policy': policy, 'review_scope_assessment': scope},
-            'knowledge': {'K1': {'id': 'K1', 'statement': 'One equals one', 'explanation': 'Reflexivity',
-                'summary': 'A sample theorem', 'lean_code': source, 'declaration_names': ['sample'],
-                'dependencies': [], 'producer_execution': 'author', 'required_reviews': 2,
-                'status': 'candidate', 'reviews': [],
-                'formal': {'status': 'verified', 'source_sha256': hashlib.sha256(source.encode()).hexdigest(),
-                           'declarations': ['sample'], 'axioms': {'sample': []},
-                           'toolchain': {'sha256': 'exact-toolchain-hash', 'version': 'test'},
-                           'execution_id': 'formal-1', 'artifact_ref': 'artifacts/formal-1.json'}}}}
-        self.runtime = {'queue': [], 'executions': {}, 'questions': []}
-        legacy = self.instance.pop('knowledge')['K1']
-        self.instance = knowledge_io.ensure_ontology(self.instance)
-        from do_math.engine import DEFAULT_CONFIG
-        from do_math.execution_profiles import build_profiles, profile_ref
-        profiles = build_profiles(DEFAULT_CONFIG)
-        self.instance.update(execution_profiles=profiles['execution_profiles'],
-                             role_profile_refs=profiles['role_profile_refs'])
-        self.profile = profile_ref(next(p for p in profiles['execution_profiles'].values() if p['role'] == 'identity_review'))
-        self.research_profile = profile_ref(next(p for p in profiles['execution_profiles'].values() if p['role'] == 'supplemental_research'))
-        self.instance['review_policy'] = deepcopy(policy)
-        from research_fixtures import trust_environment, trust_fixture
-        trusted = trust_fixture(Path(root), ['fixture-review-lean'])
-        environment, binding = trust_environment(trusted, environment_id='TE-review', source_ref='fixture-review-trust')
-        legacy['formal']['toolchain'] = deepcopy(trusted['toolchain'])
-        self.instance.update(feature_version=5, active_trust_environment='TE-review',
-            trust_environments={'TE-review': environment})
-        self.runtime['trust_bindings'] = {'TE-review': binding}
-        definition = next(row for row in self.instance['kind_definitions'].values() if row['token'] == 'theorem')
-        candidate = {key: value for key, value in legacy.items() if key not in {'formal', 'status', 'reviews'}}
-        candidate.update(revision=1, kind='theorem', kind_definition_id=definition['id'])
-        self.instance, _ = kr.create_candidate(self.instance, candidate, source_ref='test-fixture', actor_ref='author')
-        proof = deepcopy(legacy['formal'])
-        proof.update(dependency_closure={'sample': []}, dependency_evidence={'sample': {}},
-                     declaration_evidence={'sample': {'type': 'fixture-type', 'value': 'fixture-proof'}})
-        self.instance = kr.record_formal_result(self.instance, 'K1', proof, 'TE-review', runtime=self.runtime)
-        self.head = 'snapshot-one'
-        self.store = None
-        self.root = Path(root)
-        self.sequence = 0
-        self._save = create_autospec(self._save)
-
-    def pending(self):
-        return next(a for a in self.runtime['queue'] if a['role'] == 'identity_review')
-
-    def assessment(self, kid='K1'):
-        cid = self.instance['knowledge'][kid]['review_cycle_id']
-        return self.instance['identity_assessments'][self.runtime['review_cycles'][cid]['assessment_id']]
-
-    def usable(self, kid='K1'):
-        return bool(kr.usable_links(self.instance, kid))
-
-    def revise(self, previous_id='K1', new_id='K2'):
-        proposal = kr.proposal_view(self.instance, previous_id)
-        candidate = {key: deepcopy(value) for key, value in proposal.items()
-                     if key not in {'formal', 'status', 'review_cycle_id', 'review_history', 'formal_result_id', 'exposition_id'}}
-        candidate.update(id=new_id, supersedes=previous_id, revision=proposal['revision'] + 1,
-                         explanation='Expanded proof by reflexivity', formal_result_ref=proposal['formal_result_id'])
-        self.instance, _ = kr.create_candidate(self.instance, candidate, source_ref='test-revision', actor_ref='author')
-        return new_id
-
-    def execute(self, changes=None, *, record_first=False):
-        action = self.pending()
-        self.sequence += 1
-        execution_id = f'ex-{self.sequence}'
-        workspace = self.root / execution_id / 'workspace'
-        context = self._prepare_review_context(action, workspace)['context']
-        cycle = self.runtime['review_cycles'][action['review_cycle_id']]
-        output = dict(proposal_digest=context['proposal_digest'], summary='Evidence-backed result',
-                      used_sources=['proposal:1'], questions=[])
-        stage = action['stage']
-        if stage == 'scope':
-            policy = cycle['review_policy']
-            output.update(scope_complete=True, scope_assessment={
-                'assessment_id': 'generated-scope', 'policy_id': policy['id'], 'policy_version': policy['version'],
-                'required_perspectives': list(policy['required_perspectives']),
-                'initial_slots': [{'id': 'initial-0', 'perspective': 'formal', 'required_source_refs': ['proposal']},
-                                  {'id': 'initial-1', 'perspective': 'semantic', 'required_source_refs': ['proposal']}],
-                'selected_profile_ref': None, 'activity_execution_limit': policy['activity_execution_limit'],
-                'overflow_disposition': policy['overflow_disposition']})
-        elif stage == 'initial':
-            output.update(decision='match', scope_complete=True, findings=[])
-        elif stage == 'organize':
-            output['issues'] = [dict(id=f'issue-{len(cycle["issues"])+i}', finding_refs=[source['ref']],
-                answer_role_slot_id=source['ref']['slot'] if source['ref']['stage'] == 'initial' else 'initial-0')
-                for i, source in enumerate(context['pending_findings'])]
-        elif stage == 'judge':
-            output.update(decision='match', scope_complete=True, new_findings=[],
-                issue_verdicts=[dict(issue_id=i, decision='rejected', reason='Original source refutes the objection', evidence=['proposal:1']) for i in cycle['issues']])
-        elif stage == 'answer':
-            output.update(new_findings=[], answers=[dict(issue_id=i, disposition='withdraw',
-                statement='I misread the domain', evidence=['proposal:1']) for i in context['answer_requests']])
-        output.update(changes or {})
-        self.runtime['executions'][execution_id] = dict(id=execution_id, role='identity_review', action=deepcopy(action),
-                                                      status='running',
-                                                      input_snapshot=self.head,
-                                                      input_manifest={'prompt': {'sha256': 'actual-prompt-hash'}},
-                                                      actor_kind='ai', owner_activity_id=action.get('owner_activity_id') or 'AY-fixture',
-                                                      execution_profile_ref=deepcopy(getattr(self, 'profile', None)))
-        admitted = self._admit_review_execution(action, self.runtime['executions'][execution_id])
-        if admitted['disposition'] != 'admitted': raise ValueError(admitted['disposition'])
-        if record_first:
-            self._record_review_input(action, execution_id)
-            self._record_review_input(action, execution_id)
-        self.runtime['queue'].remove(action)
-        self._apply_identity_review(action, output, execution_id)
-        self.runtime['executions'][execution_id]['status'] = 'ended'
-        self.runtime['executions'][execution_id]['outcome'] = 'output_accepted'
-        self.runtime['executions'][execution_id]['output'] = deepcopy(output)
-        return context, output, execution_id
+from engine_fixtures import formal_check_engine, formal_verification, routing_engine
+from purpose_fixtures import ActivatedPurposeHarness, theorem
+from research_fixtures import bare_engine, current_state, git_init, scope_assessment, start_scoped_review
+from review_fixtures import grant_replacement, ReviewFakeEngine
+from state_fixtures import owner_calls, start_active_copy, start_model_call
 
 
 class ReviewEngineTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.engine = FakeEngine(self.temp.name)
+        self.engine = ReviewFakeEngine(self.temp.name)
 
     def test_adopted_instance_policy_is_the_only_opening_and_publication_policy(self):
         engine = self.engine
-        approved = deepcopy(engine.instance['config']['review_policy'])
+        approved = deepcopy(engine.instance['review_policy'])
         approved.update(id='ADOPTED', minimum_initial_slots=3,
                         required_perspectives=['formal', 'semantic', 'scope'], activity_execution_limit=18)
         engine.instance['review_policy'] = approved
-        engine.instance['config'].pop('review_scope_assessment')
         cid = engine._start_identity_review('K1')
         self.assertEqual(engine.runtime['review_cycles'][cid]['review_policy'], approved)
         context = engine._prepare_review_context(engine.pending(), engine.root / 'scope')['context']
@@ -183,8 +59,7 @@ class ReviewEngineTests(unittest.TestCase):
         from do_math.review_policy import minimum_scope_executions
         limit = minimum_scope_executions(2, 2)
         engine.instance['review_policy']['activity_execution_limit'] = limit
-        engine.instance['config']['review_scope_assessment']['activity_execution_limit'] = limit
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1', scope={**engine.scope, 'activity_execution_limit': limit})
         action = engine.pending()
         attempts = [f'attempt-{number}' for number in range(1, limit + 1)]
         for eid in attempts:
@@ -201,8 +76,7 @@ class ReviewEngineTests(unittest.TestCase):
     def test_optional_research_cannot_consume_mandatory_followup_reservations(self):
         engine = self.engine
         engine.instance['review_policy']['activity_execution_limit'] = 12
-        engine.instance['config']['review_scope_assessment']['activity_execution_limit'] = 12
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1', scope={**engine.scope, 'activity_execution_limit': 12})
         action = {**engine.pending(), 'role': 'supplemental_research', 'stage': 'investigating', 'research_request_id': 'R'}
         denied = engine._admit_review_execution(action, {'id': 'optional', 'actor_kind': 'ai', 'owner_activity_id': 'AY'})
         self.assertEqual(denied['disposition'], 'review_followup_reserved')
@@ -212,7 +86,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_admission_cannot_reseal_changed_policy_or_scope(self):
         engine = self.engine
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1')
         cycle = engine.runtime['review_cycles'][cid]
         cycle['activity_execution_limit'] += 1
         with self.assertRaisesRegex(ValueError, 'review inputs changed'):
@@ -221,7 +95,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_actual_prompt_and_public_provider_events_restore_only_to_their_slot(self):
         engine = self.engine
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1')
         action = deepcopy(engine.pending())
         engine.runtime['executions']['PUBLIC'] = {'id': 'PUBLIC', 'role': 'identity_review', 'action': action}
         prompt = 'Exact rendered input including the provider boundary.'
@@ -250,7 +124,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_observed_public_events_reject_out_of_order_append_but_allow_exact_replay(self):
         engine = self.engine
-        engine._start_identity_review('K1')
+        engine.start('K1')
         engine.runtime['executions']['ORDER'] = {'id': 'ORDER', 'action': deepcopy(engine.pending())}
         event = {'type': 'public_message', 'message': {'role': 'assistant', 'content': 'later message'}}
         engine._record_review_observation('ORDER', event, artifact_ref='events.jsonl', event_index=3)
@@ -262,7 +136,7 @@ class ReviewEngineTests(unittest.TestCase):
         from do_math.repository import canonical_json
         from do_math.review_cycle import validate_transcript
         engine = self.engine
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1')
         action = deepcopy(engine.pending())
         engine.runtime['executions']['NUMBERS'] = {'id': 'NUMBERS', 'action': action}
         events = []
@@ -301,7 +175,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_restore_diagnostics_keep_exact_coordinate_hashes_and_verified_prefix(self):
         engine = self.engine
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1')
         action = engine.pending()
         cycle = record_turn(engine.runtime['review_cycles'][cid], action['slot'], [
             {'role': 'assistant', 'content': 'verified first'}, {'role': 'assistant', 'content': 'original second'}])
@@ -323,7 +197,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_tampered_materialized_source_records_the_exact_file_hashes(self):
         engine = self.engine
-        cid = engine._start_identity_review('K1'); action = engine.pending()
+        cid = engine.start('K1'); action = engine.pending()
         engine.runtime['review_cycles'][cid] = record_turn(engine.runtime['review_cycles'][cid], action['slot'],
             [{'role': 'tool', 'content': 'exact original'}])
         workspace = engine.root / 'source'
@@ -339,7 +213,7 @@ class ReviewEngineTests(unittest.TestCase):
         import errno
         from unittest.mock import patch
         engine = self.engine
-        engine._start_identity_review('K1')
+        engine.start('K1')
         with patch.object(engine, '_build_review_context', side_effect=OSError(errno.EAGAIN, 'sharing temporarily unavailable', 'source.json')):
             outcome = engine._prepare_review_context(engine.pending(), engine.root / 'temporary')
         event = outcome['recovery']['recovery_event']
@@ -352,7 +226,7 @@ class ReviewEngineTests(unittest.TestCase):
         from do_math import activities
         engine = self.engine
         grant_replacement(engine)
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1')
         action = deepcopy(engine.pending())
         action.update(id='AC-held', owner_activity_id='AY-held')
         engine._prepare_review_context(action, engine.root / 'initial')
@@ -373,7 +247,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_restored_exact_bytes_release_the_held_slot_without_a_replacement(self):
         engine = self.engine
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1')
         action = deepcopy(engine.pending()); action['id'] = 'AC-held'
         good = record_turn(engine.runtime['review_cycles'][cid], action['slot'], [{'role': 'assistant', 'content': 'original'}])
         engine.runtime['review_cycles'][cid] = deepcopy(good)
@@ -399,7 +273,6 @@ class ReviewEngineTests(unittest.TestCase):
         result['declaration_evidence']['sample']['value'] = 'staged verified proof'
         transition = knowledge.record_transition_result(engine.instance, transition, result)
         engine.runtime['trust_transitions'] = {transition['id']: transition}
-        engine.instance['config'].pop('review_scope_assessment')
         return transition['id']
 
     def test_staged_candidate_uses_the_same_scope_cycle_without_publication(self):
@@ -471,7 +344,7 @@ class ReviewEngineTests(unittest.TestCase):
             self.assertEqual(engine.instance, before)
 
         stale_instance = deepcopy(engine.instance)
-        stale_instance['review_policy']['version'] += 1
+        stale_instance['review_policy']['round_limit'] += 1
         stale_before = deepcopy(stale_instance)
         candidate = deepcopy(engine.runtime['trust_transitions'][transition_id])
         candidate['results']['K1']['identity_review'] = receipt
@@ -502,7 +375,6 @@ class ReviewEngineTests(unittest.TestCase):
         transition = knowledge.record_transition_result(engine.instance, transition, result)
         transition_id = transition['id']
         engine.runtime['trust_transitions'] = {transition_id: transition}
-        engine.instance['config'].pop('review_scope_assessment')
         before = deepcopy(engine.instance)
         cid = engine._start_staged_identity_review(transition_id, 'K1')
         engine.execute(); engine.execute(); engine.execute()
@@ -513,7 +385,7 @@ class ReviewEngineTests(unittest.TestCase):
 
         repository_path = Path(self.temp.name) / 'round-trip-repository'
         repository_path.mkdir()
-        subprocess.run(['git', '-C', str(repository_path), 'init', '-q'], check=True)
+        git_init(repository_path)
         instance_id = 'RI-00000000000000000000000000'
         repository = ResearchRepository(repository_path, instance_id)
         # Every stored state passes the current lifecycle gate.
@@ -543,18 +415,24 @@ class ReviewEngineTests(unittest.TestCase):
             for binding in cycle.get('input_bindings', {}).values():
                 binding['input_sha256'] = 'a' * 64
         persisted_before, persisted_after = deepcopy(before), deepcopy(activated)
-        from do_math.engine import DEFAULT_CONFIG
+        from do_math.configuration import DEFAULT_CONFIG
         from do_math.execution_profiles import build_profiles
         capacity_constraints = build_profiles(DEFAULT_CONFIG)['capacity_constraints']
         for state in (persisted_before, persisted_after):
-            state['config'].pop('objection_round_limit', None)
-            state['config'].pop('review_policy', None)
-            state['knowledge']['K1'].pop('required_reviews', None)
             state['capacity_constraints'] = deepcopy(capacity_constraints)
             state.pop('role_profile_refs', None)
             state['lifecycle'] = deepcopy(lifecycle_instance['lifecycle'])
         first = repository.initialize(persisted_before, persisted_runtime_before)
-        second = repository.save_with_state(first, persisted_after, persisted_runtime_after)[0]
+        from do_math import repository as repository_module
+        def transition_hashes(save):
+            with patch.object(repository_module, 'exact_content_hash', wraps=repository_module.exact_content_hash) as hashes:
+                head = save()
+            return head, [call for call in hashes.call_args_list if isinstance(call.args[0], dict)
+                          and {'transition_id', 'from_environment'} <= set(call.args[0])]
+        # A staged review new to the parent binds its transition by hash.
+        second, rehashed = transition_hashes(
+            lambda: repository.save_with_state(first, persisted_after, persisted_runtime_after)[0])
+        self.assertTrue(rehashed)
         old_loaded = ResearchRepository(repository_path, instance_id).load(first)[1]
         new_loaded = ResearchRepository(repository_path, instance_id).load(second)[1]
 
@@ -610,7 +488,10 @@ class ReviewEngineTests(unittest.TestCase):
         self.assertFalse(kr.assessment_current(twice_activated, assessment['id']))
         self.assertTrue(kr.usable_links(twice_activated, 'K1'))
 
-        third = repository.save_with_state(second, twice_activated, persisted_runtime_after)[0]
+        # The finished staged review and its transition equal the parent's: the hash is not recomputed.
+        third, rehashed = transition_hashes(
+            lambda: repository.save_with_state(second, twice_activated, persisted_runtime_after)[0])
+        self.assertEqual(rehashed, [])
         twice_loaded = ResearchRepository(repository_path, instance_id).load(third)[1]
         self.assertEqual(twice_loaded['formal_results'][current['formal_result_id']],
                          first_transition_records['formal'])
@@ -630,7 +511,7 @@ class ReviewEngineTests(unittest.TestCase):
     def test_split_proposal_binds_real_formal_exposition_and_current_basis(self):
         engine = self.engine
         before = deepcopy(engine.instance['knowledge']['K1'])
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1')
         cycle = engine.runtime['review_cycles'][cid]
         self.assertEqual(cycle['proposal']['lean_code'], kr.proposal_view(engine.instance, 'K1')['lean_code'])
         self.assertEqual(cycle['identity_basis'], kr.identity_basis(engine.instance, 'K1'))
@@ -642,7 +523,7 @@ class ReviewEngineTests(unittest.TestCase):
     def test_corrupt_slot_can_be_replaced_from_verified_records_under_real_user_grant(self):
         engine = self.engine
         grant_replacement(engine)
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1')
         action = deepcopy(engine.pending())
         cycle = record_turn(engine.runtime['review_cycles'][cid], action['slot'], [
             {'role': 'user', 'content': 'preserved visible conversation', 'message_id': 'good'},
@@ -666,7 +547,7 @@ class ReviewEngineTests(unittest.TestCase):
     def test_replacement_rejects_forged_grant_source_and_revocation_before_input(self):
         engine = self.engine
         grant_replacement(engine)
-        engine._start_identity_review('K1')
+        engine.start('K1')
         action = deepcopy(engine.pending())
         engine._record_review_recovery(action, ValueError('permanent_loss'), retryable=False)
         source = engine.instance['governance_sources']['SOURCE-review']['text']
@@ -683,7 +564,7 @@ class ReviewEngineTests(unittest.TestCase):
     def test_approved_replacement_omits_malformed_manifest_without_rethrowing(self):
         engine = self.engine
         grant_replacement(engine)
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1')
         action = deepcopy(engine.pending())
         cycle = record_turn(engine.runtime['review_cycles'][cid], action['slot'], [
             {'role': 'user', 'content': 'UNVERIFIABLE', 'message_id': 'lost'}])
@@ -705,7 +586,7 @@ class ReviewEngineTests(unittest.TestCase):
         from do_math import delegations
         engine = self.engine
         grant_replacement(engine)
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1')
         action = deepcopy(engine.pending())
         engine._record_review_recovery(action, ValueError('permanent_loss'), retryable=False)
         engine.instance['decisions']['ORIGINAL'] = {'id': 'ORIGINAL', 'actor': 'user',
@@ -742,7 +623,7 @@ class ReviewEngineTests(unittest.TestCase):
     def test_replacement_unresolved_question_keeps_organizer_finding_coordinates(self):
         engine = self.engine
         grant_replacement(engine)
-        engine._start_identity_review('K1')
+        engine.start('K1')
         action = deepcopy(engine.pending())
         engine._record_review_recovery(action, ValueError('permanent_loss'), retryable=False)
         engine._authorize_review_replacement(action, grant_id='GR-review')
@@ -754,7 +635,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_actual_profile_and_restored_input_remain_bound_to_the_logical_slot(self):
         engine = self.engine
-        engine._start_identity_review('K1')
+        engine.start('K1')
         engine.profile = {'id': 'EP-review', 'revision': 1, 'sha256': 'a' * 64}
         engine.execute()
         engine.execute()
@@ -763,7 +644,7 @@ class ReviewEngineTests(unittest.TestCase):
         self.assertEqual(cycle['slot_profiles']['initial-0'], engine.profile)
         self.assertEqual(cycle['input_bindings']['ex-1']['profile_ref'], engine.profile)
         kid = engine.revise()
-        next_id = engine._start_identity_review(kid, previous_cycle_id=cid)
+        next_id = engine.start(kid, previous_cycle_id=cid)
         context, _, eid = engine.execute()
         bound = engine.runtime['review_cycles'][next_id]['input_bindings'][eid]
         self.assertEqual(bound['restored_messages'], context['self_messages'])
@@ -774,7 +655,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_runtime_trust_barrier_leaves_final_slot_pending_for_retry(self):
         engine = self.engine
-        cid = engine._start_identity_review('K1')
+        cid = engine.start('K1')
         engine.execute()
         before = deepcopy(engine.runtime['review_cycles'][cid])
         engine.runtime['trust_transitions'] = {'TR': {'status': 'ready'}}
@@ -787,7 +668,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_initial_match_activates_only_after_all_slots(self):
         engine = self.engine
-        cycle_id = engine._start_identity_review('K1')
+        cycle_id = engine.start('K1')
         self.assertFalse(engine.usable())
         self.assertEqual(len(engine.runtime['queue']), 2)
         self.assertEqual(engine._start_identity_review('K1'), cycle_id)
@@ -808,7 +689,6 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_v5_scope_execution_selects_initial_slots_before_the_initial_phase(self):
         engine = self.engine
-        engine.instance['config'].pop('review_scope_assessment')
         cycle_id = engine._start_identity_review('K1')
         self.assertEqual(engine.pending()['stage'], 'scope')
         engine.execute()
@@ -820,12 +700,11 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_scope_admission_propagates_actual_activity_and_selected_profile_to_initial_actions(self):
         engine = self.engine
-        engine.instance['config'].pop('review_scope_assessment')
         cid = engine._start_identity_review('K1')
         engine.pending()['owner_activity_id'] = 'AY-actual'
         selected = {'id': 'EP-fixed', 'revision': 2, 'sha256': 'b' * 64}
         policy = engine.runtime['review_cycles'][cid]['review_policy']
-        scope = {'assessment_id': 'scope-picked', 'policy_id': policy['id'], 'policy_version': 5,
+        scope = {'assessment_id': 'scope-picked', 'policy_id': policy['id'],
             'required_perspectives': [], 'initial_slots': [
                 {'id': 'initial-0', 'perspective': 'formal', 'required_source_refs': ['proposal']},
                 {'id': 'initial-1', 'perspective': 'semantic', 'required_source_refs': ['proposal']}],
@@ -839,7 +718,6 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_scope_to_answer_and_judgment_publishes_the_same_links_consumed_by_goal_audit(self):
         engine = self.engine
-        engine.instance['config'].pop('review_scope_assessment')
         cid = engine._start_identity_review('K1')
         engine.execute()  # actual scope consumer, followed by a disputed initial batch
         engine.execute({'decision': 'mismatch', 'findings': [
@@ -859,7 +737,7 @@ class ReviewEngineTests(unittest.TestCase):
         audit.instance['goal_judgments'] = []
         audit.runtime['tasks'] = {}
         from do_math import governance as gov
-        from test_redesign_GOVERNANCE import charter
+        from research_fixtures import charter
         record = charter('CH-goal-fixture', 'Prove the fixture')
         source = gov.preserve_source('US-goal-fixture', 'User approves the fixture goal', origin='user')
         audit.instance = gov.initialize_governance(audit.instance, source,
@@ -887,7 +765,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def open_dispute(self):
         engine = self.engine
-        cycle_id = engine._start_identity_review('K1')
+        cycle_id = engine.start('K1')
         engine.execute(dict(decision='mismatch', findings=[dict(id='f', statement='The domain is wrong', evidence=['proposal:1'])]))
         engine.execute()
         self.assertEqual(engine.pending()['stage'], 'organize')
@@ -921,7 +799,7 @@ class ReviewEngineTests(unittest.TestCase):
         self.assertIn('issue-0', plan['identity_review']['issues'])
         self.assertTrue(plan['identity_review']['actual_scope'])
         self.assertFalse(plan['identity_review']['effective'])
-        self.engine = FakeEngine(self.temp.name, rounds=1)
+        self.engine = ReviewFakeEngine(self.temp.name, rounds=1)
         self.open_dispute()
         for _ in range(3):
             self.engine.execute(dict(decision='unresolved', issue_verdicts=[dict(issue_id='issue-0', decision='unresolved', reason='Source is ambiguous', evidence=[])]))
@@ -931,13 +809,13 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_new_revision_restarts_all_slots_and_retains_own_conversation(self):
         engine = self.engine
-        first_id = engine._start_identity_review('K1')
+        first_id = engine.start('K1')
         engine.execute()
         engine.execute()
         first = deepcopy(engine.runtime['review_cycles'][first_id])
         previous_assessment = deepcopy(engine.assessment())
         kid = engine.revise()
-        second_id = engine._start_identity_review(kid, previous_cycle_id=first_id)
+        second_id = engine.start(kid, previous_cycle_id=first_id)
         second = engine.runtime['review_cycles'][second_id]
         self.assertNotEqual(second['revision'], first['revision'])
         self.assertEqual(second['reviewer_slots'], first['reviewer_slots'])
@@ -953,7 +831,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_source_recovery_has_exact_bytes_hash_and_relative_path(self):
         engine = self.engine
-        cycle_id = engine._start_identity_review('K1')
+        cycle_id = engine.start('K1')
         cycle = engine.runtime['review_cycles'][cycle_id]
         source = dict(role='tool', content='Original source at line 12: quantifier', call='read',
                       arguments={'path': 'original.txt'}, message_id='source-1')
@@ -975,8 +853,8 @@ class ReviewEngineTests(unittest.TestCase):
     def test_final_match_does_not_override_suspension_or_formal_change(self):
         for failure in ('suspended', 'source_hash', 'environment', 'trust_transition', 'policy'):
             with self.subTest(failure=failure):
-                engine = FakeEngine(self.temp.name)
-                engine._start_identity_review('K1')
+                engine = ReviewFakeEngine(self.temp.name)
+                engine.start('K1')
                 engine.execute()
                 formal = engine.instance['formal_results'][engine.instance['knowledge']['K1']['formal_result_id']]
                 if failure == 'suspended': formal['formal_use'] = 'suspended'
@@ -1007,7 +885,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_fresh_exact_formal_check_preserves_eligibility(self):
         engine = self.engine
-        engine._start_identity_review('K1')
+        engine.start('K1')
         engine.execute()
         formal = engine.instance['formal_results'][engine.instance['knowledge']['K1']['formal_result_id']]
         verification = deepcopy(formal['verification'])
@@ -1018,7 +896,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_environment_transition_during_review_invalidates_old_environment_use(self):
         engine = self.engine
-        engine._start_identity_review('K1')
+        engine.start('K1')
         engine.execute()
         engine.instance['active_trust_environment'] = 'TE-new'
         engine.instance['trust_environments']['TE-review']['status'] = 'superseded'
@@ -1043,7 +921,7 @@ class ReviewEngineTests(unittest.TestCase):
 
     def test_mutated_proposal_and_old_action_are_rejected(self):
         engine = self.engine
-        cycle_id = engine._start_identity_review('K1')
+        cycle_id = engine.start('K1')
         old_action = deepcopy(engine.pending())
         formal = engine.instance['formal_results'][engine.instance['knowledge']['K1']['formal_result_id']]
         original = formal['lean_code']
@@ -1054,9 +932,462 @@ class ReviewEngineTests(unittest.TestCase):
         engine.execute()
         engine.execute()
         kid = engine.revise()
-        engine._start_identity_review(kid, previous_cycle_id=cycle_id)
+        engine.start(kid, previous_cycle_id=cycle_id)
         with self.assertRaisesRegex(ValueError, 'not pending'):
             engine._review_schema(old_action)
+
+
+class ReleasedInsightTests(unittest.TestCase):
+    def test_released_incidental_insights_plan_only_preserved_items(self):
+        for valid in (True, False):
+            engine = routing_engine()
+            engine.instance = knowledge_io.ensure_ontology(engine.instance)
+            engine._apply_queue_plan = create_autospec(engine._apply_queue_plan)
+            engine._apply_academic_resolutions = create_autospec(engine._apply_academic_resolutions)
+            engine.runtime['executions'] = {'EX-old': {'id': 'EX-old', 'status': 'ended'},
+                'EX-current': {'id': 'EX-current', 'status': 'ended', 'extensions': {}}}
+            engine.runtime['review_cycles'] = {'RC': {'status': 'completed'}}
+            engine.runtime['private_insights'] = {'RC': [{'source_execution': 'EX-old',
+                'kind': 'question' if valid else 'unregistered', 'title': 'Question ' + str(i),
+                'statement': 'What remains?', 'summary': 'A retained question', 'evidence_ids': []} for i in range(3)]}
+            engine._apply_extensions({'role': 'identity_review', 'review_cycle_id': 'RC'}, 'EX-current')
+            plans = [a for a in engine.runtime['queue'] if a['role'] == 'research_plan']
+            self.assertEqual(len(plans), int(valid))
+            if valid:
+                self.assertEqual(set(plans[0]['evidence_refs']), set(engine.instance['knowledge']))
+                self.assertEqual(len(plans[0]['evidence_refs']), 3)
+            else:
+                self.assertEqual(engine.instance['knowledge'], {})
+
+
+class ReviewPreparationFailureTests(ActivatedPurposeHarness):
+    def test_failed_review_slot_keeps_its_live_sibling_running(self):
+        engine, runner = self.make_active()
+        engine.runtime['queue'] = []
+        engine._knowledge_io_control({'action': 'knowledge', 'id': new_id('UC'),
+            'config': {'operation': 'import', 'candidate': theorem()}})
+        formal = next(a for a in engine.runtime['queue'] if a['role'] == 'formal_check')
+        engine._save()
+        with owner_calls(engine):
+            engine._formal(formal)
+        engine._start_identity_review(formal['target'])
+        scope = next(a for a in engine.runtime['queue'] if a['role'] == 'identity_review')
+        with owner_calls(engine):
+            start_model_call(engine, scope)
+        engine.runtime['queue'] = [a for a in engine.runtime['queue'] if a['role'] == 'identity_review']
+        self.assertEqual({a['slot'] for a in engine.runtime['queue']}, {'initial-0', 'initial-1'})
+        release = threading.Event()
+        answer = runner.answer
+        def wait_for_sibling(role, context, workspace):
+            if role == 'identity_review' and context['action']['slot'] == 'initial-0':
+                self.assertTrue(release.wait(60), 'Sibling preparation never reached its restoration failure')
+            return answer(role, context, workspace)
+        runner.answer = wait_for_sibling
+        prepare = engine._prepare_review_context
+        mkdir = Path.mkdir
+        observed = []
+        def busy(path, *args, **kwargs):
+            if 'review-sources' in path.parts:
+                raise OSError(errno.EBUSY, 'Only this review slot cannot materialize its input')
+            return mkdir(path, *args, **kwargs)
+        def prepare_slot(action, workspace, **kwargs):
+            if action.get('slot') != 'initial-1':
+                return prepare(action, workspace, **kwargs)
+            observed.append(any(e.get('action', {}).get('slot') == 'initial-0' and e['status'] != 'ended'
+                                for e in engine.runtime['executions'].values()))
+            try:
+                with patch.object(Path, 'mkdir', busy):
+                    return prepare(action, workspace, **kwargs)
+            finally:
+                release.set()
+        with patch.object(engine, '_prepare_review_context', side_effect=prepare_slot):
+            engine._save()
+            engine.run(max_steps=2)
+        self.assertEqual(observed, [True])
+        first = next(e for e in engine.runtime['executions'].values() if e.get('action', {}).get('slot') == 'initial-0')
+        self.assertEqual(first['outcome'], 'output_accepted', first.get('error'))
+        held = next(w for w in engine.runtime['waiting_actions'].values() if w['action'].get('slot') == 'initial-1')
+        self.assertEqual(held['kind'], 'review_input_restoration')
+
+    def test_review_materialization_failure_ends_preparation_and_saves_recovery(self):
+        engine, _ = self.make_active()
+        engine.runtime['queue'] = []
+        engine._knowledge_io_control({'action': 'knowledge', 'id': new_id('UC'),
+            'config': {'operation': 'import', 'candidate': theorem()}})
+        formal = next(a for a in engine.runtime['queue'] if a['role'] == 'formal_check')
+        engine._save()
+        with owner_calls(engine):
+            engine._formal(formal)
+        kid = formal['target']
+        engine._start_identity_review(kid)
+        action = next(a for a in engine.runtime['queue'] if a['role'] == 'identity_review')
+        original = Path.mkdir
+        def unavailable(path, *args, **kwargs):
+            if 'review-sources' in path.parts:
+                raise OSError(errno.EBUSY, 'Regression source materialization busy')
+            return original(path, *args, **kwargs)
+        with patch.object(Path, 'mkdir', unavailable), owner_calls(engine):
+            start_model_call(engine, action)
+        attempts = [e for e in engine.runtime['executions'].values() if e.get('action', {}).get('id') == action['id']]
+        self.assertEqual(len(attempts), 1)
+        self.assertEqual(attempts[0]['status'], 'ended')
+        wait = engine.runtime['waiting_actions'][action['id']]
+        self.assertEqual(wait['kind'], 'review_input_restoration')
+        self.assertEqual(wait['next_owner'], 'review_recovery')
+        _, _, saved = engine.store.load()
+        self.assertEqual(saved['waiting_actions'][action['id']], wait)
+        outcome = engine._retry_review_restoration(wait['action'], self.root / 'restored', at=now())
+        self.assertEqual(outcome['disposition'], 'review_resumed')
+        self.assertNotIn(action['id'], engine.runtime['waiting_actions'])
+
+
+class ReviewScopeBudgetTests(unittest.TestCase):
+    def test_exhaustion_drains_only_owned_attempts_before_publishing_followup(self):
+        from do_math import execution_lifecycle
+        engine, _ = formal_check_engine(self)
+        engine.knowledge('K2')
+        policy = engine._adopted_review_policy()
+        limit = review_policy.minimum_scope_executions(2, policy['round_limit'])
+        policy['activity_execution_limit'] = limit
+        engine._adopted_review_policy = create_autospec(engine._adopted_review_policy, side_effect=lambda: deepcopy(policy))
+        cid = start_scoped_review(engine, 'K2', scope_assessment(policy, ['one', 'two']))
+        action = next(a for a in engine.runtime['queue'] if a.get('review_cycle_id') == cid)
+        stamp = engine.current_time.isoformat()
+        for number in range(limit):
+            execution = engine._register_execution(action,
+                {'id': f'EX-attempt-{number}', 'role': 'identity_review', 'status': 'queued'})
+            if number < limit-1:
+                execution_lifecycle.end_preparation(execution, at=stamp, stage='context', reason='fixture interrupted attempt', cancelled=True)
+        last = execution['id']
+        execution_lifecycle.transition_execution(execution, 'starting', at=stamp)
+        execution_lifecycle.transition_execution(execution, 'running', at=stamp)
+        unrelated = engine._register_execution({'id': 'AC-unrelated', 'role': 'maintenance'},
+            {'id':'EX-unrelated','role':'maintenance','status':'running'})
+        self.assertIsNone(engine._register_execution(action, {'id':'EX-denied','role':'identity_review','status':'queued'}))
+        cycle = engine.runtime['review_cycles'][cid]
+        self.assertEqual(review_cycle.resource_disposition(cycle)['state'], 'draining')
+        self.assertEqual(engine.runtime['executions'][last]['stop_requested'], 'review_resource_disposition')
+        self.assertNotIn('stop_requested', unrelated)
+        self.assertFalse(any(a['role']=='research_plan' for a in engine.runtime['queue']))
+        execution_lifecycle.transition_execution(execution, 'stopping', at=stamp, stop_phase='terminating')
+        execution_lifecycle.transition_execution(execution, 'ended', at=stamp, outcome='execution_incomplete', disposition='fixture return')
+        engine._settle_activity(last)
+        self.assertEqual(cycle['status'], 'unresolved')
+        self.assertEqual(engine.runtime['activities'][cycle['owner_activity_id']]['status'], 'finished')
+        self.assertEqual(unrelated['status'], 'running')
+        self.assertEqual(sum(a['role']=='research_plan' for a in engine.runtime['queue']), 1)
+        self.assertEqual(review_cycle.validate_sealed_review(cycle, engine.runtime)['decision'], 'unresolved')
+
+
+    def test_floor_counts_scope_and_mandatory_followup(self):
+        for rounds, required in [(1, 8), (2, 14), (4, 14)]:
+            with self.subTest(rounds=rounds):
+                policy = review_policy.build_review_policy(None, reviewer_count=3, max_rounds=rounds)
+                scope = scope_assessment(policy, ['one', 'two', 'three'])
+                scope['activity_execution_limit'] = required - 1
+                with self.assertRaisesRegex(ValueError, 'at least'):
+                    review_policy.validate_scope_assessment(scope, policy, executions_used=1)
+                scope['activity_execution_limit'] = required
+                self.assertEqual(review_policy.validate_scope_assessment(scope, policy,
+                    executions_used=1)['activity_execution_limit'], required)
+
+    def test_scope_context_exposes_actual_attempt_usage(self):
+        cycle = review_cycle.start_review({'revision': 1}, 2)
+        cycle['execution_accounting']['executions_used'] = ['EX-first', 'EX-retry']
+        visible = review_cycle.context_for(cycle, review_cycle.next_actions(cycle)[0])
+        self.assertEqual(visible['scope_executions_used'], 2)
+        self.assertEqual(visible['minimum_scope_execution_limit'], 13)
+
+    def test_unaffordable_scope_returns_to_plan_without_fabricating_a_judgment(self):
+        for disposition in ('unresolved', 'defer'):
+            with self.subTest(disposition=disposition):
+                engine, _ = formal_check_engine(self)
+                engine.knowledge('K2')
+                policy = engine._adopted_review_policy()
+                policy.update(activity_execution_limit=1, overflow_disposition=disposition)
+                engine._adopted_review_policy = create_autospec(engine._adopted_review_policy,
+                                                                side_effect=lambda: deepcopy(policy))
+                cid = engine._start_identity_review('K2')
+                action = next(a for a in engine.runtime['queue'] if a.get('review_cycle_id') == cid)
+                before = deepcopy(engine.instance['identity_assessments'])
+                result = engine._register_execution(action, {'id': 'EX-unstarted', 'role': 'identity_review', 'status': 'queued'})
+                self.assertIsNone(result)
+                self.assertNotIn('EX-unstarted', engine.runtime['executions'])
+                cycle = engine.runtime['review_cycles'][cid]
+                record = review_cycle.validate_resource_disposition(cycle, engine.runtime)
+                self.assertEqual(record['state'], 'ended' if disposition == 'unresolved' else 'deferred')
+                self.assertEqual(engine.instance['identity_assessments'], before)
+                plans = [a for a in engine.runtime['queue'] if a['role'] == 'research_plan']
+                self.assertEqual(len(plans), 1)
+                self.assertIn(cid, plans[0]['evidence_refs'])
+                self.assertEqual(review_cycle.next_actions(cycle), [])
+                engine._settle_review_resource_dispositions()
+                self.assertEqual(len([a for a in engine.runtime['queue'] if a['role'] == 'research_plan']), 1)
+                if disposition == 'unresolved':
+                    self.assertEqual(review_cycle.validate_sealed_review(cycle, engine.runtime)['decision'], 'unresolved')
+
+
+class ReviewInputOverflowTests(unittest.TestCase):
+    def setUp(self):
+        start_active_copy(self)
+
+    def test_actual_proposal_overflow_ends_preparation_and_reaches_plan_input(self):
+        import json
+        from do_math import knowledge_records, context_store
+        engine = ResearchEngine(self.repo, self.identifier)
+        source = 'theorem overflow : 1 = 1 := rfl'
+        engine.instance, _ = knowledge_records.create_candidate(engine.instance, {
+            'id': 'KN-overflow', 'kind': 'lemma', 'title': 'Overflow fixture', 'statement': 'One equals one', 'summary': 'Large explanation',
+            'explanation': 'This is preserved explanation evidence. ' * 35000,
+            'lean_code': source, 'declaration_names': ['overflow'], 'dependencies': []},
+            source_ref=engine.instance['lifecycle']['input_id'], actor_ref=next(iter(engine.runtime['executions'])))
+        environment = engine._formal_environment()
+        result = formal_verification(source, ['overflow'], environment['toolchain'])
+        engine.instance = knowledge_records.record_formal_result(engine.instance, 'KN-overflow', result,
+            environment['id'], runtime=engine.runtime)
+        engine._save()
+        cid = engine._start_identity_review('KN-overflow')
+        action = next(a for a in engine.runtime['queue'] if a.get('review_cycle_id') == cid)
+        with self.assertRaises(StopIteration):
+            next(engine._call_steps(action))
+        cycle = engine.runtime['review_cycles'][cid]
+        event = review_cycle.resource_disposition(cycle)
+        self.assertIsNotNone(event)
+        self.assertEqual(event['reason'], 'review_input_overflow')
+        execution = engine.runtime['executions'][event['detail']['execution_id']]
+        self.assertEqual((execution['status'], execution['input_preparation']['stage']), ('ended', 'packing'))
+        self.assertIsNone(execution.get('capacity', {}).get('process'))
+        for entry in execution['input_manifest']['direct']:
+            self.assertTrue(engine.store.read(entry['artifact_ref'], engine.head))
+        self.assertFalse(any(q.get('blocks') for q in engine.runtime.get('question_links', [])))
+        plan = next(a for a in engine.runtime['queue'] if a['role'] == 'research_plan')
+        workspace = Path(engine.instance['workspace'])/'plan-input'
+        workspace.mkdir()
+        context = engine._context(plan, workspace, execution_id='EX-plan-input')
+        profile = engine._execution_profile(plan)
+        fitted = context_store.prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
+            role='research_plan', profile=profile, snapshot=engine.head, workspace=workspace,
+            activity_id='AY-plan-input', artifact_prefix='runtime/artifacts/BA-plan-input')
+        followup = fitted['validation_context']['review_followups'][0]
+        self.assertEqual(followup['id'], cid)
+        restored = json.loads((workspace/followup['source_ref']['path']).read_bytes())
+        self.assertEqual(restored['proposal_digest'], cycle['proposal_digest'])
+        self.assertEqual(restored['history'], cycle['history'])
+        self.assertIn(cid, fitted['validation_context']['supplied_record_ids'])
+        restarted = ResearchEngine(self.repo, self.identifier)
+        self.assertEqual(restarted.runtime['review_cycles'][cid]['status'], 'unresolved')
+
+
+class ImpactReviewRouting(unittest.TestCase):
+    def fixture(self):
+        # Reuse the owner's concrete domain fixture, not a substitute apply engine.
+        from review_fixtures import ImpactReviewHarness
+        source = ImpactReviewHarness(); source.setUp()
+        engine = routing_engine(); engine.instance = source.instance
+        engine.runtime.update(source.runtime); engine.head = "current"
+        engine.instance["workspace"] = "unused"
+        action = {"id": "AC-held", "role": "research_work", "owner_activity_id": "AY-work"}
+        producer = engine.runtime["executions"]["EX-producer"]
+        producer.update(action=action, output=source.output, input_bundle="BA-input", status="ended", outcome="execution_incomplete")
+        request = source.request()
+        received = {"bundles": [{"integration_id": "IN-held", "next_owner": "impact_review", "impact_review_request": request}]}
+        engine._hold_impact_reviews(action, "EX-producer", received)
+        return engine, source, action, request, received
+
+    def test_exact_request_waits_for_accepted_review_without_new_producer(self):
+        engine, source, action, request, received = self.fixture()
+        before = deepcopy(source.output)
+        engine._hold_impact_reviews(action, "EX-producer", received)
+        reviews = [row for row in engine.runtime["queue"] if row.get("stage") == "impact_review"]
+        self.assertEqual(len(reviews), 1)
+        review_action = reviews[0]
+        self.assertEqual(review_action["input_basis"]["impact_review"], request)
+        self.assertNotIn("continuation_of", review_action)
+        engine._receive_submission = create_autospec(engine._receive_submission); engine._save = create_autospec(engine._save); engine._settle_activity = create_autospec(engine._settle_activity)
+        with patch("do_math.engine.submission.read_sealed_submission",
+                   side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
+            engine._retry_impact_reviews()
+        engine._receive_submission.assert_not_called()
+        engine.runtime["executions"]["EX-review"] = {"id": "EX-review", "status": "ended", "outcome": "output_accepted",
+            "action": review_action, "output": source.review_output(request)}
+        engine.store = create_autospec(ResearchRepository, instance=True); engine.store.read.return_value = b"{}"
+        with patch("do_math.engine.submission.read_sealed_submission",
+                   side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
+            engine._retry_impact_reviews()
+        self.assertEqual(engine._receive_submission.call_args.args[2], "EX-producer")
+        self.assertTrue(engine._receive_submission.call_args.kwargs["preserved"])
+        self.assertEqual(engine.runtime["waiting_actions"][action["id"]]["review_execution_ids"], {"IN-held": "EX-review"})
+        self.assertEqual(source.output, before)
+
+    def test_shared_candidate_applies_actual_domain_revision_without_mutating_preview_source(self):
+        from do_math import knowledge
+        engine, source, action, request, received = self.fixture()
+        bundle = deepcopy(source.bundle)
+        bundle["owns_response"] = False
+        for change in bundle["extensions"]["knowledge_changes"]:
+            roots = knowledge.revision_roots(engine.instance, change["id"])
+            change["impact_set"] = knowledge.plan_impact(engine.instance, engine.runtime, roots, [])["computed_impact"]
+        roots = set().union(*(knowledge.revision_roots(engine.instance, change["id"])
+            for change in bundle["extensions"]["knowledge_changes"]))
+        bundle["impact_set"] = knowledge.plan_impact(engine.instance, engine.runtime, roots, [])["computed_impact"]
+        # Preview and receiver both call this exact domain callback; storage/CAS is
+        # tested separately. Keep independent copies of the actual original state.
+        original = canonical_json(engine.instance)
+        candidate, running = deepcopy(engine.instance), deepcopy(engine.runtime)
+        engine._apply_bundle_candidate(candidate, running, bundle, action=action,
+            execution_id="EX-producer", extensions=bundle["extensions"])
+        self.assertEqual(canonical_json(engine.instance), original)
+        self.assertEqual({source.ids[0], source.ids[2]}, {row["supersedes"] for row in candidate["knowledge"].values() if row.get("supersedes")})
+        self.assertEqual(len([row for row in running["queue"] if row.get("reason") == "knowledge currentness changed"]), 0)
+
+    def test_unresolved_review_remains_held_and_has_one_final_rejected_receipt(self):
+        engine, source, action, request, received = self.fixture()
+        output = source.review_output(request); output["impact_review"]["plan_decisions"][0]["decision"] = "unresolved"
+        engine.runtime["executions"]["EX-review"] = {"id": "EX-review", "status": "ended", "outcome": "output_accepted",
+            "action": deepcopy(next(row for row in engine.runtime["queue"] if row.get("stage") == "impact_review")), "output": output}
+        engine._record_task_receipt = create_autospec(engine._record_task_receipt); engine._save = create_autospec(engine._save); engine._receive_submission = create_autospec(engine._receive_submission)
+        engine.store = create_autospec(ResearchRepository, instance=True); engine.store.git_dir = 'git-' + uuid.uuid4().hex
+        with patch("do_math.engine.submission.read_sealed_submission",
+                   side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
+            engine._retry_impact_reviews(); engine._retry_impact_reviews()
+        engine._receive_submission.assert_not_called()
+        engine._record_task_receipt.assert_called_once()
+        self.assertFalse(engine._record_task_receipt.call_args.kwargs["accepted"])
+        self.assertEqual(engine.runtime["waiting_actions"][action["id"]]["kind"], "impact_review_blocked")
+        self.assertEqual(len([row for row in engine.runtime["queue"] if row.get("stage") == "impact_review"]), 1)
+
+
+class AssessmentReassessmentConnections(unittest.TestCase):
+    def fixture(self):
+        from review_fixtures import ReassessmentHarness
+        owner = ReassessmentHarness(); owner.setUp(); self.addCleanup(owner.doCleanups)
+        owner.engine.runtime["status"] = "ready"
+        return owner
+
+    def test_central_control_consumes_qualified_evidence_and_retains_bounded_followup(self):
+        owner = self.fixture(); engine = owner.engine
+        request = {"id": "UC-reassessment", "action": "request", "config": {"role": "identity_review",
+            "assessment_reassessment": owner.request(owner.defect())}}
+        self.assertTrue(ResearchEngine._review_recovery_control(engine, request))
+        opened = engine.runtime["history"][-1]["result"]
+        self.assertEqual(opened["disposition"], "reassessment_opened")
+        self.assertEqual(owner.use()["status"], "suspended")
+        owner.complete("unresolved")
+        activity = engine.runtime["activities"][opened["owner_activity_id"]]
+        # The review-domain harness creates executions; attach them through the
+        # production activity API before exercising the central terminal hook.
+        from do_math.activities import assign_execution
+        for execution in list(engine.runtime["executions"].values()):
+            if execution.get("owner_activity_id") == activity["id"]:
+                assign_execution(engine.runtime, activity["id"], execution)
+        ResearchEngine._settle_activity(engine, activity["assigned_execution_ids"][-1])
+        self.assertEqual(activity["status"], "finished")
+        self.assertEqual(activity["unresolved"][0]["next_owner"], "research_plan")
+        self.assertTrue(activity["followups"][0]["revisit_conditions"])
+        self.assertEqual(len(engine.instance["identity_assessments"]), 1)
+
+    def test_cli_report_reaches_qualified_reassessment_and_replay_is_idempotent(self):
+        from do_math import cli
+        owner = self.fixture()
+        path = Path(owner.directory.name) / "assessment-report.json"
+        path.write_text(json.dumps(owner.request(owner.defect())), encoding="utf-8")
+        args = cli.build_parser().parse_args(["request", "--repository", owner.directory.name,
+            "--instance", "RI-test", "--assessment-reassessment-file", str(path)])
+        def consume(args, action, *, text, config):
+            self.assertEqual(json.loads(text), config["assessment_reassessment"])
+            ResearchEngine._review_recovery_control(owner.engine,
+                {"id": "UC-cli-report", "action": action, "config": config})
+            return owner.engine.runtime["history"][-1]["result"]
+        with patch("do_math.cli._control", side_effect=consume):
+            first, code = cli.execute(args)
+            second, _ = cli.execute(args)
+        self.assertEqual(code, 0)
+        self.assertEqual(first["disposition"], "reassessment_opened")
+        self.assertEqual(second["disposition"], "already_open")
+        self.assertEqual(first["review_cycle_id"], second["review_cycle_id"])
+        self.assertEqual(owner.use()["status"], "suspended")
+
+    def test_ordinary_report_cannot_suspend_and_closed_control_cannot_open_review(self):
+        owner = self.fixture(); engine = owner.engine
+        request = {"id": "UC-report", "action": "request", "config": {"role": "identity_review",
+            "assessment_reassessment": owner.request({"kind": "report", "text": "Maybe wrong"})}}
+        self.assertTrue(ResearchEngine._review_recovery_control(engine, request))
+        self.assertEqual(engine.runtime["history"][-1]["result"]["disposition"], "report_only")
+        self.assertEqual(owner.use()["status"], "active")
+        engine.runtime["status"] = "closed"
+        with self.assertRaisesRegex(ValueError, "closed/completed"):
+            ResearchEngine._review_recovery_control(engine, request)
+
+    def test_public_admission_binds_original_assessment_hash(self):
+        owner = self.fixture(); engine = owner.engine
+        engine.instance["workspace"] = owner.directory.name
+        store = create_autospec(ResearchRepository, instance=True); store.load.return_value = (engine.head, engine.instance, engine.runtime)
+        config = {"role": "identity_review", "assessment_reassessment": owner.request({"kind": "report", "text": "Read this original judgment"})}
+        with patch("do_math.engine.ResearchRepository", return_value=store):
+            result = control(Path(owner.directory.name), "RI-test", "request", config=config)
+            self.assertTrue(result["accepted"])
+            wrong = deepcopy(config); wrong["assessment_reassessment"]["assessment_sha256"] = "0" * 64
+            with self.assertRaisesRegex(ValueError, "original judgment"):
+                control(Path(owner.directory.name), "RI-test", "request", config=wrong)
+
+
+class DelegationConnections(unittest.TestCase):
+    def test_actual_blind_judgments_apply_the_approved_review_recovery(self):
+        from review_fixtures import ReviewFakeEngine, grant_replacement
+        from do_math import governance
+        from types import MethodType
+        with tempfile.TemporaryDirectory() as temporary:
+            engine = ReviewFakeEngine(temporary)
+            grant_replacement(engine)
+            cid = engine.start("K1")
+            action = deepcopy(engine.pending())
+            engine._record_review_recovery(action, ValueError("permanent_loss"), retryable=False)
+            engine.instance["decisions"]["ORIGINAL"] = {"id": "ORIGINAL", "actor": "user", "kind": "review_replacement", "source_ref": "SOURCE-review"}
+            engine.instance, engine.runtime, _ = governance.apply_decision(engine.instance, engine.runtime,
+                {"kind": "delegation", "decision_id": "DD", "delegation": {"id": "DG", "status": "active", "decision_kind": "review_replacement",
+                    "original_decision_id": "ORIGINAL", "included_targets": ["K1"], "excluded_targets": [], "external_effects": [], "resource_limits": {}, "expires_at": None}}, source_ref="SOURCE-review")
+            effect = {"review_cycle_id": cid, "stage": action["stage"], "slot": action["slot"],
+                      "round": action["round"], "replacement_for": 0,
+                      "continuity_break_cause": "permanent_loss"}
+            case = {"id": "CASE", "decision_kind": "review_replacement", "target_id": "K1", "external_effects": [], "resources": {}, "effect": effect,
+                    "basis_refs": [{"id": cid}]}
+            request = {"id": "UC-case", "action": "request", "config": {"role": "maintenance", "review_replacement": {"action": action, "grant_id": "GR-review", "delegation_id": "DG", "case": case}}}
+            engine._review_recovery_control = MethodType(ResearchEngine._review_recovery_control, engine)
+            engine._apply_delegation_judgment = MethodType(ResearchEngine._apply_delegation_judgment, engine)
+            self.assertTrue(engine._review_recovery_control(request))
+            engine.runtime.setdefault("history", []).append({"kind": "user_control", "request": request})
+            judgments = [a for a in engine.runtime["queue"] if a.get("delegation_application_id")]
+            self.assertEqual(len(judgments), 2)
+            application_id = judgments[0]["delegation_application_id"]
+            application = engine.runtime["delegation_applications"][application_id]
+            for index, judgment in enumerate(judgments):
+                eid = "EX-delegation-" + str(index)
+                engine.runtime["executions"][eid] = {"id": eid, "role": "intent_interpretation", "status": "running",
+                    "input_manifest": {"prompt": {"sha256": hashlib.sha256(("exact rendered prompt " + str(index)).encode()).hexdigest()}},
+                    "delegation_input_sha256": application["input_sha256"]}
+                engine._apply_delegation_judgment(judgment, {"delegation_judgment": {"input_sha256": application["input_sha256"], "decision": "within_scope", "reason": "This exact case stays within the original approved replacement"}}, eid)
+            self.assertEqual(engine.runtime["delegation_applications"][application_id]["application"]["status"], "applied")
+            self.assertTrue(any(a.get("replacement_for") == 0 for a in engine.runtime["queue"]))
+
+
+class ReviewAttemptAdmissionTests(unittest.TestCase):
+    def test_every_review_owned_attempt_uses_owner_admission_before_registration(self):
+        engine = routing_engine()
+        profile = next(p for p in execution_profiles.build_profiles(DEFAULT_CONFIG)["execution_profiles"].values()
+                       if p["role"] == "supplemental_research")
+        engine._execution_profile = create_autospec(engine._execution_profile, return_value=profile)
+        engine._admit_review_execution = create_autospec(engine._admit_review_execution, return_value={"disposition": "review_followup_reserved"})
+        engine._request_review_resource_disposition = create_autospec(engine._request_review_resource_disposition)
+        action = {"id": "AC-review", "role": "supplemental_research", "owner_review_cycle_id": "RC-one"}
+        engine.runtime["queue"] = [action]
+        result = engine._register_execution(action, {"id": "EX-attempt", "role": action["role"], "status": "queued"})
+        self.assertIsNone(result)
+        execution = engine._admit_review_execution.call_args.args[1]
+        self.assertEqual(execution["actor_kind"], "ai")
+        self.assertEqual(execution["execution_profile_ref"], execution_profiles.profile_ref(profile))
+        self.assertNotIn("EX-attempt", engine.runtime["executions"])
+        engine._request_review_resource_disposition.assert_called_once_with(
+            action, "review_followup_reserved", {"disposition": "review_followup_reserved"})
 
 
 if __name__ == '__main__':

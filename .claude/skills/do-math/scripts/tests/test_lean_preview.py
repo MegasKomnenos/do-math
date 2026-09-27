@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from test_formal import actual_command
+from provider_fixtures import actual_command
 from test_categories import test_group as category
 from do_math.submission import install_tools
 from do_math.contracts import schema_for
@@ -28,6 +28,32 @@ class LeanPreviewTests(unittest.TestCase):
             result = subprocess.run([*preview['command'], '--source', 'draft.lean', '--declaration', 'good'],
                 cwd=workspace, capture_output=True, text=True, encoding='utf-8', timeout=30)
             self.assertEqual('stopped', json.loads(result.stdout)['status'])
+
+    def test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker(self):
+        """The worker loads formal.py from a zip, so its path is never the approved path;
+        the same bytes are the same checker and pass the identity gate."""
+        from do_math import formal
+        from do_math.file_io import sha256_file
+        checker = Path(formal.__file__).resolve()
+        python = Path(sys.executable).resolve()
+        approved = {'executable': str(python), 'sha256': sha256_file(python), 'configured_command': [str(python)],
+                    'version': 'fixture', 'version_exit': 0, 'verifier_sha256': sha256_file(checker),
+                    'verifier_path': str(checker), 'executables': {}, 'project': None}
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            context = {"action": {"role": "research_work"}, "snapshot": "fixed",
+                "formal_verifier": {"command": [str(python)], "allowed_axioms": [], "expected_toolchain": approved}}
+            install_tools(workspace, context, schema_for('research_work'), 1000000)
+            script = ('import json, sys; sys.path.insert(0, sys.argv[1]); from do_math import formal; '
+                      'print(json.dumps({"file": formal.__file__, '
+                      '"errors": formal.toolchain_identity_errors(json.loads(sys.argv[2]))}))')
+            result = subprocess.run([sys.executable, '-B', '-c', script,
+                                     str(workspace / 'input/tools/submission-support.zip'), json.dumps(approved)],
+                                    capture_output=True, text=True, encoding='utf-8', timeout=60)
+            observed = json.loads(result.stdout or 'null')
+            self.assertIsNotNone(observed, result.stderr)
+            self.assertIn('submission-support.zip', observed['file'])
+            self.assertEqual(observed['errors'], [])
 
     @category('lean')
     def test_actual_standalone_preview_checks_code_axioms_and_stop(self):

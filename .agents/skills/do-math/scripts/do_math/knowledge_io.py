@@ -4,8 +4,8 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timezone
 import re
-from typing import Any
 
+from .file_io import require_text
 from .formal import is_lean_identifier
 from .git_store import is_new_id
 from .planning import record_index
@@ -15,6 +15,8 @@ from . import knowledge_records
 
 
 _TOKEN = re.compile(r"^[a-z][a-z0-9_]*$")
+# States of a kind definition: proposed, checked, adopted, withdrawn.
+KIND_STATUSES = frozenset({"candidate", "checked", "active", "withdrawn"})
 _KNOWLEDGE_FIELDS = {
     "id", "kind", "title", "statement", "explanation", "summary", "lean_code",
     "declaration_names", "dependencies", "origin_refs", "source_refs", "confirmed_scope",
@@ -77,19 +79,13 @@ def _key(family: str, token: str) -> str:
     return family + ":" + token
 
 
-def _lookup_definition(instance, family, token):
+def lookup_definition(instance, family, token):
     matches = [row for row in instance.get("kind_definitions", {}).values()
                if row.get("family") == family and row.get("token") == token]
     current = [row for row in matches if row.get("status") != "withdrawn"]
     if len(current) > 1:
         raise ValueError("multiple current definitions of one kind")
     return current[0] if current else next((row for row in reversed(matches)), None)
-
-
-def _text(value: Any, label: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{label} must be nonempty text")
-    return value
 
 
 def ensure_ontology(instance: dict) -> dict:
@@ -118,13 +114,13 @@ def catalog_definitions(instance: dict) -> dict:
 
 def register_kind_definition(instance: dict, definition: dict, *, source_ref: str,
                              actor_ref: str) -> tuple[dict, str]:
-    _text(source_ref, "source_ref"); _text(actor_ref, "actor_ref")
+    require_text(source_ref, "source_ref"); require_text(actor_ref, "actor_ref")
     if not isinstance(definition, dict) or set(definition) != {"family", "token", "meaning", "constraints"}:
         raise ValueError("kind definition requires family, token, meaning and constraints")
     family, token = definition["family"], definition["token"]
     if family not in {"knowledge", "relation"} or not isinstance(token, str) or not _TOKEN.fullmatch(token):
         raise ValueError("kind definition has an invalid family or token")
-    _text(definition["meaning"], "meaning")
+    require_text(definition["meaning"], "meaning")
     constraints = definition["constraints"]
     if not isinstance(constraints, dict) or set(constraints) - {
             "mathematical_claim", "requires_evidence", "requires_formal_results", "requires_assessments",
@@ -142,7 +138,7 @@ def register_kind_definition(instance: dict, definition: dict, *, source_ref: st
         definition = deepcopy(definition)
         definition["constraints"].update(requires_formal_results=True, requires_assessments=True)
     output = ensure_ontology(instance)
-    previous = _lookup_definition(output, family, token)
+    previous = lookup_definition(output, family, token)
     if previous and previous["status"] != "withdrawn":
         raise ValueError("kind token is already defined")
     identifier = new_id("KD")
@@ -155,9 +151,9 @@ def register_kind_definition(instance: dict, definition: dict, *, source_ref: st
 
 
 def check_kind_definition(instance, family, token, *, check_ref, actor_ref):
-    _text(check_ref, "check_ref"); _text(actor_ref, "actor_ref")
+    require_text(check_ref, "check_ref"); require_text(actor_ref, "actor_ref")
     output = deepcopy(instance)
-    record = _lookup_definition(output, family, token)
+    record = lookup_definition(output, family, token)
     if record is None:
         raise ValueError("unknown kind definition")
     if record["status"] not in {"candidate", "checked"}:
@@ -167,9 +163,9 @@ def check_kind_definition(instance, family, token, *, check_ref, actor_ref):
 
 
 def activate_kind_definition(instance, family, token, *, approval_ref, actor_ref):
-    _text(approval_ref, "approval_ref"); _text(actor_ref, "actor_ref")
+    require_text(approval_ref, "approval_ref"); require_text(actor_ref, "actor_ref")
     output = deepcopy(instance)
-    record = _lookup_definition(output, family, token)
+    record = lookup_definition(output, family, token)
     if record is None:
         raise ValueError("unknown kind definition")
     if record["status"] != "checked" or not record.get("check_ref"):
@@ -179,9 +175,9 @@ def activate_kind_definition(instance, family, token, *, approval_ref, actor_ref
 
 
 def withdraw_kind_definition(instance, runtime, family, token, *, reason, actor_ref):
-    _text(reason, "reason"); _text(actor_ref, "actor_ref")
+    require_text(reason, "reason"); require_text(actor_ref, "actor_ref")
     output, new_runtime = deepcopy(instance), deepcopy(runtime)
-    definition = _lookup_definition(output, family, token)
+    definition = lookup_definition(output, family, token)
     if definition is None:
         raise ValueError("unknown kind definition")
     definition.update(status="withdrawn", withdrawn_reason=reason, withdrawn_by=actor_ref)
@@ -199,7 +195,7 @@ def withdraw_kind_definition(instance, runtime, family, token, *, reason, actor_
 
 
 def _definition_for(instance: dict, family: str, token: str) -> dict:
-    definition = _lookup_definition(ensure_ontology({"kind_definitions": instance.get("kind_definitions", {})}),
+    definition = lookup_definition(ensure_ontology({"kind_definitions": instance.get("kind_definitions", {})}),
                                      family, token)
     if not definition or definition.get("status") != "active":
         raise ValueError(f"unknown {family} kind: {token}")
@@ -232,7 +228,7 @@ def candidate_shape_errors(candidate: dict) -> list[str]:
 def validate_insight(instance: dict, runtime: dict, insight: dict) -> None:
     """An incidental candidate needs a registered kind and real evidence refs."""
     for field in ("kind", "title", "statement", "summary"):
-        _text(insight.get(field), "insight " + field)
+        require_text(insight.get(field), "insight " + field)
     _definition_for(instance, "knowledge", insight["kind"])
     refs = insight.get("evidence_ids", [])
     if not isinstance(refs, list) or any(not isinstance(ref, str) or not ref for ref in refs) or len(refs) != len(set(refs)):
@@ -247,7 +243,7 @@ def validate_insight(instance: dict, runtime: dict, insight: dict) -> None:
 
 def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_ref: str,
                      actor_ref: str, reserved_dependency_ids=(), plan_nonformal=True) -> tuple[dict, dict, str]:
-    _text(source_ref, "source_ref"); _text(actor_ref, "actor_ref")
+    require_text(source_ref, "source_ref"); require_text(actor_ref, "actor_ref")
     if not isinstance(candidate, dict) or set(candidate) - _KNOWLEDGE_FIELDS:
         raise ValueError("candidate has unsupported fields")
     if "uncertainty_assessment" in candidate and not isinstance(candidate["uncertainty_assessment"], (str, dict)):
@@ -295,7 +291,7 @@ def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_r
         _definition_for(output, "relation", claim["kind"])
         if any(claim[key] not in output.get("knowledge", {}) for key in ("source", "target")):
             raise ValueError("relation claim requires exact existing endpoints")
-        _text(claim["confirmed_scope"], "confirmed_scope")
+        require_text(claim["confirmed_scope"], "confirmed_scope")
     from .input_basis import capture_sources
     source_refs = candidate.get("source_refs", [])
     if not isinstance(source_refs, list) or any(not isinstance(ref, str) for ref in source_refs):
@@ -383,7 +379,7 @@ def validate_relation(instance: dict, relation: dict) -> dict:
 
 def import_relation(instance: dict, relation: dict, *, source_ref: str,
                     actor_ref: str) -> tuple[dict, str]:
-    _text(source_ref, "source_ref"); _text(actor_ref, "actor_ref")
+    require_text(source_ref, "source_ref"); require_text(actor_ref, "actor_ref")
     result = validate_relation(instance, relation)
     if not result["valid"]:
         raise ValueError("invalid relation: " + ", ".join(result["reasons"]))

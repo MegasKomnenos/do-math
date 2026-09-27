@@ -2,54 +2,24 @@
 
 All numbers here are disposable test budgets, never product defaults.
 """
-from copy import deepcopy
 import json
 import os
-from pathlib import Path
 import platform
-import subprocess
 import sys
 import tempfile
 import time
 import unittest
+from copy import deepcopy
+from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from test_categories import test_group as category
-from do_math import execution_profiles as profiles
+from do_math import execution_profiles, execution_profiles as profiles
 from do_math.session_slots import SessionSlots
-from research_fixtures import current_state, dispatched_launch
 from do_math.windows_job import WindowsJob
-from test_redesign_PROFILES import CONFIG
-
-
-def evidence(name, value):
-    target = os.environ.get("DO_MATH_HOST_EVIDENCE_DIR")
-    if target:
-        path = Path(target)
-        path.mkdir(parents=True, exist_ok=True)
-        (path / (name + ".json")).write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def fixture():
-    from do_math.governance import preserve_source
-    instance = profiles.build_profiles(CONFIG)
-    source = preserve_source("GS-host-test", "Temporary test approval only: jobs 4, commit bytes 536870912, CPU basis points 8000; control reserve jobs 1, commit bytes 134217728, CPU basis points 2000.", origin="user")
-    instance["governance_sources"] = {source["id"]: source}
-    constraint = profiles.host_constraint(host_id=platform.node(),
-        limits={"jobs": 4, "memory_bytes": 512 * 1024**2, "cpu_rate_basis_points": 8000},
-        control_reserve={"jobs": 1, "memory_bytes": 128 * 1024**2, "cpu_rate_basis_points": 2000},
-        authority_refs=[source["id"]])
-    instance["capacity_constraints"][constraint["id"]] = constraint
-    instance["host_capacity_ref"] = constraint["id"]
-    selected = {}
-    for role in ("research_work", "recovery", "formal_check"):
-        original = next(p for p in instance["execution_profiles"].values() if p["role"] == role)
-        profile = profiles.with_host_resources(original, constraint,
-            {"jobs": 1, "memory_bytes": 128 * 1024**2, "cpu_rate_basis_points": 2000})
-        instance["execution_profiles"][profile["id"]] = profile
-        selected[role] = profile
-    return instance, selected, constraint
+from provider_fixtures import host_capacity_fixture, PROFILE_CONFIG
+from research_fixtures import current_state, dispatched_launch, git_init
+from test_categories import test_group as category
 
 
 class HostReservations(unittest.TestCase):
@@ -59,7 +29,7 @@ class HostReservations(unittest.TestCase):
         return accepted, execution
 
     def test_work_operations_machine_share_capacity_and_preserve_control(self):
-        instance, selected, constraint = fixture()
+        instance, selected, constraint = host_capacity_fixture()
         runtime = {"executions": {}, "reservations": {}}
         slots = SessionSlots(runtime, instance)
         for n, role in enumerate(selected):
@@ -86,7 +56,7 @@ class HostReservations(unittest.TestCase):
     def test_each_constraint_refuses_without_partial_ai_or_host_records(self):
         for unit, amount in (("jobs", 0), ("memory_bytes", 1), ("cpu_rate_basis_points", 1)):
             with self.subTest(unit=unit):
-                instance, selected, constraint = fixture()
+                instance, selected, constraint = host_capacity_fixture()
                 key = "max_jobs" if unit == "jobs" else unit
                 # Author a new approval, rather than mutate a content-addressed row.
                 limits = {"jobs": constraint["max_jobs"], "memory_bytes": constraint["memory_bytes"],
@@ -107,7 +77,7 @@ class HostReservations(unittest.TestCase):
                 self.assertEqual(runtime, before)
 
     def test_no_approval_stays_unmeasured_machine_has_no_ai_budget(self):
-        instance = profiles.build_profiles(CONFIG)
+        instance = profiles.build_profiles(PROFILE_CONFIG)
         p = next(p for p in instance["execution_profiles"].values() if p["role"] == "formal_check")
         self.assertIsNone(profiles.job_resource_limits(p))
         self.assertEqual(p["host_capacity_status"], "unmeasured_not_enforced")
@@ -116,7 +86,7 @@ class HostReservations(unittest.TestCase):
         self.assertEqual(runtime["reservations"], {})
 
     def test_other_host_refused_and_unknown_termination_retains_reservations(self):
-        instance, selected, _ = fixture()
+        instance, selected, _ = host_capacity_fixture()
         runtime = {"executions": {}, "reservations": {}}
         slots = SessionSlots(runtime, instance)
         with patch("platform.node", return_value="different-host"):
@@ -135,10 +105,10 @@ class HostReservations(unittest.TestCase):
         # integration is separately tested below; this is no schema assurance.
         from do_math.git_store import GitStateStore, GitStateStoreConflict
         from do_math.repository import canonical_json
-        instance, selected, _ = fixture()
+        instance, selected, _ = host_capacity_fixture()
         runtime = {"executions": {}, "reservations": {}}
         with tempfile.TemporaryDirectory() as directory:
-            subprocess.run(["git", "-C", directory, "init", "-q"], check=True)
+            git_init(directory)
             store = GitStateStore(directory, "RI-00000000000000000000000000")
             head = store.publish(None, {"research/approval.json": canonical_json(instance),
                 "runtime/initial.json": b"{}"}).head
@@ -165,7 +135,7 @@ class HostReservations(unittest.TestCase):
             self.assertEqual(store.read_snapshot().head, head)
 
     def test_old_profile_editions_do_not_open_an_independent_host_pool(self):
-        instance, selected, constraint = fixture()
+        instance, selected, constraint = host_capacity_fixture()
         runtime = {"executions": {}, "reservations": {}}
         slots = SessionSlots(runtime, instance)
         for n in range(3):
@@ -180,7 +150,7 @@ class HostReservations(unittest.TestCase):
         self.assertFalse(self.admit(slots, "EX-escape", p)[0])
 
     def test_unbound_profiles_cannot_bypass_shared_approval(self):
-        instance, _, _ = fixture()
+        instance, _, _ = host_capacity_fixture()
         unbound = next(p for p in instance["execution_profiles"].values() if not p.get("host_capacity_refs"))
         runtime = {"executions": {}, "reservations": {}}
         with self.assertRaisesRegex(ValueError, "current adopted host"):
@@ -188,11 +158,11 @@ class HostReservations(unittest.TestCase):
         self.assertEqual(runtime, {"executions": {}, "reservations": {}})
 
     def test_explicit_authoring_covers_every_capped_role(self):
-        _, selected, constraint = fixture()
-        bare = profiles.build_profiles(CONFIG)
+        _, selected, constraint = host_capacity_fixture()
+        bare = profiles.build_profiles(PROFILE_CONFIG)
         demands = {p["role"]: {"jobs": 1, "memory_bytes": 128*1024**2, "cpu_rate_basis_points": 1000}
                    for p in bare["execution_profiles"].values() if p["role"] in profiles.HOST_ROLES}
-        config = {**CONFIG,
+        config = {**PROFILE_CONFIG,
                   "host_resources": {"constraint": constraint, "demands_by_role": demands}}
         instance = profiles.build_profiles(config)
         self.assertEqual(instance["host_capacity_ref"], constraint["id"])
@@ -215,8 +185,8 @@ class HostReservations(unittest.TestCase):
             profiles.build_profiles(bad)
 
     def test_legacy_host_capped_lean_profile_requires_replacement(self):
-        _, _, constraint = fixture()
-        authored = profiles.build_profiles({**CONFIG, "lean_command": [sys.executable]})
+        _, _, constraint = host_capacity_fixture()
+        authored = profiles.build_profiles({**PROFILE_CONFIG, "lean_command": [sys.executable]})
         p = next(p for p in authored["execution_profiles"].values() if p["role"] == "formal_check")
         p = profiles.with_host_resources(p, constraint,
             {"jobs": 1, "memory_bytes": 128*1024**2, "cpu_rate_basis_points": 2000})
@@ -231,9 +201,9 @@ class HostReservations(unittest.TestCase):
 class HostRepositoryContract(unittest.TestCase):
     def test_positive_host_records_pass_real_repository_and_round_trip(self):
         from do_math.repository import ResearchRepository
-        instance, selected, _ = fixture()
+        instance, selected, _ = host_capacity_fixture()
         with tempfile.TemporaryDirectory() as directory:
-            subprocess.run(["git", "-C", directory, "init", "-q"], check=True)
+            git_init(directory)
             iid = "RI-00000000000000000000000000"
             instance.update(id=iid, workspace=directory, config={})
             instance, runtime = current_state(instance, {"status": "ready", "executions": {}, "reservations": {},
@@ -301,15 +271,15 @@ class HostJobTests(unittest.TestCase):
         self.assertNotIsInstance(caught.exception, WindowsJobUnsupportedError)
 
     def test_host_bound_runner_requires_start_publication_callback(self):
-        from do_math.model_runner import CodexModelRunner
-        _, selected, _ = fixture()
+        from do_math.model_runner import ModelRunner
+        _, selected, _ = host_capacity_fixture()
         p = selected["research_work"]
         prompt = profiles.prepare_prompt("test", p)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             workspace = root / "work"; workspace.mkdir()
             with self.assertRaisesRegex(ValueError, "on_started"):
-                CodexModelRunner(sys.executable).run(prompt=prompt, input_seal=profiles.prompt_seal(prompt),
+                ModelRunner(codex_path=sys.executable).run(prompt=prompt, input_seal=profiles.prompt_seal(prompt),
                     output_schema={}, workspace=workspace, evidence_dir=root / "evidence", model=p["ai"]["model"],
                     effort=p["ai"]["effort"], timeout_seconds=15, execution_id="EX-no-callback", profile=p,
                     launch_ticket=dispatched_launch('EX-no-callback',p))
@@ -317,8 +287,8 @@ class HostJobTests(unittest.TestCase):
 
     def test_resource_setting_failure_is_distinct_capability_and_starts_nothing(self):
         import ctypes
-        from do_math.model_runner import CodexModelRunner
-        _, selected, _ = fixture()
+        from do_math.model_runner import ModelRunner
+        _, selected, _ = host_capacity_fixture()
         p = selected["research_work"]
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); workspace = root / "work"; workspace.mkdir()
@@ -328,7 +298,7 @@ class HostJobTests(unittest.TestCase):
                 return 0
             with patch("do_math.windows_job._kernel32.SetInformationJobObject", side_effect=unsupported), \
                  patch.object(WindowsJob, "_create_suspended_root") as create:
-                result = CodexModelRunner(sys.executable).run(prompt=prompt, input_seal=profiles.prompt_seal(prompt),
+                result = ModelRunner(codex_path=sys.executable).run(prompt=prompt, input_seal=profiles.prompt_seal(prompt),
                     output_schema={}, workspace=workspace, evidence_dir=root / "evidence", model=p["ai"]["model"],
                     effort=p["ai"]["effort"], timeout_seconds=15, execution_id="EX-setting-failure", profile=p,
                     launch_ticket=dispatched_launch('EX-setting-failure',p),
@@ -341,9 +311,9 @@ class HostJobTests(unittest.TestCase):
             self.assertNotIn("atomic_local_job", result["capability_evidence"]["capabilities"])
 
     def test_both_real_adapters_receive_limits_before_user_code_or_model_call(self):
-        from do_math.model_runner import CodexModelRunner, ClaudeModelRunner
-        _, selected, _ = fixture()
-        for provider, cls in (("codex", CodexModelRunner), ("claude", ClaudeModelRunner)):
+        from do_math.model_runner import ModelRunner
+        _, selected, _ = host_capacity_fixture()
+        for provider in ("codex", "claude"):
             p = deepcopy(selected["research_work"])
             if provider == "claude":
                 p["ai"].update(provider="claude", model="claude-test")
@@ -353,7 +323,7 @@ class HostJobTests(unittest.TestCase):
                 workspace = root / "work"; workspace.mkdir()
                 prompt = profiles.prepare_prompt("temporary binding probe", p)
                 started = []
-                result = cls(sys.executable).run(prompt=prompt, input_seal=profiles.prompt_seal(prompt),
+                result = ModelRunner(**{provider + "_path": sys.executable}).run(prompt=prompt, input_seal=profiles.prompt_seal(prompt),
                     output_schema={}, workspace=workspace, evidence_dir=root / "evidence", model=p["ai"]["model"],
                     effort=p["ai"]["effort"], timeout_seconds=15, execution_id="EX-" + provider,
                     profile=p, should_stop=lambda: True, on_started=started.append,
@@ -365,15 +335,12 @@ class HostJobTests(unittest.TestCase):
                 self.assertEqual(request["profile_ref"], profiles.profile_ref(p))
                 self.assertTrue(result["execution"]["collect"]["termination_barrier"]["confirmed"])
                 self.assertIsNone(result["execution"]["collect"]["worker_status"])
-                evidence(provider + "-suspended-binding", {"started": started, "request": request,
-                    "termination": result["execution"]["collect"]["termination_barrier"], "model_called": False})
 
     def test_real_creation_failure_and_normal_abnormal_termination_return_once(self):
         import uuid
         from do_math.windows_job import process_identity
-        observed = []
         for outcome in ("creation_failure", "normal", "nonzero", "terminated", "setting_failure"):
-            instance, selected, _ = fixture()
+            instance, selected, _ = host_capacity_fixture()
             runtime = {"executions": {}, "reservations": {}}
             slots = SessionSlots(runtime, instance)
             p = selected["formal_check"]
@@ -410,8 +377,6 @@ class HostJobTests(unittest.TestCase):
                 self.assertEqual(runtime, once)
                 self.assertTrue(all(r["reserved"] == r["returned"] and r["state"] == "settled"
                                     for r in runtime["reservations"].values()))
-                observed.append({"outcome": outcome, "setting_failure_is_double": outcome == "setting_failure", "runtime": runtime})
-        evidence("lifetime-settlements", observed)
 
     def test_native_process_identity_round_trips_without_integer_precision_loss(self):
         from do_math.repository import canonical_json
@@ -444,13 +409,11 @@ class HostJobTests(unittest.TestCase):
                 # Windows can include a rejected commit attempt in PeakJobMemoryUsed.
                 # Allocation success is the enforcement oracle, not peak <= cap.
                 self.assertGreater(job.resource_usage()["peak_job_memory_bytes"], 0)
-                evidence("memory-limited", {"allocation": observed, "job": job.resource_usage()})
             output.unlink()
             with WindowsJob([sys.executable, "-c", code]) as control:
                 control.resume()
                 self.assertTrue(control.wait(15))
                 self.assertTrue(json.loads(output.read_text())["allocated"])
-                evidence("memory-control", {"allocation": json.loads(output.read_text()), "job": control.resource_usage()})
 
     @category('resource')
     def test_cpu_hard_cap_reduces_local_cpu_time_in_isolated_busy_child(self):
@@ -471,8 +434,6 @@ class HostJobTests(unittest.TestCase):
                         self.assertEqual(job.resource_usage()["limits"], limits)
         self.assertGreater(samples[0]["cpu"], .1, "control child got too little CPU for a meaningful comparison")
         self.assertLess(samples[1]["cpu"], samples[0]["cpu"] * .6, samples)
-        evidence("cpu-enforcement", {"samples": samples, "cpu_count": os.cpu_count(),
-            "scope": "this host isolated child comparative sample; no guaranteed minimum throughput"})
 
     def test_invalid_limits_or_setting_failure_never_create_root(self):
         with patch.object(WindowsJob, "_create_suspended_root") as create:
@@ -488,5 +449,115 @@ class HostJobTests(unittest.TestCase):
             create.assert_not_called()
 
 
+class HostConfigurationTests(unittest.TestCase):
+    def test_host_demands_accept_only_capped_roles(self):
+        from do_math.configuration import validate_config
+        config = self.configuration()
+        validate_config(config)
+        profiles = execution_profiles.build_profiles(config)['execution_profiles']
+        self.assertTrue(all('host_resources' not in p for p in profiles.values()
+            if p['role'] in {'formal_check','trust_check','trust_activate'}))
+        invalid = deepcopy(config)
+        invalid['host_resources']['demands_by_role']['formal_check'] = {'jobs': 1, 'memory_bytes': 100, 'cpu_rate_basis_points': 100}
+        with self.assertRaisesRegex(ValueError, 'capped roles only'):
+            validate_config(invalid)
+        config['host_resources']['demands_by_role'].pop('research_work')
+        with self.assertRaisesRegex(ValueError, 'capped role'):
+            validate_config(config)
+
+    def test_unstarted_role_defaults_refresh_while_task_profiles_require_preparation(self):
+        from do_math.configuration import DEFAULT_CONFIG
+        from do_math.initialization import initialize_state
+        from do_math.contracts import task_candidate_record
+        from research_fixtures import bare_engine, candidate
+        with tempfile.TemporaryDirectory() as directory:
+            config = {**deepcopy(DEFAULT_CONFIG), 'scholarly_enabled': False}
+            instance, runtime = initialize_state(instance_id='RI-host-change', goal='Test profiles', workspace=Path(directory), config=config, source_input='Test profiles', created_at='2026-09-23T00:00:00Z')
+            instance.update(execution_profiles.build_profiles(config))
+            old = deepcopy(instance['role_profile_refs']['maintenance'][0])
+            wire = candidate()
+            wire['profile_refs'] = [deepcopy(instance['role_profile_refs']['research_work'][0])]
+            task = task_candidate_record(wire, task_id='TK-pinned')
+            task.update(status='planned', results=[], reviews=[])
+            runtime['tasks'][task['id']] = task
+            runtime['queue'] = [{'id':'AC-default','role':'maintenance','profile_ref':old}]
+            changed, state = bare_engine()._configure_candidate(instance, runtime,
+                {'config':{'host_resources':self.configuration()['host_resources']}})
+            pending = next(a for a in state['queue'] if a['id']=='AC-default')
+            self.assertNotEqual(pending['profile_ref'], old)
+            self.assertEqual(state['tasks'][task['id']]['profile_refs'], task['profile_refs'])
+            self.assertTrue(any(task['id'] in a.get('revision_targets', {}) for a in state['queue']))
+
+    def configuration(self):
+        import platform
+        from do_math.configuration import DEFAULT_CONFIG
+        settings = {**deepcopy(DEFAULT_CONFIG), 'scholarly_enabled': False}
+        roles = execution_profiles.build_profiles(settings)['role_profile_refs']
+        host = execution_profiles.host_constraint(host_id=platform.node(),
+            limits={'jobs': 4, 'memory_bytes': 536870912, 'cpu_rate_basis_points': 8000},
+            control_reserve={'jobs': 1, 'memory_bytes': 134217728, 'cpu_rate_basis_points': 2000},
+            authority_refs=['configuration:request'])
+        settings['host_resources'] = {'constraint': host, 'demands_by_role': {role:
+            {'jobs': 1, 'memory_bytes': 134217728, 'cpu_rate_basis_points': 2000} for role in roles if role in execution_profiles.HOST_ROLES}}
+        return settings
+
+    def test_public_init_configure_and_removal(self):
+        from do_math.repository import ResearchRepository
+        from research_fixtures import bare_engine, new_instance
+        for sessions in (True,):
+            with self.subTest(sessions=sessions), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                settings = self.configuration()
+                instance_id = new_instance(root, goal='Temporary configuration test', workspace=root/'workspace', config=settings)
+                store = ResearchRepository(root, instance_id)
+                head, instance, runtime = store.load()
+                host_id = instance['host_capacity_ref']
+                approval = instance['capacity_constraints'][host_id]['authority_refs'][0]
+                self.assertEqual(instance['governance_sources'][approval]['origin'], 'user')
+                self.assertNotEqual(approval, 'configuration:request')
+                host = bare_engine()
+                same, state = host._configure_candidate(instance, runtime, {'config': {'host_resources': settings['host_resources']}})
+                self.assertEqual(same['host_capacity_ref'], host_id)
+                with self.assertRaisesRegex(ValueError, 'user'):
+                    host._configure_candidate(instance, runtime, {'origin': 'operator', 'config': {'host_resources': None}})
+                # Public admission refuses the same operator change instead of queueing a request application rejects.
+                from do_math.engine import control
+                with self.assertRaisesRegex(ValueError, 'user decision'):
+                    control(root, instance_id, 'configure', config={'host_resources': None}, origin='operator')
+                held = deepcopy(runtime)
+                held['executions']['EX-live'] = {'id': 'EX-live', 'status': 'queued'}
+                with self.assertRaisesRegex(ValueError, 'stopped'):
+                    host._configure_candidate(instance, held, {'config': {'host_resources': None}})
+                removed, state = host._configure_candidate(instance, runtime, {'config': {'host_resources': None}})
+                self.assertNotIn('host_capacity_ref', removed)
+                self.assertIn(host_id, removed['capacity_constraints'])
+                saved = store.save_with_state(head, removed, state)[0]
+                self.assertIsNone(store.load(saved)[1]['config']['host_resources'])
+                for profile in same['execution_profiles'].values():
+                    if profile['role'] in {'formal_check', 'trust_check', 'trust_activate'}:
+                        self.assertNotIn('host_resources', profile)
+
+
 if __name__ == "__main__":
     unittest.main()
+
+    def test_host_configuration_builds_profiles_once_per_step(self):
+        # Checking the host section must not author the editions its caller builds.
+        from do_math.engine import control
+        from do_math.repository import ResearchRepository
+        from research_fixtures import bare_engine, new_instance
+        build = execution_profiles.build_profiles
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            settings = self.configuration()
+            request = {'host_resources': settings['host_resources']}
+            with patch.object(execution_profiles, 'build_profiles', wraps=build) as built:
+                instance_id = new_instance(root, goal='Profile count test', workspace=root/'workspace', config=settings)
+            self.assertEqual(built.call_count, 1)
+            head, instance, runtime = ResearchRepository(root, instance_id).load()
+            with patch.object(execution_profiles, 'build_profiles', wraps=build) as built:
+                control(root, instance_id, 'configure', config=request)
+            self.assertEqual(built.call_count, 1)
+            with patch.object(execution_profiles, 'build_profiles', wraps=build) as built:
+                bare_engine()._configure_candidate(instance, runtime, {'config': request})
+            self.assertEqual(built.call_count, 1)

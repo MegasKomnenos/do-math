@@ -9,7 +9,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_categories import test_group as category
 from do_math import formal
-from test_formal import actual_command
+from provider_fixtures import actual_command
 
 
 class FormalRuntimeTests(unittest.TestCase):
@@ -76,13 +76,13 @@ class FormalRuntimeTests(unittest.TestCase):
     def test_uncapped_lean_admission_with_an_adopted_host_budget(self):
         from do_math import execution_profiles as profiles
         from do_math.session_slots import SessionSlots
-        from test_host_resources import fixture
-        from test_redesign_PROFILES import CONFIG
-        _, _, constraint = fixture()
-        bare = profiles.build_profiles(CONFIG)
+        from provider_fixtures import host_capacity_fixture
+        from provider_fixtures import PROFILE_CONFIG
+        _, _, constraint = host_capacity_fixture()
+        bare = profiles.build_profiles(PROFILE_CONFIG)
         demands = {p['role']: {'jobs': 1, 'memory_bytes': 128*1024**2, 'cpu_rate_basis_points': 1000}
                    for p in bare['execution_profiles'].values() if p['role'] in profiles.HOST_ROLES}
-        instance = profiles.build_profiles({**CONFIG, 'lean_command': [sys.executable],
+        instance = profiles.build_profiles({**PROFILE_CONFIG, 'lean_command': [sys.executable],
             'host_resources': {'constraint': constraint, 'demands_by_role': demands}})
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'formal_check')
         self.assertIsNone(profiles.job_resource_limits(profile))

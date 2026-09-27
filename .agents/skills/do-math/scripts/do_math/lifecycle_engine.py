@@ -1,42 +1,54 @@
-"""Engine integration for currentness, scheduling, authority and external effects."""
+"""Engine integration for the execution lifecycle: clock, pause and resume, dispatch authority, readiness and machine executions.
+
+Initialization adoption, knowledge, external and formal flows live in their
+own engine mixins (initialization_engine, knowledge_engine, external_engine,
+formal_engine); the extended control application here routes to them.
+"""
 from __future__ import annotations
 
 from copy import deepcopy
 from datetime import timedelta
-import json
+import hashlib
 import math
 import time
-from pathlib import Path
 
-from .external import prepare_operation, validate_operation, execute_operation, reconcile_operation, prepare_retry, recover_operation
 from .governance import apply_decision, timestamp
-from .knowledge import (revise_knowledge, invalidate_knowledge, register_environment,
-    begin_transition, record_transition_result, activate_transition, invalidate_environment,
-    validate_basis, assess_use)
-from .planning import (task_ready, contract_hash, apply_event_schedule, contract_review_current, review_basis_key,
-                       capture_task_basis)
-from .execution_lifecycle import MACHINE_OUTPUT_RECEIPT
-from .input_basis import sources_current
+from .planning import (task_ready, contract_hash, record_due_events, contract_review_current, review_basis_key,
+                       capture_task_basis, governance_revisions)
 from .repository import canonical_json, exact_content_hash, new_id
-from .initialization import activation_requirements, capability_requirements, governance_working_view
+from .initialization import activation_requirements, capability_requirements
 
 _SCHEDULABLE = {'planned', 'waiting', 'active'}
 
 
 def _reconsider_interval(config):
-    seconds = config.get('research_reconsider_seconds', 86400)
-    if isinstance(seconds, bool) or not isinstance(seconds, int) or seconds <= 0:
-        raise ValueError('research_reconsider_seconds must be a positive integer')
-    return timedelta(seconds=seconds)
+    return timedelta(seconds=config['research_reconsider_seconds'])
 
 
-def _toolchain_matches(expected, actual):
-    return isinstance(actual, dict) and bool(actual.get('sha256')) and expected == actual
+def preserve_rejected_candidate(store, snapshot, *, raw, reason):
+    """Keep rejected bytes on the verified head, never publish the rejected state.
+
+    Loading ``snapshot`` validates it under the state contract; a head that
+    does not load is damaged and is not rewritten.
+    """
+    if not isinstance(raw, bytes):
+        raise TypeError('candidate raw bytes required')
+    try:
+        _, instance, runtime = store.load(snapshot)
+    except (ValueError, TypeError, KeyError, OSError, RuntimeError) as exc:
+        raise ValueError('damaged current state cannot be rewritten: ' + str(exc)) from exc
+    identity = new_id('RJ')
+    path = 'runtime/artifacts/' + identity + '/candidate.raw'
+    audit = 'runtime/artifacts/' + identity + '/rejection.json'
+    new_head = store.save_with_state(snapshot, instance, runtime, artifacts={path: raw, audit: canonical_json({
+        'id': identity, 'candidate_ref': path, 'sha256': hashlib.sha256(raw).hexdigest(),
+        'base_snapshot': snapshot, 'reason': reason, 'disposition': 'rejected_not_applied'})})[0]
+    return {'snapshot': new_head, 'raw_ref': path, 'audit_ref': audit}
 
 
 class LifecycleEngineMixin:
     def _lifecycle_now(self):
-        clock = getattr(self, 'lifecycle_clock', None)
+        clock = self.lifecycle_clock
         return timestamp(clock() if clock else None)
 
 
@@ -54,10 +66,9 @@ class LifecycleEngineMixin:
 
     def _clock_guard(self):
         """A retained regression blocks authority until a verified re-observation."""
-        monotonic_clock = getattr(self, 'lifecycle_monotonic', time.monotonic)
-        before = monotonic_clock()
+        before = self.lifecycle_monotonic()
         now = self._lifecycle_now()
-        after = monotonic_clock()
+        after = self.lifecycle_monotonic()
         persisted = self.runtime.get('last_observed_utc')
         if not persisted:
             return {'usable': False, 'reason': 'missing_utc_high_water'}
@@ -86,7 +97,7 @@ class LifecycleEngineMixin:
                                                         else previous if reason == 'persisted_utc_regression'
                                                         else anchor[0]).isoformat()}
             return self._clock_failure
-        if getattr(self, '_clock_failure', None):
+        if self._clock_failure:
             return self._clock_failure
         self._clock_anchor = (now, after, wall_radius, mono_radius)
         return {'usable': True, 'observed_utc': now.isoformat()}
@@ -169,7 +180,7 @@ class LifecycleEngineMixin:
         from .session_slots import quiescence
         self.runtime['recovery_checked'] = not any(quiescence(self.runtime).values())
         requirements = activation_requirements(self.instance, self.runtime, at=self._lifecycle_now().isoformat(),
-            owner_handlers=getattr(self, '_governance_owner_handlers', lambda: None)())
+            owner_handlers=self._governance_owner_handlers())
         lifecycle.setdefault('activation', {})['missing'] = requirements['missing']
         lifecycle['activation']['observation_errors'] = requirements['observation_errors']
         if not requirements['satisfied']:
@@ -191,166 +202,18 @@ class LifecycleEngineMixin:
                       event_refs=list(dict.fromkeys(self.runtime['pending_events'])))
         return {'activated': True, **requirements}
 
-    def _initialization_control(self, change, source_ref):
-        """Existing decision control adopts settings or refreshes observed CLI evidence."""
-        from .initialization import governance_basis, grant_current, INITIAL_ROLES, adapter_for
-        from .execution_profiles import resolve_profile, capability_evidence
-        from .review_policy import build_review_policy
-        lifecycle = self.instance['lifecycle']
-        operation = change.get('operation', 'adopt')
-        if lifecycle['state'] == 'active' and operation != 'probe':
-            raise ValueError('initialization adoption cannot replace an active contract')
-        if operation == 'governance':
-            from .governance import initialize_governance, preserve_source
-            records = change.get('records')
-            if not isinstance(records, list) or not records:
-                raise ValueError('exact user-approved governance records required')
-            initial_source = preserve_source(new_id('GS'), lifecycle['immutable_input']['text'], origin='user')
-            approval_source = self.instance['governance_sources'][source_ref]
-            approval = {'id': new_id('DC'), 'kind': 'initial_governance', 'actor': 'user',
-                'source_ref': source_ref, 'source_sha256': approval_source['sha256'],
-                'input_source_ref': initial_source['id'], 'input_source_sha256': initial_source['sha256'],
-                'record_hashes': {r['id']: exact_content_hash(r) for r in records}}
-            self.instance = initialize_governance(self.instance, initial_source, approval, records,
-                                                  approval_source=approval_source)
-            self.instance['lifecycle']['adoption']['governance_sha256'] = governance_basis(self.instance)
-            self.instance['lifecycle']['adoption'].setdefault('source_refs', []).append(source_ref)
-            return
-        if operation == 'probe':
-            if 'profile_ref' in change and 'profile_refs' in change:
-                raise ValueError('supply profile_ref or profile_refs, not both')
-            refs = change.get('profile_refs', [change.get('profile_ref')])
-            if not isinstance(refs, list) or not refs:
-                raise ValueError('capability probe requires exact profile references')
-            profiles = [resolve_profile(self.instance['execution_profiles'], ref) for ref in refs]
-            if len({profile['id'] for profile in profiles}) != len(profiles):
-                raise ValueError('capability probe profile references must be distinct')
-            if any(profile['actor_kind'] != 'ai' for profile in profiles):
-                raise ValueError('CLI capability probe requires AI profiles')
-            observations, rows = {}, []
-            for profile in profiles:
-                adapter = adapter_for(profile)
-                key = (profile['ai']['provider'], adapter.observation_key())
-                if key not in observations:
-                    observations[key] = adapter.describe()
-                rows.append(capability_evidence(profile, observations[key], observed_at=self._lifecycle_now().isoformat()))
-            # A failed observation leaves the previous evidence intact. These
-            # remain individual observed facts, never an aggregate permission.
-            self.instance.setdefault('capability_evidence', {}).update({row['id']: row for row in rows})
-            return
-        if operation != 'adopt':
-            raise ValueError('initialization operation must be governance, adopt or probe')
-        adoption = deepcopy(lifecycle.get('adoption', {}))
-        if change.get('adopt_current_config') is True:
-            adoption['config_sha256'] = exact_content_hash(self.instance['config'])
-        if change.get('adopt_current_governance') is True:
-            adoption['governance_sha256'] = governance_basis(self.instance)
-        if 'conversation_loss_policy' in change:
-            if change['conversation_loss_policy'] not in {'pause', 'continue_authorized'}:
-                raise ValueError('explicit conversation loss policy required')
-            self.instance['conversation_loss_policy'] = change['conversation_loss_policy']
-        if 'external_policy' in change:
-            if change['external_policy'] not in {'disabled', 'explicit_grants'}:
-                raise ValueError('external policy must be disabled or explicit_grants')
-            adoption['external_policy'] = change['external_policy']
-        if 'review_policy' in change or change.get('adopt_default_review_policy'):
-            policy = build_review_policy(change.get('review_policy'),
-                reviewer_count=self.instance['config'].get('reviewers'),
-                max_rounds=self.instance['config'].get('review_rounds'))
-            self.instance['review_policy'] = policy
-            adoption['review_policy_sha256'] = exact_content_hash(policy)
-        if 'profile_refs' in change:
-            refs = change['profile_refs']
-            if not isinstance(refs, list) or not refs:
-                raise ValueError('adoption requires exact profile references')
-            from .observations import observation_settings_errors
-            for ref in refs:
-                errors = observation_settings_errors(resolve_profile(self.instance['execution_profiles'], ref))
-                if errors:
-                    raise ValueError('observation_configuration: ' + json.dumps(errors, ensure_ascii=False))
-            adoption['profile_refs'] = deepcopy(refs)
-        if 'initial_profile_ref' in change:
-            profile = resolve_profile(self.instance['execution_profiles'], change['initial_profile_ref'])
-            if profile['role'] != 'intent_interpretation':
-                raise ValueError('initial profile must permit intent_interpretation')
-            from .model_policy import selection
-            selection(self.instance['config'], {'role': 'intent_interpretation',
-                'profile_ref': change['initial_profile_ref']}, {}, self.instance['knowledge'],
-                instance=self.instance)
-            adoption['initial_profile_ref'] = deepcopy(change['initial_profile_ref'])
-        elif adoption.get('config_sha256') == exact_content_hash(self.instance['config']) and adoption.get('profile_refs'):
-            from .model_policy import selection
-            chosen = selection(self.instance['config'], {'role': 'intent_interpretation'}, {},
-                               self.instance['knowledge'], instance=self.instance)['profile_ref']
-            if chosen in adoption['profile_refs']:
-                adoption['initial_profile_ref'] = chosen
-        for field, initial in [('initial_grant_ids', True), ('research_grant_ids', False)]:
-            if field in change:
-                if not isinstance(change[field], list) or not change[field]:
-                    raise ValueError(field + ' must be nonempty')
-                for gid in change[field]:
-                    if not grant_current(self.instance, gid, self._lifecycle_now(), initial=initial):
-                        raise ValueError('grant is absent, stale or outside initialization scope: ' + gid)
-                adoption[field] = list(change[field])
-        if set(adoption.get('initial_grant_ids', [])) & set(adoption.get('research_grant_ids', [])):
-            raise ValueError('initial and research authority must use distinct grants')
-        adoption.setdefault('source_refs', [])
-        if source_ref not in adoption['source_refs']:
-            adoption['source_refs'].append(source_ref)
-        lifecycle['adoption'] = adoption
-        decision_id = new_id('DC')
-        self.instance['decisions'][decision_id] = {'id': decision_id, 'kind': 'initialization',
-            'source_ref': source_ref, 'actor': 'user', 'change': deepcopy(change), 'affected': [],
-            'created_at': self._lifecycle_now().isoformat()}
-        self._queue_initial_intent()
-
-    def _queue_initial_intent(self):
-        lifecycle = self.instance['lifecycle']
-        if lifecycle.get('intent_check'):
-            return
-        adoption = lifecycle.get('adoption', {})
-        ref = adoption.get('initial_profile_ref')
-        if not ref or not self._capability_requirements(ref)['satisfied']:
-            return
-        from .initialization import grant_current
-        if not any(grant_current(self.instance, gid, self._lifecycle_now(), initial=True)
-                   and 'intent_interpretation' in self.instance['grants'][gid]['roles']
-                   for gid in adoption.get('initial_grant_ids', [])):
-            return
-        input_id = lifecycle.setdefault('input_id', new_id('UI'))
-        if any(row.get('input_ref') == input_id and not row.get('superseded_by')
-               and row.get('application', {}).get('status') == 'awaiting_decision'
-               for row in self.runtime.get('intent_imports', {}).values()):
-            return
-        if not any(row['id'] == input_id for row in self.runtime.setdefault('inputs', [])):
-            self.runtime['inputs'].append({'id': input_id, 'text': lifecycle['immutable_input']['text'],
-                'sha256': lifecycle['immutable_input']['sha256'], 'config': {}})
-        pending = [*self.runtime['queue'],
-                   *(row.get('action', {}) for row in self.runtime.get('waiting_actions', {}).values())]
-        if not any(a.get('role') == 'intent_interpretation' and a.get('target') == input_id for a in pending):
-            self._enqueue('intent_interpretation', input_id, stage='interpret', initialization=True,
-                          profile_ref=ref, reason='Interpret preserved initialization input independently')
-
-    def _complete_initial_intent(self, input_id):
-        """Called after ENGINE applies the independently checked import units."""
-        lifecycle = self.instance['lifecycle']
-        if input_id != lifecycle.get('input_id'):
-            return False
-        from .initialization import initial_intent_evidence
-        lifecycle['intent_check'] = initial_intent_evidence(self.instance, self.runtime,
-            owner_handlers=getattr(self, '_governance_owner_handlers', lambda: None)())
-        return True
-
     def _action_lifecycle_gate(self, action):
+        """Admit the action under the current lifecycle, authority and clock; return its profile.
+
+        Selecting the profile records the action's profile reference and actor kind.
+        """
         if self._instance_closed():
             raise ValueError('closed/completed instance cannot dispatch')
         self._require_action_clock()
         profile = self._execution_profile(action)
-        from .execution_profiles import profile_ref
-        action.update(profile_ref=profile_ref(profile), actor_kind=profile['actor_kind'])
         lifecycle = self.instance['lifecycle']['state']
         if lifecycle == 'paused' and self._limited_recovery_allowed(action):
-            return
+            return profile
         if lifecycle == 'paused' or not self._conversation_live():
             raise ValueError('lifecycle or conversation prevents dispatch')
         if lifecycle == 'initializing':
@@ -360,7 +223,7 @@ class LifecycleEngineMixin:
                 transition = self.runtime['trust_transitions'].get(action.get('transition_id'), {})
                 if not transition.get('source_ref'):
                     raise ValueError('trust preparation requires explicit transition authority')
-                return
+                return profile
             if action['role'] not in {'intent_interpretation', 'maintenance'}:
                 raise ValueError('research dispatch waits for initialization')
             gid = action.get('grant_id')
@@ -398,6 +261,7 @@ class LifecycleEngineMixin:
                 action['grant_id'] = authority['grant_id']
         else:
             raise ValueError('invalid lifecycle state')
+        return profile
 
     @staticmethod
     def _recovery_action_basis(action):
@@ -421,8 +285,8 @@ class LifecycleEngineMixin:
         for field in ('procedure', 'purpose', 'grant_id', 'expires_at'):
             if not isinstance(change.get(field), str) or not change[field].strip():
                 raise ValueError('limited recovery requires ' + field)
-        from .execution_profiles import resolve_profile
-        profile = resolve_profile(self.instance['execution_profiles'], change['profile_ref'])
+        from .execution_profiles import match_profile_ref
+        profile = match_profile_ref(self.instance['execution_profiles'], change['profile_ref'])
         if profile['role'] != action['role']:
             raise ValueError('limited recovery requires the exact role profile')
         if timestamp(change['expires_at']) <= self._lifecycle_now():
@@ -443,7 +307,7 @@ class LifecycleEngineMixin:
         self._check_limited_recovery(action, change=change)
 
     def _check_limited_recovery(self, action, *, change=None):
-        from .execution_profiles import resolve_profile
+        from .execution_profiles import match_profile_ref
         from .governance import authorize
         lifecycle = self.instance['lifecycle']
         if (lifecycle['state'] != 'paused' or self.runtime.get('status') != 'paused'
@@ -471,7 +335,7 @@ class LifecycleEngineMixin:
                 or change.get('expires_at') != binding.get('expires_at')
                 or timestamp(change['expires_at']) <= self._lifecycle_now()):
             raise ValueError('limited recovery no longer matches its approval')
-        profile = resolve_profile(self.instance['execution_profiles'], action['profile_ref'])
+        profile = match_profile_ref(self.instance['execution_profiles'], action['profile_ref'])
         if (profile['role'] != action['role']
                 or action['role'] not in {'maintenance', 'trust_check', 'trust_activate'}):
             raise ValueError('limited recovery profile or role is outside scope')
@@ -483,10 +347,13 @@ class LifecycleEngineMixin:
             raise ValueError('limited recovery capability evidence is unavailable')
 
     def _limited_recovery_allowed(self, action):
+        """A request without a limited recovery binding is not allowed; a stale binding is refused."""
+        if not action.get('repair', {}).get('limited_recovery'):
+            return False
         try:
             self._check_limited_recovery(action)
             return True
-        except (ValueError, KeyError, TypeError, IndexError):
+        except ValueError:
             return False
 
     def _execution_stop_requested(self, action, execution=None):
@@ -582,239 +449,12 @@ class LifecycleEngineMixin:
                 self._refresh_readiness()
         except Exception as error:
             self.instance, self.runtime = before_instance, before_runtime
-            from .preflight import preserve_rejected_candidate
             rejection = preserve_rejected_candidate(self.store, self.head, raw=canonical_json(request),
                 reason=f'{type(error).__name__}: {error}')
             self.head = rejection['snapshot']
             self._evaluate_stops()
             raise
         return True
-
-    def _invalidate_goal_currentness(self):
-        view = governance_working_view(self.instance) if self.instance.get('governance') else self.instance
-        judgments = self.instance.get('goal_judgments', [])
-        basis = self.instance.get('goal_assessment_basis', judgments[-1].get('basis') if judgments else None)
-        current = [j for j in judgments if j.get('basis') == basis] if basis is not None else judgments[-1:]
-        for judgment in current:
-            invalid_dependencies = [record_id for record_id in judgment.get('dependencies', [])
-                if record_id in self.instance.get('knowledge', {}) and not assess_use(self.instance['knowledge'][record_id], self.instance)['valid']]
-            if (judgment.get('record_basis') and not validate_basis(judgment['record_basis'], self.instance, self.runtime)['valid']) or (judgment.get('source_basis') and not sources_current(judgment['source_basis'], self.instance)) or (
-                    judgment.get('goal_revision', view.get('goal_revision')) != view.get('goal_revision')) or (
-                    judgment.get('policy_revision', view.get('policy_revision')) != view.get('policy_revision')) or invalid_dependencies:
-                judgment['current'] = False
-                judgment['invalidated_reason'] = ('A mathematical dependency is no longer usable: ' + ', '.join(invalid_dependencies)
-                                                   if invalid_dependencies else 'The actual judgment basis changed')
-        stale = [j for j in current if j.get('current') is False]
-        if stale and self.instance.get('goal_status') == 'mathematically_solved':
-            self.instance['goal_status'] = 'unsolved'
-            if self.runtime.get('status') == 'completed': self.runtime['status'] = 'ready'
-            self._lifecycle_event('goal_basis_invalidated', judgment_ids=[j.get('id', j.get('execution_id')) for j in stale])
-            self._enqueue('research_plan', reason='Previously used goal evidence is no longer current')
-
-    def _knowledge_control(self, config, source_ref):
-        operation, knowledge_id = config.get('operation'), config.get('id')
-        if operation not in {'revise', 'invalidate'}:
-            raise ValueError('knowledge operation must be revise or invalidate')
-        reason = config.get('reason', '')
-        item = self.instance['knowledge'].get(knowledge_id)
-        if item is None: raise ValueError('knowledge item does not exist')
-        previous_cycle = item.get('review_cycle_id')
-        if previous_cycle in self.runtime['review_cycles']:
-            cycle = self.runtime['review_cycles'][previous_cycle]
-            if cycle['status'] == 'working':
-                cycle.update(status='unresolved', decision='unresolved', phase='ended')
-                cycle.setdefault('history', []).append({'event': 'user_knowledge_change', 'source_ref': source_ref, 'reason': reason})
-                for investigation in cycle.get('research', {}).values():
-                    if investigation.get('status') == 'pending':
-                        investigation.update(status='cancelled', cancellation={'source_ref': source_ref, 'reason': reason})
-                cycle['deferred_actions'] = {}
-        for execution in self.runtime['executions'].values():
-            if execution.get('status') != 'ended' and execution.get('action', {}).get('target') == knowledge_id:
-                execution['stop_requested'] = 'knowledge_' + str(operation)
-        if operation == 'revise':
-            self.instance, self.runtime = revise_knowledge(self.instance, self.runtime, knowledge_id,
-                config.get('changes', {}), reason=reason, actor_ref=source_ref,
-                declared_impact=config.get('declared_impact'), independent_confirmation=config.get('independent_confirmation'))
-            self.runtime['queue'][:] = [a for a in self.runtime['queue'] if not (a.get('target') == knowledge_id and
-                (a.get('role') in {'identity_review', 'formal_check'} or (a.get('role') == 'supplemental_research' and a.get('review_cycle_id'))))]
-        elif operation == 'invalidate':
-            self.instance, self.runtime = invalidate_knowledge(self.instance, self.runtime, knowledge_id,
-                reason=reason, actor_ref=source_ref, declared_impact=config.get('declared_impact'),
-                independent_confirmation=config.get('independent_confirmation'))
-            self.runtime['queue'][:] = [a for a in self.runtime['queue'] if not (a.get('target') == knowledge_id and
-                (a.get('role') in {'identity_review', 'formal_check'} or (a.get('role') == 'supplemental_research' and a.get('review_cycle_id'))))]
-        else:
-            raise ValueError('knowledge operation must be revise or invalidate')
-        self._lifecycle_event('knowledge_' + operation, target=knowledge_id, source_ref=source_ref, reason=reason)
-        self._enqueue('research_plan', reason=reason, knowledge_id=knowledge_id, source_ref=source_ref)
-
-    def _trust_control(self, config, source_ref):
-        operation = config.get('operation')
-        from .trust_validation import environment_errors
-        if operation == 'register':
-            from .trust_validation import register_request_errors
-            from .trust_inventory import read_record, usable_errors, binding as baseline_binding
-            errors = register_request_errors(config)
-            if errors:
-                raise ValueError('; '.join(errors))
-            reference, bound = config['toolchain_record'], config['binding']
-            try:
-                record = read_record(reference['path'])
-            except OSError as error:
-                raise ValueError('toolchain record unavailable: ' + str(error)) from error
-            if (record['id'] != reference['id'] or record['identity'] != config['toolchain']
-                    or bound['baseline'] >= len(record['baselines']) or baseline_binding(record, bound['baseline']) != bound):
-                raise ValueError('trust registration differs from its toolchain record')
-            errors = usable_errors(record)
-            if record['baselines'][bound['baseline']]['validation']['status'] != 'verified':
-                errors.append('bound toolchain baseline has no successful representative check')
-            if errors:
-                raise ValueError('; '.join(errors))
-            self.instance, environment_id = register_environment(self.instance, config['toolchain'], config['allowed_axioms'])
-            environment = self.instance['trust_environments'][environment_id]
-            environment.update(source_ref=source_ref, toolchain_record=deepcopy(reference))
-            self.runtime.setdefault('trust_bindings', {})[environment_id] = deepcopy(bound)
-            errors = environment_errors(environment, bound)
-            if errors:
-                raise ValueError('; '.join(errors))
-            self._lifecycle_event('trust_environment_registered', target=environment_id, source_ref=source_ref)
-        elif operation == 'transition':
-            environment_id = config.get('env_id')
-            environment = self.instance['trust_environments'].get(environment_id)
-            if not environment or environment.get('status') == 'invalid':
-                raise ValueError('transition target must be a noninvalid registered environment')
-            if not environment.get('toolchain', {}).get('sha256'):
-                raise ValueError('transition needs an exact executable fingerprint')
-            if any(t.get('status') in {'checking', 'ready'} for t in self.runtime['trust_transitions'].values()):
-                raise ValueError('a trust transition is already in progress')
-            transition = begin_transition(self.instance, environment_id)
-            errors = environment_errors(environment, self.runtime.get('trust_bindings', {}).get(environment_id))
-            if errors:
-                raise ValueError('; '.join(errors))
-            transition.update(source_ref=source_ref, created_at=self._lifecycle_now().isoformat())
-            transition.setdefault('history', []).append({'kind': 'environment_fixed',
-                'environment_id': environment_id, 'environment_sha256': exact_content_hash(environment),
-                'source_ref': source_ref, 'at': transition['created_at']})
-            self.runtime['trust_transitions'][transition['id']] = transition
-            for target in transition['targets']:
-                self._enqueue('trust_check', target['id'], transition_id=transition['id'], source_ref=source_ref)
-            if not transition['targets']:
-                self._enqueue('trust_activate', transition_id=transition['id'], source_ref=source_ref)
-            self._lifecycle_event('trust_transition_started', target=transition['id'], source_ref=source_ref)
-        elif operation == 'invalidate':
-            self.instance, self.runtime = invalidate_environment(self.instance, self.runtime,
-                config.get('env_id'), config.get('reason', 'Trust environment invalidated by explicit user decision'))
-            self._lifecycle_event('trust_environment_invalidated', target=config.get('env_id'), source_ref=source_ref)
-        else:
-            raise ValueError('trust operation must be register, transition or invalidate')
-
-    def _external_control(self, config, source_ref):
-        operation = config.get('operation')
-        if operation == 'prepare':
-            if self.instance['lifecycle'].get('adoption', {}).get('external_policy') != 'explicit_grants':
-                raise ValueError('external effects are disabled by the adopted policy')
-            grant = self.instance.get('grants', {}).get(config.get('grant_id'))
-            if not grant or grant.get('kind') != 'http': raise ValueError('HTTP operation requires an explicit HTTP grant')
-            stable_source_ref = config.get('source_ref') or ('external:' + str(config['id']) if config.get('id') else source_ref)
-            profile = self._execution_profile({'role': 'external_action'})
-            scope = {key: config[key] for key in ('target_id', 'purpose', 'subject') if key in config}
-            if 'actor_kind' in config and config['actor_kind'] != profile['actor_kind']:
-                raise ValueError('external request scope differs from the actual execution profile: actor_kind')
-            scope['actor_kind'] = profile['actor_kind']
-            entry = prepare_operation(config.get('request'), config['grant_id'], stable_source_ref, config.get('id'), **scope)
-            binding = getattr(self, '_external_preparation_binding', None)
-            if binding is not None:
-                entry['academic_binding'] = deepcopy(binding)
-            if grant.get('academic_only') or grant.get('requires_academic') or binding is not None:
-                from .academic import bind_external_prerequisite
-                basis = self._solution_basis() if hasattr(self, '_solution_basis') else None
-                entry = bind_external_prerequisite(self.instance, self.runtime, basis, entry,
-                    resolve_evidence=getattr(self, '_academic_evidence', None))
-            self._validate_external(entry, grant)
-            existing = self.runtime['external_operations'].get(entry['id'])
-            immutable = ('id', 'request_sha256', 'grant_id', 'source_ref', 'target_id', 'purpose', 'subject',
-                         'actor_kind', 'academic_basis', 'academic_binding')
-            if existing:
-                if any(existing.get(key) != entry.get(key) for key in immutable): raise ValueError('external operation ID already identifies another ledger')
-                if existing.get('status') == 'prepared': self._enqueue('external_action', entry['id'], grant_id=entry['grant_id'], source_ref=source_ref)
-                return
-            self.runtime['external_operations'][entry['id']] = entry
-            self._enqueue('external_action', entry['id'], grant_id=entry['grant_id'], source_ref=source_ref)
-            self._lifecycle_event('external_operation_prepared', target=entry['id'], source_ref=source_ref)
-        elif operation == 'reconcile':
-            entry = self.runtime['external_operations'].get(config.get('id'))
-            if entry is None: raise ValueError('external operation does not exist')
-            evidence = config.get('evidence')
-            if not isinstance(evidence, dict):
-                raise ValueError('reconciliation requires structured operation evidence')
-            entry = reconcile_operation(entry, evidence, config.get('result'), source='user',
-                succeeded=True if evidence.get('fact') == 'succeeded' else None,
-                effect_absent=True if evidence.get('fact') == 'effect_absent' else None,
-                idempotency_evidence=evidence.get('idempotency_evidence'))
-            entry['reconciliation']['source_ref'] = source_ref
-            self.runtime['external_operations'][entry['id']] = entry
-            self._external_execution_record(entry)
-            self._lifecycle_event('external_operation_reconciled', target=entry['id'], source_ref=source_ref,
-                                  outcome=entry['status'], evidence=config['evidence'])
-        elif operation == 'retry':
-            entry = self.runtime['external_operations'].get(config.get('id'))
-            grant_id = config.get('grant_id')
-            if entry is None:
-                raise ValueError('external operation does not exist')
-            if entry.get('status') not in {'unknown', 'failed', 'cancelled'}:
-                raise ValueError('completed operation cannot be retried')
-            if not isinstance(grant_id, str) or not grant_id or grant_id != entry.get('grant_id'):
-                raise ValueError('retry requires the operation\'s explicit current grant')
-            grant = self.instance.get('grants', {}).get(grant_id)
-            if not grant or grant.get('kind') != 'http':
-                raise ValueError('retry requires an active HTTP grant')
-            transmitted = entry.get('transmitted')
-            retry = config.get('evidence')
-            if not retry and entry.get('status') == 'failed' and entry.get('effect_absent') is True:
-                proof = entry.get('reconciliation', {}).get('evidence', {})
-                if proof.get('evidence_ref'):
-                    retry = {'kind': 'effect_absent', 'request_sha256': entry['request_sha256'],
-                             'idempotency_key': entry['idempotency_key'], 'evidence_ref': proof['evidence_ref']}
-            if entry['status'] == 'cancelled' and transmitted is False and not entry.get('attempts'):
-                trial = {**entry, 'status': 'prepared', 'transmission_phase': 'not_started'}
-            else:
-                if not isinstance(retry, dict): raise ValueError('retry requires request-bound effect or idempotency evidence')
-                trial = prepare_retry(entry, retry, source='user', now_iso=self._lifecycle_now().isoformat())
-            self._validate_external(trial, grant)
-            previous = {key: deepcopy(value) for key, value in entry.items()
-                        if key not in {'history', 'attempts'}}
-            history = [*deepcopy(entry.get('history', [])), {'action': 'retry_prepared', 'source_ref': source_ref,
-                       'previous': previous, 'previous_status': entry['status'],
-                       'previous_execution_id': entry.get('execution_id'), 'at': self._lifecycle_now().isoformat()}]
-            attempts = deepcopy(entry.get('attempts', []))
-            if attempts and 'outcome' not in attempts[-1]:
-                attempts[-1].update(outcome=entry['status'], transmitted=transmitted)
-            elif transmitted is True:
-                attempts.append({'request_sha256': entry['request_sha256'], 'outcome': entry['status'],
-                                 'transmitted': transmitted})
-            entry = deepcopy(trial)
-            entry.pop('execution_id', None)
-            entry.update(status='prepared', history=history, attempts=attempts,
-                         retry_authorized=True, retried_from=source_ref, transmitted=False, transmission_phase='not_started',
-                         continuation_of=previous.get('execution_id'))
-            for key in ('http_status', 'body_base64', 'body_sha256', 'error', 'credential_env', 'reconciliation', 'succeeded', 'effect_absent'):
-                entry.pop(key, None)
-            self.runtime['external_operations'][entry['id']] = entry
-            self._enqueue('external_action', entry['id'], grant_id=grant_id, source_ref=source_ref)
-            self._lifecycle_event('external_operation_retry_prepared', target=entry['id'], source_ref=source_ref,
-                                  previous_status=previous['status'])
-        else:
-            raise ValueError('external operation must be prepare, reconcile, or retry')
-
-    def _external_prerequisite(self, operation, grant):
-        from .academic import external_prerequisite
-        basis = self._solution_basis() if hasattr(self, '_solution_basis') else None
-        return external_prerequisite(self.instance, self.runtime, basis, operation, grant,
-                                     resolve_evidence=getattr(self, '_academic_evidence', None))
-
-    def _validate_external(self, operation, grant):
-        validate_operation(operation, grant, self._lifecycle_now().isoformat(), runtime=self.runtime,
-                           academic_check=self._external_prerequisite)
 
     def _conversation_control(self, config, source_ref):
         operation, conversation_id, generation = config.get('operation'), config.get('id'), config.get('generation')
@@ -938,7 +578,7 @@ class LifecycleEngineMixin:
         self._invalidate_goal_currentness()
         self._retry_observation_configuration()
         missing_assessments = self._ensure_model_assessments()
-        query_instance = governance_working_view(self.instance)
+        editions = governance_revisions(self.instance)
         for task_id, task in self.runtime['tasks'].items():
             if task.get('status') not in _SCHEDULABLE:
                 self._task_readiness.pop(task_id, None)
@@ -963,13 +603,12 @@ class LifecycleEngineMixin:
                     self._enqueue('research_preparation', task_id,
                         reason='Reprepare the unchanged research obligation with a permitted current work profile: '+str(error))
                 continue
-            required = {'revision': task['revision'], 'contract_sha256': contract_hash(task),
-                        'goal_revision': query_instance['goal_revision'], 'policy_revision': query_instance['policy_revision']}
+            required = {'revision': task['revision'], 'contract_sha256': contract_hash(task), **editions}
             # One premise snapshot serves the review key and every recorded review of this task.
-            task_basis = capture_task_basis(task, query_instance, self.runtime)
-            review_key = review_basis_key(task, query_instance, self.runtime, task_basis=task_basis)
+            task_basis = capture_task_basis(task, self.instance, self.runtime)
+            review_key = review_basis_key(task, self.instance, self.runtime, task_basis=task_basis)
             for review in task.get('reviews', []):
-                currentness = contract_review_current(review, task, query_instance, self.runtime, task_basis=task_basis)
+                currentness = contract_review_current(review, task, self.instance, self.runtime, task_basis=task_basis)
                 review['inputs_current'] = currentness['valid']
                 if currentness['changes']:
                     review['currentness_changes'] = currentness['changes']
@@ -995,7 +634,7 @@ class LifecycleEngineMixin:
                     self.runtime['queue'][:] = [a for a in self.runtime['queue'] if a not in candidates]
                     self._enqueue('task_contract_review', task_id, contract_basis=required, review_basis_key=review_key,
                                   reason='Current contract and policy require independent approval')
-            evaluation = deepcopy(task_ready(task, query_instance, self.runtime,
+            evaluation = deepcopy(task_ready(task, self.instance, self.runtime,
                                     action={'role': 'research_work', 'target': task_id, 'actor_kind': 'ai'},
                                     evaluation_context=evaluation_context))
             if not approved:
@@ -1013,16 +652,7 @@ class LifecycleEngineMixin:
                                       schedule=not evaluation.get('dispatch_occupied', False))
             if evaluation['state'] == 'evaluation_error' and (not previous or previous.get('errors') != evaluation['errors']):
                 self._lifecycle_event('task_condition_evaluation_error', target=task_id, errors=evaluation['errors'])
-        old_pending_inputs = {event.get('target') for event in self.runtime['events']
-                              if event['id'] in self.runtime['pending_events'] and event['kind'] == 'task_new_input'}
-        scheduled = apply_event_schedule(self.instance, self.runtime, now.isoformat(),
-                                         evaluation_context=evaluation_context)
-        duplicate_ids = {event['id'] for event in scheduled['events']
-                         if event['kind'] == 'task_new_input' and event.get('target') in old_pending_inputs}
-        if duplicate_ids:
-            scheduled['runtime']['events'] = [event for event in scheduled['runtime']['events'] if event['id'] not in duplicate_ids]
-            scheduled['runtime']['pending_events'] = [event_id for event_id in scheduled['runtime']['pending_events'] if event_id not in duplicate_ids]
-        self.instance, self.runtime = scheduled['instance'], scheduled['runtime']
+        record_due_events(self.instance, self.runtime, now.isoformat())
         if self.runtime.get('status') in {'paused', 'closed', 'completed'}:
             return
         self._schedule_reconsideration(now.isoformat())
@@ -1065,46 +695,21 @@ class LifecycleEngineMixin:
         # exact event_refs in an accepted execution's immutable input.
         if assigned and self.runtime.get('status') == 'waiting': self.runtime['status'] = 'ready'
 
-    def _formal_environment(self):
-        """The active environment's stored contract; live files are checked by the formal step."""
-        self._require_action_clock()
-        from .trust_validation import require_active_environment
-        return require_active_environment(self.instance, self.runtime)
-
-    def _apply_trust_rebind(self, check):
-        """Follow a baseline that setup_lean.py --rerecord appended; never author one."""
-        rebind = check.get('rebind')
-        environment_id = check.get('environment_id')
-        bindings = self.runtime.setdefault('trust_bindings', {})
-        if not rebind or bindings.get(environment_id) != rebind['previous']:
-            return
-        bindings[environment_id] = deepcopy(rebind['current'])
-        self._lifecycle_event('trust_environment_rebound', target=environment_id, schedule=False,
-            toolchain_record=deepcopy(check['toolchain_record']), previous=deepcopy(rebind['previous']),
-            current=deepcopy(rebind['current']), recorded_at=rebind['recorded_at'])
-
-    def _resume_environment_waits(self):
-        """Requeue formal checks stopped by the environment once its record or the active environment changes."""
-        from .trust_validation import environment_changed
-        for identifier, waiting in list(self.runtime.get('waiting_actions', {}).items()):
-            detail = waiting.get('detail', {})
-            if waiting.get('kind') != 'formal_environment' or not environment_changed(self.instance, detail):
-                continue
-            if not any(queued.get('id') == identifier for queued in self.runtime['queue']):
-                self.runtime['queue'].append({**deepcopy(waiting['action']), 'continuation_of': waiting['execution_id']})
-            del self.runtime['waiting_actions'][identifier]
-            self.runtime['history'].append({'kind': 'formal_environment_wait_resumed', 'action_id': identifier,
-                                            'previous': deepcopy(detail)})
+    def _release_machine_execution(self, execution, *, at):
+        """Mark the local call returned and return its capacity; False holds it at the termination barrier."""
+        from .execution_lifecycle import release_or_hold
+        from .launch import mark_returned
+        if execution.get('launch_ticket'):
+            mark_returned(execution['launch_ticket'])
+        return release_or_hold(execution, self._session_slots(), at=at)
 
     def _end_machine_execution(self, execution, *, outcome, disposition):
-        from .execution_lifecycle import release_or_hold, transition_execution
-        from .launch import mark_returned
+        """The one ending of a machine execution: release its capacity, then end it."""
+        from .execution_lifecycle import transition_execution
         at = self._lifecycle_now().isoformat()
         if execution['status'] == 'ended':
             return True
-        if execution.get('launch_ticket'):
-            mark_returned(execution['launch_ticket'])
-        if execution.get('capacity') and not release_or_hold(execution, self._session_slots(), at=at):
+        if not self._release_machine_execution(execution, at=at):
             return False
         if execution['status'] in {'starting', 'running'}:
             transition_execution(execution, 'stopping', at=at, stop_phase='terminating',
@@ -1112,49 +717,36 @@ class LifecycleEngineMixin:
         transition_execution(execution, 'ended', at=at, outcome=outcome, disposition=disposition)
         return True
 
-    def _external_execution_record(self, operation):
-        execution_id = operation.setdefault('execution_id', new_id('EX'))
-        record = self.runtime['executions'].get(execution_id)
-        if record is None:
-            action = next((a for a in self.runtime['queue'] if a.get('role') == 'external_action'
-                           and a.get('target') == operation['id']), None)
-            if action is None:
-                action = {'role': 'external_action', 'target': operation['id'],
-                          'grant_id': operation['grant_id'], 'source_ref': operation['source_ref']}
-            if operation.get('continuation_of'):
-                action['continuation_of'] = operation['continuation_of']
-            record = self._register_execution(action, {'id': execution_id, 'role': 'external_action',
-                'grant_id': operation['grant_id'], 'status': 'running', 'created_at': self._lifecycle_now().isoformat()})
-        if record['status'] != 'ended':
-            record.update(operation_id=operation['id'], request_sha256=operation['request_sha256'],
-                          source_ref=operation['source_ref'], effect_status=operation['status'],
-                          http_status=operation.get('http_status'), succeeded=operation.get('succeeded'))
-        self.runtime['external_operations'][operation['id']] = deepcopy(operation)
-        terminal = operation['status'] != 'prepared' or operation.get('waiting_reason')
-        if terminal:
-            accepted = operation['status'] == 'confirmed' and operation.get('succeeded') is True
-            if accepted and record['status'] != 'ended':
-                record['submission_receipt'] = {'kind': MACHINE_OUTPUT_RECEIPT, 'state': 'accepted',
-                    'execution_id': execution_id, 'evidence_ref': operation['id'],
-                    'source_sha256': operation['request_sha256'], 'accepted_at': self._lifecycle_now().isoformat()}
-            self._end_machine_execution(record, outcome='cancelled' if operation['status'] == 'cancelled'
-                                        else 'output_accepted' if accepted else 'execution_incomplete',
-                                        disposition={'external_operation': operation['id'],
-                                                     'effect_status': operation['status']})
-            activity_id = record['owner_activity_id']
-            activity = self.runtime['activities'][activity_id]
-            if operation['status'] == 'confirmed' and operation.get('succeeded') is True and activity['status'] != 'finished':
-                from .activities import finish_activity
-                finish_activity(self.runtime, activity_id, result_refs=[operation['id']], unresolved=[], followups=[],
-                                at=self._lifecycle_now().isoformat())
-            if activity['status'] != 'finished':
-                from .activities import wait_for
-                reason = 'external_reconciliation' if operation['status'] == 'unknown' else 'external_followup'
-                wait_for(self.runtime, activity_id, reason=reason,
-                    condition={'operation_id': operation['id'], 'status': operation['status']},
-                    next_owner='user', at=self._lifecycle_now().isoformat())
+    def _lean_machine_call(self, execution_id, invocation, *, source, declarations, workspace, environment,
+                           binding, should_stop, stopped_reason):
+        """Run one Lean machine calculation unless it is stopped first; return its result.
+
+        Formal and trust checks start the verifier with the same arguments: the
+        frozen command and toolchain (``invocation``), the approved axioms and the
+        launch ticket. ``should_stop`` is the owner's stop judgment.
+        """
+        arguments = dict(source=source, declarations=declarations, workspace=workspace,
+                         environment=environment, binding=binding, verifier=self.formal_verifier, **invocation,
+                         allowed_axioms=tuple(environment['allowed_axioms']),
+                         launch_ticket=deepcopy(self.runtime['executions'][execution_id]['launch_ticket']),
+                         should_stop=should_stop)
+        if should_stop():
+            return {'status': 'stopped', 'reason': stopped_reason}
+        result = yield execution_id, arguments
+        self._live_execution_ids.discard(execution_id)
+        return result
+
+    def _preserve_machine_return(self, execution_id, reference, result, **fields):
+        """Publish a returned calculation as ``reference`` before any judgment of it.
+
+        The execution's result reference names this evidence until the judged
+        result replaces it; ``fields`` are recorded with it.
+        """
+        self.runtime['executions'][execution_id].update(result_ref=reference, raw_result_ref=reference, **fields)
+        self._save({reference: canonical_json(result)})
 
     def _process_machine_action(self, action):
+        """Start one machine action; this lifecycle gate is the last one before its start."""
         role = action.get('role')
         if role not in {'external_action', 'trust_check', 'trust_activate'}: return False
         self._action_lifecycle_gate(action)
@@ -1176,302 +768,3 @@ class LifecycleEngineMixin:
         self._refresh_readiness()
         self._save()
         return True
-
-    def _run_trust_activation(self, action):
-        from .trust_validation import check_environment
-        return self._run_machine_steps(self._trust_activation_steps(action), calculator=check_environment)
-
-    def _record_machine_continuation(self, action, execution_id):
-        # A save replaces the state objects while this generator is suspended.
-        # Persist the continuation on the current queue, not only its old input.
-        action['continuation_of'] = execution_id
-        for queued in self.runtime['queue']:
-            if queued.get('id') == action.get('id'):
-                queued['continuation_of'] = execution_id
-
-    def _trust_activation_steps(self, action):
-        transition_id = action['transition_id']
-        transition = self.runtime['trust_transitions'][transition_id]
-        if transition['status'] in {'active', 'failed'}:
-            return
-        execution_id = new_id('EX')
-        execution = self._register_execution(action, {'id': execution_id, 'role': 'trust_activate',
-            'status': 'running', 'created_at': self._lifecycle_now().isoformat(),
-             'input_snapshot': self.head,
-             'input_manifest': [{'kind': 'trust_transition', 'id': transition_id, 'sha256': exact_content_hash(transition)}]})
-        if execution is None:
-            return False
-        self._save()
-        environment = deepcopy(self.instance['trust_environments'][transition['to_environment']])
-        binding = deepcopy(self.runtime.get('trust_bindings', {}).get(transition['to_environment']))
-        # One record read, identity check and fingerprint scan; there is no long scan to cancel.
-        verification = yield execution_id, {'environment': environment, 'binding': binding}
-        self._live_execution_ids.discard(execution_id)
-        execution = self.runtime['executions'][execution_id]
-        if (self._execution_stop_requested(action, execution) or bool(self.runtime.get('maintenance_fence'))
-                or self.instance['trust_environments'].get(transition['to_environment']) != environment):
-            self._end_machine_execution(execution, outcome='execution_incomplete', disposition={'kind':'environment_interrupted'})
-            from .activities import wait_for
-            wait_for(self.runtime, execution['owner_activity_id'], reason='environment_interrupted',
-                     condition={'transition_id':transition_id}, next_owner='engine', at=self._lifecycle_now().isoformat())
-            self._record_machine_continuation(action, execution_id)
-            self._save({f'runtime/artifacts/{execution_id}/environment.json':canonical_json(verification)})
-            return False
-        self._action_lifecycle_gate(action)
-        if verification.get('status') == 'verified':
-            self._apply_trust_rebind(verification)
-        self._finish_trust_transition(transition_id, verification)
-        transition = self.runtime['trust_transitions'][transition_id]
-        execution = self.runtime['executions'][execution_id]
-        artifact = f'runtime/artifacts/{execution_id}/trust-activation.json'
-        result = {'transition_id': transition_id, 'status': transition['status'],
-                  'trust_environment_id': transition['to_environment'],
-                  'reason': next((r['reason'] for r in reversed(transition.get('history', []))
-                                  if r.get('kind') == 'activation_failed'), None)}
-        accepted = transition['status'] == 'active'
-        execution['result_ref'] = artifact
-        if accepted:
-            execution['submission_receipt'] = {'kind': MACHINE_OUTPUT_RECEIPT, 'state': 'accepted',
-                'execution_id': execution_id, 'evidence_ref': artifact,
-                'source_sha256': exact_content_hash(result), 'trust_environment_id': transition['to_environment'],
-                'accepted_at': self._lifecycle_now().isoformat()}
-        if not self._end_machine_execution(execution, outcome='output_accepted' if accepted else 'execution_incomplete',
-                                           disposition={'kind': 'trust_activation', **result, 'artifact_ref': artifact}):
-            self._save({artifact: canonical_json(result)})
-            return False
-        from .activities import finish_activity
-        finish_activity(self.runtime, execution['owner_activity_id'], result_refs=[artifact],
-                        unresolved=[] if accepted else [transition_id], followups=[], at=self._lifecycle_now().isoformat())
-        self._save({artifact: canonical_json(result)})
-        self._remove_action(action)
-        self._refresh_readiness()
-        self._save()
-
-    def _run_external_action(self, action):
-        self._action_lifecycle_gate(action)
-        operation_id = action['target']
-        operation = self.runtime['external_operations'][operation_id]
-        if operation['status'] in {'confirmed', 'failed', 'cancelled'}: return
-        if not operation.get('execution_id'): operation['execution_id'] = new_id('EX')
-        if operation['status'] == 'unknown' or operation.get('transmission_phase') == 'recorded':
-            if operation['status'] == 'prepared':
-                operation.update(recover_operation(operation), error='Executor resumed without a confirmed remote outcome')
-            self._external_execution_record(operation)
-            self._lifecycle_event('external_reconciliation_required', target=operation_id)
-            return
-        previous = self.runtime['executions'].get(operation.get('execution_id'))
-        if previous and previous['status'] == 'ended':
-            operation['continuation_of'] = previous['id']
-            operation['execution_id'] = new_id('EX')
-            action['continuation_of'] = previous['id']
-            action['owner_activity_id'] = previous['owner_activity_id']
-        grant = self.instance.get('grants', {}).get(operation['grant_id'], {})
-        try:
-            self._validate_external(operation, grant)
-        except ValueError as error:
-            operation.update(status='cancelled', effect_absent=True, succeeded=False, error=str(error), transmitted=False)
-            self._external_execution_record(operation)
-            self._lifecycle_event('external_operation_not_authorized', target=operation_id, reason=str(error))
-            return
-        def persist(update):
-            current = self.runtime['external_operations'][operation_id]
-            if current['request_sha256'] != update['request_sha256'] or current['execution_id'] != update.get('execution_id'):
-                return False
-            if update['status'] == 'prepared':
-                if should_stop():
-                    raise ValueError('external transmission stopped before authorization')
-                self._require_action_clock()
-                self._validate_external(update, self.instance['grants'].get(update['grant_id'], {}))
-            self.runtime['external_operations'][operation_id] = deepcopy(update)
-            self._external_execution_record(update)
-            self._save()
-            return True
-        def should_stop():
-            self._controls()
-            return bool(self.runtime.get('stop_requested') or self.runtime.get('status') in {'paused', 'closed'} or
-                        self.runtime['executions'].get(operation['execution_id'], {}).get('stop_requested'))
-        try:
-            from .execution_profiles import resolve_profile
-            fixed_profile = resolve_profile(self.instance['execution_profiles'], action['profile_ref'])
-            result = execute_operation(deepcopy(operation), deepcopy(grant), persist=persist,
-                timeout_seconds=fixed_profile['window']['call_timeout_seconds'], should_stop=should_stop,
-                runtime=self.runtime, academic_check=self._external_prerequisite,
-                current_grant=lambda gid: self.instance['grants'].get(gid, {}))
-        except Exception as error:
-            result = deepcopy(self.runtime['external_operations'][operation_id])
-            sent = result.get('transmitted') is True
-            result.update(status='unknown' if sent else 'cancelled', succeeded=None if sent else False,
-                          effect_absent=None if sent else True, error=f'{type(error).__name__}: {error}')
-            persist(result)
-        self._lifecycle_event('external_operation_' + result['status'], target=operation_id,
-                              source_ref=result['source_ref'], request_sha256=result['request_sha256'])
-
-    def _run_trust_check(self, action):
-        from .trust_validation import verify_formal
-        return self._run_machine_steps(self._trust_check_steps(action), calculator=verify_formal)
-
-    def _trust_check_steps(self, action):
-        self._action_lifecycle_gate(action)
-        transition_id, knowledge_id = action['transition_id'], action['target']
-        transition = self.runtime['trust_transitions'][transition_id]
-        if transition['status'] not in {'checking', 'ready'}: return
-        if knowledge_id in transition['results']:
-            if transition['status'] == 'ready': self._enqueue('trust_activate', transition_id=transition_id)
-            return
-        target = next((t for t in transition['targets'] if t['id'] == knowledge_id), None)
-        if target is None: raise ValueError('trust check is not an assigned transition target')
-        environment = deepcopy(self.instance['trust_environments'][transition['to_environment']])
-        from .knowledge_records import proposal_view
-        item = proposal_view(self.instance, knowledge_id)
-        execution_id = new_id('EX')
-        workspace = Path(self.instance['workspace']) / 'trust' / execution_id
-        workspace.mkdir(parents=True, exist_ok=True)
-        execution = self._register_execution(action, {'id': execution_id, 'role': 'trust_check', 'status': 'running',
-            'created_at': self._lifecycle_now().isoformat()})
-        if execution is None:
-            return False
-        self._save()
-        toolchain = environment['toolchain']
-        check = validate_basis([target['basis']], self.instance, self.runtime)
-        stop_requested = False
-        raw_result = None
-        def should_stop():
-            # Owner-thread judgment of published state; the verifier reads only its flag.
-            nonlocal stop_requested
-            if self._calls.stopping:
-                stop_requested = True
-                return True
-            stop_requested = stop_requested or bool(
-                self._execution_stop_requested(action, self.runtime['executions'][execution_id]) or
-                self.instance['trust_environments'].get(transition['to_environment']) != environment or
-                not validate_basis([target['basis']], self.instance, self.runtime)['valid'])
-            from .governance import authorize
-            stop_requested = stop_requested or not authorize(self.instance, action, runtime=self.runtime)['allowed']
-            return stop_requested
-        binding = deepcopy(self.runtime.get('trust_bindings', {}).get(transition['to_environment']))
-        try:
-            from .trust_validation import environment_errors
-            errors = environment_errors(environment, binding)
-            if errors: raise ValueError('; '.join(errors))
-            if not check['valid']: raise ValueError('trust transition basis changed: ' + ', '.join(check['reasons']))
-            if environment.get('status') == 'invalid': raise ValueError('trust transition environment was invalidated')
-            from .execution_profiles import resolve_profile, machine_invocation
-            fixed = resolve_profile(self.instance['execution_profiles'], execution['execution_profile_ref'])
-            invocation = machine_invocation(fixed, trust_environment=environment,
-                on_started=lambda identity: self._machine_started(execution_id, identity))
-            arguments = dict(source=item['lean_code'], declarations=item['declaration_names'], workspace=workspace,
-                environment=environment, binding=binding, verifier=self.formal_verifier,
-                **invocation, allowed_axioms=tuple(environment['allowed_axioms']),
-                launch_ticket=deepcopy(execution['launch_ticket']), should_stop=should_stop)
-            if should_stop():
-                result = {'status': 'stopped', 'reason': 'stopped before trust verification'}
-            else:
-                result = yield execution_id, arguments
-                self._live_execution_ids.discard(execution_id)
-            raw_result = deepcopy(result)
-            if should_stop():
-                result = {**result, 'status': 'stopped', 'reason': 'trust verification stopped by control request'}
-            if result.get('status') == 'verified' and (result.get('source_sha256') != target['source_sha256'] or
-                    not _toolchain_matches(toolchain, result.get('toolchain'))):
-                result = {**result, 'status': 'rejected', 'reason': 'Compiler fingerprint or source differs from the fixed transition input'}
-            if result.get('status') == 'verified':
-                from .formal import compare_formal_results
-                result['identity_comparison'] = compare_formal_results(target, result)
-        except Exception as error:
-            result = {'status': 'failed', 'reason': f'{type(error).__name__}: {error}'}
-        if result.get('environment_check', {}).get('status') == 'verified':
-            self._apply_trust_rebind(result['environment_check'])
-        result.update(id=knowledge_id, execution_id=execution_id, trust_environment_id=transition['to_environment'],
-                      allowed_axioms=deepcopy(environment['allowed_axioms']))
-        artifact = f'runtime/artifacts/{execution_id}/trust-result.json'
-        result['artifact_ref'] = artifact
-        execution = self.runtime['executions'][execution_id]
-        raw_artifact = f'runtime/artifacts/{new_id("BA")}/trust-returned.json'
-        execution['result_ref'] = raw_artifact
-        execution['raw_result_ref'] = raw_artifact
-        self._save({raw_artifact: canonical_json(raw_result or result)})
-        execution = self.runtime['executions'][execution_id]
-        execution['result_ref'] = artifact
-        # Machine result disposition is independent of the worker submission protocol.
-        accepted = result['status'] == 'verified'
-        if accepted:
-            execution['submission_receipt'] = {'kind': MACHINE_OUTPUT_RECEIPT, 'state': 'accepted',
-                'execution_id': execution_id, 'evidence_ref': artifact, 'source_sha256': result['source_sha256'],
-                'trust_environment_id': transition['to_environment'], 'accepted_at': self._lifecycle_now().isoformat()}
-        if not self._end_machine_execution(execution, outcome='output_accepted' if accepted else 'execution_incomplete',
-                                           disposition={'trust_result': artifact, 'status': result['status']}):
-            self._save({artifact: canonical_json(result)})
-            return False
-        if result['status'] == 'stopped' or stop_requested:
-            result.update(status='stopped', reason=result.get('reason') or 'trust verification stopped')
-            self._record_machine_continuation(action, execution_id)
-            from .activities import wait_for
-            wait_for(self.runtime, execution['owner_activity_id'], reason='trust_check_stopped',
-                     condition={'transition_id': transition_id, 'target': knowledge_id, 'resume': True},
-                     next_owner='user', at=self._lifecycle_now().isoformat())
-            if self.runtime.get('status') != 'closed': self._pause_lifecycle('trust_check_stopped')
-            self._lifecycle_event('trust_target_stopped', target=knowledge_id, transition_id=transition_id,
-                                  execution_id=execution_id, artifact_ref=artifact)
-            self._save({artifact: canonical_json(result)})
-            return
-        self.runtime['trust_transitions'][transition_id] = record_transition_result(self.instance, self.runtime['trust_transitions'][transition_id], result)
-        from .activities import finish_activity
-        finish_activity(self.runtime, execution['owner_activity_id'], result_refs=[artifact], unresolved=[],
-                        followups=[transition_id], at=self._lifecycle_now().isoformat())
-        self._save({artifact: canonical_json(result)})
-        self._lifecycle_event('trust_target_checked', target=knowledge_id, transition_id=transition_id, result=result['status'])
-        if self.runtime['trust_transitions'][transition_id]['status'] == 'ready':
-            self._enqueue('trust_activate', transition_id=transition_id)
-        self.runtime['queue'][:] = [queued for queued in self.runtime['queue'] if queued != action]
-        self._refresh_readiness()
-        self._save()
-
-    def _finish_trust_transition(self, transition_id, verification):
-        self._require_action_clock()
-        transition = self.runtime['trust_transitions'][transition_id]
-        if transition['status'] in {'active', 'failed'}: return
-        try:
-            environment = self.instance['trust_environments'].get(transition['to_environment'])
-            bindings = [row for row in transition.get('history', []) if row.get('kind') == 'environment_fixed']
-            if (not environment or environment.get('status') == 'invalid' or len(bindings) != 1
-                    or bindings[0]['environment_id'] != transition['to_environment']
-                    or exact_content_hash(environment) != bindings[0]['environment_sha256']):
-                raise ValueError('target trust environment changed during transition')
-            if (verification.get('status') != 'verified' or verification.get('environment_id') != transition['to_environment']
-                    or verification.get('identity_sha256') != exact_content_hash(environment['toolchain'])
-                    or verification.get('binding') != self.runtime.get('trust_bindings', {}).get(transition['to_environment'])):
-                raise ValueError('current environment check required: ' + '; '.join(verification.get('errors', [])))
-            from .formal import compare_formal_results
-            reviewed = {}
-            pending = False
-            for target in transition['targets']:
-                result = transition.get('results', {}).get(target['id'], {})
-                if result.get('status') != 'verified':
-                    continue  # The domain checker rejects incomplete/failed targets.
-                if not compare_formal_results(target, result)['requires_identity_review']:
-                    continue
-                cid = self._start_staged_identity_review(transition_id, target['id'])
-                cycle = self.runtime['review_cycles'][cid]
-                if cycle['status'] in {'completed', 'unresolved'}:
-                    reviewed[target['id']] = self._completed_staged_identity_review(transition_id, target['id'], cid)
-                else:
-                    pending = True
-            if pending:
-                return  # Ready means checked, not activated; live K stays unchanged.
-            if reviewed:
-                candidate = deepcopy(transition)
-                for kid, receipt in reviewed.items():
-                    candidate['results'][kid]['identity_review'] = receipt
-                self.instance = activate_transition(self.instance, candidate, runtime=self.runtime)
-            else:
-                self.instance = activate_transition(self.instance, transition, runtime=self.runtime)
-        except ValueError as error:
-            transition['status'] = 'failed'
-            transition.setdefault('history', []).append({'kind': 'activation_failed', 'reason': str(error),
-                                                         'at': self._lifecycle_now().isoformat()})
-            self._lifecycle_event('trust_transition_failed', target=transition_id, reason=str(error))
-            self._enqueue('research_plan', reason='Trust transition failed; the previous environment remains in force', transition_id=transition_id)
-        else:
-            self.instance['trust_environments'][transition['to_environment']]['validation_receipt'] = deepcopy(verification)
-            transition.update(status='active', activated_at=self._lifecycle_now().isoformat())
-            self._lifecycle_event('trust_transition_activated', target=transition_id)

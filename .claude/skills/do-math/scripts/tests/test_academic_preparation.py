@@ -1,6 +1,5 @@
 """Assigned observation preparation: producer coverage and engine transitions."""
 from copy import deepcopy
-import json
 from pathlib import Path
 import sys
 import tempfile
@@ -9,13 +8,11 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.contracts import action_schema
 from do_math.model_policy import assessment_basis
-from do_math.observations import validate_rule_preparation
 from do_math.planning import action_read_ids, revision_waits
 from do_math.submission import payload_issues
-from test_engine import common
-import test_model_assessment_flow as assessment_tests
-from test_model_assessment_flow import rating
-from test_purpose_engine import ActivatedPurposeHarness, PurposeRunner
+from runner_fixtures import common
+from runner_fixtures import rating
+from purpose_fixtures import ActivatedPurposeHarness, PurposeRunner, prepared_assessment_engine
 from research_fixtures import candidate, prepared_rule_conditions, seal_response
 
 
@@ -92,7 +89,7 @@ class RuleSubmissionTests(unittest.TestCase):
 
 class RulePreparationFlowTests(ActivatedPurposeHarness):
     def prepare(self):
-        engine = assessment_tests.AssessmentFlowTests.prepare_engine(self)
+        engine = prepared_assessment_engine(self)
         engine.runtime['queue'] = []
         for task in engine.runtime['tasks'].values():
             task['initial_observation_rules'] = []

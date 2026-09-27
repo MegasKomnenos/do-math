@@ -11,6 +11,10 @@ FAMILIES = ("knowledge", "formal_results", "expositions", "identity_assessments"
 RESEARCH_RECORD_FAMILIES = ("knowledge", "formal-result", "exposition", "identity-assessment", "assessment-use",
                             "kind-definition", "trust-environment", "relation", "goal-judgment")
 EXPOSITION_FIELDS = ("definitions", "assumptions", "statement", "explanation", "summary")
+# Lifecycle of knowledge, exposition and relation records.
+RECORD_LIFECYCLES = frozenset({"active", "superseded", "withdrawn"})
+# States of the use of one identity assessment.
+ASSESSMENT_USE_STATUSES = frozenset({"active", "suspended", "withdrawn"})
 
 
 def record_digest(record):
@@ -319,56 +323,18 @@ def set_assessment_use(instance, assessment_id, status, reason, actor_ref):
 
 
 def validate_knowledge_records(instance):
-    records = all_records(instance)
-    for kid, record in instance.get("knowledge", {}).items():
-        if {"formal", "lean_code", "identity_assessment", "reviews", "status"} & set(record):
-            raise ValueError("knowledge contains another family's authority: " + kid)
-        if record.get("lifecycle") not in {"active", "superseded", "withdrawn"}:
-            raise ValueError("invalid knowledge lifecycle")
-        if record.get("exposition_id") not in instance.get("expositions", {}):
-            raise ValueError("missing exposition")
-        fid = record.get("formal_result_id")
-        if fid is not None and fid not in instance.get("formal_results", {}):
-            raise ValueError("missing formal result")
-        if any(ref not in records for ref in record.get("dependencies", [])):
-            raise ValueError("missing knowledge dependency")
+    """The knowledge-family rules no record schema or reference table states.
+
+    Field shapes, states and record references are the storage contract's
+    (record_schemas); what remains is uniqueness across records.
+    """
     for exposition in instance.get("expositions", {}).values():
-        fid = exposition.get("formal_result_id")
-        if fid is not None and fid not in instance.get("formal_results", {}):
-            raise ValueError("exposition references missing formal result")
         items = exposition.get("items", [])
         if len({item["id"] for item in items}) != len(items):
             raise ValueError("duplicate exposition item ID")
-    for assessment in instance.get("identity_assessments", {}).values():
-        if assessment.get("formal_result_id") not in instance.get("formal_results", {}) or assessment.get("exposition_id") not in instance.get("expositions", {}):
-            raise ValueError("assessment has missing inputs")
     seen = set()
     for use in instance.get("assessment_uses", {}).values():
-        aid = use.get("assessment_id")
-        if aid not in instance.get("identity_assessments", {}) or aid in seen:
-            raise ValueError("invalid or duplicate assessment use")
-        seen.add(aid)
-        if use.get("status") not in {"active", "suspended", "withdrawn"}:
-            raise ValueError("invalid assessment use status")
+        if use["assessment_id"] in seen:
+            raise ValueError("duplicate assessment use")
+        seen.add(use["assessment_id"])
     return True
-
-
-def _validate_family_record(record):
-    family = record.get("family")
-    required = {
-        "formal_results": {"id", "lean_code", "declaration_names", "publication_state", "formal_use", "verification"},
-        "expositions": {"id", "formal_result_id", "items", "lifecycle"},
-        "identity_assessments": {"id", "formal_result_id", "exposition_id", "decision", "basis", "policy_ref"},
-        "assessment_uses": {"id", "assessment_id", "status", "history"},
-    }
-    if family not in required or required[family] - set(record):
-        raise ValueError("incomplete knowledge-family record")
-    if family == "formal_results":
-        if record["publication_state"] not in {"candidate", "accepted", "rejected"} or record["formal_use"] not in {"active", "suspended", "withdrawn"}:
-            raise ValueError("invalid formal state")
-    if family == "expositions" and record["lifecycle"] not in {"active", "superseded", "withdrawn"}:
-        raise ValueError("invalid exposition lifecycle")
-    if family == "identity_assessments" and record["decision"] not in {"match", "mismatch", "unresolved"}:
-        raise ValueError("invalid identity decision")
-    if family == "assessment_uses" and record["status"] not in {"active", "suspended", "withdrawn"}:
-        raise ValueError("invalid assessment effect")

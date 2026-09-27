@@ -1,7 +1,7 @@
 """Integration checks for postsolution academic requirements.
 
-These tests use the temporary Git repository and scripted runner from the
-purpose-engine suite.  They verify engine orchestration, not a model judgment
+These tests use the temporary Git repository and scripted runner of the
+purpose scenario (``purpose_fixtures``).  They verify engine orchestration, not a model judgment
 or a Lean invocation.  Their starting states are copies of templates built
 once per process (``research_fixtures.restore_template``): the public
 activation, the state after the real mathematical solution (``solved_instance``)
@@ -22,98 +22,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from do_math.engine import ResearchEngine, control
 from do_math import external as external_module
-from do_math.repository import canonical_json
-from research_fixtures import charter_change, policy_change, send_control, assessment, restore_template
-from test_purpose_engine import GOAL, ActivatedPurposeHarness, PurposeHarness, PurposeRunner, formal_fixture
+from research_fixtures import charter_change, send_control, assessment, restore_template
+from purpose_fixtures import (SOLVED_REQUIREMENT_CRITERIA, AcademicRunner, ActivatedPurposeHarness, requirement,
+                              solved_instance)
 
 # The mathematical premise of the synthetic requirement-change states.
 SYNTHETIC_BASIS = {"goal_ref": "synthetic-solution", "records": []}
-# The requirement approved before the real solution; test_model_assessment_flow shares this solved state.
-SOLVED_REQUIREMENT_CRITERIA = ["draft account", "cite reviewed equality"]
-
-
-def requirement(criteria: list[str], *, required_inputs=None, external_effects=None) -> dict:
-    return {
-        "id": "writeup",
-        "scope": "A reader-facing account of the solved natural-number theorem.",
-        "criteria": criteria,
-        "assessor": "research_plan",
-        "required_inputs": required_inputs or [],
-        "external_effects": external_effects or [],
-    }
-
-
-class AcademicRunner(PurposeRunner):
-    """Purpose fixture that supplies an explicit planner resolution when asked."""
-
-    def __init__(self, *args, effect_request=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.effect_request = effect_request
-
-    def answer(self, role, context, workspace):
-        action = context["action"]
-        if role == "research_plan" and action.get("rejection_id"):
-            (workspace / "activity-extensions.json").write_bytes(canonical_json({
-                "academic_resolutions": [{
-                    "id": action["rejection_id"], "decision": "resolved",
-                    "evidence": "The planner compared the preserved objection with the completed reviewed task report.",
-                    "evidence_refs": [row['id'] for row in context['knowledge_catalog'] if row.get('usable_as_k')],
-                }],
-            }))
-        if role == "research_work" and context["task"].get("academic_requirement_id"):
-            task = context["task"]
-            effects = task.get("required_external_effects", [])
-            if effects and self.effect_request:
-                (workspace / "activity-extensions.json").write_bytes(canonical_json({"external_requests": [{
-                    "id": "academic-effect", "academic_effect_id": effects[0]["id"],
-                    "grant_id": effects[0].get("grant_id") or self.effect_request["grant_id"],
-                    "purpose": effects[0]["scope"], "request": deepcopy(self.effect_request["request"]),
-                }]}))
-            self.work_order.append(task["title"])
-            return {
-                "summary": "The academic criterion is addressed by the submitted reader-facing account.",
-                "used_sources": task.get("reuse", []), "questions": [], "outcome": "submitted",
-                "report": "The report explains the exact natural-number domain and the reviewed equality.",
-                "knowledge": [], "relations": [], "remaining_work": [],
-                "checkpoint": "The required account and its evidence are ready for independent assessment.",
-            }
-        return super().answer(role, context, workspace)
 
 
 def academic_tasks(engine):
     return [task for task in engine.runtime["tasks"].values() if task.get("academic_requirement_id") == "writeup"]
-
-
-def drive_to(engine, predicate, limit=45):
-    """``PurposeHarness.drive`` for a template build, which has no test case to fail."""
-    for _ in range(limit):
-        engine.run(max_steps=1)
-        if predicate(engine):
-            return
-        if engine.runtime["status"] in {"paused", "closed", "waiting"}:
-            raise AssertionError("Workflow stopped before its fixture outcome: " + repr(engine.status()))
-    raise AssertionError("Fixture did not finish within its bounded scenario: " + repr(engine.status()))
-
-
-def solved_instance(root, shared, *, criteria):
-    """``restore_template`` build: public activation, then the real mathematical solution.
-
-    This is ``PurposeHarness.make`` followed by ``drive`` to ``mathematically_solved``.
-    ``criteria`` None solves without academic requirements, so the runtime completes.
-    A list approves requirement ``writeup`` with those criteria first, so the
-    solution generates its academic task through the real path and the runtime
-    stays open. ``AcademicRunner`` answers like ``PurposeRunner`` until an
-    academic task or an academic rejection exists.
-    """
-    from research_fixtures import FixtureAdapter, activated_instance
-    instance_id = activated_instance(root, shared, goal=GOAL, config=PurposeHarness.fixture_config())
-    engine = ResearchEngine(root / "repository", instance_id, runner=AcademicRunner(), formal_verifier=formal_fixture)
-    with patch("do_math.initialization.adapter_for", side_effect=lambda profile: FixtureAdapter()):
-        if criteria is not None:
-            send_control(engine, "decision", config={"change": charter_change(engine,
-                academic_requirements=[requirement(criteria)])})
-        drive_to(engine, lambda current: current.instance["goal_status"] == "mathematically_solved")
-    return instance_id
 
 
 def requirement_change_instance(root, shared, *, completed):
@@ -150,7 +68,6 @@ class AcademicEngineTests(ActivatedPurposeHarness):
         engine, _ = super().make(*args, **kwargs)
         runner = AcademicRunner(**getattr(self, "runner_options", {}))
         engine.runner = runner
-        self.runners[-1] = runner
         return engine, runner
 
     def restore(self, build, **parameters):
@@ -158,7 +75,12 @@ class AcademicEngineTests(ActivatedPurposeHarness):
         self.root, instance_id = restore_template(build, **parameters)
         return self._engine(instance_id, AcademicRunner(**getattr(self, "runner_options", {})))
 
-    def _set_requirements(self, engine, criteria, decision_id, **extra):
+    def restore_solved(self, criteria):
+        """``restore`` for ``solved_instance``, whose build returns more than the instance ID."""
+        self.root, solved = restore_template(solved_instance, criteria=criteria)
+        return self._engine(solved["instance_id"], AcademicRunner(**getattr(self, "runner_options", {})))
+
+    def _set_requirements(self, engine, criteria, **extra):
         send_control(engine, "decision", config={"change": charter_change(engine, academic_requirements=[requirement(criteria, **extra)])})
 
     def _academic_tasks(self, engine):
@@ -179,7 +101,7 @@ class AcademicEngineTests(ActivatedPurposeHarness):
 
     def test_explicit_requirement_blocks_runtime_completion_until_independent_assessment(self):
         # The template approves the requirement, then drives the real solution to mathematically_solved.
-        engine, runner = self.restore(solved_instance, criteria=SOLVED_REQUIREMENT_CRITERIA)
+        engine, runner = self.restore_solved(SOLVED_REQUIREMENT_CRITERIA)
         tasks = self._academic_tasks(engine)
         self.assertEqual(len(tasks), 1)
         task = tasks[0]
@@ -205,7 +127,7 @@ class AcademicEngineTests(ActivatedPurposeHarness):
         old_basis = deepcopy(old["solution_basis"])
         old_hash = old["requirements_sha256"]
 
-        self._set_requirements(engine, ["draft account", "archival supplement"], "academic-v2")
+        self._set_requirements(engine, ["draft account", "archival supplement"])
         self._publish_followup(engine)
         tasks = self._academic_tasks(engine)
         self.assertEqual(len(tasks), 2)
@@ -224,7 +146,7 @@ class AcademicEngineTests(ActivatedPurposeHarness):
         old = self._academic_tasks(engine)[0]
         self.assertEqual(old["status"], "completed")
 
-        self._set_requirements(engine, ["draft account", "archival supplement"], "academic-v2")
+        self._set_requirements(engine, ["draft account", "archival supplement"])
         self._publish_followup(engine)
         tasks = self._academic_tasks(engine)
         preserved = next(task for task in tasks if task["id"] == old["id"])
@@ -294,7 +216,7 @@ class AcademicEngineTests(ActivatedPurposeHarness):
         self.assertEqual(engine.store.load()[2]["tasks"], before)
 
     def test_external_rejection_keeps_formal_solution_and_requires_planner_evidence_to_clear(self):
-        engine, _ = self.restore(solved_instance, criteria=None)  # The real solution; the runtime completed.
+        engine, _ = self.restore_solved(None)  # The real solution; the runtime completed.
         knowledge = next(iter(engine.instance["knowledge"].values()))
         formal_before = deepcopy(engine.instance["formal_results"][knowledge["formal_result_id"]])
         self.assertEqual(engine.runtime["status"], "completed")
@@ -357,7 +279,7 @@ class AcademicEngineTests(ActivatedPurposeHarness):
             config={"change": {"kind": "grant", "grant": {"id": "HTTP", "kind": "http",
                 "allowed_origins": [origin], "allowed_methods": ["POST"], "allowed_path_prefixes": ["/"],
                 "reuse": "reusable"}}})
-        self._set_requirements(engine, ["send manuscript"], "academic-effect-v1", required_inputs=["context:goal"],
+        self._set_requirements(engine, ["send manuscript"], required_inputs=["context:goal"],
             external_effects=[{"id": "submit", "scope": "send manuscript", "grant_id": "HTTP"}])
         transport_errors = []
         original_http = external_module._http
@@ -406,7 +328,7 @@ class AcademicEngineTests(ActivatedPurposeHarness):
                 config={"change": {"kind": "grant", "grant": {"id": "HTTP", "kind": "http",
                     "allowed_origins": [origin], "allowed_methods": ["POST"], "allowed_path_prefixes": ["/"],
                     "reuse": "reusable"}}})
-            self._set_requirements(engine, ["send manuscript"], "academic-effect" + suffix.replace("/", "-"),
+            self._set_requirements(engine, ["send manuscript"],
                 external_effects=[{"id": "submit", "scope": "send manuscript", "grant_id": "HTTP"}])
             # The successful loopback test covers the full mathematical path.
             # Here only that premise is synthetic; preparation, external Job,
@@ -449,8 +371,8 @@ class AcademicEngineTests(ActivatedPurposeHarness):
 
 class AcademicTaskPersistenceTests(unittest.TestCase):
     def setUp(self):
-        from test_approved_five_repairs import restore_input_recovery_state
-        restore_input_recovery_state(self)
+        from state_fixtures import start_active_copy
+        start_active_copy(self)
 
     def test_user_requirement_task_keeps_charter_provenance_without_invented_execution(self):
         from do_math.engine import ResearchEngine
@@ -477,6 +399,11 @@ class AcademicTaskPersistenceTests(unittest.TestCase):
                              for a in engine.runtime['queue']))
         _, _, saved = engine.store.load()
         self.assertEqual(saved["tasks"][task["id"]], task)
+
+    def test_absent_academic_evidence_resolves_to_none(self):
+        from do_math.engine import ResearchEngine
+        engine = ResearchEngine(self.repo, self.identifier)
+        self.assertIsNone(engine._academic_evidence("runtime/artifacts/BA-absent/evidence.json"))
 
 
 if __name__ == "__main__":

@@ -1,17 +1,18 @@
 """The provider gate must change engine recovery, not only report a timestamp."""
-from pathlib import Path
 import sys
+import tempfile
 import time
 import unittest
-from unittest.mock import patch
+from copy import deepcopy
+from pathlib import Path
+from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from research_fixtures import local_job_runner
-from do_math.engine import ResearchEngine, control
 from do_math import scheduled_operator
-from research_fixtures import producer_result, install_adapter_fixture, restore_template
+from do_math.engine import ResearchEngine
+from research_fixtures import install_adapter_fixture, local_job_runner, producer_result, restore_template
+from runner_fixtures import common, context_from, ScriptedRunner
 from state_fixtures import active_instance
-from test_engine import common, context_from, ScriptedRunner
 
 
 class QuotaRunner:
@@ -95,6 +96,88 @@ class RecoveryTests(unittest.TestCase):
             scheduled_operator.hold(workspace, reason='Explicit temporary HOLD fixture')
             self.assertEqual(scheduled_operator.wake(repo, engine.instance['id'], workspace)['outcome'], 'held')
             schedule.assert_not_called()
+
+
+class ProviderConnections(unittest.TestCase):
+    def test_result_observation_has_no_prepublication_schedule_effect(self):
+        from provider_fixtures import PROVIDER_LIMIT_FAILURE, admit, provider_repository
+        from research_fixtures import bare_engine, git_init
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        engine = bare_engine(store=provider_repository(git_init(root)))
+        engine.head, engine.instance, engine.runtime = engine.store.load()
+        self.assertTrue(admit(engine._session_slots(), engine.instance, engine.runtime, 'EX-limit'))
+        engine._schedule_provider_wake = create_autospec(engine._schedule_provider_wake)
+        engine._provider_outcome('EX-limit', {'status': 'failed', 'error_kind': 'provider_limit', 'failure': PROVIDER_LIMIT_FAILURE})
+        engine._schedule_provider_wake.assert_not_called()
+
+    def test_saved_wait_drives_wake_and_schedule_failure_is_recoverable(self):
+        from provider_fixtures import PROVIDER_LIMIT_FAILURE, admit, finish, provider_repository, report
+        from research_fixtures import bare_engine, git_init
+        from do_math import scheduled_operator
+        from do_math.session_slots import SessionSlots
+        from unittest.mock import patch
+        import time
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        engine = bare_engine(store=provider_repository(git_init(root)))
+        engine.head, engine.instance, engine.runtime = engine.store.load()
+        engine.instance['config']['operator_enabled'] = True
+        engine.runtime['tasks'] = {}  # The product save reads the task table this minimal provider state omits.
+        slots = engine._session_slots()
+        self.assertTrue(admit(slots, engine.instance, engine.runtime, 'EX-limit', current=time.time()))
+        # Observation is separate from publication; the external effect reads Git.
+        gate = report(slots, engine.instance, 'EX-limit', time.time(), PROVIDER_LIMIT_FAILURE)
+        finish(slots, engine.runtime, 'EX-limit', time.time(), close_activity=False)
+        action = {'id': 'AC-held', 'role': 'research_work',
+                  'profile_ref': deepcopy(engine.instance['role_profile_refs']['research_work'][-1])}
+        engine.runtime['queue'] = [action]
+        engine._requeue_provider_action(action, 'EX-limit', gate)
+        self.assertEqual(engine.runtime['queue'][-1]['dispatch_wait']['kind'], 'provider_limit')
+        def saved_status():
+            _, instance, persisted = engine.store.load()
+            return {**scheduled_operator.supervision_facts(instance, persisted),
+                    'provider_waits': SessionSlots(persisted, instance, observer=True).provider_snapshot()}
+        calls = []
+        actual = {}
+        def schedule(command, **kwargs):
+            calls.append((command, kwargs))
+            _, _, persisted = engine.store.load()
+            from do_math.provider_wait import epoch_seconds
+            self.assertEqual(persisted['provider_waits']['PW-claude']['retry_at'], epoch_seconds(gate['retry_at']))
+            self.assertIn('AC-held', [queued['id'] for queued in persisted['queue']])
+            if command == 'status':
+                return {'wake': actual.get('wake')}
+            if command == 'schedule-wake':
+                actual['wake'] = {'description': kwargs['wake_key'], 'next_run': kwargs['wake_at'], 'state': 'Ready'}
+            return {}
+        with patch.object(scheduled_operator, 'schedule', side_effect=OSError('scheduler unavailable')):
+            engine._publish_provider_result()
+        _, _, persisted = engine.store.load()
+        self.assertEqual(persisted['provider_wake']['status'], 'failed')
+        from do_math.provider_wait import epoch_seconds
+        self.assertEqual(persisted['provider_waits']['PW-claude']['retry_at'], epoch_seconds(gate['retry_at']))
+        with patch.object(scheduled_operator, 'schedule', side_effect=schedule):
+            with patch.object(scheduled_operator, 'read_status', return_value=saved_status()), patch.object(
+                    scheduled_operator, 'engine_start_guard', return_value={'outcome': 'provider_waiting'}):
+                observed = scheduled_operator.check(root, engine.instance['id'], root)
+                self.assertEqual(observed['provider_wake']['status'], 'scheduled')
+            engine._publish_provider_result()
+        self.assertEqual(sum(command == 'schedule-wake' for command, _ in calls), 1)
+        scheduled = next(kwargs for command, kwargs in calls if command == 'schedule-wake')
+        self.assertEqual(scheduled['wake_at'], gate['retry_at'])
+        self.assertEqual(scheduled['wake_key'], 'claude:' + str(gate['generation']))
+        with patch.object(engine, '_save', side_effect=OSError('Git failed')), patch.object(
+                scheduled_operator, 'schedule') as scheduling:
+            with self.assertRaisesRegex(OSError, 'Git failed'):
+                engine._publish_provider_result()
+            scheduling.assert_not_called()
+        with patch.object(scheduled_operator, 'schedule', side_effect=schedule):
+            scheduled_operator.hold(root, reason='Synthetic HOLD')
+            calls_before = len(calls)
+            self.assertEqual(scheduled_operator.check(root, engine.instance['id'], root)['outcome'], 'held')
+            self.assertEqual(len(calls), calls_before)
+            self.assertEqual(scheduled_operator.reconcile_wake(root, engine.instance['id'], root,
+                facts={'status': 'ready'}, providers=engine._provider_status()['providers'])['status'], 'held')
+            self.assertEqual(calls[-1][0], 'cancel-wake')
 
 
 if __name__ == "__main__":

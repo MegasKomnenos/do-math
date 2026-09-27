@@ -6,11 +6,11 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.engine import DEFAULT_CONFIG
+from do_math.configuration import DEFAULT_CONFIG
 from do_math.execution_profiles import build_profiles, profile_ref
 from do_math.initialization import initialize_state, activation_requirements
 from do_math.observations import observation_settings_errors, tracker_config
-from test_lifecycle_engine import FakeEngine
+from engine_fixtures import FakeEngine
 
 
 class ObservationAdmissionTests(unittest.TestCase):

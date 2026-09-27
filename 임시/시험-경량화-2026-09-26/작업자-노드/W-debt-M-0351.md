@@ -1,5 +1,5 @@
 ---
-id: M-0351
+worker_id: W-debt
 layer: 1
 title: do-math 기준선 실패 시험 16개의 원인 판정과 수리, 관찰 적용의 무한 소진으로 인한 소유 루프 기아 수리
 convention_version: 27

@@ -1,9 +1,14 @@
-"""Role prompt and output schemas for the Codex CLI adapter.
+"""Role prompt and output schemas for the CLI adapters of every provider.
 
 The ``do-math-cli/5`` output schemas describe newly requested CLI responses.
-They are distinct from the ``do-math-state/6`` persisted-record contract.
+They are distinct from the persisted-record contract (``state_contract.STATE_CONTRACT_ID``).
 The engine supplies IDs, hashes, references,
 and persistence bindings after receiving a validated semantic response.
+
+Every function that builds a schema, here and in the modules whose schemas a
+response carries, returns ``file_io.json_copy`` of its result: no node is shared
+with a module global such as ``TEXT`` or within the result, so a caller may
+change the returned schema in place (이음새-정본.md §5).
 """
 from __future__ import annotations
 
@@ -14,6 +19,12 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .execution_profiles import RESEARCH_PRODUCER_ROLES
+from .file_io import json_copy
+
+
+# The response contract every role output schema carries (``x-contract-id``).
+RESPONSE_CONTRACT_ID = "do-math-cli/5"
 
 ROLES = (
     "research_preparation", "research_plan", "research_work", "task_contract_review",
@@ -22,9 +33,10 @@ ROLES = (
 )
 
 
-def _object(properties: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def closed_object(properties: dict[str, dict[str, Any]], required: list[str] | None = None) -> dict[str, Any]:
+    """A closed wire object schema; every property is required unless ``required`` names them."""
     return {"type": "object", "additionalProperties": False, "properties": properties,
-            "required": list(properties)}
+            "required": list(properties) if required is None else required}
 
 
 STRING = {"type": "string"}
@@ -79,7 +91,7 @@ def identify_schema(schema: dict) -> dict:
     reference separately hashes the complete installed schema, including $id.
     """
     from .repository import exact_content_hash
-    result = copy.deepcopy(schema)
+    result = json_copy(schema)
     result.pop("$id", None)
     digest = exact_content_hash(result)
     result["$id"] = "https://do-math.invalid/schemas/cli/5/sha256/" + digest
@@ -88,35 +100,35 @@ def identify_schema(schema: dict) -> dict:
 
 def schema_reference(schema: dict) -> dict:
     from .repository import exact_content_hash
-    return {"family": schema.get("x-contract-id", "do-math-cli/5"), "id": schema.get("$id"),
+    return {"family": schema.get("x-contract-id", RESPONSE_CONTRACT_ID), "id": schema.get("$id"),
             "sha256": exact_content_hash(schema)}
 
 
 def _schema(extra: dict[str, dict[str, Any]]) -> dict[str, Any]:
     return with_integration_schema({"$schema": "https://json-schema.org/draft/2020-12/schema",
             "$id": "https://do-math.invalid/schemas/cli/5/role-response",
-            "x-contract-id": "do-math-cli/5", **_object({**COMMON, **extra})})
+            "x-contract-id": RESPONSE_CONTRACT_ID, **closed_object({**COMMON, **extra})})
 
 
 def with_integration_schema(schema: dict) -> dict:
     """Use the same envelope for ordinary and domain-owned stage responses."""
     result = copy.deepcopy(schema)
     result["properties"]["integration_bundles"] = copy.deepcopy(MANIFEST_SCHEMA)
-    result["properties"]["repair_responses"] = {"type": "array", "items": _object({
+    result["properties"]["repair_responses"] = {"type": "array", "items": closed_object({
         "issue_id": {"type": "string", "minLength": 1},
         "disposition": {"enum": ["resolved", "maintained", "withdrawn"]},
         "reason": TEXT})}
     result["required"] = [key for key in result["required"] if key != "integration_bundles"]
-    result["x-contract-id"] = "do-math-cli/5"
+    result["x-contract-id"] = RESPONSE_CONTRACT_ID
     return identify_schema(result)
 
 
-KNOWLEDGE = _object({
+KNOWLEDGE = closed_object({
     "kind": {"type": "string", "enum": ["definition", "theorem", "conjecture", "question", "observation", "obstacle"]},
     "title": STRING, "statement": STRING, "explanation": STRING, "summary": STRING,
     "lean_code": STRING, "declaration_names": STRINGS, "dependencies": STRINGS,
 })
-RELATION = _object({"kind": STRING, "source": STRING, "target": STRING, "evidence": STRING})
+RELATION = closed_object({"kind": STRING, "source": STRING, "target": STRING, "evidence": STRING})
 TEXT = {"type": "string", "minLength": 1, "pattern": r"\S"}
 REFS = {"type": "array", "items": TEXT, "uniqueItems": True}
 # The integration manifest: how a response groups its state-changing members
@@ -137,35 +149,35 @@ MANIFEST_SCHEMA["description"] = (
     "Other roles, review research and declared revision work require one bundle with 'output' and all extension members. "
     "New-object dependencies must stay in one bundle. Independence is the producer's semantic responsibility. "
     "On a retry with central accepted_response evidence, preserve that base response and omit its already accepted member.")
-PROFILE_REF = _object({"id": TEXT, "revision": {"type": "integer", "minimum": 1},
+PROFILE_REF = closed_object({"id": TEXT, "revision": {"type": "integer", "minimum": 1},
                        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}})
-OBLIGATION = _object({"id": TEXT, "claim": TEXT, "judges": {**REFS, "minItems": 1}, "evidence_required": REFS})
-PROGRESS = _object({"id": TEXT, "claim": TEXT, "evidence_required": REFS})
+OBLIGATION = closed_object({"id": TEXT, "claim": TEXT, "judges": {**REFS, "minItems": 1}, "evidence_required": REFS})
+PROGRESS = closed_object({"id": TEXT, "claim": TEXT, "evidence_required": REFS})
 for _requirement_schema in (OBLIGATION, PROGRESS):
     # Add prose requirements without changing the meaning of existing exact references.
     _requirement_schema["properties"]["evidence_requirements"] = REFS
-TASK_CANDIDATE = _object({
+TASK_CANDIDATE = closed_object({
     "revises_task_id": {"type": ["string", "null"]}, "title": TEXT, "question": TEXT,
-    "scope": _object({"included": REFS, "excluded": REFS}),
-    "expected": _object({"outputs": {**REFS, "minItems": 1}, "research_change": TEXT}),
+    "scope": closed_object({"included": REFS, "excluded": REFS}),
+    "expected": closed_object({"outputs": {**REFS, "minItems": 1}, "research_change": TEXT}),
     "progress_criteria": {"type": "array", "minItems": 1, "items": PROGRESS},
     "completion_obligations": {"type": "array", "minItems": 1, "items": OBLIGATION},
     "inputs": REFS, "reuse": REFS, "dependencies": REFS,
     "profile_refs": {"type": "array", "items": PROFILE_REF, "uniqueItems": True},
     "authority_refs": REFS, "basis_refs": REFS, "work_class": {"enum": ["formal", "nonformal"]}})
 TASK_CANDIDATE["properties"]["description"] = TEXT
-UNRESOLVED_ITEM = _object({"obligation_id": TEXT, "missing_inputs": {**REFS, "minItems": 1}, "next_owner": TEXT})
-ITEM_DISPOSITION = {"anyOf": [_object({"obligation_id": TEXT, "kind": {"const": kind},
+UNRESOLVED_ITEM = closed_object({"obligation_id": TEXT, "missing_inputs": {**REFS, "minItems": 1}, "next_owner": TEXT})
+ITEM_DISPOSITION = {"anyOf": [closed_object({"obligation_id": TEXT, "kind": {"const": kind},
     "evidence_refs": REFS, **extra}) for kind, extra in (
         ("fulfilled", {}), ("open", {}), ("waived", {"authority_ref": TEXT}),
         ("transferred", {"authority_ref": TEXT, "target_task_id": TEXT, "target_obligation_id": TEXT}))]}
 CONTRACT_REVIEW_ITEMS = ("question_scope", "inputs_reuse", "outputs_obligations_judges", "stage_boundaries", "tools_authority_profiles")
-REVIEW_ITEM = _object({"item_id": {"enum": list(CONTRACT_REVIEW_ITEMS)},
+REVIEW_ITEM = closed_object({"item_id": {"enum": list(CONTRACT_REVIEW_ITEMS)},
     "decision": {"enum": ["approved", "revision_required", "unresolved"]},
     "evidence_refs": REFS, "findings": STRINGS, "missing_inputs": REFS, "next_owner": TEXT})
-PLAN_DISPOSITION = _object({"task_id": TEXT, "kind": {"enum": ["selected", "not_selected", "not_assessable"]},
+PLAN_DISPOSITION = closed_object({"task_id": TEXT, "kind": {"enum": ["selected", "not_selected", "not_assessable"]},
     "reason": TEXT, "uncertainty": STRING, "parallel_task_ids": REFS, "expected_research_change": STRING,
-    "revisit": _object({"event_refs": REFS, "at": {"type": ["string", "null"]}}),
+    "revisit": closed_object({"event_refs": REFS, "at": {"type": ["string", "null"]}}),
     "missing_inputs": REFS, "next_owner": TEXT})
 
 
@@ -176,7 +188,7 @@ def disposition_schema():
         "description": "Use canonical entries from admissible_basis_refs. Readable catalog paths and other used_sources are not disposition authority."},
         "next_owner": TEXT, "reason": TEXT}
     variants = {
-        "continue": {"next_review": {"anyOf": [{"type": "null"}, _object({"at": TEXT, "reason": TEXT})]}},
+        "continue": {"next_review": {"anyOf": [{"type": "null"}, closed_object({"at": TEXT, "reason": TEXT})]}},
         "repair": {"repair_target": {**TEXT, "pattern": "^installation:",
             "description": "Repair targets an installation defect; local input damage uses retry with replay_safety."},
             "meaning_preserving": {"type": "boolean"}, "verification": TEXT},
@@ -185,14 +197,14 @@ def disposition_schema():
         "task_disposition": {"task_id": TEXT, "task_state": {"enum": ["completed", "incomplete", "closed"]}, "authority_ref": TEXT},
         "user_decision": {"question": TEXT, "effect": TEXT},
     }
-    return {"anyOf": [_object({"kind": {"const": kind}, **common, **fields}) for kind, fields in variants.items()]}
+    return json_copy({"anyOf": [closed_object({"kind": {"const": kind}, **common, **fields}) for kind, fields in variants.items()]})
 
 SCHEMAS = {
     "research_preparation": _schema({"candidates": {"type": "array", "items": TASK_CANDIDATE}}),
     "task_contract_review": _schema({"item_reviews": {"type": "array", "minItems": len(CONTRACT_REVIEW_ITEMS),
         "maxItems": len(CONTRACT_REVIEW_ITEMS), "items": REVIEW_ITEM}}),
     "research_plan": _schema({"dispositions": {"type": "array", "items": PLAN_DISPOSITION},
-        "preparation_requests": STRINGS, "goal_audit": {"type": "boolean"}, "task_assessments": {"type": "array", "items": _object({
+        "preparation_requests": STRINGS, "goal_audit": {"type": "boolean"}, "task_assessments": {"type": "array", "items": closed_object({
             "task_id": STRING, "decision": {"type": "string", "enum": ["completed", "incomplete", "closed"]},
             "reason": STRING, "item_dispositions": {"type": "array", "items": ITEM_DISPOSITION},
             "unresolved": {"type": "array", "items": UNRESOLVED_ITEM}})}}),
@@ -216,7 +228,7 @@ def schema_for(role: str) -> dict[str, Any]:
     if role == "intent_interpretation":
         from .governance import interpretation_schema
         return with_integration_schema(interpretation_schema("interpret"))
-    return copy.deepcopy(SCHEMAS[role])
+    return json_copy(SCHEMAS[role])
 
 
 def action_schema(action: dict) -> dict:
@@ -239,7 +251,7 @@ def action_schema(action: dict) -> dict:
             result['properties']['regenerate_after'] = {**TEXT,
                 'description': 'Timezone-qualified future time after context.observed_at; used only if no contract is preserved.'}
             result['required'].append('regenerate_after')
-    if action['role'] in {'research_work', 'supplemental_research'}:
+    if action['role'] in RESEARCH_PRODUCER_ROLES:
         # Candidate definitions may be proposed in the same bundle. The shared
         # checker validates active or proposed tokens; JSON Schema cannot inspect
         # the separate extension document.

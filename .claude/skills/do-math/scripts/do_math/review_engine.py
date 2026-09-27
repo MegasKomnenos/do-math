@@ -11,34 +11,25 @@ from .repository import canonical_json, exact_content_hash, new_id
 from .review_cycle import (accept_result, context_for, next_actions, record_turn, stage_schema, start_review,
                           defer_for_research, accept_research_result, research_schema, record_recovery_event,
                           authorize_record_replacement, reserved_review_slots, ReviewRestorationError,
-                          validate_sealed_review, validate_review_execution, validate_review_independence,
+                          validate_sealed_review, validate_review_binding, validate_review_independence,
                           replacement_authority, identity_assessment, review_action as _action,
                           resource_disposition, validate_resource_disposition, slot_key,
-                          classify_research_source)
+                          classify_research_source, review_proposal as _proposal, staged_review_candidate,
+                          PROPOSAL_FIELDS, inline_source_row, inline_source_bytes)
 from .input_basis import capture_review_input_basis, review_input_basis_changes
 from . import knowledge_records as kr
 from .review_policy import build_review_policy, minimum_scope_executions
 
 
-_PROPOSAL_FIELDS = ('id', 'revision', 'formal_result_id', 'exposition_id', 'definitions', 'assumptions', 'statement', 'explanation', 'summary', 'lean_code',
-                    'declaration_names', 'dependencies', 'relation_claim', 'relation_endpoint_basis', 'confirmed_scope', 'epistemic_status')
-_FORMAL_FIELDS = ('status', 'source_sha256', 'declarations', 'axioms', 'toolchain',
-                  'artifact_ref', 'execution_id', 'trust_environment_id', 'allowed_axioms')
-_FORMAL_FIELDS += ('declaration_signatures', 'signature_hash')
-_FORMAL_FIELDS += ('dependency_closure', 'declaration_evidence', 'dependency_evidence')
-
-
-def _proposal(instance, knowledge_id):
-    item = kr.proposal_view(instance, knowledge_id)
-    result = {name: deepcopy(item.get(name, [] if name in ('declaration_names', 'dependencies') else ''))
-              for name in _PROPOSAL_FIELDS}
-    result['formal'] = {name: deepcopy(item['formal'][name]) for name in _FORMAL_FIELDS if name in item.get('formal', {})}
-    result['revision'] = item.get('revision', 1)
-    return result
-
-
 def _pending_key(action):
     return f"{action['review_cycle_id']}:{slot_key(action)}"
+
+
+def _seat_schema(cycle, action):
+    """The stage schema of one pending seat, bound to its cycle's proposal digest."""
+    schema = stage_schema(action['stage'])
+    schema['properties']['proposal_digest']['enum'] = [cycle['proposal_digest']]
+    return schema
 
 
 def _independence_seat(action):
@@ -91,22 +82,14 @@ class ReviewEngineMixin:
             eid = evidence.get('execution_id')
             if eid not in {row['execution_id'] for row in original['results'].values()}:
                 return None
+            from .governance import execution_lineage
             authors = set(original.get('producer_execution_ids', [])) | set(original['proposal'].get('producer_execution_ids', []))
-            pending, visited = [eid], set()
-            while pending:
-                current = pending.pop()
+            for current, row in execution_lineage(self.runtime, eid):
                 if current in authors:
                     return {'kind': kind, 'execution_id': eid, 'author_execution_id': current,
                             'reason_refs': [eid, current], 'reason': 'Original reviewer inherited its proposal author context'}
-                if current in visited:
-                    continue
-                visited.add(current)
-                row = self.runtime.get('executions', {}).get(current)
                 if row is None:
                     return None  # Missing records alone do not prove an incorrect judgment.
-                for field in ('continuation_of', 'context_origin'):
-                    origins = row.get(field) or []
-                    pending.extend([origins] if isinstance(origins, str) else origins)
         elif kind == 'independent_objection':
             source = self.runtime.get('review_cycles', {}).get(evidence.get('review_cycle_id'))
             if source is None or source['id'] == original['id']:
@@ -179,9 +162,8 @@ class ReviewEngineMixin:
     def _publish_assessment_reassessment(self, action, cycle, execution_id):
         from .knowledge import apply_assessment_reassessment
         self._review_cycle(action)
-        reader = getattr(self.store, 'read', None)
-        validate_sealed_review(cycle, self.runtime, instance=self.instance, read_artifact=reader,
-                               git_dir=getattr(self.store, "git_dir", None))
+        validate_sealed_review(cycle, self.runtime, instance=self.instance, read_artifact=self.store.read,
+                               git_dir=self.store.git_dir)
         aid = cycle['proposal']['assessment_reassessment']['assessment_id']
         self.instance, self.runtime = apply_assessment_reassessment(self.instance, self.runtime, aid, cycle['id'],
             reason='Sealed independent reassessment of the original judgment: ' + cycle['decision'], actor_ref=execution_id)
@@ -215,37 +197,8 @@ class ReviewEngineMixin:
             settled.append(cid)
         return settled
 
-    def _staged_review_candidate(self, transition_id, knowledge_id):
-        """Validate staged evidence via domain APIs without publishing a formal result."""
-        from .knowledge import validate_basis
-        transition = self.runtime['trust_transitions'][transition_id]
-        if transition.get('status') not in {'checking', 'ready'}:
-            raise ValueError('staged transition is no longer reviewable')
-        target = next((row for row in transition['targets'] if row['id'] == knowledge_id), None)
-        if target is None:
-            raise ValueError('staged review target is not in the transition')
-        record = self.instance['knowledge'][knowledge_id]
-        formal = self.instance['formal_results'][target['formal_result_id']]
-        exposition = self.instance['expositions'][record['exposition_id']]
-        if (not validate_basis([target['basis']], self.instance, self.runtime)['valid'] or kr.record_digest(formal) != target['formal_basis']
-                or kr.record_digest(exposition) != target['exposition_basis']
-                or self.instance.get('active_trust_environment') != transition['from_environment']):
-            raise ValueError('staged source basis changed')
-        verification = {key: deepcopy(value) for key, value in transition['results'][knowledge_id].items()
-                        if key not in {'id', 'identity_review'}}
-        environment = self.instance['trust_environments'][transition['to_environment']]
-        if verification.get('status') != 'verified' or environment.get('status') == 'invalid':
-            raise ValueError('staged verification or target environment is not eligible for review')
-        kr.validate_formal_evidence(formal, verification, environment)
-        view = kr.formal_overlay(self.instance, formal['id'], verification=verification,
-                                 trust_environment_id=transition['to_environment'])
-        return {'proposal': _proposal(view, knowledge_id), 'identity_basis': kr.identity_basis(view, knowledge_id),
-                'transition_basis': exact_content_hash({'transition_id': transition_id, 'target': target,
-                    'verification': verification, 'target_environment': environment, 'from_environment': transition['from_environment']}),
-                'target_environment': deepcopy(environment)}
-
     def _start_staged_identity_review(self, transition_id, knowledge_id):
-        candidate = self._staged_review_candidate(transition_id, knowledge_id)
+        candidate = staged_review_candidate(self.instance, self.runtime, transition_id, knowledge_id)
         policy = self._adopted_review_policy()
         for cid, prior in self.runtime.get('review_cycles', {}).items():
             if prior.get('transition_id') == transition_id and prior.get('knowledge_id') == knowledge_id:
@@ -260,12 +213,11 @@ class ReviewEngineMixin:
         cycle.update(id=cid, knowledge_id=knowledge_id, transition_id=transition_id,
             staged_candidate=candidate, identity_basis=deepcopy(candidate['identity_basis']), input_snapshot=self.head,
             producer_execution_ids=list(dict.fromkeys([
-                *self.instance['knowledge'][knowledge_id].get('producer_execution_ids', []),
                 *([self.instance['knowledge'][knowledge_id]['producer_execution']] if self.instance['knowledge'][knowledge_id].get('producer_execution') else []),
                 *([self.runtime['trust_transitions'][transition_id]['results'][knowledge_id]['execution_id']]
                   if self.runtime['trust_transitions'][transition_id]['results'][knowledge_id].get('execution_id') else [])])),
             slot_profiles={}, input_bindings={},
-            policy_ref=policy['id'] + '@' + str(policy['version']) + ':' + exact_content_hash(policy),
+            policy_ref=policy['id'] + ':' + exact_content_hash(policy),
             publication_premises=self._review_publication_premises(knowledge_id))
         cycle['review_input_basis'] = capture_review_input_basis(cycle)
         self.runtime.setdefault('review_cycles', {})[cid] = cycle
@@ -293,23 +245,23 @@ class ReviewEngineMixin:
         cycle = self.runtime['review_cycles'][cid]
         if resource_disposition(cycle):
             return {'disposition': 'review_resource_pending', 'cycle_id': cid}
-        self._review_cycle({'role': 'identity_review', 'target': cycle['knowledge_id'], 'review_cycle_id': cid})
-        projected = {**self.runtime, 'executions': {**self.runtime.get('executions', {}), execution['id']: execution}}
-        validate_review_independence(cycle, projected, execution['id'], _independence_seat(action))
-        changes = review_input_basis_changes(cycle.get('review_input_basis', {}), cycle)
-        if changes:
-            raise ValueError('review inputs changed before admission: ' + json.dumps(changes, ensure_ascii=False))
-        owner = execution.get('owner_activity_id')
-        if not owner or (cycle.get('owner_activity_id') is not None and cycle['owner_activity_id'] != owner):
-            raise ValueError('review admission requires its actual owner activity')
-        eid = execution['id']
+        eid, owner = execution['id'], execution.get('owner_activity_id')
         accounting = cycle['execution_accounting']
         admissions = accounting.get('admissions', {})
         binding = {'action': deepcopy(action), 'owner_activity_id': owner}
         if eid in admissions:
+            # Admission checked this attempt; its result is checked again when it is accepted.
             if {key: value for key, value in admissions[eid].items() if key != 'delegation_authority'} != binding:
                 raise ValueError('review execution admission identity changed')
             return {'disposition': 'already_admitted', 'execution_id': eid}
+        self._review_cycle({'role': 'identity_review', 'target': cycle['knowledge_id'], 'review_cycle_id': cid})
+        projected = {**self.runtime, 'executions': {**self.runtime.get('executions', {}), eid: execution}}
+        validate_review_independence(cycle, projected, eid, _independence_seat(action))
+        changes = review_input_basis_changes(cycle.get('review_input_basis', {}), cycle)
+        if changes:
+            raise ValueError('review inputs changed before admission: ' + json.dumps(changes, ensure_ascii=False))
+        if not owner or (cycle.get('owner_activity_id') is not None and cycle['owner_activity_id'] != owner):
+            raise ValueError('review admission requires its actual owner activity')
         authority = self._review_replacement_authority(action)
         if authority is not None and not authority['allowed']:
             return {'disposition': 'authorization_denied', 'authority': authority}
@@ -321,7 +273,6 @@ class ReviewEngineMixin:
         used = list(dict.fromkeys([*accounting['executions_used'], *assigned]))
         reserved = reserved_review_slots(cycle, self.runtime.get('executions', {}))
         accounting['executions_used'] = used
-        accounting['reserved_execution_slots'] = reserved
         limit = cycle['activity_execution_limit']
         outcome = {'execution_id': eid, 'used': len(used), 'limit': limit,
                    'reserved_execution_slots': deepcopy(reserved), 'owner_activity_id': owner}
@@ -444,7 +395,6 @@ class ReviewEngineMixin:
             # revision relation must identify the source item.
             if item.get('supersedes') != previous.get('knowledge_id'):
                 raise ValueError('revision must name the previous knowledge item')
-        config = self.instance['config']
         policy = self._adopted_review_policy()
         reviewers = policy['minimum_initial_slots']
         if previous is not None and previous['reviewer_slots']:
@@ -452,18 +402,15 @@ class ReviewEngineMixin:
         round_limit = policy['round_limit']
         cycle = start_review(_proposal(self.instance, knowledge_id), reviewers=reviewers, max_rounds=round_limit,
                              judges=previous['judge_slots'] if previous else 3, previous=previous,
-                             policy=policy,
-                             scope_assessment=item.get('scope_assessment', config.get('review_scope_assessment')),
-                             owner_activity_id=item.get('owner_activity_id'))
+                             policy=policy)
         cycle_id = new_id('RC')
         cycle.update(id=cycle_id, knowledge_id=knowledge_id, input_snapshot=self.head,
                      producer_execution_ids=list(dict.fromkeys([*(previous.get('producer_execution_ids', []) if previous else []),
-                                                *item.get('producer_execution_ids', []),
                                                 *([item['producer_execution']] if item.get('producer_execution') else [])])))
         cycle['identity_basis'] = kr.identity_basis(self.instance, knowledge_id)
         cycle['slot_profiles'] = deepcopy(previous.get('slot_profiles', {})) if previous else {}
         cycle['input_bindings'] = deepcopy(previous.get('input_bindings', {})) if previous else {}
-        cycle['policy_ref'] = cycle['review_policy']['id'] + '@' + str(cycle['review_policy']['version']) + ':' + exact_content_hash(cycle['review_policy'])
+        cycle['policy_ref'] = cycle['review_policy']['id'] + ':' + exact_content_hash(cycle['review_policy'])
         cycle['publication_premises'] = self._review_publication_premises(knowledge_id)
         cycle['review_input_basis'] = capture_review_input_basis(cycle)
         cycles[cycle_id] = cycle
@@ -473,7 +420,7 @@ class ReviewEngineMixin:
 
     def _reconcile_review_host_profiles(self):
         """A changed host approval cannot silently rewrite a frozen review profile."""
-        from .execution_profiles import resolve_profile
+        from .execution_profiles import match_profile_ref
         changed = []
         approved = self.instance.get('host_capacity_ref')
         expected = [approved] if approved else []
@@ -485,7 +432,7 @@ class ReviewEngineMixin:
             references += [self.runtime['executions'][eid].get('execution_profile_ref')
                            for eid in cycle['execution_accounting']['executions_used']]
             mismatched = [ref for ref in references if ref is not None
-                and resolve_profile(self.instance['execution_profiles'], ref).get('host_capacity_refs', []) != expected]
+                and match_profile_ref(self.instance['execution_profiles'], ref).get('host_capacity_refs', []) != expected]
             if not mismatched:
                 continue
             if not cycle.get('owner_activity_id'):
@@ -561,7 +508,7 @@ class ReviewEngineMixin:
                 raise ValueError('reassessment current premises changed; preserve suspension and request a new basis')
             return cycle
         if cycle.get('transition_id'):
-            current = self._staged_review_candidate(cycle['transition_id'], action['target'])
+            current = staged_review_candidate(self.instance, self.runtime, cycle['transition_id'], action['target'])
             if current != cycle.get('staged_candidate') or current['proposal'] != cycle['proposal']:
                 raise ValueError('staged review candidate changed')
             if cycle.get('publication_premises') != self._review_publication_premises(action['target']):
@@ -570,7 +517,7 @@ class ReviewEngineMixin:
         if item.get('review_cycle_id') != action['review_cycle_id']:
             raise ValueError('review action belongs to a superseded proposal revision')
         live = _proposal(self.instance, action['target'])
-        if any(live[name] != cycle['proposal'].get(name, [] if name in ('declaration_names', 'dependencies') else '') for name in _PROPOSAL_FIELDS):
+        if any(live[name] != cycle['proposal'].get(name, [] if name in ('declaration_names', 'dependencies') else '') for name in PROPOSAL_FIELDS):
             raise ValueError('sealed mathematical proposal changed during review')
         if cycle.get('publication_premises') != self._review_publication_premises(action['target']):
             raise ValueError('review publication premises changed: formal, exposition, trust or policy')
@@ -580,9 +527,7 @@ class ReviewEngineMixin:
         cycle = self._review_cycle(action)
         if _action(action) not in next_actions(cycle):
             raise ValueError('review action is not pending')
-        schema = stage_schema(action['stage'])
-        schema['properties']['proposal_digest'] = {**schema['properties']['proposal_digest'], 'enum': [cycle['proposal_digest']]}
-        return schema
+        return _seat_schema(cycle, action)
 
     def _prepare_review_context(self, action, workspace: Path, *, sources=None):
         """Return a runnable context or an activity-owned recovery disposition.
@@ -607,17 +552,10 @@ class ReviewEngineMixin:
                                  'next_owner': 'governance', 'review_closure': 'not_closed'},
                     'review_cycle_id': action['review_cycle_id'], 'action': _action(action)}
         try:
-            return {"disposition": "ready", "context": self._build_review_context(action, workspace, sources=sources)}
+            return {"disposition": "ready", "context": self._build_review_context(action, workspace, cycle, sources=sources)}
         except ReviewRestorationError as error:
             return {'disposition': 'recovery_recorded',
                     'recovery': self._record_review_recovery(action, error, retryable=error.diagnostics['retryable'])}
-        except ValueError as error:
-            if not any(marker in str(error) for marker in (
-                    'transcript restoration', 'transcript bytes', 'sealed transcript', 'review source bytes',
-                    'review source hash', 'immutable review source')):
-                raise
-            return {"disposition": "recovery_recorded",
-                    "recovery": self._record_review_recovery(action, error, retryable=False)}
         except OSError as error:
             import errno
             retryable = error.errno in {errno.EAGAIN, errno.EINTR, errno.EBUSY, errno.ETIMEDOUT}
@@ -647,8 +585,8 @@ class ReviewEngineMixin:
             return {'allowed': False, 'reason': 'replacement does not match the authorized slot'}
         return replacement_authority(self.instance, self.runtime, cycle, replacement, execution_id)
 
-    def _build_review_context(self, action, workspace: Path, *, sources=None):
-        cycle = self._review_cycle(action)
+    def _build_review_context(self, action, workspace: Path, cycle, *, sources=None):
+        """cycle is the current cycle _prepare_review_context has just checked."""
         changes = review_input_basis_changes(cycle.get('review_input_basis', {}), cycle)
         if changes:
             raise ValueError('review policy, scope, profile, or activity input changed: ' + json.dumps(changes, ensure_ascii=False))
@@ -671,18 +609,9 @@ class ReviewEngineMixin:
         directory.mkdir(parents=True, exist_ok=True)
         references = {}
         for reference in context['source_refs']:
-            slot = reference['slot']
-            index = reference['index']
-            try:
-                message = cycle['turns'][slot][index]
-            except (KeyError, IndexError) as error:
-                raise ReviewRestorationError('review source bytes are unavailable', cause_kind='missing_record',
-                    coordinate={'slot': slot, 'index': index}, expected_sha256=reference['sha256']) from error
-            raw = compact_json_bytes(message)
-            if hashlib.sha256(raw).hexdigest() != reference['sha256'] or len(raw) != reference['bytes']:
-                raise ReviewRestorationError('review source hash does not match its sealed transcript', cause_kind='content_mismatch',
-                    coordinate={'slot': slot, 'index': index}, expected_sha256=reference['sha256'],
-                    observed_sha256=hashlib.sha256(raw).hexdigest())
+            # context_for matched each referenced message with its manifest row (validate_transcript).
+            slot, index = reference['slot'], reference['index']
+            raw = compact_json_bytes(cycle['turns'][slot][index])
             path = directory / f"{reference['sha256']}.json"
             if not path.resolve().is_relative_to(directory):
                 raise ValueError('review source file escapes its materialization directory')
@@ -697,7 +626,7 @@ class ReviewEngineMixin:
             content = message.get('content')
             if isinstance(content, dict) and 'source_ref' in content:
                 content['source_ref'] = deepcopy(references[content['source_ref']['ref']])
-        context['output_schema'] = self._review_schema(action)
+        context['output_schema'] = _seat_schema(cycle, action)
         context['review_cycle_id'] = action['review_cycle_id']
         context['snapshot'] = cycle['input_snapshot']
         context['identity_basis'] = deepcopy(cycle['identity_basis'])
@@ -710,7 +639,7 @@ class ReviewEngineMixin:
             'field': 'research_requests',
             'item': {'id': 'local request ID', 'question': 'One fixed question to investigate',
                      'source_refs': ['proposal or proposal:<field.path>, issue:<id>, supplied source ref, or readable knowledge ID']},
-            'remaining_requests': max(0, self.instance['config'].get('review_research_limit', 3) - len(cycle.get('research', {}))),
+            'remaining_requests': max(0, self.instance['config']['review_research_limit'] - len(cycle.get('research', {}))),
             'instructions': 'If investigation is necessary, write research_requests and return unresolved provisionally for initial/judge. The slot is deferred without sealing a verdict; all requested answers return to this same slot. Use an existing answer when it resolves the question. Investigation cannot replace your final complete review.'}
         # This is the new request, excluding the restored transcript. Appending the
         # complete rendered prompt here would recursively duplicate old messages.
@@ -825,9 +754,13 @@ class ReviewEngineMixin:
         return {'disposition': 'review_resumed', 'review_cycle_id': action['review_cycle_id'],
                 'action': _action(action), 'owner_activity_id': cycle.get('owner_activity_id')}
 
-    def _record_review_input(self, action, execution_id):
-        """Record delivered input once; the engine may call this before the runner."""
-        cycle = self._review_cycle(action)
+    def _record_review_input(self, action, execution_id, cycle=None):
+        """Record delivered input once; the engine may call this before the runner.
+
+        cycle is the current cycle when the caller has just checked it (_checked_review_result).
+        """
+        if cycle is None:
+            cycle = self._review_cycle(action)
         prepared = self.runtime.get('review_inputs', {}).get(_pending_key(action))
         if not prepared or prepared['proposal_digest'] != cycle['proposal_digest']:
             raise ValueError('the review execution has no matching prepared input')
@@ -946,6 +879,15 @@ class ReviewEngineMixin:
     def _identity_assessment(cycle, *, reason):
         return identity_assessment(cycle, reason=reason)
 
+    def _checked_review_result(self, action, execution_id):
+        """The one currentness and independence check of a returned review attempt, final or provisional."""
+        cycle = self._review_cycle(action)
+        validate_review_independence(cycle, self.runtime, execution_id, _action(action))
+        changes = review_input_basis_changes(cycle.get('review_input_basis', {}), cycle)
+        if changes:
+            raise ValueError('review inputs changed before acceptance: ' + json.dumps(changes, ensure_ascii=False))
+        return cycle
+
     def _apply_identity_review(self, action, output, execution_id):
         before_instance, before_runtime = deepcopy(self.instance), deepcopy(self.runtime)
         try:
@@ -958,7 +900,6 @@ class ReviewEngineMixin:
         authority = self._review_replacement_authority(action, execution_id)
         if authority is not None and not authority['allowed']:
             raise ValueError('replacement authority is no longer current: ' + authority['reason'])
-        cycle = self._review_cycle(action)
         item = self.instance['knowledge'][action['target']]
         execution = self.runtime.get('executions', {}).get(execution_id)
         if execution is None or execution.get('role') != 'identity_review':
@@ -968,16 +909,13 @@ class ReviewEngineMixin:
             raise ValueError('execution was assigned to a different review action')
         if _action(recorded_action) != _action(action):
             raise ValueError('execution replacement binding differs from its authorized action')
-        validate_review_independence(cycle, self.runtime, execution_id, _action(action))
-        changes = review_input_basis_changes(cycle.get('review_input_basis', {}), cycle)
-        if changes:
-            raise ValueError('review inputs changed before acceptance: ' + json.dumps(changes, ensure_ascii=False))
+        cycle = self._checked_review_result(action, execution_id)
         selected_profile = (cycle.get('scope_assessment') or {}).get('selected_profile_ref')
         if selected_profile is not None and execution.get('execution_profile_ref') != selected_profile:
             raise ValueError('identity review execution did not use the scope assessment profile')
-        cycle = self._record_review_input(action, execution_id)
+        cycle = self._record_review_input(action, execution_id, cycle)
         if cycle['proposal'].get('assessment_reassessment'):
-            validate_review_execution(cycle, self.runtime, execution_id, _action(action), output, instance=self.instance)
+            validate_review_binding(cycle, self.runtime, execution_id, _action(action), output, instance=self.instance)
         prepared = self.runtime['review_inputs'][_pending_key(action)]
         manifest = {'proposal_digest': cycle['proposal_digest'], 'role_slot_id': action['slot'],
                     'visible_execution_ids': prepared['visible_execution_ids'],
@@ -1077,31 +1015,28 @@ class ReviewEngineMixin:
                     'sha256': value.get('sha256') or hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
         elif kind == 'knowledge':
             value = {**_proposal(self.instance, reference), 'usable_links': kr.usable_links(self.instance, reference)}
-        raw = compact_json_bytes(value)
-        return {'ref': reference, 'inline': deepcopy(value), 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+        return inline_source_row(reference, value)
 
     def _defer_review_for_research(self, action, output, execution_id):
         if action.get('role') != 'identity_review' or not action.get('review_cycle_id'):
             return False
         requests = self.runtime['executions'][execution_id].get('extensions', {}).get('research_requests', [])
         if not requests: return False
-        cycle = self._review_cycle(action)
         execution = self.runtime['executions'][execution_id]
         if execution.get('role') != 'identity_review' or any(execution.get('action', {}).get(key) != action.get(key)
                 for key in ('target', 'review_cycle_id', 'stage', 'slot', 'round')):
             raise ValueError('research request execution was assigned to another review slot')
-        validate_review_independence(cycle, self.runtime, execution_id, _action(action))
+        cycle = self._checked_review_result(action, execution_id)
         source_specs = [[self._research_source_spec(cycle, action, ref) for ref in request['source_refs']]
                         for request in requests]
-        cycle = self._record_review_input(action, execution_id)
+        cycle = self._record_review_input(action, execution_id, cycle)
         # This attempt returned provisionally. Its logical slot still needs a
         # future final response, even while ENGINE has not ended its execution.
         projected_executions = {**self.runtime['executions'], execution_id: {**execution, 'status': 'ended'}}
         reserved = reserved_review_slots(cycle, projected_executions)
-        cycle['execution_accounting']['reserved_execution_slots'] = reserved
         used = len(cycle['execution_accounting']['executions_used'])
-        updated = defer_for_research(cycle, _action(action), output, requests, execution_id,
-            limit=self.instance['config'].get('review_research_limit', 3),
+        updated = defer_for_research(cycle, _action(action), output, requests, execution_id, source_specs,
+            limit=self.instance['config']['review_research_limit'],
             budget_available=(used + len(requests) + len(reserved) <= cycle['activity_execution_limit']))
         self.runtime['review_cycles'][action['review_cycle_id']] = updated
         self.runtime.get('review_inputs', {}).pop(_pending_key(action), None)
@@ -1111,12 +1046,8 @@ class ReviewEngineMixin:
         if updated['status'] != 'working':
             self._publish_identity_review_result(action, updated, execution_id)
             return True
-        from .review_cycle import research_request_digest
-        for request, specs in zip(requests, source_specs):
+        for request in requests:
             request_id = f"{execution_id}:{request['id']}"
-            record = updated['research'][request_id]
-            record['source_records'] = specs
-            record['request_digest'] = research_request_digest(record['question'], updated['proposal_digest'], specs)
             self._enqueue('supplemental_research', action['target'], review_cycle_id=action['review_cycle_id'],
                 research_request_id=request_id, requesting_slot=action['slot'], stage='investigating',
                 slot='research-' + request_id, round=action['round'], owner_review_cycle_id=action['review_cycle_id'],
@@ -1141,9 +1072,8 @@ class ReviewEngineMixin:
         _, request = self._pending_review_research(action)
         schema = research_schema()
         fields = schema['properties']
-        # Bind new field nodes; never mutate one that other fields may share.
-        fields['research_request_id'] = {**fields['research_request_id'], 'enum': [request['id']]}
-        fields['request_digest'] = {**fields['request_digest'], 'enum': [request['request_digest']]}
+        fields['research_request_id']['enum'] = [request['id']]
+        fields['request_digest']['enum'] = [request['request_digest']]
         return schema
 
     def _materialize_research_sources(self, sources, workspace, *, slot=None):
@@ -1156,7 +1086,7 @@ class ReviewEngineMixin:
             coordinate = {'slot': slot, 'source_index': i, 'source_ref': source['ref'],
                           'artifact_ref': source.get('artifact_ref'), 'snapshot': source.get('snapshot', self.head)}
             try:
-                raw = compact_json_bytes(source['inline']) if 'inline' in source else self.store.read(source['artifact_ref'], source.get('snapshot', self.head))
+                raw = None if 'inline' in source else self.store.read(source['artifact_ref'], source.get('snapshot', self.head))
             except OSError as error:
                 import errno
                 raise ReviewRestorationError(str(error), cause_kind='fixed_source_io_unavailable',
@@ -1164,17 +1094,17 @@ class ReviewEngineMixin:
                     expected_sha256=source['sha256'],
                     retryable=error.errno in {errno.EAGAIN, errno.EINTR, errno.EBUSY, errno.ETIMEDOUT}) from error
             # Inline text is derived from state and compared; a sealed artifact row
-            # already matched in this process (contract S3) is not hashed again.
+            # already matched in this process (이음새-정본.md §3) is not hashed again.
             try:
                 if 'inline' in source:
-                    if hashlib.sha256(raw).hexdigest() != source['sha256'] or len(raw) != source['bytes']:
-                        raise ValueError('inline source differs from its record')
+                    raw = inline_source_bytes(source)
                 else:
                     self._sealed_bytes(source['artifact_ref'], source['sha256'], source['bytes'], raw=raw)
             except ValueError as mismatch:
+                observed = raw if raw is not None else compact_json_bytes(source['inline'])
                 raise ReviewRestorationError('fixed research source bytes changed', cause_kind='fixed_source_content_mismatch',
                     coordinate=coordinate, expected_sha256=source['sha256'],
-                    observed_sha256=hashlib.sha256(raw).hexdigest()) from mismatch
+                    observed_sha256=hashlib.sha256(observed).hexdigest()) from mismatch
             suffix = '.json' if 'inline' in source else Path(source['artifact_ref']).suffix
             path = directory / f"{i:04d}-{source['sha256']}{suffix}"
             if not path.resolve().is_relative_to(directory.resolve()): raise ValueError('research source file escapes workspace')

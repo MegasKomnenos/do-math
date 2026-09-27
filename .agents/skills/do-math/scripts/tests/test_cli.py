@@ -6,16 +6,16 @@ help and input-error exit codes are also checked as a child process sees them.
 
 from __future__ import annotations
 
-import json
-import io
 import base64
 import hashlib
-from contextlib import redirect_stdout
-from pathlib import Path
+import io
+import json
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
 from unittest.mock import patch
 
 
@@ -24,6 +24,9 @@ ENTRYPOINT = SCRIPTS / "do_math.py"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 from research_fixtures import git_init, restore_template, run_cli
+from do_math.engine import ResearchEngine
+from research_fixtures import new_instance
+import os
 
 
 def response_body(response):
@@ -54,13 +57,13 @@ def cli_instance(root, shared):
 
 class CliTests(unittest.TestCase):
     def test_original_request_is_preserved_separately_from_the_mathematical_goal(self):
-        from do_math.engine import _repository
+        from do_math.repository import ResearchRepository
         original='증명: n+0=n. 모델은 gpt-6-sol까지. 새 인스턴스.\n'
         path=self.root/'original.txt';path.write_bytes(original.encode('utf-8'))
         response=self.run_cli('init','--repository',str(self.repository),'--workspace',str(self.root/'second'),
             '--goal','n+0=n','--request-text-file',str(path),'--config-file',str(self.operator_disabled))
         self.assertEqual(response.returncode,0,response.stdout)
-        _,instance,runtime=_repository(self.repository,response_body(response)['instance_id']).load()
+        _,instance,runtime=ResearchRepository(self.repository,response_body(response)['instance_id']).load()
         self.assertEqual(instance['lifecycle']['immutable_input']['text'],original)
         self.assertEqual(runtime['inputs'][0]['config']['goal'],'n+0=n')
         self.assertEqual(instance['lifecycle']['immutable_input']['sha256'],hashlib.sha256(original.encode()).hexdigest())
@@ -72,7 +75,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result['selection']['tier'],'high')
         self.assertEqual(result['profile']['id'],result['selection']['profile_ref']['id'])
 
-    def test_audit2_retry_replays_first_receipt_after_later_state(self):
+    def test_retry_replays_first_receipt_after_later_state(self):
         from do_math.engine import control
         args=['pause',*self.instance_args(),'--reason','audit2 pause']
         first=self.run_cli(*args)
@@ -102,9 +105,10 @@ class CliTests(unittest.TestCase):
         self.assertEqual(receipt['request_id'],direct['request_id'])
         self.assertEqual(receipt['snapshot'],direct['snapshot'])
 
-    def test_audit2_source_identity_and_effect_use_one_read(self):
+    def test_source_identity_and_effect_use_one_read(self):
         from do_math import cli
-        from do_math.engine import control,_repository
+        from do_math.engine import control
+        from do_math.repository import ResearchRepository
         path=self.root/'raw-source.bin'; original=b'\xff\x00original\r\n'; changed=b'changed after read'
         path.write_bytes(original)
         read=Path.read_bytes; reads=[]
@@ -120,7 +124,7 @@ class CliTests(unittest.TestCase):
         envelope=json.loads(output.getvalue())
         self.assertEqual(code,0,envelope)
         self.assertEqual(reads,[original])
-        store=_repository(self.repository,self.instance);head,instance,_=store.load()
+        store=ResearchRepository(self.repository,self.instance);head,instance,_=store.load()
         entry=instance['sources'][-1]
         self.assertEqual(entry['name'],'raw.bin')
         self.assertEqual(entry['sha256'],hashlib.sha256(original).hexdigest())
@@ -137,9 +141,9 @@ class CliTests(unittest.TestCase):
         self.assertEqual(repeated.returncode,0,repeated.stdout)
         self.assertEqual(response_body(repeated)['effect'],'applied')
 
-    def test_audit2_pending_and_rejected_receipts_keep_their_meaning(self):
-        from do_math.engine import _repository
-        store=_repository(self.repository,self.instance)
+    def test_pending_and_rejected_receipts_keep_their_meaning(self):
+        from do_math.repository import ResearchRepository
+        store=ResearchRepository(self.repository,self.instance)
         args=['pause',*self.instance_args(),'--reason','wait for writer']
         with store.writer_lock():
             pending=self.run_cli(*args)
@@ -167,7 +171,7 @@ class CliTests(unittest.TestCase):
         for key in ('effect','reason','status','snapshot'):
             self.assertEqual(response_body(repeated)[key],original[key],key)
 
-    def test_audit_public_check_json_discovery_and_fixed_snapshot(self):
+    def test_public_check_json_discovery_and_fixed_snapshot(self):
         result = self.run_cli('check', '--repository', str(self.repository), '--instance', self.instance)
         self.assertEqual(result.returncode, 0, result.stdout)
         value = json.loads(result.stdout)
@@ -200,7 +204,12 @@ class CliTests(unittest.TestCase):
         self.assertEqual(response_body(historical)['snapshot'],self.initial['snapshot'])
         # Before charter adoption the snapshot view shows the original input's goal, as live status does.
         self.assertEqual(response_body(historical)['goal'],'Prove a small theorem')
-        self.assertIsNone(response_body(historical)['host_observation'])
+        # One projection: a stored snapshot has the live fields, and nothing observed on this host.
+        from do_math.reporting import OBSERVED_FIELDS
+        body = response_body(historical)
+        self.assertEqual({field: body[field] for field in OBSERVED_FIELDS}, dict.fromkeys(OBSERVED_FIELDS))
+        live = self.run_cli('status',*self.instance_args(),'--json')
+        self.assertEqual(set(response_body(live)), set(body))
 
     def setUp(self) -> None:
         self.root, self.initial = restore_template(cli_instance)
@@ -227,6 +236,11 @@ class CliTests(unittest.TestCase):
         invalid = process("init", "--repository", str(self.repository), "--workspace", str(self.workspace))
         self.assertEqual(invalid.returncode, 2)
         self.assertEqual(response_body(invalid)["kind"], "input_error")
+        # The discovery contract publishes the exit code the shell actually saw.
+        from do_math import cli
+        described = cli.describe_commands(cli.build_parser())
+        self.assertEqual(described["error_exit_codes"]["input_error"], invalid.returncode)
+        self.assertEqual(described["request_fields"], list(described["request_schema"]["properties"]))
 
     def test_explicit_request_identity_replays_once_and_rejects_changed_payload(self):
         first = self.run_cli('input', *self.instance_args(), '--text', 'One request', '--request-id', 'UC-repeat')
@@ -234,8 +248,8 @@ class CliTests(unittest.TestCase):
         second = self.run_cli('input', *self.instance_args(), '--text', 'One request', '--request-id', 'UC-repeat')
         self.assertEqual(second.returncode, 0, second.stdout)
         self.assertTrue(response_body(second)['replayed'])
-        from do_math.engine import _repository
-        _, _, runtime = _repository(self.repository, self.instance).load()
+        from do_math.repository import ResearchRepository
+        _, _, runtime = ResearchRepository(self.repository, self.instance).load()
         self.assertEqual(runtime['processed_controls'].count('UC-repeat'), 1)
         conflict = self.run_cli('input', *self.instance_args(), '--text', 'Changed request', '--request-id', 'UC-repeat')
         self.assertEqual(conflict.returncode, 2, conflict.stdout)
@@ -269,7 +283,7 @@ class CliTests(unittest.TestCase):
         status = self.run_cli("status", *self.instance_args(), "--json")
         self.assertEqual(status.returncode, 0, status.stdout + status.stderr)
         self.assertGreaterEqual(response_body(status)["pending_actions"], 1)
-        from do_math.engine import _repository as ResearchRepository
+        from do_math.repository import ResearchRepository
         _, _, runtime = ResearchRepository(self.repository, self.instance).load()
         self.assertIn('maintenance', [a['role'] for a in runtime['queue']])
         self.assertNotIn('research_preparation', [a['role'] for a in runtime['queue']])
@@ -295,8 +309,8 @@ class CliTests(unittest.TestCase):
         self.assertEqual(queried.returncode, 0, queried.stdout + queried.stderr)
         query = response_body(queried)
         self.assertGreaterEqual(query["total"], 1)
-        from do_math.engine import _repository
-        store = _repository(self.repository, self.instance)
+        from do_math.repository import ResearchRepository
+        store = ResearchRepository(self.repository, self.instance)
         head, _, _ = store.load()
         path = store.list_files('research/', head)[0]
         read = self.run_cli("read", *self.instance_args(), "--path", path, '--snapshot', head)
@@ -365,7 +379,7 @@ class CliBoundaryTests(unittest.TestCase):
         ]
         for options, payload in cases:
             with self.subTest(options=options), patch.object(cli, 'ResearchRepository') as files, \
-                    patch('do_math.engine.query_records') as records:
+                    patch('do_math.cli.query_records') as records:
                 with self.assertRaises(cli.CliInputError):
                     cli.execute(cli.build_parser().parse_args(base + options))
                 with self.assertRaises(cli.CliInputError):
@@ -392,7 +406,7 @@ class CliBoundaryTests(unittest.TestCase):
                 self.assertEqual(files.return_value.query.call_args.kwargs['prefix'], 'research/')
                 cli.execute(arguments(['--files', '--prefix', 'runtime/'], {'files': True, 'prefix': 'runtime/'}))
                 self.assertEqual(files.return_value.query.call_args.kwargs['prefix'], 'runtime/')
-            with self.subTest(interface=interface), patch('do_math.engine.query_records', return_value={}) as records:
+            with self.subTest(interface=interface), patch('do_math.cli.query_records', return_value={}) as records:
                 cli.execute(arguments([], {}))
                 self.assertEqual(records.call_args.kwargs['direction'], 'both')
                 cli.execute(arguments(['--kind', 'knowledge', '--related-to', 'KN-one', '--direction', 'incoming'],
@@ -421,14 +435,14 @@ class CliBoundaryTests(unittest.TestCase):
     def test_record_output_path_is_rejected_before_reading(self):
         from do_math import cli
         output = io.StringIO()
-        with patch('do_math.engine.read_record') as read, redirect_stdout(output):
+        with patch('do_math.cli.read_record') as read, redirect_stdout(output):
             code = cli.main(['read', '--repository', '.', '--instance', 'RI-test',
                              '--id', 'KN-test', '--output', 'unused.json'])
         self.assertEqual(code, 2)
         read.assert_not_called()
         self.assertEqual(json.loads(output.getvalue())['error']['message'],
                          '--output requires --path')
-    def test_audit2_configure_receipt_does_not_reapply_scheduler(self):
+    def test_configure_receipt_does_not_reapply_scheduler(self):
         from do_math import cli
         with tempfile.TemporaryDirectory() as directory:
             configuration=Path(directory)/'configuration.json'
@@ -446,7 +460,7 @@ class CliBoundaryTests(unittest.TestCase):
                     self.assertEqual(envelope['result']['effect'],effect)
                     self.assertEqual(envelope['result']['operator_schedule']['status'],expected)
 
-    def test_audit_common_request_rejects_malformed_identity_before_dispatch(self):
+    def test_common_request_rejects_malformed_identity_before_dispatch(self):
         from do_math import cli
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'request.json'
@@ -460,7 +474,7 @@ class CliBoundaryTests(unittest.TestCase):
                 dispatch.assert_not_called()
                 self.assertEqual(json.loads(output.getvalue())['error']['kind'],'input_error')
 
-    def test_audit_json_request_validates_types_and_preserves_common_error(self):
+    def test_json_request_validates_types_and_preserves_common_error(self):
         from do_math import cli
         with tempfile.TemporaryDirectory() as directory:
             request=Path(directory)/'request.json'
@@ -476,7 +490,7 @@ class CliBoundaryTests(unittest.TestCase):
             self.assertNotIn('result',result)
             self.assertEqual(result['error']['next_owner'],'user')
 
-    def test_audit_check_exit_uses_actual_inspection_status(self):
+    def test_check_exit_uses_actual_inspection_status(self):
         from do_math import cli
         for status, expected in [('healthy',0),('incomplete',1),('blocked',1),('degraded',1)]:
             output = io.StringIO()
@@ -489,7 +503,7 @@ class CliBoundaryTests(unittest.TestCase):
             self.assertEqual(code,expected)
             self.assertEqual(json.loads(output.getvalue())['result']['submission_checks'],{'evidence':'preserved'})
 
-    def test_audit_normalized_control_identity_at_public_boundary(self):
+    def test_normalized_control_identity_at_public_boundary(self):
         # The CLI passes the command's identity inputs to ENGINE's control, which
         # derives the request ID (control_contracts.control_request_id), and reports
         # the ID control returns: the same command repeats one ID, a new key makes another.
@@ -537,6 +551,53 @@ class CliBoundaryTests(unittest.TestCase):
             engine.return_value.process_controls.side_effect = ValueError('stale derived view: role_profile_refs')
             with self.assertRaisesRegex(RuntimeError, 'R-1.*stale derived view'):
                 cli._control(Namespace(repository=Path('.'), instance='RI-test'), 'configure')
+
+
+class DocumentedQueryTests(unittest.TestCase):
+    def test_profile_query_document_reads_cli_result_envelope(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / 'repo'
+            instance_id = new_instance(repo, goal='Check profile query', workspace=root / 'work')
+            engine = ResearchEngine(repo, instance_id)
+            allowed = next(iter(engine.instance['role_profile_refs'].values()))[0]
+            selected = engine.instance['execution_profiles'][allowed['id']]
+            document = Path(__file__).resolve().parents[2] / 'references' / '초기화-운전.md'
+            lines = document.read_text(encoding='utf-8').splitlines()
+            first = next(index for index, line in enumerate(lines) if line.startswith('$dmPage = (python $dmCli query '))
+            last = next(index for index in range(first, len(lines))
+                        if lines[index].startswith('$dmProfileRecords | Select-Object'))
+            query = lines[first:last + 1]
+            selection_index = next(index for index, line in enumerate(lines)
+                                   if line.startswith('$dmSelectedProfiles = @('))
+            refs_index = next(index for index in range(selection_index, len(lines))
+                              if lines[index].startswith('$dmProfileRefs = @('))
+            selection = lines[selection_index:refs_index]
+            environment = {**os.environ, 'DM_CLI': str(Path(__file__).resolve().parents[1] / 'do_math.py'),
+                           'DM_REPO': str(repo), 'DM_INSTANCE': instance_id,
+                           'DM_CHOSEN': selected['id']}
+            self.assertGreater(len(engine.instance['execution_profiles']), 10)
+            for page_size in (1000, 10):
+                with self.subTest(page_size=page_size):
+                    page_query = [line.replace('--limit 1000', '--limit ' + str(page_size)) for line in query]
+                    script = '\n'.join(['$dmCli = $env:DM_CLI', '$dmRepository = $env:DM_REPO',
+                                        '$dmInstance = $env:DM_INSTANCE', *page_query,
+                                        '$dmChosenIds = @($env:DM_CHOSEN)', *selection,
+                                        '@($dmSelectedProfiles | Select-Object id, revision, sha256) | ConvertTo-Json -Compress -Depth 5'])
+                    result = subprocess.run(['pwsh', '-NoProfile', '-NonInteractive', '-Command', script],
+                                            env=environment, capture_output=True, text=True, encoding='utf-8')
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(json.loads(result.stdout.strip().splitlines()[-1]),
+                                     {'id': selected['id'], 'revision': selected['revision'], 'sha256': selected['sha256']})
+                    if page_size == 1000:
+                        wrong = selection[:1] + ["$dmSelectedProfiles[0].sha256 = '0' * 64"] + selection[1:]
+                        invalid = '\n'.join(['$dmCli = $env:DM_CLI', '$dmRepository = $env:DM_REPO',
+                                             '$dmInstance = $env:DM_INSTANCE', *page_query,
+                                             '$dmChosenIds = @($env:DM_CHOSEN)', *wrong])
+                        rejected = subprocess.run(['pwsh', '-NoProfile', '-NonInteractive', '-Command', invalid],
+                                                  env=environment, capture_output=True, text=True, encoding='utf-8')
+                        self.assertNotEqual(rejected.returncode, 0)
+                        self.assertIn('허용 참조', rejected.stderr)
 
 
 if __name__ == "__main__":

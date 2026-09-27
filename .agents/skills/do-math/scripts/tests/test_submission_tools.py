@@ -9,12 +9,12 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import test_purpose_engine as purpose
+import purpose_fixtures as purpose
 from do_math.repository import canonical_json
 from do_math import contracts, submission, knowledge_io
-from research_fixtures import local_job_runner, seal_response, await_control, await_stop
-from test_submission_boundaries import CheckedRunner
-from test_review_research import purpose_copy
+from research_fixtures import await_control, await_stop, git_init, local_job_runner, seal_response
+from purpose_fixtures import CheckedRunner
+from purpose_fixtures import purpose_copy
 from state_fixtures import ACTIVE_LEAN_COMMAND
 
 
@@ -55,7 +55,7 @@ class LocalControlProtocolTests(unittest.TestCase):
         self.workspace.mkdir()
         self.repo = self.root / "repo"
         self.repo.mkdir()
-        subprocess.run(["git", "-C", str(self.repo), "init", "-q"], check=True)
+        git_init(self.repo)
         self.store = GitStateStore(self.repo, "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV")
         self.head = None
         self.transport = ControlTransport(self.root / "delivery")
@@ -168,7 +168,7 @@ class LocalControlProtocolTests(unittest.TestCase):
             kind="submission_preview", wait_seconds=0)
         self.assertEqual("submitted", delivery["state"])
         # This tests transport semantics only; actual domain preview is tested separately.
-        result = {"contract_id": "do-math-candidate-preview/5", "passed": False, "authoritative": False,
+        result = {"contract_id": submission.PREVIEW_CONTRACT_ID, "passed": False, "authoritative": False,
                   "issues": [{"rule_id": "integration.candidate", "message": "Visible candidate issue"}]}
         self.transport.pump(lambda request: {"state": "previewed", "result": result})
         receipt = self.mcp("control_receipt", {"request_id": delivery["request_id"], "wait_seconds": 0})
@@ -340,7 +340,7 @@ class ProducerToolTests(purpose.ActivatedPurposeHarness):
         self.assertFalse(result["passed"])
         self.assertIn("missing-proof.txt", json.dumps(result["issues"]))
 
-    def test_legacy_live_review_validates_sidecar_before_applying_continue(self):
+    def test_live_review_validates_sidecar_before_applying_continue(self):
         # From the prepared task: the live review of its work is the subject.
         engine, runner = purpose_copy(self, purpose.PurposeRunner(observation="continue"), until="prepared",
             config=self.fixture_config(scholarly_enabled=False, tool_review_window_seconds=1))
@@ -449,7 +449,7 @@ class ProducerToolTests(purpose.ActivatedPurposeHarness):
         draft = workspace / ".scratch/submission.json"
         draft.parent.mkdir(exist_ok=True)
         draft.write_bytes(canonical_json(output))
-        with patch.object(submission, "_read_stable", wraps=submission._read_stable) as read:
+        with patch.object(submission, "read_stable", wraps=submission.read_stable) as read:
             result = submission._producer_check(workspace, ".scratch/submission.json", [])
         self.assertEqual(result["tool_sha256"], context["submission_contract"]["tool_sha256"])
         # Preparation fixed the archive digest; a tool call never rereads the archive.
