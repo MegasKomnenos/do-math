@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>상태·판정·효력의 비교표 · do-math 9월 27일 밤</title><link rel="stylesheet" href="../assets/course.css"><script defer src="../assets/course.js"></script></head>
+<body><a class="skip-link" href="#main">본문으로</a><div class="shell">
+<nav class="topbar" aria-label="과정 탐색"><a href="../index.html">do-math · 9월 27일 밤</a><span><a href="../reference/0001-map.html">전체 지도</a> · <a href="../reference/0002-glossary.html">용어</a> · <a href="../reference/0007-catalog.html">원문·구현 찾기</a></span></nav>
+<main id="main"><div class="eyebrow">빠른 참조 / 2026.09.27 NIGHT</div><h1>상태·판정·효력의 비교표</h1><p>같은 waiting이나 completed라도 소유 대상이 다르면 다른 사실입니다. 기록을 읽을 때는 대상 → 판정값 → 사용 효력 → 실제 근거와 시점의 순서로 확인합니다. <a class="source-ref" href="sources/source-0003.html#L1">GLOSSARY.md</a> <a class="source-ref" href="sources/source-0008.html#L93">references/CLI-실행-계약.md · CLI 상태와 보편 개념의 대응</a></p>
+<div class="table-wrap"><table><thead><tr><th>대상</th><th>허용 상태·값</th><th>해석의 핵심</th></tr></thead><tbody>
+<tr><td>보편 인스턴스 운전</td><td>initializing, active, paused</td><td>목표 해결·개별 실행과 별도 축</td></tr>
+<tr><td>CLI 실행 루프</td><td>initializing, ready, running, paused, capacity_waiting, waiting, completed, closed</td><td>저장 기록에서 재구성한 실행 국면</td></tr>
+<tr><td>과제</td><td>planned, active, waiting, completed, closed</td><td>불변 계약 판본과 변하는 진행 상태를 구별</td></tr>
+<tr><td>활동</td><td>ready, working, waiting, finished</td><td>여러 실행에 걸친 업무 책임. finished여도 미해결 가능</td></tr>
+<tr><td>실행</td><td>queued, starting, running, stopping, ended</td><td>한 번의 수행 수명. ended와 예약 정산도 구별</td></tr>
+<tr><td>연구 outcome</td><td>submitted, partial, waiting, no_result</td><td>작업자가 보고한 실제 수행 범위</td></tr>
+<tr><td>계약 검토 항목</td><td>approved, revision_required, unresolved</td><td>문면 결함과 근거 부족을 구별</td></tr>
+<tr><td>계획의 선택</td><td>selected, not_selected, not_assessable</td><td>선택·전략적 보류·판정 불가</td></tr>
+<tr><td>계획의 과제 평가</td><td>completed, incomplete, closed</td><td>의무와 근거에 대한 판정. task.status의 허용 값과 다름</td></tr>
+<tr><td>의무 처분</td><td>fulfilled, open, waived, transferred</td><td>미판정 의무는 별도 unresolved 배열</td></tr>
+<tr><td>동일성 판정</td><td>match, mismatch, unresolved</td><td>개별 반환과 활동 집계를 구별</td></tr>
+<tr><td>목표 감사</td><td>satisfied, not_satisfied, unresolved</td><td>목표 항목의 충족과 판단 불가</td></tr>
+<tr><td>목표 상태</td><td>unsolved, mathematically_solved</td><td>unsolved는 불가능 판정이 아님</td></tr>
+<tr><td>학술 상태</td><td>not_applicable, incomplete, pending, active, completed, externally_rejected</td><td>해결 근거·요구 판본·유효 판정·외부 거부에 상대적</td></tr>
+<tr><td>외부 operation</td><td>prepared, running, confirmed, failed, unknown, cancelled</td><td>confirmed에서도 succeeded와 근거를 확인</td></tr>
+<tr><td>지식 기록 효력</td><td>active, superseded, withdrawn</td><td>현행·대체·철회</td></tr>
+<tr><td>형식 사용 효력</td><td>active, suspended, historical</td><td>형식 결과 자체의 현재 사용</td></tr>
+<tr><td>판정 사용 효력</td><td>active, suspended, withdrawn</td><td>판정값과 별도. active인 부정 판정도 있음</td></tr>
+</tbody></table></div>
+<h2 id="section-1">자주 혼동하는 쌍</h2>
+<p><code>output_accepted</code>와 과제 완료: 앞은 수신의 구조·입력 결속, 뒤는 계약 의무의 지정 판정입니다. <code>check.passed</code>와 <code>capture_eligible</code>: 앞은 전건 구조 검사, 뒤는 후보 봉인 가능 여부입니다. <code>delivery.state=accepted</code>와 편입: 앞은 정확한 후보의 중앙 접수이고, 실제 묶음 적용에는 권한·현재성 등 조건이 남습니다.</p>
+<p><code>formal_valid</code>와 <code>usable_as_k</code>: 형식 결과가 유효해도 해설과 동일성 판정의 현재 연결이 없으면 해당 K 사용이 성립하지 않을 수 있습니다. <code>scope_complete</code>와 긍정 판정: 전건 대조를 끝내고 부정 판정을 낼 수도 있습니다. <code>task_disposition_is(completed)</code>와 실제 완료 dependency: 역사적 완료 질의가 참이어도 낡은 완료 판정으로 후속을 시작할 수는 없습니다.</p>
+<h2 id="section-2">수학 검토 집계</h2>
+<p>초기 필수 결과 전부가 완결된 match이고 열린 이의·질문이 없으면 직접 match 집계가 가능합니다. 쟁점 경로에서는 최종 전건 match이면 match, 유효한 전건 mismatch이면 mismatch이며, 의견 분열·하나 이상의 unresolved·필수 범위나 실행 미완료는 unresolved입니다. 이의 approved는 이의 성립이지 제안 승인과 같은 말이 아닙니다. 자원 처분으로 끝난 계보에 실제 동일성 판정 IA가 있다고 가정하지 않습니다.</p></main>
+<footer class="footer">기준: bdccee3 · do-math-cli/5 · do-math-state/7. 교육용 사례는 실제 실행 증거와 구별합니다. 이해가 막히는 문장이나 회상 답을 대화에 보내면 이어서 설명합니다.</footer></div></body></html>

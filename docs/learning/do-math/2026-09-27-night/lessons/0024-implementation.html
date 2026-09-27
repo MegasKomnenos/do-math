@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>24. 문서의 책임을 실제 코드에서 찾아가기 · do-math 9월 27일 밤</title><link rel="stylesheet" href="../assets/course.css"><script defer src="../assets/course.js"></script></head>
+<body><a class="skip-link" href="#main">본문으로</a><div class="shell">
+<nav class="topbar" aria-label="과정 탐색"><a href="../index.html">do-math · 9월 27일 밤</a><span><a href="../reference/0001-map.html">전체 지도</a> · <a href="../reference/0002-glossary.html">용어</a> · <a href="../reference/0007-catalog.html">원문·구현 찾기</a></span></nav>
+<main id="main"><div class="eyebrow">수업 / 2026.09.27 NIGHT</div><h1>24. 문서의 책임을 실제 코드에서 찾아가기</h1><p class="lead">한 기능의 입력 경계·판단·상태 적용·시험을 연결해 찾습니다.</p><p>새 필드의 의미를 바꾸려 할 때 실행기 한 곳만 고치면 충분하지 않을 수 있습니다. 생산자는 옛 구조를 내고 수신자는 새 구조를 기대하면, 올바른 연구 결과도 반려됩니다. do-math의 개발 원칙은 현재 계약 하나를 문서·호출부·스키마·검사·시험·예시에 함께 반영하는 것입니다.</p>
+<h2 id="section-1">입력에서 상태 공개까지 내려가 보기</h2>
+<p>공개 명령은 <code>scripts/do_math.py</code>에서 시작해 <code>cli.py</code>가 인자·JSON과 반환을 다룹니다. <code>engine.py</code>와 영역별 <code>*_engine.py</code>는 상태 전이와 후속을 연결합니다. <code>scheduler.py</code>는 병렬 호출을 배정하고, <code>parallel.py</code>는 오래 걸리는 호출을 수행하게 합니다. 상태 갱신과 정지 이유의 판단은 소유 실행기 쪽에서 직렬로 처리합니다.</p>
+<p>모델 경로는 <code>model_runner.py</code>에서 공급자 어댑터로 이어지고, Codex·Claude worker가 실제 CLI와 native stream을 다룹니다. <code>context_store.py</code>는 고정 입력·catalog·작업 공간 복원과 파일 회수, <code>submission.py</code>는 생산자·수신자가 공유하는 제출 검사, <code>integration.py</code>는 원자적 편입 묶음을 맡습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>읽으려는 책임</th><th>중심 모듈</th></tr></thead><tbody>
+<tr><td>작업 계약·착수·완료</td><td>task_contracts, planning, task_scope</td></tr>
+<tr><td>지식·형식 결과·관계</td><td>knowledge, knowledge_records, knowledge_io, relation_refs</td></tr>
+<tr><td>통치·초기화·질문</td><td>governance, initialization, delegations, questions</td></tr>
+<tr><td>형식 검사·신뢰</td><td>formal, trust_inventory, trust_validation</td></tr>
+<tr><td>독립 검토</td><td>review_policy, review_cycle, review_engine</td></tr>
+<tr><td>실행·자원·관찰</td><td>execution_profiles, execution_lifecycle, session_slots, observations</td></tr>
+<tr><td>저장·조회</td><td>git_store, repository, state_contract, record_schemas, payloads</td></tr>
+<tr><td>독립 운영·정비</td><td>scheduled_operator, operator_bootstrap, maintenance_gate, retention</td></tr>
+</tbody></table></div>
+<p>이 표는 책임을 찾는 첫 경로입니다. 전체 파일 색인은 모든 구현·시험 파일의 실제 함수·클래스 위치와 연결됩니다. 파일 이름이 비슷하다는 이유만으로 서로 다른 규칙을 합치지 않고, 호출부와 정본 함수를 함께 읽습니다.</p>
+<h2 id="section-2">저장 계약과 응답 계약은 다르다</h2>
+<p><code>contracts.py</code>의 응답 계약은 <code>do-math-cli/5</code>, <code>state_contract.py</code>의 저장 계약은 <code>do-math-state/7</code>입니다. 앞은 AI가 무엇을 반환할지 정하고, 뒤는 중앙이 그 내용을 어떤 기록으로 보존할지 정합니다. 예를 들어 AI가 knowledge 배열에 새 결과를 제출하면, 중앙은 기록 ID·상태·참조를 결합해 해당 기록군에 보존합니다. 응답 JSON을 그대로 저장 레코드라고 가정하지 않는 이유입니다.</p>
+<p>아래는 Git snapshot 안의 저장 경로를 보여 주는 예시입니다. 꺾쇠 안은 실제 기록마다 달라지는 값이며, Git 저장소의 작업 폴더에 이 파일들이 모두 펼쳐져 있다는 뜻은 아닙니다.</p>
+<pre><code class="language-text">research/knowledge/&lt;KN-ID&gt;.json       지식 기록
+runtime/executions/&lt;EX-ID&gt;.json       실행 기록
+runtime/artifacts/&lt;bundle-ID&gt;/...     고정한 입력·산출 파일</code></pre>
+<p>Git ref는 어떤 commit을 현재 상태로 가리킬지 정하는 이름입니다. 인스턴스의 <code>refs/heads/do-math/&lt;인스턴스 ID&gt;</code>가 그 기준을 가리킵니다. 프로그램은 snapshot의 여러 기록군을 읽어 메모리의 instance·runtime 객체로 조립합니다. 이 두 객체는 계산에 쓰는 보기이며, 그 전체가 같은 이름의 단일 정본 파일로 저장되는 구조는 아닙니다.</p>
+<p><code>repository</code>는 기록군의 검사·코덱·조회와 불변 artifact를, <code>git_store</code>는 Git 객체·잠금·경로 경계·조건부 ref 공개를 맡습니다. 직전 상태 하나를 부모로 새 상태를 공개하며, 새 artifact나 실제 기록 변화가 없으면 의미 없는 commit을 만들지 않습니다. 물리 payload의 분리와 논리 값 복원도 이 저장 경계에서 이루어집니다. <a class="source-ref" href="../reference/sources/source-0008.html#L54">references/CLI-실행-계약.md · 현재 저장과 작업 경로</a></p>
+<h2 id="section-3">공유 규칙은 한 정본을 호출한다</h2>
+<p>두 모듈 이상이 쓰는 규칙은 <code>scripts/이음새-정본.md</code>에서 소유자를 찾습니다. 파일 지문과 JSON digest는 <code>file_io</code>, 봉인 artifact 대조는 <code>repository</code>, 역할 집합과 프로필 참조는 <code>execution_profiles</code>처럼 나뉩니다. 같은 검사를 각 소비자 안에 다시 쓰지 않습니다.</p>
+<p>스키마는 허용 필드·자료형·값을 정하는 객체이고, 빌더는 이번 실행에 쓸 스키마를 만들어 돌려주는 함수입니다. 여기서는 사본을 만드는 방식도 중요합니다. 예를 들어 A와 B 필드가 같은 문자열 규칙 객체를 가리킨다고 합시다. A에만 허용값 <code>enum</code>을 넣었는데 B도 그 객체를 가리키면, B까지 의도하지 않은 제한을 받습니다.</p>
+<p>일반 <code>deepcopy</code>는 전역 원본과는 분리된 사본을 만들지만, 사본 안에서 A와 B가 같은 객체를 가리키는 관계는 유지할 수 있습니다. 이 구현의 <code>file_io.py</code>에 정의된 함수 <code>json_copy</code>는 각 위치에 독립된 객체를 만들어 A 수정이 B나 전역 규칙에 번지지 않게 합니다. 이 원칙과 해당 회귀 시험은 이음새 정본에 있습니다. 생산자 검사와 중앙 수신이 같은 스키마·규칙을 쓰는 것에 더해, 어느 한 실행의 스키마 조정이 다른 실행의 뜻을 바꾸지 않도록 한 것입니다.</p>
+<p>프리알파의 과거 저장 형식은 호환성 요구가 아닙니다. 계약 변경 뒤 새 인스턴스로 검증하며 옛 runtime·승인·queue를 변환해 재개하는 경로를 남기지 않습니다. 같은 연구 안의 과제 개정·프로필 판본·실행 이력을 보존하는 것은 이 구판 호환 문제와 별도입니다.</p><h2 id="practice">판단 연습</h2><fieldset class="quiz" data-answer="0" data-explain="공유 규칙의 정본 하나를 생산자와 수신자가 함께 호출한다. 계약 변경 때 구현·스키마·문서·시험·예시도 함께 맞춘다."><legend>두 모듈이 같은 제출 규칙을 검사해야 한다. 현행 개발 원칙에 맞는 방법은?</legend><button type="button" data-choice="0" aria-pressed="false">정본검사 함께호출</button><button type="button" data-choice="1" aria-pressed="false">각자검사 따로작성</button><button type="button" data-choice="2" aria-pressed="false">옛규칙 함께유지</button><p class="feedback" role="status" aria-live="polite"></p></fieldset><details class="answer"><summary>정답과 해설</summary><p>정본검사 함께호출 — 공유 규칙의 정본 하나를 생산자와 수신자가 함께 호출한다. 계약 변경 때 구현·스키마·문서·시험·예시도 함께 맞춘다.</p></details><aside class="recall"><h2>자기 말로 남기기</h2><p>제출 오류 하나를 받았다고 가정하고, CLI·입력·스키마·수신·상태 적용의 읽기 경로를 말해 보세요.</p><label for="recall-answer">나의 설명</label><textarea id="recall-answer" placeholder="이 답변은 저장하거나 전송하지 않습니다."></textarea><p class="muted">오늘은 본문을 덮고 설명하고, 하루 뒤 같은 질문을 다시 답해 보세요. 답을 대화에 보내면 피드백을 받을 수 있습니다.</p></aside><h2 id="sources">원문에서 확인하기</h2><p class="source"><a class="source-ref" href="../reference/sources/source-0002.html#L1">AGENTS.md</a> · <a class="source-ref" href="../reference/sources/source-0242.html#L1">scripts/이음새-정본.md</a> · <a class="source-ref" href="../reference/sources/source-0039.html#L1">scripts/do_math/engine.py</a> · <a class="source-ref" href="../reference/sources/source-0093.html#L1">scripts/do_math/scheduler.py</a> · <a class="source-ref" href="../reference/sources/source-0097.html#L1">scripts/do_math/state_contract.py</a> · <a class="source-ref" href="../reference/sources/source-0081.html#L1">scripts/do_math/record_schemas/schemas.py</a> · <a class="source-ref" href="../reference/sources/source-0050.html#L1">scripts/do_math/git_store.py</a></p><p><a href="../reference/0001-map.html">전체 흐름에 놓아 보기</a> · <a href="../reference/0002-glossary.html">용어 찾아보기</a></p><nav class="lesson-nav" aria-label="이전 다음 수업"><a href="0023-external-effects.html">← 이전 수업</a><a href="0025-tests-assurance.html">다음 수업 →</a></nav></main>
+<footer class="footer">기준: bdccee3 · do-math-cli/5 · do-math-state/7. 교육용 사례는 실제 실행 증거와 구별합니다. 이해가 막히는 문장이나 회상 답을 대화에 보내면 이어서 설명합니다.</footer></div></body></html>

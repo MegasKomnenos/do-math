@@ -1,0 +1,2386 @@
+[
+  {
+    "path": ".gitattributes",
+    "lessons": [
+      24
+    ],
+    "purpose": "배포 파일의 Git 속성",
+    "test_methods": 0
+  },
+  {
+    "path": "AGENTS.md",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "현재 계약 하나를 유지하는 개발 원칙",
+    "test_methods": 0
+  },
+  {
+    "path": "GLOSSARY.md",
+    "lessons": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "purpose": "공통 개념·판정·상태의 의미",
+    "test_methods": 0
+  },
+  {
+    "path": "README.md",
+    "lessons": [
+      6,
+      21,
+      22
+    ],
+    "purpose": "사용자 대화의 시작·인계·조회·제어 절차",
+    "test_methods": 0
+  },
+  {
+    "path": "SKILL.md",
+    "lessons": [
+      1,
+      2,
+      26
+    ],
+    "purpose": "목적·연구 환류·내부 역할 읽기 대응",
+    "test_methods": 0
+  },
+  {
+    "path": "examples/claude-codex-sessions.json",
+    "lessons": [
+      10
+    ],
+    "purpose": "Claude·Codex 혼합 모델과 슬롯 설정 예시",
+    "test_methods": 0
+  },
+  {
+    "path": "examples/nat-add-zero.txt",
+    "lessons": [
+      6,
+      26
+    ],
+    "purpose": "자연수 덧셈 목표 입력 예시",
+    "test_methods": 0
+  },
+  {
+    "path": "references/CLI-실행-계약.md",
+    "lessons": [
+      6,
+      10,
+      13,
+      14,
+      16,
+      21,
+      22,
+      23
+    ],
+    "purpose": "공개 명령·설정·저장·입출력·보증의 구현 계약",
+    "test_methods": 0
+  },
+  {
+    "path": "references/공통-실행.md",
+    "lessons": [
+      13,
+      14,
+      15,
+      19,
+      23
+    ],
+    "purpose": "내부 실행의 입력·개정·질문·제출·확장",
+    "test_methods": 0
+  },
+  {
+    "path": "references/과제-착수조건.md",
+    "lessons": [
+      7,
+      8
+    ],
+    "purpose": "조건 문법과 참·거짓·오류의 구별",
+    "test_methods": 0
+  },
+  {
+    "path": "references/모델과-실행예산.md",
+    "lessons": [
+      10
+    ],
+    "purpose": "모델 요구와 작업 동시 점유",
+    "test_methods": 0
+  },
+  {
+    "path": "references/입력-소비자.md",
+    "lessons": [
+      5
+    ],
+    "purpose": "의도 해석 단위의 실제 payload 소유자",
+    "test_methods": 0
+  },
+  {
+    "path": "references/자기-점검.md",
+    "lessons": [
+      19
+    ],
+    "purpose": "자기 점검 전달·인지·응답·운영 후속",
+    "test_methods": 0
+  },
+  {
+    "path": "references/지식-저작과-재사용.md",
+    "lessons": [
+      3,
+      4,
+      11
+    ],
+    "purpose": "가정·범위·근거·효력 대조와 새 지식",
+    "test_methods": 0
+  },
+  {
+    "path": "references/초기화-운전.md",
+    "lessons": [
+      6
+    ],
+    "purpose": "공개 초기화·승인·프로필·신뢰·활성화",
+    "test_methods": 0
+  },
+  {
+    "path": "references/초기화-효율과-정비.md",
+    "lessons": [
+      13,
+      16,
+      20,
+      21,
+      22
+    ],
+    "purpose": "툴체인 기준·저장 비용·정비·관측",
+    "test_methods": 0
+  },
+  {
+    "path": "references/학술자료-활용.md",
+    "lessons": [
+      12
+    ],
+    "purpose": "자료원 선택·원문 판독·근거 인계",
+    "test_methods": 0
+  },
+  {
+    "path": "requirements.txt",
+    "lessons": [
+      6,
+      25
+    ],
+    "purpose": "고정 Python 직접 의존성",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math.py",
+    "lessons": [
+      22,
+      24
+    ],
+    "purpose": "공개 CLI 진입점",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/__init__.py",
+    "lessons": [
+      24
+    ],
+    "purpose": "실행 패키지 진입 정의",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/academic.py",
+    "lessons": [
+      18
+    ],
+    "purpose": "목표 해결 뒤 학술 요구",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/academic_engine.py",
+    "lessons": [
+      18
+    ],
+    "purpose": "목표 해결 뒤 학술 요구",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/activities.py",
+    "lessons": [
+      2,
+      20
+    ],
+    "purpose": "활동·실행 수명·복구",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/budget.py",
+    "lessons": [
+      10
+    ],
+    "purpose": "모델 요구·프로필·자원 예약",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/claude_adapter.py",
+    "lessons": [
+      10,
+      14,
+      20
+    ],
+    "purpose": "공급자 CLI·native 응답",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/claude_stream.py",
+    "lessons": [
+      10,
+      14,
+      20
+    ],
+    "purpose": "공급자 CLI·native 응답",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/claude_worker.py",
+    "lessons": [
+      10,
+      14,
+      20
+    ],
+    "purpose": "공급자 CLI·native 응답",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/cli.py",
+    "lessons": [
+      6,
+      21,
+      22,
+      24
+    ],
+    "purpose": "공개 명령·설정·상태 조회",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/cli_worker.py",
+    "lessons": [
+      10,
+      14,
+      20
+    ],
+    "purpose": "공급자 CLI·native 응답",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/codex_adapter.py",
+    "lessons": [
+      10,
+      14,
+      20
+    ],
+    "purpose": "공급자 CLI·native 응답",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/codex_worker.py",
+    "lessons": [
+      10,
+      14,
+      20
+    ],
+    "purpose": "공급자 CLI·native 응답",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/configuration.py",
+    "lessons": [
+      6,
+      21,
+      22,
+      24
+    ],
+    "purpose": "공개 명령·설정·상태 조회",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/context_store.py",
+    "lessons": [
+      13
+    ],
+    "purpose": "고정 입력·현재성·파일 경계",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/contracts.py",
+    "lessons": [
+      7,
+      8,
+      9
+    ],
+    "purpose": "계약·선택·완료 판정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/control_contracts.py",
+    "lessons": [
+      5,
+      6
+    ],
+    "purpose": "통치·의도·초기화와 질문",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/control_transport.py",
+    "lessons": [
+      19,
+      20
+    ],
+    "purpose": "관찰·제어·실행 기한",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/decision_engine.py",
+    "lessons": [
+      13
+    ],
+    "purpose": "고정 입력·현재성·파일 경계",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/delegations.py",
+    "lessons": [
+      5,
+      6
+    ],
+    "purpose": "통치·의도·초기화와 질문",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/engine.py",
+    "lessons": [
+      2,
+      10,
+      20,
+      24
+    ],
+    "purpose": "연구 실행기의 상태 전이와 배정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/events.py",
+    "lessons": [
+      13,
+      22,
+      24
+    ],
+    "purpose": "저장·공통 IO·불변 payload·사건",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/execution_lifecycle.py",
+    "lessons": [
+      2,
+      20
+    ],
+    "purpose": "활동·실행 수명·복구",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/execution_profiles.py",
+    "lessons": [
+      10
+    ],
+    "purpose": "모델 요구·프로필·자원 예약",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/execution_window.py",
+    "lessons": [
+      19,
+      20
+    ],
+    "purpose": "관찰·제어·실행 기한",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/external.py",
+    "lessons": [
+      23
+    ],
+    "purpose": "모델 공급자 대기와 외부 HTTP",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/external_engine.py",
+    "lessons": [
+      23
+    ],
+    "purpose": "모델 공급자 대기와 외부 HTTP",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/file_io.py",
+    "lessons": [
+      13,
+      22,
+      24
+    ],
+    "purpose": "저장·공통 IO·불변 payload·사건",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/formal.py",
+    "lessons": [
+      16
+    ],
+    "purpose": "형식 검사와 신뢰 환경",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/formal_engine.py",
+    "lessons": [
+      16
+    ],
+    "purpose": "형식 검사와 신뢰 환경",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/formal_preview.py",
+    "lessons": [
+      16
+    ],
+    "purpose": "형식 검사와 신뢰 환경",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/git_store.py",
+    "lessons": [
+      13,
+      22,
+      24
+    ],
+    "purpose": "저장·공통 IO·불변 payload·사건",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/governance.py",
+    "lessons": [
+      5,
+      6
+    ],
+    "purpose": "통치·의도·초기화와 질문",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/governance_engine.py",
+    "lessons": [
+      5,
+      6
+    ],
+    "purpose": "통치·의도·초기화와 질문",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/initialization.py",
+    "lessons": [
+      5,
+      6
+    ],
+    "purpose": "통치·의도·초기화와 질문",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/initialization_engine.py",
+    "lessons": [
+      5,
+      6
+    ],
+    "purpose": "통치·의도·초기화와 질문",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/input_basis.py",
+    "lessons": [
+      13
+    ],
+    "purpose": "고정 입력·현재성·파일 경계",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/input_recovery.py",
+    "lessons": [
+      7,
+      8,
+      9
+    ],
+    "purpose": "계약·선택·완료 판정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/integration.py",
+    "lessons": [
+      14,
+      15
+    ],
+    "purpose": "제출·묶음 편입·개정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/knowledge.py",
+    "lessons": [
+      3,
+      4,
+      15
+    ],
+    "purpose": "지식 기록·관계·효력",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/knowledge_engine.py",
+    "lessons": [
+      3,
+      4,
+      15
+    ],
+    "purpose": "지식 기록·관계·효력",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/knowledge_io.py",
+    "lessons": [
+      3,
+      4,
+      15
+    ],
+    "purpose": "지식 기록·관계·효력",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/knowledge_records.py",
+    "lessons": [
+      3,
+      4,
+      15
+    ],
+    "purpose": "지식 기록·관계·효력",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/launch.py",
+    "lessons": [
+      2,
+      20
+    ],
+    "purpose": "활동·실행 수명·복구",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/lifecycle_engine.py",
+    "lessons": [
+      2,
+      10,
+      20,
+      24
+    ],
+    "purpose": "연구 실행기의 상태 전이와 배정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/maintenance_gate.py",
+    "lessons": [
+      21,
+      24
+    ],
+    "purpose": "독립 운영·설치 정비·보관",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/model_policy.py",
+    "lessons": [
+      10
+    ],
+    "purpose": "모델 요구·프로필·자원 예약",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/model_runner.py",
+    "lessons": [
+      10,
+      14,
+      20
+    ],
+    "purpose": "공급자 CLI·native 응답",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/observation_transport.py",
+    "lessons": [
+      19,
+      20
+    ],
+    "purpose": "관찰·제어·실행 기한",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/observations.py",
+    "lessons": [
+      19,
+      20
+    ],
+    "purpose": "관찰·제어·실행 기한",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/operation_trace.py",
+    "lessons": [
+      13,
+      22,
+      24
+    ],
+    "purpose": "저장·공통 IO·불변 payload·사건",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/operational_dispositions.py",
+    "lessons": [
+      19,
+      20
+    ],
+    "purpose": "관찰·제어·실행 기한",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/parallel.py",
+    "lessons": [
+      2,
+      10,
+      20,
+      24
+    ],
+    "purpose": "연구 실행기의 상태 전이와 배정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/payloads.py",
+    "lessons": [
+      13,
+      22,
+      24
+    ],
+    "purpose": "저장·공통 IO·불변 payload·사건",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/planning.py",
+    "lessons": [
+      7,
+      8,
+      9
+    ],
+    "purpose": "계약·선택·완료 판정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/planning_engine.py",
+    "lessons": [
+      7,
+      8,
+      9
+    ],
+    "purpose": "계약·선택·완료 판정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/preflight.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "설치 구조 검사",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/provider_engine.py",
+    "lessons": [
+      23
+    ],
+    "purpose": "모델 공급자 대기와 외부 HTTP",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/provider_wait.py",
+    "lessons": [
+      23
+    ],
+    "purpose": "모델 공급자 대기와 외부 HTTP",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/question_engine.py",
+    "lessons": [
+      5,
+      6
+    ],
+    "purpose": "통치·의도·초기화와 질문",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/questions.py",
+    "lessons": [
+      5,
+      6
+    ],
+    "purpose": "통치·의도·초기화와 질문",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/record_schemas/__init__.py",
+    "lessons": [
+      24
+    ],
+    "purpose": "기록군 스키마 등록·참조·의미 검사 연결",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/record_schemas/schemas.py",
+    "lessons": [
+      24
+    ],
+    "purpose": "현행 저장 기록·설정·action의 닫힌 스키마",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/relation_refs.py",
+    "lessons": [
+      3,
+      4,
+      15
+    ],
+    "purpose": "지식 기록·관계·효력",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/repair_execution.py",
+    "lessons": [
+      2,
+      20
+    ],
+    "purpose": "활동·실행 수명·복구",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/reporting.py",
+    "lessons": [
+      6,
+      21,
+      22,
+      24
+    ],
+    "purpose": "공개 명령·설정·상태 조회",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/repository.py",
+    "lessons": [
+      13,
+      22,
+      24
+    ],
+    "purpose": "저장·공통 IO·불변 payload·사건",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/retention.py",
+    "lessons": [
+      21,
+      24
+    ],
+    "purpose": "독립 운영·설치 정비·보관",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/review_cycle.py",
+    "lessons": [
+      17
+    ],
+    "purpose": "독립 동일성 검토",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/review_engine.py",
+    "lessons": [
+      17
+    ],
+    "purpose": "독립 동일성 검토",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/review_policy.py",
+    "lessons": [
+      17
+    ],
+    "purpose": "독립 동일성 검토",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/revision_engine.py",
+    "lessons": [
+      14,
+      15
+    ],
+    "purpose": "제출·묶음 편입·개정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/revisions.py",
+    "lessons": [
+      14,
+      15
+    ],
+    "purpose": "제출·묶음 편입·개정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/scheduled_operator.py",
+    "lessons": [
+      21,
+      24
+    ],
+    "purpose": "독립 운영·설치 정비·보관",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/scheduler.py",
+    "lessons": [
+      2,
+      10,
+      20,
+      24
+    ],
+    "purpose": "연구 실행기의 상태 전이와 배정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/scholarly.py",
+    "lessons": [
+      12
+    ],
+    "purpose": "학술자료 MCP 연결",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/session_slots.py",
+    "lessons": [
+      10
+    ],
+    "purpose": "모델 요구·프로필·자원 예약",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/state_checks.py",
+    "lessons": [
+      13,
+      22,
+      24
+    ],
+    "purpose": "저장·공통 IO·불변 payload·사건",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/state_contract.py",
+    "lessons": [
+      13,
+      22,
+      24
+    ],
+    "purpose": "저장·공통 IO·불변 payload·사건",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/submission.py",
+    "lessons": [
+      14,
+      15
+    ],
+    "purpose": "제출·묶음 편입·개정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/task_contracts.py",
+    "lessons": [
+      7,
+      8,
+      9
+    ],
+    "purpose": "계약·선택·완료 판정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/task_scope.py",
+    "lessons": [
+      7,
+      8,
+      9
+    ],
+    "purpose": "계약·선택·완료 판정",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/trust_inventory.py",
+    "lessons": [
+      16
+    ],
+    "purpose": "형식 검사와 신뢰 환경",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/trust_validation.py",
+    "lessons": [
+      16
+    ],
+    "purpose": "형식 검사와 신뢰 환경",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/do_math/windows_job.py",
+    "lessons": [
+      2,
+      20
+    ],
+    "purpose": "활동·실행 수명·복구",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/operator_bootstrap.py",
+    "lessons": [
+      21
+    ],
+    "purpose": "고정 설치 사본의 manifest 확인과 기동",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/operator_schedule.ps1",
+    "lessons": [
+      21
+    ],
+    "purpose": "Windows 연구·감독·wake 예약 어댑터",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/probe_cli.py",
+    "lessons": [
+      6,
+      25
+    ],
+    "purpose": "설치 구조와 명시적 provider 실호출 검사",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/run_tests.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "모든 회귀 시험의 선택·격리·보고 실행기",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/setup_lean.py",
+    "lessons": [
+      6,
+      16
+    ],
+    "purpose": "공유 툴체인 설치·기록·재기록·내용 점검",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/test_categories.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "시험 모듈 조각과 실제 자원 격리 표지",
+    "test_methods": 1
+  },
+  {
+    "path": "scripts/tests/engine_fixtures.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "시험의 시작 상태·러너·기록을 공유하는 fixture",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/tests/knowledge_fixtures.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "시험의 시작 상태·러너·기록을 공유하는 fixture",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/tests/provider_fixtures.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "시험의 시작 상태·러너·기록을 공유하는 fixture",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/tests/purpose_fixtures.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "시험의 시작 상태·러너·기록을 공유하는 fixture",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/tests/record_fixtures.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "시험의 시작 상태·러너·기록을 공유하는 fixture",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/tests/research_fixtures.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "시험의 시작 상태·러너·기록을 공유하는 fixture",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/tests/review_fixtures.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "시험의 시작 상태·러너·기록을 공유하는 fixture",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/tests/runner_fixtures.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "시험의 시작 상태·러너·기록을 공유하는 fixture",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/tests/state_fixtures.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "시험의 시작 상태·러너·기록을 공유하는 fixture",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/tests/test_academic.py",
+    "lessons": [
+      18,
+      25
+    ],
+    "purpose": "회귀 검사: 목표 해결 뒤 학술 요구",
+    "test_methods": 17
+  },
+  {
+    "path": "scripts/tests/test_academic_engine.py",
+    "lessons": [
+      18,
+      25
+    ],
+    "purpose": "회귀 검사: 목표 해결 뒤 학술 요구",
+    "test_methods": 11
+  },
+  {
+    "path": "scripts/tests/test_academic_preparation.py",
+    "lessons": [
+      18,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: academic_preparation",
+    "test_methods": 8
+  },
+  {
+    "path": "scripts/tests/test_background_processes.py",
+    "lessons": [
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: background_processes",
+    "test_methods": 3
+  },
+  {
+    "path": "scripts/tests/test_budget.py",
+    "lessons": [
+      10,
+      25
+    ],
+    "purpose": "회귀 검사: 모델 요구·프로필·자원 예약",
+    "test_methods": 5
+  },
+  {
+    "path": "scripts/tests/test_checkpoint_persistence.py",
+    "lessons": [
+      19,
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: checkpoint_persistence",
+    "test_methods": 5
+  },
+  {
+    "path": "scripts/tests/test_claude_adapter.py",
+    "lessons": [
+      10,
+      14,
+      20,
+      25
+    ],
+    "purpose": "회귀 검사: 공급자 CLI·native 응답",
+    "test_methods": 12
+  },
+  {
+    "path": "scripts/tests/test_claude_stream.py",
+    "lessons": [
+      10,
+      14,
+      20,
+      25
+    ],
+    "purpose": "회귀 검사: 공급자 CLI·native 응답",
+    "test_methods": 8
+  },
+  {
+    "path": "scripts/tests/test_cli.py",
+    "lessons": [
+      6,
+      21,
+      22,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 공개 명령·설정·상태 조회",
+    "test_methods": 26
+  },
+  {
+    "path": "scripts/tests/test_cli_advanced.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: cli_advanced",
+    "test_methods": 6
+  },
+  {
+    "path": "scripts/tests/test_cli_surface.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: cli_surface",
+    "test_methods": 2
+  },
+  {
+    "path": "scripts/tests/test_codex_adapter.py",
+    "lessons": [
+      10,
+      14,
+      20,
+      25
+    ],
+    "purpose": "회귀 검사: 공급자 CLI·native 응답",
+    "test_methods": 15
+  },
+  {
+    "path": "scripts/tests/test_completion_settlement.py",
+    "lessons": [
+      18,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: completion_settlement",
+    "test_methods": 6
+  },
+  {
+    "path": "scripts/tests/test_configuration.py",
+    "lessons": [
+      6,
+      21,
+      22,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 공개 명령·설정·상태 조회",
+    "test_methods": 2
+  },
+  {
+    "path": "scripts/tests/test_context_store.py",
+    "lessons": [
+      13,
+      25
+    ],
+    "purpose": "회귀 검사: 고정 입력·현재성·파일 경계",
+    "test_methods": 34
+  },
+  {
+    "path": "scripts/tests/test_contract_checks.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      15,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: contract_checks",
+    "test_methods": 14
+  },
+  {
+    "path": "scripts/tests/test_contracts.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      25
+    ],
+    "purpose": "회귀 검사: 계약·선택·완료 판정",
+    "test_methods": 16
+  },
+  {
+    "path": "scripts/tests/test_control_shapes.py",
+    "lessons": [
+      19,
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: control_shapes",
+    "test_methods": 13
+  },
+  {
+    "path": "scripts/tests/test_control_transport.py",
+    "lessons": [
+      19,
+      20,
+      25
+    ],
+    "purpose": "회귀 검사: 관찰·제어·실행 기한",
+    "test_methods": 17
+  },
+  {
+    "path": "scripts/tests/test_controls.py",
+    "lessons": [
+      19,
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: controls",
+    "test_methods": 19
+  },
+  {
+    "path": "scripts/tests/test_currentness.py",
+    "lessons": [
+      13,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: currentness",
+    "test_methods": 9
+  },
+  {
+    "path": "scripts/tests/test_decision_basis.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: decision_basis",
+    "test_methods": 12
+  },
+  {
+    "path": "scripts/tests/test_delegations.py",
+    "lessons": [
+      5,
+      6,
+      25
+    ],
+    "purpose": "회귀 검사: 통치·의도·초기화와 질문",
+    "test_methods": 11
+  },
+  {
+    "path": "scripts/tests/test_design_walkthroughs.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: design_walkthroughs",
+    "test_methods": 15
+  },
+  {
+    "path": "scripts/tests/test_diagnosed_installation_recovery.py",
+    "lessons": [
+      21,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: diagnosed_installation_recovery",
+    "test_methods": 6
+  },
+  {
+    "path": "scripts/tests/test_engine.py",
+    "lessons": [
+      2,
+      10,
+      20,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 연구 실행기의 상태 전이와 배정",
+    "test_methods": 32
+  },
+  {
+    "path": "scripts/tests/test_environment_validation.py",
+    "lessons": [
+      16,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: environment_validation",
+    "test_methods": 19
+  },
+  {
+    "path": "scripts/tests/test_execution_lifecycle.py",
+    "lessons": [
+      2,
+      20,
+      25
+    ],
+    "purpose": "회귀 검사: 활동·실행 수명·복구",
+    "test_methods": 15
+  },
+  {
+    "path": "scripts/tests/test_execution_profiles.py",
+    "lessons": [
+      10,
+      25
+    ],
+    "purpose": "회귀 검사: 모델 요구·프로필·자원 예약",
+    "test_methods": 34
+  },
+  {
+    "path": "scripts/tests/test_execution_window.py",
+    "lessons": [
+      19,
+      20,
+      25
+    ],
+    "purpose": "회귀 검사: 관찰·제어·실행 기한",
+    "test_methods": 3
+  },
+  {
+    "path": "scripts/tests/test_external.py",
+    "lessons": [
+      23,
+      25
+    ],
+    "purpose": "회귀 검사: 모델 공급자 대기와 외부 HTTP",
+    "test_methods": 10
+  },
+  {
+    "path": "scripts/tests/test_external_operations.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: external_operations",
+    "test_methods": 6
+  },
+  {
+    "path": "scripts/tests/test_family_records.py",
+    "lessons": [
+      22,
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: family_records",
+    "test_methods": 74
+  },
+  {
+    "path": "scripts/tests/test_file_io.py",
+    "lessons": [
+      13,
+      22,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 저장·공통 IO·불변 payload·사건",
+    "test_methods": 8
+  },
+  {
+    "path": "scripts/tests/test_formal.py",
+    "lessons": [
+      16,
+      25
+    ],
+    "purpose": "회귀 검사: 형식 검사와 신뢰 환경",
+    "test_methods": 28
+  },
+  {
+    "path": "scripts/tests/test_formal_engine.py",
+    "lessons": [
+      16,
+      25
+    ],
+    "purpose": "회귀 검사: 형식 검사와 신뢰 환경",
+    "test_methods": 9
+  },
+  {
+    "path": "scripts/tests/test_formal_input_manifest.py",
+    "lessons": [
+      16,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: formal_input_manifest",
+    "test_methods": 1
+  },
+  {
+    "path": "scripts/tests/test_formal_runtime.py",
+    "lessons": [
+      16,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: formal_runtime",
+    "test_methods": 8
+  },
+  {
+    "path": "scripts/tests/test_git_store.py",
+    "lessons": [
+      13,
+      22,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 저장·공통 IO·불변 payload·사건",
+    "test_methods": 31
+  },
+  {
+    "path": "scripts/tests/test_goal_audit.py",
+    "lessons": [
+      18,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: goal_audit",
+    "test_methods": 12
+  },
+  {
+    "path": "scripts/tests/test_governance.py",
+    "lessons": [
+      5,
+      6,
+      25
+    ],
+    "purpose": "회귀 검사: 통치·의도·초기화와 질문",
+    "test_methods": 40
+  },
+  {
+    "path": "scripts/tests/test_governance_engine.py",
+    "lessons": [
+      5,
+      6,
+      25
+    ],
+    "purpose": "회귀 검사: 통치·의도·초기화와 질문",
+    "test_methods": 30
+  },
+  {
+    "path": "scripts/tests/test_host_resources.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: host_resources",
+    "test_methods": 23
+  },
+  {
+    "path": "scripts/tests/test_impact_review.py",
+    "lessons": [
+      15,
+      17,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: impact_review",
+    "test_methods": 12
+  },
+  {
+    "path": "scripts/tests/test_initial_intent_connection.py",
+    "lessons": [
+      5,
+      6,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: initial_intent_connection",
+    "test_methods": 6
+  },
+  {
+    "path": "scripts/tests/test_initialization_probe_batch.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: initialization_probe_batch",
+    "test_methods": 6
+  },
+  {
+    "path": "scripts/tests/test_input_recovery.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      25
+    ],
+    "purpose": "회귀 검사: 계약·선택·완료 판정",
+    "test_methods": 10
+  },
+  {
+    "path": "scripts/tests/test_installation_discovery.py",
+    "lessons": [
+      21,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: installation_discovery",
+    "test_methods": 4
+  },
+  {
+    "path": "scripts/tests/test_integration_bundles.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: integration_bundles",
+    "test_methods": 18
+  },
+  {
+    "path": "scripts/tests/test_json_digests.py",
+    "lessons": [
+      22,
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: json_digests",
+    "test_methods": 6
+  },
+  {
+    "path": "scripts/tests/test_knowledge.py",
+    "lessons": [
+      3,
+      4,
+      15,
+      25
+    ],
+    "purpose": "회귀 검사: 지식 기록·관계·효력",
+    "test_methods": 53
+  },
+  {
+    "path": "scripts/tests/test_knowledge_import_engine.py",
+    "lessons": [
+      3,
+      4,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: knowledge_import_engine",
+    "test_methods": 14
+  },
+  {
+    "path": "scripts/tests/test_knowledge_io.py",
+    "lessons": [
+      3,
+      4,
+      15,
+      25
+    ],
+    "purpose": "회귀 검사: 지식 기록·관계·효력",
+    "test_methods": 11
+  },
+  {
+    "path": "scripts/tests/test_knowledge_storage.py",
+    "lessons": [
+      3,
+      4,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: knowledge_storage",
+    "test_methods": 12
+  },
+  {
+    "path": "scripts/tests/test_launch_recovery.py",
+    "lessons": [
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: launch_recovery",
+    "test_methods": 4
+  },
+  {
+    "path": "scripts/tests/test_lean_preview.py",
+    "lessons": [
+      16,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: lean_preview",
+    "test_methods": 3
+  },
+  {
+    "path": "scripts/tests/test_lifecycle_engine.py",
+    "lessons": [
+      2,
+      10,
+      20,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 연구 실행기의 상태 전이와 배정",
+    "test_methods": 72
+  },
+  {
+    "path": "scripts/tests/test_lifecycle_gates.py",
+    "lessons": [
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: lifecycle_gates",
+    "test_methods": 16
+  },
+  {
+    "path": "scripts/tests/test_live_observation.py",
+    "lessons": [
+      19,
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: live_observation",
+    "test_methods": 20
+  },
+  {
+    "path": "scripts/tests/test_machine_parallel.py",
+    "lessons": [
+      10,
+      23,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: machine_parallel",
+    "test_methods": 22
+  },
+  {
+    "path": "scripts/tests/test_machine_scheduling.py",
+    "lessons": [
+      10,
+      23,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: machine_scheduling",
+    "test_methods": 4
+  },
+  {
+    "path": "scripts/tests/test_model_assessment_flow.py",
+    "lessons": [
+      10,
+      23,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: model_assessment_flow",
+    "test_methods": 22
+  },
+  {
+    "path": "scripts/tests/test_model_metadata_boundary.py",
+    "lessons": [
+      10,
+      23,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: model_metadata_boundary",
+    "test_methods": 5
+  },
+  {
+    "path": "scripts/tests/test_model_runner.py",
+    "lessons": [
+      10,
+      14,
+      20,
+      25
+    ],
+    "purpose": "회귀 검사: 공급자 CLI·native 응답",
+    "test_methods": 11
+  },
+  {
+    "path": "scripts/tests/test_native_final_submission.py",
+    "lessons": [
+      14,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: native_final_submission",
+    "test_methods": 11
+  },
+  {
+    "path": "scripts/tests/test_observation_admission.py",
+    "lessons": [
+      19,
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: observation_admission",
+    "test_methods": 6
+  },
+  {
+    "path": "scripts/tests/test_observations.py",
+    "lessons": [
+      19,
+      20,
+      25
+    ],
+    "purpose": "회귀 검사: 관찰·제어·실행 기한",
+    "test_methods": 58
+  },
+  {
+    "path": "scripts/tests/test_operation_trace.py",
+    "lessons": [
+      13,
+      22,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 저장·공통 IO·불변 payload·사건",
+    "test_methods": 5
+  },
+  {
+    "path": "scripts/tests/test_operator.py",
+    "lessons": [
+      21,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: operator",
+    "test_methods": 21
+  },
+  {
+    "path": "scripts/tests/test_operator_bootstrap.py",
+    "lessons": [
+      21,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: operator_bootstrap",
+    "test_methods": 4
+  },
+  {
+    "path": "scripts/tests/test_owned_job_children.py",
+    "lessons": [
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: owned_job_children",
+    "test_methods": 4
+  },
+  {
+    "path": "scripts/tests/test_payloads.py",
+    "lessons": [
+      13,
+      22,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 저장·공통 IO·불변 payload·사건",
+    "test_methods": 6
+  },
+  {
+    "path": "scripts/tests/test_planning.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      25
+    ],
+    "purpose": "회귀 검사: 계약·선택·완료 판정",
+    "test_methods": 20
+  },
+  {
+    "path": "scripts/tests/test_planning_engine.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      25
+    ],
+    "purpose": "회귀 검사: 계약·선택·완료 판정",
+    "test_methods": 10
+  },
+  {
+    "path": "scripts/tests/test_preflight.py",
+    "lessons": [
+      25
+    ],
+    "purpose": "회귀 검사: 설치 구조 검사",
+    "test_methods": 10
+  },
+  {
+    "path": "scripts/tests/test_preparation_cache.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: preparation_cache",
+    "test_methods": 3
+  },
+  {
+    "path": "scripts/tests/test_probe_cli.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: probe_cli",
+    "test_methods": 1
+  },
+  {
+    "path": "scripts/tests/test_provider_final_contract.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      15,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: provider_final_contract",
+    "test_methods": 3
+  },
+  {
+    "path": "scripts/tests/test_provider_recovery.py",
+    "lessons": [
+      10,
+      23,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: provider_recovery",
+    "test_methods": 4
+  },
+  {
+    "path": "scripts/tests/test_provider_wait.py",
+    "lessons": [
+      23,
+      25
+    ],
+    "purpose": "회귀 검사: 모델 공급자 대기와 외부 HTTP",
+    "test_methods": 6
+  },
+  {
+    "path": "scripts/tests/test_purpose_engine.py",
+    "lessons": [
+      18,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: purpose_engine",
+    "test_methods": 19
+  },
+  {
+    "path": "scripts/tests/test_query_records.py",
+    "lessons": [
+      22,
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: query_records",
+    "test_methods": 4
+  },
+  {
+    "path": "scripts/tests/test_question_flow.py",
+    "lessons": [
+      5,
+      6,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: question_flow",
+    "test_methods": 4
+  },
+  {
+    "path": "scripts/tests/test_questions.py",
+    "lessons": [
+      5,
+      6,
+      25
+    ],
+    "purpose": "회귀 검사: 통치·의도·초기화와 질문",
+    "test_methods": 13
+  },
+  {
+    "path": "scripts/tests/test_reading_map.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      15,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: reading_map",
+    "test_methods": 7
+  },
+  {
+    "path": "scripts/tests/test_reassessment.py",
+    "lessons": [
+      15,
+      17,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: reassessment",
+    "test_methods": 21
+  },
+  {
+    "path": "scripts/tests/test_reference_catalog.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: reference_catalog",
+    "test_methods": 4
+  },
+  {
+    "path": "scripts/tests/test_relation_dependencies.py",
+    "lessons": [
+      3,
+      4,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: relation_dependencies",
+    "test_methods": 5
+  },
+  {
+    "path": "scripts/tests/test_repair_execution.py",
+    "lessons": [
+      2,
+      20,
+      25
+    ],
+    "purpose": "회귀 검사: 활동·실행 수명·복구",
+    "test_methods": 10
+  },
+  {
+    "path": "scripts/tests/test_repetition.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      15,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: repetition",
+    "test_methods": 9
+  },
+  {
+    "path": "scripts/tests/test_reporting.py",
+    "lessons": [
+      6,
+      21,
+      22,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 공개 명령·설정·상태 조회",
+    "test_methods": 7
+  },
+  {
+    "path": "scripts/tests/test_repository.py",
+    "lessons": [
+      13,
+      22,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 저장·공통 IO·불변 payload·사건",
+    "test_methods": 30
+  },
+  {
+    "path": "scripts/tests/test_research_recovery.py",
+    "lessons": [
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: research_recovery",
+    "test_methods": 47
+  },
+  {
+    "path": "scripts/tests/test_retention.py",
+    "lessons": [
+      21,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 독립 운영·설치 정비·보관",
+    "test_methods": 12
+  },
+  {
+    "path": "scripts/tests/test_review_cycle.py",
+    "lessons": [
+      17,
+      25
+    ],
+    "purpose": "회귀 검사: 독립 동일성 검토",
+    "test_methods": 24
+  },
+  {
+    "path": "scripts/tests/test_review_engine.py",
+    "lessons": [
+      17,
+      25
+    ],
+    "purpose": "회귀 검사: 독립 동일성 검토",
+    "test_methods": 57
+  },
+  {
+    "path": "scripts/tests/test_review_policy.py",
+    "lessons": [
+      17,
+      25
+    ],
+    "purpose": "회귀 검사: 독립 동일성 검토",
+    "test_methods": 12
+  },
+  {
+    "path": "scripts/tests/test_review_research.py",
+    "lessons": [
+      15,
+      17,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: review_research",
+    "test_methods": 17
+  },
+  {
+    "path": "scripts/tests/test_review_scope_wire.py",
+    "lessons": [
+      15,
+      17,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: review_scope_wire",
+    "test_methods": 6
+  },
+  {
+    "path": "scripts/tests/test_revision_obligations.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      15,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: revision_obligations",
+    "test_methods": 7
+  },
+  {
+    "path": "scripts/tests/test_role_input.py",
+    "lessons": [
+      13,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: role_input",
+    "test_methods": 28
+  },
+  {
+    "path": "scripts/tests/test_schedule_lifetime.py",
+    "lessons": [
+      21,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: schedule_lifetime",
+    "test_methods": 1
+  },
+  {
+    "path": "scripts/tests/test_schedule_pythonw.py",
+    "lessons": [
+      21,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: schedule_pythonw",
+    "test_methods": 2
+  },
+  {
+    "path": "scripts/tests/test_scholarly.py",
+    "lessons": [
+      12,
+      25
+    ],
+    "purpose": "회귀 검사: 학술자료 MCP 연결",
+    "test_methods": 5
+  },
+  {
+    "path": "scripts/tests/test_session_scheduler.py",
+    "lessons": [
+      21,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: session_scheduler",
+    "test_methods": 39
+  },
+  {
+    "path": "scripts/tests/test_standalone.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: standalone",
+    "test_methods": 3
+  },
+  {
+    "path": "scripts/tests/test_state_checks.py",
+    "lessons": [
+      13,
+      22,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 저장·공통 IO·불변 payload·사건",
+    "test_methods": 22
+  },
+  {
+    "path": "scripts/tests/test_state_contract.py",
+    "lessons": [
+      13,
+      22,
+      24,
+      25
+    ],
+    "purpose": "회귀 검사: 저장·공통 IO·불변 payload·사건",
+    "test_methods": 7
+  },
+  {
+    "path": "scripts/tests/test_stop_flags.py",
+    "lessons": [
+      19,
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: stop_flags",
+    "test_methods": 16
+  },
+  {
+    "path": "scripts/tests/test_submission_boundaries.py",
+    "lessons": [
+      14,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: submission_boundaries",
+    "test_methods": 11
+  },
+  {
+    "path": "scripts/tests/test_submission_checks.py",
+    "lessons": [
+      14,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: submission_checks",
+    "test_methods": 36
+  },
+  {
+    "path": "scripts/tests/test_submission_flow.py",
+    "lessons": [
+      14,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: submission_flow",
+    "test_methods": 34
+  },
+  {
+    "path": "scripts/tests/test_submission_tools.py",
+    "lessons": [
+      14,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: submission_tools",
+    "test_methods": 33
+  },
+  {
+    "path": "scripts/tests/test_supervisor_recovery.py",
+    "lessons": [
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: supervisor_recovery",
+    "test_methods": 5
+  },
+  {
+    "path": "scripts/tests/test_task_completion.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      15,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: task_completion",
+    "test_methods": 10
+  },
+  {
+    "path": "scripts/tests/test_task_contracts.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      25
+    ],
+    "purpose": "회귀 검사: 계약·선택·완료 판정",
+    "test_methods": 61
+  },
+  {
+    "path": "scripts/tests/test_task_scope.py",
+    "lessons": [
+      7,
+      8,
+      9,
+      25
+    ],
+    "purpose": "회귀 검사: 계약·선택·완료 판정",
+    "test_methods": 8
+  },
+  {
+    "path": "scripts/tests/test_test_runner.py",
+    "lessons": [
+      24,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: test_runner",
+    "test_methods": 11
+  },
+  {
+    "path": "scripts/tests/test_trust_continuation.py",
+    "lessons": [
+      16,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: trust_continuation",
+    "test_methods": 2
+  },
+  {
+    "path": "scripts/tests/test_unicode_flow.py",
+    "lessons": [
+      5,
+      6,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: unicode_flow",
+    "test_methods": 5
+  },
+  {
+    "path": "scripts/tests/test_windows_job.py",
+    "lessons": [
+      2,
+      20,
+      25
+    ],
+    "purpose": "회귀 검사: 활동·실행 수명·복구",
+    "test_methods": 8
+  },
+  {
+    "path": "scripts/tests/test_worker_temporary_outputs.py",
+    "lessons": [
+      20,
+      25
+    ],
+    "purpose": "성질별 회귀 검사: worker_temporary_outputs",
+    "test_methods": 1
+  },
+  {
+    "path": "scripts/tests/시험-지침.md",
+    "lessons": [
+      25
+    ],
+    "purpose": "시험 선택·시간·fixture·재현 방법",
+    "test_methods": 0
+  },
+  {
+    "path": "scripts/이음새-정본.md",
+    "lessons": [
+      24
+    ],
+    "purpose": "공유 검사·값·스키마의 소유 정본 목록",
+    "test_methods": 0
+  },
+  {
+    "path": "계약/독립-운영.md",
+    "lessons": [
+      21
+    ],
+    "purpose": "모델 없는 감독과 제한된 설치 복구",
+    "test_methods": 0
+  },
+  {
+    "path": "계약/동일성-검토.md",
+    "lessons": [
+      17
+    ],
+    "purpose": "범위 계획·전건 의미 대조·쟁점·재심사",
+    "test_methods": 0
+  },
+  {
+    "path": "계약/목표-감사.md",
+    "lessons": [
+      18
+    ],
+    "purpose": "현행 목표와 사용할 형식 근거의 대응",
+    "test_methods": 0
+  },
+  {
+    "path": "계약/보충-조사.md",
+    "lessons": [
+      12,
+      17
+    ],
+    "purpose": "과제 조사와 검토 고정 질문 조사의 차이",
+    "test_methods": 0
+  },
+  {
+    "path": "계약/연구-계획.md",
+    "lessons": [
+      9
+    ],
+    "purpose": "전건 선택·완료 의무 판정·후속",
+    "test_methods": 0
+  },
+  {
+    "path": "계약/연구-수행.md",
+    "lessons": [
+      11
+    ],
+    "purpose": "실제 연구·보고·지식·형식 원문 저작",
+    "test_methods": 0
+  },
+  {
+    "path": "계약/운영-점검.md",
+    "lessons": [
+      19,
+      20
+    ],
+    "purpose": "운영 근거와 여섯 처분",
+    "test_methods": 0
+  },
+  {
+    "path": "계약/유지보수.md",
+    "lessons": [
+      4,
+      15,
+      20
+    ],
+    "purpose": "호출 절차의 판단·영향 검토·복구 경계",
+    "test_methods": 0
+  },
+  {
+    "path": "계약/의도-해석.md",
+    "lessons": [
+      5
+    ],
+    "purpose": "원문 전건 피복·독립 검사·위임 대조",
+    "test_methods": 0
+  },
+  {
+    "path": "계약/작업-계약-검토.md",
+    "lessons": [
+      8
+    ],
+    "purpose": "다섯 항목의 독립 계약 검토",
+    "test_methods": 0
+  },
+  {
+    "path": "계약/후보-준비.md",
+    "lessons": [
+      7
+    ],
+    "purpose": "질문 정련·계약·개정·평가와 관찰 보충",
+    "test_methods": 0
+  }
+]

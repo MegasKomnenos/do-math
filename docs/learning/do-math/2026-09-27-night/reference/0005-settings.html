@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>설정·프로필·관찰 규칙의 정확한 기본값 · do-math 9월 27일 밤</title><link rel="stylesheet" href="../assets/course.css"><script defer src="../assets/course.js"></script></head>
+<body><a class="skip-link" href="#main">본문으로</a><div class="shell">
+<nav class="topbar" aria-label="과정 탐색"><a href="../index.html">do-math · 9월 27일 밤</a><span><a href="../reference/0001-map.html">전체 지도</a> · <a href="../reference/0002-glossary.html">용어</a> · <a href="../reference/0007-catalog.html">원문·구현 찾기</a></span></nav>
+<main id="main"><div class="eyebrow">빠른 참조 / 2026.09.27 NIGHT</div><h1>설정·프로필·관찰 규칙의 정확한 기본값</h1><p>아래 표는 기준 스냅샷의 CLI 실행 계약에 있는 설정 행을 그대로 가져왔습니다. 값은 이 판본의 운용 기본값이며 사용자 승인·실제 능력을 대신하지 않습니다. 표의 “모델 표”는 상 gpt-6-astra·중 gpt-5.6-sol·하 gpt-5.6-terra와 각 모델 작업 슬롯 3개를 가리킵니다. “역할 하한”의 상세는 아래에 있습니다. <a class="source-ref" href="sources/source-0011.html#L1">references/모델과-실행예산.md</a> <a class="source-ref" href="sources/source-0008.html#L146">references/CLI-실행-계약.md · 설정 계약</a></p>
+<div class="table-wrap"><table><thead><tr><th>설정</th><th>현행 기본값</th><th>허용 형태</th></tr></thead><tbody>
+<tr><td><code>tier_models</code></td><td>모델 표의 등급별 기본 모델</td><td><code>low</code>, <code>medium</code>, <code>high</code> 세 등급 전부를 비어 있지 않은 모델 이름에 대응한 객체</td></tr>
+<tr><td><code>role_tiers</code></td><td>역할 하한의 기본 등급</td><td>역할 이름을 등급에 대응한 객체. 생략한 역할에는 기본값을 적용한다</td></tr>
+<tr><td><code>session_limits</code></td><td><code>work</code>만 두고 모델별 값은 모델 표를 따른다</td><td><code>{&quot;work&quot;: {모델 이름: 0 이상의 정수}}</code>. <code>tier_models</code>의 모델을 모두 명시한다</td></tr>
+<tr><td><code>effort</code></td><td><code>medium</code></td><td><code>minimal</code>, <code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code></td></tr>
+<tr><td><code>operator_effort</code></td><td><code>high</code></td><td><code>effort</code>의 값과 <code>max</code>, <code>ultra</code></td></tr>
+<tr><td><code>call_timeout_seconds</code></td><td>600</td><td>양의 정수</td></tr>
+<tr><td><code>reviewers</code></td><td>2</td><td>양의 정수</td></tr>
+<tr><td><code>goal_auditors</code></td><td>2</td><td>양의 정수</td></tr>
+<tr><td><code>max_input_bytes</code></td><td>500000</td><td>양의 정수</td></tr>
+<tr><td><code>max_output_repairs</code></td><td>1</td><td>0 이상의 정수</td></tr>
+<tr><td><code>lean_command</code></td><td><code>null</code></td><td><code>null</code> 또는 항목이 하나 이상인 argv 배열. 각 항목은 비어 있지 않은 문자열이다</td></tr>
+<tr><td><code>review_rounds</code></td><td>3</td><td>양의 정수</td></tr>
+<tr><td><code>review_research_limit</code></td><td>3</td><td>양의 정수</td></tr>
+<tr><td><code>research_reconsider_seconds</code></td><td>86400</td><td>양의 정수</td></tr>
+<tr><td><code>observation_mode</code></td><td><code>event_driven</code></td><td><code>event_driven</code>, <code>periodic</code></td></tr>
+<tr><td><code>observation_interval_seconds</code></td><td>300</td><td>양의 정수</td></tr>
+<tr><td><code>plan_settle_seconds</code></td><td>300</td><td>양의 정수</td></tr>
+<tr><td><code>max_artifact_bytes</code></td><td>268435456</td><td>양의 정수</td></tr>
+<tr><td><code>allowed_axioms</code></td><td><code>propext</code>, <code>Classical.choice</code>, <code>Quot.sound</code></td><td>각 항목이 비어 있지 않은 문자열인 배열</td></tr>
+<tr><td><code>operator_enabled</code></td><td><code>true</code></td><td>불리언</td></tr>
+<tr><td><code>operator_interval_seconds</code></td><td>7200</td><td>양의 정수</td></tr>
+<tr><td><code>operator_timeout_seconds</code></td><td>5400</td><td>양의 정수</td></tr>
+<tr><td><code>scholarly_enabled</code></td><td><code>true</code></td><td>불리언</td></tr>
+<tr><td><code>scholarly_server</code></td><td><code>null</code></td><td><code>null</code> 또는 <code>command</code>·<code>args</code> 객체</td></tr>
+<tr><td><code>claude_only_assigned_model</code></td><td><code>false</code></td><td>불리언</td></tr>
+<tr><td><code>provider_retry_initial_seconds</code></td><td>300</td><td>양의 정수</td></tr>
+<tr><td><code>provider_retry_max_seconds</code></td><td>7200</td><td><code>provider_retry_initial_seconds</code> 이상의 양의 정수</td></tr>
+<tr><td><code>finish_notice_seconds</code></td><td>60</td><td>양의 정수</td></tr>
+<tr><td><code>tool_review_window_seconds</code></td><td>없음</td><td>양의 정수</td></tr>
+<tr><td><code>self_check_response_window_seconds</code></td><td>없음</td><td>양의 정수</td></tr>
+<tr><td><code>no_progress_limit</code></td><td>없음</td><td>양의 정수</td></tr>
+<tr><td><code>import_rework_limit</code>, <code>selection_failure_limit</code>, <code>exhaustion_empty_limit</code>, <code>proposal_version_limit</code>, <code>contract_revision_limit</code></td><td>없음. 설정하지 않은 계보에는 횟수 한도를 두지 않는다</td><td>양의 정수</td></tr>
+<tr><td><code>host_resources</code></td><td>없음</td><td><code>null</code> 또는 아래 호스트 자원 설정</td></tr>
+</tbody></table></div>
+<h2 id="section-1">기본값이 없는 것과 무기한인 것</h2>
+<p>tool_review_window_seconds와 self_check_response_window_seconds는 사용에 필요한 값을 확정해야 합니다. no_progress_limit과 계보별 반복 한도는 적용 설정의 의미를 따릅니다. 계보별 한도를 설정하지 않은 경우 해당 횟수 한도를 두지 않는다는 명시 계약이며, 모든 빈칸을 일반적으로 무제한이라고 읽는 규칙은 아닙니다.</p>
+<p>작업 AI·중앙 Lean에는 경과 시간만으로 취소하는 기한이 없습니다. 운영 AI에는 call_timeout_seconds가, 설치 복구 AI에는 operator_timeout_seconds가 적용됩니다. 연구 예약의 ExecutionTimeLimit은 PT0S, 운영 예약에는 복구 기한에 종료 여유 300초를 더한 유한 제한이 적용됩니다. finish_notice는 마무리 예고이며 그 자체가 실제 정지는 아닙니다.</p>
+<h2 id="section-2">역할 하한과 프로필 변경</h2>
+<p>기본 상 등급은 후보 준비·연구 계획·의도 해석·동일성 검토·목표 감사·설치 복구입니다. 중 등급은 계약 검토·운영 점검·유지보수, 하 등급은 연구 수행·보충 조사입니다. 과제의 난이도·중요도가 더 높으면 상향합니다.</p>
+<p>configure에서 생략한 최상위 필드는 유지하지만 tier_models와 session_limits를 바꿀 때는 해당 맵 전체를 제공합니다. 슬롯 한도를 현재 점유보다 낮추면 새 배정을 기다리게 하며 이미 시작한 실행을 강제 종료하지 않습니다. 새 프로필의 도입과 과제에 고정된 프로필 변경은 구별합니다. 후자는 재준비·독립 계약 검토가 필요할 수 있습니다.</p>
+<p>host_resources를 쓸 때에는 jobs·memory_bytes·cpu_rate_basis_points와 제어용 reserve, 역할별 요구량을 정확한 제약 ID에 결박합니다. CPU는 10000을 전체로 한 단위입니다. Lean 기계 역할의 현행 무상한 계약은 유지합니다. 설정된 호스트 자원의 변경·해제에는 CLI 계약이 정한 정지·미종료 실행·예약 조건이 필요하므로 슬롯 수 조정과 같은 것으로 다루지 않습니다.</p>
+<p>Claude는 minimal을 지원하지 않고 operator_effort의 ultra도 전달할 수 없습니다. 실제 모델·노력 수준 접근은 CLI 응답으로 확인하며 실패를 다른 모델로 조용히 우회하지 않습니다. claude_only_assigned_model은 내부 보조·fallback 모델 제한이고 모든 역할을 Claude로 바꾸는 옵션은 아닙니다.</p>
+<h2 id="section-3">관찰 연산자</h2>
+<div class="table-wrap"><table><thead><tr><th>연산자</th><th>대상</th><th>출처·단위</th></tr></thead><tbody>
+<tr><td>counter_gte</td><td>counter</td><td>checkpoint, count</td></tr>
+<tr><td>iteration_gte</td><td>iteration</td><td>checkpoint, count</td></tr>
+<tr><td>checkpoint_count_gte</td><td>checkpoint</td><td>checkpoint, count</td></tr>
+<tr><td>wall_time_reached</td><td>clock</td><td>clock, UTC</td></tr>
+<tr><td>tool_call_completed</td><td>tool_call</td><td>adapter_calls, count</td></tr>
+<tr><td>safe_boundary_recorded</td><td>safe_boundary</td><td>control_receipts, count</td></tr>
+</tbody></table></div>
+<p>규칙은 id·operator·subject·basis·threshold·required_evidence를 가지며 필요하면 repeat_interval을 씁니다. 목록은 비어 있지 않은 최대 16개입니다. 프로필은 신호 종류를 고정하고 실제 ID·카운터는 실행에서 결박합니다. 첫 미관측을 0으로 바꾸지 않으며 규칙 도래는 진전 판정과 다릅니다.</p></main>
+<footer class="footer">기준: bdccee3 · do-math-cli/5 · do-math-state/7. 교육용 사례는 실제 실행 증거와 구별합니다. 이해가 막히는 문장이나 회상 답을 대화에 보내면 이어서 설명합니다.</footer></div></body></html>

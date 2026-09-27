@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>17. 독립 동일성 검토에서 이의를 처리하는 법 · do-math 9월 27일 밤</title><link rel="stylesheet" href="../assets/course.css"><script defer src="../assets/course.js"></script></head>
+<body><a class="skip-link" href="#main">본문으로</a><div class="shell">
+<nav class="topbar" aria-label="과정 탐색"><a href="../index.html">do-math · 9월 27일 밤</a><span><a href="../reference/0001-map.html">전체 지도</a> · <a href="../reference/0002-glossary.html">용어</a> · <a href="../reference/0007-catalog.html">원문·구현 찾기</a></span></nav>
+<main id="main"><div class="eyebrow">수업 / 2026.09.27 NIGHT</div><h1>17. 독립 동일성 검토에서 이의를 처리하는 법</h1><p class="lead">개별 의견과 전체 판정, 전건 검토와 회차 한도를 구별합니다.</p><p>“모든 x에 대해 x와 같은 y가 있다”와 “모든 x와 같은 하나의 y가 있다”는 다릅니다. 첫 표현은 x마다 y를 골라도 되지만 둘째는 하나의 y가 모든 경우를 동시에 만족해야 합니다. Lean이 첫 표현을 증명했는데 해설이 둘째를 말한다면 형식 검사의 성공만으로 그 차이를 발견할 수 없습니다. 동일성 검토가 이 의미 대조를 맡습니다.</p>
+<h2 id="section-1">먼저 검토 범위와 자리를 고정한다</h2>
+<p>독립 범위 계획 <code>scope</code>는 제안 전부와 검토 방침을 읽고 필요한 관점·원자료·초기 검토 자리·프로필·활동 실행 상한을 정합니다. <strong>검토 자리</strong>는 같은 판단 책임과 자기 공개 메시지를 여러 회차에 걸쳐 잇는 논리적 자리입니다. 실행 ID나 모델 세션 자체와 같지 않습니다.</p>
+<p>각 초기 검토자와 쟁점 판정자는 제안 전건을 대조합니다. 논증 재구성·범위 반박·의미 동일성을 적용하며, 중점 전문성이 달라도 일부씩 나눈 검토의 합집합을 각자의 전건 검토라고 부르지 않습니다. 해설 본문과 요약의 조건·범위도 모두 대상입니다. 한 결함을 찾은 뒤에도 읽을 수 있는 나머지 필수 범위를 살핍니다. <a class="source-ref" href="../reference/sources/source-0244.html#L1">계약/동일성-검토.md</a></p>
+<h2 id="section-2">초기 의견이 갈리면 쟁점의 근거를 심사한다</h2>
+<p><code>initial</code>은 제안 전체에 대한 match·mismatch·unresolved와 구체적인 발견을 반환합니다. 초기 전건이 완결된 match이고 열린 이의·질문이 없으면 직접 집계할 수 있습니다. 그 밖의 유효한 결과는 <code>organize</code>에서 원 발견의 좌표·논증을 보존한 쟁점으로 연결합니다. 이어 세 독립 <code>judge</code> 자리가 이의 전부와 제안 전체를 각각 판단합니다.</p>
+<p>이의의 <code>approved</code>는 <strong>그 이의가 성립한다</strong>는 말이고 제안의 승인과 방향이 다릅니다. <code>rejected</code>는 이의 기각입니다. 판정자는 이의별 판정과 별도로 제안 전체의 <code>decision</code>을 냅니다. 필요한 회차에서는 원 초기 검토 자리가 <code>answer</code>로 유지·수정·분화·철회의 근거를 설명하고, 심사자가 이를 다시 대조합니다.</p>
+<p>같은 자리의 자기 메시지와 이미 공개된 이전 단계 근거는 이어받지만, 같은 단계 동료의 비공개 판단이나 제안 작성자의 작업 맥락은 받지 않습니다. 이는 입력의 독립성 경계이며 통계적 독립이나 강한 OS 격리를 증명하는 장치는 아닙니다.</p>
+<h2 id="section-3">전체 판정은 다수결이 아니다</h2>
+<p>쟁점 경로에서 필수 범위와 근거가 완결되고 최종 판정 전부가 match면 전체 match입니다. 전부가 유효한 mismatch면 전체 mismatch입니다. 의견이 갈리거나 하나라도 unresolved, 필수 실행·범위의 미완료가 남으면 전체는 unresolved입니다. 초기 검토자 한 명의 mismatch만으로 확정 결함을 만들지 않고, 2 대 1이라는 다수로 전체 승인을 만들지도 않습니다.</p>
+<p>필요한 근거를 더 조사할 수 있으면 검토 자리는 질문·대상·원자료를 고정한 보충 조사를 요청합니다. 조사자는 answered 또는 unresolved로 답과 범위를 돌려주고 원 자리가 최종 판단을 이어갑니다. 이 고정 조사에는 새 과제·중첩 조사·부수 통찰을 포함한 비어 있지 않은 확장을 허용하지 않습니다. 답변 성공이 제안 승인은 아닙니다.</p>
+<h2 id="section-4">새 판본과 한도 소진을 정확히 처리한다</h2>
+<p>제안을 고치면 변경되지 않은 부분까지 새 판본의 의미를 다시 검토합니다. 같은 판본·같은 할당·같은 필수 입력의 복구라면 정상 봉인한 다른 자리의 결과를 유지할 수 있습니다. 두 경우를 혼동해 옛 승인을 새 판본에 자동 승계하지 않습니다.</p>
+<p>활동에는 유한 실행 상한과 회차 한도가 있습니다. 상한은 최소한 필요한 심사 경로를 배정할 수 있어야 합니다. 이미 사용한 실행 수를 E, 초기 자리 수를 N이라고 쓰면 각 몫은 다음과 같습니다. 원문 식의 사용 횟수 기호를 이 수업에서는 E로 바꾸어, 미지 지평과 구별했습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>확보할 실행</th><th>한 회차 허용</th><th>두 회차 이상 허용</th></tr></thead><tbody>
+<tr><td>이미 사용한 몫</td><td>E</td><td>E</td></tr>
+<tr><td>초기 검토</td><td>N</td><td>N</td></tr>
+<tr><td>쟁점 정리</td><td>1</td><td>1</td></tr>
+<tr><td>원 검토 자리의 답변</td><td>0</td><td>N</td></tr>
+<tr><td>독립 심사</td><td>3</td><td>답변 전후 각각 3, 합계 6</td></tr>
+<tr><td>필요한 최소 상한</td><td>E+N+4</td><td>E+2N+7</td></tr>
+</tbody></table></div>
+<p>예를 들어 이미 1번 실행했고 초기 자리가 2개라면 한 회차 하한은 1+2+4=7, 두 회차 이상 하한은 1+4+7=12입니다. 이 값은 최소 경로를 위한 배정 기준입니다. 초기 검토에서 바로 match가 나면 전부 쓰지 않을 수도 있고, 추가 조사·수리나 모든 허용 회차까지 끝낼 예산을 보장하지도 않습니다. 한도를 소진하면 정책에 따라 미해결 종료나 유예로 남기며 사용 횟수를 지우지 않습니다. 자원 때문에 절차를 끝냈다는 사실만으로 수행하지 않은 의미 판정 기록을 만들어서는 안 됩니다.</p><h2 id="practice">판단 연습</h2><fieldset class="quiz" data-answer="2" data-explain="의견 분열은 unresolved다. 다수결로 승인하지 않으며 개별 mismatch의 제출만으로 전체 불일치가 확정되지도 않는다."><legend>마지막 세 심사자의 제안 판정이 match, match, mismatch다. 전체 판정은?</legend><button type="button" data-choice="0" aria-pressed="false">match 판정</button><button type="button" data-choice="1" aria-pressed="false">mismatch 판정</button><button type="button" data-choice="2" aria-pressed="false">unresolved 판정</button><p class="feedback" role="status" aria-live="polite"></p></fieldset><details class="answer"><summary>정답과 해설</summary><p>unresolved 판정 — 의견 분열은 unresolved다. 다수결로 승인하지 않으며 개별 mismatch의 제출만으로 전체 불일치가 확정되지도 않는다.</p></details><aside class="recall"><h2>자기 말로 남기기</h2><p>이의 approved와 제안 match의 차이, 새 판본 검토와 같은 판본 복구의 차이를 설명해 보세요.</p><label for="recall-answer">나의 설명</label><textarea id="recall-answer" placeholder="이 답변은 저장하거나 전송하지 않습니다."></textarea><p class="muted">오늘은 본문을 덮고 설명하고, 하루 뒤 같은 질문을 다시 답해 보세요. 답을 대화에 보내면 피드백을 받을 수 있습니다.</p></aside><h2 id="sources">원문에서 확인하기</h2><p class="source"><a class="source-ref" href="../reference/sources/source-0244.html#L1">계약/동일성-검토.md</a> · <a class="source-ref" href="../reference/sources/source-0246.html#L1">계약/보충-조사.md</a> · <a class="source-ref" href="../reference/sources/source-0087.html#L1">scripts/do_math/review_cycle.py</a> · <a class="source-ref" href="../reference/sources/source-0088.html#L1">scripts/do_math/review_engine.py</a> · <a class="source-ref" href="../reference/sources/source-0089.html#L1">scripts/do_math/review_policy.py</a></p><p><a href="../reference/0001-map.html">전체 흐름에 놓아 보기</a> · <a href="../reference/0002-glossary.html">용어 찾아보기</a></p><nav class="lesson-nav" aria-label="이전 다음 수업"><a href="0016-formal-trust.html">← 이전 수업</a><a href="0018-goal-and-academic.html">다음 수업 →</a></nav></main>
+<footer class="footer">기준: bdccee3 · do-math-cli/5 · do-math-state/7. 교육용 사례는 실제 실행 증거와 구별합니다. 이해가 막히는 문장이나 회상 답을 대화에 보내면 이어서 설명합니다.</footer></div></body></html>

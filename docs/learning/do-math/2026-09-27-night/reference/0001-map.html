@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>전체 흐름과 역할별 책임 · do-math 9월 27일 밤</title><link rel="stylesheet" href="../assets/course.css"><script defer src="../assets/course.js"></script></head>
+<body><a class="skip-link" href="#main">본문으로</a><div class="shell">
+<nav class="topbar" aria-label="과정 탐색"><a href="../index.html">do-math · 9월 27일 밤</a><span><a href="../reference/0001-map.html">전체 지도</a> · <a href="../reference/0002-glossary.html">용어</a> · <a href="../reference/0007-catalog.html">원문·구현 찾기</a></span></nav>
+<main id="main"><div class="eyebrow">빠른 참조 / 2026.09.27 NIGHT</div><h1>전체 흐름과 역할별 책임</h1><p>목표와 기존 지식에서 남은 질문을 찾고, 계약을 만들어 독립 검토한 뒤, 준비된 과제를 선택해 수행합니다. 산출은 근거를 보존한 채 수학 검증과 완료 판정으로 이어지고, 결과와 실패는 다시 다음 계획에 반영됩니다. 상태·권한·현재성 검사는 이 흐름 전체에 걸쳐 있습니다.</p>
+<h2 id="section-1">역할과 다음 소비자</h2>
+<div class="table-wrap"><table><thead><tr><th>역할</th><th>맡는 판단·산출</th><th>작업 슬롯</th><th>다음 소비자</th></tr></thead><tbody>
+<tr><td>research_preparation 후보 준비</td><td>후보·작업 계약·개정·모델 평가·관찰 규칙</td><td>사용 안 함</td><td>계약 검토·계획</td></tr>
+<tr><td>task_contract_review 작업 계약 검토</td><td>다섯 항목의 적합성</td><td>사용</td><td>준비 수리·기계 착수 검사</td></tr>
+<tr><td>research_plan 연구 계획</td><td>배정 후보 전건 처분·반환 과제 판정·준비 요청</td><td>사용 안 함</td><td>수행·준비·목표 감사</td></tr>
+<tr><td>research_work 연구 수행</td><td>해설·코드·지식·관계·실제 범위</td><td>사용</td><td>계획·형식 검사·동일성 검토</td></tr>
+<tr><td>supplemental_research 보충 조사</td><td>과제 조사 또는 검토 자리의 고정 질문 답</td><td>사용</td><td>원 요청 활동·자리</td></tr>
+<tr><td>identity_review 동일성 검토</td><td>범위 계획·전건 의미 대조·이의 처리</td><td>사용</td><td>K 편입·연구 계획</td></tr>
+<tr><td>goal_audit 목표 감사</td><td>현재 목표와 사용할 결과의 대응</td><td>사용</td><td>목표 상태·학술 후속·계획</td></tr>
+<tr><td>intent_interpretation 의도 해석</td><td>원문 해석·독립 대조·위임 범위 판단</td><td>사용 안 함</td><td>등록 소비자·사용자 결정</td></tr>
+<tr><td>operational_review 운영 점검</td><td>한 실행의 진전 근거·실패·복구 처분</td><td>사용 안 함</td><td>실행기·설치 복구·사용자</td></tr>
+<tr><td>maintenance 유지보수 AI</td><td>호출 절차의 의미 보존·종류 정의·영향 검토 등</td><td>사용 안 함</td><td>해당 절차의 기계 적용</td></tr>
+</tbody></table></div>
+<p>설치 복구 AI는 위 내부 역할 읽기표와 별도의 고정 프롬프트를 받으며 live 설치 수리만 맡습니다. 정상 예약 감독은 모델 없는 기계 경로입니다. 형식 검사·신뢰 검사·신뢰 활성화·외부 행동은 기계 역할로 구별합니다. <a class="source-ref" href="sources/source-0005.html#L137">SKILL.md · 역할 읽기 대응표</a></p>
+<h2 id="section-2">역할이 받는 문서</h2>
+<p>내부 역할 공통 순서는 SKILL → GLOSSARY → 공통 실행 → 지식 저작과 재사용 → 학술자료 활용입니다. 이어 해당 역할의 추가 reference와 계약을 받습니다. 모델과 실행예산은 후보 준비·계획·계약 검토에, 과제 착수조건은 준비·계약 검토에, 자기 점검은 연구 수행·운영 점검에, 입력 소비자는 의도 해석에 추가됩니다. 실제 배정은 입력 manifest의 문서 경로·해시로 확인합니다.</p>
+<p>이 역할 문서를 읽는 것만으로 그 역할의 실행 권한이 생기지는 않습니다. 실제 action·stage·입력·출력 스키마·허가가 이번 배정을 정합니다. 설치 복구의 지시 정본은 scheduled_operator의 고정 프롬프트이며 독립 운영 계약은 그 경계를 사람 운영자에게 설명합니다.</p>
+<h2 id="section-3">먼저 읽을 경로</h2>
+<ul>
+<li>전체 개념: 01–04강 → 26강에서 흐름 회상.</li>
+<li>연구 과제와 산출: 07–15강 → 17–18강에서 검토와 완료.</li>
+<li>실제 운전: 05–06강 → 10강 → 19–23강.</li>
+<li>코드 변경과 검사: 24–25강 → 전파일 색인 → 해당 원문 함수와 시험.</li>
+</ul>
+<p>막힌 지점에서는 해당 수업 끝의 원문을 열고 정확한 범위를 읽습니다. 용어집은 정의를 찾는 자료이고, 수업은 그 정의들이 어떤 판단으로 이어지는지 설명하는 자료입니다.</p></main>
+<footer class="footer">기준: bdccee3 · do-math-cli/5 · do-math-state/7. 교육용 사례는 실제 실행 증거와 구별합니다. 이해가 막히는 문장이나 회상 답을 대화에 보내면 이어서 설명합니다.</footer></div></body></html>
