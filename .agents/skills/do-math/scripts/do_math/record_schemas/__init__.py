@@ -182,11 +182,6 @@ def config_schema():
     return json_copy(obj(config))
 
 
-def _validate_active_grant(instance, runtime, grant):
-    from ..governance import validate_grant_source
-    validate_grant_source(instance, grant)
-
-
 # Record-local rules: each reads one record and nothing else, so install
 # registers it as its family's validator. StateContract.validate runs it for a
 # record that differs from the parent's and skips it for an equal one, the one
@@ -334,7 +329,7 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
     from ..activities import validate_activities
     from ..execution_profiles import match_profile_ref, validate_host_constraint
     from ..formal import compare_formal_results
-    from ..governance import validate_governance_state
+    from ..governance import validate_governance_state, validate_grant_source
     from ..knowledge import _hash
     from ..knowledge_io import _BUILTINS, _RELATION_FIELDS, validate_relation
     from ..knowledge_records import _assessment_basis, validate_formal_evidence, validate_knowledge_records
@@ -359,7 +354,7 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
                 prior_grants.get(identifier) != grant
                 or prior_sources.get(grant.get("source_ref")) != sources.get(grant.get("source_ref"))
                 or prior_decisions.get(grant.get("decision_id")) != instance.get("decisions", {}).get(grant.get("decision_id"))):
-            _validate_active_grant(instance, runtime, grant)
+            validate_grant_source(instance, grant)
     if instance.get("review_policy"):
         build_review_policy(instance["review_policy"])
     validate_knowledge_records(instance)
@@ -617,10 +612,9 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
     # input aliases. These namespaces are explicit, not a scan for any 'id'.
     # They do not depend on the question, so build them once per validation.
     # Input references are derived, never stored; a stored target is valid whatever the host found.
+    # They already carry every source alias (input_basis.aliases).
     question_targets = (set(identifiers) | set(runtime.get("waiting_actions", {}))
                         | set(available_input_refs(instance, runtime, lean_available=True)))
-    for source in instance.get("sources", []):
-        question_targets.update(v for v in (source.get("path"), source.get("name")) if v)
     for question in runtime.get("question_links", []):
         if question["origin_execution_id"] is None and not question.get("source_ref"):
             raise ValueError("nonexecution question requires a preserved source reference")

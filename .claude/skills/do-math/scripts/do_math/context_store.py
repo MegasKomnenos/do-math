@@ -12,6 +12,7 @@ from pathlib import Path, PurePosixPath
 from .repository import canonical_json, exact_content_hash
 from .file_io import is_sha256, no_reparse, stat_fingerprint
 from .git_store import PhysicalBoundary, oid_shape
+from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
 
 
 class _ChangedDuringRead(OSError):
@@ -488,7 +489,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         private_scope = {'review_cycle_id': action['review_cycle_id'], 'slot': action.get('slot'),
                          'stage': action.get('stage'), 'source_refs': deepcopy(supplied.get('source_refs', [])),
                          'view_sha256': exact_content_hash(supplied)}
-    if role in {'research_preparation', 'research_plan'}:
+    if role in PLANNING_ROLES:
         tasks = runtime.get('tasks', {})
         reader_tasks = {task['id']: task for task in value.get('tasks', [])}
         if set(reader_tasks) != set(tasks):
@@ -605,11 +606,11 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     documents = documents if documents is not None else contracts.prompt_documents(role)
     schema = output_schema if output_schema is not None else contracts.schema_for(role)
     validation_context = deepcopy(value)
-    if role in {'research_preparation', 'research_plan'}:
+    if role in PLANNING_ROLES:
         # Resolve catalog references independently of the comparison population.
         validation_context['tasks'] = [deepcopy(runtime['tasks'][identifier])
                                        for identifier in sorted(runtime['tasks'])]
-    if role in {'research_work', 'supplemental_research'}:
+    if role in RESEARCH_PRODUCER_ROLES:
         # A fixed public domain view for the shared relation checker, not a
         # second store or a worker-authored validity assertion.
         # Serialized immediately below; the records are read, not copied.
@@ -774,7 +775,7 @@ def validate_role_manifest(manifest):
     for ref in manifest.get('references', []):
         relative_path(ref['source_ref']['path'])
     order = manifest.get('candidate_order')
-    if manifest['role'] in {'research_preparation', 'research_plan'}:
+    if manifest['role'] in PLANNING_ROLES:
         if not isinstance(order, dict) or len(order.get('ids', [])) != len(set(order.get('ids', []))):
             raise ValueError('candidate input requires a sealed population order')
         _candidate_order(order['ids'], snapshot, manifest['role'], order.get('basis', {}).get('action_id'), order)

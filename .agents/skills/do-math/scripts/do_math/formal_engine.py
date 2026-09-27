@@ -299,7 +299,6 @@ class FormalEngineMixin:
         identity review; a failed one returns to the research plan.
         """
         from .activities import continue_activity, wait_for
-        from .execution_lifecycle import MACHINE_OUTPUT_RECEIPT
         from .execution_profiles import machine_invocation
         from .file_io import now
         from .formal import lean_source_sha256

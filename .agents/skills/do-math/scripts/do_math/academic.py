@@ -204,6 +204,15 @@ def evidence_record(instance, runtime, identifier, resolve_evidence=None):
     return found[0]
 
 
+def stored_evidence(store, head, ref):
+    """Academic evidence stored at ``ref`` in the snapshot ``head``, or None when that snapshot lacks it.
+
+    evidence_record takes None as unresolvable evidence, so an absent path makes a
+    resolution unresolved instead of failing the read. The engine and the status
+    report read stored evidence through this one function."""
+    return store.read_many([ref], head, missing="omit").get(ref)
+
+
 def _evidence_hash(value):
     return hashlib.sha256(value).hexdigest() if isinstance(value, bytes) else exact_content_hash(value)
 

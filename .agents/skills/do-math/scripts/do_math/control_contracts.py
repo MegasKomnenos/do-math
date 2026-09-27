@@ -189,10 +189,6 @@ def validate_import_approvals(approvals):
     _check(_APPROVAL_VALIDATOR, approvals, 'import_approvals')
 
 
-def validate_config_shape(config):
-    _check(_configure_validator(), config, 'config')
-
-
 def validate_control_payload(action, text, config):
     if not isinstance(action, str) or action not in {*_VALIDATORS, 'configure'}:
         raise ValueError('unknown control action')

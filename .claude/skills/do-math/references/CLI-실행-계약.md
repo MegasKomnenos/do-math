@@ -679,7 +679,7 @@ export --destination PATH [--snapshot OID] [--all]
 
 `references/CLI-실행-계약.md`는 CLI를 운전하거나 구현을 고치는 독자를 위한 참조이며 모든 AI 역할에 자동 주입되지 않는다. 역할이 판단할 현행 필드와 단계는 자기 계약, canonical input context와 실행별 출력 schema가 소유한다.
 
-입력 context의 공통 필드는 현재 snapshot과 workspace, goal·policies, action, 대상 task, 과제 목록, knowledge catalog, relations, sources, 사용자 입력, 열린 질문, 최근 이력, grant 요지, 자원·시간 한도, kind definitions, 중앙 형식 검사 설명, 학술 요구·상태와 외부 operation을 포함한다. 후보 준비와 연구 계획은 활성 `config` 전문도 받는다. `available_input_refs`는 저장 상태의 필드가 아니라 역할 입력을 만들 때 계산해 넣는 목록이다. `task_readiness`는 연구 계획·연구 수행·보충 조사의 입력에만, `supplied_record_ids`는 후보 준비·연구 계획·운영 점검의 입력에만 들어간다. 역할과 action에 따라 proposal, review context, eligible knowledge, operational observation, intent interpretation 입력, 이전 output 파일과 checkpoint가 추가되거나 비공개 자료가 제거된다.
+입력 context의 공통 필드는 현재 snapshot과 workspace, goal·policies, action, 대상 task, 과제 목록, knowledge catalog, relations, sources, 사용자 입력, 열린 질문, 최근 이력, grant 요지, 자원·시간 한도, kind definitions, 중앙 형식 검사 설명, 학술 요구·상태와 외부 operation을 포함한다. 후보 준비·연구 계획·의도 해석은 활성 설정 전문도 `configuration_source`의 원문 참조로 받는다. `available_input_refs`는 저장 상태의 필드가 아니라 역할 입력을 만들 때 계산해 넣는 목록이다. `task_readiness`는 연구 계획·연구 수행·보충 조사의 입력에만, `supplied_record_ids`는 후보 준비·연구 계획·운영 점검의 입력에만 들어간다. 역할과 action에 따라 proposal, review context, eligible knowledge, operational observation, intent interpretation 입력, 이전 output 파일과 checkpoint가 추가되거나 비공개 자료가 제거된다.
 
 모든 knowledge와 source 원문은 `input/knowledge/`, `input/sources/`, `input/task-results/`, `input/review-cycles/` 아래의 실행별 사본으로 물질화한다. catalog의 `path`나 `local_path`는 이 workspace 안의 파일을 가리킨다. 해시와 목록이 있다는 사실은 모델이 원문을 읽었다는 뜻이 아니다.
 
@@ -928,7 +928,7 @@ initial 결과는 서로 숨긴 채 봉인한다. 열린 finding이 있으면 or
 
 과거 수리 action의 previous_output 전문은 inline 이력에서 반복하지 않고 `action_source`가 가리키는 정확한 JSON으로 제공한다. 실패와 미결 사항의 원문은 계속 읽을 수 있으며, 현재 상태와 과거의 거부된 주장을 구분해 사용한다.
 
-후보 준비와 연구 계획은 현재 goal·policies, 활성 config 전문, 자원과 실행 한도를 받는다. 입력 manifest와 `input/catalog/` 사본이 실제 제공한 판본·경로·해시를 고정한다. 다른 역할은 자기 판단에 필요한 설정 필드만 받고, 입력에 없는 설정값을 추측하지 않는다.
+후보 준비와 연구 계획은 현재 goal·policies, `configuration_source`가 가리키는 활성 설정 전문, 자원과 실행 한도를 받는다. 입력 manifest와 `input/catalog/` 사본이 실제 제공한 판본·경로·해시를 고정한다. 의도 해석도 설정 변경 단위를 작성할 수 있도록 같은 `configuration_source`를 받는다. 이 세 역할 밖의 역할은 자기 판단에 필요한 설정 필드만 받고, 입력에 없는 설정값을 추측하지 않는다.
 
 ## 표현 방식과 보증 범위의 차이
 

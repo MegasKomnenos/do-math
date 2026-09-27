@@ -5,7 +5,8 @@ only after `import Mathlib` compiles through the exact command the verifier will
 and the ready marker follows the record, so a half-downloaded cache is never selected.
 Record writers (installation, --verify-only, --rerecord, --check-contents) exclude each
 other with the lock file of the records directory. Exit codes: 0 success, 1 a refused,
-failed or mismatching result, 2 an execution error. Every mode prints one JSON object.
+failed or mismatching result, 2 an execution error. Every mode prints one JSON object on stdout;
+installation progress and Lake output go to stderr.
 """
 import argparse
 from datetime import datetime, timezone
@@ -14,6 +15,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import time
 import urllib.request
@@ -23,7 +25,7 @@ import zipfile
 from do_math.formal import LEAN_VERSION, READY_MARKER, discover_lean, mathlib_project, portable_bin, toolchain_root, inspect_toolchain
 from do_math import trust_inventory as records
 from do_math.trust_validation import AXIOMS
-from do_math.file_io import RACY_NS, fingerprint_settled
+from do_math.file_io import RACY_NS, fingerprint_settled, now
 
 LEAN_ZIP = f"https://github.com/leanprover/lean4/releases/download/v{LEAN_VERSION}/lean-{LEAN_VERSION}-windows.zip"
 # Mathlib tags follow Lean releases; the tag equal to the toolchain is the one whose cached .olean files load.
@@ -62,7 +64,7 @@ def verify_environment(command, evidence_root, identity):
     validation = {'status': 'failed', 'scope': scope, 'source': str(source), 'source_text': source_text,
                   'source_sha256': hashlib.sha256(source_text.encode('utf-8')).hexdigest(),
                   'command': [*command, str(source)], 'exit_code': None, 'stdout': '', 'stderr': '',
-                  'started_at': records.now()}
+                  'started_at': now()}
     try:
         from do_math.formal import _job_run
         from do_math.operation_trace import tracing, phase
@@ -74,7 +76,7 @@ def verify_environment(command, evidence_root, identity):
             validation['status'] = 'verified'
     except Exception as error:
         validation['error'] = f'{type(error).__name__}: {error}'
-    validation['finished_at'] = records.now()
+    validation['finished_at'] = now()
     (directory / 'validation.json').write_text(json.dumps(validation, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     return validation
 
@@ -166,7 +168,7 @@ def check_contents(records_dir, record_id, command):
         fingerprint = records.observe_fingerprint(record['identity'])
         content = records.content_hashes(record['identity'], fingerprint['files'])
         mismatched = records.changed_files(record['baselines'][current]['content']['files'], content['files'])
-        check = {'checked_at': records.now(), 'baseline': current,
+        check = {'checked_at': now(), 'baseline': current,
                  'result': 'mismatch' if mismatched else 'passed', 'mismatched': mismatched}
         record['checks'].append(check)
         records.write_record(path, record)
@@ -187,8 +189,9 @@ def write_trust_request(result, destination):
 
 
 def run(command, cwd, env):
-    print("+", " ".join(command), flush=True)
-    subprocess.run(command, cwd=cwd, env=env, check=True)
+    # Progress goes to stderr; stdout carries only the one JSON result.
+    print("+", " ".join(command), file=sys.stderr, flush=True)
+    subprocess.run(command, cwd=cwd, env=env, check=True, stdout=sys.stderr)
 
 
 def install(root):
@@ -197,7 +200,7 @@ def install(root):
     if not (bin_dir / "lean.exe").is_file():
         archive = bin_dir.parents[1] / f"lean-{LEAN_VERSION}-windows.zip"
         archive.parent.mkdir(parents=True, exist_ok=True)
-        print("downloading", LEAN_ZIP, flush=True)
+        print("downloading", LEAN_ZIP, file=sys.stderr, flush=True)
         urllib.request.urlretrieve(LEAN_ZIP, archive)
         with zipfile.ZipFile(archive) as bundle:
             bundle.extractall(archive.parent)
@@ -243,7 +246,7 @@ def main():
     try:
         if installing:
             if root is None:
-                raise SystemExit("this installation has no repository root above it; set lean_command explicitly instead")
+                raise ValueError("this installation has no repository root above it; set lean_command explicitly instead")
             (mathlib_project(root) / READY_MARKER).unlink(missing_ok=True)
             command = install(root)
         else:

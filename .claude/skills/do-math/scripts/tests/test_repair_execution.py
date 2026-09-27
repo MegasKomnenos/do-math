@@ -143,7 +143,7 @@ class InstallationRepairRoutingTests(unittest.TestCase):
         host._save = create_autospec(host._save)
         host._settle_stops = create_autospec(host._settle_stops)  # stop judgment is not this rule
         host._dispatchable = create_autospec(host._dispatchable, side_effect=dispatchable)
-        with patch('do_math.scheduler.ModelCalls',return_value=calls), patch('do_math.scheduler.time.sleep'):
+        with patch('do_math.scheduler.ModelCalls',return_value=calls):
             host._run_parallel()
         self.assertEqual(calls.collect.call_count,2)
         self.assertTrue(calls.close.called)

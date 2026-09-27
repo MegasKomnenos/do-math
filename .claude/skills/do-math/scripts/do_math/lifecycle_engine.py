@@ -17,6 +17,7 @@ from .planning import (task_ready, contract_hash, record_due_events, contract_re
                        capture_task_basis, governance_revisions)
 from .repository import canonical_json, exact_content_hash, new_id
 from .initialization import activation_requirements, capability_requirements
+from .session_slots import live_action_ids
 
 _SCHEDULABLE = {'planned', 'waiting', 'active'}
 
@@ -108,8 +109,8 @@ class LifecycleEngineMixin:
             raise ValueError('clock prevents new authority: ' + guard['reason'])
         return guard['observed_utc']
 
-    def _capability_requirements(self, reference, required=()):
-        return capability_requirements(self.instance, reference, required, at=self._lifecycle_now().isoformat())
+    def _capability_requirements(self, reference):
+        return capability_requirements(self.instance, reference, at=self._lifecycle_now().isoformat())
 
     def _instance_closed(self):
         """Closed or completed research: no lifecycle control or dispatch applies any more."""
@@ -539,8 +540,7 @@ class LifecycleEngineMixin:
         self._retire_closed_revision_targets()
         self._retire_sealed_goal_audit_requests()
         self._reconcile_revision_delegations()
-        live_actions = {execution.get('action', {}).get('id') for execution in self.runtime['executions'].values()
-                        if execution.get('status') != 'ended'}
+        live_actions = live_action_ids(self.runtime)
         for action in list(self.runtime['queue']):
             if action.get('id') in live_actions:
                 continue
@@ -664,8 +664,7 @@ class LifecycleEngineMixin:
         pending = [event_id for event_id in dict.fromkeys(self.runtime['pending_events'])
                    if event_id not in assigned_refs]
         if not pending: return
-        running_ids = {execution.get('action', {}).get('id') for execution in self.runtime['executions'].values()
-                       if execution.get('status') != 'ended'}
+        running_ids = live_action_ids(self.runtime)
         assigned = False
         for role in ('research_preparation', 'research_plan'):
             selected = [event_id for event_id in pending if

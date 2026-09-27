@@ -33,7 +33,8 @@ CONFIG = {'operator_enabled': False, 'scholarly_enabled': False, 'lean_command':
 def apply(engine, repository, action, **kwargs):
     """The owner pass applies a queued public control; returns its rejection records."""
     request = control(repository, engine.instance['id'], action, **kwargs)
-    engine._controls(pump=False)
+    engine._apply_inbox(pump=False)
+    engine._upkeep()
     return [row for row in engine.runtime['history'] if row.get('kind') == 'rejected_user_control'
             and row.get('request', {}).get('id') == request['request_id']]
 
@@ -273,7 +274,8 @@ class PreparationStopTests(StopFlagHarness):
         e.lifecycle_clock = lambda: (datetime.now(timezone.utc) + offset[0]).isoformat()
         control(self.repo, e.instance['id'], 'conversation', config={'operation': 'attach', 'id': 'CV-fixture',
             'generation': 1, 'lease_seconds': 60, 'disconnect_policy': 'pause'})
-        e._controls(pump=False)
+        e._apply_inbox(pump=False)
+        e._upkeep()
         with self.running() as (e, eid, future, reads):
             e._settle_stops()
             self.assertFalse(future.stop.is_set())

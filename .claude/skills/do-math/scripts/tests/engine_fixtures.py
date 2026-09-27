@@ -106,7 +106,7 @@ class FakeEngine(ResearchEngine):
                 action.get('profile_ref') or self.instance['role_profile_refs'][action['role']][0])
         action.update(profile_ref=profiles.profile_ref(profile),actor_kind=profile['actor_kind'])
         return profile
-    def _controls(self, *, pump=True): pass
+    def _controls(self): pass
     def _save(self,artifacts=None):
         self.saves.append({'instance':deepcopy(self.instance),'runtime':deepcopy(self.runtime),'artifacts':deepcopy(artifacts or {})})
     def _ensure_model_assessments(self): return set()
@@ -372,7 +372,7 @@ def routing_engine():
     # read store.git_dir and config['max_artifact_bytes'] without a fallback.
     engine = bare_engine(store=NoRepository())
     engine.instance = governance_start({"id": "RI-test", "knowledge": {}, "relations": [],
-                       "goal": "Original approved goal", "policies": "", "goal_status": "unresolved",
+                       "goal_status": "unresolved",
                        "config": {"goal_auditors": 2, "max_artifact_bytes": DEFAULT_CONFIG["max_artifact_bytes"]}})
     engine.runtime = {"tasks": {}, "activities": {}, "executions": {}, "queue": [],
                       "questions": [], "question_links": [], "history": [], "inputs": [],

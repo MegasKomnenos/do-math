@@ -27,7 +27,7 @@ from .input_basis import capture_sources, sources_current, capture_decision_basi
 from .context_store import collect_outputs, prepare_role_input, defer_input_overflow, materialize_inputs, restore_continuation, verify_manifest_artifacts
 from .operation_trace import engine_operation, tracing, phase, measured, progress as operation_progress
 from .observation_transport import ObservationBatch
-from .observations import ObservationTracker, CHECKPOINT_SCHEMA, preserve_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, self_check_feedback, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint, observation_settings_errors, task_rules_from_execution, bind_task_rules, capture_checkpoint_files
+from .observations import ObservationTracker, CHECKPOINT_SCHEMA, checkpoint_value, preserve_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, self_check_feedback, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint, observation_settings_errors, task_rules_from_execution, bind_task_rules, capture_checkpoint_files
 from .review_engine import ReviewEngineMixin
 from .lifecycle_engine import LifecycleEngineMixin
 from .initialization_engine import InitializationEngineMixin
@@ -55,7 +55,7 @@ from . import revisions
 from . import submission, execution_window, integration
 from . import activities, execution_lifecycle, execution_profiles, initialization, launch
 from .provider_engine import record_model_policy_violation
-from .session_slots import held_reservations, local_termination_confirmed
+from .session_slots import held_reservations, live_action_ids, local_termination_confirmed
 from . import task_contracts, operational_dispositions, retention, repair_execution
 from .control_transport import ControlTransport, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, SUBMIT_INTENT
 from .file_io import cached_sha256, fingerprint_settled, now, os_lock, stat_fingerprint, write_bytes_atomic
@@ -84,9 +84,10 @@ def _artifact_format_valid(reference, raw):
     suffix = Path(reference["path"]).suffix.lower()
     try:
         if suffix == ".json":
-            value = submission.load_json(raw)
             if Path(reference["path"]).name == "checkpoint.json":
-                jsonschema.Draft202012Validator(CHECKPOINT_SCHEMA).validate(value)
+                checkpoint_value(raw)
+            else:
+                submission.load_json(raw)
             return True
         if suffix in {".txt", ".md", ".tsv", ".csv"}:
             return "\0" not in raw.decode("utf-8-sig")
@@ -178,7 +179,7 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
                     path = f"runtime/artifacts/{bundle}/{i:04d}-{source_name}"
                     artifacts[path] = raw
                     instance["sources"].append({"id": new_id("SO"), "path": path, "name": source_name,
-                                                "sha256": hashlib.sha256(raw).hexdigest()})
+                                                "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)})
                 head = store.save_with_state(head, instance, runtime, artifacts=artifacts)[0]
         return {"instance_id": instance_id, "snapshot": head, "status": runtime["status"]}
 
@@ -264,7 +265,6 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
         current_config = instance["config"]
         candidate = {**current_config, **(config or {})}
         validate_config(candidate)
-        execution_profiles.build_profiles(candidate)
         if origin == "operator" and any(candidate.get(key) != current_config.get(key)
                                          for key in USER_DECISION_SETTINGS):
             raise ValueError("changing resource capacity or model allocation requires a user decision")
@@ -327,13 +327,10 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
 
 
 def _record_evidence(row):
-    record = row["record"]
-    semantic = exact_content_hash(record)
     return {"snapshot": row["snapshot"], "path": row["path"], "json_pointer": row.get("json_pointer", "/record"),
             "sha256": row["sha256"], "bytes": len(row["bytes"]), "byte_scope": "persisted_file",
-            "logical_sha256": exact_content_hash(record), "semantic_sha256": semantic,
-            **({'payload_refs':deepcopy(row['payload_refs']), 'json_pointer_scope':'decoded_record'} if row.get('payload_refs') else {}),
-            "semantic_projection": "exact_canonical_record/2"}
+            "logical_sha256": exact_content_hash(row["record"]),
+            **({'payload_refs':deepcopy(row['payload_refs']), 'json_pointer_scope':'decoded_record'} if row.get('payload_refs') else {})}
 
 
 # Public query family names: the condition grammar's names of the stored families,
@@ -500,7 +497,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             selection = self._select_model(action)
         allowed = self.instance.get("role_profile_refs", {}).get(action["role"])
         task = self.runtime["tasks"].get(action.get("target"))
-        if task and action["role"] in {"research_work", "supplemental_research"}:
+        if task and action["role"] in execution_profiles.RESEARCH_PRODUCER_ROLES:
             allowed = task.get("profile_refs", [])
         profile = execution_profiles.select_profile(profiles, action, selection, allowed_refs=allowed)
         action["profile_ref"] = execution_profiles.profile_ref(profile)
@@ -788,9 +785,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         # Preserve their host acceptance order, including equal wall-clock timestamps.
         return sorted(results, key=lambda request: (request["accepted_order"], request["created_at"], request["id"]))
 
-    def _controls(self, *, pump=True) -> None:
+    def _controls(self) -> None:
         """One owner pass over controls: apply the inbox, then the periodic upkeep."""
-        self._apply_inbox(pump=pump)
+        self._apply_inbox()
         self._upkeep()
 
     def _apply_inbox(self, *, pump=True) -> None:
@@ -1100,8 +1097,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     break
                 references[identifier] = review["id"]
             if failed:
-                continue
-            if set(judgments) != set(waiting["review_requests"]):
                 continue
             live = self.runtime["waiting_actions"][waiting["action"]["id"]]
             live["review_execution_ids"] = references
@@ -1415,7 +1410,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             "operation_progress": operation_progress(Path(self.instance['workspace']) / 'operations'),
             "pending_controls": len(self._inbox()),
             "budget": self._session_resources(),
-            "provider_waits": self._provider_status()})
+            "provider_waits": self._provider_status()}, evaluation_context=evaluation_context)
 
     @engine_operation('run')
     def run(self, *, max_steps: int | None = None, watch: bool = False, until_active: bool = False) -> dict:
@@ -1666,7 +1661,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             "role_tiers": self.instance["config"]["role_tiers"], "assessment_schema": model_policy.ASSESSMENT_SCHEMA,
             "selected": action.get("model_selection"), "missing_assessment": "Existing tasks require assessment-only preparation before contract review; preparation uses its configured role floor."}
         if action["role"] == "research_plan":
-            live_ids = self._live_action_ids()
+            live_ids = live_action_ids(self.runtime)
             context["queued_work"] = [deepcopy(a) for a in self.runtime["queue"] if a["role"] in execution_profiles.WORK_ROLES and a.get("id") not in live_ids]
             context['review_followups'] = [deepcopy(cycle) for cid, cycle in self.runtime.get('review_cycles', {}).items()
                 if cid in action.get('evidence_refs', [])]
@@ -1913,7 +1908,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     materialize_inputs(workspace, {local: raw})
                     context['initial_submission_diagnosis']['materials'].append({
                         'artifact_ref': ref, 'local_path': 'input/' + local, 'sha256': hashlib.sha256(raw).hexdigest()})
-        if action["role"] in {"research_preparation", "research_plan"}:
+        if action["role"] in execution_profiles.PLANNING_ROLES:
             # prepare_role_input derives configuration_source, and for preparation
             # pending_revisions, from state; waiting actions appear in its ongoing_work.
             if action["role"] == "research_plan":
@@ -2359,7 +2354,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         lifecycle = self.instance['lifecycle']
         predecessor = self.runtime['executions'].get(waiting.get('execution_id'), {})
         if (lifecycle['state'] != 'initializing' or lifecycle.get('intent_check')
-                or original.get('id') != identifier or original.get('role') != 'intent_interpretation'
+                or original.get('role') != 'intent_interpretation'
                 or original.get('target') != lifecycle.get('input_id')
                 or predecessor.get('status') != 'ended'
                 or predecessor.get('outcome') != 'execution_incomplete'
@@ -2979,7 +2974,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
             self._save()
             return bool(self.runtime["queue"])
-        if role in {"research_work", "supplemental_research"} and not action.get("review_cycle_id"):
+        if role in execution_profiles.RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id"):
             check_task = deepcopy(self.runtime["tasks"][action["target"]])
             ready = planning.task_ready(check_task, self.instance, self.runtime, action=action, include_scheduling_waits=False,
                                         evaluation_context=self._evaluation_context())
@@ -3196,7 +3191,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self._live_execution_ids.add(execution_id)
         if self.runtime["status"] != "paused":
             self.runtime["status"] = "running"
-        if role in {"research_work", "supplemental_research"} and not action.get("review_cycle_id"):
+        if role in execution_profiles.RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id"):
             self.runtime["tasks"][action["target"]]["status"] = "active"
         execution["control_transport"] = {key: value for key, value in binding.items() if key != "capability"}
         launch.mark_dispatched(execution['launch_ticket'])
@@ -3418,10 +3413,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._save()
         return self.runtime["status"] in {"ready", "running"}
 
-    def _live_action_ids(self) -> set:
-        """IDs of the actions whose executions have not ended."""
-        return {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
-
     def _enqueue(self, role: str, target: str | None = None, *, front=False, **extra: Any) -> None:
         action = {"role": role, **extra}
         if target is not None:
@@ -3430,7 +3421,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         compare_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "transition_id",
                         "assessment_targets", "observation_rule_targets", "review_basis_key", "live", "grant_id", "profile_ref",
                          "cleanup_execution_ids", "delegation_application_id", "initial_submission_diagnosis")
-        live_actions = self._live_action_ids()
+        live_actions = live_action_ids(self.runtime)
         for queued in self.runtime["queue"]:
             if queued.get("id") not in live_actions and all(queued.get(k) == action.get(k) for k in compare_keys):
                 # A request without revision targets must outlive the retirement of merged targets.
@@ -3482,7 +3473,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         for definition in extension.get("kind_definitions", []):
             self._propose_kind(definition, execution_id)
         if extension.get("task_dispositions"):
-            if action["role"] not in {"research_preparation", "research_plan"}:
+            if action["role"] not in execution_profiles.PLANNING_ROLES:
                 raise ValueError("only preparation and planning may withdraw AI-prepared tasks")
             execution = self.runtime["executions"][execution_id]
             _, _, input_runtime = self.store.view(execution["input_snapshot"])
@@ -3717,7 +3708,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 basis = {"revision": task["revision"], "contract_sha256": planning.contract_hash(task),
                          **self._governance_revisions()}
                 review_key = planning.review_basis_key(task, self.instance, self.runtime)
-                live_actions = self._live_action_ids()
+                live_actions = live_action_ids(self.runtime)
                 for pending in list(self.runtime["queue"]):
                     if (pending["role"] == "task_contract_review" and pending.get("target") == tid
                             and pending.get("id") not in live_actions
@@ -3764,7 +3755,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                               contract_review_execution=execution_id)
         elif role == "research_plan":
             self._apply_plan(output, execution_id)
-        elif role in {"research_work", "supplemental_research"}:
+        elif role in execution_profiles.RESEARCH_PRODUCER_ROLES:
             if owns_response:
                 if not output["report"].strip():
                     raise ValueError("work must report its actual scope, outcome and remaining work")
@@ -4044,8 +4035,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 continue
             kind = record.get('disposition', {}).get('kind')
             if kind == 'repair':
-                if record['status'] in {'applied',
-                        'installation_repair_pending', 'installation_repair_waiting', 'installation_repair_resolved'}:
+                if record['status'] in {'applied', 'installation_repair_pending', 'installation_repair_waiting'}:
                     continue
             elif kind not in {'resume', 'retry', 'task_disposition'} or record['status'] != 'awaiting_termination':
                 continue

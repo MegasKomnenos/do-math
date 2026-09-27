@@ -95,7 +95,6 @@ class AcceptanceTests(unittest.TestCase):
         self.fixture = BoundaryFixture()
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
-        self.addCleanup(self.fixture.tearDown)
 
     def test_newly_reported_knowledge_dependencies_bind_the_read_snapshot(self):
         for declaration in ("used_sources", "dependencies", "knowledge_path"):

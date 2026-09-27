@@ -17,19 +17,6 @@ from do_math.session_slots import SessionSlots
 
 
 class ProfileTests(unittest.TestCase):
-    def test_role_scoped_authoring_preserves_exact_profile_editions_and_capacity(self):
-        config = {**deepcopy(PROFILE_CONFIG), "lean_command": ["fixture-no-lean"]}
-        full = execution_profiles.build_profiles(config)
-        for role in sorted(execution_profiles.PROFILE_ROLES):
-            with self.subTest(role=role):
-                scoped = execution_profiles.build_profiles(config, roles={role})
-                expected = {key: row for key, row in full["execution_profiles"].items()
-                            if row["role"] == role}
-                self.assertEqual(scoped["execution_profiles"], expected)
-                self.assertEqual(scoped["role_profile_refs"], {role: full["role_profile_refs"][role]})
-                self.assertEqual(scoped["capacity_constraints"], full["capacity_constraints"])
-        with self.assertRaisesRegex(ValueError, "supported roles"):
-            execution_profiles.build_profiles(config, roles={"invented"})
 
     def test_selection_cost_depends_on_allowed_profiles_not_retained_editions(self):
         registry = {}
@@ -73,7 +60,7 @@ class ProfileTests(unittest.TestCase):
         self.assertIn(chosen["profile_ref"], instance["role_profile_refs"]["maintenance"])
         self.assertEqual(seals.call_count, 0)
 
-    def test_scoped_authoring_keeps_shared_host_validation(self):
+    def test_profile_authoring_rejects_missing_unknown_and_invalid_host_demands(self):
         constraint = execution_profiles.host_constraint(host_id="fixture-host",
             limits={"jobs": 3, "memory_bytes": 4096, "cpu_rate_basis_points": 10000},
             control_reserve={"jobs": 1, "memory_bytes": 1024, "cpu_rate_basis_points": 1000},
@@ -82,11 +69,7 @@ class ProfileTests(unittest.TestCase):
                    for role in execution_profiles.HOST_ROLES}
         config = {**deepcopy(PROFILE_CONFIG), "lean_command": ["fixture-no-lean"],
                   "host_resources": {"constraint": constraint, "demands_by_role": demands}}
-        full = execution_profiles.build_profiles(config)
-        scoped = execution_profiles.build_profiles(config, roles={"maintenance"})
-        self.assertEqual(scoped["execution_profiles"], {
-            key: row for key, row in full["execution_profiles"].items() if row["role"] == "maintenance"})
-        self.assertEqual(scoped["host_capacity_ref"], full["host_capacity_ref"])
+        self.assertEqual(execution_profiles.build_profiles(config)["host_capacity_ref"], constraint["id"])
         for defect in ("missing", "unknown", "invalid"):
             bad = deepcopy(config)
             rows = bad["host_resources"]["demands_by_role"]
@@ -97,7 +80,7 @@ class ProfileTests(unittest.TestCase):
             else:
                 rows["research_work"]["memory_bytes"] = 0
             with self.subTest(defect=defect), self.assertRaises(ValueError):
-                execution_profiles.build_profiles(bad, roles={"maintenance"})
+                execution_profiles.build_profiles(bad)
 
     def test_normal_final_delivery_rendering_preserves_the_sealed_profile(self):
         from do_math import execution_profiles as api, contracts
@@ -650,6 +633,7 @@ class MachineAndProviderEvidenceTests(unittest.TestCase):
                                             workspace=Path(directory), **args)
             self.assertEqual((result["status"], result["reason"]), ("rejected", "approved toolchain changed before execution"))
             self.assertEqual(result["identity_errors"], ["approved toolchain file changed: " + str(tool.resolve())])
+            self.assertEqual(result["error_kind"], "trust_environment")
             with self.assertRaises(ValueError):
                 ep.machine_invocation(formal_profile(second), trust_environment={"toolchain": {"configured_command": ["different"]}})
 
@@ -667,6 +651,7 @@ class MachineAndProviderEvidenceTests(unittest.TestCase):
                 result = formal.verify_lean(source="theorem t : True := True.intro", declarations=["t"],
                                             workspace=Path(directory), **args)
             self.assertEqual((result["status"], result["reason"]), ("rejected", "approved toolchain changed before execution"))
+            self.assertEqual(result["error_kind"], "trust_environment")
 
     def test_explicit_old_edition_uses_its_model_but_preserves_floor_and_allowlist(self):
         ep, old = self.profiles()

@@ -173,8 +173,7 @@ class CodexWorkerTests(unittest.TestCase):
     def test_collect_rejects_malformed_tail_even_with_turn_completed(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            request, prompt, stdout, stderr, final, status = (root / name for name in ("r", "p", "o", "e", "f", "s"))
-            request.write_bytes(b"{}"); prompt.write_bytes(b"p")
+            stdout, stderr, final, status = (root / name for name in ("o", "e", "f", "s"))
             stdout.write_bytes(b'{"type":"turn.completed"}\nbroken')
             stderr.write_bytes(b""); final.write_bytes(b"final")
             status.write_text('{"state":"exited","cli_exit_code":0}', encoding="utf-8")
@@ -189,7 +188,7 @@ class CodexWorkerTests(unittest.TestCase):
         import hashlib
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            request, prompt, stdout, stderr, final, status = (root / name for name in ("r", "p", "o", "e", "f", "s"))
+            stdout, stderr, final, status = (root / name for name in ("o", "e", "f", "s"))
             stdout.write_bytes(b""); stderr.write_bytes(b""); final.write_bytes(b"final")
             status.write_text('{"state":"exited","cli_exit_code":0}', encoding="utf-8")
             # The private snapshot files are absent: collection uses the bytes hashed at start.
@@ -197,7 +196,6 @@ class CodexWorkerTests(unittest.TestCase):
                                      hashlib.sha256(b"p").hexdigest(), ("worker",), stdout, stderr, final, status,
                                      FakeJob(JobInspection(0, (), True)), None, b"{}", b"p")
             result = CodexExecAdapter(sys.executable).collect(execution)
-        self.assertNotIn("source_request_changed", result["reasons"])
         self.assertEqual(result["source_request"], {"present": True, "bytes": 2,
                          "sha256": execution.request_sha256, "raw": b"{}"})
         self.assertEqual(result["source_prompt"]["sha256"], execution.prompt_sha256)
@@ -205,8 +203,8 @@ class CodexWorkerTests(unittest.TestCase):
     def test_timeout_with_descendant_still_in_job_cannot_collect_stale_files(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            request, prompt, stdout, stderr, final, status = (root / name for name in ("r", "p", "o", "e", "f", "s"))
-            for path in (request, prompt, stdout, stderr, final): path.write_bytes(b"old")
+            stdout, stderr, final, status = (root / name for name in ("o", "e", "f", "s"))
+            for path in (stdout, stderr, final): path.write_bytes(b"old")
             status.write_text('{"state":"timeout","runner_stop_required":true}', encoding="utf-8")
             execution = CLIExecution("x", "y", ("worker",), stdout, stderr, final, status,
                                      FakeJob(JobInspection(1, (99,), True)), None, b"{}", b"old")

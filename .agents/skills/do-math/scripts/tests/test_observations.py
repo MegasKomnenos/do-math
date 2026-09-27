@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 from pathlib import Path
+import re
 import sys
 import tempfile
 import unittest
@@ -425,6 +426,14 @@ class Tests(unittest.TestCase):
 
     def test_explicit_null_repeat_is_not_a_positive_repeat_interval(self):
         with self.assertRaises(ValueError): observations.validate_rules([observation_rule(repeat_interval=None)])
+
+    def test_documented_operator_table_is_the_operator_table(self):
+        """「공통 실행」's operator table is the rule authors' copy of observations.OPERATORS."""
+        text = (Path(__file__).resolve().parents[2] / 'references' / '공통-실행.md').read_text(encoding='utf-8')
+        rows = re.findall(r'^\| `(\w+)` \| `(\w+)` \| `(\w+)`, `(\w+)` \|$', text, re.M)
+        documented = {operator: {'subject_kind': kind, 'unit': unit, 'source': source}
+                      for operator, kind, source, unit in rows}
+        self.assertEqual(documented, observations.OPERATORS)
 
 
 class SelfCheckControlBindingTests(unittest.TestCase):

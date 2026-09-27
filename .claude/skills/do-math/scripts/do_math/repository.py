@@ -338,6 +338,7 @@ class ResearchRepository:
         entry = _VALIDATED_READS.get(self._read_key(head))
         return None if entry is None else entry[:2]
 
+    @measured('candidate_validation')
     def validate_candidate(self, instance, runtime, expected_head=None, *, artifacts=None):
         """Pure candidate check, including parent event facts when supplied.
 
@@ -345,10 +346,6 @@ class ResearchRepository:
         observe assigned events. No rejected/CAS-losing proposal mutates them.
         :meth:`save_validated` publishes the result without validating it again.
         """
-        return self._validate_candidate(instance, runtime, expected_head, artifacts=artifacts)
-
-    @measured('candidate_validation')
-    def _validate_candidate(self, instance, runtime, expected_head=None, *, artifacts=None):
         if not isinstance(instance, dict) or not isinstance(runtime, dict):
             raise ValueError("instance and runtime must be objects")
         instance = deepcopy(instance)
@@ -390,8 +387,7 @@ class ResearchRepository:
         # Evidence validation and publication must see the same merged bytes.
         self._validate_artifact_evidence(runtime, expected_head, {**files, **supplied})
         self._store._validate_candidate_paths(set(files) | set(supplied))
-        return {"instance": instance, "runtime": runtime, "files": files,
-                "contract": self.contract.manifest(), "valid": True, "artifacts": supplied,
+        return {"instance": instance, "runtime": runtime, "files": files, "artifacts": supplied,
                 "basis": {"head": expected_head}}
 
     def save_with_state(self, expected_head, instance, runtime, *, artifacts=None, retain=None):
@@ -401,7 +397,7 @@ class ResearchRepository:
         publication (``retain_reads``); None leaves the retained set unchanged.
         """
         self._precheck_head(expected_head)
-        candidate = self._validate_candidate(instance, runtime, expected_head, artifacts=artifacts)
+        candidate = self.validate_candidate(instance, runtime, expected_head, artifacts=artifacts)
         published = self._publish_candidate(expected_head, candidate)
         if retain is not None:
             retain_reads(self.git_dir, retain)
@@ -415,8 +411,8 @@ class ResearchRepository:
         """
         self._precheck_head(expected_head)
         if candidate.get("basis") != {"head": expected_head}:
-            candidate = self._validate_candidate(candidate["instance"], candidate["runtime"], expected_head,
-                                                 artifacts=candidate.get("artifacts") or None)
+            candidate = self.validate_candidate(candidate["instance"], candidate["runtime"], expected_head,
+                                                artifacts=candidate.get("artifacts") or None)
         return self._publish_candidate(expected_head, candidate)
 
     def _precheck_head(self, expected_head):

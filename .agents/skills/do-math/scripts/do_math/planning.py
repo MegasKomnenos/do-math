@@ -8,6 +8,7 @@ from typing import Any
 
 from .activities import ACTIVITY_STATUSES
 from .execution_lifecycle import EXECUTION_STATUSES
+from .execution_profiles import RESEARCH_PRODUCER_ROLES
 from .external import OPERATION_STATUSES
 from .file_io import is_sha256, parse_utc
 from .git_store import ARTIFACT_ROOT, check_path_segment
@@ -65,8 +66,9 @@ def condition_refs(condition) -> set[str]:
 
 
 # Fields through which one record reads others. Task read closures
-# (action_read_ids) and knowledge impact closures (knowledge._impact_refs)
-# share this table. A list field holds IDs or {"id": ID} references and an ID
+# (action_read_ids), knowledge impact closures (knowledge._impact_refs) and
+# completion assessment bases (task_scope.assessment_basis) share this table.
+# A list field holds IDs or {"id": ID} references and an ID
 # field holds one ID. A strict list field names records only, so an impact
 # closure reports its unknown values; a lenient one may also name non-record
 # inputs or locators, so an impact closure counts only its known record IDs.
@@ -459,12 +461,12 @@ def _shared_index(instance: dict, runtime: dict):
         return None
 
 
-def _record_candidates(records: dict[str, tuple[str, dict]], identifier: str, family: str | None = None) -> list[tuple[str, dict]]:
-    """Resolve a condition target in this evaluation's validated record index."""
+def _record_target(records: dict[str, tuple[str, dict]], identifier: str, family: str) -> tuple[str, dict] | None:
+    """The condition target in this evaluation's validated record index, or None when it is absent."""
     found = records.get(identifier)
-    if found and family is not None and found[0]!=family:
+    if found and found[0] != family:
         raise ValueError('existing record belongs to another family: '+identifier)
-    return [found] if found and (family is None or found[0] == family) else []
+    return found
 
 
 def _basis(record: dict) -> dict: return {"id": record["id"], "sha256": exact_content_hash(record), "status": record.get("status", record.get("lifecycle"))}
@@ -535,19 +537,15 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
                 basis.append({"absencequery": {"op": op, "subkind": node.get("subkind"), "from_id": node.get("from_id"), "to_id": node.get("to_id")}})
                 return "not_ready"
             if op == "task_disposition_is":
-                candidates = _record_candidates(records, node.get("task_id"), "task")
-                record = candidates[0] if len(candidates) == 1 else None
+                record = _record_target(records, node.get("task_id"), "task")
                 if record is None: basis.append({"absencequery": {"op": op, "task_id": node.get("task_id")}}); return "not_ready"
-                if record[0] != "task": raise ValueError("task disposition requires a task")
                 basis.append(_basis(record[1])); return "ready" if record[1].get("status") == node.get("value") else "not_ready"
             if op == "decision_value_is":
-                candidates = _record_candidates(records, node.get("decision_id"), "decision")
-                if len(candidates) > 1:
-                    raise ValueError("decision ID is ambiguous")
-                if not candidates:
+                record = _record_target(records, node.get("decision_id"), "decision")
+                if record is None:
                     basis.append({"absencequery": {"op": op, "decision_id": node.get("decision_id")}})
                     return "not_ready"
-                decision = candidates[0][1]
+                decision = record[1]
                 basis.append(_basis(decision))
                 from .task_scope import decision_is_current
                 effective = decision_is_current(decision, instance, runtime, evaluation_context=evaluation_context)
@@ -574,13 +572,10 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
                 size = len(data) if data is not None else VERIFIED_ARTIFACTS[artifact_key(git_dir, ref["path"], ref["sha256"])]
                 basis.append({"artifact_ref": deepcopy(ref), "bytes": size})
                 return "ready"
-            candidates = _record_candidates(records, node.get("record_id"), node.get("family"))
-            if len(candidates) > 1:
-                raise ValueError("condition record ID is ambiguous without a family")
-            record = candidates[0] if candidates else None
+            record = _record_target(records, node.get("record_id"), node.get("family"))
             if op == "record_exists":
                 if record is None: basis.append({"absencequery": {"op": op, "record_id": node.get("record_id"), "family": node.get("family")}}); return "not_ready"
-                basis.append(_basis(record[1])); return "ready" if record[0] == node.get("family") else "not_ready"
+                basis.append(_basis(record[1])); return "ready"
             if record is None: basis.append({"absencequery": {"op": op, "record_id": node.get("record_id")}}); return "not_ready"
             basis.append(_basis(record[1]))
             if op == "record_lifecycle_is": return "ready" if record[1].get("lifecycle", record[1].get("status")) == node.get("value") else "not_ready"
@@ -701,7 +696,7 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
             return {"state": "not_ready", "basis": [], "errors": ["returned work requires assessment"]}
         occupied = [e for e in runtime.get("executions", {}).values() if e.get("status") != "ended"
                     and e.get("action", {}).get("target") == task["id"] and e.get("action", {}).get("id") != action.get("id")]
-        queued = [a for a in runtime.get("queue", []) if a.get("target") == task["id"] and a.get("role") in {"research_work", "supplemental_research"} and a.get("id") != action.get("id")]
+        queued = [a for a in runtime.get("queue", []) if a.get("target") == task["id"] and a.get("role") in RESEARCH_PRODUCER_ROLES and a.get("id") != action.get("id")]
         waiting = task.get("waiting")
         continuation=bool(waiting and waiting.get('kind')=='research_followup' and
                           waiting.get('basis_ref')==task.get('assessment',{}).get('execution_id') and
@@ -709,7 +704,7 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
         if occupied or queued or (waiting and not continuation):
             normal = bool(occupied or queued) and (not waiting or continuation)
             normal = normal and all(e.get('role', e.get('action', {}).get('role')) in
-                {'research_work', 'supplemental_research'} for e in occupied)
+                RESEARCH_PRODUCER_ROLES for e in occupied)
             normal = normal and not any(w.get('action', {}).get('target') == task['id']
                                         for w in runtime.get('waiting_actions', {}).values())
             if normal:

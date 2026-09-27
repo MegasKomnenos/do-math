@@ -14,7 +14,7 @@ from typing import Any
 from .file_io import distinct_texts, is_sha256, json_copy, parse_utc, require_text
 from .repository import exact_content_hash, new_id
 from .academic import requirement_record
-from .execution_profiles import WORK_ROLES as _SLOT_WORK_ROLES
+from .execution_profiles import PLANNING_ROLES, WORK_ROLES as _SLOT_WORK_ROLES
 from .external import recover_operation
 
 # Roles that carry out or judge task work: the slot-reserving work roles and
@@ -326,7 +326,7 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
     for execution in state.get("executions", {}).values():
         if (execution.get("status") != "ended" and record["kind"] in {"charter", "policy"}
                 and (not academic_only or state.get("tasks", {}).get(execution.get("action", {}).get("target"), {}).get("academic_requirement_id"))
-                and execution.get("role") in TASK_WORK_ROLES | {"research_preparation", "research_plan"}
+                and execution.get("role") in TASK_WORK_ROLES | PLANNING_ROLES
                 and not execution.get("action", {}).get("review_cycle_id")):
             execution["stop_requested"] = "governance_changed"
             event["affected"].append(execution["id"])

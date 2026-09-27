@@ -143,7 +143,8 @@ class SourceControlReceiptTests(unittest.TestCase):
             sent = control(repo, instance_id, 'source', config={'path': str(source)},
                            request_id='UC-unchanged-source')
             self.assertEqual(sent['effect'], 'pending engine processing')
-            engine._controls(pump=False)
+            engine._apply_inbox(pump=False)
+            engine._upkeep()
             receipt = engine.control_result('UC-unchanged-source')
             self.assertEqual(receipt['effect'], 'applied')
             self.assertEqual(receipt['reason'], 'source content unchanged')
@@ -156,7 +157,8 @@ class SourceControlReceiptTests(unittest.TestCase):
             source.write_text('updated source\n', encoding='utf-8')
             control(repo, instance_id, 'source', config={'path': str(source)},
                     request_id='UC-changed-source')
-            engine._controls(pump=False)
+            engine._apply_inbox(pump=False)
+            engine._upkeep()
             self.assertEqual(engine.instance['sources'][0]['revision'], 2)
             self.assertEqual(engine.store.read(engine.instance['sources'][0]['path'], engine.head),
                              source.read_bytes())

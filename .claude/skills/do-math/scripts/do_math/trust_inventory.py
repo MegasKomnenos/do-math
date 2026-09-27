@@ -10,7 +10,6 @@ explicit content check against the recorded full hashes.
 """
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -18,7 +17,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 from .repository import exact_content_hash
-from .file_io import fingerprint_json, os_lock, sha256_file, stat_fingerprint
+from .file_io import fingerprint_json, now, os_lock, sha256_file, stat_fingerprint
 from .trust_validation import RECORD_ID_PATTERN
 
 SMOKE = 'import Mathlib\nexample (n : Nat) : n + 0 = n := by rfl\nexample : (2 : ℝ) + 2 = 4 := by norm_num\n'
@@ -68,10 +67,6 @@ _VALIDATOR = Draft202012Validator(RECORD_SCHEMA)
 def validation_program(toolchain):
     return ((SMOKE, 'mathlib_import_and_representative_proofs') if toolchain.get('project') is not None
             else (CORE_SMOKE, 'lean_core_representative_proofs'))
-
-
-def now():
-    return datetime.now(timezone.utc).isoformat()
 
 
 def roots(identity):

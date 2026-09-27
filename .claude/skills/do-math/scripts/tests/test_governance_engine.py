@@ -591,7 +591,7 @@ class IntentConnections(unittest.TestCase):
         bundle, action = intent_import(engine, clarification=True,
             payload={"kind": "charter", "record": {"id": "CH-one"}})
         engine._apply(action, intent_verdict(bundle), "EX-check")
-        self.assertEqual(engine.instance["goal"], "Original approved goal")
+        self.assertNotIn("CH-one", engine.instance["governance"])
         self.assertEqual(engine.runtime["intent_imports"][bundle["id"]]["application"]["status"], "awaiting_decision")
         self.assertEqual(len(engine.runtime["question_links"]), 1)
         self.assertFalse(any(a["role"] == "research_preparation" for a in engine.runtime["queue"]))

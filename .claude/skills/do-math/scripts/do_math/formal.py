@@ -471,12 +471,14 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
         resolved=Path(shutil.which(command[0]) or command[0]).resolve()
         if expected_toolchain is not None:
             if expected_toolchain.get('configured_command') != command or expected_toolchain.get('executable') != str(resolved):
-                return {**base,'status':'rejected','reason':'approved toolchain changed before execution'}
+                return {**base,'status':'rejected','reason':'approved toolchain changed before execution',
+                        'error_kind':'trust_environment'}
             identity_errors=toolchain_identity_errors(expected_toolchain,should_stop=should_stop)
             if identity_errors:
                 reason=('approved project inputs changed before execution' if identity_errors == ['approved project inputs changed']
                         else 'approved toolchain changed before execution')
-                return {**base,'status':'rejected','reason':reason,'identity_errors':identity_errors}
+                return {**base,'status':'rejected','reason':reason,'identity_errors':identity_errors,
+                        'error_kind':'trust_environment'}
         toolchain=inspect_toolchain(command,workspace,should_stop=should_stop) if expected_toolchain is None else dict(expected_toolchain)
     except VerificationStopped as error:
         return {**base,'status':'stopped','reason':str(error),'phase':'preparation'}

@@ -72,7 +72,6 @@ CHECKPOINT_SCHEMA = {
     },
     "required": ["current_claim", "evidence_paths", "attempts", "remaining_work", "next_step", "progress_state"],
 }
-Draft202012Validator.check_schema(CHECKPOINT_SCHEMA)
 _CHECKPOINT_VALIDATOR = Draft202012Validator(CHECKPOINT_SCHEMA)
 
 def validate_rule_proposal(proposal: dict, *, current_revision: int) -> list[dict]:
@@ -378,6 +377,17 @@ def evaluate_rules(rules: list[dict], snapshot: dict, *, consumed_boundaries: di
     return due
 
 
+def checkpoint_value(raw: bytes) -> dict:
+    """The checkpoint that ``raw`` holds: strict JSON in the storage value domain that matches CHECKPOINT_SCHEMA.
+
+    The one checkpoint format rule. The tracker's live read, the receiver's capture
+    check and the artifact format check all apply it, with one prebuilt validator."""
+    value = strict_json_loads(raw.decode("utf-8-sig"))
+    validate_storage_value(value)
+    _CHECKPOINT_VALIDATOR.validate(value)
+    return value
+
+
 def read_checkpoint(workspace: Path) -> dict:
     path = workspace / "checkpoint.json"
     if not path.exists():
@@ -393,9 +403,7 @@ def read_checkpoint(workspace: Path) -> dict:
         if file_fingerprint(path) != before:
             return {"status": "being_written"}
         digest = hashlib.sha256(raw).hexdigest()
-        value = strict_json_loads(raw.decode("utf-8-sig"))
-        validate_storage_value(value)
-        _CHECKPOINT_VALIDATOR.validate(value)
+        value = checkpoint_value(raw)
         for reference in value["evidence_paths"]:
             evidence = safe_path(workspace, reference)
             relative = Path(reference)

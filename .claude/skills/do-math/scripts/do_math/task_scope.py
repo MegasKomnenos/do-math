@@ -199,7 +199,7 @@ def assessment_basis(task, assessment, instance, runtime, *, records=None):
 
     records is planning.record_index(instance, runtime) when the caller already built it.
     """
-    from .planning import record_index,task_reference_basis,condition_refs
+    from .planning import record_index,task_reference_basis,condition_refs,READ_REFERENCE_FIELDS,READ_REFERENCE_ID_FIELDS
     from .relation_refs import relation_references, relation_evidence_references
     if records is None:
         records=record_index(instance,runtime)
@@ -221,15 +221,16 @@ def assessment_basis(task, assessment, instance, runtime, *, records=None):
         if not found:
             continue
         family, record = found
-        linked = {item for key in ('inputs', 'reuse', 'dependencies', 'basis_refs', 'authority_refs')
-                  if isinstance(record.get(key), list) for item in record[key] if isinstance(item, str)}
-        fields = ('formal_result_id', 'exposition_id', 'kind_definition_id', 'source_ref', 'assessment_id')
-        if family != 'formal-result' or ref in strict:
-            fields += ('trust_environment_id',)
+        # The reference fields every read closure shares (planning.READ_REFERENCE_FIELDS).
+        linked = {item if isinstance(item, str) else item['id'] for key in READ_REFERENCE_FIELDS
+                  if isinstance(record.get(key), list) for item in record[key]
+                  if isinstance(item, str) or isinstance(item, dict) and isinstance(item.get('id'), str)}
+        fields = (*READ_REFERENCE_ID_FIELDS, 'source_ref')
+        if family == 'formal-result' and ref not in strict:
+            fields = tuple(key for key in fields if key != 'trust_environment_id')
         linked.update(record[key] for key in fields if isinstance(record.get(key), str))
         linked.update(row.get('id') or row['name'] for row in record.get('source_basis', [])
                       if isinstance(row.get('id') or row.get('name'), str))
-        linked.update(row['id'] for row in record.get('profile_refs', []) if isinstance(row.get('id'), str))
         linked.update(condition_refs(record.get('occurrence_condition')))
         linked.update(relation_references(record.get('relation_claim') or {}))
         if family == 'relation':

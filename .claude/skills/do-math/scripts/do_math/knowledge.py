@@ -463,13 +463,21 @@ def apply_assessment_reassessment(instance, runtime, assessment_id, review_cycle
         reassessment_ref=review_cycle_id)
 
 
+# The knowledge fields a revision may author. Every other field (identity,
+# lifecycle, history, reviews, formal evidence, provenance) is the engine's.
+AUTHORED_FIELDS = frozenset({"kind", "title", "statement", "explanation", "summary", "definitions", "assumptions",
+                             "lean_code", "declaration_names", "dependencies", "source_refs", "origin_refs",
+                             "confirmed_scope", "epistemic_status", "selection_relevance", "uncertainty_assessment",
+                             "relation_claim"})
+
+
 def validate_changes(changes: dict) -> None:
-    """Structural revision rules shared by author preview and application."""
+    """The one field rule of a revision; the producer check and the application both run it."""
     if not isinstance(changes, dict) or not changes:
         raise ValueError("changes must be a nonempty object")
-    forbidden = _DECISION_BOOKKEEPING
-    if forbidden & set(changes):
-        raise ValueError("changes contain engine-owned fields")
+    outside = sorted(set(changes) - AUTHORED_FIELDS)
+    if outside:
+        raise ValueError("changes name fields a revision cannot author: " + ", ".join(outside))
 
 
 def revision_roots(instance, knowledge_id):
@@ -487,14 +495,9 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
     from . import knowledge_records as kr
     require_text(reason, "reason"); require_text(actor_ref, "actor_ref")
     validate_changes(changes)
-    permitted = {"kind", "title", "statement", "explanation", "summary", "definitions", "assumptions",
-                 "lean_code", "declaration_names", "dependencies", "source_refs", "origin_refs",
-                 "confirmed_scope", "epistemic_status", "selection_relevance", "uncertainty_assessment", "relation_claim"}
-    if set(changes) - permitted:
-        raise ValueError("unsupported authored knowledge fields")
     old = instance["knowledge"][knowledge_id]
     view = kr.proposal_view(instance, knowledge_id)
-    candidate = {key: deepcopy(value) for key, value in view.items() if key in permitted}
+    candidate = {key: deepcopy(value) for key, value in view.items() if key in AUTHORED_FIELDS}
     candidate.update(deepcopy(changes))
     if replacement_id is not None:
         candidate["id"] = replacement_id

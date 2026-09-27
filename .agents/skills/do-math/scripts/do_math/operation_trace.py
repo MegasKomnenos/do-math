@@ -284,6 +284,5 @@ def phase_rows(directory):
         if event['event'] == 'started': row['created_at_utc'] = event['observed_at']
         if event['event'] in {'completed','interrupted'}:
             row.update(ended_at_utc=event['observed_at'], elapsed_ns=event['elapsed_ns'], outcome=event['event'])
-        for name in ('file_count','completed_files','read_bytes','peak_pending','trace_write_errors'):
-            if name in event: row[name] = event[name]
+        if 'trace_write_errors' in event: row['trace_write_errors'] = event['trace_write_errors']
     return list(spans.values())

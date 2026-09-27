@@ -782,8 +782,8 @@ class FamilyRecordStorageTests(unittest.TestCase):
 
     def test_current_lifecycle_empty_families_are_registered(self):
         names = ("trust_transitions", "conversations", "checkpoints", "observations", "extended_controls")
-        result = self.repository.validate_candidate(*current_state(runtime={name: {} for name in names}))
-        self.assertTrue(result["valid"])
+        checked = self.repository.validate_candidate(*current_state(runtime={name: {} for name in names}))
+        self.assertEqual({name: checked["runtime"][name] for name in names}, {name: {} for name in names})
 
     def test_academic_resolution_accepts_only_resolved_sealed_artifact_evidence(self):
         from do_math import academic

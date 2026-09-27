@@ -9,7 +9,7 @@ from copy import deepcopy
 from pathlib import Path
 import time
 
-from .execution_profiles import LEAN_ROLES, MACHINE_ROLES
+from .execution_profiles import LEAN_ROLES, MACHINE_ROLES, PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
 from .model_policy import selection
 from .parallel import ModelCalls, failed_result
 from .payloads import json_safe
@@ -241,7 +241,7 @@ class SchedulerMixin:
         if any(e.get("action", {}).get("id") == action.get("id") for e in live if action.get("id")):
             return False
         role, target = action["role"], action.get("target")
-        if role in {"research_work", "supplemental_research"} and not action.get("review_cycle_id"):
+        if role in RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id"):
             from .planning import task_ready
             task = self.runtime["tasks"].get(target)
             evaluation = task_ready(task, self.instance, self.runtime, action=action,
@@ -262,10 +262,10 @@ class SchedulerMixin:
         identity_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "review_basis_key", "live")
         if any(all(e.get("action", {}).get(key) == action.get(key) for key in identity_keys) for e in live):
             return False
-        if role in {"research_preparation", "research_plan"} and any(e["role"] == role for e in live):
+        if role in PLANNING_ROLES and any(e["role"] == role for e in live):
             return False
-        if role in {"research_work", "supplemental_research"} and not action.get("review_cycle_id") and any(
-                e["role"] in {"research_work", "supplemental_research"} and e.get("action", {}).get("target") == target
+        if role in RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id") and any(
+                e["role"] in RESEARCH_PRODUCER_ROLES and e.get("action", {}).get("target") == target
                 and not e.get("action", {}).get("review_cycle_id") for e in live):
             return False
         if role in MACHINE_ROLES:
@@ -301,7 +301,7 @@ class SchedulerMixin:
                 # transport requests every pass. Controls enter a published state, and a
                 # request received in this pass precedes the clock's stop reasons.
                 self._settle_stops(clock=False)
-                self._controls(pump=True)
+                self._controls()
                 self._settle_stops()
                 collected = self._calls.collect()
                 self._check_installation()

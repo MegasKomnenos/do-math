@@ -72,9 +72,6 @@ class MachineSchedulingTests(unittest.TestCase):
         self.assertEqual(runtime,released)
 
 
-if __name__=='__main__': unittest.main()
-
-
 class ModelCallTests(unittest.TestCase):
     def test_parallel_call_carries_a_distinct_execution_id(self):
         events = []
@@ -97,3 +94,6 @@ class ModelCallTests(unittest.TestCase):
         finally:
             calls.close()
         self.assertEqual(events, [{"pid": 7}, {"status": "completed"}])
+
+
+if __name__=='__main__': unittest.main()

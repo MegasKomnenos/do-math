@@ -187,15 +187,11 @@ def validate_host_resources(host) -> None:
         raise ValueError('host demands must name capped roles only')
 
 
-def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
-    """Freeze selected roles, or every role when omitted, from adopted values.
+def build_profiles(config: dict) -> dict:
+    """Freeze the profile editions of every role from adopted values.
 
-    Shared capacity and host-demand validation still cover the whole config.
     No new capacity, permission or measured limit is invented.
     """
-    selected_roles = PROFILE_ROLES if roles is None else set(roles)
-    if not selected_roles <= PROFILE_ROLES:
-        raise ValueError("profile authoring requires supported roles")
     limits = config["session_limits"]
     constraints = {}
     adopted_host = config.get("host_resources")
@@ -207,9 +203,8 @@ def build_profiles(config: dict, *, roles: set[str] | None = None) -> dict:
         constraints[identifier] = {"id": identifier, "kind": "concurrency", "model": model,
             "accounting_unit": "execution", "work_slots": work, "scope": "local_execution_not_provider_operations"}
     profiles, refs = {}, {}
-    lean = (_lean_contract(config)
-            if selected_roles & LEAN_ROLES else None)
-    for role in sorted(selected_roles):
+    lean = _lean_contract(config)
+    for role in sorted(PROFILE_ROLES):
         machine = role in MACHINE_ROLES
         mode = (config["observation_mode"] if role == "research_work" else
                 "periodic" if role in WORK_ROLES else "deadline_only")

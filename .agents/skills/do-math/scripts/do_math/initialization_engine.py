@@ -8,7 +8,7 @@ from .repository import exact_content_hash, new_id
 class InitializationEngineMixin:
     def _initialization_control(self, change, source_ref):
         """Existing decision control adopts settings or refreshes observed CLI evidence."""
-        from .initialization import governance_basis, grant_current, INITIAL_ROLES, adapter_for
+        from .initialization import governance_basis, grant_current, adapter_for
         from .execution_profiles import match_profile_ref, capability_evidence
         from .review_policy import build_review_policy
         lifecycle = self.instance['lifecycle']
@@ -132,14 +132,11 @@ class InitializationEngineMixin:
                    and 'intent_interpretation' in self.instance['grants'][gid]['roles']
                    for gid in adoption.get('initial_grant_ids', [])):
             return
-        input_id = lifecycle.setdefault('input_id', new_id('UI'))
+        input_id = lifecycle['input_id']
         if any(row.get('input_ref') == input_id and not row.get('superseded_by')
                and row.get('application', {}).get('status') == 'awaiting_decision'
                for row in self.runtime.get('intent_imports', {}).values()):
             return
-        if not any(row['id'] == input_id for row in self.runtime.setdefault('inputs', [])):
-            self.runtime['inputs'].append({'id': input_id, 'text': lifecycle['immutable_input']['text'],
-                'sha256': lifecycle['immutable_input']['sha256'], 'config': {}})
         pending = [*self.runtime['queue'],
                    *(row.get('action', {}) for row in self.runtime.get('waiting_actions', {}).values())]
         if not any(a.get('role') == 'intent_interpretation' and a.get('target') == input_id for a in pending):

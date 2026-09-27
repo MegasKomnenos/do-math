@@ -12,12 +12,10 @@ import sys
 from typing import Any, Mapping
 
 try:  # This module is also the direct ``python codex_worker.py`` Job root.
-    from do_math.scholarly import validate_scholarly_server
     from do_math.control_transport import CONTROL_SERVER, ControlTransport
     from do_math.file_io import strict_json_loads
     from do_math.cli_worker import allowed_environment, check_common_request, run_cli
 except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regression.
-    from scholarly import validate_scholarly_server
     from control_transport import CONTROL_SERVER, ControlTransport
     from file_io import strict_json_loads
     from cli_worker import allowed_environment, check_common_request, run_cli
@@ -62,9 +60,8 @@ def build_argv(request: Mapping[str, Any]) -> list[str]:
         control = ControlTransport.mcp_server_config(request["control_binding"])
         argv.extend(["--config", f"mcp_servers.{CONTROL_SERVER}.command=" + json.dumps(control["command"], ensure_ascii=False),
                      "--config", f"mcp_servers.{CONTROL_SERVER}.args=" + json.dumps(control["args"], ensure_ascii=False)])
-    scholarly = request.get("scholarly_server")
-    if scholarly is not None:
-        server = validate_scholarly_server(scholarly)
+    server = request.get("scholarly_server")
+    if server is not None:
         data_dir = str((Path(request["cwd"]).resolve() / "scholarly-data"))
         args = [*server["args"], "--data-dir", data_dir]
         argv.extend(["--config", "mcp_servers.scholarly.command=" + json.dumps(server["command"], ensure_ascii=False),

@@ -11,7 +11,6 @@ import platform
 import jsonschema
 
 from . import execution_profiles, model_policy
-from .control_contracts import validate_config_shape
 from .record_schemas import config_schema
 from .scholarly import validate_scholarly_server
 from .trust_validation import AXIOMS
@@ -45,7 +44,6 @@ def validate_config(config: dict) -> None:
     if unknown:
         raise ValueError("configuration has fields outside the stored configuration section: "
                          + ", ".join(sorted(unknown)))
-    validate_config_shape(config)
     config = {**DEFAULT_CONFIG, **config}
     # A requested host constraint may still carry its request authority alias,
     # which the stored schema refuses; the host section is checked below instead.

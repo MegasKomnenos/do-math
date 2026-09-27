@@ -90,7 +90,7 @@ class OperationTraceTests(unittest.TestCase):
             child=next(r for r in rows if r['phase']=='child')
             parent=next(r for r in rows if r['phase']=='parent')
             self.assertEqual(child['parent_span_id'],parent['span_id'])
-            self.assertEqual(child['read_bytes'],20)
+            self.assertEqual(child['trace_write_errors'],0)
             self.assertGreaterEqual(parent['elapsed_ns'],child['elapsed_ns'])
             self.assertEqual(progress(directory)['rows'],[])
             (Path(directory)/'interrupted.jsonl').write_bytes(b'{"event": "started"}\n\xff')

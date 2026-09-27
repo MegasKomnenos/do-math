@@ -99,7 +99,7 @@ class AcademicConsumerTests(unittest.TestCase):
                   'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}
         # Adopt every research_work tier edition, as initialization does: an
         # unassessed work task requires the high tier (model_policy.selection).
-        built = build_profiles(config, roles={'research_work'})
+        built = build_profiles(config)
         h.instance.update(goal_status='mathematically_solved', knowledge={}, sources=[], config=config,
             execution_profiles=built['execution_profiles'],
             role_profile_refs={'research_work': built['role_profile_refs']['research_work']},

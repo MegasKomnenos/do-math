@@ -39,6 +39,12 @@ def quiescence(runtime: dict) -> dict:
             'held_reservations': [row['id'] for row in held_reservations(runtime)]}
 
 
+def live_action_ids(runtime: dict) -> set:
+    """IDs of the actions whose executions have not ended."""
+    return {e.get('action', {}).get('id') for e in runtime.get('executions', {}).values()
+            if e.get('status') != 'ended'}
+
+
 class SessionSlots:
     """A working view of the Git execution/reservation families.
 

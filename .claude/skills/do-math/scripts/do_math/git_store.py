@@ -506,7 +506,7 @@ class GitStateStore:
                 folded_prefixes[key] = original
                 if position < len(parts):
                     directories.add(original)
-        # Git's index would silently drop the file side of such a pair.
+        # The tree writer would let the subtree replace the file entry of the same name, silently dropping the file.
         conflicts = directories.intersection(paths)
         if conflicts:
             raise ValueError("state path is both a file and a directory: " + min(conflicts))

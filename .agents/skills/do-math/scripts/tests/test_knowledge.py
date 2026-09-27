@@ -408,6 +408,16 @@ class KnowledgeRecordTests(unittest.TestCase):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 knowledge.revise_knowledge(state, runtime, kid, changes, reason="revision", actor_ref="author", declared_impact=declared)
 
+    def test_revision_changes_name_only_authored_fields(self):
+        # The producer check and the application share this one rule.
+        for field in sorted(knowledge.AUTHORED_FIELDS):
+            with self.subTest(field=field):
+                knowledge.validate_changes({field: "value"})
+        for field in ("id", "status", "formal", "verified_at", "identity_assessment", "producer_execution_ids",
+                      "unknown_field"):
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                knowledge.validate_changes({field: "value"})
+
     def test_import_captures_required_source_and_rejects_unknown_source(self):
         state = {"sources": [{"name": "paper", "path": "research/sources/paper.txt", "sha256": "original"}]}
         with self.assertRaises(ValueError):

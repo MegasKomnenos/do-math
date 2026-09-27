@@ -53,8 +53,8 @@ deep copy of what the build returned. Every build puts the repository at
 are shared (keywords in parentheses):
 
 - ``state_fixtures.active_instance`` (``config``, ``external_policy``,
-  ``review_policy``): the validated synthetic state of
-  ``state_fixtures.active_engine``, without interpretation executions;
+  ``review_policy``): the validated synthetic active state assembled with
+  ``engine_fixtures.FakeEngine``, without interpretation executions;
   returns the instance ID.
 - ``activated_instance`` (``goal``, ``config``, ``external_policy``,
   ``review_policy``): public ``initialize`` plus ``activate``, the published

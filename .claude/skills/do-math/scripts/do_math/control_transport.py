@@ -551,7 +551,7 @@ def _mcp_server(binding: dict) -> int:
     tools = [
         {"name": "submit_draft", "description": "Validate and submit one workspace-relative draft; internal checks and hashes are derived automatically.",
          "inputSchema": {"type": "object", "properties": {"draft_path": {"type": "string"}, "preview": {"type": "boolean"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["draft_path"]}},
-        {"name": SUBMIT_TOOL, "description": "Submit a boundary, manifest or self-check answer to the central execution pump.",
+        {"name": SUBMIT_TOOL, "description": "Submit a safety boundary, a workspace-relative draft (payload draft_path) for submission or preview, or a self-check answer to the central execution pump.",
          "inputSchema": {"type": "object", "properties": {"request_id": {"type": "string"}, "kind": {"enum": sorted(REQUEST_KINDS)}, "payload": {"type": "object"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["request_id", "kind", "payload"]}},
         {"name": RECEIPT_TOOL, "description": "Read or wait for the central receipt using a caller-provided duration.",
          "inputSchema": {"type": "object", "properties": {"request_id": {"type": "string"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["request_id"]}},

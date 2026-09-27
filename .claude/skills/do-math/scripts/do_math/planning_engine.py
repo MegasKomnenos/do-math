@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from .execution_profiles import WORK_ROLES
+from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, WORK_ROLES
 from .model_policy import assessment_basis, validate_assessments, preparation_only
+from .session_slots import live_action_ids
 
 class PlanningEngineMixin:
     def _apply_model_metadata(self, action, output, execution_id):
         extensions = self.runtime["executions"][execution_id].get("extensions", {})
-        if action["role"] not in {"research_preparation", "research_plan"}:
+        if action["role"] not in PLANNING_ROLES:
             if extensions.get("model_assessments"):
                 raise ValueError("only preparation and planning author model assessments")
             return
@@ -24,8 +25,6 @@ class PlanningEngineMixin:
                         raise ValueError('preparation target has a live execution: ' + tid)
             from .observations import validate_rule_preparation
             validate_rule_preparation(action, extensions, self.runtime['tasks'])
-            self.runtime['executions'][execution_id]['model_decisions'] = identified
-            return
         # Keep the authored wire candidate unchanged. The task constructor's
         # caller installs these assessed values in the resulting task record.
         self.runtime["executions"][execution_id]["model_decisions"] = identified
@@ -44,7 +43,7 @@ class PlanningEngineMixin:
                 continue
             action = entry['action']
             task = self.runtime['tasks'].get(action.get('target'))
-            if task and action['role'] in {'research_work', 'supplemental_research'}:
+            if task and action['role'] in RESEARCH_PRODUCER_ROLES:
                 from .execution_profiles import match_profile_ref
                 current = [match_profile_ref(self.instance['execution_profiles'], ref)
                            for ref in self.instance['role_profile_refs'].get(action['role'], [])]
@@ -70,7 +69,7 @@ class PlanningEngineMixin:
         for aid, entry in list(self.runtime.get('waiting_actions', {}).items()):
             if (entry.get('kind') in {'observation_rules', 'observation_configuration'}
                     and entry.get('action', {}).get('target') == task_id
-                    and entry['action']['role'] in {'research_work', 'supplemental_research'}):
+                    and entry['action']['role'] in RESEARCH_PRODUCER_ROLES):
                 self.runtime['history'].append({'kind': entry['kind'] + '_resolved', 'action_id': aid,
                     'failed_execution_id': entry.get('execution_id'), 'resolved_by': execution_id,
                     'previous': deepcopy(entry)})
@@ -104,7 +103,7 @@ class PlanningEngineMixin:
     def _ensure_model_assessments(self):
         """Prepare ratings and academic observation rules before contract review."""
         from .observations import validate_task_rules
-        live = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
+        live = live_action_ids(self.runtime)
         for tid, task in self.runtime["tasks"].items():
             if (not task.get('academic_requirement_id') or not task.get('revision_requested')
                     or task.get('status') in {'completed', 'closed'}):
@@ -226,9 +225,9 @@ class PlanningEngineMixin:
         if action["role"] != "research_plan":
             raise ValueError("only research planning reorders queued work")
         _, _, original = self.store.view(self.runtime["executions"][execution_id]["input_snapshot"])
-        original_live = {e.get("action", {}).get("id") for e in original["executions"].values() if e["status"] != "ended"}
+        original_live = live_action_ids(original)
         allowed = {a["id"] for a in original["queue"] if a.get("id") and a["role"] in WORK_ROLES and a["id"] not in original_live}
-        live = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
+        live = live_action_ids(self.runtime)
         current = {a.get("id"): a for a in self.runtime["queue"]}
         ordered, seen = [], set()
         for row in dispositions:
@@ -245,7 +244,7 @@ class PlanningEngineMixin:
             if row["decision"] == "cancel":
                 self._remove_action(request)
                 task = self.runtime["tasks"].get(request.get("target"))
-                if task and request["role"] in {"research_work", "supplemental_research"} and not request.get("review_cycle_id") and task["status"] == "active":
+                if task and request["role"] in RESEARCH_PRODUCER_ROLES and not request.get("review_cycle_id") and task["status"] == "active":
                     task.update(status="planned", deferred_reason=row["reason"])
             else:
                 ordered.append(request)

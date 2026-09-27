@@ -20,12 +20,12 @@ import jsonschema
 from .file_io import atomic_replace, json_copy
 
 from . import knowledge_io, planning, review_cycle
-from .context_store import collect_outputs, materialize_inputs, read_source, safe_path, is_excluded, read_stable, is_reparse, relative_path
+from .context_store import collect_outputs, materialize_inputs, read_source, safe_path, is_excluded, read_stable, relative_path
 from .git_store import ULID_PATTERN
 from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
 from .external import prepare_operation, validate_operation
 from .model_policy import ASSESSMENT_SCHEMA, assessment_key, validate_assessments, preparation_only
-from .observations import read_checkpoint, validate_rule_proposal, CHECKPOINT_SCHEMA, CHECKPOINT_MAX_BYTES, RULES_MAX_BYTES
+from .observations import read_checkpoint, checkpoint_value, validate_rule_proposal, CHECKPOINT_MAX_BYTES, RULES_MAX_BYTES
 from .file_io import reject_constant, unique_pairs
 from .repository import canonical_json, exact_content_hash
 from .contracts import REFS, TEXT, closed_object
@@ -876,11 +876,10 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         if "kind" in entry["changes"]:
             check(f"activity-extensions.json/knowledge_changes/{index}/changes/kind", lambda entry=entry: require(
                 entry["changes"]["kind"] in {d["token"] for d in context["kind_definitions"]["knowledge"]}, "revision kind must be registered"))
-    for name in ("observation_rules",):
-        if name in extensions:
-            from .observations import task_rules_from_execution
-            check("activity-extensions.json/" + name, lambda: task_rules_from_execution(extensions[name], context.get('execution_id')))
-            check("activity-extensions.json/" + name, lambda: require(action.get("target") in tasks, "persisted rules require the assigned task"))
+    if "observation_rules" in extensions:
+        from .observations import task_rules_from_execution
+        check("activity-extensions.json/observation_rules", lambda: task_rules_from_execution(extensions["observation_rules"], context.get('execution_id')))
+        check("activity-extensions.json/observation_rules", lambda: require(action.get("target") in tasks, "persisted rules require the assigned task"))
     conditions = extensions.get("task_conditions", [])
     targeted = []
     for index, entry in enumerate(conditions):
@@ -1092,8 +1091,7 @@ def _captured_checkpoint(files: dict[str, bytes]) -> dict:
     try:
         if len(raw) > CHECKPOINT_MAX_BYTES:
             raise ValueError("checkpoint exceeds the 4 MiB record limit")
-        value = load_json(raw)
-        jsonschema.validate(value, CHECKPOINT_SCHEMA)
+        value = checkpoint_value(raw)
         return {"status": "valid", "value": value, "sha256": hashlib.sha256(raw).hexdigest(), "raw": raw}
     except Exception as error:
         return {"status": "invalid", "error": f"{type(error).__name__}: {error}"}

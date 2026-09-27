@@ -158,9 +158,7 @@ class GitStateStoreTests(unittest.TestCase):
         with self.store.writer_lock():
             with patch.object(self.store, '_git', wraps=self.store._git) as calls:
                 later = self.store.publish(first.head, {'runtime/state.json': b'{"state": "running"}\n'})
-            ref_reads = [c for c in calls.call_args_list if c.args[0] in {'rev-parse', 'update-ref'}
-                         or c.args[:2] == ('cat-file', '-t')]
-            self.assertEqual([c.args[0] for c in ref_reads], ['update-ref'])
+            self.assertEqual([c.args[0] for c in calls.call_args_list], ['update-ref'])
             # Under the lock no do-math writer moves the ref, so the head this
             # store just published is not read back.
             with patch.object(self.store, '_git', wraps=self.store._git) as calls:
@@ -270,7 +268,6 @@ class GitStateStoreTests(unittest.TestCase):
 
         self.assertEqual(user_file.read_bytes(), b"staged user change\n")
         self.assertEqual(index.read_bytes(), before_index)
-        self.assertEqual(list(self.store._git_dir.glob("do-math-index-*")), [])
 
     def test_publish_does_not_execute_repository_hook(self) -> None:
         hook_directory = self.repository / "hostile-hooks"

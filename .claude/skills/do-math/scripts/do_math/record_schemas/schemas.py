@@ -330,10 +330,11 @@ RECORDS["executions"] = record({"owner_activity_id": ID, "actor_kind": enum("ai"
     "observation_rules": array(_RULE)},
     ("owner_activity_id", "actor_kind", "input_manifest", "execution_profile_ref", "created_at", "status", "context_origin"))
 # The stored task contract states its whole shape here: nonempty text and
-# lists, a positive revision, distinct evidence and judged completion
-# obligations. task_contracts.validate_contract_rules keeps what this schema
-# does not express (sealed profile editions; distinct criterion, obligation
-# and profile IDs), and validate_task_contract applies both to tasks in memory.
+# lists, a positive revision, exact profile references (PROFILE_REF, revision
+# at least 1), distinct evidence and judged completion obligations.
+# task_contracts.validate_contract_meaning keeps what this schema does not
+# express (distinct criterion, obligation and profile IDs), and
+# validate_task_contract applies both to tasks in memory.
 _CRITERION_FIELDS = {"id": {"type": "string", "minLength": 1}, "claim": _NONEMPTY_TEXT,
     "evidence_required": array({"type": "string", "minLength": 1}, True),
     "evidence_requirements": array(_NONEMPTY_TEXT, True)}

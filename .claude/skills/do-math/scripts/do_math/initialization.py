@@ -25,12 +25,12 @@ def adapter_for(profile):
     return provider_adapter(profile["ai"]["provider"])
 
 
-def capability_requirements(instance, reference, required=(), *, current_identity=None, at=None):
+def capability_requirements(instance, reference, *, current_identity=None, at=None):
     """Use exact profile/host/implementation evidence, never profile booleans."""
-    missing = sorted(set(required))
+    missing = []
     try:
         profile = match_profile_ref(instance.get("execution_profiles", {}), reference)
-        missing = sorted(set(required) | set(profile.get("required_capabilities", [])))
+        missing = sorted(set(profile.get("required_capabilities", [])))
         if profile["actor_kind"] == "machine":
             return {"satisfied": not missing, "missing": missing, "profile_ref": reference, "evidence_refs": []}
         identity = current_identity if current_identity is not None else adapter_for(profile).capability_identity()

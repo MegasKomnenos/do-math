@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .provider_wait import epoch_seconds
 from .repository import ResearchRepository
-from .session_slots import ADMISSION_WAITS
+from .session_slots import ADMISSION_WAITS, live_action_ids
 from .state_checks import inspect_state
 
 # One implementation-level scope for live and historical status. Runtime state
@@ -41,14 +41,14 @@ def display_time(value, timezone_name='Asia/Seoul'):
 
 def dispatch_waits(runtime):
     """Project preserved queue reasons without performing a new admission check."""
-    live = {e.get('action', {}).get('id') for e in runtime.get('executions', {}).values()
-            if e.get('status') != 'ended'}
+    live = live_action_ids(runtime)
     return [deepcopy({'action_id': a.get('id'), 'role': a['role'], 'target': a.get('target'),
                       'model_selection': a.get('model_selection'), 'wait': a['dispatch_wait']})
             for a in runtime.get('queue', []) if a.get('dispatch_wait') and a.get('id') not in live]
 
 
-def task_status(instance, runtime):
+def task_status(instance, runtime, *, evaluation_context=None):
+    """Per-task rows; readiness uses ``evaluation_context`` so a current view judges as dispatch does."""
     from . import planning, questions, task_contracts
     rows = []
     pending_assessments = set(task_contracts.returned_task_ids(runtime.get('tasks', {})))
@@ -70,7 +70,8 @@ def task_status(instance, runtime):
                 waiting.append(action['dispatch_wait'])
         readiness = None
         if not executions and task.get('status') not in planning.TERMINAL_TASK_STATUSES:
-            readiness = planning.task_ready(task, instance, runtime, include_scheduling_waits=False)
+            readiness = planning.task_ready(task, instance, runtime, include_scheduling_waits=False,
+                                            evaluation_context=evaluation_context)
             if readiness['state'] != 'ready':
                 waiting.append({'kind': 'contract_review' if 'current revision lacks approved contract review' in readiness['errors'] else 'required_input',
                                 'errors': readiness['errors']})
@@ -148,13 +149,17 @@ OBSERVED_FIELDS = ("research_observed_at", "research_wake_reasons", "operation_p
                    "pending_controls", "budget", "provider_waits")
 
 
-def status_report(store, head, instance, runtime, *, observation=None, requested_areas=None) -> dict:
+def status_report(store, head, instance, runtime, *, observation=None, requested_areas=None,
+                  evaluation_context=None) -> dict:
     """The one status projection: every field of the persisted snapshot at ``head``.
 
     ``observation`` holds the OBSERVED_FIELDS the caller observed now; each
     field it omits is None. ``store`` reads the snapshot's artifacts.
+    ``evaluation_context`` is the engine's current evaluation context, so task
+    readiness sees this host's facts (a discovered Lean, the clock) exactly as
+    dispatch does. A snapshot projection omits it.
     """
-    from .academic import academic_status
+    from .academic import academic_status, stored_evidence
     from .academic import current_solution_basis
     from .execution_profiles import WORK_ROLES
     from .initialization import governance_or_initial_view
@@ -181,7 +186,7 @@ def status_report(store, head, instance, runtime, *, observation=None, requested
             "goal": governance_view["goal"], "goal_status": instance.get("goal_status"),
             "status": runtime.get("status"), "active_execution": live[0] if live else None,
             "pending_actions": len(runtime.get("queue", [])), "cycles": runtime.get("cycles"),
-            "tasks": task_status(instance, runtime), "dispatch_waits": waits,
+            "tasks": task_status(instance, runtime, evaluation_context=evaluation_context), "dispatch_waits": waits,
             "knowledge": {"K": sum(row["usable"] for row in knowledge_view(instance)),
                           "formal_results": len(instance.get("formal_results", {})),
                           "expositions": len(instance.get("expositions", {})),
@@ -219,7 +224,7 @@ def status_report(store, head, instance, runtime, *, observation=None, requested
             "academic_validation": ({"status": "initialization_incomplete"}
                 if governance_view.get("status") == "unadopted_input" else
                 academic_status(instance, runtime, current_solution_basis(instance, runtime),
-                                resolve_evidence=lambda ref: store.read_many([ref], head).get(ref))),
+                                resolve_evidence=lambda ref: stored_evidence(store, head, ref))),
             "cleanup_failures": pending_cleanup_failures(runtime),
             "assurance": deepcopy(ASSURANCE),
             **observed}

@@ -537,12 +537,8 @@ class HostConfigurationTests(unittest.TestCase):
                     if profile['role'] in {'formal_check', 'trust_check', 'trust_activate'}:
                         self.assertNotIn('host_resources', profile)
 
-
-if __name__ == "__main__":
-    unittest.main()
-
     def test_host_configuration_builds_profiles_once_per_step(self):
-        # Checking the host section must not author the editions its caller builds.
+        # Admission only checks the host section; initialization and application each author the editions once.
         from do_math.engine import control
         from do_math.repository import ResearchRepository
         from research_fixtures import bare_engine, new_instance
@@ -557,7 +553,11 @@ if __name__ == "__main__":
             head, instance, runtime = ResearchRepository(root, instance_id).load()
             with patch.object(execution_profiles, 'build_profiles', wraps=build) as built:
                 control(root, instance_id, 'configure', config=request)
-            self.assertEqual(built.call_count, 1)
+            self.assertEqual(built.call_count, 0)
             with patch.object(execution_profiles, 'build_profiles', wraps=build) as built:
                 bare_engine()._configure_candidate(instance, runtime, {'config': request})
             self.assertEqual(built.call_count, 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

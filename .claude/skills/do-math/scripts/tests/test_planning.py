@@ -201,7 +201,6 @@ class ConditionIndexTests(unittest.TestCase):
         result = planning.evaluate_condition(wrong_family, instance, {})
         self.assertEqual(result['state'], 'evaluation_error')
         self.assertIn('another family', result['errors'][0])
-if __name__=='__main__':unittest.main(verbosity=2)
 
 
 class ArtifactConditionTests(unittest.TestCase):
@@ -357,3 +356,6 @@ class ReadinessConditionTests(unittest.TestCase):
             changed['knowledge'][kid][field] = value
             approve_task(task, changed, runtime)
             self.assertEqual(planning.task_ready(task, changed, runtime)['state'], 'not_ready', field)
+
+
+if __name__=='__main__':unittest.main(verbosity=2)

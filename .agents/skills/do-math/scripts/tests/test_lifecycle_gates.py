@@ -62,11 +62,14 @@ class ActivationGateTests(unittest.TestCase):
         self.assertEqual(engine.runtime["last_observed_utc"], "2026-09-20T00:01:00+00:00")
 
     def test_capability_gate_reports_missing_evidence_instead_of_assuming_support(self):
-        instance = {"execution_profiles": {"P1": {"id": "P1", "status": "active", "capabilities": {"tool_results": True}}}}
+        from do_math.configuration import DEFAULT_CONFIG
+        from do_math.execution_profiles import build_profiles, profile_ref
+        instance = build_profiles(DEFAULT_CONFIG)
+        profile = next(p for p in instance["execution_profiles"].values() if p["actor_kind"] == "ai")
 
-        result = capability_requirements(instance, "P1", {"tool_results", "remote_cancel"})
+        result = capability_requirements(instance, profile_ref(profile), current_identity={"host": "fixture"})
 
-        self.assertEqual(result["missing"], ["remote_cancel", "tool_results"])
+        self.assertEqual(result["missing"], sorted(profile["required_capabilities"]))
         self.assertFalse(result["satisfied"])
 
     def test_activation_requires_recorded_evidence_then_opens_the_correct_first_action(self):
@@ -130,7 +133,7 @@ class LifecycleTransitionTests(unittest.TestCase):
 
     def test_profile_boolean_claim_is_not_capability_evidence(self):
         instance = {'execution_profiles': {'P': {'id': 'P', 'status': 'active', 'capabilities': {'model': True}}}}
-        self.assertFalse(capability_requirements(instance, 'P', ['model'])['satisfied'])
+        self.assertFalse(capability_requirements(instance, 'P')['satisfied'])
 
     def test_derived_readiness_not_written_to_runtime(self):
         engine = self.engine()

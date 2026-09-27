@@ -103,6 +103,7 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, insta
     assignments use its adopted ``role_profile_refs``, the same editions the
     engine publishes, never a profile rebuilt from the configuration.
     """
+    from .execution_profiles import RESEARCH_PRODUCER_ROLES
     role, target = action["role"], action.get("target")
     requirement = action.get("model_assessment")
     task = tasks.get(target, {})
@@ -113,7 +114,7 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, insta
     if requirement:
         tier = max((assessment_tier(requirement), floor), key=TIERS.index)
         reason = requirement["reason"]
-    elif role in {"research_work", "supplemental_research"}:
+    elif role in RESEARCH_PRODUCER_ROLES:
         tier, reason = "high", "No preserved difficulty/importance assessment; use high until explicitly assessed."
     else:
         tier, reason = floor, "Configured role requirement; raise when task difficulty or importance requires it."
@@ -126,7 +127,7 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, insta
         # decision roles use their own adopted role profiles, while still
         # inheriting the task's difficulty/importance requirement above.
         allowed = (task.get("profile_refs")
-                   if role in {"research_work", "supplemental_research"}
+                   if role in RESEARCH_PRODUCER_ROLES
                    and not action.get("review_cycle_id") else None)
         if action.get("profile_ref"):
             explicit = match_profile_ref(profiles, action["profile_ref"])
@@ -149,6 +150,7 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, insta
 def work_profile_selection(config: dict, task: dict, instance: dict, *, action=None) -> dict:
     """One admission rule for authored contracts, readiness and work dispatch."""
     action = action or {'role': 'research_work', 'target': task['id']}
-    if action['role'] not in {'research_work', 'supplemental_research'}:
+    from .execution_profiles import RESEARCH_PRODUCER_ROLES
+    if action['role'] not in RESEARCH_PRODUCER_ROLES:
         raise ValueError('work profile admission requires a work role')
     return selection(config, action, {task['id']: task}, {}, instance=instance)

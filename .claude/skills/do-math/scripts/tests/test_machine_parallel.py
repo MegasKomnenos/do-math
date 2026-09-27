@@ -52,8 +52,8 @@ class Host(FakeEngine):
         self.head = 'fixture-head-' + str(len(self.saves))  # A publication moves the head.
         self._evaluate_stops()  # The real publication point judges stops after every save.
 
-    def _controls(self, *, pump=True):
-        if pump and self._calls is not None:
+    def _controls(self):
+        if self._calls is not None:
             self._calls.pump()
         self.control_action()
 

@@ -9,7 +9,7 @@ from copy import deepcopy
 from pathlib import Path
 import re
 
-from .file_io import file_fingerprint, fingerprint_json, is_sha256
+from .file_io import file_fingerprint, fingerprint_json, is_sha256, now
 
 AXIOMS = ('propext', 'Classical.choice', 'Quot.sound')
 _AXIOM_SET = frozenset(AXIOMS)
@@ -121,7 +121,7 @@ def check_environment(environment, binding, *, identity=True):
     baseline, the bound baseline is older and the identity still matches. The
     caller then rebinds; this function never writes a baseline.
     """
-    from .trust_inventory import read_record, usable_errors, observe_fingerprint, binding as baseline_binding, changed_files, now
+    from .trust_inventory import read_record, usable_errors, observe_fingerprint, binding as baseline_binding, changed_files
     from .formal import toolchain_identity_errors
     from .repository import exact_content_hash
     reference = environment['toolchain_record']

@@ -962,8 +962,7 @@ class ReviewEngineMixin:
             from .trust_validation import require_active_environment
             require_active_environment(self.instance, self.runtime, current_identity=True)
         assessment = self._identity_assessment(updated, reason='Complete independent review')
-        assessment.pop('cycle_id', None)
-        assessment.update(review_cycle_id=updated['id'], basis=deepcopy(updated['identity_basis']))
+        assessment['basis'] = deepcopy(updated['identity_basis'])
         published, assessment_id = kr.record_identity_assessment(
             self.instance, knowledge_id, assessment, updated['policy_ref'], runtime=self.runtime)
         self.instance = published

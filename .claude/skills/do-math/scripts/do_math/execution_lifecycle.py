@@ -16,7 +16,7 @@ RECOVERY_REPORT_RECEIPT = "recovery_report"
 # Receipts that accept an AI role's sealed submission.
 SUBMISSION_RECEIPT_KINDS = frozenset({SUBMIT_INTENT, NATIVE_FINAL_RECEIPT})
 EXECUTION_STATUSES = frozenset({"queued", "starting", "running", "stopping", "ended"})
-STOP_PHASES = frozenset({"checkpointing", "terminating"})
+STOP_PHASES = frozenset({"terminating"})
 OUTCOMES = frozenset({"output_accepted", "execution_incomplete", "cancelled", "start_failed"})
 _EDGES = {"queued": {"starting", "ended"}, "starting": {"running", "stopping"},
           "running": {"stopping"}, "stopping": {"ended"}, "ended": set()}
@@ -59,10 +59,7 @@ def transition_execution(execution: dict, target: str, *, at: str, reason: str |
         raise ValueError(f"illegal execution transition {current} -> {target}")
     if target == "stopping":
         if stop_phase not in STOP_PHASES:
-            raise ValueError("stopping requires checkpointing or terminating")
-        previous = execution.get("stop_phase")
-        if previous == "terminating" and stop_phase != "terminating":
-            raise ValueError("terminating cannot return to checkpointing")
+            raise ValueError("stopping requires the terminating stop phase")
     elif stop_phase is not None:
         raise ValueError("stop_phase exists only while stopping")
     if target == "ended":
@@ -74,11 +71,6 @@ def transition_execution(execution: dict, target: str, *, at: str, reason: str |
             raise ValueError("a queued execution can end only as cancelled or start_failed")
     elif outcome is not None:
         raise ValueError("outcome exists only at ended")
-    if target == current and target == "stopping" and execution.get("stop_phase") != stop_phase:
-        execution["stop_phase"] = stop_phase
-        execution.setdefault("transitions", []).append({"from": current, "to": target, "at": at,
-                                                           "reason": reason, "stop_phase": stop_phase})
-        return execution
     if target == current:
         return execution
     execution["status"] = target
@@ -167,12 +159,11 @@ def end_preparation(execution: dict, *, at: str, stage: str, reason: str, cancel
 
 
 def drive_to_termination(execution: dict, *, at: str, reason: str) -> dict:
-    """Move a started or checkpointing execution to the terminating barrier.
+    """Move a starting or running execution to the terminating barrier.
 
-    Queued, ended and already terminating executions are unchanged.
+    Queued, ended and already stopping executions are unchanged.
     """
-    if execution.get("status") in {"starting", "running"} or (
-            execution.get("status") == "stopping" and execution.get("stop_phase") == "checkpointing"):
+    if execution.get("status") in {"starting", "running"}:
         transition_execution(execution, "stopping", at=at, reason=reason, stop_phase="terminating")
     return execution
 
@@ -208,9 +199,6 @@ def recover_execution(execution: dict, *, at: str) -> dict:
     elif state == "running":
         drive_to_termination(execution, at=at, reason="previous engine lost")
         execution["recovery_disposition"] = "reconcile_local_and_remote"
-    elif state == "stopping" and execution.get("stop_phase") == "checkpointing":
-        drive_to_termination(execution, at=at, reason="checkpointing cannot continue after recovery")
-        execution["recovery_disposition"] = "preserve_received_checkpoint"
     elif state == "stopping":
         execution["recovery_disposition"] = "preserve_space_and_reservations"
     else:

@@ -38,7 +38,7 @@ def route_submission_return(engine, action, received, execution_id, output, *, r
     engine.runtime.setdefault('waiting_actions', {})[action['id']] = {
         'action': retry, 'kind': 'output_validation', 'execution_id': execution_id,
         'reason': 'Producer repair was rejected again; diagnose the preserved contract and receiver errors',
-        'next_owner': 'operations', 'detail': {'issues': deepcopy(received['issues'])}}
+        'detail': {'issues': deepcopy(received['issues'])}}
     route_failed_action(engine, action, execution_id,
         reason='Bounded submission repair exhausted; distinguish producer, input, contract and installation defects')
 

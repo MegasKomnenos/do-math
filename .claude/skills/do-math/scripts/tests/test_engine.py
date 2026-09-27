@@ -226,9 +226,9 @@ class QueryIdentity(unittest.TestCase):
         self.assertEqual(first["sha256"], hashlib.sha256(canonical_json({"record": record})).hexdigest())
         self.assertEqual(first["logical_sha256"], exact_content_hash(record))
         same_metadata = {**record, "title": "é"}
-        self.assertNotEqual(first["semantic_sha256"], evidence(same_metadata)["semantic_sha256"])
+        self.assertNotEqual(first["logical_sha256"], evidence(same_metadata)["logical_sha256"])
         changed_payload = {**record, "verification": {"K": "é", "K": "é"}}
-        self.assertNotEqual(first["semantic_sha256"], evidence(changed_payload)["semantic_sha256"])
+        self.assertNotEqual(first["logical_sha256"], evidence(changed_payload)["logical_sha256"])
 
     def test_duplicate_id_is_rejected_across_families(self):
         # The state contract checks global record IDs of every bundle candidate
@@ -589,7 +589,8 @@ class QueuedPreparationTests(unittest.TestCase):
         try:
             with self.model_process(arguments, resume=False):
                 control(e.store._store.repository, e.instance['id'], 'pause', text='stop before model resume')
-                e._controls(pump=False)  # The owner pass applies and publishes the control.
+                e._apply_inbox(pump=False)  # The owner pass applies and publishes the control.
+                e._upkeep()
                 self.assertTrue(arguments['should_stop'](), 'a suspended model must not resume for checkpoint grace')
         finally:
             with self.assertRaises(StopIteration):
@@ -620,7 +621,8 @@ class QueuedPreparationTests(unittest.TestCase):
             with self.model_process(arguments, resume=True):
                 self.assertFalse(arguments['should_stop']())
                 control(e.store._store.repository, e.instance['id'], 'pause', text='stop running work')
-                e._controls(pump=False)  # The owner pass applies and publishes the control.
+                e._apply_inbox(pump=False)  # The owner pass applies and publishes the control.
+                e._upkeep()
                 self.assertTrue(arguments['should_stop']())
                 execution = e.runtime['executions'][arguments['execution_id']]
                 self.assertEqual(execution['status'], 'stopping')

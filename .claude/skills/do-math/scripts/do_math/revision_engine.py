@@ -2,14 +2,15 @@
 from copy import deepcopy
 
 from . import planning, revisions
+from .execution_profiles import RESEARCH_PRODUCER_ROLES
+from .session_slots import live_action_ids
 
 
 class RevisionEngineMixin:
     def _retire_closed_revision_targets(self):
         closed = {identifier for identifier, task in self.runtime['tasks'].items()
                   if task.get('status') in planning.TERMINAL_TASK_STATUSES}
-        live = {execution.get('action', {}).get('id') for execution in self.runtime['executions'].values()
-                if execution.get('status') != 'ended'}
+        live = live_action_ids(self.runtime)
         containers = [(action.get('id'), action, None) for action in list(self.runtime['queue'])]
         containers.extend((identifier, entry['action'], entry) for identifier, entry in list(self.runtime.get('waiting_actions', {}).items()))
         for identifier, action, entry in containers:
@@ -58,7 +59,7 @@ class RevisionEngineMixin:
                 self._remove_action(action)
 
     def _selected_action_current(self, action, *, evaluation_context=None):
-        if action.get("role") not in {"research_work", "supplemental_research"} or action.get("review_cycle_id"):
+        if action.get("role") not in RESEARCH_PRODUCER_ROLES or action.get("review_cycle_id"):
             return True
         task = self.runtime["tasks"].get(action.get("target"))
         if not task:
@@ -89,7 +90,7 @@ class RevisionEngineMixin:
             if task.get("status") not in planning.TERMINAL_TASK_STATUSES:
                 action["revision_targets"] = revisions.capture_targets(self.instance, self.runtime, [target], required=planning.revision_required(task),
                     source_ref=action.get("contract_review_execution") or action.get("decision_id"))
-        if action.get("role") in {"research_work", "supplemental_research"} and not action.get("review_cycle_id"):
+        if action.get("role") in RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id"):
             task = self.runtime["tasks"].get(target, {})
             if task.get("knowledge_revision_targets") and not action["revision_targets"]:
                 action["revision_targets"] = revisions.capture_targets(self.instance, self.runtime, task["knowledge_revision_targets"])
@@ -128,12 +129,12 @@ class RevisionEngineMixin:
                                   revision_followup=detached)
 
     def _cancel_selected_revision_targets(self, action):
-        live_ids = {e.get("action", {}).get("id") for e in self.runtime["executions"].values() if e["status"] != "ended"}
+        live_ids = live_action_ids(self.runtime)
         for identifier in planning.action_write_ids(action):
             task = self.runtime["tasks"].get(identifier)
             if not task or task.get("status") != "active":
                 continue
-            selected = [a for a in self.runtime["queue"] if a.get("target") == identifier and a["role"] in {"research_work", "supplemental_research"}
+            selected = [a for a in self.runtime["queue"] if a.get("target") == identifier and a["role"] in RESEARCH_PRODUCER_ROLES
                         and not a.get("review_cycle_id") and a.get("id") not in live_ids]
             if any(e.get("action", {}).get("target") == identifier and e["status"] != "ended" for e in self.runtime["executions"].values()):
                 continue
@@ -180,7 +181,7 @@ class RevisionEngineMixin:
         declared = action.get("revision_targets", {})
         if not declared:
             return
-        if action.get("role") in {"research_work", "supplemental_research"} and extension.get("knowledge_changes"):
+        if action.get("role") in RESEARCH_PRODUCER_ROLES and extension.get("knowledge_changes"):
             task = self.runtime["tasks"].get(action.get("target"))
             if task and task.get("status") not in planning.TERMINAL_TASK_STATUSES and output.get("outcome") != "waiting":
                 # Dependency propagation must not hide this writer's newly

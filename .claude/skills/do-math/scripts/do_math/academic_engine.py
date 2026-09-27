@@ -49,7 +49,7 @@ class AcademicEngineMixin:
                 unresolved=activity['unresolved'], followups=activity['followups'], at=now())
 
     def _academic_evidence(self, ref):
-        return self.store.read_many([ref], self.head, missing="omit").get(ref)
+        return academic.stored_evidence(self.store, self.head, ref)
 
     def _solution_basis(self):
         return academic.current_solution_basis(self.instance, self.runtime)

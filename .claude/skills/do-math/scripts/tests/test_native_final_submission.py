@@ -19,8 +19,6 @@ def job_native_result(case, execution, context, raw, workspace):
     result = native_result(execution, context, raw, workspace)
     collected = result['execution']['collect']
     evidence = workspace.parent / 'native-evidence'; evidence.mkdir()
-    for name, file in [('source_request', 'request.json'), ('source_prompt', 'prompt.txt')]:
-        (evidence/file).write_bytes(collected[name]['raw'])
     payload = {'stdout.jsonl': collected['stdout']['raw'].decode(), 'final.txt': raw.decode(),
         'stderr.txt': '', 'status.json': json.dumps(collected['worker_status'])}
     # The suspended process itself writes all terminal evidence after resume.

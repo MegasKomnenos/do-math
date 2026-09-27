@@ -197,7 +197,7 @@ class LocalCLIAdapter:
         workspace = Path(request["cwd"]).resolve()
         if any(path.resolve().is_relative_to(workspace) for path in outputs):
             raise ValueError("worker outputs and status must be outside the model workspace")
-        request_raw, prompt_raw = request_path.read_bytes(), prompt_path.read_bytes()
+        prompt_raw = prompt_path.read_bytes()
         stage = Path(tempfile.mkdtemp(prefix="do-math-cli-", dir=workspace.parent))
         snapshot_prompt = stage / "prompt.bin"; snapshot_prompt.write_bytes(prompt_raw)
         snapshot_schema = None

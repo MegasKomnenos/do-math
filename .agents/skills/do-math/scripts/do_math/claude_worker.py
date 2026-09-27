@@ -13,12 +13,10 @@ try:
     from do_math.cli_worker import allowed_environment, check_common_request, run_cli
     from do_math.control_transport import CONTROL_SERVER, ControlTransport
     from do_math.file_io import strict_json_loads
-    from do_math.scholarly import validate_scholarly_server
 except ModuleNotFoundError:  # Direct Python worker inside the Windows Job.
     from cli_worker import allowed_environment, check_common_request, run_cli
     from control_transport import CONTROL_SERVER, ControlTransport
     from file_io import strict_json_loads
-    from scholarly import validate_scholarly_server
 
 
 def sanitized_environment(source=None):
@@ -52,8 +50,8 @@ def build_argv(request: dict) -> list[str]:
     servers = {}
     if "control_binding" in request:
         servers[CONTROL_SERVER] = ControlTransport.mcp_server_config(request["control_binding"])
-    if request.get("scholarly_server") is not None:
-        server = validate_scholarly_server(request["scholarly_server"])
+    server = request.get("scholarly_server")
+    if server is not None:
         servers["scholarly"] = {**server, "args": [*server["args"], "--data-dir",
                                                   str(Path(request["cwd"]).resolve() / "scholarly-data")]}
     # Keep subscription login; --bare deliberately disables OAuth login.

@@ -134,7 +134,6 @@ class ContextStoreTests(unittest.TestCase):
    part=store.read_source(root,ref,offset=2,limit=2);self.assertEqual(part['bytes'],b'cd');self.assertTrue(part['truncated']);self.assertEqual(part['range'],{'start':2,'end':4,'total':6})
    self.assertEqual(store.read_source(root,{'path':'input/nope','sha256':'0','bytes':1})['status'],'missing')
    self.assertEqual(store.read_source(root,{**ref,'sha256':'0'*64})['status'],'error')
-if __name__=='__main__':unittest.main(verbosity=2)
 
 
 class RoleInputTests(unittest.TestCase):
@@ -572,3 +571,6 @@ class RoleInputTests(unittest.TestCase):
             self.assertEqual(original, task)
             checked = json.loads((root / 'input/submission/context.json').read_bytes())
             self.assertEqual(checked['tasks'], [task])
+
+
+if __name__=='__main__':unittest.main(verbosity=2)

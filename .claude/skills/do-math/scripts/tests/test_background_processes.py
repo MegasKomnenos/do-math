@@ -102,9 +102,9 @@ assert store.read_bytes(snap.head,'runtime/artifacts/actual/binary')==raw
                     self.assertIn('creationflags', {k.arg for k in node.keywords}, calls[-1])
         # The scan must reach every launching module. Both providers share one
         # capability probe (codex_adapter) and one worker launch (cli_worker.run_cli),
-        # so the product has nine call sites: cli 2, codex_adapter 1, cli_worker 1,
-        # formal 1, git_store 1, scheduled_operator 3.
-        self.assertGreaterEqual(len(calls), 9)
+        # so the product has ten call sites: cli 2, codex_adapter 1, cli_worker 1,
+        # formal 2, git_store 1, scheduled_operator 3.
+        self.assertGreaterEqual(len(calls), 10)
 
     @unittest.skipUnless(os.name == 'nt', 'Windows console semantics')
     def test_pythonw_git_calls_have_no_console_and_preserve_binary_state(self):

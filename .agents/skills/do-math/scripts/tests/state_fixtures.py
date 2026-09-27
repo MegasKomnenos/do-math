@@ -1,12 +1,12 @@
 """Validated starting states for tests whose subject is after initialization, and owner-loop helpers.
 
-``active_engine`` assembles synthetic adapter, trust and interpretation
-evidence with ``engine_fixtures.FakeEngine`` and publishes the result through
-the real repository validation; it does not establish that the public
-initialization workflow works. ``active_instance`` is its template build
-(``research_fixtures.restore_template``). ``active_repository()`` is a copy of
-that state with ``ACTIVE_CONFIG``; ``start_active_copy(test)`` gives a test
-such a copy with the adapter observation replaced.
+``active_instance`` is a template build (``research_fixtures.restore_template``)
+that assembles synthetic adapter, trust and interpretation evidence with
+``engine_fixtures.FakeEngine`` and publishes the result through the real
+repository validation; it does not establish that the public initialization
+workflow works. ``active_repository()`` is a copy of that state with
+``ACTIVE_CONFIG``; ``start_active_copy(test)`` gives a test such a copy with
+the adapter observation replaced.
 
 ``owner_calls(engine)`` and ``start_model_call(engine, action)`` run machine
 steps and model calls as the scheduler's owner loop does.
@@ -18,7 +18,6 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-from do_math.engine import ResearchEngine
 from do_math.repository import ResearchRepository, new_id
 
 # FakeEngine.activate registers its active trust environment for this command.
@@ -27,21 +26,24 @@ from do_math.repository import ResearchRepository, new_id
 ACTIVE_LEAN_COMMAND = ('synthetic-lean', 'base')
 
 
-def active_engine(repository, workspace, *, config=None, runner=None, formal_verifier=None, trust_root=None,
-                  external_policy='explicit_grants', review_policy=None):
-    """``trust_root`` (default: ``workspace``) receives the synthetic toolchain files.
+def active_instance(root, shared, *, config, external_policy='explicit_grants', review_policy=None):
+    """``restore_template`` build of the synthetic active state; returns the instance ID.
 
+    The repository is ``root / 'repository'`` and the workspace ``root / 'work-0'``.
+    The synthetic toolchain goes to ``shared`` so restored copies keep its fingerprint.
     ``external_policy`` and ``review_policy`` go to the adoption decision, as in
     ``research_fixtures.activate``; ``review_policy`` None adopts the default.
     """
     from engine_fixtures import FakeEngine
-    from research_fixtures import FixtureAdapter
+    from research_fixtures import FixtureAdapter, git_init
 
+    repository = root / "repository"
+    git_init(repository)
+    workspace = root / "work-0"
     workspace.mkdir(parents=True, exist_ok=True)
     with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
         seed = FakeEngine(workspace, config=config)
-        if trust_root is not None:
-            seed.root = Path(trust_root)
+        seed.root = Path(shared)
         seed.activate(external_policy=external_policy, review_policy=review_policy)
     seed.runtime.update(processed_controls=[], reservations={},
                         provider_waits={}, updated_at=seed.runtime["last_observed_utc"],
@@ -49,20 +51,7 @@ def active_engine(repository, workspace, *, config=None, runner=None, formal_ver
     identifier = new_id("RI")
     instance, runtime = json.loads(json.dumps([seed.instance, seed.runtime]).replace("RI-test", identifier))
     ResearchRepository(repository, identifier).initialize(instance, runtime)
-    return ResearchEngine(repository, identifier, runner=runner, formal_verifier=formal_verifier)
-
-
-def active_instance(root, shared, *, config, external_policy='explicit_grants', review_policy=None):
-    """``restore_template`` build of the ``active_engine`` state; returns the instance ID.
-
-    The repository is ``root / 'repository'`` and the workspace ``root / 'work-0'``.
-    The synthetic toolchain goes to ``shared`` so restored copies keep its fingerprint.
-    """
-    from research_fixtures import git_init
-    repository = root / "repository"
-    git_init(repository)
-    return active_engine(repository, root / "work-0", config=config, trust_root=shared,
-                         external_policy=external_policy, review_policy=review_policy).instance["id"]
+    return identifier
 
 
 # The settings of the copy most tests start from (``active_repository``).

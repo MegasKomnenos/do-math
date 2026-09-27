@@ -10,6 +10,7 @@ from . import governance, academic, knowledge, knowledge_records, execution_prof
 from .configuration import validate_config
 from .control_contracts import USER_DECISION_SETTINGS
 from .repository import new_id, canonical_json, exact_content_hash
+from .session_slots import live_action_ids
 
 
 def bind_host_configuration(instance, config, *, origin):
@@ -61,7 +62,7 @@ class GovernanceEngineMixin:
         editions = execution_profiles.build_profiles(candidate)
         result['config'] = candidate
         execution_profiles.apply_editions(result, editions)
-        live = {e.get('action', {}).get('id') for e in state['executions'].values() if e['status'] != 'ended'}
+        live = live_action_ids(state)
         waiting = [row['action'] for row in state.get('waiting_actions', {}).values()]
         for pending in [*state['queue'], *waiting]:
             if pending.get('id') not in live: pending.pop('model_selection', None)
@@ -153,8 +154,7 @@ class GovernanceEngineMixin:
         author = self.runtime.get('executions', {}).get(bundle['execution_id'], {}).get('action', {})
         fields = {key: deepcopy(author[key]) for key in ('initialization', 'grant_id', 'profile_ref', 'owner_activity_id') if key in author}
         input_id = bundle['input_ref']
-        current_source = self._governance_input_source(input_id) if any(
-            row['id'] == input_id for row in self.runtime.get('inputs', [])) else bundle['source']
+        current_source = self._governance_input_source(input_id)
         if current_source == bundle['source']:
             fields['previous_import_id'] = bundle['id']
         fields['intent_repair'] = {'import_id': bundle['id'], 'previous_sha256': bundle['sha256'],
@@ -165,8 +165,7 @@ class GovernanceEngineMixin:
     def _after_governance_import(self, import_id):
         bundle = self.runtime['intent_imports'][import_id]
         if bundle.get('application', {}).get('status') != 'applied': return
-        assigned = {e.get('action', {}).get('id') for e in self.runtime.get('executions', {}).values()
-                    if e.get('status') != 'ended'}
+        assigned = live_action_ids(self.runtime)
         obsolete = [a for a in self.runtime.get('queue', []) if a.get('id') not in assigned
                     and a.get('role') == 'intent_interpretation'
                     and import_id in (a.get('import_id'), a.get('previous_import_id'))]
