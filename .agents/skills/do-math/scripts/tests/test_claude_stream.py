@@ -8,6 +8,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.claude_stream import parse_stream, provider_limit
 from do_math.claude_adapter import ClaudePrintAdapter
+from provider_fixtures import claude_stream as stream
 
 
 INIT = {"type": "system", "subtype": "init", "session_id": "one"}
@@ -15,10 +16,6 @@ RESULT = {"type": "result", "subtype": "success", "is_error": False, "session_id
           "num_turns": 2, "usage": {"input_tokens": 3, "output_tokens": 7},
           "modelUsage": {"claude-opus-5": {"outputTokens": 7}}, "total_cost_usd": .1,
           "structured_output": {"summary": "computation pending"}}
-
-
-def stream(*events):
-    return b"".join(json.dumps(e).encode() + b"\n" for e in events)
 
 
 def notification(**changes):

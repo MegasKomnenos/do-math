@@ -215,10 +215,12 @@ def current_state(instance=None, runtime=None):
     high-water. Storage tests extend this with the families they examine.
     """
     raw = b"fixture input"
-    base_instance = {"lifecycle": {"state": "initializing", "immutable_input": {
+    base_instance = {"lifecycle": {"state": "initializing", "input_id": "UI-fixture", "immutable_input": {
         "text": raw.decode(), "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}}}
     base_runtime = {"status": "initializing",
-                    "last_observed_utc": "2026-01-01T00:00:00+00:00"}
+                    "last_observed_utc": "2026-01-01T00:00:00+00:00",
+                    "inputs": [{"id": "UI-fixture", "text": raw.decode(), "sha256": hashlib.sha256(raw).hexdigest(),
+                                "config": {"goal": "fixture"}, "created_at": "2026-01-01T00:00:00+00:00"}]}
     return {**base_instance, **(instance or {})}, {**base_runtime, **(runtime or {})}
 
 
@@ -766,7 +768,7 @@ def trust_environment(request, *, environment_id='TE-fixture', status='active', 
 
 def send_control(engine, action, **kwargs):
     from do_math.engine import control
-    request = control(engine.store._store.repository, engine.instance["id"], action, **kwargs)
+    request = control(engine.store.repository, engine.instance["id"], action, **kwargs)
     engine.process_controls()
     rejected = [h for h in engine.runtime["history"] if h.get("kind") == "rejected_user_control"
                 and h.get("request", {}).get("id") == request["request_id"]]
@@ -859,7 +861,7 @@ def activate(engine, root, *, initialization_runner, external_policy="disabled",
                                          "profile_refs": [profile_ref(p) for p in profiles]}})]
     controls += [("trust", trust_fixture(root, engine.instance["config"]["lean_command"]))]
     for action, config in controls:
-        control(engine.store._store.repository, engine.instance["id"], action,
+        control(engine.store.repository, engine.instance["id"], action,
             text="Synthetic CORE_TESTS input; not actual host verification or user approval", config=config)
     engine.process_controls()
     rejected = [h for h in engine.runtime["history"] if h.get("kind") == "rejected_user_control"]

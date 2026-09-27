@@ -11,7 +11,7 @@ from copy import deepcopy
 import jsonschema
 
 from .contracts import MANIFEST_SCHEMA, REFS, TEXT, closed_object
-from .execution_profiles import RESEARCH_PRODUCER_ROLES
+from .execution_profiles import task_research
 from .file_io import json_copy
 from .repository import exact_content_hash
 
@@ -236,8 +236,7 @@ def apply_reviewed_knowledge_changes(instance, runtime, bundle, *, actor_ref, pr
 def split_research(context):
     """Ordinary task research, whose knowledge and relation records form independent bundles."""
     action = context.get("action", {})
-    return (action.get("role") in RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id")
-            and not action.get("revision_targets"))
+    return task_research(action) and not action.get("revision_targets")
 
 
 def member_values(output, extensions, context):
@@ -258,7 +257,8 @@ def member_values(output, extensions, context):
     return members
 
 
-def _refs(value):
+def reference_ids(value):
+    """IDs named by the REFERENCE_KEYS fields anywhere inside ``value``."""
     refs = set()
     if isinstance(value, dict):
         for key, child in value.items():
@@ -268,10 +268,10 @@ def _refs(value):
                 elif isinstance(child, list):
                     refs.update(item for item in child if isinstance(item, str))
             if isinstance(child, (dict, list)):
-                refs.update(_refs(child))
+                refs.update(reference_ids(child))
     elif isinstance(value, list):
         for child in value:
-            refs.update(_refs(child))
+            refs.update(reference_ids(child))
     return refs
 
 
@@ -385,7 +385,7 @@ def inspect_bundles(output, extensions, context, *, derived=None):
     for coordinate, value in members.items():
         if coordinate in already_owned:
             continue
-        refs = _refs(value)
+        refs = reference_ids(value)
         if isinstance(value, dict) and value.get("kind"):
             refs.add(value["kind"])
         if (coordinate.startswith("activity-extensions.json/knowledge_metadata/")

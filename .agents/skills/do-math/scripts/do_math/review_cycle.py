@@ -128,7 +128,7 @@ def start_review(proposal, reviewers, judges=3, max_rounds=3, previous=None, *, 
     previous_reviews, turns, manifests = [], {}, {}
     lineage = proposal.get("review_lineage_id", digest)
     if previous is not None:
-        _check_proposal(previous)
+        check_proposal(previous)
         if proposal["revision"] == previous["revision"]:
             raise ValueError("new review requires a new proposal revision")
         if assessment is not None and (not set(previous["reviewer_slots"]).issubset(actual_reviewer_slots) or judge_slots != previous["judge_slots"]):
@@ -163,7 +163,7 @@ def start_review(proposal, reviewers, judges=3, max_rounds=3, previous=None, *, 
         "replacement_receipts": []}
 
 
-def _check_proposal(cycle):
+def check_proposal(cycle):
     if exact_content_hash(cycle["proposal"]) != cycle["proposal_digest"] or cycle["revision"] != cycle["proposal"]["revision"]:
         raise ValueError("sealed proposal changed")
 
@@ -239,7 +239,7 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
     No caller-supplied approval bit substitutes for execution, source or authority
     evidence. A repository owner may additionally verify exact artifact bytes.
     """
-    _check_proposal(cycle)
+    check_proposal(cycle)
     cid = cycle.get('id')
     if not cid or cid in _seen or cycle.get('status') == 'working' or cycle.get('decision') not in {'match', 'mismatch', 'unresolved'}:
         raise ValueError('review is not a completely sealed finite cycle')
@@ -275,7 +275,7 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
         if resource and key not in cycle['results']:
             if resource['state'] != 'ended':
                 raise ValueError('review resource disposition has not ended')
-            replay.update(status='unresolved', decision='unresolved', phase='done')
+            replay.update(status='unresolved', decision='unresolved', phase='ended')
             break
         # Supplemental work returns only to its requesting slot before its final vote.
         for event in cycle.get('history', []):
@@ -397,7 +397,6 @@ def staged_review_candidate(instance, runtime, transition_id, knowledge_id):
     """
     from . import knowledge_records as kr
     from .knowledge import validate_basis
-    from .repository import exact_content_hash
     transition = runtime['trust_transitions'][transition_id]
     if transition.get('status') not in {'checking', 'ready'}:
         raise ValueError('staged transition is no longer reviewable')
@@ -579,7 +578,7 @@ def _phase_actions(cycle):
 
 
 def next_actions(cycle):
-    _check_proposal(cycle)
+    check_proposal(cycle)
     if cycle["status"] != "working" or resource_disposition(cycle):
         return []
     pending = []
@@ -608,7 +607,7 @@ def validate_resource_disposition(cycle, runtime, *, read_artifact=None, instanc
         raise ValueError('review has duplicate resource dispositions')
     if record.get('state') not in {'draining', 'deferred', 'ended'}:
         raise ValueError('unknown review resource disposition state')
-    if record['state'] == 'ended' and (cycle['status'], cycle['decision'], cycle['phase']) != ('unresolved', 'unresolved', 'done'):
+    if record['state'] == 'ended' and (cycle['status'], cycle['decision'], cycle['phase']) != ('unresolved', 'unresolved', 'ended'):
         raise ValueError('ended resource disposition must preserve an unresolved review')
     if (record['proposal_digest'] != cycle['proposal_digest'] or record['policy'] != cycle['review_policy']
             or record['limit'] != cycle['activity_execution_limit']
@@ -799,7 +798,7 @@ def defer_for_research(cycle, action, output, requests, execution_id, sources, *
 
 
 def accept_research_result(cycle, request_id, output, execution_id, source_records=None, *, execution_status="completed"):
-    _check_proposal(cycle)
+    check_proposal(cycle)
     request = cycle.get("research", {}).get(request_id)
     if cycle["status"] != "working" or not request or request["status"] != "pending":
         raise ValueError("investigation is not pending")
@@ -1097,15 +1096,13 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
     # The final assistant output belongs in its slot even if the caller never resends it.
     n = _append_turns(n, action["slot"], [{"role": "assistant", "content": copy.deepcopy(output),
                                          "message_id": f"{execution_id}:assistant"}])
-    batch = [a for a in _phase_actions(cycle)]
+    batch = _phase_actions(cycle)
     if all(slot_key(a) in n["results"] for a in batch):
         keys = [slot_key(a) for a in batch]
         n["sealed"].extend(keys)
         entries = [n["results"][k] for k in keys]
         n["history"].append({"round": cycle["round"], "stage": stage, "sealed": keys})
-        if stage == "scope":
-            pass
-        elif stage == "initial":
+        if stage == "initial":
             for entry in entries:
                 _add_findings(n, entry["action"], entry["output"])
             if all(e["output"]["decision"] == "match" and e["output"]["scope_complete"] for e in entries):
@@ -1145,7 +1142,7 @@ def accept_result(cycle, action, output, execution_id, input_manifest=None):
 
 def record_turn(cycle, slot, messages):
     """Append immutable public messages; stable message IDs deduplicate resends."""
-    _check_proposal(cycle)
+    check_proposal(cycle)
     return _append_turns(copy.deepcopy(cycle), slot, messages)
 
 

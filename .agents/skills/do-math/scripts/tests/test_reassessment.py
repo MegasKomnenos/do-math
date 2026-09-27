@@ -205,7 +205,7 @@ class ReassessmentGitTests(KnowledgeRoundtripHarness):
             engine._apply_identity_review(action, output, eid)
             execution = engine.runtime['executions'][eid]
             execution.update(output=output, submission_receipt={'state': 'accepted', 'evidence_ref': 'synthetic:review'})
-            execution_lifecycle.transition_execution(execution, 'stopping', at='2026-09-20T00:00:00Z', stop_phase='terminating')
+            execution_lifecycle.transition_execution(execution, 'stopping', at='2026-09-20T00:00:00Z')
             execution_lifecycle.transition_execution(execution, 'ended', at='2026-09-20T00:00:00Z', outcome='output_accepted')
         self.assertEqual(engine._settle_assessment_reassessments(), [result['review_cycle_id']])
         self.state, self.runtime = engine.instance, engine.runtime

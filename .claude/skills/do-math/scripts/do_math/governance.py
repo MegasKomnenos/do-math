@@ -11,11 +11,12 @@ from datetime import datetime, timezone
 import hashlib
 from typing import Any
 
-from .file_io import distinct_texts, is_sha256, json_copy, parse_utc, require_text
+from .file_io import SHA256_SCHEMA, distinct_texts, is_sha256, json_copy, parse_utc, require_text
 from .repository import exact_content_hash, new_id
 from .academic import requirement_record
 from .execution_profiles import PLANNING_ROLES, WORK_ROLES as _SLOT_WORK_ROLES
 from .external import recover_operation
+from .task_contracts import TERMINAL_TASK_STATUSES
 
 # Roles that carry out or judge task work: the slot-reserving work roles and
 # the machine formal check. A governance change stops their unended executions.
@@ -251,7 +252,7 @@ def additional_audit_schema(instance):
         fields = {"audit_ref": {"const": audit["id"]}, "assessor": {"const": content["assessor"]},
                   "verdict": {"enum": list(content["verdict_mapping"])}, "reason": {"type": "string", "minLength": 1},
                   "input_hashes": {"type": "object", "additionalProperties": False,
-                     "properties": {ref: {"type": "string", "pattern": "^[0-9a-f]{64}$"} for ref in content["required_inputs"]},
+                     "properties": {ref: json_copy(SHA256_SCHEMA) for ref in content["required_inputs"]},
                      "required": list(content["required_inputs"])}}
         options.append({"type": "object", "additionalProperties": False, "properties": fields, "required": list(fields)})
     return {"type": "array", "items": {"oneOf": options} if options else False,
@@ -318,7 +319,7 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
     validate_governance_state(result)
     if record["kind"] == "charter" and not academic_only: result["goal_status"] = "unsolved"
     for task in state.get("tasks", {}).values():
-        if task.get("status") in {"completed", "closed"}: continue
+        if task.get("status") in TERMINAL_TASK_STATUSES: continue
         if academic_only and not task.get("academic_requirement_id"): continue
         event["affected"].append(task["id"])
         task["governance_revision_required"] = {"decision_ref": decision_id, "record_ref": record["id"]}
@@ -633,19 +634,19 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         by_id = {row["id"]: row for row in runtime.get("question_links", [])}
         targets = change.get("target_ids")
         distinct_texts(targets, "answer affected targets", nonempty=True)
+        from .questions import open_targets
         for identifier in identifiers:
             if identifier not in by_id:
                 raise ValueError("unknown question: " + str(identifier))
-            from .questions import open_targets
-            relevant = open_targets(by_id[identifier])
-            if targets is not None and set(targets) - set(relevant): raise ValueError("answer names unrelated or already resolved targets")
-            event["affected"].extend(targets if targets is not None else relevant)
+            if set(targets) - set(open_targets(by_id[identifier])):
+                raise ValueError("answer names unrelated or already resolved targets")
+        event["affected"].extend(targets)
     elif kind == "task_scope":
         from .planning import contract_hash
         from .task_contracts import validate_task_contract
         tid = change.get("task_id")
         task = runtime["tasks"].get(tid)
-        if task is None or task["status"] in {"completed", "closed"}:
+        if task is None or task["status"] in TERMINAL_TASK_STATUSES:
             raise ValueError("task scope decision requires an unfinished task")
         validate_task_contract(task)
         if change.get("revision") != task["revision"] or change.get("contract_sha256") != contract_hash(task):
@@ -660,7 +661,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
                 raise ValueError("scope approval names an unknown obligation")
             if disposition == "transfer":
                 recipient = runtime["tasks"].get(change.get("target_task_id"))
-                if not recipient or recipient["id"] == tid or recipient["status"] in {"completed", "closed"}:
+                if not recipient or recipient["id"] == tid or recipient["status"] in TERMINAL_TASK_STATUSES:
                     raise ValueError("scope transfer requires a distinct unfinished recipient")
                 validate_task_contract(recipient)
             # This is authority, not a second application of TASKS' lifecycle.
@@ -923,8 +924,9 @@ def validate_import_units(instance, runtime, source, output, *, owner_handlers=N
     if bool(details) != output.get("needs_clarification"): raise ValueError("clarification and question records disagree")
 
 
-def _import_payload(bundle):
-    return {k: v for k, v in bundle.items() if k not in {"sha256", "check", "status", "superseded_by", "application"}}
+def import_seal(bundle):
+    """The seal digest of an intent import: every field but the seal, its check, status, supersession and application."""
+    return exact_content_hash({k: v for k, v in bundle.items() if k not in {"sha256", "check", "status", "superseded_by", "application"}})
 
 
 def import_input_source(instance, runtime, input_id):
@@ -950,7 +952,7 @@ def prepare_import(instance, runtime, source, output, *, execution_id, input_ref
     if previous_id:
         if not previous or previous.get("superseded_by") or previous.get("status") not in INTERPRETATION_DECISIONS:
             raise ValueError("rework must follow a sealed failed or changed import")
-        if previous["sha256"] != exact_content_hash(_import_payload(previous)): raise ValueError("rework parent seal changed")
+        if previous["sha256"] != import_seal(previous): raise ValueError("rework parent seal changed")
         repair = output.get("repair", {})
         if repair.get("previous_sha256") != previous["sha256"] or not repair.get("actions") or not isinstance(repair.get("changed_unit_ids"), list):
             raise ValueError("rework requires parent findings and exact changed coordinates")
@@ -975,19 +977,19 @@ def prepare_import(instance, runtime, source, output, *, execution_id, input_ref
               "previous_id": previous_id, "previous_findings": deepcopy(previous.get("check", {}).get("findings", [])) if previous else [],
               "status": "checking"}
     bundle['input_ref'] = input_ref
-    bundle["sha256"] = exact_content_hash(_import_payload(bundle))
+    bundle["sha256"] = import_seal(bundle)
     if previous: previous["superseded_by"] = identifier
     runtime.setdefault("intent_imports", {})[identifier] = bundle
     return deepcopy(bundle)
 
 
-def _current_import(instance, runtime, import_id, *, owner_handlers=None):
+def current_import(instance, runtime, import_id, *, owner_handlers=None):
     bundle = runtime.get("intent_imports", {}).get(import_id)
     if not bundle or bundle.get("superseded_by"): raise ValueError("import is absent or superseded")
     validate_source(bundle["source"])
     if import_input_source(instance, runtime, bundle['input_ref']) != bundle['source']:
         raise ValueError('original public input changed')
-    if bundle["sha256"] != exact_content_hash(_import_payload(bundle)): raise ValueError("sealed import changed")
+    if bundle["sha256"] != import_seal(bundle): raise ValueError("sealed import changed")
     source = instance.get("governance_sources", {}).get(bundle["source"]["id"])
     if source is not None and source != bundle["source"]: raise ValueError("original version changed")
     receipt = bundle.get("application")
@@ -1005,7 +1007,7 @@ def _current_import(instance, runtime, import_id, *, owner_handlers=None):
 
 
 def check_import(instance, runtime, import_id, output, *, execution_id, owner_handlers=None):
-    bundle = _current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
+    bundle = current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
     if bundle.get("check"): raise ValueError("check is sealed; reauthor instead")
     require_text(execution_id, "checker execution")
     validate_independent_execution(runtime,execution_id,[bundle["execution_id"]])
@@ -1068,7 +1070,7 @@ def validate_independent_execution(runtime, execution_id, author_ids):
 
 def import_approval_draft(instance, runtime, import_id, *, owner_handlers=None):
     """Derive exact approval coordinates without approving or applying a change."""
-    bundle = _current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
+    bundle = current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
     check = bundle.get('check', {})
     if (bundle.get('status') != 'approved' or check.get('decision') != 'approved'
             or check.get('scope_complete') is not True
@@ -1086,7 +1088,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
     approvals = {} if approvals is None else approvals
     validate_import_approvals(approvals)
     owner_handlers = _owner_handlers(owner_handlers)
-    bundle = _current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
+    bundle = current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
     if bundle.get("application", {}).get("status") == "applied": return deepcopy(instance), deepcopy(runtime), deepcopy(bundle["application"])
     if bundle["status"] != "approved": raise ValueError("independent complete approval required")
     check = bundle["check"]
@@ -1109,7 +1111,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
         for unit in bundle["output"]["import_units"]:
             change = unit["payload"]
             if not change: continue
-            approval = (approvals or {}).get(unit["unit_id"])
+            approval = approvals.get(unit["unit_id"])
             if not approval or approval.get("actor") != "user" or approval.get("change_sha256") != exact_content_hash(change): raise ValueError("semantic check is not user approval of the exact change")
             source_ref = approval.get("source_ref")
             source = result["governance_sources"].get(source_ref)
@@ -1125,7 +1127,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
     outcome["post_owner_basis"] = _owner_basis(result, state, bundle["output"], owner_handlers)
     outcome["bundle_sha256"] = bundle["sha256"]
     outcome["check_sha256"] = check["sha256"]
-    outcome["approvals"] = deepcopy(approvals or {})
+    outcome["approvals"] = deepcopy(approvals)
     outcome["sha256"] = exact_content_hash(outcome)
     state["intent_imports"][import_id]["application"] = deepcopy(outcome)
     return result, state, outcome

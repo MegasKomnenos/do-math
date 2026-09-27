@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from research_fixtures import local_job_runner, restore_template
 from do_math.contracts import schema_for
 from do_math.engine import ResearchEngine
-from do_math.model_policy import LIMITS, MODELS
+from do_math.model_policy import MODELS
 from do_math.planning import contract_hash
 from do_math.repository import canonical_json
 from do_math.submission import payload_issues
@@ -315,8 +315,7 @@ class AssessmentFlowTests(ActivatedPurposeHarness):
 
     def test_receiver_parks_incomplete_new_candidate_assessments_without_creating_tasks(self):
         engine, _ = self.make_active(**self.fixture_config(
-            scholarly_enabled=False, operator_enabled=False,
-            session_limits=deepcopy(LIMITS), max_output_repairs=0))
+            scholarly_enabled=False, operator_enabled=False, max_output_repairs=0))
         engine.runtime['queue'] = []
         engine._enqueue('research_preparation', reason='Check missing candidate assessments')
         engine._save()
@@ -330,15 +329,13 @@ class AssessmentFlowTests(ActivatedPurposeHarness):
         self.assertEqual(engine.runtime["tasks"], {})
         self.assertTrue(any("model assessment coverage" in e.get("reason", "") for e in engine.runtime["waiting_actions"].values()))
 
-    def test_real_academic_generation_enters_assessment_preparation_on_session_conversion(self):
-        from do_math.engine import control
+    def test_real_academic_generation_enters_assessment_preparation_before_contract_review(self):
         from purpose_fixtures import SOLVED_REQUIREMENT_CRITERIA, solved_instance
         # The template approves an academic requirement, then drives the real solution, which generates its task.
         self.root, solved = restore_template(solved_instance, criteria=SOLVED_REQUIREMENT_CRITERIA)
         engine, _ = self._engine(solved["instance_id"], PurposeRunner())
         academic = {tid: t for tid, t in engine.runtime["tasks"].items() if t.get("academic_requirement_id")}
         self.assertTrue(academic)
-        control(self.repo, engine.instance["id"], "configure", config={"session_limits": deepcopy(LIMITS)})
         engine.process_controls()
         engine._refresh_readiness()
         covered = {tid for a in engine.runtime["queue"] for tid in a.get("assessment_targets", {})}
@@ -428,7 +425,6 @@ class RejectedAcademicAssessmentTests(ActivatedPurposeHarness):
                         self.assertEqual(task[key], value)
 
     def test_preexisting_rejection_enters_repair_on_refresh(self):
-        from do_math.engine import ResearchEngine
         engine, tid, _ = self.rejected_engine()
         engine = ResearchEngine(self.repo, engine.instance["id"], runner=engine.runner)
         engine._refresh_readiness()
@@ -438,13 +434,11 @@ class RejectedAcademicAssessmentTests(ActivatedPurposeHarness):
         self.assertEqual(task["model_assessment_history"][0]["contract_review_execution"], self.rejected_id)
 
     def test_repair_deferral_preserves_obligation_until_resume(self):
-        from unittest.mock import patch
         engine, _, _ = self.rejected_engine()
         with patch.object(self, "prepare_engine", return_value=engine):
             AssessmentFlowTests.test_deferred_assessment_waits_for_input_and_can_resume_without_stale_question(self)
 
     def test_late_repair_cannot_overwrite_a_changed_user_contract(self):
-        from unittest.mock import patch
         engine, _, _ = self.rejected_engine()
         with patch.object(self, "prepare_engine", return_value=engine):
             AssessmentFlowTests.test_late_assessment_cannot_change_a_revised_user_contract(self)

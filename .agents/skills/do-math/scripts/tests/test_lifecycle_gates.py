@@ -66,9 +66,12 @@ class ActivationGateTests(unittest.TestCase):
         from do_math.execution_profiles import build_profiles, profile_ref
         instance = build_profiles(DEFAULT_CONFIG)
         profile = next(p for p in instance["execution_profiles"].values() if p["actor_kind"] == "ai")
+        # A boolean claim on the stored profile is not observed capability evidence.
+        profile["capabilities"] = {name: True for name in profile["required_capabilities"]}
 
         result = capability_requirements(instance, profile_ref(profile), current_identity={"host": "fixture"})
 
+        self.assertNotIn("reason", result)  # judged on evidence, not ended by an invalid reference
         self.assertEqual(result["missing"], sorted(profile["required_capabilities"]))
         self.assertFalse(result["satisfied"])
 
@@ -130,10 +133,6 @@ class LifecycleTransitionTests(unittest.TestCase):
             engine._apply_extended_control({'id': 'grant-1', 'action': 'decision', 'config': {'change':
                 {'kind': 'grant', 'grant': {'kind': 'local', 'roles': ['maintenance']}}}})
         self.assertEqual(engine.instance.get('grants', {}), before)
-
-    def test_profile_boolean_claim_is_not_capability_evidence(self):
-        instance = {'execution_profiles': {'P': {'id': 'P', 'status': 'active', 'capabilities': {'model': True}}}}
-        self.assertFalse(capability_requirements(instance, 'P')['satisfied'])
 
     def test_derived_readiness_not_written_to_runtime(self):
         engine = self.engine()

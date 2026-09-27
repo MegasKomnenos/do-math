@@ -57,7 +57,7 @@ def validate_config(config: dict) -> None:
     if config["provider_retry_max_seconds"] < config["provider_retry_initial_seconds"]:
         raise ValueError("provider retry maximum must be at least the initial interval")
     if config["lean_command"] is not None and any("\0" in part for part in config["lean_command"]):
-        raise ValueError("lean_command must be a nonempty argv list")
+        raise ValueError("lean_command arguments must be NUL-free strings")
     if config.get('host_resources') is not None:
         execution_profiles.validate_host_resources(config['host_resources'])
         if config['host_resources']['constraint']['host_id'] != platform.node():

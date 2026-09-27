@@ -94,7 +94,7 @@ def prepare_work(engine, root):
         execution = engine._register_execution({'id': 'AC-' + identifier, 'role': role},
                                                {'id': identifier, 'role': role, 'status': 'running'})
         at = engine._lifecycle_now().isoformat()
-        transition_execution(execution, 'stopping', at=at, stop_phase='terminating')
+        transition_execution(execution, 'stopping', at=at)
         transition_execution(execution, 'ended', at=at, outcome='execution_incomplete')
     reviewed_task(engine, 'TK-stop', inputs=[kid], authority_refs=[grant],
                   initial_observation_rules=prepared_rule_conditions(['TK-stop'])[0]['observation_rules'])

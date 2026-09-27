@@ -624,7 +624,8 @@ class ReviewFailureTests(purpose.ActivatedPurposeHarness):
         engine.run(max_steps=1)
         self.assertEqual(len(runner.calls), count)
         self.assertEqual(engine.instance["knowledge"][kid], before)
-        self.assertFalse(any(a.get("reconstruction_target") == kid for a in engine.runtime["queue"]))
+        self.assertFalse(any(row.get("event") == "review_resource_disposition"
+                             for row in engine.runtime["review_cycles"][cid]["history"]))
 
     def test_fixed_question_resolver_accepts_the_supplied_source_aliases(self):
         from do_math.engine import control

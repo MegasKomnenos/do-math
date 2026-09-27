@@ -78,7 +78,6 @@ class InitialFailureRetryTests(unittest.TestCase):
         from do_math.repository import ResearchRepository, new_id
         from do_math import execution_profiles as profiles
         from engine_fixtures import FakeEngine, PublicInitializationRunner
-        from research_fixtures import FixtureAdapter
         from research_fixtures import charter_record, install_adapter_fixture
         install_adapter_fixture(self)
         from do_math.initialization import adapter_for

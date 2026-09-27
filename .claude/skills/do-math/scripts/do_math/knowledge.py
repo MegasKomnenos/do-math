@@ -11,6 +11,7 @@ from typing import Any
 
 from .file_io import require_text
 from .repository import exact_content_hash, new_id
+from .execution_profiles import review_research
 from .planning import READ_REFERENCE_FIELDS, READ_REFERENCE_ID_FIELDS, record_index
 
 
@@ -257,12 +258,17 @@ def plan_impact(instance, runtime, roots, declared_impact, *, sensitive=False, e
             "unresolved_refs": unknown, "sensitive": sensitive,
             "requires_independent_review": bool(sensitive or computed != declared or unknown),
             "basis": {rid: _hash(records[rid]) for rid in sorted(affected | declared)}}
-    plan["digest"] = _hash(plan)
+    plan["digest"] = plan_digest(plan)
     return plan
 
 
+def plan_digest(plan):
+    """The digest an impact plan carries: the record hash of every field but ``digest``."""
+    return _hash({key: value for key, value in plan.items() if key != "digest"})
+
+
 def _confirmed_impact(plan, confirmation):
-    if plan.get("digest") != _hash({key: value for key, value in plan.items() if key != "digest"}):
+    if plan.get("digest") != plan_digest(plan):
         raise ValueError("impact plan digest is invalid")
     affected = set(plan["computed_impact"])
     if plan["requires_independent_review"]:
@@ -363,16 +369,20 @@ def _apply_current_plan(instance, runtime, plan, *, reason, independent_confirma
         reason=reason, impact_digest=plan["digest"], in_place=in_place)
 
 
-def _propagate(instance, runtime, roots, reason):
-    # System-observed failures have a computed scope. Producer changes must use
-    # plan_impact/apply_impact with their declaration before altering the root.
+def propagate(instance, runtime, roots, reason):
+    # System-observed failures have a computed scope and no producer whose
+    # declaration an independent review could check, so the computed impact is
+    # always applied. References outside the basis records are named in the
+    # reason, which the reassessment event and the research plan receive.
+    # Producer changes must use plan_impact/apply_impact with their declaration
+    # before altering the root.
     preview = plan_impact(instance, runtime, roots, [])
     plan = plan_impact(instance, runtime, roots, preview["computed_impact"])
-    if plan["requires_independent_review"]:
-        runtime.setdefault("pending_knowledge_impacts", []).append({"plan": plan, "reason": reason})
-        return
+    if plan["unresolved_refs"]:
+        reason += "; references outside the recorded basis: " + ", ".join(plan["unresolved_refs"])
     # Callers pass their own copies, and this plan was just computed from them.
-    _apply_current_plan(instance, runtime, plan, reason=reason, in_place=True)
+    _apply_impact_effects(instance, runtime, set(plan["computed_impact"]), set(plan["roots"]),
+        reason=reason, impact_digest=plan["digest"], in_place=True)
 
 
 def assessment_reassessment_proposal(instance, assessment_id, *, runtime):
@@ -400,7 +410,7 @@ def _assessment_disposition(instance, runtime, assessment_id, status, *, reason,
     old_status = use['status']
     # Calculate fallout while the original support is still visible.
     if status != 'active' and old_status == 'active':
-        _propagate(output, run, [assessment_id], reason)
+        propagate(output, run, [assessment_id], reason)
     # Restore the root's state for the transition primitive: propagation can also
     # reach its AU, but its own explicit disposition must retain the actual prior state.
     use = next(u for u in output['assessment_uses'].values() if u['assessment_id'] == assessment_id)
@@ -446,7 +456,7 @@ def apply_assessment_reassessment(instance, runtime, assessment_id, review_cycle
     original = runtime.get('review_cycles', {}).get(assessment.get('review_cycle_id'), {})
     if not original or cycle.get('review_policy') != original.get('review_policy'):
         raise ValueError('reassessment must retain the original review policy')
-    reviews._check_proposal(cycle)
+    reviews.check_proposal(cycle)
     authors = set(expected['producer_execution_ids'])
     if not authors <= set(cycle['proposal'].get('producer_execution_ids', [])):
         raise ValueError('reassessment omits original author exclusions')
@@ -529,7 +539,7 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
         if action.get("target") != actual_replacement_id and not (
             action.get("target") == knowledge_id and (
                 action.get("role") in {"formal_check", "identity_review"}
-                or (action.get("role") == "supplemental_research" and action.get("review_cycle_id"))))]
+                or review_research(action)))]
     next_role = "identity_review" if reuse_formal else "formal_check"
     if not replacement.get("formal_result_id"):
         next_role = "research_plan"
@@ -574,7 +584,7 @@ def suspend_for_source_change(instance, runtime, knowledge_id, *, source_name, r
                     use.pop("environment_revalidation", None)
                     use.setdefault("use_history", []).append({"reason": reason,
                         "source_name": source_name, "actor_ref": actor_ref})
-    _propagate(output, new_runtime, {knowledge_id}, reason)
+    propagate(output, new_runtime, {knowledge_id}, reason)
     return output, new_runtime
 
 
@@ -804,7 +814,7 @@ def invalidate_environment(instance, runtime, env_id, reason, *, affected_consta
             roots.add(formal["id"])
     previously_active = {uid for uid, use in output.get("assessment_uses", {}).items() if use.get("status") == "active"}
     if roots:
-        _propagate(output, new_runtime, roots, reason)
+        propagate(output, new_runtime, roots, reason)
         for uid in previously_active:
             use = output["assessment_uses"][uid]
             if use["status"] == "suspended":

@@ -22,7 +22,6 @@ failures tests ask for; ``prompts`` records every (role, prompt).
 """
 from __future__ import annotations
 
-import hashlib
 import json
 
 import jsonschema
@@ -167,18 +166,15 @@ def formal_ok(*, source, declarations, workspace, lean_command,
         signature, dependencies, value = "(n : Nat) -> n + 0 = n", ["Nat", "Nat.add_zero"], "Nat.add_zero"
     else:
         raise AssertionError("No explicit compiler fixture covers this source and declaration set")
+    from do_math.repository import exact_content_hash
+    from knowledge_fixtures import formal_result
     signatures = {name: f"{name} : {signature}" for name in declarations}
-    return {"status": "verified", "launch_not_created": True,
-            "source_sha256": hashlib.sha256(source.encode()).hexdigest(),
-            "declarations": declarations, "axioms": {name: [] for name in declarations},
-            "declaration_signatures": signatures,
-            "signature_hash": hashlib.sha256(json.dumps(signatures, sort_keys=True).encode()).hexdigest(),
-            "allowed_axioms": list(allowed_axioms),
-            "dependency_closure": {name: dependencies for name in declarations},
-            "dependency_evidence": {name: {ref: "fixture-" + ref for ref in dependencies} for name in declarations},
-            "declaration_evidence": {name: {"type": signature, "value": value} for name in declarations},
-            "toolchain": expected_toolchain or {"executable": "test-lean", "sha256": "f" * 64,
-                          "version": "Lean test 4.32.0", "version_exit": 0, "configured_command": list(lean_command)}}
+    toolchain = expected_toolchain or {"executable": "test-lean", "sha256": "f" * 64,
+        "version": "Lean test 4.32.0", "version_exit": 0, "configured_command": list(lean_command)}
+    return formal_result(source, declarations, toolchain, closure=dependencies,
+        dependency_evidence=["fixture-" + ref for ref in dependencies], declaration_evidence=(signature, value),
+        launch_not_created=True, declaration_signatures=signatures, signature_hash=exact_content_hash(signatures),
+        allowed_axioms=list(allowed_axioms))
 
 
 def rating(**identity):

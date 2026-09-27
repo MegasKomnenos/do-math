@@ -1,4 +1,4 @@
-"""Native Claude invocation segments; shared by the worker and collector.
+"""Native Claude invocation segments, parsed by the collector (``claude_adapter``).
 
 Only the observed same-session task-notification continuation is supported.
 The original JSONL remains the authority for event and submission bytes.
@@ -8,10 +8,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import hashlib
 import math
-if __package__:
-    from .file_io import json_digest, strict_json_loads
-else:  # Direct Python worker inside the Windows Job.
-    from file_io import json_digest, strict_json_loads
+
+from .file_io import json_digest, strict_json_loads
 
 
 def _number(value):

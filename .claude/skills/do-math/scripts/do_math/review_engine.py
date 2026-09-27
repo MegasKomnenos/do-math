@@ -6,7 +6,8 @@ import hashlib
 import json
 from pathlib import Path
 
-from .file_io import compact_json_bytes, json_digest
+from .file_io import compact_json_bytes, json_digest, now
+from .execution_profiles import review_research
 from .repository import canonical_json, exact_content_hash, new_id
 from .review_cycle import (accept_result, context_for, next_actions, record_turn, stage_schema, start_review,
                           defer_for_research, accept_research_result, research_schema, record_recovery_event,
@@ -112,7 +113,6 @@ class ReviewEngineMixin:
     def _start_assessment_reassessment(self, assessment_id, assessment_sha256, evidence):
         from .knowledge import assessment_reassessment_proposal, suspend_assessment_use
         from .activities import open_activity
-        from datetime import datetime, timezone
         assessment = self.instance['identity_assessments'].get(assessment_id)
         if assessment is None or exact_content_hash(assessment) != assessment_sha256:
             raise ValueError('reassessment requires the exact original assessment')
@@ -152,7 +152,7 @@ class ReviewEngineMixin:
             reason=qualified['reason'], actor_ref=cid, reason_refs=qualified['reason_refs'])
         runtime.setdefault('review_cycles', {})[cid] = cycle
         open_activity(runtime, activity_id=owner, activity_kind='identity_review', owner_ref=assessment_id,
-            input_refs=[assessment_id, original['id']], opened_at=datetime.now(timezone.utc).isoformat(),
+            input_refs=[assessment_id, original['id']], opened_at=now(),
             execution_limit=policy['activity_execution_limit'])
         self.instance, self.runtime = instance, runtime
         self._queue_identity_actions(knowledge_id, cid)
@@ -179,7 +179,6 @@ class ReviewEngineMixin:
     def _settle_assessment_reassessments(self):
         """After real EX termination/reload, finish bounded work and retain its next owner."""
         from .activities import finish_activity
-        from datetime import datetime, timezone
         settled = []
         for cid, cycle in self.runtime.get('review_cycles', {}).items():
             if not cycle['proposal'].get('assessment_reassessment') or cycle['status'] == 'working':
@@ -193,7 +192,7 @@ class ReviewEngineMixin:
             followup = {k: deepcopy(v) for k, v in applied.items() if k != 'event'}
             finish_activity(self.runtime, activity['id'], result_refs=[cid, applied['assessment_id']],
                 unresolved=[followup] if applied['status'] == 'suspended' else [], followups=[followup],
-                at=datetime.now(timezone.utc).isoformat())
+                at=now())
             settled.append(cid)
         return settled
 
@@ -231,7 +230,7 @@ class ReviewEngineMixin:
         self._review_cycle({'role': 'identity_review', 'target': knowledge_id, 'review_cycle_id': cycle_id})
         if cycle['status'] != 'completed' or cycle.get('decision') != 'match':
             raise ValueError('staged identity review has no completed match')
-        assessment = self._identity_assessment(cycle, reason='Sealed staged identity review')
+        assessment = identity_assessment(cycle, reason='Sealed staged identity review')
         return {**assessment, 'policy_ref': cycle['policy_ref'], 'identity_basis': deepcopy(cycle['identity_basis']),
                 'transition_id': transition_id, 'knowledge_id': knowledge_id,
                 'transition_basis': cycle['staged_candidate']['transition_basis']}
@@ -298,7 +297,6 @@ class ReviewEngineMixin:
 
     def _request_review_resource_disposition(self, action, reason, detail):
         """Stop only this review's attempts, then hand its actual evidence to planning."""
-        from datetime import datetime, timezone
         cycle = self.runtime['review_cycles'][action.get('review_cycle_id') or action['owner_review_cycle_id']]
         record = resource_disposition(cycle)
         if record is None:
@@ -308,7 +306,7 @@ class ReviewEngineMixin:
                 'executions_used': list(cycle['execution_accounting']['executions_used']),
                 'pending_actions': next_actions(cycle), 'detail': deepcopy(detail),
                 'disposition': cycle['review_policy']['overflow_disposition'],
-                'at': datetime.now(timezone.utc).isoformat()}
+                'at': now()}
             cycle['history'].append(record)
         validate_resource_disposition(cycle, self.runtime)
         self.runtime['queue'][:] = [row for row in self.runtime['queue']
@@ -324,7 +322,6 @@ class ReviewEngineMixin:
         self._settle_review_resource_dispositions()
 
     def _settle_review_resource_dispositions(self):
-        from datetime import datetime, timezone
         from .activities import finish_activity, wait_for
         changed = []
         for cid, cycle in self.runtime.get('review_cycles', {}).items():
@@ -347,7 +344,7 @@ class ReviewEngineMixin:
             closed = self.runtime.get('status') in {'closed', 'completed'}
             if record['state'] == 'deferred' and not superseded and not closed:
                 continue
-            stamp = datetime.now(timezone.utc).isoformat()
+            stamp = now()
             followup = {'cycle_id': cid, 'knowledge_id': cycle['knowledge_id'], 'reason': record['reason'],
                         'next_owner': 'research_plan', 'proposal_digest': cycle['proposal_digest']}
             if record['state'] == 'draining':
@@ -366,7 +363,7 @@ class ReviewEngineMixin:
                 if superseded or closed:
                     record['resolution'] = {'kind': 'instance_ended' if closed else 'proposal_superseded', 'knowledge_id': item.get('id'),
                                             'exposition_id': item.get('exposition_id')}
-                cycle.update(status='unresolved', decision='unresolved', phase='done')
+                cycle.update(status='unresolved', decision='unresolved', phase='ended')
                 finish_activity(self.runtime, activity['id'], result_refs=[cid], unresolved=[followup],
                                 followups=[followup], at=stamp)
             validate_resource_disposition(cycle, self.runtime)
@@ -706,8 +703,7 @@ class ReviewEngineMixin:
     def _release_review_wait(self, action, *, at=None):
         """Resolve only this slot's restoration wait through the activity owner API."""
         from . import activities
-        from datetime import datetime, timezone
-        at = at or datetime.now(timezone.utc).isoformat()
+        at = at or now()
         waits = self.runtime.setdefault('waiting_actions', {})
         released = []
         for identifier, entry in list(waits.items()):
@@ -875,10 +871,6 @@ class ReviewEngineMixin:
         self.runtime['review_cycles'][cycle['id']] = record_turn(cycle, action['slot'], messages)
         return True
 
-    @staticmethod
-    def _identity_assessment(cycle, *, reason):
-        return identity_assessment(cycle, reason=reason)
-
     def _checked_review_result(self, action, execution_id):
         """The one currentness and independence check of a returned review attempt, final or provisional."""
         cycle = self._review_cycle(action)
@@ -961,7 +953,7 @@ class ReviewEngineMixin:
             # checked before compiling and a later change surfaces at the next check.
             from .trust_validation import require_active_environment
             require_active_environment(self.instance, self.runtime, current_identity=True)
-        assessment = self._identity_assessment(updated, reason='Complete independent review')
+        assessment = identity_assessment(updated, reason='Complete independent review')
         assessment['basis'] = deepcopy(updated['identity_basis'])
         published, assessment_id = kr.record_identity_assessment(
             self.instance, knowledge_id, assessment, updated['policy_ref'], runtime=self.runtime)
@@ -1055,7 +1047,7 @@ class ReviewEngineMixin:
         return True
 
     def _pending_review_research(self, action):
-        if action.get('role') != 'supplemental_research' or not action.get('review_cycle_id'):
+        if not review_research(action):
             raise ValueError('action is not a review investigation')
         cycle = self.runtime['review_cycles'].get(action['review_cycle_id'])
         request = cycle.get('research', {}).get(action.get('research_request_id')) if cycle else None

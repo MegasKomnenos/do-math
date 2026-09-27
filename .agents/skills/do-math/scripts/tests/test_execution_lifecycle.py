@@ -33,7 +33,7 @@ class ActivityContractTests(unittest.TestCase):
 
     def end_cancelled(self, execution):
         transition_execution(execution, "starting", at=TIME)
-        transition_execution(execution, "stopping", at=TIME, stop_phase="terminating")
+        transition_execution(execution, "stopping", at=TIME)
         transition_execution(execution, "ended", at=TIME, outcome="cancelled")
 
     def test_one_activity_owns_multiple_attempts_and_waits_after_them(self):
@@ -95,7 +95,7 @@ class ExecutionLifecycleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as workspace:
             intent, _ = sealed_maintenance_submission(workspace, execution['id'])
         record_submission_intent(execution, intent, receipt, at=TIME)
-        transition_execution(execution, "stopping", at=TIME, stop_phase="terminating")
+        transition_execution(execution, "stopping", at=TIME)
         transition_execution(execution, "ended", at=TIME, outcome="output_accepted",
                              disposition="receiver_validation_pending")
         self.assertEqual(execution["outcome"], "output_accepted")
@@ -126,7 +126,7 @@ class ExecutionLifecycleTests(unittest.TestCase):
             record_submission_intent(execution, intent, {**receipt, "execution_id": "EX-other"})
         self.assertEqual(execution, before)
         record_submission_intent(execution, intent, receipt)
-        self.assertEqual((execution["status"], execution["stop_phase"]), ("stopping", "terminating"))
+        self.assertEqual(execution["status"], "stopping")
         once = deepcopy(execution)
         record_submission_intent(execution, intent, receipt)
         self.assertEqual(execution, once)
@@ -303,7 +303,7 @@ class StoredExecutionTests(unittest.TestCase):
         activities.bind_action(self.runtime, working, "AY-audit")
         self.assertEqual(self.action["owner_activity_id"], "AY-audit")
         self.running()
-        transition_execution(self.execution, "stopping", at=TIME, reason="user_pause", stop_phase="terminating")
+        transition_execution(self.execution, "stopping", at=TIME, reason="user_pause")
         transition_execution(self.execution, "ended", at=TIME, outcome="cancelled")
         self.runtime["checkpoints"] = {"EX-audit": {"kind": "recovered", "reason": "test evidence"}}
         activities.continue_activity(self.runtime, "EX-audit", at=TIME, reason="user_pause",
@@ -338,7 +338,6 @@ class StoredExecutionTests(unittest.TestCase):
                        "kind": "submit_intent", "state": "accepted", "received_at": TIME}
             record_submission_intent(self.execution, intent, receipt)
             self.assertEqual(self.execution["status"], "stopping")
-            self.assertEqual(self.execution["stop_phase"], "terminating")
             self.assertEqual(self.execution["authority_revocation"]["scope"], "execution_research")
             self.runtime["control_receipts"] = {receipt["id"]: receipt}
             self.head=self.repo.save_with_state(self.head,self.instance,self.runtime,artifacts=artifacts)[0]

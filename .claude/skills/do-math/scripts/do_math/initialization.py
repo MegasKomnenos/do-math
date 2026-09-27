@@ -104,7 +104,7 @@ def governance_working_view(instance):
 
 def initial_intent_evidence(instance, runtime, *, owner_handlers=None):
     """Resolve the sealed, independently checked and actually applied original."""
-    from .governance import _current_import, validate_independent_execution
+    from .governance import current_import, validate_independent_execution
     lifecycle = instance['lifecycle']
     original = lifecycle['immutable_input']
     original_input_bytes(original)
@@ -112,7 +112,7 @@ def initial_intent_evidence(instance, runtime, *, owner_handlers=None):
     for row in reversed(list(runtime.get('intent_imports', {}).values())):
         if row.get('input_ref') != lifecycle.get('input_id') or row.get('superseded_by'):
             continue
-        bundle = _current_import(instance, runtime, row['id'], owner_handlers=owner_handlers)
+        bundle = current_import(instance, runtime, row['id'], owner_handlers=owner_handlers)
         check, application = bundle.get('check', {}), bundle.get('application', {})
         expected_units = {u['unit_id'] for u in bundle['output']['import_units'] if u['payload']}
         if (bundle['source']['sha256'] != original_sha256 or bundle['source']['text'] != original['text']

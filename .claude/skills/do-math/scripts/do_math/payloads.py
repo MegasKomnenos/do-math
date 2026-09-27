@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .file_io import bytes_evidence
+from .git_store import ARTIFACT_ROOT
 
 LIMIT = 65536
 
@@ -24,8 +25,8 @@ def seal(value, raw=None, digest=None):
     from .repository import canonical_json
     raw = canonical_json(value) if raw is None else raw
     result = FrozenText(value)
-    result._payload_bytes = raw
-    result._payload_hash = digest or hashlib.sha256(raw).hexdigest()
+    result.payload_bytes = raw
+    result.payload_hash = digest or hashlib.sha256(raw).hexdigest()
     return result
 
 
@@ -92,9 +93,9 @@ def encode(envelope):
     blobs, references, tokens = {}, [], []
     def visit(value):
         kind = type(value)
-        if kind is not dict and kind is not list and hasattr(value, '_payload_bytes'):
-            raw, digest = value._payload_bytes, value._payload_hash
-            path = 'runtime/artifacts/payload-' + digest + '/value.json'
+        if kind is not dict and kind is not list and hasattr(value, 'payload_bytes'):
+            raw, digest = value.payload_bytes, value.payload_hash
+            path = ARTIFACT_ROOT + 'payload-' + digest + '/value.json'
             blobs[path] = raw
             references.append({'tokens':list(tokens), 'path':path, 'sha256':digest, 'bytes':len(raw)})
             return None
@@ -145,7 +146,7 @@ def decode(envelope, read_payload, git_dir=None):
                 or any(type(t) not in {str,int} or type(t) is int and t < 0 for t in ref['tokens'])
                 or not is_sha256(ref['sha256'])
                 or type(ref['bytes']) is not int or ref['bytes'] < LIMIT
-                or ref['path'] != 'runtime/artifacts/payload-' + ref['sha256'] + '/value.json'):
+                or ref['path'] != ARTIFACT_ROOT + 'payload-' + ref['sha256'] + '/value.json'):
             raise ValueError('invalid immutable payload reference')
         cache = getattr(read_payload, 'decoded', {})
         key = (ref['path'], ref['sha256'], ref['bytes'])

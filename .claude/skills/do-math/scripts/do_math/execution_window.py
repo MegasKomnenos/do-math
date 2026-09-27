@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import time
 
-from .file_io import write_bytes_atomic
+from .file_io import now, write_bytes_atomic
 
 
 def notice_seconds(config):
@@ -43,7 +43,7 @@ def request_finish(workspace: Path, deadline: float | None, config: dict, *, clo
     path = workspace / ".control" / "finish-request.json"
     if path.exists() or deadline - clock() > notice_seconds(config):
         return False
-    _write(path, {"requested_at": datetime.now(timezone.utc).isoformat(),
+    _write(path, {"requested_at": now(),
                   "kind": "finish_notice", "revokes_authority": False,
                   "instruction": "Submit established results, evidence and remaining obligations before the effective deadline. Partial work is acceptable under the role contract."})
     return True

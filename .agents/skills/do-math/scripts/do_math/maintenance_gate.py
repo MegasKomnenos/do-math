@@ -33,8 +33,8 @@ def settle(runtime):
         return False
     from .execution_lifecycle import transition_execution
     from .session_slots import local_termination_confirmed
-    from datetime import datetime, timezone
-    settled_at = datetime.now(timezone.utc).isoformat()
+    from .file_io import now
+    settled_at = now()
     publication = {w.get('execution_id') for w in runtime.get('waiting_actions', {}).values()
                    if w.get('kind') == 'submission_publication'}
     for identifier in publication:

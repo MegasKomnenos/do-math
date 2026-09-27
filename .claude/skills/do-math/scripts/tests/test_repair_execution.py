@@ -79,26 +79,25 @@ class InstallationRepairRoutingTests(unittest.TestCase):
     """Installation repair: routing a receiver defect to diagnosis, the repair request, and the work around it."""
 
     def test_repeated_submission_return_stops_producer_and_opens_one_diagnosis(self):
-        from do_math.repair_execution import route_submission_return
         opened = []
         engine = bare_engine({'config':{'max_output_repairs':1}}, {'queue':[], 'waiting_actions':{}})
         engine._enqueue = create_autospec(engine._enqueue, side_effect=lambda *a, **k: opened.append((a, k)))
         action = {'id':'AC-producer','role':'research_plan'}
         received = {'retry_bundle_ids':['IN-failed'], 'bundles':[], 'issues':[{'rule_id':'application'}]}
-        route_submission_return(engine, action, received, 'EX-first', {'summary':'preserved'})
+        engine.route_submission_return(action, received, 'EX-first', {'summary':'preserved'})
         retry = engine.runtime['queue'].pop()
         self.assertEqual(retry['repair_attempt'], 1)
-        route_submission_return(engine, retry, received, 'EX-second', {'summary':'preserved'})
+        engine.route_submission_return(retry, received, 'EX-second', {'summary':'preserved'})
         self.assertEqual(engine.runtime['queue'], [])
         self.assertEqual(opened[0][0], ('operational_review','EX-second'))
         wait = engine.runtime['waiting_actions']['AC-producer']
         self.assertEqual(wait['action']['repair']['execution_id'], 'EX-second')
         self.assertEqual(wait['detail']['issues'], received['issues'])
         # Failed diagnostic output itself cannot open recursive diagnostics forever.
-        route_submission_return(engine, {**retry,'role':'operational_review'}, received, 'EX-op', {})
+        engine.route_submission_return({**retry,'role':'operational_review'}, received, 'EX-op', {})
         self.assertEqual(len(opened), 1)
         engine.instance['config']['max_output_repairs'] = 0
-        route_submission_return(engine, {'id':'AC-zero','role':'research_plan'}, received, 'EX-zero', {})
+        engine.route_submission_return({'id':'AC-zero','role':'research_plan'}, received, 'EX-zero', {})
         self.assertEqual(engine.runtime['queue'], [])
         self.assertIn('AC-zero', engine.runtime['waiting_actions'])
 

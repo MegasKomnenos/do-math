@@ -30,7 +30,7 @@ from .operation_trace import measured
 
 from .events import EventPublisher, check_sequence, event_rows
 from .file_io import is_sha256, no_reparse, reject_constant, unique_pairs
-from .git_store import GitStateStore, PhysicalBoundary, ULID_ALPHABET, ULID_LENGTH
+from .git_store import ARTIFACT_ROOT, GitStateStore, PhysicalBoundary, ULID_ALPHABET, ULID_LENGTH
 # payloads imports this module only inside its functions, so a module-level
 # import is acyclic; canonical_json and its value check run on every node.
 from .payloads import FrozenText, decode, encode, seal_large
@@ -213,8 +213,8 @@ def new_id(prefix: str) -> str:
 
 def canonical_json(value: Any) -> bytes:
     """Encode a finite JSON value deterministically without changing Unicode."""
-    if isinstance(value, FrozenText) and hasattr(value, '_payload_bytes'):
-        return value._payload_bytes
+    if isinstance(value, FrozenText) and hasattr(value, 'payload_bytes'):
+        return value.payload_bytes
     validate_storage_value(value)
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False) + "\n").encode("utf-8")
 
@@ -225,16 +225,21 @@ def exact_content_hash(value: Any) -> str:
 
 
 class ResearchRepository:
-    """Read and publish version-five record-family files through one Git CAS."""
+    """Read and publish the record-family files of the installed state contract through one Git CAS."""
 
     def __init__(self, repository: Path, instance_id: str, *, contract: StateContract | None = None) -> None:
         self._store = GitStateStore(repository, instance_id)
         self.contract = contract or default_state_contract()
 
     @property
+    def repository(self) -> Path:
+        """The Git work tree or bare repository this store opened."""
+        return self._store.repository
+
+    @property
     def git_dir(self) -> Path:
         """Repository identity for process-wide caches such as VERIFIED_ARTIFACTS."""
-        return self._store._git_dir
+        return self._store.git_dir
 
     def initialize(self, instance, runtime):
         if self._store.read_snapshot().head is not None:
@@ -256,7 +261,7 @@ class ResearchRepository:
         """
         instance, runtime, descriptors, files = self._read_documents(head)
         if descriptors is None:
-            records = {path: raw for path, raw in files.items() if not path.startswith("runtime/artifacts/")}
+            records = {path: raw for path, raw in files.items() if not path.startswith(ARTIFACT_ROOT)}
             descriptors = _decode_families(records, self.contract, self._store.object_format,
                                            read_payload=files.__getitem__, git_dir=self.git_dir,
                                            describe=True)[2]
@@ -278,9 +283,9 @@ class ResearchRepository:
         if cached is not None:
             _VALIDATED_READS.move_to_end(key)
             return cached
-        paths = self._store._tree_paths(head)
+        paths = self._store.tree_paths(head)
         # Sealed artifacts are not parsed or loaded just to reconstruct state.
-        files = self._store.read_many(head, sorted(p for p in paths if not p.startswith("runtime/artifacts/")))
+        files = self._store.read_many(head, sorted(p for p in paths if not p.startswith(ARTIFACT_ROOT)))
         payload_bytes = {}
         def read_payload(path):
             if path not in payload_bytes:
@@ -309,13 +314,13 @@ class ResearchRepository:
         """
         files = candidate["files"]
         for path in files:
-            if path.startswith("runtime/artifacts/payload-"):
+            if path.startswith(ARTIFACT_ROOT + "payload-"):
                 mark_artifact_verified(self.git_dir, path, path.split("/")[2].removeprefix("payload-"),
                                        len(files[path]))
         _remember_read(self._read_key(head), (candidate["instance"], candidate["runtime"], None, files))
 
     def load(self, snapshot=None):
-        head = self._resolve_snapshot(snapshot)
+        head = self.resolve_snapshot(snapshot)
         instance, runtime = deepcopy(self._read_documents(head)[:2])
         return head, instance, runtime
 
@@ -325,7 +330,7 @@ class ResearchRepository:
         The caller only reads the result; mutating it would corrupt the
         process-wide snapshot cache.
         """
-        head = self._resolve_snapshot(snapshot)
+        head = self.resolve_snapshot(snapshot)
         instance, runtime = self._read_documents(head)[:2]
         return head, instance, runtime
 
@@ -386,7 +391,7 @@ class ResearchRepository:
                 raise ValueError('immutable artifact differs from encoded state: ' + path)
         # Evidence validation and publication must see the same merged bytes.
         self._validate_artifact_evidence(runtime, expected_head, {**files, **supplied})
-        self._store._validate_candidate_paths(set(files) | set(supplied))
+        self._store.validate_candidate_paths(set(files) | set(supplied))
         return {"instance": instance, "runtime": runtime, "files": files, "artifacts": supplied,
                 "basis": {"head": expected_head}}
 
@@ -416,11 +421,11 @@ class ResearchRepository:
         return self._publish_candidate(expected_head, candidate)
 
     def _precheck_head(self, expected_head):
-        self._store._validate_oid(expected_head)
+        self._store.validate_oid(expected_head)
         # Without the writer lock, a ref precheck avoids expensive validation
         # against an already stale head. Under it no other do-math writer can
         # move the ref; the final expected-old-OID update is the sole authority.
-        if not self._store._holds_writer_lock and self._store.read_snapshot().head != expected_head:
+        if not self._store.holds_writer_lock and self._store.read_snapshot().head != expected_head:
             from .git_store import GitStateStoreConflict
             raise GitStateStoreConflict("expected head no longer matches the instance ref")
 
@@ -429,14 +434,14 @@ class ResearchRepository:
         files = candidate["files"]
         # Unreferenced payloads remain immutable Git blobs. They are reusable
         # even when the parent decoder did not need to read them into old_files.
-        missing = {p for p in files if p.startswith('runtime/artifacts/') and p not in old_files}
+        missing = {p for p in files if p.startswith(ARTIFACT_ROOT) and p not in old_files}
         if missing:
-            existing = self._store.read_many(expected_head, sorted(missing & self._store._tree_paths(expected_head)))
+            existing = self._store.read_many(expected_head, sorted(missing & self._store.tree_paths(expected_head)))
             for path, raw in existing.items():
                 if files[path] != raw:
                     raise ValueError('immutable artifact differs from encoded state: ' + path)
             old_files = {**old_files, **existing}
-        changes = {p: None for p in old_files if p not in files and not p.startswith('runtime/artifacts/')}
+        changes = {p: None for p in old_files if p not in files and not p.startswith(ARTIFACT_ROOT)}
         changes.update({p: raw for p, raw in files.items() if old_files.get(p) != raw})
         changes.update(candidate["artifacts"])
         published = self._store.publish(expected_head, changes)
@@ -454,8 +459,8 @@ class ResearchRepository:
             raise TypeError("artifacts must map full artifact paths to bytes")
         snapshot = {}
         for path, raw in artifacts.items():
-            if not isinstance(path, str) or not path.startswith("runtime/artifacts/") or not isinstance(raw, bytes):
-                raise ValueError("artifacts require full runtime/artifacts/<bundle>/<path> and bytes")
+            if not isinstance(path, str) or not path.startswith(ARTIFACT_ROOT) or not isinstance(raw, bytes):
+                raise ValueError(f"artifacts require full {ARTIFACT_ROOT}<bundle>/<path> and bytes")
             snapshot[path] = raw
         return snapshot
 
@@ -464,7 +469,7 @@ class ResearchRepository:
         """Immutable byte evidence rows (ref, sha256, bytes or None) named by runtime."""
         references = [(ref, row["evidence_hashes"][ref], None)
             for row in runtime.get("academic_resolution_records", [])
-            for ref in row["evidence_refs"] if ref.startswith("runtime/artifacts/")]
+            for ref in row["evidence_refs"] if ref.startswith(ARTIFACT_ROOT)]
         for checkpoint in runtime.get("checkpoints", {}).values():
             for observation in (checkpoint, checkpoint.get("final_observation", {})):
                 references.extend((row['artifact_ref'], row['sha256'], row['bytes'])
@@ -487,13 +492,13 @@ class ResearchRepository:
             return
         supplied = artifacts or {}
         for ref, _, _ in references:
-            if not ref.startswith("runtime/artifacts/"):
+            if not ref.startswith(ARTIFACT_ROOT):
                 raise ValueError("artifact evidence must use the immutable artifact namespace")
-            self._store._validate_path(ref)
+            self._store.validate_path(ref)
         pending = [row for row in references
                    if row[0] in supplied or not artifact_verified(self.git_dir, *row)]
         wanted = sorted({ref for ref, _, _ in pending if ref not in supplied})
-        available = self._store._tree_paths(head) if head and wanted else set()
+        available = self._store.tree_paths(head) if head and wanted else set()
         stored = self._store.read_many(head, [ref for ref in wanted if ref in available]) if available else {}
         for ref, digest, size in pending:
             raw = supplied.get(ref)
@@ -503,12 +508,12 @@ class ResearchRepository:
 
     def load_records(self, snapshot=None):
         """Load one validated snapshot together with its exact persisted record rows."""
-        head = self._resolve_snapshot(snapshot)
+        head = self.resolve_snapshot(snapshot)
         instance, runtime, rows = deepcopy(self._descriptors(head))
         return head, instance, runtime, [{**row, "snapshot": head} for row in rows]
 
     def read_record(self, record_id, snapshot=None):
-        head = self._resolve_snapshot(snapshot)
+        head = self.resolve_snapshot(snapshot)
         matches = [row for row in self._descriptors(head)[2] if row["id"] == record_id]
         if len(matches) != 1:
             raise KeyError("record not found: " + str(record_id))
@@ -520,10 +525,10 @@ class ResearchRepository:
         Artifact bytes this process wrote or read at this snapshot, or at an
         earlier head it published this snapshot from, are not read again.
         """
-        head = self._resolve_snapshot(snapshot)
-        if not isinstance(path, str) or not path.startswith("runtime/artifacts/"):
+        head = self.resolve_snapshot(snapshot)
+        if not isinstance(path, str) or not path.startswith(ARTIFACT_ROOT):
             return self._store.read_bytes(head, path)
-        self._store._validate_path(path)
+        self._store.validate_path(path)
         git_dir = str(self.git_dir)
         row = _known_artifact(git_dir, path, head)
         if row is not None and row[2] is not None:
@@ -537,7 +542,7 @@ class ResearchRepository:
 
         ``missing="omit"`` leaves absent paths out instead of failing the batch.
         """
-        return self._store.read_many(self._resolve_snapshot(snapshot), paths, missing=missing)
+        return self._store.read_many(self.resolve_snapshot(snapshot), paths, missing=missing)
 
     def blob_sizes(self, paths: list[str], snapshot: str | None = None, *, missing: str = "raise") -> dict[str, int]:
         """Read stored lengths without blob bytes; ``missing`` is as for :meth:`read_many`.
@@ -545,29 +550,29 @@ class ResearchRepository:
         Artifact lengths this process already knows at this snapshot (see
         :meth:`read`) are not asked of Git again.
         """
-        head = self._resolve_snapshot(snapshot)
+        head = self.resolve_snapshot(snapshot)
         wanted = list(dict.fromkeys(paths))
         git_dir = str(self.git_dir)
         known = {}
         for path in wanted:
-            if isinstance(path, str) and path.startswith("runtime/artifacts/"):
+            if isinstance(path, str) and path.startswith(ARTIFACT_ROOT):
                 row = _known_artifact(git_dir, path, head)
                 if row is not None:
-                    self._store._validate_path(path)
+                    self._store.validate_path(path)
                     known[path] = row[1]
         rest = [path for path in wanted if path not in known]
         sizes = self._store.blob_sizes(head, rest, missing=missing)
         for path, size in sizes.items():
-            if path.startswith("runtime/artifacts/"):
+            if path.startswith(ARTIFACT_ROOT):
                 _learn_artifact(git_dir, path, head, size)
         return {path: known[path] if path in known else sizes[path]
                 for path in wanted if path in known or path in sizes}
 
     def list_files(self, prefix: str, snapshot: str | None = None) -> list[str]:
         """List files below one POSIX state prefix in stable lexical order."""
-        head = self._resolve_snapshot(snapshot)
+        head = self.resolve_snapshot(snapshot)
         normalized_prefix = _validate_prefix(prefix)
-        return sorted(path for path in self._store._tree_paths(head) if path.startswith(normalized_prefix))
+        return sorted(path for path in self._store.tree_paths(head) if path.startswith(normalized_prefix))
 
     def query(
         self,
@@ -597,7 +602,7 @@ class ResearchRepository:
                 raise RepositoryCursorError("cursor is bound to another snapshot or query")
             snapshot = cursor_snapshot
             last_path = payload["last_path"]
-        head = self._resolve_snapshot(snapshot)
+        head = self.resolve_snapshot(snapshot)
 
         needle = text.encode("utf-8")
         matches: list[dict[str, Any]] = []
@@ -653,7 +658,7 @@ class ResearchRepository:
         prefixes: tuple[str, ...] = ("research/",),
     ) -> dict[str, Any]:
         """Copy selected snapshot files into a new or empty non-reparse directory."""
-        head = self._resolve_snapshot(snapshot)
+        head = self.resolve_snapshot(snapshot)
         if not isinstance(prefixes, tuple) or not prefixes:
             raise ValueError("prefixes must be a non-empty tuple")
         normalized_prefixes = tuple(_validate_prefix(prefix) for prefix in prefixes)
@@ -689,19 +694,17 @@ class ResearchRepository:
         """Delegate the same-instance OS lock to GitStateStore."""
         return self._store.writer_lock()
 
-    def _resolve_snapshot(self, snapshot: str | None) -> str:
+    def resolve_snapshot(self, snapshot: str | None) -> str:
         if snapshot is None:
             snapshot = self._store.read_snapshot().head
         if snapshot is None:
             raise ValueError("repository has no authoritative snapshot")
-        self._store._validate_oid(snapshot)
+        self._store.validate_oid(snapshot)
         return snapshot
 
     def first_descendant(self, parent: str, head: str) -> str | None:
         """The commit on ``head``'s first-parent line whose parent is ``parent``, if any."""
-        self._store._validate_oid(parent)
-        commits = self._store._git("rev-list", "--first-parent", "--reverse", parent + ".." + head).stdout.decode().splitlines()
-        return commits[0] if commits else None
+        return self._store.first_descendant(parent, head)
 
 
 def _decode_object(data: bytes) -> dict[str, Any]:
@@ -747,7 +750,7 @@ def validate_storage_value(value: Any) -> None:
         if not value.isascii() and _SURROGATE.search(value):
             raise ValueError("JSON strings cannot contain surrogate code points")
         return
-    if isinstance(value, FrozenText) and hasattr(value, '_payload_bytes'):
+    if isinstance(value, FrozenText) and hasattr(value, 'payload_bytes'):
         return  # Sealing validated exact bytes and these values cannot be edited.
     if value is None or isinstance(value, (bool, str)):
         if isinstance(value, str) and _SURROGATE.search(value):

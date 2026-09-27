@@ -18,8 +18,10 @@ from .planning import (task_ready, contract_hash, record_due_events, contract_re
 from .repository import canonical_json, exact_content_hash, new_id
 from .initialization import activation_requirements, capability_requirements
 from .session_slots import live_action_ids
+from .git_store import ARTIFACT_ROOT
+from .task_contracts import LIFECYCLE_STATES, TERMINAL_TASK_STATUSES
 
-_SCHEDULABLE = {'planned', 'waiting', 'active'}
+_SCHEDULABLE = LIFECYCLE_STATES - TERMINAL_TASK_STATUSES
 
 
 def _reconsider_interval(config):
@@ -39,8 +41,8 @@ def preserve_rejected_candidate(store, snapshot, *, raw, reason):
     except (ValueError, TypeError, KeyError, OSError, RuntimeError) as exc:
         raise ValueError('damaged current state cannot be rewritten: ' + str(exc)) from exc
     identity = new_id('RJ')
-    path = 'runtime/artifacts/' + identity + '/candidate.raw'
-    audit = 'runtime/artifacts/' + identity + '/rejection.json'
+    path = ARTIFACT_ROOT + identity + '/candidate.raw'
+    audit = ARTIFACT_ROOT + identity + '/rejection.json'
     new_head = store.save_with_state(snapshot, instance, runtime, artifacts={path: raw, audit: canonical_json({
         'id': identity, 'candidate_ref': path, 'sha256': hashlib.sha256(raw).hexdigest(),
         'base_snapshot': snapshot, 'reason': reason, 'disposition': 'rejected_not_applied'})})[0]
@@ -115,7 +117,7 @@ class LifecycleEngineMixin:
     def _instance_closed(self):
         """Closed or completed research: no lifecycle control or dispatch applies any more."""
         return (self.runtime.get('status') in {'closed', 'completed'}
-                or self.instance['lifecycle'].get('permanently_closed'))
+                or self.instance.get('lifecycle', {}).get('permanently_closed'))
 
     def _request_stop_all(self, reason):
         """Record one stop reason on every execution that has not ended."""
@@ -181,7 +183,7 @@ class LifecycleEngineMixin:
         from .session_slots import quiescence
         self.runtime['recovery_checked'] = not any(quiescence(self.runtime).values())
         requirements = activation_requirements(self.instance, self.runtime, at=self._lifecycle_now().isoformat(),
-            owner_handlers=self._governance_owner_handlers())
+            owner_handlers=self.governance_owner_handlers())
         lifecycle.setdefault('activation', {})['missing'] = requirements['missing']
         lifecycle['activation']['observation_errors'] = requirements['observation_errors']
         if not requirements['satisfied']:
@@ -525,7 +527,7 @@ class LifecycleEngineMixin:
         if not guard['usable']:
             self.runtime['clock_guard'] = {'state': 'blocked', **guard}
             self.runtime['availability'] = {'state': 'blocked', 'reason': 'clock_regression'}
-            if self.runtime.get('status') not in {'closed', 'completed'}:
+            if not self._instance_closed():
                 self._pause_lifecycle('clock_regression')
             return
         if self.instance['lifecycle']['state'] == 'paused':
@@ -558,14 +560,14 @@ class LifecycleEngineMixin:
         changed_assessments = refresh_task_assessments(self.instance, self.runtime,
             evaluation_context=evaluation_context)
         reassess = [tid for tid in changed_assessments
-            if self.runtime['tasks'][tid].get('status') not in {'completed', 'closed'}
+            if self.runtime['tasks'][tid].get('status') not in TERMINAL_TASK_STATUSES
             and self.runtime['tasks'][tid].get('results')]
         if reassess:
             self._enqueue('research_plan', reason='Assessment evidence changed; reassess existing results: '
                           + ', '.join(sorted(reassess)))
         for task_id, task in self.runtime['tasks'].items():
             assessment = task.get('assessment', {})
-            if task.get('status') not in {'completed', 'closed'} or assessment.get('current') is not False:
+            if task.get('status') not in TERMINAL_TASK_STATUSES or assessment.get('current') is not False:
                 continue
             basis = exact_content_hash({key: assessment.get(key) for key in
                 ('execution_id', 'contract_sha256', 'results_sha256', 'basis')})
@@ -634,11 +636,10 @@ class LifecycleEngineMixin:
                     self.runtime['queue'][:] = [a for a in self.runtime['queue'] if a not in candidates]
                     self._enqueue('task_contract_review', task_id, contract_basis=required, review_basis_key=review_key,
                                   reason='Current contract and policy require independent approval')
-            evaluation = deepcopy(task_ready(task, self.instance, self.runtime,
+            evaluation = (deepcopy(task_ready(task, self.instance, self.runtime,
                                     action={'role': 'research_work', 'target': task_id, 'actor_kind': 'ai'},
-                                    evaluation_context=evaluation_context))
-            if not approved:
-                evaluation = {'state': 'not_ready', 'basis': [], 'errors': ['current revision lacks approved contract review']}
+                                    evaluation_context=evaluation_context)) if approved else
+                          {'state': 'not_ready', 'basis': [], 'errors': ['current revision lacks approved contract review']})
             previous = self._task_readiness.get(task_id)
             self._record_readiness(task_id, {**evaluation, 'contract_basis': required}, now.isoformat())
             if evaluation['state'] == 'ready':
@@ -711,8 +712,7 @@ class LifecycleEngineMixin:
         if not self._release_machine_execution(execution, at=at):
             return False
         if execution['status'] in {'starting', 'running'}:
-            transition_execution(execution, 'stopping', at=at, stop_phase='terminating',
-                                 reason='local machine call returned')
+            transition_execution(execution, 'stopping', at=at, reason='local machine call returned')
         transition_execution(execution, 'ended', at=at, outcome=outcome, disposition=disposition)
         return True
 

@@ -103,7 +103,7 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, insta
     assignments use its adopted ``role_profile_refs``, the same editions the
     engine publishes, never a profile rebuilt from the configuration.
     """
-    from .execution_profiles import RESEARCH_PRODUCER_ROLES
+    from .execution_profiles import RESEARCH_PRODUCER_ROLES, task_research
     role, target = action["role"], action.get("target")
     requirement = action.get("model_assessment")
     task = tasks.get(target, {})
@@ -126,9 +126,7 @@ def selection(config: dict, action: dict, tasks: dict, knowledge: dict, *, insta
         # A task's allowlist governs its work attempts. Reviewers and other
         # decision roles use their own adopted role profiles, while still
         # inheriting the task's difficulty/importance requirement above.
-        allowed = (task.get("profile_refs")
-                   if role in RESEARCH_PRODUCER_ROLES
-                   and not action.get("review_cycle_id") else None)
+        allowed = task.get("profile_refs") if task_research(action) else None
         if action.get("profile_ref"):
             explicit = match_profile_ref(profiles, action["profile_ref"])
             if explicit["actor_kind"] == "ai":

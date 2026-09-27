@@ -106,7 +106,7 @@ class RepetitionLineageTests(unittest.TestCase):
             for _ in range(2):
                 revisions.record_execution_outcome(instance, runtime, action, {}, eid, accepted=False)
         self.assertEqual(task_contracts.repetition_lineages(runtime)['selection_failure']['count'], 3)
-        for kind in ('currentness_changed', 'capacity_wait', 'input_overflow', 'provider_failure', 'publication_failure'):
+        for kind in ('currentness_changed', 'publication_failure', 'input_failure'):
             runtime['executions'][kind] = {'role': action['role'], 'error_kind': kind}
             revisions.record_execution_outcome(instance, runtime, action, {}, kind, accepted=False)
         self.assertEqual(task_contracts.repetition_lineages(runtime)['selection_failure']['count'], 3)
@@ -204,7 +204,7 @@ class RepetitionEngineTests(ActivatedPurposeHarness):
             result = native_result(execution, context, raw, workspace)
             result = engine._collect_submitted_result(execution, result, context, schema, workspace)
             self.assertIn('rejected_submission', result, result.get('error'))
-            transition_execution(engine.runtime['executions'][eid], 'stopping', at=now(), stop_phase='terminating')
+            transition_execution(engine.runtime['executions'][eid], 'stopping', at=now())
             engine._receive_submission(action, result, eid, context, schema, workspace)
             failure = engine.runtime['executions'][eid]
             self.assertEqual(failure['error_kind'], expected, failure.get('integration_result'))
@@ -278,7 +278,7 @@ class RepetitionEngineTests(ActivatedPurposeHarness):
         result = engine._collect_submitted_result(assessor, result, context, schema, workspace)
         self.assertEqual(result['status'], 'completed', result.get('error'))
         from do_math.execution_lifecycle import transition_execution
-        transition_execution(engine.runtime['executions'][assessor['id']], 'stopping', at=now(), stop_phase='terminating')
+        transition_execution(engine.runtime['executions'][assessor['id']], 'stopping', at=now())
         received = engine._receive_submission(review_action, result, assessor['id'], context, schema, workspace)
         self.assertEqual(received['status'], 'accepted', received.get('issues'))
         record = next(iter(engine.runtime['operational_dispositions'].values()))

@@ -31,10 +31,10 @@ run; identity assessments are recorded directly, never reviewed.
   doubles; its verifier returns ``formal_evidence``.
 """
 from copy import deepcopy
-import hashlib
 from pathlib import Path
 
 from do_math import knowledge as k, knowledge_io as io, knowledge_records as kr
+from do_math.formal import lean_source_sha256
 from do_math.repository import new_id
 
 
@@ -50,7 +50,7 @@ def formal_result(source, declarations, toolchain, *, closure=('True', 'True.int
                   dependency_evidence=('fixture-type', 'fixture-value'),
                   declaration_evidence=('fixture-type', 'fixture-proof'), **extra):
     """A verified compiler result for ``source``; ``extra`` adds fields such as ``allowed_axioms``."""
-    return dict(status='verified', source_sha256=hashlib.sha256(source.encode()).hexdigest(),
+    return dict(status='verified', source_sha256=lean_source_sha256(source),
         declarations=list(declarations), toolchain=deepcopy(toolchain), **extra,
         axioms={n: [] for n in declarations}, dependency_closure={n: list(closure) for n in declarations},
         dependency_evidence={n: dict(zip(closure, dependency_evidence)) for n in declarations},

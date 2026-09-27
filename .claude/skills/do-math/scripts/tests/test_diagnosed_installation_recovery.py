@@ -21,7 +21,6 @@ class DiagnosedRecoveryTests(unittest.TestCase):
         root = Path(temporary.name)
         runtime, diagnosis = installation_repair_state()
         configured = execution_profiles.build_profiles(DEFAULT_CONFIG)
-        profile = next(p for p in configured['execution_profiles'].values() if p['role'] == 'recovery')
         state = {**configured, 'config':dict(DEFAULT_CONFIG), 'id':'RI-fixture'}
         repository = SimpleNamespace(git_dir=root,
             writer_lock=lambda: nullcontext(), load=lambda: ('head',state,runtime),
@@ -61,8 +60,6 @@ class DiagnosedRecoveryTests(unittest.TestCase):
             (operator,'ResearchRepository',repository), (operator,'LIVE_INSTALLATION_ROOT',installation),
         ):
             stack.enter_context(patch.object(owner,name,return_value=value) if name=='ResearchRepository' else patch.object(owner,name,value))
-        stack.enter_context(patch.object(operator,'selection',return_value={'model':profile['ai']['model']}))
-        stack.enter_context(patch('do_math.execution_profiles.select_profile',return_value=profile))
         stack.enter_context(patch('do_math.initialization.adapter_for',return_value=SimpleNamespace(capability_identity=lambda:{})))
         stack.enter_context(patch('do_math.initialization.capability_requirements',return_value={'satisfied':True}))
         stack.enter_context(patch('do_math.session_slots.SessionSlots',return_value=slots))

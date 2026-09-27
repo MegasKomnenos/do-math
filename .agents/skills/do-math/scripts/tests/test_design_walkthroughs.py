@@ -20,7 +20,7 @@ from research_fixtures import write_checkpoint
 from do_math.repository import exact_content_hash, new_id
 from do_math.engine import query_records, read_record
 from do_math.repository import ResearchRepository
-from research_fixtures import git_init, observation_rule, observe
+from research_fixtures import Clock, git_init, observation_rule, observe
 from do_math.task_scope import apply_task_dispositions
 
 
@@ -78,11 +78,6 @@ def activate_relation(e, token):
 
 def rule(threshold=2):
     return observation_rule(threshold=threshold, id='R-attempts', required_evidence=['EV-attempts'], repeat_interval=2)
-
-
-class Clock:
-    value = 0
-    def __call__(self): return self.value
 
 
 def self_check(tracker, obligation, status='normal', **changes):

@@ -234,7 +234,7 @@ class NativeRepairTests(unittest.TestCase):
         self.assertEqual(received['error_kind'], 'output_validation')
         from do_math.execution_lifecycle import transition_execution
         transition_execution(self.engine.runtime['executions'][execution['id']], 'stopping',
-                             at='2026-09-22T12:00:00+00:00', stop_phase='terminating')
+                             at='2026-09-22T12:00:00+00:00')
         self.engine._receive_submission(self.context['action'], received, execution['id'], self.context, self.schema, self.workspace)
         retry = next(a for a in self.engine.runtime['queue'] if a.get('continuation_of') == execution['id'])
         self.assertEqual(retry['role'], self.context['action']['role'])

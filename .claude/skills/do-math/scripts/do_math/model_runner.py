@@ -14,8 +14,7 @@ import jsonschema
 
 from do_math.claude_adapter import ADAPTERS, provider_adapter, request_provider
 from do_math.provider_wait import provider_for
-from datetime import datetime, timezone
-from do_math.file_io import strict_json_loads
+from do_math.file_io import now, strict_json_loads
 from do_math.repository import canonical_json
 from do_math.session_slots import local_termination_confirmed
 from .observation_transport import ObservationBatch, decode_observation_row
@@ -137,7 +136,7 @@ class ModelRunner:
                 failure_path.write_bytes(canonical_json({**result["capability_failure"], "error": str(error),
                                                         "identity": identity, "execution_id": execution_id}))
                 result["capability_evidence"] = structural_failure_evidence(profile, identity,
-                    observed_at=datetime.now(timezone.utc).isoformat(), execution_id=execution_id,
+                    observed_at=now(), execution_id=execution_id,
                     evidence_ref=str(failure_path), capability=result["capability_failure"]["capability"])
             return result
         offset = 0
@@ -183,7 +182,7 @@ class ModelRunner:
             if chunk or final or current - last_tick >= 1:
                 last_tick = current
                 on_observation(ObservationBatch(events, offsets, rows, rows_emitted,
-                    datetime.now(timezone.utc).isoformat(), current, offset, stdout_path, terminated))
+                    now(), current, offset, stdout_path, terminated))
                 rows_emitted += len(rows)
         from .windows_job import process_identity
         started = {**process_identity(execution.job),
@@ -255,7 +254,7 @@ class ModelRunner:
             limit = adapter.provider_failure(parsed)
             if limit:
                 result.update(error_kind="provider_limit", failure={**limit,
-                    "observed_at": datetime.now(timezone.utc).isoformat(),
+                    "observed_at": now(),
                     "evidence_ref": str(evidence_dir / "stdout.jsonl")})
             return result
         if control_binding is not None:

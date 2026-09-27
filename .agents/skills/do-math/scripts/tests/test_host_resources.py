@@ -229,7 +229,6 @@ class HostRepositoryContract(unittest.TestCase):
             if os.name == "nt":
                 from do_math.windows_job import process_identity
                 from do_math.execution_lifecycle import transition_execution
-                import uuid
                 marker = Path(directory) / "user-started"
                 code = f"from pathlib import Path; Path({str(marker)!r}).write_text('ok')"
                 slots = SessionSlots(runtime, instance)
@@ -247,7 +246,7 @@ class HostRepositoryContract(unittest.TestCase):
                     while job.inspect().active_processes and time.monotonic() < deadline: time.sleep(.02)
                     with repo.writer_lock():
                         self.assertTrue(slots.release(e["id"]))
-                        transition_execution(e, "stopping", at="2026-09-20T00:01:00Z", stop_phase="terminating")
+                        transition_execution(e, "stopping", at="2026-09-20T00:01:00Z")
                         transition_execution(e, "ended", at="2026-09-20T00:01:01Z", outcome="execution_incomplete")
                         head = repo.save_with_state(head, instance, runtime)[0]
                         self.assertTrue(slots.release(e["id"], reason="repeat settlement"))
@@ -337,7 +336,6 @@ class HostJobTests(unittest.TestCase):
                 self.assertIsNone(result["execution"]["collect"]["worker_status"])
 
     def test_real_creation_failure_and_normal_abnormal_termination_return_once(self):
-        import uuid
         from do_math.windows_job import process_identity
         for outcome in ("creation_failure", "normal", "nonzero", "terminated", "setting_failure"):
             instance, selected, _ = host_capacity_fixture()
@@ -504,38 +502,37 @@ class HostConfigurationTests(unittest.TestCase):
     def test_public_init_configure_and_removal(self):
         from do_math.repository import ResearchRepository
         from research_fixtures import bare_engine, new_instance
-        for sessions in (True,):
-            with self.subTest(sessions=sessions), tempfile.TemporaryDirectory() as directory:
-                root = Path(directory)
-                settings = self.configuration()
-                instance_id = new_instance(root, goal='Temporary configuration test', workspace=root/'workspace', config=settings)
-                store = ResearchRepository(root, instance_id)
-                head, instance, runtime = store.load()
-                host_id = instance['host_capacity_ref']
-                approval = instance['capacity_constraints'][host_id]['authority_refs'][0]
-                self.assertEqual(instance['governance_sources'][approval]['origin'], 'user')
-                self.assertNotEqual(approval, 'configuration:request')
-                host = bare_engine()
-                same, state = host._configure_candidate(instance, runtime, {'config': {'host_resources': settings['host_resources']}})
-                self.assertEqual(same['host_capacity_ref'], host_id)
-                with self.assertRaisesRegex(ValueError, 'user'):
-                    host._configure_candidate(instance, runtime, {'origin': 'operator', 'config': {'host_resources': None}})
-                # Public admission refuses the same operator change instead of queueing a request application rejects.
-                from do_math.engine import control
-                with self.assertRaisesRegex(ValueError, 'user decision'):
-                    control(root, instance_id, 'configure', config={'host_resources': None}, origin='operator')
-                held = deepcopy(runtime)
-                held['executions']['EX-live'] = {'id': 'EX-live', 'status': 'queued'}
-                with self.assertRaisesRegex(ValueError, 'stopped'):
-                    host._configure_candidate(instance, held, {'config': {'host_resources': None}})
-                removed, state = host._configure_candidate(instance, runtime, {'config': {'host_resources': None}})
-                self.assertNotIn('host_capacity_ref', removed)
-                self.assertIn(host_id, removed['capacity_constraints'])
-                saved = store.save_with_state(head, removed, state)[0]
-                self.assertIsNone(store.load(saved)[1]['config']['host_resources'])
-                for profile in same['execution_profiles'].values():
-                    if profile['role'] in {'formal_check', 'trust_check', 'trust_activate'}:
-                        self.assertNotIn('host_resources', profile)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            settings = self.configuration()
+            instance_id = new_instance(root, goal='Temporary configuration test', workspace=root/'workspace', config=settings)
+            store = ResearchRepository(root, instance_id)
+            head, instance, runtime = store.load()
+            host_id = instance['host_capacity_ref']
+            approval = instance['capacity_constraints'][host_id]['authority_refs'][0]
+            self.assertEqual(instance['governance_sources'][approval]['origin'], 'user')
+            self.assertNotEqual(approval, 'configuration:request')
+            host = bare_engine()
+            same, state = host._configure_candidate(instance, runtime, {'config': {'host_resources': settings['host_resources']}})
+            self.assertEqual(same['host_capacity_ref'], host_id)
+            with self.assertRaisesRegex(ValueError, 'user'):
+                host._configure_candidate(instance, runtime, {'origin': 'operator', 'config': {'host_resources': None}})
+            # Public admission refuses the same operator change instead of queueing a request application rejects.
+            from do_math.engine import control
+            with self.assertRaisesRegex(ValueError, 'user decision'):
+                control(root, instance_id, 'configure', config={'host_resources': None}, origin='operator')
+            held = deepcopy(runtime)
+            held['executions']['EX-live'] = {'id': 'EX-live', 'status': 'queued'}
+            with self.assertRaisesRegex(ValueError, 'stopped'):
+                host._configure_candidate(instance, held, {'config': {'host_resources': None}})
+            removed, state = host._configure_candidate(instance, runtime, {'config': {'host_resources': None}})
+            self.assertNotIn('host_capacity_ref', removed)
+            self.assertIn(host_id, removed['capacity_constraints'])
+            saved = store.save_with_state(head, removed, state)[0]
+            self.assertIsNone(store.load(saved)[1]['config']['host_resources'])
+            for profile in same['execution_profiles'].values():
+                if profile['role'] in {'formal_check', 'trust_check', 'trust_activate'}:
+                    self.assertNotIn('host_resources', profile)
 
     def test_host_configuration_builds_profiles_once_per_step(self):
         # Admission only checks the host section; initialization and application each author the editions once.

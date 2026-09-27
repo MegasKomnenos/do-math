@@ -680,7 +680,7 @@ class FollowupDocumentTests(ActivatedPurposeHarness):
         old.update(artifact_bundle="BA-old", result_ref=reference,
                    error="output validation: earlier proposal omitted its required source")
         at = engine._lifecycle_now().isoformat()
-        transition_execution(old, "stopping", at=at, stop_phase="terminating")
+        transition_execution(old, "stopping", at=at)
         transition_execution(old, "ended", at=at, outcome="execution_incomplete")
         engine.runtime["history"] = [{"role": "maintenance", "summary": "Unrelated later event"} for _ in range(20)]
         engine._save({reference: result})

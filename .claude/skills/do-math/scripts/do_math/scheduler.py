@@ -9,7 +9,8 @@ from copy import deepcopy
 from pathlib import Path
 import time
 
-from .execution_profiles import LEAN_ROLES, MACHINE_ROLES, PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
+from .execution_profiles import LEAN_ROLES, MACHINE_ROLES, PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, task_research
+from .git_store import ARTIFACT_ROOT
 from .model_policy import selection
 from .parallel import ModelCalls, failed_result
 from .payloads import json_safe
@@ -134,7 +135,7 @@ class SchedulerMixin:
             execution = self.runtime['executions'].get(execution_id)
             if not execution or execution['status'] == 'ended':
                 continue
-            reference = f'runtime/artifacts/{new_id("BA")}/interrupted-result.json'
+            reference = f'{ARTIFACT_ROOT}{new_id("BA")}/interrupted-result.json'
             artifacts[reference] = raw
             execution['result_ref'] = reference
             execution['stop_requested'] = 'engine_error'
@@ -144,12 +145,11 @@ class SchedulerMixin:
                     disposition={'kind': 'engine_error', 'result_ref': reference, 'local_result': local_path}):
                 action = execution['action']
                 self._remove_action(action)
-                if action.get('id') and self.runtime['status'] not in {'closed', 'completed'}:
+                if action.get('id') and not self._instance_closed():
                     self.runtime.setdefault('waiting_actions', {})[action['id']] = {
                         'action': deepcopy(action), 'kind': 'execution_failure', 'execution_id': execution_id,
                         'reason': execution['error'], 'next_owner': 'operational_review'}
-                    from .repair_execution import route_failed_action
-                    route_failed_action(self, action, execution_id,
+                    self.route_failed_action(action, execution_id,
                         reason='Assess the interrupted execution using its preserved result and remaining obligation')
                 self._settle_activity(execution_id)
         self._live_execution_ids.clear()
@@ -241,7 +241,7 @@ class SchedulerMixin:
         if any(e.get("action", {}).get("id") == action.get("id") for e in live if action.get("id")):
             return False
         role, target = action["role"], action.get("target")
-        if role in RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id"):
+        if task_research(action):
             from .planning import task_ready
             task = self.runtime["tasks"].get(target)
             evaluation = task_ready(task, self.instance, self.runtime, action=action,
@@ -264,7 +264,7 @@ class SchedulerMixin:
             return False
         if role in PLANNING_ROLES and any(e["role"] == role for e in live):
             return False
-        if role in RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id") and any(
+        if task_research(action) and any(
                 e["role"] in RESEARCH_PRODUCER_ROLES and e.get("action", {}).get("target") == target
                 and not e.get("action", {}).get("review_cycle_id") for e in live):
             return False
@@ -290,6 +290,9 @@ class SchedulerMixin:
         return admission['allowed']
 
     def _run_parallel(self, *, max_steps=None, watch=False, until_active=False):
+        # Bound before the loop: the maintenance exit leaves the loop before its
+        # stopping check, and the settlement after the loop still reads this name.
+        from .repair_execution import pending_installation_repair
         self._calls = ModelCalls(on_returned=self._local_call_returned,
                                  on_observation_error=self._observation_failed)
         self._stop_deadlines, self._stop_clock = {}, None
@@ -315,9 +318,8 @@ class SchedulerMixin:
                     break
                 limited = self.runtime['status'] == 'paused' and any(
                     self._limited_recovery_allowed(a) for a in self.runtime['queue'])
-                stopping = (self.runtime["status"] in {"closed", "completed"}
+                stopping = (self._instance_closed()
                             or (self.runtime['status'] == 'paused' and not limited))
-                from .repair_execution import pending_installation_repair
                 stopping = stopping or pending_installation_repair(self.runtime) is not None
                 if stopping:
                     if not self._calls.futures:
@@ -341,7 +343,7 @@ class SchedulerMixin:
                 scan = self._scan_due()
                 if scan:
                     self._refresh_readiness()
-                if self.runtime["status"] in {"closed", "completed"} or (self.runtime['status'] == 'paused' and not limited):
+                if self._instance_closed() or (self.runtime['status'] == 'paused' and not limited):
                     continue
                 self._resume_environment_waits()
                 if not self.runtime["queue"] and not self._calls.futures:
@@ -389,7 +391,7 @@ class SchedulerMixin:
             if self.runtime["status"] not in {"initializing", "paused", "closed", "completed", "waiting", "capacity_waiting"}:
                 self.runtime["status"] = "ready"
             if (pending_installation_repair(self.runtime) is not None
-                    and self.runtime['status'] not in {'paused', 'closed', 'completed'}):
+                    and self.runtime['status'] != 'paused' and not self._instance_closed()):
                 self.runtime['status'] = 'waiting'
             self._save()
         except BaseException as error:

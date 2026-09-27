@@ -16,7 +16,6 @@ RECOVERY_REPORT_RECEIPT = "recovery_report"
 # Receipts that accept an AI role's sealed submission.
 SUBMISSION_RECEIPT_KINDS = frozenset({SUBMIT_INTENT, NATIVE_FINAL_RECEIPT})
 EXECUTION_STATUSES = frozenset({"queued", "starting", "running", "stopping", "ended"})
-STOP_PHASES = frozenset({"terminating"})
 OUTCOMES = frozenset({"output_accepted", "execution_incomplete", "cancelled", "start_failed"})
 _EDGES = {"queued": {"starting", "ended"}, "starting": {"running", "stopping"},
           "running": {"stopping"}, "stopping": {"ended"}, "ended": set()}
@@ -48,8 +47,7 @@ def create_execution(*, execution_id: str, owner_activity_id: str, actor_kind: s
 
 
 def transition_execution(execution: dict, target: str, *, at: str, reason: str | None = None,
-                         stop_phase: str | None = None, outcome: str | None = None,
-                         disposition: Any = None) -> dict:
+                         outcome: str | None = None, disposition: Any = None) -> dict:
     """Apply one legal transition; terminal outcomes do not encode activity meaning."""
     current = execution.get("status")
     if current not in EXECUTION_STATUSES or target not in EXECUTION_STATUSES:
@@ -57,11 +55,6 @@ def transition_execution(execution: dict, target: str, *, at: str, reason: str |
     require_text(at, "at")
     if target != current and target not in _EDGES[current]:
         raise ValueError(f"illegal execution transition {current} -> {target}")
-    if target == "stopping":
-        if stop_phase not in STOP_PHASES:
-            raise ValueError("stopping requires the terminating stop phase")
-    elif stop_phase is not None:
-        raise ValueError("stop_phase exists only while stopping")
     if target == "ended":
         if outcome not in OUTCOMES:
             raise ValueError("ended requires a closed outcome")
@@ -74,12 +67,8 @@ def transition_execution(execution: dict, target: str, *, at: str, reason: str |
     if target == current:
         return execution
     execution["status"] = target
-    execution.setdefault("transitions", []).append({"from": current, "to": target, "at": at,
-                                                       "reason": reason, "stop_phase": stop_phase})
-    if target == "stopping":
-        execution["stop_phase"] = stop_phase
-    elif target == "ended":
-        execution.pop("stop_phase", None)
+    execution.setdefault("transitions", []).append({"from": current, "to": target, "at": at, "reason": reason})
+    if target == "ended":
         # A recovery disposition governs an unfinished execution; the outcome replaces it.
         execution.pop("recovery_disposition", None)
         execution.update(ended_at=at, outcome=outcome, result_disposition=deepcopy(disposition))
@@ -116,7 +105,7 @@ def record_submission_intent(execution: dict, intent: dict, receipt: dict, *, at
     candidate["submission_intent"] = deepcopy(intent)
     candidate["submission_receipt"] = deepcopy(receipt)
     if not recovery:
-        transition_execution(candidate, "stopping", at=at, reason="submission_intent", stop_phase="terminating")
+        transition_execution(candidate, "stopping", at=at, reason="submission_intent")
     candidate["authority_revocation"] = {"scope": "execution_research", "reason": "submission_intent",
                                           "at": at, "receipt_id": receipt_id}
     execution.clear()
@@ -164,7 +153,7 @@ def drive_to_termination(execution: dict, *, at: str, reason: str) -> dict:
     Queued, ended and already stopping executions are unchanged.
     """
     if execution.get("status") in {"starting", "running"}:
-        transition_execution(execution, "stopping", at=at, reason=reason, stop_phase="terminating")
+        transition_execution(execution, "stopping", at=at, reason=reason)
     return execution
 
 
@@ -177,8 +166,7 @@ def release_or_hold(execution: dict, slots, *, at: str) -> bool:
     """
     if not execution.get("capacity") or slots.release(execution["id"]):
         return True
-    transition_execution(execution, "stopping", at=at, stop_phase="terminating",
-                         reason="local Job termination remains unconfirmed")
+    transition_execution(execution, "stopping", at=at, reason="local Job termination remains unconfirmed")
     if not execution.get("error"):
         execution["error"] = "Local Job termination is unconfirmed; capacity and output remain held for recovery."
     return False

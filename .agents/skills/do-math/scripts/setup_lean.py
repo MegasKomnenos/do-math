@@ -253,14 +253,14 @@ def main():
             from do_math.submission import load_json
             command = load_json(args.command_file.read_bytes())['lean_command'] if args.command_file else discover_lean()
             if not command:
-                parser.error('Lean was not found; supply --command-file')
+                raise ValueError('Lean was not found; supply --command-file')
         if args.inspect_only:
             with tempfile.TemporaryDirectory() as directory:
                 print(json.dumps({'status': 'observed', 'lean_command': command,
                                   'toolchain': inspect_toolchain(command, Path(directory))}))
             return
         if root is None and (args.records_dir is None or args.evidence_dir is None and not args.check_contents):
-            parser.error('this installation has no toolchain root; supply --records-dir and --evidence-dir')
+            raise ValueError('this installation has no toolchain root; supply --records-dir and --evidence-dir')
         records_dir = args.records_dir or root / 'records'
         evidence_root = args.evidence_dir or (root / 'validation' if root else None)
         if args.check_contents:

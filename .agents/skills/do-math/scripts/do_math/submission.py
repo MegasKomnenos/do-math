@@ -21,8 +21,8 @@ from .file_io import atomic_replace, json_copy
 
 from . import knowledge_io, planning, review_cycle
 from .context_store import collect_outputs, materialize_inputs, read_source, safe_path, is_excluded, read_stable, relative_path
-from .git_store import ULID_PATTERN
-from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
+from .git_store import ARTIFACT_ROOT, ULID_PATTERN
+from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, review_research, task_research
 from .external import prepare_operation, validate_operation
 from .model_policy import ASSESSMENT_SCHEMA, assessment_key, validate_assessments, preparation_only
 from .observations import read_checkpoint, checkpoint_value, validate_rule_proposal, CHECKPOINT_MAX_BYTES, RULES_MAX_BYTES
@@ -122,7 +122,7 @@ def issued_input(execution: dict, snapshot: str, read_artifact, *,
     parsed again, and callers get copies.
     """
     def issued(relative):
-        raw = read_artifact("runtime/artifacts/" + execution["input_bundle"] + "/" + relative, snapshot)
+        raw = read_artifact(ARTIFACT_ROOT + execution["input_bundle"] + "/" + relative, snapshot)
         key = hashlib.sha256(raw).digest()
         value = _ISSUED_INPUTS.get(key)
         if value is None:
@@ -225,7 +225,7 @@ def extension_schema(action: dict) -> dict:
     else:
         allowed.discard("model_assessment_deferrals")
         allowed.discard('observation_rule_deferrals')
-    if action["role"] == "supplemental_research" and action.get("review_cycle_id"):
+    if review_research(action):
         allowed.clear()
     if not action.get("review_cycle_id"):
         allowed.discard("research_requests")
@@ -262,8 +262,8 @@ def reported_references(output: dict, extensions: dict, context: dict | None = N
         refs.append(row.get("task_id"))
     for row in output.get("candidates", []):
         refs.extend([*row.get("dependencies", []), *row.get("authority_refs", []), *row.get("basis_refs", [])])
-    refs.extend(integration._refs(output.get("task_assessments", [])))
-    refs.extend(integration._refs(output.get("item_reviews", [])))
+    refs.extend(integration.reference_ids(output.get("task_assessments", [])))
+    refs.extend(integration.reference_ids(output.get("item_reviews", [])))
     refs.extend(output.get("disposition", {}).get("basis_refs", []))
     for row in extensions.get("task_conditions", []):
         refs.extend(row.get("dependencies", []))
@@ -350,7 +350,7 @@ def reference_catalog(context: dict, workspace: Path) -> list[dict]:
         identity = aliases.get(ref.removeprefix("workspace:"), ref)
         current = identity in records or identity in source_names
         kind = ("source" if identity in source_names else "record" if identity in records else
-                "historical_artifact" if ref.startswith("runtime/artifacts/") else "supplied_reference")
+                "historical_artifact" if ref.startswith(ARTIFACT_ROOT) else "supplied_reference")
         rows.append({"value": ref, "canonical_ref": identity, "kind": kind,
                      "basis": "current_content" if current else "fixed_input_or_historical_evidence"})
     return rows
@@ -724,7 +724,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         tasks[context["task"]["id"]] = context["task"]
     new_knowledge = {item["title"] for item in output.get("knowledge", [])}
     new_tasks = {item["title"] for item in output.get("candidates", [])}
-    if not (action["role"] == "supplemental_research" and action.get("review_cycle_id")):
+    if not review_research(action):
         for index, ref in enumerate(output.get("used_sources", [])):
             check(f"output/used_sources/{index}", lambda ref=ref: supplied(ref))
     for label, rows in (("knowledge", output.get("knowledge", [])), ("candidates", output.get("candidates", []))):
@@ -825,7 +825,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             require(definition["token"] not in {row["token"] for row in definitions.get(family, [])}, "kind token already exists")
             definitions.setdefault(family, []).append(definition)
         check(f"activity-extensions.json/kind_definitions/{index}", check_kind)
-    if action["role"] in RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id"):
+    if task_research(action):
         if owns_response:
             check("output/report", lambda: require(bool(output["report"].strip()), "report must state the actual scope and outcome"))
         for index, item in enumerate(output["knowledge"]):
@@ -990,7 +990,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         domain_output = {key: value for key, value in output.items() if key not in {"integration_bundles", "repair_responses"}}
         check("output", lambda: review_cycle.validate_visible_output(context["role_review"], action, domain_output,
                     requesting_research=bool(extensions.get("research_requests"))))
-    if action["role"] == "supplemental_research" and action.get("review_cycle_id"):
+    if review_research(action):
         research = context["review_research"]
         check("output", lambda: review_cycle.validate_research_answer(output))
         for field in ('used_sources', 'evidence_refs'):
@@ -1321,7 +1321,7 @@ def _repair_links(records, result):
         skipped = result.get("not_checked", [])
         checked = ("schema" not in skipped if rule.startswith("schema.") else
                    "read_or_parse" not in result.get("check_order", []) if rule in {
-                       'submission.read_or_parse', 'submission.parse', 'submission.read'} else
+                       'submission.parse', 'submission.read'} else
                    "payload_semantics" not in skipped)
         if checked:
             links.append({key: failure[key] for key in ("issue_id", "rule_id", "path")})
@@ -1418,7 +1418,7 @@ def summarize_snapshot_checks(seals, *, snapshot, read_artifact, history_window,
         evidence = seal['submission_check']
         artifacts = {}
         for entry in evidence['artifacts']:
-            if not entry['path'].startswith('runtime/artifacts/') or entry['path'] in artifacts:
+            if not entry['path'].startswith(ARTIFACT_ROOT) or entry['path'] in artifacts:
                 raise ValueError('central check artifact coordinate differs')
             raw = sealed_bytes(git_dir, entry['path'], entry['sha256'], entry['bytes'],
                                lambda: read_artifact(entry['path'], snapshot),
@@ -1477,13 +1477,13 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
             "arguments": "--source <workspace-relative .lean file> --declaration <name> (repeat for each declaration)",
             "authoritative": False,
             "environment": "Same verifier edition and configured command. Shared libraries and Lake caches are not isolated. Central verification is mandatory."}
-    from datetime import datetime, timezone
+    from .file_io import now
     from .contracts import schema_reference
     contract = {"command": [sys.executable, "-B", "input/tools/check_submission.py"],
         "schema_ref": schema_reference(schema),
         "delivery": "Normal delivery is one complete JSON final. Central validation captures its exact bytes after verified CLI completion and local termination. Draft submission is optional and early; an accepted draft cannot be replaced by a later final.",
         "arguments": "--output <workspace-relative draft>; add --preview or --submit and --wait-seconds <remaining caller budget> for central control; --new-knowledge-id prints a fresh replacement_id without submission or reservation",
-        "basis_time": context.get("observed_at") or datetime.now(timezone.utc).isoformat(),
+        "basis_time": context.get("observed_at") or now(),
         "tool_sha256": hashlib.sha256(archive).hexdigest(), "checks_directory": "checks",
         "workspace": str(workspace.resolve()),
         "schema_path": "input/submission/schema.json", "context_path": "input/submission/context.json",
@@ -1663,7 +1663,7 @@ def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
     from .repository import new_id
     request_id = ("preview-" if kind == SUBMISSION_PREVIEW else "submit-") + new_id("RQ")
     delivery = ControlTransport.worker_submit(binding, request_id=request_id, kind=kind, payload=payload)
-    if delivery["state"] in {"withdrawn", "closed"}:
+    if delivery["state"] == "closed":
         return delivery
     return ControlTransport.wait_receipt(binding, request_id, wait_seconds) or delivery
 

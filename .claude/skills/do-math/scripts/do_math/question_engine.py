@@ -3,6 +3,7 @@ from copy import deepcopy
 import json
 
 from . import academic, questions
+from .git_store import ARTIFACT_ROOT
 
 
 def resolve_pointer(value, pointer):
@@ -63,7 +64,7 @@ class QuestionEngineMixin:
             review_source = next(key for key, row in cycle["results"].items() if row["execution_id"] == execution_id)
         else:
             source = source_ref or (execution.get("submission_intent", {}).get("output_ref") or
-                      f"runtime/artifacts/{execution['artifact_bundle']}/output.json")
+                      f"{ARTIFACT_ROOT}{execution['artifact_bundle']}/output.json")
         routes = {row["question_index"]: row for row in execution.get("extensions", {}).get("question_routes", [])}
         default_owner = "operations" if action["role"] in questions.OPERATIONS_ROLES else "research"
         for index, text in enumerate(output.get("questions", [])):

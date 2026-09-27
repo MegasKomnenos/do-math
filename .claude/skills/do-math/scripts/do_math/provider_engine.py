@@ -75,7 +75,7 @@ class ProviderEngineMixin:
         if not facts["operator_enabled"] and not self.runtime.get('provider_wake'):
             return
         try:
-            result = reconcile_wake(self.store._store.repository, self.instance["id"], Path(self.instance["workspace"]),
+            result = reconcile_wake(self.store.repository, self.instance["id"], Path(self.instance["workspace"]),
                                     facts=facts, providers=self._provider_status()["providers"])
             result.pop("observed", None)
         except Exception as error:
@@ -98,5 +98,5 @@ class ProviderEngineMixin:
                      condition=deepcopy(wait), next_owner=wait["next_owner"],
                      at=self._lifecycle_now().isoformat())
         self.runtime["queue"].append(restored)
-        if self.runtime["status"] not in {"paused", "closed", "completed"}:
+        if self.runtime["status"] != "paused" and not self._instance_closed():
             self.runtime["status"] = "ready"

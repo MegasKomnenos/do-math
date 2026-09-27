@@ -54,7 +54,6 @@ import jsonschema
 from do_math import submission
 from do_math.control_transport import ControlTransport
 from do_math.engine import ResearchEngine, control
-from do_math.model_policy import LIMITS
 from do_math.repository import canonical_json
 from research_fixtures import (FixtureAdapter, assessment, await_stop, bind_candidates, charter_change,
                                contract_review, disposition, install_adapter_fixture, intent_response,
@@ -106,9 +105,6 @@ def formal_fixture(*, source, declarations, workspace, lean_command,
     result = formal_ok(source=source, declarations=declarations, workspace=workspace,
         lean_command=lean_command, allowed_axioms=allowed_axioms, expected_toolchain=expected_toolchain,
         launch_ticket=launch_ticket)
-    result['dependency_closure'] = {'add_zero_fixture': ['Nat', 'Nat.add_zero']}
-    result['dependency_evidence'] = {'add_zero_fixture': {'Nat': 'fixture-Nat', 'Nat.add_zero': 'fixture-Nat.add_zero'}}
-    result['declaration_evidence'] = {'add_zero_fixture': {'type': '(n : Nat) -> n + 0 = n', 'value': 'Nat.add_zero'}}
     result['reason'] = 'Explicit compiler fixture; not an actual Lean invocation'
     return result
 
@@ -190,7 +186,7 @@ class PurposeRunner:
                 'reason': 'The fixture replaces this contract.' if identifier in revised else 'The fixture preserves this remaining obligation.'}
                 for identifier in action['revision_targets']]
             path.write_bytes(canonical_json(extensions))
-        if role == 'research_preparation' and context.get('budget_unit') == 'concurrent_sessions':
+        if role == 'research_preparation':
             from runner_fixtures import contract_checks
             path = workspace / 'activity-extensions.json'
             extensions = json.loads(path.read_bytes()) if path.exists() else {}
@@ -210,7 +206,7 @@ class PurposeRunner:
                                 {'outcome': 'B leaves the domain unresolved',
                                  'completion': 'Preserve the unmet premise and do not claim the identity'}]
             path.write_bytes(canonical_json(extensions))
-        if role == 'research_plan' and context.get('budget_unit') == 'concurrent_sessions':
+        if role == 'research_plan':
             path = workspace / 'activity-extensions.json'
             extensions = json.loads(path.read_bytes()) if path.exists() else {}
             extensions['model_assessments'] = planning_model_assessments(output, context)
@@ -221,7 +217,6 @@ class PurposeRunner:
             supply_observation_rules(output['candidates'], extensions)
             path.write_bytes(canonical_json(extensions))
         if role == 'research_preparation' and action.get('observation_rule_targets'):
-            from research_fixtures import prepared_rule_conditions
             path = workspace / 'activity-extensions.json'
             extensions = json.loads(path.read_bytes()) if path.exists() else {}
             extensions['task_conditions'] = prepared_rule_conditions(action['observation_rule_targets'])
@@ -302,7 +297,6 @@ class PurposeRunner:
                 'knowledge': knowledge, 'relations': [], 'remaining_work': [], 'checkpoint': 'Argument and domain are explicit'}
         if role == 'identity_review':
             if action['stage'] == 'scope':
-                from research_fixtures import scope_response
                 return {**common('Inspect the full supplied proposal and assign independent perspectives'), **scope_response(context)}
             review = context['role_review']
             base = {**common('Compare the exact Nat statement, explanation and proof'), 'proposal_digest': review['proposal_digest'],
@@ -403,7 +397,7 @@ class ActivatedPurposeHarness(PurposeHarness):
         return engine, runner
 
     def make(self, scenario='direct', *, observation=None, external_policy='disabled', review_policy=None, **config):
-        from research_fixtures import activated_instance, restore_template
+        from research_fixtures import activated_instance
         if observation in {'continue', 'stop'}:
             config.setdefault('tool_review_window_seconds', 1)
         self.root, instance_id = restore_template(activated_instance, goal=GOAL,
@@ -411,8 +405,6 @@ class ActivatedPurposeHarness(PurposeHarness):
         return self._engine(instance_id, PurposeRunner(scenario, observation=observation))
 
     def make_active(self, **config):
-        from research_fixtures import restore_template
-        from state_fixtures import active_instance
         self.root, instance_id = restore_template(active_instance, config=config)
         return self._engine(instance_id, PurposeRunner())
 
@@ -496,7 +488,7 @@ def solved_instance(root, shared, *, criteria):
     the head the driving engine published last and the order in which the
     runner answered research work.
     """
-    from research_fixtures import FixtureAdapter, activated_instance
+    from research_fixtures import activated_instance
     instance_id = activated_instance(root, shared, goal=GOAL, config=PurposeHarness.fixture_config())
     engine = ResearchEngine(root / "repository", instance_id, runner=AcademicRunner(), formal_verifier=formal_fixture)
     with patch("do_math.initialization.adapter_for", side_effect=lambda profile: FixtureAdapter()):
@@ -582,8 +574,7 @@ class CheckedRunner:
             ControlTransport.wait_receipt(binding, request_id, 60)  # The owner receives it on its next pass.
         return result
 
-ASSESSMENT_CONFIG = PurposeHarness.fixture_config(scholarly_enabled=False, operator_enabled=False,
-                                                  session_limits=deepcopy(LIMITS))
+ASSESSMENT_CONFIG = PurposeHarness.fixture_config(scholarly_enabled=False, operator_enabled=False)
 
 
 def assessment_preparation_instance(root, shared, *, config):
@@ -594,8 +585,6 @@ def assessment_preparation_instance(root, shared, *, config):
     and their contract reviews are injected, and the published readiness has
     replaced the reviews with one assessment-only preparation.
     """
-    from research_fixtures import candidate as task_candidate, send_control
-    from state_fixtures import active_instance
     from do_math.academic import current_requirements
     instance_id = active_instance(root, shared, config=config)
     engine = ResearchEngine(root / "repository", instance_id)
@@ -605,7 +594,7 @@ def assessment_preparation_instance(root, shared, *, config):
     engine.runtime["queue"] = []
     for number in (1, 2):
         tid = f"TK-academic-{number}"
-        engine.runtime["tasks"][tid] = {**task_candidate(str(number)), "id": tid, "revision": 1,
+        engine.runtime["tasks"][tid] = {**v5_candidate(str(number)), "id": tid, "revision": 1,
             "status": "planned", "academic_requirement_id": "r",
             "requirements_sha256": requirement_hash, "results": [], "reviews": [], "dependencies": [],
             "occurrence_condition": {"op": "always"},
@@ -622,7 +611,6 @@ def assessment_preparation_instance(root, shared, *, config):
 
 def prepared_assessment_engine(test):
     """An engine for ``test`` (an ``ActivatedPurposeHarness``) on a copy of ``assessment_preparation_instance``."""
-    from research_fixtures import restore_template
     test.root, instance_id = restore_template(assessment_preparation_instance, config=ASSESSMENT_CONFIG)
     engine, _ = test._engine(instance_id, PurposeRunner())
     return engine

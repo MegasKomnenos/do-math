@@ -134,7 +134,7 @@ def complete_academic_task(engine, task, basis):
             "id": new_id("EX"), "role": role, "status": "running",
             "input_solution_basis": deepcopy(basis)})
         at = engine._lifecycle_now().isoformat()
-        transition_execution(execution, "stopping", at=at, stop_phase="terminating")
+        transition_execution(execution, "stopping", at=at)
         transition_execution(execution, "ended", at=at, outcome="execution_incomplete")
         executions.append(execution["id"])
     task["results"] = [{"execution_id": executions[0], "report": "Synthetic returned academic account."}]

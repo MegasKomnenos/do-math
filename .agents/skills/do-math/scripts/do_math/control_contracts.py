@@ -22,6 +22,11 @@ USER_DECISION_SETTINGS = ('session_limits', 'tier_models', 'role_tiers', 'claude
                           'host_resources')
 
 
+def user_decision_changed(current: dict, candidate: dict) -> bool:
+    """Whether a candidate configuration changes a setting that only a user decision may change."""
+    return any(candidate.get(key) != current.get(key) for key in USER_DECISION_SETTINGS)
+
+
 def control_request_id(instance_id, action, *, text='', config=None, origin='user', idempotency_key=None):
     """Hash normalized content, not mutable admission state or delivery time.
 

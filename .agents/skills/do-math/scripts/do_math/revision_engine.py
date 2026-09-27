@@ -2,7 +2,7 @@
 from copy import deepcopy
 
 from . import planning, revisions
-from .execution_profiles import RESEARCH_PRODUCER_ROLES
+from .execution_profiles import RESEARCH_PRODUCER_ROLES, task_research
 from .session_slots import live_action_ids
 
 
@@ -59,7 +59,7 @@ class RevisionEngineMixin:
                 self._remove_action(action)
 
     def _selected_action_current(self, action, *, evaluation_context=None):
-        if action.get("role") not in RESEARCH_PRODUCER_ROLES or action.get("review_cycle_id"):
+        if not task_research(action):
             return True
         task = self.runtime["tasks"].get(action.get("target"))
         if not task:
@@ -90,7 +90,7 @@ class RevisionEngineMixin:
             if task.get("status") not in planning.TERMINAL_TASK_STATUSES:
                 action["revision_targets"] = revisions.capture_targets(self.instance, self.runtime, [target], required=planning.revision_required(task),
                     source_ref=action.get("contract_review_execution") or action.get("decision_id"))
-        if action.get("role") in RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id"):
+        if task_research(action):
             task = self.runtime["tasks"].get(target, {})
             if task.get("knowledge_revision_targets") and not action["revision_targets"]:
                 action["revision_targets"] = revisions.capture_targets(self.instance, self.runtime, task["knowledge_revision_targets"])
@@ -124,7 +124,7 @@ class RevisionEngineMixin:
                     detached.append({"record_id": identifier, "task_id": task_id})
             if detached:
                 entry.setdefault("delegation_history", []).extend(detached)
-                if self.runtime['status'] not in {'closed', 'completed'}:
+                if not self._instance_closed():
                     self._enqueue("research_plan", reason="A delegated task ended or changed while its revision obligation remains: " + parent_id,
                                   revision_followup=detached)
 
@@ -134,8 +134,8 @@ class RevisionEngineMixin:
             task = self.runtime["tasks"].get(identifier)
             if not task or task.get("status") != "active":
                 continue
-            selected = [a for a in self.runtime["queue"] if a.get("target") == identifier and a["role"] in RESEARCH_PRODUCER_ROLES
-                        and not a.get("review_cycle_id") and a.get("id") not in live_ids]
+            selected = [a for a in self.runtime["queue"] if a.get("target") == identifier and task_research(a)
+                        and a.get("id") not in live_ids]
             if any(e.get("action", {}).get("target") == identifier and e["status"] != "ended" for e in self.runtime["executions"].values()):
                 continue
             for previous in selected:

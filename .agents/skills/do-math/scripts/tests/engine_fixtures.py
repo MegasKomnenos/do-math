@@ -68,10 +68,9 @@ def approve_contract(instance, runtime, task, decision='approved'):
 
 def formal_verification(source, declarations, chain):
     """``FakeEngine``'s compiler double: every declaration verified as ``Eq Nat 1 1`` with no dependencies."""
-    return {'status':'verified','source_sha256':hashlib.sha256(source.encode()).hexdigest(),
-        'declarations':declarations,'toolchain':deepcopy(chain),'allowed_axioms':sorted(AXIOMS),
-        'axioms':{d:[] for d in declarations},'declaration_evidence':{d:{'type':'Eq Nat 1 1'} for d in declarations},
-        'dependency_closure':{d:[] for d in declarations},'dependency_evidence':{d:{} for d in declarations}}
+    from knowledge_fixtures import formal_result
+    return formal_result(source, declarations, chain, closure=(), dependency_evidence=(),
+                         declaration_evidence=('Eq Nat 1 1', None), allowed_axioms=sorted(AXIOMS))
 
 
 class FakeEngine(ResearchEngine):
@@ -345,7 +344,7 @@ def initial_failure_engine(root, kind='execution_failure', stage='interpret'):
     failed.update(role=action['role'], action=deepcopy(action), capacity={'local_termination': 'confirmed'})
     activities.assign_execution(engine.runtime, 'AY-original', failed)
     execution_lifecycle.transition_execution(failed, 'starting', at=AT)
-    execution_lifecycle.transition_execution(failed, 'stopping', at=AT, stop_phase='terminating')
+    execution_lifecycle.transition_execution(failed, 'stopping', at=AT)
     execution_lifecycle.transition_execution(failed, 'ended', at=AT, outcome='execution_incomplete')
     activities.wait_for(engine.runtime, 'AY-original', reason=kind, condition={'action_ids': [action['id']]},
                         next_owner='maintenance', at=AT)

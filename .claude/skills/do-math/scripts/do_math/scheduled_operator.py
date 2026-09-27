@@ -17,6 +17,7 @@ from typing import Any, Callable
 import uuid
 from copy import deepcopy
 
+from .file_io import now
 from .repository import ResearchRepository
 from .model_runner import ModelRunner
 from .model_policy import selection
@@ -225,7 +226,7 @@ def _operator_dir(workspace: Path) -> Path:
 
 def hold(workspace: Path, *, reason: str) -> dict[str, Any]:
     """Set a local hold marker; intentionally does not send pause or resume."""
-    value = {"id": uuid.uuid4().hex, "reason": reason, "started_at": datetime.now(timezone.utc).isoformat()}
+    value = {"id": uuid.uuid4().hex, "reason": reason, "started_at": now()}
     _json(_operator_dir(workspace) / "HOLD.json", value)
     return value
 
@@ -237,7 +238,7 @@ def release(workspace: Path) -> dict[str, Any]:
     if held is None:
         return {"released": None}
     path.unlink()
-    result = {"released": held, "released_at": datetime.now(timezone.utc).isoformat()}
+    result = {"released": held, "released_at": now()}
     _json(_operator_dir(workspace) / "release.json", result)
     return result
 
@@ -383,7 +384,7 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
     except Exception as error:
         failure = {"outcome": "recovery_required", "kind": "engine_unavailable",
                    "error_type": type(error).__name__, "error": str(error),
-                   "observed_at": datetime.now(timezone.utc).isoformat()}
+                   "observed_at": now()}
         _json(_operator_dir(workspace) / "engine-failure.json", failure)
         if probe:
             return failure
@@ -438,7 +439,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
     Instruction scope is explicit; it is not an OS sandbox. Research and user
     decisions are unchanged.
     """
-    from .execution_profiles import (select_profile, profile_ref, capability_evidence, prepare_prompt,
+    from .execution_profiles import (profile_ref, capability_evidence, prepare_prompt,
                                      prompt_seal, execution_observation)
     from .session_slots import SessionSlots
     from .file_io import os_lock
@@ -501,13 +502,13 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                             'failure_sha256': failure_identity, 'installation_sha256': installation_sha256}
                         for e in runtime.get('executions', {}).values()):
                     return {'outcome': 'recovery_waiting', 'reason': 'same failure and installation already attempted'}
-                chosen = selection(config, {"role": "recovery"}, {}, {})
-                profile = select_profile(state["execution_profiles"], {"role": "recovery"}, chosen,
-                                         allowed_refs=state["role_profile_refs"]["recovery"])
+                # The one role selection rule; it picks the adopted recovery edition.
+                chosen = selection(config, {"role": "recovery"}, {}, {}, instance=state)
+                profile = state["execution_profiles"][chosen["profile_ref"]["id"]]
                 from .initialization import adapter_for, capability_requirements
                 adapter = adapter_for(profile)
                 reference = profile_ref(profile)
-                checked_at = datetime.now(timezone.utc).isoformat()
+                checked_at = now()
                 capability = capability_requirements(state, reference,
                     current_identity=adapter.capability_identity(), at=checked_at)
                 if not capability["satisfied"]:
@@ -517,7 +518,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     state.setdefault("capability_evidence", {})[evidence["id"]] = evidence
                     head = repo.save_with_state(head, state, runtime)[0]
                     capability = capability_requirements(state, reference,
-                        current_identity=adapter.capability_identity(), at=datetime.now(timezone.utc).isoformat())
+                        current_identity=adapter.capability_identity(), at=now())
                 if not capability["satisfied"]:
                     return {"outcome": "recovery_waiting", "reason": "profile_capability_unavailable",
                             "capability": capability}
@@ -526,7 +527,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     json.dumps(failure, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()}
                 activity = next((a for a in runtime.get("activities", {}).values()
                                  if a.get("owner_ref") == owner and a.get("status") != "finished"), None)
-                at = datetime.now(timezone.utc).isoformat()
+                at = now()
                 if activity is None:
                     activity = activities.open_activity(runtime, activity_id=new_id("AY"), activity_kind="recovery",
                         owner_ref=owner, input_refs=[failure], opened_at=at)
@@ -578,7 +579,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                 head = repo.save_with_state(head, state, runtime)[0]
                 def on_started(identity):
                     nonlocal head
-                    slots.started(eid, identity, at=datetime.now(timezone.utc).isoformat())
+                    slots.started(eid, identity, at=now())
                     head = repo.save_with_state(head, state, runtime)[0]
                 result = None
                 try:
@@ -613,7 +614,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     if outcome == "repaired":
                         execution["submission_receipt"] = {
                             "kind": execution_lifecycle.RECOVERY_REPORT_RECEIPT, "state": "accepted", "execution_id": eid,
-                            "receiver": "recovery_launcher", "observed_at": datetime.now(timezone.utc).isoformat(),
+                            "receiver": "recovery_launcher", "observed_at": now(),
                             "evidence_ref": str(run_directory / "evidence"),
                             "scope": "structured_recovery_report_not_research_integration"}
                         verified = subprocess.run([sys.executable, str(Path(LIVE_INSTALLATION_ROOT) / "scripts/probe_cli.py"), "--skill-only"],
@@ -634,13 +635,12 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     # save() may rebuild dictionary objects; always update the loaded view.
                     execution = runtime["executions"][eid]
                     mark_returned(execution['launch_ticket'], result)
-                    ended_at = datetime.now(timezone.utc).isoformat()
+                    ended_at = now()
                     released = execution_lifecycle.release_or_hold(execution, slots, at=ended_at)
                     if not released:
                         outcome = "recovery_termination_unknown"
                     else:
-                        execution_lifecycle.transition_execution(execution, "stopping", at=ended_at,
-                            stop_phase="terminating", reason=outcome)
+                        execution_lifecycle.transition_execution(execution, "stopping", at=ended_at, reason=outcome)
                         execution_lifecycle.transition_execution(execution, "ended", at=ended_at,
                             outcome="output_accepted" if execution.get("submission_receipt") else "execution_incomplete",
                             disposition={"recovery": outcome})

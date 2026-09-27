@@ -128,7 +128,7 @@ def formal_usable(instance, formal):
             and verification.get("toolchain") == env.get("toolchain"))
 
 
-def _assessment_basis(formal, exposition):
+def identity_premise(formal, exposition):
     # Mutable use state is deliberately outside the immutable judgment premise.
     return {"formal": exact_content_hash({key: formal.get(key) for key in
             ("id", "lean_code", "declaration_names", "verification", "trust_environment_id")}),
@@ -178,7 +178,7 @@ def usable_links(instance, knowledge_id, _visiting=None):
             continue
         exposition = instance.get("expositions", {}).get(assessment.get("exposition_id"), {})
         if (exposition.get("lifecycle") != "active" or exposition.get("formal_result_id") != fid
-                or assessment.get("basis") != _assessment_basis(formal, exposition)):
+                or assessment.get("basis") != identity_premise(formal, exposition)):
             continue
         uses = [use for use in instance.get("assessment_uses", {}).values()
                 if use.get("assessment_id") == assessment["id"] and use.get("status") == "active"]
@@ -254,7 +254,7 @@ def seal_identity_assessment(output, knowledge_id, assessment, policy_ref, *, ru
         raise ValueError("invalid identity decision")
     if decision == "match" and not formal_usable(output, formal):
         raise ValueError("match cannot activate without current formal evidence")
-    expected_basis = _assessment_basis(formal, exposition)
+    expected_basis = identity_premise(formal, exposition)
     if assessment.get("basis") != expected_basis:
         raise ValueError("identity assessment must name the exact current formal and exposition basis")
     aid = assessment.get("id") or new_id("IA")
@@ -276,8 +276,8 @@ def seal_identity_assessment(output, knowledge_id, assessment, policy_ref, *, ru
 
 def identity_basis(instance, knowledge_id):
     record = instance["knowledge"][knowledge_id]
-    return _assessment_basis(instance["formal_results"][record["formal_result_id"]],
-                             instance["expositions"][record["exposition_id"]])
+    return identity_premise(instance["formal_results"][record["formal_result_id"]],
+                            instance["expositions"][record["exposition_id"]])
 
 
 def formal_overlay(instance, formal_id, **changes):
@@ -293,7 +293,7 @@ def assessment_current(instance, assessment_id):
     formal = instance.get('formal_results', {}).get(assessment.get('formal_result_id'), {})
     exposition = instance.get('expositions', {}).get(assessment.get('exposition_id'), {})
     if (not formal_usable(instance, formal) or exposition.get('lifecycle') != 'active'
-            or assessment.get('basis') != _assessment_basis(formal, exposition)):
+            or assessment.get('basis') != identity_premise(formal, exposition)):
         return False
     return any(record.get('exposition_id') == exposition.get('id') and record.get('formal_result_id') == formal.get('id')
                and record_premises_current(instance, record) for record in instance.get('knowledge', {}).values())

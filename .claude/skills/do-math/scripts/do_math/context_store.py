@@ -11,7 +11,7 @@ from pathlib import Path, PurePosixPath
 
 from .repository import canonical_json, exact_content_hash
 from .file_io import is_sha256, no_reparse, stat_fingerprint
-from .git_store import PhysicalBoundary, oid_shape
+from .git_store import ARTIFACT_ROOT, PhysicalBoundary, oid_shape
 from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
 
 
@@ -561,7 +561,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
             if action.get('target') in tasks:
                 targets.add(action['target'])
             value['tasks'] = [reader_task(identifier) for identifier, task in sorted(tasks.items())
-                              if task.get('status') == 'planned' or identifier in targets and task.get('status') not in {'completed', 'closed'}]
+                              if task.get('status') == 'planned' or identifier in targets and task.get('status') not in task_contracts.TERMINAL_TASK_STATUSES]
             value['pending_revisions'] = deepcopy(revisions)
         from .planning import CONTRACT_FIELDS
         comparison_fields = set(CONTRACT_FIELDS) | {'id', 'title', 'question', 'revision', 'status',
@@ -706,8 +706,8 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         # The one archive of this role input: every file sits at its
         # workspace-relative path below the prefix, and the prompt at input.txt.
         prefix = relative_path(artifact_prefix).as_posix()
-        if not prefix.startswith('runtime/artifacts/'):
-            raise ValueError('role input archive must stay in runtime/artifacts')
+        if not prefix.startswith(ARTIFACT_ROOT):
+            raise ValueError('role input archive must stay in ' + ARTIFACT_ROOT)
         catalog_files = fitted['catalog_files']
         for row in manifest['direct']:
             path = catalog['entries'][row['key']]['path']

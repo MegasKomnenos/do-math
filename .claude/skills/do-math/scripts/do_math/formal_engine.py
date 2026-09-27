@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import hashlib
 from pathlib import Path
 from .knowledge import begin_transition, record_transition_result, activate_transition, invalidate_environment, validate_basis
 from .execution_lifecycle import MACHINE_OUTPUT_RECEIPT
 from .repository import canonical_json, exact_content_hash, new_id
+from .git_store import ARTIFACT_ROOT
 
 def _toolchain_matches(expected, actual):
     return isinstance(actual, dict) and bool(actual.get('sha256')) and expected == actual
@@ -144,7 +144,7 @@ class FormalEngineMixin:
             wait_for(self.runtime, execution['owner_activity_id'], reason='environment_interrupted',
                      condition={'transition_id':transition_id}, next_owner='engine', at=self._lifecycle_now().isoformat())
             self._record_machine_continuation(action, execution_id)
-            self._save({f'runtime/artifacts/{execution_id}/environment.json':canonical_json(verification)})
+            self._save({f'{ARTIFACT_ROOT}{execution_id}/environment.json':canonical_json(verification)})
             return False
         self._action_lifecycle_gate(action)
         if verification.get('status') == 'verified':
@@ -152,7 +152,7 @@ class FormalEngineMixin:
         self._finish_trust_transition(transition_id, verification)
         transition = self.runtime['trust_transitions'][transition_id]
         execution = self.runtime['executions'][execution_id]
-        artifact = f'runtime/artifacts/{execution_id}/trust-activation.json'
+        artifact = f'{ARTIFACT_ROOT}{execution_id}/trust-activation.json'
         result = {'transition_id': transition_id, 'status': transition['status'],
                   'trust_environment_id': transition['to_environment'],
                   'reason': next((r['reason'] for r in reversed(transition.get('history', []))
@@ -246,9 +246,9 @@ class FormalEngineMixin:
             self._apply_trust_rebind(result['environment_check'])
         result.update(id=knowledge_id, execution_id=execution_id, trust_environment_id=transition['to_environment'],
                       allowed_axioms=deepcopy(environment['allowed_axioms']))
-        artifact = f'runtime/artifacts/{execution_id}/trust-result.json'
+        artifact = f'{ARTIFACT_ROOT}{execution_id}/trust-result.json'
         result['artifact_ref'] = artifact
-        self._preserve_machine_return(execution_id, f'runtime/artifacts/{new_id("BA")}/trust-returned.json',
+        self._preserve_machine_return(execution_id, f'{ARTIFACT_ROOT}{new_id("BA")}/trust-returned.json',
                                       raw_result or result)
         execution = self.runtime['executions'][execution_id]
         execution['result_ref'] = artifact
@@ -282,7 +282,7 @@ class FormalEngineMixin:
         self._lifecycle_event('trust_target_checked', target=knowledge_id, transition_id=transition_id, result=result['status'])
         if self.runtime['trust_transitions'][transition_id]['status'] == 'ready':
             self._enqueue('trust_activate', transition_id=transition_id)
-        self.runtime['queue'][:] = [queued for queued in self.runtime['queue'] if queued != action]
+        self._remove_action(action)
         self._refresh_readiness()
         self._save()
 
@@ -337,7 +337,7 @@ class FormalEngineMixin:
             return
         source, declarations = proposal['lean_code'], deepcopy(proposal['declaration_names'])
         predecessor = self.runtime['executions'].get(action.get('continuation_of'))
-        manifest = [{'kind': 'formal_source', 'sha256': hashlib.sha256(source.encode()).hexdigest(),
+        manifest = [{'kind': 'formal_source', 'sha256': lean_source_sha256(source),
                      'declaration_names': declarations},
                     {'kind': 'trust_environment', 'id': environment_id,
                      'sha256': exact_content_hash(environment)}]
@@ -367,7 +367,7 @@ class FormalEngineMixin:
         def stop():
             # Owner-thread judgment of published state; the verifier reads only its flag.
             reasons = set()
-            if self.runtime['status'] in {'closed', 'completed'}:
+            if self._instance_closed():
                 reasons.add('instance_ended')
             if self.runtime['status'] == 'paused' or self.runtime.get('stop_requested'):
                 reasons.add('instance_paused')
@@ -390,7 +390,7 @@ class FormalEngineMixin:
         result = json_safe(result)
         # Preserve returned evidence before currentness checks or domain publication.
         raw_bundle = new_id('BA')
-        self._preserve_machine_return(execution_id, f'runtime/artifacts/{raw_bundle}/formal-returned.json', result,
+        self._preserve_machine_return(execution_id, f'{ARTIFACT_ROOT}{raw_bundle}/formal-returned.json', result,
                                       artifact_bundle=raw_bundle)
         if stop():
             result = {**result, 'status': 'stopped', 'reason': ', '.join(sorted(stop_reasons))}
@@ -398,7 +398,7 @@ class FormalEngineMixin:
         if current['lean_code'] != source or current['declaration_names'] != declarations:
             result = {**result, 'status': 'failed', 'reason': 'formal source changed during verification'}
         bundle = new_id('BA')
-        reference = f'runtime/artifacts/{bundle}/formal.json'
+        reference = f'{ARTIFACT_ROOT}{bundle}/formal.json'
         execution = self.runtime['executions'][execution_id]
         execution.update(result_ref=reference, artifact_bundle=bundle, formal_status=result['status'])
         # A held execution keeps its capacity and records no formal result.
@@ -447,7 +447,7 @@ class FormalEngineMixin:
                     'execution_id': execution_id, 'next_owner': 'trust_governance'}
             self._settle_activity(execution_id)
         # The formal bundle holds the checked Lean source beside its judged result.
-        self._save({f'runtime/artifacts/{bundle}/proposal.lean': source.encode(), reference: canonical_json(result)})
+        self._save({f'{ARTIFACT_ROOT}{bundle}/proposal.lean': source.encode(), reference: canonical_json(result)})
         if released and result['status'] == 'verified':
             try:
                 self._start_identity_review(kid)

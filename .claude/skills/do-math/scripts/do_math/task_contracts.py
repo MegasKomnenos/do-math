@@ -14,6 +14,8 @@ from .contracts import ITEM_DISPOSITION
 
 
 LIFECYCLE_STATES = frozenset({"planned", "active", "waiting", "completed", "closed"})
+# Task states in which the task's work has ended; the other states are unfinished.
+TERMINAL_TASK_STATUSES = frozenset({"completed", "closed"})
 # The item disposition kinds, as the wire schema ITEM_DISPOSITION defines them.
 DISPOSITION_KINDS = frozenset(option["properties"]["kind"]["const"] for option in ITEM_DISPOSITION["anyOf"])
 REPEAT_LINEAGES = ("import_rework", "selection_failure", "exhaustion_empty", "proposal_version", "contract_revision")
@@ -103,6 +105,11 @@ def validate_task_contract(task: dict) -> None:
     validate_contract_meaning(task)
 
 
+def assessor_is_judge(obligation: dict, role: str, execution_id: str) -> bool:
+    """Whether the assessing execution judges this obligation itself: its role or its ID is among the judges."""
+    return role in obligation["judges"] or execution_id in obligation["judges"]
+
+
 def judge_coverage_errors(role: str, execution_id: str, task: dict, assessment: dict, families: dict) -> list[str]:
     """A fulfilment by an assessor outside an obligation's judges must cite its judges' evidence.
 
@@ -117,7 +124,7 @@ def judge_coverage_errors(role: str, execution_id: str, task: dict, assessment: 
         if row.get("kind") != "fulfilled" or obligation is None:
             continue
         judges = obligation["judges"]
-        if role in judges or execution_id in judges:
+        if assessor_is_judge(obligation, role, execution_id):
             continue
         wanted = {JUDGE_EVIDENCE_FAMILIES[judge] for judge in judges if judge in JUDGE_EVIDENCE_FAMILIES}
         if not any(families.get(ref) in wanted for ref in row.get("evidence_refs", [])):
@@ -152,9 +159,9 @@ def validate_item_dispositions(task: dict, assessment: dict, *, require_complete
     validate_task_contract(task)
     if not isinstance(assessment, dict):
         raise ValueError("assessment must be an object")
-    terminal = assessment.get('decision') in {'completed', 'closed'}
+    terminal = assessment.get('decision') in TERMINAL_TASK_STATUSES
     require_complete = require_complete or terminal
-    if task.get('status') in {'completed', 'closed'} and assessment.get('decision') != task['status']:
+    if task.get('status') in TERMINAL_TASK_STATUSES and assessment.get('decision') != task['status']:
         raise ValueError('terminal task status differs from its assessment decision')
     obligations = {row["id"]: row for row in contract_obligations(task)}
     rows = _row_by_obligation(assessment)
@@ -211,7 +218,7 @@ def returned_task_ids(tasks):
     from .planning import contract_hash
     from .repository import exact_content_hash
     return sorted(identifier for identifier, task in tasks.items()
-        if task.get('status') not in {'completed', 'closed'} and task.get('results') and (
+        if task.get('status') not in TERMINAL_TASK_STATUSES and task.get('results') and (
             task.get('assessment', {}).get('results_sha256') != exact_content_hash(task['results']) or
             task.get('assessment', {}).get('contract_sha256') != contract_hash(task) or
             task.get('assessment', {}).get('current') is False))
@@ -279,7 +286,7 @@ def repetition_lineages(runtime: dict, task_id: str | None = None, *,
             counts[key] = 0
         elif 'version' in row:
             counts[key] = row['version']-baselines.get((name,key),0)
-        elif row['outcome'] not in {'premises_changed', 'capacity_wait', 'input_overflow', 'waiting', 'transport_failure','unclassified_failure'}:
+        elif row['outcome'] not in {'premises_changed', 'waiting', 'unclassified_failure'}:
             counts[key] = counts.get(key, 0) + 1
         result[name]["count"] = sum(counts.values())
         if include_events:

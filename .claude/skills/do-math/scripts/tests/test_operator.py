@@ -310,7 +310,6 @@ AT = '2026-09-22T00:00:00+00:00'
 
 class WakeTests(unittest.TestCase):
     def test_supervisor_requests_once_and_probe_reports_the_same_reason(self):
-        from do_math import scheduled_operator as operator
         # Supervision judges from this one engine status; it loads no repository state.
         status = {'status': 'waiting', 'research_wake_reasons': [{'kind': 'research_reconsider_due'}],
                   'operator_enabled': True, 'provider_waits': {'providers': {}}}

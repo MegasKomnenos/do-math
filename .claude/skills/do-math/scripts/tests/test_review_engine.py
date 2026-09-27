@@ -1069,7 +1069,7 @@ class ReviewScopeBudgetTests(unittest.TestCase):
         self.assertEqual(engine.runtime['executions'][last]['stop_requested'], 'review_resource_disposition')
         self.assertNotIn('stop_requested', unrelated)
         self.assertFalse(any(a['role']=='research_plan' for a in engine.runtime['queue']))
-        execution_lifecycle.transition_execution(execution, 'stopping', at=stamp, stop_phase='terminating')
+        execution_lifecycle.transition_execution(execution, 'stopping', at=stamp)
         execution_lifecycle.transition_execution(execution, 'ended', at=stamp, outcome='execution_incomplete', disposition='fixture return')
         engine._settle_activity(last)
         self.assertEqual(cycle['status'], 'unresolved')

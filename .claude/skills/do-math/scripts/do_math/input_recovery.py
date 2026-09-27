@@ -4,6 +4,7 @@ from copy import deepcopy
 from .execution_profiles import profile_ref, match_profile_ref
 from .model_policy import selection
 from .planning import contract_hash
+from .task_contracts import TERMINAL_TASK_STATUSES
 
 
 def overflow_requests(instance, runtime):
@@ -14,7 +15,7 @@ def overflow_requests(instance, runtime):
                 or action.get('role') != 'research_work' or action.get('review_cycle_id')):
             continue
         task = runtime.get('tasks', {}).get(action.get('target'))
-        if not task or task.get('status') in {'completed', 'closed'}:
+        if not task or task.get('status') in TERMINAL_TASK_STATUSES:
             continue
         candidates = waiting.get('detail', {}).get('allowed_profile_candidates', [])
         allowed = []

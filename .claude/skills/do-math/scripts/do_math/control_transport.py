@@ -67,7 +67,7 @@ def self_check_response_errors(response: Any) -> list[str]:
     return [error.message for error in Draft202012Validator(SELF_CHECK_RESPONSE_SCHEMA).iter_errors(response)]
 
 
-_FINAL_RECEIPTS = frozenset({"accepted", "rejected", "withdrawn", "closed", "previewed"})
+_FINAL_RECEIPTS = frozenset({"accepted", "rejected", "closed", "previewed"})
 _WINDOWS_DEVICE_NAMES = frozenset(
     {"CON", "PRN", "AUX", "NUL"}
     | {f"COM{number}" for number in range(1, 10)}
@@ -148,10 +148,8 @@ def _decode_json(path: Path, raw: bytes) -> dict:
 class ControlTransport:
     """A pumpable local transport; it neither starts a daemon nor owns state."""
 
-    def __init__(self, root: Path | str | None = None,
-                 publish: Callable[[dict], dict] | None = None):
+    def __init__(self, root: Path | str | None = None):
         self.root = None if root is None else Path(root).resolve()
-        self._publish = publish
         self._capabilities: dict[str, dict] = {}
         self._receipts: dict[tuple[str | None, str], dict] = {}  # (transport_id, request_id) -> receipt
         self._pump_cache: dict[Path, tuple[tuple, dict]] = {}
@@ -235,12 +233,10 @@ class ControlTransport:
             return self._reject_unvalidated(request, str(error))
         state = self._state(request)
         if state["state"] != "open":
-            return self._store(request, {"state": "withdrawn" if state["state"] == "withdrawn" else "closed",
-                                         "reason": state.get("reason", "transport is not open")})
-        publisher = publish or self._publish
-        if publisher is None:
+            return self._store(request, {"state": "closed", "reason": state.get("reason", "transport is not open")})
+        if publish is None:
             return self._store(request, {"state": "received"})
-        decision = publisher(deepcopy(request))
+        decision = publish(deepcopy(request))
         if request["kind"] == SUBMISSION_PREVIEW:
             if (not isinstance(decision, dict) or decision.get("state") not in {"previewed", "rejected"}
                     or decision.get("published") is True):
@@ -255,19 +251,17 @@ class ControlTransport:
                 raise ValueError("accepted receipt requires a published authoritative snapshot")
         return self._store(request, decision)
 
-    def pump(self, publish: Callable[[dict], dict] | None = None, *, limit: int | None = None) -> list[dict]:
+    def pump(self, publish: Callable[[dict], dict] | None = None) -> list[dict]:
         """Read delivery files and call the engine's validation-and-CAS hook."""
         if self.root is None:
             raise ValueError("a memory-only transport has no inbox to pump")
-        if limit is not None and (isinstance(limit, bool) or not isinstance(limit, int) or limit < 1):
-            raise ValueError("limit must be a positive integer or null")
         if self._open is None:
             # issue and close keep state.json current, so this scan sees every earlier issue and close.
             self._open = ({path.parent.name for path in self.root.glob("*/binding.json") if _is_open(path.parent)}
                           if self.root.is_dir() else set())
         paths = [path for transport_id in sorted(self._open)
                  for path in sorted((self.root / transport_id / "inbox").glob("*.json"))]
-        return self._pump_paths(paths[:limit], publish)
+        return self._pump_paths(paths, publish)
 
     def _pump_paths(self, paths: list[Path], publish: Callable[[dict], dict] | None) -> list[dict]:
         results = []
@@ -297,10 +291,10 @@ class ControlTransport:
                 self._pump_cache[path] = (mark, deepcopy(receipt))
         return results
 
-    def close(self, binding: dict, *, reason: str, withdrawn: bool = False) -> dict:
+    def close(self, binding: dict, *, reason: str) -> dict:
         endpoint = self._endpoint(binding)
         _require_text(reason, "reason")
-        state = {"state": "withdrawn" if withdrawn else "closed", "reason": reason}
+        state = {"state": "closed", "reason": reason}
         _atomic_json(endpoint / "state.json", state)
         # A delivery that raced the close gets its closed receipt now; later pumps skip this transport.
         inbox = sorted((endpoint / "inbox").glob("*.json"))
@@ -331,7 +325,7 @@ class ControlTransport:
         endpoint = self._endpoint(binding)
         state = _json(endpoint / "state.json") or {}
         if state.get("state") != "open":
-            raise ValueError("a closed or withdrawn transport cannot request a self-check")
+            raise ValueError("a closed transport cannot request a self-check")
         request = deepcopy(request)
         path = endpoint / "worker-inbox" / (self_check_id + ".json")
         existing = _json(path)
@@ -363,8 +357,7 @@ class ControlTransport:
         _require_file_name(binding.get("transport_id"), "transport_id")
         state = _json(endpoint / "state.json") or {}
         if state.get("state") != "open":
-            return {"request_id": request_id, "state": "withdrawn" if state.get("state") == "withdrawn" else "closed",
-                    "reason": state.get("reason", "transport is not open")}
+            return {"request_id": request_id, "state": "closed", "reason": state.get("reason", "transport is not open")}
         request = {key: binding[key] for key in BINDING_FIELDS if key != "endpoint"}
         request.update(request_id=request_id, kind=kind, payload=deepcopy(payload or {}))
         path = endpoint / "inbox" / (request_id + ".json")

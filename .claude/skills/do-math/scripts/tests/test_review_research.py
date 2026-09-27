@@ -116,7 +116,8 @@ class ReviewResearchEngineTests(ActivatedPurposeHarness):
         self.assertEqual(engine.instance['knowledge'][knowledge_id], before)
         self.assertTrue(any(w['action'].get('id') == action['id'] and w['reason'] == 'input_overflow'
                             for w in engine.runtime.get('waiting_actions', {}).values()))
-        self.assertFalse(any(a.get('reconstruction_target') == knowledge_id for a in engine.runtime['queue']))
+        self.assertFalse(any(row.get('event') == 'review_resource_disposition'
+                             for row in engine.runtime['review_cycles'][action['review_cycle_id']]['history']))
         wait = next(w for w in engine.runtime['waiting_actions'].values() if w['action']['id'] == action['id'])
         question = next(q for q in engine.runtime['question_links'] if q['id'] == wait['question_id'])
         self.assertEqual(question['status'], 'open')

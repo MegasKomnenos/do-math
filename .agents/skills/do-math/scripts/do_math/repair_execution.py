@@ -9,96 +9,6 @@ from .git_store import GitStateStoreError
 from .repository import exact_content_hash
 
 
-def route_failed_action(engine, action, execution_id, *, reason, front=False):
-    """Choose a diagnosis allowed in the current lifecycle, without recursion."""
-    wait = engine.runtime['waiting_actions'][action['id']]
-    if engine.instance.get('lifecycle', {}).get('state') == 'initializing':
-        wait['next_owner'] = 'maintenance'
-        if action['role'] == 'intent_interpretation' and not action.get('diagnosis_attempt'):
-            engine._enqueue('maintenance', execution_id, initial_submission_diagnosis=True, reason=reason)
-        return
-    wait['next_owner'] = 'operational_review'
-    if action['role'] != 'operational_review':
-        engine._enqueue('operational_review', execution_id, front=front, reason=reason)
-
-
-def route_submission_return(engine, action, received, execution_id, output, *, rejected_submission=None):
-    """Keep a bounded producer repair, then diagnose the preserved actual error."""
-    retry = {**deepcopy(action), 'continuation_of': execution_id,
-        'repair_attempt': action.get('repair_attempt', 0) + 1,
-        'repair': {'execution_id': execution_id, 'previous_output': output,
-            'retry_bundle_ids': received['retry_bundle_ids'],
-            'bundle_results': received['bundles'], 'issues': received['issues']}}
-    if rejected_submission:
-        retry['repair'].update(deepcopy(rejected_submission))
-    if retry['repair_attempt'] <= engine.instance['config']['max_output_repairs'] and not action.get('diagnosis_attempt'):
-        engine.runtime.get('waiting_actions', {}).pop(action['id'], None)
-        engine.runtime['queue'].append(retry)
-        return
-    engine.runtime.setdefault('waiting_actions', {})[action['id']] = {
-        'action': retry, 'kind': 'output_validation', 'execution_id': execution_id,
-        'reason': 'Producer repair was rejected again; diagnose the preserved contract and receiver errors',
-        'detail': {'issues': deepcopy(received['issues'])}}
-    route_failed_action(engine, action, execution_id,
-        reason='Bounded submission repair exhausted; distinguish producer, input, contract and installation defects')
-
-
-def initial_diagnosis_input(engine, action):
-    if engine.instance['lifecycle']['state'] != 'initializing':
-        raise ValueError('initial submission diagnosis requires initialization')
-    execution = engine.runtime['executions'].get(action.get('target'), {})
-    if execution.get('role') != 'intent_interpretation' or execution.get('status') != 'ended':
-        raise ValueError('initial diagnosis must identify an ended interpretation')
-    wait = engine.runtime.get('waiting_actions', {}).get(execution['action']['id'])
-    if not wait or wait.get('kind') not in {'output_validation', 'execution_failure', 'submission_failure'} or wait.get('execution_id') != execution['id']:
-        raise ValueError('initial diagnosis no longer owns this failure')
-    engine._validate_initial_retry(wait, diagnostic_action_id=action.get('id'))
-    return execution, wait
-
-
-def apply_initial_diagnosis(engine, action, output, execution_id):
-    failed, wait = initial_diagnosis_input(engine, action)
-    decision = output['initial_submission_diagnosis']
-    if not decision['guidance'].strip():
-        raise ValueError('initial diagnosis requires concrete repair or waiting guidance')
-    wait['diagnosis'] = {'execution_id': execution_id, **deepcopy(decision)}
-    if decision['decision'] == 'wait':
-        wait.update(reason=decision['guidance'], next_owner='maintenance')
-        return
-    if decision['decision'] != 'retry' or wait['action'].get('diagnosis_attempt'):
-        raise ValueError('initial diagnosis allows one bounded follow-up, not repeated automatic diagnosis')
-    # This runs inside an integration candidate. Native-final recovery publishes
-    # evidence, so only the owner may continue after this diagnosis is committed.
-    wait['next_owner'] = 'engine'
-
-
-def continue_initial_retries(engine):
-    if (engine.instance.get('lifecycle', {}).get('state') != 'initializing'
-            or engine.runtime.get('status') in {'paused', 'closed', 'completed'}
-            or engine.runtime.get('user_pause')):
-        return
-    for identifier in list(engine.runtime.get('waiting_actions', {})):
-        wait = engine.runtime['waiting_actions'].get(identifier)
-        if not wait:
-            continue
-        diagnosis = wait.get('diagnosis', {})
-        reviewer = engine.runtime['executions'].get(diagnosis.get('execution_id'), {})
-        if (diagnosis.get('decision') != 'retry' or diagnosis.get('retry_error')
-                or reviewer.get('role') != 'maintenance' or reviewer.get('status') != 'ended'
-                or reviewer.get('outcome') != 'output_accepted'
-                or reviewer.get('action', {}).get('target') != wait.get('execution_id')
-                or not reviewer.get('action', {}).get('initial_submission_diagnosis')):
-            continue
-        try:
-            engine._continue_initial_execution(wait, request_id=reviewer['id'], diagnosis=diagnosis)
-        except (ValueError, OSError, GitStateStoreError) as error:
-            current = engine.runtime.get('waiting_actions', {}).get(identifier)
-            if current:
-                current['diagnosis']['retry_error'] = str(error)
-                current.update(next_owner='maintenance', reason=str(error))
-        engine._save()
-
-
 def installation_sha256(root):
     """Identity of the whole installed skill; unchanged files reuse their digests."""
     from .file_io import cached_sha256, installation_files
@@ -160,19 +70,6 @@ def validate_installation_target(disposition, target, root):
     return refs
 
 
-def request_installation_repair(engine, record):
-    disposition = record['disposition']
-    root = Path(__file__).resolve().parents[2]
-    target = engine.runtime['executions'][record['target_execution_id']]
-    refs = validate_installation_target(disposition, target, root)
-    record['status'] = 'installation_repair_pending'
-    record.setdefault('result', {})['installation_repair'] = {
-        'installation_sha256': installation_sha256(root), 'evidence_refs': refs}
-    engine.runtime['operational_dispositions'][record['id']] = record
-    engine._save()
-    return deepcopy(engine.runtime['operational_dispositions'][record['id']])
-
-
 def resume_installation_repair(runtime, record, *, repaired_by, at):
     """Resume the preserved rejected response, retaining its repair lineage."""
     target_id = record['target_execution_id']
@@ -201,16 +98,116 @@ def resume_installation_repair(runtime, record, *, repaired_by, at):
     return action
 
 
-def complete_repair(engine, record):
-    """Hand the current installation diagnosis to the existing recovery owner."""
-    identifier = record["id"]
-    current = engine.runtime.get("operational_dispositions", {}).get(identifier)
-    if current is None or current != record:
-        raise ValueError("repair must consume the current authoritative OD record")
-    record = deepcopy(current)
-    disposition = operational_dispositions.validate_disposition(record["disposition"])
-    if disposition["kind"] != "repair":
-        raise ValueError("complete_repair only consumes repair dispositions")
-    if record['status'] in {'installation_repair_pending', 'installation_repair_waiting', 'applied'}:
-        return record
-    return request_installation_repair(engine, record)
+class RepairExecutionMixin:
+    """Engine methods that route failed submissions and installation repairs."""
+
+    def route_failed_action(self, action, execution_id, *, reason):
+        """Choose a diagnosis allowed in the current lifecycle, without recursion."""
+        wait = self.runtime['waiting_actions'][action['id']]
+        if self.instance.get('lifecycle', {}).get('state') == 'initializing':
+            wait['next_owner'] = 'maintenance'
+            if action['role'] == 'intent_interpretation' and not action.get('diagnosis_attempt'):
+                self._enqueue('maintenance', execution_id, initial_submission_diagnosis=True, reason=reason)
+            return
+        wait['next_owner'] = 'operational_review'
+        if action['role'] != 'operational_review':
+            self._enqueue('operational_review', execution_id, reason=reason)
+
+    def route_submission_return(self, action, received, execution_id, output, *, rejected_submission=None):
+        """Keep a bounded producer repair, then diagnose the preserved actual error."""
+        retry = {**deepcopy(action), 'continuation_of': execution_id,
+            'repair_attempt': action.get('repair_attempt', 0) + 1,
+            'repair': {'execution_id': execution_id, 'previous_output': output,
+                'retry_bundle_ids': received['retry_bundle_ids'],
+                'bundle_results': received['bundles'], 'issues': received['issues']}}
+        if rejected_submission:
+            retry['repair'].update(deepcopy(rejected_submission))
+        if retry['repair_attempt'] <= self.instance['config']['max_output_repairs'] and not action.get('diagnosis_attempt'):
+            self.runtime.get('waiting_actions', {}).pop(action['id'], None)
+            self.runtime['queue'].append(retry)
+            return
+        self.runtime.setdefault('waiting_actions', {})[action['id']] = {
+            'action': retry, 'kind': 'output_validation', 'execution_id': execution_id,
+            'reason': 'Producer repair was rejected again; diagnose the preserved contract and receiver errors',
+            'detail': {'issues': deepcopy(received['issues'])}}
+        self.route_failed_action(action, execution_id,
+            reason='Bounded submission repair exhausted; distinguish producer, input, contract and installation defects')
+
+    def initial_diagnosis_input(self, action):
+        if self.instance['lifecycle']['state'] != 'initializing':
+            raise ValueError('initial submission diagnosis requires initialization')
+        execution = self.runtime['executions'].get(action.get('target'), {})
+        if execution.get('role') != 'intent_interpretation' or execution.get('status') != 'ended':
+            raise ValueError('initial diagnosis must identify an ended interpretation')
+        wait = self.runtime.get('waiting_actions', {}).get(execution['action']['id'])
+        if not wait or wait.get('kind') not in {'output_validation', 'execution_failure', 'submission_failure'} or wait.get('execution_id') != execution['id']:
+            raise ValueError('initial diagnosis no longer owns this failure')
+        self._validate_initial_retry(wait, diagnostic_action_id=action.get('id'))
+        return execution, wait
+
+    def apply_initial_diagnosis(self, action, output, execution_id):
+        failed, wait = self.initial_diagnosis_input(action)
+        decision = output['initial_submission_diagnosis']
+        if not decision['guidance'].strip():
+            raise ValueError('initial diagnosis requires concrete repair or waiting guidance')
+        wait['diagnosis'] = {'execution_id': execution_id, **deepcopy(decision)}
+        if decision['decision'] == 'wait':
+            wait.update(reason=decision['guidance'], next_owner='maintenance')
+            return
+        if decision['decision'] != 'retry' or wait['action'].get('diagnosis_attempt'):
+            raise ValueError('initial diagnosis allows one bounded follow-up, not repeated automatic diagnosis')
+        # This runs inside an integration candidate. Native-final recovery publishes
+        # evidence, so only the owner may continue after this diagnosis is committed.
+        wait['next_owner'] = 'engine'
+
+    def continue_initial_retries(self):
+        if (self.instance.get('lifecycle', {}).get('state') != 'initializing'
+                or self.runtime.get('status') in {'paused', 'closed', 'completed'}
+                or self.runtime.get('user_pause')):
+            return
+        for identifier in list(self.runtime.get('waiting_actions', {})):
+            wait = self.runtime['waiting_actions'].get(identifier)
+            if not wait:
+                continue
+            diagnosis = wait.get('diagnosis', {})
+            reviewer = self.runtime['executions'].get(diagnosis.get('execution_id'), {})
+            if (diagnosis.get('decision') != 'retry' or diagnosis.get('retry_error')
+                    or reviewer.get('role') != 'maintenance' or reviewer.get('status') != 'ended'
+                    or reviewer.get('outcome') != 'output_accepted'
+                    or reviewer.get('action', {}).get('target') != wait.get('execution_id')
+                    or not reviewer.get('action', {}).get('initial_submission_diagnosis')):
+                continue
+            try:
+                self._continue_initial_execution(wait, request_id=reviewer['id'], diagnosis=diagnosis)
+            except (ValueError, OSError, GitStateStoreError) as error:
+                current = self.runtime.get('waiting_actions', {}).get(identifier)
+                if current:
+                    current['diagnosis']['retry_error'] = str(error)
+                    current.update(next_owner='maintenance', reason=str(error))
+            self._save()
+
+    def request_installation_repair(self, record):
+        disposition = record['disposition']
+        root = Path(__file__).resolve().parents[2]
+        target = self.runtime['executions'][record['target_execution_id']]
+        refs = validate_installation_target(disposition, target, root)
+        record['status'] = 'installation_repair_pending'
+        record.setdefault('result', {})['installation_repair'] = {
+            'installation_sha256': installation_sha256(root), 'evidence_refs': refs}
+        self.runtime['operational_dispositions'][record['id']] = record
+        self._save()
+        return deepcopy(self.runtime['operational_dispositions'][record['id']])
+
+    def complete_repair(self, record):
+        """Hand the current installation diagnosis to the existing recovery owner."""
+        identifier = record["id"]
+        current = self.runtime.get("operational_dispositions", {}).get(identifier)
+        if current is None or current != record:
+            raise ValueError("repair must consume the current authoritative OD record")
+        record = deepcopy(current)
+        disposition = operational_dispositions.validate_disposition(record["disposition"])
+        if disposition["kind"] != "repair":
+            raise ValueError("complete_repair only consumes repair dispositions")
+        if record['status'] in {'installation_repair_pending', 'installation_repair_waiting', 'applied'}:
+            return record
+        return self.request_installation_repair(record)

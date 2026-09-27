@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from .execution_profiles import RESEARCH_PRODUCER_ROLES
-from .file_io import json_copy
+from .file_io import SHA256_SCHEMA, json_copy
 
 
 # The response contract every role output schema carries (``x-contract-id``).
@@ -149,8 +149,7 @@ MANIFEST_SCHEMA["description"] = (
     "Other roles, review research and declared revision work require one bundle with 'output' and all extension members. "
     "New-object dependencies must stay in one bundle. Independence is the producer's semantic responsibility. "
     "On a retry with central accepted_response evidence, preserve that base response and omit its already accepted member.")
-PROFILE_REF = closed_object({"id": TEXT, "revision": {"type": "integer", "minimum": 1},
-                       "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}})
+PROFILE_REF = closed_object({"id": TEXT, "revision": {"type": "integer", "minimum": 1}, "sha256": SHA256_SCHEMA})
 OBLIGATION = closed_object({"id": TEXT, "claim": TEXT, "judges": {**REFS, "minItems": 1}, "evidence_required": REFS})
 PROGRESS = closed_object({"id": TEXT, "claim": TEXT, "evidence_required": REFS})
 for _requirement_schema in (OBLIGATION, PROGRESS):
@@ -194,7 +193,7 @@ def disposition_schema():
             "meaning_preserving": {"type": "boolean"}, "verification": TEXT},
         "resume": {"checkpoint_ref": TEXT, "scope": TEXT},
         "retry": {"scope": TEXT, "replay_safety": TEXT},
-        "task_disposition": {"task_id": TEXT, "task_state": {"enum": ["completed", "incomplete", "closed"]}, "authority_ref": TEXT},
+        "task_disposition": {"task_id": TEXT, "task_state": {"enum": ["completed", "incomplete", "closed"]}},
         "user_decision": {"question": TEXT, "effect": TEXT},
     }
     return json_copy({"anyOf": [closed_object({"kind": {"const": kind}, **common, **fields}) for kind, fields in variants.items()]})

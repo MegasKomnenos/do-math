@@ -132,14 +132,14 @@ class GitStateStore:
         self.ref = f"refs/heads/do-math/{instance_id}"
         # Until Git reports its directory, the work tree stands in for it in
         # _git (the disabled hooks path and the boundary re-proved on error).
-        self._git_dir = self.repository
+        self.git_dir = self.repository
         self._git_boundary = self._repository_boundary
         facts = self._git_text("rev-parse", "--absolute-git-dir", "--show-object-format",
                                "--git-path", "objects").splitlines()
         if len(facts) != 3:
             raise GitStateStoreError("git rev-parse did not report the Git directory, object format and objects")
-        self._git_dir = Path(facts[0]).absolute()
-        self._git_boundary = PhysicalBoundary(self._git_dir)
+        self.git_dir = Path(facts[0]).absolute()
+        self._git_boundary = PhysicalBoundary(self.git_dir)
         self.object_format = facts[1].strip()
         if self.object_format not in {"sha1", "sha256"}:
             raise GitStateStoreError(f"unsupported Git object format: {self.object_format!r}")
@@ -152,7 +152,7 @@ class GitStateStore:
         self._read: _Tree | None = None
         # Set only while this store holds the writer lock and its own CAS moved the ref.
         self._held_head: str | None = None
-        self._holds_writer_lock = False
+        self.holds_writer_lock = False
 
     def read_snapshot(self) -> StateSnapshot:
         """Return the current state commit, checking that it holds research/runtime trees.
@@ -179,7 +179,7 @@ class GitStateStore:
         if len(root) != 2:
             raise GitStateStoreError("invalid state commit metadata")
         head, object_type = root
-        self._validate_oid(head)
+        self.validate_oid(head)
         if object_type != "commit":
             raise GitStateStoreError("state ref must point to a commit")
         if result.returncode:
@@ -190,8 +190,8 @@ class GitStateStore:
 
     def read_bytes(self, commit: str, path: str) -> bytes:
         """Read exact blob bytes from an explicit, format-valid state commit."""
-        self._validate_oid(commit)
-        self._validate_path(path)
+        self.validate_oid(commit)
+        self.validate_path(path)
         return self._git("cat-file", "blob", f"{commit}:{path}").stdout
 
     def read_many(self, commit: str, paths: list[str], *, missing: str = "raise") -> dict[str, bytes]:
@@ -200,11 +200,11 @@ class GitStateStore:
         With ``missing="omit"`` a path absent from the snapshot is left out of
         the result; with ``"raise"`` it fails the whole batch.
         """
-        self._validate_oid(commit)
+        self.validate_oid(commit)
         self._check_missing_mode(missing)
         paths = list(dict.fromkeys(paths))
         for path in paths:
-            self._validate_path(path)
+            self.validate_path(path)
         if not paths:
             return {}
         raw = self._git("cat-file", "--batch", input="".join(
@@ -218,7 +218,7 @@ class GitStateStore:
             header = raw[offset:end].split() if end >= 0 else []
             if len(header) != 3 or header[1] != b"blob" or not header[2].isdigit():
                 raise GitStateStoreError("batch read did not return a blob: " + path)
-            self._validate_oid(header[0].decode("ascii"))
+            self.validate_oid(header[0].decode("ascii"))
             size = int(header[2])
             start, offset = end + 1, end + 1 + size
             if raw[offset:offset + 1] != b"\n":
@@ -234,10 +234,10 @@ class GitStateStore:
 
         ``missing`` has the meaning it has for :meth:`read_many`.
         """
-        self._validate_oid(commit)
+        self.validate_oid(commit)
         self._check_missing_mode(missing)
         for path in paths:
-            self._validate_path(path)
+            self.validate_path(path)
         if not paths:
             return {}
         output = self._git('cat-file', '--batch-check=%(objectsize) %(objecttype)',
@@ -353,7 +353,7 @@ class GitStateStore:
         if updated.returncode:
             self._held_head = None
             raise GitStateStoreConflict(f"state ref changed before the {operation} compare-and-swap")
-        self._held_head = new if self._holds_writer_lock else None
+        self._held_head = new if self.holds_writer_lock else None
 
     @measured('git_publication')
     def publish(self, expected_head: str | None, changes: Mapping[str, bytes | None]) -> StateSnapshot:
@@ -367,7 +367,7 @@ class GitStateStore:
         stale head compare it first (``ResearchRepository`` does).
         """
         if expected_head is not None:
-            self._validate_oid(expected_head)
+            self.validate_oid(expected_head)
         normalized_changes = self._validate_changes(changes)
 
         parent = self._tree(expected_head) if expected_head is not None else None
@@ -379,7 +379,7 @@ class GitStateStore:
                 candidate_paths.discard(path)
             else:
                 candidate_paths.add(path)
-        self._validate_candidate_paths(candidate_paths)
+        self.validate_candidate_paths(candidate_paths)
         if expected_head is not None and not normalized_changes:
             # A no-op still compares the authoritative ref at the publication
             # boundary, but creates neither blobs nor an empty history commit.
@@ -405,14 +405,14 @@ class GitStateStore:
         """Acquire a non-stale, same-instance advisory OS lock in the Git dir."""
         with ExitStack() as held:
             try:
-                held.enter_context(os_lock(self._git_dir / f"do-math-{self.instance_id}.lock", blocking=False))
+                held.enter_context(os_lock(self.git_dir / f"do-math-{self.instance_id}.lock", blocking=False))
             except OSError as error:
                 raise GitStateStoreLockError("another local writer owns this instance lock") from error
-            self._holds_writer_lock = True
+            self.holds_writer_lock = True
             try:
                 yield
             finally:
-                self._holds_writer_lock = False
+                self.holds_writer_lock = False
                 self._held_head = None
 
     def _ref_oid(self) -> str | None:
@@ -424,7 +424,7 @@ class GitStateStore:
             detail = result.stderr.decode("utf-8", "replace").strip()
             raise GitStateStoreError(f"cannot resolve existing state ref: {detail}")
         oid = result.stdout.decode("ascii").strip()
-        self._validate_oid(oid)
+        self.validate_oid(oid)
         return oid
 
     def _check_subtrees(self, rows: list[str], names: tuple[str, ...]) -> None:
@@ -435,11 +435,11 @@ class GitStateStore:
             if len(fields) != 2 or fields[-1] == "missing":
                 raise GitStateStoreError(f"state object lacks required {name!r} subtree")
             oid, object_type = fields
-            self._validate_oid(oid)
+            self.validate_oid(oid)
             if object_type != "tree":
                 raise GitStateStoreError(f"state {name!r} entry must be a tree")
 
-    def _tree_paths(self, commit: str) -> frozenset[str]:
+    def tree_paths(self, commit: str) -> frozenset[str]:
         return self._tree(commit).paths
 
     def _tree(self, commit: str) -> _Tree:
@@ -448,7 +448,7 @@ class GitStateStore:
         Two slots keep reading an older snapshot from displacing the head the
         next publication builds on.
         """
-        self._validate_oid(commit)
+        self.validate_oid(commit)
         for known in (self._published, self._read):
             if known is not None and known.commit == commit:
                 return known
@@ -466,7 +466,7 @@ class GitStateStore:
             if kind == "tree":
                 directories.setdefault(path, {})
             else:
-                self._validate_path(path)
+                self.validate_path(path)
                 paths.add(path)
             above, _, name = path.rpartition("/")
             # ls-tree prints a subtree's mode zero-padded (040000); the tree object stores 40000.
@@ -480,7 +480,7 @@ class GitStateStore:
         normalized: dict[str, bytes | None] = {}
         folded: dict[str, str] = {}
         for path, contents in changes.items():
-            self._validate_path(path)
+            self.validate_path(path)
             folded_path = path.casefold()
             prior = folded.get(folded_path)
             if prior is not None and prior != path:
@@ -491,11 +491,11 @@ class GitStateStore:
             normalized[path] = contents
         return normalized
 
-    def _validate_candidate_paths(self, paths: set[str]) -> None:
+    def validate_candidate_paths(self, paths: set[str]) -> None:
         folded_prefixes: dict[str, str] = {}
         directories: set[str] = set()
         for path in paths:
-            self._validate_path(path)
+            self.validate_path(path)
             parts = path.split("/")
             for position in range(1, len(parts) + 1):
                 original = "/".join(parts[:position])
@@ -522,7 +522,7 @@ class GitStateStore:
             if parts[:2] == ["runtime", "artifacts"] and parts[2] in existing_bundles:
                 raise ValueError("existing runtime artifact bundles are immutable")
 
-    def _validate_path(self, path: str) -> None:
+    def validate_path(self, path: str) -> None:
         if not isinstance(path, str) or not path:
             raise ValueError("path must be a non-empty POSIX relative path")
         if path.startswith("/") or "\\" in path or "\x00" in path:
@@ -535,9 +535,15 @@ class GitStateStore:
         if parts[:2] == ["runtime", "artifacts"] and len(parts) < 4:
             raise ValueError("artifact paths must name a bundle and a file")
 
-    def _validate_oid(self, oid: str) -> None:
+    def validate_oid(self, oid: str) -> None:
         if oid_shape(oid) != self.object_format:
             raise ValueError(f"OID must be a lowercase {self.object_format} object ID")
+
+    def first_descendant(self, parent: str, head: str) -> str | None:
+        """The commit on ``head``'s first-parent line whose parent is ``parent``, if any."""
+        self.validate_oid(parent)
+        commits = self._git("rev-list", "--first-parent", "--reverse", parent + ".." + head).stdout.decode().splitlines()
+        return commits[0] if commits else None
 
     def _git_text(self, *arguments: str) -> str:
         return self._git(*arguments).stdout.decode("utf-8").strip()
@@ -548,7 +554,7 @@ class GitStateStore:
         input: bytes | None = None,
         check: bool = True,
     ) -> subprocess.CompletedProcess[bytes]:
-        disabled_hooks = self._git_dir / "do-math-disabled-hooks"
+        disabled_hooks = self.git_dir / "do-math-disabled-hooks"
         environment = os.environ.copy()
         environment.update({
             "GIT_CONFIG_NOSYSTEM": "1",

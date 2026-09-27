@@ -284,7 +284,6 @@ def reviewed_candidate(root, *, verified=False):
     single reviewer leaves the scope unresolved.
     """
     from do_math import review_cycle as rc
-    from do_math.review_engine import ReviewEngineMixin
     from do_math.execution_lifecycle import create_execution
     from do_math.activities import assign_execution
     from engine_fixtures import FakeEngine
@@ -330,7 +329,7 @@ def reviewed_candidate(root, *, verified=False):
     if cycle["status"] != ("completed" if verified else "unresolved"):
         raise AssertionError("The synthetic review ended as " + repr(cycle["status"]))
     runtime["review_cycles"] = {cycle["id"]: cycle}
-    assessment = ReviewEngineMixin._identity_assessment(cycle, reason="Scope remains incomplete")
+    assessment = rc.identity_assessment(cycle, reason="Scope remains incomplete")
     assessment["basis"] = kr.identity_basis(instance, kid)
     instance, aid = kr.record_identity_assessment(instance, kid, assessment, cycle["policy_ref"], runtime=runtime)
     return instance, runtime, kid, aid
@@ -447,7 +446,7 @@ class KnowledgeRoundtripHarness(unittest.TestCase):
             for status in ('starting', 'running'):
                 execution_lifecycle.transition_execution(execution, status, at='2026-09-20T00:00:00Z')
             execution['submission_receipt'] = {'state': 'accepted', 'evidence_ref': 'synthetic:review'}
-            execution_lifecycle.transition_execution(execution, 'stopping', at='2026-09-20T00:00:00Z', stop_phase='terminating')
+            execution_lifecycle.transition_execution(execution, 'stopping', at='2026-09-20T00:00:00Z')
             execution_lifecycle.transition_execution(execution, 'ended', at='2026-09-20T00:00:00Z', outcome='output_accepted')
         self.assertEqual(cycle['decision'], decision)
         cycle.update(id=cid, knowledge_id=self.kid, identity_basis=kr.identity_basis(self.state, self.kid), policy_ref='policy:fixture')
@@ -455,9 +454,9 @@ class KnowledgeRoundtripHarness(unittest.TestCase):
         return cycle
 
     def assessment(self, decision='match'):
-        from do_math.review_engine import ReviewEngineMixin
+        from do_math.review_cycle import identity_assessment
         cycle = self.cycle(decision)
-        assessment = ReviewEngineMixin._identity_assessment(cycle, reason='Synthetic sealed review')
+        assessment = identity_assessment(cycle, reason='Synthetic sealed review')
         self.state, aid = kr.record_identity_assessment(self.state, self.kid,
             {**assessment, 'basis': cycle['identity_basis']}, cycle['policy_ref'], runtime=self.runtime)
         return aid

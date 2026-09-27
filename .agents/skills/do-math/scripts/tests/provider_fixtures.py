@@ -162,7 +162,7 @@ def finish(slots, runtime, identifier, current, *, close_activity=True):
     if not slots.release(identifier):
         raise AssertionError("test execution without an acknowledged process did not settle")
     execution = runtime["executions"][identifier]
-    lifecycle.transition_execution(execution, "stopping", at=instant(current), stop_phase="terminating")
+    lifecycle.transition_execution(execution, "stopping", at=instant(current))
     lifecycle.transition_execution(execution, "ended", at=instant(current), outcome="start_failed",
         disposition={"kind": "synthetic_provider_observation"})
     if not close_activity:

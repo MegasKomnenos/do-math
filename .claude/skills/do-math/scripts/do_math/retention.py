@@ -13,7 +13,7 @@ import shutil
 
 from .context_store import read_stable
 from .file_io import file_fingerprint, fingerprint_settled, no_reparse
-from .git_store import PhysicalBoundary, oid_shape
+from .git_store import ARTIFACT_ROOT, PhysicalBoundary, oid_shape
 from .relation_refs import relation_references
 from .repository import canonical_json, sealed_bytes
 from .task_contracts import CONTEXT_INPUT_REFS, TOOL_INPUT_REFS
@@ -212,7 +212,7 @@ def archive_run(workspace, identifier, execution, prefix, marks=None):
 def _archive_reference(path, snapshot):
     # Reading the artifact validates the path with the Git state path rules.
     oid_shape(snapshot)
-    if not isinstance(path, str) or not path.startswith('runtime/artifacts/'):
+    if not isinstance(path, str) or not path.startswith(ARTIFACT_ROOT):
         raise ValueError('invalid immutable archive reference')
 
 

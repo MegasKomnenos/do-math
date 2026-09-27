@@ -370,7 +370,7 @@ class ImpactBundleTests(ImpactReviewHarness):
 
 class ImpactReviewRetryTests(unittest.TestCase):
     def test_sealed_bytes_are_read_only_after_every_requested_review_ended(self):
-        engine = bare_engine(head='a' * 40)
+        engine = bare_engine({}, head='a' * 40)
         request = {'integration_id': 'IN-1', 'payload_sha256': 'p' * 64}
         engine.runtime = {'status': 'ready', 'executions': {'EX-producer': {'id': 'EX-producer'}},
             'waiting_actions': {'A-1': {'action': {'id': 'A-1'}, 'kind': 'impact_review',

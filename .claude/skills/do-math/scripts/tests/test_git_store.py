@@ -67,7 +67,7 @@ class GitStateStoreTests(unittest.TestCase):
         from do_math.git_store import oid_shape
         self.assertEqual(oid_shape("a" * 64), "sha256")
         with self.assertRaises(ValueError):
-            self.store._validate_oid("a" * 64)
+            self.store.validate_oid("a" * 64)
         with self.assertRaises(ValueError):
             oid_shape("A" * 40)
 
@@ -78,8 +78,8 @@ class GitStateStoreTests(unittest.TestCase):
         snapshot = self.store.publish(None, self.initial_changes())
         self.forget_trees()
         with patch.object(self.store, '_git', wraps=self.store._git) as calls:
-            first = self.store._tree_paths(snapshot.head)
-            second = self.store._tree_paths(snapshot.head)
+            first = self.store.tree_paths(snapshot.head)
+            second = self.store.tree_paths(snapshot.head)
         self.assertEqual(first, second)
         self.assertEqual(sum(c.args[0] == 'ls-tree' for c in calls.call_args_list), 1)
 
@@ -88,16 +88,16 @@ class GitStateStoreTests(unittest.TestCase):
         with patch.object(self.store, '_git', wraps=self.store._git) as calls:
             later = self.store.publish(first.head, {'runtime/state.json': None, 'research/next.json': b'{}\n',
                                                     'runtime/artifacts/two/b.bin': b'b'})
-            listed = self.store._tree_paths(later.head)
+            listed = self.store.tree_paths(later.head)
         # The parent list also came from its own publication.
         self.assertEqual(sum(c.args[0] == 'ls-tree' for c in calls.call_args_list), 0)
         # Reading an older snapshot does not displace the tree just published.
-        self.store._tree_paths(first.head)
+        self.store.tree_paths(first.head)
         with patch.object(self.store, '_git', wraps=self.store._git) as calls:
             self.store.publish(later.head, {'research/again.json': b'{}\n'})
         self.assertEqual([c.args[0] for c in calls.call_args_list], ['update-ref'])
         self.forget_trees()
-        self.assertEqual(listed, self.store._tree_paths(later.head))
+        self.assertEqual(listed, self.store.tree_paths(later.head))
 
     def test_publication_writes_objects_in_process_and_moves_the_ref_only_by_cas(self):
         first = self.store.publish(None, self.initial_changes())
@@ -138,7 +138,7 @@ class GitStateStoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'both a file and a directory'):
             self.store.publish(first.head, {'research/a/b': b'child'})
         with self.assertRaisesRegex(ValueError, 'both a file and a directory'):
-            self.store._validate_candidate_paths({'research/x', 'research/x/y'})
+            self.store.validate_candidate_paths({'research/x', 'research/x/y'})
         self.assertEqual(self.store.read_snapshot().head, first.head)
 
     def test_physical_boundary_is_proved_on_open_and_after_git_errors_only(self):
@@ -179,8 +179,8 @@ class GitStateStoreTests(unittest.TestCase):
         path = "runtime/artifacts/one/e\u0301.txt"
         snapshot = self.store.publish(None, {**self.initial_changes(), path: b"raw"})
         self.assertEqual(self.store.read_bytes(snapshot.head, path), b"raw")
-        self.assertIn(path, self.store._tree_paths(snapshot.head))
-        self.assertNotIn("runtime/artifacts/one/\u00e9.txt", self.store._tree_paths(snapshot.head))
+        self.assertIn(path, self.store.tree_paths(snapshot.head))
+        self.assertNotIn("runtime/artifacts/one/\u00e9.txt", self.store.tree_paths(snapshot.head))
 
     def test_many_blobs_use_no_hash_process_and_preserve_raw_bytes(self):
         (self.repository / '.gitattributes').write_text('* text eol=lf\n', encoding='utf-8')
@@ -285,7 +285,7 @@ class GitStateStoreTests(unittest.TestCase):
     def test_writer_lock_is_an_os_lock_without_stale_pid_contents(self) -> None:
         with self.store.writer_lock():
             snapshot = self.store.publish(None, self.initial_changes())
-        lock_path = self.store._git_dir / f"do-math-{INSTANCE_ID}.lock"
+        lock_path = self.store.git_dir / f"do-math-{INSTANCE_ID}.lock"
         self.assertEqual(lock_path.read_bytes(), b"\0")
         self.assertEqual(self.store.read_snapshot().head, snapshot.head)
 
@@ -373,7 +373,7 @@ class GitStateStoreTests(unittest.TestCase):
 
     def test_non_commit_or_corrupt_existing_ref_is_not_treated_as_absent(self) -> None:
         blob = git(self.repository, "hash-object", "-w", "--stdin", input=b"not a commit").decode().strip()
-        corrupt_path = self.store._git_dir / self.store.ref
+        corrupt_path = self.store.git_dir / self.store.ref
         corrupt_path.parent.mkdir(parents=True, exist_ok=True)
         corrupt_path.write_text(blob + "\n", encoding="ascii")
         with self.assertRaises(GitStateStoreError):
@@ -484,7 +484,7 @@ class InProcessObjectsMatchGitPlumbingTests(unittest.TestCase):
                         model.pop(path, None)
                     else:
                         model[path] = raw
-                self.assertEqual(store._tree_paths(head), set(model))
+                self.assertEqual(store.tree_paths(head), set(model))
                 heads.append(head)
                 expected.append(self.oracle_tree(repository, index, changes, store.oid_length))
             trees = git(repository, "rev-parse", *(f"{commit}^{{tree}}" for commit in heads)).decode().split()

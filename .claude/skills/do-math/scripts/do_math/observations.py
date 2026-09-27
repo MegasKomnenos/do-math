@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 import hashlib
 import json
@@ -15,8 +15,9 @@ from jsonschema import Draft202012Validator
 from .context_store import is_excluded, read_stable, safe_path
 from .control_transport import (CONTROL_SERVER, RECEIPT_TOOL, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE,
                                 SELF_CHECK_TOOL, SUBMIT_TOOL, self_check_request_id, self_check_response_errors)
-from .file_io import is_sha256, parse_utc, strict_json_loads
+from .file_io import is_sha256, now, parse_utc, strict_json_loads
 from .repository import validate_storage_value
+from .execution_profiles import OBSERVATION_MODES
 from .file_io import read_bytes_shared, write_bytes_atomic, file_fingerprint, fingerprint_settled
 
 CHECKPOINT_MAX_BYTES = 4 * 1024 * 1024
@@ -136,9 +137,10 @@ def validate_rule_preparation(action, extensions, tasks):
     if 'observation_rule_targets' not in action:
         return {}
     from .model_policy import assessment_basis
+    from .task_contracts import TERMINAL_TASK_STATUSES
     for tid, basis in targets.items():
         task = tasks.get(tid)
-        if (not task or task.get('status') in {'completed', 'closed'}
+        if (not task or task.get('status') in TERMINAL_TASK_STATUSES
                 or assessment_basis(task) != basis):
             raise ValueError('observation rule target contract edition changed: ' + tid)
     prepared = {}
@@ -240,10 +242,6 @@ def duration_ms(seconds: Any, field: str, *, required: bool = False) -> int | No
 
 def _offset_ms(started: float, current: float) -> int:
     return max(0, int((Decimal(str(current)) - Decimal(str(started))) * 1000))
-
-
-def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 def validate_rules(rules: list[dict], *, allow_empty: bool = False) -> list[dict]:
@@ -409,7 +407,7 @@ def read_checkpoint(workspace: Path) -> dict:
             relative = Path(reference)
             if (relative.parts[0] != "input" and is_excluded(relative)) or not evidence.is_file():
                 raise ValueError("checkpoint evidence is unavailable or excluded from preservation: " + reference)
-        return {"status": "valid", "value": value, "sha256": digest, "raw": raw, "observed_at": utc_now()}
+        return {"status": "valid", "value": value, "sha256": digest, "raw": raw, "observed_at": now()}
     except Exception as error:
         return {"status": "invalid", "error": f"{type(error).__name__}: {error}"}
 
@@ -444,7 +442,7 @@ class ObservationTracker:
         self.execution_id, self.workspace, self.config, self.clock = execution_id, workspace, config, clock
         self.started = self.last_review = clock()
         self.mode = config.get("observation_mode", "event_driven")
-        if self.mode not in {"event_driven", "periodic", "deadline_only"}:
+        if self.mode not in OBSERVATION_MODES:
             raise ValueError("unsupported observation mode")
         self.rule_revision = config.get("self_check_revision", 0)
         if isinstance(self.rule_revision, bool) or not isinstance(self.rule_revision, int) or self.rule_revision < 0:
@@ -507,7 +505,7 @@ class ObservationTracker:
         result = {"kind": kind, "id": f"OF-{self.execution_id}-{self.fact_sequence}",
                 "execution_id": self.execution_id, "event_json": raw,
                 "event_sha256": hashlib.sha256(raw.encode()).hexdigest(),
-                "observed_at": utc_now(), "monotonic_offset_ms": _offset_ms(self.started, when)}
+                "observed_at": now(), "monotonic_offset_ms": _offset_ms(self.started, when)}
         if self.observation_source is not None:
             result['source'] = {key: value for key, value in self.observation_source.items()
                                 if key != 'received_monotonic'}
@@ -569,7 +567,7 @@ class ObservationTracker:
         Its hash is what a successful poll must return.
         """
         obligation = self.obligations[obligation_id]
-        obligation['delivered_at'] = utc_now()
+        obligation['delivered_at'] = now()
         if obligation['response_availability'] == 'available' and self.response_window_ms is not None:
             obligation['deadline_offset_ms'] = _offset_ms(self.started, self.clock()) + self.response_window_ms
         request = self_check_request(obligation)
@@ -720,13 +718,12 @@ class ObservationTracker:
             raise ValueError("checkpoint already counted; response lineage must precede file polling")
         self.self_check_checkpoints.add(sha256)
 
-    def record_safe_boundary(self, receipt_id: str, *, call_ids: list[str] = (), self_check_only: bool = False) -> list[dict]:
+    def record_safe_boundary(self, receipt_id: str, *, call_ids: list[str] = ()) -> list[dict]:
         """Called only for a validated control receipt, not arbitrary CLI text."""
         if not isinstance(receipt_id, str) or not receipt_id:
             raise ValueError("safe boundary needs a control receipt")
         when = self.clock()
-        if not self_check_only:
-            self.safe_boundary_ids.add(receipt_id)
+        self.safe_boundary_ids.add(receipt_id)
         for call_id in call_ids:
             if call_id in self.pending_tools:
                 self.pending_tools[call_id]["safe_boundary"] = True
@@ -752,7 +749,7 @@ class ObservationTracker:
             return
         obligation["missed_reason"] = reason
         self.pending_records.append({"kind": "self_check_missed", "execution_id": self.execution_id,
-            "obligation_id": obligation["id"], "reason": reason, "observed_at": utc_now(),
+            "obligation_id": obligation["id"], "reason": reason, "observed_at": now(),
             "followup": {"kind": "operational_review_due", "trigger": reason,
                 "next_owner": "operational_review", "basis_refs": [obligation["id"]]}})
 
@@ -799,7 +796,7 @@ class ObservationTracker:
                      "worker_feedback": worker_feedback({"kind": "observation_rules_rejected", "reason": reason,
                          "active_revision": self.rule_revision, "active_rules_sha256": self.rules_digest,
                          "previous_rules_preserved": True, "next_owner": "worker"}),
-                     "next_owner": "worker", "observed_at": utc_now()}]
+                     "next_owner": "worker", "observed_at": now()}]
 
     def _replace_rules(self, proposal: dict) -> dict:
         before = self.rules_digest
@@ -816,7 +813,7 @@ class ObservationTracker:
         except (ValueError, TypeError) as error:
             result = {"kind": "observation_rules_rejected", "reason": str(error), "previous_rules_preserved": True}
         result.update(execution_id=self.execution_id, active_revision=self.rule_revision,
-                      active_rules_sha256=self.rules_digest, observed_at=utc_now())
+                      active_rules_sha256=self.rules_digest, observed_at=now())
         result["worker_feedback"] = {key: value for key, value in result.items() if key in WORKER_FEEDBACK_FIELDS}
         return result
 
@@ -825,7 +822,7 @@ class ObservationTracker:
         return {"completed_call_ids": sorted(self.completed_call_ids),
                 "safe_boundary_ids": sorted(self.safe_boundary_ids), "counters": dict(self.counters),
                 "iterations": dict(self.iterations), "checkpoint_counts": {self.execution_id: self.checkpoint_count},
-                "observed_at": utc_now()}
+                "observed_at": now()}
 
     def _self_check_obligation(self, due: list[dict], when: float) -> dict:
         fingerprint = json.dumps({"execution_id": self.execution_id, "revision": self.rule_revision, "due": due}, ensure_ascii=False, sort_keys=True)
@@ -839,7 +836,7 @@ class ObservationTracker:
                       "consumed_boundaries": dict(self.consumed_rules),
                       "response_availability": "available" if available else "awaiting_safe_boundary",
                       "deadline_offset_ms": None if self.response_window_ms is None or not available else opened + self.response_window_ms,
-                      "status": "open", "observed_at": utc_now()}
+                      "status": "open", "observed_at": now()}
         self.obligations[identifier] = obligation
         return obligation
 
@@ -895,7 +892,7 @@ class ObservationTracker:
                   "execution_id": self.execution_id,
                   "obligation_id": obligation_id if isinstance(obligation_id, str) else None,
                   "response_json": _raw_json(response),
-                  "received_offset_ms": now_offset, "observed_at": utc_now()}
+                  "received_offset_ms": now_offset, "observed_at": now()}
         record["control_call_ids"] = [cid for cid, row in self.control_calls.items() if
             row["obligation_id"] == obligation_id and receipt_id is not None and self.control_requests.get(row["request_id"], {}).get("receipt_id") == receipt_id]
         if errors:
@@ -946,7 +943,7 @@ class ObservationTracker:
         try: self._ingest_event(event, when)
         except ValueError as error:
             emitted.append({"kind": "observation_input_rejected", "execution_id": self.execution_id,
-                            "reason": str(error), "next_owner": "adapter", "observed_at": utc_now(),
+                            "reason": str(error), "next_owner": "adapter", "observed_at": now(),
                             "followup": {"kind": "operational_review_due", "trigger": "observation_error", "next_owner": "operational_review"}
                             if self.mode != "deadline_only" else None})
         if event.get("type") != "tick": emitted.append(self.fact("observation_fact", event, when))
@@ -970,7 +967,7 @@ class ObservationTracker:
                     self._merge_monotonic(self.iterations, {self.execution_id: progress["iteration"]}, "checkpoint iterations")
             except ValueError as error:
                 emitted.append({"kind": "checkpoint_observation_rejected", "execution_id": self.execution_id,
-                                "reason": str(error), "observed_at": utc_now()})
+                                "reason": str(error), "observed_at": now()})
             emitted.append({"kind": "checkpoint", "execution_id": self.execution_id, **checkpoint})
         if self.research_self_checks:
             snapshot = self._snapshot()
@@ -988,7 +985,7 @@ class ObservationTracker:
             if unavailable:
                 self.reported_unavailable.update(unavailable)
                 emitted.append({"kind": "observation_unavailable", "execution_id": self.execution_id,
-                    "rule_ids": unavailable, "reason": "required observation signal has not been measured", "observed_at": utc_now(),
+                    "rule_ids": unavailable, "reason": "required observation signal has not been measured", "observed_at": now(),
                     "followup": {"kind": "operational_review_due", "trigger": "observation_unavailable", "next_owner": "operational_review"}})
             due = evaluate_rules(self.rules, snapshot, consumed_boundaries=self.consumed_rules)
             if self.next_self_check_offset_ms is not None and _offset_ms(self.started, when) >= self.next_self_check_offset_ms:
@@ -1027,7 +1024,7 @@ class ObservationTracker:
                                     "elapsed_ms": _offset_ms(details["started"], when),
                                     "basis": {"source": "selected_profile" if self.profile_ref else "admitted_settings", "profile_ref": self.profile_ref,
                                               "field": "tool_review_window_seconds", "unit": "milliseconds"},
-                                    "observed_at": utc_now()})
+                                    "observed_at": now()})
             if self.mode == "periodic" and self.periodic_interval_ms is not None:
                 if _offset_ms(self.last_review, when) >= self.periodic_interval_ms:
                     self.last_review = when
@@ -1035,18 +1032,18 @@ class ObservationTracker:
                                     "interval_ms": self.periodic_interval_ms,
                                     "basis": {"source": "selected_profile" if self.profile_ref else "admitted_settings", "profile_ref": self.profile_ref,
                                               "field": "observation_interval_seconds", "unit": "milliseconds"},
-                                    "observed_at": utc_now()})
+                                    "observed_at": now()})
             for review in self.explicit_reviews.values():
-                if not review["fired"] and _utc(utc_now(), "now") >= _utc(review["at"], "review at"):
+                if not review["fired"] and _utc(now(), "now") >= _utc(review["at"], "review at"):
                     review["fired"] = True
                     emitted.append({"kind": "explicit_review_due", "execution_id": self.execution_id,
                                     **{key: review[key] for key in ("review_id", "reason", "basis_ref", "at")},
-                                    "observed_at": utc_now()})
+                                    "observed_at": now()})
         if (self.config.get("checkpoint_expected") and not self.checkpoint_reminded and self.checkpoint_count == 0 and
                 self.periodic_interval_ms is not None and _offset_ms(self.started, when) >= self.periodic_interval_ms):
             self.checkpoint_reminded = True
             emitted.append({"kind": "checkpoint_reminder_due", "execution_id": self.execution_id,
-                            "checkpoint_status": checkpoint["status"], "observed_at": utc_now()})
+                            "checkpoint_status": checkpoint["status"], "observed_at": now()})
         emitted.extend(self.pending_records)
         self.pending_records = []
         return emitted

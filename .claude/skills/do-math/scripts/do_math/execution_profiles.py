@@ -28,6 +28,8 @@ UNCAPPED_ROLES = LEAN_ROLES | {"trust_activate"}
 OBSERVATION_KEYS = ("observation_interval_seconds",
                     "self_check_response_window_seconds", "tool_review_window_seconds")
 WINDOW_KEYS = ("call_timeout_seconds", "finish_notice_seconds")
+# The observation modes a profile may pin (profile ``observation.mode``).
+OBSERVATION_MODES = ("event_driven", "periodic", "deadline_only")
 PROFILE_ROLES = set(ROLE_TIERS) | MACHINE_ROLES
 HOST_ROLES = PROFILE_ROLES - UNCAPPED_ROLES
 BOUNDARY = {"mode": "instructions", "os_isolation": False, "authenticated_caller": False,
@@ -35,6 +37,16 @@ BOUNDARY = {"mode": "instructions", "os_isolation": False, "authenticated_caller
                       "Do not read other reviewers' private work or modify central records directly.",
                       "Deliver proposals as a normal JSON final, or use the supplied tools for optional early submission.",
                       "Do not issue user controls or expand research goals, budgets or external authority."]}
+
+
+def task_research(action: dict) -> bool:
+    """A research producer's work on its task, not supplemental research a review cycle requested."""
+    return action.get("role") in RESEARCH_PRODUCER_ROLES and not action.get("review_cycle_id")
+
+
+def review_research(action: dict) -> bool:
+    """Supplemental research that a review cycle requested for its proposal."""
+    return action.get("role") == "supplemental_research" and bool(action.get("review_cycle_id"))
 
 
 def _research_observation_rule_contract() -> list[dict]:
@@ -85,7 +97,7 @@ def validate_profile(profile: dict) -> None:
     expected_mode = ("deadline_only" if actor == "machine" or role not in WORK_ROLES
                      else None if role == "research_work" else "periodic")
     mode = profile.get("observation", {}).get("mode")
-    if mode not in {"event_driven", "periodic", "deadline_only"} or expected_mode and mode != expected_mode:
+    if mode not in OBSERVATION_MODES or expected_mode and mode != expected_mode:
         raise ValueError("observation mode differs from role responsibility")
     bindings = profile.get("observation", {}).get("rule_bindings")
     if role == "research_work":

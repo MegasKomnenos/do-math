@@ -875,7 +875,7 @@ class ResourceWaitTests(unittest.TestCase):
         self.assertEqual(runtime, before)
 
     def test_configure_wakes_only_changed_resource_waits_and_keeps_pinned_profile(self):
-        from engine_fixtures import goal_audit_host, governance_host
+        from engine_fixtures import governance_host
         e, _, _ = governance_host()
         e.instance['workspace'] = str(Path('.').resolve())
         e.instance['config']['session_limits']['work'] = {m: 0 for m in e.instance['config']['tier_models'].values()}

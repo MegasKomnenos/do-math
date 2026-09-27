@@ -150,5 +150,5 @@ class InitializationEngineMixin:
             return False
         from .initialization import initial_intent_evidence
         lifecycle['intent_check'] = initial_intent_evidence(self.instance, self.runtime,
-            owner_handlers=self._governance_owner_handlers())
+            owner_handlers=self.governance_owner_handlers())
         return True

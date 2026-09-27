@@ -87,10 +87,10 @@ class PublicationTrustIdentityTests(unittest.TestCase):
                               'trust_bindings':{'TE-test':binding}}
             engine._review_publication_premises = create_autospec(engine._review_publication_premises,
                 return_value={'fixed':'same stored environment'})
-            engine._identity_assessment = create_autospec(engine._identity_assessment, return_value={'decision':'match'})
             updated = {'id':'RC-test','proposal':{},'decision':'match','identity_basis':{},'policy_ref':'policy',
                        'publication_premises':{'fixed':'same stored environment'}}
-            with patch('do_math.review_engine.kr.record_identity_assessment', side_effect=RuntimeError('publication reached')):
+            with patch('do_math.review_engine.identity_assessment', return_value={'decision':'match'}), \
+                 patch('do_math.review_engine.kr.record_identity_assessment', side_effect=RuntimeError('publication reached')):
                 with self.assertRaisesRegex(RuntimeError, 'publication reached'):
                     engine._publish_identity_review_result({'target':'KN-test'}, updated, 'EX-review')
                 # The fingerprint was checked before compiling; publication checks only the identity.

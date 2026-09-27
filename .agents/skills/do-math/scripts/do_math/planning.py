@@ -16,7 +16,7 @@ from .governance import GOVERNANCE_STATUSES, GRANT_STATUSES
 from .input_basis import SOURCE_STATUSES
 from .repository import VERIFIED_ARTIFACTS, artifact_key, exact_content_hash, sealed_bytes
 from .review_cycle import CYCLE_STATUSES
-from .task_contracts import LIFECYCLE_STATES
+from .task_contracts import LIFECYCLE_STATES, TERMINAL_TASK_STATUSES
 from .trust_validation import ENVIRONMENT_STATUSES
 
 
@@ -31,7 +31,6 @@ def contract_hash(task: dict) -> str:
     return exact_content_hash({key: task[key] for key in CONTRACT_FIELDS if key in task})
 
 
-TERMINAL_TASK_STATUSES = frozenset({"completed", "closed"})
 # (format validator, artifact path, sha256) -> its verdict. The verdict is a function
 # of the validator, the name and the bytes only; whether a repository holds those
 # bytes is repository.VERIFIED_ARTIFACTS' fact. Pure, so no repository clears it.
@@ -78,6 +77,17 @@ READ_REFERENCE_ID_FIELDS = ("formal_result_id", "exposition_id", "trust_environm
                             "kind_definition_id", "assessment_id")
 
 
+def listed_reference_ids(record: dict) -> set[str]:
+    """The IDs that the READ_REFERENCE_FIELDS lists of ``record`` name.
+
+    A list entry is an ID or an {"id": ID} reference; an entry of any other shape
+    names no record. Task read closures and completion assessment bases read the
+    list fields through this one function."""
+    return {ref if isinstance(ref, str) else ref['id'] for key in READ_REFERENCE_FIELDS
+            if isinstance(record.get(key), list) for ref in record[key]
+            if isinstance(ref, str) or isinstance(ref, dict) and isinstance(ref.get('id'), str)}
+
+
 def action_read_ids(action: dict, instance: dict, runtime: dict, *, records=None) -> set[str]:
     """records may carry record_index() of this same state, shared by one evaluation."""
     from .relation_refs import relation_references
@@ -100,10 +110,7 @@ def action_read_ids(action: dict, instance: dict, runtime: dict, *, records=None
         if identifier not in records:
             continue
         family, record = records[identifier]
-        for key in READ_REFERENCE_FIELDS:
-            if isinstance(record.get(key), list):
-                seeds.update(ref if isinstance(ref, str) else ref['id'] for ref in record[key]
-                             if isinstance(ref, str) or isinstance(ref, dict) and isinstance(ref.get('id'), str))
+        seeds.update(listed_reference_ids(record))
         # A reader also follows the provenance source that a record names.
         seeds.update(record[key] for key in (*READ_REFERENCE_ID_FIELDS, 'source_ref') if isinstance(record.get(key), str))
         if record.get('formal_result_id'):
@@ -132,10 +139,8 @@ def pending_revisions(runtime: dict) -> list[dict]:
     for identifier, entry in runtime.get("waiting_actions", {}).items():
         action = entry['action']
         if action_write_ids(action) and identifier not in rows:
-            delegated = entry.get("delegated_targets", {})
             rows[identifier] = {"action": action, "state": "waiting",
-                                "delegated_to_task_id": next(iter(delegated.values()), None),
-                                "delegated_targets": delegated}
+                                "delegated_targets": entry.get("delegated_targets", {})}
     for execution in runtime.get("executions", {}).values():
         action = execution.get("action", {})
         if execution.get("status") != "ended" and action_write_ids(action):
@@ -347,7 +352,7 @@ def validate_condition(condition: dict) -> None:
         for name in fields[op] - {"value"}:
             if not isinstance(condition[name], str) or not condition[name].strip():
                 raise ValueError("condition " + name + " must be nonempty text")
-        if op == "task_disposition_is" and condition["value"] not in {"completed", "closed"}:
+        if op == "task_disposition_is" and condition["value"] not in TERMINAL_TASK_STATUSES:
             raise ValueError("task disposition must be completed or closed")
         if op == "record_field_equals" and (not condition["pointer"].startswith("/") or isinstance(condition["value"], (dict, list))):
             raise ValueError("record comparison needs a pointer and scalar value")
@@ -407,7 +412,7 @@ def lifecycle_values():
 EXPOSED_FIELDS = {
     'goal-judgment': {'/decision', '/current'},
     'knowledge': {'/lifecycle','/kind','/kind_use_suspended','/usable_as_k'}, 'task': {'/status','/revision'},
-    'activity': {'/status','/activity_kind'}, 'execution': {'/status','/role','/outcome','/stop_phase'},
+    'activity': {'/status','/activity_kind'}, 'execution': {'/status','/role','/outcome'},
     'governance': {'/status'}, 'grant': {'/status'}, 'decision': {'/kind'},
     'external-operation': {'/status','/http_status','/succeeded'}, 'source': {'/status','/revision','/sha256'},
     'trust-environment': {'/status'}, 'review-cycle': {'/status','/decision','/phase'},
@@ -472,9 +477,8 @@ def _record_target(records: dict[str, tuple[str, dict]], identifier: str, family
 def _basis(record: dict) -> dict: return {"id": record["id"], "sha256": exact_content_hash(record), "status": record.get("status", record.get("lifecycle"))}
 
 
-def _pointer(record: dict, family: str, pointer: str) -> Any:
-    if not isinstance(pointer, str) or not pointer.startswith("/"): raise ValueError("JSON Pointer must start with /")
-    if pointer not in EXPOSED_FIELDS.get(family,set()): raise ValueError("pointer is not an exposed machine field")
+def _pointer(record: dict, pointer: str) -> Any:
+    """The scalar machine field at pointer; validate_condition admitted the pointer for this record's family."""
     value: Any = record
     for token in pointer.split("/")[1:]:
         token = token.replace("~1", "/").replace("~0", "~")
@@ -497,30 +501,26 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
     except (ValueError, TypeError) as error:
         return {"state": "evaluation_error", "basis": [], "errors": [str(error)]}
     def visit(node: dict) -> str:
+        # validate_condition has checked every node's op, fields and nonempty args above.
         try:
-            if not isinstance(node, dict) or not isinstance(node.get("op"), str): raise ValueError("condition op is required")
             op = node["op"]
-            if op not in CONDITION_FIELDS: raise ValueError(f"unsupported condition op: {op}")
             if op == "always": return "ready"
             if op in {"all", "any"}:
-                args = node.get("args")
-                if not isinstance(args, list) or not args: raise ValueError(f"{op} requires nonempty args")
-                results = [visit(x) for x in args]
+                results = [visit(x) for x in node["args"]]
                 if "evaluation_error" in results: return "evaluation_error"
                 return "ready" if (all(x == "ready" for x in results) if op == "all" else any(x == "ready" for x in results)) else "not_ready"
             if op == "not":
                 result = visit(node.get("arg"))
                 return "evaluation_error" if result == "evaluation_error" else "not_ready" if result == "ready" else "ready"
             if op == "relation_exists":
-                from .knowledge_io import _RELATION_FIELDS, validate_relation
+                from .knowledge_io import validate_stored_relation
                 candidates = [r for r in instance.get("relations", []) if isinstance(r, dict) and r.get("kind") == node.get("subkind") and r.get("source") == node.get("from_id") and r.get("target") == node.get("to_id")]
                 matches = []
                 for relation in candidates:
                     basis.append(_basis(relation))
                     if relation.get("status", "active") in {"suspended", "withdrawn", "invalid"} or relation.get("use_status", "active") in {"suspended", "withdrawn"}:
                         continue
-                    value = {key: value for key, value in relation.items() if key in _RELATION_FIELDS}
-                    result = validate_relation(instance, value)
+                    result = validate_stored_relation(instance, relation)
                     unavailable = ("formal_result_not_usable:", "assessment_not_effective:")
                     structural = [reason for reason in result["reasons"] if not reason.startswith(unavailable)]
                     if structural:
@@ -584,7 +584,7 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
                     from .knowledge import assess_use
                     actual = assess_use(record[1], instance)['valid']
                 else:
-                    actual = _pointer(record[1], record[0], node.get("pointer"))
+                    actual = _pointer(record[1], node["pointer"])
                 expected = node.get("value")
                 return "ready" if type(actual) is type(expected) and actual==expected else "not_ready"
             raise ValueError(f"unsupported condition op: {op}")

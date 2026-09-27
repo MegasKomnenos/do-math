@@ -675,7 +675,7 @@ class PlanAfterPreparationTests(ActivatedPurposeHarness):
         # so nothing but the tested preparation can open a plan. (Public activation
         # leaves reconsideration events that a plan would first have to consume.)
         engine, _ = self.make_active(**self.fixture_config(
-            scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS)))
+            scholarly_enabled=False, operator_enabled=False))
         self.assertEqual(engine.runtime["queue"], [])
         self.assertFalse(engine.runtime.get("pending_events"))
         if ready_candidate:
@@ -713,7 +713,7 @@ class PlanAfterPreparationTests(ActivatedPurposeHarness):
 class DuplicateContractReviewTests(ActivatedPurposeHarness):
     def test_a_running_review_of_the_same_contract_is_not_doubled_when_its_outside_premises_move(self):
         engine, _ = self.make_active(**self.fixture_config(
-            scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS)))
+            scholarly_enabled=False, operator_enabled=False))
         engine.runner = ScriptedRunner(preparation_candidates=[candidate("window")])
         engine._enqueue("research_preparation", reason="Prepare the contract under review")
         engine._save()
@@ -733,7 +733,7 @@ class DuplicateContractReviewTests(ActivatedPurposeHarness):
 class PlanSettleTests(ActivatedPurposeHarness):
     def setUp(self):
         super().setUp()
-        self.engine, _ = self.make_active(scholarly_enabled=False, operator_enabled=False, session_limits=deepcopy(LIMITS))
+        self.engine, _ = self.make_active(scholarly_enabled=False, operator_enabled=False)
         self.engine.runtime["queue"] = []
 
     def queue(self, plan, review=True):
@@ -766,8 +766,7 @@ class RunWithoutDeadlineTests(ActivatedPurposeHarness):
         import time
         import do_math.engine as engine_module
         import do_math.scheduler as scheduler
-        engine, _ = self.make_active(scholarly_enabled=False, operator_enabled=False,
-            session_limits=deepcopy(LIMITS))
+        engine, _ = self.make_active(scholarly_enabled=False, operator_enabled=False)
         engine.runtime['queue'] = []
         engine._enqueue('research_preparation', reason='Prepare a contract for the deadline regression')
         engine._save()
@@ -919,6 +918,20 @@ class MachineAdmissionConnections(unittest.TestCase):
                 self.assertNotEqual(engine.head, admitted)
                 self.assertEqual(started["executions"]["EX-machine"]["capacity"]["process"], identity)
                 self.assertEqual(started["executions"]["EX-machine"]["status"], "running")
+
+
+class MaintenanceFenceRunTests(unittest.TestCase):
+    def test_run_that_starts_under_a_maintenance_fence_returns_without_an_execution(self):
+        # The owner loop meets the fence in its first pass, before the loop's stopping check.
+        start_active_copy(self)
+        control(self.repo, self.identifier, 'quiesce', text='fixture installation maintenance')
+        engine = ResearchEngine(self.repo, self.identifier)
+        engine.process_controls()
+        self.assertEqual(engine.runtime['maintenance_fence']['state'], 'quiescent')
+        executions = deepcopy(engine.runtime['executions'])
+        engine.run(max_steps=1)
+        self.assertEqual(engine.runtime['maintenance_fence']['state'], 'quiescent')
+        self.assertEqual(engine.runtime['executions'], executions)
 
 
 if __name__ == "__main__":

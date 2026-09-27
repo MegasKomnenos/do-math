@@ -66,7 +66,7 @@ class GoalAuditSlotTests(unittest.TestCase):
         e.head = 'fixed'
         e.instance['workspace'] = str(Path('.').resolve())
         ex = e.runtime['executions']['EX-original']
-        ex.update(status='stopping', stop_phase='terminating', actor_kind='ai',
+        ex.update(status='stopping', actor_kind='ai',
             result_ref='original-result', input_bundle='original-input',
             capacity={'local_termination': 'confirmed', 'process': {'job_name': 'fixture-job'}}, submission_intent={})
         artifacts, refs = {}, []

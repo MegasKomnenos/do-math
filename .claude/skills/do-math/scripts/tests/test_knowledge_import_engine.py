@@ -98,7 +98,7 @@ class KnowledgeImportTests(unittest.TestCase):
                    'decision': 'approved', 'findings': []}
         engine._apply_kind_definition_check(action, verdict, eid)
         execution['submission_receipt'] = {'state': 'accepted', 'evidence_ref': 'synthetic:kind-check'}
-        execution_lifecycle.transition_execution(execution, 'stopping', at='2026-09-20T00:00:00Z', stop_phase='terminating')
+        execution_lifecycle.transition_execution(execution, 'stopping', at='2026-09-20T00:00:00Z')
         execution_lifecycle.transition_execution(execution, 'ended', at='2026-09-20T00:00:00Z', outcome='output_accepted')
         with engine.store.writer_lock():
             engine._save()

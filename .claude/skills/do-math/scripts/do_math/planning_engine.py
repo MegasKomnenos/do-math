@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, WORK_ROLES
+from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, WORK_ROLES, task_research
 from .model_policy import assessment_basis, validate_assessments, preparation_only
 from .session_slots import live_action_ids
+from .task_contracts import TERMINAL_TASK_STATUSES
 
 class PlanningEngineMixin:
     def _apply_model_metadata(self, action, output, execution_id):
@@ -18,7 +19,7 @@ class PlanningEngineMixin:
             for field in ('assessment_targets', 'observation_rule_targets'):
                 for tid, basis in action.get(field, {}).items():
                     task = self.runtime['tasks'].get(tid)
-                    if not task or task.get('status') in {'completed', 'closed'} or assessment_basis(task) != basis:
+                    if not task or task.get('status') in TERMINAL_TASK_STATUSES or assessment_basis(task) != basis:
                         raise ValueError(field + ' task edition changed: ' + tid)
                     if any(e.get('status') != 'ended' and e.get('action', {}).get('target') == tid
                            for e in self.runtime['executions'].values()):
@@ -106,7 +107,7 @@ class PlanningEngineMixin:
         live = live_action_ids(self.runtime)
         for tid, task in self.runtime["tasks"].items():
             if (not task.get('academic_requirement_id') or not task.get('revision_requested')
-                    or task.get('status') in {'completed', 'closed'}):
+                    or task.get('status') in TERMINAL_TASK_STATUSES):
                 continue
             basis = assessment_basis(task)
             review = next((r for r in reversed(task.get("reviews", []))
@@ -131,7 +132,7 @@ class PlanningEngineMixin:
                    if (task.get("status") in {"planned", "active", "waiting"}) and (not task.get("model_assessment"))}
         missing_rules = {}
         for tid, task in self.runtime['tasks'].items():
-            if not task.get('academic_requirement_id') or task.get('status') in {'completed', 'closed'}:
+            if not task.get('academic_requirement_id') or task.get('status') in TERMINAL_TASK_STATUSES:
                 continue
             try:
                 validate_task_rules(task.get('initial_observation_rules', []))
@@ -244,7 +245,7 @@ class PlanningEngineMixin:
             if row["decision"] == "cancel":
                 self._remove_action(request)
                 task = self.runtime["tasks"].get(request.get("target"))
-                if task and request["role"] in RESEARCH_PRODUCER_ROLES and not request.get("review_cycle_id") and task["status"] == "active":
+                if task and task_research(request) and task["status"] == "active":
                     task.update(status="planned", deferred_reason=row["reason"])
             else:
                 ordered.append(request)

@@ -7,7 +7,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit, unquote
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from .file_io import parse_utc
+from .file_io import now, parse_utc
 from .repository import exact_content_hash
 
 # The states of one external operation; its EX execution reports the same set.
@@ -20,7 +20,7 @@ def request_binding_current(operation: dict) -> bool:
     digest = exact_content_hash(operation.get("request"))
     return operation.get("request_sha256") == digest and operation.get("idempotency_key") == idempotency_key(operation.get("id", ""), digest)
 
-def _retry_evidence_bound(operation: dict, evidence: dict) -> bool:
+def retry_evidence_bound(operation: dict, evidence: dict) -> bool:
     """Retry evidence names this operation's exact request hash, idempotency key and an evidence ref."""
     return (evidence.get("request_sha256") == operation.get("request_sha256")
             and evidence.get("idempotency_key") == operation.get("idempotency_key") and bool(evidence.get("evidence_ref")))
@@ -101,13 +101,13 @@ def execute_operation(operation: dict, grant: dict, *, persist: Callable[[dict],
         raise ValueError("recorded transmission requires recovery before another send")
     if operation.get("attempts"):
         retry = operation.get("retry_evidence", {})
-        if not _retry_evidence_bound(operation, retry):
+        if not retry_evidence_bound(operation, retry):
             raise ValueError("retry lacks request-bound evidence")
         if retry.get("kind") not in {"effect_absent", "verified_idempotency"}: raise ValueError("invalid retry evidence kind")
         if retry["kind"] == "verified_idempotency" and (not retry.get("valid_until") or parse_utc(retry["valid_until"]) <= datetime.now(timezone.utc)):
             raise ValueError("idempotency assurance expired")
     grant = current_grant(operation["grant_id"]) if current_grant else grant
-    validate_operation(operation,grant,datetime.now(timezone.utc).isoformat(),runtime=runtime,academic_check=academic_check)
+    validate_operation(operation,grant,now(),runtime=runtime,academic_check=academic_check)
     def save(record):
         if persist(record) is False: raise ValueError("operation ledger is stale; recover recorded transmission before retry")
         return record
@@ -128,7 +128,7 @@ def execute_operation(operation: dict, grant: dict, *, persist: Callable[[dict],
         prepared["credential_env"]=names
     if should_stop and should_stop(): return save({**prepared,"status":"cancelled","transmitted":False})
     grant = current_grant(operation["grant_id"]) if current_grant else grant
-    validate_operation(operation,grant,datetime.now(timezone.utc).isoformat(),runtime=runtime,academic_check=academic_check)
+    validate_operation(operation,grant,now(),runtime=runtime,academic_check=academic_check)
     try:
         sending={**prepared,"transmitted":True,"transmission_phase":"recorded","attempts":[*prepared.get("attempts",[]),{"request_sha256":prepared["request_sha256"]}]}
         save(sending)
@@ -158,12 +158,12 @@ def recover_operation(operation):
 def prepare_retry(operation, evidence, *, source, now_iso=None):
     if operation.get("status") not in {"unknown", "failed"} or source not in {"user", "adapter"}:
         raise ValueError("retry needs an uncertain or absent-effect operation and authorized evidence source")
-    if not _retry_evidence_bound(operation, evidence):
+    if not retry_evidence_bound(operation, evidence):
         raise ValueError("retry evidence must bind exact request and key")
     if evidence.get("kind") == "effect_absent":
         if operation.get("status") != "failed" or operation.get("effect_absent") is not True: raise ValueError("effect absence not established")
     elif evidence.get("kind") == "verified_idempotency":
-        if not evidence.get("valid_until") or parse_utc(evidence["valid_until"]) <= parse_utc(now_iso or datetime.now(timezone.utc).isoformat()): raise ValueError("idempotency evidence expired")
+        if not evidence.get("valid_until") or parse_utc(evidence["valid_until"]) <= parse_utc(now_iso or now()): raise ValueError("idempotency evidence expired")
     else: raise ValueError("unsupported retry evidence")
     return {**operation,"status":"prepared","transmitted":False,"transmission_phase":"not_started",
             "retry_evidence": {**evidence, "source":source}, "previous_outcome":operation["status"]}

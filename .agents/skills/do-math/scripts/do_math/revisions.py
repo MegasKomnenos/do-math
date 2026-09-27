@@ -4,6 +4,7 @@ from copy import deepcopy
 from . import knowledge, planning
 from .file_io import parse_utc
 from .repository import exact_content_hash
+from .session_slots import live_action_ids
 
 
 def regeneration_time_valid(regenerate_after, observed_at) -> bool:
@@ -219,7 +220,6 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
         if not decision_is_current(decision,instance,runtime) or not hold or change.get('kind')!='repetition_continue' or (
             change.get('lineage'),change.get('lineage_id'),change.get('hold_event_ref'))!=(lineage,lineage_id,hold['event_ref']) or not change.get('allowed_action'):
             raise ValueError('continuation reset requires its explicit current decision')
-        row['baseline_revision']=change.get('baseline_revision',0)
         if lineage in {'contract_revision','proposal_version'} and (type(row['baseline_revision']) is not int or row['baseline_revision']<1):
             raise ValueError('version continuation needs its current baseline revision')
         if lineage in {'contract_revision','proposal_version'}:
@@ -248,12 +248,8 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
         linked = link(runtime, execution_id=event_ref, field=f'{len(history) - 1}/question',
              owner='user', targets=[event_ref], reason='Configured repetition limit reached; scoped continuation required')
         linked['source_kind'] = 'history'
-    no_followup={'accepted','contracts_preserved','continued','premises_changed','capacity_wait','input_overflow','waiting',
-                 'transport_failure'}
-    if outcome in {'revised','authored','reauthored'} and not repetition_hold(runtime,lineage,lineage_id):
-        no_followup.add('revised')
-        no_followup.add('authored')
-        no_followup.add('reauthored')
+    no_followup={'accepted','contracts_preserved','continued','premises_changed','waiting',
+                 'revised','authored','reauthored'}
     if outcome not in no_followup:
         if repetition_hold(runtime, lineage, lineage_id):
             return deepcopy(row)
@@ -305,8 +301,7 @@ def continue_repetition(instance, runtime, change, decision):
         raise ValueError('continuation scope differs from the current queued or waiting action')
     if hold not in action_repetition_waits(instance, runtime, action):
         raise ValueError('continued action is outside this held lineage')
-    if any(e.get('action', {}).get('id') == action['id'] and e.get('status') != 'ended'
-           for e in runtime.get('executions', {}).values()):
+    if action['id'] in live_action_ids(runtime):
         raise ValueError('continuation cannot overlap a live attempt')
     record_repetition(instance, runtime, lineage=lineage, lineage_id=key,
         event_ref=decision['id'], outcome='continued', owner='user',
@@ -366,11 +361,9 @@ def record_execution_outcome(instance, runtime, action, output, execution_id, *,
     reason=execution.get('error') or output.get('summary') or 'execution receipt'
     if role=='research_plan':
         failure=execution.get('error_kind')
-        result='accepted' if accepted else {'currentness_changed':'premises_changed','input_overflow':'input_overflow','capacity_wait':'capacity_wait',
+        result='accepted' if accepted else {'currentness_changed':'premises_changed',
             'output_validation':'rejected','output_parse':'rejected','output_schema':'rejected',
-            'output_contract':'rejected','publication_failure':'waiting',
-            'provider_failure':'transport_failure','provider_error':'transport_failure',
-            'semantic_rejection':'rejected','plan_disposition_invalid':'rejected','submission_semantic':'rejected'}.get(failure,'unclassified_failure')
+            'output_contract':'rejected','publication_failure':'waiting'}.get(failure,'unclassified_failure')
         basis=action.get('repetition_bases',{}).get('selection_failure') or exact_content_hash({
             'instance':instance['id'],'population':execution.get('ready_task_ids',[]),'basis':execution.get('decision_basis',{})})
         record_repetition(instance,runtime,lineage='selection_failure',lineage_id=basis,event_ref=execution_id,

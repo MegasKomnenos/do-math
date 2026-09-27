@@ -9,11 +9,12 @@ import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from engine_fixtures import QUERY_INSTANCE_ID, start_query_repository
+from do_math.control_contracts import PAYLOADS
 from do_math.engine import ResearchEngine, control
 from do_math.repository import canonical_json
 
-ACTIONS = ('pause', 'resume', 'close', 'input', 'configure', 'request', 'decision',
-           'knowledge', 'trust', 'external', 'conversation', 'source', 'quiesce', 'release_quiesce')
+# Every public control action: the shaped payloads and configure, whose shape is the configuration section.
+ACTIONS = (*PAYLOADS, 'configure')
 BAD_PAYLOADS = [
     ('decision', {'change': []}),
     ('decision', {'change': {'kind': 'charter', 'record': {'kind': 'charter', 'content': []}}}),

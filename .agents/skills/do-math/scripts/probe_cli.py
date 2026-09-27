@@ -1,11 +1,11 @@
 """Installed schema checks and explicit-provider representative local CLI probes."""
-from datetime import datetime, timezone
 import argparse
 import hashlib
 import json
 from pathlib import Path
 import uuid
 
+from do_math.file_io import now
 from do_math.payloads import json_safe
 from do_math.model_runner import ModelRunner
 from do_math.preflight import inspect_bundle
@@ -127,7 +127,7 @@ def main(argv=None):
         except Exception as error:
             results.append({"case": case, "passed": False, "error": type(error).__name__ + ": " + str(error)})
     root = Path(__file__).parent
-    report = {"at": datetime.now(timezone.utc).isoformat(), "provider": args.provider, "model": args.model,
+    report = {"at": now(), "provider": args.provider, "model": args.model,
               "passed": all(row["passed"] for row in results), "cases": results,
               "sources": {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in (root / "do_math").glob("*.py")},
               "scope": "representative local CLI protocol, files, tool and stop boundaries; no research efficacy claim"}

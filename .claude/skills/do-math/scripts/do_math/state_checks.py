@@ -9,6 +9,9 @@ import hashlib
 from typing import Any
 
 from .academic import academic_status
+from .execution_profiles import review_research
+from .git_store import ARTIFACT_ROOT
+from .task_contracts import TERMINAL_TASK_STATUSES
 
 
 def _error(errors: list[str], subject: str, detail: str) -> None:
@@ -30,10 +33,10 @@ def _source_errors(instance: dict, errors: list[str]) -> None:
                 seen[key].add(value)
 
 
-def _supplement_errors(instance: dict, runtime: dict, errors: list[str]) -> None:
+def _supplement_errors(runtime: dict, errors: list[str]) -> None:
     cycles = runtime.get("review_cycles", {})
     for action in runtime.get("queue", []):
-        if not isinstance(action, dict) or action.get("role") != "supplemental_research" or not action.get("review_cycle_id"):
+        if not isinstance(action, dict) or not review_research(action):
             continue
         cycle = cycles.get(action["review_cycle_id"])
         request = cycle.get("research", {}).get(action.get("research_request_id")) if isinstance(cycle, dict) else None
@@ -41,9 +44,8 @@ def _supplement_errors(instance: dict, runtime: dict, errors: list[str]) -> None
             _error(errors, "supplemental review", "queued investigation is not linked to a pending review request")
 
 
-def _goal_errors(instance: dict, runtime: dict, errors: list[str]) -> None:
-    if runtime.get("status") != "completed":
-        return
+def _goal_errors(instance: dict, errors: list[str]) -> None:
+    """The current audit group of a solved goal or completed runtime is complete and agreeing."""
     group_id = instance.get("goal_assessment_basis")
     group = [item for item in instance.get("goal_judgments", []) if item.get("basis") == group_id]
     if not isinstance(group_id, str) or not group:
@@ -80,7 +82,7 @@ def inspection_exit_code(inspection):
 
 
 def inspect_state(instance: dict, runtime: dict, *, requested_areas: list[str] | None = None,
-                  snapshot: str | None = None, read_artifact=None, artifact_errors=None,
+                  snapshot: str | None = None, read_artifact=None,
                   read_artifacts=None, artifact_sizes=None) -> dict[str, Any]:
     """Inspect declared persisted-state areas without inventing semantic facts.
 
@@ -114,8 +116,6 @@ def inspect_state(instance: dict, runtime: dict, *, requested_areas: list[str] |
             local = [_finding(area, status='blocked', message='malformed domain records: ' + str(error),
                               blocked_scope=[area], next_owner='maintenance')]
             checked, missing = [], ['remaining invariants after malformed records']
-        if area == 'record_storage':
-            local.extend(_finding(area, status='blocked', message=str(error), blocked_scope=['artifacts'], next_owner='maintenance') for error in artifact_errors or [])
         findings.extend(local)
         if missing:
             not_checked.append(area)
@@ -225,7 +225,7 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
             if task.get('scope_disposition', {}).get('kind') == 'withdraw':
                 from .task_scope import validate_withdrawal_record
                 run('withdrawal preserves returned work and residual scope', lambda t=task: validate_withdrawal_record(t), identifier)
-            if task.get('status') in {'completed', 'closed'} and any(e.get('status') != 'ended' and e.get('action', {}).get('target') == identifier for e in runtime.get('executions', {}).values()):
+            if task.get('status') in TERMINAL_TASK_STATUSES and any(e.get('status') != 'ended' and e.get('action', {}).get('target') == identifier for e in runtime.get('executions', {}).values()):
                 defect('terminal task has a live worker', identifier)
             # Loading checks the dispositions of every recorded assessment; a
             # completed task without one is this inspection's own finding.
@@ -274,19 +274,19 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
         if instance.get('goal_status') == 'mathematically_solved' or runtime.get('status') == 'completed':
             def audits():
                 errors = []
-                _goal_errors(instance, {**runtime, 'status': 'completed'}, errors)
+                _goal_errors(instance, errors)
                 return errors
             run('solved goal complete current agreeing audits', audits, 'goal')
         if runtime.get('status') == 'completed':
             from .academic import current_solution_basis
             artifact_refs = [ref for record in runtime.get('academic_resolution_records', [])
-                             for ref in record.get('evidence_refs', []) if ref.startswith('runtime/artifacts/')]
+                             for ref in record.get('evidence_refs', []) if ref.startswith(ARTIFACT_ROOT)]
             if artifact_refs and read_artifact is None:
                 omitted('current academic resolution artifact bytes')
             else:
                 def completed_academic():
                     def resolve_evidence(ref):
-                        if read_artifact is not None and ref.startswith('runtime/artifacts/'):
+                        if read_artifact is not None and ref.startswith(ARTIFACT_ROOT):
                             return read_artifact(ref)
                         return None
                     status = academic_status(instance, runtime, current_solution_basis(instance, runtime),
@@ -304,7 +304,7 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
                 defect('selected work references absent task', action.get('id', 'queue'))
         checked.extend(['single live preparation/selection', 'queued work task references'])
         def supplements():
-            errors = []; _supplement_errors(instance, runtime, errors); return errors
+            errors = []; _supplement_errors(runtime, errors); return errors
         run('supplementary research request ownership', supplements)
     elif area == 'start_import_input':
         for identifier, execution in runtime.get('executions', {}).items():

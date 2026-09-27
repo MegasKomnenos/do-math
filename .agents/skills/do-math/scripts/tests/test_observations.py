@@ -10,7 +10,7 @@ from unittest.mock import patch
 from copy import deepcopy
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math import observations, observations as obs
+from do_math import observations
 from research_fixtures import acknowledge, Clock, git_init, observation_batch, observation_rule, observe, self_check_response, write_checkpoint
 from do_math.execution_profiles import BOUNDARY, build_profiles, profile_ref, seal_profile
 from do_math.observations import ObservationTracker, evaluate_rules, observation_rule_contract, self_check_feedback, tracker_config, validate_rules
@@ -186,7 +186,7 @@ class Tests(unittest.TestCase):
         tracker = observations.ObservationTracker("P", self.ws, {"observation_mode": "periodic", "observation_interval_seconds": 3}, clock=self.clock)
         tracker.schedule_review("RECHECK", at="2026-09-20T10:00:00Z", reason="inspect recovery", basis_ref="DISP-1")
         self.clock.value = 3
-        with patch.object(observations, "utc_now", return_value="2026-09-20T10:00:00+00:00"):
+        with patch.object(observations, "now", return_value="2026-09-20T10:00:00+00:00"):
             rows = observe(tracker, {"type": "tick"})
             self.assertEqual({r["kind"] for r in rows}, {"periodic_review_due", "explicit_review_due"})
             for row in rows:
@@ -444,7 +444,7 @@ class SelfCheckControlBindingTests(unittest.TestCase):
     def tearDown(self): self.temp.cleanup()
 
     def tracker(self):
-        return obs.ObservationTracker("EX-1", self.ws, {"observation_rules": [observation_rule()],
+        return ObservationTracker("EX-1", self.ws, {"observation_rules": [observation_rule()],
             "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}, clock=self.clock)
 
     def submission(self, tracker):
@@ -498,13 +498,13 @@ class SelfCheckControlBindingTests(unittest.TestCase):
             self.assertTrue(any(r["kind"] == "self_check_missed" for r in observe(tracker, event)))
 
     def test_missing_profile_observability_contract_is_not_support(self):
-        with self.assertRaises(ValueError): obs.tracker_config(profile([]), initial_self_check_rules=[observation_rule()])
+        with self.assertRaises(ValueError): tracker_config(profile([]), initial_self_check_rules=[observation_rule()])
 
     def test_checkpoint_counter_rule_ignores_counters_from_another_source(self):
         import json
         rule = observation_rule(basis={"source": "checkpoint", "unit": "count"})
         binding = {"operator": rule["operator"], "subject_kind": rule["subject"]["kind"], **rule["basis"]}
-        tracker = obs.ObservationTracker("EX-1", self.ws, obs.tracker_config(profile([binding]), initial_self_check_rules=[rule]), clock=self.clock)
+        tracker = ObservationTracker("EX-1", self.ws, tracker_config(profile([binding]), initial_self_check_rules=[rule]), clock=self.clock)
         rows = observe(tracker, {"type": "tick", "counters": {"attempts": 2}})
         self.assertFalse(any(r["kind"] == "self_check_due" for r in rows))
         (self.ws / "checkpoint.json").write_text(json.dumps({"current_claim": "c", "evidence_paths": [], "attempts": [],

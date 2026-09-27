@@ -235,7 +235,9 @@ def strict_json_loads(raw):
     return value
 
 
-_SHA256=re.compile(r"[0-9a-f]{64}")
+# The shape of a SHA-256 digest. Stored, wire and toolchain record schemas embed this node.
+SHA256_SCHEMA={"type":"string","pattern":"^[0-9a-f]{64}$"}
+_SHA256=re.compile(SHA256_SCHEMA["pattern"])
 
 
 def is_sha256(value):

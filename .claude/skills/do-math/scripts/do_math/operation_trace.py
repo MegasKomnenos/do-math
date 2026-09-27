@@ -1,7 +1,6 @@
 """Bounded operational telemetry; never a grant or a mathematical judgment."""
 from contextlib import contextmanager
 from contextvars import ContextVar
-from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -11,7 +10,7 @@ import uuid
 import warnings
 from functools import wraps
 from inspect import signature
-from .file_io import atomic_replace, read_bytes_shared
+from .file_io import atomic_replace, now, read_bytes_shared
 
 _sink = ContextVar('do_math_operation_trace', default=None)
 # The live progress snapshot lags the trace by at most this many seconds.
@@ -28,8 +27,8 @@ class OperationTrace:
     never more than ``LIVE_INTERVAL`` behind. ``close`` flushes and stops both;
     a row that still arrives afterwards is appended but never rewrites the snapshot.
     """
-    def __init__(self, directory, *, operation_id=None):
-        self.id = operation_id or uuid.uuid4().hex
+    def __init__(self, directory):
+        self.id = uuid.uuid4().hex
         self.path = Path(directory) / (self.id + '.jsonl')
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.lock = Lock()
@@ -48,7 +47,7 @@ class OperationTrace:
     def emit(self, row):
         # No raw requests, prompts, argv, credentials, or control capabilities.
         row = {'operation_id': self.id, 'parent_operation_id':self.parent_operation_id,
-               'observed_at': datetime.now(timezone.utc).isoformat(), **row}
+               'observed_at': now(), **row}
         raw = json.dumps(row, ensure_ascii=False, separators=(',', ':')) + '\n'
         with self.lock:
             if self.closed:
@@ -117,7 +116,7 @@ class OperationTrace:
 
     def _failed(self, operation, error):
         self.errors += 1
-        observed = datetime.now(timezone.utc).isoformat()
+        observed = now()
         self.failure = {'operation_id':self.id,'operation':operation,
             'exception_type':type(error).__name__,'errno':error.errno,
             'winerror':getattr(error,'winerror',None),'count':self.errors,
@@ -141,9 +140,9 @@ class OperationTrace:
 
 
 @contextmanager
-def tracing(directory, *, operation_id=None):
+def tracing(directory):
     try:
-        sink = OperationTrace(directory, operation_id=operation_id)
+        sink = OperationTrace(directory)
     except OSError:
         warnings.warn('operation telemetry unavailable', RuntimeWarning)
         yield None
@@ -242,7 +241,7 @@ def progress(directory):
     for path in sorted((Path(directory)/'errors').glob('*.json'))[-16:]:
         try:failures.append(json.loads(read_bytes_shared(path).decode('utf-8')))
         except (OSError,ValueError):failures.append({'operation_id':path.stem,'status':'unreadable_error_record'})
-    return {'source':'local_operation_sidecars','observed_at':datetime.now(timezone.utc).isoformat(),
+    return {'source':'local_operation_sidecars','observed_at':now(),
             'rows':rows,'telemetry_errors':failures,
             'scope':'progress only; not process liveness or authoritative completion'}
 
@@ -257,7 +256,7 @@ def trace_rows(directory):
             rows.append({'event':'unreadable_trace','file':path.name})
             continue
         source = {'path':str(path), 'sha256':hashlib.sha256(data).hexdigest(),
-                  'observed_at':datetime.now(timezone.utc).isoformat()}
+                  'observed_at':now()}
         for raw in data.splitlines():
             try:
                 value = json.loads(raw)

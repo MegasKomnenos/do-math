@@ -118,7 +118,7 @@ class CentralGovernanceTests(unittest.TestCase):
             output = {'questions': [], 'question_details': [], 'needs_clarification': False, 'import_units': [{
                 'unit_id': 'U', 'source_range': {'start': 0, 'end': len(source['text'])}, 'interpretation': 'Configure capacities',
                 'owner_kind': 'configuration', 'owner_ref': 'I', 'payload': payload, 'decision_refs': [], 'question_refs': []}]}
-            handlers = h._governance_owner_handlers()
+            handlers = h.governance_owner_handlers()
             bundle = gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR', input_ref='CONF',
                                         owner_handlers=handlers)
             h.runtime['executions']['CHECK'] = {'role': 'intent_interpretation', 'status': 'queued', 'intent_import_sha256': bundle['sha256']}
@@ -164,7 +164,7 @@ class CentralGovernanceTests(unittest.TestCase):
             gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR', input_ref='RAW')
 
     def test_audit_context_schema_binding_and_rejected_missing_results(self):
-        from record_fixtures import checked_import, audited_governance
+        from record_fixtures import audited_governance
         h, _, _ = governance_host()
         h.instance, h.runtime = audited_governance()
         action = {'role': 'goal_audit'}
@@ -179,7 +179,6 @@ class CentralGovernanceTests(unittest.TestCase):
         with self.assertRaises(ValueError): evaluate_goal_audits(h.instance, h.runtime, 'AUDITOR', [])
 
     def test_original_literal_changes_are_not_equal_approval_hashes(self):
-        from do_math import governance as gov
         self.assertNotEqual(exact_content_hash({'statement': 'e\u0301 has two codepoints'}),
                             exact_content_hash({'statement': '\u00e9 has two codepoints'}))
 
@@ -275,10 +274,7 @@ class CentralGovernanceTests(unittest.TestCase):
 
 class PublicGitGovernanceTests(unittest.TestCase):
     def initialized(self, root, goal='User approves P'):
-        from do_math.configuration import DEFAULT_CONFIG
-        instance_id = new_instance(root, goal=goal, workspace=root/'work', config={
-            'scholarly_enabled': False, 'session_limits': deepcopy(DEFAULT_CONFIG['session_limits']),
-             })
+        instance_id = new_instance(root, goal=goal, workspace=root/'work', config={'scholarly_enabled': False})
         return ResearchEngine(root, instance_id)
 
     def execution_fixture(self, engine, eid, role, target=None):
@@ -551,7 +547,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
 
 class ApprovalDraftTests(unittest.TestCase):
     def test_exact_draft_reaches_existing_consumer_without_mutating_source_state(self):
-        from record_fixtures import checked_import, audited_governance
+        from record_fixtures import checked_import
         from do_math import governance
         instance,runtime,bundle,request=checked_import()
         before=deepcopy((instance,runtime))
@@ -599,7 +595,6 @@ class IntentConnections(unittest.TestCase):
 
 class GovernanceOwnerConnections(unittest.TestCase):
     def test_control_applies_actual_checked_import_and_records_one_public_result(self):
-        from engine_fixtures import goal_audit_host, governance_host
         host, bundle, request = governance_host()
         engine = routing_engine(); engine.instance, engine.runtime = host.instance, host.runtime
         engine.runtime.update(status="ready", history=[], processed_controls=[])

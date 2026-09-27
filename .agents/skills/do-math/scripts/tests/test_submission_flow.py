@@ -127,9 +127,9 @@ class SubmissionFlowTests(unittest.TestCase):
         # With the repository identity, a sealed row is hashed once per process (이음새-정본.md §3).
         from unittest.mock import Mock, patch
         read = lambda path, snapshot: store.read_bytes(snapshot, path)
-        self.assertEqual(submission.read_sealed_submission(execution, head, read, git_dir=store._git_dir), recovered)
+        self.assertEqual(submission.read_sealed_submission(execution, head, read, git_dir=store.git_dir), recovered)
         with patch.object(submission, 'hashlib', Mock(sha256=Mock(side_effect=AssertionError('sealed row rehashed')))):
-            self.assertEqual(submission.read_sealed_submission(execution, head, read, git_dir=store._git_dir), recovered)
+            self.assertEqual(submission.read_sealed_submission(execution, head, read, git_dir=store.git_dir), recovered)
         self.assertTrue(recovered['check']['passed'])
 
         for mutation in ('output', 'extensions', 'execution', 'mode', 'schema'):
@@ -750,8 +750,7 @@ class CentralSubmissionEvidence(unittest.TestCase):
         submission.install_tools(root, context, schema, 10000000)
         (root / "draft.json").write_bytes(raw)
         engine._response_schema = create_autospec(engine._response_schema, return_value=schema)
-        execution = {"id": "EX-work", "action": context["action"], "status": "stopping",
-                     "stop_phase": "terminating"}
+        execution = {"id": "EX-work", "action": context["action"], "status": "stopping"}
         return engine, output, context, execution
 
     def test_unsealed_runner_output_is_preserved_but_cannot_be_integrated(self):
@@ -913,7 +912,7 @@ class TaskReceiptTests(unittest.TestCase):
                 receipt_artifacts = [{'path': path, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
                                      for path, raw in artifacts.items()]
                 execution = {'id': 'EX-work', 'action': context['action'], 'status': 'stopping',
-                    'stop_phase': 'terminating', 'submission_intent': intent,
+                    'submission_intent': intent,
                     'submission_receipt': {'kind': 'submit_intent', 'state': 'accepted',
                         'execution_id': 'EX-work', 'payload': {'submission_check': {'artifacts': receipt_artifacts}}}}
                 engine.runtime["executions"][execution["id"]] = execution

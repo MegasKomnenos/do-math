@@ -110,7 +110,7 @@ class RecoveryStorageConnectionTests(unittest.TestCase):
         action = {'id': 'AC-rejected', 'role': 'research_plan'}
         engine._action_lifecycle_gate(action)
         execution = engine._register_execution(action, {'id': 'EX-rejected', 'role': 'research_plan', 'status': 'starting'})
-        transition_execution(execution, 'stopping', at=now(), stop_phase='terminating')
+        transition_execution(execution, 'stopping', at=now())
         transition_execution(execution, 'ended', at=now(), outcome='start_failed', reason='Explicit fixture failed before any process')
         # This test supplies only the already-decided operational verdict;
         # the actual retry producer and typed Git save/reload are under test.
@@ -530,13 +530,12 @@ class LimitedRecoveryCallTests(ActivatedPurposeHarness):
 
 class InitialDiagnosisTests(unittest.TestCase):
     def test_exhausted_initial_repairs_have_a_reachable_diagnostic_owner(self):
-        from do_math.repair_execution import route_submission_return
         requests = []
         engine = bare_engine({'lifecycle':{'state':'initializing'}, 'config':{'max_output_repairs':1}},
             {'queue':[], 'waiting_actions':{}})
         engine._enqueue = create_autospec(engine._enqueue, side_effect=lambda *a, **kw: requests.append((a,kw)))
         action = {'id':'AC-original','role':'intent_interpretation','target':'UI-original','repair_attempt':1}
-        route_submission_return(engine,action,{'retry_bundle_ids':[],'bundles':[],'issues':[]},'EX-bad',None)
+        engine.route_submission_return(action,{'retry_bundle_ids':[],'bundles':[],'issues':[]},'EX-bad',None)
         self.assertEqual(requests[0][0], ('maintenance','EX-bad'))
         self.assertTrue(requests[0][1]['initial_submission_diagnosis'])
 
@@ -550,23 +549,22 @@ class InitialDiagnosisTests(unittest.TestCase):
         self.assertIn('observation_rules', RECORDS['executions']['properties'])
 
     def test_diagnosis_retry_preserves_the_original_and_is_bounded(self):
-        from do_math.repair_execution import apply_initial_diagnosis, continue_initial_retries, route_submission_return
         with tempfile.TemporaryDirectory() as directory:
             engine, action, wait = initial_failure_engine(Path(directory), 'output_validation')
             engine._save = create_autospec(engine._save)
             diagnostic = {'target': 'EX-bad', 'initial_submission_diagnosis': True}
-            apply_initial_diagnosis(engine, diagnostic,
+            engine.apply_initial_diagnosis(diagnostic,
                 {'initial_submission_diagnosis':{'decision':'retry','guidance':'Return the missing required field'}}, 'EX-diagnosis')
             self.assertEqual(engine.runtime['queue'], [])
             engine.runtime['executions']['EX-diagnosis'] = {'id': 'EX-diagnosis', 'role': 'maintenance',
                 'status': 'ended', 'outcome': 'output_accepted', 'action': diagnostic}
-            continue_initial_retries(engine)
+            engine.continue_initial_retries()
             self.assertTrue(engine.runtime['queue'], engine.runtime['waiting_actions'])
             retry = engine.runtime['queue'].pop()
             self.assertEqual(retry['target'], 'UI-original')
             self.assertEqual(retry['owner_activity_id'], 'AY-original')
             self.assertEqual(retry['diagnosis_attempt'], 1)
-            route_submission_return(engine,retry,{'retry_bundle_ids':[],'bundles':[],'issues':[]},'EX-again',None)
+            engine.route_submission_return(retry,{'retry_bundle_ids':[],'bundles':[],'issues':[]},'EX-again',None)
             self.assertEqual(engine.runtime['queue'], [])
 
 
@@ -734,19 +732,19 @@ class RecoveryBoundaryTests(unittest.TestCase):
                 with self.subTest(kind=kind, stage=stage), tempfile.TemporaryDirectory() as directory:
                     engine, action, wait = initial_failure_engine(Path(directory), kind, stage)
                     original = deepcopy(engine.instance['lifecycle']['immutable_input'])
-                    repair_execution.route_failed_action(engine, action, 'EX-bad', reason='Diagnose actual failure')
+                    engine.route_failed_action(action, 'EX-bad', reason='Diagnose actual failure')
                     diagnostic = engine.runtime['queue'].pop()
                     self.assertEqual(diagnostic['role'], 'maintenance')
                     engine._action_lifecycle_gate(diagnostic)
                     engine.runtime['executions']['EX-diagnosis'] = {'id': 'EX-diagnosis', 'role': 'maintenance',
                         'status': 'running', 'action': diagnostic}
-                    repair_execution.apply_initial_diagnosis(engine, diagnostic,
+                    engine.apply_initial_diagnosis(diagnostic,
                         {'initial_submission_diagnosis': {'decision': 'retry', 'guidance': 'Use the preserved contract'}}, 'EX-diagnosis')
                     self.assertEqual(engine.runtime['queue'], [], 'candidate application cannot publish a native recovery')
                     engine._save = create_autospec(engine._save)
                     engine.runtime['executions']['EX-diagnosis'] = {'id': 'EX-diagnosis', 'role': 'maintenance',
                         'status': 'ended', 'outcome': 'output_accepted', 'action': diagnostic}
-                    repair_execution.continue_initial_retries(engine)
+                    engine.continue_initial_retries()
                     self.assertTrue(engine.runtime['queue'], engine.runtime['waiting_actions'])
                     retry = engine.runtime['queue'].pop()
                     self.assertEqual(retry['stage'], stage)
@@ -756,7 +754,7 @@ class RecoveryBoundaryTests(unittest.TestCase):
                     self.assertEqual(engine.instance['lifecycle']['immutable_input'], original)
                     if kind == 'output_validation':
                         self.assertEqual(retry['repair']['retry_bundle_ids'], ['IN-pending'])
-                    repair_execution.route_submission_return(engine, retry,
+                    engine.route_submission_return(retry,
                         {'retry_bundle_ids': [], 'bundles': [], 'issues': []}, 'EX-again', None)
                     self.assertEqual(engine.runtime['queue'], [])
 
@@ -766,14 +764,14 @@ class RecoveryBoundaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             engine, action, wait = initial_failure_engine(Path(directory))
             diagnostic = {'id': 'AC-diagnosis', 'role': 'maintenance', 'target': 'EX-bad', 'initial_submission_diagnosis': True}
-            repair_execution.apply_initial_diagnosis(engine, diagnostic,
+            engine.apply_initial_diagnosis(diagnostic,
                 {'initial_submission_diagnosis': {'decision': 'retry', 'guidance': 'Retry original input'}}, 'EX-diagnosis')
             engine.runtime['executions']['EX-diagnosis'] = {'id': 'EX-diagnosis', 'role': 'maintenance',
                 'status': 'ended', 'outcome': 'output_accepted', 'action': diagnostic}
             engine.instance['grants']['GR-init']['status'] = 'revoked'
             engine._save = create_autospec(engine._save)
-            repair_execution.continue_initial_retries(engine)
-            repair_execution.continue_initial_retries(engine)
+            engine.continue_initial_retries()
+            engine.continue_initial_retries()
             self.assertIn('retry_error', wait['diagnosis'])
             self.assertEqual(engine.runtime['queue'], [])
             engine._save.assert_called_once()
@@ -812,7 +810,7 @@ class RecoveryBoundaryTests(unittest.TestCase):
                 'role': 'research_work', 'owner_activity_id': 'AY-work'})
             activities.assign_execution(engine.runtime, 'AY-work', target)
             execution_lifecycle.transition_execution(target, 'starting', at=AT)
-            execution_lifecycle.transition_execution(target, 'stopping', at=AT, stop_phase='terminating')
+            execution_lifecycle.transition_execution(target, 'stopping', at=AT)
             execution_lifecycle.transition_execution(target, 'ended', at=AT, outcome='execution_incomplete')
             activities.wait_for(engine.runtime, 'AY-work', reason='returned', condition={'action_ids': ['AC-work']},
                                 next_owner='operations', at=AT)
@@ -889,7 +887,7 @@ class FinalBoundaryConnections(unittest.TestCase):
         engine.store = create_autospec(ResearchRepository, instance=True); engine.store.view.return_value = ("input", deepcopy(instance), deepcopy(runtime))
         engine._evaluation_context = create_autospec(engine._evaluation_context, return_value={})
         record = {"id": "OD-one", "execution_id": "EX-review", "target_execution_id": "EX-work",
-            "disposition": {"kind": "task_disposition", "task_id": "TK-1", "task_state": "closed", "authority_ref": "DC-1"}}
+            "disposition": {"kind": "task_disposition", "task_id": "TK-1", "task_state": "closed"}}
         engine.runtime["operational_dispositions"] = {record["id"]: record}
         before = deepcopy((engine.instance, engine.runtime))
         engine.instance["decisions"]["DC-1"]["source_sha256"] = "b" * 64
@@ -922,7 +920,7 @@ class FinalBoundaryConnections(unittest.TestCase):
             "EX-review": {"input_snapshot": "input", "output": {"task_assessments": [assessment]}}}
         engine.store = create_autospec(ResearchRepository, instance=True); engine.store.view.return_value = ("input", {}, {"tasks": {"TK-one": {"id": "TK-one"}}})
         engine._evaluation_context = create_autospec(engine._evaluation_context, return_value={"snapshot": "current"})
-        record = {"id": "OD-one", "execution_id": "EX-review", "target_execution_id": "EX-work", "disposition": {"kind": "task_disposition", "task_id": "TK-one", "task_state": "completed", "authority_ref": "designated obligation judge"}}
+        record = {"id": "OD-one", "execution_id": "EX-review", "target_execution_id": "EX-work", "disposition": {"kind": "task_disposition", "task_id": "TK-one", "task_state": "completed"}}
         completed = deepcopy(engine.runtime); completed["tasks"]["TK-one"]["status"] = "completed"
         with patch("do_math.engine.task_scope.apply_task_assessments", return_value=(engine.instance, completed)) as apply:
             engine._complete_operational_disposition(record)
@@ -938,7 +936,7 @@ class OperationalRepairCandidateTests(unittest.TestCase):
         engine.runtime["executions"] = {"EX-target": {"id": "EX-target", "status": "ended"}}
         proposal = {"kind": "repair", "basis_refs": ["EX-target"], "next_owner": "engine", "reason": "Restore input",
                     "repair_target": "input/catalog/task.json", "meaning_preserving": True, "verification": "sha256:" + "a" * 64}
-        with patch("do_math.engine.repair_execution.complete_repair") as effect:
+        with patch.object(type(engine), "complete_repair") as effect:
             # The disposition schema admits only installation: repair targets.
             with self.assertRaisesRegex(ValueError, 'repair/repair_target'):
                 engine._apply_operational_disposition({"target": "EX-target"}, proposal, "EX-review")

@@ -812,8 +812,7 @@ class RepetitionLineageTests(unittest.TestCase):
         instance = {'id': 'IN-1'}
         runtime = {'history': [], 'queue': [], 'executions': {}}
         action = {'role': 'research_plan', 'repetition_bases': {'selection_failure': 'population-1'}}
-        failures = ('currentness_changed', 'input_overflow', 'capacity_wait',
-                    'publication_failure', 'provider_failure', 'provider_error')
+        failures = ('currentness_changed', 'publication_failure', 'input_failure')
         for number, failure in enumerate(failures):
             identifier = 'EX-technical-' + str(number)
             runtime['executions'][identifier] = {'role': 'research_plan', 'error_kind': failure}
@@ -839,7 +838,7 @@ class RepetitionLineageTests(unittest.TestCase):
 class PreparationReceiptClassificationTests(unittest.TestCase):
     def test_rejected_preparation_does_not_count_as_an_empty_research_result(self):
         from do_math import revisions
-        for failure in ('output_validation', 'currentness_changed', 'submission_semantic'):
+        for failure in ('output_validation', 'currentness_changed', 'output_contract'):
             with self.subTest(failure=failure):
                 instance = {'id': 'I', 'config': {'exhaustion_empty_limit': 1}}
                 action = {'role': 'research_preparation',

@@ -142,8 +142,6 @@ class SupervisorRecoveryTests(unittest.TestCase):
             self.assertEqual(runtime["activities"][prior_activity]["status"], "finished")
 
     def test_recovery_never_restarts_with_unknown_local_termination(self):
-        from contextlib import nullcontext
-        from unittest.mock import Mock
         import subprocess
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -173,15 +171,13 @@ class SupervisorRecoveryTests(unittest.TestCase):
             self.assertEqual(Path(verify.call_args.args[0][1]), root / "live-installation/scripts/probe_cli.py")
             # The unconfirmed Job keeps the execution at the termination barrier with its output.
             execution = runtime["executions"][result["execution_id"]]
-            self.assertEqual((execution["status"], execution["stop_phase"]), ("stopping", "terminating"))
+            self.assertEqual(execution["status"], "stopping")
             self.assertEqual(execution["capacity"]["local_termination"], "unknown")
             self.assertEqual(execution["error"],
                              "Local Job termination is unconfirmed; capacity and output remain held for recovery.")
             self.assertEqual(runtime["reservations"], {})
 
     def test_recovery_requires_current_profile_capability_before_reservation(self):
-        from contextlib import nullcontext
-        from unittest.mock import Mock
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             instance = {**execution_profiles.build_profiles(PROFILE_CONFIG), "config": {**PROFILE_CONFIG, "operator_enabled": True}}
@@ -199,7 +195,7 @@ class SupervisorRecoveryTests(unittest.TestCase):
             evidence = next(iter(instance["capability_evidence"].values()))
             self.assertEqual(evidence["capabilities"]["structured_output"]["status"], "unsupported")
 
-    def test_recovery_cannot_ignore_hold_or_unknown_live_job(self):
+    def test_recovery_cannot_ignore_hold(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             scheduled_operator.hold(root, reason="test")
@@ -207,6 +203,19 @@ class SupervisorRecoveryTests(unittest.TestCase):
                 self.assertEqual(scheduled_operator.recovery(root, "unused", root,
                     failure={"kind": "engine_unavailable", "error": "fixture"})["outcome"], "held")
                 runner.assert_not_called()
+
+    def test_recovery_waits_for_unended_execution_without_confirmed_termination(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            instance = {**execution_profiles.build_profiles(PROFILE_CONFIG), "config": {**PROFILE_CONFIG, "operator_enabled": True}}
+            runtime = {"executions": {"EX-live": {"id": "EX-live", "status": "running"}}, "reservations": {}, "status": "ready"}
+            repo = repository_double(root, instance, runtime, published="unused")
+            with patch.object(scheduled_operator, "ResearchRepository", return_value=repo), \
+                 patch.object(scheduled_operator.ModelRunner, "run") as runner:
+                result = scheduled_operator.recovery(root, "test", root,
+                    failure={"kind": "engine_unavailable", "error": "fixture"})
+            self.assertEqual((result["outcome"], result["execution_id"]), ("recovery_waiting", "EX-live"))
+            runner.assert_not_called()
 
 
 if __name__ == "__main__":

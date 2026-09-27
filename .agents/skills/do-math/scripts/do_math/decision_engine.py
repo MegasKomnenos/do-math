@@ -2,7 +2,7 @@
 from copy import deepcopy
 
 from . import planning, submission
-from .execution_profiles import RESEARCH_PRODUCER_ROLES
+from .execution_profiles import task_research
 from .input_basis import capture_decision_basis, decision_basis_changes, CurrentnessChanged
 from .repository import exact_content_hash, new_id
 from .session_slots import held_reservations
@@ -63,7 +63,7 @@ class DecisionEngineMixin:
                     at=self._lifecycle_now().isoformat())
 
     def _execution_requirement_changes(self, action, *, evaluation_context=None):
-        if action.get("role") not in RESEARCH_PRODUCER_ROLES or action.get("review_cycle_id"):
+        if not task_research(action):
             return []
         task = self.runtime["tasks"].get(action.get("target"))
         if not task or task.get("status") in planning.TERMINAL_TASK_STATUSES:
@@ -95,10 +95,10 @@ class DecisionEngineMixin:
         execution["decision_basis"] = capture_decision_basis(original_instance, original_runtime, refs)
         changes = decision_basis_changes(execution["decision_basis"], self.instance, self.runtime)
         changes.extend(self._execution_requirement_changes(action,evaluation_context=evaluation_context))
-        from .questions import user_waits
+        from .questions import open_links, user_waits
         changes.extend({"field": "user_decision", **row} for row in user_waits(action, self.instance, self.runtime))
         if output.get("confirmed_question_ids"):
-            open_questions = {row["id"] for row in self.runtime.get("question_links", []) if row["status"] == "open" and row["owner"] == "user"}
+            open_questions = {row["id"] for row in open_links(self.runtime, "user")}
             changes.extend({"id": identifier, "field": "question_applicability", "reason": "the user question is no longer open"}
                            for identifier in output["confirmed_question_ids"] if identifier not in open_questions)
         if action["role"] == "goal_audit" and action.get("basis") != self._goal_basis_key():

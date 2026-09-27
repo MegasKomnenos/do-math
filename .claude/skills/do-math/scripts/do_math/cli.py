@@ -324,7 +324,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
         engine = ResearchEngine(args.repository, args.instance)
         engine.head, engine.instance, engine.runtime = engine.store.load(args.snapshot)
         value = import_approval_draft(engine.instance, engine.runtime, args.import_id,
-                                     owner_handlers=engine._governance_owner_handlers())
+                                     owner_handlers=engine.governance_owner_handlers())
         with args.output.open('xb') as stream:
             stream.write(canonical_json(value))
         return {'snapshot':engine.head, 'output':str(args.output.resolve()),
@@ -407,7 +407,7 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
             raise CliInputError("--output requires --path")
         if args.path is not None:
             store = ResearchRepository(args.repository, args.instance)
-            resolved_snapshot = store._resolve_snapshot(args.snapshot)
+            resolved_snapshot = store.resolve_snapshot(args.snapshot)
             raw = store.read(args.path, resolved_snapshot)
             provenance = {"snapshot": resolved_snapshot, "path": args.path, "sha256": hashlib.sha256(raw).hexdigest(),
                           "range": {"start": 0, "end": len(raw), "total": len(raw)}}

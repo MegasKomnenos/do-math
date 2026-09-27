@@ -8,9 +8,10 @@ from pathlib import Path
 
 from . import governance, academic, knowledge, knowledge_records, execution_profiles
 from .configuration import validate_config
-from .control_contracts import USER_DECISION_SETTINGS
+from .control_contracts import user_decision_changed
 from .repository import new_id, canonical_json, exact_content_hash
 from .session_slots import live_action_ids
+from .task_contracts import TERMINAL_TASK_STATUSES
 
 
 def bind_host_configuration(instance, config, *, origin):
@@ -50,8 +51,7 @@ class GovernanceEngineMixin:
         validate_config(candidate)
         result, state = deepcopy(instance), deepcopy(runtime)
         candidate = bind_host_configuration(result, candidate, origin=request.get('origin', 'user'))
-        if request.get('origin', 'user') == 'operator' and any(candidate.get(k) != current.get(k)
-                                                               for k in USER_DECISION_SETTINGS):
+        if request.get('origin', 'user') == 'operator' and user_decision_changed(current, candidate):
             raise ValueError('resource settings require a user decision at application time')
         host_changed = candidate.get('host_resources') != current.get('host_resources')
         if host_changed and (self._executor_running or self._calls is not None
@@ -87,7 +87,7 @@ class GovernanceEngineMixin:
                         pending['model_selection']['profile_ref'] = deepcopy(pending['profile_ref'])
             affected = []
             for tid, task in state.get('tasks', {}).items():
-                if task.get('status') in {'completed', 'closed'}:
+                if task.get('status') in TERMINAL_TASK_STATUSES:
                     continue
                 profiles = [execution_profiles.match_profile_ref(result['execution_profiles'], ref)
                             for ref in task.get('profile_refs', [])]
@@ -98,7 +98,7 @@ class GovernanceEngineMixin:
                 state['queue'].insert(0, {'id': new_id('AC'), 'role': 'research_preparation',
                     'reason': 'Reprepare task profile contracts for the newly adopted host resources',
                     'revision_targets': revisions.capture_targets(result, state, affected)})
-        resources_changed = any(candidate.get(key) != current.get(key) for key in USER_DECISION_SETTINGS)
+        resources_changed = user_decision_changed(current, candidate)
         if state.get('status') in {'waiting', 'capacity_waiting'} and resources_changed:
             for action in state['queue']:
                 if (action.get('id') not in live and action.get('dispatch_wait', {}).get('kind') in RESOURCE_WAITS):
@@ -107,7 +107,7 @@ class GovernanceEngineMixin:
                 state['status'] = 'ready'
         return result, state
 
-    def _governance_owner_handlers(self):
+    def governance_owner_handlers(self):
         handlers = governance.import_owner_handlers()
         def configure(instance, runtime, unit, approval):
             return self._configure_candidate(instance, runtime, {'action': 'configure',
@@ -127,7 +127,7 @@ class GovernanceEngineMixin:
             source = self._governance_input_source(action['target'])
             context['user_request'] = {**deepcopy(request), 'text': source['text'], 'sha256': source['sha256']}
             context['original_source'] = source
-            context['import_consumers'] = governance.import_consumer_catalog(self._governance_owner_handlers())
+            context['import_consumers'] = governance.import_consumer_catalog(self.governance_owner_handlers())
             context['governance_records'] = deepcopy(list(self.instance.get('governance', {}).values()))
             context['delegations'] = deepcopy(list(self.instance.get('delegations', {}).values()))
             context['source_coordinate_unit'] = 'unicode_codepoint'
@@ -209,7 +209,7 @@ class GovernanceEngineMixin:
         before_instance, before_runtime = deepcopy(self.instance), deepcopy(self.runtime)
         try:
             self.instance, self.runtime, _ = governance.apply_import_control(self.instance, self.runtime,
-                normalized, owner_handlers=self._governance_owner_handlers())
+                normalized, owner_handlers=self.governance_owner_handlers())
             if not was_applied: self._after_governance_import(change['import_id'])
         except (ValueError, KeyError, TypeError) as error:
             self.instance, self.runtime = before_instance, before_runtime
@@ -228,7 +228,7 @@ class GovernanceEngineMixin:
     def _apply_governance_intent(self, action, output, execution_id):
         target = action['target']
         source = self._governance_input_source(target)
-        handlers = self._governance_owner_handlers()
+        handlers = self.governance_owner_handlers()
         if action.get('stage', 'interpret') == 'interpret':
             bundle = governance.prepare_import(self.instance, self.runtime, source, output, execution_id=execution_id,
                 previous_id=action.get('previous_import_id'), owner_handlers=handlers, input_ref=target)

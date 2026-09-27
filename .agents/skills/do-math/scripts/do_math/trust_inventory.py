@@ -17,7 +17,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 from .repository import exact_content_hash
-from .file_io import fingerprint_json, now, os_lock, sha256_file, stat_fingerprint
+from .file_io import SHA256_SCHEMA as _HASH, fingerprint_json, now, os_lock, sha256_file, stat_fingerprint
 from .trust_validation import RECORD_ID_PATTERN
 
 SMOKE = 'import Mathlib\nexample (n : Nat) : n + 0 = n := by rfl\nexample : (2 : ℝ) + 2 = 4 := by norm_num\n'
@@ -29,7 +29,6 @@ JUDGMENT_SUFFIXES = ('.olean', '.dll', '.so', '.dylib')
 VALIDATION_SUMMARY = ('command', 'source_sha256', 'exit_code', 'stdout', 'stderr', 'started_at', 'finished_at')
 
 _TEXT = {'type': 'string'}
-_HASH = {'type': 'string', 'pattern': '^[0-9a-f]{64}$'}
 _NANOSECONDS = {'type': 'string', 'pattern': '^[0-9]+$'}
 _BASELINE = {'type': 'object', 'additionalProperties': False,
     'required': ['recorded_at', 'fingerprint', 'content', 'validation', 'validation_sha256'],

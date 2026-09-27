@@ -10,7 +10,6 @@ from .operation_trace import measured
 
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 import hashlib
 import importlib
 import json
@@ -24,7 +23,7 @@ import platform
 import shutil
 from typing import Any, Mapping
 
-from do_math.file_io import compact_json_bytes, strict_json_loads
+from do_math.file_io import compact_json_bytes, now, strict_json_loads
 from do_math.windows_job import WindowsJob, process_identity
 from do_math import cli_worker, codex_worker
 
@@ -223,7 +222,7 @@ class LocalCLIAdapter:
     def stop(self, execution: CLIExecution) -> dict[str, Any]:
         execution.job.terminate()
         receipt = {"accepted": True, "operation": "TerminateJobObject",
-                   "observed_at": datetime.now(timezone.utc).isoformat(),
+                   "observed_at": now(),
                    **process_identity(execution.job)}
         execution.stop_receipts.append(receipt)
         return receipt

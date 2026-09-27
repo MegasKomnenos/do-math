@@ -390,14 +390,14 @@ class IntentImportTests(unittest.TestCase):
     """The user's intent imported into governance: its input, owners, questions and grants."""
 
     def test_intent_input_exposes_actual_consumers_and_exact_source(self):
-        from engine_fixtures import goal_audit_host, governance_host
+        from engine_fixtures import governance_host
         host, _, _ = governance_host()
         host.runtime['inputs'] = [{'id': 'UI-exact', 'text': 'e\u0301 has two code points', 'config': {}}]
         context = host._governance_context({'role': 'intent_interpretation', 'target': 'UI-exact'}, {})
         self.assertEqual(context['user_request']['text'], context['original_source']['text'])
         kinds = {row['owner_kind'] for row in context['import_consumers']}
         self.assertEqual(kinds, gov.GOVERNANCE_KINDS | {'grant', 'revoke', 'delegation', 'question_answer',
-            'task_scope'} | set(host._governance_owner_handlers()))
+            'task_scope'} | set(host.governance_owner_handlers()))
         self.assertEqual(context['governance_records'], list(host.instance['governance'].values()))
         for row in context['import_consumers']:
             document = Path(__file__).resolve().parents[2] / row['payload_contract']['document']
@@ -461,7 +461,6 @@ class IntentImportTests(unittest.TestCase):
         self.assertEqual(runtime['question_links'][-1]['status'], 'open')
 
     def test_unrelated_progress_preserves_checked_import_but_relevant_changes_do_not(self):
-        from record_fixtures import checked_import, audited_governance
         instance, runtime, bundle, request = checked_import()
         runtime['tasks']['TK-other'] = {'id': 'TK-other', 'revision': 2, 'status': 'active', 'question': 'Unrelated'}
         instance['decisions']['DC-other'] = {'id': 'DC-other', 'change': {'note': 'Unrelated'}}
@@ -475,7 +474,7 @@ class IntentImportTests(unittest.TestCase):
     def test_initial_blocking_question_waits_and_answer_reopens_original_once(self):
         from datetime import datetime, timezone
         from unittest.mock import patch
-        from engine_fixtures import goal_audit_host, governance_host
+        from engine_fixtures import governance_host
         from do_math.initialization_engine import InitializationEngineMixin
         host, _, _ = governance_host()
         text = 'Which domain?'
@@ -519,7 +518,6 @@ class IntentImportTests(unittest.TestCase):
         self.assertEqual(host.runtime['waiting_actions'], {})
 
     def test_question_references_are_stable_ids_at_both_boundaries(self):
-        from record_fixtures import domain_governance, governance_import
         instance = domain_governance()
         source = gov.preserve_source('SOURCE', 'Which domain?', origin='user')
         output = {'questions': ['Which domain?'], 'needs_clarification': True,
@@ -537,14 +535,13 @@ class IntentImportTests(unittest.TestCase):
         self.assertTrue(submission._intent_import_issues(output, context))
 
     def test_interpretation_binds_referenced_source_alias(self):
-        from record_fixtures import domain_governance, governance_import
         instance, runtime, source, output = governance_import()
         instance['sources'] = [{'id': 'SO-table', 'name': 'table.txt', 'path': 'sources/table.txt', 'sha256': 'a'*64}]
         output['used_sources'] = ['source:table.txt']
         bundle = gov.prepare_import(instance, runtime, source, output, execution_id='AUTHOR', input_ref='IN')
         instance['sources'][0]['sha256'] = 'b'*64
         with self.assertRaisesRegex(ValueError, 'targets changed'):
-            gov._current_import(instance, runtime, bundle['id'])
+            gov.current_import(instance, runtime, bundle['id'])
 
     def test_documented_research_grant_permits_formal_check(self):
         path = Path(__file__).resolve().parents[2] / 'references' / '초기화-운전.md'

@@ -564,7 +564,7 @@ class QueuedPreparationTests(unittest.TestCase):
         original = e._context
         def prepare(action, workspace, **kwargs):
             context = original(action, workspace, **kwargs)
-            control(e.store._store.repository, e.instance["id"], "pause", text="stop during materialization")
+            control(e.store.repository, e.instance["id"], "pause", text="stop during materialization")
             return context
         # Preparation applies user controls only; periodic upkeep waits for the owner loop.
         with patch.object(e, '_context', side_effect=prepare), \
@@ -588,7 +588,7 @@ class QueuedPreparationTests(unittest.TestCase):
         arguments = next(steps)
         try:
             with self.model_process(arguments, resume=False):
-                control(e.store._store.repository, e.instance['id'], 'pause', text='stop before model resume')
+                control(e.store.repository, e.instance['id'], 'pause', text='stop before model resume')
                 e._apply_inbox(pump=False)  # The owner pass applies and publishes the control.
                 e._upkeep()
                 self.assertTrue(arguments['should_stop'](), 'a suspended model must not resume for checkpoint grace')
@@ -620,13 +620,12 @@ class QueuedPreparationTests(unittest.TestCase):
         try:
             with self.model_process(arguments, resume=True):
                 self.assertFalse(arguments['should_stop']())
-                control(e.store._store.repository, e.instance['id'], 'pause', text='stop running work')
+                control(e.store.repository, e.instance['id'], 'pause', text='stop running work')
                 e._apply_inbox(pump=False)  # The owner pass applies and publishes the control.
                 e._upkeep()
                 self.assertTrue(arguments['should_stop']())
                 execution = e.runtime['executions'][arguments['execution_id']]
                 self.assertEqual(execution['status'], 'stopping')
-                self.assertEqual(execution['stop_phase'], 'terminating')
         finally:
             with self.assertRaises(StopIteration):
                 steps.send({'status': 'stopped', 'output': None, 'usage': {}, 'error': 'local stop requested'})
@@ -644,7 +643,7 @@ class QueuedPreparationTests(unittest.TestCase):
 
     def test_construction_and_status_leave_installation_and_artifact_bytes_to_run_and_check(self):
         from do_math import engine as engine_module
-        repository = self.engine.store._store.repository
+        repository = self.engine.store.repository
         source = self.root / 'note.txt'
         source.write_bytes(b'archived source bytes')
         control(repository, self.engine.instance['id'], 'source', config={'path': str(source)})
@@ -739,7 +738,7 @@ class QueuedPreparationTests(unittest.TestCase):
         e = self.engine
         e._save()
         head = e.head
-        reopened = ResearchEngine(e.store._store.repository, e.instance['id'])
+        reopened = ResearchEngine(e.store.repository, e.instance['id'])
         reopened._save()
         self.assertEqual(reopened.head, head)
 

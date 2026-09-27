@@ -156,6 +156,16 @@ class KnowledgeTests(unittest.TestCase):
         ins['knowledge'][ids['b']]['dependencies'].append('KN-MISSING')
         self.assertIn('KN-MISSING', k.plan_impact(ins, run, [ids['b']], [])['unresolved_refs'])
 
+    def test_system_propagation_applies_computed_impact_and_names_unresolved_refs(self):
+        ins, run, ids = knowledge_graph()
+        ins['knowledge'][ids['c']]['used_sources'] = [ids['a']]
+        ins['knowledge'][ids['c']]['dependencies'].append('KN-MISSING')
+        k.propagate(ins, run, [ids['a']], 'trust environment invalidated')
+        event = run['history'][-1]
+        self.assertEqual(event['kind'], 'knowledge_reassessment_required')
+        self.assertIn(ids['c'], event['affected_ids'])
+        self.assertIn('KN-MISSING', event['reason'])
+
     def test_known_source_propagates_but_locator_does_not(self):
         ins, run, ids = knowledge_graph()
         ins['knowledge'][ids['c']]['used_sources'] = ['proposal:1', 'input/knowledge/KN-X.json', ids['a']]
@@ -300,7 +310,7 @@ class KnowledgeTests(unittest.TestCase):
         ins, run, _ = knowledge_graph()
         with patch.object(k, 'plan_impact', wraps=k.plan_impact) as plans:
             _, changed_run = k.invalidate_environment(ins, run, 'TE-old', 'environment defect')
-        # Preview and plan inside _propagate; no third recomputation on apply.
+        # Preview and plan inside propagate; no third recomputation on apply.
         self.assertEqual(plans.call_count, 2)
         self.assertEqual(changed_run['history'][-1]['kind'], 'knowledge_reassessment_required')
         self.assertNotIn('knowledge_reassessment_required', [h.get('kind') for h in run['history']])
@@ -418,6 +428,14 @@ class KnowledgeRecordTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 knowledge.validate_changes({field: "value"})
 
+    def test_common_execution_names_exactly_the_authored_fields(self):
+        """「공통 실행」 gives revision authors the closed field set that validate_changes accepts."""
+        import re
+        text = (Path(__file__).resolve().parents[2] / 'references' / '공통-실행.md').read_text(encoding='utf-8')
+        match = re.search(r'`changes`의 키는 저작 필드 (.+?) 가운데서만 고른다', text)
+        self.assertIsNotNone(match)
+        self.assertEqual(set(re.findall(r'`(\w+)`', match.group(1))), knowledge.AUTHORED_FIELDS)
+
     def test_import_captures_required_source_and_rejects_unknown_source(self):
         state = {"sources": [{"name": "paper", "path": "research/sources/paper.txt", "sha256": "original"}]}
         with self.assertRaises(ValueError):
@@ -534,8 +552,7 @@ class KnowledgeRecordTests(unittest.TestCase):
             from do_math.execution_profiles import build_profiles, profile_ref
             from do_math.configuration import DEFAULT_CONFIG
             from do_math import activities, execution_lifecycle
-            from do_math.review_cycle import accept_result, next_actions
-            from do_math.review_engine import ReviewEngineMixin
+            from do_math.review_cycle import accept_result, identity_assessment, next_actions
             from review_fixtures import scoped_start
             environment, binding = trust_environment(trust_fixture(Path(directory), ['synthetic-lean']),
                                                      environment_id='TE-test', source_ref='synthetic:approval')
@@ -562,12 +579,12 @@ class KnowledgeRecordTests(unittest.TestCase):
                 for status in ('starting', 'running'):
                     execution_lifecycle.transition_execution(execution, status, at='2026-09-20T00:00:00Z')
                 execution['submission_receipt'] = {'state': 'accepted', 'evidence_ref': 'synthetic:review'}
-                execution_lifecycle.transition_execution(execution, 'stopping', at='2026-09-20T00:00:00Z', stop_phase='terminating')
+                execution_lifecycle.transition_execution(execution, 'stopping', at='2026-09-20T00:00:00Z')
                 execution_lifecycle.transition_execution(execution, 'ended', at='2026-09-20T00:00:00Z', outcome='output_accepted')
             self.assertEqual(cycle['status'], 'completed')
             cycle.update(id=new_id('RC'), knowledge_id=kid, identity_basis=kr.identity_basis(state, kid), policy_ref='policy:fixture')
             runtime['review_cycles'] = {cycle['id']: cycle}
-            assessment = ReviewEngineMixin._identity_assessment(cycle, reason='Synthetic sealed review')
+            assessment = identity_assessment(cycle, reason='Synthetic sealed review')
             state, aid = kr.record_identity_assessment(state, kid,
                 {**assessment, 'basis': cycle['identity_basis']}, cycle['policy_ref'], runtime=runtime)
             git_init(directory)

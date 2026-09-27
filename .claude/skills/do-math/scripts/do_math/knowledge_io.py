@@ -2,27 +2,22 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import datetime, timezone
 import re
 
-from .file_io import require_text
+from .file_io import now, require_text
 from .formal import is_lean_identifier
 from .git_store import is_new_id
 from .planning import record_index
 from .repository import canonical_json, new_id
-from .knowledge import assess_use, _propagate, capture_basis
+from .knowledge import AUTHORED_FIELDS, assess_use, capture_basis, propagate
 from . import knowledge_records
 
 
 _TOKEN = re.compile(r"^[a-z][a-z0-9_]*$")
 # States of a kind definition: proposed, checked, adopted, withdrawn.
 KIND_STATUSES = frozenset({"candidate", "checked", "active", "withdrawn"})
-_KNOWLEDGE_FIELDS = {
-    "id", "kind", "title", "statement", "explanation", "summary", "lean_code",
-    "declaration_names", "dependencies", "origin_refs", "source_refs", "confirmed_scope",
-    "epistemic_status", "selection_relevance", "uncertainty_assessment",
-    "relation_claim", "definitions", "assumptions", "formal_result_ref",
-}
+# A candidate carries the fields a revision may author, its proposed ID and a reused formal result.
+_KNOWLEDGE_FIELDS = AUTHORED_FIELDS | {"id", "formal_result_ref"}
 _RELATION_FIELDS = {
     "id", "kind", "source", "target", "evidence", "evidence_refs",
     "formal_result_refs", "assessment_refs", "confirmed_scope",
@@ -37,7 +32,7 @@ def _definition(family: str, token: str, meaning: str, *, mathematical=False,
             "requires_assessments": mathematical}}
 
 
-_BUILTINS = [
+BUILTIN_DEFINITIONS = [
     *[_definition("knowledge", token, meaning, evidence=False) for token, meaning in (
         ("definition", "A stated mathematical or research definition."),
         ("theorem", "A proposition proposed for formal and semantic verification."),
@@ -91,7 +86,7 @@ def lookup_definition(instance, family, token):
 def ensure_ontology(instance: dict) -> dict:
     output = deepcopy(instance)
     registry = output.setdefault("kind_definitions", {})
-    for index, definition in enumerate(_BUILTINS):
+    for index, definition in enumerate(BUILTIN_DEFINITIONS):
         if definition["family"] == "knowledge":
             value = deepcopy(definition)
             value["id"] = "KD-" + str(index + 1).zfill(26)
@@ -101,7 +96,7 @@ def ensure_ontology(instance: dict) -> dict:
 
 def relation_templates():
     return [{key: deepcopy(value) for key, value in row.items() if key not in {"status", "builtin"}}
-            for row in _BUILTINS if row["family"] == "relation"]
+            for row in BUILTIN_DEFINITIONS if row["family"] == "relation"]
 
 
 def catalog_definitions(instance: dict) -> dict:
@@ -144,7 +139,7 @@ def register_kind_definition(instance: dict, definition: dict, *, source_ref: st
     identifier = new_id("KD")
     output["kind_definitions"][identifier] = {**deepcopy(definition), "id": identifier, "status": "candidate", "builtin": False,
         "source_ref": source_ref, "actor_ref": actor_ref,
-        "created_at": datetime.now(timezone.utc).isoformat()}
+        "created_at": now()}
     if previous:
         output["kind_definitions"][identifier]["supersedes"] = previous["id"]
     return output, token
@@ -190,7 +185,7 @@ def withdraw_kind_definition(instance, runtime, family, token, *, reason, actor_
             else:
                 row["kind_use_suspended"] = True
     if roots:
-        _propagate(output, new_runtime, roots, reason)
+        propagate(output, new_runtime, roots, reason)
     return output, new_runtime
 
 
@@ -324,6 +319,11 @@ def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_r
     return output, new_runtime, record_id
 
 
+def validate_stored_relation(instance: dict, relation: dict) -> dict:
+    """``validate_relation`` of a stored relation's claim, without its lifecycle and use fields."""
+    return validate_relation(instance, {key: value for key, value in relation.items() if key in _RELATION_FIELDS})
+
+
 def validate_relation(instance: dict, relation: dict) -> dict:
     reasons: list[str] = []
     if not isinstance(relation, dict) or set(relation) - _RELATION_FIELDS:
@@ -394,7 +394,7 @@ def import_relation(instance: dict, relation: dict, *, source_ref: str,
                   status="active", source_ref=source_ref, imported_by=actor_ref,
                   kind_definition_id=result["definition"]["id"],
                   authority="mathematical_connection" if mathematical else "research_connection",
-                  imported_at=datetime.now(timezone.utc).isoformat())
+                  imported_at=now())
     if old:
         record["history"] = [*deepcopy(old.get("history", [])),
                              {key: deepcopy(value) for key, value in old.items() if key != "history"}]

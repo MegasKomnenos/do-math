@@ -2,14 +2,15 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import datetime, timezone
 
 from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
+from .file_io import now
 from .planning import contract_hash
 from .repository import exact_content_hash
+from .task_contracts import LIFECYCLE_STATES, TERMINAL_TASK_STATUSES
 
 
-_WITHDRAWABLE_STATES = {"planned", "waiting", "active"}
+_WITHDRAWABLE_STATES = LIFECYCLE_STATES - TERMINAL_TASK_STATUSES
 
 
 def result_ids(task: dict) -> set[str]:
@@ -33,12 +34,12 @@ def _task_execution(execution: dict, task_id: str) -> bool:
     return isinstance(execution, dict) and execution.get("action", {}).get("target") == task_id
 
 
-def _validate(task: dict, snapshot_task: dict, runtime: dict, task_id: str, instance=None, *, actor_execution_id) -> None:
+def _validate(task: dict, snapshot_task: dict, runtime: dict, task_id: str, instance: dict, *, actor_execution_id) -> None:
     if not isinstance(snapshot_task, dict) or contract_hash(task) != contract_hash(snapshot_task):
         raise ValueError("task contract changed since the execution input snapshot: " + task_id)
     validate_withdrawal_scope(task, snapshot_task)
     if task.get('results'):
-        if not assessment_current(task, instance or {}, runtime):
+        if not assessment_current(task, instance, runtime):
             raise ValueError('performed obligations need current item dispositions for all returned work')
     producer_id = task.get("producer_execution")
     producer = runtime.get("executions", {}).get(producer_id)
@@ -120,7 +121,7 @@ def apply_task_dispositions(instance: dict, runtime: dict, dispositions: list[di
         task["scope_disposition"] = {
             "kind": "withdraw", "actor_execution": execution_id, "reason": reason,
             "previous_revision": task.get("revision"), "previous_contract_sha256": previous_hash,
-            "at": datetime.now(timezone.utc).isoformat(), "cancelled_queue_actions": removed_queue,
+            "at": now(), "cancelled_queue_actions": removed_queue,
             "cancelled_waiting_actions": removed_waiting,
             'results_sha256': exact_content_hash(task.get('results', [])),
             'assessment_sha256': exact_content_hash(assessment) if assessment else None,
@@ -177,7 +178,6 @@ def decision_is_current(decision, instance, runtime, *, evaluation_context=None)
 
 def validate_disposition_authority(task, row, instance, runtime, *, evaluation_context=None):
     """A local execution grant does not authorize changing a research obligation."""
-    from .planning import contract_hash
     authority = instance.get('decisions', {}).get(row.get('authority_ref'))
     if not authority or not decision_is_current(authority, instance, runtime, evaluation_context=evaluation_context):
         raise ValueError('scope disposition requires a current source-bound user decision')
@@ -199,7 +199,7 @@ def assessment_basis(task, assessment, instance, runtime, *, records=None):
 
     records is planning.record_index(instance, runtime) when the caller already built it.
     """
-    from .planning import record_index,task_reference_basis,condition_refs,READ_REFERENCE_FIELDS,READ_REFERENCE_ID_FIELDS
+    from .planning import record_index,task_reference_basis,condition_refs,listed_reference_ids,READ_REFERENCE_ID_FIELDS
     from .relation_refs import relation_references, relation_evidence_references
     if records is None:
         records=record_index(instance,runtime)
@@ -221,10 +221,8 @@ def assessment_basis(task, assessment, instance, runtime, *, records=None):
         if not found:
             continue
         family, record = found
-        # The reference fields every read closure shares (planning.READ_REFERENCE_FIELDS).
-        linked = {item if isinstance(item, str) else item['id'] for key in READ_REFERENCE_FIELDS
-                  if isinstance(record.get(key), list) for item in record[key]
-                  if isinstance(item, str) or isinstance(item, dict) and isinstance(item.get('id'), str)}
+        # The list reference fields every read closure shares (planning.listed_reference_ids).
+        linked = listed_reference_ids(record)
         fields = (*READ_REFERENCE_ID_FIELDS, 'source_ref')
         if family == 'formal-result' and ref not in strict:
             fields = tuple(key for key in fields if key != 'trust_environment_id')
@@ -286,7 +284,7 @@ def assessment_current(task,instance,runtime,*,evaluation_context=None,records=N
         or assessment.get('results_sha256')!=exact_content_hash(task.get('results',[]))
         or assessment.get('basis')!=assessment_basis(task,assessment,instance,runtime,records=records)):
         return False
-    from .task_contracts import validate_item_dispositions
+    from .task_contracts import assessor_is_judge, validate_item_dispositions
     try:
         validate_item_dispositions(task, assessment, require_complete=assessment.get('decision') in {'completed', 'closed'})
     except ValueError:
@@ -295,7 +293,7 @@ def assessment_current(task,instance,runtime,*,evaluation_context=None,records=N
         if row['kind'] == 'fulfilled':
             obligation = next(o for o in task['completion_obligations'] if o['id'] == row['obligation_id'])
             actor = runtime.get('executions', {}).get(assessment.get('execution_id'), {})
-            if actor.get('role') not in obligation['judges'] and assessment.get('execution_id') not in obligation['judges']:
+            if not assessor_is_judge(obligation, actor.get('role'), assessment.get('execution_id')):
                 support = assessment.get('specialist_support', {}).get(row['obligation_id'])
                 if not support or designated_judgment(task, obligation, {**row, 'evidence_refs': [support]}, instance, runtime) != support:
                     return False
@@ -377,7 +375,7 @@ def designated_judgment(task, obligation, disposition, instance, runtime):
 
 def apply_task_assessments(instance, runtime, assessments, *, execution_id, input_tasks, reference_tasks=None, evaluation_context=None):
     """Apply the whole assessment set on copies, including recipient obligations."""
-    from .task_contracts import validate_item_dispositions, contract_obligations, judge_coverage_errors
+    from .task_contracts import assessor_is_judge, validate_item_dispositions, contract_obligations, judge_coverage_errors
     from .planning import record_index
     new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
     reference_tasks = input_tasks if reference_tasks is None else reference_tasks
@@ -409,8 +407,7 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
         evidence_ids = set(records) | result_ids(task)
         for row in assessment['item_dispositions']:
             obligation = obligations[row['obligation_id']]
-            if (row['kind'] == 'fulfilled' and actor['role'] not in obligation['judges']
-                    and execution_id not in obligation['judges']
+            if (row['kind'] == 'fulfilled' and not assessor_is_judge(obligation, actor['role'], execution_id)
                     and not designated_judgment(task, obligation, row, new_instance, new_runtime)):
                 raise ValueError('fulfilled obligation needs its designated judge or a current specialist judgment for this task')
             require_evidence_refs(row['evidence_refs'], evidence_ids)
@@ -458,12 +455,11 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
         task['assessment'] = {**deepcopy(assessment), 'execution_id':execution_id, 'contract_sha256':contract_hash(task),
                               'results_sha256':exact_content_hash(task['results']), 'current':True,
                               'basis':assessment_basis(task,assessment,new_instance,new_runtime,records=records)}
+        obligations = {o['id']: o for o in contract_obligations(task)}
         task['assessment']['specialist_support'] = {
-            row['obligation_id']: designated_judgment(task,
-                next(o for o in task['completion_obligations'] if o['id'] == row['obligation_id']), row, new_instance, new_runtime)
+            row['obligation_id']: designated_judgment(task, obligations[row['obligation_id']], row, new_instance, new_runtime)
             for row in assessment['item_dispositions'] if row['kind'] == 'fulfilled'
-            and actor['role'] not in next(o for o in task['completion_obligations'] if o['id'] == row['obligation_id'])['judges']
-            and execution_id not in next(o for o in task['completion_obligations'] if o['id'] == row['obligation_id'])['judges']}
+            and not assessor_is_judge(obligations[row['obligation_id']], actor['role'], execution_id)}
         if assessment['decision'] in {'completed','closed'}:
             task['status'] = assessment['decision']; task.pop('waiting', None)
         else:

@@ -11,10 +11,11 @@ from copy import deepcopy as _deepcopy
 from ..activities import ACTIVITY_STATUSES as _ACTIVITY_STATUSES
 from ..contracts import (PLAN_DISPOSITION as _PLAN_DISPOSITION, TEXT as _NONEMPTY_TEXT,
                          schema_for as _schema_for)
-from ..execution_lifecycle import (EXECUTION_STATUSES as _EXECUTION_STATUSES, OUTCOMES as _OUTCOMES,
-                                   STOP_PHASES as _STOP_PHASES)
-from ..execution_profiles import OBSERVATION_KEYS as _OBSERVATION_KEYS, WINDOW_KEYS as _WINDOW_KEYS
+from ..execution_lifecycle import EXECUTION_STATUSES as _EXECUTION_STATUSES, OUTCOMES as _OUTCOMES
+from ..execution_profiles import (OBSERVATION_KEYS as _OBSERVATION_KEYS, OBSERVATION_MODES as _OBSERVATION_MODES,
+                                  WINDOW_KEYS as _WINDOW_KEYS)
 from ..external import OPERATION_STATUSES as _OPERATION_STATUSES
+from ..file_io import SHA256_SCHEMA as HASH
 from ..governance import (GOVERNANCE_STATUSES as _GOVERNANCE_STATUSES, GRANT_STATUSES as _GRANT_STATUSES,
                           interpretation_schema as _interpretation_schema)
 from ..input_basis import SOURCE_STATUSES as _SOURCE_STATUSES
@@ -35,7 +36,6 @@ ID = {"type": "string", "minLength": 1, "pattern": "^" + RECORD_ID + "$"}
 INTEGER = {"type": "integer"}
 NAT = {"type": "integer", "minimum": 0}
 BOOL = {"type": "boolean"}
-HASH = {"type": "string", "pattern": "^[0-9a-f]{64}$"}
 # Evidence payloads are preserved JSON; domain validators determine their use.
 EVIDENCE = {"type": "object"}
 
@@ -277,7 +277,7 @@ RECORDS["executions"] = record({"owner_activity_id": ID, "actor_kind": enum("ai"
     "created_at": TEXT, "status": enum(*sorted(_EXECUTION_STATUSES)),
     "continuation_of": nullable(ID), "context_origin": REFS, "role": TEXT, "action": _ACTION,
     "transitions": HISTORY, "ended_at": TEXT, "outcome": enum(*sorted(_OUTCOMES)), "result_disposition": {"type": ["string", "object", "null"]},
-    "stop_phase": enum(*sorted(_STOP_PHASES)), "submission_intent": EVIDENCE, "submission_receipt": EVIDENCE,
+    "submission_intent": EVIDENCE, "submission_receipt": EVIDENCE,
     "recovery_disposition": TEXT, "grant_id": ID,
     "model": TEXT, "effort": TEXT, "model_decisions": EVIDENCE,
     "input_snapshot": TEXT, "input_bundle": TEXT,
@@ -392,7 +392,7 @@ RECORDS["execution_profiles"] = record({"revision": NAT, "sha256": HASH,
     "boundary": obj({"mode": TEXT, "os_isolation": BOOL, "authenticated_caller": BOOL, "rules": array(TEXT)},
                     ("mode", "os_isolation", "authenticated_caller", "rules")),
     "host_capacity_refs": REFS, "host_capacity_status": TEXT,
-    "observation": obj({"mode": enum("event_driven", "periodic", "deadline_only"),
+    "observation": obj({"mode": enum(*_OBSERVATION_MODES),
         "settings": obj({key: NAT for key in _OBSERVATION_KEYS}),
         "rule_bindings": array(obj({"source": TEXT, "operator": TEXT, "subject_kind": TEXT, "unit": TEXT},
                                    ("source", "operator", "subject_kind", "unit")))},
@@ -454,7 +454,8 @@ RECORDS["question_links"] = record({"origin_execution_id": nullable(ID), "origin
     "target_ids": REFS, "status": enum("open", "resolved", "superseded"), "resolution_ref": nullable(ID),
     "source_ref": TEXT, "routing_reason": TEXT,
     "unresolved_target_ids": REFS, "blocks": BOOL,
-    "checked_by": nullable(ID), "resolution_history": HISTORY, "source_kind": TEXT, "source_id": ID},
+    "checked_by": nullable(ID), "resolution_history": HISTORY, "source_kind": TEXT, "source_id": ID,
+    "question_kind": enum("grant")},
     ("origin_execution_id", "origin_field", "owner", "target_ids", "status", "resolution_ref", "unresolved_target_ids"))
 RECORDS["external_operations"] = record({"request": obj({"method": TEXT, "url": TEXT, "body": TEXT}, ("method", "url", "body")),
     "request_sha256": HASH, "grant_id": ID, "source_ref": TEXT, "status": enum(*sorted(_OPERATION_STATUSES)),
@@ -627,7 +628,7 @@ RESEARCH_FIELDS = {
             "initial_profile_ref": PROFILE_REF, "research_grant_ids": REFS, "initial_grant_ids": REFS, "source_refs": array(TEXT)}),
         "intent_check": obj({"input_sha256": HASH, "interpretation_execution_id": ID, "check_execution_id": ID},
                             ("input_sha256", "interpretation_execution_id", "check_execution_id")),
-        "input_id": ID, "activated_at": TEXT}, ("state", "immutable_input")),
+        "input_id": ID, "activated_at": TEXT}, ("state", "immutable_input", "input_id")),
     "review_policy": obj({"id": ID,
         "required_perspectives": array(TEXT, True), "minimum_initial_slots": NAT, "judge_slots": array(TEXT, True),
         "round_limit": NAT, "activity_execution_limit": NAT, "overflow_disposition": enum("unresolved", "defer")},
@@ -672,7 +673,7 @@ RUNTIME_FIELDS = {"status": enum("initializing", "ready", "running", "paused", "
     "user_pause": {"type": ["boolean", "object"]}, "stop_requested": {"type": ["boolean", "string"]},
     "next_research_reconsider_at": nullable(TEXT),
     "model_policy_violation": EVIDENCE, "provider_wake": EVIDENCE,
-    "pending_knowledge_impacts": HISTORY, "permission_requests": HISTORY,
+    "permission_requests": HISTORY,
     # Per trust environment: the toolchain-record baseline whose fingerprint was last accepted.
     "trust_bindings": mapping(_BINDING_SCHEMA),
     # These assessments have no producer ID. Their enclosing list is one typed

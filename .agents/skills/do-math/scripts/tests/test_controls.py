@@ -117,7 +117,6 @@ class ControlTransitionTests(unittest.TestCase):
         _, _, runtime = self.store.load()
         recovered = runtime['executions']['EX-crashed']
         self.assertEqual(recovered['status'], 'stopping')
-        self.assertEqual(recovered['stop_phase'], 'terminating')
         self.assertNotIn('outcome', recovered)
         self.assertEqual(recovered['recovery_disposition'], 'reconcile_local_and_remote')
         owner = runtime['activities'][recovered['owner_activity_id']]
@@ -202,7 +201,6 @@ class ControlReceipts(unittest.TestCase):
         self.assertEqual(receipt["snapshot"], "published")
         self.assertEqual(receipt["state"], "accepted")
         self.assertEqual(engine.runtime["executions"]["EX-work"]["status"], "stopping")
-        self.assertEqual(engine.runtime["executions"]["EX-work"]["stop_phase"], "terminating")
         self.assertNotIn("outcome", engine.runtime["executions"]["EX-work"])
         stored = next(iter(engine.runtime["control_receipts"].values()))
         self.assertNotIn("capability", stored["request"])

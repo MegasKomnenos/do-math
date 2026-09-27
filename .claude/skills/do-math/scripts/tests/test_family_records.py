@@ -349,7 +349,7 @@ class FamilyRecordStorageTests(unittest.TestCase):
         for status in ("starting", "running"):
             transition_execution(execution, status, at="2026-09-20T00:00:00Z")
         execution.update(stop_reason="submission_intent", stop_observed_at="2026-09-20T00:00:01Z")
-        transition_execution(execution, "stopping", at="2026-09-20T00:00:01Z", stop_phase="terminating")
+        transition_execution(execution, "stopping", at="2026-09-20T00:00:01Z")
         head = self.repository.initialize(instance, runtime)
         _, saved, loaded = self.repository.load(head)
         self.assertEqual(loaded["executions"]["EX-1"]["execution_window"]["remaining_ms_at_start"], 750)
@@ -952,6 +952,17 @@ class FamilyRecordStorageTests(unittest.TestCase):
                 "owner": "user", "target_ids": ["AC-finished"], "unresolved_target_ids": [],
                 "blocks": True, "status": "resolved", "resolution_ref": None}]})
         self.repository.validate_candidate(instance, runtime)
+
+    def test_grant_question_kind_survives_storage(self):
+        # The engine marks the user question of an external request that names no grant
+        # (engine._apply_extensions); the status question view reads that mark.
+        from do_math import questions
+        instance, runtime = execution_state("research_work")
+        question = questions.link(runtime, execution_id="EX-1", field="extensions/external_requests/0/purpose",
+            owner="user", targets=["EX-1"], reason="External action requires a user grant")
+        question["question_kind"] = "grant"
+        head = self.repository.initialize(instance, runtime)
+        self.assertEqual(self.repository.load(head)[2]["question_links"][0]["question_kind"], "grant")
 
     def test_relation_schema_and_domain_kind_evidence_are_both_enforced(self):
         from do_math import knowledge_io as io, knowledge_records as kr
