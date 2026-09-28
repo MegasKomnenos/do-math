@@ -1,9 +1,14 @@
-"""Sequential shard-by-shard unittest runner with owned, bounded Lean/resource workers.
+"""Sequential group-by-group unittest runner with owned, bounded Lean/resource workers.
 
-Tests are selected by ID or module (positional), by shard (``--shard``), or all
-shards when neither is given. Every selected test runs; there is no result cache.
-Shards and the isolation labels live in ``test_categories.py`` beside this runner; a test
-module missing from ``SHARDS`` stops the run. When and what to run is in
+Legacy tests (``tests/test_*.py``) run in shards; new-system tests live in the
+tier folders under ``tests/`` and are chosen with ``--tier T0``..``T5``
+(docs/do-math/시험-재편-2026-09-29/설계.md 5). Tests are selected by ID or
+module (positional), by shard, by tier, or, when none is given, every legacy
+shard plus the in-process tiers; boundary and smoke tests run only when asked.
+Every selected test runs; there is no result cache. Shards and the isolation
+labels live in ``test_categories.py`` beside this runner; a legacy test module
+missing from ``SHARDS`` stops the run. The report states the number of open
+entries in ``tests/known_defects.json``. When and what to run is in
 ``tests/시험-지침.md``.
 
 Lean and resource tests run per class in an owned Windows Job with a per-phase
@@ -32,6 +37,41 @@ from do_math.file_io import write_bytes_atomic, read_bytes_shared
 
 SCRIPTS = Path(__file__).resolve().parent
 TESTS = SCRIPTS / 'tests'
+# New-system tests live in these packages under tests/; the folder is the tier
+# group (docs/do-math/시험-재편-2026-09-29/설계.md 5.4). Legacy tests/test_*.py
+# modules keep their SHARDS until they are retired.
+FOLDERS = ('structure', 'unit', 'sim', 'contracts', 'boundary', 'smoke')
+TIERS = {
+    'T0': ('structure',),
+    'T1': ('structure', 'unit', 'contracts'),
+    'T2': ('structure', 'unit', 'contracts', 'sim'),
+    'T3': ('structure', 'unit', 'contracts', 'sim'),
+    'T4': ('boundary',),
+    'T5': ('smoke',),
+}
+# Folders that run when no --tier/--shard/test ID narrows the selection. Boundary
+# and smoke tests need real tools or model calls, so they run only when asked.
+DEFAULT_FOLDERS = TIERS['T2']
+
+
+def folder_of(test):
+    """The tier folder a test module lives in, or None for a legacy tests/test_*.py module."""
+    head = type(test).__module__.split('.')[0]
+    return head if head in FOLDERS else None
+
+
+def select_tiers(tests, tiers):
+    folders = {folder for tier in tiers for folder in TIERS[tier]}
+    return [test for test in tests if folder_of(test) in folders]
+
+
+def group_of(test):
+    return folder_of(test) or shard_for(test)
+
+
+def discover(loader=None):
+    loader = loader or unittest.TestLoader()
+    return list(flatten(loader.discover(str(TESTS), pattern='test_*.py', top_level_dir=str(TESTS))))
 
 
 def _write_json(path, value):
@@ -264,7 +304,8 @@ def _edition():
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('tests', nargs='*', help='test IDs or modules; default: every shard')
-    parser.add_argument('--shard', action='append', choices=tuple(SHARDS), help='repeat to combine')
+    parser.add_argument('--shard', action='append', choices=tuple(SHARDS), help='legacy shard; repeat to combine')
+    parser.add_argument('--tier', action='append', choices=tuple(TIERS), help='new-system tier T0-T5; repeat to combine')
     parser.add_argument('--match', action='append', default=[], help='test-ID glob; repeat for alternatives')
     parser.add_argument('--list', action='store_true', help='discover and list without running tests')
     parser.add_argument('--timeout', type=float, default=300, help='seconds per isolated test/fixture phase (default: 300)')
@@ -282,13 +323,19 @@ def main(argv=None):
         return 2
     before = _edition()
     loader = unittest.TestLoader()
-    discovered = list(flatten(loader.discover(str(TESTS), pattern='test_*.py')))
+    discovered = discover(loader)
     if loader.errors:
         print('\n'.join(loader.errors), file=sys.stderr)
         return 2
-    selected = [test for test in discovered
-                if (not args.shard or shard_for(test) in args.shard)
-                and (not args.tests or any(test.id() == name or test.id().startswith(name + '.') for name in args.tests))
+    if args.tier or args.shard:
+        pool = select_tiers(discovered, args.tier or []) + [
+            test for test in discovered if folder_of(test) is None and args.shard and shard_for(test) in args.shard]
+    elif args.tests:
+        pool = discovered
+    else:
+        pool = [test for test in discovered if folder_of(test) is None or folder_of(test) in DEFAULT_FOLDERS]
+    selected = [test for test in pool
+                if (not args.tests or any(test.id() == name or test.id().startswith(name + '.') for name in args.tests))
                 and (not args.match or any(fnmatch.fnmatchcase(test.id(), pattern) for pattern in args.match))]
     unknown = [name for name in args.tests or []
                if not any(test.id() == name or test.id().startswith(name + '.') for test in discovered)]
@@ -301,15 +348,18 @@ def main(argv=None):
         return 2
     if args.list:
         for test in selected:
-            print(shard_for(test) + '\t' + test.id())
+            print(group_of(test) + '\t' + test.id())
         return 0
     directory = args.output.resolve() if args.output else Path(tempfile.mkdtemp(prefix='do-math-tests-'))
     if directory.exists() and any(directory.iterdir()):
         parser.error('--output must be new or empty; previous evidence is never overwritten')
     directory.mkdir(parents=True, exist_ok=True)
+    from support.known_defects import open_count  # tests/ is importable after discovery
+    open_defects = open_count()
+    print(f'Open known defects: {open_defects}', flush=True)
     reports, shard_seconds = [], {}
-    for shard in SHARDS:
-        tests = [test for test in selected if shard_for(test) == shard]
+    for shard in (*SHARDS, *FOLDERS):
+        tests = [test for test in selected if group_of(test) == shard]
         if not tests:
             continue
         started = time.monotonic()
@@ -331,10 +381,10 @@ def main(argv=None):
     after = _edition()
     changed = sorted(path for path in before.keys() | after.keys() if before.get(path) != after.get(path))
     rows = [row for report in reports for row in report['rows']]
-    result = {'complete': all(report['complete'] for report in reports),
+    result = {'open_known_defects': open_defects, 'complete': all(report['complete'] for report in reports),
         'successful': not changed and all(report['successful'] for report in reports),
         'selected': [test.id() for test in selected], 'discovered': len(discovered),
-        'shards': sorted(args.shard or []), 'tests': args.tests,
+        'shards': sorted(args.shard or []), 'tiers': sorted(args.tier or []), 'tests': args.tests,
         'shard_seconds': shard_seconds, 'total_seconds': round(sum(shard_seconds.values()), 1),
         'counts': dict(Counter(row['outcome'] for row in rows if not row.get('fixture'))),
         'fixture_counts': dict(Counter(row['outcome'] for row in rows if row.get('fixture'))),
