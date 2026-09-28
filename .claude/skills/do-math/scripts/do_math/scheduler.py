@@ -11,7 +11,7 @@ from pathlib import Path
 from .execution_profiles import LEAN_ROLES, MACHINE_ROLES, PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, task_research
 from .git_store import ARTIFACT_ROOT
 from .model_policy import selection
-from .parallel import ModelCalls, failed_result
+from .parallel import failed_result
 from .payloads import json_safe
 from .session_slots import SLOT_WAITS, SessionSlots
 
@@ -277,8 +277,8 @@ class SchedulerMixin:
         # Bound before the loop: the maintenance exit leaves the loop before its
         # stopping check, and the settlement after the loop still reads this name.
         from .repair_execution import pending_installation_repair
-        self._calls = ModelCalls(on_returned=self._local_call_returned,
-                                 on_observation_error=self._observation_failed)
+        self._calls = self.ports.calls.new(on_returned=self._local_call_returned,
+                                           on_observation_error=self._observation_failed)
         self._stop_deadlines, self._stop_clock = {}, None
         self._scan_head = None  # Every run judges readiness and dispatch in its first pass.
         steps = 0

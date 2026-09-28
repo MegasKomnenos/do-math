@@ -37,18 +37,29 @@ class ModelCalls:
         # observation or a returned call. The owner waits on it, not a spin.
         self.wake = Event()
 
+    def _owner_call(self, function, args):
+        """Run ``function(*args)`` on the owner thread and return its result to the calling thread."""
+        response = Future()
+        with self.guard:
+            if self.stopping:
+                raise RuntimeError("executor is shutting down")
+            self.events.put((function, args, response))
+            self.wake.set()
+        from .operation_trace import phase
+        with phase('callback_wait', callback=getattr(function, '__name__', 'callback')):
+            return response.result()
+
     def _started(self, function):
         def call(*args):
-            response = Future()
-            with self.guard:
-                if self.stopping:
-                    raise RuntimeError("executor is shutting down")
-                self.events.put((function, args, response))
-                self.wake.set()
-            from .operation_trace import phase
-            with phase('callback_wait', callback=getattr(function, '__name__', 'callback')):
-                return response.result()
+            return self._owner_call(function, args)
         return call
+
+    def _spawn(self, run):
+        """Start one call's calculation off the owner thread."""
+        context = copy_context()
+        thread = Thread(target=lambda: context.run(run), name="do-math-call")
+        self.threads.append(thread)
+        thread.start()
 
     def _observed(self, function, future):
         def call(*args):
@@ -91,10 +102,7 @@ class ModelCalls:
                 future.set_exception(error)
             finally:
                 self.wake.set()
-        context = copy_context()
-        thread = Thread(target=lambda: context.run(run), name="do-math-call")
-        self.threads.append(thread)
-        thread.start()
+        self._spawn(run)
         return future
 
     def wait(self, timeout):
@@ -217,3 +225,10 @@ class ModelCalls:
             response.set_exception(RuntimeError("executor is shutting down"))
         for thread in self.threads:
             thread.join()
+
+
+class ThreadCalls:
+    """Real calls port: each call's calculation runs on its own thread."""
+
+    def new(self, *, on_returned=None, on_observation_error=None):
+        return ModelCalls(on_returned=on_returned, on_observation_error=on_observation_error)
