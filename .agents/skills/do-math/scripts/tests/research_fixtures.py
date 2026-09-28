@@ -201,7 +201,8 @@ def clock_ports(**overrides):
     real = SystemClock()
     operations = {name: getattr(real, name) for name in ('now', 'wall', 'wall_ns', 'monotonic', 'sleep', 'new_id')}
     operations.update(overrides)
-    return Ports(clock=SimpleNamespace(**operations))
+    from do_math.git_process import GitProcess
+    return Ports(clock=SimpleNamespace(**operations), git_backend=GitProcess())
 
 
 def bare_engine(instance=None, runtime=None, *, head="fixture-head", store=None, runner=None,

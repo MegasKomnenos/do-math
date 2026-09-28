@@ -220,8 +220,9 @@ def exact_content_hash(value: Any) -> str:
 class ResearchRepository:
     """Read and publish the record-family files of the installed state contract through one Git CAS."""
 
-    def __init__(self, repository: Path, instance_id: str, *, contract: StateContract | None = None) -> None:
-        self._store = GitStateStore(repository, instance_id)
+    def __init__(self, repository: Path, instance_id: str, *, contract: StateContract | None = None,
+                 backend=None) -> None:
+        self._store = GitStateStore(repository, instance_id, backend=backend)
         self.contract = contract or default_state_contract()
 
     @property

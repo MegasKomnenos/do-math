@@ -455,8 +455,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     def __init__(self, repository: Path, instance_id: str, *, runner: Any = None, formal_verifier: Any = None,
                  ports=None):
+        if ports is None:
+            from .wiring import real_ports  # layer: 1b migration default until entry points pass Ports
+            ports = real_ports()
         self.ports = ports
-        self.store = ResearchRepository(repository, instance_id)
+        self.store = ResearchRepository(repository, instance_id, backend=ports.git_backend)
         self.runner = runner or ModelRunner()
         self.formal_verifier = formal_verifier or verify_lean
         self.head, self.instance, self.runtime = self.store.load()

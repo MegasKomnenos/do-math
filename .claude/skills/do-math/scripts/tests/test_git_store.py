@@ -77,36 +77,36 @@ class GitStateStoreTests(unittest.TestCase):
     def test_tree_cache_reuses_only_immutable_oids(self):
         snapshot = self.store.publish(None, self.initial_changes())
         self.forget_trees()
-        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+        with patch.object(self.store._backend, '_run', wraps=self.store._backend._run) as calls:
             first = self.store.tree_paths(snapshot.head)
             second = self.store.tree_paths(snapshot.head)
         self.assertEqual(first, second)
-        self.assertEqual(sum(c.args[0] == 'ls-tree' for c in calls.call_args_list), 1)
+        self.assertEqual(sum(c.args[1] == 'ls-tree' for c in calls.call_args_list), 1)
 
     def test_own_publication_lists_the_new_tree_without_enumerating_it(self):
         first = self.store.publish(None, {**self.initial_changes(), 'runtime/artifacts/one/a.bin': b'a'})
-        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+        with patch.object(self.store._backend, '_run', wraps=self.store._backend._run) as calls:
             later = self.store.publish(first.head, {'runtime/state.json': None, 'research/next.json': b'{}\n',
                                                     'runtime/artifacts/two/b.bin': b'b'})
             listed = self.store.tree_paths(later.head)
         # The parent list also came from its own publication.
-        self.assertEqual(sum(c.args[0] == 'ls-tree' for c in calls.call_args_list), 0)
+        self.assertEqual(sum(c.args[1] == 'ls-tree' for c in calls.call_args_list), 0)
         # Reading an older snapshot does not displace the tree just published.
         self.store.tree_paths(first.head)
-        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+        with patch.object(self.store._backend, '_run', wraps=self.store._backend._run) as calls:
             self.store.publish(later.head, {'research/again.json': b'{}\n'})
-        self.assertEqual([c.args[0] for c in calls.call_args_list], ['update-ref'])
+        self.assertEqual([c.args[1] for c in calls.call_args_list], ['update-ref'])
         self.forget_trees()
         self.assertEqual(listed, self.store.tree_paths(later.head))
 
     def test_publication_writes_objects_in_process_and_moves_the_ref_only_by_cas(self):
         first = self.store.publish(None, self.initial_changes())
         before = loose_objects(self.repository)
-        with patch.object(self.store, '_git', wraps=self.store._git) as calls, \
+        with patch.object(self.store._backend, '_run', wraps=self.store._backend._run) as calls, \
              patch('do_math.git_store.os.fsync', wraps=os.fsync) as fsync:
             later = self.store.publish(first.head, {'runtime/state.json': b'{"state": "running"}\n',
                                                     'research/new/deep.json': b'{}\n'})
-        self.assertEqual([c.args[0] for c in calls.call_args_list], ['update-ref'])
+        self.assertEqual([c.args[1] for c in calls.call_args_list], ['update-ref'])
         # Installed Git for Windows flushes each new loose object (core.fsyncObjectFiles=true).
         created = loose_objects(self.repository) - before
         self.assertEqual(fsync.call_count, len(created))
@@ -156,12 +156,12 @@ class GitStateStoreTests(unittest.TestCase):
     def test_writer_lock_leaves_the_final_cas_as_the_only_ref_comparison(self):
         first = self.store.publish(None, self.initial_changes())
         with self.store.writer_lock():
-            with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+            with patch.object(self.store._backend, '_run', wraps=self.store._backend._run) as calls:
                 later = self.store.publish(first.head, {'runtime/state.json': b'{"state": "running"}\n'})
-            self.assertEqual([c.args[0] for c in calls.call_args_list], ['update-ref'])
+            self.assertEqual([c.args[1] for c in calls.call_args_list], ['update-ref'])
             # Under the lock no do-math writer moves the ref, so the head this
             # store just published is not read back.
-            with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+            with patch.object(self.store._backend, '_run', wraps=self.store._backend._run) as calls:
                 self.assertEqual(self.store.read_snapshot(), StateSnapshot(later.head))
             self.assertEqual(calls.call_count, 0)
             # A writer outside the lock is still refused by that final CAS.
@@ -171,7 +171,7 @@ class GitStateStoreTests(unittest.TestCase):
                 self.store.publish(later.head, {'runtime/state.json': b'{"state": "lost"}\n'})
             # The failed CAS proves the remembered head stale; it is read again.
             self.assertEqual(self.store.read_snapshot().head, moved.head)
-        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+        with patch.object(self.store._backend, '_run', wraps=self.store._backend._run) as calls:
             self.assertEqual(self.store.read_snapshot().head, moved.head)
         self.assertEqual(calls.call_count, 1)
 
@@ -187,16 +187,16 @@ class GitStateStoreTests(unittest.TestCase):
         changes = {**self.initial_changes(), **{
             f'runtime/artifacts/batch/자료 {i}.bin': bytes(range(256)) + b'\r\n\x00' + bytes([i])
             for i in range(38)}}
-        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+        with patch.object(self.store._backend, '_run', wraps=self.store._backend._run) as calls:
             snapshot = self.store.publish(None, changes)
-        self.assertEqual([c.args[0] for c in calls.call_args_list], ['update-ref'])
+        self.assertEqual([c.args[1] for c in calls.call_args_list], ['update-ref'])
         self.assertEqual(self.store.read_many(snapshot.head, list(changes)), changes)
 
     def test_batch_read_is_exact_and_missing_blob_is_an_error(self):
         changes = {**self.initial_changes(), 'runtime/artifacts/batch/빈 파일': b'',
                    'runtime/artifacts/batch/바이너리': b'\x00\xff\n\r\nblob missing\n'}
         snapshot = self.store.publish(None, changes)
-        with patch.object(self.store, '_git', wraps=self.store._git) as calls:
+        with patch.object(self.store._backend, '_run', wraps=self.store._backend._run) as calls:
             values = self.store.read_many(snapshot.head, list(changes))
         self.assertEqual(values, changes)
         self.assertEqual(len(calls.call_args_list), 1)
@@ -520,15 +520,20 @@ class SnapshotMetadataTests(unittest.TestCase):
         self.repository = git_init(Path(self.enterContext(tempfile.TemporaryDirectory())))
 
     def store(self, *, length=40, root_type='commit', rows=None, returncode=0, resolved=None):
-        """A store over an empty repository whose later Git calls answer with the given metadata."""
+        """A store over an empty repository whose later Git runs answer with the given metadata.
+
+        Git output is parsed by the real Git backend (do_math.git_process), so the
+        fake output replaces that backend's process runs. Rows carry the object size.
+        """
         store = GitStateStore(self.repository, self.INSTANCE)
         store.object_format = 'sha1' if length == 40 else 'sha256'
         head, research, runtime = ('a' * length, 'b' * length, 'c' * length)
-        values = rows if rows is not None else [head + ' ' + root_type, research + ' tree', runtime + ' tree']
+        values = rows if rows is not None else [head + ' ' + root_type + ' 180', research + ' tree 70',
+                                                runtime + ' tree 70']
         if resolved is None:
             resolved = git_result(0, (head + '\n').encode())
         # One batch query; rev-parse (``resolved``) runs only when the ref line is missing.
-        store._git = create_autospec(store._git, side_effect=[
+        store._backend._run = create_autospec(store._backend._run, side_effect=[
             git_result(returncode, ('\n'.join(values) + '\n').encode()), resolved])
         return store, head
 
@@ -537,9 +542,10 @@ class SnapshotMetadataTests(unittest.TestCase):
             with self.subTest(length=length):
                 store, head = self.store(length=length)
                 self.assertEqual(store.read_snapshot(), StateSnapshot(head))
-                self.assertEqual(store._git.call_count, 1)
-                request = store._git.call_args
-                self.assertEqual(request.args, ('cat-file', '--batch-check=%(objectname) %(objecttype)'))
+                self.assertEqual(store._backend._run.call_count, 1)
+                request = store._backend._run.call_args
+                self.assertEqual(request.args[1:],
+                                 ('cat-file', '--batch-check=%(objectname) %(objecttype) %(objectsize)'))
                 self.assertEqual(request.kwargs['input'],
                                  f'{self.REF}\n{self.REF}:research\n{self.REF}:runtime\n'.encode())
 
@@ -547,20 +553,24 @@ class SnapshotMetadataTests(unittest.TestCase):
         missing = [self.REF + suffix + ' missing' for suffix in ('', ':research', ':runtime')]
         store, _ = self.store(rows=missing, resolved=git_result(1))
         self.assertEqual(store.read_snapshot(), StateSnapshot(None))
-        self.assertEqual([call.args[0] for call in store._git.call_args_list], ['cat-file', 'rev-parse'])
+        self.assertEqual([call.args[1] for call in store._backend._run.call_args_list], ['cat-file', 'rev-parse'])
         store, _ = self.store(rows=missing, resolved=git_result(1, stderr=b'bad ref'))
-        with self.assertRaisesRegex(GitStateStoreError, 'cannot resolve'):
+        with self.assertRaisesRegex(GitStateStoreError, 'rev-parse --verify --quiet .* failed: bad ref'):
             store.read_snapshot()
 
     def test_wrong_or_incomplete_metadata_never_returns_a_snapshot(self):
         head, tree, ref = 'a' * 40, 'b' * 40, self.REF
-        cases = [([head + ' blob', ref + ':research missing', ref + ':runtime missing'], 'commit'),
-                 ([ref + ' missing'], 'unreadable'),
-                 ([head + ' commit extra', tree + ' tree', tree + ' tree'], 'invalid state commit'),
-                 ([head + ' commit', ref + ':research missing', tree + ' tree'], 'research'),
-                 ([head + ' commit', tree + ' blob', tree + ' tree'], 'tree'),
-                 ([head + ' commit', tree + ' tree'], 'incomplete'),
-                 ([head + ' commit', tree + ' tree', tree + ' tree', tree + ' tree'], 'incomplete')]
+        missing = [ref + suffix + ' missing' for suffix in ('', ':research', ':runtime')]
+        # Row shape (field count, size) is refused by the Git backend; kinds and
+        # subtrees by the store.
+        cases = [([head + ' blob 5', ref + ':research missing', ref + ':runtime missing'], 'commit'),
+                 (missing, 'unreadable'),
+                 ([head + ' commit extra', tree + ' tree 70', tree + ' tree 70'], 'invalid batch object check row'),
+                 ([head + ' commit 180', ref + ':research missing', tree + ' tree 70'], 'research'),
+                 ([head + ' commit 180', tree + ' blob 5', tree + ' tree 70'], 'tree'),
+                 ([head + ' commit 180', tree + ' tree 70'], 'response count differs'),
+                 ([head + ' commit 180', tree + ' tree 70', tree + ' tree 70', tree + ' tree 70'],
+                  'response count differs')]
         for rows, message in cases:
             with self.subTest(rows=rows):
                 store, _ = self.store(rows=rows)

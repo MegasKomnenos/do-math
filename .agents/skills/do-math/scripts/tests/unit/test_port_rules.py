@@ -24,7 +24,15 @@ class Drifted:
     def write(self, path: str, data: bytes) -> None: return None
 
 
+class Unannotated:
+    def read(self, path): return b''
+    def write(self, path, data, *, fsync=True): return None
+
+
 class SignatureTests(unittest.TestCase):
+    def test_annotations_alone_do_not_make_a_signature_differ(self):
+        self.assertEqual(signature_issues(Thing, Unannotated(), Complete()), [])
+
     def test_matching_implementations_have_no_issue(self):
         self.assertEqual(signature_issues(Thing, Complete(), Complete()), [])
 

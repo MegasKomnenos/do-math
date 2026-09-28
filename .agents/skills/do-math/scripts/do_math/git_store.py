@@ -16,7 +16,6 @@ import hashlib
 import os
 from pathlib import Path
 import re
-import subprocess
 import tempfile
 import stat
 import time
@@ -95,7 +94,7 @@ class GitStateStore:
     tampering, outside the accidental-change threat model.
     """
 
-    def __init__(self, repository: str | os.PathLike[str], instance_id: str) -> None:
+    def __init__(self, repository: str | os.PathLike[str], instance_id: str, *, backend=None) -> None:
         if not isinstance(instance_id, str) or not is_new_id("RI", instance_id):
             raise ValueError("instance_id must be the registry RI-prefixed canonical ULID")
         self.repository = Path(repository).absolute()
@@ -104,14 +103,15 @@ class GitStateStore:
             raise ValueError("repository must be an existing Git work tree or bare repository")
         self.instance_id = instance_id
         self.ref = f"refs/heads/do-math/{instance_id}"
-        # Until Git reports its directory, the work tree stands in for it in
-        # _git (the disabled hooks path and the boundary re-proved on error).
+        if backend is None:
+            from .git_process import GitProcess
+            backend = GitProcess()
+        self._backend = backend
+        # Until Git reports its directory, the work tree stands in for it when
+        # a failure re-proves the boundaries.
         self.git_dir = self.repository
         self._git_boundary = self._repository_boundary
-        facts = self._git_text("rev-parse", "--absolute-git-dir", "--show-object-format",
-                               "--git-path", "objects").splitlines()
-        if len(facts) != 3:
-            raise GitStateStoreError("git rev-parse did not report the Git directory, object format and objects")
+        facts = self._call("describe")
         self.git_dir = Path(facts[0]).absolute()
         self._git_boundary = PhysicalBoundary(self.git_dir)
         self.object_format = facts[1].strip()
@@ -140,25 +140,17 @@ class GitStateStore:
         if self._held_head is not None:
             return StateSnapshot(self._held_head)
         names = ("research", "runtime")
-        queries = "".join(f"{self.ref}{suffix}\n" for suffix in ("", *(":" + name for name in names)))
-        result = self._git("cat-file", "--batch-check=%(objectname) %(objecttype)",
-                           input=queries.encode("ascii"), check=False)
-        rows = result.stdout.decode("ascii").splitlines()
-        root = rows[0].split() if rows else []
-        if not root or root[-1] == "missing":
+        specs = [self.ref, *(f"{self.ref}:{name}" for name in names)]
+        info = self._call("object_info", specs)
+        rows = [f"{spec} missing" if found is None else f"{found[0]} {found[1]}" for spec, found in zip(specs, info)]
+        if info[0] is None:
             if self._ref_oid() is None:
                 return StateSnapshot(None)
-            detail = result.stderr.decode("utf-8", "replace").strip()
-            raise GitStateStoreError(f"state ref points to an unreadable object: {detail}")
-        if len(root) != 2:
-            raise GitStateStoreError("invalid state commit metadata")
-        head, object_type = root
+            raise GitStateStoreError("state ref points to an unreadable object")
+        head, object_type = info[0][0], info[0][1]
         self.validate_oid(head)
         if object_type != "commit":
             raise GitStateStoreError("state ref must point to a commit")
-        if result.returncode:
-            detail = result.stderr.decode("utf-8", "replace").strip()
-            raise GitStateStoreError(f"cannot read state subtree metadata: {detail}")
         self._check_subtrees(rows[1:], names)
         return StateSnapshot(head)
 
@@ -166,7 +158,14 @@ class GitStateStore:
         """Read exact blob bytes from an explicit, format-valid state commit."""
         self.validate_oid(commit)
         self.validate_path(path)
-        return self._git("cat-file", "blob", f"{commit}:{path}").stdout
+        found = self._call("read_objects", [f"{commit}:{path}"])[0]
+        if found is None or found[0] != "blob":
+            # Git refuses this read; as with any Git refusal, a moved repository
+            # is reported before the missing blob.
+            self._repository_boundary.check()
+            self._git_boundary.check()
+            raise GitStateStoreError(f"git cat-file blob {commit}:{path} failed: no blob at this path")
+        return found[1]
 
     def read_many(self, commit: str, paths: list[str], *, missing: str = "raise") -> dict[str, bytes]:
         """Read a fixed snapshot in one process, using binary lengths, not lines.
@@ -181,26 +180,14 @@ class GitStateStore:
             self.validate_path(path)
         if not paths:
             return {}
-        raw = self._git("cat-file", "--batch", input="".join(
-            f"{commit}:{path}\n" for path in paths).encode("utf-8")).stdout
-        result, offset = {}, 0
-        for path in paths:
-            end = raw.find(b"\n", offset)
-            if missing == "omit" and end >= 0 and raw[offset:end] == f"{commit}:{path} missing".encode("utf-8"):
-                offset = end + 1
+        found = self._call("read_objects", [f"{commit}:{path}" for path in paths])
+        result = {}
+        for path, item in zip(paths, found):
+            if item is None and missing == "omit":
                 continue
-            header = raw[offset:end].split() if end >= 0 else []
-            if len(header) != 3 or header[1] != b"blob" or not header[2].isdigit():
+            if item is None or item[0] != "blob":
                 raise GitStateStoreError("batch read did not return a blob: " + path)
-            self.validate_oid(header[0].decode("ascii"))
-            size = int(header[2])
-            start, offset = end + 1, end + 1 + size
-            if raw[offset:offset + 1] != b"\n":
-                raise GitStateStoreError("truncated batch blob: " + path)
-            result[path] = raw[start:offset]
-            offset += 1
-        if offset != len(raw):
-            raise GitStateStoreError("unexpected trailing batch output")
+            result[path] = item[1]
         return result
 
     def blob_sizes(self, commit: str, paths: list[str], *, missing: str = "raise") -> dict[str, int]:
@@ -214,18 +201,14 @@ class GitStateStore:
             self.validate_path(path)
         if not paths:
             return {}
-        output = self._git('cat-file', '--batch-check=%(objectsize) %(objecttype)',
-                          input=''.join(f'{commit}:{path}\n' for path in paths).encode()).stdout.splitlines()
-        if len(output) != len(paths):
-            raise GitStateStoreError('batch size response count differs')
+        info = self._call("object_info", [f'{commit}:{path}' for path in paths])
         result = {}
-        for path, row in zip(paths, output):
-            if missing == "omit" and row == f"{commit}:{path} missing".encode("utf-8"):
+        for path, found in zip(paths, info):
+            if found is None and missing == "omit":
                 continue
-            fields = row.split()
-            if len(fields) != 2 or not fields[0].isdigit() or fields[1] != b'blob':
+            if found is None or found[1] != 'blob':
                 raise GitStateStoreError('batch size did not return a blob: ' + path)
-            result[path] = int(fields[0])
+            result[path] = found[2]
         return result
 
     @staticmethod
@@ -323,8 +306,11 @@ class GitStateStore:
 
     def _compare_and_swap(self, new: str, old: str | None, operation: str) -> None:
         """Move the ref by Git's expected-old-OID update, the only ref move."""
-        updated = self._git("update-ref", self.ref, new, old or "0" * self.oid_length, check=False)
-        if updated.returncode:
+        if not self._backend.update_ref(self.repository, self.ref, new, old):
+            # A moved or remounted repository surfaces as a failed update; report
+            # the changed boundary rather than only a conflict.
+            self._repository_boundary.check()
+            self._git_boundary.check()
             self._held_head = None
             raise GitStateStoreConflict(f"state ref changed before the {operation} compare-and-swap")
         self._held_head = new if self.holds_writer_lock else None
@@ -391,13 +377,9 @@ class GitStateStore:
 
     def _ref_oid(self) -> str | None:
         """Resolve the ref and validate OID syntax; object kinds are checked by readers."""
-        result = self._git("rev-parse", "--verify", "--quiet", self.ref, check=False)
-        if result.returncode:
-            if result.returncode == 1 and not result.stderr:
-                return None
-            detail = result.stderr.decode("utf-8", "replace").strip()
-            raise GitStateStoreError(f"cannot resolve existing state ref: {detail}")
-        oid = result.stdout.decode("ascii").strip()
+        oid = self._call("ref_oid", self.ref)
+        if oid is None:
+            return None
         self.validate_oid(oid)
         return oid
 
@@ -428,11 +410,7 @@ class GitStateStore:
                 return known
         directories: dict[str, dict[str, tuple[str, str]]] = {"": {}}
         paths: set[str] = set()
-        for record in self._git("ls-tree", "-r", "-t", "-z", commit).stdout.split(b"\0"):
-            if not record:
-                continue
-            fields, _, raw_path = record.partition(b"\t")
-            mode, kind, oid = fields.decode("ascii").split(" ")
+        for mode, kind, oid, raw_path in self._call("list_tree", commit):
             try:
                 path = raw_path.decode("utf-8")
             except UnicodeDecodeError as error:
@@ -516,49 +494,20 @@ class GitStateStore:
     def first_descendant(self, parent: str, head: str) -> str | None:
         """The commit on ``head``'s first-parent line whose parent is ``parent``, if any."""
         self.validate_oid(parent)
-        commits = self._git("rev-list", "--first-parent", "--reverse", parent + ".." + head).stdout.decode().splitlines()
+        commits = self._call("first_parent_line", parent, head)
         return commits[0] if commits else None
 
-    def _git_text(self, *arguments: str) -> str:
-        return self._git(*arguments).stdout.decode("utf-8").strip()
-
-    def _git(
-        self,
-        *arguments: str,
-        input: bytes | None = None,
-        check: bool = True,
-    ) -> subprocess.CompletedProcess[bytes]:
-        disabled_hooks = self.git_dir / "do-math-disabled-hooks"
-        environment = os.environ.copy()
-        environment.update({
-            "GIT_CONFIG_NOSYSTEM": "1",
-            "GIT_CONFIG_GLOBAL": os.devnull,
-            "GIT_OPTIONAL_LOCKS": "0",
-        })
-        completed = subprocess.run(
-            [
-                "git", "-C", str(self.repository),
-                "-c", "user.name=do-math",
-                "-c", "user.email=do-math@invalid",
-                "-c", f"core.hooksPath={disabled_hooks}",
-                *arguments,
-            ],
-            input=input,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env=environment,
-            check=False,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-        )
-        if completed.returncode and completed.stderr:
+    def _call(self, operation: str, *arguments):
+        """One Git backend operation; a Git failure re-proves both boundaries first."""
+        from .ports.git_backend import GitBackendError
+        try:
+            return getattr(self._backend, operation)(self.repository, *arguments)
+        except GitBackendError as error:
             # A moved or remounted repository surfaces as a Git error; report
             # the changed boundary rather than only the Git symptom.
             self._repository_boundary.check()
             self._git_boundary.check()
-        if check and completed.returncode:
-            detail = completed.stderr.decode("utf-8", "replace").strip()
-            raise GitStateStoreError(f"git {' '.join(arguments)} failed: {detail}")
-        return completed
+            raise GitStateStoreError(str(error)) from error
 
 
 def _windows_handle_facts(handle):

@@ -31,7 +31,7 @@ def capture(command,**kwargs):
     captured.update(command=command,kwargs=kwargs)
     return real_run(command,**kwargs)
 subprocess.run=capture
-store._git('cat-file','--batch',input=b'')
+store._backend._run(store.repository,'cat-file','--batch',input=b'')
 subprocess.run=real_run
 command=captured['command']; options=captured['kwargs']; options.pop('input'); options.pop('check')
 kernel=ctypes.WinDLL('kernel32',use_last_error=True); user=ctypes.WinDLL('user32',use_last_error=True)
@@ -134,7 +134,7 @@ first=store.publish(None,{'research/instance.json':b'{}','runtime/state.json':b'
 second=store.publish(first.head,{'runtime/state.json':b'{"next":true}'})
 result={'parent_console':int(ctypes.windll.kernel32.GetConsoleWindow()),
     'child_consoles':consoles,'binary_unchanged':store.read_bytes(second.head,'runtime/artifacts/one/binary')==raw,
-    'parent_preserved':store._git_text('rev-parse',second.head+'^')==first.head}
+    'parent_preserved':store._backend._run(store.repository,'rev-parse',second.head+'^').stdout.decode().strip()==first.head}
 (root/'result.json').write_text(json.dumps(result))
 ''', encoding='utf-8')
             subprocess.run([str(Path(sys.executable).with_name('pythonw.exe')), str(script),

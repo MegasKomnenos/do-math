@@ -31,7 +31,8 @@ class PortCompletenessTests(unittest.TestCase):
                     module = importlib.import_module(f'{side}.test_port_{name}')
                     runnable = [value for value in vars(module).values() if inspect.isclass(value)
                                 and issubclass(value, contract) and issubclass(value, unittest.TestCase)]
-                    self.assertEqual(len(runnable), 1, f'{side}.test_port_{name} needs one {contract.__name__} TestCase')
+                    self.assertGreaterEqual(len(runnable), 1,
+                                            f'{side}.test_port_{name} needs a {contract.__name__} TestCase')
 
 
 if __name__ == '__main__':

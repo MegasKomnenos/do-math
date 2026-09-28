@@ -705,9 +705,9 @@ class QueuedPreparationTests(unittest.TestCase):
             {'execution_id': 'E', 'output_files': entries}]}
         e.runtime['tasks']['T'].pop('revises_task_id')
         e._save(files)
-        with patch.object(e.store._store, '_git', wraps=e.store._store._git) as calls:
+        with patch.object(e.store._store._backend, '_run', wraps=e.store._store._backend._run) as calls:
             context = e._context({'role': 'research_plan'}, self.root / 'results-plan')
-        reads = [c for c in calls.call_args_list if c.args[0] == 'cat-file']
+        reads = [c for c in calls.call_args_list if c.args[1] == 'cat-file']
         self.assertEqual(len(reads), 1)
         restored = context['tasks'][0]['results'][0]['output_files']
         self.assertEqual(len(restored), 12)

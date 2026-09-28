@@ -7,8 +7,10 @@ chosen by ``do_math.wiring.real_ports`` (layer 3) and tests pass fakes.
 from dataclasses import dataclass
 
 from .clock import Clock
+from .git_backend import GitBackend
 
 
 @dataclass(frozen=True)
 class Ports:
     clock: Clock
+    git_backend: GitBackend
