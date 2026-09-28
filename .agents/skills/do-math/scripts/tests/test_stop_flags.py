@@ -23,7 +23,7 @@ from do_math.engine import ResearchEngine
 from research_fixtures import charter_change, policy_change, restore_template
 from state_fixtures import active_instance
 from runner_fixtures import ScriptedRunner
-from research_fixtures import FixtureAdapter
+from research_fixtures import FixtureAdapter, clock_ports
 
 
 CONFIG = {'operator_enabled': False, 'scholarly_enabled': False, 'lean_command': ['test-lean'],
@@ -237,20 +237,21 @@ class PreparationStopTests(StopFlagHarness):
         with self.running() as (e, eid, future, reads):
             notice, deadline = e._stop_deadlines[eid]
             workspace = Path(e.instance['workspace']) / 'runs' / eid / 'workspace'
+            @contextmanager
             def at(instant):
-                # Only the executor's deadline clock moves; the clock guard keeps real time.
-                import time as real
-                clock = SimpleNamespace(**{name: getattr(real, name) for name in dir(real) if not name.startswith('_')})
-                clock.monotonic = lambda: instant
-                return patch('do_math.engine.time', clock), patch('do_math.scheduler.time', clock)
+                # Only the executor's deadline clock moves; the clock guard keeps real
+                # time because lifecycle_monotonic stays bound to the engine's first clock.
+                saved, e.ports = e.ports, clock_ports(monotonic=lambda: instant)
+                try:
+                    yield
+                finally:
+                    e.ports = saved
             e._settle_stops()
-            first, second = at(notice + .001)
-            with first, second:
+            with at(notice + .001):
                 e._settle_stops()
             self.assertTrue((workspace / '.control' / 'finish-request.json').exists())
             self.assertFalse(future.stop.is_set(), 'a finish notice does not revoke authority')
-            first, second = at(deadline + .001)
-            with first, second:
+            with at(deadline + .001):
                 e._settle_stops()
             self.assertStopped(e, eid, future, reads, 'user_or_deadline_stop')
 

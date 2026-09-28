@@ -32,9 +32,9 @@ class InitializationEngineMixin:
             records = change.get('records')
             if not isinstance(records, list) or not records:
                 raise ValueError('exact user-approved governance records required')
-            initial_source = preserve_source(new_id('GS'), lifecycle['immutable_input']['text'], origin='user')
+            initial_source = preserve_source(self.ports.clock.new_id('GS'), lifecycle['immutable_input']['text'], origin='user')
             approval_source = self.instance['governance_sources'][source_ref]
-            approval = {'id': new_id('DC'), 'kind': 'initial_governance', 'actor': 'user',
+            approval = {'id': self.ports.clock.new_id('DC'), 'kind': 'initial_governance', 'actor': 'user',
                 'source_ref': source_ref, 'source_sha256': approval_source['sha256'],
                 'input_source_ref': initial_source['id'], 'input_source_sha256': initial_source['sha256'],
                 'record_hashes': {r['id']: exact_content_hash(r) for r in records}}
@@ -130,7 +130,7 @@ class InitializationEngineMixin:
         if source_ref not in adoption['source_refs']:
             adoption['source_refs'].append(source_ref)
         lifecycle['adoption'] = adoption
-        decision_id = new_id('DC')
+        decision_id = self.ports.clock.new_id('DC')
         self.instance['decisions'][decision_id] = {'id': decision_id, 'kind': 'initialization',
             'source_ref': source_ref, 'actor': 'user', 'change': deepcopy(change), 'affected': [],
             'created_at': self._lifecycle_now().isoformat()}

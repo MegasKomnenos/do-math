@@ -30,7 +30,8 @@ from .operation_trace import measured
 
 from .events import EventPublisher, check_sequence, event_rows
 from .file_io import is_sha256, no_reparse, reject_constant, unique_pairs
-from .git_store import ARTIFACT_ROOT, GitStateStore, PhysicalBoundary, ULID_ALPHABET, ULID_LENGTH
+from .git_store import ARTIFACT_ROOT, GitStateStore, PhysicalBoundary
+from .ids import ENTROPY_BYTES, ulid
 # payloads imports this module only inside its functions, so a module-level
 # import is acyclic; canonical_json and its value check run on every node.
 from .payloads import FrozenText, decode, encode, seal_large
@@ -194,21 +195,13 @@ class RepositoryCursorError(ValueError):
     """A query cursor is malformed or bound to another snapshot/query."""
 
 
-_PREFIX = re.compile(r"[A-Z][A-Z0-9]{0,7}\Z")
 _SAFE_INTEGER = (1 << 53) - 1
 _SURROGATE = re.compile(r"[\ud800-\udfff]")
 
 
 def new_id(prefix: str) -> str:
     """Create a canonical uppercase ULID with the caller's registry prefix."""
-    if not isinstance(prefix, str) or not _PREFIX.fullmatch(prefix):
-        raise ValueError("prefix must be a canonical uppercase registry prefix")
-    value = ((time.time_ns() // 1_000_000) << 80) | int.from_bytes(secrets.token_bytes(10), "big")
-    encoded = ""
-    for _ in range(ULID_LENGTH):
-        encoded = ULID_ALPHABET[value & 31] + encoded
-        value >>= 5
-    return f"{prefix}-{encoded}"
+    return ulid(prefix, time.time_ns() // 1_000_000, secrets.token_bytes(ENTROPY_BYTES))
 
 
 def canonical_json(value: Any) -> bytes:

@@ -142,7 +142,7 @@ class ReviewEngineMixin:
             current_premises=self._reassessment_premises(knowledge_id),
             original_premises=deepcopy(original.get('publication_premises', {})), defect_evidence=qualified)
         cycle = start_review(proposal, policy['minimum_initial_slots'], policy['judge_slots'], policy['round_limit'], policy=policy)
-        cid, owner = new_id('RC'), new_id('AT')
+        cid, owner = self.ports.clock.new_id('RC'), self.ports.clock.new_id('AT')
         cycle.update(id=cid, knowledge_id=knowledge_id, owner_activity_id=owner,
             identity_basis=deepcopy(assessment['basis']), policy_ref=assessment['policy_ref'], input_snapshot=self.head,
             publication_premises=deepcopy(proposal['current_premises']), producer_execution_ids=proposal['producer_execution_ids'],
@@ -152,7 +152,7 @@ class ReviewEngineMixin:
             reason=qualified['reason'], actor_ref=cid, reason_refs=qualified['reason_refs'])
         runtime.setdefault('review_cycles', {})[cid] = cycle
         open_activity(runtime, activity_id=owner, activity_kind='identity_review', owner_ref=assessment_id,
-            input_refs=[assessment_id, original['id']], opened_at=now(),
+            input_refs=[assessment_id, original['id']], opened_at=self.ports.clock.now(),
             execution_limit=policy['activity_execution_limit'])
         self.instance, self.runtime = instance, runtime
         self._queue_identity_actions(knowledge_id, cid)
@@ -192,7 +192,7 @@ class ReviewEngineMixin:
             followup = {k: deepcopy(v) for k, v in applied.items() if k != 'event'}
             finish_activity(self.runtime, activity['id'], result_refs=[cid, applied['assessment_id']],
                 unresolved=[followup] if applied['status'] == 'suspended' else [], followups=[followup],
-                at=now())
+                at=self.ports.clock.now())
             settled.append(cid)
         return settled
 
@@ -208,7 +208,7 @@ class ReviewEngineMixin:
                 return cid
         cycle = start_review(candidate['proposal'], reviewers=policy['minimum_initial_slots'],
             judges=policy['judge_slots'], max_rounds=policy['round_limit'], policy=policy)
-        cid = new_id('RC')
+        cid = self.ports.clock.new_id('RC')
         cycle.update(id=cid, knowledge_id=knowledge_id, transition_id=transition_id,
             staged_candidate=candidate, identity_basis=deepcopy(candidate['identity_basis']), input_snapshot=self.head,
             producer_execution_ids=list(dict.fromkeys([
@@ -306,7 +306,7 @@ class ReviewEngineMixin:
                 'executions_used': list(cycle['execution_accounting']['executions_used']),
                 'pending_actions': next_actions(cycle), 'detail': deepcopy(detail),
                 'disposition': cycle['review_policy']['overflow_disposition'],
-                'at': now()}
+                'at': self.ports.clock.now()}
             cycle['history'].append(record)
         validate_resource_disposition(cycle, self.runtime)
         self.runtime['queue'][:] = [row for row in self.runtime['queue']
@@ -344,7 +344,7 @@ class ReviewEngineMixin:
             closed = self._instance_closed()
             if record['state'] == 'deferred' and not superseded and not closed:
                 continue
-            stamp = now()
+            stamp = self.ports.clock.now()
             followup = {'cycle_id': cid, 'knowledge_id': cycle['knowledge_id'], 'reason': record['reason'],
                         'next_owner': 'research_plan', 'proposal_digest': cycle['proposal_digest']}
             if record['state'] == 'draining':
@@ -400,7 +400,7 @@ class ReviewEngineMixin:
         cycle = start_review(_proposal(self.instance, knowledge_id), reviewers=reviewers, max_rounds=round_limit,
                              judges=previous['judge_slots'] if previous else 3, previous=previous,
                              policy=policy)
-        cycle_id = new_id('RC')
+        cycle_id = self.ports.clock.new_id('RC')
         cycle.update(id=cycle_id, knowledge_id=knowledge_id, input_snapshot=self.head,
                      producer_execution_ids=list(dict.fromkeys([*(previous.get('producer_execution_ids', []) if previous else []),
                                                 *([item['producer_execution']] if item.get('producer_execution') else [])])))
@@ -434,7 +434,7 @@ class ReviewEngineMixin:
                 continue
             if not cycle.get('owner_activity_id'):
                 action = next((a for a in self.runtime['queue'] if a.get('review_cycle_id') == cid),
-                    {'id': new_id('AC'), 'role': 'identity_review', 'target': cycle['knowledge_id'], 'review_cycle_id': cid})
+                    {'id': self.ports.clock.new_id('AC'), 'role': 'identity_review', 'target': cycle['knowledge_id'], 'review_cycle_id': cid})
                 cycle['owner_activity_id'] = self._activity_for_action(action)['id']
                 cycle['review_input_basis'] = capture_review_input_basis(cycle)
             self._request_review_resource_disposition({'review_cycle_id': cid}, 'review_host_configuration_changed',
@@ -703,7 +703,7 @@ class ReviewEngineMixin:
     def _release_review_wait(self, action, *, at=None):
         """Resolve only this slot's restoration wait through the activity owner API."""
         from . import activities
-        at = at or now()
+        at = at or self.ports.clock.now()
         waits = self.runtime.setdefault('waiting_actions', {})
         released = []
         for identifier, entry in list(waits.items()):

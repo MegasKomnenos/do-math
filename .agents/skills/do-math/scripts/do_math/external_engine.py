@@ -119,7 +119,7 @@ class ExternalEngineMixin:
                            academic_check=self._external_prerequisite)
 
     def _external_execution_record(self, operation):
-        execution_id = operation.setdefault('execution_id', new_id('EX'))
+        execution_id = operation.setdefault('execution_id', self.ports.clock.new_id('EX'))
         record = self.runtime['executions'].get(execution_id)
         if record is None:
             action = next((a for a in self.runtime['queue'] if a.get('role') == 'external_action'
@@ -164,7 +164,7 @@ class ExternalEngineMixin:
         operation_id = action['target']
         operation = self.runtime['external_operations'][operation_id]
         if operation['status'] in {'confirmed', 'failed', 'cancelled'}: return
-        if not operation.get('execution_id'): operation['execution_id'] = new_id('EX')
+        if not operation.get('execution_id'): operation['execution_id'] = self.ports.clock.new_id('EX')
         if operation['status'] == 'unknown' or operation.get('transmission_phase') == 'recorded':
             if operation['status'] == 'prepared':
                 operation.update(recover_operation(operation), error='Executor resumed without a confirmed remote outcome')
@@ -174,7 +174,7 @@ class ExternalEngineMixin:
         previous = self.runtime['executions'].get(operation.get('execution_id'))
         if previous and previous['status'] == 'ended':
             operation['continuation_of'] = previous['id']
-            operation['execution_id'] = new_id('EX')
+            operation['execution_id'] = self.ports.clock.new_id('EX')
             action['continuation_of'] = previous['id']
             action['owner_activity_id'] = previous['owner_activity_id']
         grant = self.instance.get('grants', {}).get(operation['grant_id'], {})

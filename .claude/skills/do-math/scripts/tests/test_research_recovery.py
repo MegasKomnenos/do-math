@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from pathlib import Path
@@ -236,15 +237,24 @@ class ResearchRecoveryTests(RecoveryHarness):
         self.assertTrue(any(a['role'] == 'research_preparation' for a in engine.runtime['queue']))
 
 
+def _scripted_clock(times, ids=None):
+    """A clock port whose now() and new_id() return the given values in order."""
+    from do_math.system_clock import SystemClock
+    times, ids = iter(times), iter(ids) if ids is not None else None
+    real = SystemClock()
+    return SimpleNamespace(now=lambda: next(times), new_id=lambda prefix: next(ids) if ids else real.new_id(prefix))
+
+
 class RecoveryRoutingTests(RecoveryHarness):
     def test_controls_with_identical_wall_time_preserve_acceptance_order(self):
         engine, _ = self.active()
         ids = ['UC-01M2KWMGGK0000000000000002', 'UC-01M2KWMGGK0000000000000001']
-        with patch('do_math.engine.new_id', side_effect=ids), patch('do_math.engine.now', return_value='2026-09-16T01:00:00+00:00'):
-            control(self.repo, engine.instance['id'], 'conversation', config={
-                'operation': 'attach', 'id': 'C-user', 'generation': 1, 'disconnect_policy': 'pause', 'lease_seconds': 60})
-            control(self.repo, engine.instance['id'], 'conversation', config={
-                'operation': 'detach', 'id': 'C-user', 'generation': 1})
+        clock = _scripted_clock(['2026-09-16T01:00:00+00:00'] * 2, ids)
+        control(self.repo, engine.instance['id'], 'conversation', config={
+            'operation': 'attach', 'id': 'C-user', 'generation': 1, 'disconnect_policy': 'pause', 'lease_seconds': 60},
+            clock=clock)
+        control(self.repo, engine.instance['id'], 'conversation', config={
+            'operation': 'detach', 'id': 'C-user', 'generation': 1}, clock=clock)
         self.assertEqual([row['config']['operation'] for row in engine._inbox()], ['attach', 'detach'])
         engine.process_controls()
         self.assertEqual(engine.runtime['status'], 'paused')
@@ -253,9 +263,9 @@ class RecoveryRoutingTests(RecoveryHarness):
         engine, _ = self.active()
         ids = ['UC-01M2KWMGGK0000000000000002', 'UC-01M2KWMGGK0000000000000001']
         times = ['2026-09-16T01:00:00.000001+00:00', '2026-09-16T01:00:00.000002+00:00']
-        with patch('do_math.engine.new_id', side_effect=ids), patch('do_math.engine.now', side_effect=times):
-            control(self.repo, engine.instance['id'], 'pause', text='first')
-            control(self.repo, engine.instance['id'], 'resume', text='second')
+        clock = _scripted_clock(times, ids)
+        control(self.repo, engine.instance['id'], 'pause', text='first', clock=clock)
+        control(self.repo, engine.instance['id'], 'resume', text='second', clock=clock)
         pending = engine._inbox()
         self.assertEqual([row['action'] for row in pending], ['pause', 'resume'])
         self.assertEqual(int(pending[1]['accepted_order']) - int(pending[0]['accepted_order']), 1)
@@ -265,9 +275,9 @@ class RecoveryRoutingTests(RecoveryHarness):
     def test_controls_preserve_acceptance_order_when_wall_clock_moves_back(self):
         engine, _ = self.active()
         times = ['2026-09-16T01:00:01+00:00', '2026-09-16T01:00:00+00:00']
-        with patch('do_math.engine.now', side_effect=times):
-            control(self.repo, engine.instance['id'], 'pause', text='first')
-            control(self.repo, engine.instance['id'], 'resume', text='second')
+        clock = _scripted_clock(times)
+        control(self.repo, engine.instance['id'], 'pause', text='first', clock=clock)
+        control(self.repo, engine.instance['id'], 'resume', text='second', clock=clock)
         self.assertEqual([row['action'] for row in engine._inbox()], ['pause', 'resume'])
         engine.process_controls()
         self.assertEqual(engine.runtime['status'], 'ready')

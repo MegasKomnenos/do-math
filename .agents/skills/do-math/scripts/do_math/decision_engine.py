@@ -154,7 +154,7 @@ class DecisionEngineMixin:
                 raise ValueError('assessment changed a selected recipient contract; replan after review')
             task['selection_disposition']={**deepcopy(row),'execution_id':execution_id,'contract_sha256':planning.contract_hash(task)}
             if row['kind']=='selected':
-                action = {'id':new_id('AC'),'role':'research_work','target':task['id'],
+                action = {'id':self.ports.clock.new_id('AC'),'role':'research_work','target':task['id'],
                     'selected_contract_sha256':planning.contract_hash(task),'selection_execution_id':execution_id}
                 assessment = runtime['executions'][execution_id].get('model_decisions', {}).get(task['id'])
                 if assessment is not None:
@@ -172,7 +172,7 @@ class DecisionEngineMixin:
         runtime.setdefault('history',[]).append({'kind':'task_plan_applied','execution_id':execution_id,
             'dispositions':deepcopy(output['dispositions']),'task_assessments':deepcopy(output.get('task_assessments',[]))})
         for reason in output.get('preparation_requests',[]):
-            runtime.setdefault('queue',[]).append({'id':new_id('AC'),'role':'research_preparation','reason':reason,'requested_by':execution_id})
+            runtime.setdefault('queue',[]).append({'id':self.ports.clock.new_id('AC'),'role':'research_preparation','reason':reason,'requested_by':execution_id})
         self.instance,self.runtime=instance,runtime
         # Bind exact semantic repetition premises to requests created by this plan.
         from .revisions import bind_repetition_bases

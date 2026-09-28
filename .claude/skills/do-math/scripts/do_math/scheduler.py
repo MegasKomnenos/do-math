@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
-import time
 
 from .execution_profiles import LEAN_ROLES, MACHINE_ROLES, PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, task_research
 from .git_store import ARTIFACT_ROOT
@@ -56,7 +55,7 @@ class SchedulerMixin:
     def _scan_due(self):
         """Publish pending owner changes; True when readiness and dispatch need judging again."""
         self._save()
-        instant = time.monotonic()
+        instant = self.ports.clock.monotonic()
         if self._scan_head == self.head and instant - self._scan_at < OWNER_RESCAN_SECONDS:
             return False
         self._scan_head, self._scan_at = self.head, instant
@@ -79,7 +78,7 @@ class SchedulerMixin:
     def _stop_time_due(self):
         """True when a time-bound stop reason fell due since the previous owner pass."""
         from .governance import timestamp
-        now, instant = self._lifecycle_now(), time.monotonic()
+        now, instant = self._lifecycle_now(), self.ports.clock.monotonic()
         since, self._stop_clock = self._stop_clock, (now, instant)
         if since is None or not self._clock_guard()['usable']:
             return True
@@ -112,7 +111,7 @@ class SchedulerMixin:
 
     def _abort_parallel_calls(self):
         """Preserve returned evidence and reconcile confirmed Jobs after owner failure."""
-        from .repository import canonical_json, new_id
+        from .repository import canonical_json
         from .governance import timestamp
         returned = []
         for future, generator in self._calls.futures.items():
@@ -135,7 +134,7 @@ class SchedulerMixin:
             execution = self.runtime['executions'].get(execution_id)
             if not execution or execution['status'] == 'ended':
                 continue
-            reference = f'{ARTIFACT_ROOT}{new_id("BA")}/interrupted-result.json'
+            reference = f'{ARTIFACT_ROOT}{self.ports.clock.new_id("BA")}/interrupted-result.json'
             artifacts[reference] = raw
             execution['result_ref'] = reference
             execution['stop_requested'] = 'engine_error'
@@ -340,7 +339,7 @@ class SchedulerMixin:
                         self._save()
                         if not watch:
                             break
-                        time.sleep(OWNER_POLL_SECONDS)
+                        self.ports.clock.sleep(OWNER_POLL_SECONDS)
                         continue
                     # _refresh_readiness already asks TASKS about obligations,
                     # exhaustion and repetition lineage. An empty queue or an
@@ -376,7 +375,7 @@ class SchedulerMixin:
                 self._save()
                 if not watch:
                     break
-                time.sleep(OWNER_POLL_SECONDS)
+                self.ports.clock.sleep(OWNER_POLL_SECONDS)
             if not self._instance_closed() and self.runtime["status"] not in {"initializing", "paused", "waiting", "capacity_waiting"}:
                 self.runtime["status"] = "ready"
             if (pending_installation_repair(self.runtime) is not None

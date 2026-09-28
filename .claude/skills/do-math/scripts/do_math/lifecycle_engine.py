@@ -15,7 +15,7 @@ import time
 from .governance import apply_decision, timestamp
 from .planning import (instance_ended, task_ready, contract_hash, record_due_events, contract_review_current, review_basis_key,
                        capture_task_basis, governance_revisions, assigned_event_refs, CONTRACT_REVIEW_MISSING)
-from .repository import canonical_json, exact_content_hash, new_id
+from .repository import canonical_json, exact_content_hash
 from .initialization import activation_requirements, capability_requirements
 from .execution_profiles import INITIAL_ROLES
 from .session_slots import live_action_ids
@@ -29,7 +29,7 @@ def _reconsider_interval(config):
     return timedelta(seconds=config['research_reconsider_seconds'])
 
 
-def preserve_rejected_candidate(store, snapshot, *, raw, reason):
+def preserve_rejected_candidate(store, snapshot, *, raw, reason, clock):
     """Keep rejected bytes on the verified head, never publish the rejected state.
 
     Loading ``snapshot`` validates it under the state contract; a head that
@@ -41,7 +41,7 @@ def preserve_rejected_candidate(store, snapshot, *, raw, reason):
         _, instance, runtime = store.load(snapshot)
     except (ValueError, TypeError, KeyError, OSError, RuntimeError) as exc:
         raise ValueError('damaged current state cannot be rewritten: ' + str(exc)) from exc
-    identity = new_id('RJ')
+    identity = clock.new_id('RJ')
     path = ARTIFACT_ROOT + identity + '/candidate.raw'
     audit = ARTIFACT_ROOT + identity + '/rejection.json'
     new_head = store.save_with_state(snapshot, instance, runtime, artifacts={path: raw, audit: canonical_json({
@@ -53,7 +53,7 @@ def preserve_rejected_candidate(store, snapshot, *, raw, reason):
 class LifecycleEngineMixin:
     def _lifecycle_now(self):
         clock = self.lifecycle_clock
-        return timestamp(clock() if clock else None)
+        return timestamp(clock()) if clock else self.ports.clock.wall()
 
 
     def _lifecycle_event(self, kind, *, target=None, source_ref=None, schedule=True, **details):
@@ -61,7 +61,7 @@ class LifecycleEngineMixin:
         if not guard['usable']:
             raise RuntimeError('cannot publish a lifecycle event while the clock guard blocks new actions')
         when = guard['observed_utc']
-        event = {'id': new_id('EV'), 'kind': kind, 'at': when, 'opened_at': when,
+        event = {'id': self.ports.clock.new_id('EV'), 'kind': kind, 'at': when, 'opened_at': when,
                  'target': target, 'source_ref': source_ref, **deepcopy(details)}
         self.runtime['events'].append(event)
         if schedule: self.runtime['pending_events'].append(event['id'])
@@ -133,7 +133,7 @@ class LifecycleEngineMixin:
             lifecycle['state'] = 'paused'
         self.runtime['status'] = 'paused'
         self.runtime['stop_requested'] = reason
-        lifecycle.setdefault('history', []).append({'kind': 'pause', 'id': new_id('PA'), 'reason': reason})
+        lifecycle.setdefault('history', []).append({'kind': 'pause', 'id': self.ports.clock.new_id('PA'), 'reason': reason})
         self._request_stop_all(reason)
 
     def _conversation_live(self):
@@ -439,7 +439,7 @@ class LifecycleEngineMixin:
             # Owner decision APIs return candidate requests. Give each its
             # durable identity at this application boundary, before storage.
             for queued in self.runtime['queue']:
-                queued.setdefault('id', new_id('AC'))
+                queued.setdefault('id', self.ports.clock.new_id('AC'))
                 queued.setdefault('lineage_id', queued['id'])
             self.runtime['extended_controls'][source_ref] = {'request': deepcopy(request), 'action': action,
                                                             'processed_at': self._lifecycle_now().isoformat()}
@@ -451,7 +451,7 @@ class LifecycleEngineMixin:
                 self._refresh_readiness()
         except Exception as error:
             self.instance, self.runtime = before_instance, before_runtime
-            rejection = preserve_rejected_candidate(self.store, self.head, raw=canonical_json(request),
+            rejection = preserve_rejected_candidate(self.store, self.head, raw=canonical_json(request), clock=self.ports.clock,
                 reason=f'{type(error).__name__}: {error}')
             self.head = rejection['snapshot']
             self._evaluate_stops()
@@ -679,11 +679,11 @@ class LifecycleEngineMixin:
                            and 'assessment_targets' not in a and 'observation_rule_targets' not in a), None)
             opened = queued is None or 'opened_at' not in queued
             if queued is None:
-                self._enqueue(role, id=new_id('AC'), reason='Preserved research events require reconsideration',
+                self._enqueue(role, id=self.ports.clock.new_id('AC'), reason='Preserved research events require reconsideration',
                               opened_at=now.isoformat(), event_refs=selected)
                 queued = self.runtime['queue'][-1]
             else:
-                queued.setdefault('id', new_id('AC'))
+                queued.setdefault('id', self.ports.clock.new_id('AC'))
                 queued.setdefault('opened_at', now.isoformat())
                 queued['event_refs'] = list(dict.fromkeys([*queued.get('event_refs', []), *selected]))
             if opened and role == 'research_preparation':

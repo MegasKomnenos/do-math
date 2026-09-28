@@ -163,7 +163,7 @@ class PlanningEngineMixin:
                 targets[field] = uncovered
         if targets:
             from .repository import new_id
-            self.runtime["queue"].append({"id": new_id("AC"), "role": "research_preparation",
+            self.runtime["queue"].append({"id": self.ports.clock.new_id("AC"), "role": "research_preparation",
                 **targets, 'reason': 'Prepare the assigned ratings and observation rules before independent review. '
                 'Preserve the user contract. Read prior reviews and preparation histories when repairing rejected preparation.'})
         return set(missing) | set(missing_rules)

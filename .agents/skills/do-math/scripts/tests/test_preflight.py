@@ -26,21 +26,23 @@ class PersistedPreflightTests(unittest.TestCase):
 
     def test_good_head_preserves_rejected_raw_not_candidate_state(self):
         from do_math.lifecycle_engine import preserve_rejected_candidate
+        from do_math.system_clock import SystemClock
         _,before_i,before_r=self.store.load(self.head)
-        result=preserve_rejected_candidate(self.store,self.head,raw=b'{broken candidate',reason='schema rejection')
+        result=preserve_rejected_candidate(self.store,self.head,raw=b'{broken candidate',reason='schema rejection',clock=SystemClock())
         self.assertEqual(self.store.read(result['raw_ref'],result['snapshot']),b'{broken candidate')
         _,after_i,after_r=self.store.load(result['snapshot'])
         self.assertEqual((after_i,after_r),(before_i,before_r))
 
     def test_damaged_head_is_not_rewritten_even_to_preserve_candidate(self):
         from do_math.lifecycle_engine import preserve_rejected_candidate
+        from do_math.system_clock import SystemClock
         path=next(row['path'] for row in self.store.load_records(self.head)[3] if row['family']=='lifecycle')
         damaged=self.store._store.publish(self.head,{path:b'{}\n'}).head
         # Loading validates a head; a head that does not load is damaged.
         with self.assertRaises((ValueError,TypeError,KeyError,OSError,RuntimeError)):
             self.store.load(damaged)
         with self.assertRaisesRegex(ValueError,'damaged'):
-            preserve_rejected_candidate(self.store,damaged,raw=b'raw',reason='candidate rejected')
+            preserve_rejected_candidate(self.store,damaged,raw=b'raw',reason='candidate rejected',clock=SystemClock())
         self.assertEqual(self.store._store.read_snapshot().head,damaged)
 
     def test_malformed_or_naive_high_water_is_rejected(self):

@@ -15,7 +15,6 @@ import json
 import os
 import shutil
 from pathlib import Path
-import time
 from typing import Any
 
 import jsonschema
@@ -39,7 +38,7 @@ from .academic_engine import AcademicEngineMixin
 from .governance_engine import GovernanceEngineMixin, bind_host_configuration
 from .repair_execution import RepairExecutionMixin
 from .model_runner import ModelRunner, verified_native_final
-from .repository import ResearchRepository, canonical_json, exact_content_hash, new_id
+from .repository import ResearchRepository, canonical_json, exact_content_hash
 from .repository import mark_artifact_verified, sealed_bytes
 from .state_checks import inspect_state
 from .git_store import ARTIFACT_ROOT, GitStateStoreError
@@ -59,7 +58,7 @@ from .provider_engine import record_model_policy_violation
 from .session_slots import held_reservations, live_action_ids, local_termination_confirmed
 from . import task_contracts, operational_dispositions, retention, repair_execution
 from .control_transport import ControlTransport, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, SUBMIT_INTENT, self_check_response_errors
-from .file_io import cached_sha256, fingerprint_settled, now, os_lock, stat_fingerprint, write_bytes_atomic
+from .file_io import cached_sha256, fingerprint_settled, os_lock, stat_fingerprint, write_bytes_atomic
 from .configuration import DEFAULT_CONFIG, validate_config
 from .control_contracts import (OPERATOR_ACTIONS, REQUESTABLE_ROLES, user_decision_changed, control_request_id,
                                 normalized_source, normalized_source_bytes, validate_control_payload,
@@ -137,19 +136,25 @@ def _installation_listing(root, documents):
     return rows
 
 
-def _evaluation_context_for(store, snapshot, *, lean_available):
+def _evaluation_context_for(store, snapshot, *, lean_available, clock=None):
+    if clock is None:
+        from .wiring import default_clock  # layer: 1b migration default until entry points pass Ports
+        clock = default_clock()
     def read_artifact(path, commit):
         if not isinstance(path, str) or not path.startswith(ARTIFACT_ROOT):
             raise ValueError("task evidence must identify an immutable archived artifact")
         return store.read(path, commit)
     return {"snapshot": snapshot, "read_artifact": read_artifact, "git_dir": store.git_dir,
-            "validate_artifact": _artifact_format_valid, "now": now(), "lean_available": lean_available}
+            "validate_artifact": _artifact_format_valid, "now": clock.now(), "lean_available": lean_available}
 
 
 def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | None = None,
                title: str = "",
                instance_id: str | None = None, sources: list[Path] | None = None,
-               source_input: str | None = None) -> dict:
+               source_input: str | None = None, clock=None) -> dict:
+    if clock is None:
+        from .wiring import default_clock  # layer: 1b migration default until entry points pass Ports
+        clock = default_clock()
     if not goal.strip():
         raise ValueError("a nonempty mathematical goal is required")
     settings = deepcopy(DEFAULT_CONFIG)
@@ -158,13 +163,13 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
     if settings["scholarly_enabled"]:
         settings["scholarly_server"] = resolve_scholarly_server(settings["scholarly_server"], start=Path.cwd())
     source_inputs = [(source.name, source.read_bytes()) for source in (sources or [])]
-    instance_id = instance_id or new_id("RI")
+    instance_id = instance_id or clock.new_id("RI")
     workspace = workspace.resolve()
     workspace.mkdir(parents=True, exist_ok=True)
     with tracing(workspace / 'operations'), phase('initialize'):
         instance, runtime = initialization.initialize_state(instance_id=instance_id, goal=goal,
             workspace=workspace, config=settings, source_input=goal if source_input is None else source_input,
-            title=title, created_at=now())
+            title=title, created_at=clock.now())
         settings = bind_host_configuration(instance, settings, origin='user')
         instance['config'] = settings
         profiles = execution_profiles.build_profiles(settings)
@@ -176,11 +181,11 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
             head = store.initialize(instance, runtime)
             if source_inputs:
                 artifacts = {}
-                bundle = new_id("BA")
+                bundle = clock.new_id("BA")
                 for i, (source_name, raw) in enumerate(source_inputs):
                     path = f"{ARTIFACT_ROOT}{bundle}/{i:04d}-{source_name}"
                     artifacts[path] = raw
-                    instance["sources"].append({"id": new_id("SO"), "path": path, "name": source_name,
+                    instance["sources"].append({"id": clock.new_id("SO"), "path": path, "name": source_name,
                                                 "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)})
                 head = store.save_with_state(head, instance, runtime, artifacts=artifacts)[0]
         return {"instance_id": instance_id, "snapshot": head, "status": runtime["status"]}
@@ -250,8 +255,12 @@ def _last_opposite_control(inbox: Path, runtime: dict, action: str) -> str | Non
 
 
 def control(repository: Path, instance_id: str, action: str, *, text: str = "", config: dict | None = None,
-            origin: str = "user", request_id: str | None = None, idempotency_key: str | None = None) -> dict:
+            origin: str = "user", request_id: str | None = None, idempotency_key: str | None = None,
+            clock=None) -> dict:
     """Queue user commands; only the owning engine publishes authority changes."""
+    if clock is None:
+        from .wiring import default_clock  # layer: 1b migration default until entry points pass Ports
+        clock = default_clock()
     config = {} if config is None else config
     validate_control_payload(action, text, config)
     if not isinstance(origin, str) or origin not in {"user", "operator"}:
@@ -333,7 +342,7 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
         if role == "supplemental_research":
             task = runtime["tasks"].get((config or {}).get("target"))
             if not task or planning.task_ready(task, instance, runtime, evaluation_context=_evaluation_context_for(
-                    store, head, lean_available=discover_lean() is not None))["state"] != "ready":
+                    store, head, lean_available=discover_lean() is not None, clock=clock))["state"] != "ready":
                 raise ValueError("supplemental research requires a task whose current contract is ready")
         if role == "operational_review" and (config or {}).get("target") not in runtime["executions"]:
             raise ValueError("operational review requires an existing execution ID")
@@ -341,9 +350,9 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
     with os_lock(inbox / ".acceptance.lock", blocking=True):
         if destination.is_file():
             return replay(json.loads(destination.read_bytes()))
-        request = {"id": request_id, **payload, "created_at": now(),
+        request = {"id": request_id, **payload, "created_at": clock.now(),
                    "accepted_order": _next_control_order(inbox)}
-        temporary = inbox / (request_id + "." + new_id("TMP") + ".tmp")
+        temporary = inbox / (request_id + "." + clock.new_id("TMP") + ".tmp")
         temporary.write_bytes(canonical_json(request))
         try:
             # Publish a complete inbox record without overwriting a concurrent same-ID request.
@@ -434,7 +443,8 @@ def read_record(repository: Path, instance_id: str, record_id: str, *, snapshot:
 
 class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMixin, ProviderEngineMixin, SchedulerMixin, PlanningEngineMixin, ReviewEngineMixin, LifecycleEngineMixin, InitializationEngineMixin, KnowledgeEngineMixin, ExternalEngineMixin, FormalEngineMixin, AcademicEngineMixin, GovernanceEngineMixin, RepairExecutionMixin):
     def _evaluation_context(self, snapshot=None):
-        return _evaluation_context_for(self.store, snapshot or self.head, lean_available=self._lean_discovered())
+        return _evaluation_context_for(self.store, snapshot or self.head, lean_available=self._lean_discovered(),
+                                       clock=self.ports.clock)
 
     def _governance(self):
         return initialization.governance_or_initial_view(self.instance, self.runtime)
@@ -443,7 +453,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         view = self._governance()
         return {key: view.get(key, 1) for key in ("goal_revision", "policy_revision")}
 
-    def __init__(self, repository: Path, instance_id: str, *, runner: Any = None, formal_verifier: Any = None):
+    def __init__(self, repository: Path, instance_id: str, *, runner: Any = None, formal_verifier: Any = None,
+                 ports=None):
+        self.ports = ports
         self.store = ResearchRepository(repository, instance_id)
         self.runner = runner or ModelRunner()
         self.formal_verifier = formal_verifier or verify_lean
@@ -455,7 +467,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         """Process-local owner state that no repository holds.
 
         Every engine starts here, including test engines built without a store.
+        An engine given no Ports bundle uses the real ports (stage 1b migration).
         """
+        if getattr(self, 'ports', None) is None:
+            from .wiring import real_ports  # layer: 1b migration default until entry points pass Ports
+            self.ports = real_ports()
         self._task_readiness = {}
         self._live_execution_ids = set()
         self._executor_running = False
@@ -470,7 +486,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self._clock_failure = None  # a retained clock regression (LifecycleEngineMixin._clock_guard)
         # Lifecycle clocks: None reads the wall clock; tests substitute both.
         self.lifecycle_clock = None
-        self.lifecycle_monotonic = time.monotonic
+        self.lifecycle_monotonic = self.ports.clock.monotonic
         self._feedback_delivered = set()  # control receipts whose worker feedback this process delivered
         self._retrying_publication = False
         self._next_lean_discovery, self._lean_found = 0.0, False
@@ -536,7 +552,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         return profile
 
     def _activity_for_action(self, action):
-        action.setdefault("id", new_id("AC"))
+        action.setdefault("id", self.ports.clock.new_id("AC"))
         action.setdefault("lineage_id", action["id"])
         parent_id = action.get("continuation_of")
         if not parent_id:
@@ -554,10 +570,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             action["owner_activity_id"] = parent["owner_activity_id"]
         aid = action.get("owner_activity_id")
         if aid is None:
-            aid = new_id("AY")
+            aid = self.ports.clock.new_id("AY")
             activities.open_activity(self.runtime, activity_id=aid, activity_kind=action["role"],
                 owner_ref=action["lineage_id"], input_refs=[action["target"]] if action.get("target") else [],
-                opened_at=now())
+                opened_at=self.ports.clock.now())
             action["owner_activity_id"] = aid
         activity = self.runtime["activities"][aid]
         if activity["status"] == "finished":
@@ -580,7 +596,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         requested_state = execution.get("status", "queued")
         base = execution_lifecycle.create_execution(execution_id=execution["id"], owner_activity_id=activity["id"],
             actor_kind=profile["actor_kind"], input_manifest=execution.get("input_manifest", []),
-            profile_ref=execution_profiles.profile_ref(profile), created_at=execution.get("created_at", now()),
+            profile_ref=execution_profiles.profile_ref(profile), created_at=execution.get("created_at", self.ports.clock.now()),
             continuation_of=action.get("continuation_of"), context_origin=action.get("context_origin", []))
         execution.update(base, action=deepcopy(action))
         if action["role"] == "intent_interpretation" and action.get("stage") == "check":
@@ -601,26 +617,26 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = {"action": deepcopy(action),
                 "kind": admission["disposition"], "detail": admission, "next_owner": "review_policy"}
             activities.wait_for(self.runtime, activity["id"], reason=admission["disposition"],
-                condition=admission, next_owner="review_policy", at=now())
+                condition=admission, next_owner="review_policy", at=self.ports.clock.now())
             self._remove_action(action)
             return None
         if activity["status"] == "waiting":
-            activities.resume_activity(self.runtime, activity["id"], condition=activity["waiting"]["condition"], at=now())
+            activities.resume_activity(self.runtime, activity["id"], condition=activity["waiting"]["condition"], at=self.ports.clock.now())
         machine_admission = profile["actor_kind"] == "machine" and requested_state in {"starting", "running"}
         if machine_admission:
             slots = self._session_slots()
             if not slots.acquire(execution["id"], profile=profile, execution=execution):
                 action["dispatch_wait"] = deepcopy(slots.admission_wait)
                 activities.wait_for(self.runtime, activity["id"], reason="machine capacity unavailable",
-                    condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=now())
+                    condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=self.ports.clock.now())
                 return None
             action.pop("dispatch_wait", None)
             execution["action"] = deepcopy(action)
             launch.mark_dispatched(execution['launch_ticket'])
         elif requested_state in {"starting", "running"}:
-            execution_lifecycle.transition_execution(execution, "starting", at=now())
+            execution_lifecycle.transition_execution(execution, "starting", at=self.ports.clock.now())
         if requested_state == "running" and not (machine_admission and profile.get("host_resources")):
-            execution_lifecycle.transition_execution(execution, "running", at=now())
+            execution_lifecycle.transition_execution(execution, "running", at=self.ports.clock.now())
         activities.assign_execution(self.runtime, activity["id"], execution)
         revisions.record_import_rework(self.instance, self.runtime, action, execution['id'])
         return execution
@@ -630,7 +646,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         execution = self.runtime["executions"][execution_id]
         if execution["actor_kind"] != "machine":
             raise ValueError("machine process callback requires a machine execution")
-        self._session_slots().started(execution_id, identity, at=now())
+        self._session_slots().started(execution_id, identity, at=self.ports.clock.now())
         self._save()
 
     def _settle_activity(self, execution_id):
@@ -654,7 +670,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if repairs:
             if activity["status"] != "waiting":
                 activities.wait_for(self.runtime, aid, reason="operational repair remains pending",
-                    condition={"operational_disposition_ids": repairs}, next_owner="engine", at=now())
+                    condition={"operational_disposition_ids": repairs}, next_owner="engine", at=self.ports.clock.now())
             return
         pending = [row for row in self.runtime["queue"] if row.get("owner_activity_id") == aid]
         waiting = [row for row in self.runtime.get("waiting_actions", {}).values()
@@ -670,7 +686,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                       else wait.get('reason') or wait['kind'])
             activities.wait_for(self.runtime, aid, reason=reason,
                 condition={"action_ids": [row["action"]["id"] for row in waiting]},
-                next_owner=waiting[0].get("next_owner", "engine"), at=now())
+                next_owner=waiting[0].get("next_owner", "engine"), at=self.ports.clock.now())
             return
         preserved = [row for row in activity['unresolved'] if isinstance(row, dict)
                      and row.get('reason') == 'goal_completed_before_dispatch']
@@ -679,13 +695,13 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         failed = ([] if execution["outcome"] == "output_accepted" or execution.get("formal_status") == "verified"
                   else [{"execution_id": execution_id, "reason": execution.get("error") or execution["outcome"]}])
         activities.finish_activity(self.runtime, aid, result_refs=activity["result_refs"],
-            unresolved=[*preserved, *failed], followups=followups, at=now())
+            unresolved=[*preserved, *failed], followups=followups, at=self.ports.clock.now())
 
     def _render_prompt(self, role: str, context: dict, **kwargs) -> str:
         return render_prompt(role, context, documents=self._documents[role], **kwargs)
 
     def _check_installation(self, *, force=False):
-        current = time.monotonic()
+        current = self.ports.clock.monotonic()
         if not force and current < self._next_installation_check:
             return True
         self._next_installation_check = current + 1.0
@@ -719,7 +735,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if (resolved.parent != runs or resolved.name != execution_id or not execution
                 or execution["status"] != "queued" or execution.get("input_bundle")):
             raise ValueError("only this unpublished execution input may be discarded")
-        execution_lifecycle.end_preparation(execution, at=now(),
+        execution_lifecycle.end_preparation(execution, at=self.ports.clock.now(),
             stage=execution.get("input_preparation", {}).get("stage", "context"), reason=reason, cancelled=cancelled)
         self._continue_prepared_action(execution)
         self._settle_activity(execution_id)
@@ -776,7 +792,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if anchor:
             if anchor[0] > governance.timestamp(self.runtime["last_observed_utc"]):
                 self.runtime["last_observed_utc"] = anchor[0].isoformat()
-        self.runtime["updated_at"] = now()
+        self.runtime["updated_at"] = self.ports.clock.now()
         # Result acceptance reads each live execution's input snapshot again.
         retain = {execution["input_snapshot"] for execution in self.runtime["executions"].values()
                   if execution.get("status") != "ended" and execution.get("input_snapshot")}
@@ -854,8 +870,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     self._record_control_result(request, reason="source content unchanged", source_id=old["id"])
                     self._save()
                     continue
-                bundle = new_id("BA")
-                entry = {"id": old.get("id", new_id("SO")) if old else new_id("SO"), "name": spec["name"],
+                bundle = self.ports.clock.new_id("BA")
+                entry = {"id": old.get("id", self.ports.clock.new_id("SO")) if old else self.ports.clock.new_id("SO"), "name": spec["name"],
                          "path": f"{ARTIFACT_ROOT}{bundle}/source.bin", "sha256": spec["sha256"], "bytes": len(raw),
                          "revision": old.get("revision", 1)+1 if old else 1, "status": "active", "source_ref": request["id"]}
                 if old:
@@ -1163,7 +1179,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._enqueue("operational_review", identifier, live=True,
                 reason=next_review["reason"], observation={"kind": "scheduled_review_due", "disposition_id": request["disposition_id"]},
                 observation_refs=[request["disposition_id"]])
-            request["dispatched_at"] = now()
+            request["dispatched_at"] = self.ports.clock.now()
         self._save()
 
     def _publish_control_request(self, request):
@@ -1211,8 +1227,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         live_tracker = tracker
         tracker = deepcopy(tracker) if tracker is not None else None
         feedback = []
-        receipt = {"id": new_id("CT"), "request_id": request["request_id"], "request_sha256": digest,
-            "execution_id": execution["id"], "kind": request["kind"], "state": "accepted", "received_at": now(),
+        receipt = {"id": self.ports.clock.new_id("CT"), "request_id": request["request_id"], "request_sha256": digest,
+            "execution_id": execution["id"], "kind": request["kind"], "state": "accepted", "received_at": self.ports.clock.now(),
             "request": safe_request, "parent_snapshot": self.head}
         try:
             if request["kind"] == SUBMIT_INTENT:
@@ -1357,7 +1373,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if waiting is None:
                 raise ValueError("review restoration must identify the exact held slot action")
             workspace = Path(self.instance["workspace"]) / "review-restoration" / request["id"]
-            outcome = self._retry_review_restoration(waiting["action"], workspace, at=now())
+            outcome = self._retry_review_restoration(waiting["action"], workspace, at=self.ports.clock.now())
             self.runtime["history"].append({"kind": "review_restoration", "request_id": request["id"], "outcome": outcome})
             return True
         spec = config["review_replacement"]
@@ -1379,7 +1395,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     delegation_application_id=application["id"], requested_by=request["id"],
                     reason="Independently compare this case with the exact original decision and approved delegation")
         else:
-            outcome = self._authorize_review_replacement(action, grant_id=spec.get("grant_id"), at=now())
+            outcome = self._authorize_review_replacement(action, grant_id=spec.get("grant_id"), at=self.ports.clock.now())
             if outcome["disposition"] != "replacement_ready":
                 raise ValueError("review replacement is not authorized: " + str(outcome.get("authority")))
         return True
@@ -1402,7 +1418,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         spec = request["config"]["review_replacement"]
         case = {**deepcopy(record["basis"]["case"]), "application_id": application_id}
         outcome = self._authorize_review_replacement(deepcopy(spec["action"]), grant_id=spec.get("grant_id"),
-            delegation_id=record["delegation_id"], case=case, at=now())
+            delegation_id=record["delegation_id"], case=case, at=self.ports.clock.now())
         if outcome["disposition"] != "replacement_ready":
             raise ValueError("independently checked case no longer authorizes recovery: " +
                              str(outcome.get("authority", {}).get("reason", outcome["disposition"])))
@@ -1524,9 +1540,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                       if row["status"] != "ended" and row["id"] not in publication_pending]
         if not unfinished:
             return
-        recovery_id = new_id("RY")
+        recovery_id = self.ports.clock.new_id("RY")
         self.runtime.setdefault("recoveries", {})[recovery_id] = {
-            "id": recovery_id, "started_at": now(), "execution_ids": unfinished, "dispositions": []}
+            "id": recovery_id, "started_at": self.ports.clock.now(), "execution_ids": unfinished, "dispositions": []}
         self._save()
         for eid in unfinished:
             execution = self.runtime["executions"][eid]
@@ -1539,13 +1555,13 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     # Judged cancelled, not start_failed, because an attempt that disappeared
                     # before its authority was recorded never started.
                     observation = {"fact": "no_execution_or_reservation"}
-                    execution_lifecycle.end_preparation(execution, at=now(), stage="recovery",
+                    execution_lifecycle.end_preparation(execution, at=self.ports.clock.now(), stage="recovery",
                         reason="executor disappeared during unpublished preparation", cancelled=True)
                     self._continue_prepared_action(execution)
                     self._settle_activity(eid)
                 self.runtime["recoveries"][recovery_id]["dispositions"].append({"execution_id": eid, **observation})
                 continue
-            execution_lifecycle.recover_execution(execution, at=now())
+            execution_lifecycle.recover_execution(execution, at=self.ports.clock.now())
             transport = execution.get("control_transport")
             if transport and self._transport:
                 self._transport.close(transport, reason="executor restarted")
@@ -1558,14 +1574,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 self.runtime["recoveries"][recovery_id]["dispositions"].append(disposition)
                 continue
             if execution.get('role') == 'goal_audit' and self._committed_goal_audit(eid):
-                if self._settle_recovered_execution(eid, at=now(),
+                if self._settle_recovered_execution(eid, at=self.ports.clock.now(),
                         disposition={'kind': 'committed_submission_pending'}):
                     self._restore_goal_audit_publication(execution)
                     disposition['next_owner'] = 'engine'
                 self.runtime['recoveries'][recovery_id]['dispositions'].append(disposition)
                 self._save()
                 continue
-            bundle = new_id("BA")
+            bundle = self.ports.clock.new_id("BA")
             workspace = Path(self.instance["workspace"]) / "runs" / eid / "workspace"
             if execution["role"] in execution_profiles.LEAN_ROLES:
                 workspace = Path(self.instance["workspace"]) / ("formal" if execution["role"] == "formal_check" else "trust") / eid
@@ -1573,7 +1589,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 eid, workspace, bundle, max_bytes=self.instance["config"]["max_artifact_bytes"])
             execution.update(result_ref=reference, artifact_bundle=bundle, output_files=entries,
                              outputs_complete=complete, error="previous executor disappeared")
-            if not self._settle_recovered_execution(eid, at=now(), disposition={
+            if not self._settle_recovered_execution(eid, at=self.ports.clock.now(), disposition={
                     "local_process": "terminated", "remote_state": "unknown", "artifact_ref": reference}):
                 self.runtime["recoveries"][recovery_id]["dispositions"].append({**disposition,
                     "local_termination_confirmed": False, "reason": "reservation settlement not confirmed"})
@@ -1590,7 +1606,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self.runtime["recoveries"][recovery_id]["dispositions"].append(disposition)
             self._settle_activity(eid)
             self._save(artifacts)
-        self.runtime["recoveries"][recovery_id]["finished_at"] = now()
+        self.runtime["recoveries"][recovery_id]["finished_at"] = self.ports.clock.now()
         self._save()
 
     def _context(self, action: dict, workspace: Path, *, execution_id: str | None = None) -> dict:
@@ -2230,7 +2246,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             execution = self.runtime['executions'][execution_id]
             execution.update(error_kind=integration.failure_kind(check['issues']),
                              error='native final failed central structural validation')
-            execution_lifecycle.transition_execution(execution, 'ended', at=now(), outcome='execution_incomplete',
+            execution_lifecycle.transition_execution(execution, 'ended', at=self.ports.clock.now(), outcome='execution_incomplete',
                 disposition={'kind': 'submission_returned', 'check_ref': rejected['check_ref']})
             self._remove_action(action)
             self.route_submission_return(action, received, execution_id, result.get('output'),
@@ -2264,15 +2280,15 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             check["passed"] = not check["issues"]
             check['capture_eligible'] = False
             check["id"] = "MC-" + exact_content_hash({key: value for key, value in check.items() if key != "id"})[:24]
-            bundle_id = new_id("BA")
+            bundle_id = self.ports.clock.new_id("BA")
             prefix = f"{ARTIFACT_ROOT}{bundle_id}"
             execution = self.runtime["executions"][execution_id]
             execution["submission_check_ref"] = prefix + "/check.json"
             execution["submitted_output_ref"] = prefix + "/output.json"
             execution["submitted_extensions_ref"] = prefix + "/extensions.json"
             execution["extensions"] = extensions
-            self.runtime.setdefault("events", []).append({"id": new_id("EV"), "kind": "submission_unsealed",
-                "execution_id": execution_id, "at": now(), "evidence_refs": [prefix + "/check.json"],
+            self.runtime.setdefault("events", []).append({"id": self.ports.clock.new_id("EV"), "kind": "submission_unsealed",
+                "execution_id": execution_id, "at": self.ports.clock.now(), "evidence_refs": [prefix + "/check.json"],
                 "reason": "worker output did not pass through the central submit capture"})
             self._save({prefix + "/check.json": canonical_json(check),
                         prefix + "/output.json": canonical_json(output),
@@ -2288,7 +2304,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 # reopens execution authority or changes the physical end time.
                 execution.update(outcome="output_accepted", result_disposition=disposition)
             else:
-                execution_lifecycle.transition_execution(execution, "ended", at=now(), outcome="output_accepted", disposition=disposition)
+                execution_lifecycle.transition_execution(execution, "ended", at=self.ports.clock.now(), outcome="output_accepted", disposition=disposition)
             # Domain application may have replaced this wait with a new obligation.
             # Only the exact publication/impact wait discharged by this receipt ends.
             if (previous_wait and previous_wait.get('kind') in {'submission_publication', 'impact_review'}
@@ -2320,7 +2336,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                         self.runtime["history"].append({"kind": "feedback_delivery_failed", "execution_id": execution_id, "error": str(error)})
         else:
             if not any(row.get("next_owner") == "engine" for row in received["bundles"]):
-                execution_lifecycle.transition_execution(execution, "ended", at=now(), outcome="execution_incomplete",
+                execution_lifecycle.transition_execution(execution, "ended", at=self.ports.clock.now(), outcome="execution_incomplete",
                     disposition={"kind": "submission_returned", "retry_bundle_ids": received["retry_bundle_ids"]})
             execution.update(error_kind=integration.failure_kind(received['issues']),
                              error="one or more integration bundles were returned")
@@ -2373,7 +2389,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     def _lean_discovered(self) -> bool:
         """Rediscover the local Lean at most once per second, the installation-check period."""
-        current = time.monotonic()
+        current = self.ports.clock.monotonic()
         if current >= self._next_lean_discovery:
             self._next_lean_discovery = current + 1.0
             self._lean_found = discover_lean() is not None
@@ -2456,7 +2472,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         superseded = [deepcopy(row) for row in self.runtime['queue']
                       if (row.get('role') == 'operational_review' or row.get('initial_submission_diagnosis'))
                       and row.get('target') == predecessor['id']]
-        activities.resume_activity(self.runtime, activity_id, condition=condition, at=now())
+        activities.resume_activity(self.runtime, activity_id, condition=condition, at=self.ports.clock.now())
         del self.runtime['waiting_actions'][identifier]
         self.runtime['queue'] = [row for row in self.runtime['queue'] if row not in superseded]
         self.runtime['queue'].insert(0, action)
@@ -2464,7 +2480,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             'request_id': request['id'], 'action_id': identifier, 'activity_id': activity_id,
             'execution_id': predecessor['id'], 'input_ref': source['id'], 'input_sha256': source['sha256'],
             'prior_failure': deepcopy(waiting), 'superseded_diagnoses': superseded,
-            'profile_ref': deepcopy(action['profile_ref']), 'grant_id': action['grant_id'], 'started_at': now()})
+            'profile_ref': deepcopy(action['profile_ref']), 'grant_id': action['grant_id'], 'started_at': self.ports.clock.now()})
         self.runtime['status'] = 'initializing'
         return action
 
@@ -2514,7 +2530,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         action = deepcopy(execution['action'])
         activity = self.runtime['activities'][execution['owner_activity_id']]
         if activity['status'] == 'waiting':
-            activities.resume_activity(self.runtime, activity['id'], condition=deepcopy(activity['waiting']['condition']), at=now())
+            activities.resume_activity(self.runtime, activity['id'], condition=deepcopy(activity['waiting']['condition']), at=self.ports.clock.now())
         self.runtime.get('waiting_actions', {}).pop(action['id'], None)
         self.runtime['queue'] = [row for row in self.runtime['queue']
             if not ((row.get('role') == 'operational_review' or row.get('initial_submission_diagnosis'))
@@ -2579,11 +2595,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             action['profile_ref'] = deepcopy(selected_profile)
         action["input_overflow_retry"] = {"action_id": identifier,
             "question_id": waiting["question_id"], "request_id": decision_id,
-            "started_at": now(), "state": "pending"}
+            "started_at": self.ports.clock.now(), "state": "pending"}
         # This is a technical retry, not new authority. Recheck the currently
         # adopted profile, current grant and current lifecycle before mutation.
         self._action_lifecycle_gate(action)
-        activities.resume_activity(self.runtime, activity_id, condition=condition, at=now())
+        activities.resume_activity(self.runtime, activity_id, condition=condition, at=self.ports.clock.now())
         del self.runtime["waiting_actions"][identifier]
         self.runtime["queue"].insert(0, action)
         self.runtime.setdefault("history", []).append({"kind": "input_overflow_retry_started",
@@ -2650,7 +2666,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         consumed = set(action.get("event_refs", []))
         if consumed:
             self.runtime["history"].append({"kind": "event_consumption", "event_ids": sorted(consumed),
-                                            "execution_id": execution_id, "consumed_at": now()})
+                                            "execution_id": execution_id, "consumed_at": self.ports.clock.now()})
         for event in self.runtime.get("events", []):
             if event["id"] in consumed:
                 task = self.runtime["tasks"].get(event.get("target")) if event["kind"] == "task_new_input" else None
@@ -2666,7 +2682,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if action.get("role") != "identity_review" or not action.get("review_cycle_id"):
             return None
         return {"raw": batch.rows[index], "event_index": batch.first_row + index,
-                "artifact_ref": f"{ARTIFACT_ROOT}{new_id('BA')}/provider-event.jsonl"}
+                "artifact_ref": f"{ARTIFACT_ROOT}{self.ports.clock.new_id('BA')}/provider-event.jsonl"}
 
     @measured('observation_application')
     def _observe_running(self, execution_id: str, tracker: ObservationTracker, batch: ObservationBatch) -> None:
@@ -2701,7 +2717,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if (previous is None or previous['end_offset'] != batch.end_offset
                 or previous['local_termination_confirmed'] != (not live)):
             stream = {'end_offset': batch.end_offset, 'received_at': batch.received_at,
-                'applied_at': now(), 'local_termination_confirmed': not live}
+                'applied_at': self.ports.clock.now(), 'local_termination_confirmed': not live}
         obligations = self.runtime.get("self_check_obligations", {})
         if not (review_rows or observations or stream is not None
                 or any(obligations.get(key) != value for key, value in candidate.obligations.items())):
@@ -2724,7 +2740,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 elif kind == "self_check_due":
                     self_checks.append(deepcopy(observed))
                 elif kind == "checkpoint":
-                    ref = f"{ARTIFACT_ROOT}{new_id('BA')}/{kind}.json"
+                    ref = f"{ARTIFACT_ROOT}{self.ports.clock.new_id('BA')}/{kind}.json"
                     record = persistent_record(observed, artifact_ref=ref)
                     artifacts[ref] = observed["raw"]
                     record["kind"] = "worker_checkpoint"
@@ -2818,7 +2834,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     def _stage_submission_capture(self, execution, sealed, receipt, *, origin):
         """Stage one central check and its byte artifacts in the caller's CAS."""
-        prefix = f"{ARTIFACT_ROOT}{new_id('BA')}/submission"
+        prefix = f"{ARTIFACT_ROOT}{self.ports.clock.new_id('BA')}/submission"
         artifacts = {prefix + '/' + path: raw for path, raw in sealed['artifacts'].items()}
         receipt['payload'] = {'origin': origin, 'submission_check': {
             'check_ref': prefix + '/check.json',
@@ -2874,8 +2890,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             proof['execution']['collect']['final'].items() if key != 'raw'}
         proof['execution']['collect']['final']['artifact'] = 'output.json'
         sealed['artifacts']['native-evidence.json'] = canonical_json(json_safe(proof))
-        receipt = {'id': new_id('NF'), 'kind': execution_lifecycle.NATIVE_FINAL_RECEIPT, 'state': 'accepted',
-            'execution_id': execution['id'], 'received_at': now(), 'parent_snapshot': self.head,
+        receipt = {'id': self.ports.clock.new_id('NF'), 'kind': execution_lifecycle.NATIVE_FINAL_RECEIPT, 'state': 'accepted',
+            'execution_id': execution['id'], 'received_at': self.ports.clock.now(), 'parent_snapshot': self.head,
             'final_sha256': hashlib.sha256(raw).hexdigest()}
         if recovery_request:
             receipt['recovery_request_id'] = recovery_request
@@ -2951,7 +2967,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._remove_action(action)
             self._save()
             return True
-        action.setdefault("id", new_id("AC"))
+        action.setdefault("id", self.ports.clock.new_id("AC"))
         action.setdefault("lineage_id", action["id"])
         self._bind_revision_action(action)
         waits = self._revision_dispatch_waits(action)
@@ -2982,7 +2998,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         rules = (self.runtime.get("task_observation_rules", {}).get(
             action.get("target"), task.get("initial_observation_rules", []))
             if role == "research_work" and not action.get("review_cycle_id") else [])
-        execution_id = new_id('EX')
+        execution_id = self.ports.clock.new_id('EX')
         settings_errors = observation_settings_errors(profile)
         try:
             if settings_errors:
@@ -2995,7 +3011,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             next_owner = "research_preparation" if role == "research_work" and not settings_errors else "execution_profile"
             kind = "observation_rules" if next_owner == "research_preparation" else "observation_configuration"
             activities.wait_for(self.runtime, activity["id"], reason=str(error),
-                condition={"kind": kind, "task_id": action.get("target")}, next_owner=next_owner, at=now())
+                condition={"kind": kind, "task_id": action.get("target")}, next_owner=next_owner, at=self.ports.clock.now())
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
                 "action": deepcopy(action), "kind": kind, "reason": str(error), "next_owner": next_owner}
             if settings_errors:
@@ -3027,16 +3043,16 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 return bool(self.runtime["queue"])
         activity_id = activity["id"]
         queued = self._register_execution(action, {"id": execution_id, "role": role, "status": "queued",
-            "created_at": now(), "input_snapshot": self.head, "grant_id": authority["grant_id"]}, profile=profile)
+            "created_at": self.ports.clock.now(), "input_snapshot": self.head, "grant_id": authority["grant_id"]}, profile=profile)
         if queued is None:
             self._save()
             return True
-        execution_lifecycle.begin_preparation(queued, at=now())
+        execution_lifecycle.begin_preparation(queued, at=self.ports.clock.now())
         self._save()
         base = Path(self.instance["workspace"]) / "runs" / execution_id
         workspace = base / "workspace"
         workspace.mkdir(parents=True)
-        preparation_started = time.monotonic()
+        preparation_started = self.ports.clock.monotonic()
         input_head = self.head
         self._preparing_input = True
         try:
@@ -3070,7 +3086,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if role == "intent_interpretation":
             context.setdefault("interpretation_to_check", None)
         # The execution's one input archive; the role input manifest names its files.
-        input_bundle = new_id("BA")
+        input_bundle = self.ports.clock.new_id("BA")
         try:
             fitted = prepare_role_input(context, instance=self.instance, runtime=self.runtime, role=role, profile=profile,
                 snapshot=input_head, workspace=workspace, activity_id=activity_id, output_schema=schema,
@@ -3096,11 +3112,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if (role == 'identity_review' and action.get('review_cycle_id')
                     and detail.get('cause') == 'current_proposal_or_required_sources'
                     and detail.get('suggested_disposition') == 'unresolved_to_review_plan'):
-                overflow_ref = f"{ARTIFACT_ROOT}{new_id('BA')}/input-overflow.json"
+                overflow_ref = f"{ARTIFACT_ROOT}{self.ports.clock.new_id('BA')}/input-overflow.json"
                 self.runtime.setdefault('input_overflows', []).append({
                     'action': deepcopy(action), 'detail': detail, 'source_catalog': fitted['manifest']})
                 self.runtime['executions'][execution_id]['input_manifest'] = deepcopy(fitted['manifest'])
-                execution_lifecycle.end_preparation(self.runtime['executions'][execution_id], at=now(),
+                execution_lifecycle.end_preparation(self.runtime['executions'][execution_id], at=self.ports.clock.now(),
                     stage='packing', reason='review proposal input overflow', cancelled=True)
                 self._transport.close(binding, reason='review proposal input overflow')
                 self._transport_bindings.pop(execution_id, None)
@@ -3109,7 +3125,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 self._save({**fitted['artifacts'], overflow_ref: canonical_json(detail)})
                 return True
             resolution = detail.setdefault("resolution_question", {"question": "Which authorized profile or scope change should resolve this input overflow?", "next_owner": "user"})
-            overflow_ref = f"{ARTIFACT_ROOT}{new_id('BA')}/input-overflow.json"
+            overflow_ref = f"{ARTIFACT_ROOT}{self.ports.clock.new_id('BA')}/input-overflow.json"
             question = questions.link(self.runtime, execution_id=execution_id, field="resolution_question/question",
                 owner="research" if resolution["next_owner"] == "research_plan" else "user",
                 targets=[action.get("target") or action["id"]], source_ref=overflow_ref,
@@ -3128,18 +3144,18 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     "prior_question_id": retry["question_id"], "question_id": question["id"],
                     "execution_id": execution_id, "profile_ref": deepcopy(action.get("profile_ref")),
                     "overflow_ref": overflow_ref, "question_disposition": question_disposition,
-                    "failed_at": now()})
+                    "failed_at": self.ports.clock.now()})
             self.runtime.setdefault("input_overflows", []).append({"action": action, "detail": detail, "source_catalog": fitted["manifest"]})
             self._remove_action(action)
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = {"action": action,
                 "kind": "input_overflow", "reason": "input_overflow", "detail": detail, "question_id": question["id"],
                 "next_owner": resolution["next_owner"]}
-            defer_input_overflow(self.runtime, detail, at=now(), question_ref=question["id"])
+            defer_input_overflow(self.runtime, detail, at=self.ports.clock.now(), question_ref=question["id"])
             self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
             if resolution["next_owner"] == "research_plan":
                 self._enqueue("research_plan", reason="Select an already authorized profile for the preserved input overflow",
                               input_overflow=deepcopy(detail), overflow_activity_id=activity_id)
-            execution_lifecycle.end_preparation(self.runtime["executions"][execution_id], at=now(),
+            execution_lifecycle.end_preparation(self.runtime["executions"][execution_id], at=self.ports.clock.now(),
                 stage="packing", reason="input overflow", cancelled=True)
             self._continue_prepared_action(self.runtime["executions"][execution_id])
             self._transport.close(binding, reason="input overflow")
@@ -3180,9 +3196,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 resolved_execution_id=execution_id, question_disposition=question_disposition)
             self.runtime.setdefault("history", []).append({"kind": "input_overflow_retry_resolved",
                 "activity_id": activity_id, "execution_id": execution_id,
-                "question_disposition": question_disposition, "resolved_at": now(), **deepcopy(evidence)})
+                "question_disposition": question_disposition, "resolved_at": self.ports.clock.now(), **deepcopy(evidence)})
         execution = {"id": execution_id, "role": role, "action": action,
-                     "status": "queued", "created_at": now(), "input_snapshot": self.head,
+                     "status": "queued", "created_at": self.ports.clock.now(), "input_snapshot": self.head,
                      "input_bundle": input_bundle,
                      "model": chosen_model["model"],
                      "model_selection": chosen_model,
@@ -3191,7 +3207,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                      "validity_basis": knowledge.capture_basis(self.instance, self.runtime, basis_ids),
                      "decision_basis": capture_decision_basis(self.instance, self.runtime, self._decision_references(action)),
                      "source_basis": capture_sources(self.instance, source_refs),
-                     "input_preparation_milliseconds": int((time.monotonic() - preparation_started) * 1000),
+                     "input_preparation_milliseconds": int((self.ports.clock.monotonic() - preparation_started) * 1000),
                      "input_manifest": deepcopy(fitted["manifest"]),
                      "input_reductions": fitted["reductions"],
                      "input_metrics": prompt_metrics(prompt, fitted["context"], schema, self._documents[role])}
@@ -3218,18 +3234,18 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if not admitted:
             self._transport.close(binding, reason="execution was not admitted")
             self._transport_bindings.pop(execution_id, None)
-            execution_lifecycle.transition_execution(execution, "ended", at=now(), outcome="start_failed",
+            execution_lifecycle.transition_execution(execution, "ended", at=self.ports.clock.now(), outcome="start_failed",
                 reason="provider admission deferred", disposition=deepcopy(action.get("dispatch_wait")))
             self._continue_prepared_action(execution)
             for queued in self.runtime['queue']:
                 if queued.get('id') == action['id']:
                     queued['dispatch_wait'] = deepcopy(action['dispatch_wait'])
             activities.wait_for(self.runtime, activity_id, reason="provider admission deferred",
-                condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=now())
+                condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=self.ports.clock.now())
             self._save(self._input_artifacts(input_bundle, schema, fitted, workspace))
             return False
         if execution["status"] == "queued":
-            execution_lifecycle.transition_execution(execution, "starting", at=now())
+            execution_lifecycle.transition_execution(execution, "starting", at=self.ports.clock.now())
         self._live_execution_ids.add(execution_id)
         if self.runtime["status"] != "paused":
             self.runtime["status"] = "running"
@@ -3242,15 +3258,15 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._record_review_prompt(execution_id, prompt, artifact_ref=fitted["manifest"]["prompt"]["artifact_ref"])
         self._save(self._input_artifacts(input_bundle, schema, fitted, workspace))
         execution = self.runtime["executions"][execution_id]
-        execution["input_published_at"] = now()
+        execution["input_published_at"] = self.ports.clock.now()
         self._trackers[execution_id] = tracker
         stop_started = None
         # Research ends by submission or an effective stop/authority condition.
         # Only operational AI roles have a per-call execution deadline.
         call_deadline = (None if role in execution_profiles.WORK_ROLES
-                         else time.monotonic() + config["call_timeout_seconds"])
+                         else self.ports.clock.monotonic() + config["call_timeout_seconds"])
         def started(identity):
-            current = self._session_slots().started(execution_id, identity, at=now())
+            current = self._session_slots().started(execution_id, identity, at=self.ports.clock.now())
             current["execution_window"] = execution_window.publish(workspace, execution_id, call_deadline, config)
             self._save()
         def should_stop():
@@ -3278,22 +3294,22 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 current["currentness_changes"] = premise_changes or [{"field": "action_contract_or_authority", "reason": "execution input changed"}]
             requested = (current.get("submission_intent") or self._execution_stop_requested(action, current)
                          or not allowed or changed
-                         or (call_deadline is not None and time.monotonic() >= call_deadline))
+                         or (call_deadline is not None and self.ports.clock.monotonic() >= call_deadline))
             if not requested:
                 # The notice compares the same clock as the deadline above.
-                execution_window.request_finish(workspace, call_deadline, config, clock=time.monotonic)
+                execution_window.request_finish(workspace, call_deadline, config, clock=self.ports.clock.monotonic)
                 return False
             reason = current.get("stop_requested") or ("authority_changed" if not allowed or changed else
                 "submission_intent" if current.get("submission_intent") else "user_or_deadline_stop")
             # Instruction boundaries cannot enforce checkpoint-only research after stop.
             if stop_started is None:
-                stop_started = time.monotonic()
+                stop_started = self.ports.clock.monotonic()
                 current["stop_reason"] = reason
-                current["stop_observed_at"] = now()
+                current["stop_observed_at"] = self.ports.clock.now()
                 tracker.set_execution_status("stopping")
-                execution_lifecycle.transition_execution(current, "stopping", at=now(), reason=str(reason))
+                execution_lifecycle.transition_execution(current, "stopping", at=self.ports.clock.now(), reason=str(reason))
                 self._save()
-                request_checkpoint(workspace / ".control", str(reason), immediate=True, deadline=now())
+                request_checkpoint(workspace / ".control", str(reason), immediate=True, deadline=self.ports.clock.now())
             return True
         arguments = dict(prompt=prompt, output_schema=schema, workspace=workspace, evidence_dir=base/"evidence",
                          model=execution["model"], effort=execution["effort"],
@@ -3301,7 +3317,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                          launch_ticket=deepcopy(execution['launch_ticket']),
                          control_binding=binding,
                          input_seal=deepcopy(fitted["manifest"]["prompt"]),
-                         timeout_seconds=None if call_deadline is None else max(.1, call_deadline-time.monotonic()),
+                         timeout_seconds=None if call_deadline is None else max(.1, call_deadline-self.ports.clock.monotonic()),
                          should_stop=should_stop, on_started=started,
                          on_observation=lambda event: self._observe_running(execution_id, tracker, event))
         deadlines = self._stop_deadlines
@@ -3327,8 +3343,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 raise ValueError("capability evidence differs from the attempted profile")
             self.instance.setdefault("capability_evidence", {})[evidence["id"]] = deepcopy(evidence)
         pending = self.runtime["executions"][execution_id]
-        if not execution_lifecycle.release_or_hold(pending, self._session_slots(), at=now()):
-            result_ref = f"{ARTIFACT_ROOT}{new_id('BA')}/result.json"
+        if not execution_lifecycle.release_or_hold(pending, self._session_slots(), at=self.ports.clock.now()):
+            result_ref = f"{ARTIFACT_ROOT}{self.ports.clock.new_id('BA')}/result.json"
             pending['result_ref'] = result_ref
             for key in ('error_kind', 'failure'):
                 if key in result:
@@ -3349,7 +3365,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             result = {**result, "status": "stopped",
                       "error": "final output was collected after " + str(stopped_execution.get("stop_requested")
                           or "a pause or operational stop request") + "; preserved without acceptance"}
-        bundle = new_id("BA")
+        bundle = self.ports.clock.new_id("BA")
         artifacts, output_files, _, outputs_complete = self._preserve_outputs(
             execution_id, workspace, bundle, max_bytes=config["max_artifact_bytes"], evidence_dir=base / "evidence")
         artifacts[f"{ARTIFACT_ROOT}{bundle}/result.json"] = canonical_json(result)
@@ -3357,7 +3373,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             artifacts[f"{ARTIFACT_ROOT}{bundle}/output.json"] = canonical_json(result["output"])
         execution = self.runtime["executions"][execution_id]
         if execution["status"] != "stopping":
-            execution_lifecycle.transition_execution(execution, "stopping", at=now())
+            execution_lifecycle.transition_execution(execution, "stopping", at=self.ports.clock.now())
         obsolete = self._obsolete_action_reason(action, execution_id=execution_id)
         accepting = ((result["status"] == "completed" or result.get("error_kind") == "output_validation")
             and not self._instance_closed() and not obsolete
@@ -3365,7 +3381,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if not accepting:
             cancelled = result["status"] == "stopped" and (self.runtime["status"] in {"paused", "closed"}
                 or self.runtime.get("stop_requested"))
-            execution_lifecycle.transition_execution(execution, "ended", at=now(), outcome="cancelled" if cancelled else "execution_incomplete",
+            execution_lifecycle.transition_execution(execution, "ended", at=self.ports.clock.now(), outcome="cancelled" if cancelled else "execution_incomplete",
                 disposition={"kind": "preserved_for_followup", "artifact_ref": f"{ARTIFACT_ROOT}{bundle}/result.json"})
             if cancelled:
                 self._continue_prepared_action(execution)
@@ -3406,7 +3422,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             except Exception as error:
                 # Never restore an execution-wide copy: earlier bundles may have committed.
                 current = self.runtime["executions"][execution_id]
-                execution_lifecycle.transition_execution(current, "ended", at=now(), outcome="execution_incomplete",
+                execution_lifecycle.transition_execution(current, "ended", at=self.ports.clock.now(), outcome="execution_incomplete",
                     disposition={"kind": "submission_failure"})
                 current.update(error=str(error), error_kind="submission_failure")
                 self._remove_action(action)
@@ -3497,7 +3513,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     queued["merged_action_ids"] = list(dict.fromkeys([*queued.get("merged_action_ids", []), action["id"]]))
                 self._cancel_selected_revision_targets(queued)
                 return
-        action.setdefault("id", new_id("AC"))
+        action.setdefault("id", self.ports.clock.new_id("AC"))
         action.setdefault("lineage_id", action["id"])
         self.runtime["queue"].append(action)
         self._cancel_selected_revision_targets(action)
@@ -3594,7 +3610,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self.instance, self.runtime, kid = knowledge_io.import_candidate(self.instance, self.runtime,
                 candidate, source_ref=producer, actor_ref=producer, plan_nonformal=False)
             imported_insights.append(kid)
-            self.instance["knowledge"][kid].update(source_basis=source_basis, created_at=now())
+            self.instance["knowledge"][kid].update(source_basis=source_basis, created_at=self.ports.clock.now())
             if changed:
                 self.instance["knowledge"][kid].update(use_suspended=True, use_suspensions=[{
                     "kind": "dependency", "root_ids": list(refs), "reason": "Incidental evidence changed before publication: " + "; ".join(changed)}])
@@ -3612,7 +3628,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             raise ValueError("knowledge titles must be unique within an integration bundle")
         if len(metadata) != len(entries) or set(metadata) - set(titles):
             raise ValueError("knowledge metadata must identify a member of the same bundle")
-        identifiers = {item["title"]: item.get("id") or new_id("KN") for item in candidates}
+        identifiers = {item["title"]: item.get("id") or self.ports.clock.new_id("KN") for item in candidates}
         pending = []
         for item in candidates:
             extra = metadata.get(item["title"], {})
@@ -3634,7 +3650,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 raise ValueError("knowledge dependencies are missing or cyclic within the declared bundle")
             self.instance, self.runtime, kid = knowledge_io.import_candidate(
                 self.instance, self.runtime, ready, source_ref=execution_id, actor_ref=execution_id, plan_nonformal=False)
-            self.instance["knowledge"][kid].update(task_id=action.get("target"), created_at=now(),
+            self.instance["knowledge"][kid].update(task_id=action.get("target"), created_at=self.ports.clock.now(),
                 source_basis=deepcopy(self.runtime["executions"][execution_id].get("source_basis", [])))
             pending.remove(ready)
         for relation in output.get("relations", []):
@@ -3667,7 +3683,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 if authoring_environment is None:
                     raise ValueError('formal task requires the trust environment supplied to its author')
             for proposal in output["candidates"]:
-                tid = proposal["revises_task_id"] or new_id("TK")
+                tid = proposal["revises_task_id"] or self.ports.clock.new_id("TK")
                 old = self.runtime["tasks"].get(tid)
                 if proposal["revises_task_id"] and (old is None or old["status"] in task_contracts.TERMINAL_TASK_STATUSES | {"active"}):
                     raise ValueError("revision must identify an existing unfinished task")
@@ -3869,7 +3885,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 continue
             try:
                 files, manifest, termination = retention.archive_run(
-                    workspace, identifier, execution, f"{ARTIFACT_ROOT}{new_id('BA')}", marks)
+                    workspace, identifier, execution, f"{ARTIFACT_ROOT}{self.ports.clock.new_id('BA')}", marks)
                 artifacts.update(files)
                 archived[identifier] = (manifest, termination)
             except (ValueError, OSError) as error:
@@ -3963,10 +3979,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             governance.timestamp(disposition['next_review']['at'])
         if changes:
             raise CurrentnessChanged(changes)
-        record_id = new_id("OD")
+        record_id = self.ports.clock.new_id("OD")
         record = {"id": record_id, "execution_id": execution_id, "target_execution_id": target["id"],
                   "disposition": disposition, "obligation_ids": deepcopy(action.get("obligation_ids", [])),
-                  "created_at": now(), "status": "applied"}
+                  "created_at": self.ports.clock.now(), "status": "applied"}
         self.runtime.setdefault("operational_dispositions", {})[record_id] = record
         if operational_dispositions.reconcile_recovery(self.runtime, record):
             return
@@ -4030,7 +4046,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     self._sealed_bytes(base + '/' + entry['path'], entry['sha256'], entry['bytes'], needed=False,
                                        error='retry submission support differs from its sealed input')
             held = self.runtime.get('waiting_actions', {}).get(previous.get('id'))
-            retry = activities.continue_activity(self.runtime, target['id'], at=now(),
+            retry = activities.continue_activity(self.runtime, target['id'], at=self.ports.clock.now(),
                 reason='operational_' + kind + ':' + record['id'])
             if held and held.get('execution_id') == target['id']:
                 retry.update(deepcopy(held['action']), continuation_of=target['id'])
@@ -4039,7 +4055,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                                  'reason': disposition['reason']}
             activity = self.runtime['activities'][target['owner_activity_id']]
             if activity['status'] == 'waiting':
-                activities.resume_activity(self.runtime, activity['id'], condition=activity['waiting']['condition'], at=now())
+                activities.resume_activity(self.runtime, activity['id'], condition=activity['waiting']['condition'], at=self.ports.clock.now())
             record.setdefault('result', {})['continuation_action_id'] = retry['id']
         elif kind == "task_disposition":
             task = self.runtime["tasks"].get(disposition["task_id"])

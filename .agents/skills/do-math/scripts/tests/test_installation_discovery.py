@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import engine as engine_module
-from research_fixtures import bare_engine
+from research_fixtures import bare_engine, clock_ports
 
 
 class ToolDiscoveryTests(unittest.TestCase):
@@ -16,8 +16,8 @@ class ToolDiscoveryTests(unittest.TestCase):
                            'knowledge': {}, 'sources': []}
         engine.runtime = {'tasks': {}}
         clock = [100.0]
-        with patch.object(engine_module, 'discover_lean', return_value=['lean']) as discover, \
-                patch.object(engine_module.time, 'monotonic', side_effect=lambda: clock[0]):
+        engine.ports = clock_ports(monotonic=lambda: clock[0])
+        with patch.object(engine_module, 'discover_lean', return_value=['lean']) as discover:
             for _ in range(5):
                 self.assertIn('tool:lean', engine._available_inputs())
             self.assertEqual(discover.call_count, 1)

@@ -17,7 +17,7 @@ from do_math.execution_lifecycle import transition_execution
 from do_math.repository import ResearchRepository, new_id
 from do_math import knowledge_records
 from engine_fixtures import FakeEngine
-from research_fixtures import FixtureAdapter, await_stop, git_init
+from research_fixtures import FixtureAdapter, await_stop, clock_ports, git_init
 from state_fixtures import owner_calls
 from test_categories import test_group
 
@@ -91,7 +91,7 @@ class MachineSchedulerTests(unittest.TestCase):
         self.enterContext(patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()))
         self.enterContext(patch('do_math.windows_job.named_job_empty', return_value=True))
         self.host = Host(self.temp.name)
-        self.enterContext(patch('do_math.scheduler.time.monotonic', side_effect=lambda: self.host.tick))
+        self.host.ports = clock_ports(monotonic=lambda: self.host.tick)
 
     def run_case(self, *, trust=False, cancel=False, stops=None):
         host = self.host

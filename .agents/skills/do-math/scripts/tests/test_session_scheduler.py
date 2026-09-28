@@ -25,7 +25,7 @@ from do_math.repository import new_id
 from do_math.session_slots import SessionSlots
 from engine_fixtures import initialized_instance, reassessment_engine, routing_engine
 from purpose_fixtures import ActivatedPurposeHarness
-from research_fixtures import (candidate, contract_review, current_state, git_init, install_adapter_fixture,
+from research_fixtures import (candidate, clock_ports, contract_review, current_state, git_init, install_adapter_fixture,
                                local_job_runner, observation_batch, producer_result, restore_template)
 from runner_fixtures import common, context_from, ScriptedRunner
 from state_fixtures import start_active_copy
@@ -205,17 +205,18 @@ class OwnerRescanTests(unittest.TestCase):
         from do_math.scheduler import OWNER_RESCAN_SECONDS
         root, instance_id = restore_template(state_fixtures.active_instance, config={})
         engine = ResearchEngine(root / "repository", instance_id)
-        with patch("do_math.scheduler.time.monotonic", return_value=100.0) as clock:
-            self.assertTrue(engine._scan_due())
-            self.assertFalse(engine._scan_due(), "an unchanged state was judged again")
-            engine.runtime["history"].append({"kind": "fixture_observation"})
-            engine._publish_observation()
-            self.assertFalse(engine._scan_due(), "an observation publication made the owner judge again")
-            engine.runtime["history"].append({"kind": "fixture_change"})
-            self.assertTrue(engine._scan_due())
-            self.assertFalse(engine._scan_due())
-            clock.return_value = 100.0 + OWNER_RESCAN_SECONDS
-            self.assertTrue(engine._scan_due())
+        instant = [100.0]
+        engine.ports = clock_ports(monotonic=lambda: instant[0])
+        self.assertTrue(engine._scan_due())
+        self.assertFalse(engine._scan_due(), "an unchanged state was judged again")
+        engine.runtime["history"].append({"kind": "fixture_observation"})
+        engine._publish_observation()
+        self.assertFalse(engine._scan_due(), "an observation publication made the owner judge again")
+        engine.runtime["history"].append({"kind": "fixture_change"})
+        self.assertTrue(engine._scan_due())
+        self.assertFalse(engine._scan_due())
+        instant[0] = 100.0 + OWNER_RESCAN_SECONDS
+        self.assertTrue(engine._scan_due())
 
 
 class SlotTests(unittest.TestCase):
@@ -795,9 +796,8 @@ class RunWithoutDeadlineTests(ActivatedPurposeHarness):
                 clock[0] += 10000
                 return result
         engine.runner = Runner()
-        observed_clock = SimpleNamespace(monotonic=lambda: time.monotonic() + clock[0], sleep=time.sleep)
-        with patch.object(scheduler, 'time', observed_clock), patch.object(engine_module, 'time', observed_clock):
-            engine.run(max_steps=2)
+        engine.ports = clock_ports(monotonic=lambda: time.monotonic() + clock[0])
+        engine.run(max_steps=2)
         self.assertEqual(len(calls), 2)
         self.assertEqual({call['profile']['role'] in WORK_ROLES for call in calls}, {True, False})
         for call in calls:

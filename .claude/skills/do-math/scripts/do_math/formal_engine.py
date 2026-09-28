@@ -35,7 +35,7 @@ class FormalEngineMixin:
                 errors.append('bound toolchain baseline has no successful representative check')
             if errors:
                 raise ValueError('; '.join(errors))
-            environment_id = new_id('TE')
+            environment_id = self.ports.clock.new_id('TE')
             environment = {'id': environment_id, 'toolchain': deepcopy(config['toolchain']),
                            'allowed_axioms': deepcopy(config['allowed_axioms']), 'status': 'registered',
                            'source_ref': source_ref, 'toolchain_record': deepcopy(reference)}
@@ -148,7 +148,7 @@ class FormalEngineMixin:
         transition = self.runtime['trust_transitions'][transition_id]
         if transition['status'] in {'active', 'failed'}:
             return
-        execution_id = new_id('EX')
+        execution_id = self.ports.clock.new_id('EX')
         execution = self._register_execution(action, {'id': execution_id, 'role': 'trust_activate',
             'status': 'running', 'created_at': self._lifecycle_now().isoformat(),
              'input_snapshot': self.head,
@@ -217,7 +217,7 @@ class FormalEngineMixin:
         environment = deepcopy(self.instance['trust_environments'][transition['to_environment']])
         from .knowledge_records import proposal_view
         item = proposal_view(self.instance, knowledge_id)
-        execution_id = new_id('EX')
+        execution_id = self.ports.clock.new_id('EX')
         workspace = Path(self.instance['workspace']) / 'trust' / execution_id
         workspace.mkdir(parents=True, exist_ok=True)
         execution = self._register_execution(action, {'id': execution_id, 'role': 'trust_check', 'status': 'running',
@@ -268,7 +268,7 @@ class FormalEngineMixin:
                       allowed_axioms=deepcopy(environment['allowed_axioms']))
         artifact = f'{ARTIFACT_ROOT}{execution_id}/trust-result.json'
         result['artifact_ref'] = artifact
-        self._preserve_machine_return(execution_id, f'{ARTIFACT_ROOT}{new_id("BA")}/trust-returned.json',
+        self._preserve_machine_return(execution_id, f'{ARTIFACT_ROOT}{self.ports.clock.new_id("BA")}/trust-returned.json',
                                       raw_result or result)
         execution = self.runtime['executions'][execution_id]
         execution['result_ref'] = artifact
@@ -327,12 +327,12 @@ class FormalEngineMixin:
         from .knowledge_records import proposal_view, record_formal_result
         from .payloads import json_safe
         from .planning import action_read_ids
-        action.setdefault('id', new_id('AC'))
+        action.setdefault('id', self.ports.clock.new_id('AC'))
         action.setdefault('lineage_id', action['id'])
         kid = action['target']
         proposal = proposal_view(self.instance, kid)
         profile = self._execution_profile(action)
-        execution_id = new_id('EX')
+        execution_id = self.ports.clock.new_id('EX')
         environment_error = None
         try:
             environment = deepcopy(self._formal_environment())
@@ -348,7 +348,7 @@ class FormalEngineMixin:
             reason = authority['reason'] if not authority['allowed'] else environment_error
             wait_for(self.runtime, activity['id'], reason=reason,
                 condition={'kind': 'formal_authority', 'knowledge_id': kid}, next_owner='trust_governance',
-                at=now())
+                at=self.ports.clock.now())
             self.runtime.setdefault('waiting_actions', {})[action['id']] = {
                 'action': deepcopy(action), 'kind': 'formal_authority', 'reason': reason,
                 'next_owner': 'trust_governance'}
@@ -373,7 +373,7 @@ class FormalEngineMixin:
         workspace = Path(self.instance['workspace']) / 'formal' / execution_id
         execution = self._register_execution(action, {
             'id': execution_id, 'role': 'formal_check', 'status': 'running',
-            'created_at': now(), 'grant_id': authority['grant_id'],
+            'created_at': self.ports.clock.now(), 'grant_id': authority['grant_id'],
             'input_snapshot': self.head,
             'decision_basis': capture_decision_basis(self.instance, self.runtime,
                 action_read_ids(action, self.instance, self.runtime)),
@@ -407,7 +407,7 @@ class FormalEngineMixin:
             should_stop=stop, stopped_reason='formal authority changed')
         result = json_safe(result)
         # Preserve returned evidence before currentness checks or domain publication.
-        raw_bundle = new_id('BA')
+        raw_bundle = self.ports.clock.new_id('BA')
         self._preserve_machine_return(execution_id, f'{ARTIFACT_ROOT}{raw_bundle}/formal-returned.json', result,
                                       artifact_bundle=raw_bundle)
         if stop():
@@ -415,12 +415,12 @@ class FormalEngineMixin:
         current = proposal_view(self.instance, kid)
         if current['lean_code'] != source or current['declaration_names'] != declarations:
             result = {**result, 'status': 'failed', 'reason': 'formal source changed during verification'}
-        bundle = new_id('BA')
+        bundle = self.ports.clock.new_id('BA')
         reference = f'{ARTIFACT_ROOT}{bundle}/formal.json'
         execution = self.runtime['executions'][execution_id]
         execution.update(result_ref=reference, artifact_bundle=bundle, formal_status=result['status'])
         # A held execution keeps its capacity and records no formal result.
-        released = self._release_machine_execution(execution, at=now())
+        released = self._release_machine_execution(execution, at=self.ports.clock.now())
         if released:
             # Failed compiler runs remain evidence. Only complete checked evidence can seal a formal result.
             if result['status'] == 'verified':
@@ -438,7 +438,7 @@ class FormalEngineMixin:
             if result['status'] == 'verified':
                 execution['submission_receipt'] = {'kind': MACHINE_OUTPUT_RECEIPT, 'state': 'accepted',
                     'execution_id': execution_id, 'evidence_ref': reference, 'source_sha256': lean_source_sha256(source),
-                    'trust_environment_id': environment_id, 'accepted_at': now()}
+                    'trust_environment_id': environment_id, 'accepted_at': self.ports.clock.now()}
             self._end_machine_execution(execution,
                 outcome='output_accepted' if result['status'] == 'verified' else 'execution_incomplete',
                 disposition={'kind': 'formal_result', 'status': result['status'], 'artifact_ref': reference,
@@ -447,7 +447,7 @@ class FormalEngineMixin:
                          and not stop_reasons.intersection({'instance_ended', 'authority_changed',
                                                             'trust_environment_changed', 'input_changed'}))
             if resumable:
-                continue_activity(self.runtime, execution_id, at=now(),
+                continue_activity(self.runtime, execution_id, at=self.ports.clock.now(),
                                   reason='formal_paused')
             else:
                 self._remove_action(action)
@@ -471,7 +471,7 @@ class FormalEngineMixin:
             try:
                 self._start_identity_review(kid)
             except (ValueError, KeyError, TypeError) as error:
-                review_action = {'id': new_id('AC'), 'role': 'identity_review', 'target': kid}
+                review_action = {'id': self.ports.clock.new_id('AC'), 'role': 'identity_review', 'target': kid}
                 self.runtime.setdefault('waiting_actions', {})[review_action['id']] = {
                     'action': review_action,
                     'kind': 'review_initialization', 'execution_id': execution_id,

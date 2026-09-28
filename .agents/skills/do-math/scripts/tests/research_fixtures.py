@@ -164,6 +164,7 @@ docstring), or feeds such a fixture check.
 """
 from __future__ import annotations
 
+from types import SimpleNamespace
 import atexit
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
@@ -187,6 +188,20 @@ from do_math.repository import canonical_json
 
 IDENTITY = {"host": "CORE_TESTS synthetic host", "implementation": "CORE_TESTS synthetic adapter"}
 from do_math.trust_validation import AXIOMS
+
+
+def clock_ports(**overrides):
+    """A Ports bundle whose clock is the real clock with the named operations replaced.
+
+    Legacy tests that move one clock (usually ``monotonic``) and keep the rest real
+    set ``engine.ports = clock_ports(monotonic=...)``.
+    """
+    from do_math.ports import Ports
+    from do_math.system_clock import SystemClock
+    real = SystemClock()
+    operations = {name: getattr(real, name) for name in ('now', 'wall', 'wall_ns', 'monotonic', 'sleep', 'new_id')}
+    operations.update(overrides)
+    return Ports(clock=SimpleNamespace(**operations))
 
 
 def bare_engine(instance=None, runtime=None, *, head="fixture-head", store=None, runner=None,

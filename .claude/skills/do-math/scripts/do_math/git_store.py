@@ -62,9 +62,7 @@ _FILE_MODE: Final = "100644"
 _TREE_MODE: Final = "40000"
 
 # ULID in Crockford base32: 26 digits, the first at most 7 (48-bit time + 80 random bits).
-ULID_ALPHABET: Final = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
-ULID_LENGTH: Final = 26
-ULID_PATTERN: Final = f"[0-7][{ULID_ALPHABET}]{{{ULID_LENGTH - 1}}}"
+from .ids import ULID_ALPHABET, ULID_LENGTH, ULID_PATTERN  # noqa: F401  (re-exported)
 _HEX = re.compile(r"[0-9a-f]+\Z")
 # Archived artifacts live under this prefix; an existing bundle there never changes.
 ARTIFACT_ROOT: Final = "runtime/artifacts/"

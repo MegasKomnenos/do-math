@@ -95,7 +95,7 @@ class GovernanceEngineMixin:
                         if result.get('host_capacity_ref') else []) for profile in profiles):
                     affected.append(tid)
             if affected:
-                state['queue'].insert(0, {'id': new_id('AC'), 'role': 'research_preparation',
+                state['queue'].insert(0, {'id': self.ports.clock.new_id('AC'), 'role': 'research_preparation',
                     'reason': 'Reprepare task profile contracts for the newly adopted host resources',
                     'revision_targets': revisions.capture_targets(result, state, affected)})
         resources_changed = user_decision_changed(current, candidate)
@@ -322,7 +322,7 @@ class GovernanceEngineMixin:
                 row.update(state='waiting', action_id=waiting['action']['id'],
                            kind=waiting.get('kind'), next_owner=waiting.get('next_owner'))
             else:
-                identifier = new_id('AC')
+                identifier = self.ports.clock.new_id('AC')
                 self._enqueue(**scope, id=identifier, requested_by=request_execution_id,
                               reason='Complete the unsealed slot of the requested goal audit')
                 row.update(state='queued_new', action_id=identifier)
@@ -403,7 +403,7 @@ class GovernanceEngineMixin:
         links = [link for identifier in dependencies if identifier in self.instance['knowledge']
                  for link in knowledge_records.usable_links(self.instance, identifier)]
         view = governance.governance_view(self.instance)
-        judgment = {**deepcopy(output), 'id': new_id('GJ'), 'execution_id': execution_id, 'slot': action['slot'],
+        judgment = {**deepcopy(output), 'id': self.ports.clock.new_id('GJ'), 'execution_id': execution_id, 'slot': action['slot'],
             'basis': action['basis'], 'required': action['required'], 'formal_result_refs': sorted({r['formal_result_id'] for r in links}),
             'assessment_refs': sorted({r['assessment_id'] for r in links}), 'dependencies': dependencies,
             'record_basis': knowledge.capture_basis(self.instance, self.runtime, dependencies), 'basis_is_conservative': not bool(cited),

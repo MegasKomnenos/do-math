@@ -46,7 +46,7 @@ class AcademicEngineMixin:
             references = list(dict.fromkeys([*activity['result_refs'],
                 *(execution['result_ref'] for execution in attempts if execution.get('result_ref'))]))
             activities.finish_activity(self.runtime, aid, result_refs=references,
-                unresolved=activity['unresolved'], followups=activity['followups'], at=now())
+                unresolved=activity['unresolved'], followups=activity['followups'], at=self.ports.clock.now())
 
     def _academic_evidence(self, ref):
         return academic.stored_evidence(self.store, self.head, ref)
@@ -80,7 +80,7 @@ class AcademicEngineMixin:
                    t.get("requirements_sha256") == current_hash and not (
                        t.get("status") == "completed" and t.get("assessment", {}).get("current") is False)
                    for t in self.runtime["tasks"].values()): continue
-            tid = new_id("TK")
+            tid = self.ports.clock.new_id("TK")
             refs = [r["id"] for r in basis["records"] if r["id"] in self.instance["knowledge"]]
             inputs = list(dict.fromkeys([*(row["id"] for row in basis["records"]), *requirement["required_inputs"]]))
             from .execution_profiles import profile_ref, match_profile_ref
@@ -129,7 +129,7 @@ class AcademicEngineMixin:
         if basis is None: raise ValueError("external rejection requires a current solved mathematical goal")
         if not all(isinstance(change.get(key), str) and change[key].strip() for key in ("actor", "text")):
             raise ValueError("external rejection needs its actor and preserved original text")
-        entry = {"id": new_id("RJ"), "actor": change["actor"], "text": change["text"], "source_ref": request["id"],
+        entry = {"id": self.ports.clock.new_id("RJ"), "actor": change["actor"], "text": change["text"], "source_ref": request["id"],
                  "created_at": request["created_at"], "solution_basis": basis}
         self.runtime.setdefault("external_rejections", []).append(entry)
         if self.runtime["status"] == "completed": self.runtime["status"] = "ready"
