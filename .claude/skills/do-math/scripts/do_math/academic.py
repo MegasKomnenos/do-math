@@ -153,7 +153,7 @@ def assess(requirement_id: str, basis: dict, requirements: dict, decision: str, 
 
 def academic_status(instance: dict, runtime: dict, current_basis: dict | None, *, resolve_evidence=None) -> dict:
     if instance.get("goal_status") != "mathematically_solved":
-        return {"status": "not_applicable", "reason": "unsolved or no requirements"}
+        return {"status": "not_applicable", "reason": "goal not mathematically solved"}
     if current_basis is None:
         return {"status": "incomplete", "reason": "solution basis unreadable"}
     requirements = current_requirements(instance)

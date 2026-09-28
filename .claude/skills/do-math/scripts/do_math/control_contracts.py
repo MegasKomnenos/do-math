@@ -27,10 +27,13 @@ def user_decision_changed(current: dict, candidate: dict) -> bool:
     return any(candidate.get(key) != current.get(key) for key in USER_DECISION_SETTINGS)
 
 
-def control_request_id(instance_id, action, *, text='', config=None, origin='user', idempotency_key=None):
+def control_request_id(instance_id, action, *, text='', config=None, origin='user', idempotency_key=None,
+                       after=None):
     """Hash normalized content, not mutable admission state or delivery time.
 
-    A source control is hashed in its normalized name/body/hash/size form.
+    A source control is hashed in its normalized name/body/hash/size form. ``after`` names
+    the latest accepted opposite control of a default pause or resume ID (ENGINE's
+    ``control``), so a pause after a resume is a new request while a resend replays.
     """
     from .repository import exact_content_hash
     if idempotency_key is not None and (not isinstance(idempotency_key, str) or not idempotency_key):
@@ -38,6 +41,8 @@ def control_request_id(instance_id, action, *, text='', config=None, origin='use
     value = {'schema_version': 5, 'command': action, 'caller': origin,
              'payload': {'instance_id': instance_id, 'text': text, 'config': config or {}},
              'idempotency_key': idempotency_key}
+    if after is not None:
+        value['after'] = after
     return 'UC-' + exact_content_hash(value)
 
 
@@ -107,14 +112,14 @@ CASE = obj({**fields(text='id decision_kind target_id application_id', lists='ex
     'basis_refs': {'type': 'array', 'items': {'anyOf': [TEXT, {'type': 'object',
         'properties': {'id': TEXT}, 'required': ['id'], 'additionalProperties': False}]}}})
 RECOVERY = obj({**fields(text='grant_id delegation_id'), 'action': ACTION, 'case': CASE})
-DECISION = obj({**fields(text='kind operation decision_id grant_id delegation_id task_id contract_sha256 disposition reason actor text import_id bundle_sha256 check_sha256 action_id procedure purpose lineage lineage_id hold_event_ref target_task_id',
+DECISION = obj({**fields(text='kind operation decision_id grant_id delegation_id task_id contract_sha256 config_sha256 disposition reason actor text import_id bundle_sha256 check_sha256 action_id procedure purpose lineage lineage_id hold_event_ref target_task_id',
     lists='replaces resolves_questions target_ids obligation_ids initial_grant_ids research_grant_ids',
     objects='review_policy config'), 'record': GOVERNANCE_RECORD, 'grant': GRANT, 'delegation': DELEGATION,
     'records': {'type': 'array', 'items': GOVERNANCE_RECORD}, 'allowed_action': ACTION,
     'revision': INTEGER, 'expires_at': TIME, 'profile_ref': PROFILE_REF, 'initial_profile_ref': PROFILE_REF,
     'profile_refs': {'type': 'array', 'items': PROFILE_REF},
     'unit_hashes': {'type': 'object', 'additionalProperties': TEXT},
-    **{key: BOOL for key in ('adopt_current_config', 'adopt_current_governance', 'adopt_default_review_policy')},
+    **{key: BOOL for key in ('adopt_current_governance', 'adopt_default_review_policy')},
     **fields(text='conversation_loss_policy external_policy')})
 RELATION = obj(fields(text='id kind source target evidence confirmed_scope',
     lists='evidence_refs formal_result_refs assessment_refs'))

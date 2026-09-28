@@ -183,6 +183,17 @@ class QuestionRouteWireTests(unittest.TestCase):
         route['blocks'] = 'true'
         self.assertTrue(list(validator.iter_errors({'question_routes': [route]})))
 
+    def test_route_targets_admit_the_records_of_the_record_index(self):
+        # A grant a task relies on is a record the role may cite through its record_index.
+        output = {'questions': ['May the task use GR-1 for this effect?']}
+        route = {'question_index': 0, 'owner': 'user', 'target_ids': ['GR-1'], 'blocks': True,
+                 'reason': 'The answer decides whether GR-1 authorizes the next action.'}
+        context = {'instance_id': 'I', 'action': {'role': 'research_work'},
+                   'record_index': {'research/grants': ['GR-1']}}
+        self.assertEqual(questions.validate_extensions(output, {'question_routes': [route]}, context), [])
+        route['target_ids'] = ['GR-unknown']
+        self.assertTrue(questions.validate_extensions(output, {'question_routes': [route]}, context))
+
 
 class GovernanceQuestionTests(unittest.TestCase):
     def test_question_advice_does_not_block_and_partial_target_answer_does_not_erase_wait(self):

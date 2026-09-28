@@ -287,7 +287,7 @@ class SubmissionBoundaryTests(unittest.TestCase):
         text = "첫째 둘째"
         ctx = {**research_work_context(), "action": action, "user_request": {"id": "UC-1", "text": text},
                "original_source": preserve_source("UC-1", text, origin="user_request")}
-        output = dict(summary="interpret", used_sources=[], questions=[], question_details=[], needs_clarification=False,
+        output = dict(summary="interpret", used_sources=[], questions=[], question_details=[],
             import_units=[dict(unit_id="IU-1", source_range={"start": 0, "end": 2}, interpretation="첫째",
                 owner_kind="charter", owner_ref="context:goal", payload={}, decision_refs=[], question_refs=[])],
             integration_bundles=[dict(integration_id="IN-1", members=["output"], impact_set=[], authority_refs=[])])

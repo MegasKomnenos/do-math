@@ -223,16 +223,6 @@ class KnowledgeTests(unittest.TestCase):
             self.assertTrue(k.assess_use(changed['knowledge'][kid], changed)['valid'])
             self.assertNotEqual(changed['knowledge'][kid]['formal_result_id'], ins['knowledge'][kid]['formal_result_id'])
 
-    def test_environment_invalidation_is_local_to_constant_closure(self):
-        ins, run, ids = knowledge_graph()
-        ins, run, isolated, _ = add_knowledge(ins, run, lean_code='theorem isolated : True := True.intro', declaration_names=['isolated'])
-        fid = ins['knowledge'][isolated]['formal_result_id']
-        changed, nrun = k.invalidate_environment(ins, run, 'TE-old', 'constant defect',
-            affected_constants=['isolated'], scope_evidence='checked closure boundary')
-        self.assertEqual(changed['formal_results'][fid]['formal_use'], 'suspended')
-        self.assertTrue(k.assess_use(changed['knowledge'][ids['c']], changed)['valid'])
-        self.assertEqual(nrun['tasks'][ids['unrelated']], run['tasks'][ids['unrelated']])
-
     def test_invalidated_environment_recovery_rechecks_all_accepted_results(self):
         ins, run, ids = knowledge_graph()
         stopped, _ = k.invalidate_environment(ins, run, 'TE-old', 'kernel defect')

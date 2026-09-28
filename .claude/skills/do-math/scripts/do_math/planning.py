@@ -10,8 +10,8 @@ from .activities import ACTIVITY_STATUSES
 from .execution_lifecycle import EXECUTION_STATUSES
 from .execution_profiles import RESEARCH_PRODUCER_ROLES
 from .external import OPERATION_STATUSES
-from .file_io import is_sha256, parse_utc
-from .git_store import ARTIFACT_ROOT, check_path_segment
+from .file_io import check_path_segment, is_sha256, parse_utc
+from .git_store import ARTIFACT_ROOT
 from .governance import GOVERNANCE_STATUSES, GRANT_STATUSES
 from .input_basis import SOURCE_STATUSES
 from .repository import VERIFIED_ARTIFACTS, artifact_key, exact_content_hash, sealed_bytes
@@ -37,9 +37,18 @@ def contract_hash(task: dict) -> str:
 _VALID_ARTIFACTS: dict[tuple, bool] = {}
 
 
+def revision_requested(task: dict) -> bool:
+    """A contract revision was requested for the task's current revision.
+
+    The request names the revision it asked to replace, so a later revision has answered it.
+    """
+    requested = task.get("revision_requested")
+    return isinstance(requested, dict) and requested.get("revision") == task.get("revision")
+
+
 def revision_required(task: dict) -> bool:
     """A contract revision was requested, or a review of the current revision did not approve it."""
-    return bool(task.get("revision_requested")) or any(
+    return revision_requested(task) or any(
         review.get("revision") == task.get("revision") and review.get("decision") != "approved"
         for review in task.get("reviews", []))
 
@@ -621,11 +630,10 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
         return {"state": "not_ready", "basis": [], "errors": ["an explicit user decision is required"], "waits": waits}
     if instance.get("goal_status") == "mathematically_solved" and not task.get("academic_requirement_id"):
         return {"state": "not_ready", "basis": [], "errors": ["research production stopped after goal satisfaction"]}
-    if task.get("status") not in {"planned", "waiting", "active"}:
+    if task.get("status") not in LIFECYCLE_STATES - TERMINAL_TASK_STATUSES:
         return {"state": "not_ready", "basis": [], "errors": ["task state is not schedulable"]}
-    requested = task.get("revision_requested")
-    if isinstance(requested, dict) and requested.get("revision") == task.get("revision"):
-        return {"state": "not_ready", "basis": [], "errors": ["a contract revision was requested by " + str(requested.get("source")) + "; awaiting a new revision"]}
+    if revision_requested(task):
+        return {"state": "not_ready", "basis": [], "errors": ["a contract revision was requested by " + str(task["revision_requested"].get("source")) + "; awaiting a new revision"]}
     revision = task.get("revision")
     reviews = task.get("reviews", [])
     approved = [r for r in reviews if r.get("revision") == revision and r.get("decision") == "approved" and r.get("inputs_current", True)]

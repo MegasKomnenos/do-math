@@ -421,11 +421,19 @@ class Tests(unittest.TestCase):
         self.assertTrue((workspace / ".control/observation-feedback.json").exists())
         self.assertEqual(queued, [])
 
-    def test_response_without_confirmed_safe_boundary_is_not_accepted(self):
+    def test_obligation_opened_during_a_research_call_is_held_until_the_call_ends(self):
         observe(self.t, {"type": "item.started", "item": {"type": "command_execution", "id": "C"}})
         obligation = self.due()
+        held = self.t.obligations[obligation["id"]]
+        self.assertEqual((held["deadline_offset_ms"], held["deadline_held_offset_ms"]), (5000, 0))
+        self.clock.value = 30
+        self.assertFalse(any(r["kind"] == "self_check_missed" for r in observe(self.t, {"type": "tick"})))
+        observe(self.t, {"type": "item.completed", "item": {"type": "command_execution", "id": "C"}})
+        self.assertEqual(held["deadline_offset_ms"], 35000)
+        self.assertNotIn("deadline_held_offset_ms", held)
+        # No safety boundary is needed before the response.
         result = self.t.record_self_check_response(self_check_response(obligation), available_evidence_refs={"EV-1"})
-        self.assertIn("response_boundary_unconfirmed", result["errors"])
+        self.assertEqual(result["kind"], "self_check_received", result.get("errors"))
 
     def test_feedback_producers_share_the_public_field_set(self):
         with self.assertRaisesRegex(ValueError, "private or unknown"):
@@ -704,20 +712,36 @@ class ObservationRuleTests(unittest.TestCase):
             self.assertIn("response_deadline_passed", rejected["errors"])
             self.assertEqual(rejected["followup"]["kind"], "operational_review_due")
 
-    def test_tool_wait_defers_deadline_until_confirmed_boundary(self):
+    def test_call_reported_at_a_safe_boundary_stops_holding_the_deadline(self):
         clock = Clock()
         with tempfile.TemporaryDirectory() as directory:
             tracker = self.tracker(Path(directory), clock)
             observe(tracker, {"type": "item.started", "item": {"id": "C", "type": "command_execution"}})
             write_checkpoint(directory, counters={"attempts": 2})
             obligation = next(r for r in observe(tracker, {"type": "tick"}) if r["kind"] == "self_check_due")
-            self.assertIsNone(obligation["deadline_offset_ms"])
+            self.assertEqual((obligation["deadline_offset_ms"], obligation["deadline_held_offset_ms"]), (5000, 0))
             clock.value = 9
             tracker.record_safe_boundary("CT-1", call_ids=["C"])
             self.assertEqual(tracker.obligations[obligation["id"]]["deadline_offset_ms"], 14000)
             clock.value = 14
             accepted = tracker.record_self_check_response(self_check_response(obligation), available_evidence_refs={"EV-1"})
             self.assertEqual(accepted["kind"], "self_check_received")
+
+    def test_deadline_held_by_a_call_running_at_opening_passes_after_the_call_ends(self):
+        clock = Clock()
+        with tempfile.TemporaryDirectory() as directory:
+            tracker = self.tracker(Path(directory), clock)
+            observe(tracker, {"type": "item.started", "item": {"id": "C", "type": "command_execution"}})
+            write_checkpoint(directory, counters={"attempts": 2})
+            obligation = next(r for r in observe(tracker, {"type": "tick"}) if r["kind"] == "self_check_due")
+            self.assertEqual(obligation["deadline_held_offset_ms"], 0)
+            clock.value = 9
+            observe(tracker, {"type": "item.completed", "item": {"id": "C", "type": "command_execution"}})
+            self.assertEqual(tracker.obligations[obligation["id"]]["deadline_offset_ms"], 14000)
+            clock.value = 15
+            rejected = tracker.record_self_check_response(self_check_response(obligation), available_evidence_refs={"EV-1"})
+            self.assertEqual(rejected["kind"], "self_check_rejected")
+            self.assertIn("response_deadline_passed", rejected["errors"])
 
     def test_research_calls_before_the_response_hold_its_deadline_until_all_of_them_end(self):
         clock = Clock()

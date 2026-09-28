@@ -92,6 +92,14 @@ class PlanningTests(unittest.TestCase):
         self.task['question']='changed'
         self.assertNotEqual(planning.contract_hash(self.task),baseline)
 
+    def test_a_revision_request_of_an_earlier_revision_is_already_answered(self):
+        task={'revision':2,'reviews':[],'revision_requested':{'revision':1,'source':'EX-review'}}
+        self.assertFalse(planning.revision_requested(task))
+        self.assertFalse(planning.revision_required(task))
+        task['revision_requested']['revision']=2
+        self.assertTrue(planning.revision_requested(task))
+        self.assertTrue(planning.revision_required(task))
+
     def test_periodic_exploration_is_not_consumed_by_preparation_only(self):
         from do_math.model_policy import preparation_only
         for field in ('assessment_targets', 'observation_rule_targets'):

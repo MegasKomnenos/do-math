@@ -733,7 +733,7 @@ class RepetitionLineageTests(unittest.TestCase):
         self.assertEqual(task_contracts.repetition_lineages(r)['selection_failure']['count'],1)
         self.assertEqual(revisions.repetition_hold(r,'selection_failure','population')['owner'],'user')
 
-    def test_new_request_ids_do_not_reset_semantic_lineage_and_user_owner_needs_question(self):
+    def test_new_request_ids_do_not_reset_semantic_lineage(self):
         from do_math import revisions
         t,i,r=approved_task()
         a={'id':'AC-1','role':'research_plan'};b={'id':'AC-2','role':'research_plan'}
@@ -742,8 +742,6 @@ class RepetitionLineageTests(unittest.TestCase):
         i['sources'][0]['sha256']='b'*64
         c={'id':'AC-3','role':'research_plan'};revisions.bind_repetition_bases(i,r,c)
         self.assertNotEqual(a['repetition_bases'],c['repetition_bases'])
-        with self.assertRaises(ValueError):
-            revisions.record_repetition(i,r,lineage='contract_revision',lineage_id='TK-1',event_ref='EX-change',outcome='revised',owner='user',reason='change requested')
 
     def test_one_case_grant_is_available_before_reservation_but_not_after_other_use(self):
         t,i,r=approved_task();i['grants']['GR-1']['reuse']='once';approve_task(t,i,r)

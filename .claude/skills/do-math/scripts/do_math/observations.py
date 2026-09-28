@@ -591,8 +591,12 @@ class ObservationTracker:
         """
         obligation = self.obligations[obligation_id]
         obligation['delivered_at'] = now()
-        if obligation['response_availability'] == 'available' and self.response_window_ms is not None:
-            obligation['deadline_offset_ms'] = _offset_ms(self.started, self.clock()) + self.response_window_ms
+        if self.response_window_ms is not None:
+            offset = _offset_ms(self.started, self.clock())
+            obligation['deadline_offset_ms'] = offset + self.response_window_ms
+            if _HELD in obligation:
+                # A research call still running holds the restarted deadline from delivery.
+                obligation[_HELD] = offset
         request = self_check_request(obligation)
         obligation['delivered_request_sha256'] = hashlib.sha256(_raw_json(request).encode()).hexdigest()
         return request
@@ -741,25 +745,19 @@ class ObservationTracker:
             raise ValueError("checkpoint already counted; response lineage must precede file polling")
         self.self_check_checkpoints.add(sha256)
 
-    def record_safe_boundary(self, receipt_id: str, *, call_ids: list[str] = ()) -> list[dict]:
-        """Called only for a validated control receipt, not arbitrary CLI text."""
+    def record_safe_boundary(self, receipt_id: str, *, call_ids: list[str] = ()) -> None:
+        """Called only for a validated control receipt, not arbitrary CLI text.
+
+        The receipt is a ``safe_boundary_recorded`` signal, and the reported calls
+        stop holding response deadlines (``_hold_deadlines``).
+        """
         if not isinstance(receipt_id, str) or not receipt_id:
             raise ValueError("safe boundary needs a control receipt")
-        when = self.clock()
         self.safe_boundary_ids.add(receipt_id)
         for call_id in call_ids:
             if call_id in self.pending_tools:
                 self.pending_tools[call_id]["safe_boundary"] = True
-        updates = []
-        for obligation in self.obligations.values():
-            if obligation["status"] == "open" and obligation["response_availability"] == "awaiting_safe_boundary":
-                obligation["response_availability"] = "available"
-                obligation["boundary_receipt_ref"] = receipt_id
-                obligation["deadline_offset_ms"] = (None if self.response_window_ms is None
-                    else _offset_ms(self.started, when) + self.response_window_ms)
-                updates.append(deepcopy(obligation))
-        self._hold_deadlines(when)
-        return updates
+        self._hold_deadlines(self.clock())
 
     def _research_call_running(self) -> bool:
         """An observed research call is in flight: not a control call and not reported at a safe boundary."""
@@ -880,15 +878,15 @@ class ObservationTracker:
         identifier = "SC-" + hashlib.sha256(fingerprint.encode()).hexdigest()[:20]
         if identifier in self.obligations: return self.obligations[identifier]
         opened = _offset_ms(self.started, when)
-        available = not any(not details["safe_boundary"] for details in self.pending_tools.values())
         obligation = {"kind": "self_check_due", "id": identifier, "execution_id": self.execution_id,
                       "rule_revision": self.rule_revision, "due": due, "opened_offset_ms": opened,
                       "rules_sha256": self.rules_digest, "snapshot": self._snapshot(),
                       "consumed_boundaries": dict(self.consumed_rules),
-                      "response_availability": "available" if available else "awaiting_safe_boundary",
-                      "deadline_offset_ms": None if self.response_window_ms is None or not available else opened + self.response_window_ms,
+                      "deadline_offset_ms": None if self.response_window_ms is None else opened + self.response_window_ms,
                       "status": "open", "observed_at": now()}
         self.obligations[identifier] = obligation
+        # A research call already running holds the new deadline until every such call ends.
+        self._hold_deadlines(when)
         return obligation
 
     def record_self_check_response(self, response: dict, *, available_evidence_refs: set[str] | None = None,
@@ -910,7 +908,6 @@ class ObservationTracker:
             if obligation["status"] != "open": errors.append("obligation_not_open")
             if response.get("execution_id") != self.execution_id: errors.append("execution_mismatch")
             if response.get("rule_revision") != obligation["rule_revision"]: errors.append("revision_mismatch")
-            if obligation["response_availability"] != "available": errors.append("response_boundary_unconfirmed")
             if _deadline_passed(obligation, now_offset):
                 errors.append("response_deadline_passed")
             if obligation.get("missed_reason"): errors.append(obligation["missed_reason"])

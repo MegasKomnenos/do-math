@@ -21,6 +21,20 @@ class ProbeTests(unittest.TestCase):
                 mkdir.assert_not_called()
                 run.assert_not_called()
 
+    def test_claude_model_names_reach_the_runner_with_one_provider_prefix(self):
+        import tempfile
+        from unittest.mock import patch
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        import probe_cli
+        for model, routed in (('opus', 'claude:opus'), ('claude:opus', 'claude:opus'),
+                              ('claude-opus-5', 'claude-opus-5')):
+            with self.subTest(model=model), tempfile.TemporaryDirectory() as directory, \
+                    patch.object(probe_cli, 'ModelRunner') as runner:
+                runner.return_value.run.return_value = {'status': 'failed', 'output': None}
+                probe_cli.run_case(Path(directory), 'structured', provider='claude', model=model,
+                                   effort='low', timeout=1, only_assigned=False)
+                self.assertEqual(runner.return_value.run.call_args.kwargs['model'], routed)
+
 
 if __name__ == "__main__":
     unittest.main()

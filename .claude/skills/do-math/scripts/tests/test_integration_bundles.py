@@ -272,6 +272,7 @@ class BundleApplicationTests(unittest.TestCase):
         self.assertEqual({}, result["instance"])
         self.assertFalse(result["runtime"].get("integrations"))
         self.assertTrue(all(r["status"] == "returned" for r in result["bundles"]))
+        self.assertEqual("returned", result["status"])
 
 
 if __name__ == "__main__":

@@ -101,7 +101,7 @@ class DomainGovernanceTests(unittest.TestCase):
     def test_unapproved_or_stale_import_cannot_change_charter(self):
         i, rt, s, output = governance_import()
         replacement = charter("CH2", "Prove Q"); replacement["supersedes"] = ["CH1"]
-        output.update(questions=[], question_details=[], needs_clarification=False)
+        output.update(questions=[], question_details=[])
         unit = output["import_units"][0]; unit.update(owner_ref="CH2", question_refs=[], payload={"kind": "charter", "record": replacement})
         b = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN")
         rt["executions"]["E2"] = {"role":"intent_interpretation", "intent_import_sha256":b["sha256"]}
@@ -259,6 +259,11 @@ class DomainGovernanceTests(unittest.TestCase):
         unit = schema["properties"]["import_units"]["items"]["required"]
         self.assertEqual(unit, ["unit_id", "source_range", "interpretation", "owner_kind", "owner_ref", "payload", "decision_refs", "question_refs"])
 
+    def test_interpretation_has_no_flag_derived_from_its_question_records(self):
+        schema = interpretation_schema("interpret")
+        self.assertIn("question_details", schema["properties"])
+        self.assertNotIn("needs_clarification", schema["properties"])
+
     def test_once_http_operation_and_its_execution_share_logical_case(self):
         grant = {'id': 'G', 'status': 'active', 'reuse': 'once'}
         operation = {'id': 'OP', 'grant_id': 'G', 'request_sha256': 'request'}
@@ -354,7 +359,7 @@ class RegisteredOwnerTests(unittest.TestCase):
         gov.register_configuration_owner(handlers, apply=install)
         i, rt, source, output = governance_import()
         i['config'] = deepcopy(DEFAULT_CONFIG)
-        output.update(questions=[], question_details=[], needs_clarification=False)
+        output.update(questions=[], question_details=[])
         output['import_units'][0].update(owner_kind='configuration', owner_ref='I', question_refs=[],
             payload={'kind': 'configuration', 'config': {'call_timeout_seconds': 0}})
         with self.assertRaises(ValueError): gov.prepare_import(i, rt, source, output, execution_id='E1', input_ref="IN", owner_handlers=handlers)
@@ -416,7 +421,7 @@ class IntentImportTests(unittest.TestCase):
             return changed, deepcopy(r)
         handlers = gov.register_configuration_owner(gov.import_owner_handlers(), apply=configure)
         payload = {'kind': 'configuration', 'config': {'effort': 'high'}}
-        output = {'questions': [], 'question_details': [], 'needs_clarification': False,
+        output = {'questions': [], 'question_details': [],
             'import_units': [{'unit_id': 'U', 'source_range': {'start': 0, 'end': len(source['text'])},
                 'interpretation': 'Use the approved effort', 'owner_kind': 'configuration',
                 'owner_ref': instance['id'], 'payload': payload, 'decision_refs': [], 'question_refs': []}]}
@@ -444,7 +449,7 @@ class IntentImportTests(unittest.TestCase):
         original = runtime['intent_imports'][original_id]
         output = deepcopy(original['output'])
         uid = output['import_units'][0]['unit_id']
-        output.update(questions=['Optional presentation preference?'], needs_clarification=True,
+        output.update(questions=['Optional presentation preference?'],
             question_details=[{'id': 'Q-advice', 'question_index': 0, 'target_ids': [instance['id']],
                 'blocks': False, 'reason': 'Presentation preference is optional', 'source_unit_ids': [uid], 'options': []}])
         output['import_units'][0]['question_refs'] = ['Q-advice']
@@ -488,7 +493,7 @@ class IntentImportTests(unittest.TestCase):
         host.runtime['waiting_actions'] = {}
         action = {'id': 'AC-interpret', 'role': 'intent_interpretation', 'target': 'UI-original', 'stage': 'interpret'}
         host.runtime['executions']['AUTHOR'] = {'id': 'AUTHOR', 'role': 'intent_interpretation', 'status': 'ended', 'action': action}
-        output = {'questions': [text], 'needs_clarification': True, 'question_details': [{'id': 'Q-domain',
+        output = {'questions': [text], 'question_details': [{'id': 'Q-domain',
             'question_index': 0, 'target_ids': [host.instance['id']], 'blocks': True, 'reason': 'Domain is needed',
             'source_unit_ids': ['U'], 'options': []}], 'import_units': [{'unit_id': 'U',
             'source_range': {'start': 0, 'end': len(text)}, 'interpretation': 'Ask the domain',
@@ -520,7 +525,7 @@ class IntentImportTests(unittest.TestCase):
     def test_question_references_are_stable_ids_at_both_boundaries(self):
         instance = domain_governance()
         source = gov.preserve_source('SOURCE', 'Which domain?', origin='user')
-        output = {'questions': ['Which domain?'], 'needs_clarification': True,
+        output = {'questions': ['Which domain?'],
             'question_details': [{'id': 'Q-domain', 'question_index': 0,
                 'target_ids': [instance['id']], 'blocks': True, 'reason': 'Domain changes the goal',
                 'source_unit_ids': ['U'], 'options': []}],

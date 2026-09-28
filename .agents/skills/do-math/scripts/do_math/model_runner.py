@@ -86,7 +86,7 @@ class ModelRunner:
         if evidence_dir.exists():
             raise FileExistsError("evidence_dir must be new")
         if not isinstance(prompt, str) or not isinstance(output_schema, dict):
-            raise ValueError("invalid prompt, schema, or timeout")
+            raise ValueError("invalid prompt or schema")
         evidence_dir.mkdir(parents=True)
         prompt_path = evidence_dir / "input.txt"
         prompt_path.write_bytes(prompt.encode("utf-8"))

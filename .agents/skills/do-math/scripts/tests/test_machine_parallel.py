@@ -172,12 +172,12 @@ class MachineSchedulerTests(unittest.TestCase):
         self.assertEqual(waiting['kind'], 'formal_environment')
         self.assertEqual(waiting['next_owner'], 'trust_governance')
         previous = waiting['execution_id']
-        host._resume_environment_waits()
+        host._resume_formal_waits()
         self.assertIn(action['id'], host.runtime['waiting_actions'])
         record_path = Path(environment['toolchain_record']['path'])
         with fixture_setup_lean(environment['toolchain'], record_path.parent / 'smoke.lean'):
             recorded =setup_lean.rerecord(['unused'], record_path.parent, record_path.parent / 'evidence', None)
-        host._resume_environment_waits()
+        host._resume_formal_waits()
         successor = next(a for a in host.runtime['queue'] if a['id']==action['id'])
         self.assertEqual(successor['continuation_of'], previous)
         self.assertNotIn(action['id'], host.runtime['waiting_actions'])

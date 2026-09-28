@@ -132,7 +132,9 @@ class SupervisorRecoveryTests(unittest.TestCase):
                  patch.object(scheduled_operator.subprocess, "run", side_effect=verification), \
                  patch.object(scheduled_operator, "wake", side_effect=restart), \
                  patch("do_math.windows_job.named_job_empty", return_value=True):
-                result = scheduled_operator.recovery(root, iid, root, failure=failure)
+                # A later observation of the same failure carries its own time; it continues the same activity.
+                result = scheduled_operator.recovery(root, iid, root,
+                    failure={**failure, "observed_at": "2026-09-28T00:00:00+00:00"})
             self.assertEqual(result["outcome"], "repaired")
             _, _, runtime = repository.load()
             execution = runtime["executions"][result["execution_id"]]

@@ -8,15 +8,14 @@ from typing import Callable
 
 import jsonschema
 
-from .file_io import json_digest
-from .git_store import check_path_segment
+from .file_io import check_path_segment, json_digest
 
 # The one stored contract identifier: the root manifest of each snapshot names
 # it, and loading accepts no other. Records carry no version marker of their own.
-STATE_CONTRACT_ID = "do-math-state/7"
+STATE_CONTRACT_ID = "do-math-state/8"
 # A record ID names its file research/<family>/<id>.json, so it excludes path
 # separators and ':'. The validator also applies the Git path segment rule
-# (git_store.check_path_segment), which refuses Windows device names.
+# (file_io.check_path_segment), which refuses Windows device names.
 RECORD_ID = r"[A-Za-z0-9][A-Za-z0-9_.-]*"
 _ABSENT = object()
 

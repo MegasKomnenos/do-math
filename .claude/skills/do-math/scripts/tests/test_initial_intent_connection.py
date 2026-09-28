@@ -101,10 +101,11 @@ class InitialFailureRetryTests(unittest.TestCase):
             from do_math.model_policy import selection
             initial=selection(seed.instance['config'],{'role':'intent_interpretation'}, {},{},
                 instance=seed.instance)['profile_ref']
-            seed.control('decision',{'change':{'kind':'initialization','adopt_current_config':True,
+            from do_math.repository import exact_content_hash
+            seed.control('decision',{'change':{'kind':'initialization',
+                'config_sha256':exact_content_hash(seed.instance['config']),
                 'adopt_current_governance':True,'conversation_loss_policy':'continue_authorized',
                 'external_policy':'disabled','adopt_default_review_policy':True,
-                'profile_refs':[profiles.profile_ref(p) for p in seed.instance['execution_profiles'].values()],
                 'initial_profile_ref':initial,'initial_grant_ids':['GR-init'],'research_grant_ids':['GR-research']}})
             seed.runtime.update(processed_controls=[],reservations={},provider_waits={},
                 updated_at=seed.runtime['last_observed_utc'])

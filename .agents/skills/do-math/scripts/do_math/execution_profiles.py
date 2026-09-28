@@ -9,7 +9,7 @@ from copy import deepcopy
 import hashlib
 import json
 
-from .file_io import is_sha256
+from .file_io import validate_profile_ref
 from .model_policy import ROLE_TIERS, TIERS
 from .repository import exact_content_hash
 from .provider_wait import provider_for
@@ -269,15 +269,6 @@ def apply_editions(instance: dict, editions: dict) -> dict:
     else:
         instance.pop("host_capacity_ref", None)
     return instance
-
-
-def validate_profile_ref(reference) -> None:
-    """A sealed profile reference: exactly a nonblank id, a revision >= 1 and a SHA-256."""
-    if (not isinstance(reference, dict) or set(reference) != {"id", "revision", "sha256"}
-            or not isinstance(reference["id"], str) or not reference["id"].strip()
-            or type(reference["revision"]) is not int or reference["revision"] < 1
-            or not is_sha256(reference["sha256"])):
-        raise ValueError("profile reference requires exact id, revision and sha256")
 
 
 def match_profile_ref(profiles: dict, reference: dict) -> dict:

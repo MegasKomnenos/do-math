@@ -6,6 +6,7 @@ from .execution_profiles import task_research
 from .input_basis import capture_decision_basis, decision_basis_changes, CurrentnessChanged
 from .repository import exact_content_hash, new_id
 from .session_slots import held_reservations
+from .task_contracts import TERMINAL_TASK_STATUSES
 
 
 class DecisionEngineMixin:
@@ -66,7 +67,7 @@ class DecisionEngineMixin:
         if not task_research(action):
             return []
         task = self.runtime["tasks"].get(action.get("target"))
-        if not task or task.get("status") in planning.TERMINAL_TASK_STATUSES:
+        if not task or task.get("status") in TERMINAL_TASK_STATUSES:
             return []
         result = planning.task_ready(task, self.instance, self.runtime,
                                      include_scheduling_waits=False, action=action,evaluation_context=evaluation_context)
@@ -120,7 +121,7 @@ class DecisionEngineMixin:
             for identifier in target_ids:
                 before = original_runtime["tasks"].get(identifier)
                 after = self.runtime["tasks"].get(identifier)
-                if not before or not after or after.get("status") in planning.TERMINAL_TASK_STATUSES:
+                if not before or not after or after.get("status") in TERMINAL_TASK_STATUSES:
                     changes.append({"id": identifier, "field": "target_applicability", "reason": "planning target ended or missing"})
                     continue
                 if planning.contract_hash(before) != planning.contract_hash(after):
@@ -193,6 +194,8 @@ class DecisionEngineMixin:
         if action.get("refresh", {}).get("attempt", 0) < 1:
             refreshed = {**deepcopy(action), "refresh": {"execution_id": execution_id, "changes": deepcopy(changes), "attempt": 1}}
             refreshed.pop("model_selection", None)
+            # The premises changed, not the output: no earlier submission issue carries over.
+            refreshed.pop("repair", None)
             if action["role"] == "task_contract_review":
                 task = self.runtime["tasks"][action["target"]]
                 refreshed["contract_basis"] = {"revision": task["revision"], "contract_sha256": planning.contract_hash(task),

@@ -2,14 +2,15 @@
 from copy import deepcopy
 from pathlib import Path
 
+from .planning import instance_ended
 from .session_slots import SessionSlots
 
 
-def record_model_policy_violation(runtime, execution_id, model, result):
+def record_model_policy_violation(instance, runtime, execution_id, model, result):
     """Pause on a reported model other than the assigned one; the user decides the next step."""
     runtime["model_policy_violation"] = {"execution_id": execution_id, "assigned_model": model,
                                          "reported_models": deepcopy(result.get("reported_models"))}
-    if runtime["status"] not in {"closed", "completed"}:
+    if not instance_ended(instance, runtime):
         runtime["status"] = "paused"
 
 
@@ -18,8 +19,7 @@ class ProviderEngineMixin:
         """A fresh ledger view over the engine's current state; it holds no state of its own."""
         return SessionSlots(self.runtime, self.instance)
 
-    def _settle_recovered_execution(self, execution_id, *, at,
-                                    outcome="execution_incomplete", disposition=None):
+    def _settle_recovered_execution(self, execution_id, *, at, disposition=None):
         """Stage local reservation settlement and execution end for one CAS.
 
         The caller owns the repository lock and saves this runtime together with
@@ -33,7 +33,8 @@ class ProviderEngineMixin:
             return False
         candidate = deepcopy(execution)
         if candidate["status"] != "ended":
-            end_recovered(candidate, at=at, outcome=outcome, disposition=disposition or "preserved_for_followup")
+            end_recovered(candidate, at=at, outcome="execution_incomplete",
+                          disposition=disposition or "preserved_for_followup")
         if not self._session_slots().release(execution_id, reason="recovery local termination confirmed"):
             return False
         candidate["capacity"] = deepcopy(execution["capacity"])

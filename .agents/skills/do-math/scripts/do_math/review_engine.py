@@ -341,7 +341,7 @@ class ReviewEngineMixin:
             superseded = (item.get('lifecycle') in {'withdrawn', 'superseded'}
                 or item.get('exposition_id') != cycle['proposal'].get('exposition_id')
                 or item.get('review_cycle_id') not in {None, cid})
-            closed = self.runtime.get('status') in {'closed', 'completed'}
+            closed = self._instance_closed()
             if record['state'] == 'deferred' and not superseded and not closed:
                 continue
             stamp = now()

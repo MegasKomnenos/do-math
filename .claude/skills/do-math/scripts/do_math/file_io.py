@@ -246,11 +246,50 @@ def is_sha256(value):
     return isinstance(value,str) and _SHA256.fullmatch(value) is not None
 
 
+def validate_profile_ref(reference):
+    """A sealed execution profile reference: exactly a nonblank id, a revision >= 1 and a SHA-256.
+
+    The CLI workers check it inside their Windows Job, where they load this module
+    without the package; the engine's stored profile lookup checks it too.
+    """
+    if (not isinstance(reference, dict) or set(reference) != {"id", "revision", "sha256"}
+            or not isinstance(reference["id"], str) or not reference["id"].strip()
+            or type(reference["revision"]) is not int or reference["revision"] < 1
+            or not is_sha256(reference["sha256"])):
+        raise ValueError("profile reference requires exact id, revision and sha256")
+
+
 def require_text(value, label):
     """``value`` when it is a string with a non-whitespace character; otherwise ``ValueError``."""
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{label} must be nonempty text")
     return value
+
+
+_WINDOWS_RESERVED = frozenset({
+    "CON", "PRN", "AUX", "NUL",
+    *(f"COM{number}" for number in range(1, 10)),
+    *(f"LPT{number}" for number in range(1, 10)),
+})
+
+
+# Pure in its string argument; saves re-checking the same segments on every save.
+@lru_cache(maxsize=65536)
+def check_path_segment(part: str) -> None:
+    """Reject one path segment that Windows cannot store under that name.
+
+    Empty, ``.``/``..``, trailing dot or space (Win32 strips them), separators,
+    ``<>:"|?*`` and control characters, and reserved device names (``CON``,
+    ``com1.txt``) are refused. State paths, record IDs and the control transport's
+    file names share this rule; the transport loads this module without the package.
+    """
+    if (not isinstance(part, str) or not part or part in {".", ".."} or part[-1] in {".", " "}
+            or "/" in part or "\\" in part):
+        raise ValueError("path contains an invalid segment")
+    if any(character in '<>:"|?*' or ord(character) < 32 for character in part):
+        raise ValueError("path contains a Windows-invalid segment")
+    if part.rstrip(". ").split(".", 1)[0].upper() in _WINDOWS_RESERVED:
+        raise ValueError("path contains a reserved Windows device name")
 
 
 def distinct_texts(value, label, *, nonempty=False):

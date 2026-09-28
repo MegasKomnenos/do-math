@@ -32,7 +32,7 @@ class ActivationGateTests(unittest.TestCase):
     def test_initialization_persists_missing_activation_requirements_without_dispatch(self):
         instance, runtime = initialize_state(
             instance_id="RI-test", goal="Prove a theorem", workspace=Path(tempfile.gettempdir()) / "do-math-lifecycle-test",
-            config={"allowed_axioms": ["propext"]}, source_input="original user request",
+            config={}, source_input="original user request",
         )
 
         self.assertEqual(instance["lifecycle"]["state"], "initializing")

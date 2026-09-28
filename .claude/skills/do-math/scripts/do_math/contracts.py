@@ -247,8 +247,9 @@ def action_schema(action: dict) -> dict:
         if preparation_only(action):
             result['properties']['candidates']['maxItems'] = 0
         else:
-            result['properties']['regenerate_after'] = {**TEXT,
-                'description': 'Timezone-qualified future time after context.observed_at; used only if no contract is preserved.'}
+            result['properties']['regenerate_after'] = {'anyOf': [{'type': 'null'}, {**TEXT}],
+                'description': 'Without candidates: a timezone-qualified time after context.observed_at. '
+                               'With candidates: null; the time is used only when no contract is preserved.'}
             result['required'].append('regenerate_after')
     if action['role'] in RESEARCH_PRODUCER_ROLES:
         # Candidate definitions may be proposed in the same bundle. The shared

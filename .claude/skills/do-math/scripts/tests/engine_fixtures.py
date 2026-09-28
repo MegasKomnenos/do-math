@@ -51,7 +51,7 @@ from do_math.context_store import prepare_role_input
 from do_math.engine import ResearchEngine
 from do_math.governance import OPERATING_ROLES, TASK_WORK_ROLES
 from do_math.initialization import governance_working_view, initialize_state
-from do_math.repository import ResearchRepository, canonical_json
+from do_math.repository import ResearchRepository, canonical_json, exact_content_hash
 from do_math.trust_validation import AXIOMS
 from research_fixtures import (FixtureAdapter, StateStore, approved_governance, bare_engine, charter, governance_start,
                                review_items)
@@ -145,11 +145,11 @@ class FakeEngine(ResearchEngine):
             if p['actor_kind']=='ai':
                 row=profiles.capability_evidence(p,FixtureAdapter().describe(),observed_at=self.current_time.isoformat())
                 self.instance.setdefault('capability_evidence',{})[row['id']]=row
-        self.control('decision',{'change':{'kind':'initialization','adopt_current_config':True,
+        self.control('decision',{'change':{'kind':'initialization',
+            'config_sha256':exact_content_hash(self.instance['config']),
             'adopt_current_governance':True,'conversation_loss_policy':'continue_authorized',
             'external_policy':external_policy,
             **({'review_policy':review_policy} if review_policy is not None else {'adopt_default_review_policy':True}),
-            'profile_refs':[profiles.profile_ref(p) for p in self.instance['execution_profiles'].values()],
             'initial_grant_ids':['GR-init'],'research_grant_ids':['GR-research']}})
         self.environment('base',True)
         iid=self.instance['lifecycle']['input_id']
@@ -391,7 +391,7 @@ def intent_import(engine, *, clarification=False, payload=None):
     engine.runtime["inputs"] = [{"id": "UC-input", "text": text, "config": {}, "origin": "user"}]
     questions = ["Which scope?"] if clarification else []
     output = {"summary": "interpretation", "used_sources": [], "questions": questions,
-        "needs_clarification": clarification, "import_units": [{"unit_id": "IU-one",
+        "import_units": [{"unit_id": "IU-one",
             "source_range": {"start": 0, "end": len(text)}, "interpretation": text,
             "owner_kind": "charter", "owner_ref": "CH-one", "payload": payload or {},
             "decision_refs": [], "question_refs": ["Q-one"] if clarification else []}],
@@ -729,7 +729,7 @@ def evidence_engine(goal='Establish P', *, academic_requirements=None):
         'workspace': str(SCRIPTS),
         'grants': {'GR-evidence': {'id': 'GR-evidence', 'kind': 'local', 'status': 'active',
             'roles': ['research_work', 'supplemental_research'], 'task_ids': [],
-            'expires_at': None, 'checkpoint_allowed': True, 'reuse': 'reusable'}}})
+            'expires_at': None, 'reuse': 'reusable'}}})
     e.instance = approved_governance(e.instance, [charter('CH-fixture', goal, rationale='Research the stated goal',
         desired_result=goal, success_criteria=[goal], evidence_boundary='Proof not preference',
         academic_requirements=academic_requirements or [])],

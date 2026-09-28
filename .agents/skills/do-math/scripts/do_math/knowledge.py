@@ -787,30 +787,21 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None) -> di
     return output
 
 
-def invalidate_environment(instance, runtime, env_id, reason, *, affected_constants=None,
-                           scope_evidence=None) -> tuple[dict, dict]:
+def invalidate_environment(instance, runtime, env_id, reason) -> tuple[dict, dict]:
+    """Invalidate a trust environment and suspend every formal result verified in it."""
     require_text(reason, "reason")
     output, new_runtime = deepcopy(instance), deepcopy(runtime)
     environment = output.get("trust_environments", {}).get(env_id)
     if environment is None:
         raise ValueError("unknown trust environment: " + env_id)
-    scoped = bool(affected_constants and scope_evidence)
-    candidates = [formal for formal in output.get("formal_results", {}).values()
-                  if formal.get("trust_environment_id") == env_id]
-    if any(not formal.get("verification", {}).get("dependency_closure") for formal in candidates):
-        scoped = False
-    if not scoped:
-        environment.update(status="invalid", invalidated_reason=reason)
-        if output.get("active_trust_environment") == env_id:
-            output["active_trust_environment"] = None
+    environment.update(status="invalid", invalidated_reason=reason)
+    if output.get("active_trust_environment") == env_id:
+        output["active_trust_environment"] = None
     roots = set()
-    for formal in candidates:
-        closure = {name for names in formal.get("verification", {}).get("dependency_closure", {}).values() for name in names}
-        closure.update(formal.get("declaration_names", []))
-        if not scoped or closure & set(affected_constants):
+    for formal in output.get("formal_results", {}).values():
+        if formal.get("trust_environment_id") == env_id:
             formal["formal_use"] = "suspended"
-            formal.setdefault("use_history", []).append({"reason": reason, "environment_id": env_id,
-                "affected_constants": sorted(affected_constants or []), "scope_evidence": scope_evidence})
+            formal.setdefault("use_history", []).append({"reason": reason, "environment_id": env_id})
             roots.add(formal["id"])
     previously_active = {uid for uid, use in output.get("assessment_uses", {}).items() if use.get("status") == "active"}
     if roots:

@@ -563,7 +563,7 @@ def intent_response(context):
     if context["action"].get("stage", "interpret") == "interpret":
         source = context["user_request"]
         return {"summary": "Preserve the supplied input verbatim for independent inspection",
-            "used_sources": [], "questions": [], "needs_clarification": False, "question_details": [],
+            "used_sources": [], "questions": [], "question_details": [],
             "import_units": [{"unit_id": "IU-original", "source_range": {"start": 0, "end": len(source["text"])},
                 "interpretation": source["text"], "owner_kind": "charter",
                 "owner_ref": context["governance"]["charter"]["id"],
@@ -875,10 +875,8 @@ def activate(engine, root, *, initialization_runner, external_policy="disabled",
     if windows:
         send_control(engine, "configure", config=windows)
     expiry = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
-    from do_math.execution_profiles import resolve_profile
-    profiles = [resolve_profile(engine.instance['execution_profiles'], ref)
-                for refs in engine.instance['role_profile_refs'].values() for ref in refs]
-    profiles = [p for p in profiles if p['actor_kind'] == 'ai']
+    from do_math.repository import exact_content_hash
+    config_sha256 = exact_content_hash(engine.instance["config"])
     from do_math.model_policy import selection
     initial_ref = selection(engine.instance["config"], {"role": "intent_interpretation"},
         {}, engine.instance["knowledge"], instance=engine.instance)["profile_ref"]
@@ -890,7 +888,7 @@ def activate(engine, root, *, initialization_runner, external_policy="disabled",
         ("decision", {"change": {"kind": "grant", "grant": {"id": "GR-research-fixture",
         "kind": "local", "roles": list(ROLES) + ["formal_check"], "reuse": "reusable", "expires_at": expiry}}})]
     controls += [("decision", {"change": {"kind": "initialization", "operation": "probe",
-                                         "profile_refs": [profile_ref(p) for p in profiles]}})]
+                                         "config_sha256": config_sha256}})]
     controls += [("trust", trust_fixture(root, engine.instance["config"]["lean_command"]))]
     for action, config in controls:
         control(engine.store.repository, engine.instance["id"], action,
@@ -902,10 +900,9 @@ def activate(engine, root, *, initialization_runner, external_policy="disabled",
     environment = next(iter(engine.instance["trust_environments"]))
     send_control(engine, "trust", config={"operation": "transition", "env_id": environment})
     send_control(engine, "decision", config={"change": {"kind": "initialization",
-        "adopt_current_config": True, "adopt_current_governance": True,
+        "config_sha256": config_sha256, "adopt_current_governance": True,
         "conversation_loss_policy": "continue_authorized", "external_policy": external_policy,
         **({"review_policy": review_policy} if review_policy is not None else {"adopt_default_review_policy": True}),
-        "profile_refs": [profile_ref(p) for p in profiles],
         "initial_profile_ref": initial_ref, "initial_grant_ids": ["GR-initial-fixture"],
         "research_grant_ids": ["GR-research-fixture"]}})
     previous = engine.runner

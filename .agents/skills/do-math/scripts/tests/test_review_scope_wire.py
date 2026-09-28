@@ -140,6 +140,16 @@ class ExpandedScopeRevisionTests(unittest.TestCase):
         next_scope = {**deepcopy(scope), 'assessment_id': 'SA-next'}
         next_scope['initial_slots'].pop()
         action = review_cycle.next_actions(current)[0]
+        # The scope seat receives the seats it must keep and the proposal the new revision replaces,
+        # so the shared submission check refuses the removal before central receipt.
+        visible = review_cycle.context_for(current, action)
+        self.assertEqual(visible['retained_reviewer_slots'], slots)
+        self.assertEqual(visible['previous_reviews'][-1]['proposal'], previous['proposal'])
+        with self.assertRaisesRegex(ValueError, 'retained logical slots'):
+            review_cycle.validate_visible_output(visible, action, {
+                'proposal_digest': current['proposal_digest'], 'summary': 'Incorrectly removes a seat',
+                'used_sources': ['proposal'], 'questions': [], 'scope_complete': True,
+                'scope_assessment': next_scope})
         with self.assertRaisesRegex(ValueError, 'retained logical slots'):
             review_cycle.accept_result(current, action, {
                 'proposal_digest': current['proposal_digest'], 'summary': 'Incorrectly removes a seat',

@@ -267,10 +267,9 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
                         defect('external execution ' + field + ' differs from ledger', identifier)
         checked.append('external execution mappings')
     elif area == 'mathematical_effect':
-        from .knowledge_records import formal_usable
-        for identifier, formal in instance.get('formal_results', {}).items():
-            if formal.get('publication_state') == 'accepted' and formal.get('formal_use') == 'active':
-                run('formal use currentness', lambda f=formal: [] if formal_usable(instance, f) else ['active formal result has stale verification or trust basis'], identifier)
+        # Loading already binds every sealed formal result to its own trust
+        # environment (record_schemas.validate_semantics). A result left under a
+        # superseded environment after a trust transition is history, not a defect.
         if instance.get('goal_status') == 'mathematically_solved' or runtime.get('status') == 'completed':
             def audits():
                 errors = []

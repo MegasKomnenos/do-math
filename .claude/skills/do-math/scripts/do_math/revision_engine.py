@@ -4,12 +4,13 @@ from copy import deepcopy
 from . import planning, revisions
 from .execution_profiles import RESEARCH_PRODUCER_ROLES, task_research
 from .session_slots import live_action_ids
+from .task_contracts import TERMINAL_TASK_STATUSES
 
 
 class RevisionEngineMixin:
     def _retire_closed_revision_targets(self):
         closed = {identifier for identifier, task in self.runtime['tasks'].items()
-                  if task.get('status') in planning.TERMINAL_TASK_STATUSES}
+                  if task.get('status') in TERMINAL_TASK_STATUSES}
         live = live_action_ids(self.runtime)
         containers = [(action.get('id'), action, None) for action in list(self.runtime['queue'])]
         containers.extend((identifier, entry['action'], entry) for identifier, entry in list(self.runtime.get('waiting_actions', {}).items()))
@@ -73,7 +74,7 @@ class RevisionEngineMixin:
         self._remove_action(action)
         self.runtime["history"].append({"kind": "obsolete_selection", "action": deepcopy(action),
                                         "reason": "selected contract or its approval is no longer current", "readiness": result})
-        if task["status"] not in planning.TERMINAL_TASK_STATUSES:
+        if task["status"] not in TERMINAL_TASK_STATUSES:
             task["status"] = "waiting"
             task['waiting']={'kind':'contract_review','target_refs':[task['id']],'next_owner':'research_preparation','reason':result['errors']}
             task.pop("selected_by", None)
@@ -87,7 +88,7 @@ class RevisionEngineMixin:
         target = action.get("target")
         if action.get("role") == "research_preparation" and not preparation_only(action) and not action["revision_targets"] and target in self.runtime["tasks"]:
             task = self.runtime["tasks"][target]
-            if task.get("status") not in planning.TERMINAL_TASK_STATUSES:
+            if task.get("status") not in TERMINAL_TASK_STATUSES:
                 action["revision_targets"] = revisions.capture_targets(self.instance, self.runtime, [target], required=planning.revision_required(task),
                     source_ref=action.get("contract_review_execution") or action.get("decision_id"))
         if task_research(action):
@@ -119,7 +120,7 @@ class RevisionEngineMixin:
             detached = []
             for identifier, task_id in list(entry.get("delegated_targets", {}).items()):
                 task = self.runtime["tasks"].get(task_id, {})
-                if task.get("status") in planning.TERMINAL_TASK_STATUSES or identifier not in task.get("knowledge_revision_targets", []):
+                if task.get("status") in TERMINAL_TASK_STATUSES or identifier not in task.get("knowledge_revision_targets", []):
                     del entry["delegated_targets"][identifier]
                     detached.append({"record_id": identifier, "task_id": task_id})
             if detached:
@@ -183,7 +184,7 @@ class RevisionEngineMixin:
             return
         if action.get("role") in RESEARCH_PRODUCER_ROLES and extension.get("knowledge_changes"):
             task = self.runtime["tasks"].get(action.get("target"))
-            if task and task.get("status") not in planning.TERMINAL_TASK_STATUSES and output.get("outcome") != "waiting":
+            if task and task.get("status") not in TERMINAL_TASK_STATUSES and output.get("outcome") != "waiting":
                 # Dependency propagation must not hide this writer's newly
                 # submitted result from the completion assessor.
                 task["status"] = "waiting"

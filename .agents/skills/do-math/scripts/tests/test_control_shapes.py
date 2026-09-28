@@ -101,7 +101,7 @@ class ControlShapeBoundaryTests(unittest.TestCase):
 class DomainShapeTests(unittest.TestCase):
     def test_initialization_checks_the_boolean_flags_its_owner_actually_consumes(self):
         from do_math.control_contracts import validate_control_payload
-        for key in ('adopt_current_config', 'adopt_current_governance', 'adopt_default_review_policy'):
+        for key in ('adopt_current_governance', 'adopt_default_review_policy'):
             with self.subTest(key=key):
                 validate_control_payload('decision', '', {'change': {'kind': 'initialization', key: True}})
                 with self.assertRaises(ValueError):

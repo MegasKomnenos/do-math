@@ -84,8 +84,12 @@ class PublicLifecycleTests(unittest.TestCase):
         self.assertNotIn('missing',resumed.runtime['availability'])
         send_control(resumed,'close',config={})
         self.assertTrue(resumed.instance['lifecycle']['permanently_closed'])
-        send_control(resumed,'pause',config={})
-        send_control(resumed,'resume',config={})
+        from do_math.engine import control
+        for action in ('pause','resume'):
+            # After the resume, the same pause is a new request; a closed instance rejects both.
+            request=control(root,instance_id,action,config={})
+            resumed.process_controls()
+            self.assertEqual(resumed.control_result(request['request_id'])['effect'],'rejected',action)
         terminal=ResearchEngine(root,instance_id)
         self.assertEqual(terminal.runtime['status'],'closed')
         self.assertTrue(terminal.instance['lifecycle']['permanently_closed'])

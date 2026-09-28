@@ -162,7 +162,7 @@ class RepairExecutionMixin:
 
     def continue_initial_retries(self):
         if (self.instance.get('lifecycle', {}).get('state') != 'initializing'
-                or self.runtime.get('status') in {'paused', 'closed', 'completed'}
+                or self.runtime.get('status') == 'paused' or self._instance_closed()
                 or self.runtime.get('user_pause')):
             return
         for identifier in list(self.runtime.get('waiting_actions', {})):

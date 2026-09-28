@@ -358,6 +358,11 @@ class WakeTests(unittest.TestCase):
             status = {'status': 'waiting', 'research_wake_reasons': reasons}
             with patch.object(scheduled_operator, 'read_status', return_value=status):
                 self.assertEqual(scheduled_operator.engine_start_guard(root, 'RI-test', root)['outcome'], 'startable')
+                status['model_policy_violation'] = {'execution_id': 'EX-model'}
+                # Every refusal reports the status it judged under the same key.
+                self.assertEqual(scheduled_operator.engine_start_guard(root, 'RI-test', root),
+                                 {'outcome': 'model_policy_waiting', 'before': status})
+                del status['model_policy_violation']
                 status['user_pause'] = {'reason': 'user'}
                 self.assertEqual(scheduled_operator.engine_start_guard(root, 'RI-test', root)['outcome'], 'paused')
                 scheduled_operator.hold(root, reason='test')

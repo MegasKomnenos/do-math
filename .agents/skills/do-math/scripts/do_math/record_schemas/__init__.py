@@ -1,5 +1,5 @@
 """Installation registry and domain semantic checks for persisted families."""
-from .schemas import (BOOL, EVIDENCE, NAT, PROFILE_REF, RECORDS, RESEARCH_FIELDS, RUNTIME_FIELDS, TEXT,
+from .schemas import (BOOL, EVIDENCE, NAT, RECORDS, RESEARCH_FIELDS, RUNTIME_FIELDS, TEXT,
                       array, enum, nullable, obj)
 from ..file_io import json_copy
 from ..git_store import ARTIFACT_ROOT
@@ -79,8 +79,6 @@ def _lifecycle_references(row):
         if check.get(field):
             yield check[field], "executions"
     adoption = row.get("adoption", {})
-    for ref in adoption.get("profile_refs", []):
-        yield ref["id"], "execution_profiles"
     if adoption.get("initial_profile_ref"):
         yield adoption["initial_profile_ref"]["id"], "execution_profiles"
     for field in ("initial_grant_ids", "research_grant_ids"):
@@ -127,23 +125,17 @@ def install(contract):
         contract.register_family("research" if name in research else "runtime", name,
             shape="list" if name in lists else "map",
             schema=schema, validator=validators.get(name), references=REFERENCES.get(name))
+    references = {("research", "lifecycle"): _lifecycle_references,
+                  ("research", "role_profile_refs"): _role_profile_references,
+                  ("research", "host_capacity_ref"): _host_capacity_reference,
+                  ("runtime", "pending_events"): _event_queue_references,
+                  ("runtime", "academic_assessments"): _academic_assessment_references,
+                  ("runtime", "trust_bindings"): _trust_binding_references}
     for root, fields in (("research", RESEARCH_FIELDS), ("runtime", RUNTIME_FIELDS)):
         for name, schema in fields.items():
-            if name == "role_profile_refs":
-                from ..execution_profiles import PROFILE_ROLES
-                choices = {**array(PROFILE_REF, True), "minItems": 1}
-                selection_schema = obj({role: choices for role in sorted(PROFILE_ROLES)})
-                contract.register_family(root, name, shape="singleton", schema=selection_schema,
-                                         identity=False, references=_role_profile_references)
-            else:
-                reference = {("research", "lifecycle"): _lifecycle_references,
-                    ("runtime", "pending_events"): _event_queue_references,
-                    ("runtime", "academic_assessments"): _academic_assessment_references,
-                    ("research", "host_capacity_ref"): _host_capacity_reference,
-                    ("runtime", "trust_bindings"): _trust_binding_references}.get((root, name))
-                contract.register_family(root, name, shape="metadata" if name in metadata[root] else "singleton",
-                                         schema=schema, validator=validators.get(name), identity=False,
-                                         references=reference)
+            contract.register_family(root, name, shape="metadata" if name in metadata[root] else "singleton",
+                                     schema=schema, validator=validators.get(name), identity=False,
+                                     references=references.get((root, name)))
     contract.register_family("research", "config", shape="singleton", schema=config_schema(), identity=False)
 
 
@@ -173,7 +165,7 @@ def config_schema():
               **{k: {"type": "object", "additionalProperties": TEXT} for k in ("tier_models", "role_tiers")},
               "session_limits": obj({"work": {"type": "object", "additionalProperties": NAT}}, ("work",)),
               "lean_command": nullable({**array({"type": "string", "minLength": 1}), "minItems": 1}),
-              "allowed_axioms": array({"type": "string", "minLength": 1}), "scholarly_server": nullable(EVIDENCE)}
+              "scholarly_server": nullable(EVIDENCE)}
     host_demands = obj({"jobs": {"const": 1}, "memory_bytes": {"type": "integer", "minimum": 1},
         "cpu_rate_basis_points": {"type": "integer", "minimum": 1, "maximum": 10000}},
         ("jobs", "memory_bytes", "cpu_rate_basis_points"))
@@ -194,11 +186,9 @@ def _immutable_input_rules(lifecycle):
 
 
 def _execution_rules(row):
-    from ..execution_lifecycle import SUBMISSION_RECEIPT_KINDS
-    if row["status"] == "ended" and (not row.get("ended_at") or not row.get("outcome")):
-        raise ValueError("ended execution requires termination evidence")
-    if row.get("outcome") == "output_accepted" and not row.get("submission_receipt"):
-        raise ValueError("accepted output lacks submission receipt")
+    from ..execution_lifecycle import SUBMISSION_RECEIPT_KINDS, check_termination
+    check_termination(row["status"], ended_at=row.get("ended_at"), outcome=row.get("outcome"),
+                      receipt=row.get("submission_receipt"))
     if row.get("execution_window", {}).get("execution_id", row["id"]) != row["id"]:
         raise ValueError("execution window belongs to a different execution")
     if row.get("authority_revocation"):
@@ -438,7 +428,7 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
                 raise ValueError("task profile reference does not identify an execution profile")
             match_profile_ref(instance.get("execution_profiles", {}), reference)
         if task.get("assessment"):
-            validate_item_dispositions(task, task["assessment"], require_complete=task.get("status") == "completed")
+            validate_item_dispositions(task, task["assessment"])
     for row in runtime.get("self_check_responses", {}).values():
         if row["kind"] == "self_check_rejected":
             continue  # Invalid incoming IDs remain raw rejection evidence.

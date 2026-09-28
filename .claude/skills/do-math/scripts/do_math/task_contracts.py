@@ -156,6 +156,8 @@ def _row_by_obligation(assessment: dict) -> dict[str, dict]:
 
 
 def validate_item_dispositions(task: dict, assessment: dict, *, require_complete: bool = False) -> None:
+    """Each obligation is disposed or inspected once. A terminal decision already requires that none
+    stays undisposed, unresolved or open; require_complete asks the same of any other assessment."""
     validate_task_contract(task)
     if not isinstance(assessment, dict):
         raise ValueError("assessment must be an object")
@@ -264,7 +266,7 @@ def validate_plan_dispositions(plan: dict, tasks: dict, ready_ids: list[str]) ->
         task = tasks.get(assessment["task_id"])
         if task is None:
             raise ValueError("assessment names an unknown task")
-        validate_item_dispositions(task, assessment, require_complete=assessment.get("decision") in {"completed", "closed"})
+        validate_item_dispositions(task, assessment)
 
 
 def repetition_lineages(runtime: dict, task_id: str | None = None, *,

@@ -225,11 +225,6 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
         if lineage in {'contract_revision','proposal_version'}:
             current=max((r.get('version',0) for r in history if r.get('lineage')==lineage and r.get('lineage_id')==lineage_id),default=0)
             if row['baseline_revision']!=current:raise ValueError('continuation cannot invent a future version baseline')
-    if owner == 'user' and outcome not in {'accepted','contracts_preserved','continued'}:
-        from .questions import open_links
-        questions=[q for q in open_links(runtime,'user') if q.get('id')==decision_ref and lineage_id in q.get('target_ids',[])]
-        if not questions:
-            raise ValueError('user-owned change requires an existing scoped user question')
     history.append(row)
     from .task_contracts import repetition_lineages
     limit=instance.get('config',{}).get(lineage+'_limit')

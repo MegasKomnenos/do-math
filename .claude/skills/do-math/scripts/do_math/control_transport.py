@@ -20,10 +20,10 @@ import time
 from typing import Any, Callable
 if __package__:
     from .file_io import (compact_json_bytes, read_bytes_shared, file_fingerprint, fingerprint_settled,
-                          json_digest, require_text, write_bytes_atomic)
+                          check_path_segment, json_digest, require_text, write_bytes_atomic)
 else:
     from file_io import (compact_json_bytes, read_bytes_shared, file_fingerprint, fingerprint_settled,
-                         json_digest, require_text, write_bytes_atomic)
+                         check_path_segment, json_digest, require_text, write_bytes_atomic)
 
 
 # Control vocabulary shared by the workers, the MCP server and the observers.
@@ -69,11 +69,6 @@ def self_check_response_errors(response: Any) -> list[str]:
 
 
 _FINAL_RECEIPTS = frozenset({"accepted", "rejected", "closed", "previewed"})
-_WINDOWS_DEVICE_NAMES = frozenset(
-    {"CON", "PRN", "AUX", "NUL"}
-    | {f"COM{number}" for number in range(1, 10)}
-    | {f"LPT{number}" for number in range(1, 10)}
-)
 
 
 def _require_text(value: Any, name: str) -> str:
@@ -84,12 +79,13 @@ def _require_text(value: Any, name: str) -> str:
 
 
 def _require_file_name(value: Any, name: str) -> str:
+    """One Windows file name segment (``file_io.check_path_segment``) that also has no ``[`` or ``]``."""
     value = _require_text(value, name)
-    invalid = '<>:"/\\|?*[]'
-    device = value.split(".", 1)[0].upper()
-    if (value in {".", ".."} or value[-1] in {" ", "."}
-            or any(character in invalid or ord(character) < 32 for character in value)
-            or device in _WINDOWS_DEVICE_NAMES):
+    try:
+        check_path_segment(value)
+    except ValueError:
+        raise ValueError(f"{name} must be a safe file name component") from None
+    if "[" in value or "]" in value:
         raise ValueError(f"{name} must be a safe file name component")
     return value
 

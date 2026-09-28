@@ -275,7 +275,7 @@ def _worker(request_path: Path) -> int:
 
 
 def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None,
-             on_finished=None, raw_output=False, job_name=None):
+             on_finished=None, job_name=None):
     """Wait for the whole Job; only explicit stop terminates it.
 
     The two-second termination check applies only after cancellation, never to computation.
@@ -309,13 +309,11 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
                 time.sleep(.02)
         if on_finished: on_finished(job.resource_usage())
         def read_output(path):
-            if not path.exists(): return b'' if raw_output else ''
-            return path.read_bytes() if raw_output else path.read_text(encoding='utf-8',errors='replace')
+            return path.read_text(encoding='utf-8',errors='replace') if path.exists() else ''
         stdout,stderr=read_output(out),read_output(err)
-        error_stderr=stderr.decode(errors='replace') if isinstance(stderr,bytes) else stderr
         if stopped: return None,stdout,stderr,True
         if not status.exists():
-            raise RuntimeError('formal worker completion status missing' + (': '+error_stderr if error_stderr else ''))
+            raise RuntimeError('formal worker completion status missing' + (': '+stderr if stderr else ''))
         try:
             data=json.loads(status.read_text())
             if (not isinstance(data,dict) or data.get('state') not in {'exited','worker_error'}
@@ -323,7 +321,7 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
                 raise ValueError('invalid completion status')
         except ValueError as error:
             raise RuntimeError('formal worker completion status invalid: '+str(error)) from error
-        if data['state']=='worker_error': raise RuntimeError('formal worker failed: '+error_stderr)
+        if data['state']=='worker_error': raise RuntimeError('formal worker failed: '+stderr)
         return data['exit'],stdout,stderr,False
     finally: job.close()
 
@@ -630,5 +628,4 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None, *, ext
         base['declaration_evidence'][declaration]=row['evidence']
     # One body hash per constant of the closures; the rows it came from leave the output.
     base['dependency_evidence']={name:dependency_hashes[name] for names in base['dependency_closure'].values() for name in names}
-    base['dependency_hash']=exact_content_hash(base['dependency_closure'])
-    return {**base,'stdout':''.join(kept),'status':'verified','reason':None,'expression_encoding':'lean-expr-dag/1'}
+    return {**base,'stdout':''.join(kept),'status':'verified','reason':None}

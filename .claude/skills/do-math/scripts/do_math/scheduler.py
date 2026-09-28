@@ -165,8 +165,8 @@ class SchedulerMixin:
         annotations are a query projection and never rewrite published facts.
         """
         from .planning import schedule_reconsideration
-        if self.instance['lifecycle']['state'] != 'active' or self.runtime['status'] in {
-                'paused', 'closed', 'completed'}:
+        if (self.instance['lifecycle']['state'] != 'active' or self.runtime['status'] == 'paused'
+                or self._instance_closed()):
             return
         runtime = self.runtime
         annotations = ('assigned_to', 'assigned_at')
@@ -345,7 +345,7 @@ class SchedulerMixin:
                     self._refresh_readiness()
                 if self._instance_closed() or (self.runtime['status'] == 'paused' and not limited):
                     continue
-                self._resume_environment_waits()
+                self._resume_formal_waits()
                 if not self.runtime["queue"] and not self._calls.futures:
                     if self.instance["lifecycle"]["state"] == "initializing":
                         self._save()
@@ -388,7 +388,7 @@ class SchedulerMixin:
                 if not watch:
                     break
                 time.sleep(OWNER_POLL_SECONDS)
-            if self.runtime["status"] not in {"initializing", "paused", "closed", "completed", "waiting", "capacity_waiting"}:
+            if not self._instance_closed() and self.runtime["status"] not in {"initializing", "paused", "waiting", "capacity_waiting"}:
                 self.runtime["status"] = "ready"
             if (pending_installation_repair(self.runtime) is not None
                     and self.runtime['status'] != 'paused' and not self._instance_closed()):

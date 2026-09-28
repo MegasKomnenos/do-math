@@ -21,6 +21,18 @@ _EDGES = {"queued": {"starting", "ended"}, "starting": {"running", "stopping"},
           "running": {"stopping"}, "stopping": {"ended"}, "ended": set()}
 
 
+def check_termination(status: str, *, ended_at: Any, outcome: Any, receipt: Any) -> None:
+    """The ended-execution invariant that a transition and the storage gate both check.
+
+    An ended execution has its end time and a closed outcome; an accepted output
+    has a recorded submission receipt.
+    """
+    if status == "ended" and (not ended_at or outcome not in OUTCOMES):
+        raise ValueError("ended execution requires termination evidence")
+    if outcome == "output_accepted" and not receipt:
+        raise ValueError("accepted output lacks submission receipt")
+
+
 def create_execution(*, execution_id: str, owner_activity_id: str, actor_kind: str,
                      input_manifest: Any, profile_ref: Any, created_at: str,
                      continuation_of: str | None = None,
@@ -56,10 +68,7 @@ def transition_execution(execution: dict, target: str, *, at: str, reason: str |
     if target != current and target not in _EDGES[current]:
         raise ValueError(f"illegal execution transition {current} -> {target}")
     if target == "ended":
-        if outcome not in OUTCOMES:
-            raise ValueError("ended requires a closed outcome")
-        if outcome == "output_accepted" and not execution.get("submission_receipt"):
-            raise ValueError("accepted output requires a recorded submission receipt")
+        check_termination(target, ended_at=at, outcome=outcome, receipt=execution.get("submission_receipt"))
         if current == "queued" and outcome not in {"cancelled", "start_failed"}:
             raise ValueError("a queued execution can end only as cancelled or start_failed")
     elif outcome is not None:

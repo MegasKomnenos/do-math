@@ -447,7 +447,7 @@ def authorize(instance: dict, action: dict, at: str | None = None, *, runtime: d
     grant = accepted[0]
     return {"allowed": True, "grant_id": grant["id"],
             "grant_sha256": exact_content_hash(grant),
-            "expires_at": grant.get("expires_at"), "checkpoint_allowed": grant.get("checkpoint_allowed", False)}
+            "expires_at": grant.get("expires_at")}
 
 
 def validate_grant_source(instance, grant):
@@ -921,7 +921,6 @@ def validate_import_units(instance, runtime, source, output, *, owner_handlers=N
         for option in q["options"]:
             require_text(option.get("text"), "option"); require_text(option.get("effect"), "option effect")
     if indices != set(range(len(output.get("questions", [])))): raise ValueError("all questions require source and impact details")
-    if bool(details) != output.get("needs_clarification"): raise ValueError("clarification and question records disagree")
 
 
 def import_seal(bundle):
@@ -1184,7 +1183,7 @@ def interpretation_schema(stage: str) -> dict:
                            "source_unit_ids":{"type":"array","items":string,"minItems":1,"uniqueItems":True},
                            "options":{"type":"array","items":{"type":"object","additionalProperties":False,
                                "properties":{"text":string,"effect":string},"required":["text","effect"]}}}
-        fields.update(import_units={"type": "array", "items": unit, "minItems": 1}, needs_clarification={"type": "boolean"},
+        fields.update(import_units={"type": "array", "items": unit, "minItems": 1},
                       question_details={"type":"array","items":{"type":"object","additionalProperties":False,"properties":question_fields,"required":list(question_fields)}})
     elif stage == "check":
         fields.update(decision={"type": "string", "enum": list(INTERPRETATION_DECISIONS)},

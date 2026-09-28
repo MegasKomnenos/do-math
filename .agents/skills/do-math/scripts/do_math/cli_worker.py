@@ -16,11 +16,11 @@ from typing import Any, Mapping
 try:  # A worker imports this module both as a package module and as a direct Job script.
     from do_math.scholarly import validate_scholarly_server
     from do_math.control_transport import ControlTransport
-    from do_math.file_io import compact_json_bytes, is_sha256, write_bytes_atomic
+    from do_math.file_io import compact_json_bytes, validate_profile_ref, write_bytes_atomic
 except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regressions.
     from scholarly import validate_scholarly_server
     from control_transport import ControlTransport
-    from file_io import compact_json_bytes, is_sha256, write_bytes_atomic
+    from file_io import compact_json_bytes, validate_profile_ref, write_bytes_atomic
 
 
 # Request fields every worker binds to its status, and the collector compares.
@@ -46,13 +46,12 @@ def validate_execution_binding(request):
     fields = {"execution_id", "profile_ref", "control_binding", "resource_limits"}
     if not fields.intersection(request):
         return
-    ref = request.get("profile_ref")
-    if (not isinstance(request.get("execution_id"), str) or not request["execution_id"].strip()
-            or not isinstance(ref, dict) or set(ref) != {"id", "revision", "sha256"}
-            or not isinstance(ref["id"], str) or not ref["id"]
-            or type(ref["revision"]) is not int or ref["revision"] < 1
-            or not is_sha256(ref["sha256"])):
+    if not isinstance(request.get("execution_id"), str) or not request["execution_id"].strip():
         raise ValueError("worker execution binding requires exact execution_id and profile_ref")
+    try:
+        validate_profile_ref(request.get("profile_ref"))
+    except ValueError:
+        raise ValueError("worker execution binding requires exact execution_id and profile_ref") from None
     if "resource_limits" in request:
         try:
             from do_math.windows_job import validate_resource_limits

@@ -420,4 +420,52 @@ class OperationalBasisPremiseTests(unittest.TestCase):
         self.assertEqual(basis_premise_changes({'basis_refs': ['EX-target']}, at_input, current), [])
 
 
+class CurrentnessReturnRoutingTests(unittest.TestCase):
+    def test_currentness_return_beside_an_accepted_bundle_is_refreshed_not_repaired(self):
+        # A split response can accept one bundle while another returns on changed premises. The
+        # result status is then 'partial', exactly as when nothing was accepted, so the receiver
+        # routes by the returned issues (integration.failure_kind), never by that status.
+        import uuid
+        from unittest.mock import create_autospec
+        from do_math import integration, submission
+        from do_math.repository import ResearchRepository
+        from engine_fixtures import routing_engine
+        from research_fixtures import sealed_maintenance_submission
+        with tempfile.TemporaryDirectory() as temporary:
+            workspace = Path(temporary)
+            intent, artifacts = sealed_maintenance_submission(workspace, 'EX-work')
+            prefix = intent['output_ref'].removesuffix('output.json')
+            intent.update(extensions_ref=prefix + 'extensions.json', check_ref=prefix + 'check.json')
+            engine = routing_engine()
+            engine.store = create_autospec(ResearchRepository, instance=True)
+            engine.store.read.side_effect = lambda path, head: artifacts[path]
+            engine.store.git_dir = 'git-' + uuid.uuid4().hex
+            engine.head = 'fixture-snapshot'
+            context = submission.load_json((workspace / 'input/submission/context.json').read_bytes())
+            receipt_artifacts = [{'path': path, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+                                 for path, raw in artifacts.items()]
+            action = context['action']
+            engine.runtime['executions']['EX-work'] = {'id': 'EX-work', 'role': action['role'], 'action': action,
+                'status': 'stopping', 'submission_intent': intent,
+                'submission_receipt': {'kind': 'submit_intent', 'state': 'accepted', 'execution_id': 'EX-work',
+                                       'payload': {'submission_check': {'artifacts': receipt_artifacts}}}}
+            stale = integration.issue('integration.currentness', 'output/integration_bundles',
+                                      'a source changed after the input was fixed', 'IN-two')
+            engine._apply_submission_bundles = create_autospec(engine._apply_submission_bundles, return_value={
+                'status': 'partial', 'retry_bundle_ids': ['IN-two'], 'issues': [stale], 'bundles': [
+                    {'integration_id': 'IN-one', 'status': 'accepted', 'issues': []},
+                    {'integration_id': 'IN-two', 'status': 'returned', 'issues': [stale], 'next_owner': 'producer'}]})
+            engine._record_task_receipt = create_autospec(engine._record_task_receipt)
+            engine._receive_submission(action, {}, 'EX-work', context, engine._response_schema(action), workspace)
+        execution = engine.runtime['executions']['EX-work']
+        self.assertEqual(execution['error_kind'], 'currentness_changed')
+        self.assertEqual([row['integration_id'] for row in execution['currentness_changes']], ['IN-two'])
+        refreshed, = engine.runtime['queue']
+        self.assertEqual(refreshed['refresh']['execution_id'], 'EX-work')
+        self.assertNotIn('repair', refreshed)
+        self.assertNotIn(action['id'], engine.runtime.get('waiting_actions', {}))
+        # The refresh records this execution's outcome once; the ordinary receipt is not recorded again.
+        engine._record_task_receipt.assert_not_called()
+
+
 if __name__ == '__main__': unittest.main()

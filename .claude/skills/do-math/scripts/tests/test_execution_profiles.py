@@ -497,10 +497,12 @@ class ProfileTests(unittest.TestCase):
             except ValueError as error:
                 self.fail("worker rejects execution/profile binding: " + str(error))
             self.assertEqual(loaded["execution_id"], "EX-bound")
-            del request["execution_id"]
-            path.write_text(json.dumps(request), encoding="utf-8")
-            with self.assertRaises(ValueError):
-                codex_worker.load_request(path)
+            for invalid in ({"execution_id": None}, {"profile_ref": {**request["profile_ref"], "id": "   "}}):
+                with self.subTest(invalid=invalid):
+                    bound = {key: value for key, value in {**request, **invalid}.items() if value is not None}
+                    path.write_text(json.dumps(bound), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        codex_worker.load_request(path)
 
     def test_provider_wait_is_canonical_and_serializes_retry_probe(self):
         from do_math.session_slots import SessionSlots

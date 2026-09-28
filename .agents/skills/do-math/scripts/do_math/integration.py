@@ -531,9 +531,11 @@ def apply_bundles(instance, runtime, output, extensions, context, *, execution_i
             if row["issue_id"] not in issue_ids:
                 issues.append(row)
                 issue_ids.add(row["issue_id"])
+    returned = [row["integration_id"] for row in results if row["status"] == "returned"]
+    # Partial only when another bundle is accepted, now or by an earlier receipt.
+    status = "accepted" if not returned else "partial" if len(returned) < len(results) else "returned"
     return {"instance": working_instance, "runtime": working_runtime, "bundles": results,
-            "issues": issues, "retry_bundle_ids": [row["integration_id"] for row in results if row["status"] == "returned"],
-            "status": "partial" if any(row["status"] == "returned" for row in results) else "accepted"}
+            "issues": issues, "retry_bundle_ids": returned, "status": status}
 
 
 def preview_bundles(instance, runtime, output, extensions, context, *, execution_id,

@@ -308,7 +308,7 @@ def engine_start_guard(repository: Path, instance: str, workspace: Path, *, stat
     if block == 'maintenance':
         return {'outcome':'maintenance_waiting', 'before':status}
     if block == 'model_policy':
-        return {"outcome": "model_policy_waiting", "status": status, "reason": "Reported model violated the instance lock; no further operator model was called."}
+        return {"outcome": "model_policy_waiting", "before": status}
     if block in {'user_pause', 'paused'}:
         return {"outcome": "paused", "before": status}
     if block in {'closed', 'completed'}:
@@ -447,6 +447,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
     from .repository import new_id
     from .git_store import GitStateStoreLockError
     from .launch import mark_dispatched, mark_returned
+    from .planning import instance_ended
     from .provider_engine import record_model_policy_violation
     from . import activities, execution_lifecycle
     if failure is not None and (failure.get("kind") not in {"engine_unavailable", "installation_defect"}
@@ -523,8 +524,9 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     return {"outcome": "recovery_waiting", "reason": "profile_capability_unavailable",
                             "capability": capability}
                 eid = new_id("EX")
-                owner = {"kind": "installation_recovery", "failure_sha256": hashlib.sha256(
-                    json.dumps(failure, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()}
+                # The activity of one failure is keyed like its attempts, so a later
+                # observation of the same failure continues the same activity.
+                owner = {"kind": "installation_recovery", "failure_sha256": failure_identity}
                 activity = next((a for a in runtime.get("activities", {}).values()
                                  if a.get("owner_ref") == owner and a.get("status") != "finished"), None)
                 at = now()
@@ -538,12 +540,12 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                 execution_workspace = run_directory / "workspace"
                 execution_workspace.mkdir(parents=True)
                 failure_inputs = []
-                for index, reference in enumerate(failure.get('evidence_refs', [])):
-                    raw = repo.read(reference, head)
+                for index, artifact_ref in enumerate(failure.get('evidence_refs', [])):
+                    raw = repo.read(artifact_ref, head)
                     local = execution_workspace / 'input' / f'failure-{index}.json'
                     local.parent.mkdir(exist_ok=True)
                     local.write_bytes(raw)
-                    failure_inputs.append({'artifact_ref': reference, 'local_path': str(local),
+                    failure_inputs.append({'artifact_ref': artifact_ref, 'local_path': str(local),
                         'sha256': hashlib.sha256(raw).hexdigest()})
                 prompt = (
                     ("Repair only the independently diagnosed do-math installation defect that blocks the preserved submission. "
@@ -557,7 +559,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     "Existing installation-repair approval applies; a new research or external-action authority does not.\n"
                     + json.dumps({"failure": failure, "failure_inputs": failure_inputs,
                                   "installation": str(LIVE_INSTALLATION_ROOT), "repository": str(repository),
-                                  "instance": instance, "execution_id": eid, "profile_ref": profile_ref(profile)}, ensure_ascii=False))
+                                  "instance": instance, "execution_id": eid, "profile_ref": reference}, ensure_ascii=False))
                 prompt = prepare_prompt(prompt, profile)
                 sealed_input = prompt_seal(prompt)
                 if sealed_input["bytes"] > profile["input"]["max_input_bytes"]:
@@ -567,7 +569,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     actor_kind="ai", input_manifest={"failure": failure, "prompt": sealed_input,
                         'repair_identity': {'failure_sha256': failure_identity, 'installation_sha256': installation_sha256},
                         "repair_authority": {"source": "adopted_operator_repair_scope", "boundary": "instructions"}},
-                    profile_ref=profile_ref(profile), created_at=at,
+                    profile_ref=reference, created_at=at,
                     context_origin=activity["assigned_execution_ids"][-1:])
                 execution["role"] = "recovery"
                 slots = SessionSlots(runtime, state)
@@ -607,7 +609,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                         state.setdefault("capability_evidence", {})[evidence["id"]] = evidence
                     outcome = "repaired" if result.get("status") == "completed" else "recovery_failed"
                     if result.get("error_kind") == "model_policy":
-                        record_model_policy_violation(runtime, eid, chosen["model"], result)
+                        record_model_policy_violation(state, runtime, eid, chosen["model"], result)
                     if outcome == 'repaired' and diagnosis:
                         regression = collect_repair_verification(result.get('output'), execution_workspace)
                         _json(run_directory / 'regression-evidence.json', {'files': regression})
@@ -625,7 +627,8 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                         if verified.returncode != 0:
                             outcome = "recovery_verification_failed"
                     if ((_operator_dir(workspace) / 'HOLD.json').exists()
-                            or runtime.get('user_pause') or runtime.get('status') in {'paused', 'closed', 'completed'}):
+                            or runtime.get('user_pause') or runtime.get('status') == 'paused'
+                            or instance_ended(state, runtime)):
                         outcome = 'recovery_held'
                 except Exception as error:
                     outcome = "recovery_failed"

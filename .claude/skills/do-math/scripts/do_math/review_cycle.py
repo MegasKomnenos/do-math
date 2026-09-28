@@ -1317,6 +1317,7 @@ def context_for(cycle, action):
         "review_policy": copy.deepcopy(cycle.get("review_policy")), "scope_assessment": copy.deepcopy(cycle.get("scope_assessment")),
         "owner_activity_id": cycle.get("owner_activity_id"), "activity_execution_limit": cycle.get("activity_execution_limit"),
         "scope_executions_used": len(cycle['execution_accounting']['executions_used']),
+        "retained_reviewer_slots": list(cycle['retained_reviewer_slots']),
         "minimum_scope_execution_limit": minimum_scope_executions(
             max(cycle['review_policy']['minimum_initial_slots'], len(cycle['retained_reviewer_slots'])),
             cycle['max_rounds'], len(cycle['execution_accounting']['executions_used'])),
@@ -1328,7 +1329,7 @@ def context_for(cycle, action):
         "supplemental_results": supplemental,
         "pending_findings": [copy.deepcopy(cycle["findings"][k]) for k in cycle["pending_findings"]],
         "answer_requests": [i for i in cycle["answer_requests"] if cycle["issues"][i]["answer_role_slot_id"] == slot],
-        "previous_reviews": [{**{k: copy.deepcopy(p[k]) for k in ("revision", "proposal_digest", "issues", "decision")},
+        "previous_reviews": [{**{k: copy.deepcopy(p[k]) for k in ("revision", "proposal_digest", "proposal", "issues", "decision")},
                               "completed_results": {key: copy.deepcopy(p["results"][key]) for key in p["sealed"]}}
                              for p in cycle["previous_reviews"]],
         "output_schema": stage_schema(action["stage"])}

@@ -220,7 +220,7 @@ class ControlReceipts(unittest.TestCase):
         engine._save.assert_not_called()
         self.assertEqual((engine.instance, engine.runtime), before)
 
-    def test_safety_boundary_updates_obligation_only_after_publication(self):
+    def test_safety_boundary_releases_the_held_deadline_only_after_publication(self):
         from do_math.observations import ObservationTracker
         from research_fixtures import Clock, observation_rule
         engine, request = self.make_engine()
@@ -234,6 +234,8 @@ class ControlReceipts(unittest.TestCase):
             write_checkpoint(temporary, counters={"attempts": 2})
             obligation = next(row for row in observe(tracker, {"type": "tick"})
                               if row["kind"] == "self_check_due")
+            # The research call C was running when the obligation opened, so its deadline is held.
+            self.assertEqual((obligation["deadline_offset_ms"], obligation["deadline_held_offset_ms"]), (5000, 0))
             engine._trackers = {"EX-work": tracker}
             engine._transport = Mock(); engine._transport_bindings = {"EX-work": {}}
             request.update(kind="safety_boundary", payload={"inflight_calls": False, "call_ids": ["C"]})
@@ -246,9 +248,10 @@ class ControlReceipts(unittest.TestCase):
             self.assertEqual(engine._publish_control_request(uncovered)["state"], "rejected")
             engine._save.side_effect = ValueError("CAS failed")
             self.assertEqual(engine._publish_control_request(request)["state"], "rejected")
-            self.assertIsNone(tracker.obligations[obligation["id"]]["deadline_offset_ms"])
+            self.assertIn("deadline_held_offset_ms", tracker.obligations[obligation["id"]])
             engine._save.side_effect = lambda *a: setattr(engine, "head", "published")
             self.assertEqual(engine._publish_control_request(request)["state"], "accepted")
+            self.assertNotIn("deadline_held_offset_ms", tracker.obligations[obligation["id"]])
             self.assertEqual(tracker.obligations[obligation["id"]]["deadline_offset_ms"], 5000)
             self.assertEqual(engine.runtime["self_check_obligations"][obligation["id"]]["deadline_offset_ms"], 5000)
 
@@ -369,23 +372,53 @@ class SelfCheckStorageTests(unittest.TestCase):
         self.assertEqual(record["rule_update"]["kind"], "observation_rules_accepted")
         self.assertEqual(stored["self_check_obligations"][obligation["id"]]["status"], "answered")
 
-    def test_safety_boundary_is_saved_and_its_replay_redelivers_the_opened_obligation(self):
+    def test_self_check_response_may_cite_the_executions_own_checkpoint(self):
+        from do_math.observations import ObservationTracker
+        from research_fixtures import Clock, observation_rule, self_check_response
+        self.tracker = ObservationTracker("EX-history", self.workspace, {"observation_rules": [
+            observation_rule(required_evidence=["workspace:checkpoint.json"])],
+            "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}, clock=Clock())
+        self.engine._trackers = {"EX-history": self.tracker}
+        obligation = self.due()
+        request = {**self.binding, "request_id": "self-check-" + obligation["id"], "kind": "self_check_response",
+                   "payload": {"self_check_id": obligation["id"], "response": self_check_response(obligation)}}
+        receipt = self.engine._publish_control_request(request)
+        self.assertEqual(receipt["state"], "accepted", receipt)
+        _, _, stored = self.engine.store.load()
+        self.assertEqual(next(iter(stored["self_check_responses"].values()))["kind"], "self_check_received")
+
+    def test_safety_boundary_is_saved_and_releases_the_held_deadline(self):
         observe(self.tracker, {"type": "item.started", "item": {"id": "C", "type": "command_execution"}})
         obligation = self.due()
-        self.assertIsNone(obligation["deadline_offset_ms"])
+        self.assertEqual((obligation["deadline_offset_ms"], obligation["deadline_held_offset_ms"]), (5000, 0))
         request = {**self.binding, "request_id": "boundary-one", "kind": "safety_boundary",
                    "payload": {"inflight_calls": False, "call_ids": ["C"]}}
         receipt = self.engine._publish_control_request(request)
         self.assertEqual(receipt["state"], "accepted", receipt)
         _, _, stored = self.engine.store.load()
-        self.assertEqual(stored["self_check_obligations"][obligation["id"]]["boundary_receipt_ref"],
-                         receipt["publication_id"])
-        # A replay reads the stored reference back to deliver the opened obligation again.
-        feedback = self.workspace / ".control/observation-feedback.json"
-        feedback.unlink()
+        saved = stored["self_check_obligations"][obligation["id"]]
+        self.assertNotIn("deadline_held_offset_ms", saved)
+        self.assertEqual(saved["deadline_offset_ms"], 5000)
+        # A replay returns the published receipt without applying the boundary again.
         replay = ResearchEngine(self.repo, self.identifier)._publish_control_request(request)
-        self.assertEqual(replay["state"], "accepted")
-        self.assertEqual(json.loads(feedback.read_text(encoding="utf-8"))["obligation_id"], obligation["id"])
+        self.assertEqual((replay["state"], replay["publication_id"]), ("accepted", receipt["publication_id"]))
+
+
+def paused_then_resumed(**pause):
+    """An initializing instance paused with ``pause`` (control keyword arguments), then resumed.
+
+    Returns the repository, the instance ID and the first pause's receipt.
+    """
+    root, identifier = restore_template(initialized_instance, config=CONFIG, goal="pause identity fixture")
+    repository = root / "repository"
+    engine = ResearchEngine(repository, identifier)
+    first = control(repository, identifier, "pause", **pause)
+    engine.process_controls()
+    control(repository, identifier, "resume")
+    engine.process_controls()
+    if engine.status()["status"] == "paused":
+        raise AssertionError("the fixture's resume did not apply")
+    return repository, identifier, first
 
 
 class UserControlIdentity(unittest.TestCase):
@@ -425,6 +458,25 @@ class UserControlIdentity(unittest.TestCase):
             self.assertNotEqual(engine.head, original["snapshot"])
             from do_math.control_contracts import control_request_id
             self.assertEqual(first["request_id"], control_request_id(identifier, "pause", text="pause once"))
+
+    def test_default_pause_after_resume_is_a_new_request_that_pauses(self):
+        repository, identifier, first = paused_then_resumed(text="hold")
+        engine = ResearchEngine(repository, identifier)
+        again = control(repository, identifier, "pause", text="hold")
+        self.assertNotEqual(again["request_id"], first["request_id"])
+        self.assertNotIn("replayed", again)
+        engine.process_controls()
+        self.assertEqual(engine.status()["status"], "paused")
+
+    def test_explicit_idempotency_key_keeps_its_request_id_and_replays_after_resume(self):
+        from do_math.control_contracts import control_request_id
+        repository, identifier, first = paused_then_resumed(text="hold", idempotency_key="hold-once")
+        again = control(repository, identifier, "pause", text="hold", idempotency_key="hold-once")
+        self.assertEqual(again["request_id"], first["request_id"])
+        self.assertEqual(again["request_id"],
+                         control_request_id(identifier, "pause", text="hold", idempotency_key="hold-once"))
+        self.assertTrue(again["replayed"])
+        self.assertNotEqual(ResearchEngine(repository, identifier).status()["status"], "paused")
 
     def test_normalized_source_has_one_identity_and_rejects_wrong_bytes(self):
         from do_math.control_contracts import control_request_id

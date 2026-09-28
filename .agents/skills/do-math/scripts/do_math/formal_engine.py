@@ -93,17 +93,42 @@ class FormalEngineMixin:
             toolchain_record=deepcopy(check['toolchain_record']), previous=deepcopy(rebind['previous']),
             current=deepcopy(rebind['current']), recorded_at=rebind['recorded_at'])
 
-    def _resume_environment_waits(self):
-        """Requeue formal checks stopped by the environment once its record or the active environment changes."""
+    def _resume_formal_waits(self):
+        """Requeue parked formal checks once the condition that parked them is gone.
+
+        A ``formal_environment`` wait resumes when its toolchain record or the
+        active environment changed. A ``formal_authority`` wait, and a
+        ``formal_stopped`` wait stopped only by a pause or by changed authority,
+        environment or input, resumes when an active environment admits formal
+        checks and the action is authorized: the gate ``_formal_steps`` applies
+        again before any compiler start. A check stopped by an explicit
+        execution stop or by an executor shutdown stays parked.
+        """
+        from .governance import authorize
         from .trust_validation import environment_changed
+        recoverable = {'instance_paused', 'authority_changed', 'trust_environment_changed', 'input_changed'}
         for identifier, waiting in list(self.runtime.get('waiting_actions', {}).items()):
-            detail = waiting.get('detail', {})
-            if waiting.get('kind') != 'formal_environment' or not environment_changed(self.instance, detail):
+            kind, detail = waiting.get('kind'), waiting.get('detail', {})
+            if kind == 'formal_environment':
+                if not environment_changed(self.instance, detail):
+                    continue
+            elif kind == 'formal_authority' or (kind == 'formal_stopped'
+                                                and set(detail.get('stop_reasons', ())) <= recoverable):
+                try:
+                    self._formal_environment()
+                except ValueError:
+                    continue
+                if not authorize(self.instance, waiting['action'], runtime=self.runtime)['allowed']:
+                    continue
+            else:
                 continue
             if not any(queued.get('id') == identifier for queued in self.runtime['queue']):
-                self.runtime['queue'].append({**deepcopy(waiting['action']), 'continuation_of': waiting['execution_id']})
+                action = deepcopy(waiting['action'])
+                if waiting.get('execution_id'):
+                    action['continuation_of'] = waiting['execution_id']
+                self.runtime['queue'].append(action)
             del self.runtime['waiting_actions'][identifier]
-            self.runtime['history'].append({'kind': 'formal_environment_wait_resumed', 'action_id': identifier,
+            self.runtime['history'].append({'kind': kind + '_wait_resumed', 'action_id': identifier,
                                             'previous': deepcopy(detail)})
 
     def _run_trust_activation(self, action):
@@ -444,7 +469,8 @@ class FormalEngineMixin:
             elif result['status'] == 'stopped' and not resumable and 'instance_ended' not in stop_reasons:
                 self.runtime.setdefault('waiting_actions', {})[action['id']] = {
                     'action': deepcopy(action), 'kind': 'formal_stopped', 'reason': result.get('reason'),
-                    'execution_id': execution_id, 'next_owner': 'trust_governance'}
+                    'execution_id': execution_id, 'next_owner': 'trust_governance',
+                    'detail': {'stop_reasons': sorted(stop_reasons)}}
             self._settle_activity(execution_id)
         # The formal bundle holds the checked Lean source beside its judged result.
         self._save({f'{ARTIFACT_ROOT}{bundle}/proposal.lean': source.encode(), reference: canonical_json(result)})

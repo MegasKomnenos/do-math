@@ -98,7 +98,7 @@ class OperationalInputTests(unittest.TestCase):
             self.assertEqual((root / files[0]['local_path']).read_bytes(), proof)
 
     def test_assigned_role_uses_exact_registry_references_even_below_input_limit(self):
-        from do_math.context_store import fit_context, read_source
+        from do_math.context_store import fit_context, input_class, read_source
         engine, _, _, _ = self.fixture()
         profiles = list(engine.instance['execution_profiles'].values())
         context = {'action': {'role': 'research_work'}, 'task': {'id': 'TK-one', 'question': 'Fixed'},
@@ -106,8 +106,10 @@ class OperationalInputTests(unittest.TestCase):
                    'tasks': [{'id': 'TK-one', 'question': 'Fixed'}] * 10}
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            result = fit_context(context, max_bytes=10_000_000, workspace=root,
-                                 mandatory_keys=['task'], role='research_work')
+            result = fit_context(context, max_bytes=10_000_000, workspace=root, mandatory_keys=['task'],
+                                 role='research_work', map_keys=[key for key in context
+                                                                 if input_class('research_work', key) == 'map'])
+            self.assertEqual(set(result['context']['tasks']), {'source_ref', 'total'})
             self.assertIsInstance(result['context']['execution_profiles'], dict,
                                   'The already assigned role need not repeatedly inline the full registry')
             ref = result['context']['execution_profiles']['source_ref']
@@ -655,9 +657,9 @@ class ArchivedControlInputTests(unittest.TestCase):
 
 
 # Fields of a stored central check beyond knowledge_fixtures.formal_result: the compiler's
-# raw output and invocation, the kernel evidence digest, signatures and the check reference.
+# raw output and invocation, signatures and the check reference.
 CENTRAL_CHECK = {'stdout': 'raw Lean output', 'stderr': 'raw Lean warnings', 'command': ['lake', 'env', 'lean', 'Check.lean'],
-                 'exit_code': 0, 'dependency_hash': 'd' * 64, 'declaration_signatures': {'truth': 'True'},
+                 'exit_code': 0, 'declaration_signatures': {'truth': 'True'},
                  'signature_hash': 's' * 64, 'execution_id': 'EX-formal', 'artifact_ref': 'runtime/artifacts/BA-formal/formal.json'}
 # What identity review and goal audit compare (계약/동일성-검토.md, 계약/목표-감사.md).
 JUDGED = {'status', 'source_sha256', 'declarations', 'axioms', 'declaration_signatures', 'signature_hash',
@@ -792,28 +794,30 @@ class RoleInputClassTests(unittest.TestCase):
              {'relation_validation_source', 'goal', 'policies', 'user_inputs', 'external_operations', 'external_rejections',
               'model_policy', 'execution_profiles'}),
             ({'role': 'operational_review'}, operational,
-             {'repetition_holds', 'events', 'recent_history', 'goal_revision', 'policy_revision', 'execution_profiles',
-              'role_profile_refs', 'decisions', 'user_inputs', 'external_operations', 'blocked_actions'},
+             {'repetition_holds', 'events', 'recent_history', 'goal_revision', 'policy_revision', 'decisions',
+              'user_inputs', 'external_operations', 'blocked_actions'},
              {'model_policy', 'resources', 'budget_unit', 'formal_verifier', 'external_rejections', 'academic_requirements',
-              'academic_phase', 'academic_validation', 'pending_revisions', 'revision_cycles'}),
+              'academic_phase', 'academic_validation', 'pending_revisions', 'revision_cycles', 'execution_profiles',
+              'role_profile_refs'}),
             ({'role': 'goal_audit'}, {'eligible_knowledge': []},
              {'academic_requirements', 'academic_phase', 'academic_validation', 'decisions', 'relations', 'goal',
               'policies', 'goal_revision', 'policy_revision', 'external_rejections', 'open_questions'},
              {'formal_verifier', 'model_policy', 'resources', 'execution_profiles', 'role_profile_refs', 'events',
               'user_inputs', 'external_operations', 'repetition_holds'}),
             ({'role': 'task_contract_review'}, {'task': {'id': 'TK-1'}},
-             {'model_policy', 'resources', 'budget_unit', 'execution_profiles', 'formal_verifier', 'academic_requirements',
+             {'model_policy', 'resources', 'budget_unit', 'formal_verifier', 'academic_requirements',
               'academic_phase', 'recent_history', 'external_operations', 'external_rejections', 'open_questions'},
-             {'role_profile_refs', 'events', 'academic_validation', 'goal_revision', 'policy_revision',
-              'repetition_holds', 'user_inputs'}),
+             {'execution_profiles', 'role_profile_refs', 'events', 'academic_validation', 'goal_revision',
+              'policy_revision', 'repetition_holds', 'user_inputs'}),
             ({'role': 'intent_interpretation', 'stage': 'interpret'}, intent,
-             {'formal_verifier', 'academic_requirements', 'configuration_source', 'execution_profiles', 'goal_revision'},
-             {'recent_history', 'user_inputs', 'open_questions', 'events', 'model_policy', 'academic_phase'}),
+             {'formal_verifier', 'academic_requirements', 'configuration_source', 'goal_revision'},
+             {'recent_history', 'user_inputs', 'open_questions', 'events', 'model_policy', 'academic_phase',
+              'execution_profiles', 'role_profile_refs'}),
             ({'role': 'intent_interpretation', 'stage': 'check'}, intent,
-             {'academic_requirements', 'execution_profiles', 'role_profile_refs', 'goal_revision', 'goal', 'relations',
-              'decisions', 'configuration_source'},
+             {'academic_requirements', 'goal_revision', 'goal', 'relations', 'decisions', 'configuration_source'},
              {'formal_verifier', 'recent_history', 'user_inputs', 'open_questions', 'events', 'model_policy', 'resources',
-              'external_operations', 'external_rejections', 'repetition_holds', 'academic_phase', 'academic_validation'}),
+              'external_operations', 'external_rejections', 'repetition_holds', 'academic_phase', 'academic_validation',
+              'execution_profiles', 'role_profile_refs'}),
             ({'role': 'intent_interpretation', 'stage': 'delegation_check', 'delegation_application_id': 'DA-1'}, intent,
              {'decisions'},
              {'configuration_source', 'goal', 'policies', 'goal_revision', 'policy_revision', 'relations',
@@ -836,9 +840,9 @@ class RoleInputClassTests(unittest.TestCase):
               'pending_revisions', 'revision_cycles', 'blocked_actions', 'external_rejections'},
              {'user_inputs', 'execution_profiles', 'role_profile_refs'}),
             ({'role': 'research_preparation'}, planning,
-             {'model_policy', 'resources', 'execution_profiles', 'role_profile_refs', 'academic_phase',
-              'repetition_holds', 'events', 'user_inputs', 'external_operations'},
-             {'academic_validation'}),
+             {'model_policy', 'resources', 'academic_phase', 'repetition_holds', 'events', 'user_inputs',
+              'external_operations'},
+             {'academic_validation', 'execution_profiles', 'role_profile_refs'}),
         ]
         for action, direct, inlined, mapped in cases:
             with self.subTest(action=action), tempfile.TemporaryDirectory() as directory:
@@ -913,6 +917,117 @@ class RoleInputClassTests(unittest.TestCase):
         self.assertEqual(held, ['research/goal_judgments/GJ-peer.json'])
         self.assertEqual((reached, cited), ([], False))
 
+    def test_operational_review_of_an_audit_slot_cannot_reach_another_slots_judgment(self):
+        # 계약/목표-감사.md 13: a live operational review of a running audit slot publishes its
+        # disposition reason to that slot (engine: publish_worker_feedback), so the reviewer must
+        # not see the round's other judgments either: inline, in the history or in the snapshot.
+        from do_math import operational_dispositions
+        from do_math.git_store import GitStateStore
+        from do_math.state_contract import STATE_CONTRACT_ID
+        from research_fixtures import git_init, role_reach
+        secret = 'PRIVATE-PEER-AUDIT'
+        judgment = {'id': 'GJ-peer', 'basis': 'BASIS', 'slot': 0, 'required': 2, 'decision': 'satisfied',
+                    'summary': secret}
+        audit = {'id': 'EX-audit', 'role': 'goal_audit', 'status': 'running',
+                 'action': {'role': 'goal_audit', 'basis': 'BASIS', 'slot': 1, 'required': 2}}
+        instance, runtime = surface_state()
+        instance['goal_judgments'] = [judgment]
+        runtime['executions']['EX-audit'] = audit
+        action = {'role': 'operational_review', 'target': 'EX-audit', 'live': True}
+        direct = {'execution_to_review': deepcopy(audit), 'observation': {}, 'operational_evidence': {},
+                  'admissible_basis_refs': operational_dispositions.admissible_basis_refs(instance, runtime, action)}
+        # The engine gives an operational review the goal judgments and the recent history.
+        extra = {'goal_judgments': [judgment],
+                 'recent_history': [{'role': 'goal_audit', 'execution_id': 'EX-peer', 'summary': secret}]}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repository, workspace = root / 'repository', root / 'workspace'
+            repository.mkdir()
+            workspace.mkdir()
+            git_init(repository)
+            store = {'repository': str(repository), 'instance_id': SnapshotReadToolTests.INSTANCE}
+            def envelope(family, record):
+                return canonical_json({'contract_id': STATE_CONTRACT_ID, 'family': family, 'record': record})
+            snapshot = GitStateStore(repository, store['instance_id']).publish(None, {
+                'research/goal_judgments/GJ-peer.json': envelope('goal_judgments', judgment),
+                'runtime/executions/EX-audit.json': envelope('executions', audit)}).head
+            fitted = self.prepare(action, direct, instance=instance, runtime=runtime,
+                                  extra={**extra, 'record_store': store, 'formal_verifier': {'reference': 'tool:lean'}},
+                                  root=workspace, snapshot=snapshot, install=True)
+            reached, held = role_reach(fitted['prompt'], workspace, secret)
+            try:
+                submission.validate_reference('GJ-peer', fitted['validation_context'], workspace)
+                cited = True
+            except ValueError:
+                cited = False
+        self.assertEqual(held, ['research/goal_judgments/GJ-peer.json'])
+        self.assertEqual((reached, cited), ([], False))
+
+    def test_independent_judgment_cannot_reach_unpublished_work_of_the_execution_ledger(self):
+        """Over 10 s: each of three scopes runs the installed read tool in a child process on a real Git snapshot."""
+        # Scopes whose ledger reach was judged only from the code: a delegation judge and the
+        # executions it stays independent of (계약/의도-해석.md 69, delegations.record_judgment),
+        # the interpreter's unfixed checkpoint (계약/의도-해석.md 50) and the unsealed lineage record
+        # behind a review seat's operational review (공통-실행.md 「질문의 소유자와 영향을 받는 대상을
+        # 밝힌다」). Each secret lives only in the execution ledger, and each input is built as the
+        # engine builds it, so a supplied reference that names a ledger record is really supplied.
+        from do_math import delegations, operational_dispositions
+        from do_math.git_store import GitStateStore
+        from do_math.state_contract import STATE_CONTRACT_ID
+        from research_fixtures import git_init, role_reach
+        secret = 'PRIVATE-UNPUBLISHED-WORK'
+        def envelope(family, record):
+            return canonical_json({'contract_id': STATE_CONTRACT_ID, 'family': family, 'record': record})
+        instance, runtime = surface_state()
+        seat = {'id': 'EX-seat', 'role': 'identity_review', 'status': 'running',
+                'action': {'role': 'identity_review', 'review_cycle_id': 'RC-1'}}
+        author = {'id': 'EX-author', 'role': 'intent_interpretation', 'status': 'ended'}
+        runtime['executions'].update({'EX-seat': seat, 'EX-author': author})
+        runtime['review_cycles'] = {'RC-1': {'id': 'RC-1'}}
+        # The case names its original decision's author, whose execution the judge stays independent of.
+        runtime['delegation_applications'] = {'DA-1': {'id': 'DA-1', 'input_sha256': 'c' * 64, 'judgments': {},
+            'basis': {'original_decision': {'id': 'DC-1', 'actor': 'user', 'author_execution_ids': ['EX-author']},
+                      'case': {'id': 'CASE-1', 'basis_refs': []}}}}
+        delegation_case = delegations.judgment_input(runtime, 'DA-1')
+        review_target = {'role': 'operational_review', 'target': 'EX-seat'}
+        # A published canon record: every snapshot holds a research subtree.
+        canon = {'research/decisions/DC-1.json': envelope('decisions', {'id': 'DC-1', 'actor': 'user'})}
+        cases = [  # (action, direct inputs, snapshot files that hold the secret, other snapshot files)
+            ({'role': 'intent_interpretation', 'stage': 'delegation_check', 'delegation_application_id': 'DA-1'},
+             {'user_request': {'request': {'id': 'UI-1'}, 'delegation_case': deepcopy(delegation_case)},
+              'delegation_case': deepcopy(delegation_case), 'interpretation_to_check': None},
+             {'runtime/delegation_applications/DA-1.json': envelope('delegation_applications', {
+                  'id': 'DA-1', 'judgments': {'interpret': {'execution_id': 'EX-peer', 'output': {'reason': secret}}}}),
+              'runtime/executions/EX-author.json': envelope('executions', {**author, 'summary': secret})}, {}),
+            ({'role': 'intent_interpretation', 'stage': 'check'}, INTENT_DIRECT,
+             {'runtime/artifacts/BA-interpreter/checkpoint.json': secret.encode('utf-8')}, {}),
+            (review_target, {'execution_to_review': deepcopy(seat), 'observation': {}, 'operational_evidence': {},
+                             'admissible_basis_refs': operational_dispositions.admissible_basis_refs(
+                                 instance, runtime, review_target)},
+             {'runtime/review_cycles/RC-1.json': envelope('review_cycles', {'id': 'RC-1', 'summary': secret})},
+             {'runtime/executions/EX-seat.json': envelope('executions', seat)}),
+        ]
+        for action, direct, unpublished, published in cases:
+            with self.subTest(action=action), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                repository, workspace = root / 'repository', root / 'workspace'
+                repository.mkdir()
+                workspace.mkdir()
+                git_init(repository)
+                store = {'repository': str(repository), 'instance_id': SnapshotReadToolTests.INSTANCE}
+                snapshot = GitStateStore(repository, store['instance_id']).publish(
+                    None, {**canon, **unpublished, **published}).head
+                fitted = self.prepare(action, direct, instance=instance, runtime=runtime,
+                                      extra={'record_store': store, 'formal_verifier': {'reference': 'tool:lean'}},
+                                      root=workspace, snapshot=snapshot, install=True)
+                self.assertEqual(fitted['context']['record_map']['ledger'], 'supplied_only')
+                reached, held = role_reach(fitted['prompt'], workspace, secret)
+                self.assertEqual(held, sorted(unpublished))
+                self.assertEqual(reached, [])
+                if action is review_target:
+                    # The seat's target is supplied and readable; only the lineage record it names is not.
+                    self.assertIn('EX-seat', fitted['validation_context']['record_index']['runtime/executions'])
+
     def test_record_index_lists_the_snapshot_records_the_role_may_read(self):
         from record_fixtures import task_contract
         instance, runtime = surface_state()
@@ -967,6 +1082,28 @@ class RoleInputClassTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 submission.validate_reference('EX-1', fixed, root)
 
+    def test_review_seat_operational_review_reads_the_evidence_its_input_supplies(self):
+        # 공통-실행.md 「독립 판단의 차단」: an independent judgment reads the ledger records and
+        # files its input supplies; an operational review supplies them as admissible_basis_refs.
+        from do_math.context_store import readable_snapshot_path
+        instance, runtime = surface_state()
+        runtime['executions']['EX-seat'] = {'id': 'EX-seat', 'role': 'identity_review', 'status': 'ended',
+                                            'action': {'role': 'identity_review', 'review_cycle_id': 'RC-1'}}
+        runtime['observation_facts'] = {identifier: {'id': identifier} for identifier in ('OF-seat', 'OF-other')}
+        runtime['self_check_obligations'] = {'SC-seat': {'id': 'SC-seat', 'execution_id': 'EX-seat'}}
+        result = 'runtime/artifacts/BA-seat/result.json'
+        direct = {**OPERATIONAL_DIRECT, 'execution_to_review': {'id': 'EX-seat'},
+                  'admissible_basis_refs': ['EX-seat', 'OF-seat', 'SC-seat', result]}
+        with tempfile.TemporaryDirectory() as directory:
+            fixed = self.prepare({'role': 'operational_review', 'target': 'EX-seat'}, direct, instance=instance,
+                                 runtime=runtime, root=Path(directory))['validation_context']
+        self.assertEqual(fixed['record_map']['ledger'], 'supplied_only')
+        index = fixed['record_index']
+        self.assertEqual((index.get('runtime/observation_facts'), index.get('runtime/self_check_obligations')),
+                         (['OF-seat'], ['SC-seat']))
+        self.assertTrue(readable_snapshot_path(fixed, result))
+        self.assertFalse(readable_snapshot_path(fixed, 'runtime/artifacts/BA-other/result.json'))
+
     def test_citable_records_cover_every_readable_work_record(self):
         # Task inputs and completion evidence may name any record the role can read (공통-실행.md 41).
         for action, direct in (({'role': 'research_preparation'}, PLANNING_DIRECT),
@@ -975,11 +1112,24 @@ class RoleInputClassTests(unittest.TestCase):
                 fixed = self.prepare(action, direct, root=Path(directory))['validation_context']
                 self.assertTrue({'EX-1', 'AC-1'} <= set(fixed['supplied_record_ids']), fixed['supplied_record_ids'])
 
-    def test_self_check_evidence_may_cite_records_of_the_input_snapshot(self):
+    def test_self_check_evidence_follows_the_submission_citation_rule(self):
+        # Records of the input snapshot and the execution's preserved workspace files are citable.
         engine = context_engine()
         engine._issued_input = create_autospec(engine._issued_input, return_value=(
             {'reference_catalog': [], 'record_index': {'runtime/activities': ['AC-1']}}, None))
-        self.assertIn('AC-1', engine._control_evidence_refs({'id': 'EX-1', 'output_files': []}))
+        cited = ['AC-1', 'checkpoint.json', 'workspace:checkpoint.json', '.scratch/note.txt', 'absent.txt']
+        response = {'obligation_id': 'SC-1', 'execution_id': 'EX-1', 'rule_revision': 0, 'progress': 'progress',
+                    'attempts': ['read the checkpoint'], 'next_method': 'continue',
+                    'rule_results': [{'rule_id': 'R-1', 'status': 'normal', 'evidence_refs': cited,
+                                      'missing_evidence_refs': [], 'reason': 'compared the checkpoint'}]}
+        with tempfile.TemporaryDirectory() as directory:
+            engine.instance['workspace'] = directory
+            workspace = Path(directory) / 'runs/EX-1/workspace'
+            (workspace / '.scratch').mkdir(parents=True)
+            (workspace / 'checkpoint.json').write_text('{}', encoding='utf-8')
+            (workspace / '.scratch/note.txt').write_text('scratch', encoding='utf-8')
+            self.assertEqual(engine._control_evidence_refs({'id': 'EX-1'}, response),
+                             {'AC-1', 'checkpoint.json', 'workspace:checkpoint.json'})
 
     def test_scope_follows_the_role_the_input_is_prepared_for(self):
         # prepare_role_input vouches for its role (the selected profile's role), not for action fields.
@@ -1130,6 +1280,13 @@ class SnapshotReadToolTests(unittest.TestCase):
         self.assertEqual(code, 0, output)
         self.assertEqual([(row['id'], row['kind']) for row in output['records']], [('DC-1', 'approval')])
         self.assertEqual(log[-1]['status'], 'ok')
+
+    def test_invalid_output_path_is_refused_in_the_json_result(self):
+        # 공통-실행.md 「읽기 도구로 읽는다」: the result is one JSON value and every request is logged.
+        code, output, log = self.read(self.install('readable'), '--path', 'runtime/artifacts/BA-1/result.json',
+                                      '--output', '../outside.json')
+        self.assertEqual((code, output['records'][0]['status']), (1, 'refused'))
+        self.assertEqual(log[-1]['status'], 'refused')
 
 
 class FollowupDocumentTests(ActivatedPurposeHarness):

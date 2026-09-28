@@ -96,12 +96,12 @@ def resolve_user(runtime, identifiers, *, resolution_ref, affected_ids):
 
 
 def validate_extensions(output, extensions, context):
+    # A route target is an ID the role may use (공통-실행.md 「시작할 때 입력을 확인한다」):
+    # a supplied input reference, a record the input shows, or a record of its record_index.
+    # The citation check reads the same population through the same two functions.
+    from .submission import record_index_ids, supplied_reference_ids
     errors = []
-    known = {context.get("instance_id"), *context.get("available_input_refs", [])}
-    for key in ("tasks", "task_catalog", "knowledge_catalog", "sources", "question_links"):
-        known.update(row["id"] for row in context.get(key, []) if isinstance(row, dict) and row.get("id"))
-    if context.get("task"):
-        known.add(context["task"]["id"])
+    known = supplied_reference_ids(context) | record_index_ids(context) | set(context.get("available_input_refs", []))
     indices = set()
     for route in extensions.get("question_routes", []):
         index = route["question_index"]
@@ -109,9 +109,8 @@ def validate_extensions(output, extensions, context):
             errors.append({"path": "question_routes", "message": "route each supplied question index at most once"})
         indices.add(index)
         if set(route["target_ids"]) - known or (route["owner"] == "user" and not route["target_ids"]):
-            errors.append({"path": "question_routes", "message": "user questions require provided affected target IDs"})
-        if type(route.get("blocks", False)) is not bool or (route.get("blocks") and not route.get("reason", "").strip()):
-            errors.append({"path": "question_routes", "message": "a blocking question needs the necessary decision and its reason"})
+            errors.append({"path": "question_routes", "message": "route targets must be IDs this input supplies or "
+                           "lists in its record_index, and a user question needs at least one"})
     questions = {row["id"]: row for row in context.get("question_links", [])}
     role = context["action"]["role"]
     seen = set()

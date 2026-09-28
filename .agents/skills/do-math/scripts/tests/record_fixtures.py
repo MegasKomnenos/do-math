@@ -78,7 +78,7 @@ def governance_import():
     s = gov.import_input_source(i, rt, "IN")
     unit = {"unit_id": "U", "source_range": {"start": 0, "end": 8}, "interpretation": "Ask a choice",
             "owner_kind": "charter", "owner_ref": "CH1", "payload": {}, "decision_refs": ["D"], "question_refs": ["Q"]}
-    output = {"import_units": [unit], "questions": ["Which scope?"], "needs_clarification": True,
+    output = {"import_units": [unit], "questions": ["Which scope?"],
               "question_details": [{"id": "Q", "question_index": 0, "target_ids": ["I"], "blocks": False,
                                     "reason": "Optional direction", "options": [{"text": "Keep", "effect": "No change"}],
                                     "source_unit_ids": ["U"]}]}
@@ -89,7 +89,7 @@ def checked_import(kind='charter', handlers=None, payload=None):
     i, rt, source, output = governance_import()
     replacement = charter('CH2', 'Prove Q'); replacement['supersedes'] = ['CH1']
     payload = payload or {'kind': kind, 'record': replacement}
-    output.update(questions=[], question_details=[], needs_clarification=False)
+    output.update(questions=[], question_details=[])
     output['import_units'][0].update(owner_kind=kind, owner_ref=payload.get('record', {}).get('id', 'I'),
                                     payload=payload, question_refs=[])
     bundle = gov.prepare_import(i, rt, source, output, execution_id='E1', input_ref="IN", owner_handlers=handlers)
@@ -125,7 +125,7 @@ def applied_initial_intent(text):
     input_id = instance['lifecycle']['input_id']
     source = gov.import_input_source(instance, runtime, input_id)
     output = {'summary': 'Preserve exact original', 'used_sources': [], 'questions': [],
-              'needs_clarification': False, 'question_details': [],
+              'question_details': [],
               'import_units': [{'unit_id': 'IU-goal', 'source_range': {'start': 0, 'end': len(text)},
                   'interpretation': text, 'owner_kind': 'charter', 'owner_ref': records[0]['id'],
                   'payload': {}, 'decision_refs': [], 'question_refs': []}]}

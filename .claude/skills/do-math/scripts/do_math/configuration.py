@@ -13,7 +13,6 @@ import jsonschema
 from . import execution_profiles, model_policy
 from .record_schemas import config_schema
 from .scholarly import validate_scholarly_server
-from .trust_validation import AXIOMS
 
 
 DEFAULT_CONFIG = {
@@ -27,7 +26,6 @@ DEFAULT_CONFIG = {
     "observation_mode": "event_driven", "observation_interval_seconds": 300,
     "plan_settle_seconds": 300,
     "max_artifact_bytes": 268435456,
-    "allowed_axioms": list(AXIOMS),
     "operator_enabled": True, "operator_interval_seconds": 7200,
     "operator_timeout_seconds": 5400, "operator_effort": "high",
     "scholarly_enabled": True, "scholarly_server": None,

@@ -134,17 +134,18 @@ def initial_intent_evidence(instance, runtime, *, owner_handlers=None):
 
 
 def observed_profile_refs(instance):
-    """Adopted profile references, then the role references dispatch selects from.
+    """The current role profile references: the editions dispatch selects from.
 
-    Dispatch uses role_profile_refs after activation; a narrow bootstrap
-    adoption must not hide incomplete profiles that will then be selected.
+    Adopting the configuration adopts these editions; activation checks their
+    observation settings and capability evidence.
     """
-    return [*instance.get('lifecycle', {}).get('adoption', {}).get('profile_refs', []),
-            *(ref for refs in instance.get('role_profile_refs', {}).values() for ref in refs)]
+    return [ref for refs in instance.get('role_profile_refs', {}).values() for ref in refs]
 
 
-# Windows a worker cannot answer while its own Lean compile runs.
-COMPILE_BOUND_WINDOWS = ('tool_review_window_seconds', 'self_check_response_window_seconds')
+# Windows a Lean compile consumes: one call outlasting the tool review window
+# opens an operational review. The self-check response window is not one of
+# them, because research calls hold that deadline (ObservationTracker._hold_deadlines).
+COMPILE_BOUND_WINDOWS = ('tool_review_window_seconds',)
 
 
 def observation_window_warnings(instance, runtime):
@@ -230,13 +231,13 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
     if (not env or env.get("status") != "active"
             or environment_errors(env, runtime.get("trust_bindings", {}).get(instance.get("active_trust_environment")))):
         missing.append("trust_environment")
-    references = adoption.get("profile_refs", [])
+    references = observed_profile_refs(instance)
     if not references:
         missing.append("profiles")
     from .observations import observation_settings_errors
     observation_errors = []
     checked_profiles = set()
-    for ref in observed_profile_refs(instance):
+    for ref in references:
         try:
             profile = match_profile_ref(instance['execution_profiles'], ref)
         except (ValueError, KeyError, TypeError):

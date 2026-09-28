@@ -209,11 +209,11 @@ class ProviderAdmissionTests(unittest.TestCase):
         slots.started("EX-git", {"job_name": execution['launch_ticket']['job_name']}, at=TIME)
         self.assertEqual(execution["status"], "running")
         with patch("do_math.windows_job.named_job_empty", return_value=False):
-            self.assertFalse(engine._settle_recovered_execution("EX-git", at=TIME, outcome="cancelled"))
+            self.assertFalse(engine._settle_recovered_execution("EX-git", at=TIME))
         self.assertEqual(execution["status"], "running")
         with patch("do_math.windows_job.named_job_empty", return_value=True):
-            self.assertTrue(engine._settle_recovered_execution("EX-git", at=TIME, outcome="cancelled"))
-        self.assertEqual((execution["status"], execution["outcome"]), ("ended", "cancelled"))
+            self.assertTrue(engine._settle_recovered_execution("EX-git", at=TIME))
+        self.assertEqual((execution["status"], execution["outcome"]), ("ended", "execution_incomplete"))
         self.assertEqual(execution["capacity"]["local_termination"], "confirmed")
         self.assertEqual(other["status"], "starting")
         self.assertTrue(all(row["state"] == "held" for row in engine.runtime["reservations"].values()

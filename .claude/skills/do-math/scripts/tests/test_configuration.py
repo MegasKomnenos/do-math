@@ -22,6 +22,7 @@ class ConfigurationTests(unittest.TestCase):
     def test_configuration_outside_the_current_contract_is_rejected_before_creating_an_instance(self):
         # The configuration section is closed: an undeclared key names no setting, and a declared one needs its type.
         for patch, message in (({'invented_setting': 1}, 'outside the stored configuration section: invented_setting'),
+                               ({'allowed_axioms': ['propext']}, 'outside the stored configuration section: allowed_axioms'),
                                ({'session_limits': None}, 'config/session_limits: None is not of type')):
             with self.subTest(patch=patch), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)

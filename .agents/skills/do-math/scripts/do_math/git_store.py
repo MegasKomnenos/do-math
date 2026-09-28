@@ -12,7 +12,6 @@ from .operation_trace import measured
 from collections.abc import Iterator, Mapping
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from functools import lru_cache
 import hashlib
 import os
 from pathlib import Path
@@ -24,7 +23,7 @@ import time
 from typing import Final
 import zlib
 
-from .file_io import no_reparse, os_lock
+from .file_io import check_path_segment, no_reparse, os_lock
 
 
 class GitStateStoreError(RuntimeError):
@@ -69,34 +68,11 @@ ULID_PATTERN: Final = f"[0-7][{ULID_ALPHABET}]{{{ULID_LENGTH - 1}}}"
 _HEX = re.compile(r"[0-9a-f]+\Z")
 # Archived artifacts live under this prefix; an existing bundle there never changes.
 ARTIFACT_ROOT: Final = "runtime/artifacts/"
-_WINDOWS_RESERVED: Final = {
-    "CON", "PRN", "AUX", "NUL",
-    *(f"COM{number}" for number in range(1, 10)),
-    *(f"LPT{number}" for number in range(1, 10)),
-}
 
 
 def is_new_id(prefix: str, value) -> bool:
     """True for ``<prefix>-<ULID>``, the form ``repository.new_id`` creates."""
     return isinstance(value, str) and re.fullmatch(re.escape(prefix) + "-" + ULID_PATTERN, value) is not None
-
-
-# Pure in its string argument; saves re-checking the same segments on every save.
-@lru_cache(maxsize=65536)
-def check_path_segment(part: str) -> None:
-    """Reject one state path segment that a Windows checkout cannot store under that name.
-
-    Empty, ``.``/``..``, trailing dot or space (Win32 strips them), separators,
-    ``<>:"|?*`` and control characters, and reserved device names (``CON``,
-    ``com1.txt``) are refused.
-    """
-    if (not isinstance(part, str) or not part or part in {".", ".."} or part[-1] in {".", " "}
-            or "/" in part or "\\" in part):
-        raise ValueError("path contains an invalid segment")
-    if any(character in '<>:"|?*' or ord(character) < 32 for character in part):
-        raise ValueError("path contains a Windows-invalid segment")
-    if part.rstrip(". ").split(".", 1)[0].upper() in _WINDOWS_RESERVED:
-        raise ValueError("path contains a reserved Windows device name")
 
 
 def oid_shape(oid: str) -> str:

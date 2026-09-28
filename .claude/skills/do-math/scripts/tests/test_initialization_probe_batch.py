@@ -13,7 +13,7 @@ from research_fixtures import FixtureAdapter, bare_engine
 class ProbeBatchTests(unittest.TestCase):
     def setUp(self):
         config = deepcopy(DEFAULT_CONFIG)
-        self.engine = bare_engine({"lifecycle": {"state": "initializing"}, **build_profiles(config)})
+        self.engine = bare_engine({"lifecycle": {"state": "initializing"}, "config": config, **build_profiles(config)})
         self.profiles = [p for p in self.engine.instance["execution_profiles"].values() if p["actor_kind"] == "ai"][:2]
 
     def test_activation_batch_reuses_only_the_current_provider_observation(self):
@@ -86,6 +86,25 @@ class ProbeBatchTests(unittest.TestCase):
         for operation in ("adopt", "governance"):
             with self.subTest(operation=operation), self.assertRaisesRegex(ValueError, "active contract"):
                 self.engine._initialization_control({"operation": operation}, "source")
+
+    def test_probe_without_named_editions_observes_every_current_ai_role_profile(self):
+        from do_math.initialization import observed_profile_refs
+        from do_math.repository import exact_content_hash
+        change = {"operation": "probe", "config_sha256": exact_content_hash(self.engine.instance["config"])}
+        with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
+            self.engine._initialization_control(change, "source")
+        observed = {row["execution_profile_ref"]["id"] for row in self.engine.instance["capability_evidence"].values()}
+        current = {ref["id"] for ref in observed_profile_refs(self.engine.instance)
+                   if self.engine.instance["execution_profiles"][ref["id"]]["actor_kind"] == "ai"}
+        self.assertEqual(observed, current)
+
+    def test_probe_without_named_editions_must_name_the_current_configuration(self):
+        with patch("do_math.initialization.adapter_for") as adapter:
+            for change in ({"operation": "probe"}, {"operation": "probe", "config_sha256": "0" * 64}):
+                with self.subTest(change=change), self.assertRaisesRegex(ValueError, "config_sha256"):
+                    self.engine._initialization_control(change, "source")
+        adapter.assert_not_called()
+        self.assertFalse(self.engine.instance.get("capability_evidence"))
 
 
 class ActiveProbePublicTests(unittest.TestCase):

@@ -67,6 +67,17 @@ class KnowledgeImportTests(unittest.TestCase):
         self.assertTrue(any(row.get('kind') == 'rejected_user_control' for row in self.engine.runtime['history']),
                         self.engine.runtime['history'])
 
+    def test_ended_instance_refuses_knowledge_imports(self):
+        e = self.engine
+        for status in ('completed', 'closed'):
+            with self.subTest(status=status):
+                e.runtime['status'] = status
+                with self.assertRaisesRegex(ValueError, 'closed/completed'):
+                    e._knowledge_io_control({'action': 'knowledge', 'id': new_id('UC'),
+                                             'config': {'operation': 'import', 'candidate': knowledge_candidate()}})
+                self.assertEqual(e.runtime['status'], status)
+                self.assertEqual(e.instance['knowledge'], {})
+
     def test_custom_kind_reaches_worker_catalog_only_after_check_and_activation(self):
         definition = dict(family='knowledge', token='computational_lemma',
                           meaning='An explicitly bounded computational proposition.', constraints={})

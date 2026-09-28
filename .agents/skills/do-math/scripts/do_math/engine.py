@@ -27,7 +27,7 @@ from .input_basis import capture_sources, sources_current, capture_decision_basi
 from .context_store import collect_outputs, prepare_role_input, defer_input_overflow, input_class, input_scope, materialize_inputs, restore_continuation, verify_manifest_artifacts
 from .operation_trace import engine_operation, tracing, phase, measured, progress as operation_progress
 from .observation_transport import ObservationBatch
-from .observations import ObservationTracker, CHECKPOINT_SCHEMA, checkpoint_value, preserve_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, self_check_feedback, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint, observation_settings_errors, task_rules_from_execution, bind_task_rules, capture_checkpoint_files
+from .observations import ObservationTracker, CHECKPOINT_SCHEMA, checkpoint_value, preserve_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint, observation_settings_errors, task_rules_from_execution, bind_task_rules, capture_checkpoint_files
 from .review_engine import ReviewEngineMixin
 from .lifecycle_engine import LifecycleEngineMixin
 from .initialization_engine import InitializationEngineMixin
@@ -58,7 +58,7 @@ from . import activities, execution_lifecycle, execution_profiles, initializatio
 from .provider_engine import record_model_policy_violation
 from .session_slots import held_reservations, live_action_ids, local_termination_confirmed
 from . import task_contracts, operational_dispositions, retention, repair_execution
-from .control_transport import ControlTransport, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, SUBMIT_INTENT
+from .control_transport import ControlTransport, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, SUBMIT_INTENT, self_check_response_errors
 from .file_io import cached_sha256, fingerprint_settled, now, os_lock, stat_fingerprint, write_bytes_atomic
 from .configuration import DEFAULT_CONFIG, validate_config
 from .control_contracts import (user_decision_changed, control_request_id, normalized_source,
@@ -232,6 +232,22 @@ def _next_control_order(inbox: Path) -> str:
     return f"{next_order:020d}"
 
 
+_OPPOSITE_CONTROL = {"pause": "resume", "resume": "pause"}
+
+
+def _last_opposite_control(inbox: Path, runtime: dict, action: str) -> str | None:
+    """ID of the latest accepted control that undoes ``action``: a pending one, else a processed one."""
+    opposite = _OPPOSITE_CONTROL[action]
+    processed = set(runtime.get("processed_controls", []))
+    pending = [request for request in (json.loads(path.read_bytes()) for path in inbox.glob("*.json")
+                                       if path.stem not in processed) if request.get("action") == opposite]
+    if pending:
+        return max(pending, key=lambda request: (request["accepted_order"], request["created_at"], request["id"]))["id"]
+    return next((row["request"]["id"] for row in reversed(runtime.get("history", []))
+                 if row.get("kind") in {"user_control", "rejected_user_control"}
+                 and row.get("request", {}).get("action") == opposite), None)
+
+
 def control(repository: Path, instance_id: str, action: str, *, text: str = "", config: dict | None = None,
             origin: str = "user", request_id: str | None = None, idempotency_key: str | None = None) -> dict:
     """Queue user commands; only the owning engine publishes authority changes."""
@@ -254,10 +270,12 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
         # The inbox consumer applies this same rule to the admitted copy.
         normalized_source_bytes(config)
     payload = {"instance_id": instance_id, "action": action, "text": text, "config": config or {}, "origin": origin}
-    if request_id is None:
-        request_id = control_request_id(instance_id, action, text=text, config=config, origin=origin,
-                                        idempotency_key=idempotency_key)
     inbox = Path(instance["workspace"]) / "control" / instance_id
+    if request_id is None:
+        after = (_last_opposite_control(inbox, runtime, action)
+                 if action in _OPPOSITE_CONTROL and idempotency_key is None else None)
+        request_id = control_request_id(instance_id, action, text=text, config=config, origin=origin,
+                                        idempotency_key=idempotency_key, after=after)
     destination = inbox / (request_id + ".json")
     def replay(prior):
         if canonical_json({key: prior.get(key) for key in payload}) != canonical_json(payload):
@@ -309,7 +327,7 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
             ids = config["cleanup_execution_ids"]
             if role != "maintenance" or not isinstance(ids, list) or not ids or any(not isinstance(eid, str) for eid in ids) or len(set(ids)) != len(ids) or set(ids) - runtime["executions"].keys():
                 raise ValueError("maintenance cleanup requires distinct existing execution IDs")
-        if runtime["status"] in {"closed", "completed"}:
+        if planning.instance_ended(instance, runtime):
             raise ValueError("closed/completed instance cannot accept new research activities")
         if role == "supplemental_research":
             task = runtime["tasks"].get((config or {}).get("target"))
@@ -1191,7 +1209,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         tracker = self._trackers.get(execution["id"])
         live_tracker = tracker
         tracker = deepcopy(tracker) if tracker is not None else None
-        boundary_updates = []
         feedback = []
         receipt = {"id": new_id("CT"), "request_id": request["request_id"], "request_sha256": digest,
             "execution_id": execution["id"], "kind": request["kind"], "state": "accepted", "received_at": now(),
@@ -1214,7 +1231,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                                         - tracker.boundary_call_ids)
                     if pending_research - set(call_ids):
                         raise ValueError("safe boundary omits observed inflight research calls")
-                    boundary_updates = tracker.record_safe_boundary(receipt["id"], call_ids=call_ids)
+                    tracker.record_safe_boundary(receipt["id"], call_ids=call_ids)
                     self.runtime.setdefault("self_check_obligations", {}).update(tracker.stored_obligations())
             elif request["kind"] == SELF_CHECK_RESPONSE:
                 if tracker is None:
@@ -1223,7 +1240,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 response = payload["response"]
                 if response.get("obligation_id") != payload["self_check_id"]:
                     raise ValueError("self-check response refers to another issued obligation")
-                available = self._control_evidence_refs(execution)
+                available = self._control_evidence_refs(execution, response)
                 tracker.bind_control_request(request, receipt_id=receipt["id"])
                 record = tracker.record_self_check_response(response, available_evidence_refs=available, receipt_id=receipt["id"])
                 record = persistent_record(record)
@@ -1258,8 +1275,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             live_tracker.__dict__.clear()
             live_tracker.__dict__.update(tracker.__dict__)
         workspace = Path(self.instance.get("workspace", ".")) / "runs" / execution["id"] / "workspace"
-        for obligation in boundary_updates:
-            feedback.append(self_check_feedback(obligation))
         for item in feedback:
             try:
                 publish_worker_feedback(workspace / ".control", item)
@@ -1281,9 +1296,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         for record in self.runtime.get("self_check_responses", {}).values():
             if record.get("receipt_ref") == receipt["id"]:
                 feedback.extend(item["worker_feedback"] for item in (record, record.get("rule_update", {})) if item.get("worker_feedback"))
-        for obligation in self.runtime.get("self_check_obligations", {}).values():
-            if obligation.get("boundary_receipt_ref") == receipt["id"]:
-                feedback.append(self_check_feedback(obligation))
         workspace = Path(self.instance.get("workspace", ".")) / "runs" / receipt["execution_id"] / "workspace"
         for item in feedback:
             publish_worker_feedback(workspace / ".control", item)
@@ -1292,19 +1304,30 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         """The fixed context and schema this execution received (submission.issued_input)."""
         return submission.issued_input(execution, self.head, self.store.read, with_schema=with_schema)
 
-    def _control_evidence_refs(self, execution):
+    def _control_evidence_refs(self, execution, response):
+        """The evidence references of self-check ``response`` that ``execution`` may cite.
+
+        Self checks cite by the submission rule (``submission.validate_reference``): what
+        the fixed input shows, records of its snapshot and preserved files of the
+        execution's own workspace, such as its checkpoint. The execution's observation
+        records are citable too. A response outside its schema cites nothing; the
+        tracker rejects it.
+        """
+        if self_check_response_errors(response):
+            return set()
         context, _ = self._issued_input(execution, with_schema=False)
-        refs = {row["value"] for row in context.get("reference_catalog", [])} | submission.record_index_ids(context)
-        for family in ("observation_facts", "self_check_obligations", "self_check_responses"):
-            refs.update(row["id"] for row in self.runtime.get(family, {}).values()
-                        if row.get("execution_id") == execution["id"])
-        for row in execution.get("output_files", []):
+        workspace = Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace"
+        own = {row["id"] for family in ("observation_facts", "self_check_obligations", "self_check_responses")
+               for row in self.runtime.get(family, {}).values() if row.get("execution_id") == execution["id"]}
+        citable = set()
+        for ref in {ref for row in response["rule_results"] for ref in row["evidence_refs"]}:
             try:
-                self._sealed_bytes(row["artifact_ref"], row["sha256"], row.get("bytes"), needed=False)
-            except ValueError:
+                if ref not in own:
+                    submission.validate_reference(ref, context, workspace)
+            except (ValueError, OSError):
                 continue
-            refs.add(row["artifact_ref"])
-        return refs
+            citable.add(ref)
+        return citable
 
     def _reject_control(self, request: dict, reason: str) -> None:
         self.runtime["processed_controls"].append(request["id"])
@@ -1386,6 +1409,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         spec = request["config"]
         operation = spec.get("operation")
         if operation not in {"import", "register-kind", "withdraw-kind", "import-relation"}: return False
+        if self._instance_closed(): raise ValueError("closed/completed instance cannot apply knowledge controls")
         if operation == "import":
             self.instance, self.runtime, kid = knowledge_io.import_candidate(self.instance, self.runtime, spec["candidate"],
                 source_ref=request["id"], actor_ref=request["id"])
@@ -1402,7 +1426,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         else:
             self.instance, _ = knowledge_io.import_relation(self.instance, spec["relation"], source_ref=request["id"], actor_ref=request["id"])
         self._invalidate_goal_currentness()
-        if self.runtime["status"] in {"waiting", "completed"}: self.runtime["status"] = "ready"
+        if self.runtime["status"] == "waiting": self.runtime["status"] = "ready"
         return True
 
     @engine_operation('controls')
@@ -3324,7 +3348,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             result.setdefault('error_kind', 'execution_failure')
         stopped_execution = self.runtime["executions"][execution_id]
         if result.get("error_kind") == "model_policy":
-            record_model_policy_violation(self.runtime, execution_id, execution["model"], result)
+            record_model_policy_violation(self.instance, self.runtime, execution_id, execution["model"], result)
         if result["status"] == "completed" and (
                 stopped_execution.get("after_stop")
                 or self._execution_stop_requested(action, stopped_execution)):
@@ -3496,7 +3520,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             _, _, input_runtime = self.store.view(execution["input_snapshot"])
             self.instance, self.runtime = apply_task_dispositions(self.instance, self.runtime,
                 extension["task_dispositions"], execution_id=execution_id, input_tasks=input_runtime["tasks"])
-        self._apply_queue_plan(action, execution_id)
+        self._apply_queue_plan(execution_id)
         self._apply_academic_resolutions(action, execution_id, extension.get("academic_resolutions", []))
         for relation in extension.get("relations", []):
             self.instance, _ = knowledge_io.import_relation(self.instance, relation, source_ref=execution_id, actor_ref=execution_id)
@@ -3514,7 +3538,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 if required.get("grant_id") and required["grant_id"] != request.get("grant_id"):
                     raise ValueError("academic effect requires its specified grant")
             if not request.get("grant_id"):
-                self.runtime.setdefault("permission_requests", []).append({"execution_id": execution_id, **request})
                 question = questions.link(self.runtime, execution_id=execution_id,
                     field="extensions/external_requests/" + str(index) + "/purpose", owner="user",
                     targets=[action.get("target") or self.instance["id"]], reason="External action requires a user grant")
@@ -3653,7 +3676,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             for proposal in output["candidates"]:
                 tid = proposal["revises_task_id"] or new_id("TK")
                 old = self.runtime["tasks"].get(tid)
-                if proposal["revises_task_id"] and (old is None or old["status"] in {"completed", "closed", "active"}):
+                if proposal["revises_task_id"] and (old is None or old["status"] in task_contracts.TERMINAL_TASK_STATUSES | {"active"}):
                     raise ValueError("revision must identify an existing unfinished task")
                 if old and old.get("academic_requirement_id"):
                     raise ValueError("user-defined academic contracts require an academic_requirements decision")

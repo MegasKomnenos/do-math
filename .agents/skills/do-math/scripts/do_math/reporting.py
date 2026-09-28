@@ -8,7 +8,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .provider_wait import epoch_seconds
-from .repository import ResearchRepository
+from .repository import exact_content_hash, ResearchRepository
 from .session_slots import ADMISSION_WAITS, live_action_ids
 from .state_checks import inspect_state
 
@@ -70,7 +70,7 @@ def task_status(instance, runtime, *, evaluation_context=None):
             if action.get('dispatch_wait', {}).get('kind') in ADMISSION_WAITS:
                 waiting.append(action['dispatch_wait'])
         readiness = None
-        if not ended and not executions and task.get('status') not in planning.TERMINAL_TASK_STATUSES:
+        if not ended and not executions and task.get('status') not in task_contracts.TERMINAL_TASK_STATUSES:
             readiness = planning.task_ready(task, instance, runtime, include_scheduling_waits=False,
                                             evaluation_context=evaluation_context)
             if readiness['state'] != 'ready':
@@ -84,7 +84,7 @@ def task_status(instance, runtime, *, evaluation_context=None):
         assessment = task.get('assessment', {})
         followups = [e['id'] for e in runtime.get('events', [])
                      if e['kind'] == 'task_assessment_invalidated' and e.get('target') == identifier]
-        if assessment.get('current') is False and task['status'] in planning.TERMINAL_TASK_STATUSES:
+        if assessment.get('current') is False and task['status'] in task_contracts.TERMINAL_TASK_STATUSES:
             next_owner = next_owner or 'research_plan'
         rows.append({"id": identifier, "title": task.get("title", task.get('question')), "status": task["status"], "revision": task.get("revision"),
                      "selected_actions": [a.get("id") for a in queued if a.get("id") not in running_ids],
@@ -186,6 +186,8 @@ def status_report(store, head, instance, runtime, *, observation=None, requested
                 "reason": "status reports persisted records; check derives submission check diagnostics"},
             "goal": governance_view["goal"], "goal_status": instance.get("goal_status"),
             "status": runtime.get("status"), "active_execution": live[0] if live else None,
+            # The configuration a capability probe or an initialization adoption names (config_sha256).
+            "config_sha256": exact_content_hash(instance.get("config", {})),
             "pending_actions": len(runtime.get("queue", [])), "cycles": runtime.get("cycles"),
             "tasks": task_status(instance, runtime, evaluation_context=evaluation_context), "dispatch_waits": waits,
             "knowledge": {"K": sum(row["usable"] for row in knowledge_view(instance)),

@@ -4,7 +4,6 @@ from copy import deepcopy
 from . import academic, governance
 from .file_io import now
 from .repository import exact_content_hash, new_id
-from .task_contracts import TERMINAL_TASK_STATUSES
 
 
 class AcademicEngineMixin:
@@ -150,7 +149,7 @@ class AcademicEngineMixin:
                 or any(applied.get(key) != value for key, value in assessment.items())
                 or not assessment_current(task, self.instance, self.runtime)):
             raise ValueError("academic result requires the current applied independent TASKS assessment")
-        validate_item_dispositions(task, assessment, require_complete=assessment["decision"] in TERMINAL_TASK_STATUSES)
+        validate_item_dispositions(task, assessment)
         requirement = next(item for item in academic.current_requirements(self.instance)["items"]
                            if item["id"] == task["academic_requirement_id"])
         expected = academic.criterion_obligations(task["id"], requirement)

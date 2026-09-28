@@ -522,7 +522,7 @@ class ParallelEngineTests(unittest.TestCase):
             "queued_requests": [{"request_id": third["id"], "decision": "keep", "reason": "opens the next proof question"},
                                 {"request_id": first["id"], "decision": "keep", "reason": "follow after third"},
                                 {"request_id": second["id"], "decision": "cancel", "reason": "defer this approach"}]}}
-        engine._apply_queue_plan({"role": "research_plan"}, eid)
+        engine._apply_queue_plan(eid)
         self.assertEqual([a["id"] for a in engine.runtime["queue"]], [third["id"], first["id"]])
         task = engine.runtime["tasks"][second["target"]]
         self.assertEqual(task["status"], "planned")

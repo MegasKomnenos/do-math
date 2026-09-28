@@ -41,6 +41,8 @@ class T(unittest.TestCase):
   self.assertEqual(result['dependency_closure'],{'first':['True','True.intro'],'second':['True','True.intro']})
   self.assertEqual(result['dependency_evidence'],{'True':exact_content_hash({'type':'Prop','value':None}),
                                                   'True.intro':exact_content_hash({'type':'True','value':None})})
+  # The closure and its body table are the stored evidence; no second digest or format marker is kept.
+  self.assertFalse({'dependency_hash','expression_encoding'} & set(result))
 
  def test_verified_output_omits_dependency_body_rows_reduced_to_hashes(self):
   with tempfile.TemporaryDirectory() as d:

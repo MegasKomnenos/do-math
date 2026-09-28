@@ -919,7 +919,7 @@ class TaskReceiptTests(unittest.TestCase):
                 action = {"id": "AC-one", "role": "maintenance"}
                 engine._save = create_autospec(engine._save); engine._resolve_failed_actions = create_autospec(engine._resolve_failed_actions); engine._ensure_academic_followup = create_autospec(engine._ensure_academic_followup)
                 ordered = []
-                result = {"status": "accepted" if owner is None else "partial", "bundles": [{"integration_id": "IN-one", "status": "accepted" if owner is None else "returned", "next_owner": owner}], "retry_bundle_ids": [] if owner is None else ["IN-one"], "issues": []}
+                result = {"status": "accepted" if owner is None else "returned", "bundles": [{"integration_id": "IN-one", "status": "accepted" if owner is None else "returned", "next_owner": owner}], "retry_bundle_ids": [] if owner is None else ["IN-one"], "issues": []}
                 def bundles(*args): ordered.append("all bundles"); return result
                 engine._apply_submission_bundles = create_autospec(engine._apply_submission_bundles, side_effect=bundles)
                 engine._record_task_receipt = create_autospec(engine._record_task_receipt, side_effect=lambda *a, **kw: ordered.append("task receipt"))

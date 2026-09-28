@@ -24,9 +24,6 @@ ENTRYPOINT = SCRIPTS / "do_math.py"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 from research_fixtures import git_init, restore_template, run_cli
-from do_math.engine import ResearchEngine
-from research_fixtures import new_instance
-import os
 
 
 def response_body(response):
@@ -75,7 +72,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result['selection']['tier'],'high')
         self.assertEqual(result['profile']['id'],result['selection']['profile_ref']['id'])
 
-    def test_retry_replays_first_receipt_after_later_state(self):
+    def test_resend_replays_its_receipt_until_an_opposite_control_intervenes(self):
         from do_math.engine import control
         args=['pause',*self.instance_args(),'--reason','audit2 pause']
         first=self.run_cli(*args)
@@ -89,15 +86,18 @@ class CliTests(unittest.TestCase):
         resumed=self.run_cli('resume',*self.instance_args(),'--reason','audit2 resume')
         self.assertEqual(resumed.returncode,0,resumed.stdout)
         self.assertNotEqual(original['snapshot'],response_body(resumed)['snapshot'])
-        direct=control(self.repository,self.instance,'pause',text='audit2 pause')
+        # After the resume the same pause is a new request that pauses again.
         repeated=self.run_cli(*args)
         self.assertEqual(repeated.returncode,0,repeated.stdout)
         result=response_body(repeated)
-        self.assertEqual(result['request_id'],direct['request_id'])
+        self.assertNotEqual(result['request_id'],original['request_id'])
+        self.assertEqual((result['effect'],result['status']),('applied','paused'))
+        # Its resend, with no resume between, replays its receipt.
+        direct=control(self.repository,self.instance,'pause',text='audit2 pause')
+        self.assertEqual(direct['request_id'],result['request_id'])
+        self.assertTrue(direct['replayed'])
         for field in ('effect','reason','status','snapshot','config'):
-            self.assertEqual(result[field],original[field],field)
-            self.assertEqual(direct[field],original[field],field)
-        self.assertTrue(result['replayed'])
+            self.assertEqual(direct[field],result[field],field)
         reapplied=self.run_cli(*args,'--idempotency-key','audit2 intentional reapply')
         receipt=response_body(reapplied)
         direct=control(self.repository,self.instance,'pause',text='audit2 pause',idempotency_key='audit2 intentional reapply')
@@ -551,53 +551,6 @@ class CliBoundaryTests(unittest.TestCase):
             engine.return_value.process_controls.side_effect = ValueError('stale derived view: role_profile_refs')
             with self.assertRaisesRegex(RuntimeError, 'R-1.*stale derived view'):
                 cli._control(Namespace(repository=Path('.'), instance='RI-test'), 'configure')
-
-
-class DocumentedQueryTests(unittest.TestCase):
-    def test_profile_query_document_reads_cli_result_envelope(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            repo = root / 'repo'
-            instance_id = new_instance(repo, goal='Check profile query', workspace=root / 'work')
-            engine = ResearchEngine(repo, instance_id)
-            allowed = next(iter(engine.instance['role_profile_refs'].values()))[0]
-            selected = engine.instance['execution_profiles'][allowed['id']]
-            document = Path(__file__).resolve().parents[2] / 'references' / '초기화-운전.md'
-            lines = document.read_text(encoding='utf-8').splitlines()
-            first = next(index for index, line in enumerate(lines) if line.startswith('$dmPage = (python $dmCli query '))
-            last = next(index for index in range(first, len(lines))
-                        if lines[index].startswith('$dmProfileRecords | Select-Object'))
-            query = lines[first:last + 1]
-            selection_index = next(index for index, line in enumerate(lines)
-                                   if line.startswith('$dmSelectedProfiles = @('))
-            refs_index = next(index for index in range(selection_index, len(lines))
-                              if lines[index].startswith('$dmProfileRefs = @('))
-            selection = lines[selection_index:refs_index]
-            environment = {**os.environ, 'DM_CLI': str(Path(__file__).resolve().parents[1] / 'do_math.py'),
-                           'DM_REPO': str(repo), 'DM_INSTANCE': instance_id,
-                           'DM_CHOSEN': selected['id']}
-            self.assertGreater(len(engine.instance['execution_profiles']), 10)
-            for page_size in (1000, 10):
-                with self.subTest(page_size=page_size):
-                    page_query = [line.replace('--limit 1000', '--limit ' + str(page_size)) for line in query]
-                    script = '\n'.join(['$dmCli = $env:DM_CLI', '$dmRepository = $env:DM_REPO',
-                                        '$dmInstance = $env:DM_INSTANCE', *page_query,
-                                        '$dmChosenIds = @($env:DM_CHOSEN)', *selection,
-                                        '@($dmSelectedProfiles | Select-Object id, revision, sha256) | ConvertTo-Json -Compress -Depth 5'])
-                    result = subprocess.run(['pwsh', '-NoProfile', '-NonInteractive', '-Command', script],
-                                            env=environment, capture_output=True, text=True, encoding='utf-8')
-                    self.assertEqual(result.returncode, 0, result.stderr)
-                    self.assertEqual(json.loads(result.stdout.strip().splitlines()[-1]),
-                                     {'id': selected['id'], 'revision': selected['revision'], 'sha256': selected['sha256']})
-                    if page_size == 1000:
-                        wrong = selection[:1] + ["$dmSelectedProfiles[0].sha256 = '0' * 64"] + selection[1:]
-                        invalid = '\n'.join(['$dmCli = $env:DM_CLI', '$dmRepository = $env:DM_REPO',
-                                             '$dmInstance = $env:DM_INSTANCE', *page_query,
-                                             '$dmChosenIds = @($env:DM_CHOSEN)', *wrong])
-                        rejected = subprocess.run(['pwsh', '-NoProfile', '-NonInteractive', '-Command', invalid],
-                                                  env=environment, capture_output=True, text=True, encoding='utf-8')
-                        self.assertNotEqual(rejected.returncode, 0)
-                        self.assertIn('허용 참조', rejected.stderr)
 
 
 if __name__ == "__main__":

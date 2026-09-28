@@ -62,7 +62,8 @@ class Tests(unittest.TestCase):
 
     def test_unsolved_not_applicable(self):
         self.instance['goal_status'] = 'unsolved'
-        self.assertEqual(academic_status(self.instance, self.runtime, self.basis)['status'], 'not_applicable')
+        self.assertEqual(academic_status(self.instance, self.runtime, self.basis),
+                         {'status': 'not_applicable', 'reason': 'goal not mathematically solved'})
 
     def test_effect_receipts_require_the_exact_successful_operation(self):
         requirements = requirement_record([{**self.requirement, 'required_inputs': ['context:goal'],

@@ -129,6 +129,20 @@ class RepetitionLineageTests(unittest.TestCase):
                 issues = submission._payload_issues({**output, 'regenerate_after': time}, schema, context, {}, Path(directory))
                 self.assertEqual(any(i.get('rule_id') == 'submission.regeneration_time' for i in issues), invalid, issues)
 
+    def test_generation_time_is_checked_only_when_no_candidate_is_proposed(self):
+        from research_fixtures import candidate
+        action = {'role': 'research_preparation'}
+        schema = contracts.action_schema(action)
+        context = {'action': action, 'observed_at': '2026-09-23T00:00:00Z',
+                   'tasks': [], 'kind_definitions': {}, 'knowledge_catalog': [], 'available_input_refs': []}
+        proposed = {'summary': 'One candidate', 'used_sources': [], 'questions': [], 'candidates': [candidate('one')]}
+        empty = {**proposed, 'summary': 'No candidates', 'candidates': []}
+        with tempfile.TemporaryDirectory() as directory:
+            for output, time, invalid in ((proposed, None, False), (proposed, '2026-09-22T23:00:00Z', False),
+                                          (empty, None, True)):
+                issues = submission._payload_issues({**output, 'regenerate_after': time}, schema, context, {}, Path(directory))
+                self.assertEqual(any(i['path'] == 'output/regenerate_after' for i in issues), invalid, issues)
+
 
 class RepetitionEngineTests(ActivatedPurposeHarness):
     def seed_plan(self, engine):

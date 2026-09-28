@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, WORK_ROLES, task_research
+from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, task_research
 from .model_policy import assessment_basis, validate_assessments, preparation_only
+from .planning import revision_requested
 from .session_slots import live_action_ids
 from .task_contracts import TERMINAL_TASK_STATUSES
 
@@ -106,7 +107,7 @@ class PlanningEngineMixin:
         from .observations import validate_task_rules
         live = live_action_ids(self.runtime)
         for tid, task in self.runtime["tasks"].items():
-            if (not task.get('academic_requirement_id') or not task.get('revision_requested')
+            if (not task.get('academic_requirement_id') or not revision_requested(task)
                     or task.get('status') in TERMINAL_TASK_STATUSES):
                 continue
             basis = assessment_basis(task)
@@ -129,7 +130,7 @@ class PlanningEngineMixin:
                 'contract_review_execution': review['execution_id']})
             self.runtime.get('task_observation_rules', {}).pop(tid, None)
         missing = {tid: assessment_basis(task) for tid, task in self.runtime["tasks"].items()
-                   if (task.get("status") in {"planned", "active", "waiting"}) and (not task.get("model_assessment"))}
+                   if task.get("status") not in TERMINAL_TASK_STATUSES and not task.get("model_assessment")}
         missing_rules = {}
         for tid, task in self.runtime['tasks'].items():
             if not task.get('academic_requirement_id') or task.get('status') in TERMINAL_TASK_STATUSES:
@@ -219,25 +220,19 @@ class PlanningEngineMixin:
                 'rule_input_version': self._rule_deferral_inputs(deferred_rules),
                 "reason": question, "question": question, "input_version": self._assessment_input_version(), "execution_id": execution_id}
 
-    def _apply_queue_plan(self, action, execution_id):
+    def _apply_queue_plan(self, execution_id):
+        # The receiver's submission check fixed every row before this application: only
+        # research_plan may write this family (extension_schema), and each row names a distinct
+        # request of its input's queued_work with keep or cancel and a reason. What can differ
+        # now is the current queue, which this loop checks.
         dispositions = self.runtime["executions"][execution_id].get("extensions", {}).get("queued_requests", [])
         if not dispositions:
             return
-        if action["role"] != "research_plan":
-            raise ValueError("only research planning reorders queued work")
-        _, _, original = self.store.view(self.runtime["executions"][execution_id]["input_snapshot"])
-        original_live = live_action_ids(original)
-        allowed = {a["id"] for a in original["queue"] if a.get("id") and a["role"] in WORK_ROLES and a["id"] not in original_live}
         live = live_action_ids(self.runtime)
         current = {a.get("id"): a for a in self.runtime["queue"]}
-        ordered, seen = [], set()
+        ordered = []
         for row in dispositions:
-            if set(row) != {"request_id", "decision", "reason"} or row["decision"] not in {"keep", "cancel"} or not isinstance(row["reason"], str) or not row["reason"].strip():
-                raise ValueError("queued request disposition requires identity, keep/cancel and reason")
             aid = row["request_id"]
-            if aid not in allowed or aid in seen:
-                raise ValueError("queued request was not in the planning input or is repeated")
-            seen.add(aid)
             if aid in live or aid not in current:
                 self.runtime["history"].append({"kind": "queue_plan_not_applied", "execution_id": execution_id, **row})
                 continue

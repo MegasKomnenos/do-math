@@ -11,6 +11,7 @@ from do_math.model_runner import ModelRunner
 from do_math.preflight import inspect_bundle
 from do_math.observations import read_checkpoint
 from do_math.scholarly import resolve_scholarly_server
+from do_math.provider_wait import provider_for
 
 
 def run_case(destination, case, *, provider, model, effort, timeout, only_assigned, scholarly=False):
@@ -63,7 +64,7 @@ def run_case(destination, case, *, provider, model, effort, timeout, only_assign
             observe_event(event)
     server = resolve_scholarly_server(None, start=Path.cwd()) if scholarly else None
     runner = ModelRunner()
-    routed_model = model if provider == "codex" or model.startswith("claude-") else "claude:" + model
+    routed_model = model if provider_for(model) == provider else "claude:" + model
     result = runner.run(prompt=prompt, output_schema=schema, workspace=workspace, evidence_dir=root / "evidence",
         model=routed_model, effort=effort, timeout_seconds=timeout, claude_only_assigned_model=only_assigned,
         scholarly_server=server, on_observation=observe, should_stop=lambda: stop)
@@ -111,7 +112,7 @@ def main(argv=None):
         parser.error("live probes require explicit --provider, --model, --output-dir and a positive timeout")
     if args.provider == "claude" and args.only_assigned_model and not args.model.startswith("claude-"):
         parser.error("model locking requires the full Claude model ID")
-    if args.provider == "codex" and args.model.startswith(("claude:", "claude-")):
+    if args.provider == "codex" and provider_for(args.model) == "claude":
         parser.error("provider and model disagree")
     if args.provider == "codex" and ("background" in args.cases or args.only_assigned_model):
         parser.error("background and --only-assigned-model require --provider claude")

@@ -286,7 +286,7 @@ def assessment_current(task,instance,runtime,*,evaluation_context=None,records=N
         return False
     from .task_contracts import assessor_is_judge, validate_item_dispositions
     try:
-        validate_item_dispositions(task, assessment, require_complete=assessment.get('decision') in {'completed', 'closed'})
+        validate_item_dispositions(task, assessment)
     except ValueError:
         return False
     for row in assessment.get('item_dispositions',[]):
@@ -392,14 +392,14 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
         old = input_tasks.get(task['id'])
         if not old or contract_hash(old) != contract_hash(task) or exact_content_hash(old.get('results', [])) != exact_content_hash(task.get('results', [])):
             raise ValueError('assessment contract or returned work changed')
-        if task['status'] in {'completed', 'closed'} or not task.get('results'):
+        if task['status'] in TERMINAL_TASK_STATUSES or not task.get('results'):
             raise ValueError('assessment requires unfinished returned work')
         if execution_id in {task.get('producer_execution'), *task.get('author_execution_ids', [])}:
             raise ValueError('contract author cannot assess its own obligations')
         if any(e.get('status') != 'ended' and e.get('action', {}).get('target') == task['id']
                and e.get('role') in RESEARCH_PRODUCER_ROLES for e in new_runtime.get('executions', {}).values()):
             raise ValueError('work execution must end before completion assessment')
-        validate_item_dispositions(task, assessment, require_complete=assessment['decision'] in {'completed','closed'})
+        validate_item_dispositions(task, assessment)
         coverage = judge_coverage_errors(actor['role'], execution_id, task, assessment, families)
         if coverage:
             raise ValueError(coverage[0])
@@ -415,7 +415,7 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
                 validate_disposition_authority(task, row, new_instance, new_runtime, evaluation_context=evaluation_context)
             if row['kind'] == 'transferred':
                 target = tasks.get(row['target_task_id'])
-                if not target or target['id'] == task['id'] or target['id'] in ids or target['status'] in {'completed','closed'}:
+                if not target or target['id'] == task['id'] or target['id'] in ids or target['status'] in TERMINAL_TASK_STATUSES:
                     raise ValueError('transfer requires a distinct unfinished recipient outside this assessment set')
                 previous = reference_tasks.get(target['id'])
                 if not previous or contract_hash(previous) != contract_hash(target):
@@ -460,7 +460,7 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
             row['obligation_id']: designated_judgment(task, obligations[row['obligation_id']], row, new_instance, new_runtime)
             for row in assessment['item_dispositions'] if row['kind'] == 'fulfilled'
             and not assessor_is_judge(obligations[row['obligation_id']], actor['role'], execution_id)}
-        if assessment['decision'] in {'completed','closed'}:
+        if assessment['decision'] in TERMINAL_TASK_STATUSES:
             task['status'] = assessment['decision']; task.pop('waiting', None)
         else:
             task['status'] = 'waiting'

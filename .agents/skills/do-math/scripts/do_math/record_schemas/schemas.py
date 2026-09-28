@@ -13,7 +13,7 @@ from ..contracts import (PLAN_DISPOSITION as _PLAN_DISPOSITION, TEXT as _NONEMPT
                          schema_for as _schema_for)
 from ..execution_lifecycle import EXECUTION_STATUSES as _EXECUTION_STATUSES, OUTCOMES as _OUTCOMES
 from ..execution_profiles import (OBSERVATION_KEYS as _OBSERVATION_KEYS, OBSERVATION_MODES as _OBSERVATION_MODES,
-                                  WINDOW_KEYS as _WINDOW_KEYS)
+                                  PROFILE_ROLES as _PROFILE_ROLES, WINDOW_KEYS as _WINDOW_KEYS)
 from ..external import OPERATION_STATUSES as _OPERATION_STATUSES
 from ..file_io import SHA256_SCHEMA as HASH
 from ..governance import (GOVERNANCE_STATUSES as _GOVERNANCE_STATUSES, GRANT_STATUSES as _GRANT_STATUSES,
@@ -427,11 +427,11 @@ RECORDS["capability_evidence"] = record({"execution_profile_ref": PROFILE_REF, "
 RECORDS["grants"] = record({"kind": enum("local", "http"), "status": enum(*sorted(_GRANT_STATUSES)),
     "roles": array(TEXT), "task_ids": REFS,
     "expires_at": nullable(TEXT), "valid_from": nullable(TEXT), "created_at": TEXT, "source_ref": TEXT,
-    "checkpoint_allowed": BOOL, "decision_id": ID, "revoked_at": TEXT, "revoked_by": ID,
+    "decision_id": ID, "revoked_at": TEXT, "revoked_by": ID,
     "allowed_origins": array(TEXT), "allowed_methods": array(TEXT), "allowed_path_prefixes": array(TEXT),
     "credential_env": {"type": "object", "additionalProperties": TEXT},
     "included_targets": REFS, "excluded_targets": REFS, "reuse": TEXT, "initialization_only": BOOL,
-    "expired_at": TEXT, "expiry_event_ref": ID, "uses": HISTORY,
+    "expired_at": TEXT, "expiry_event_ref": ID,
     "replaced_by": ID, "academic_only": BOOL, "requires_academic": BOOL,
     "excluded_origins": array(TEXT, True), "excluded_path_prefixes": array(TEXT, True),
     **{key: array(TEXT, True) for key in ("execution_kinds", "purposes", "subjects")}}, ("kind", "status", "source_ref"))
@@ -488,8 +488,8 @@ RECORDS["self_check_obligations"] = record({"kind": TEXT, "execution_id": ID, "r
     "due": HISTORY, "opened_at": TEXT, "status": enum("open", "answered", "closed"),
     "response_ref": TEXT, "opened_offset_ms": NAT, "deadline_offset_ms": nullable(NAT),
     "observed_at": TEXT, "rules_sha256": HASH, "snapshot": EVIDENCE,
-    "consumed_boundaries": mapping(NAT), "response_availability": enum("available", "awaiting_safe_boundary"),
-    "missed_reason": TEXT, "boundary_receipt_ref": TEXT, "deadline_held_offset_ms": NAT,
+    "consumed_boundaries": mapping(NAT),
+    "missed_reason": TEXT, "deadline_held_offset_ms": NAT,
     "delivered_source_offset": NAT, "delivered_at": TEXT, 'delivered_request_sha256': HASH,
     'acknowledged_source_offset': NAT, 'acknowledged_call_id': TEXT},
     ("kind", "execution_id", "rule_revision", "due", "opened_offset_ms", "deadline_offset_ms", "status", "observed_at"))
@@ -624,7 +624,8 @@ RESEARCH_FIELDS = {
     "active_trust_environment": nullable(ID),
     "conversation_loss_policy": TEXT, "governance_approval": {"type": ["boolean", "object"]},
     "goal_assessment_basis": TEXT,
-    "role_profile_refs": {"type": "object", "additionalProperties": array(PROFILE_REF)},
+    # Each role that builds profiles (execution_profiles.PROFILE_ROLES) selects its stored editions.
+    "role_profile_refs": obj({role: {**array(PROFILE_REF, True), "minItems": 1} for role in sorted(_PROFILE_ROLES)}),
     "lifecycle": obj({"state": enum("initializing", "active", "paused"),
         "immutable_input": obj({"text": TEXT, "sha256": HASH, "bytes": NAT},
         ("text", "sha256", "bytes")),
@@ -632,7 +633,7 @@ RESEARCH_FIELDS = {
         "activation": obj({"completed": array(TEXT), "missing": array(TEXT), "observation_errors": HISTORY}),
         "permanently_closed": BOOL, "history": HISTORY,
         "adoption": obj({"governance_sha256": HASH, "config_sha256": HASH, "review_policy_sha256": HASH,
-            "external_policy": {"type": ["string", "object"]}, "profile_refs": array(PROFILE_REF),
+            "external_policy": {"type": ["string", "object"]},
             "initial_profile_ref": PROFILE_REF, "research_grant_ids": REFS, "initial_grant_ids": REFS, "source_refs": array(TEXT)}),
         "intent_check": obj({"input_sha256": HASH, "interpretation_execution_id": ID, "check_execution_id": ID},
                             ("input_sha256", "interpretation_execution_id", "check_execution_id")),
@@ -681,7 +682,6 @@ RUNTIME_FIELDS = {"status": enum("initializing", "ready", "running", "paused", "
     "user_pause": {"type": ["boolean", "object"]}, "stop_requested": {"type": ["boolean", "string"]},
     "next_research_reconsider_at": nullable(TEXT),
     "model_policy_violation": EVIDENCE, "provider_wake": EVIDENCE,
-    "permission_requests": HISTORY,
     # Per trust environment: the toolchain-record baseline whose fingerprint was last accepted.
     "trust_bindings": mapping(_BINDING_SCHEMA),
     # These assessments have no producer ID. Their enclosing list is one typed

@@ -129,9 +129,28 @@ class StateCheckTests(unittest.TestCase):
                 broken['sources'] = [{'id': 'SO-1', 'name': 'broken', 'path': 'runtime/broken',
                                       'sha256': 'a' * 64, 'bytes': 0, field: value}]
                 self.assertRejectedAtLoad(broken, unchanged, 'research/sources/None/' + field)
+        # A published formal result without its verification never loads.
         formal = instance['formal_results'][instance['knowledge'][kid]['formal_result_id']]
         formal.update(publication_state='accepted', formal_use='active')
-        self.assertError(instance, runtime, 'stale verification', 'mathematical_effect')
+        self.assertRejectedAtLoad(instance, runtime, 'published formal result requires verification evidence')
+
+    def test_formal_results_left_under_a_superseded_environment_are_not_findings(self):
+        # A trust transition gives each target a new formal result and leaves the
+        # old one, still accepted and active, under the superseded environment.
+        from do_math import knowledge
+        from knowledge_fixtures import verified_knowledge
+        instance, runtime, kid, _ = verified_knowledge()
+        old = instance['knowledge'][kid]['formal_result_id']
+        instance['trust_environments']['TE-next'] = {'id': 'TE-next', 'status': 'registered',
+                                                     'toolchain': {'version': 'next'}, 'allowed_axioms': []}
+        result = {**deepcopy(instance['formal_results'][old]['verification']), 'id': kid,
+                  'toolchain': {'version': 'next'}}
+        transition = knowledge.begin_transition(instance, 'TE-next')
+        instance = knowledge.activate_transition(instance,
+            knowledge.record_transition_result(instance, transition, result))
+        self.assertEqual(instance['trust_environments']['TE-test']['status'], 'superseded')
+        self.assertEqual(instance['formal_results'][old]['formal_use'], 'active')
+        self.assertEqual(self.area(instance, runtime, 'mathematical_effect')['status'], 'healthy')
 
     def test_completion_requires_all_obligations_and_authoritative_waiver(self):
         from record_fixtures import task_contract

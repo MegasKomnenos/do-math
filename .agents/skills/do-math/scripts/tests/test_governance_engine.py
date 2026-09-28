@@ -25,7 +25,7 @@ class CentralGovernanceTests(unittest.TestCase):
         ]
         for kind, target, payload in cases:
             with self.subTest(kind=kind):
-                output = {'questions': [], 'question_details': [], 'needs_clarification': False,
+                output = {'questions': [], 'question_details': [],
                     'import_units': [{'unit_id': 'U', 'source_range': {'start': 0, 'end': len(source['text'])},
                         'interpretation': 'Use the named target.', 'owner_kind': kind, 'owner_ref': target,
                         'payload': deepcopy(payload), 'decision_refs': [], 'question_refs': []}]}
@@ -115,7 +115,7 @@ class CentralGovernanceTests(unittest.TestCase):
             h.runtime['inputs'].append({'id': 'CONF', 'text': 'Adopt these exact concurrent capacities', 'origin': 'user'})
             source = gov.import_input_source(h.instance, h.runtime, 'CONF')
             payload = {'kind': 'configuration', 'config': patch}
-            output = {'questions': [], 'question_details': [], 'needs_clarification': False, 'import_units': [{
+            output = {'questions': [], 'question_details': [], 'import_units': [{
                 'unit_id': 'U', 'source_range': {'start': 0, 'end': len(source['text'])}, 'interpretation': 'Configure capacities',
                 'owner_kind': 'configuration', 'owner_ref': 'I', 'payload': payload, 'decision_refs': [], 'question_refs': []}]}
             handlers = h.governance_owner_handlers()
@@ -171,7 +171,7 @@ class CentralGovernanceTests(unittest.TestCase):
         self.assertEqual(context['user_request']['text'], text)
         source = h._governance_input_source('RAW')
         self.assertEqual(source['sha256'], hashlib.sha256(raw).hexdigest())
-        output = {'questions': [], 'question_details': [], 'needs_clarification': False, 'import_units': [{
+        output = {'questions': [], 'question_details': [], 'import_units': [{
             'unit_id': 'U', 'source_range': {'start': 0, 'end': len(text)}, 'interpretation': 'Exact codepoint assertion',
             'owner_kind': 'charter', 'owner_ref': 'CH1', 'payload': {}, 'decision_refs': [], 'question_refs': []}]}
         gov.prepare_import(h.instance, h.runtime, source, output, execution_id='AUTHOR', input_ref='RAW')
@@ -361,7 +361,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
                 self.execution_fixture(engine, eid, 'intent_interpretation', 'input-Q')
             record = charter('CH2', 'Prove Q'); record['supersedes'] = ['CH1']
             output = {'summary': 'User changes P to Q', 'used_sources': [], 'questions': [], 'question_details': [],
-                'needs_clarification': False, 'import_units': [{
+                'import_units': [{
                     'unit_id': 'U', 'source_range': {'start': 0, 'end': len(input_text)},
                     'interpretation': 'Adopt Q as goal', 'owner_kind': 'charter', 'owner_ref': 'CH2',
                     'payload': {'kind': 'charter', 'record': record}, 'decision_refs': [], 'question_refs': []}]}

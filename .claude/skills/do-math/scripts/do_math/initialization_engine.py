@@ -5,10 +5,22 @@ from copy import deepcopy
 import json
 from .repository import exact_content_hash, new_id
 
+
+def _require_current_config(instance, change):
+    """A probe or adoption names the configuration it acts on; it must be the current one.
+
+    The hash makes a request sent after a configuration change a new request rather
+    than a resend, and keeps an adoption from binding a configuration its sender did
+    not inspect. ``status`` reports the current hash (``config_sha256``).
+    """
+    if change.get('config_sha256') != exact_content_hash(instance['config']):
+        raise ValueError('config_sha256 must name the current configuration; status reports its hash')
+
+
 class InitializationEngineMixin:
     def _initialization_control(self, change, source_ref):
         """Existing decision control adopts settings or refreshes observed CLI evidence."""
-        from .initialization import governance_basis, grant_current, adapter_for
+        from .initialization import governance_basis, grant_current, adapter_for, observed_profile_refs
         from .execution_profiles import match_profile_ref, capability_evidence
         from .review_policy import build_review_policy
         lifecycle = self.instance['lifecycle']
@@ -34,7 +46,15 @@ class InitializationEngineMixin:
         if operation == 'probe':
             if 'profile_ref' in change and 'profile_refs' in change:
                 raise ValueError('supply profile_ref or profile_refs, not both')
-            refs = change.get('profile_refs', [change.get('profile_ref')])
+            named = {'profile_ref', 'profile_refs'} & change.keys()
+            if 'config_sha256' in change or not named:
+                _require_current_config(self.instance, change)
+            if named:
+                refs = change.get('profile_refs', [change.get('profile_ref')])
+            else:
+                # Without named editions, observe every current AI role profile dispatch may select.
+                refs = [ref for ref in observed_profile_refs(self.instance)
+                        if match_profile_ref(self.instance['execution_profiles'], ref)['actor_kind'] == 'ai']
             if not isinstance(refs, list) or not refs:
                 raise ValueError('capability probe requires exact profile references')
             profiles = [match_profile_ref(self.instance['execution_profiles'], ref) for ref in refs]
@@ -56,8 +76,17 @@ class InitializationEngineMixin:
         if operation != 'adopt':
             raise ValueError('initialization operation must be governance, adopt or probe')
         adoption = deepcopy(lifecycle.get('adoption', {}))
-        if change.get('adopt_current_config') is True:
-            adoption['config_sha256'] = exact_content_hash(self.instance['config'])
+        if 'profile_refs' in change:
+            raise ValueError('adoption binds the current role profiles of the adopted configuration; '
+                             'profile_refs names editions only for a capability probe')
+        if 'config_sha256' in change:
+            _require_current_config(self.instance, change)
+            from .observations import observation_settings_errors
+            errors = [error for ref in observed_profile_refs(self.instance) for error in
+                      observation_settings_errors(match_profile_ref(self.instance['execution_profiles'], ref))]
+            if errors:
+                raise ValueError('observation_configuration: ' + json.dumps(errors, ensure_ascii=False))
+            adoption['config_sha256'] = change['config_sha256']
         if change.get('adopt_current_governance') is True:
             adoption['governance_sha256'] = governance_basis(self.instance)
         if 'conversation_loss_policy' in change:
@@ -74,16 +103,6 @@ class InitializationEngineMixin:
                 max_rounds=self.instance['config'].get('review_rounds'))
             self.instance['review_policy'] = policy
             adoption['review_policy_sha256'] = exact_content_hash(policy)
-        if 'profile_refs' in change:
-            refs = change['profile_refs']
-            if not isinstance(refs, list) or not refs:
-                raise ValueError('adoption requires exact profile references')
-            from .observations import observation_settings_errors
-            for ref in refs:
-                errors = observation_settings_errors(match_profile_ref(self.instance['execution_profiles'], ref))
-                if errors:
-                    raise ValueError('observation_configuration: ' + json.dumps(errors, ensure_ascii=False))
-            adoption['profile_refs'] = deepcopy(refs)
         if 'initial_profile_ref' in change:
             profile = match_profile_ref(self.instance['execution_profiles'], change['initial_profile_ref'])
             if profile['role'] != 'intent_interpretation':
@@ -93,12 +112,10 @@ class InitializationEngineMixin:
                 'profile_ref': change['initial_profile_ref']}, {}, self.instance['knowledge'],
                 instance=self.instance)
             adoption['initial_profile_ref'] = deepcopy(change['initial_profile_ref'])
-        elif adoption.get('config_sha256') == exact_content_hash(self.instance['config']) and adoption.get('profile_refs'):
+        elif adoption.get('config_sha256') == exact_content_hash(self.instance['config']):
             from .model_policy import selection
-            chosen = selection(self.instance['config'], {'role': 'intent_interpretation'}, {},
-                               self.instance['knowledge'], instance=self.instance)['profile_ref']
-            if chosen in adoption['profile_refs']:
-                adoption['initial_profile_ref'] = chosen
+            adoption['initial_profile_ref'] = selection(self.instance['config'], {'role': 'intent_interpretation'},
+                {}, self.instance['knowledge'], instance=self.instance)['profile_ref']
         for field, initial in [('initial_grant_ids', True), ('research_grant_ids', False)]:
             if field in change:
                 if not isinstance(change[field], list) or not change[field]:

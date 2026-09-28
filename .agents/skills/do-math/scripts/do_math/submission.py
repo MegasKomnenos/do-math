@@ -29,7 +29,7 @@ from .file_io import reject_constant, unique_pairs
 from .repository import canonical_json, exact_content_hash
 from .contracts import REFS, TEXT, closed_object
 from .questions import QUESTION_OWNERS
-from .task_contracts import CONTEXT_INPUT_REFS
+from .task_contracts import CONTEXT_INPUT_REFS, TERMINAL_TASK_STATUSES
 from . import integration
 
 
@@ -402,7 +402,7 @@ def contract_check_errors(item: dict, entry: dict, dependencies: list[str], task
         elif row["revision"] != sibling.get("revision"):
             errors.append(("contract_check.sibling_revision",
                            f"sibling boundary was not read from the current revision {sibling.get('revision')} of {ref}"))
-        elif ((sibling.get("revision_requested") or ref in revising)
+        elif ((planning.revision_requested(sibling) or ref in revising)
               and not row["independent_of_next_revision"] and ref not in dependencies):
             errors.append(("contract_check.sibling_under_revision",
                            "sibling contract is under revision: state a boundary that its next revision cannot move, "
@@ -496,7 +496,6 @@ def supplied_reference_ids(context):
         ids.update((source["name"], source["path"], "source:" + source["name"]))
     ids.update(row["id"] for row in context.get("grants", []))
     for key in ("user_inputs", "events", "external_operations", "external_rejections", "question_links", "decisions",
-                "activities", "executions", "self_check_obligations", "observation_facts",
                 "governance_records", "delegations", "goal_judgments"):
         ids.update(row["id"] for row in context.get(key, []) if row.get("id"))
     ids.update(row['resolution']['id'] for row in context.get('question_links', []) if isinstance(row.get('resolution'), dict) and row['resolution'].get('id'))
@@ -510,6 +509,11 @@ def supplied_reference_ids(context):
     for key in ("task", "user_request", "original_source", "execution_to_review", "previous_execution"):
         if isinstance(context.get(key), dict) and context[key].get("id"):
             ids.add(context[key]["id"])
+    # An operational review's admissible_basis_refs are the evidence its input supplies: its
+    # target, the target's observation facts and self-check obligations, successors and
+    # preserved results (operational_dispositions). Like every supplied record they are
+    # citable and readable.
+    ids.update(context.get("admissible_basis_refs", []))
     return ids
 
 
@@ -521,14 +525,13 @@ def record_index_ids(context):
 def _reference_index(context, *, records=True):
     """Citable IDs and locators of one fixed input; workspace files are still checked per reference.
 
-    A reference is citable when the input shows it or, with ``records``, when it names a
-    record of the input snapshot in the record_index; field rules apply separately. An
-    operational review's admissible_basis_refs are supplied evidence: the disposition
-    check and this general reference check admit the same set.
+    A reference is citable when the input shows it (supplied_reference_ids, which also counts an
+    operational review's admissible_basis_refs, so the disposition check and this general
+    reference check admit the same set) or, with ``records``, when it names a record of the
+    input snapshot in the record_index; field rules apply separately.
     """
     known = (supplied_reference_ids(context) | set(context.get("available_input_refs", []))
-             | set(context.get("admissible_basis_refs", [])) | CONTEXT_INPUT_REFS
-             | (record_index_ids(context) if records else set()))
+             | CONTEXT_INPUT_REFS | (record_index_ids(context) if records else set()))
     locators = supplied_locators(context)
     for source in context.get("sources", []):
         locators.update((source["name"], "source:" + source["name"]))
@@ -668,11 +671,16 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
         if not condition:
             raise ValueError(message)
 
-    if action['role'] == 'research_preparation' and 'regenerate_after' in schema.get('properties', {}):
+    # The time is consumed only when an accepted output preserved no contract,
+    # which a preparation proposing candidates never is (revisions.record_execution_outcome).
+    if (action['role'] == 'research_preparation' and 'regenerate_after' in schema.get('properties', {})
+            and not output['candidates']):
         from .revisions import regeneration_time_valid
         check('output/regenerate_after', lambda: require(
-            regeneration_time_valid(output['regenerate_after'], context['observed_at']),
-            'regenerate_after must follow the machine observed_at'), 'submission.regeneration_time')
+            output['regenerate_after'] is not None
+            and regeneration_time_valid(output['regenerate_after'], context['observed_at']),
+            'an output without candidates needs regenerate_after after the machine observed_at'),
+            'submission.regeneration_time')
 
     if action["role"] == "maintenance" and action.get("stage") == "impact_review":
         check("output/impact_review", lambda: integration.validate_impact_review_response(action["input_basis"]["impact_review"], output),
@@ -772,7 +780,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                                      "prepared in this output; unknown: " + ", ".join(missing))
                 if item["revises_task_id"]:
                     old = tasks.get(item["revises_task_id"])
-                    require(bool(old) and old.get("status") not in {"completed", "closed", "active"}, "revision requires an existing unfinished task")
+                    require(bool(old) and old.get("status") not in TERMINAL_TASK_STATUSES | {"active"}, "revision requires an existing unfinished task")
                     require(not old.get("academic_requirement_id"), "user academic requirements have a separate decision path")
             check(f"output/candidates/{index}", candidate)
             from .observations import validate_task_rules

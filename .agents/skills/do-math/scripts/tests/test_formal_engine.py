@@ -140,28 +140,60 @@ class FormalAttemptLineageTests(unittest.TestCase):
         self.assertTrue(any(a['role'] == 'identity_review' for a in final.runtime['queue']))
 
 
+def parked_formal_check():
+    """An engine whose formal check ``AC-formal`` waits because no preapproved environment is active."""
+    from do_math import knowledge_io
+    engine = routing_engine()
+    engine.instance.update(active_trust_environment=None, trust_environments={}, sources=[])
+    engine.instance["config"] = deepcopy(DEFAULT_CONFIG)
+    engine.instance.update(execution_profiles.build_profiles(engine.instance["config"]))
+    engine.instance, engine.runtime, kid = knowledge_io.import_candidate(engine.instance, engine.runtime,
+        {"kind": "theorem", "title": "T", "statement": "True", "summary": "True", "explanation": "A proof",
+         "lean_code": "theorem t : True := by trivial", "declaration_names": ["t"], "dependencies": []},
+        source_ref="EX-author", actor_ref="EX-author")
+    # This isolates the actual trust-environment gate; public lifecycle/grant
+    # admission is exercised by PublicGitFlow and LIFECYCLE's owner tests.
+    engine._action_lifecycle_gate = create_autospec(engine._action_lifecycle_gate)
+    engine._require_action_clock = create_autospec(engine._require_action_clock)
+    engine.runtime["trust_transitions"] = {}
+    engine.formal_verifier = Mock()
+    engine._save = create_autospec(engine._save)
+    engine._formal({"id": "AC-formal", "role": "formal_check", "target": kid})
+    return engine
+
+
 class FormalAuthority(unittest.TestCase):
     def test_missing_preapproved_environment_never_runs_or_autoapproves(self):
-        from do_math import knowledge_io
-        engine = routing_engine()
-        engine.instance.update(active_trust_environment=None, trust_environments={}, sources=[])
-        engine.instance["config"] = deepcopy(DEFAULT_CONFIG)
-        engine.instance.update(execution_profiles.build_profiles(engine.instance["config"]))
-        engine.instance, engine.runtime, kid = knowledge_io.import_candidate(engine.instance, engine.runtime,
-            {"kind": "theorem", "title": "T", "statement": "True", "summary": "True", "explanation": "A proof",
-             "lean_code": "theorem t : True := by trivial", "declaration_names": ["t"], "dependencies": []},
-            source_ref="EX-author", actor_ref="EX-author")
-        # This isolates the actual trust-environment gate; public lifecycle/grant
-        # admission is exercised by PublicGitFlow and LIFECYCLE's owner tests.
-        engine._action_lifecycle_gate = create_autospec(engine._action_lifecycle_gate)
-        engine._require_action_clock = create_autospec(engine._require_action_clock)
-        engine.runtime["trust_transitions"] = {}
-        engine.formal_verifier = Mock()
-        engine._save = create_autospec(engine._save)
-        engine._formal({"id": "AC-formal", "role": "formal_check", "target": kid})
+        engine = parked_formal_check()
         engine.formal_verifier.assert_not_called()
         self.assertIsNone(engine.instance["active_trust_environment"])
         self.assertEqual(next(iter(engine.runtime["activities"].values()))["status"], "waiting")
+
+    def test_parked_check_returns_to_the_queue_once_an_environment_and_authority_admit_it(self):
+        engine = parked_formal_check()
+        engine._resume_formal_waits()
+        self.assertIn("AC-formal", engine.runtime["waiting_actions"])
+        engine._formal_environment = create_autospec(engine._formal_environment, return_value={"id": "TE-new"})
+        with patch("do_math.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}):
+            engine._resume_formal_waits()
+        self.assertNotIn("AC-formal", engine.runtime["waiting_actions"])
+        self.assertIn("AC-formal", [action["id"] for action in engine.runtime["queue"]])
+
+    def test_only_a_check_stopped_by_changed_conditions_resumes(self):
+        engine = parked_formal_check()
+        action = engine.runtime["waiting_actions"].pop("AC-formal")["action"]
+        for identifier, reasons in (("AC-changed", ["authority_changed", "input_changed"]),
+                                    ("AC-stopped", ["execution_stop_requested"])):
+            engine.runtime["waiting_actions"][identifier] = {
+                "action": {**action, "id": identifier}, "kind": "formal_stopped", "reason": ", ".join(reasons),
+                "execution_id": "EX-" + identifier, "next_owner": "trust_governance",
+                "detail": {"stop_reasons": reasons}}
+        engine._formal_environment = create_autospec(engine._formal_environment, return_value={"id": "TE-new"})
+        with patch("do_math.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}):
+            engine._resume_formal_waits()
+        self.assertEqual(list(engine.runtime["waiting_actions"]), ["AC-stopped"])
+        resumed = next(row for row in engine.runtime["queue"] if row["id"] == "AC-changed")
+        self.assertEqual(resumed["continuation_of"], "EX-AC-changed")
 
 
 class FormalBindingConnections(unittest.TestCase):

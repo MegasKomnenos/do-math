@@ -627,7 +627,7 @@ class LifecycleEngineMixin:
             live_review = any(execution.get('status') != 'ended' and execution.get('action', {}).get('role') == 'task_contract_review'
                 and execution['action'].get('target') == task_id and execution['action'].get('contract_basis') == required
                 for execution in self.runtime['executions'].values())
-            if not approved and not reviewed and not blocked_review and not live_review:
+            if not reviewed and not blocked_review and not live_review:
                 candidates = [a for a in self.runtime['queue'] if a.get('role') == 'task_contract_review' and a.get('target') == task_id]
                 same = next((a for a in candidates if a.get('contract_basis') == required and a.get('review_basis_key') == review_key), None)
                 if same is None:
@@ -652,7 +652,8 @@ class LifecycleEngineMixin:
             if evaluation['state'] == 'evaluation_error' and (not previous or previous.get('errors') != evaluation['errors']):
                 self._lifecycle_event('task_condition_evaluation_error', target=task_id, errors=evaluation['errors'])
         record_due_events(self.instance, self.runtime, now.isoformat())
-        if self.runtime.get('status') in {'paused', 'closed', 'completed'}:
+        # An ended instance returned above (_instance_closed); only a lost conversation pauses here.
+        if self.runtime.get('status') == 'paused':
             return
         self._schedule_reconsideration(now.isoformat())
         events = {event['id']: event for event in self.runtime['events']}

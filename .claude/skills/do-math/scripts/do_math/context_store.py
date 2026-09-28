@@ -430,9 +430,13 @@ INLINE_SCOPES = {
                   'operational_review', 'goal_audit', 'maintenance:general', 'maintenance:impact'),
     'formal_verifier': ('intent_interpretation:interpret', *_PLANNING, 'task_contract_review', 'research_work',
                         'supplemental_research', 'maintenance:general', 'maintenance:impact'),
-    'execution_profiles': (*_INTENT, 'research_preparation', 'task_contract_review', 'identity_review:scope',
-                           'operational_review'),
-    'role_profile_refs': (*_INTENT, 'research_preparation', 'identity_review:scope', 'operational_review'),
+    # The profile registry and the per-role selection are map entries in every scope; a role that
+    # binds a profile reads the exact source (execution_profile and profile_selection are inline).
+    'execution_profiles': (),
+    'role_profile_refs': (),
+    # A role that compares, selects or aggregates tasks carries the task list; a role assigned one
+    # task receives that task inline and the list as a map entry.
+    'tasks': ('intent_interpretation', *_PLANNING, 'operational_review', 'goal_audit', 'maintenance'),
     'decisions': ('intent_interpretation', *_PLANNING, 'task_contract_review', 'research_work', 'supplemental_research',
                   'operational_review', 'goal_audit', 'maintenance'),
     'pending_revisions': (*_PLANNING, 'maintenance:general'),
@@ -460,6 +464,10 @@ BLOCKED_KEYS = {
     # 공통-실행.md 「질문의 소유자와 영향을 받는 대상을 밝힌다」 (review seats' private questions):
     # an operational review of a review seat reports back to that seat.
     'operational_review:review': _REVIEW_PRIVATE,
+    # 계약/목표-감사.md 13: a live operational review of an audit slot reports its disposition
+    # reason back to that slot, so it reads neither the round's other judgments nor the history
+    # rows that summarize them.
+    'operational_review:goal_audit': ('goal_judgments', 'recent_history', 'research/goal_judgments'),
     # 계약/목표-감사.md 13: provided sources and published reviews, not another auditor's answer.
     # Each audit slot seals its judgment into the research canon before the round's other slots judge.
     'goal_audit': ('recent_history', 'research/goal_judgments'),
@@ -490,9 +498,11 @@ def input_scope(action, runtime):
         mode = ('kind' if action.get('kind_definition_id') else 'impact' if action.get('stage') == 'impact_review'
                 else 'diagnosis' if action.get('initial_submission_diagnosis') else 'general')
     elif role == 'operational_review':
-        # A review seat's execution belongs to its review lineage (BLOCKED_KEYS).
-        target = runtime.get('executions', {}).get(action.get('target')) or {}
-        mode = 'review' if target.get('action', {}).get('review_cycle_id') else 'general'
+        # A review seat's execution belongs to its review lineage, an audit slot's to its audit
+        # round (BLOCKED_KEYS).
+        target = (runtime.get('executions', {}).get(action.get('target')) or {}).get('action', {})
+        mode = ('review' if target.get('review_cycle_id')
+                else 'goal_audit' if target.get('role') == 'goal_audit' else 'general')
     else:
         return role
     return role + ':' + str(mode)
@@ -1092,14 +1102,11 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
     # inclusion as required direct input is enforced by prepare_role_input.
     candidates = sorted((key for key in catalog["entries"] if key not in mandatory_keys),
                         key=lambda key: len(raw[key]), reverse=True)
-    reference_only = {'execution_profiles', 'role_profile_refs'} if role in _ROLE_DIRECT else set()
-    if role in {'research_work', 'supplemental_research', 'task_contract_review'}:
-        reference_only.add('tasks')
     mapped = set(map_keys) - set(mandatory_keys)
     for key in candidates:
         if mandatory_bytes > max_bytes:
             break
-        if key not in mapped and key not in reference_only and _object_size(sizes.values()) <= max_bytes:
+        if key not in mapped and _object_size(sizes.values()) <= max_bytes:
             continue
         ref = catalog["entries"][key]
         projected = {"source_ref": ref, "total": len(context[key]) if isinstance(context[key], (dict, list)) else None}
@@ -1191,9 +1198,10 @@ def readable_snapshot_path(context, path):
 
     Never a file of a family ``record_map.blocked_keys`` names. Otherwise a record file of its
     record_index; with ``record_map.ledger == 'readable'`` any state file; otherwise research
-    canon files and the files the input itself shows.
+    canon files and the files the input itself shows, as a locator or as a supplied reference
+    (an operational review's admissible_basis_refs name its target's result and checkpoint).
     """
-    from .submission import supplied_locators
+    from .submission import supplied_locators, supplied_reference_ids
     parts = path.split('/') if isinstance(path, str) else []
     if (len(parts) < 2 or parts[0] not in {'research', 'runtime'}
             or parts[0] + '/' + parts[1] in context.get('record_map', {}).get('blocked_keys', ())):
@@ -1203,7 +1211,7 @@ def readable_snapshot_path(context, path):
         return True
     if context.get('record_map', {}).get('ledger') == 'readable' or parts[0] == 'research':
         return True
-    return path in supplied_locators(context)
+    return path in supplied_locators(context) or path in supplied_reference_ids(context)
 
 
 def read_main(argv=None):
@@ -1249,15 +1257,19 @@ def read_main(argv=None):
         if path is None or not readable_snapshot_path(context, path):
             return {**row, 'status': 'refused',
                     'reason': 'outside the record map of this input (record_index and record_map.ledger)'}
-        if output is not None and relative_path(output).parts[0] == 'input':
-            return {**row, 'status': 'refused', 'reason': '--output must not write into the fixed input/'}
+        if output is not None:
+            try:
+                target = safe_path(workspace, output)
+            except ValueError as error:
+                return {**row, 'status': 'refused', 'reason': '--output needs a workspace-relative path: ' + str(error)}
+            if relative_path(output).parts[0] == 'input':
+                return {**row, 'status': 'refused', 'reason': '--output must not write into the fixed input/'}
         try:
             raw = read(path)
         except (OSError, ValueError, KeyError, RuntimeError) as error:
             return {**row, 'status': 'error', 'reason': str(error)}
         row.update(status='ok', sha256=hashlib.sha256(raw).hexdigest(), bytes=len(raw))
         if output is not None:
-            target = safe_path(workspace, output)
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(raw)
             return {**row, 'output': relative_path(output).as_posix()}

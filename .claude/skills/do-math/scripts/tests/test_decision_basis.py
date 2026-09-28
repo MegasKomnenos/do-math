@@ -33,11 +33,11 @@ class BasisTests(unittest.TestCase):
                 validate_candidate=validate, publish=publish)
         before = deepcopy(runtime)
         failed = run(runtime, lambda *_: (_ for _ in ()).throw(ValueError('later candidate failure')))
-        self.assertEqual(failed['status'], 'partial')
+        self.assertEqual(failed['status'], 'returned')
         self.assertEqual(runtime, before)
         unpublished = run(runtime, lambda *_: None,
             publish=lambda *_: (_ for _ in ()).throw(OSError('Git publication failed')))
-        self.assertEqual(unpublished['status'], 'partial')
+        self.assertEqual(unpublished['status'], 'returned')
         self.assertEqual(runtime, before)
         accepted = run(runtime, lambda *_: None)
         self.assertEqual(accepted['status'], 'accepted')
@@ -180,6 +180,19 @@ class BasisTests(unittest.TestCase):
         self.assertTrue(any("one replacement candidate" in row["message"] for row in errors), errors)
         output["candidates"][1]["revises_task_id"] = None
         self.assertEqual(revisions.submission_errors(output, extension, context), [])
+
+    def test_premise_refresh_of_an_output_repair_carries_no_previous_submission_issues(self):
+        repair = {'execution_id': 'EX-first', 'previous_output': {}, 'retry_bundle_ids': ['IN-one'],
+                  'bundle_results': [], 'issues': [{'issue_id': 'IS-old', 'rule_id': 'schema.required'}]}
+        action = {'id': 'AC-repair', 'role': 'supplemental_research', 'continuation_of': 'EX-first',
+                  'repair_attempt': 1, 'repair': repair}
+        owner = bare_engine({'id': 'RI-test'}, {'queue': [deepcopy(action)], 'tasks': {},
+            'executions': {'EX-second': {'id': 'EX-second', 'role': 'supplemental_research', 'action': action}}})
+        owner._refresh_changed_decision(action, 'EX-second', [{'field': 'integration_currentness'}])
+        refreshed = owner.runtime['queue'][0]
+        self.assertEqual(refreshed['refresh']['execution_id'], 'EX-second')
+        self.assertEqual(refreshed['continuation_of'], 'EX-first')
+        self.assertNotIn('repair', refreshed)
 
 
 if __name__ == "__main__":

@@ -350,12 +350,10 @@ class ObservationWindowWarningTests(unittest.TestCase):
 
     def state(self, **windows):
         from do_math.configuration import DEFAULT_CONFIG
-        from do_math.execution_profiles import build_profiles, profile_ref
+        from do_math.execution_profiles import build_profiles
         built = build_profiles({**deepcopy(DEFAULT_CONFIG), **windows})
-        research = next(p for p in built['execution_profiles'].values()
-                        if p['role'] == 'research_work' and p['actor_kind'] == 'ai')
         instance = {**built, 'config': {}, 'trust_environments': {self.environment['id']: self.environment},
-                    'lifecycle': {'state': 'initializing', 'adoption': {'profile_refs': [profile_ref(research)]}}}
+                    'lifecycle': {'state': 'initializing', 'adoption': {}}}
         runtime = {'status': 'initializing', 'history': [], 'trust_bindings': {self.environment['id']: self.binding}}
         return instance, runtime
 
@@ -371,6 +369,12 @@ class ObservationWindowWarningTests(unittest.TestCase):
                              {'field': 'tool_review_window_seconds', 'window_seconds': 120,
                               'environment_id': self.environment['id'], 'representative_check_seconds': 240})
         instance, runtime = self.state(tool_review_window_seconds=240, self_check_response_window_seconds=240)
+        self.assertEqual(observation_window_warnings(instance, runtime), [])
+
+    def test_the_self_check_response_window_is_not_bound_by_a_compile(self):
+        # Research calls such as a compile hold the response deadline (ObservationTracker._hold_deadlines).
+        from do_math.initialization import observation_window_warnings
+        instance, runtime = self.state(tool_review_window_seconds=240, self_check_response_window_seconds=60)
         self.assertEqual(observation_window_warnings(instance, runtime), [])
 
     def test_adoption_and_registration_results_return_the_warnings(self):
