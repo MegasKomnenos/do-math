@@ -3,11 +3,9 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from .execution_profiles import match_profile_ref
+from .execution_profiles import INITIAL_ROLES, match_profile_ref
 from .governance import grant_time_reason, source_record, timestamp
 from .repository import exact_content_hash, new_id
-
-INITIAL_ROLES = {"intent_interpretation", "maintenance"}
 
 
 def original_input_bytes(record):

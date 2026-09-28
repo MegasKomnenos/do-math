@@ -32,7 +32,6 @@ class FamilyRecordStorageTests(unittest.TestCase):
     def test_relation_claim_endpoint_basis_survives_storage_and_remains_typed(self):
         from do_math import knowledge, knowledge_io
         from knowledge_fixtures import knowledge_candidate
-        from knowledge_fixtures import activate_kind
         instance, runtime = current_state()
         endpoints = []
         for title in ("source", "target"):
@@ -40,7 +39,6 @@ class FamilyRecordStorageTests(unittest.TestCase):
                 knowledge_candidate(title=title, lean_code="", declaration_names=[]),
                 source_ref="fixture:input", actor_ref="fixture:user")
             endpoints.append(kid)
-        instance = activate_kind(instance, "formally_implies")
         claim = {"kind": "formally_implies", "source": endpoints[0],
                  "target": endpoints[1], "confirmed_scope": "True implies True"}
         instance, runtime, kid = knowledge_io.import_candidate(instance, runtime,
@@ -339,8 +337,7 @@ class FamilyRecordStorageTests(unittest.TestCase):
         instance, runtime = execution_state()
         work = self.repository_path / "window"
         work.mkdir()
-        window = publish(work, "EX-1", 12.75, instance["config"],
-            deadline_source="operational_call", clock=lambda: 12.0)
+        window = publish(work, "EX-1", 12.75, instance["config"], clock=lambda: 12.0)
         runtime["executions"]["EX-1"]["execution_window"] = window
         # Same values written by ENGINE's should_stop callback; the lifecycle
         # owner still controls the independent execution status/stop-phase axes.
@@ -792,7 +789,7 @@ class FamilyRecordStorageTests(unittest.TestCase):
         basis = {"goal_ref": "CH-1", "records": []}
         runtime["executions"]["EX-1"].update(role="research_plan", input_solution_basis=basis)
         runtime["external_rejections"] = [{"id": "RJ-1", "actor": "reviewer", "text": "objection",
-            "source_ref": "input", "solution_basis": basis, "resolved": False}]
+            "source_ref": "input", "solution_basis": basis}]
         head = self.repository.initialize(instance, runtime)
         path = "runtime/artifacts/BA-1/reply.txt"
         raw = b"preserved answer"
@@ -969,9 +966,6 @@ class FamilyRecordStorageTests(unittest.TestCase):
         instance = io.ensure_ontology(current_state()[0])
         for text in ("one", "two"):
             instance, _ = kr.create_candidate(instance, {"kind": "observation", "statement": text, "dependencies": []}, source_ref="input", actor_ref="user")
-        instance, _ = io.register_kind_definition(instance, {"family": "relation", "token": "supports", "meaning": "Research support", "constraints": {"requires_evidence": True}}, source_ref="source", actor_ref="author")
-        instance = io.check_kind_definition(instance, "relation", "supports", check_ref="checked", actor_ref="checker")
-        instance = io.activate_kind_definition(instance, "relation", "supports", approval_ref="approved", actor_ref="user")
         ids = list(instance["knowledge"])
         instance, relation_id = io.import_relation(instance, {"kind": "supports", "source": ids[0], "target": ids[1], "evidence": "input"}, source_ref="source", actor_ref="author")
         head = self.repository.initialize(instance, current_state()[1])

@@ -30,8 +30,9 @@ DECISION_OWNER_KINDS = GOVERNANCE_KINDS | {"grant", "revoke", "delegation", "que
 # Verdicts of the independent interpretation check (schema enum and receiver check).
 INTERPRETATION_DECISIONS = ("approved", "revision_required", "unresolved")
 GRANT_LIST_FIELDS = ("included_targets", "excluded_targets", "subjects", "execution_kinds", "purposes")
-# The states of one grant: created active, then revoked by a decision or expired by time.
-GRANT_STATUSES = frozenset({"active", "revoked", "expired"})
+# The states of one grant: created active, then revoked by a decision. Expiry is not a
+# state: every authority check compares the clock with expires_at (grant_time_reason).
+GRANT_STATUSES = frozenset({"active", "revoked"})
 # The states of one governance record edition.
 GOVERNANCE_STATUSES = frozenset({"active", "superseded"})
 
@@ -403,9 +404,6 @@ def _grant_scope_reason(grant, action, runtime, *, now):
     if grant.get("subjects") and action.get("subject", action.get("role")) not in grant["subjects"]: return "subject outside grant"
     if grant.get("execution_kinds") and action.get("actor_kind") not in grant["execution_kinds"]: return "execution kind outside grant"
     if grant.get("purposes") and action.get("purpose") not in grant["purposes"]: return "purpose outside grant"
-    if grant.get("resource_limits"):
-        # Enforcement belongs to the reservation/profile owner, never a caller's boolean claim.
-        return "resource-limited grant requires reservation-owner enforcement"
     if grant.get("reuse", "once") == "once":
         if runtime is None or not action.get("id"): return "one-case authority requires action identity and current ledger"
         try:
@@ -511,20 +509,6 @@ def _dispose_grant_consumers(runtime, gid, event, reason):
             event["affected"].append(operation["id"])
 
 
-def expire_grants(instance, runtime, *, at):
-    """Mechanical deadline effects; no new approval, grant, or research decision."""
-    result, state = deepcopy(instance), deepcopy(runtime)
-    events = []
-    for gid, grant in result.get("grants", {}).items():
-        if grant.get("status") != "active" or grant_time_reason(grant, timestamp(at)) != "grant expired": continue
-        event = {"id":new_id("GX"),"kind":"grant_expiry","grant_id":gid,"at":at,"affected":[]}
-        grant.update(status="expired",expired_at=at,expiry_event_ref=event["id"])
-        _dispose_grant_consumers(state,gid,event,"grant_expired")
-        state.setdefault("governance_events",[]).append(event)
-        events.append(event)
-    return result,state,events
-
-
 def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: str,
                    actor: str = "user", at: str | None = None) -> tuple[dict, dict, dict]:
     """Apply one explicit decision atomically to copies of the two roots."""
@@ -574,8 +558,6 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         if spec["reuse"] not in {"once", "reusable"}: raise ValueError("grant reuse must be explicit once or reusable")
         for field in GRANT_LIST_FIELDS:
             distinct_texts(spec[field], field)
-        if spec.get("resource_limits"):
-            raise ValueError("resource limits require an enforcing reservation contract; unsupported limits cannot be granted")
         if spec.get("valid_from"): timestamp(spec["valid_from"])
         if spec.get("valid_from") and expires and timestamp(spec["valid_from"]) >= timestamp(expires):
             raise ValueError("grant has an empty effective interval")

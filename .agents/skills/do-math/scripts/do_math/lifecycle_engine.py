@@ -14,9 +14,10 @@ import time
 
 from .governance import apply_decision, timestamp
 from .planning import (instance_ended, task_ready, contract_hash, record_due_events, contract_review_current, review_basis_key,
-                       capture_task_basis, governance_revisions)
+                       capture_task_basis, governance_revisions, assigned_event_refs, CONTRACT_REVIEW_MISSING)
 from .repository import canonical_json, exact_content_hash, new_id
 from .initialization import activation_requirements, capability_requirements
+from .execution_profiles import INITIAL_ROLES
 from .session_slots import live_action_ids
 from .git_store import ARTIFACT_ROOT
 from .task_contracts import LIFECYCLE_STATES, TERMINAL_TASK_STATUSES
@@ -225,7 +226,7 @@ class LifecycleEngineMixin:
                 if not transition.get('source_ref'):
                     raise ValueError('trust preparation requires explicit transition authority')
                 return profile
-            if action['role'] not in {'intent_interpretation', 'maintenance'}:
+            if action['role'] not in INITIAL_ROLES:
                 raise ValueError('research dispatch waits for initialization')
             gid = action.get('grant_id')
             candidates = {g: self.instance['grants'][g] for g in adoption.get('initial_grant_ids', [])
@@ -614,9 +615,10 @@ class LifecycleEngineMixin:
                     review['currentness_changes'] = currentness['changes']
                 else:
                     review.pop('currentness_changes', None)
-            approved = any(review.get('decision') == 'approved'  and review.get('inputs_current', True) and all(review.get(key) == value for key, value in required.items())
+            # inputs_current, set just above, already compares every review with `required`.
+            approved = any(review['inputs_current'] and review.get('decision') == 'approved'
                            for review in task.get('reviews', []))
-            reviewed = any(review.get('inputs_current', True) and all(review.get(key) == value for key, value in required.items()) for review in task.get('reviews', []))
+            reviewed = any(review['inputs_current'] for review in task.get('reviews', []))
             blocked_review = any(entry.get('action', {}).get('role') == 'task_contract_review'
                 and entry['action'].get('target') == task_id
                 and entry['action'].get('contract_basis') == required
@@ -637,7 +639,7 @@ class LifecycleEngineMixin:
             evaluation = (deepcopy(task_ready(task, self.instance, self.runtime,
                                     action={'role': 'research_work', 'target': task_id, 'actor_kind': 'ai'},
                                     evaluation_context=evaluation_context)) if approved else
-                          {'state': 'not_ready', 'basis': [], 'errors': ['current revision lacks approved contract review']})
+                          {'state': 'not_ready', 'basis': [], 'errors': [CONTRACT_REVIEW_MISSING]})
             previous = self._task_readiness.get(task_id)
             self._record_readiness(task_id, {**evaluation, 'contract_basis': required}, now.isoformat())
             if evaluation['state'] == 'ready':
@@ -657,10 +659,7 @@ class LifecycleEngineMixin:
             return
         self._schedule_reconsideration(now.isoformat())
         events = {event['id']: event for event in self.runtime['events']}
-        requests = self.runtime['queue'] + [e.get('action', {}) for e in self.runtime['executions'].values()
-                                           if e.get('status') != 'ended']
-        requests += [w['action'] for w in self.runtime.get('waiting_actions', {}).values() if 'action' in w]
-        assigned_refs = {ref for a in requests for ref in a.get('event_refs', [])}
+        assigned_refs = assigned_event_refs(self.runtime)
         pending = [event_id for event_id in dict.fromkeys(self.runtime['pending_events'])
                    if event_id not in assigned_refs]
         if not pending: return

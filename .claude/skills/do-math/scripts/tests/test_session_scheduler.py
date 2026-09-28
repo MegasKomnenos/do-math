@@ -394,11 +394,11 @@ class ParallelEngineTests(unittest.TestCase):
         self.assertEqual(state["budget"][MODELS["high"]]["used"], 0)
         checked = engine.check()
         self.assertEqual(checked["errors"], [], checked)
-        # Snapshot inspection deliberately leaves live trust files unexamined
-        # (state_checks governance_trust); every other area is clean.
-        self.assertEqual(checked["inspection"]["not_checked"], ["governance_trust"], checked)
-        self.assertEqual({(row["area"], row["status"]) for row in checked["inspection"]["findings"]},
-                         {("governance_trust", "incomplete")}, checked)
+        # Every persisted-state area is clean, so the check passes; live trust
+        # files are outside the snapshot the inspection reads.
+        self.assertEqual(checked["inspection"]["not_checked"], [], checked)
+        self.assertEqual(checked["inspection"]["findings"], [], checked)
+        self.assertTrue(checked["passed"], checked)
 
     def test_unavailable_assigned_model_waits_without_spending_other_model_slots(self):
         limits = deepcopy(LIMITS); limits["work"][MODELS["high"]] = 0
@@ -548,8 +548,25 @@ class ParallelEngineTests(unittest.TestCase):
         inspection = engine.check()
         self.assertEqual(inspection["errors"], [])
         self.assertEqual(inspection["submission_checks"]["status"], "verified")
-        self.assertEqual(inspection["inspection"]["not_checked"], ["governance_trust"])
-        self.assertEqual(inspection["inspection"]["status"], "incomplete")
+        self.assertEqual(inspection["inspection"]["not_checked"], [])
+        self.assertEqual(inspection["inspection"]["status"], "healthy")
+
+    def test_selected_task_without_a_plan_assessment_runs_at_its_reviewed_assessment(self):
+        """About 14 s after the shared template: receipt, plan application and dispatch each decide the unrated selection."""
+        assessment = {"difficulty": "low", "importance": "low", "reason": "a local bounded comparison with an explicit method"}
+        # The plan rates no selected task, so the receiver accepts it and dispatch reads the task record.
+        engine = self.engine(ScriptedRunner(model_rating=assessment, plan_assessments=False), count=0, public=True)
+        for _ in range(12):
+            engine.run(max_steps=1)
+            if any(e["role"] == "research_work" for e in engine.runtime["executions"].values()):
+                break
+        plans = [e for e in engine.runtime["executions"].values() if e["role"] == "research_plan"]
+        self.assertTrue(plans)
+        self.assertEqual(plans[0].get("model_decisions"), {})
+        work = [e for e in engine.runtime["executions"].values() if e["role"] == "research_work"]
+        self.assertTrue(work, [e.get("reason") for e in engine.runtime.get("waiting_actions", {}).values()])
+        self.assertEqual(work[0]["model"], MODELS["low"])
+        self.assertEqual(work[0]["model_selection"]["assessment"], assessment)
 
     def test_failed_live_review_stops_its_parent_and_preserves_independent_work(self):
         review_failed = threading.Event()
@@ -661,11 +678,9 @@ class ResearchAdmissionTests(unittest.TestCase):
         self.assertTrue(work[0]['observation_rules'])
         report = engine.check()
         self.assertEqual(report['errors'], [])
-        # This fixture supplies synthetic initial interpretations without input
-        # manifests. Persisted-state inspection also cannot inspect live Lean.
+        # This fixture supplies synthetic initial interpretations without input manifests.
         self.assertEqual(report['inspection']['status'], 'incomplete', report)
         self.assertEqual({row['message'] for row in report['inspection']['findings']}, {
-            'shared toolchain records and installed files (persisted snapshot inspection only) not examined',
             'EX-check: role input manifest not examined', 'EX-interpret: role input manifest not examined'})
 
 

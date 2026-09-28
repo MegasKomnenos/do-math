@@ -19,8 +19,6 @@ run; identity assessments are recorded directly, never reviewed.
   judgment using ``b`` and completed tasks using ``b`` and ``c``.
 - ``impact_declaration(state, runtime, roots)``: the complete computed impact a
   producer declares; ``revise_knowledge`` revises one record with it.
-- ``activate_kind(state, token, family='relation', definition=None)``: register,
-  check and activate one kind definition.
 - ``verified_knowledge(environment=None, *, binding=None, identity=True, check=None)``:
   ``(state, runtime, kid, assessment ID)``, the candidate verified under
   ``TE-test`` and (unless ``identity=False``) assessed as a match. ``check``
@@ -107,13 +105,6 @@ def revise_knowledge(state, runtime, kid, changes=None):
     changes = changes or {'statement': 'Revised statement'}
     return k.revise_knowledge(state, runtime, kid, changes, reason='correction', actor_ref='author',
         declared_impact=impact_declaration(state, runtime, k.revision_roots(state, kid)))
-
-
-def activate_kind(state, token, family='relation', definition=None):
-    definition = definition or next(t for t in io.relation_templates() if t['token'] == token)
-    state, _ = io.register_kind_definition(state, definition, source_ref='source', actor_ref='author')
-    state = io.check_kind_definition(state, family, token, check_ref='check:fixture', actor_ref='checker')
-    return io.activate_kind_definition(state, family, token, approval_ref='approval:fixture', actor_ref='reviewer')
 
 
 def verified_knowledge(environment=None, *, binding=None, identity=True, check=None):

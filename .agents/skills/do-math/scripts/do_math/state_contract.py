@@ -12,7 +12,7 @@ from .file_io import check_path_segment, json_digest
 
 # The one stored contract identifier: the root manifest of each snapshot names
 # it, and loading accepts no other. Records carry no version marker of their own.
-STATE_CONTRACT_ID = "do-math-state/8"
+STATE_CONTRACT_ID = "do-math-state/9"
 # A record ID names its file research/<family>/<id>.json, so it excludes path
 # separators and ':'. The validator also applies the Git path segment rule
 # (file_io.check_path_segment), which refuses Windows device names.

@@ -198,14 +198,6 @@ class PurposeRunner:
                 'reason': 'The fixture supplies a bounded natural-number identity'} for identity in identities]
             if output['candidates']:
                 extensions['contract_checks'] = contract_checks(output['candidates'])
-                if self.scenario == 'dependency':
-                    for check in extensions['contract_checks']:
-                        if check['task_title'] == 'A':
-                            check['outcome_branches'] = [
-                                {'outcome': 'B establishes the natural-number domain',
-                                 'completion': 'Use the established domain to prove the identity'},
-                                {'outcome': 'B leaves the domain unresolved',
-                                 'completion': 'Preserve the unmet premise and do not claim the identity'}]
             path.write_bytes(canonical_json(extensions))
         if role == 'research_plan':
             path = workspace / 'activity-extensions.json'

@@ -217,8 +217,9 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
         for identifier, environment in envs.items():
             run('trust environment and binding structure',
                 lambda e=environment, b=bindings.get(identifier): environment_errors(e, b), identifier)
-        if envs:
-            omitted('shared toolchain records and installed files (persisted snapshot inspection only)')
+        # Toolchain records and installed files are host files outside the
+        # persisted snapshot (checked_scope). Formal publication gates verify
+        # them where they are used (trust_validation.require_active_environment).
     elif area == 'tasks_activities_executions':
         from .task_contracts import validate_item_dispositions
         for identifier, task in runtime.get('tasks', {}).items():
@@ -335,4 +336,5 @@ def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, a
     elif area == 'repair_iteration':
         from .task_contracts import repetition_lineages
         run('five repetition lineages', lambda: (repetition_lineages(runtime), None)[1])
-    return findings, checked, missing
+    # One name per invariant, however many records or references it covered.
+    return findings, list(dict.fromkeys(checked)), list(dict.fromkeys(missing))

@@ -431,7 +431,6 @@ RECORDS["grants"] = record({"kind": enum("local", "http"), "status": enum(*sorte
     "allowed_origins": array(TEXT), "allowed_methods": array(TEXT), "allowed_path_prefixes": array(TEXT),
     "credential_env": {"type": "object", "additionalProperties": TEXT},
     "included_targets": REFS, "excluded_targets": REFS, "reuse": TEXT, "initialization_only": BOOL,
-    "expired_at": TEXT, "expiry_event_ref": ID,
     "replaced_by": ID, "academic_only": BOOL, "requires_academic": BOOL,
     "excluded_origins": array(TEXT, True), "excluded_path_prefixes": array(TEXT, True),
     **{key: array(TEXT, True) for key in ("execution_kinds", "purposes", "subjects")}}, ("kind", "status", "source_ref"))
@@ -554,7 +553,8 @@ RECORDS["goal_judgments"] = record({"execution_id": ID, "basis": TEXT, "decision
     "formal_result_refs": REFS, "assessment_refs": REFS, "dependencies": REFS,
     "record_basis": array(obj({"id": ID, "sha256": HASH, "status": TEXT}, ("id", "sha256", "status"))),
     "basis_is_conservative": BOOL, "reason": TEXT, "goal_revision": NAT,
-    "policy_revision": HASH, "source_basis": HISTORY, "use_history": HISTORY, "current": BOOL},
+    "policy_revision": HASH, "source_basis": HISTORY, "use_history": HISTORY, "current": BOOL,
+    "invalidated_reason": TEXT},
     ("execution_id", "decision", "basis"))
 RECORDS["conversations"] = record({"generation": {"type": "integer", "minimum": 1},
     "status": enum("connected", "lost"), "lease_seconds": {"type": "integer", "minimum": 1},
@@ -569,8 +569,9 @@ RECORDS["trust_transitions"] = record({"from_environment": nullable(ID), "to_env
         ("id", "formal_result_id", "exposition_id", "source_sha256", "basis", "formal_basis", "exposition_basis"))),
     "results": mapping(EVIDENCE), "status": enum("checking", "ready", "active", "activated", "failed", "withdrawn"),
     "source_ref": TEXT, "created_at": TEXT, "activated_at": TEXT, "history": HISTORY}, ("from_environment", "to_environment", "targets", "results", "status"))
+# A rejection is immutable once received; its resolution lives in academic_resolution_records.
 RECORDS["external_rejections"] = record({"actor": TEXT, "text": TEXT, "source_ref": TEXT,
-    "created_at": TEXT, "solution_basis": _SOLUTION_BASIS, "resolved": BOOL}, ("actor", "text", "source_ref", "solution_basis", "resolved"))
+    "created_at": TEXT, "solution_basis": _SOLUTION_BASIS}, ("actor", "text", "source_ref", "solution_basis"))
 RECORDS["academic_resolution_records"] = record({"rejection_id": ID, "rejection_sha256": HASH,
     "solution_basis": _SOLUTION_BASIS, "requirements_sha256": nullable(HASH), "execution_id": ID,
     "decision": enum("resolved", "unresolved"), "evidence": TEXT, "evidence_refs": array(TEXT, True),
@@ -609,8 +610,6 @@ RECORDS["delegation_applications"] = record({"delegation_id": ID,
         "original_decision_id": ID, "effect": EVIDENCE, "post_basis_sha256": HASH, "sha256": HASH},
         ("status", "application_id", "input_sha256", "original_decision_id", "effect", "post_basis_sha256", "sha256"))},
     ("delegation_id", "basis", "input_sha256", "judgments"))
-RECORDS["governance_events"] = record({"kind": TEXT, "grant_id": ID, "at": TEXT, "affected": REFS},
-                                     ("kind", "grant_id", "at", "affected"))
 RECORDS["inputs"] = record({"instance_id": ID, "action": TEXT, "text": TEXT, "config": EVIDENCE,
     "created_at": TEXT, "origin": TEXT, "accepted_order": TEXT, "sha256": HASH}, ("text", "config"))
 RECORDS["queue"] = _ACTION

@@ -74,17 +74,14 @@ class Tests(unittest.TestCase):
             self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")
         self.assertLessEqual(checks.call_count, 1)
 
-    def test_live_polling_rereads_checkpoint_and_rules_only_after_a_change(self):
+    def test_live_polling_rereads_the_checkpoint_only_after_a_change(self):
         import os
         from do_math import file_io
         checkpoint = self.ws / "checkpoint.json"
-        rules = self.ws / "observation-rules.json"
         self.write(evidence_paths=["proof.txt"])
-        rules.write_text("{not json", encoding="utf-8")
         # Fresh files cannot age their birth time; treat any past fingerprint as settled.
         with patch.object(file_io, "RACY_NS", 0), \
-                patch.object(observations, "read_checkpoint", wraps=observations.read_checkpoint) as reads, \
-                patch.object(observations, "read_bytes_shared", wraps=observations.read_bytes_shared) as raw:
+                patch.object(observations, "read_checkpoint", wraps=observations.read_checkpoint) as reads:
             self.assertEqual(self.t._changed_checkpoint()["status"], "invalid")
             # An invalid read is not remembered: its named evidence may appear later.
             (self.ws / "proof.txt").write_bytes(b"evidence")
@@ -96,10 +93,6 @@ class Tests(unittest.TestCase):
             os.utime(checkpoint, ns=(later, later))
             self.assertEqual(self.t._changed_checkpoint()["status"], "valid")
             self.assertEqual(reads.call_count, 3)
-            self.assertEqual(len(self.t._rule_file_events()), 1)
-            before = raw.call_count
-            self.assertEqual(self.t._rule_file_events(), [])
-            self.assertEqual(raw.call_count, before, "unchanged rules were reread")
 
     def test_duplicate_checkpoint_keys_are_invalid_live_and_at_final_capture(self):
         from do_math.submission import _captured_checkpoint
@@ -143,6 +136,28 @@ class Tests(unittest.TestCase):
         (self.ws / ".scratch/proof.txt").write_text("disposable", encoding="utf-8")
         self.write(evidence_paths=[".scratch/proof.txt"])
         self.assertEqual(observations.read_checkpoint(self.ws)["status"], "invalid")
+
+    def test_checkpoint_is_refused_through_a_workspace_reparse_point(self):
+        # The checkpoint obeys the workspace path rule (context_store.safe_path) like every other
+        # workspace file: a junction on the path is refused even when it resolves back inside.
+        import os
+        import subprocess
+        real, link = self.ws / "real", self.ws / "link"
+        real.mkdir()
+        (real / "checkpoint.json").write_text(json.dumps({"current_claim": "c", "evidence_paths": [],
+            "attempts": [], "remaining_work": [], "next_step": "n", "progress_state": "working"}), encoding="utf-8")
+        if os.name == "nt":
+            created = subprocess.run(["cmd.exe", "/d", "/c", "mklink", "/J", str(link), str(real)], capture_output=True)
+            self.assertEqual(created.returncode, 0, created.stderr)
+        else:
+            link.symlink_to(real, target_is_directory=True)
+        try:
+            self.assertEqual(observations.read_checkpoint(real)["status"], "valid")
+            refused = observations.read_checkpoint(link)
+            self.assertEqual(refused["status"], "invalid")
+            self.assertRegex(refused["error"], "reparse|symlink")
+        finally:
+            os.rmdir(link) if os.name == "nt" else link.unlink()  # Only the link, not its target.
 
     def test_invalid_partial_missing_checkpoint_and_stop_request(self):
         self.assertEqual(observations.read_checkpoint(self.ws)["status"], "missing")
@@ -244,45 +259,16 @@ class Tests(unittest.TestCase):
                 self.assertEqual(result["kind"], "self_check_received")
                 self.assertEqual(result["followup"]["kind"], expected)
 
-    def test_oversized_rules_are_reported_once_per_exact_content(self):
-        import hashlib
-        import os
-        path = self.ws / "observation-rules.json"
-        initial = json.dumps({"current_revision": 0, "reason": "rename",
-                              "rules": [observation_rule(id="R-new")]}).encode("utf-8")
-        path.write_bytes(initial)
-        initial_notice = self.t._rule_file_events()[0]
-        self.assertEqual(initial_notice["proposal_sha256"], hashlib.sha256(initial).hexdigest())
-        raw = b"x" * (observations.RULES_MAX_BYTES + 1)
-        path.write_bytes(raw)
-        stamp = path.stat()
-        rejected = self.t._rule_file_events()
-        self.assertEqual(len(rejected), 1)
-        self.assertIn("exceed 64 KiB", rejected[0]["reason"])
-        self.assertEqual(rejected[0]["proposal_sha256"], hashlib.sha256(raw).hexdigest())
-        for _ in range(3):
-            self.assertEqual(self.t._rule_file_events(), [])
-        changed = b"y" + raw[1:]
-        path.write_bytes(changed)
-        os.utime(path, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
-        rejected = self.t._rule_file_events()
-        self.assertEqual(len(rejected), 1)
-        self.assertEqual(rejected[0]["proposal_sha256"], hashlib.sha256(changed).hexdigest())
-        self.assertEqual(self.t._rule_file_events(), [])
-        path.write_bytes(initial)
-        self.assertIn("valid self-check response", self.t._rule_file_events()[0]["reason"])
+    def test_a_rules_file_in_the_workspace_is_not_a_replacement_path(self):
+        # Only a self-check response's rule_proposal replaces rules; a workspace file is ordinary output
+        # that neither replaces them nor draws a notice.
+        proposal = {"current_revision": 0, "reason": "rename", "rules": [observation_rule(id="R-new")]}
+        (self.ws / "observation-rules.json").write_text(json.dumps(proposal), encoding="utf-8")
+        rows = observe(self.t, {"type": "tick"})
+        self.assertFalse(any(r["kind"] == "observation_rules_rejected" for r in rows), rows)
         self.assertEqual(self.t.rules, self.config["observation_rules"])
         self.assertEqual(self.t.rule_revision, 0)
         self.assertEqual(self.t.next_self_check_offset_ms, 300000)
-
-    def test_rule_only_file_cannot_reanchor_or_replace_and_feedback_is_delivered(self):
-        proposal = {"current_revision": 0, "reason": "rename", "rules": [observation_rule(id="R-new")]}
-        (self.ws / "observation-rules.json").write_text(json.dumps(proposal), encoding="utf-8")
-        rejected = next(r for r in observe(self.t, {"type": "tick"}) if r["kind"] == "observation_rules_rejected")
-        self.assertEqual(self.t.rule_revision, 0)
-        self.assertEqual(self.t.next_self_check_offset_ms, 300000)
-        observations.publish_worker_feedback(self.ws, rejected["worker_feedback"])
-        self.assertTrue(json.loads((self.ws / ".control/observation-feedback.json").read_text(encoding="utf-8"))["previous_rules_preserved"])
 
     def test_valid_response_accepts_rules_but_bad_proposal_keeps_previous(self):
         obligation = self.due()
@@ -293,7 +279,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(result["rule_update"]["kind"], "observation_rules_rejected")
         self.assertEqual(self.t.rule_revision, 0)
 
-    def test_rule_proposal_file_has_the_same_shape_in_live_and_captured_submission(self):
+    def test_rule_proposal_travels_in_the_response_and_a_rules_file_is_not_checked(self):
         from do_math.context_store import collect_outputs
         from do_math.submission import _workspace_checks
         proposal = {"current_revision": 0, "reason": "Use a renamed rule",
@@ -304,12 +290,12 @@ class Tests(unittest.TestCase):
         self.assertEqual(result["rule_update"]["kind"], "observation_rules_accepted")
         context = {"submission_contract": {"limits": {"max_artifact_bytes": 100000}}}
         path = self.ws / "observation-rules.json"
-        for value, valid in ((proposal, True), (proposal["rules"], False),
-                             ({**proposal, "current_revision": -1}, False)):
+        # A file of any shape carries no rule meaning, so neither a live nor a captured submission checks it.
+        for value in (proposal, proposal["rules"], {**proposal, "current_revision": -1}):
             path.write_text(json.dumps(value), encoding="utf-8")
             for captured in (None, collect_outputs(self.ws)):
                 issues, _ = _workspace_checks(context, self.ws, candidate=captured)
-                self.assertEqual(not issues, valid, issues)
+                self.assertEqual(issues, [], issues)
         self.assertEqual(self.t.rule_revision, 1)
 
     def test_tracker_records_leave_through_the_storage_check(self):
@@ -782,19 +768,6 @@ class ObservationRuleTests(unittest.TestCase):
             clock.value = 6
             rows = observe(tracker, {"type": "item.started", "item": {"id": "late", "type": "command_execution"}})
             self.assertTrue(any(r.get("reason") == "response_deadline_passed" for r in rows))
-
-    def test_invalid_rules_feedback_preserves_previous_revision(self):
-        clock = Clock()
-        with tempfile.TemporaryDirectory() as directory:
-            workspace = Path(directory)
-            tracker = self.tracker(workspace, clock)
-            (workspace / "observation-rules.json").write_text('{"rules":[]}', encoding="utf-8")
-            rows = observe(tracker, {"type": "tick"})
-            rejected = next(r for r in rows if r["kind"] == "observation_rules_rejected")
-            self.assertEqual(tracker.rule_revision, 0)
-            self.assertEqual(tracker.rules, [observation_rule()])
-            self.assertTrue(rejected["worker_feedback"]["reason"])
-            self.assertEqual(rejected["worker_feedback"]["active_revision"], 0)
 
     def test_integer_persistence_keeps_raw_adapter_payload_as_text(self):
         from do_math.repository import canonical_json

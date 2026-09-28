@@ -4,7 +4,6 @@ from __future__ import annotations
 from .knowledge import revise_knowledge, invalidate_knowledge, validate_basis, assess_use
 from .input_basis import sources_current
 from .initialization import governance_working_view
-from .execution_profiles import review_research
 
 class KnowledgeEngineMixin:
     def _invalidate_goal_currentness(self):
@@ -56,7 +55,5 @@ class KnowledgeEngineMixin:
             self.instance, self.runtime = invalidate_knowledge(self.instance, self.runtime, knowledge_id,
                 reason=reason, actor_ref=source_ref, declared_impact=config.get('declared_impact'),
                 independent_confirmation=config.get('independent_confirmation'))
-        self.runtime['queue'][:] = [a for a in self.runtime['queue'] if not (a.get('target') == knowledge_id and
-            (a.get('role') in {'identity_review', 'formal_check'} or review_research(a)))]
         self._lifecycle_event('knowledge_' + operation, target=knowledge_id, source_ref=source_ref, reason=reason)
         self._enqueue('research_plan', reason=reason, knowledge_id=knowledge_id, source_ref=source_ref)

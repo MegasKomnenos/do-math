@@ -15,7 +15,7 @@ from record_fixtures import installation_repair_state
 
 
 class DiagnosedRecoveryTests(unittest.TestCase):
-    def run_case(self, outcome, *, runner_result=None):
+    def run_case(self, outcome, *, runner_result=None, during_call=None, probe_exit=0):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -48,6 +48,8 @@ class DiagnosedRecoveryTests(unittest.TestCase):
             observed.append(arguments)
             arguments['on_started']({'pid':123,'job_name':arguments['launch_ticket']['job_name']})
             (arguments['workspace']/'regression.txt').write_text('Synthetic regression: former input now accepted',encoding='utf-8')
+            if during_call:
+                during_call(root/'work')
             result = {**{'status':'completed','output':{'repair_outcome':outcome,'verification_evidence':['regression.txt'],
                 'summary':'synthetic repair','observed_status':outcome,'actions':['fixture inspection'],
                 'evidence_paths':['regression.txt'],'user_questions':[],'next_step':'launcher continuation'}},
@@ -65,7 +67,7 @@ class DiagnosedRecoveryTests(unittest.TestCase):
         stack.enter_context(patch('do_math.session_slots.SessionSlots',return_value=slots))
         stack.enter_context(patch('do_math.file_io.os_lock',return_value=nullcontext()))
         stack.enter_context(patch.object(operator,'ModelRunner',return_value=SimpleNamespace(run=provider)))
-        verify = stack.enter_context(patch.object(operator.subprocess,'run',return_value=subprocess.CompletedProcess([],0,'verified','')))
+        verify = stack.enter_context(patch.object(operator.subprocess,'run',return_value=subprocess.CompletedProcess([],probe_exit,'verified','')))
         wake = stack.enter_context(patch.object(operator,'wake',return_value={'outcome':'engine_requested'}))
         arguments = (root/'repo','RI-fixture',root/'work')
         result = operator.recovery(*arguments, failure=repair_execution.installation_failure(runtime,diagnosis))
@@ -113,13 +115,51 @@ class DiagnosedRecoveryTests(unittest.TestCase):
         _, _, _, observed, result, verify, wake, _ = self.run_case('unresolved',
             runner_result={'status': 'failed', 'output': None, 'error': 'provider quota',
                            'error_kind': 'provider_limit', 'failure': failure})
-        self.assertEqual(result['outcome'], 'recovery_failed')
+        self.assertEqual(result['outcome'], 'recovery_provider_limited')
         # The shared gate reads the failure and response from the unaltered runner result.
         self.provider_results.assert_called_once_with(observed[0]['execution_id'], self.runner_results[0],
                                                       DEFAULT_CONFIG)
         self.assertEqual(self.runner_results[0]['failure'], failure)
         verify.assert_not_called()
         wake.assert_not_called()
+
+    def test_a_provider_refused_or_held_call_does_not_use_up_the_one_repair(self):
+        # None of these calls judged a repair, so the next supervision check calls the model again.
+        refused = {'status': 'failed', 'output': None, 'error': 'provider quota', 'error_kind': 'provider_limit',
+                   'failure': {'kind': 'provider_limit', 'provider': 'codex', 'retry_at': None,
+                               'evidence_ref': 'synthetic-provider.jsonl'}}
+        paused = {'status': 'failed', 'output': None, 'error': 'wrong reported model',
+                  'error_kind': 'model_policy', 'reported_models': ['other-model']}
+        stopped = {'status': 'stopped', 'output': None, 'error': 'stop requested or timeout',
+                   'error_kind': 'execution_failure'}
+        hold = lambda work: operator.hold(work, reason='user hold during the call')
+        for name, outcome, runner_result, during_call in (
+                ('provider limit', 'recovery_provider_limited', refused, None),
+                ('model-policy pause', 'recovery_held', paused, None),
+                ('HOLD stop', 'recovery_held', stopped, hold)):
+            with self.subTest(name):
+                _, runtime, diagnosis, observed, result, _, _, args = self.run_case('unresolved',
+                    runner_result=runner_result, during_call=during_call)
+                self.assertEqual(result['outcome'], outcome)
+                # The user resolves the pause or HOLD; the slot double never closes a provider gate.
+                runtime.pop('model_policy_violation', None)
+                runtime['status'] = 'ready'
+                operator.release(args[2])
+                operator.recovery(*args, failure=repair_execution.installation_failure(runtime, diagnosis))
+                self.assertEqual(len(observed), 2)
+
+    def test_a_judged_repair_counts_once_even_when_a_hold_holds_its_result(self):
+        # The model reported a repair that failed installation verification while a HOLD arrived.
+        _, runtime, diagnosis, observed, result, verify, wake, args = self.run_case('repaired',
+            during_call=lambda work: operator.hold(work, reason='user hold during the call'), probe_exit=1)
+        self.assertEqual(result['outcome'], 'recovery_held')
+        verify.assert_called_once()
+        wake.assert_not_called()
+        operator.release(args[2])
+        repeated = operator.recovery(*args, failure=repair_execution.installation_failure(runtime, diagnosis))
+        self.assertEqual(repeated, {'outcome': 'recovery_waiting',
+                                    'reason': 'same failure and installation already attempted'})
+        self.assertEqual(len(observed), 1)
 
     def test_normal_recovery_response_reaches_provider_reobservation(self):
         _, _, _, observed, result, _, _, _ = self.run_case('repaired')

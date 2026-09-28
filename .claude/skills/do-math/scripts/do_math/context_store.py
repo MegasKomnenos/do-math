@@ -12,7 +12,7 @@ from pathlib import Path, PurePosixPath
 from .repository import canonical_json, exact_content_hash
 from .file_io import is_sha256, no_reparse, stat_fingerprint
 from .git_store import ARTIFACT_ROOT, PhysicalBoundary, oid_shape
-from .execution_profiles import PLANNING_ROLES
+from .execution_profiles import INITIAL_ROLES, PLANNING_ROLES
 
 
 class _ChangedDuringRead(OSError):
@@ -425,7 +425,7 @@ INLINE_SCOPES = {
                     'maintenance:general'),
     'open_questions': (*_PLANNING, 'task_contract_review', 'research_work', 'supplemental_research:task',
                        'operational_review', 'goal_audit'),
-    'recent_history': (*_PLANNING, 'task_contract_review', 'operational_review', 'maintenance:general'),
+    'recent_history': (*_PLANNING, 'operational_review', 'maintenance:general'),
     'relations': (*_INTENT, *_PLANNING, 'task_contract_review', 'research_work', 'supplemental_research',
                   'operational_review', 'goal_audit', 'maintenance:general', 'maintenance:impact'),
     'formal_verifier': ('intent_interpretation:interpret', *_PLANNING, 'task_contract_review', 'research_work',
@@ -447,6 +447,9 @@ INLINE_SCOPES = {
     'task_readiness': (*_PLANNING, 'research_work'),
     # The IDs of the records the role may read and cite; record_map summarizes them inline.
     'record_index': (),
+    # The records of record_index a task input or completion evidence may name (CITED_RECORD_ROLES).
+    # Like record_index it grows with the snapshot's records; the checker reads the whole list.
+    'supplied_record_ids': (),
 }
 
 # Blocked: context keys an independent judgment must not receive, by scope, with the contract
@@ -530,7 +533,8 @@ def readable_record_index(instance, runtime, scope, supplied):
 
     Every identity record of the research canon; every one of the execution ledger, or for a
     blocked scope only those whose ID the input supplies; none of a family the scope blocks.
-    ``supplied`` is the set of IDs the fixed input shows (submission.supplied_reference_ids).
+    ``supplied`` is the set of IDs the fixed input shows (submission.supplied_reference_ids) together
+    with the records its assigned task's published contract names (prepare_role_input).
     """
     from .state_contract import default_state_contract
     ledger, blocked = not _in_scope(scope, BLOCKED_KEYS), _blocked(scope)
@@ -563,13 +567,15 @@ def record_map(index, scope, snapshot):
 
 
 def role_direct_keys(role, context):
-    """The comparison population, current request and resume evidence are direct."""
+    """The comparison population, current request and resume evidence are direct.
+
+    Goal and policy text are projections of the direct governance record, not direct keys.
+    """
     role_keys = _ROLE_DIRECT.get(role, ())
     if role == 'supplemental_research' and context.get('action', {}).get('review_cycle_id'):
         role_keys = ('review_research', 'proposal')
     return list(dict.fromkeys([
-        'snapshot', 'goal', 'policies', 'action', 'implementation_documents',
-        'governance', 'execution_profile', *role_keys,
+        'snapshot', 'action', 'governance', 'execution_profile', *role_keys,
         *(['import_consumers', 'original_source'] if context.get('import_consumers') is not None else []),
         *(['impact_review_input'] if context.get('action', {}).get('stage') == 'impact_review' else []),
         *[key for key in ('proposal', 'role_review', 'previous_execution', 'resume_checkpoint',
@@ -627,7 +633,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         value['configuration_source'] = preserve_detail('configuration', instance['config'])
     if instance.get('governance'):
         governance_input = governance.governance_view(instance)
-    elif role in {'intent_interpretation', 'maintenance'} and instance.get('lifecycle', {}).get('state') == 'initializing':
+    elif role in INITIAL_ROLES and instance.get('lifecycle', {}).get('state') == 'initializing':
         governance_input = {'status': 'not_yet_adopted',
                             'immutable_input': deepcopy(instance['lifecycle']['immutable_input']),
                             'adoption': deepcopy(instance['lifecycle'].get('adoption', {}))}
@@ -774,16 +780,21 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         sealed_order = order
         if role == 'research_plan':
             value['ready_task_ids'] = list(order['ids'])
+    from .planning import condition_refs, listed_reference_ids
     from .submission import supplied_record_ids, supplied_reference_ids
-    value['record_index'] = readable_record_index(instance, runtime, scope, supplied_reference_ids(value))
+    # An assigned task's published contract supplies the records it names: its reference lists,
+    # its occurrence condition and its evidence requirements (계약/작업-계약-검토.md 21, 71, 85).
+    assigned = value['task'] if isinstance(value.get('task'), dict) else {}
+    named = listed_reference_ids(assigned) | condition_refs(assigned.get('occurrence_condition'))
+    named.update(ref for row in (*assigned.get('progress_criteria', []), *assigned.get('completion_obligations', []))
+                 for ref in row.get('evidence_required', []))
+    value['record_index'] = readable_record_index(instance, runtime, scope, supplied_reference_ids(value) | named)
     value['record_map'] = record_map(value['record_index'], scope, snapshot)
     if role in CITED_RECORD_ROLES:
         # Task inputs and completion evidence name records the role can read (공통-실행.md).
         from .planning import record_index as family_records
         value['supplied_record_ids'] = supplied_record_ids(value, family_records(instance, runtime))
     required = role_direct_keys(role, value)
-    # Goal and policy text are projections of the approved governance records.
-    required = [key for key in required if key not in {'goal', 'policies', 'implementation_documents'}]
     missing = set(required) - value.keys()
     if missing:
         raise ValueError('required role input is absent: ' + ', '.join(sorted(missing)))
@@ -1085,7 +1096,7 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
     if not isinstance(mandatory_keys, list) or any(not isinstance(k, str) for k in mandatory_keys) or len(mandatory_keys) != len(set(mandatory_keys)):
         raise ValueError("mandatory_keys must contain distinct string keys")
     mandatory_keys = list(dict.fromkeys([*mandatory_keys, *[key for key in role_direct_keys(role, context)
-                                                   if key in context and key not in {'goal', 'policies', 'implementation_documents'}]]))
+                                                   if key in context]]))
     missing = set(mandatory_keys) - context.keys()
     if missing:
         raise ValueError("mandatory context keys are missing: " + ", ".join(sorted(missing)))
@@ -1134,10 +1145,7 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
             "actual_bytes": actual, "original_bytes": original_bytes, "reductions": reductions, "overflow": overflow}
 
 
-def read_source(workspace: Path, ref: dict, offset: int = 0,
-                limit: int = 1048576) -> dict:
-    if isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
-        raise ValueError("offset must be a nonnegative integer")
+def read_source(workspace: Path, ref: dict, limit: int = 1048576) -> dict:
     if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
         raise ValueError("limit must be a positive integer")
     try:
@@ -1146,7 +1154,7 @@ def read_source(workspace: Path, ref: dict, offset: int = 0,
         path = safe_path(workspace, ref["path"], require_input=True)
         if not path.exists():
             return {"status": "missing", "path": ref["path"], "bytes": b"",
-                    "sha256": None, "range": {"start": offset, "end": offset, "total": 0},
+                    "sha256": None, "range": {"start": 0, "end": 0, "total": 0},
                     "truncated": False, "reason": "source_missing"}
         data = read_stable(path, boundary=PhysicalBoundary(_physical_root(workspace)))
         digest = hashlib.sha256(data).hexdigest()
@@ -1154,9 +1162,9 @@ def read_source(workspace: Path, ref: dict, offset: int = 0,
             raise ValueError("source hash differs from reference")
         if "bytes" in ref and ref["bytes"] != len(data):
             raise ValueError("source size differs from reference")
-        start = min(offset, len(data)); end = min(start + limit, len(data))
-        return {"status": "ok", "path": ref["path"], "bytes": data[start:end],
-                "sha256": digest, "range": {"start": start, "end": end, "total": len(data)},
+        end = min(limit, len(data))
+        return {"status": "ok", "path": ref["path"], "bytes": data[:end],
+                "sha256": digest, "range": {"start": 0, "end": end, "total": len(data)},
                 "truncated": end < len(data)}
     except (OSError, ValueError) as error:
         return {"status": "error", "path": ref.get("path") if isinstance(ref, dict) else None,

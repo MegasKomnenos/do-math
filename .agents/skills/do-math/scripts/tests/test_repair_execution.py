@@ -149,6 +149,26 @@ class InstallationRepairRoutingTests(unittest.TestCase):
         self.assertEqual(runtime['status'],'waiting')
         self.assertEqual(runtime['queue'],[{'id':'AC-independent','role':'research_work'}])
 
+    def test_scheduler_dispatches_no_research_while_an_installation_recovery_has_not_ended(self):
+        # The supervisor released its locks, but the restart recovery could not confirm that the
+        # repair AI's local Job ended; it may still be changing the installation.
+        from do_math.parallel import ModelCalls
+        runtime = {'queue':[{'id':'AC-independent','role':'research_work'}], 'status':'ready',
+                   'executions':{'EX-repair':{'id':'EX-repair','role':'recovery','status':'stopping'}},
+                   'activities':{}, 'waiting_actions':{}, 'operational_dispositions':{}}
+        calls = create_autospec(ModelCalls, instance=True)
+        calls.futures = {}
+        def dispatchable(action): raise AssertionError('new work must not be dispatched')
+        host = bare_engine({'workspace':'.','id':'RI-test','config':{}}, runtime)
+        for name in ('_controls', '_check_installation', '_save', '_settle_stops',
+                     '_refresh_readiness', '_resume_formal_waits'):
+            setattr(host, name, create_autospec(getattr(host, name)))
+        host._scan_due = create_autospec(host._scan_due, return_value=True)
+        host._dispatchable = create_autospec(host._dispatchable, side_effect=dispatchable)
+        with patch('do_math.scheduler.ModelCalls',return_value=calls):
+            host._run_parallel()
+        self.assertEqual(runtime['queue'],[{'id':'AC-independent','role':'research_work'}])
+
     def test_supervisor_routes_diagnosed_live_engine_defect_and_probe_stays_read_only(self):
         from do_math import scheduled_operator as operator
         from types import SimpleNamespace

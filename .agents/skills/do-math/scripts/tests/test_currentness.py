@@ -342,12 +342,10 @@ class CurrentnessTests(ActivatedPurposeHarness):
         self.assertEqual(first['due'][0]['boundary'], 2)
         write_checkpoint(folder, counters={'attempts': 2}, claim='same count')
         self.assertFalse(any(row['kind'] == 'self_check_due' for row in observe(tracker, {'type': 'tick'})))
-        (folder / 'observation-rules.json').write_text('{')
         write_checkpoint(folder, counters={'attempts': 4})
         events = observe(tracker, {'type': 'tick'})
         second = next(row for row in events if row['kind'] == 'self_check_due')
         self.assertEqual(second['due'][0]['boundary'], 4)
-        self.assertTrue(any(row['kind'] == 'observation_rules_rejected' for row in events))
         self.assertEqual(tracker.rules, rules)
         with self.assertRaises(ValueError):
             validate_rules([{**rules[0], 'threshold': True}])
@@ -405,6 +403,10 @@ class SolvedStateCurrentnessTests(ActivatedPurposeHarness):
         self.assertFalse(validate_basis(endpoint_basis, engine.instance, engine.runtime)['valid'])
         engine._invalidate_goal_currentness()
         self.assertFalse(judgment['current'])
+        # The invalidated judgment is still a record the storage contract accepts.
+        from do_math.state_contract import default_state_contract, validate_record
+        validate_record(default_state_contract().family('research', 'goal_judgments').checker,
+                        judgment, 'goal_judgments')
         self.assertEqual(engine.instance['goal_status'], 'unsolved')
         self.assertEqual(engine.runtime['status'], 'ready')
 
@@ -423,8 +425,9 @@ class OperationalBasisPremiseTests(unittest.TestCase):
 class CurrentnessReturnRoutingTests(unittest.TestCase):
     def test_currentness_return_beside_an_accepted_bundle_is_refreshed_not_repaired(self):
         # A split response can accept one bundle while another returns on changed premises. The
-        # result status is then 'partial', exactly as when nothing was accepted, so the receiver
-        # routes by the returned issues (integration.failure_kind), never by that status.
+        # result status is then 'partial'. That status says only that some bundle was accepted:
+        # it is the same whether the returned bundle needs a refresh or an output repair, so the
+        # receiver routes by the returned issues (integration.failure_kind), never by that status.
         import uuid
         from unittest.mock import create_autospec
         from do_math import integration, submission

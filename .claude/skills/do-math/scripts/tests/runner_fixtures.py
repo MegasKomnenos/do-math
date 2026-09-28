@@ -3,7 +3,8 @@
 ``ScriptedRunner`` answers every role with the smallest output the role's
 contract accepts, built from its actual input: the preparation proposes one
 candidate (``research_fixtures.candidate``) or the ``preparation_candidates``
-given, the plan selects every ready task and assesses every returned one, the
+given, the plan selects every ready task and assesses every returned one (it
+re-rates each selected task unless ``plan_assessments=False``), the
 work returns one theorem (formal when ``formal=True``), reviews match and the
 goal audit is satisfied when eligible knowledge exists. Its output passes
 through the producer path a real worker takes (``bind_candidates``,
@@ -39,11 +40,8 @@ def context_from(prompt: str, workspace=None) -> dict:
 
 
 def contract_checks(candidates: list[dict]) -> list[dict]:
-    """The smallest self-check a fixture contract needs: no symbols, no cited sibling, two outcomes."""
-    return [{"task_title": item["title"], "symbols": [], "sibling_boundaries": [], "outcome_branches": [
-        {"outcome": "The fixture obligation is met", "completion": "Every criterion is judged from the report"},
-        {"outcome": "The fixture obligation is not met", "completion": "The report records the unmet criterion"}]}
-        for item in candidates]
+    """The smallest self-check a fixture contract needs: it cites no sibling task."""
+    return [{"task_title": item["title"], "sibling_boundaries": []} for item in candidates]
 
 
 def common(role: str) -> dict:
@@ -62,8 +60,9 @@ def common(role: str) -> dict:
 
 class ScriptedRunner:
     def __init__(self, *, formal: bool = False, invalid_plan: str | None = None, fail_role: str | None = None,
-                 preparation_candidates=None, model_rating=None):
+                 preparation_candidates=None, model_rating=None, plan_assessments=True):
         self.formal, self.invalid_plan, self.fail_role = formal, invalid_plan, fail_role
+        self.plan_assessments = plan_assessments
         self.prompts: list[tuple[str, str]] = []
         self.preparation_candidates = preparation_candidates
         self.explicit_model_rating = model_rating
@@ -140,7 +139,7 @@ class ScriptedRunner:
                 if ctx['action'].get('observation_rule_targets'):
                     from research_fixtures import prepared_rule_conditions
                     extensions['task_conditions'] = prepared_rule_conditions(ctx['action']['observation_rule_targets'])
-            elif ctx.get("budget_unit") == "concurrent_sessions":
+            elif ctx.get("budget_unit") == "concurrent_sessions" and self.plan_assessments:
                 extensions["model_assessments"] = planning_model_assessments(out, ctx)
                 if self.explicit_model_rating is not None:
                     extensions["model_assessments"] = [{**row, **self.explicit_model_rating}

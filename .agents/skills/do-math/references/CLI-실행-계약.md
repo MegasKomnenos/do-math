@@ -2,7 +2,7 @@
 
 초기화의 검사 분리, 큰 불변 payload의 저장 코덱, `launch_ticket`, `quiesce`/`release-quiesce`, 신뢰 환경의 툴체인 기록·재기록, `timeline --include-operations`는 [초기화 효율과 정비](초기화-효율과-정비.md)의 현행 계약을 함께 따른다. `maintenance_fence`와 `operation_progress`는 각각 정비 상태와 별도 로컬 진행 관측이며 수학적 완료 판정이 아니다.
 
-이 문서는 현행 do-math의 구체 인터페이스 참조다. 역할 응답의 wire 계약은 `do-math-cli/5`, 저장 계약은 `do-math-state/8`이며 서로 같은 스키마가 아니다. 명령행 인자, 구조화 제어, 저장 형식, CLI 상태 투영, AI 입력·출력과 산출 경로를 설명한다. do-math의 목적과 전체 연구 흐름은 `SKILL.md`, 보편 개념의 정의는 `GLOSSARY.md`, 역할별 판단·산출·실패 행동은 `계약/` 문서가 소유한다.
+이 문서는 현행 do-math의 구체 인터페이스 참조다. 역할 응답의 wire 계약은 `do-math-cli/5`, 저장 계약은 `do-math-state/9`이며 서로 같은 스키마가 아니다. 명령행 인자, 구조화 제어, 저장 형식, CLI 상태 투영, AI 입력·출력과 산출 경로를 설명한다. do-math의 목적과 전체 연구 흐름은 `SKILL.md`, 보편 개념의 정의는 `GLOSSARY.md`, 역할별 판단·산출·실패 행동은 `계약/` 문서가 소유한다.
 
 역할 응답, 기록 저장과 소비 API는 정확한 판본·해시를 대조하며, 옛 필드를 암묵 변환해 현재 계약으로 취급하지 않는다.
 
@@ -55,7 +55,7 @@ exit 0은 요청이 수학적으로 승인됐거나 과제·활동·실행이 �
 
 ## 현재 저장과 작업 경로
 
-인스턴스의 권위 있는 머리는 `refs/heads/do-math/<instance_id>`다. 각 상태 commit은 직전 상태 commit 하나를 부모로 가지며, 저장소는 등록된 기록군을 `research/<family>/...`와 `runtime/<family>/...` 아래에 분리해 저장한다. `runtime/artifacts/<bundle_id>/...`의 불변 산출은 추가 전용으로 보존한다. 정확한 기록군·shape·스키마는 설치본의 `do-math-state/8` manifest가 소유한다.
+인스턴스의 권위 있는 머리는 `refs/heads/do-math/<instance_id>`다. 각 상태 commit은 직전 상태 commit 하나를 부모로 가지며, 저장소는 등록된 기록군을 `research/<family>/...`와 `runtime/<family>/...` 아래에 분리해 저장한다. `runtime/artifacts/<bundle_id>/...`의 불변 산출은 추가 전용으로 보존한다. 정확한 기록군·shape·스키마는 설치본의 `do-math-state/9` manifest가 소유한다.
 
 일시적으로 재구성되는 `instance`·`runtime` 객체는 코드 내부 view이며 그 자체로 정본에 저장되지 않는다. 등록되지 않은 기록군, 알려지지 않은 필드, 중복 전역 ID와 잘못된 참조는 공개 전에 거부된다. 사건 기록군 `events`는 목록 형태로만 저장한다.
 
@@ -237,7 +237,7 @@ Path('host-config.json').write_text(json.dumps(settings, ensure_ascii=False, ind
 
 Claude는 기존 CLI 로그인을 사용한다. `PATH`에서 실행 파일을 찾으며 `CLAUDE_CONFIG_DIR`와 Windows의 `CLAUDE_CODE_GIT_BASH_PATH`를 전달한다. API 키·API 공급자 변경 환경변수는 전달하지 않는다. `--setting-sources`를 비우고 사용자 훅·자동 기억·스킬 호출·내부 Agent/Task 도구를 비활성화하며, `--strict-mcp-config`로 인스턴스에 고정된 scholarly만 연결한다. Claude만 사용하는 인스턴스도 scholarly의 자동 탐색 위치는 작업 경로에서 부모 방향으로 찾는 `.codex/config.toml`, 이어 `CODEX_HOME/config.toml`(미설정이면 사용자 홈의 `.codex/config.toml`) 순서이며, 다른 위치의 설정은 `scholarly_server`에 직접 지정한다.
 
-인스턴스 설정 `effort`의 지원 값은 `minimal`, `low`, `medium`, `high`, `xhigh`다. 이 가운데 Claude는 `minimal`을 지원하지 않는다. `operator_effort`는 추가로 `max`·`ultra`를 허용하지만 Claude에는 `ultra`를 전달할 수 없다. Claude worker는 지원하지 않는 수준을 CLI 시작 전에 거부한다. 모델 접근 권한과 해당 모델의 노력 수준 지원은 실제 CLI 응답으로 확인하며, 실패를 다른 모델·수준으로 우회하지 않는다.
+`effort`와 `operator_effort`의 허용 값은 이 절의 설정 표가 정한다. 그 가운데 `minimal`과 `ultra`는 Claude에 전달할 수 없다. Claude worker는 지원하지 않는 수준을 CLI 시작 전에 거부한다. 모델 접근 권한과 해당 모델의 노력 수준 지원은 실제 CLI 응답으로 확인하며, 실패를 다른 모델·수준으로 우회하지 않는다.
 
 다음은 일부 설정을 명시하는 예다. `init`에서 생략한 필드는 코드의 기본값을 사용하고, `configure`에서 생략한 최상위 필드는 기존 값을 유지한다.
 
@@ -538,7 +538,7 @@ source --file PATH [--name FILE_NAME]
 }
 ```
 
-`family`는 현재 CLI에서 `knowledge` 또는 `relation`이다. `token`은 소문자로 시작하는 영문 소문자·숫자·underscore 문자열이고 기존 token과 중복될 수 없다. 수학 주장 종류는 `requires_formal_results`와 `requires_assessments`가 자동으로 참이 된다. 이 `knowledge` family는 현재 CLI 레지스트리의 구현 이름이며 GLOSSARY.md의 F 객체 의미를 새로 정의하지 않는다.
+`family`는 현재 CLI에서 `knowledge` 또는 `relation`이다. `token`은 소문자로 시작하는 영문 소문자·숫자·underscore 문자열이고 기존 token과 중복될 수 없다. 스킬에 설치된 지식·관계 종류의 token은 인스턴스를 만들 때 이미 활성으로 정의되므로 다시 등록하지 않는다. 수학 주장 종류는 `requires_formal_results`와 `requires_assessments`가 자동으로 참이 된다. 이 `knowledge` family는 현재 CLI 레지스트리의 구현 이름이며 GLOSSARY.md의 F 객체 의미를 새로 정의하지 않는다.
 
 #### 관계 수입
 
@@ -818,9 +818,9 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 `progress_state`는 `working`, `blocked`, `no_progress`, `ready_to_submit`이다. 선택 필드 `iteration`은 음수가 아닌 정수다. 선택 필드 `counters`는 이름별 관찰값을 담은 객체이며 각 값이 음수가 아닌 정수다. 파일은 workspace 안의 일반 파일이어야 하고 4 MiB 이하이며 완전한 JSON Schema를 만족해야 한다. `evidence_paths`에는 실제 존재하는 파일의 상대 POSIX 경로를 쓴다. `.scratch/`와 그 아래 `.scratch/.execution-temp/`처럼 산출에서 제외되는 임시 파일을 근거로 삼지 않는다. 쓰는 중인 파일과 invalid 파일은 이전에 관찰한 유효 checkpoint를 대체하지 않는다.
 
-### `observation-rules.json`
+### 자기 점검 규칙의 실행 중 교체
 
-이 파일은 자기 점검 규칙의 교체 **제안**이다. 최상위는 `{current_revision, reason, rules}` 객체이며, 파일을 쓴 것만으로 활성 규칙이 바뀌지 않는다. 유효한 자기 점검 응답의 `rule_proposal`로 제출하고, 실행기가 현재 revision과 선택 프로필의 `observation.rule_bindings`에 대조한 수신 결과를 확인한다. 교체가 반려되면 이전 유효 규칙을 유지한다. 문법 검사는 `validate_rules`, 실행에서 허용되는 증거·대상 검사는 `validate_execution_rules`가 맡는다.
+실행 중 자기 점검 규칙은 유효한 자기 점검 응답의 `rule_proposal`로만 교체한다. 제안은 `{current_revision, reason, rules}` 객체이며, 실행기가 현재 revision과 선택 프로필의 `observation.rule_bindings`에 대조한 수신 결과를 응답의 수신 기록에서 확인한다. 교체가 반려되면 이전 유효 규칙을 유지한다. 작업 공간에 규칙 파일을 두어 교체하는 경로는 없다. 문법 검사는 `validate_rules`, 실행에서 허용되는 증거·대상 검사는 `validate_execution_rules`가 맡는다.
 
 작업자의 규칙이나 최대 자기 점검 간격이 도래하면 자기 점검 의무를 만든다. 응답은 의무·실행·규칙 판본과 도래한 규칙 전건, 실제 증거, 진전과 다음 방법을 연결한다. 첫 tick에서 카운터 이름이 아직 없다는 사실만으로 운영 AI를 부르거나 값을 0으로 만들지 않는다. 선택 프로필의 첫 관찰 구간이 끝날 때도 필요한 신호가 측정되지 않았으면 `observation_unavailable` 진단과 그 후속을 기록한다. 정상 자기 점검 응답 자체는 운영 AI를 새로 부르는 이유가 아니다. 결함·판단 불가·계약 부적합·계약 한도에 도달한 반복 무진전 또는 응답 기한 소진은 그 근거에 맞는 후속 점검으로 연결된다.
 
@@ -832,7 +832,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 현재 확장 파일은 후보 과제의 발생 조건·의존·최초 관찰 규칙과 후보별 계약 자기점검 `contract_checks`, 부수 연구 통찰, 외부 행동 요청, 기존·신규 지식의 metadata와 관계, 검토 자리의 고정 질문, 관찰 규칙과 학술 외부 거부의 해소 근거를 전달한다. 예를 들어 새 knowledge의 `confirmed_scope`는 주 JSON의 유일한 title에 결박하고, 검토 보충 조사는 원 검토 자리의 질문 ID와 exact source references에 결박한다.
 
-`contract_checks`는 후보 준비가 후보마다 하나씩 제출하는 `{task_title, symbols, outcome_branches, sibling_boundaries}`다. 중앙 검사는 선언과 계약 문면을 대조하며, 선택적 로컬 검사도 같은 함수를 사용한다. 대조 항목은 기호의 중복 선언과 문면 부재, 서로 다른 결과 갈래 둘 이상과 의존 과제의 언급, 문면에 인용한 `TK-`·`KN-` 기록의 실재, 인용한 과제의 경계 선언과 현행 revision 일치, 개정 중인 과제에 달린 경계다. 후보 전건에 필요하다. 실행기는 이 선언을 생산 실행의 확장 기록으로 보존하며 과제 계약과 계약 검토 입력에는 넣지 않는다. 필드의 의미와 점검 순서는 후보 준비 계약을 따른다.
+`contract_checks`는 후보 준비가 후보마다 하나씩 제출하는 `{task_title, sibling_boundaries}`다. 중앙 검사는 선언과 계약 문면을 입력 상태에 대조하며, 선택적 로컬 검사도 같은 함수를 사용한다. 대조 항목은 문면에 인용한 `TK-`·`KN-` 기록의 실재, 인용한 과제의 경계 선언과 현행 revision 일치, 개정 중인 과제에 달린 경계다. 후보 전건에 필요하다. 실행기는 이 선언을 생산 실행의 확장 기록으로 보존하며 과제 계약과 계약 검토 입력에는 넣지 않는다. 필드의 의미와 점검 순서는 후보 준비 계약을 따른다.
 
 `task_dispositions`는 후보 준비와 연구 계획이 AI 생성 미완료 과제를 철회하는 경로다. `{task_id, disposition:"withdraw", reason}`를 받으며 입력 스냅샷의 계약 해시·생성 계보·현재 상태·실행 부재를 검사한다. 부분 결과는 보존하고 `closed` 처분과 제거한 미시작 요청을 기록한다. 완료·닫힘·수행 중 과제나 사용자 학술 요구에는 적용하지 않는다. 전체 의미와 예시는 공통 실행 문서를 따른다.
 
@@ -858,7 +858,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 한 묶음의 실패는 그 묶음의 후보 변경을 버린다는 뜻이다. 이미 수락된 다른 독립 묶음이나 보존된 원 산출까지 되돌리지 않는다. 재시도는 원 묶음의 정체성과 입력·산출 해시를 대조하며 이미 수락된 묶음을 중복 적용하지 않는다. 기계가 선언을 통과시켰다는 사실은 묶음의 수학적 독립성을 입증하지 않는다.
 
-생산자의 선언 영향과 계산된 의존이 다르거나 변경이 목적·권한·신뢰·완료 기준에 영향을 주면 지정 독립 의미 검토가 필요하다. 계산된 의존이 따라가는 참조 필드는 [공통 실행](공통-실행.md)의 편입 묶음 절이 정하며, 과제가 `basis_refs`·`authority_refs`·`profile_refs`로 가리킨 기록의 개정도 그 과제를 계산된 영향에 넣는다. 독립 검토는 정확한 원 묶음과 변경별 영향 계획에 결박되어야 하며, 생산자가 자기 응답에 승인 문구를 붙여 대신할 수 없다. 해당 검토·현재성·권한이 해소되지 않은 묶음은 보류하고 실제 다음 소유자에게 반환한다.
+실행기는 계산된 의존을 생산자의 선언과 관계없이 적용한다. 생산자가 계산된 의존 밖의 기록을 영향으로 선언했거나, 계산이 해석하지 못한 참조가 남거나, 변경이 목적·권한·신뢰·완료 기준에 영향을 주면 지정 독립 의미 검토가 필요하다. 선언이 계산된 의존의 일부를 빠뜨린 것만으로는 검토를 열지 않는다. 검토의 승인도 계산된 의존을 덮어야 하므로, 빠뜨린 선언은 적용 결과를 바꾸지 못하기 때문이다. 계산된 의존이 따라가는 참조 필드는 [공통 실행](공통-실행.md)의 편입 묶음 절이 정하며, 과제가 `basis_refs`·`authority_refs`·`profile_refs`로 가리킨 기록의 개정도 그 과제를 계산된 영향에 넣는다. 독립 검토는 정확한 원 묶음과 변경별 영향 계획에 결박되어야 하며, 생산자가 자기 응답에 승인 문구를 붙여 대신할 수 없다. 해당 검토·현재성·권한이 해소되지 않은 묶음은 보류하고 실제 다음 소유자에게 반환한다.
 
 출력 형식 수리는 `max_output_repairs` 안에서 같은 의무를 잇는 새 실행으로 처리한다. 새 실행 ID·정확한 프로필·예산 예약과 이전 산출·오류를 기록한다. 한도 뒤에는 실패 요청과 남은 의무를 보존하고 운영 점검에 넘긴다. 실행 종료가 활동을 자동 종결하지 않으며 활동은 후속이나 대기 조건을 계속 소유한다. `resume`만으로 보류된 출력 실패를 재생하지 않는다.
 
@@ -890,7 +890,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 ### 정지와 현재성
 
-사용자 pause·close, 권한 철회·만료, 실행 근거 변경과 기한은 해당 실행의 정지·회수 경계를 연다. `.control/finish-request.json`은 정상 부분 제출의 예고이고 `.control/stop-request.json`은 새 연구 권한의 회수다. 허용된 마무리 시간에는 이미 얻은 결과와 남은 의무를 보존한다. Windows Job의 로컬 종료 확인은 호스트 격리나 원격 종료의 보증이 아니다.
+사용자 pause·close, 권한 철회·만료, 실행 근거 변경과 기한은 해당 실행의 정지·회수 경계를 연다. `.control/finish-request.json`과 `.control/stop-request.json`이 각각 무엇을 뜻하고 어느 실행에 오는지는 「전제·대기·조회 계약」 절의 `finish_notice_seconds` 문단이 정한다. 허용된 마무리 시간에는 이미 얻은 결과와 남은 의무를 보존한다. Windows Job의 로컬 종료 확인은 호스트 격리나 원격 종료의 보증이 아니다.
 
 `run`은 기동할 때 설치 코드·필수 문서를 해시해 기준으로 삼는다. 실행 중에는 파일 지문(크기·수정 시각·생성 시각)이 바뀐 파일만 다시 해시해 기준과 대조하고, 해시가 바뀌면 일관된 설치본에서 재시작하도록 정지한다. 세 값을 모두 보존한 채 내용만 바뀐 경우는 이 대조로 잡지 않는다. 입력 준비·확정·결과 수신 경계의 검사와 순회 검사는 파일 변경 즉시 감지와 다르다. 이미 고정한 입력·산출은 당시 판본으로 보존한다. 입력 준비 중 제어로 전제가 바뀌면 아직 공개하지 않은 입력 준비를 정리하고 현재 입력으로 다시 판단한다.
 

@@ -18,7 +18,8 @@ def _write(path, value):
 
 
 def publish(workspace: Path, execution_id: str, deadline: float | None, config: dict, *,
-            deadline_source: str, clock=time.monotonic, wall_clock=None):
+            clock=time.monotonic, wall_clock=None):
+    """Describe the call's deadline in UTC; only an operational call has one."""
     if deadline is None:
         value = {"execution_id": execution_id, "effective_deadline_at": None,
                  "remaining_ms_at_start": None, "deadline_source": "none",
@@ -30,7 +31,7 @@ def publish(workspace: Path, execution_id: str, deadline: float | None, config: 
     finish = current + timedelta(milliseconds=remaining_ms)
     notice = notice_seconds(config)
     value = {"execution_id": execution_id, "effective_deadline_at": finish.isoformat(),
-             "remaining_ms_at_start": remaining_ms, "deadline_source": deadline_source,
+             "remaining_ms_at_start": remaining_ms, "deadline_source": "operational_call",
              "finish_notice_at": (finish - timedelta(seconds=notice)).isoformat(),
              "effective_notice_ms": int(Decimal(str(notice)) * 1000)}
     _write(workspace / ".control" / "execution-window.json", value)

@@ -130,7 +130,7 @@ class AcademicEngineMixin:
         if not all(isinstance(change.get(key), str) and change[key].strip() for key in ("actor", "text")):
             raise ValueError("external rejection needs its actor and preserved original text")
         entry = {"id": new_id("RJ"), "actor": change["actor"], "text": change["text"], "source_ref": request["id"],
-                 "created_at": request["created_at"], "solution_basis": basis, "resolved": False}
+                 "created_at": request["created_at"], "solution_basis": basis}
         self.runtime.setdefault("external_rejections", []).append(entry)
         if self.runtime["status"] == "completed": self.runtime["status"] = "ready"
         self._enqueue("research_plan", reason="Examine the external rejection against the preserved solution evidence", rejection_id=entry["id"])

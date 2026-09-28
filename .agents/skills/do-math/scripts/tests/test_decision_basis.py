@@ -149,6 +149,8 @@ class BasisTests(unittest.TestCase):
         waits = planning.revision_waits(first, self.instance, self.runtime)
         self.assertEqual([w["action_id"] for w in waits if "action_id" in w], ["AC-2"])
         self.assertEqual([w["execution_id"] for w in waits if "execution_id" in w], ["E"])
+        # The running writer waits for nothing: the two writers' mutual reads form no wait cycle.
+        self.assertEqual(planning.revision_cycles(self.instance, self.runtime), [])
 
     def test_writer_drains_a_running_plan_but_failed_writer_does_not_block_diagnosis(self):
         writer = {"id": "write", "role": "research_preparation", "revision_targets": revisions.capture_targets(self.instance, self.runtime, ["A"])}
@@ -181,18 +183,28 @@ class BasisTests(unittest.TestCase):
         output["candidates"][1]["revises_task_id"] = None
         self.assertEqual(revisions.submission_errors(output, extension, context), [])
 
-    def test_premise_refresh_of_an_output_repair_carries_no_previous_submission_issues(self):
+    def test_premise_refresh_of_an_output_repair_continues_the_refreshed_execution(self):
+        # EX-second, the output repair of EX-first, had its response bundle accepted before another
+        # bundle returned on changed premises. The refresh continues EX-second: it inherits what
+        # EX-second had accepted and none of the earlier submission issues.
         repair = {'execution_id': 'EX-first', 'previous_output': {}, 'retry_bundle_ids': ['IN-one'],
                   'bundle_results': [], 'issues': [{'issue_id': 'IS-old', 'rule_id': 'schema.required'}]}
         action = {'id': 'AC-repair', 'role': 'supplemental_research', 'continuation_of': 'EX-first',
                   'repair_attempt': 1, 'repair': repair}
+        receipt = {'id': 'IN-report', 'execution_id': 'EX-second', 'response_sha256': 'a' * 64}
         owner = bare_engine({'id': 'RI-test'}, {'queue': [deepcopy(action)], 'tasks': {},
-            'executions': {'EX-second': {'id': 'EX-second', 'role': 'supplemental_research', 'action': action}}})
+            'executions': {'EX-second': {'id': 'EX-second', 'role': 'supplemental_research', 'action': action}},
+            'integrations': {receipt['id']: receipt}})
         owner._refresh_changed_decision(action, 'EX-second', [{'field': 'integration_currentness'}])
         refreshed = owner.runtime['queue'][0]
-        self.assertEqual(refreshed['refresh']['execution_id'], 'EX-second')
-        self.assertEqual(refreshed['continuation_of'], 'EX-first')
+        self.assertEqual((refreshed['refresh']['execution_id'], refreshed['continuation_of']),
+                         ('EX-second', 'EX-second'))
         self.assertNotIn('repair', refreshed)
+        context = {}
+        owner._submission_repair_context(context, refreshed)
+        self.assertEqual(context['submission_failures'], [])
+        self.assertEqual(context['accepted_integration_ids'], ['IN-report'])
+        self.assertEqual(context['accepted_response'], {'integration_id': 'IN-report', 'response_sha256': 'a' * 64})
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ from pathlib import Path
 import shutil
 
 from .context_store import read_stable
-from .file_io import file_fingerprint, fingerprint_settled, no_reparse
+from .file_io import check_path_segment, file_fingerprint, fingerprint_settled, no_reparse
 from .git_store import ARTIFACT_ROOT, PhysicalBoundary, oid_shape
 from .relation_refs import relation_references
 from .repository import canonical_json, sealed_bytes
@@ -39,8 +39,8 @@ def _physical(path):
 
 
 def _run_path(workspace, execution_id):
-    if not isinstance(execution_id, str) or not execution_id or any(c in execution_id for c in '/\\\\:') or execution_id in {'.', '..'}:
-        raise ValueError('invalid execution path segment')
+    # The state path segment rule: Windows would store "EX-1." as the folder of "EX-1".
+    check_path_segment(execution_id)
     root = _physical(workspace)
     path = _physical(root / 'runs' / execution_id)
     if path.parent != root / 'runs':

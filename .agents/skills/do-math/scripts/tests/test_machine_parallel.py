@@ -93,7 +93,7 @@ class MachineSchedulerTests(unittest.TestCase):
         self.host = Host(self.temp.name)
         self.enterContext(patch('do_math.scheduler.time.monotonic', side_effect=lambda: self.host.tick))
 
-    def run_case(self, *, trust=False, cancel=False):
+    def run_case(self, *, trust=False, cancel=False, stops=None):
         host = self.host
         if trust:
             host.knowledge('K1')
@@ -136,14 +136,15 @@ class MachineSchedulerTests(unittest.TestCase):
         self.assertTrue(host.ai_finished.is_set())
         details = {path: raw.decode('utf-8', 'replace') for saved in host.saves for path, raw in saved['artifacts'].items()
                    if path.endswith(('formal.json', 'trust-result.json'))}
-        self.assertEqual(observed, [bool(cancel)], str(details) + str(host.runtime.get('waiting_actions')))
+        stops = bool(cancel) if stops is None else stops
+        self.assertEqual(observed, [stops], str(details) + str(host.runtime.get('waiting_actions')))
         machines = [e for e in host.runtime['executions'].values() if e['role'] in {'formal_check', 'trust_check'}]
         self.assertEqual(len(machines), 1, 'the second Lean request must stay unstarted')
         self.assertEqual(machines[0]['status'], 'ended')
         self.assertEqual(machines[0]['capacity']['local_termination'], 'confirmed')
         model = next(e for e in host.runtime['executions'].values() if e['role'] == 'maintenance')
         self.assertEqual(model['capacity']['local_termination'], 'confirmed')
-        if cancel:
+        if stops:
             self.assertEqual(machines[0]['outcome'], 'execution_incomplete')
             self.assertEqual(host.identity_reviews, [])
         return host
@@ -205,8 +206,9 @@ class MachineSchedulerTests(unittest.TestCase):
     def test_revoked_authority_rejects_both_kinds_of_formal_result(self):
         self.run_case(cancel='revoke')
 
-    def test_trust_revoked_authority_rejects_late_result(self):
-        self.run_case(trust=True, cancel='revoke')
+    def test_revoking_research_grants_does_not_stop_a_trust_check(self):
+        # Dispatch admits trust checks without a grant; the approved transition is their authority.
+        self.run_case(trust=True, cancel='revoke', stops=False)
 
     def test_machine_artifacts_publish_to_real_immutable_git_bundles(self):
         import subprocess

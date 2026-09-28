@@ -297,10 +297,7 @@ def installation_repair_state():
 
 
 def contract_check(title="one", **changes):
-    return {"task_title": title, "symbols": [], "sibling_boundaries": [],
-            "outcome_branches": [{"outcome": "The identity holds on the given inputs", "completion": "Report the check"},
-                                 {"outcome": "A given input contradicts the identity", "completion": "Report the contradicting input"}],
-            **changes}
+    return {"task_title": title, "sibling_boundaries": [], **changes}
 
 
 def preparation_context():

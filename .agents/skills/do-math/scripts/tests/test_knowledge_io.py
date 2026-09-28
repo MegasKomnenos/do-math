@@ -1,7 +1,7 @@
 """Authored import and ontology contracts using the v5 authoritative families."""
 from copy import deepcopy
 import unittest
-from knowledge_fixtures import activate_kind, add_knowledge, knowledge_candidate, knowledge_graph, revise_knowledge
+from knowledge_fixtures import add_knowledge, knowledge_candidate, knowledge_graph, revise_knowledge
 from do_math import knowledge_io as io, knowledge_records as kr
 from do_math.repository import new_id
 
@@ -82,7 +82,6 @@ class KnowledgeIoTests(unittest.TestCase):
                 knowledge_candidate(title=title, lean_code='', declaration_names=[]),
                 source_ref='fixture', actor_ref='user')
             endpoints.append(kid)
-        ins = activate_kind(ins, 'formally_implies')
         claim = dict(kind='formally_implies', source=endpoints[0],
                      target=endpoints[1], confirmed_scope='True implies True')
         ins, run, proof = io.import_candidate(ins, run, knowledge_candidate(relation_claim=claim),
@@ -112,7 +111,6 @@ class KnowledgeIoTests(unittest.TestCase):
 
     def test_research_analogy_is_distinct_from_mathematical_connection(self):
         ins, run, ids = knowledge_graph()
-        for token in ('analogous_to', 'formally_implies'): ins = activate_kind(ins, token)
         analogy = dict(kind='analogous_to', source=ids['a'], target=ids['b'], evidence='Same recurrence shape')
         self.assertTrue(io.validate_relation(ins, analogy)['valid'])
         ins, rid = io.import_relation(ins, analogy, source_ref='s', actor_ref='u')
@@ -125,7 +123,6 @@ class KnowledgeIoTests(unittest.TestCase):
         for decision in ("mismatch", "unresolved"):
             with self.subTest(decision=decision):
                 ins, run, ids = knowledge_graph()
-                ins = activate_kind(ins, "formally_implies")
                 claim = dict(kind="formally_implies", source=ids["a"], target=ids["b"],
                              confirmed_scope="True implies True")
                 ins, run, proof, _ = add_knowledge(ins, run, verified=False, relation_claim=claim)
@@ -152,7 +149,6 @@ class KnowledgeIoTests(unittest.TestCase):
 
     def test_mathematical_relation_requires_exact_formal_identity_and_current_endpoints(self):
         ins, run, ids = knowledge_graph()
-        ins = activate_kind(ins, 'formally_implies')
         claim = dict(kind='formally_implies', source=ids['a'], target=ids['b'], confirmed_scope='True implies True')
         relation = {**claim, 'evidence': 'proof', 'formal_result_refs': [ins['knowledge'][ids['a']]['formal_result_id']],
                     'assessment_refs': [ids['aa']]}
@@ -168,7 +164,6 @@ class KnowledgeIoTests(unittest.TestCase):
 
     def test_relation_revision_keeps_id_and_history(self):
         ins, run, ids = knowledge_graph()
-        ins = activate_kind(ins, 'supports')
         first = dict(id=new_id('RL'), kind='supports', source=ids['a'], target=ids['b'], evidence='e1')
         ins, rid = io.import_relation(ins, first, source_ref='s1', actor_ref='u')
         ins, again = io.import_relation(ins, {**first, 'evidence': 'e2'}, source_ref='s2', actor_ref='u')
@@ -178,15 +173,29 @@ class KnowledgeIoTests(unittest.TestCase):
         self.assertEqual(row['history'][-1]['evidence'], 'e1')
 
     def test_catalog_exposes_only_active_definitions(self):
+        # A new relation kind still passes an independent check before any use.
+        installed = sorted(d['token'] for d in io.BUILTIN_DEFINITIONS if d['family'] == 'relation')
         definition = dict(family='relation', token='translates_to', meaning='An explicitly scoped translation.', constraints={'requires_evidence': True})
         ins, _ = io.register_kind_definition({}, definition, source_ref='s', actor_ref='u')
-        self.assertEqual(io.catalog_definitions(ins)['relations'], [])
+        relations = lambda: sorted(d['token'] for d in io.catalog_definitions(ins)['relations'])
+        self.assertEqual(relations(), installed)
         self.assertTrue(any(d['token'] == 'theorem' for d in io.catalog_definitions(ins)['knowledge']))
         ins = io.check_kind_definition(ins, 'relation', 'translates_to', check_ref='check', actor_ref='checker')
+        self.assertEqual(relations(), installed)
         ins = io.activate_kind_definition(ins, 'relation', 'translates_to', approval_ref='approval', actor_ref='reviewer')
-        self.assertEqual([d['token'] for d in io.catalog_definitions(ins)['relations']], ['translates_to'])
+        self.assertEqual(relations(), sorted([*installed, 'translates_to']))
         ins, _ = io.withdraw_kind_definition(ins, {}, 'relation', 'translates_to', reason='meaning defect', actor_ref='reviewer')
-        self.assertEqual(io.catalog_definitions(ins)['relations'], [])
+        self.assertEqual(relations(), installed)
+
+    def test_installed_relation_kinds_are_usable_without_activation(self):
+        ins, run, ids = knowledge_graph()
+        support = dict(kind='supports', source=ids['a'], target=ids['b'], evidence='Same recurrence shape')
+        self.assertTrue(io.validate_relation(ins, support)['valid'])
+        # An installed mathematical kind is active too; its evidence requirement still applies.
+        result = io.validate_relation(ins, {**support, 'kind': 'formally_implies'})
+        self.assertFalse(result['valid'])
+        self.assertIn('formal_result_refs_required', result['reasons'])
+        self.assertIn('assessment_refs_required', result['reasons'])
 
 
 if __name__ == '__main__': unittest.main(verbosity=2)

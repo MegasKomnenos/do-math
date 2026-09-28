@@ -1,8 +1,11 @@
 """Producer-side contract self-checks for research preparation.
 
-The rules are the mechanically decidable part of what contract review returned
-in the 2026-09-19 parking run: colliding symbols, missing outcome branches and
-boundaries taken from a sibling contract that was still being revised.
+The rules are the part of contract review that the input state decides: a
+cited task or knowledge record must exist, and a boundary taken from a cited
+sibling contract must be read at its current revision and must not silently
+depend on a sibling that is still being revised (the 2026-09-19 parking run).
+Symbol collisions and missing outcome branches are the author's judgment and
+the independent contract review's, not declarations checked here.
 """
 import json
 from pathlib import Path
@@ -38,24 +41,19 @@ class ContractCheckTests(unittest.TestCase):
         self.assertNotEqual(self.issues(contract_check(), contract_check()), "[]")
         self.assertNotEqual(self.issues(contract_check(), contract_check("foreign")), "[]")
 
-
-    def test_one_symbol_cannot_carry_two_meanings_and_must_occur_in_the_contract(self):
-        self.item["question"] = "With T the threshold, expand C = T - Q + L"
-        two = [{"symbol": "T", "meaning": "threshold"}, {"symbol": "T", "meaning": "first term of the identity"}]
-        self.assertIn("symbol", self.issues(contract_check(symbols=two)))
-        self.assertIn("absent", self.issues(contract_check(symbols=[{"symbol": "tau", "meaning": "threshold"}])))
-        self.assertEqual(self.issues(contract_check(symbols=[{"symbol": "T", "meaning": "threshold"}, {"symbol": "Q", "meaning": "two long blocks"}])), "[]")
-
-    def test_a_single_outcome_is_not_a_branching(self):
-        self.assertNotEqual(self.issues(contract_check(outcome_branches=contract_check()["outcome_branches"][:1])), "[]")
-
-    def test_each_declared_dependency_is_named_by_some_outcome(self):
+    def test_self_check_declares_only_sibling_boundaries(self):
+        # A symbol used with two meanings and a dependency named by no outcome are
+        # judged by the author and the contract review; no declaration is compared.
+        self.item["question"] = "With T the threshold, expand C = T - Q + L where T is the first term"
         self.context["tasks"] = [{**candidate("exact"), "id": "TK-exact", "revision": 1, "status": "active"}]
         self.conditions = [{"task_title": "one", "dependencies": ["TK-exact"]}]
-        self.assertIn("TK-exact", self.issues(contract_check()))
-        branches = [{"outcome": "TK-exact completes with every row unimodal", "completion": "Explain the peak"},
-                    {"outcome": "TK-exact completes with a counterexample row", "completion": "Explain the sign change"}]
-        self.assertEqual(self.issues(contract_check(outcome_branches=branches)), "[]")
+        self.assertEqual(self.issues(contract_check()), "[]")
+        removed = {"symbols": [{"symbol": "T", "meaning": "threshold"}],
+                   "outcome_branches": [{"outcome": "TK-exact holds", "completion": "Report proof"},
+                                        {"outcome": "TK-exact fails", "completion": "Report gap"}]}
+        for field, value in removed.items():
+            with self.subTest(field=field):
+                self.assertIn(field, self.issues(contract_check(**{field: value})))
 
     def test_a_cited_sibling_contract_is_declared_at_its_current_revision(self):
         self.sibling()
@@ -64,15 +62,17 @@ class ContractCheckTests(unittest.TestCase):
         self.assertIn("revision", self.issues(contract_check(sibling_boundaries=[entry])))
         self.assertEqual(self.issues(contract_check(sibling_boundaries=[{**entry, "revision": 2}])), "[]")
 
-    def test_sibling_boundary_reads_the_exact_catalog_contract(self):
+    def test_sibling_boundary_is_read_from_the_checker_task_not_its_detail_copy(self):
+        # The checker context holds every current task, a completed sibling outside the comparison
+        # population included (context_store.prepare_role_input); the prompt's detail copy is not read.
         import hashlib
         self.sibling(status='completed')
-        task = self.context['tasks'].pop()
+        task = self.context['tasks'][0]
         raw = json.dumps(task).encode('utf-8')
         root = Path(self.temp.name)
         path = root / 'input' / 'details' / 'sibling.json'
         path.parent.mkdir(parents=True)
-        path.write_bytes(raw)
+        path.write_bytes(raw + b' ')  # An accidentally changed detail copy.
         self.context['snapshot'] = 'fixed-input'
         self.context['task_catalog'] = [{'id': task['id'], 'title': task['title'],
             'revision': task['revision'], 'status': task['status'], 'source_ref': {
@@ -82,34 +82,29 @@ class ContractCheckTests(unittest.TestCase):
                  'boundary': 'k <= tau - 3', 'independent_of_next_revision': True}
         self.assertEqual(self.issues(contract_check(sibling_boundaries=[entry])), '[]')
         self.assertIn('revision', self.issues(contract_check(sibling_boundaries=[{**entry, 'revision': 1}])))
-        path.write_bytes(raw + b' ')
-        self.assertIn('sibling contract source', self.issues(contract_check(sibling_boundaries=[entry])))
 
-    def test_primary_and_extension_dependencies_have_the_same_self_check(self):
-        self.context['tasks'] = [{**candidate('exact'), 'id': 'TK-exact', 'revision': 1, 'status': 'active'}]
-        branches = [{'outcome': 'TK-exact holds', 'completion': 'Report proof'},
-                    {'outcome': 'TK-exact fails', 'completion': 'Report gap'}]
-        for primary, extension in ((True, False), (False, True), (True, True)):
+    def test_primary_and_extension_dependencies_both_wait_for_a_sibling_under_revision(self):
+        self.sibling(revision_requested={"revision": 2, "source": "AC-review", "reason": "The sibling boundary is under revision"})
+        entry = {"task_id": "TK-window", "revision": 2, "boundary": "k <= T - s", "independent_of_next_revision": False}
+        for primary, extension in ((False, False), (True, False), (False, True), (True, True)):
             with self.subTest(primary=primary, extension=extension):
-                self.item['dependencies'] = ['TK-exact'] if primary else []
-                self.conditions = [{'task_title': 'one', 'dependencies': ['TK-exact']}] if extension else []
-                self.assertIn('TK-exact', self.issues(contract_check()))
-                self.assertEqual(self.issues(contract_check(outcome_branches=branches)), '[]')
+                self.item['dependencies'] = ['TK-window'] if primary else []
+                self.conditions = [{'task_title': 'one', 'dependencies': ['TK-window']}] if extension else []
+                issues = self.issues(contract_check(sibling_boundaries=[entry]))
+                if primary or extension:
+                    self.assertEqual(issues, '[]')
+                else:
+                    self.assertIn('under revision', issues)
 
     def test_revision_condition_is_matched_by_existing_id(self):
+        self.sibling(revision_requested={"revision": 2, "source": "AC-review", "reason": "The sibling boundary is under revision"})
         self.item['revises_task_id'] = 'TK-one'
-        self.context['tasks'] = [{**candidate('old'), 'id': 'TK-one', 'revision': 1, 'status': 'planned'},
-                                 {**candidate('exact'), 'id': 'TK-exact', 'revision': 1, 'status': 'active'}]
-        self.conditions = [{'task_id': 'TK-one', 'dependencies': ['TK-exact']}]
-        self.assertIn('TK-exact', self.issues(contract_check()))
-
-    def test_new_sibling_title_is_checked_before_the_engine_allocates_ids(self):
-        self.conditions = [{'task_title': 'one', 'dependencies': ['second']}]
-        candidates = [self.item, candidate('second')]
-        self.assertIn('second', self.issues(contract_check(), contract_check('second'), candidates=candidates))
-        branches = [{'outcome': 'second holds', 'completion': 'Apply result'},
-                    {'outcome': 'second fails', 'completion': 'Report gap'}]
-        self.assertEqual(self.issues(contract_check(outcome_branches=branches), contract_check('second'), candidates=candidates), '[]')
+        self.context['tasks'].append({**candidate('old'), 'id': 'TK-one', 'revision': 1, 'status': 'planned'})
+        entry = {"task_id": "TK-window", "revision": 2, "boundary": "k <= T - s", "independent_of_next_revision": False}
+        self.assertIn('under revision', self.issues(contract_check(sibling_boundaries=[entry])))
+        # The revision fixture carries unrelated issues; only the matched condition's dependency is asserted.
+        self.conditions = [{'task_id': 'TK-one', 'dependencies': ['TK-window']}]
+        self.assertNotIn('under revision', self.issues(contract_check(sibling_boundaries=[entry])))
 
     def test_title_and_revision_id_cannot_supply_two_conditions_for_one_candidate(self):
         self.item['revises_task_id'] = 'TK-old'
@@ -124,8 +119,7 @@ class ContractCheckTests(unittest.TestCase):
         self.assertIn("under revision", self.issues(contract_check(sibling_boundaries=[entry])))
         self.assertEqual(self.issues(contract_check(sibling_boundaries=[{**entry, "boundary": "k <= tau - 3", "independent_of_next_revision": True}])), "[]")
         self.conditions = [{"task_title": "one", "dependencies": ["TK-window"]}]
-        named = [{"outcome": "TK-window fixes s", "completion": "Use s"}, {"outcome": "TK-window is withdrawn", "completion": "Report the gap"}]
-        self.assertEqual(self.issues(contract_check(sibling_boundaries=[entry], outcome_branches=named)), "[]")
+        self.assertEqual(self.issues(contract_check(sibling_boundaries=[entry])), "[]")
 
     def test_a_pending_revision_of_the_sibling_counts_as_under_revision(self):
         self.sibling()

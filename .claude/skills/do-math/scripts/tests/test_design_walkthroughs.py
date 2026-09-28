@@ -65,17 +65,6 @@ def disposition(tid, kind='selected'):
     return row
 
 
-def activate_relation(e, token):
-    template = next(t for t in knowledge_io.relation_templates() if t['token'] == token)
-    e.instance, token = knowledge_io.register_kind_definition(e.instance, template,
-        source_ref='fixture:relation-definition', actor_ref='EX-definition-author')
-    e.instance = knowledge_io.check_kind_definition(e.instance, 'relation', token,
-        check_ref='fixture:independent-kind-check', actor_ref='EX-kind-checker')
-    e.instance = knowledge_io.activate_kind_definition(e.instance, 'relation', token,
-        approval_ref='fixture:kind-approval', actor_ref='EX-kind-approver')
-    return token
-
-
 def rule(threshold=2):
     return observation_rule(threshold=threshold, id='R-attempts', required_evidence=['EV-attempts'], repeat_interval=2)
 
@@ -173,7 +162,7 @@ class DesignWalkthroughs(unittest.TestCase):
                         proposed, source_ref='fixture:finite-calculation', actor_ref='EX-calculation')
                     if kind == 'observation': calculation_id = endpoint
                     else: conjecture_id = endpoint
-                token = activate_relation(e, 'refutes')
+                token = 'refutes'
                 claim = {'kind': token, 'source': calculation_id, 'target': conjecture_id,
                          'confirmed_scope': 'n=1 refutes forall n : Nat, n=0; it proves no universal affirmative'}
                 kid, aid = accept_knowledge(e, truth_candidate('¬ (∀ n : Nat, n = 0)',
@@ -370,7 +359,7 @@ class DesignWalkthroughs(unittest.TestCase):
         self.assertFalse(knowledge.assess_use(imported, e.instance)['valid'])
         e.instance = kr.set_assessment_use(e.instance, aid, 'suspended', 'new objection', 'review')
         self.assertFalse(knowledge.assess_use(e.instance['knowledge'][kid], e.instance)['valid'])
-        token = activate_relation(e, 'supports')
+        token = 'supports'
         e.instance, relation_id = knowledge_io.import_relation(e.instance, {
             'kind': token, 'source': imported['id'], 'target': kid,
             'confirmed_scope': 'Search history informs reuse; no formal implication',

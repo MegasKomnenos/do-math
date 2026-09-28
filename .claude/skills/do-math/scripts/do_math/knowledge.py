@@ -256,7 +256,11 @@ def plan_impact(instance, runtime, roots, declared_impact, *, sensitive=False, e
     plan = {"roots": sorted(roots), "computed_impact": sorted(computed), "declared_impact": sorted(declared),
             "missing_declarations": sorted(computed - declared), "extra_declarations": sorted(declared - computed),
             "unresolved_refs": unknown, "sensitive": sensitive,
-            "requires_independent_review": bool(sensitive or computed != declared or unknown),
+            # The computed closure is applied whatever was declared, and an approval must
+            # cover it, so a missing declaration cannot change the result. Only a record
+            # the producer adds beyond it, or a reference the closure cannot resolve,
+            # needs the independent judgment.
+            "requires_independent_review": bool(sensitive or declared - computed or unknown),
             "basis": {rid: _hash(records[rid]) for rid in sorted(affected | declared)}}
     plan["digest"] = plan_digest(plan)
     return plan
@@ -360,13 +364,13 @@ def apply_impact(instance, runtime, plan, *, reason, independent_confirmation=No
         independent_confirmation=independent_confirmation)
 
 
-def _apply_current_plan(instance, runtime, plan, *, reason, independent_confirmation=None, in_place=False):
+def _apply_current_plan(instance, runtime, plan, *, reason, independent_confirmation=None):
     # For a plan the caller has just computed from these same views. A supplied
     # or stored plan goes through apply_impact, which recomputes it first.
     require_text(reason, "reason")
     affected = _confirmed_impact(plan, independent_confirmation)
     return _apply_impact_effects(instance, runtime, affected, set(plan["roots"]),
-        reason=reason, impact_digest=plan["digest"], in_place=in_place)
+        reason=reason, impact_digest=plan["digest"])
 
 
 def propagate(instance, runtime, roots, reason):
@@ -498,6 +502,14 @@ def revision_roots(instance, knowledge_id):
     return sorted(roots)
 
 
+def _without_checks(queue, knowledge_id):
+    """``queue`` without the pending checks of ``knowledge_id``: its formal check,
+    identity review and review research. A superseded or withdrawn record is no
+    longer the subject of these checks."""
+    return [action for action in queue if not (action.get("target") == knowledge_id and (
+        action.get("role") in {"formal_check", "identity_review"} or review_research(action)))]
+
+
 def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: dict,
                       *, reason: str, actor_ref: str, replacement_id=None,
                       reserved_dependency_ids=()) -> tuple[dict, dict]:
@@ -535,11 +547,8 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
     # Superseding the authored record retires its pending checks at the domain
     # boundary, including callers that apply a revision through integration.
     # Completed executions and unrelated work remain available as history.
-    new_runtime["queue"] = [action for action in new_runtime.get("queue", [])
-        if action.get("target") != actual_replacement_id and not (
-            action.get("target") == knowledge_id and (
-                action.get("role") in {"formal_check", "identity_review"}
-                or review_research(action)))]
+    new_runtime["queue"] = [action for action in _without_checks(new_runtime.get("queue", []), knowledge_id)
+                            if action.get("target") != actual_replacement_id]
     next_role = "identity_review" if reuse_formal else "formal_check"
     if not replacement.get("formal_result_id"):
         next_role = "research_plan"
@@ -554,7 +563,7 @@ def revise_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: 
                      independent_confirmation=None, replacement_id=None) -> tuple[dict, dict]:
     roots = revision_roots(instance, knowledge_id)
     preview = plan_impact(instance, runtime, roots, declared_impact or [])
-    # No declaration is harmless only when there are no downstream consumers.
+    # The computed impact applies without a declaration; only a declared record beyond it needs confirmation.
     output, new_runtime = _apply_current_plan(instance, runtime, preview, reason=reason,
                                               independent_confirmation=independent_confirmation)
     return replace_knowledge(output, new_runtime, knowledge_id, changes,
@@ -568,6 +577,7 @@ def invalidate_knowledge(instance, runtime, knowledge_id, *, reason, actor_ref,
     output, new_runtime = _apply_current_plan(instance, runtime, plan, reason=reason,
                                               independent_confirmation=independent_confirmation)
     output["knowledge"][knowledge_id].update(lifecycle="withdrawn", withdrawal_reason=reason, withdrawn_by=actor_ref)
+    new_runtime["queue"] = _without_checks(new_runtime.get("queue", []), knowledge_id)
     return output, new_runtime
 
 

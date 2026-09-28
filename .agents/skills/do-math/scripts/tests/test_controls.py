@@ -273,6 +273,8 @@ class ControlReceipts(unittest.TestCase):
             request.update(kind="self_check_response", payload={"self_check_id": obligation["id"], "response": response})
             receipt = engine._publish_control_request(request)
             self.assertEqual(receipt["state"], "rejected")
+            # The receipt the worker reads names the actual rejection error.
+            self.assertIn("evidence_not_current", receipt["reason"])
             self.assertTrue(engine.runtime["self_check_responses"])
             self.assertEqual(len(engine.runtime["queue"]), 1)
             self.assertTrue((Path(temporary)/"runs/EX-work/workspace/.control/observation-feedback.json").is_file())

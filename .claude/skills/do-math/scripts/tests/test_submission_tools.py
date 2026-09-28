@@ -388,7 +388,7 @@ class ProducerToolTests(purpose.ActivatedPurposeHarness):
         limits = context["submission_contract"]["limits"]
         self.assertEqual(limits["max_artifact_bytes"], 100)
         self.assertEqual(limits["checkpoint_bytes"], 4 * 1024 * 1024)
-        self.assertEqual(limits["observation_rules_bytes"], 65536)
+        self.assertNotIn("observation_rules_bytes", limits)
         output = {**purpose.common("No proposal."), "candidates": []}
         (workspace / ".scratch").mkdir()
         (workspace / ".scratch/disposable.bin").write_bytes(b"x" * 101)
@@ -398,16 +398,17 @@ class ProducerToolTests(purpose.ActivatedPurposeHarness):
         self.assertFalse(result["passed"])
         self.assertIn("evidence.bin", json.dumps(result["issues"]))
 
-    def test_producer_checks_live_checkpoint_and_observation_files(self):
+    def test_producer_checks_live_checkpoint_but_not_a_rules_file(self):
         _, workspace, context = self.prepare()
         output = {**purpose.common("No proposal."), "candidates": []}
         (workspace / "checkpoint.json").write_text('{"current_claim":"unfinished schema"}', encoding="utf-8")
+        # Rules change only through a self-check response; a leftover rules file is ordinary output.
         (workspace / "observation-rules.json").write_text('[{"id":"bad","op":"counter_gte","threshold":true}]', encoding="utf-8")
         result = self.check_output(workspace, context, output)
         self.assertFalse(result["passed"])
         issues = json.dumps(result["issues"])
         self.assertIn("checkpoint.json", issues)
-        self.assertIn("observation-rules.json", issues)
+        self.assertNotIn("observation-rules.json", issues)
 
     def test_producer_checks_planning_population_and_exact_completion_criteria(self):
         from research_fixtures import candidate, disposition

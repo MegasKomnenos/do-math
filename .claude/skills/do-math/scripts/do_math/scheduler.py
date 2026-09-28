@@ -161,37 +161,22 @@ class SchedulerMixin:
     def _schedule_reconsideration(self, observed_at):
         """Adapt runtime availability to TASKS' active-research query contract.
 
-        Assignment lives in request event_refs. The owner's working event
-        annotations are a query projection and never rewrite published facts.
+        Assignment lives in request event_refs (planning.assigned_event_refs), which
+        the query reads directly; published events are never annotated.
         """
         from .planning import schedule_reconsideration
         if (self.instance['lifecycle']['state'] != 'active' or self.runtime['status'] == 'paused'
                 or self._instance_closed()):
             return
         runtime = self.runtime
-        annotations = ('assigned_to', 'assigned_at')
-        published = {e['id']: {k: e[k] for k in annotations if k in e} for e in runtime.get('events', [])}
         status = runtime['status']
         runtime['status'] = 'active'
         try:
-            requests = runtime['queue'] + [e.get('action', {}) for e in runtime['executions'].values()
-                                           if e.get('status') != 'ended']
-            requests += [w['action'] for w in runtime.get('waiting_actions', {}).values() if 'action' in w]
-            assigned = {ref: a.get('id') for a in requests for ref in a.get('event_refs', [])}
-            for event in runtime.get('events', []):
-                event.pop('assigned_to', None)
-                event.pop('assigned_at', None)
-                if event['id'] in assigned:
-                    event['assigned_to'] = assigned[event['id']]
             return schedule_reconsideration(self.instance, runtime,
                 now=observed_at, evaluation_context={**self._evaluation_context(), 'now': observed_at})
         finally:
-            # Only the query's working annotations are undone; its new events and requests stay.
+            # Only the query's status view is undone; its new events and requests stay.
             runtime['status'] = status
-            for event in runtime.get('events', []):
-                event.pop('assigned_to', None)
-                event.pop('assigned_at', None)
-                event.update(published.get(event['id'], {}))
 
     def _failed_live_review(self, action, reason):
         parent = self.runtime["executions"].get(action.get("target"))
@@ -321,6 +306,10 @@ class SchedulerMixin:
                 stopping = (self._instance_closed()
                             or (self.runtime['status'] == 'paused' and not limited))
                 stopping = stopping or pending_installation_repair(self.runtime) is not None
+                # An installation recovery the restart recovery could not end has no confirmed
+                # local termination; its repair AI may still be changing the installation.
+                stopping = stopping or any(row.get('role') == 'recovery' and row.get('status') != 'ended'
+                                           for row in self.runtime.get('executions', {}).values())
                 if stopping:
                     if not self._calls.futures:
                         break

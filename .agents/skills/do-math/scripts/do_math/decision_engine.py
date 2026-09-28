@@ -39,10 +39,6 @@ class DecisionEngineMixin:
                 "failed_execution_id": entry.get("execution_id"), "resolved_by": evidence_id,
                 "decision_execution_id": execution_id, "reason": claim["reason"], "previous": deepcopy(entry)})
             del self.runtime["waiting_actions"][identifier]
-            for event in self.runtime.get("events", []):
-                if event.get("assigned_to") == identifier and not event.get("consumed_at"):
-                    event.pop("assigned_to", None)
-                    event.pop("assigned_at", None)
             failed = self.runtime["executions"].get(entry.get("execution_id"), {})
             activity_id = previous.get("owner_activity_id") or failed.get("owner_activity_id")
             activity = self.runtime.get("activities", {}).get(activity_id)
@@ -139,7 +135,7 @@ class DecisionEngineMixin:
         if changes:
             raise CurrentnessChanged(changes)
 
-    def _apply_task_plan(self, output, execution_id, input_tasks, ready_ids, *, reference_tasks=None, evaluation_context=None):
+    def _apply_task_plan(self, output, execution_id, input_tasks, ready_ids, *, evaluation_context=None):
         """Owner application for one indivisible planning response."""
         from .task_scope import apply_task_assessments
         planning.validate_plan_submission(output, input_tasks, ready_ids)
@@ -151,7 +147,7 @@ class DecisionEngineMixin:
             if row['kind']=='selected' and planning.task_ready(current,self.instance,self.runtime,evaluation_context=evaluation_context)['state']!='ready':
                 raise ValueError('selected task is no longer ready')
         instance,runtime=apply_task_assessments(self.instance,self.runtime,output.get('task_assessments',[]),
-            execution_id=execution_id,input_tasks=input_tasks,reference_tasks=reference_tasks,evaluation_context=evaluation_context)
+            execution_id=execution_id,input_tasks=input_tasks,evaluation_context=evaluation_context)
         for row in output['dispositions']:
             task=runtime['tasks'][row['task_id']]
             if row['kind']=='selected' and planning.contract_hash(task)!=planning.contract_hash(input_tasks[task['id']]):
@@ -192,7 +188,12 @@ class DecisionEngineMixin:
         from .revisions import record_execution_outcome
         record_execution_outcome(self.instance,self.runtime,action,{},execution_id,accepted=False)
         if action.get("refresh", {}).get("attempt", 0) < 1:
-            refreshed = {**deepcopy(action), "refresh": {"execution_id": execution_id, "changes": deepcopy(changes), "attempt": 1}}
+            # The refresh continues the execution whose premises changed, as an output repair continues
+            # the returned one, even when this action already continues an earlier execution: that
+            # execution's output and the bundles it already had accepted stay in the lineage that
+            # restore_continuation and _submission_repair_context follow.
+            refreshed = {**deepcopy(action), "continuation_of": execution_id,
+                         "refresh": {"execution_id": execution_id, "changes": deepcopy(changes), "attempt": 1}}
             refreshed.pop("model_selection", None)
             # The premises changed, not the output: no earlier submission issue carries over.
             refreshed.pop("repair", None)

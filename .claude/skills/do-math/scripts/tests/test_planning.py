@@ -122,6 +122,8 @@ class PlanningTests(unittest.TestCase):
                 due = [e['id'] for e in runtime['events'] if e['kind'] == 'research_reconsider_due']
                 self.assertEqual(general[0]['event_refs'], due)
                 self.assertTrue(general[0]['periodic_reconsideration'])
+                # Assignment lives in the request's event_refs; published events carry no mark.
+                self.assertFalse(any('assigned_to' in event for event in runtime['events']))
                 planning.record_due_events(self.instance, runtime, '2026-09-25T00:00:01Z')
                 planning.schedule_reconsideration(self.instance, runtime,
                     now='2026-09-25T00:00:01Z')
@@ -167,10 +169,6 @@ class PlanningTests(unittest.TestCase):
         from knowledge_fixtures import verified_knowledge
         from do_math import knowledge_records as kr
         i,r,kid,aid=verified_knowledge()
-        template=next(t for t in knowledge_io.relation_templates() if t['token']=='formally_implies')
-        i,_=knowledge_io.register_kind_definition(i,template,source_ref='source',actor_ref='producer')
-        i=knowledge_io.check_kind_definition(i,'relation','formally_implies',check_ref='check',actor_ref='reviewer')
-        i=knowledge_io.activate_kind_definition(i,'relation','formally_implies',approval_ref='approved',actor_ref='reviewer')
         fid=i['knowledge'][kid]['formal_result_id'];xid=i['knowledge'][kid]['exposition_id']
         claim={'kind':'formally_implies','source':kid,'target':kid,'confirmed_scope':'True implies True'}
         i['expositions'][xid]['relation_claim']=claim

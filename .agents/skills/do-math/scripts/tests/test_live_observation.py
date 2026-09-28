@@ -231,6 +231,26 @@ class ObservationCollectionTests(unittest.TestCase):
             artifacts = engine._save.call_args.args[0]
             self.assertEqual(artifacts[record['evidence_files'][0]['artifact_ref']], proof)
 
+    def test_rejected_input_of_a_deadline_only_execution_is_recorded_without_a_review(self):
+        # A deadline_only execution opens no recursive review, so its rejected input carries no followup.
+        engine = routing_engine()
+        engine._controls = create_autospec(engine._controls)
+        engine._check_conversations = create_autospec(engine._check_conversations, return_value=False)
+        engine._save = create_autospec(engine._save)
+        engine.runtime['executions']['EX-one'] = {'id': 'EX-one', 'status': 'running',
+            'role': 'maintenance', 'action': {'role': 'maintenance'}}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            tracker = ObservationTracker('EX-one', root, {'observation_mode': 'deadline_only'}, clock=Clock())
+            engine._observe_running('EX-one', tracker, observation_batch(
+                [{'type': 'turn.started', 'execution_id': 'EX-other'}],
+                received_monotonic=tracker.clock(), stream_path=root / 'stdout.jsonl'))
+        rejected = [json.loads(fact['event_json']) for fact in engine.runtime['observation_facts'].values()
+                    if json.loads(fact['event_json']).get('kind') == 'observation_input_rejected']
+        self.assertEqual(len(rejected), 1)
+        self.assertNotIn('followup', rejected[0])
+        self.assertFalse(any(a['role'] == 'operational_review' for a in engine.runtime['queue']))
+
     def test_returned_result_is_collected_before_unrelated_observation_callbacks(self):
         import threading
         import time

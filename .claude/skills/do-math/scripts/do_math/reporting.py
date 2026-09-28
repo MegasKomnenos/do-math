@@ -74,7 +74,7 @@ def task_status(instance, runtime, *, evaluation_context=None):
             readiness = planning.task_ready(task, instance, runtime, include_scheduling_waits=False,
                                             evaluation_context=evaluation_context)
             if readiness['state'] != 'ready':
-                waiting.append({'kind': 'contract_review' if 'current revision lacks approved contract review' in readiness['errors'] else 'required_input',
+                waiting.append({'kind': 'contract_review' if planning.CONTRACT_REVIEW_MISSING in readiness['errors'] else 'required_input',
                                 'errors': readiness['errors']})
         waiting = list({json.dumps(row, sort_keys=True): row for row in waiting}.values())
         next_owner = ('user' if any(row.get('kind') == 'user_decision' or row.get('next_owner') == 'user' for row in waiting) else

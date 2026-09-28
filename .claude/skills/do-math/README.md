@@ -12,7 +12,7 @@
 - [기존 연구 조회·제어](#existing-control): 지정된 인스턴스의 상태를 읽거나 입력·정지·재개 요청의 효과를 확인한다.
 - [직접 전진·수동 운전](#manual-run): 해당 절의 적용 조건을 확인한 뒤 허가된 범위를 직접 실행한다.
 
-역할 응답 스키마는 `do-math-cli/5`, 저장 계약은 `do-math-state/8`이다. 중앙 실행기, 설치 manifest와 역할별 소비자는 이 판본을 함께 사용하며 다른 판본의 필드를 섞지 않는다.
+역할 응답 스키마는 `do-math-cli/5`, 저장 계약은 `do-math-state/9`이다. 중앙 실행기, 설치 manifest와 역할별 소비자는 이 판본을 함께 사용하며 다른 판본의 필드를 섞지 않는다.
 
 역할 응답 계약은 후보 준비, 항목별 작업 계약 검토, 연구 계획의 전건 처분, 생산자 선언 편입 묶음과 독립 동일성 검토의 범위 계획을 정의한다. 각 기능이 무엇을 보증하는지는 서로 다르며, 명령 성공·스키마 통과·실행 종료는 형식 타당성·해설 동일성·목표 충족을 대신하지 않는다.
 
@@ -438,7 +438,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 ### 독립 운영의 설정과 정지
 
-`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 정상 감독·연구 엔진 작업을 다시 맞추고 `operator uninstall`은 그 인스턴스의 연구·정기 감독·일회성 wake 예약을 제거한다. 운영 주기와 기한은 `configure`의 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`, `operator_effort`로 바꾼다. `operator_effort`, `tier_models`와 `role_tiers.recovery`는 실패 시 설치 복구 AI에 적용된다. 정상 감독에는 모델 배정이 없다. 예약 작업의 주기와 기한은 예약을 설치할 때 현재 설정에서 읽어 등록하며, 다른 예약 동작은 이 값을 다시 읽지 않는다. 즉시 적용된 운영 설정 변경은 CLI가 예약에 반영한다. 제어가 아직 대기 중이면 운전자는 적용을 확인한 뒤 같은 인스턴스에서 `operator install`로 예약을 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
+`operator status`는 실제 예약 작업을 조회한다. `operator install`은 현재 인스턴스 설정으로 정상 감독·연구 엔진 작업을 다시 맞추고 `operator uninstall`은 그 인스턴스의 연구·정기 감독·일회성 wake 예약을 제거한다. 독립 운영의 활성 여부·주기·기한은 `configure`의 `operator_enabled`, `operator_interval_seconds`, `operator_timeout_seconds`로 바꾼다. 실패 시 설치 복구 AI에는 `operator_effort`, `tier_models`와 `role_tiers.recovery`가 적용된다. 이 값들은 `configure`가 새로 만드는 복구 프로필에 들어가므로 바꿔도 예약을 다시 맞출 필요가 없다. 정상 감독에는 모델 배정이 없다. 예약 작업의 주기와 기한은 예약을 설치할 때 현재 설정에서 읽어 등록하며, 다른 예약 동작은 이 값을 다시 읽지 않는다. 활성 여부·주기·기한의 변경이 즉시 적용되면 CLI가 예약에 반영한다. 제어가 아직 대기 중이면 운전자는 적용을 확인한 뒤 같은 인스턴스에서 `operator install`로 예약을 재조정한다. 비활성화나 예약 제거가 이미 실행 중인 연구까지 정지했다는 뜻은 아니다.
 
 연구 예약의 Windows 실행 제한은 무제한을 뜻하는 `PT0S`다. 운영 담당 예약에는 `operator_timeout_seconds`에 종료 여유를 더한 유한 제한을 적용한다. 여유의 크기는 [CLI 실행 계약](references/CLI-실행-계약.md#config-list)의 독립 운영 설정 설명을 따른다. 기존 설치를 갱신할 때는 같은 인스턴스에서 `operator install`을 사용하고 `operator status`의 `execution_limit`을 확인한다. 재설치는 기존 예약의 Disabled 상태를 보존하며 HOLD나 사용자 정지를 해제하지 않는다.
 
@@ -448,7 +448,7 @@ python .agents/skills/do-math/scripts/do_math.py resume `
 
 설치 감독을 읽기 전용으로 시험하려면 `operator probe`를 사용한다. 이 명령은 상태·기록을 모델 없이 읽고 연구나 예약 상태를 변경하지 않으며, 엔진 읽기 실패가 있어도 복구 AI를 시작하지 않고 실패 증거만 반환한다. 정상 `operator check`는 같은 감독 뒤 실행 가능한 엔진 작업을 요청할 수 있고, 엔진 시작 실패의 실제 증거나 수락된 설치 결함 진단이 있을 때 복구 AI를 연다.
 
-예약 작업이 실행하는 bootstrap은 예약 어댑터 `scripts/operator_schedule.ps1` 옆의 `operator_bootstrap.py`를 설치 시점의 파일 manifest와 해시에 고정한 복사본이다. bootstrap은 재분석 지점·파일 해시와 경로를 검사하고, 실행 중인 live 설치와 구별된다. 첫 검사는 전 파일을 해시하고 정착한 파일 지문을 manifest 옆에 기록한다. 이후 기동에서는 지문이 바뀐 파일만 다시 해시한다. 복구 AI는 writer lock과 별도 설치 유지보수 lock, 종료된 선행 실행, 고정 복구 프로필과 현재 능력 증거, 공급자 대기와 설정된 호스트 자원의 착수 조건을 모두 확인한 뒤 live 설치만 수리할 수 있다. 연구 기록·사용자 전역 설정·예약 작업·사용자 결정을 고치지 않는다. 수리 뒤 설치본의 `probe_cli.py --skill-only`가 통과한 경우에만 두 lock을 놓고 엔진 재시작을 요청한다. 이는 지시 기반 경계이며 다른 사용자 권한·파일·네트워크·자격 증명 접근을 OS가 차단한다는 뜻이 아니다. 실행별 근거와 결과는 `<workspace>/operator/` 아래에 보존되며 이 대화로 자동 알림이 전송되지는 않는다.
+예약 작업이 실행하는 bootstrap은 예약 어댑터 `scripts/operator_schedule.ps1` 옆의 `operator_bootstrap.py`를 설치 시점의 파일 manifest와 해시에 고정한 복사본이다. bootstrap은 재분석 지점·파일 해시와 경로를 검사하고, 실행 중인 live 설치와 구별된다. 첫 검사는 전 파일을 해시하고 정착한 파일 지문을 manifest 옆에 기록한다. 이후 기동에서는 지문이 바뀐 파일만 다시 해시한다. 복구 AI는 writer lock과 별도 설치 유지보수 lock, 종료된 선행 실행, 고정 복구 프로필과 현재 능력 증거, 공급자 대기와 설정된 호스트 자원의 착수 조건을 모두 확인한 뒤 live 설치만 수리할 수 있다. 연구 기록·사용자 전역 설정·예약 작업·사용자 결정을 고치지 않는다. 두 lock은 복구 호출이 끝나면 결과와 관계없이 놓는다. 엔진 재시작은 수리 뒤 설치본의 `probe_cli.py --skill-only`가 통과하고 복구 AI의 로컬 종료를 확인한 경우에만 요청한다. 종료를 확인하지 못한 복구 실행이 끝날 때까지 연구 실행기는 새 연구를 배정하지 않는다. 이는 지시 기반 경계이며 다른 사용자 권한·파일·네트워크·자격 증명 접근을 OS가 차단한다는 뜻이 아니다. 실행별 근거와 결과는 `<workspace>/operator/` 아래에 보존되며 이 대화로 자동 알림이 전송되지는 않는다.
 
 ## 운영 제어 명령의 용도
 

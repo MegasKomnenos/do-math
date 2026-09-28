@@ -811,7 +811,7 @@ class ContinuationConnections(unittest.TestCase):
         engine._save.assert_not_called()
         engine._record_task_receipt.assert_not_called()
 
-    def test_bundle_live_prior_hash_and_transitive_impact_are_required(self):
+    def test_bundle_requires_live_prior_hash_and_review_only_for_impact_beyond_the_closure(self):
         from do_math import knowledge, knowledge_io
         engine = routing_engine()
         engine.instance.update(sources=[], kind_definitions={})
@@ -820,6 +820,7 @@ class ContinuationConnections(unittest.TestCase):
              "lean_code": "theorem t : True := by trivial", "declaration_names": ["t"], "dependencies": []},
             source_ref="EX-author", actor_ref="EX-author")
         engine.runtime["tasks"]["TK-dependent"] = {"id": "TK-dependent", "dependencies": [kid]}
+        engine.runtime["tasks"]["TK-other"] = {"id": "TK-other", "dependencies": []}
         change = {"id": kid, "changes": {"summary": "New summary"}, "reason": "clarification", "impact_set": ["TK-dependent"]}
         bundle = {"integration_id": "IN-revision", "output": {}, "owns_response": False,
                   "extensions": {"knowledge_changes": [change]}, "impact_set": ["TK-dependent"],
@@ -829,9 +830,12 @@ class ContinuationConnections(unittest.TestCase):
         action = {"id": "AC-revise", "role": "research_work"}
         engine.runtime["executions"]["EX-author"] = {"id": "EX-author", "role": "research_work", "input_snapshot": "fixed"}
         engine._validate_bundle_impacts(engine.instance, engine.runtime, bundle, action=action, execution_id="EX-author")
-        changed = deepcopy(bundle); changed["impact_set"] = []
-        with self.assertRaisesRegex(ValueError, "impact"):
-            engine._validate_bundle_impacts(engine.instance, engine.runtime, changed, action=action, execution_id="EX-author")
+        omitted = deepcopy(bundle); omitted["impact_set"] = []
+        # The computed closure is applied whatever was declared, so an omission needs no review.
+        self.assertEqual(engine._validate_bundle_impacts(engine.instance, engine.runtime, omitted, action=action, execution_id="EX-author"), {})
+        beyond = deepcopy(bundle); beyond["impact_set"] = ["TK-dependent", "TK-other"]
+        with self.assertRaises(integration.ImpactReviewRequired):
+            engine._validate_bundle_impacts(engine.instance, engine.runtime, beyond, action=action, execution_id="EX-author")
         engine.instance["knowledge"][kid]["title"] = "Changed after input"
         with self.assertRaisesRegex(ValueError, "hash|changed"):
             engine._validate_bundle_impacts(engine.instance, engine.runtime, bundle, action=action, execution_id="EX-author")

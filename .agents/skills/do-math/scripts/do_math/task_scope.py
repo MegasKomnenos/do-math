@@ -373,12 +373,11 @@ def designated_judgment(task, obligation, disposition, instance, runtime):
     return None
 
 
-def apply_task_assessments(instance, runtime, assessments, *, execution_id, input_tasks, reference_tasks=None, evaluation_context=None):
+def apply_task_assessments(instance, runtime, assessments, *, execution_id, input_tasks, evaluation_context=None):
     """Apply the whole assessment set on copies, including recipient obligations."""
     from .task_contracts import assessor_is_judge, validate_item_dispositions, contract_obligations, judge_coverage_errors
     from .planning import record_index
     new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
-    reference_tasks = input_tasks if reference_tasks is None else reference_tasks
     actor = new_runtime.get('executions', {}).get(execution_id)
     if not actor or actor.get('role') not in {'research_plan', 'operational_review'}:
         raise ValueError('completion requires a designated independent assessor execution')
@@ -417,7 +416,7 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
                 target = tasks.get(row['target_task_id'])
                 if not target or target['id'] == task['id'] or target['id'] in ids or target['status'] in TERMINAL_TASK_STATUSES:
                     raise ValueError('transfer requires a distinct unfinished recipient outside this assessment set')
-                previous = reference_tasks.get(target['id'])
+                previous = input_tasks.get(target['id'])
                 if not previous or contract_hash(previous) != contract_hash(target):
                     raise ValueError('transfer recipient must be bound to the current input')
                 if any(e.get('status') != 'ended' and e.get('action', {}).get('target') == target['id'] for e in new_runtime.get('executions', {}).values()):

@@ -402,10 +402,8 @@ class RoleInputBoundaryTests(unittest.TestCase):
             engine.store.view.return_value = engine.store.load.return_value
             frozen = canonical_json(fixed)
             evidence = engine.store.read.return_value
-            task_sources = {row['source_ref']['artifact_ref']: (root / row['source_ref']['path']).read_bytes()
-                            for row in fixed['task_catalog']}
             engine.store.read.side_effect = lambda path, head: (
-                frozen if path.endswith('/context.json') else task_sources.get(path, evidence))
+                frozen if path.endswith('/context.json') else evidence)
             engine.runtime['executions']['EX-plan'] = {'id': 'EX-plan', 'role': 'research_plan', 'status': 'ended',
                 'action': fixed['action'], 'input_snapshot': engine.head, 'input_bundle': 'BA-plan'}
             extra = deepcopy(task); extra['id'] = 'TK-later'; engine.runtime['tasks'][extra['id']] = extra
@@ -454,9 +452,7 @@ class RoleInputBoundaryTests(unittest.TestCase):
                 self.assertTrue(check['passed'], check['issues'])
                 engine.store.load.return_value = (engine.head, deepcopy(engine.instance), deepcopy(engine.runtime))
                 engine.store.view.return_value = engine.store.load.return_value
-                task_sources = {row['source_ref']['artifact_ref']: (root / row['source_ref']['path']).read_bytes()
-                                for row in fixed['task_catalog']}
-                engine.store.read.side_effect = lambda path, head: task_sources.get(path, canonical_json(fixed))
+                engine.store.read.side_effect = lambda path, head: canonical_json(fixed)
                 engine.runtime['executions']['EX-plan'].update(input_snapshot=engine.head, input_bundle='BA-plan')
                 if mutation == 'foreign':
                     engine.instance['knowledge'][kid]['task_id'] = 'TK-other'
@@ -471,10 +467,7 @@ class RoleInputBoundaryTests(unittest.TestCase):
 
     def relation_engine(self):
         state, _, kid, aid = verified_knowledge()
-        template = next(t for t in knowledge_io.relation_templates() if t['token'] == 'formally_implies')
-        state, token = knowledge_io.register_kind_definition(state, template, source_ref='fixture', actor_ref='author')
-        state = knowledge_io.check_kind_definition(state, 'relation', token, check_ref='check', actor_ref='checker')
-        state = knowledge_io.activate_kind_definition(state, 'relation', token, approval_ref='review', actor_ref='reviewer')
+        token = 'formally_implies'
         fid = state['knowledge'][kid]['formal_result_id']
         claim = {'kind': token, 'source': kid, 'target': kid, 'confirmed_scope': 'reflexive'}
         state['identity_assessments'][aid]['relation_claim'] = claim
@@ -806,9 +799,9 @@ class RoleInputClassTests(unittest.TestCase):
               'user_inputs', 'external_operations', 'repetition_holds'}),
             ({'role': 'task_contract_review'}, {'task': {'id': 'TK-1'}},
              {'model_policy', 'resources', 'budget_unit', 'formal_verifier', 'academic_requirements',
-              'academic_phase', 'recent_history', 'external_operations', 'external_rejections', 'open_questions'},
+              'academic_phase', 'external_operations', 'external_rejections', 'open_questions'},
              {'execution_profiles', 'role_profile_refs', 'events', 'academic_validation', 'goal_revision',
-              'policy_revision', 'repetition_holds', 'user_inputs'}),
+              'policy_revision', 'repetition_holds', 'user_inputs', 'recent_history'}),
             ({'role': 'intent_interpretation', 'stage': 'interpret'}, intent,
              {'formal_verifier', 'academic_requirements', 'configuration_source', 'goal_revision'},
              {'recent_history', 'user_inputs', 'open_questions', 'events', 'model_policy', 'academic_phase',
@@ -1082,6 +1075,21 @@ class RoleInputClassTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 submission.validate_reference('EX-1', fixed, root)
 
+    def test_contract_reviewer_reads_the_ledger_records_its_contract_names(self):
+        # 계약/작업-계약-검토.md 21·43·85: the reviewer reads the records the published contract cites.
+        # An academic task's inputs name the goal audit executions of its solution basis.
+        from record_fixtures import task_contract
+        instance, runtime = surface_state()
+        task = {**task_contract(), 'inputs': ['EX-1'], 'basis_refs': ['KN-1', 'AC-1']}
+        runtime['tasks'] = {'TK-1': task}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixed = self.prepare({'role': 'task_contract_review', 'target': 'TK-1'}, {'task': deepcopy(task)},
+                                 instance=instance, runtime=runtime, root=root)['validation_context']
+            index = fixed['record_index']
+            self.assertEqual((index.get('runtime/executions'), index.get('runtime/activities')), (['EX-1'], ['AC-1']))
+            submission.validate_reference('EX-1', fixed, root)
+
     def test_review_seat_operational_review_reads_the_evidence_its_input_supplies(self):
         # 공통-실행.md 「독립 판단의 차단」: an independent judgment reads the ledger records and
         # files its input supplies; an operational review supplies them as admissible_basis_refs.
@@ -1111,6 +1119,19 @@ class RoleInputClassTests(unittest.TestCase):
             with self.subTest(action=action), tempfile.TemporaryDirectory() as directory:
                 fixed = self.prepare(action, direct, root=Path(directory))['validation_context']
                 self.assertTrue({'EX-1', 'AC-1'} <= set(fixed['supplied_record_ids']), fixed['supplied_record_ids'])
+
+    def test_citable_record_list_reaches_the_prompt_as_a_map_entry(self):
+        # supplied_record_ids grows with the snapshot's records like record_index, so the prompt carries
+        # its map entry while the checker reads the whole list (공통-실행.md 「기록 지도와 읽기 도구」).
+        for action, direct in (({'role': 'research_preparation'}, PLANNING_DIRECT),
+                               ({'role': 'operational_review', 'target': 'EX-1'}, OPERATIONAL_DIRECT)):
+            with self.subTest(action=action), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                fitted = self.prepare(action, direct, root=root)
+                mapped = fitted['context']['supplied_record_ids']
+                self.assertTrue(is_map_entry(mapped), mapped)
+                self.assertEqual(json.loads((root / mapped['source_ref']['path']).read_bytes()),
+                                 fitted['validation_context']['supplied_record_ids'])
 
     def test_self_check_evidence_follows_the_submission_citation_rule(self):
         # Records of the input snapshot and the execution's preserved workspace files are citable.

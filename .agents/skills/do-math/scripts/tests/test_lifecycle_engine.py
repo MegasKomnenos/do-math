@@ -348,6 +348,16 @@ class LifecycleTests(unittest.TestCase):
             if row['role']=='trust_check':
                 self.assertEqual(row['outcome'],'output_accepted')
                 self.assertEqual(row['submission_receipt']['kind'],'machine_output')
+    def test_trust_recheck_needs_no_grant_naming_the_trust_roles(self):
+        # The documented research grant names research roles and formal_check (초기화-운전 3절).
+        # The dispatch gate admits the trust roles on the user's transition control; the re-check keeps that authority.
+        e=self.engine
+        for grant in e.instance['grants'].values():
+            grant['roles']=[role for role in grant['roles'] if role not in {'trust_check','trust_activate'}]
+        old,new,tid=self.transition()
+        run_machine(e,'trust_check'); run_machine(e,'trust_check'); run_machine(e,'trust_activate')
+        self.assertEqual(e.instance['lifecycle']['state'],'active')
+        self.assertEqual(e.instance['active_trust_environment'],new)
     def test_partial_failure_cannot_activate(self):
         e=self.engine; old,new,tid=self.transition()
         e.formal_behavior=lambda args:{'status':'failed','reason':'fixture'}

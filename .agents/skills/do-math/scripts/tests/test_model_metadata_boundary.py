@@ -32,6 +32,29 @@ class ModelMetadataBoundaryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'unexpected'):
             engine._apply_model_metadata({'role': 'research_plan'}, output, 'EX-plan')
 
+    def test_plan_rates_a_selected_task_only_to_change_or_supply_its_stored_assessment(self):
+        engine = routing_engine()
+        engine.instance['config'] = deepcopy(DEFAULT_CONFIG)
+        stored = {'difficulty': 'low', 'importance': 'medium', 'reason': 'Reviewed with the contract'}
+        changed = {'difficulty': 'high', 'importance': 'high', 'reason': 'A failed attempt showed the gap is central'}
+        engine.runtime['tasks'] = {'TK-kept': {'id': 'TK-kept', 'model_assessment': stored},
+                                   'TK-unrated': {'id': 'TK-unrated'}}
+        output = {'dispositions': [disposition('TK-kept'), disposition('TK-unrated'),
+                                   disposition('TK-waiting', kind='not_selected')]}
+        def apply(rows):
+            engine.runtime['executions']['EX-plan'] = {'extensions': {'model_assessments': rows}}
+            engine._apply_model_metadata({'role': 'research_plan'}, output, 'EX-plan')
+            return engine.runtime['executions']['EX-plan']['model_decisions']
+        self.assertEqual(apply([{'task_id': 'TK-unrated', **stored}]), {'TK-unrated': stored})
+        self.assertEqual(apply([{'task_id': 'TK-kept', **changed}, {'task_id': 'TK-unrated', **stored}]),
+                         {'TK-kept': changed, 'TK-unrated': stored})
+        with self.assertRaisesRegex(ValueError, 'missing'):
+            apply([{'task_id': 'TK-kept', **changed}])
+        with self.assertRaisesRegex(ValueError, 'unexpected'):
+            apply([{'task_id': 'TK-unrated', **stored}, {'task_id': 'TK-waiting', **stored}])
+        with self.assertRaisesRegex(ValueError, 'duplicate'):
+            apply([{'task_id': 'TK-unrated', **stored}, {'task_id': 'TK-unrated', **changed}])
+
     def test_formal_contract_binds_the_supplied_environment_without_changing_wire(self):
         item = candidate('formal work', formal=True)
         original = deepcopy(item)

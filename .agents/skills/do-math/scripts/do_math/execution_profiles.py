@@ -17,9 +17,13 @@ from .provider_wait import provider_for
 # Only work roles reserve a model slot; operational AI roles run on their pinned
 # model without a reservation, and machine roles use host limits alone.
 WORK_ROLES = {"research_work", "supplemental_research", "task_contract_review", "identity_review", "goal_audit"}
+# Roles whose action works on its target task: the task's end makes the action obsolete.
+TASK_TARGET_ROLES = frozenset({"research_work", "supplemental_research", "task_contract_review"})
 # Roles whose output is task research, and the roles that prepare and plan tasks.
 RESEARCH_PRODUCER_ROLES = frozenset({"research_work", "supplemental_research"})
 PLANNING_ROLES = frozenset({"research_preparation", "research_plan"})
+# Roles that run while an instance initializes: an initial grant authorizes no other role.
+INITIAL_ROLES = frozenset({"intent_interpretation", "maintenance"})
 MACHINE_ROLES = {"formal_check", "trust_check", "trust_activate", "external_action"}
 # Machine roles that run a Lean command in a native Job.
 LEAN_ROLES = {"formal_check", "trust_check"}
@@ -330,7 +334,7 @@ def _lean_contract(config: dict) -> dict:
 
 
 def machine_invocation(profile: dict, *, trust_environment: dict, on_started=None) -> dict:
-    """Use the frozen command/deadline with the separately approved trust edition."""
+    """Use the frozen command with the separately approved trust edition; a Lean check has no deadline."""
     machine = profile.get("machine", {})
     command = machine.get("lean_command")
     if profile["actor_kind"] != "machine" or not command:

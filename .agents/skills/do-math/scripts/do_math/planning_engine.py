@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, task_research
-from .model_policy import assessment_basis, validate_assessments, preparation_only
+from .model_policy import assessment_basis, edition_current, validate_assessments, preparation_only
 from .planning import revision_requested
 from .session_slots import live_action_ids
 from .task_contracts import TERMINAL_TASK_STATUSES
@@ -15,12 +15,11 @@ class PlanningEngineMixin:
             if extensions.get("model_assessments"):
                 raise ValueError("only preparation and planning author model assessments")
             return
-        identified = validate_assessments(action, output, extensions)
+        identified = validate_assessments(action, output, extensions, self.runtime["tasks"])
         if preparation_only(action):
             for field in ('assessment_targets', 'observation_rule_targets'):
                 for tid, basis in action.get(field, {}).items():
-                    task = self.runtime['tasks'].get(tid)
-                    if not task or task.get('status') in TERMINAL_TASK_STATUSES or assessment_basis(task) != basis:
+                    if not edition_current(self.runtime['tasks'].get(tid), basis):
                         raise ValueError(field + ' task edition changed: ' + tid)
                     if any(e.get('status') != 'ended' and e.get('action', {}).get('target') == tid
                            for e in self.runtime['executions'].values()):

@@ -607,14 +607,13 @@ def start_query_repository(test):
 
     Sets ``root``, ``git`` (the repository), ``workspace``, ``repository``,
     ``initial_head``, ``kids`` (definition "One", theorem "Two"), ``relation_id``
-    (One supports Two, through an activated kind definition), ``old_head`` (that
+    (One supports Two, through the installed kind definition), ``old_head`` (that
     state) and ``file_head`` (two more query-fixture artifacts).
     """
     import tempfile
     from do_math.engine import initialize
-    from do_math.knowledge_io import (import_candidate, import_relation, register_kind_definition,
-        check_kind_definition, activate_kind_definition, relation_templates)
-    from do_math.repository import ResearchRepository, canonical_json
+    from do_math.knowledge_io import import_candidate, import_relation
+    from do_math.repository import ResearchRepository
     from research_fixtures import git_init
     test.root = Path(test.enterContext(tempfile.TemporaryDirectory()))
     test.git = git_init(test.root / "git")
@@ -633,21 +632,10 @@ def start_query_repository(test):
              "explanation": "Explicit query fixture: " + summary, "lean_code": "",
              "declaration_names": [], "dependencies": []}, source_ref=QUERY_INSTANCE_ID, actor_ref=QUERY_INSTANCE_ID)
         test.kids.append(kid)
-    definition = next(row for row in relation_templates() if row['token'] == 'supports')
-    instance, _ = register_kind_definition(instance, definition, source_ref=QUERY_INSTANCE_ID, actor_ref=QUERY_INSTANCE_ID)
-    check_ref = 'runtime/artifacts/query-kind/check.json'
-    approval_ref = 'runtime/artifacts/query-kind/approval.json'
-    instance = check_kind_definition(instance, 'relation', 'supports', check_ref=check_ref, actor_ref=QUERY_INSTANCE_ID)
-    instance = activate_kind_definition(instance, 'relation', 'supports', approval_ref=approval_ref, actor_ref=QUERY_INSTANCE_ID)
     instance, test.relation_id = import_relation(instance,
         {"kind": "supports", "source": test.kids[0], "target": test.kids[1], "evidence": "alpha"},
         source_ref=QUERY_INSTANCE_ID, actor_ref=QUERY_INSTANCE_ID)
-    test.old_head = test.repository.save_with_state(test.initial_head, instance, runtime, artifacts={
-        check_ref: canonical_json({'definition': definition, 'verdict': 'checked',
-            'scope': 'Explicit CORE_TESTS kind-check fixture'}),
-        approval_ref: canonical_json({'definition': definition, 'decision': 'activate',
-            'scope': 'Explicit CORE_TESTS fixture; not actual user approval'}),
-    })[0]
+    test.old_head = test.repository.save_with_state(test.initial_head, instance, runtime)[0]
     test.file_head = test.repository.save_with_state(test.old_head, instance, runtime, artifacts={
         "runtime/artifacts/query-fixture/a.txt": b"needle alpha",
         "runtime/artifacts/query-fixture/b.txt": b"needle beta",

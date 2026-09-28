@@ -228,7 +228,10 @@ class AcademicEngineTests(ActivatedPurposeHarness):
         engine.process_controls()
         rejection = engine.runtime["external_rejections"][-1]
         rejection_before = deepcopy(rejection)
-        self.assertFalse(rejection["resolved"])
+        # The stored rejection never changes; the planner's input derives whether it blocks the solution.
+        before_plan = engine._context({"role": "research_plan"}, self.root / "plan-before-resolution")
+        self.assertIs(next(row for row in before_plan["external_rejections"]
+                           if row["id"] == rejection["id"])["blocks_current_solution"], True)
         self.assertEqual(engine.instance["goal_status"], "mathematically_solved")
         self.assertEqual(engine.instance["formal_results"][knowledge["formal_result_id"]], formal_before)
         self.assertNotEqual(engine.runtime["status"], "completed")
@@ -236,6 +239,9 @@ class AcademicEngineTests(ActivatedPurposeHarness):
         self.drive(engine, predicate=lambda current: current.runtime["status"] == "completed", limit=12)
         rejection = next(item for item in engine.runtime["external_rejections"] if item["id"] == rejection["id"])
         self.assertEqual(rejection, rejection_before)
+        after_plan = engine._context({"role": "research_plan"}, self.root / "plan-after-resolution")
+        self.assertIs(next(row for row in after_plan["external_rejections"]
+                           if row["id"] == rejection["id"])["blocks_current_solution"], False)
         resolution = next(row for row in engine.runtime['academic_resolution_records']
                           if row['rejection_id'] == rejection['id'])
         self.assertEqual(resolution['decision'], 'resolved')

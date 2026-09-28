@@ -121,10 +121,18 @@ class DomainGovernanceTests(unittest.TestCase):
     def test_explicit_once_grant_and_exclusions_use_existing_execution_ledger(self):
         i = {"grants": {"G": {"id": "G", "kind": "local", "status": "active",
              "roles": ["research_work"], "task_ids": [], "excluded_targets": ["B"], "reuse": "once",
-             "source_ref": "S", "subjects": ["research_work"], "resource_limits": {}}}}
+             "source_ref": "S", "subjects": ["research_work"]}}}
         rt = {"executions": {"E": {"id": "E", "grant_id": "G", "action": {"id": "A1"}}}}
         self.assertFalse(gov.authorize(i, {"id": "A2", "role": "research_work", "target": "A"}, runtime=rt)["allowed"])
         self.assertFalse(gov.authorize(i, {"id": "A1", "role": "research_work", "target": "B"}, runtime={})["allowed"])
+
+    def test_grant_decision_shape_names_no_resource_limit(self):
+        # No reservation owner enforces a limit written on a grant, and the stored grant has no such field.
+        from do_math.control_contracts import validate_decision_shape
+        spec = {"id": "G", "kind": "local", "roles": ["research_work"], "reuse": "reusable"}
+        for limits in ({}, {"jobs": 1}):
+            with self.subTest(limits=limits), self.assertRaisesRegex(ValueError, "change/grant: invalid additionalProperties"):
+                validate_decision_shape({"kind": "grant", "grant": {**spec, "resource_limits": limits}})
 
     def test_initialization_cannot_rebind_another_immutable_original(self):
         source = gov.preserve_source("S", "P", origin="user")
@@ -165,7 +173,7 @@ class DomainGovernanceTests(unittest.TestCase):
         self.assertEqual(verdict["decision"],"satisfied")
         self.assertEqual(i["goal_status"],"unsolved")
 
-    def test_grant_replacement_is_atomic_and_expiry_disposes_current_consumers(self):
+    def test_grant_replacement_revokes_the_replaced_grant_and_stops_its_consumers(self):
         i=domain_governance();rt={"tasks":{},"executions":{},"queue":[]}
         spec={"id":"G","kind":"local","roles":["research_work"],"reuse":"reusable","expires_at":"2099-01-01T00:00:00Z"}
         i,rt,_=gov.apply_decision(i,rt,{"kind":"grant","grant":spec},source_ref="S")
@@ -175,9 +183,6 @@ class DomainGovernanceTests(unittest.TestCase):
         self.assertEqual(i["grants"]["G"]["status"],"revoked")
         self.assertEqual(i["grants"]["G"]["revoked_by"],event["id"])
         self.assertEqual(rt["executions"]["E"]["stop_requested"],"grant_revoked")
-        i,rt,events=gov.expire_grants(i,rt,at="2099-01-03T00:00:00Z")
-        self.assertEqual(i["grants"]["G2"]["status"],"expired")
-        self.assertEqual(events[0]["grant_id"],"G2")
 
     def test_local_execution_kind_is_not_ignored(self):
         i={"grants":{"G":{"id":"G","kind":"local","status":"active","roles":["research_work"],
@@ -258,11 +263,6 @@ class DomainGovernanceTests(unittest.TestCase):
         self.assertIn("import_units", schema["properties"])
         unit = schema["properties"]["import_units"]["items"]["required"]
         self.assertEqual(unit, ["unit_id", "source_range", "interpretation", "owner_kind", "owner_ref", "payload", "decision_refs", "question_refs"])
-
-    def test_interpretation_has_no_flag_derived_from_its_question_records(self):
-        schema = interpretation_schema("interpret")
-        self.assertIn("question_details", schema["properties"])
-        self.assertNotIn("needs_clarification", schema["properties"])
 
     def test_once_http_operation_and_its_execution_share_logical_case(self):
         grant = {'id': 'G', 'status': 'active', 'reuse': 'once'}

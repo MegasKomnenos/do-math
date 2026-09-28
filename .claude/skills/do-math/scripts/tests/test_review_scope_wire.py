@@ -77,15 +77,21 @@ class ScopeWireTests(unittest.TestCase):
             self.assertEqual(submission._payload_issues(response, wire, context, {}, Path(directory)), [])
             other_policy = deepcopy(response)
             other_policy['scope_assessment']['policy_id'] = 'RP-other'
-            incomplete = {**deepcopy(response), 'scope_complete': False}
-            open_question = {**deepcopy(response), 'questions': ['Which domain is intended?']}
-            for label, changed in (('policy', other_policy), ('scope_complete', incomplete), ('questions', open_question)):
-                with self.subTest(changed=label):
-                    issues = submission._payload_issues(changed, wire, context, {}, Path(directory))
-                    self.assertEqual([row['path'] for row in issues], ['output'], issues)
-                    with self.assertRaises(ValueError):
-                        review_cycle.accept_result(cycle, action, {key: value for key, value in changed.items()
-                                                                   if key != 'integration_bundles'}, 'EX-scope-result')
+            issues = submission._payload_issues(other_policy, wire, context, {}, Path(directory))
+            self.assertEqual([row['path'] for row in issues], ['output'], issues)
+            with self.assertRaises(ValueError):
+                review_cycle.accept_result(cycle, action, {key: value for key, value in other_policy.items()
+                                                           if key != 'integration_bundles'}, 'EX-scope-result')
+            # An honest partial reading and an open question are reported, not refused:
+            # the sealed scope result carries both to every initial seat.
+            reported = {**deepcopy(response), 'scope_complete': False, 'questions': ['Which domain is intended?']}
+            self.assertEqual(submission._payload_issues(reported, wire, context, {}, Path(directory)), [])
+            scoped = review_cycle.accept_result(cycle, action, {key: value for key, value in reported.items()
+                                                                if key != 'integration_bundles'}, 'EX-scope-result')
+            initial = review_cycle.next_actions(scoped)[0]
+            sealed = review_cycle.context_for(scoped, initial)['completed_results']['scope:1:scope']
+            self.assertEqual(sealed['output']['questions'], ['Which domain is intended?'])
+            self.assertIs(sealed['output']['scope_complete'], False)
 
     def test_wire_rejects_missing_proposal_binding_and_invalid_scope_details(self):
         for missing in ("proposal_digest", "scope_complete"):

@@ -22,7 +22,6 @@ from .execution_profiles import OBSERVATION_MODES
 from .file_io import read_bytes_shared, write_bytes_atomic, file_fingerprint, fingerprint_settled
 
 CHECKPOINT_MAX_BYTES = 4 * 1024 * 1024
-RULES_MAX_BYTES = 65536
 # The one operator table: each operator's subject kind, unit, and the one
 # source that actually produces its value during an execution.
 OPERATORS = {
@@ -35,8 +34,10 @@ OPERATORS = {
 }
 _ONE_TIME_OPERATORS = frozenset({"tool_call_completed", "safe_boundary_recorded"})
 _RULE_FIELDS = {"id", "operator", "subject", "basis", "threshold", "repeat_interval", "required_evidence"}
-# Fields a worker may read from its feedback file. Every producer builds its
-# feedback through ``worker_feedback`` so that a stray field fails before ENGINE saves.
+# Fields a worker may read in a feedback record ENGINE derives from state.
+# ``worker_feedback`` rejects any other field, and ``publish_worker_feedback`` applies
+# it to every such delivery. The fixed executor checkpoint reminder
+# (``write_checkpoint_reminder``, ``decision=checkpoint``) is a separate notice outside this set.
 WORKER_FEEDBACK_FIELDS = frozenset({
     "kind", "reason", "errors", "obligation_id", "execution_id", "rule_revision", "due",
     "deadline_offset_ms", "active_revision", "active_rules_sha256",
@@ -154,12 +155,9 @@ def validate_rule_preparation(action, extensions, tasks):
     targets = action.get('observation_rule_targets', {})
     if 'observation_rule_targets' not in action:
         return {}
-    from .model_policy import assessment_basis
-    from .task_contracts import TERMINAL_TASK_STATUSES
+    from .model_policy import edition_current
     for tid, basis in targets.items():
-        task = tasks.get(tid)
-        if (not task or task.get('status') in TERMINAL_TASK_STATUSES
-                or assessment_basis(task) != basis):
+        if not edition_current(tasks.get(tid), basis):
             raise ValueError('observation rule target contract edition changed: ' + tid)
     prepared = {}
     for row in extensions.get('task_conditions', []):
@@ -414,9 +412,7 @@ def read_checkpoint(workspace: Path) -> dict:
     if not path.exists():
         return {"status": "missing"}
     try:
-        resolved = path.resolve(strict=True)
-        if not resolved.is_relative_to(workspace.resolve()) or path.is_symlink():
-            raise ValueError("checkpoint must stay within the execution workspace")
+        safe_path(workspace, "checkpoint.json")
         before = file_fingerprint(path)
         if before[0] > CHECKPOINT_MAX_BYTES:
             raise ValueError("checkpoint exceeds the 4 MiB record limit")
@@ -481,8 +477,7 @@ class ObservationTracker:
             if _execution_bound_subject(rule) and rule["subject"]["id"] != execution_id:
                 raise ValueError("rule subject belongs to a different execution")
         self.rules_digest = hashlib.sha256(_raw_json(self.rules).encode()).hexdigest()
-        self.rule_proposal_digest = None
-        self.rule_file_mark = self.checkpoint_mark = None
+        self.checkpoint_mark = None
         self.consumed_rules: dict[str, int] = {}
         self.obligations: dict[str, dict] = {}
         self.response_count = 0
@@ -819,34 +814,6 @@ class ObservationTracker:
                                 and fingerprint_settled(mark) else None)
         return checkpoint
 
-    def _rule_file_events(self) -> list[dict]:
-        path = self.workspace / "observation-rules.json"
-        if not path.exists(): return []
-        try:
-            if path.is_symlink() or not path.resolve().is_relative_to(self.workspace.resolve()):
-                raise ValueError("observation rules must stay in workspace")
-            # A settled, unchanged fingerprint names the bytes this tracker already judged.
-            mark = file_fingerprint(path)
-            if mark == self.rule_file_mark: return []
-            raw = read_bytes_shared(path)
-            digest = hashlib.sha256(raw).hexdigest()
-            self.rule_file_mark = mark if fingerprint_settled(mark) and file_fingerprint(path) == mark else None
-            if digest == self.rule_proposal_digest: return []
-            self.rule_proposal_digest = digest
-            if len(raw) > RULES_MAX_BYTES: raise ValueError("observation rules exceed 64 KiB")
-            proposal = strict_json_loads(raw.decode("utf-8-sig"))
-            validate_rule_proposal(proposal, current_revision=self.rule_revision)
-            raise ValueError("rule replacement requires rule_proposal in a valid self-check response")
-        except (ValueError, TypeError, OSError, UnicodeError, json.JSONDecodeError) as error:
-            reason = f"{type(error).__name__}: {error}"
-            return [{"kind": "observation_rules_rejected", "execution_id": self.execution_id,
-                     "proposal_sha256": self.rule_proposal_digest, "active_revision": self.rule_revision,
-                     "active_rules_sha256": self.rules_digest, "reason": reason,
-                     "worker_feedback": worker_feedback({"kind": "observation_rules_rejected", "reason": reason,
-                         "active_revision": self.rule_revision, "active_rules_sha256": self.rules_digest,
-                         "previous_rules_preserved": True, "next_owner": "worker"}),
-                     "next_owner": "worker", "observed_at": now()}]
-
     def _replace_rules(self, proposal: dict) -> dict:
         before = self.rules_digest
         try:
@@ -988,10 +955,13 @@ class ObservationTracker:
         self.live_observation = live and self.execution_status == 'running'
         try: self._ingest_event(event, when)
         except ValueError as error:
-            emitted.append({"kind": "observation_input_rejected", "execution_id": self.execution_id,
-                            "reason": str(error), "next_owner": "adapter", "observed_at": now(),
-                            "followup": {"kind": "operational_review_due", "trigger": "observation_error", "next_owner": "operational_review"}
-                            if self.mode != "deadline_only" else None})
+            rejected = {"kind": "observation_input_rejected", "execution_id": self.execution_id,
+                        "reason": str(error), "next_owner": "adapter", "observed_at": now()}
+            # deadline_only opens no recursive review, so its rejection names no followup.
+            if self.mode != "deadline_only":
+                rejected["followup"] = {"kind": "operational_review_due", "trigger": "observation_error",
+                                        "next_owner": "operational_review"}
+            emitted.append(rejected)
         self._hold_deadlines(when)
         if event.get("type") != "tick": emitted.append(self.fact("observation_fact", event, when))
         if not evaluate or not self.live_observation:
@@ -1001,7 +971,6 @@ class ObservationTracker:
             emitted.extend(self.pending_records)
             self.pending_records.clear()
             return emitted
-        emitted.extend(self._rule_file_events())
         checkpoint = self._changed_checkpoint()
         if checkpoint["status"] == "valid" and checkpoint["sha256"] not in self.seen_checkpoints:
             self.seen_checkpoints.add(checkpoint["sha256"])

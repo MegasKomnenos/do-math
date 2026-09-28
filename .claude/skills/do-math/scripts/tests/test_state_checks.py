@@ -297,6 +297,8 @@ class BatchedInspectionTests(unittest.TestCase):
         batch = Mock(side_effect=lambda paths: {path: files[path] for path in paths})
         self.assertEqual(self.inspect(refs, single, batch), expected)
         self.assertEqual(expected['status'], 'blocked')
+        # The area names each invariant once, however many references it checked.
+        self.assertEqual(expected['areas'][0]['checked_invariants'].count('artifact bytes'), 1)
         batch.assert_called_once_with(list(files))
         single.assert_not_called()
 

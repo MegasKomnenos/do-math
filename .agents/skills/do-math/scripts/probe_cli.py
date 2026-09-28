@@ -130,7 +130,7 @@ def main(argv=None):
     root = Path(__file__).parent
     report = {"at": now(), "provider": args.provider, "model": args.model,
               "passed": all(row["passed"] for row in results), "cases": results,
-              "sources": {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in (root / "do_math").glob("*.py")},
+              "sources": {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in (root / "do_math").rglob("*.py")},
               "scope": "representative local CLI protocol, files, tool and stop boundaries; no research efficacy claim"}
     (args.output_dir / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False))

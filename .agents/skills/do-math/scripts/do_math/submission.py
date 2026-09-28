@@ -24,7 +24,7 @@ from .git_store import ARTIFACT_ROOT, ULID_PATTERN
 from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, review_research, task_research
 from .external import prepare_operation, validate_operation
 from .model_policy import ASSESSMENT_SCHEMA, assessment_key, validate_assessments, preparation_only
-from .observations import read_checkpoint, checkpoint_value, validate_rule_proposal, CHECKPOINT_MAX_BYTES, RULES_MAX_BYTES
+from .observations import read_checkpoint, checkpoint_value, CHECKPOINT_MAX_BYTES
 from .file_io import reject_constant, unique_pairs
 from .repository import canonical_json, exact_content_hash
 from .contracts import REFS, TEXT, closed_object
@@ -169,8 +169,6 @@ def extension_schema(action: dict) -> dict:
             "knowledge_revision_targets": REFS,
             "occurrence_condition": {"type": "object"}, "observation_rules": {"type": "array"}}, []),
         "contract_checks": closed_object({"task_title": TEXT,
-            "symbols": {"type": "array", "items": closed_object({"symbol": TEXT, "meaning": TEXT})},
-            "outcome_branches": {"type": "array", "minItems": 2, "items": closed_object({"outcome": TEXT, "completion": TEXT})},
             "sibling_boundaries": {"type": "array", "items": closed_object({"task_id": TEXT, "revision": {"type": "integer", "minimum": 1},
                 "boundary": TEXT, "independent_of_next_revision": {"type": "boolean"}})}}),
         "task_dispositions": closed_object({"task_id": TEXT, "disposition": {"const": "withdraw"}, "reason": TEXT}),
@@ -364,8 +362,12 @@ RECORD_ID = re.compile(r"(?<![0-9A-Za-z])(?:TK|KN)-[0-9A-Za-z]+(?:-[0-9A-Za-z]+)
 
 
 def contract_check_errors(item: dict, entry: dict, dependencies: list[str], tasks: dict, known: set, revising: set) -> list[tuple[str, str]]:
-    """The mechanically decidable part of contract review, run by the producer before submission.
+    """The part of contract review that the input state decides, run by the producer before submission.
 
+    A cited record must exist, and a cited sibling's boundary must be read at its
+    current revision and must not silently depend on a sibling under revision.
+    Symbol meanings and outcome branches stay with the author's self-review and
+    the independent contract review; no declaration of them is compared here.
     Each finding is (rule_id, message); the rule identifies the kind of defect,
     so distinct defects of one candidate remain distinct issues.
     """
@@ -376,19 +378,6 @@ def contract_check_errors(item: dict, entry: dict, dependencies: list[str], task
     cited = set(RECORD_ID.findall(text)) - {item["revises_task_id"]}
     errors += [("contract_check.cited_record", "cited record is neither in the supplied input nor in its record_index: " + ref)
                for ref in sorted(cited - known - set(tasks))]
-    symbols = [row["symbol"] for row in entry["symbols"]]
-    errors += [("contract_check.symbol_meaning", "symbol has more than one declared meaning: " + symbol)
-               for symbol in sorted({x for x in symbols if symbols.count(x) > 1})]
-    errors += [("contract_check.symbol_absent", "declared symbol is absent from the contract text: " + symbol)
-               for symbol in symbols if symbol not in text]
-    outcomes = "\n".join(row["outcome"] for row in entry["outcome_branches"])
-    if len({row["outcome"] for row in entry["outcome_branches"]}) < 2:
-        errors.append(("contract_check.outcome_branches", "outcome branches must state at least two distinct outcomes"))
-    for dependency in dependencies:
-        names = {dependency, tasks.get(dependency, {}).get("title", dependency)}
-        if not any(name in outcomes for name in names):
-            errors.append(("contract_check.dependency_outcomes",
-                           "no outcome branch names the normal outcomes of the dependency: " + dependency))
     declared = {row["task_id"]: row for row in entry["sibling_boundaries"]}
     if len(declared) != len(entry["sibling_boundaries"]):
         errors.append(("contract_check.sibling_boundary", "sibling boundaries must name distinct tasks"))
@@ -800,24 +789,8 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                 json.dumps(sorted(set(expected) - set(titles)), ensure_ascii=False)), "contract_check.coverage")
             revising = {target for row in context.get("pending_revisions", []) if row["action"].get("id") != action.get("id")
                         for target in planning.action_write_ids(row['action'])}
-            reference_tasks = dict(tasks)
-            catalog = {row["id"]: row for row in context.get("task_catalog", [])}
-            sibling_ids = {row["task_id"] for entry in entries for row in entry["sibling_boundaries"]}
-            for identifier in sorted(sibling_ids & catalog.keys()):
-                def read_sibling(identifier=identifier):
-                    row = catalog[identifier]
-                    ref = row["source_ref"]
-                    require(ref["snapshot"] == context["snapshot"],
-                            "sibling contract source belongs to another snapshot")
-                    source = read_source(workspace, ref, limit=max(1, ref["bytes"]))
-                    require(source["status"] == "ok" and not source["truncated"],
-                            "sibling contract source is missing or corrupt: " + identifier)
-                    record = load_json(source["bytes"])
-                    require(isinstance(record, dict) and record.get("id") == identifier
-                            and record.get("revision") == row["revision"],
-                            "sibling contract source differs from its catalog identity or revision")
-                    reference_tasks[identifier] = record
-                check("activity-extensions.json/contract_checks", read_sibling)
+            # The checker context holds every current task, siblings outside the comparison
+            # population included (context_store.prepare_role_input), so boundaries are read there.
             for index, entry in enumerate(entries):
                 item = next((x for x in output["candidates"] if x["title"] == entry["task_title"]), None)
                 if item is None:
@@ -827,7 +800,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                     if row.get('task_title') == item['title'] or
                        item.get('revises_task_id') and row.get('task_id') == item['revises_task_id']), {})
                 dependencies = prepared_dependencies(item, condition)
-                for rule_id, message in contract_check_errors(item, entry, dependencies, reference_tasks, known, revising):
+                for rule_id, message in contract_check_errors(item, entry, dependencies, tasks, known, revising):
                     issues.append(_issue(f"activity-extensions.json/contract_checks/{index}", message, rule_id))
     if action["role"] == "research_plan":
         check("output", lambda: planning.validate_plan_submission(output, tasks, context.get("ready_task_ids", [])))
@@ -945,7 +918,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             len({row[key] for row in rows}) == len(rows), "entries must identify distinct targets"))
     if action["role"] in PLANNING_ROLES:
         check("activity-extensions.json/model_assessments", lambda: validate_assessments(
-            action, output, extensions))
+            action, output, extensions, tasks))
     if 'observation_rule_targets' in action:
         from .observations import validate_rule_preparation
         check('activity-extensions.json/task_conditions', lambda: validate_rule_preparation(action, extensions, tasks))
@@ -1140,22 +1113,6 @@ def _workspace_checks(context, workspace, candidate=None):
                                    candidate_files=files["files"] if candidate is not None else None)
             except (ValueError, TypeError, OSError) as error:
                 issues.append(_issue("checkpoint.json/evidence_paths", str(error), "checkpoint.reference"))
-    rules = files["files"].get("observation-rules.json") if candidate is not None else None
-    rules_path = safe_path(workspace, "observation-rules.json")
-    if rules is not None or (candidate is None and rules_path.exists()):
-        try:
-            rules = rules if candidate is not None else read_stable(rules_path)
-            if len(rules) > limits.get("observation_rules_bytes", RULES_MAX_BYTES):
-                raise ValueError("observation rules exceed the supplied byte limit")
-            proposal = load_json(rules)
-            if (not isinstance(proposal, dict) or type(proposal.get("current_revision")) is not int
-                    or proposal["current_revision"] < 0):
-                raise ValueError("rule proposal requires a nonnegative current_revision")
-            # The file preserves a proposal; only a self-check response can
-            # compare the active revision and install its rules.
-            validate_rule_proposal(proposal, current_revision=proposal["current_revision"])
-        except (ValueError, TypeError, OSError) as error:
-            issues.append(_issue("observation-rules.json", str(error), "observation.rules"))
     return issues, files["manifest"]
 
 
@@ -1527,8 +1484,7 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
         "workspace": str(workspace.resolve()),
         "schema_path": "input/submission/schema.json", "context_path": "input/submission/context.json",
         "extensions_schema_path": "input/submission/extensions.schema.json",
-        "limits": {"max_artifact_bytes": max_artifact_bytes, "checkpoint_bytes": CHECKPOINT_MAX_BYTES,
-                   "observation_rules_bytes": RULES_MAX_BYTES},
+        "limits": {"max_artifact_bytes": max_artifact_bytes, "checkpoint_bytes": CHECKPOINT_MAX_BYTES},
         "scratch_directory": ".scratch", "not_checked": list(NOT_MACHINE_CHECKED)}
     context["submission_contract"] = contract
     files["submission/context.json"] = canonical_json(context)

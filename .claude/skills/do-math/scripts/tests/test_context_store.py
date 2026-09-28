@@ -131,7 +131,7 @@ class ContextStoreTests(unittest.TestCase):
  def test_read_source_range_missing_and_hash_error(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);mat=store.materialize_inputs(root,{'x.bin':b'abcdef'});ref=mat['manifest'][0]
-   part=store.read_source(root,ref,offset=2,limit=2);self.assertEqual(part['bytes'],b'cd');self.assertTrue(part['truncated']);self.assertEqual(part['range'],{'start':2,'end':4,'total':6})
+   part=store.read_source(root,ref,limit=2);self.assertEqual(part['bytes'],b'ab');self.assertTrue(part['truncated']);self.assertEqual(part['range'],{'start':0,'end':2,'total':6})
    self.assertEqual(store.read_source(root,{'path':'input/nope','sha256':'0','bytes':1})['status'],'missing')
    self.assertEqual(store.read_source(root,{**ref,'sha256':'0'*64})['status'],'error')
 

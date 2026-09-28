@@ -91,12 +91,10 @@ class ProfileTests(unittest.TestCase):
         delivered = api.prepare_prompt(role_prompt, profile)
         self.assertIn('normal JSON final', delivered)
         self.assertIn('optional early submission', delivered)
-        self.assertNotIn("Submit proposals through the execution's supplied submission tools.", delivered)
         self.assertEqual(profile, original)
         self.assertEqual(api.profile_ref(profile), api.profile_ref(original))
         for rule in original['boundary']['rules']:
-            if not rule.startswith('Submit proposals'):
-                self.assertIn(rule, delivered)
+            self.assertIn(rule, delivered)
         changed = deepcopy(profile)
         changed['boundary']['rules'][0] = 'Use unassigned inputs.'
         with self.assertRaises(ValueError): api.validate_profile(changed)
@@ -298,8 +296,7 @@ class ProfileTests(unittest.TestCase):
             root = Path(directory)
             for role, timeout in (("research_work", None), ("operational_review", 600)):
                 profile = next(p for p in profiles.values() if p["role"] == role)
-                self.assertNotIn('run_timeout_seconds', profile['window'])
-                self.assertNotIn('dispatch_reserve_seconds', profile['window'])
+                self.assertEqual(set(profile['window']), set(execution_profiles.WINDOW_KEYS))
                 adapter = Adapter({"result": "output_collected", "final": {"raw": b'{}'}, "jsonl": {}})
                 runner = runner_with(adapter)
                 runner.run(prompt=execution_profiles.prepare_prompt("test", profile), input_seal=execution_profiles.prompt_seal(execution_profiles.prepare_prompt("test", profile)), output_schema={}, workspace=root, evidence_dir=root / role,

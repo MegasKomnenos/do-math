@@ -15,11 +15,16 @@ from .record_schemas.schemas import PROFILE_REF, RECORDS
 
 # A caller-chosen control request ID; the CLI request schema and ENGINE share it.
 REQUEST_ID_PATTERN = '^[A-Za-z0-9_-]{1,128}$'
+# The roles a public ``request --role`` queues; the CLI choices and ENGINE admission share it.
+REQUESTABLE_ROLES = ("research_preparation", "research_plan", "supplemental_research", "operational_review", "maintenance")
 SOURCE_FIELDS = frozenset({'name', 'body_base64', 'sha256', 'bytes'})
 # Resource capacity and model allocation settings. Only a user decision changes
 # them: public configure admission and inbox application both refuse the operator.
 USER_DECISION_SETTINGS = ('session_limits', 'tier_models', 'role_tiers', 'claude_only_assigned_model',
                           'host_resources')
+# The control actions an operator-origin request may use. Public control admission refuses
+# the others, and the CLI offers the operator origin only on the commands of these actions.
+OPERATOR_ACTIONS = frozenset({'pause', 'resume', 'request', 'configure', 'source', 'quiesce', 'release_quiesce'})
 
 
 def user_decision_changed(current: dict, candidate: dict) -> bool:
@@ -96,10 +101,11 @@ def fields(*, text='', lists='', objects=''):
 GOVERNANCE_RECORD = obj({**fields(text='id kind', lists='supersedes'), 'revision': INTEGER,
     'content': RECORDS['governance']['properties']['content'],
     'document': obj(fields(text='ref sha256'))})
-GRANT = obj({**fields(text='id kind reuse', lists='roles task_ids included_targets excluded_targets subjects execution_kinds purposes allowed_origins excluded_origins allowed_methods allowed_path_prefixes excluded_path_prefixes'),
-    'expires_at': TIME, 'valid_from': TIME, 'resource_limits': OBJECT,
+# Closed like the stored grant, so a field the grant cannot store is refused at admission.
+GRANT = {**obj({**fields(text='id kind reuse', lists='roles task_ids included_targets excluded_targets subjects execution_kinds purposes allowed_origins excluded_origins allowed_methods allowed_path_prefixes excluded_path_prefixes'),
+    'expires_at': TIME, 'valid_from': TIME,
     'credential_env': {'type': 'object', 'additionalProperties': TEXT},
-    **{key: BOOL for key in ('initialization_only', 'academic_only', 'requires_academic')}})
+    **{key: BOOL for key in ('initialization_only', 'academic_only', 'requires_academic')}}), 'additionalProperties': False}
 DELEGATION = obj({**fields(text='id status decision_kind original_decision_id',
     lists='included_targets excluded_targets external_effects', objects='resource_limits'),
     'expires_at': TIME})

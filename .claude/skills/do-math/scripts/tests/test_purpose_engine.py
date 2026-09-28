@@ -89,7 +89,8 @@ class PurposeFixtureContractTests(unittest.TestCase):
             {'id': 'TK-deferred', 'model_assessment': {'difficulty': 'low', 'importance': 'low'}}]}
         extensions = {'model_assessments': planning_model_assessments(output, context)}
         jsonschema.validate(extensions, submission.extension_schema(action))
-        identified = model_policy.validate_assessments(action, output, extensions)
+        identified = model_policy.validate_assessments(action, output, extensions,
+            {task['id']: task for task in context['tasks']})
         self.assertEqual(set(identified), {'TK-selected'})
         self.assertEqual(identified['TK-selected']['difficulty'], 'high')
         self.assertEqual(identified['TK-selected']['importance'], 'medium')

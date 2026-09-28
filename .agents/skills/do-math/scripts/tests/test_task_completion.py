@@ -139,16 +139,16 @@ class CompletionBasisTests(unittest.TestCase):
 
 
 class TransferReferenceTests(unittest.TestCase):
-    def test_nonready_recipient_uses_separate_fixed_reference_population(self):
-        from record_fixtures import transfer_assessment, apply_assessment
+    def test_transfer_recipient_is_bound_to_the_fixed_input_population(self):
+        # A plan's fixed input holds every current task (context_store.prepare_role_input), a
+        # recipient outside its ready population included; the recipient is bound to that input.
+        from record_fixtures import transfer_assessment
         from do_math.task_scope import apply_task_assessments
         instance, runtime, assessment = transfer_assessment()
-        selected_population = {'TK-1': deepcopy(runtime['tasks']['TK-1'])}
         original = deepcopy(runtime['tasks'])
         _, changed = apply_task_assessments(instance, runtime, [assessment], execution_id='EX-plan',
-            input_tasks=selected_population, reference_tasks=original)
+            input_tasks=original)
         self.assertEqual(changed['tasks']['TK-2']['completion_obligations'][-1]['id'], 'OB-inherited')
-        self.assertEqual(set(selected_population), {'TK-1'})
         for mutate in (lambda r: r['tasks']['TK-2'].update(revision=2),
                        lambda r: r['tasks']['TK-2'].update(status='closed'),
                        lambda r: r['executions'].update({'EX-peer': {'status': 'running', 'action': {'target': 'TK-2'}}})):
@@ -156,10 +156,10 @@ class TransferReferenceTests(unittest.TestCase):
             mutate(candidate)
             with self.assertRaises(ValueError):
                 apply_task_assessments(instance, candidate, [assessment], execution_id='EX-plan',
-                    input_tasks=selected_population, reference_tasks=original)
+                    input_tasks=original)
         with self.assertRaisesRegex(ValueError, 'recipient'):
             apply_task_assessments(instance, runtime, [assessment], execution_id='EX-plan',
-                input_tasks=selected_population, reference_tasks=selected_population)
+                input_tasks={'TK-1': original['TK-1']})
 
 
 if __name__ == "__main__":

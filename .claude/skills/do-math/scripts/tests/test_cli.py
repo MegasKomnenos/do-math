@@ -460,6 +460,21 @@ class CliBoundaryTests(unittest.TestCase):
                     self.assertEqual(envelope['result']['effect'],effect)
                     self.assertEqual(envelope['result']['operator_schedule']['status'],expected)
 
+    def test_operator_effort_alone_leaves_the_schedule_untouched(self):
+        # The recovery AI reads operator_effort from the recovery profile that configure rebuilds.
+        from do_math import cli
+        with tempfile.TemporaryDirectory() as directory:
+            configuration=Path(directory)/'configuration.json'
+            configuration.write_text(json.dumps({'operator_effort':'max'}),encoding='utf-8')
+            receipt={'accepted':True,'request_id':'UC-test','effect':'applied','snapshot':'a'*40,
+                     'config':{'operator_enabled':True,'operator_interval_seconds':7200,'operator_timeout_seconds':5400}}
+            output=io.StringIO()
+            with patch.object(cli,'_control',return_value=receipt),patch.object(cli,'_reconcile_operator',return_value={'status':'installed'}) as schedule,redirect_stdout(output):
+                code=cli.main(['configure','--repository','.','--instance','RI-test','--config-file',str(configuration)])
+            self.assertEqual(code,0,output.getvalue())
+            schedule.assert_not_called()
+            self.assertNotIn('operator_schedule',json.loads(output.getvalue())['result'])
+
     def test_common_request_rejects_malformed_identity_before_dispatch(self):
         from do_math import cli
         with tempfile.TemporaryDirectory() as directory:
@@ -473,6 +488,21 @@ class CliBoundaryTests(unittest.TestCase):
                 self.assertEqual(code,2,output.getvalue())
                 dispatch.assert_not_called()
                 self.assertEqual(json.loads(output.getvalue())['error']['kind'],'input_error')
+
+    def test_operator_origin_is_offered_only_where_control_admission_accepts_it(self):
+        from do_math import cli
+        from do_math.control_contracts import OPERATOR_ACTIONS
+        parser = cli.build_parser()
+        offered = {}
+        for name, command in cli._command_parsers(parser).items():
+            origin = next((action for action in command._actions if action.dest == 'origin'), None)
+            if origin is not None:
+                offered[name.replace('-', '_')] = 'operator' in origin.choices
+        self.assertIn('decision', offered)
+        self.assertEqual({name for name, operator in offered.items() if operator}, set(OPERATOR_ACTIONS))
+        with self.assertRaises(cli.CliInputError):
+            parser.parse_args(['decision', '--repository', '.', '--instance', 'RI-test',
+                               '--file', 'unused.json', '--origin', 'operator'])
 
     def test_json_request_validates_types_and_preserves_common_error(self):
         from do_math import cli

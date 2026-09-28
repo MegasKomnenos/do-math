@@ -2,9 +2,8 @@
 
 ``SHARDS`` is the one list of which test module runs in which shard;
 ``run_tests.py`` refuses to run while a ``tests/test_*.py`` module is missing
-from it or it names a module that does not exist. The time targets (each shard
-alone within 120 s, all shards in sequence within 300 s) and when to run what
-are in ``tests/시험-지침.md``.
+from it or it names a module that does not exist. The shard time targets and
+when to run what are in ``tests/시험-지침.md``.
 
 ``test_group('lean')`` and ``test_group('resource')`` mark tests that call the
 real Lean toolchain or manage real process lifetimes and resources; the runner

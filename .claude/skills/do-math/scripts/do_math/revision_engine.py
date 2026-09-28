@@ -2,7 +2,7 @@
 from copy import deepcopy
 
 from . import planning, revisions
-from .execution_profiles import RESEARCH_PRODUCER_ROLES, task_research
+from .execution_profiles import RESEARCH_PRODUCER_ROLES, TASK_TARGET_ROLES, task_research
 from .session_slots import live_action_ids
 from .task_contracts import TERMINAL_TASK_STATUSES
 
@@ -33,7 +33,7 @@ class RevisionEngineMixin:
                     else:
                         self._remove_action(action)
                     continue
-            if (action.get('target') in closed and action.get('role') in {'research_work', 'supplemental_research', 'task_contract_review'}
+            if (action.get('target') in closed and action.get('role') in TASK_TARGET_ROLES
                     and (not entry or entry.get('kind') != 'revision_dependency')):
                 self.runtime['history'].append({'kind': 'action_retired_after_target_disposition', 'action': deepcopy(action),
                                                 'previous': deepcopy(entry)})

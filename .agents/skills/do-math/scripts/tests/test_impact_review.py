@@ -194,6 +194,26 @@ class ImpactBundleTests(ImpactReviewHarness):
         self.assertIn("EX-consumer", plan["computed_impact"])
         self.assertIn("EX-other-review", plan["computed_impact"])
 
+    def test_only_an_impact_beyond_the_computed_closure_needs_independent_review(self):
+        root, unrelated = self.ids[0], self.ids[1]
+        self.runtime["executions"]["EX-consumer"] = {
+            "id": "EX-consumer",
+            "role": "research_work",
+            "status": "ended",
+            "output": {"used_sources": [root], "report": "Consumed the premise."},
+        }
+        from do_math import knowledge
+
+        # The machine applies its computed closure, and an approval must cover it,
+        # so a declaration that misses part of it changes nothing.
+        undeclared = knowledge.plan_impact(self.instance, self.runtime, [root], [])
+        self.assertIn("EX-consumer", undeclared["missing_declarations"])
+        self.assertFalse(undeclared["requires_independent_review"])
+        # Suspending a record the closure does not reach is the producer's own judgment.
+        extra = knowledge.plan_impact(self.instance, self.runtime, [root], [unrelated])
+        self.assertIn(unrelated, extra["extra_declarations"])
+        self.assertTrue(extra["requires_independent_review"])
+
     def test_explicit_replacement_ids_support_forward_sibling_dependencies(self):
         first, dependent = self.ids[:2]
         new_first = "KN-01ARZ3NDEKTSV4RRFFQ69G5FAA"

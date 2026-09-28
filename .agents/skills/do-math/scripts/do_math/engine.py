@@ -61,8 +61,9 @@ from . import task_contracts, operational_dispositions, retention, repair_execut
 from .control_transport import ControlTransport, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, SUBMIT_INTENT, self_check_response_errors
 from .file_io import cached_sha256, fingerprint_settled, now, os_lock, stat_fingerprint, write_bytes_atomic
 from .configuration import DEFAULT_CONFIG, validate_config
-from .control_contracts import (user_decision_changed, control_request_id, normalized_source,
-                                normalized_source_bytes, validate_control_payload, validate_request_id)
+from .control_contracts import (OPERATOR_ACTIONS, REQUESTABLE_ROLES, user_decision_changed, control_request_id,
+                                normalized_source, normalized_source_bytes, validate_control_payload,
+                                validate_request_id)
 from .input_recovery import overflow_requests, validate_resolutions
 from .maintenance_gate import apply_control, settle
 from .review_cycle import resource_disposition
@@ -255,8 +256,8 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
     validate_control_payload(action, text, config)
     if not isinstance(origin, str) or origin not in {"user", "operator"}:
         raise ValueError("control origin must be user or operator")
-    if origin == "operator" and action not in {"pause", "resume", "request", "configure", "source", "quiesce", "release_quiesce"}:
-        raise ValueError("operator controls are limited to pause, resume, request, configure, source, quiesce, and release_quiesce")
+    if origin == "operator" and action not in OPERATOR_ACTIONS:
+        raise ValueError("operator controls are limited to " + ", ".join(sorted(OPERATOR_ACTIONS)))
     if request_id is not None:
         validate_request_id(request_id)
     store = ResearchRepository(repository, instance_id)
@@ -321,7 +322,7 @@ def control(repository: Path, instance_id: str, action: str, *, text: str = "", 
             original = runtime.get("review_cycles", {}).get(assessment["review_cycle_id"], {})
             if config.get("target") not in {None, original.get("knowledge_id")}:
                 raise ValueError("assessment reassessment target differs from the original judgment")
-        elif role not in {"research_preparation", "research_plan", "supplemental_research", "operational_review", "maintenance"}:
+        elif role not in REQUESTABLE_ROLES:
             raise ValueError("unsupported requested role")
         if "cleanup_execution_ids" in (config or {}):
             ids = config["cleanup_execution_ids"]
@@ -907,7 +908,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     self._reject_control(request, "new research input requires an unfinished instance")
                     continue
                 self.runtime["inputs"].append(request)
-                if self.runtime["status"] != "paused" and not self._instance_closed():
+                if self.runtime["status"] != "paused":
                     self.runtime["status"] = "ready"
                 self._enqueue("intent_interpretation", request["id"], reason="new user input")
             elif action == "request":
@@ -1247,7 +1248,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 self.runtime.setdefault("self_check_responses", {})[record["id"]] = record
                 self.runtime.setdefault("self_check_obligations", {}).update(tracker.stored_obligations())
                 if record["kind"] == "self_check_rejected":
-                    receipt["state"] = "rejected"
+                    # The worker reads this receipt; name the actual errors, not only the rejection.
+                    receipt.update(state="rejected",
+                                   reason="self-check response rejected: " + ", ".join(record["errors"]))
                 for item in (record, record.get("rule_update", {})):
                     if item.get("worker_feedback"):
                         feedback.append(item["worker_feedback"])
@@ -1730,9 +1733,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                                              else academic.current_requirements(self.instance))
         context["academic_phase"] = "postsolution" if self.instance["goal_status"] == "mathematically_solved" else "deferred_until_goal_solved"
         context["kind_definitions"] = knowledge_io.catalog_definitions(self.instance)
-        if action["role"] in submission.EXTENSION_ROLES["kind_definitions"] and not action.get("review_cycle_id"):
-            # Installed inactive frames for proposing relation kinds; never usable kinds.
-            context["relation_templates"] = knowledge_io.relation_templates()
         if action.get("kind_definition_id"):
             definition = self.instance["kind_definitions"][action["kind_definition_id"]]
             if exact_content_hash(definition) != action["kind_definition_sha256"]:
@@ -1769,7 +1769,13 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                                        configured=tools["scholarly_server"] is not None)
         context["academic_validation"] = ({"status": "initialization_incomplete"}
             if governance_input.get("status") == "unadopted_input" else self._academic_status())
-        context["external_rejections"] = self.runtime.get("external_rejections", [])
+        # A stored rejection never changes; whether it still blocks the current solution is derived here.
+        rejections = self.runtime.get("external_rejections", [])
+        solution = self._solution_basis() if rejections else None
+        blocking = ({row["id"] for row in academic.unresolved_rejections(self.instance, self.runtime, solution,
+                     resolve_evidence=self._academic_evidence)} if solution is not None else set())
+        context["external_rejections"] = [{**row, "blocks_current_solution": row["id"] in blocking}
+                                          for row in rejections]
         if action["role"] == "identity_review":
             prepared = self._prepare_review_context(action, workspace, sources=sources)
             if prepared["disposition"] != "ready":
@@ -1857,13 +1863,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
                 normal_result_ref = f"{ARTIFACT_ROOT}{bundle}/result.json"
                 checkpoint_ref = f"{ARTIFACT_ROOT}{bundle}/checkpoint-recovery.json"
-                activity_result_ref = reviewed_execution.get("result_ref")
-                if activity_result_ref:
-                    selected_result_ref = activity_result_ref
-                elif reviewed_execution.get("error") == "previous executor disappeared":
-                    selected_result_ref = checkpoint_ref
-                else:
-                    selected_result_ref = normal_result_ref
+                # Recovery (_recover_disappeared) records its preserved checkpoint as the result_ref.
+                selected_result_ref = reviewed_execution.get("result_ref") or normal_result_ref
                 result_kind = ("execution_result" if selected_result_ref == normal_result_ref else
                                "checkpoint_recovery" if selected_result_ref == checkpoint_ref else
                                "activity_result")
@@ -2908,12 +2909,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 "failed_execution_id": entry.get("execution_id"), "resolved_by": execution_id,
                 "previous": deepcopy(entry)})
             del self.runtime["waiting_actions"][aid]
-            # Keep unconsumed events available for a current action instead of
-            # leaving their ownership attached to the retired failed action.
-            for event in self.runtime.get("events", []):
-                if event.get("assigned_to") == aid and not event.get("consumed_at"):
-                    event.pop("assigned_to", None)
-                    event.pop("assigned_at", None)
 
     def _obsolete_action_reason(self, action: dict, *, execution_id=None) -> str | None:
         judgment = self._goal_audit_seal(action)
@@ -2929,11 +2924,10 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 return 'The failed action has already been resolved; its execution remains historical evidence'
         for field in ('assessment_targets', 'observation_rule_targets'):
             for tid, basis in action.get(field, {}).items():
-                task = self.runtime["tasks"].get(tid)
-                if not task or task.get("status") in task_contracts.TERMINAL_TASK_STATUSES or model_policy.assessment_basis(task) != basis:
+                if not model_policy.edition_current(self.runtime["tasks"].get(tid), basis):
                     return field + " contract edition changed: " + tid
         task = self.runtime["tasks"].get(action.get("target"))
-        if (task and action["role"] in {"research_work", "supplemental_research", "task_contract_review"}
+        if (task and action["role"] in execution_profiles.TASK_TARGET_ROLES
                 and task.get("status") in task_contracts.TERMINAL_TASK_STATUSES):
             return "The assigned task is already completed or closed"
         return self._obsolete_review_reason(action)
@@ -3257,8 +3251,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                          else time.monotonic() + config["call_timeout_seconds"])
         def started(identity):
             current = self._session_slots().started(execution_id, identity, at=now())
-            current["execution_window"] = execution_window.publish(workspace, execution_id, call_deadline, config,
-                deadline_source="none" if call_deadline is None else "operational_call")
+            current["execution_window"] = execution_window.publish(workspace, execution_id, call_deadline, config)
             self._save()
         def should_stop():
             # Owner-thread judgment. The owner loop applies controls and conversation
@@ -3527,7 +3520,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if extension.get("observation_rules"):
             rules = task_rules_from_execution(extension["observation_rules"], execution_id)
             if action.get("target") not in self.runtime["tasks"]:
-                raise ValueError("persisted observation rules require a task target; live rules belong in observation-rules.json")
+                raise ValueError("persisted observation rules require a task target; live rules change only through a self-check rule_proposal")
             self.runtime.setdefault("task_observation_rules", {})[action["target"]] = deepcopy(rules)
         for index, request in enumerate(extension.get("external_requests", [])):
             task = self.runtime["tasks"].get(action.get("target"), {})
@@ -4118,20 +4111,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         fixed, _ = self._issued_input(execution, with_schema=False)
         if fixed.get("snapshot") != execution["input_snapshot"] or "ready_task_ids" not in fixed:
             raise ValueError("planning input is missing its fixed candidate population")
+        # The fixed input holds every current task (context_store.prepare_role_input), so assessed
+        # tasks and transfer recipients are bound to this one population.
         input_tasks = {row["id"]: input_runtime["tasks"][row["id"]] for row in fixed["tasks"]}
-        reference_tasks = dict(input_tasks)
-        for row in fixed.get('task_catalog', []):
-            source = row['source_ref']
-            if source['snapshot'] != execution['input_snapshot']:
-                raise ValueError('planning task catalog differs from its fixed source')
-            raw = self._sealed_bytes(source['artifact_ref'], source['sha256'], source.get('bytes'),
-                                     error='planning task catalog differs from its fixed source')
-            task = input_runtime['tasks'][row['id']]
-            if planning.contract_hash(submission.load_json(raw)) != planning.contract_hash(task):
-                raise ValueError('planning task catalog differs from its input snapshot')
-            reference_tasks[row['id']] = task
         self._apply_task_plan(output, execution_id, input_tasks, fixed["ready_task_ids"],
-                              reference_tasks=reference_tasks, evaluation_context=self._evaluation_context())
+                              evaluation_context=self._evaluation_context())
         self._apply_input_overflow_resolutions(execution.get('extensions', {}).get('input_overflow_resolutions', []),
                                                fixed, execution_id)
         for assessment in output["task_assessments"]:

@@ -102,7 +102,7 @@ class FormalEngineMixin:
         environment or input, resumes when an active environment admits formal
         checks and the action is authorized: the gate ``_formal_steps`` applies
         again before any compiler start. A check stopped by an explicit
-        execution stop or by an executor shutdown stays parked.
+        execution stop stays parked.
         """
         from .governance import authorize
         from .trust_validation import environment_changed
@@ -232,15 +232,10 @@ class FormalEngineMixin:
         def should_stop():
             # Owner-thread judgment of published state; the verifier reads only its flag.
             nonlocal stop_requested
-            if self._calls.stopping:
-                stop_requested = True
-                return True
             stop_requested = stop_requested or bool(
                 self._execution_stop_requested(action, self.runtime['executions'][execution_id]) or
                 self.instance['trust_environments'].get(transition['to_environment']) != environment or
                 not validate_basis([target['basis']], self.instance, self.runtime)['valid'])
-            from .governance import authorize
-            stop_requested = stop_requested or not authorize(self.instance, action, runtime=self.runtime)['allowed']
             return stop_requested
         binding = deepcopy(self.runtime.get('trust_bindings', {}).get(transition['to_environment']))
         try:
@@ -396,8 +391,6 @@ class FormalEngineMixin:
                 reasons.add('instance_ended')
             if self.runtime['status'] == 'paused' or self.runtime.get('stop_requested'):
                 reasons.add('instance_paused')
-            if self._calls is not None and self._calls.stopping:
-                reasons.add('executor_stopping')
             if self.runtime['executions'][execution_id].get('stop_requested'):
                 reasons.add('execution_stop_requested')
             if not authorize(self.instance, action, runtime=self.runtime)['allowed']:

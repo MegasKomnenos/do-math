@@ -55,14 +55,6 @@ class EngineTests(unittest.TestCase):
         self.repo = self.root / "repository"
         return ResearchEngine(self.repo, instance_id, runner=runner, formal_verifier=verifier), instance_id
 
-    def assert_persisted_state_clean(self, engine):
-        checked = engine.check()
-        self.assertEqual(checked['errors'], [], checked)
-        # Snapshot inspection deliberately leaves live trust files unexamined.
-        self.assertEqual(checked['inspection']['not_checked'], ['governance_trust'], checked)
-        self.assertEqual({(row['area'], row['status']) for row in checked['inspection']['findings']},
-                         {('governance_trust', 'incomplete')}, checked)
-
     def test_initialization_reports_missing_values_without_model_dispatch(self):
         init = initialize(self.repo, goal="Explicit initial input", workspace=self.root / "work",
                           config={"scholarly_enabled": False, "operator_enabled": False})

@@ -514,7 +514,7 @@ class ReviewEngineMixin:
         if item.get('review_cycle_id') != action['review_cycle_id']:
             raise ValueError('review action belongs to a superseded proposal revision')
         live = _proposal(self.instance, action['target'])
-        if any(live[name] != cycle['proposal'].get(name, [] if name in ('declaration_names', 'dependencies') else '') for name in PROPOSAL_FIELDS):
+        if any(live[name] != cycle['proposal'][name] for name in PROPOSAL_FIELDS):
             raise ValueError('sealed mathematical proposal changed during review')
         if cycle.get('publication_premises') != self._review_publication_premises(action['target']):
             raise ValueError('review publication premises changed: formal, exposition, trust or policy')

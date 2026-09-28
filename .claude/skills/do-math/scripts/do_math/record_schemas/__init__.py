@@ -62,7 +62,6 @@ REFERENCES = {
     "academic_resolution_records": _academic_references,
     "intent_imports": refs(("execution_id", "executions"), ("previous_id", "intent_imports"), ("superseded_by", "intent_imports"), ("input_ref", "inputs")),
     "delegation_applications": refs(("delegation_id", "delegations")),
-    "governance_events": refs(("grant_id", "grants"), lists=(("affected", None),)),
 }
 
 
@@ -114,7 +113,7 @@ def install(contract):
     research = {"knowledge", "formal_results", "expositions", "identity_assessments", "assessment_uses",
                 "relations", "sources", "kind_definitions", "grants", "decisions", "delegations",
                 "trust_environments", "execution_profiles", "capacity_constraints", "capability_evidence", "goal_judgments", "governance", "governance_sources"}
-    lists = {"relations", "sources", "question_links", "goal_judgments", "external_rejections", "academic_resolution_records", "inputs", "queue", "governance_events", "events"}
+    lists = {"relations", "sources", "question_links", "goal_judgments", "external_rejections", "academic_resolution_records", "inputs", "queue", "events"}
     metadata = {
         "research": {"id", "object_format", "title", "workspace", "created_at",
                      "goal_status", "active_trust_environment", "conversation_loss_policy", "host_capacity_ref"},

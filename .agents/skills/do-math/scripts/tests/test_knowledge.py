@@ -140,6 +140,14 @@ class KnowledgeTests(unittest.TestCase):
         self.assertTrue(k.assess_use(new['knowledge'][ids['c']], new)['valid'])
         self.assertEqual(nrun['tasks'][ids['unrelated']], run['tasks'][ids['unrelated']])
 
+    def test_withdrawn_record_retires_its_pending_checks(self):
+        ins, run, ids = knowledge_graph()
+        run['queue'] = [{'id': new_id('AC'), 'role': role, 'target': ids['a'], **extra} for role, extra in (
+            ('formal_check', {}), ('identity_review', {}),
+            ('supplemental_research', {'review_cycle_id': 'RC-review'}), ('maintenance', {}))]
+        _, changed = withdraw(ins, run, ids['a'])
+        self.assertEqual([a['role'] for a in changed['queue'] if a.get('target') == ids['a']], ['maintenance'])
+
     def test_basis_hash_covers_exact_family_record(self):
         ins, run, ids = knowledge_graph()
         xid = ins['knowledge'][ids['a']]['exposition_id']
@@ -352,9 +360,16 @@ class KnowledgeRecordTests(unittest.TestCase):
         self.assertIn(record["formal_result_id"], state["formal_results"])
         self.assertIn(record["exposition_id"], state["expositions"])
 
-    def test_relation_templates_are_not_active_instance_definitions(self):
+    def test_installed_relation_kinds_are_active_from_installation(self):
         state = knowledge_io.ensure_ontology({})
-        self.assertFalse(knowledge_io.catalog_definitions(state)["relations"])
+        installed = {row["token"] for row in knowledge_io.BUILTIN_DEFINITIONS if row["family"] == "relation"}
+        catalog = knowledge_io.catalog_definitions(state)["relations"]
+        self.assertEqual({row["token"] for row in catalog}, installed)
+        self.assertTrue(all(row["status"] == "active" and row["builtin"] for row in catalog))
+        supports = next(row for row in catalog if row["token"] == "supports")
+        with self.assertRaisesRegex(ValueError, "already defined"):
+            knowledge_io.register_kind_definition(state, {key: supports[key] for key in
+                ("family", "token", "meaning", "constraints")}, source_ref="source", actor_ref="producer")
 
     def test_kind_registration_requires_explicit_check_and_activation(self):
         definition = dict(family="knowledge", token="bounded_result", meaning="A bounded result", constraints={})
@@ -459,10 +474,7 @@ class KnowledgeRecordTests(unittest.TestCase):
 
     def test_mathematical_relation_consumes_separate_result_and_assessment(self):
         state, runtime, kid, aid = verified_knowledge()
-        template = next(t for t in knowledge_io.relation_templates() if t["token"] == "formally_implies")
-        state, token = knowledge_io.register_kind_definition(state, template, source_ref="template", actor_ref="author")
-        state = knowledge_io.check_kind_definition(state, "relation", token, check_ref="check", actor_ref="checker")
-        state = knowledge_io.activate_kind_definition(state, "relation", token, approval_ref="review", actor_ref="reviewer")
+        token = "formally_implies"
         fid = state["knowledge"][kid]["formal_result_id"]
         claim = {"kind": token, "source": kid, "target": kid, "confirmed_scope": "reflexive implication"}
         state["formal_results"][fid]["relation_claim"] = claim
@@ -474,10 +486,7 @@ class KnowledgeRecordTests(unittest.TestCase):
 
     def test_relation_claim_is_bound_through_import_and_identity(self):
         state, runtime, kid, aid = verified_knowledge()
-        template = next(t for t in knowledge_io.relation_templates() if t["token"] == "formally_implies")
-        state, token = knowledge_io.register_kind_definition(state, template, source_ref="template", actor_ref="author")
-        state = knowledge_io.check_kind_definition(state, "relation", token, check_ref="check", actor_ref="checker")
-        state = knowledge_io.activate_kind_definition(state, "relation", token, approval_ref="review", actor_ref="reviewer")
+        token = "formally_implies"
         claim = {"kind": token, "source": kid, "target": kid, "confirmed_scope": "reflexive"}
         state, runtime, proof = knowledge_io.import_candidate(state, runtime, knowledge_candidate(relation_claim=claim), source_ref="source", actor_ref="author")
         verification = copy.deepcopy(state["formal_results"][state["knowledge"][kid]["formal_result_id"]]["verification"])
@@ -661,10 +670,12 @@ class KnowledgeRecordTests(unittest.TestCase):
             kr.record_identity_assessment(state, kid, {"decision": "match", "basis": kr.identity_basis(state, kid)}, "policy:1", runtime=runtime)
 
     def test_impact_mismatch_and_staleness_reject_without_mutation(self):
-        state = {"knowledge": {"KN-a": {"id": "KN-a", "lifecycle": "active"}},
+        state = {"knowledge": {"KN-a": {"id": "KN-a", "lifecycle": "active"},
+                               "KN-b": {"id": "KN-b", "lifecycle": "active"}},
                  "relations": [{"id": "RL-a", "source": "KN-a", "target": "KN-a", "status": "active"}]}
         before = copy.deepcopy(state)
-        mismatch = knowledge.plan_impact(state, {}, ["KN-a"], [])
+        # A declared record beyond the computed closure needs an independent confirmation.
+        mismatch = knowledge.plan_impact(state, {}, ["KN-a"], ["RL-a", "KN-b"])
         with self.assertRaises(ValueError):
             knowledge.apply_impact(state, {}, mismatch, reason="change")
         self.assertEqual(state, before)

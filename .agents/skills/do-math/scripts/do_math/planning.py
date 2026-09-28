@@ -204,7 +204,8 @@ def revision_cycles(instance: dict, runtime: dict) -> list[list[str]]:
     graph = {}
     for row in rows:
         action = row["action"]
-        if not action.get("id"):
+        # A started writer waits for nothing, so only unstarted requests can close a wait cycle.
+        if not action.get("id") or row["state"] == "running":
             continue
         graph[action["id"]] = {"dependencies": [wait["action_id"] for wait in revision_waits(action, instance, runtime, records=records) if wait.get("action_id")]}
     return dependency_cycles(graph)
@@ -609,6 +610,12 @@ def instance_ended(instance: dict, runtime: dict) -> bool:
             or bool(instance.get('lifecycle', {}).get('permanently_closed')))
 
 
+# The readiness error of a task whose current revision has no approved contract
+# review. task_ready and the readiness refresh (lifecycle_engine) state it;
+# status (reporting.task_status) reads it as a contract review wait.
+CONTRACT_REVIEW_MISSING = "current revision lacks approved contract review"
+
+
 def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_waits=True,
                action=None, evaluation_context=None, records=None) -> dict:
     """The same live predicate serves population, receipt, and pre-start checks.
@@ -642,7 +649,7 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
         approved = [r for r in approved if contract_review_current(r, task, instance, runtime, task_basis=task_basis)["valid"]]
     except (ValueError, KeyError, TypeError) as error:
         return {"state": "evaluation_error", "basis": [], "errors": [str(error)]}
-    if not approved: return {"state": "not_ready", "basis": [], "errors": ["current revision lacks approved contract review"]}
+    if not approved: return {"state": "not_ready", "basis": [], "errors": [CONTRACT_REVIEW_MISSING]}
     waits = revision_waits(action, instance, runtime, records=records)
     if waits:
         return {"state": "not_ready", "basis": [], "errors": ["required record has an unresolved revision"], "waits": waits}
@@ -765,9 +772,6 @@ def exhaustion_state(instance, runtime, *, now=None, evaluation_context=None):
     external=[t for t in unfinished if t.get('waiting',{}).get('kind') in {'external_event','user_decision','assessment_input','permission','condition'}]
     if external:
         answer.update(reasons=['external_waits'],next_owner=external[0]['waiting'].get('next_owner')); return answer
-    if any(a.get('role') in {'research_preparation','task_contract_review'} for a in runtime.get('queue',[])) or any(
-        e.get('role') in {'research_preparation','task_contract_review'} and e.get('status')!='ended' for e in runtime.get('executions',{}).values()):
-        answer.update(reasons=['preparation_or_review_in_progress']);return answer
     receipts=[r for r in runtime.get('history',[]) if r.get('kind')=='task_repetition' and r.get('lineage')=='exhaustion_empty']
     answer['exhausted']=True
     answer['basis']={'tasks':{tid:{'contract_sha256':contract_hash(t),'results_sha256':exact_content_hash(t.get('results',[])),
@@ -820,7 +824,8 @@ def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None)
             exhaustion_event={'id':new_id('EV'),'kind':'research_exhausted','observed_at':now,
                 'basis_sha256':basis_sha256,'basis':deepcopy(state['basis']),'regenerate_after':state.get('reobserve_at')}
             runtime['events'].append(exhaustion_event)
-    pending=[e for e in runtime.get('events',[]) if e['id'] in runtime.get('pending_events',[]) and not e.get('assigned_to')]
+    held=assigned_event_refs(runtime)
+    pending=[e for e in runtime.get('events',[]) if e['id'] in runtime.get('pending_events',[]) and e['id'] not in held]
     periodic=[e['id'] for e in pending if e.get('kind')=='research_reconsider_due']
     selection_events=[e['id'] for e in pending if e.get('kind') in {'task_revisit_due','task_new_input'}]
     if periodic or state['prepare']:
@@ -844,8 +849,6 @@ def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None)
         runtime['queue'].append(queued)
     assigned=periodic if role=='research_preparation' else selection_events
     queued['event_refs']=list(dict.fromkeys([*queued.get('event_refs',[]),*assigned]))
-    for event in runtime['events']:
-        if event['id'] in assigned:event.update(assigned_to=queued['id'],assigned_at=now)
     if exhaustion_event:
         queued['exhaustion_basis']=deepcopy(state)
         queued['exhaustion_event_ref']=exhaustion_event['id']
@@ -898,3 +901,15 @@ def record_due_events(instance: dict, runtime: dict, now_iso: str) -> list[dict]
     pending = runtime.setdefault("pending_events", [])
     pending.extend(event["id"] for event in events if event["id"] not in pending)
     return events
+
+
+def assigned_event_refs(runtime: dict) -> set[str]:
+    """The events that a queued, live or waiting request already names in its event_refs.
+
+    Request event_refs are the one record of assignment; event records carry no
+    assignment mark. Assignment is not consumption: the owning engine consumes
+    only the event_refs of an accepted execution's input."""
+    requests = [*runtime.get('queue', []),
+                *(e.get('action', {}) for e in runtime.get('executions', {}).values() if e.get('status') != 'ended'),
+                *(w['action'] for w in runtime.get('waiting_actions', {}).values() if 'action' in w)]
+    return {ref for action in requests for ref in action.get('event_refs', [])}

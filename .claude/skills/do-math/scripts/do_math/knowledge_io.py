@@ -84,19 +84,20 @@ def lookup_definition(instance, family, token):
 
 
 def ensure_ontology(instance: dict) -> dict:
+    """Install every builtin knowledge and relation kind as an active definition.
+
+    The installation fixes their meaning and constraints, and the storage gate
+    rejects a builtin that differs from it, so only new tokens go through the
+    proposal, independent check and activation of register_kind_definition.
+    A withdrawn builtin keeps its fixed ID and is not reinstalled.
+    """
     output = deepcopy(instance)
     registry = output.setdefault("kind_definitions", {})
     for index, definition in enumerate(BUILTIN_DEFINITIONS):
-        if definition["family"] == "knowledge":
-            value = deepcopy(definition)
-            value["id"] = "KD-" + str(index + 1).zfill(26)
-            registry.setdefault(value["id"], value)
+        value = deepcopy(definition)
+        value["id"] = "KD-" + str(index + 1).zfill(26)
+        registry.setdefault(value["id"], value)
     return output
-
-
-def relation_templates():
-    return [{key: deepcopy(value) for key, value in row.items() if key not in {"status", "builtin"}}
-            for row in BUILTIN_DEFINITIONS if row["family"] == "relation"]
 
 
 def catalog_definitions(instance: dict) -> dict:

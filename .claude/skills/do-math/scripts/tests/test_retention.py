@@ -203,6 +203,13 @@ class RetentionTests(unittest.TestCase):
             self.assertFalse(candidates[0]['eligible'])
             self.assertTrue(any('reparse' in r for r in candidates[0]['reasons']))
 
+    def test_run_path_refuses_an_execution_id_that_windows_stores_as_another_run(self):
+        # Windows drops a trailing dot, so the folder of "EX-1." would be that of "EX-1".
+        from do_math.retention import _run_path
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                _run_path(Path(d), 'EX-1.')
+
     @unittest.skipUnless(os.name == 'nt', 'Windows junction probe')
     def test_real_windows_runs_junction_is_not_a_new_trusted_root(self):
         with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as outside:

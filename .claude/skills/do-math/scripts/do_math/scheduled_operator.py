@@ -497,11 +497,20 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     ensure_ascii=False, sort_keys=True).encode('utf-8')).hexdigest()
                 if diagnosis:
                     failure_identity = failure['failure_sha256']
-                # One automatic attempt per actual failure and installation edition.
-                if any(e.get('role') == 'recovery'
-                        and e.get('input_manifest', {}).get('repair_identity') == {
-                            'failure_sha256': failure_identity, 'installation_sha256': installation_sha256}
-                        for e in runtime.get('executions', {}).values()):
+                # One automatic repair per actual failure and installation edition. A call that judged
+                # no repair does not count: the provider limit refused it, or a HOLD, pause or close
+                # held it before its repair report was received. A held call with a received report
+                # still counts. The provider gate and the supervision blocks pace a retry.
+                def attempted(execution):
+                    disposition = execution.get('result_disposition')
+                    recovery = disposition.get('recovery') if isinstance(disposition, dict) else None
+                    unjudged = (recovery == 'recovery_provider_limited'
+                                or (recovery == 'recovery_held' and not execution.get('submission_receipt')))
+                    return (execution.get('role') == 'recovery'
+                            and execution.get('input_manifest', {}).get('repair_identity') == {
+                                'failure_sha256': failure_identity, 'installation_sha256': installation_sha256}
+                            and not unjudged)
+                if any(attempted(e) for e in runtime.get('executions', {}).values()):
                     return {'outcome': 'recovery_waiting', 'reason': 'same failure and installation already attempted'}
                 # The one role selection rule; it picks the adopted recovery edition.
                 chosen = selection(config, {"role": "recovery"}, {}, {}, instance=state)
@@ -608,6 +617,8 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                         evidence = result["capability_evidence"]
                         state.setdefault("capability_evidence", {})[evidence["id"]] = evidence
                     outcome = "repaired" if result.get("status") == "completed" else "recovery_failed"
+                    if result.get("error_kind") == "provider_limit":
+                        outcome = "recovery_provider_limited"
                     if result.get("error_kind") == "model_policy":
                         record_model_policy_violation(state, runtime, eid, chosen["model"], result)
                     if outcome == 'repaired' and diagnosis:

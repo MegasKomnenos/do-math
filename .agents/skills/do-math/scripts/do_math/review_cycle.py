@@ -937,8 +937,6 @@ def _validate_content(cycle, action, output):
     if stage == "scope":
         assessment = validate_scope_assessment(output["scope_assessment"], cycle["review_policy"],
             executions_used=cycle.get('scope_executions_used', len(cycle.get('execution_accounting', {}).get('executions_used', []))))
-        if not output["scope_complete"] or output["questions"]:
-            raise ValueError("scope assessment must be complete and leave no open questions")
         if cycle.get("retained_reviewer_slots") and not set(cycle["retained_reviewer_slots"]).issubset(
                 {slot["id"] for slot in assessment["initial_slots"]}):
             raise ValueError("new scope assessment cannot remove retained logical slots")

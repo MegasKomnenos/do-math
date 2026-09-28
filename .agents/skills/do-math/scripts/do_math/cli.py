@@ -13,7 +13,7 @@ from typing import Any
 
 from .claude_adapter import provider_adapter
 from .contracts import RESPONSE_CONTRACT_ID
-from .control_contracts import REQUEST_ID_PATTERN
+from .control_contracts import OPERATOR_ACTIONS, REQUEST_ID_PATTERN, REQUESTABLE_ROLES
 from .engine import ResearchEngine, control, initialize, query_records, read_record
 from .git_store import GitStateStoreConflict, GitStateStoreError, GitStateStoreLockError
 from .payloads import json_safe
@@ -121,7 +121,6 @@ def build_parser() -> _Parser:
         command = commands.add_parser(name, help=f"queue and apply {name}")
         _instance_arguments(command)
         command.add_argument("--reason", default="")
-        command.add_argument("--origin", choices=("user", "operator"), default="user")
         command.add_argument("--request-id", help="stable retry identity; changed payloads are rejected")
         if name == 'release-quiesce':
             command.add_argument('--fence', required=True)
@@ -131,38 +130,31 @@ def build_parser() -> _Parser:
     incoming = input_command.add_mutually_exclusive_group(required=True)
     incoming.add_argument("--text")
     incoming.add_argument("--file")
-    input_command.add_argument("--origin", choices=("user", "operator"), default="user")
     input_command.add_argument("--request-id", help="stable retry identity; changed payloads are rejected")
     input_command.add_argument("--responds-to", action="append", default=[], help="ID of an open user question answered by this input; repeat for multiple questions")
 
     configure = commands.add_parser("configure", help="change explicit instance configuration")
     _instance_arguments(configure)
     configure.add_argument("--config-file", required=True)
-    configure.add_argument("--origin", choices=("user", "operator"), default="user")
 
     request = commands.add_parser("request", help="queue a model-free activity request")
     _instance_arguments(request)
     request_mode = request.add_mutually_exclusive_group(required=True)
-    request_mode.add_argument("--role", choices=(
-        "research_preparation", "research_plan", "supplemental_research", "operational_review", "maintenance",
-    ))
+    request_mode.add_argument("--role", choices=REQUESTABLE_ROLES)
     request_mode.add_argument("--retry-action", help="retry one held input overflow or failed initial interpretation; reuse a verified preserved native final when available")
     request_mode.add_argument("--assessment-reassessment-file", help="report exact original assessment and defect evidence for bounded independent reassessment")
     request.add_argument("--target")
     request.add_argument("--reason")
-    request.add_argument("--origin", choices=("user", "operator"), default="user")
 
     for name in ("decision", "knowledge", "trust", "external", "conversation"):
         command = commands.add_parser(name, help=f"apply a structured {name} control")
         _instance_arguments(command)
         command.add_argument("--file", required=True)
-        command.add_argument("--origin", choices=("user", "operator"), default="user")
 
     source = commands.add_parser("source", help="import an exact local source file")
     _instance_arguments(source)
     source.add_argument("--file", required=True)
     source.add_argument("--name")
-    source.add_argument("--origin", choices=("user", "operator"), default="user")
 
     query = commands.add_parser("query", help="query records or raw snapshot files")
     _instance_arguments(query)
@@ -220,6 +212,9 @@ def build_parser() -> _Parser:
         commands.choices[name].add_argument('--request-id', help='stable retry identity; changed payloads are rejected')
     for name in ('pause','resume','close','quiesce','release-quiesce','input','configure','request','decision','knowledge','trust','external','conversation','source'):
         commands.choices[name].add_argument('--idempotency-key', help='explicit key for an intentional new application of the same content')
+        # Control admission refuses the operator origin outside OPERATOR_ACTIONS; only those commands offer it.
+        origins = ('user', 'operator') if name.replace('-', '_') in OPERATOR_ACTIONS else ('user',)
+        commands.choices[name].add_argument('--origin', choices=origins, default='user')
     return parser
 
 
@@ -346,7 +341,9 @@ def execute(args: argparse.Namespace) -> tuple[dict[str, Any] | str, int]:
     if command == "configure":
         requested = _json_file(args.config_file)
         result = _control(args, "configure", config=requested)
-        operator_keys = {"operator_enabled", "operator_interval_seconds", "operator_timeout_seconds", "operator_effort"}
+        # The settings the scheduled tasks are installed with. operator_effort reaches the recovery AI
+        # through the recovery profile that this configure rebuilds, so it needs no schedule change.
+        operator_keys = {"operator_enabled", "operator_interval_seconds", "operator_timeout_seconds"}
         if operator_keys.intersection(requested) and result['effect'] == 'rejected':
             result['operator_schedule'] = {'status': 'not_applied', 'reason': 'configuration was rejected'}
         elif operator_keys.intersection(requested) and result.get('replayed') and result['effect'] == 'applied':

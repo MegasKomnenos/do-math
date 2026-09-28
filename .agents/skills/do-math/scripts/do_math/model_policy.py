@@ -37,8 +37,14 @@ def assessment_key(action: dict) -> str:
     return "task_title" if action["role"] == "research_preparation" and not preparation_only(action) else "task_id"
 
 
-def validate_assessments(action: dict, output: dict, extensions: dict) -> dict:
-    """One shared completeness check for the supplied checker and receiver."""
+def validate_assessments(action: dict, output: dict, extensions: dict, tasks: dict) -> dict:
+    """One shared coverage check for the supplied checker and receiver.
+
+    A preparation rates each of its candidates or assigned tasks exactly once. A
+    plan rates a selected task only to change its stored assessment, or because
+    ``tasks`` (the plan's input tasks) holds none for it; an unrated selection is
+    assigned from the stored assessment (``selection``).
+    """
     key = assessment_key(action)
     rows = extensions.get("model_assessments", [])
     identified = {}
@@ -57,17 +63,20 @@ def validate_assessments(action: dict, output: dict, extensions: dict) -> dict:
             allowed.update({'task_conditions', 'observation_rule_deferrals'})
         if set(extensions) - allowed:
             raise ValueError("assessment-only preparation may only assess or defer its assigned tasks")
-        expected = set(action.get("assessment_targets", {}))
+        required = allowed = set(action.get("assessment_targets", {}))
         deferred = [entry["task_id"] for entry in extensions.get("model_assessment_deferrals", [])]
         if len(deferred) != len(set(deferred)) or set(deferred) & set(identified):
             raise ValueError("assessment and deferral must identify each target exactly once")
         supplied = set(identified) | set(deferred)
+    elif action["role"] == "research_preparation":
+        required = allowed = {item["title"] for item in output.get("candidates", [])}
+        supplied = set(identified)
     else:
         from .task_contracts import selected_task_ids
-        expected = ({item["title"] for item in output.get("candidates", [])}
-                    if action["role"] == "research_preparation" else set(selected_task_ids(output)))
+        allowed = set(selected_task_ids(output))
+        required = {tid for tid in allowed if not tasks.get(tid, {}).get("model_assessment")}
         supplied = set(identified)
-    missing, unexpected = expected - supplied, supplied - expected
+    missing, unexpected = required - supplied, supplied - allowed
     if unexpected or missing:
         import json
         raise ValueError("model assessment coverage: " + json.dumps(
@@ -78,6 +87,17 @@ def validate_assessments(action: dict, output: dict, extensions: dict) -> dict:
 def assessment_basis(task: dict) -> dict:
     from .planning import contract_hash
     return {"revision": task["revision"], "contract_sha256": contract_hash(task)}
+
+
+def edition_current(task: dict | None, basis: dict) -> bool:
+    """Whether a preparation target still names this unfinished task edition.
+
+    A preparation fixes each assessment or observation rule target to its
+    assessment_basis when it is assigned. The engine's obsolescence check, the
+    preparation receipt and the rule preparation check all apply this test.
+    """
+    from .task_contracts import TERMINAL_TASK_STATUSES
+    return bool(task) and task.get("status") not in TERMINAL_TASK_STATUSES and assessment_basis(task) == basis
 
 
 def validate_policy(config: dict) -> None:
