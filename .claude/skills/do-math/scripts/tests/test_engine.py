@@ -325,6 +325,8 @@ class PublicGitFlow(unittest.TestCase):
                 seal_response(output, context, workspace)
                 draft = workspace / "draft.json"; draft.write_bytes(canonical_json(output))
                 self.assertEqual(context["control_binding"], arguments["control_binding"])
+                # Only research work answers self checks, so only its binding offers the tool.
+                self.assertEqual(context["control_binding"].get("self_check", False), role == "research_work")
                 # Queue through the real transport; the owner loop receives it on its
                 # next pass and the worker waits for the durable receipt.
                 delivery = submission.request_control(workspace, "draft.json", kind="submit_intent", wait_seconds=0)

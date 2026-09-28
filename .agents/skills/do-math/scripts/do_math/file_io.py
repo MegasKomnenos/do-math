@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import stat
+import sys
 import tempfile
 import time
 
@@ -277,6 +278,19 @@ def parse_utc(value):
     if parsed.tzinfo is None:
         raise ValueError("timestamp requires a timezone: "+value)
     return parsed.astimezone(timezone.utc)
+
+
+def console_python():
+    """The interpreter for commands a worker or person runs from a shell.
+
+    A scheduled engine runs under ``pythonw.exe``, a GUI-subsystem program:
+    PowerShell neither waits for it nor shows its output. Its sibling
+    ``python.exe`` is the same installation with a console. Processes the
+    engine starts itself with piped output keep ``sys.executable``.
+    """
+    current=Path(sys.executable)
+    console=current.with_name('python.exe')
+    return str(console) if current.name.lower()=='pythonw.exe' and console.is_file() else sys.executable
 
 
 def sha256_file(path):

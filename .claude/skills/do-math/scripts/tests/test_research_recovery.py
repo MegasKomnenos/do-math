@@ -703,6 +703,29 @@ class RecoveryBoundaryTests(unittest.TestCase):
                 self.assertEqual(raw, originals[row['artifact_ref']])
                 self.assertEqual(hashlib.sha256(raw).hexdigest(), row['sha256'])
 
+    def test_initial_diagnosis_receives_the_failed_checkpoint_evidence_files(self):
+        # 계약/유지보수.md 42 and 공통-실행.md 49: the diagnosis reads the checkpoint and its evidence.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            engine, action, wait = initial_failure_engine(root)
+            adopted, _ = surface_state()
+            engine.instance.update({key: adopted[key] for key in ('governance', 'governance_sources')})
+            evidence = b'partial interpretation notes'
+            reference = 'runtime/artifacts/BA-checkpoint/evidence/notes.txt'
+            engine.runtime.setdefault('checkpoints', {})['EX-bad'] = {'kind': 'worker_checkpoint',
+                'checkpoint': {'current_claim': 'partial'}, 'evidence_files': [{'path': 'notes.txt',
+                'artifact_ref': reference, 'sha256': hashlib.sha256(evidence).hexdigest(), 'bytes': len(evidence)}]}
+            engine.store.read.side_effect = lambda ref, head: {reference: evidence}[ref]
+            engine._documents = {'maintenance': contracts.prompt_documents('maintenance')}
+            engine._preparation_checkpoint = create_autospec(engine._preparation_checkpoint, side_effect=lambda: None)
+            engine._session_slots = create_autospec(engine._session_slots)
+            engine._academic_status = create_autospec(engine._academic_status, side_effect=lambda: {})
+            workspace = root / 'diagnosis'
+            context = engine._context({'id': 'AC-diagnosis', 'role': 'maintenance', 'target': 'EX-bad',
+                                       'initial_submission_diagnosis': True}, workspace)
+            row = next(row for row in context['initial_submission_diagnosis']['materials'] if row['artifact_ref'] == reference)
+            self.assertEqual((workspace / row['local_path']).read_bytes(), evidence)
+
     def test_retry_queue_and_disposition_publish_together_and_replay_is_noop(self):
         start_repair_host(self)
         host = self.host

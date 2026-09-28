@@ -91,7 +91,9 @@ def _baseline(command, evidence_root, identity, fingerprint, content):
 
 
 def _summary(path, record, **fields):
-    return {'record_path': str(path), 'record_id': record['id'], 'binding': records.binding(record), **fields}
+    return {'record_path': str(path), 'record_id': record['id'], 'binding': records.binding(record),
+            'representative_check_seconds': records.representative_check_seconds(record['baselines'][-1]['validation']),
+            **fields}
 
 
 def _settled_fingerprint(identity, attempts=3):

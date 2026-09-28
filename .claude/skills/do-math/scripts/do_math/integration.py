@@ -13,6 +13,7 @@ import jsonschema
 from .contracts import MANIFEST_SCHEMA, REFS, TEXT, closed_object
 from .execution_profiles import task_research
 from .file_io import json_copy
+from .input_basis import CurrentnessChanged
 from .repository import exact_content_hash
 
 
@@ -33,7 +34,8 @@ def failure_kind(issues):
     rules = {row.get('rule_id', '') for row in issues}
     if 'integration.publication' in rules:
         return 'publication_failure'
-    if 'integration.currentness' in rules:
+    # Changed premises alone refresh the decision; any other error stays the producer's.
+    if rules == {'integration.currentness'}:
         return 'currentness_changed'
     if any(rule.startswith('schema.') for rule in rules):
         return 'output_schema'
@@ -500,7 +502,9 @@ def apply_bundles(instance, runtime, output, extensions, context, *, execution_i
             publish(candidate_instance, candidate_runtime, bundle, validated)
         except Exception as error:
             if not local_issues:
-                local_issues = [issue("integration." + stage, "output/integration_bundles", str(error), ident)]
+                # A changed premise found while applying is still a currentness return.
+                rule = "integration.currentness" if isinstance(error, CurrentnessChanged) else "integration." + stage
+                local_issues = [issue(rule, "output/integration_bundles", str(error), ident)]
             results.append({"integration_id": ident, "status": "returned", "issues": local_issues,
                             "next_owner": "producer" if stage != "publication" else "engine"})
             if isinstance(error, ImpactReviewRequired):

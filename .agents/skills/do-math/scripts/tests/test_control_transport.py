@@ -344,6 +344,29 @@ class ControlPreviewTests(unittest.TestCase):
 
 
 class ControlTransportTests(unittest.TestCase):
+    def test_mcp_child_offers_the_self_check_tool_only_to_self_checking_executions(self):
+        # Only research work answers self checks (observations.tracker_config).
+        listed = {}
+        with tempfile.TemporaryDirectory() as directory:
+            transport = ControlTransport(directory)
+            for self_check in (True, False):
+                binding = transport.issue("EX-" + str(self_check), "GR-1", self_check=self_check)
+                ControlTransport.validate_binding(binding, execution_id=binding["execution_id"])
+                server = transport.mcp_server_config(binding)
+                child = subprocess.Popen([server["command"], *server["args"]], stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                try:
+                    child.stdin.write(json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}) + "\n")
+                    child.stdin.flush()
+                    listed[self_check] = {tool["name"] for tool in json.loads(child.stdout.readline())["result"]["tools"]}
+                finally:
+                    child.stdin.close()
+                    child.wait(timeout=10)
+                    child.stdout.close()
+                    child.stderr.close()
+        self.assertEqual(listed[True] - listed[False], {transport_module.SELF_CHECK_TOOL})
+
     def test_control_rejects_an_unconfirmed_boundary_and_request_id_reuse(self):
         with tempfile.TemporaryDirectory() as root:
             transport = ControlTransport(root)

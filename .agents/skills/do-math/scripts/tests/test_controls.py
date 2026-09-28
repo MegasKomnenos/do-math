@@ -13,7 +13,7 @@ from do_math import maintenance_gate, submission
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.engine import control, ResearchEngine
 from do_math.repository import canonical_json, ResearchRepository
-from engine_fixtures import initialized, initialized_instance, routing_engine
+from engine_fixtures import initialized, initialized_instance, routing_engine, start_submission_history
 from research_fixtures import (install_adapter_fixture, new_instance, observe, restore_template, run_cli,
                                write_checkpoint)
 from runner_fixtures import ScriptedRunner
@@ -336,6 +336,56 @@ class ControlReceipts(unittest.TestCase):
             receipt = engine._publish_control_request(request)
         self.assertEqual(receipt["state"], "rejected")
         self.assertNotIn("submission_receipt", engine.runtime["executions"]["EX-work"])
+
+
+class SelfCheckStorageTests(unittest.TestCase):
+    """Self-check controls saved by the engine into a real repository, through the actual storage contract."""
+
+    def setUp(self):
+        from do_math.observations import ObservationTracker
+        from research_fixtures import Clock, observation_rule
+        start_submission_history(self)
+        self.tracker = ObservationTracker("EX-history", self.workspace, {"observation_rules": [observation_rule()],
+            "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}, clock=Clock())
+        self.engine._trackers = {"EX-history": self.tracker}
+
+    def due(self):
+        write_checkpoint(self.workspace, counters={"attempts": 2})
+        return next(row for row in observe(self.tracker, {"type": "tick"}) if row["kind"] == "self_check_due")
+
+    def test_self_check_response_and_its_rule_update_are_saved(self):
+        from research_fixtures import observation_rule, self_check_response
+        obligation = self.due()
+        response = {**self_check_response(obligation), "rule_proposal": {"current_revision": 0,
+            "reason": "Check again at the next attempt pair", "rules": [observation_rule(repeat_interval=2)]}}
+        self.engine._control_evidence_refs = create_autospec(self.engine._control_evidence_refs, return_value={"EV-1"})
+        request = {**self.binding, "request_id": "self-check-" + obligation["id"], "kind": "self_check_response",
+                   "payload": {"self_check_id": obligation["id"], "response": response}}
+        receipt = self.engine._publish_control_request(request)
+        self.assertEqual(receipt["state"], "accepted", receipt)
+        _, _, stored = self.engine.store.load()
+        record = next(iter(stored["self_check_responses"].values()))
+        self.assertEqual(record["kind"], "self_check_received")
+        self.assertEqual(record["rule_update"]["kind"], "observation_rules_accepted")
+        self.assertEqual(stored["self_check_obligations"][obligation["id"]]["status"], "answered")
+
+    def test_safety_boundary_is_saved_and_its_replay_redelivers_the_opened_obligation(self):
+        observe(self.tracker, {"type": "item.started", "item": {"id": "C", "type": "command_execution"}})
+        obligation = self.due()
+        self.assertIsNone(obligation["deadline_offset_ms"])
+        request = {**self.binding, "request_id": "boundary-one", "kind": "safety_boundary",
+                   "payload": {"inflight_calls": False, "call_ids": ["C"]}}
+        receipt = self.engine._publish_control_request(request)
+        self.assertEqual(receipt["state"], "accepted", receipt)
+        _, _, stored = self.engine.store.load()
+        self.assertEqual(stored["self_check_obligations"][obligation["id"]]["boundary_receipt_ref"],
+                         receipt["publication_id"])
+        # A replay reads the stored reference back to deliver the opened obligation again.
+        feedback = self.workspace / ".control/observation-feedback.json"
+        feedback.unlink()
+        replay = ResearchEngine(self.repo, self.identifier)._publish_control_request(request)
+        self.assertEqual(replay["state"], "accepted")
+        self.assertEqual(json.loads(feedback.read_text(encoding="utf-8"))["obligation_id"], obligation["id"])
 
 
 class UserControlIdentity(unittest.TestCase):

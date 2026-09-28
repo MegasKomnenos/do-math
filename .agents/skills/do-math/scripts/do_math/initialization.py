@@ -133,6 +133,60 @@ def initial_intent_evidence(instance, runtime, *, owner_handlers=None):
     raise ValueError('initial input has no applied independent import')
 
 
+def observed_profile_refs(instance):
+    """Adopted profile references, then the role references dispatch selects from.
+
+    Dispatch uses role_profile_refs after activation; a narrow bootstrap
+    adoption must not hide incomplete profiles that will then be selected.
+    """
+    return [*instance.get('lifecycle', {}).get('adoption', {}).get('profile_refs', []),
+            *(ref for refs in instance.get('role_profile_refs', {}).values() for ref in refs)]
+
+
+# Windows a worker cannot answer while its own Lean compile runs.
+COMPILE_BOUND_WINDOWS = ('tool_review_window_seconds', 'self_check_response_window_seconds')
+
+
+def observation_window_warnings(instance, runtime):
+    """Used observation windows shorter than a registered toolchain's representative compile.
+
+    A window shorter than one compile expires while the worker waits on that
+    compile. This is advice returned with adoption results, never a refusal;
+    an unreadable toolchain record gives no warning because activation checks it.
+    """
+    from .observations import observation_settings_used
+    from .trust_inventory import read_record, representative_check_seconds
+    compiles = {}
+    for environment_id, environment in instance.get('trust_environments', {}).items():
+        if environment.get('status') == 'invalid':
+            continue
+        try:
+            record = read_record(environment['toolchain_record']['path'])
+            baseline = record['baselines'][runtime['trust_bindings'][environment_id]['baseline']]
+            compiles[environment_id] = representative_check_seconds(baseline['validation'])
+        except (OSError, ValueError, KeyError, IndexError, TypeError):
+            continue
+    warnings, seen = [], set()
+    for ref in observed_profile_refs(instance):
+        try:
+            profile = match_profile_ref(instance['execution_profiles'], ref)
+        except (ValueError, KeyError, TypeError):
+            continue
+        if profile['id'] in seen:
+            continue
+        seen.add(profile['id'])
+        settings = profile['observation']['settings']
+        for field in observation_settings_used(profile):
+            if field not in COMPILE_BOUND_WINDOWS or not isinstance(settings.get(field), int):
+                continue
+            for environment_id, seconds in compiles.items():
+                if settings[field] < seconds:
+                    warnings.append({'role': profile['role'], 'profile_id': profile['id'], 'field': field,
+                                     'window_seconds': settings[field], 'environment_id': environment_id,
+                                     'representative_check_seconds': seconds})
+    return warnings
+
+
 def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
     """Evaluate current evidence; none of these checks creates authority."""
     lifecycle = instance.get("lifecycle", {})
@@ -181,11 +235,8 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
         missing.append("profiles")
     from .observations import observation_settings_errors
     observation_errors = []
-    # Dispatch uses role_profile_refs after activation; a narrow bootstrap
-    # adoption must not hide incomplete profiles that will then be selected.
-    selected = [*references, *(ref for refs in instance.get('role_profile_refs', {}).values() for ref in refs)]
     checked_profiles = set()
-    for ref in selected:
+    for ref in observed_profile_refs(instance):
         try:
             profile = match_profile_ref(instance['execution_profiles'], ref)
         except (ValueError, KeyError, TypeError):

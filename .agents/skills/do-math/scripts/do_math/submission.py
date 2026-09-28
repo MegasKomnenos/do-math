@@ -13,11 +13,10 @@ import io
 import json
 from pathlib import Path
 import re
-import sys
 import zipfile
 
 import jsonschema
-from .file_io import atomic_replace, json_copy
+from .file_io import atomic_replace, console_python, json_copy
 
 from . import knowledge_io, planning, review_cycle
 from .context_store import collect_outputs, materialize_inputs, read_source, safe_path, is_excluded, read_stable, relative_path
@@ -306,7 +305,8 @@ def normalize_reference(reference: str, aliases: dict) -> str:
     return aliases.get(reference.removeprefix("workspace:"), reference)
 
 
-def _reference_locators(context):
+def supplied_locators(context):
+    """The file locators (paths and artifact references) the fixed input shows."""
     locators = set()
     def collect(value):
         if isinstance(value, dict):
@@ -325,8 +325,12 @@ def _reference_locators(context):
 
 
 def reference_catalog(context: dict, workspace: Path) -> list[dict]:
-    """Project the same reference checker used by producers and receivers."""
-    known, locators = _reference_index(context)
+    """Project the same reference checker used by producers and receivers.
+
+    The catalog lists the references the input shows; the further records of the input
+    snapshot the role may cite are listed once, in its record_index.
+    """
+    known, locators = _reference_index(context, records=False)
     aliases = reference_aliases(context)
     candidates = known | locators | set(aliases)
     if context.get("proposal") or context.get("role_review", {}).get("proposal"):
@@ -370,7 +374,7 @@ def contract_check_errors(item: dict, entry: dict, dependencies: list[str], task
         *(row["claim"] for row in item["completion_obligations"]), *(row["claim"] for row in item["progress_criteria"])])
     errors = []
     cited = set(RECORD_ID.findall(text)) - {item["revises_task_id"]}
-    errors += [("contract_check.cited_record", "cited record does not exist in the supplied input: " + ref)
+    errors += [("contract_check.cited_record", "cited record is neither in the supplied input nor in its record_index: " + ref)
                for ref in sorted(cited - known - set(tasks))]
     symbols = [row["symbol"] for row in entry["symbols"]]
     errors += [("contract_check.symbol_meaning", "symbol has more than one declared meaning: " + symbol)
@@ -470,7 +474,8 @@ def _intent_import_issues(output, context):
     return issues
 
 
-def _reference_ids(context):
+def supplied_reference_ids(context):
+    """The record IDs the fixed input shows in its context values."""
     ids = {row["id"] for row in context.get("knowledge_catalog", [])}
     for row in context.get("knowledge_catalog", []):
         if row.get("formal_result_id"):
@@ -508,10 +513,23 @@ def _reference_ids(context):
     return ids
 
 
-def _reference_index(context):
-    """Supplied IDs and locators of one fixed input; workspace files are still checked per reference."""
-    known = _reference_ids(context) | set(context.get("available_input_refs", [])) | CONTEXT_INPUT_REFS
-    locators = _reference_locators(context)
+def record_index_ids(context):
+    """IDs of the input snapshot records the role may read and cite (its record_index)."""
+    return {identifier for ids in context.get("record_index", {}).values() for identifier in ids}
+
+
+def _reference_index(context, *, records=True):
+    """Citable IDs and locators of one fixed input; workspace files are still checked per reference.
+
+    A reference is citable when the input shows it or, with ``records``, when it names a
+    record of the input snapshot in the record_index; field rules apply separately. An
+    operational review's admissible_basis_refs are supplied evidence: the disposition
+    check and this general reference check admit the same set.
+    """
+    known = (supplied_reference_ids(context) | set(context.get("available_input_refs", []))
+             | set(context.get("admissible_basis_refs", [])) | CONTEXT_INPUT_REFS
+             | (record_index_ids(context) if records else set()))
+    locators = supplied_locators(context)
     for source in context.get("sources", []):
         locators.update((source["name"], "source:" + source["name"]))
     return known, locators
@@ -544,21 +562,21 @@ def _validate_reference(reference, context, workspace, *, known, locators, candi
     path = safe_path(workspace, name)
     relative = Path(name)
     if relative.parts[0] != "input" and is_excluded(relative):
-        raise ValueError("reference must identify supplied input or a preserved workspace file: " + reference +
-                         "; use an exact reference_catalog value or workspace:<preserved-file>")
+        raise ValueError("reference must identify supplied input, a record of the input snapshot or a preserved workspace file: " + reference +
+                         "; use an exact reference_catalog value, a record_index ID or workspace:<preserved-file>")
     exists = path.is_file() if relative.parts[0] == "input" or candidate_files is None else name in candidate_files
     if not exists:
-        raise ValueError("reference must identify supplied input or a preserved workspace file: " + reference +
-                         "; use an exact reference_catalog value or workspace:<preserved-file>")
+        raise ValueError("reference must identify supplied input, a record of the input snapshot or a preserved workspace file: " + reference +
+                         "; use an exact reference_catalog value, a record_index ID or workspace:<preserved-file>")
 
 
 def supplied_record_ids(context: dict, record_ids) -> list[str]:
-    """Records this fixed input supplies: IDs it shows that are current records.
+    """Records of ``record_ids`` this fixed input shows or lists in its record_index.
 
-    The engine stores the result as context['supplied_record_ids']; task inputs
+    prepare_role_input stores the result as context['supplied_record_ids']; task inputs
     and completion evidence may cite them (common execution contract).
     """
-    return sorted(_reference_ids(context) & set(record_ids))
+    return sorted((supplied_reference_ids(context) | record_index_ids(context)) & set(record_ids))
 
 
 # A failed action a later accepted execution may resolve, and the judgment scope it must share.
@@ -702,7 +720,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
     if action["role"] == "intent_interpretation" and action.get("stage", "interpret") == "interpret":
         issues.extend(_intent_import_issues(output, context))
 
-    known = _reference_ids(context)
+    known = supplied_reference_ids(context) | record_index_ids(context)
     blocked = {row["action_id"]: row for row in context.get("blocked_actions", [])}
     resolutions = extensions.get("action_resolutions", [])
     check("activity-extensions.json/action_resolutions", lambda: require(
@@ -1453,7 +1471,10 @@ def _support_archive(package: Path, sources: tuple[tuple[str, str], ...]) -> byt
 
 
 def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_bytes: int | None) -> dict:
-    """Copy one installed code edition, never the central research state."""
+    """Copy one installed code edition, never the central research state.
+
+    The read tool reads that state only at the input snapshot and within the record map.
+    """
     context["reference_catalog"] = reference_catalog(context, workspace)
     package = Path(__file__).resolve().parent
     # The installed edition is identified by fingerprint-cached digests; code
@@ -1468,18 +1489,28 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
     files["tools/check_submission.py"] = (b"import sys\nfrom pathlib import Path\nsys.dont_write_bytecode = True\n"
         b"sys.path.insert(0, str(Path(__file__).with_name('submission-support.zip')))\n"
         b"from do_math.submission import main\nraise SystemExit(main())\n")
+    files["tools/read_input.py"] = (b"import sys\nfrom pathlib import Path\nsys.dont_write_bytecode = True\n"
+        b"sys.path.insert(0, str(Path(__file__).with_name('submission-support.zip')))\n"
+        b"from do_math.context_store import read_main\nraise SystemExit(read_main())\n")
+    if "record_map" in context:
+        from .context_store import READ_LOG
+        context["record_map"]["read_tool"] = {
+            "command": [console_python(), "-B", "input/tools/read_input.py"],
+            "arguments": "--list [--family <root/family>] | --id <record ID> (repeatable) | --path <snapshot file path> "
+                         "(repeatable) [--output <workspace-relative file> with one --path]",
+            "log_path": READ_LOG}
     if "formal_verifier" in context:
         files["tools/check_lean.py"] = (b"import sys\nfrom pathlib import Path\nsys.dont_write_bytecode = True\n"
             b"sys.path.insert(0, str(Path(__file__).with_name('submission-support.zip')))\n"
             b"from do_math.formal_preview import main\nraise SystemExit(main())\n")
         context["formal_verifier"]["preview"] = {
-            "command": [sys.executable, "-B", "input/tools/check_lean.py"],
+            "command": [console_python(), "-B", "input/tools/check_lean.py"],
             "arguments": "--source <workspace-relative .lean file> --declaration <name> (repeat for each declaration)",
             "authoritative": False,
-            "environment": "Same verifier edition and configured command. Shared libraries and Lake caches are not isolated. Central verification is mandatory."}
+            "environment": "Same verifier edition and configured command for the kernel check, signatures and axioms; dependency evidence is not extracted. Shared libraries and Lake caches are not isolated. Central verification is mandatory."}
     from .file_io import now
     from .contracts import schema_reference
-    contract = {"command": [sys.executable, "-B", "input/tools/check_submission.py"],
+    contract = {"command": [console_python(), "-B", "input/tools/check_submission.py"],
         "schema_ref": schema_reference(schema),
         "delivery": "Normal delivery is one complete JSON final. Central validation captures its exact bytes after verified CLI completion and local termination. Draft submission is optional and early; an accepted draft cannot be replaced by a later final.",
         "arguments": "--output <workspace-relative draft>; add --preview or --submit and --wait-seconds <remaining caller budget> for central control; --new-knowledge-id prints a fresh replacement_id without submission or reservation",
@@ -1623,6 +1654,11 @@ def seal_submission(workspace, draft=None, *, execution_id, context, schema, max
     check.setdefault('capture_eligible', False)
     check['id'] = 'MC-' + exact_content_hash({key: value for key, value in check.items() if key != 'id'})[:24]
     artifacts = {"check.json": canonical_json(check), "manifest.json": canonical_json(collected["manifest"])}
+    from .context_store import read_log_bytes
+    reads = read_log_bytes(workspace)
+    if reads is not None:
+        # What the producer read of its input snapshot through the read tool, up to this capture.
+        artifacts["reads.jsonl"] = reads
     if raw is not None:
         artifacts["output.json"] = raw
     if extension_raw is not None:

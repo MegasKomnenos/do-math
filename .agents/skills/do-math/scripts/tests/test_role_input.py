@@ -136,6 +136,49 @@ class OperationalInputTests(unittest.TestCase):
             issues = payload_issues(output, schema, fixed, {}, root)
             self.assertTrue(any('invalid_basis_refs' in row['message'] for row in issues), issues)
 
+    def test_every_advertised_basis_ref_passes_the_submission_check(self):
+        from do_math.submission import payload_issues
+        engine, action, _, _ = self.fixture()
+        profile = next(p for p in engine.instance['execution_profiles'].values() if p['role'] == 'operational_review')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            context = engine._context(action, root, execution_id='EX-review')
+            fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
+                role='operational_review', profile=profile, snapshot=engine.head, workspace=root,
+                activity_id='AY-review', install_submission_tools=True)
+            fixed = fitted['validation_context']
+            advertised = fixed['admissible_basis_refs']
+            self.assertTrue({'OF-one', 'SC-one'} <= set(advertised), advertised)
+            output = {'summary': 'Review', 'used_sources': list(advertised), 'questions': [],
+                'disposition': {'kind': 'continue', 'basis_refs': list(advertised), 'next_owner': 'engine',
+                                'reason': 'The observation opened a review of a progressing run.', 'next_review': None}}
+            self.assertEqual(payload_issues(output, contracts.schema_for('operational_review'), fixed, {}, root), [])
+            catalog = {row['value'] for row in fitted['context']['reference_catalog']}
+            self.assertLessEqual(set(advertised), catalog, 'The producer-visible catalog projects the same checker')
+
+    def test_next_review_of_the_same_target_can_resolve_an_exhausted_review(self):
+        from do_math.submission import payload_issues
+        engine, action, _, _ = self.fixture()
+        exhausted = {'id': 'AC-earlier-review', 'role': 'operational_review', 'target': 'EX-work', 'live': True}
+        engine.runtime['waiting_actions'] = {exhausted['id']: {'action': exhausted, 'kind': 'output_validation',
+            'execution_id': 'EX-earlier-review', 'next_owner': 'operational_review',
+            'reason': 'Producer repair was rejected again; diagnose the preserved contract and receiver errors'}}
+        profile = next(p for p in engine.instance['execution_profiles'].values() if p['role'] == 'operational_review')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            context = engine._context(action, root, execution_id='EX-review')
+            self.assertEqual([row['action_id'] for row in context['blocked_actions']], [exhausted['id']])
+            fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
+                role='operational_review', profile=profile, snapshot=engine.head, workspace=root,
+                activity_id='AY-review', install_submission_tools=True)
+            output = {'summary': 'Review', 'used_sources': ['EX-work'], 'questions': [],
+                'disposition': {'kind': 'continue', 'basis_refs': ['EX-work'], 'next_owner': 'engine',
+                                'reason': 'The target still progresses.', 'next_review': None}}
+            extensions = {'action_resolutions': [{'action_id': exhausted['id'], 'evidence_execution_id': 'current',
+                'reason': 'This accepted review settles the same observed target.'}]}
+            self.assertEqual(payload_issues(output, contracts.schema_for('operational_review'),
+                                            fitted['validation_context'], extensions, root), [])
+
     def test_changed_checkpoint_file_bytes_are_rejected_before_review(self):
         engine, action, _, _ = self.fixture()
         engine.store.read.return_value = b'changed bytes'
@@ -609,6 +652,484 @@ class ArchivedControlInputTests(unittest.TestCase):
             self.assertEqual(json.loads((root/'input-case'/ref['path']).read_bytes()), request)
             self.assertLess(len(canonical_json(validation['recent_history'])), 1000)
             self.assertLess(len(validation['reference_catalog']), 20)
+
+
+# Fields of a stored central check beyond knowledge_fixtures.formal_result: the compiler's
+# raw output and invocation, the kernel evidence digest, signatures and the check reference.
+CENTRAL_CHECK = {'stdout': 'raw Lean output', 'stderr': 'raw Lean warnings', 'command': ['lake', 'env', 'lean', 'Check.lean'],
+                 'exit_code': 0, 'dependency_hash': 'd' * 64, 'declaration_signatures': {'truth': 'True'},
+                 'signature_hash': 's' * 64, 'execution_id': 'EX-formal', 'artifact_ref': 'runtime/artifacts/BA-formal/formal.json'}
+# What identity review and goal audit compare (계약/동일성-검토.md, 계약/목표-감사.md).
+JUDGED = {'status', 'source_sha256', 'declarations', 'axioms', 'declaration_signatures', 'signature_hash',
+          'toolchain', 'execution_id', 'artifact_ref'}
+
+
+def central_check_knowledge():
+    """``(instance, runtime, kid, stored verification)``: one K record whose check stored raw output and evidence."""
+    instance, runtime = surface_state()
+    evidence, _, kid, _ = verified_knowledge(check=CENTRAL_CHECK)
+    instance.update(evidence)
+    verification = instance['formal_results'][instance['knowledge'][kid]['formal_result_id']]['verification']
+    return instance, runtime, kid, verification
+
+
+class FormalJudgmentInputTests(unittest.TestCase):
+    def assert_judged(self, view, verification):
+        self.assertEqual(view, {name: verification[name] for name in JUDGED})
+
+    def assert_environment(self, formal):
+        # verified_knowledge's trust environment TE-test allows no axiom.
+        self.assertEqual((formal.pop('trust_environment_id'), formal.pop('allowed_axioms')), ('TE-test', []))
+
+    def test_identity_review_proposal_carries_only_the_judged_formal_fields(self):
+        from do_math.review_cycle import review_proposal
+        instance, _, kid, verification = central_check_knowledge()
+        formal = review_proposal(instance, kid)['formal']
+        self.assert_environment(formal)
+        self.assert_judged(formal, verification)
+
+    def test_judged_formal_view_states_its_environment_allowed_axioms(self):
+        # A central check stores no allowed axioms; the judgment compares axioms with its environment's.
+        environment = {'id': 'TE-test', 'status': 'active', 'toolchain': {'version': 'test-fixture'},
+                       'allowed_axioms': ['propext']}
+        instance, _, kid, _ = verified_knowledge(environment)
+        verification = instance['formal_results'][instance['knowledge'][kid]['formal_result_id']]['verification']
+        self.assertNotIn('allowed_axioms', verification)
+        self.assertEqual(knowledge_records.proposal_view(instance, kid)['formal']['allowed_axioms'], ['propext'])
+
+    def test_goal_audit_receives_the_judged_formal_result(self):
+        instance, runtime, kid, verification = central_check_knowledge()
+        engine = context_engine(instance, runtime)
+        engine._documents['goal_audit'] = contracts.prompt_documents('goal_audit')
+        with tempfile.TemporaryDirectory() as directory:
+            item, = engine._context({'role': 'goal_audit'}, Path(directory))['eligible_knowledge']
+        self.assert_environment(item['proposal']['formal'])
+        self.assert_judged(item['proposal']['formal'], verification)
+        self.assert_judged(item['formal_result']['verification'], verification)
+        self.assertEqual(item['formal_result']['trust_environment_id'], 'TE-test')
+
+    def test_knowledge_files_carry_the_judged_formal_result(self):
+        instance, runtime, kid, verification = central_check_knowledge()
+        with tempfile.TemporaryDirectory() as directory:
+            context = context_engine(instance, runtime)._context({'role': 'research_preparation'}, Path(directory))
+            row, = context['knowledge_catalog']
+            record = json.loads((Path(directory) / row['path']).read_bytes())
+        self.assert_environment(record['formal'])
+        self.assert_judged(record['formal'], verification)
+        self.assert_judged(record['formal_result']['verification'], verification)
+
+    def test_reviewed_proposal_fixes_the_sources_it_used(self):
+        # 계약/동일성-검토.md 39: transcriptions are compared with the originals actually used.
+        from do_math.review_cycle import review_proposal
+        instance, _, kid, _ = central_check_knowledge()
+        record = instance['knowledge'][kid]
+        record.update(source_refs=['paper.pdf'], source_basis=[{'name': 'paper.pdf', 'sha256': 'e' * 64}])
+        proposal = review_proposal(instance, kid)
+        self.assertEqual((proposal['source_refs'], proposal['source_basis']),
+                         (record['source_refs'], record['source_basis']))
+
+
+# Context keys the engine builds for many roles; each reaches only the roles whose contract
+# or checks read it. The expectations below are those roles, from the role contracts.
+SCOPED_KEYS = ('model_policy', 'resources', 'budget_unit', 'academic_requirements', 'academic_phase',
+               'academic_validation', 'repetition_holds', 'goal', 'policies', 'goal_revision', 'policy_revision',
+               'events', 'external_operations', 'external_rejections', 'user_inputs', 'open_questions',
+               'recent_history', 'relations', 'formal_verifier', 'execution_profiles', 'role_profile_refs',
+               'decisions', 'pending_revisions', 'revision_cycles', 'blocked_actions')
+
+
+def is_map_entry(value):
+    """A context key given as a map entry: its exact catalog source and item count, not its content."""
+    return isinstance(value, dict) and set(value) == {'source_ref', 'total'}
+
+
+# Derived machine files the input builds only for the scopes that inline them; elsewhere the
+# records they are derived from stay readable through the record map.
+DERIVED_KEYS = {'configuration_source', 'relation_validation_source'}
+PLANNING_DIRECT = {'tasks': [], 'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': [], 'blocked_actions': []}
+INTENT_DIRECT = {'user_request': {'id': 'UI-1'}, 'interpretation_to_check': None}
+OPERATIONAL_DIRECT = {'execution_to_review': {'id': 'EX-work'}, 'observation': {}, 'operational_evidence': {},
+                      'admissible_basis_refs': []}
+
+
+class RoleInputClassTests(unittest.TestCase):
+    def prepare(self, action, direct=None, *, instance=None, runtime=None, extra=None, root=None,
+                snapshot='a' * 40, install=False):
+        """One role input whose engine context held every scoped key.
+
+        Returns the packaged context, or with ``root`` the whole prepared input in that workspace.
+        ``install`` also installs the submission and read tools, as the engine does.
+        """
+        if instance is None:
+            instance, runtime = surface_state()
+        profile = next(p for p in instance['execution_profiles'].values() if p['role'] == action['role'])
+        context = {key: [] for key in SCOPED_KEYS}
+        context.update(action={'id': 'AC-scope', **action}, **(direct or {}), **(extra or {}))
+        def run(workspace):
+            return prepare_role_input(context, instance=instance, runtime=runtime, role=action['role'],
+                profile=profile, snapshot=snapshot, workspace=workspace, activity_id='AC-1',
+                install_submission_tools=install, max_artifact_bytes=100000 if install else None)
+        if root is not None:
+            return run(root)
+        with tempfile.TemporaryDirectory() as directory:
+            return run(Path(directory))['context']
+
+    def test_role_input_maps_context_its_scope_does_not_inline(self):
+        planning, intent, operational = PLANNING_DIRECT, INTENT_DIRECT, OPERATIONAL_DIRECT
+        cases = [  # (action, direct inputs, keys it inlines, keys it receives only as map entries)
+            ({'role': 'research_work'}, {'task': {'id': 'TK-1'}},
+             {'formal_verifier', 'relations', 'user_inputs', 'external_operations', 'external_rejections', 'open_questions',
+              'goal', 'policies', 'decisions', 'relation_validation_source'},
+             {'model_policy', 'resources', 'budget_unit', 'academic_requirements', 'academic_phase', 'academic_validation',
+              'repetition_holds', 'goal_revision', 'policy_revision', 'events', 'recent_history', 'execution_profiles',
+              'role_profile_refs', 'pending_revisions', 'revision_cycles', 'blocked_actions'}),
+            ({'role': 'supplemental_research'}, {'task': {'id': 'TK-1'}},
+             {'relation_validation_source', 'goal', 'user_inputs', 'external_operations', 'formal_verifier'},
+             {'model_policy', 'events', 'recent_history', 'execution_profiles'}),
+            ({'role': 'supplemental_research', 'review_cycle_id': 'RC-1'},
+             {'review_research': {'sources': []}, 'proposal': {'revision': 1}},
+             {'formal_verifier', 'relations', 'decisions'},
+             {'relation_validation_source', 'goal', 'policies', 'user_inputs', 'external_operations', 'external_rejections',
+              'model_policy', 'execution_profiles'}),
+            ({'role': 'operational_review'}, operational,
+             {'repetition_holds', 'events', 'recent_history', 'goal_revision', 'policy_revision', 'execution_profiles',
+              'role_profile_refs', 'decisions', 'user_inputs', 'external_operations', 'blocked_actions'},
+             {'model_policy', 'resources', 'budget_unit', 'formal_verifier', 'external_rejections', 'academic_requirements',
+              'academic_phase', 'academic_validation', 'pending_revisions', 'revision_cycles'}),
+            ({'role': 'goal_audit'}, {'eligible_knowledge': []},
+             {'academic_requirements', 'academic_phase', 'academic_validation', 'decisions', 'relations', 'goal',
+              'policies', 'goal_revision', 'policy_revision', 'external_rejections', 'open_questions'},
+             {'formal_verifier', 'model_policy', 'resources', 'execution_profiles', 'role_profile_refs', 'events',
+              'user_inputs', 'external_operations', 'repetition_holds'}),
+            ({'role': 'task_contract_review'}, {'task': {'id': 'TK-1'}},
+             {'model_policy', 'resources', 'budget_unit', 'execution_profiles', 'formal_verifier', 'academic_requirements',
+              'academic_phase', 'recent_history', 'external_operations', 'external_rejections', 'open_questions'},
+             {'role_profile_refs', 'events', 'academic_validation', 'goal_revision', 'policy_revision',
+              'repetition_holds', 'user_inputs'}),
+            ({'role': 'intent_interpretation', 'stage': 'interpret'}, intent,
+             {'formal_verifier', 'academic_requirements', 'configuration_source', 'execution_profiles', 'goal_revision'},
+             {'recent_history', 'user_inputs', 'open_questions', 'events', 'model_policy', 'academic_phase'}),
+            ({'role': 'intent_interpretation', 'stage': 'check'}, intent,
+             {'academic_requirements', 'execution_profiles', 'role_profile_refs', 'goal_revision', 'goal', 'relations',
+              'decisions', 'configuration_source'},
+             {'formal_verifier', 'recent_history', 'user_inputs', 'open_questions', 'events', 'model_policy', 'resources',
+              'external_operations', 'external_rejections', 'repetition_holds', 'academic_phase', 'academic_validation'}),
+            ({'role': 'intent_interpretation', 'stage': 'delegation_check', 'delegation_application_id': 'DA-1'}, intent,
+             {'decisions'},
+             {'configuration_source', 'goal', 'policies', 'goal_revision', 'policy_revision', 'relations',
+              'formal_verifier', 'execution_profiles', 'role_profile_refs', 'academic_requirements'}),
+            ({'role': 'maintenance'}, {},
+             {'resources', 'budget_unit', 'formal_verifier', 'pending_revisions', 'revision_cycles', 'blocked_actions',
+              'recent_history', 'user_inputs', 'external_operations', 'external_rejections', 'goal', 'relations', 'decisions'},
+             {'model_policy', 'academic_requirements', 'academic_phase', 'academic_validation', 'repetition_holds',
+              'goal_revision', 'policy_revision', 'events', 'open_questions', 'execution_profiles', 'role_profile_refs'}),
+            ({'role': 'maintenance', 'kind_definition_id': 'KD-1'}, {},
+             {'decisions'},
+             {'goal', 'policies', 'relations', 'formal_verifier', 'resources', 'budget_unit', 'pending_revisions',
+              'revision_cycles', 'blocked_actions', 'user_inputs', 'recent_history', 'external_operations',
+              'external_rejections'}),
+            ({'role': 'maintenance', 'stage': 'impact_review'}, {'impact_review_input': {}},
+             {'goal', 'relations', 'formal_verifier'},
+             {'resources', 'pending_revisions', 'blocked_actions', 'user_inputs', 'recent_history', 'external_operations'}),
+            ({'role': 'research_plan'}, planning,
+             {'model_policy', 'resources', 'academic_validation', 'repetition_holds', 'events', 'goal_revision',
+              'pending_revisions', 'revision_cycles', 'blocked_actions', 'external_rejections'},
+             {'user_inputs', 'execution_profiles', 'role_profile_refs'}),
+            ({'role': 'research_preparation'}, planning,
+             {'model_policy', 'resources', 'execution_profiles', 'role_profile_refs', 'academic_phase',
+              'repetition_holds', 'events', 'user_inputs', 'external_operations'},
+             {'academic_validation'}),
+        ]
+        for action, direct, inlined, mapped in cases:
+            with self.subTest(action=action), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                context = self.prepare(action, direct, root=root)['context']
+                self.assertEqual(inlined - context.keys(), set())
+                self.assertEqual({key for key in inlined if is_map_entry(context[key])}, set())
+                self.assertEqual(mapped & DERIVED_KEYS & context.keys(), set())
+                for key in mapped - DERIVED_KEYS:
+                    self.assertTrue(is_map_entry(context.get(key)), key)
+                    self.assertEqual((root / context[key]['source_ref']['path']).read_bytes(), canonical_json([]))
+
+    def test_independent_judgment_never_receives_its_blocked_context(self):
+        # 계약/보충-조사.md 23, 공통-실행.md 69 (review lineage); 계약/목표-감사.md 13; 계약/의도-해석.md 69.
+        instance, runtime = surface_state()
+        runtime['executions']['EX-seat'] = {'id': 'EX-seat', 'role': 'identity_review', 'status': 'ended',
+                                            'action': {'role': 'identity_review', 'review_cycle_id': 'RC-1'}}
+        private = {'tasks': [{'id': 'TK-private'}], 'recent_history': [], 'open_questions': [], 'question_links': [],
+                   'user_inputs': []}
+        review_lineage = {'tasks', 'recent_history', 'open_questions', 'question_links'}
+        cases = [
+            ({'role': 'supplemental_research', 'review_cycle_id': 'RC-1'},
+             {'review_research': {'sources': []}, 'proposal': {'revision': 1}}, review_lineage),
+            ({'role': 'operational_review', 'target': 'EX-seat'}, OPERATIONAL_DIRECT, review_lineage),
+            ({'role': 'goal_audit'}, {'eligible_knowledge': []}, {'recent_history'}),
+            ({'role': 'intent_interpretation', 'stage': 'delegation_check', 'delegation_application_id': 'DA-1'},
+             INTENT_DIRECT, {'recent_history', 'user_inputs', 'open_questions', 'question_links'}),
+        ]
+        for action, direct, blocked in cases:
+            with self.subTest(action=action), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                fitted = self.prepare(action, direct, instance=instance, runtime=runtime, extra=private, root=root)
+                self.assertEqual(blocked & fitted['context'].keys(), set())
+                self.assertEqual(blocked & fitted['validation_context'].keys(), set())
+                self.assertEqual({key for key in blocked if (root / 'input/catalog' / (key + '.json')).exists()}, set())
+                if 'tasks' in blocked:
+                    self.assertNotIn('TK-private', canonical_json(fitted['validation_context']).decode())
+
+    def test_goal_auditor_cannot_reach_another_auditors_judgment(self):
+        # 계약/목표-감사.md 13: each audit slot seals its judgment in research/goal_judgments while
+        # the other slots of the same round may still be unjudged; they must not read or cite it.
+        from do_math.git_store import GitStateStore
+        from do_math.state_contract import STATE_CONTRACT_ID
+        from research_fixtures import git_init, role_reach
+        secret = 'PRIVATE-PEER-AUDIT'
+        judgment = {'id': 'GJ-peer', 'basis': 'BASIS', 'slot': 0, 'required': 2, 'decision': 'satisfied',
+                    'summary': secret}
+        instance, runtime = surface_state()
+        instance['goal_judgments'] = [judgment]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repository, workspace = root / 'repository', root / 'workspace'
+            repository.mkdir()
+            workspace.mkdir()
+            git_init(repository)
+            store = {'repository': str(repository), 'instance_id': SnapshotReadToolTests.INSTANCE}
+            def envelope(family, record):
+                return canonical_json({'contract_id': STATE_CONTRACT_ID, 'family': family, 'record': record})
+            snapshot = GitStateStore(repository, store['instance_id']).publish(None, {
+                'research/goal_judgments/GJ-peer.json': envelope('goal_judgments', judgment),
+                'runtime/executions/EX-1.json': envelope('executions', {'id': 'EX-1', 'role': 'research_work'})}).head
+            fitted = self.prepare({'role': 'goal_audit', 'basis': 'BASIS', 'slot': 1, 'required': 2},
+                                  {'eligible_knowledge': []}, instance=instance, runtime=runtime,
+                                  extra={'record_store': store, 'formal_verifier': {'reference': 'tool:lean'}},
+                                  root=workspace, snapshot=snapshot, install=True)
+            reached, held = role_reach(fitted['prompt'], workspace, secret)
+            try:
+                submission.validate_reference('GJ-peer', fitted['validation_context'], workspace)
+                cited = True
+            except ValueError:
+                cited = False
+        self.assertEqual(held, ['research/goal_judgments/GJ-peer.json'])
+        self.assertEqual((reached, cited), ([], False))
+
+    def test_record_index_lists_the_snapshot_records_the_role_may_read(self):
+        from record_fixtures import task_contract
+        instance, runtime = surface_state()
+        runtime['tasks'] = {'TK-1': task_contract()}
+        governance_sources = sorted(instance['governance_sources'])
+        with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
+            readable = self.prepare({'role': 'maintenance'}, instance=instance, runtime=runtime, root=Path(first))
+            judged = self.prepare({'role': 'task_contract_review', 'target': 'TK-1'}, {'task': task_contract()},
+                                  instance=instance, runtime=runtime, root=Path(second))
+        index = readable['validation_context']['record_index']
+        self.assertEqual((index['runtime/executions'], index['runtime/activities'], index['runtime/tasks']),
+                         (['EX-1'], ['AC-1'], ['TK-1']))
+        self.assertEqual(index['research/governance_sources'], governance_sources)
+        # An independent judgment reads the research canon and only the supplied part of the execution ledger.
+        index = judged['validation_context']['record_index']
+        self.assertEqual({family for family in index if family.startswith('runtime/')}, {'runtime/tasks'})
+        self.assertEqual(index['research/governance_sources'], governance_sources)
+        for fitted, ledger in ((readable, 'readable'), (judged, 'supplied_only')):
+            record_map = fitted['context']['record_map']
+            self.assertEqual(record_map['ledger'], ledger)
+            self.assertEqual(record_map['families'], {family: len(ids) for family, ids in
+                                                      fitted['validation_context']['record_index'].items()})
+            self.assertTrue(is_map_entry(fitted['context']['record_index']))
+
+    def test_snapshot_record_outside_the_prompt_passes_the_shared_reference_check(self):
+        # A record of the input snapshot is citable although no inline key shows it (R5).
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fitted = self.prepare({'role': 'maintenance'}, extra={'execution_id': 'EX-check'}, root=root)
+            fixed = fitted['validation_context']
+            self.assertNotIn('AC-1', canonical_json(fitted['context']).decode())
+            output = {'summary': 'Inspect', 'used_sources': ['AC-1'], 'questions': [],
+                      'report': 'Inspected the activity record', 'remaining_work': []}
+            schema = contracts.schema_for('maintenance')
+            self.assertEqual(submission.payload_issues(output, schema, fixed, {}, root), [])
+            output['used_sources'] = ['AC-absent']
+            self.assertEqual([row['path'] for row in submission.payload_issues(output, schema, fixed, {}, root)],
+                             ['output/used_sources/0'])
+
+    def test_independent_judgment_cites_the_research_canon_but_not_an_unsupplied_ledger_record(self):
+        from record_fixtures import task_contract
+        instance, runtime = surface_state()
+        runtime['tasks'] = {'TK-1': task_contract()}
+        # A published exposition that no key of this input shows.
+        instance['expositions'] = {'EP-1': {'id': 'EP-1'}}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixed = self.prepare({'role': 'task_contract_review', 'target': 'TK-1'}, {'task': task_contract()},
+                                 instance=instance, runtime=runtime, root=root)['validation_context']
+            submission.validate_reference('EP-1', fixed, root)
+            submission.validate_reference('TK-1', fixed, root)
+            with self.assertRaises(ValueError):
+                submission.validate_reference('EX-1', fixed, root)
+
+    def test_citable_records_cover_every_readable_work_record(self):
+        # Task inputs and completion evidence may name any record the role can read (공통-실행.md 41).
+        for action, direct in (({'role': 'research_preparation'}, PLANNING_DIRECT),
+                               ({'role': 'operational_review', 'target': 'EX-1'}, OPERATIONAL_DIRECT)):
+            with self.subTest(action=action), tempfile.TemporaryDirectory() as directory:
+                fixed = self.prepare(action, direct, root=Path(directory))['validation_context']
+                self.assertTrue({'EX-1', 'AC-1'} <= set(fixed['supplied_record_ids']), fixed['supplied_record_ids'])
+
+    def test_self_check_evidence_may_cite_records_of_the_input_snapshot(self):
+        engine = context_engine()
+        engine._issued_input = create_autospec(engine._issued_input, return_value=(
+            {'reference_catalog': [], 'record_index': {'runtime/activities': ['AC-1']}}, None))
+        self.assertIn('AC-1', engine._control_evidence_refs({'id': 'EX-1', 'output_files': []}))
+
+    def test_scope_follows_the_role_the_input_is_prepared_for(self):
+        # prepare_role_input vouches for its role (the selected profile's role), not for action fields.
+        planning = {'tasks': [], 'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': [], 'blocked_actions': []}
+        instance, runtime = surface_state()
+        profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_plan')
+        with tempfile.TemporaryDirectory() as directory:
+            context = prepare_role_input({'action': {'id': 'AC-plan'}, 'model_policy': {}, **planning},
+                instance=instance, runtime=runtime, role='research_plan', profile=profile, snapshot='a' * 40,
+                workspace=Path(directory), activity_id='AC-1')['context']
+        self.assertEqual({'model_policy', 'configuration_source'} - context.keys(), set())
+
+    def test_identity_review_maps_what_it_does_not_inline_and_never_receives_its_private_keys(self):
+        # 계약/동일성-검토.md 47 and GLOSSARY 「검토 자리」: no author or peer execution context.
+        instance, _ = surface_state()
+        with tempfile.TemporaryDirectory() as directory:
+            engine = ReviewFakeEngine(Path(directory))
+            engine.instance = {**instance, **engine.instance,
+                'config': {**instance['config'], **engine.instance['config']},
+                **{family: {**instance[family], **engine.instance[family]} for family in governance_start()}}
+            engine.head = 'a' * 40
+            engine.start('K1')
+            action = {**engine.pending(), 'grant_id': 'GR-current-execution'}
+            review = engine._prepare_review_context(action, Path(directory) / 'seat')['context']
+            fitted = self.prepare(action, {'role_review': review}, instance=engine.instance, runtime=engine.runtime,
+                                  extra={'tasks': [{'id': 'TK-private'}], 'question_links': []},
+                                  root=Path(directory) / 'input-case')
+        context = fitted['context']
+        self.assertEqual(action['stage'], 'initial')
+        for key in ('model_policy', 'formal_verifier', 'decisions', 'relations', 'goal', 'policies',
+                    'execution_profiles', 'role_profile_refs', 'events', 'user_inputs'):
+            self.assertTrue(is_map_entry(context.get(key)), key)
+        self.assertEqual({'tasks', 'recent_history', 'open_questions', 'question_links'}
+                         & fitted['validation_context'].keys(), set())
+        self.assertEqual(context['record_map']['ledger'], 'supplied_only')
+
+    def test_control_binding_reaches_the_checker_context_but_not_the_prompt(self):
+        instance, runtime = surface_state()
+        profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_work')
+        binding = {'execution_id': 'EX-work', 'grant_id': 'GR-1', 'capability': 'secret-capability'}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fitted = prepare_role_input({'action': {'id': 'AC-work', 'role': 'research_work'}, 'task': {'id': 'TK-1'},
+                'control_binding': binding}, instance=instance, runtime=runtime, role='research_work', profile=profile,
+                snapshot='a' * 40, workspace=root, activity_id='AC-1', install_submission_tools=True,
+                max_artifact_bytes=100000)
+            checker = json.loads((root / 'input/submission/context.json').read_bytes())
+        self.assertEqual(checker['control_binding'], binding)
+        self.assertNotIn('control_binding', fitted['context'])
+        self.assertNotIn('secret-capability', fitted['prompt'])
+
+    def test_task_readiness_reaches_its_readers_in_their_scope(self):
+        # 후보-준비.md 61 checks which tasks wait for external input; 연구-수행.md 17 reads its own task's basis.
+        from record_fixtures import task_contract
+        instance, runtime = surface_state()
+        runtime['tasks'] = {identifier: {**task_contract(), 'id': identifier} for identifier in ('TK-1', 'TK-2')}
+        engine = context_engine(instance, runtime)
+        engine._documents['supplemental_research'] = contracts.prompt_documents('supplemental_research')
+        readiness = {}
+        for role in ('research_preparation', 'research_work', 'supplemental_research'):
+            with tempfile.TemporaryDirectory() as directory:
+                readiness[role] = engine._context({'role': role, 'target': 'TK-1'}, Path(directory)).get('task_readiness')
+        self.assertEqual(set(readiness['research_preparation']), {'TK-1', 'TK-2'})
+        self.assertEqual(set(readiness['research_work']), {'TK-1'})
+        self.assertIsNone(readiness['supplemental_research'])
+
+    def test_completed_review_record_reaches_only_the_goal_audit(self):
+        # 계약/목표-감사.md 21 reads it; no other role contract does.
+        instance, runtime, kid, _ = central_check_knowledge()
+        instance['knowledge'][kid]['review_cycle_id'] = 'RC-done'
+        runtime['review_cycles'] = {'RC-done': {'id': 'RC-done', 'status': 'completed', 'turns': {}}}
+        engine = context_engine(instance, runtime)
+        engine._documents['goal_audit'] = contracts.prompt_documents('goal_audit')
+        for role, expected in (('goal_audit', True), ('research_preparation', False)):
+            with self.subTest(role=role), tempfile.TemporaryDirectory() as directory:
+                row, = engine._context({'role': role}, Path(directory))['knowledge_catalog']
+                self.assertEqual('review_cycle_source' in row, expected)
+                self.assertEqual((Path(directory) / 'input' / 'review-cycles').exists(), expected)
+
+
+class SnapshotReadToolTests(unittest.TestCase):
+    """The installed read tool reads the fixed input snapshot within the record map and logs each read."""
+    INSTANCE = 'RI-01ARZ3NDEKTSV4RRFFQ69G5FAV'
+
+    def setUp(self):
+        from do_math.git_store import GitStateStore
+        from do_math.state_contract import STATE_CONTRACT_ID
+        from research_fixtures import git_init
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.repository = self.root / 'repo'
+        self.repository.mkdir()
+        git_init(self.repository)
+        def envelope(family, record):
+            return canonical_json({'contract_id': STATE_CONTRACT_ID, 'family': family, 'record': record})
+        self.decision = {'id': 'DC-1', 'kind': 'approval', 'actor': 'user'}
+        self.result = b'{"report": "earlier run"}'
+        self.snapshot = GitStateStore(self.repository, self.INSTANCE).publish(None, {
+            'research/decisions/DC-1.json': envelope('decisions', self.decision),
+            'runtime/executions/EX-1.json': envelope('executions', {'id': 'EX-1', 'role': 'research_work'}),
+            'runtime/artifacts/BA-1/result.json': self.result}).head
+
+    def install(self, ledger):
+        workspace = self.root / ledger
+        workspace.mkdir()
+        index = {'research/decisions': ['DC-1'], **({'runtime/executions': ['EX-1']} if ledger == 'readable' else {})}
+        context = {'action': {'id': 'AC-read', 'role': 'maintenance'}, 'execution_id': 'EX-read',
+                   'snapshot': self.snapshot, 'tasks': [], 'knowledge_catalog': [], 'sources': [],
+                   'kind_definitions': {}, 'record_index': index,
+                   'record_map': {'snapshot': self.snapshot, 'ledger': ledger,
+                                  'families': {family: len(ids) for family, ids in index.items()}},
+                   'record_store': {'repository': str(self.repository), 'instance_id': self.INSTANCE}}
+        submission.install_tools(workspace, context, contracts.schema_for('maintenance'), None)
+        return workspace
+
+    def read(self, workspace, *arguments):
+        import subprocess
+        result = subprocess.run([sys.executable, '-B', 'input/tools/read_input.py', *arguments], cwd=workspace,
+                                text=True, capture_output=True, timeout=60)
+        log = (workspace / 'checks/reads.jsonl').read_text(encoding='utf-8').splitlines()
+        return result.returncode, json.loads(result.stdout), [json.loads(line) for line in log]
+
+    def test_indexed_record_is_read_from_the_input_snapshot_and_logged(self):
+        code, output, log = self.read(self.install('readable'), '--id', 'DC-1')
+        self.assertEqual(code, 0, output)
+        row, = output['records']
+        self.assertEqual((row['status'], row['path'], row['record']), ('ok', 'research/decisions/DC-1.json', self.decision))
+        self.assertEqual([(entry['request'], entry['status'], entry['snapshot']) for entry in log],
+                         [('DC-1', 'ok', self.snapshot)])
+
+    def test_record_outside_the_index_is_refused_and_logged(self):
+        code, output, log = self.read(self.install('supplied_only'), '--id', 'EX-1')
+        self.assertEqual(code, 1)
+        self.assertEqual(output['records'][0]['status'], 'refused')
+        self.assertNotIn('record', output['records'][0])
+        self.assertEqual([(entry['request'], entry['status']) for entry in log], [('EX-1', 'refused')])
+
+    def test_ledger_artifact_is_readable_only_where_the_ledger_is(self):
+        path = 'runtime/artifacts/BA-1/result.json'
+        code, output, _ = self.read(self.install('readable'), '--path', path)
+        self.assertEqual((code, output['records'][0]['text']), (0, self.result.decode()))
+        code, output, _ = self.read(self.install('supplied_only'), '--path', path)
+        self.assertEqual((code, output['records'][0]['status']), (1, 'refused'))
+
+    def test_family_listing_summarizes_its_indexed_records(self):
+        code, output, log = self.read(self.install('readable'), '--list', '--family', 'research/decisions')
+        self.assertEqual(code, 0, output)
+        self.assertEqual([(row['id'], row['kind']) for row in output['records']], [('DC-1', 'approval')])
+        self.assertEqual(log[-1]['status'], 'ok')
 
 
 class FollowupDocumentTests(ActivatedPurposeHarness):

@@ -312,6 +312,19 @@ class Tests(unittest.TestCase):
                 self.assertEqual(not issues, valid, issues)
         self.assertEqual(self.t.rule_revision, 1)
 
+    def test_tracker_records_leave_through_the_storage_check(self):
+        """The tracker runs the storage gate's own checker on what ENGINE saves (이음새-정본.md §6)."""
+        from do_math.state_contract import default_state_contract, validate_record
+        obligation = self.due()
+        response = {**self_check_response(obligation), "rule_proposal": {"current_revision": 0,
+            "reason": "rename", "rules": [observation_rule(id="renamed", repeat_interval=2)]}}
+        record = self.t.record_self_check_response(response, available_evidence_refs={"EV-1"})
+        validate_record(default_state_contract().family("runtime", "self_check_responses").checker, record, "response")
+        self.assertEqual(self.t.stored_obligations(), self.t.obligations)
+        self.t.obligations[obligation["id"]]["bookkeeping"] = []
+        with self.assertRaisesRegex(ValueError, "bookkeeping"):
+            self.t.stored_obligations()
+
     def test_malformed_rule_proposal_does_not_reject_valid_self_check(self):
         obligation = self.due()
         response = {**self_check_response(obligation), "rule_proposal": {"current_revision": 0, "reason": "bad", "rules": [observation_rule(threshold=1.5)]}}
@@ -467,7 +480,8 @@ class SelfCheckControlBindingTests(unittest.TestCase):
         tracker.bind_control_request(request, receipt_id="CT-1")
         record = tracker.record_self_check_response(response, available_evidence_refs={"EV-1"}, receipt_id="CT-1")
         self.assertEqual(record["kind"], "self_check_received")
-        self.assertEqual(record["control_call_ids"], ["CALL-SC"])
+        self.assertIn("CALL-SC", tracker.self_check_call_ids)
+        self.assertEqual(tracker.control_requests[request["request_id"]]["receipt_id"], "CT-1")
 
     def test_receipt_before_adapter_event_and_claude_shape(self):
         tracker = self.tracker()
@@ -704,6 +718,46 @@ class ObservationRuleTests(unittest.TestCase):
             clock.value = 14
             accepted = tracker.record_self_check_response(self_check_response(obligation), available_evidence_refs={"EV-1"})
             self.assertEqual(accepted["kind"], "self_check_received")
+
+    def test_research_calls_before_the_response_hold_its_deadline_until_all_of_them_end(self):
+        clock = Clock()
+        start = lambda cid: observe(tracker, {"type": "item.started", "item": {"id": cid, "type": "command_execution"}})
+        end = lambda cid: observe(tracker, {"type": "item.completed", "item": {"id": cid, "type": "command_execution"}})
+        missed = lambda rows: any(r["kind"] == "self_check_missed" for r in rows)
+        with tempfile.TemporaryDirectory() as directory:
+            tracker = self.tracker(Path(directory), clock)
+            write_checkpoint(directory, counters={"attempts": 2})
+            obligation = next(r for r in observe(tracker, {"type": "tick"}) if r["kind"] == "self_check_due")
+            held = tracker.obligations[obligation["id"]]
+            self.assertEqual(held["deadline_offset_ms"], 5000)
+            clock.value = 1
+            start("A")
+            clock.value = 3
+            start("B")
+            clock.value = 20
+            self.assertFalse(missed(end("A")), "a nested call still running holds the deadline")
+            clock.value = 30
+            self.assertFalse(missed(end("B")))
+            self.assertEqual(held["deadline_offset_ms"], 34000)
+            self.assertNotIn("deadline_held_offset_ms", held)
+            clock.value = 31
+            start("C")
+            clock.value = 40
+            self.assertFalse(missed(end("C")))
+            self.assertEqual(held["deadline_offset_ms"], 43000)
+            clock.value = 43
+            accepted = tracker.record_self_check_response(self_check_response(obligation), available_evidence_refs={"EV-1"})
+            self.assertEqual(accepted["kind"], "self_check_received")
+
+    def test_research_call_after_the_deadline_does_not_hold_it(self):
+        clock = Clock()
+        with tempfile.TemporaryDirectory() as directory:
+            tracker = self.tracker(Path(directory), clock)
+            write_checkpoint(directory, counters={"attempts": 2})
+            next(r for r in observe(tracker, {"type": "tick"}) if r["kind"] == "self_check_due")
+            clock.value = 6
+            rows = observe(tracker, {"type": "item.started", "item": {"id": "late", "type": "command_execution"}})
+            self.assertTrue(any(r.get("reason") == "response_deadline_passed" for r in rows))
 
     def test_invalid_rules_feedback_preserves_previous_revision(self):
         clock = Clock()

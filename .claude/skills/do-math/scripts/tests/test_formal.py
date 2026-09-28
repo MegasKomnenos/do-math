@@ -12,8 +12,67 @@ from do_math import formal
 from do_math.formal import compare_formal_results, is_lean_identifier, project_source_identity, verify_lean
 from provider_fixtures import actual_command
 from test_categories import test_group as category
+from do_math.repository import exact_content_hash
+
+
+def _evidence_compiler(root):
+ """A synthetic compiler: ``first`` and ``second`` verified over the shared closure True, True.intro."""
+ import json
+ lines=[]
+ for name in ('first','second'):
+  lines+=[f'"__DO_MATH_SIGNATURE_BEGIN_{name}__"',f'{name} : True',f'"__DO_MATH_SIGNATURE_END_{name}__"',
+          f"'{name}' does not depend on any axioms"]
+ lines.append('user output')
+ for name,kind in (('True','Prop'),('True.intro','True')):
+  lines.append('__DO_MATH_DEPENDENCY__'+json.dumps({'name':name,'evidence':{'type':kind,'value':None}}))
+ for name in ('first','second'):
+  lines.append('__DO_MATH_DEPENDENCIES__'+json.dumps({'declaration':name,'dependencies':['True','True.intro'],
+               'axioms':[],'evidence':{'type':'True','value':'True.intro'}}))
+ fake=root/'fake.py'
+ fake.write_text("import sys\nif '--version' in sys.argv: print('Lean fake')\nelse: print("+repr('\n'.join(lines))+")\n",encoding='utf8')
+ return [sys.executable,str(fake)]
+
 
 class T(unittest.TestCase):
+ def test_dependency_bodies_are_one_table_shared_by_the_declared_closures(self):
+  with tempfile.TemporaryDirectory() as d:
+   result=verify_lean(source='',declarations=['first','second'],workspace=Path(d),lean_command=_evidence_compiler(Path(d)))
+  self.assertEqual(result['status'],'verified',result)
+  self.assertEqual(result['dependency_closure'],{'first':['True','True.intro'],'second':['True','True.intro']})
+  self.assertEqual(result['dependency_evidence'],{'True':exact_content_hash({'type':'Prop','value':None}),
+                                                  'True.intro':exact_content_hash({'type':'True','value':None})})
+
+ def test_verified_output_omits_dependency_body_rows_reduced_to_hashes(self):
+  with tempfile.TemporaryDirectory() as d:
+   result=verify_lean(source='',declarations=['first','second'],workspace=Path(d),lean_command=_evidence_compiler(Path(d)))
+  self.assertEqual(result['status'],'verified',result)
+  self.assertNotIn('__DO_MATH_DEPENDENCY__',result['stdout'])
+  self.assertIn('user output',result['stdout'])
+  self.assertEqual(result['stdout'].count('__DO_MATH_DEPENDENCIES__'),2)
+  self.assertIn('"__DO_MATH_SIGNATURE_BEGIN_first__"',result['stdout'])
+
+ def test_results_without_dependencies_compare_as_equivalent(self):
+  result={'axioms':{'x':[]},'dependency_closure':{'x':[]},'dependency_evidence':{},
+          'declaration_evidence':{'x':{'type':'Prop','value':None}}}
+  self.assertTrue(compare_formal_results(result,dict(result))['equivalent'])
+
+ @category('lean')
+ def test_actual_shared_closure_traversal_matches_each_declaration_checked_alone(self):
+  source=('def base : Nat := 1\ndef mid : Nat := base\ntheorem leaf : mid = mid := rfl\n'
+          "theorem em' (p : Prop) : p ∨ ¬p := Classical.em p\ntheorem t : True := True.intro\n")
+  names=['leaf',"em'",'t']
+  with tempfile.TemporaryDirectory() as d:
+   together=verify_lean(source=source,declarations=names,workspace=Path(d),lean_command=actual_command())
+   alone={name:verify_lean(source=source,declarations=[name],workspace=Path(d),lean_command=actual_command()) for name in names}
+  self.assertEqual(together['status'],'verified',together)
+  self.assertEqual(set(together['axioms']["em'"]),{'Classical.choice','Quot.sound','propext'})
+  for name,result in alone.items():
+   self.assertEqual(result['status'],'verified',result)
+   for field in ('axioms','dependency_closure','declaration_evidence','declaration_signatures'):
+    self.assertEqual(together[field][name],result[field][name],(field,name))
+   self.assertEqual({dependency:together['dependency_evidence'][dependency] for dependency in result['dependency_closure'][name]},
+                    result['dependency_evidence'])
+
  def test_project_preparation_honors_stop_before_starting_git(self):
   with tempfile.TemporaryDirectory() as d, patch('do_math.formal.subprocess.Popen',side_effect=AssertionError('must stop before Git')):
    with self.assertRaisesRegex(RuntimeError,'stopped'):
@@ -170,8 +229,7 @@ class T(unittest.TestCase):
    self.assertEqual(set(result['declaration_signatures']),set(names))
    self.assertEqual(set(result['axioms']),set(names))
    self.assertEqual(set(result['declaration_evidence']),set(names))
-   for name in names:
-    self.assertEqual(set(result['dependency_evidence'][name]),set(result['dependency_closure'][name]))
+   self.assertEqual(set(result['dependency_evidence']),{d for name in names for d in result['dependency_closure'][name]})
  def test_invalid_declaration_rejected(self):
   with tempfile.TemporaryDirectory() as d:self.assertEqual(verify_lean(source='',declarations=['bad;'],workspace=Path(d))['status'],'rejected')
  def test_empty_declaration_list_is_rejected(self):

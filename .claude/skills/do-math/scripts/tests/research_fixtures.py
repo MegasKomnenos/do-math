@@ -12,8 +12,9 @@ module. Each module's docstring lists what it holds.
 - ``research_fixtures`` (this module): inputs every area uses (task
   candidates, review outputs, charters and their approval, trust environments,
   observation rules, clocks and batches), the in-process ``git_init``,
-  ``run_cli`` and ``cli_result``, public activation (``activate``) and the
-  shared starting states below.
+  ``run_cli`` and ``cli_result``, public activation (``activate``), what a
+  prepared role input lets its role reach (``role_reach``) and the shared
+  starting states below.
 - ``state_fixtures``: the validated synthetic active state (``active_instance``,
   ``active_repository``, ``start_active_copy``) and the owner-loop helpers
   (``owner_calls``, ``start_model_call``).
@@ -322,6 +323,37 @@ def read_fixture_context(prompt, workspace):
             if task.get(field + '_source'):
                 task[field] = read(task[field + '_source'])
     return value
+
+
+def role_reach(prompt, workspace, secret):
+    """Where ``secret`` reaches the role given ``prompt`` in its prepared ``workspace``.
+
+    A role reads three things: its rendered prompt, the files of its workspace (the fixed
+    input), and through its installed read tool the input snapshot that record_map allows.
+    The tool is run as the role runs it, on every record_index ID and on every snapshot
+    file that holds ``secret``. Returns ``(reached, held)``: the prompt, workspace files and
+    tool requests that yield ``secret``, and the snapshot files that hold it. An empty
+    ``held`` means the snapshot never held the secret, so ``reached`` proves nothing.
+    """
+    import subprocess
+    from do_math.git_store import GitStateStore
+    workspace, needle = Path(workspace), secret.encode("utf-8")
+    reached = ["prompt"] if secret in prompt else []
+    reached += sorted(path.relative_to(workspace).as_posix() for path in workspace.rglob("*")
+                      if path.is_file() and needle in path.read_bytes())
+    context = json.loads((workspace / "input/submission/context.json").read_bytes())
+    store = GitStateStore(Path(context["record_store"]["repository"]), context["record_store"]["instance_id"])
+    paths = sorted(store.tree_paths(context["snapshot"]))
+    held = sorted(path for path, raw in store.read_many(context["snapshot"], paths).items() if needle in raw)
+    requests = [argument for identifier in sorted({i for ids in context["record_index"].values() for i in ids})
+                for argument in ("--id", identifier)] + [argument for path in held for argument in ("--path", path)]
+    if requests:
+        result = subprocess.run([sys.executable, "-B", "input/tools/read_input.py", *requests], cwd=workspace,
+                                capture_output=True, timeout=120)
+        output = json.loads(result.stdout)
+        reached += ["read_input.py " + row["request"] for row in output["records"]
+                    if row["status"] == "ok" and secret in json.dumps(row, ensure_ascii=False)]
+    return reached, held
 
 
 def candidate(title="task", *, formal=False, revises=None, refs=None):

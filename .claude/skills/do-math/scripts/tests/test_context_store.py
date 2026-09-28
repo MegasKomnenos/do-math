@@ -199,7 +199,9 @@ class RoleInputTests(unittest.TestCase):
             direct = fitted['context']
             self.assertEqual(direct['ready_task_ids'], [])
             self.assertEqual(direct['returned_task_ids'], ['TK-returned'])
-            self.assertEqual(direct['candidate_order']['ids'], [])
+            # The sealed order orders `tasks`; its seed is manifest evidence, not role context.
+            self.assertEqual(fitted['manifest']['candidate_order']['ids'], [])
+            self.assertNotIn('candidate_order', direct)
             self.assertEqual([t['id'] for t in direct['tasks']], ['TK-returned'])
             self.assertEqual(direct['tasks'][0]['result_count'], 1)
             validation = json.loads((root/'input/submission/context.json').read_bytes())
@@ -242,8 +244,8 @@ class RoleInputTests(unittest.TestCase):
                 'resources':{},'knowledge_catalog':[],'blocked_actions':[]},instance=instance,runtime=runtime,role='research_preparation',profile=profile,
                 snapshot='a'*40,workspace=root,activity_id='AC-1',install_submission_tools=True,max_artifact_bytes=100000)
             preview=json.loads((root/'input/submission/context.json').read_bytes())
-            self.assertIn('EX-preserved',submission._reference_ids(preview))
-            self.assertIn('EX-review',submission._reference_ids(preview))
+            self.assertIn('EX-preserved',submission.supplied_reference_ids(preview))
+            self.assertIn('EX-review',submission.supplied_reference_ids(preview))
             self.assertEqual(preview['tasks'][0]['results'],runtime['tasks']['TK-1']['results'])
             self.assertNotIn('results',fitted['context']['tasks'][0])
 
@@ -394,7 +396,8 @@ class RoleInputTests(unittest.TestCase):
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_work')
         context = {'action': {'role': 'research_work'}, 'task': {'id': 'TK-1'},
                    'previous_execution': {'id': 'EX-old', 'failure': 'must not disappear'},
-                   'resume_checkpoint': {'remaining_work': 'P'}, 'recent_history': ['x' * 1000]}
+                   'resume_checkpoint': {'remaining_work': 'P'},
+                   'recent_history': [{'kind': 'note', 'summary': 'x' * 1000}]}
         with tempfile.TemporaryDirectory() as d, patch('do_math.context_store.write_source_catalog',
                 wraps=context_store.write_source_catalog) as catalogs:
             result = prepare_role_input(context, instance=instance, runtime=runtime, role='research_work',
@@ -547,6 +550,26 @@ class RoleInputTests(unittest.TestCase):
             at='2026-09-20T00:00:02Z', outcome='cancelled', reason='input overflow', disposition='question')
         self.assertEqual(defer_input_overflow(runtime, overflow, at='2026-09-20T00:00:03Z', question_ref='Q-1')['status'], 'waiting')
         self.assertEqual(runtime['activities']['AC-1']['status'], 'waiting')
+
+    def test_role_overflow_records_the_context_budget_it_compared(self):
+        # Mandatory context below the whole limit still overflows the budget left after
+        # the fixed documents, schema and framing; the record states that budget.
+        from do_math import contracts, execution_profiles
+        instance, runtime = surface_state()
+        profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_work')
+        fixed = lambda p: len(execution_profiles.prepare_prompt(contracts.render_prompt('research_work', {}), p).encode('utf-8'))
+        body = {k: deepcopy(v) for k, v in profile.items() if k not in {'id', 'sha256'}}
+        body['input']['max_input_bytes'] = fixed(profile) + 1000
+        profile = execution_profiles.seal_profile(body)
+        limit = profile['input']['max_input_bytes']
+        with tempfile.TemporaryDirectory() as d:
+            overflow = prepare_role_input({'action': {}, 'task': {'id': 'TK', 'evidence': 'x' * 3000}},
+                instance=instance, runtime=runtime, role='research_work', profile=profile,
+                snapshot='a'*40, workspace=Path(d), activity_id='AC-1')['overflow']
+        self.assertEqual(overflow['reason'], 'mandatory_context_exceeds_limit')
+        self.assertEqual((overflow['limit_bytes'], overflow['context_budget_bytes']), (limit, limit - fixed(profile)))
+        self.assertLess(overflow['context_budget_bytes'], overflow['mandatory_bytes'])
+        self.assertLess(overflow['mandatory_bytes'], overflow['limit_bytes'])
 
     def test_assessment_only_input_contains_waiting_contract_and_review_history(self):
         from record_fixtures import surface_state

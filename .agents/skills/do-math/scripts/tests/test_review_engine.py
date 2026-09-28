@@ -48,6 +48,16 @@ class ReviewEngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'publication premises'):
             engine._start_identity_review('K1')
 
+    def test_kernel_evidence_outside_the_reviewed_projection_still_binds_publication(self):
+        engine = self.engine
+        cid = engine._start_identity_review('K1')
+        sealed = deepcopy(engine.runtime['review_cycles'][cid]['proposal'])
+        formal = engine.instance['formal_results'][engine.instance['knowledge']['K1']['formal_result_id']]
+        formal['verification']['declaration_evidence']['sample']['value'] = 'another proof term'
+        self.assertEqual(review_cycle.review_proposal(engine.instance, 'K1'), sealed)
+        with self.assertRaisesRegex(ValueError, 'publication premises'):
+            engine._review_cycle(engine.pending())
+
     def test_v5_missing_adopted_policy_does_not_use_config_default(self):
         engine = self.engine
         engine.instance.pop('review_policy', None)
@@ -282,7 +292,7 @@ class ReviewEngineTests(unittest.TestCase):
         cid = engine._start_staged_identity_review(transition_id, 'K1')
         self.assertEqual(engine.pending()['stage'], 'scope')
         cycle = engine.runtime['review_cycles'][cid]
-        self.assertEqual(cycle['proposal']['formal']['declaration_evidence']['sample']['value'], 'staged verified proof')
+        self.assertEqual(cycle['proposal']['formal']['toolchain'], engine.instance['trust_environments']['TE-next']['toolchain'])
         engine.execute(); engine.execute(); engine.execute()
         self.assertEqual(engine.instance, before)
         receipt = engine._completed_staged_identity_review(transition_id, 'K1', cid)
@@ -1136,9 +1146,10 @@ class ReviewInputOverflowTests(unittest.TestCase):
         from do_math import knowledge_records, context_store
         engine = ResearchEngine(self.repo, self.identifier)
         source = 'theorem overflow : 1 = 1 := rfl'
+        fragment = 'This is preserved explanation evidence. '
         engine.instance, _ = knowledge_records.create_candidate(engine.instance, {
             'id': 'KN-overflow', 'kind': 'lemma', 'title': 'Overflow fixture', 'statement': 'One equals one', 'summary': 'Large explanation',
-            'explanation': 'This is preserved explanation evidence. ' * 35000,
+            'explanation': fragment * (engine.instance['config']['max_input_bytes'] // len(fragment) + 1),
             'lean_code': source, 'declaration_names': ['overflow'], 'dependencies': []},
             source_ref=engine.instance['lifecycle']['input_id'], actor_ref=next(iter(engine.runtime['executions'])))
         environment = engine._formal_environment()

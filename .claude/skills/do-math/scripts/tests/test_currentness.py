@@ -1,8 +1,9 @@
 """Currentness of research state as sources, tasks and knowledge change.
 
 Source replacement, plans citing changed tasks, interrupted work restored for
-its review, live observation rules, conversation guards and goal dependencies.
-Model answers are fixtures."""
+its review, operational evidence replaced before application, live observation
+rules, conversation guards and goal dependencies. A return caused only by
+changed premises is refreshed, not repaired. Model answers are fixtures."""
 import hashlib
 import json
 import sys
@@ -20,8 +21,10 @@ from do_math.observations import ObservationTracker, validate_rules
 from do_math.planning import task_ready
 from purpose_fixtures import (ActivatedPurposeHarness, common, CURRENTNESS_CONFIG, formal_fixture,
                               PurposeRunner)
-from research_fixtures import (await_control, local_job_runner, observe, producer_result, restore_template,
-                               send_control, write_checkpoint)
+from do_math.git_store import ARTIFACT_ROOT
+from do_math.repository import new_id
+from research_fixtures import (await_control, local_job_runner, observe, producer_result, read_fixture_context,
+                               restore_template, send_control, write_checkpoint)
 
 
 def plan_ready_instance(root, shared, *, config):
@@ -118,6 +121,11 @@ class CurrentnessTests(ActivatedPurposeHarness):
         self.assertTrue(any(row['rule_id'] == 'integration.currentness' and 'source' in row['message']
                             for row in issues), issues)
         self.assertEqual(engine.runtime['cycles'], 0)
+        # With no output repair allowed, the changed premise is still refreshed once.
+        refreshed = [a for a in engine.runtime['queue'] if a.get('refresh', {}).get('execution_id') == execution['id']]
+        self.assertEqual(len(refreshed), 1)
+        self.assertNotIn('repair', refreshed[0])
+        self.assertNotIn(execution['action']['id'], engine.runtime.get('waiting_actions', {}))
         entry = next(f for f in execution['output_files'] if f['path'] == 'partial.txt')
         self.assertEqual(engine.store.read(entry['artifact_ref']), b'The old input was read.')
 
@@ -210,6 +218,76 @@ class CurrentnessTests(ActivatedPurposeHarness):
         other = engine._context(review, other_workspace)['recovery_materials']
         self.assertEqual((other_workspace / other['result_source']['local_path']).read_bytes(), activity_result)
         self.assertNotEqual(other['result_source']['local_path'], other['checkpoint_source']['local_path'])
+
+    def _review_after_checkpoint_replacement(self, disposition):
+        """Run an operational review of a failed attempt whose checkpoint is replaced after the review input.
+
+        ``disposition(failed_id, cited_checkpoint_ref)`` is the reviewer's answer.
+        Returns the engine, the reviewed execution ID, the cited reference and the review execution.
+        """
+        engine, _ = self.make()
+        class FailingRunner:
+            @local_job_runner
+            def run(inner, **kwargs):
+                kwargs['on_started']({'fixture': True})
+                (kwargs['workspace'] / 'checkpoint.json').write_text(json.dumps({
+                    'current_claim': 'A partial lemma is established.', 'evidence_paths': [],
+                    'attempts': ['Checked the bounded case.'], 'remaining_work': ['Prove the general case.'],
+                    'next_step': 'Resume from the partial lemma.', 'progress_state': 'blocked'}), encoding='utf-8')
+                return producer_result({'status': 'failed', 'output': None, 'usage': {}, 'error': 'fixture interruption'}, kwargs)
+        engine.runner = FailingRunner()
+        engine.run(max_steps=1)
+        failed = next(e['id'] for e in engine.runtime['executions'].values() if e['role'] == 'research_preparation')
+        cited = engine.runtime['checkpoints'][failed]['artifact_ref']
+        class ReviewRunner:
+            @local_job_runner
+            def run(inner, **kwargs):
+                kwargs['on_started']({'fixture': True})
+                context = read_fixture_context(kwargs['prompt'], kwargs['workspace'])
+                if cited not in context['admissible_basis_refs']:
+                    raise AssertionError('The fixture must cite a checkpoint that its input admitted')
+                output = {**common('The failed attempt kept a reusable checkpoint'),
+                          'disposition': disposition(failed, cited)}
+                return producer_result({'status': 'completed', 'output': output, 'usage': {}}, kwargs)
+        engine.runner = ReviewRunner()
+        receive = engine._receive_submission
+        def checkpoint_replaced_then_received(action, *args, **kwargs):
+            # The target's newest checkpoint changes after the review input was fixed.
+            if action['role'] == 'operational_review':
+                checkpoint = engine.runtime['checkpoints'][failed]
+                replacement = ARTIFACT_ROOT + new_id('BA') + '/checkpoint.json'
+                raw = engine.store.read(checkpoint['artifact_ref'], engine.head)
+                engine.runtime['checkpoints'][failed] = {**checkpoint, 'artifact_ref': replacement}
+                engine._save({replacement: raw})
+            return receive(action, *args, **kwargs)
+        with patch.object(engine, '_receive_submission', checkpoint_replaced_then_received):
+            engine.run(max_steps=1)
+        review = next(e for e in engine.runtime['executions'].values() if e['role'] == 'operational_review')
+        return engine, failed, cited, review
+
+    def test_operational_basis_replaced_after_input_is_refreshed_without_output_repair(self):
+        engine, failed, cited, review = self._review_after_checkpoint_replacement(lambda target, checkpoint: {
+            'kind': 'continue', 'basis_refs': [target, checkpoint], 'next_owner': 'engine',
+            'reason': 'The preserved checkpoint records the partial lemma.', 'next_review': None})
+        self.assertEqual(review['error_kind'], 'currentness_changed', review.get('integration_result'))
+        self.assertTrue(any(cited in change['reason'] and 'admissible at input' in change['reason']
+                            for change in review['currentness_changes']), review['currentness_changes'])
+        followups = [a for a in engine.runtime['queue'] if a['role'] == 'operational_review' and a.get('target') == failed]
+        self.assertEqual([a.get('refresh', {}).get('execution_id') for a in followups], [review['id']])
+        self.assertNotIn('repair', followups[0], 'A changed premise does not spend an output repair')
+        self.assertNotIn(review['action']['id'], engine.runtime.get('waiting_actions', {}))
+
+    def test_replaced_operational_basis_with_another_application_error_stays_a_producer_repair(self):
+        engine, failed, cited, review = self._review_after_checkpoint_replacement(lambda target, checkpoint: {
+            'kind': 'repair', 'basis_refs': [target, checkpoint], 'next_owner': 'installation_recovery',
+            'reason': 'The receiver rejected the preserved checkpoint.', 'repair_target': 'installation:missing.py',
+            'meaning_preserving': True, 'verification': 'Rerun the receiver on the preserved checkpoint.'})
+        self.assertEqual(review['error_kind'], 'output_contract', review.get('integration_result'))
+        self.assertTrue(any('installation repair target' in row['message']
+                            for row in review['integration_result']['issues']), review['integration_result'])
+        followups = [a for a in engine.runtime['queue'] if a['role'] == 'operational_review' and a.get('target') == failed]
+        self.assertEqual([a.get('repair', {}).get('execution_id') for a in followups], [review['id']])
+        self.assertNotIn('refresh', followups[0])
 
     def test_recovery_captures_parent_and_inline_child_without_losing_action(self):
         engine, _ = self.make()
@@ -329,6 +407,17 @@ class SolvedStateCurrentnessTests(ActivatedPurposeHarness):
         self.assertFalse(judgment['current'])
         self.assertEqual(engine.instance['goal_status'], 'unsolved')
         self.assertEqual(engine.runtime['status'], 'ready')
+
+
+class OperationalBasisPremiseTests(unittest.TestCase):
+    def test_only_evidence_admitted_at_input_can_become_a_changed_premise(self):
+        from do_math.operational_dispositions import basis_premise_changes
+        at_input, current = ['EX-target', 'BA-old'], ['EX-target', 'BA-new']
+        changed = basis_premise_changes({'basis_refs': ['EX-target', 'BA-old']}, at_input, current)
+        self.assertEqual([row['id'] for row in changed], ['BA-old'])
+        self.assertEqual(basis_premise_changes({'basis_refs': ['BA-old', 'OF-never-supplied']}, at_input, current), [],
+                         'A citation outside the input stays a producer error')
+        self.assertEqual(basis_premise_changes({'basis_refs': ['EX-target']}, at_input, current), [])
 
 
 if __name__ == '__main__': unittest.main()

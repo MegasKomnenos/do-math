@@ -125,7 +125,8 @@ class PurposeRunner:
         role = prompt.split('You are the do-math role: ', 1)[1].split('.', 1)[0]
         context = parse_context(prompt, workspace)
         action = context['action']
-        self.calls.append({'role': role, 'action': deepcopy(action), 'context': deepcopy(context), 'workspace': str(workspace)})
+        self.calls.append({'role': role, 'action': deepcopy(action), 'context': deepcopy(context), 'workspace': str(workspace),
+                           'prompt': prompt})
         on_started()
         if action.get('repair'):
             raise AssertionError('A purpose fixture must not silently adapt to an engine validation failure: ' +

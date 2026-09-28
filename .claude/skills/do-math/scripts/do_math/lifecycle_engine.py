@@ -13,7 +13,7 @@ import math
 import time
 
 from .governance import apply_decision, timestamp
-from .planning import (task_ready, contract_hash, record_due_events, contract_review_current, review_basis_key,
+from .planning import (instance_ended, task_ready, contract_hash, record_due_events, contract_review_current, review_basis_key,
                        capture_task_basis, governance_revisions)
 from .repository import canonical_json, exact_content_hash, new_id
 from .initialization import activation_requirements, capability_requirements
@@ -115,9 +115,7 @@ class LifecycleEngineMixin:
         return capability_requirements(self.instance, reference, at=self._lifecycle_now().isoformat())
 
     def _instance_closed(self):
-        """Closed or completed research: no lifecycle control or dispatch applies any more."""
-        return (self.runtime.get('status') in {'closed', 'completed'}
-                or self.instance.get('lifecycle', {}).get('permanently_closed'))
+        return instance_ended(self.instance, self.runtime)
 
     def _request_stop_all(self, reason):
         """Record one stop reason on every execution that has not ended."""

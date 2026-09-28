@@ -127,6 +127,10 @@ class GovernanceEngineMixin:
             source = self._governance_input_source(action['target'])
             context['user_request'] = {**deepcopy(request), 'text': source['text'], 'sha256': source['sha256']}
             context['original_source'] = source
+            # A task_scope unit binds the contract edition by the hash the decision checks (apply_decision).
+            from .planning import contract_hash
+            for task in context.get('tasks', []):
+                task['contract_sha256'] = contract_hash(task)
             context['import_consumers'] = governance.import_consumer_catalog(self.governance_owner_handlers())
             context['governance_records'] = deepcopy(list(self.instance.get('governance', {}).values()))
             context['delegations'] = deepcopy(list(self.instance.get('delegations', {}).values()))

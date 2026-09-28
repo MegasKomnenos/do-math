@@ -21,7 +21,7 @@ DEFAULT_CONFIG = {
     "session_limits": deepcopy(model_policy.LIMITS),
     "effort": "medium", "call_timeout_seconds": 600,
      "reviewers": 2,
-    "goal_auditors": 2, "max_input_bytes": 500000, "max_output_repairs": 1,
+    "goal_auditors": 2, "max_input_bytes": 2000000, "max_output_repairs": 1,
     "lean_command": None,
     "review_rounds": 3, "review_research_limit": 3, "research_reconsider_seconds": 86400,
     "observation_mode": "event_driven", "observation_interval_seconds": 300,

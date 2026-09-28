@@ -164,6 +164,18 @@ class ReportingTests(unittest.TestCase):
         self.assertEqual(reporting.dispatch_waits(runtime), [])
 
 
+    def test_task_rows_of_an_ended_instance_carry_no_readiness(self):
+        from record_fixtures import approved_task
+        task, instance, runtime = approved_task()
+        task['status'] = 'active'
+        self.assertEqual(reporting.task_status(instance, runtime)[0]['readiness']['state'], 'ready')
+        for ended in ('closed', 'completed'):
+            with self.subTest(status=ended):
+                row, = reporting.task_status(instance, {**runtime, 'status': ended})
+                self.assertIsNone(row['readiness'])
+                self.assertEqual(row['waits'], [])
+
+
 class StatusSnapshotTests(unittest.TestCase):
     def test_engine_cleanup_failure_reaches_snapshot_reporting(self):
         from do_math.repository import ResearchRepository as Repository

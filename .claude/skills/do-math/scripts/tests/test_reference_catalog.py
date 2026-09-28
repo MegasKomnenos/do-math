@@ -19,7 +19,7 @@ class CatalogTests(unittest.TestCase):
                        "reference_catalog": [{"path": "invented"}],
                        "proposal": {"valid": {}},
                        "other": [{"ref": "proposal:missing"}]}
-            with patch.object(submission, '_reference_locators', wraps=submission._reference_locators) as locators:
+            with patch.object(submission, 'supplied_locators', wraps=submission.supplied_locators) as locators:
                 values = {row['value'] for row in reference_catalog(context, root)}
                 self.assertEqual(locators.call_count, 1)
             self.assertTrue(set(paths).issubset(values))

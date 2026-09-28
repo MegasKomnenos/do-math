@@ -370,20 +370,19 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
 
 
 PROPOSAL_FIELDS = ('id', 'revision', 'formal_result_id', 'exposition_id', 'definitions', 'assumptions', 'statement', 'explanation', 'summary', 'lean_code',
-                    'declaration_names', 'dependencies', 'relation_claim', 'relation_endpoint_basis', 'confirmed_scope', 'epistemic_status')
-_FORMAL_FIELDS = ('status', 'source_sha256', 'declarations', 'axioms', 'toolchain',
-                  'artifact_ref', 'execution_id', 'trust_environment_id', 'allowed_axioms')
-_FORMAL_FIELDS += ('declaration_signatures', 'signature_hash')
-_FORMAL_FIELDS += ('dependency_closure', 'declaration_evidence', 'dependency_evidence')
-
-
+                    'declaration_names', 'dependencies', 'source_refs', 'source_basis', 'relation_claim', 'relation_endpoint_basis',
+                    'confirmed_scope', 'epistemic_status')
+_LIST_PROPOSAL_FIELDS = ('declaration_names', 'dependencies', 'source_refs', 'source_basis')
 def review_proposal(instance, knowledge_id):
-    """The reviewed projection of one knowledge record (the proposal a review cycle seals)."""
+    """The reviewed projection of one knowledge record (the proposal a review cycle seals).
+
+    Its formal part is the judged verification (knowledge_records.judged_verification).
+    """
     from . import knowledge_records as kr
     item = kr.proposal_view(instance, knowledge_id)
-    result = {name: copy.deepcopy(item.get(name, [] if name in ('declaration_names', 'dependencies') else ''))
+    result = {name: copy.deepcopy(item.get(name, [] if name in _LIST_PROPOSAL_FIELDS else ''))
               for name in PROPOSAL_FIELDS}
-    result['formal'] = {name: copy.deepcopy(item['formal'][name]) for name in _FORMAL_FIELDS if name in item.get('formal', {})}
+    result['formal'] = copy.deepcopy(item['formal'])
     result['revision'] = item.get('revision', 1)
     return result
 

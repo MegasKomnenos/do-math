@@ -299,6 +299,17 @@ class OperatorTests(unittest.TestCase):
                 self.assertTrue(command.endswith('--instance ' + quote(self.instance)))
                 self.assertEqual(code, 5)
 
+    def test_schedule_reconcile_uses_the_console_interpreter_when_run_windowless(self):
+        interpreters = self.root / 'Python'
+        interpreters.mkdir()
+        for name in ('python.exe', 'pythonw.exe'):
+            (interpreters / name).write_bytes(b'')
+        with patch.object(sys, 'executable', str(interpreters / 'pythonw.exe')):
+            result, _ = cli._schedule_failure({'config': {'operator_enabled': True}}, RuntimeError('failed'),
+                                              self.repository, self.instance)
+        self.assertTrue(result['operator_schedule']['reconcile'].startswith(
+            "& '" + str(interpreters / 'python.exe') + "' "))
+
     def _config(self, value: dict) -> Path:
         path = self.root / "config.json"
         path.write_text(json.dumps(value), encoding="utf-8")

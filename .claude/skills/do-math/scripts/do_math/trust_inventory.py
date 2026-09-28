@@ -11,13 +11,14 @@ explicit content check against the recorded full hashes.
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 import json
+import math
 import os
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
 from .repository import exact_content_hash
-from .file_io import SHA256_SCHEMA as _HASH, fingerprint_json, now, os_lock, sha256_file, stat_fingerprint
+from .file_io import SHA256_SCHEMA as _HASH, fingerprint_json, now, os_lock, parse_utc, sha256_file, stat_fingerprint
 from .trust_validation import RECORD_ID_PATTERN
 
 SMOKE = 'import Mathlib\nexample (n : Nat) : n + 0 = n := by rfl\nexample : (2 : ℝ) + 2 = 4 := by norm_num\n'
@@ -132,6 +133,12 @@ def content_hashes(identity, paths):
 
 def validation_sha256(validation):
     return exact_content_hash({key: validation.get(key) for key in VALIDATION_SUMMARY})
+
+
+def representative_check_seconds(validation):
+    """Whole seconds, rounded up, from the start to the finish of a baseline's representative compile."""
+    elapsed = parse_utc(validation['finished_at']) - parse_utc(validation['started_at'])
+    return math.ceil(elapsed.total_seconds())
 
 
 def new_baseline(fingerprint, content, validation):

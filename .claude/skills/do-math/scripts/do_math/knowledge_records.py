@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from .file_io import is_sha256
 from .formal import FORMAL_EVIDENCE_FIELDS, forbidden_axioms, lean_source_sha256
 from .planning import record_index
 from .repository import exact_content_hash, new_id
@@ -85,6 +86,27 @@ def create_candidate(output, candidate, *, source_ref, actor_ref):
     return output, kid
 
 
+# The verification fields a judgment compares: declaration names, types and signatures,
+# axioms, the trust environment and the checked source, with the exact check reference
+# (계약/동일성-검토.md, 계약/목표-감사.md). The raw compiler output and the kernel
+# dependency evidence are read only by machine checks, from the stored record; the
+# identity premise still hashes the whole verification.
+JUDGED_VERIFICATION_FIELDS = ("status", "source_sha256", "declarations", "axioms", "declaration_signatures",
+                              "signature_hash", "toolchain", "allowed_axioms", "execution_id", "artifact_ref")
+
+
+def judged_verification(verification):
+    """The one projection of a formal verification that judgment roles receive."""
+    return {name: deepcopy(verification[name]) for name in JUDGED_VERIFICATION_FIELDS if name in verification}
+
+
+def judged_formal_result(formal):
+    """A formal result record as judgment roles receive it."""
+    view = {key: deepcopy(value) for key, value in formal.items() if key != "verification"}
+    view["verification"] = judged_verification(formal.get("verification", {}))
+    return view
+
+
 def proposal_view(instance, knowledge_id):
     record = deepcopy(instance["knowledge"][knowledge_id])
     exposition = instance["expositions"][record["exposition_id"]]
@@ -93,9 +115,13 @@ def proposal_view(instance, knowledge_id):
         values = [item["text"] for item in exposition["items"] if item["kind"] == field]
         record[field] = values if field in {"definitions", "assumptions"} else "\n".join(values)
     record.update(lean_code=formal.get("lean_code", ""), declaration_names=formal.get("declaration_names", []),
-                  formal=deepcopy(formal.get("verification", {})))
+                  formal=judged_verification(formal.get("verification", {})))
     if formal.get("trust_environment_id"):
         record["formal"]["trust_environment_id"] = formal["trust_environment_id"]
+        # A judgment compares the axioms with those its trust environment allows.
+        environment = instance.get("trust_environments", {}).get(formal["trust_environment_id"], {})
+        if "allowed_axioms" in environment:
+            record["formal"].setdefault("allowed_axioms", deepcopy(environment["allowed_axioms"]))
     record["status"] = "verified" if usable_links(instance, knowledge_id) else "candidate"
     return record
 
@@ -104,8 +130,8 @@ def reader_view(instance, knowledge_id):
     """Delivered evidence only; never copy these projections into a new candidate."""
     record = proposal_view(instance, knowledge_id)
     formal = instance.get('formal_results', {}).get(record.get('formal_result_id'), {})
-    # Exact split records are available to readers of this already-delivered file.
-    record["formal_result"] = deepcopy(formal)
+    # The split records are available to readers of this already-delivered file.
+    record["formal_result"] = judged_formal_result(formal)
     record["identity_assessments"] = [deepcopy(row) for row in instance.get("identity_assessments", {}).values()
         if row.get("formal_result_id") == record.get("formal_result_id")
         and row.get("exposition_id") == record.get("exposition_id")]
@@ -205,11 +231,14 @@ def validate_formal_evidence(formal, verification, env):
     if verification.get("declarations") != formal["declaration_names"]:
         raise ValueError("verification declarations differ from formal result")
     for field in FORMAL_EVIDENCE_FIELDS:
-        if set(verification.get(field, {})) != set(formal["declaration_names"]):
+        if field != "dependency_evidence" and set(verification.get(field, {})) != set(formal["declaration_names"]):
             raise ValueError("verification evidence incomplete: " + field)
-    for declaration in formal["declaration_names"]:
-        if set(verification["dependency_evidence"][declaration]) != set(verification["dependency_closure"][declaration]):
-            raise ValueError("dependency body evidence differs from the closure")
+    # One body hash per constant of the declared closures.
+    closure = {name for declaration in formal["declaration_names"]
+               for name in verification["dependency_closure"][declaration]}
+    table = verification.get("dependency_evidence")
+    if not isinstance(table, dict) or set(table) != closure or not all(map(is_sha256, table.values())):
+        raise ValueError("dependency body evidence differs from the closure")
     if verification.get("status") == "verified" and forbidden_axioms(verification["axioms"], env.get("allowed_axioms", [])):
         raise ValueError("verification uses unapproved axioms")
 

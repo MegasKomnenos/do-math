@@ -104,7 +104,7 @@ class ReviewFakeEngine(ResearchEngine):
         candidate.update(revision=1, kind='theorem', kind_definition_id=definition['id'])
         self.instance, _ = kr.create_candidate(self.instance, candidate, source_ref='test-fixture', actor_ref='author')
         proof = deepcopy(legacy['formal'])
-        proof.update(dependency_closure={'sample': []}, dependency_evidence={'sample': {}},
+        proof.update(dependency_closure={'sample': []}, dependency_evidence={},
                      declaration_evidence={'sample': {'type': 'fixture-type', 'value': 'fixture-proof'}})
         self.instance = kr.record_formal_result(self.instance, 'K1', proof, 'TE-review', runtime=self.runtime)
         self.head = 'snapshot-one'
@@ -225,15 +225,15 @@ def review_stage_output(cycle, stage, **changes):
 def defer_review_for_research(engine):
     """Open a review of ``K1`` on a ``ReviewFakeEngine`` and defer its first initial review for fixed research.
 
-    The deferred reviewer asks one question over the proposal's dependency
-    closure and Lean code; returns the review cycle ID.
+    The deferred reviewer asks one question over the proposal's checked axioms
+    and Lean code; returns the review cycle ID.
     """
     cid = engine._start_identity_review('K1')
     engine.execute()
     action = deepcopy(engine.pending())
     context = engine._prepare_review_context(action, engine.root / 'deferred')['context']
-    requests = [{'id': 'domain', 'question': 'Which kernel constants does this exact declaration depend on?',
-                 'source_refs': ['proposal:formal.dependency_closure', 'proposal:lean_code']}]
+    requests = [{'id': 'domain', 'question': 'Which axioms does this exact declaration use?',
+                 'source_refs': ['proposal:formal.axioms', 'proposal:lean_code']}]
     # A started review execution carries the manifest of the prompt it was given.
     engine.runtime['executions']['INV-request'] = {'id': 'INV-request', 'role': 'identity_review',
         'status': 'running', 'action': action, 'actor_kind': 'ai', 'owner_activity_id': action['owner_activity_id'],

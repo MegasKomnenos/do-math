@@ -56,6 +56,19 @@ def require_basis_refs(disposition, allowed):
                          'invalid_basis_refs=' + repr(invalid) + '; admissible_basis_refs=' + repr(sorted(allowed)))
 
 
+def basis_premise_changes(disposition, input_refs, current_refs):
+    """Cited evidence admissible at input but not at application: changed premises, not a producer error.
+
+    Empty when nothing is stale or when any stale citation was never admissible;
+    the application check then rejects the citation as the producer's error.
+    """
+    stale = sorted(set(disposition['basis_refs']) - set(current_refs))
+    if not stale or not set(stale) <= set(input_refs):
+        return []
+    return [{'field': 'admissible_basis_refs', 'id': ref,
+             'reason': ref + ' was admissible at input; replaced before application'} for ref in stale]
+
+
 
 
 def worker_feedback(disposition: dict[str, Any]) -> dict[str, Any]:

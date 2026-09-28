@@ -24,7 +24,7 @@ from .contracts import render_prompt, all_prompt_documents, reading_map, prompt_
 from .formal import verify_lean, discover_lean
 from . import governance, knowledge, planning, knowledge_io, knowledge_records, academic, task_scope, delegations
 from .input_basis import capture_sources, sources_current, capture_decision_basis, decision_basis_changes, CurrentnessChanged
-from .context_store import collect_outputs, prepare_role_input, defer_input_overflow, materialize_inputs, restore_continuation, verify_manifest_artifacts
+from .context_store import collect_outputs, prepare_role_input, defer_input_overflow, input_class, input_scope, materialize_inputs, restore_continuation, verify_manifest_artifacts
 from .operation_trace import engine_operation, tracing, phase, measured, progress as operation_progress
 from .observation_transport import ObservationBatch
 from .observations import ObservationTracker, CHECKPOINT_SCHEMA, checkpoint_value, preserve_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, self_check_feedback, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint, observation_settings_errors, task_rules_from_execution, bind_task_rules, capture_checkpoint_files
@@ -197,6 +197,16 @@ def _control_result(store, head, runtime, request_id):
     if successor is None:
         raise ValueError("control receipt has no published successor")
     return {**deepcopy(row["result"]), "snapshot": successor}
+
+
+def _adopts_observation_or_toolchain(request):
+    """An applied control that adopts profiles or registers a toolchain; its result carries window warnings."""
+    config = request.get("config")
+    if request.get("action") == "trust":
+        return isinstance(config, dict) and config.get("operation") == "register"
+    change = config.get("change") if isinstance(config, dict) else None
+    return (request.get("action") == "decision" and isinstance(change, dict)
+            and change.get("kind") == "initialization" and change.get("operation", "adopt") == "adopt")
 
 
 def _user_control_request(runtime, request_id):
@@ -757,11 +767,15 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self._evaluate_stops()
 
     def _record_control_result(self, request, *, rejected=False, reason=None, **details):
+        result = {"effect": "rejected" if rejected else "applied", "reason": reason,
+                  "status": self.runtime["status"], "config": deepcopy(self.instance["config"])
+                      if request["action"] == "configure" else None}
+        if not rejected and _adopts_observation_or_toolchain(request):
+            from .initialization import observation_window_warnings
+            result["observation_window_warnings"] = observation_window_warnings(self.instance, self.runtime)
         self.runtime["history"].append({"kind": "rejected_user_control" if rejected else "user_control",
             "request": deepcopy(request), "reason": reason, **details, "publication_parent": self.head,
-            "result": {"effect": "rejected" if rejected else "applied", "reason": reason,
-                "status": self.runtime["status"], "config": deepcopy(self.instance["config"])
-                    if request["action"] == "configure" else None}})
+            "result": result})
 
     def control_result(self, request_id):
         return _control_result(self.store, self.head, self.runtime, request_id)
@@ -1201,7 +1215,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     if pending_research - set(call_ids):
                         raise ValueError("safe boundary omits observed inflight research calls")
                     boundary_updates = tracker.record_safe_boundary(receipt["id"], call_ids=call_ids)
-                    self.runtime.setdefault("self_check_obligations", {}).update(deepcopy(tracker.obligations))
+                    self.runtime.setdefault("self_check_obligations", {}).update(tracker.stored_obligations())
             elif request["kind"] == SELF_CHECK_RESPONSE:
                 if tracker is None:
                     raise ValueError("self-check has no current tracker")
@@ -1214,7 +1228,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 record = tracker.record_self_check_response(response, available_evidence_refs=available, receipt_id=receipt["id"])
                 record = persistent_record(record)
                 self.runtime.setdefault("self_check_responses", {})[record["id"]] = record
-                self.runtime.setdefault("self_check_obligations", {}).update(deepcopy(tracker.obligations))
+                self.runtime.setdefault("self_check_obligations", {}).update(tracker.stored_obligations())
                 if record["kind"] == "self_check_rejected":
                     receipt["state"] = "rejected"
                 for item in (record, record.get("rule_update", {})):
@@ -1280,7 +1294,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     def _control_evidence_refs(self, execution):
         context, _ = self._issued_input(execution, with_schema=False)
-        refs = {row["value"] for row in context.get("reference_catalog", [])}
+        refs = {row["value"] for row in context.get("reference_catalog", [])} | submission.record_index_ids(context)
         for family in ("observation_facts", "self_check_obligations", "self_check_responses"):
             refs.update(row["id"] for row in self.runtime.get(family, {}).values()
                         if row.get("execution_id") == execution["id"])
@@ -1592,8 +1606,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             catalog[-1]["identity_assessment_ids"] = [row["id"] for row in record["identity_assessments"]]
             cycle_id = knowledge_record.get("review_cycle_id")
             cycle = self.runtime.get("review_cycles", {}).get(cycle_id)
-            if cycle and cycle["status"] in {"completed", "unresolved"} and not (
-                    action["role"] == "identity_review" and action.get("review_cycle_id") == cycle_id):
+            # Only the goal audit reads a finished review's record (계약/목표-감사.md).
+            if action["role"] == "goal_audit" and cycle and cycle["status"] in {"completed", "unresolved"}:
                 cycle_path = directory / "review-cycles" / (cycle_id + ".json")
                 cycle_path.parent.mkdir(exist_ok=True)
                 raw = canonical_json(cycle)
@@ -1613,10 +1627,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             sources.append({**source, "local_path": path.relative_to(workspace).as_posix()})
         target = action.get("target")
         task = self.runtime["tasks"].get(target)
-        target_execution_action = self.runtime["executions"].get(target, {}).get("action", {}) if action["role"] == "operational_review" else {}
-        private_review_context = bool(action.get("review_cycle_id") or target_execution_action.get("review_cycle_id"))
+        # The class table decides what this input may carry; blocked keys are dropped by
+        # prepare_role_input, and their files are never restored here.
+        scope = input_scope(action, self.runtime)
         task_views = [{**deepcopy(row), "content_sha256": knowledge.content_hash(row)} for row in self.runtime["tasks"].values()]
-        if not private_review_context:
+        if input_class(scope, "tasks") != "blocked":
             result_bytes = self.store.read_many([
                 file["artifact_ref"] for view in task_views for result in view.get("results", [])
                 for file in result.get("output_files", self.runtime["executions"].get(
@@ -1644,17 +1659,19 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                    "user_inputs": self.runtime["inputs"], "open_questions": self._user_questions(),
                    "instance_id": self.instance["id"], "question_links": self._question_view(),
                    "recent_history": self.runtime["history"][-8:],
-                   "instructions": "Read input/ and your workspace only. Pass the exact absolute workspace as workdir on every shell call, with login=false. Use absolute paths under this workspace for file reads and writes; a shell's default working directory may differ. Ask for missing inputs. Never read other runs or the central repository. New research source code belongs in this workspace."}
+                   "instructions": "Read input/, your workspace and, through record_map.read_tool, the records of the input snapshot that record_map allows. Pass the exact absolute workspace as workdir on every shell call, with login=false. Use absolute paths under this workspace for file reads and writes; a shell's default working directory may differ. Ask for missing inputs. Never read other runs' workspaces or the central repository directly. New research source code belongs in this workspace."}
         context.update(goal_revision=governance_input.get("goal_revision", 1), policy_revision=governance_input.get("policy_revision", 1),
                        grants=[{k: v for k, v in grant.items() if k != "credential_env"} for grant in self.instance.get("grants", {}).values()],
                        checkpoint_schema=CHECKPOINT_SCHEMA, checkpoint_path="checkpoint.json",
                        external_operations=list(self.runtime.get("external_operations", {}).values()),
                        events=[e for e in self.runtime.get("events", []) if e["id"] in action.get("event_refs", [])],
                        available_input_refs=self._available_inputs())
-        if action["role"] in {"research_plan", "research_work", "supplemental_research"}:
-            # The plan and research contracts read the readiness basis; other roles do not.
-            context["task_readiness"] = {tid: planning.task_ready(task, self.instance, self.runtime, evaluation_context=evaluation_context)
-                                         for tid, task in self.runtime["tasks"].items()}
+        if input_class(scope, "task_readiness") == "inline":
+            # The plan selects and preparation finds tasks waiting only for input by every
+            # task's basis; research work confirms the basis that admitted its own task.
+            readers = {target: task} if action["role"] == "research_work" else self.runtime["tasks"]
+            context["task_readiness"] = {tid: planning.task_ready(row, self.instance, self.runtime, evaluation_context=evaluation_context)
+                                         for tid, row in readers.items() if row is not None}
         context["resources"] = self._session_resources()
         context["budget_unit"] = "concurrent_sessions"
         context["model_policy"] = {"tier_models": self.instance["config"]["tier_models"],
@@ -1729,10 +1746,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         context["academic_validation"] = ({"status": "initialization_incomplete"}
             if governance_input.get("status") == "unadopted_input" else self._academic_status())
         context["external_rejections"] = self.runtime.get("external_rejections", [])
-        if action["role"] in {"identity_review", "goal_audit"}:
-            context.pop("recent_history")
         if action["role"] == "identity_review":
-            context.pop("tasks")
             prepared = self._prepare_review_context(action, workspace, sources=sources)
             if prepared["disposition"] != "ready":
                 raise ReviewPreparationDeferred(prepared)
@@ -1746,7 +1760,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 proposal = knowledge_records.proposal_view(self.instance, kid)
                 context["eligible_knowledge"].append({"id": kid,
                     "proposal": proposal, "links": links,
-                    "formal_result": deepcopy(self.instance["formal_results"][record["formal_result_id"]]),
+                    "formal_result": knowledge_records.judged_formal_result(
+                        self.instance["formal_results"][record["formal_result_id"]]),
                     "exposition": deepcopy(self.instance["expositions"][record["exposition_id"]]),
                     "identity_assessments": [deepcopy(self.instance["identity_assessments"][link["assessment_id"]])
                                              for link in links]})
@@ -1863,8 +1878,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if request is None:
                 raise ValueError("delegated recovery must resolve its preserved request")
             context["user_request"] = {"request": deepcopy(request), "delegation_case": deepcopy(context["delegation_case"])}
-            for key in ("recent_history", "user_inputs", "open_questions", "question_links"):
-                context.pop(key, None)
             context["interpretation_stage"] = action["stage"]
             context["interpretation_to_check"] = None
         context.update(restore_continuation(self.runtime, action, workspace, snapshot=self.head,
@@ -1873,14 +1886,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self._submission_repair_context(context, action)
         if execution_profiles.review_research(action):
             context.update(self._review_research_context(action, workspace))
-        reviewed_action = self.runtime["executions"].get(target, {}).get("action", {}) if action["role"] == "operational_review" else action
-        if reviewed_action.get("review_cycle_id"):
-            for key in ("open_questions", "question_links", "recent_history", "tasks"):
-                context.pop(key, None)
         if action["role"] == "operational_review":
+            # The target's own failed obligations, and an earlier review of the same
+            # target that exhausted its repair: its wait names that review's execution.
             context["blocked_actions"] = [submission.blocked_action_row(aid, entry)
                 for aid, entry in self.runtime.get("waiting_actions", {}).items()
-                if entry.get("execution_id") == action.get("target") and entry.get("kind") in submission.RESOLVABLE_WAITS]
+                if entry.get("kind") in submission.RESOLVABLE_WAITS and (entry.get("execution_id") == action.get("target")
+                    or (entry["action"].get("role") == "operational_review"
+                        and entry["action"].get("target") == action.get("target")))]
         if action["role"] == "maintenance":
             # Queue repairs are checked against the engine's own revision state.
             context["pending_revisions"] = deepcopy(planning.pending_revisions(self.runtime))
@@ -1897,6 +1910,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                         waiting['action'].get('repair', {}).get('check_ref'), failed.get('submitted_output_ref'),
                         failed.get('submission_check_ref')) if ref]
                 refs.extend(row['artifact_ref'] for row in failed.get('output_files', []))
+                refs.extend(row['artifact_ref'] for row in (context['initial_submission_diagnosis']['checkpoint'] or {}).get('evidence_files', []))
                 if failed.get('input_bundle'):
                     prefix = ARTIFACT_ROOT + failed['input_bundle']
                     refs.extend([failed['input_manifest']['prompt']['artifact_ref'], prefix + '/schema.json',
@@ -1924,10 +1938,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             context["recent_history"] = self._planning_history("research_plan", workspace)
             if action["role"] == "research_preparation":
                 context["preparation_history"] = self._planning_history("research_preparation", workspace)
-        if action["role"] in {"research_preparation", "research_plan", "operational_review"}:
-            # Task inputs and completion evidence may cite these records (common execution contract).
-            context["supplied_record_ids"] = submission.supplied_record_ids(
-                context, planning.record_index(self.instance, self.runtime))
+        # The read tool reads this repository at the input snapshot (context_store.read_main).
+        context["record_store"] = {"repository": str(self.store.repository), "instance_id": self.instance["id"]}
         return self._governance_context(action, context)
 
     def _planning_history(self, role: str, workspace: Path) -> list[dict]:
@@ -2242,6 +2254,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                         prefix + "/extensions.json": canonical_json(extensions)})
         received = self._apply_submission_bundles(action, output, extensions, execution_id, context, check["issues"])
         self._remove_action(action)
+        refreshed = False
         execution = self.runtime["executions"][execution_id]
         if received["status"] == "accepted":
             disposition = {"kind": "submission_integrated", "integration_ids": [row["integration_id"] for row in received["bundles"]]}
@@ -2297,11 +2310,20 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                                if environment else "Reload current Git state and reapply only unpublished candidate bundles")}
             elif any(row.get("next_owner") == "impact_review" for row in received["bundles"]):
                 self._hold_impact_reviews(action, execution_id, received)
+            elif execution["error_kind"] == "currentness_changed":
+                # Premises changed after the input was fixed: refresh with the change
+                # table instead of spending the producer's bounded output repair.
+                refreshed = True
+                self.runtime.get("waiting_actions", {}).pop(action["id"], None)
+                self._refresh_changed_decision(action, execution_id, [
+                    {"field": "integration_currentness", "integration_id": row.get("integration_id"),
+                     "reason": row["message"]} for row in received["issues"]])
             else:
                 self.route_submission_return(action, received, execution_id, output)
         publication_pending = any(row.get("next_owner") in {"engine", "impact_review"} for row in received["bundles"])
         if not publication_pending:
-            self._record_task_receipt(action, output or {}, execution_id, accepted=received["status"] == "accepted")
+            if not refreshed:  # A refresh records its own outcome.
+                self._record_task_receipt(action, output or {}, execution_id, accepted=received["status"] == "accepted")
             if action["role"] == "operational_review":
                 self._save()
                 try:
@@ -2707,7 +2729,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                             observation_refs=[record["id"]])
                     if observed.get("worker_feedback"):
                         feedback.append(observed["worker_feedback"])
-            self.runtime.setdefault("self_check_obligations", {}).update(deepcopy(candidate.obligations))
+            self.runtime.setdefault("self_check_obligations", {}).update(candidate.stored_obligations())
             self._publish_observation(artifacts or None)
         except Exception:
             self.runtime = self.store.load(self.head)[2] if original_runtime is None else original_runtime
@@ -2721,7 +2743,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             request = tracker.issue_self_check(obligation['id'])
             self._transport.request_self_check(self._transport_bindings[execution_id], request=request)
             tracker.record_delivery(obligation['id'], source_offset=batch.stream_size())
-            self.runtime['self_check_obligations'][obligation['id']] = deepcopy(tracker.obligations[obligation['id']])
+            self.runtime['self_check_obligations'].update(tracker.stored_obligations([obligation['id']]))
         if self_checks:
             self._publish_observation()
         if remind:
@@ -3021,7 +3043,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             raise
         finally:
             self._preparing_input = False
-        binding = self._transport.issue(execution_id, authority["grant_id"], workspace=workspace)
+        # Only an execution the tracker opens self checks for is offered the self-check tool.
+        binding = self._transport.issue(execution_id, authority["grant_id"], workspace=workspace,
+                                        self_check=observation_config["research_self_checks"])
         self._transport_bindings[execution_id] = binding
         context["control_binding"] = deepcopy(binding)
         schema = self._response_schema(action)
@@ -3908,10 +3932,21 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         target = self.runtime["executions"].get(action.get("target"))
         if target is None:
             raise ValueError("operational disposition has no execution target")
+        # Application rechecks the newest evidence. A citation that the review's
+        # input admitted but a later checkpoint or result replaced is a changed
+        # premise; it is reported only when the disposition has no other error.
         current_refs = operational_dispositions.admissible_basis_refs(self.instance, self.runtime, action)
-        operational_dispositions.require_basis_refs(disposition, current_refs)
+        issued, _ = self._issued_input(self.runtime["executions"][execution_id], with_schema=False)
+        changes = operational_dispositions.basis_premise_changes(
+            disposition, issued["admissible_basis_refs"], current_refs)
+        if not changes:
+            operational_dispositions.require_basis_refs(disposition, current_refs)
         if disposition['kind'] == 'repair':
             repair_execution.validate_installation_target(disposition, target, Path(__file__).resolve().parents[2])
+        if disposition['kind'] == 'continue' and disposition['next_review']:
+            governance.timestamp(disposition['next_review']['at'])
+        if changes:
+            raise CurrentnessChanged(changes)
         record_id = new_id("OD")
         record = {"id": record_id, "execution_id": execution_id, "target_execution_id": target["id"],
                   "disposition": disposition, "obligation_ids": deepcopy(action.get("obligation_ids", [])),
@@ -3923,8 +3958,6 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if kind == "repair":
             record["status"] = "repair_required"
         if kind == "continue":
-            if disposition["next_review"]:
-                governance.timestamp(disposition["next_review"]["at"])
             target["operational_continuation"] = {"disposition_id": record_id, "next_review": disposition["next_review"]}
             return
         if target["status"] != "ended" and kind in {"repair", "resume", "retry", "task_disposition"}:

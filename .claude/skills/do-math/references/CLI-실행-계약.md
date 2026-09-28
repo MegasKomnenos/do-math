@@ -43,6 +43,8 @@ exit 0은 요청이 수학적으로 승인됐거나 과제·활동·실행이 �
 | `reason` | 거부 또는 처분 이유. 해당하지 않으면 null일 수 있다 |
 | `status`, `snapshot` | 적용 뒤 CLI 상태와 상태 commit. lock이 busy이면 아직 없을 수 있다 |
 
+초기화 채택(`decision`의 `kind=initialization`, `operation=adopt`)과 툴체인 등록(`trust`의 `operation=register`)이 적용되면 결과에 `observation_window_warnings` 배열이 더 붙는다. 각 항목은 채택된 프로필이나 역할별 현행 프로필이 쓰는 `tool_review_window_seconds` 또는 `self_check_response_window_seconds`가 등록된 툴체인 기록의 대표 검사 소요 시간보다 짧다는 경고이며, `role`, `profile_id`, `field`, `window_seconds`, `environment_id`, `representative_check_seconds`를 담는다. 소요 시간은 결박한 기준 항목의 대표 검사 시작·종료 시각의 차를 초 단위로 올림한 값이다. 경고는 채택이나 등록을 막지 않는다. 등록된 환경이 없거나 기록을 읽을 수 없으면 배열은 비어 있다.
+
 동일 인스턴스의 writer lock을 다른 실행기가 보유하면 요청은 inbox에 남고 `effect="pending engine processing"`, `lock="busy"`를 반환한다. 다음 실행기 제어 처리에서 전제가 달라졌으면 해당 요청은 `effect="rejected"`와 이유를 남기고 소비된다. 접수 사실은 적용·실행·성공을 뜻하지 않는다.
 
 공개 Python 제어와 CLI는 같은 payload 구조 검사를 사용한다. `config`는 객체이며, 생략을 뜻하는 Python `None`만 빈 객체로 처리한다. 중첩 결정·과거 실행 복구·신뢰 환경 등의 값도 사용 전에 해당 구조를 확인한다. 수신자는 inbox의 식별 가능한 요청을 다시 검사하고, 잘못된 payload를 거절 영수증과 함께 한 번 정산한 뒤 다음 요청을 처리한다. 입력 구조 검사는 현재 권한·참조·환경 관측을 대신하지 않는다. JSON 해석이나 요청 정체성 자체가 손상된 파일은 정상 사용자 요청으로 간주하지 않는다.
@@ -119,7 +121,7 @@ GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 CLI가
 | `completed` | 독립 완료 판정을 기록한 종결 과제 |
 | `closed` | 범위 처분 근거로 닫은 종결 과제 |
 
-`readiness`는 배정 대기를 제외한 계약·근거 평가다. 이것만으로 현재 선택 모집단이라고 판단하지 않는다. 결과 판정이 필요하면 `assessment_pending=true`이며 계획 입력의 `returned_task_ids`가 전건을 지정한다. `ready`, `performing`, `assessing`, `needs_revision`은 이 API가 반환하는 과제 상태값이 아니다.
+`readiness`는 배정 대기를 제외한 계약·근거 평가다. 이것만으로 현재 선택 모집단이라고 판단하지 않는다. 실행 중이거나 종결된 과제에는 `readiness`가 null이다. 인스턴스가 `closed`나 `completed`이면 새 배정이 없으므로 모든 과제의 `readiness`가 null이고, 과제의 `status`는 종결 시점의 값으로 남는다. 결과 판정이 필요하면 `assessment_pending=true`이며 계획 입력의 `returned_task_ids`가 전건을 지정한다. `ready`, `performing`, `assessing`, `needs_revision`은 이 API가 반환하는 과제 상태값이 아니다.
 
 `dispatch_waits`는 미시작 queue 요청의 보존된 대기 사유다. `capacity`는 동시 슬롯, `host_capacity`는 호스트 자원이다. `resource_unclassified`는 제약 좌표가 없는 예약 실패다. 각 행의 `next_owner`, `profile_ref`, `constraint_id` 또는 `provider`로 후속을 확인한다. `status.budget`은 현행 설정의 요약이며 요청의 사유는 그 요청에 고정된 프로필·제약 판본을 따른다. 한도 변경은 재평가를 열지만 고정 프로필을 자동 교체하지 않는다. 과거 snapshot 조회는 새 예약 검사를 실행하지 않는다.
 
@@ -161,7 +163,7 @@ GLOSSARY의 보편 상태가 개념의 뜻을 소유한다. 아래 값은 CLI가
 | `call_timeout_seconds` | 600 | 양의 정수 |
 | `reviewers` | 2 | 양의 정수 |
 | `goal_auditors` | 2 | 양의 정수 |
-| `max_input_bytes` | 500000 | 양의 정수 |
+| `max_input_bytes` | 2000000 | 양의 정수 |
 | `max_output_repairs` | 1 | 0 이상의 정수 |
 | `lean_command` | `null` | `null` 또는 항목이 하나 이상인 argv 배열. 각 항목은 NUL 문자가 없는 비어 있지 않은 문자열이다 |
 | `review_rounds` | 3 | 양의 정수 |
@@ -210,7 +212,7 @@ Path('host-config.json').write_text(json.dumps(settings, ensure_ascii=False, ind
 
 호스트 설정의 채택·변경·해제는 사용자 권한으로 실행기가 정지하고 모든 execution이 ended이며 held 예약이 없을 때 적용한다. inbox의 요청도 실제 적용 시 이 조건을 다시 검사한다. 같은 설정의 재적용은 제약을 바꾸지 않는다. `host_resources=null`은 해제이고, 부분 configure에서 필드를 생략하면 기존 설정을 유지한다. `operator`는 호스트 설정을 바꿀 수 없다. 과거 제약·프로필은 종료 실행의 근거로 남긴다. 바뀐 호스트 승인과 맞지 않는 과제 프로필은 재준비·독립 계약 검토로 갱신하며, 이미 고정된 검토 프로필은 덮어쓰지 않고 미완료 사유와 함께 계획으로 반환한다. `formal_check`, `trust_check`, `trust_activate`에는 호스트 상한을 붙이지 않는 현행 Lean 계약을 유지한다.
 
-중앙 Lean 검사는 완료까지 기다리며 실행 시간·메모리·CPU·출력량 상한을 적용하지 않는다. 정지 요청이나 실행 권한 변경에 따른 취소는 유지한다. 출력 전체를 보존하며, 공통 의존 선언의 타입·본문은 한 검사에서 한 번만 전송하고 선언별 의존 관계와 증거 해시는 모두 보존한다.
+중앙 Lean 검사는 완료까지 기다리며 실행 시간·메모리·CPU·출력량 상한을 적용하지 않는다. 정지 요청이나 실행 권한 변경에 따른 취소는 유지한다. 공통 의존 선언의 타입·본문은 한 검사에서 한 번만 전송한다. 결과는 선언별 의존 폐포(`dependency_closure`)와, 폐포들의 합집합에 든 상수마다 타입·본문의 해시 하나를 담은 표(`dependency_evidence`)로 보존한다. 선언별 공리는 폐포 안의 공리 상수로 도출해 `#print axioms` 출력과 대조하며, 둘이 다르면 검사는 실패한다. `verified` 결과의 원출력에서는 해시로 환원한 의존 본문 행을 빼고 나머지를 모두 보존하며, 그 밖의 결과는 원출력 전체를 보존한다.
 
 일반 형식 검사와 신뢰 환경 전환 검사는 기존 병렬 호출 관리에서 실행하며, 두 종류의 동시 실행 수를 합해 인스턴스당 최대 한 건으로 제한한다. 메인은 고정 입력·프로필·권한과 Job 식별자를 저장한 뒤 계산 시작을 허용한다. 계산 중에도 제어 요청과 독립 AI의 배정·완료를 처리한다.
 
@@ -278,7 +280,7 @@ init --repository PATH [--create-repository] --workspace PATH
 
 공개 명령의 실행 순서, 완전한 요청 객체, 정확한 프로필 참조를 얻는 방법, 능력·신뢰 근거의 출처와 현재 승인 연결의 한계는 [초기화 운전](초기화-운전.md)을 따른다. 활성화는 채택된 통치·설정·정책, 초기화와 연구의 별도 권한, 고정 프로필과 현재 능력 증거, 실제 적용된 독립 의도 검사, 활성 신뢰 환경·복구 검사를 대조한다. 이미 채택된 값은 같은 근거를 재사용하며, 연구 권한이나 미확인 증거를 기본값에서 추론하지 않는다.
 
-독립 운영이 활성인 설정이면 CLI는 저장 뒤 Windows 작업 두 개를 등록한다. 예약 등록이 실패해도 이미 생성된 인스턴스를 다시 만들지 않는다. 응답에 남은 ID·snapshot과 실패·재조정 명령을 사용한다. 저장과 운영체제의 예약 효과는 별도의 성공 조건이다.
+독립 운영이 활성인 설정이면 CLI는 저장 뒤 Windows 작업 두 개를 등록한다. 예약 등록이 실패해도 이미 생성된 인스턴스를 다시 만들지 않는다. 응답에 남은 ID·snapshot과 실패·재조정 명령을 사용한다. 저장과 운영체제의 예약 효과는 별도의 성공 조건이다. 재조정 명령과 작업자에게 지급하는 검사 명령(`submission_contract.command`, `formal_verifier.preview.command`)의 Python은, 실행기가 예약 작업에서 콘솔 없는 `pythonw.exe`로 돌 때에도 같은 설치의 `python.exe`다. PowerShell은 `pythonw.exe`를 기다리지 않고 그 출력도 보여 주지 않기 때문이다.
 
 ### `run`, `status`, `check`, `profile`
 
@@ -679,19 +681,19 @@ export --destination PATH [--snapshot OID] [--all]
 
 `references/CLI-실행-계약.md`는 CLI를 운전하거나 구현을 고치는 독자를 위한 참조이며 모든 AI 역할에 자동 주입되지 않는다. 역할이 판단할 현행 필드와 단계는 자기 계약, canonical input context와 실행별 출력 schema가 소유한다.
 
-입력 context의 공통 필드는 현재 snapshot과 workspace, goal·policies, action, 대상 task, 과제 목록, knowledge catalog, relations, sources, 사용자 입력, 열린 질문, 최근 이력, grant 요지, 자원·시간 한도, kind definitions, 중앙 형식 검사 설명, 학술 요구·상태와 외부 operation을 포함한다. 후보 준비·연구 계획·의도 해석은 활성 설정 전문도 `configuration_source`의 원문 참조로 받는다. `available_input_refs`는 저장 상태의 필드가 아니라 역할 입력을 만들 때 계산해 넣는 목록이다. `task_readiness`는 연구 계획·연구 수행·보충 조사의 입력에만, `supplied_record_ids`는 후보 준비·연구 계획·운영 점검의 입력에만 들어간다. 역할과 action에 따라 proposal, review context, eligible knowledge, operational observation, intent interpretation 입력, 이전 output 파일과 checkpoint가 추가되거나 비공개 자료가 제거된다.
+입력 context의 구성요소는 싣기·지도·차단 세 분류 가운데 하나다. 모든 역할에 싣는 필드는 현재 snapshot과 workspace, 통치 기록 `governance`, action, 대상 task, 과제 목록, knowledge catalog, sources, grant 요지, kind definitions, 학술자료 도구 안내, 시간 한도, 제출 계약과 참조 목록, 기록 지도 요약 `record_map`이다. goal·policies와 그 판본, relations, 사용자 입력, 열린 질문, 최근 이력, 자원 표와 모델 정책, 중앙 형식 검사 설명(`formal_verifier`), 학술 요구·상태, 외부 operation과 거부, 반복 보류, 실행 프로필 전체 목록은 역할 계약이나 제출 검사가 그 필드를 읽는 역할과 단계에 싣고, 다른 역할과 단계에는 `input/catalog/<key>.json`의 원문 참조 `{source_ref, total}`(지도)로만 준다. 독립 판단(동일성 검토, 검토 자리의 고정 질문 조사, 검토 자리 실행의 운영 점검, 목표 감사, 의도 해석의 검사·위임, 작업 계약 검토)은 계약이 막은 비공개 필드와 기록 가족을 받지 않고(차단, 예: 목표 감사는 감사 자리마다 봉인되는 `research/goal_judgments`를 읽거나 인용하지 않는다), 실행 원장 기록은 입력이 지급한 것만 읽고 인용한다. 세 분류의 정본은 `scripts/do_math/context_store.py`의 `INLINE_SCOPES`, `BLOCKED_KEYS`와 `input_class`다. 모든 역할은 읽고 인용할 수 있는 입력 스냅숏 기록의 ID를 `root/family`별로 담은 `record_index`(지도)를 받는다. 제출 검사는 입력이 보여 준 참조와 이 ID를 인용 모집단으로 쓰고, 필드별 규칙을 따로 적용한다. 읽기 도구 `input/tools/read_input.py`는 입력 스냅숏 커밋만 읽고 요청마다 `checks/reads.jsonl`에 기록하며, 중앙 봉인은 그 기록을 제출 산출물 `reads.jsonl`로 보존한다. 역할용 설명은 「공통 실행」의 「기록 지도와 읽기 도구」에 있다. 후보 준비·연구 계획과 위임 판단이 아닌 의도 해석은 활성 설정 전문도 `configuration_source`의 원문 참조로 받는다. `available_input_refs`는 저장 상태의 필드가 아니라 역할 입력을 만들 때 계산해 넣는 목록이다. `task_readiness`는 연구 계획·후보 준비의 입력에 전 과제의 착수 판정으로, 연구 수행의 입력에 자기 과제의 착수 판정으로만 들어간다. `supplied_record_ids`는 후보 준비·연구 계획·운영 점검의 입력에만 들어가며, 입력이 보여 주거나 `record_index`에 있는 기록 색인(`planning.record_index`)의 ID다. 제어 통로 결박 `control_binding`과 읽기 도구의 저장소 결박 `record_store`는 도구가 읽는 `input/submission/context.json`에만 두고 프롬프트에는 넣지 않는다. 역할과 action에 따라 proposal, review context, eligible knowledge, operational observation, intent interpretation 입력, 이전 output 파일과 checkpoint가 추가되거나 비공개 자료가 제거된다.
 
-모든 knowledge와 source 원문은 `input/knowledge/`, `input/sources/`, `input/task-results/`, `input/review-cycles/` 아래의 실행별 사본으로 물질화한다. catalog의 `path`나 `local_path`는 이 workspace 안의 파일을 가리킨다. 해시와 목록이 있다는 사실은 모델이 원문을 읽었다는 뜻이 아니다.
+모든 knowledge와 source 원문은 `input/knowledge/`, `input/sources/`, `input/task-results/` 아래의 실행별 사본으로 물질화한다. 완료된 동일성 검토의 기록은 그것을 읽는 목표 감사의 입력에만 `input/review-cycles/` 아래에 물질화한다. 독립 판단이 아닌 역할은 `runtime/review_cycles`를 읽기 도구로 읽는다. catalog의 `path`나 `local_path`는 이 workspace 안의 파일을 가리킨다. 해시와 목록이 있다는 사실은 모델이 원문을 읽었다는 뜻이 아니다.
 
 ### 입력 크기 조정
 
-기계 실행기는 최종 prompt의 UTF-8 바이트를 `max_input_bytes` 안에 맞춘다. goal, policies와 action별 필수 판단 정보를 보존한다. 현재 작업 계약과 검토 제안의 전문은 필요한 역할에 제공하고, 누적 이력 때문에 같은 전문을 여러 곳에 중복하지 않는다. 검토 계보의 제안은 `role_review.proposal`에 한 번 제공한다.
+기계 실행기는 최종 prompt의 UTF-8 바이트를 `max_input_bytes` 안에 맞춘다. goal, policies와 action별 필수 판단 정보를 보존한다. 현재 작업 계약과 검토 제안의 전문은 필요한 역할에 제공하고, 누적 이력 때문에 같은 전문을 여러 곳에 중복하지 않는다. 검토 계보의 제안은 `role_review.proposal`에 한 번 제공한다. 판단 역할이 받는 형식 결과는 동일성 검토의 제안, 목표 감사의 `eligible_knowledge`, 지식 사본이 모두 같은 판단용 투영(`knowledge_records.judged_verification`: 선언·타입·서명, 공리와 신뢰 환경의 허용 공리, 검사한 원문 해시, 검사 결과 원문 참조)이다. 검사 원출력과 커널 의존 증거는 이 투영에 넣지 않고, 그것을 쓰는 기계 검사가 저장 기록에서 읽는다. 판정 전제는 형식 결과의 `verification` 전체를 해시하므로 투영 밖 필드가 바뀌어도 편입 관문이 거부한다.
 
-크기가 넘으면 필수 직접 입력이 아닌 항목을 큰 것부터 통째로 `{source_ref, total}`로 바꾼다. `source_ref`는 `input/catalog/<key>.json`의 exact source reference이고 `total`은 원래 항목 수다. action, 역할별 대상 task·검토 자리·운영 대상, 재개·진단 자료 같은 필수 직접 입력은 줄이지 않는다. 연구 수행·보충 조사·작업 계약 검토의 `tasks`와 모든 역할의 `execution_profiles`·`role_profile_refs`는 필수 직접 입력이 아니면 크기가 넘지 않아도 참조로 바꾼다. 어느 경우든 참조 표현이 원래 항목보다 짧을 때만 바꾸므로, 빈 목록처럼 작은 항목은 그대로 남는다. tasks 목록의 표현을 바꿔도 계획이 대조할 고정 모집단 `ready_task_ids`를 보존한다. 역할은 필요한 원문을 그 경로에서 읽어야 한다.
+크기가 넘으면 필수 직접 입력이 아닌 항목을 큰 것부터 통째로 `{source_ref, total}`로 바꾼다. `source_ref`는 `input/catalog/<key>.json`의 exact source reference이고 `total`은 원래 항목 수다. action, 역할별 대상 task·검토 자리·운영 대상, 재개·진단 자료 같은 필수 직접 입력은 줄이지 않는다. 연구 수행·보충 조사·작업 계약 검토의 `tasks`와 모든 역할의 `execution_profiles`·`role_profile_refs`는 필수 직접 입력이 아니면 크기가 넘지 않아도 참조로 바꾼다. 이 두 경우에는 참조 표현이 원래 항목보다 짧을 때만 바꾸므로, 빈 목록처럼 작은 항목은 그대로 남는다. 지도 필드는 크기와 관계없이 항상 참조로 준다. tasks 목록의 표현을 바꿔도 계획이 대조할 고정 모집단 `ready_task_ids`를 보존한다. 역할은 필요한 원문을 그 경로에서 읽어야 한다.
 
 필수 판단 정보와 ready 모집단을 보존하고도 입력을 맞출 수 없으면 AI 실행을 시작하지 않는다. 동일성 검토 자리는 복원한 대화를 빼고도 제안과 필수 원자료만으로 한도를 넘는 경우에만 제안 자체의 입력 초과로 보고, 아래 「형식 검사, 동일성 검토와 목표」 절의 자원 처분으로 그 검토를 정산해 연구 계획의 `review_followups`에 넘긴다. 자기 검토 이력이나 다른 입력의 증가로 넘은 경우에는 수학 제안의 결함으로 바꾸지 않고 `input_overflow`로 보류한다. 다른 역할도 해당 요청과 오류를 보류한다. 같은 근거의 보류된 작업 계약 검토와 검토 자리를 새 ID로 자동 재생성하지 않는다.
 
-`input_overflow`는 원 action, owner activity, 취소된 입력 준비 실행, 입력 크기·원인·현재 한도, 공개 질문과 그 source artifact를 보존한다. `status --json`의 `question_links`는 이 artifact의 `resolution_question/question`을 원문으로 읽는다. 설치·필수 입력·승인 설정이 실제로 달라진 뒤 `request --retry-action AC-ID`로 같은 action을 다시 포장할 수 있다. 일반 `resume`은 이 대기를 해제하지 않는다.
+`input_overflow`는 원 action, owner activity, 취소된 입력 준비 실행, 입력 크기·원인·현재 한도, 공개 질문과 그 source artifact를 보존한다. 문맥은 한도 전체가 아니라 한도에서 지급 문서·출력 스키마·틀의 고정 부분을 뺀 문맥 예산과 비교되므로, 기록은 한도(`limit_bytes`)와 함께 그 예산(`context_budget_bytes`)을 남긴다. `status --json`의 `question_links`는 이 artifact의 `resolution_question/question`을 원문으로 읽는다. 설치·필수 입력·승인 설정이 실제로 달라진 뒤 `request --retry-action AC-ID`로 같은 action을 다시 포장할 수 있다. 일반 `resume`은 이 대기를 해제하지 않는다.
 
 재시도 요청을 적용하면 상태는 “재시도 중”이며 요청 자체로 질문을 해소하지 않는다. 현재 포장이 한도 안에 들어온 사실을 확인하면 아직 열린 질문을 해소하고 `input_overflow_retry_resolved`를 기록한다. 다른 적법한 결정이 이미 질문을 해소했다면 그 근거와 이력을 보존한다. 다시 넘치면 아직 열린 이전 질문을 새 실패 질문으로 대체했다는 해소 이력과 `input_overflow_retry_failed`를 기록하고, 새 질문과 같은 action을 다시 보류한다. 과거 overflow detail·source manifest·질문 원문은 삭제하거나 현재 성공으로 덮지 않는다. 원문이나 필수 직접 입력을 몰래 줄이지 않으며, 승인되지 않은 프로필·범위·자원·권한 변경을 재시도 명령으로 대신하지 않는다.
 
@@ -898,7 +900,7 @@ Lean source가 있는 knowledge candidate는 중앙 `formal_check` action으로 
 
 형식 검사가 사용자 pause·HOLD로 멈추면 프로세스 종료와 예약 반환 뒤 원 action·활동과 종료 execution의 계보를 남긴다. 정상 resume·release 뒤에는 동일한 소스·선언·신뢰 환경과 현재 허가를 다시 확인하여 새 execution으로 검사한다. 컴파일러의 중간 메모리를 복원하는 것은 아니다. 소스·환경·허가가 바뀌었거나 인스턴스가 닫혔으면 이 일시 정지 재개를 적용하지 않는다.
 
-작업자의 `formal_verifier.preview.command`는 `input/tools/check_lean.py`를 실행한다. `--source`와 반복 가능한 `--declaration`을 받고 JSON을 반환한다. `verified`이면 exit 0, 그 밖의 `rejected`, `failed`, `unavailable`, `stopped`는 exit 1이다. `authoritative=false`이며 성공한 검사의 해시는 읽은 UTF-8 소스 바이트에 결박된다. `submission-support.zip` 안의 같은 검증 코드와 입력의 구성 명령·허용 공리를 사용하고, 컴파일은 별도 임시 작업 폴더와 Windows Job에서 수행한다. 다만 preview는 작업자의 로컬 Job 소유 범위에 속하므로 작업자의 기한·정지에 따라 함께 종료될 수 있다. 공유 라이브러리·Lake 프로젝트·빌드 캐시의 불변성이나 격리는 보증하지 않는다. 중앙 `formal_check`는 사전 검사 결과를 승계하지 않고 제출된 소스를 다시 검사한다.
+작업자의 `formal_verifier.preview.command`는 `input/tools/check_lean.py`를 실행한다. `--source`와 반복 가능한 `--declaration`을 받고 JSON을 반환한다. `verified`이면 exit 0, 그 밖의 `rejected`, `failed`, `unavailable`, `stopped`는 exit 1이다. `authoritative=false`이며 성공한 검사의 해시는 읽은 UTF-8 소스 바이트에 결박된다. `submission-support.zip` 안의 같은 검증 코드와 입력의 구성 명령·허용 공리로 커널 검사, 선언 서명과 `#print axioms` 공리 감사를 하지만 의존 증거는 추출하지 않는다. 반환 JSON은 `status`, `reason`, `source_sha256`, `declarations`, `declaration_signatures`, `axioms`, `toolchain`, 신뢰 환경 거부의 `identity_errors`, Lean 출력 `stdout`·`stderr`와 `authoritative`, `input_snapshot`, `assurance`만 담는다. 컴파일은 별도 임시 작업 폴더와 Windows Job에서 수행한다. 다만 preview는 작업자의 로컬 Job 소유 범위에 속하므로 작업자의 기한·정지에 따라 함께 종료될 수 있다. 공유 라이브러리·Lake 프로젝트·빌드 캐시의 불변성이나 격리는 보증하지 않는다. 중앙 `formal_check`는 사전 검사 결과를 승계하지 않고 제출된 소스를 다시 검사한다.
 
 형식 검사를 통과하면 현재 CLI는 동일성 검토 계보의 initial 결과를 서로 숨긴 채 봉인한다. 전건 complete match이고 열린 finding이 없으면 직접 집계한다. 그 밖에는 organize, 독립 judge 세 자리, 원 initial 자리의 answer와 같은 judge의 재심을 `review_rounds` 안에서 수행한다. 보충 조사, 실행 미완료와 남은 쟁점은 같은 계보에 보존한다.
 
@@ -977,7 +979,7 @@ Codex는 CLI가 쓴 최종 파일 `final.txt`를 final 바이트로 사용한다
 | `output_parse`·`output_schema`·`output_contract`·`input_failure` | 중앙 수신 검사가 주 응답·확장·편입 묶음을 반려했다. 각각 파싱·출력 스키마·계약 수신·제출 파일 읽기 실패다. 반려된 묶음은 `max_output_repairs` 안에서 같은 의무의 생산자 수리로 잇는다. 한도를 넘으면 대기 행동 `kind=output_validation`으로 보존하고 운영 점검(초기화 중에는 유지보수)의 진단으로 넘긴다 |
 | `publication_failure` | 검사를 통과한 묶음의 Git 공개가 실패했다. 실행기가 현재 Git 상태를 다시 읽어 공개되지 않은 묶음만 다시 적용하며 작업자의 의미 오류로 처리하지 않는다 |
 | `submission_failure` | 수신·편입 처리 자체가 예외로 끝났다. 보존된 원 산출과 함께 대기 행동을 남기고 운영 진단으로 연결한다 |
-| `currentness_changed` | 원 역할이 변경표·이전 산출·새 입력으로 판단을 갱신한다. 같은 lineage의 자동 갱신은 한 번이다 |
+| `currentness_changed` | 실행 중이나 편입의 현재성 검사에서 판단 전제가 바뀌었다. 편입 반환은 모든 문제가 `integration.currentness`일 때만 이 분류이고, 다른 문제가 섞이면 생산자 반려다. 원 역할이 변경표·이전 산출·새 입력으로 판단을 갱신하며 출력 수리 횟수는 쓰지 않는다. 같은 lineage의 자동 갱신은 한 번이다 |
 | `provider_limit` | 원 행동·부분 자료를 보존하고 공급자 공통 대기로 연결한다. 같은 한도를 진단하는 모델은 호출하지 않는다 |
 | `execution_failure` | 원인 미확정 호출 실패를 기존 운영 진단으로 연결한다 |
 | `model_policy` | 잠금과 다른 실제 모델이 보고되어 후속을 정지한다 |

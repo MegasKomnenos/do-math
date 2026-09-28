@@ -12,6 +12,19 @@ from do_math import formal
 from provider_fixtures import actual_command
 
 
+def _dependency_rows(source, declarations):
+    """The dependency body rows of the central check file, which the verifier reduces to hashes."""
+    with tempfile.TemporaryDirectory() as directory:
+        workspace = Path(directory)
+        check = workspace / 'check.lean'
+        check.write_bytes(formal._check_file(source.encode(), declarations, extract_evidence=True))
+        code, stdout, stderr, _ = formal._job_run([*actual_command(), str(check)], workspace)
+    if code != 0:
+        raise AssertionError(stdout + stderr)
+    return [json.loads(line.removeprefix('__DO_MATH_DEPENDENCY__'))
+            for line in stdout.splitlines() if line.startswith('__DO_MATH_DEPENDENCY__')]
+
+
 class FormalRuntimeTests(unittest.TestCase):
     @category('lean')
     def test_shared_expression_evidence_does_not_expand_shared_subterms(self):
@@ -48,13 +61,7 @@ class FormalRuntimeTests(unittest.TestCase):
                   'def identityBase (Ω : Nat) : Nat := Ω\n'
                   'def textLeaf : String := textBase\n'
                   'def functionLeaf : Nat → Nat := identityBase')
-        with tempfile.TemporaryDirectory() as directory:
-            result = formal.verify_lean(source=source, declarations=['textLeaf', 'functionLeaf'],
-                workspace=Path(directory), lean_command=actual_command())
-        self.assertEqual(result['status'], 'verified', {key:result.get(key) for key in ('reason','stderr','exit_code')})
-        rows = {row['name']: row for row in
-                (json.loads(line.removeprefix('__DO_MATH_DEPENDENCY__'))
-                 for line in result['stdout'].splitlines() if line.startswith('__DO_MATH_DEPENDENCY__'))}
+        rows = {row['name']: row for row in _dependency_rows(source, ['textLeaf', 'functionLeaf'])}
         atoms = [argument['atom'] for node in json.loads(rows['textBase']['evidence']['value'])['nodes']
                  for argument in node['args'] if 'atom' in argument]
         self.assertTrue(any('"a  b\\nc"' in atom for atom in atoms))
@@ -62,12 +69,7 @@ class FormalRuntimeTests(unittest.TestCase):
 
     @category('lean')
     def test_dependency_representation_does_not_expand_layout_indentation(self):
-        with tempfile.TemporaryDirectory() as directory:
-            result = formal.verify_lean(source='theorem good (p : Prop) : p ∨ ¬p := Classical.em p',
-                declarations=['good'], workspace=Path(directory), lean_command=actual_command())
-        self.assertEqual(result['status'], 'verified', {key:result.get(key) for key in ('reason','stderr','exit_code')})
-        rows = [json.loads(line.removeprefix('__DO_MATH_DEPENDENCY__'))
-                for line in result['stdout'].splitlines() if line.startswith('__DO_MATH_DEPENDENCY__')]
+        rows = _dependency_rows('theorem good (p : Prop) : p ∨ ¬p := Classical.em p', ['good'])
         self.assertTrue(rows)
         for row in rows:
             self.assertNotIn('\n', row['evidence']['type'], row['name'])
@@ -122,16 +124,10 @@ class FormalRuntimeTests(unittest.TestCase):
 
     @category('lean')
     def test_common_dependency_bodies_are_emitted_once(self):
-        with tempfile.TemporaryDirectory() as directory:
-            result = formal.verify_lean(source='theorem first : True := True.intro\n'
-                'theorem second : True := True.intro', declarations=['first', 'second'],
-                workspace=Path(directory), lean_command=actual_command())
-        self.assertEqual(result['status'], 'verified', {key:result.get(key) for key in ('reason','stderr','exit_code')})
-        rows = [json.loads(line.removeprefix('__DO_MATH_DEPENDENCY__'))
-                for line in result['stdout'].splitlines() if line.startswith('__DO_MATH_DEPENDENCY__')]
+        rows = _dependency_rows('theorem first : True := True.intro\ntheorem second : True := True.intro',
+                                ['first', 'second'])
         self.assertEqual({row['name'] for row in rows}, {'True', 'True.intro'})
         self.assertEqual(len(rows), 2)
-        self.assertEqual(result['dependency_evidence']['first'], result['dependency_evidence']['second'])
 
 
 if __name__ == '__main__':

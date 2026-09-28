@@ -15,7 +15,7 @@ import setup_lean
 from do_math import trust_inventory as records
 from do_math.repository import exact_content_hash
 from do_math.trust_validation import check_environment, environment_errors, register_request_errors
-from research_fixtures import fixture_setup_lean, trust_environment, trust_fixture, validation_fixture
+from research_fixtures import bare_engine, fixture_setup_lean, trust_environment, trust_fixture, validation_fixture
 
 
 def set_birthtime(path, nanoseconds):
@@ -277,6 +277,11 @@ class ToolchainRecordTests(unittest.TestCase):
         self.assertEqual(waited.call_count, 3)
         self.assertEqual(len(self.record()['baselines']), 1)
 
+    def test_recorded_summary_reports_the_representative_compile_duration(self):
+        with self.recorded():
+            confirmed = setup_lean.record_installation(['synthetic-lean'], self.record_path.parent, self.root / 'evidence')
+        self.assertEqual(confirmed['representative_check_seconds'], 1)
+
     def test_trust_request_names_the_record_and_its_current_baseline(self):
         result = {'record_path': str(self.record_path), 'binding': records.binding(self.record())}
         written = setup_lean.write_trust_request(result, self.root / 'request.json')
@@ -326,6 +331,60 @@ class RepresentativeCompileTests(unittest.TestCase):
         self.assertNotIn('LEAN_PATH',supplied)
         self.assertNotIn('LEAN_SYSROOT',supplied)
         self.assertNotIn('LAKE_HOME',supplied)
+
+
+class ObservationWindowWarningTests(unittest.TestCase):
+    """Adopted observation windows against the representative compile of a registered toolchain."""
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        request = trust_fixture(Path(temporary.name), ['synthetic-lean'])
+        path = Path(request['toolchain_record']['path'])
+        record = records.read_record(path)
+        validation = record['baselines'][0]['validation']
+        validation['finished_at'] = '2026-09-20T00:03:59.2Z'  # 239.2 s after started_at
+        record['baselines'][0]['validation_sha256'] = records.validation_sha256(validation)
+        records.write_record(path, record)
+        request['binding'] = records.binding(record)
+        self.environment, self.binding = trust_environment(request, status='registered')
+
+    def state(self, **windows):
+        from do_math.configuration import DEFAULT_CONFIG
+        from do_math.execution_profiles import build_profiles, profile_ref
+        built = build_profiles({**deepcopy(DEFAULT_CONFIG), **windows})
+        research = next(p for p in built['execution_profiles'].values()
+                        if p['role'] == 'research_work' and p['actor_kind'] == 'ai')
+        instance = {**built, 'config': {}, 'trust_environments': {self.environment['id']: self.environment},
+                    'lifecycle': {'state': 'initializing', 'adoption': {'profile_refs': [profile_ref(research)]}}}
+        runtime = {'status': 'initializing', 'history': [], 'trust_bindings': {self.environment['id']: self.binding}}
+        return instance, runtime
+
+    def test_windows_shorter_than_the_representative_compile_are_warned(self):
+        from do_math.initialization import observation_window_warnings
+        instance, runtime = self.state(tool_review_window_seconds=120, self_check_response_window_seconds=240)
+        warnings = observation_window_warnings(instance, runtime)
+        self.assertTrue(warnings)
+        self.assertIn('research_work', {row['role'] for row in warnings})
+        for row in warnings:
+            self.assertEqual({key: row[key] for key in ('field', 'window_seconds', 'environment_id',
+                                                         'representative_check_seconds')},
+                             {'field': 'tool_review_window_seconds', 'window_seconds': 120,
+                              'environment_id': self.environment['id'], 'representative_check_seconds': 240})
+        instance, runtime = self.state(tool_review_window_seconds=240, self_check_response_window_seconds=240)
+        self.assertEqual(observation_window_warnings(instance, runtime), [])
+
+    def test_adoption_and_registration_results_return_the_warnings(self):
+        from do_math.initialization import observation_window_warnings
+        instance, runtime = self.state(tool_review_window_seconds=120, self_check_response_window_seconds=60)
+        expected = observation_window_warnings(instance, runtime)
+        engine = bare_engine(instance, runtime)
+        for action, config in (('trust', {'operation': 'register'}),
+                               ('decision', {'change': {'kind': 'initialization', 'operation': 'adopt'}})):
+            with self.subTest(action=action):
+                engine._record_control_result({'id': 'RQ-' + action, 'action': action, 'config': config})
+                self.assertEqual(runtime['history'][-1]['result']['observation_window_warnings'], expected)
+        engine._record_control_result({'id': 'RQ-pause', 'action': 'pause', 'config': {}})
+        self.assertNotIn('observation_window_warnings', runtime['history'][-1]['result'])
 
 
 class ActivationProfileTests(unittest.TestCase):

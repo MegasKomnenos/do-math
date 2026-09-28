@@ -21,9 +21,10 @@ run; identity assessments are recorded directly, never reviewed.
   producer declares; ``revise_knowledge`` revises one record with it.
 - ``activate_kind(state, token, family='relation', definition=None)``: register,
   check and activate one kind definition.
-- ``verified_knowledge(environment=None, *, binding=None, identity=True)``:
+- ``verified_knowledge(environment=None, *, binding=None, identity=True, check=None)``:
   ``(state, runtime, kid, assessment ID)``, the candidate verified under
-  ``TE-test`` and (unless ``identity=False``) assessed as a match.
+  ``TE-test`` and (unless ``identity=False``) assessed as a match. ``check``
+  adds fields of the stored central check, such as its raw output.
 - ``formal_boundary_engine(workspace, toolchain=None)``: ``(engine, kid)``, a
   bare engine with an adopted trust environment ``TE-old`` (the installed
   ``toolchain`` when given, else a synthetic one) and one unverified candidate
@@ -35,7 +36,7 @@ from pathlib import Path
 
 from do_math import knowledge as k, knowledge_io as io, knowledge_records as kr
 from do_math.formal import lean_source_sha256
-from do_math.repository import new_id
+from do_math.repository import exact_content_hash, new_id
 
 
 def knowledge_candidate(**changes):
@@ -49,11 +50,13 @@ def knowledge_candidate(**changes):
 def formal_result(source, declarations, toolchain, *, closure=('True', 'True.intro'),
                   dependency_evidence=('fixture-type', 'fixture-value'),
                   declaration_evidence=('fixture-type', 'fixture-proof'), **extra):
-    """A verified compiler result for ``source``; ``extra`` adds fields such as ``allowed_axioms``."""
+    """A verified compiler result for ``source``; ``extra`` adds fields such as ``allowed_axioms``.
+
+    ``dependency_evidence`` labels the closure's bodies; the result stores their hashes."""
     return dict(status='verified', source_sha256=lean_source_sha256(source),
         declarations=list(declarations), toolchain=deepcopy(toolchain), **extra,
         axioms={n: [] for n in declarations}, dependency_closure={n: list(closure) for n in declarations},
-        dependency_evidence={n: dict(zip(closure, dependency_evidence)) for n in declarations},
+        dependency_evidence={name: exact_content_hash(label) for name, label in zip(closure, dependency_evidence)},
         declaration_evidence={n: {'type': declaration_evidence[0], 'value': declaration_evidence[1]}
                               for n in declarations})
 
@@ -113,7 +116,7 @@ def activate_kind(state, token, family='relation', definition=None):
     return io.activate_kind_definition(state, family, token, approval_ref='approval:fixture', actor_ref='reviewer')
 
 
-def verified_knowledge(environment=None, *, binding=None, identity=True):
+def verified_knowledge(environment=None, *, binding=None, identity=True, check=None):
     proposed = knowledge_candidate()
     state, runtime, kid = io.import_candidate({}, {}, proposed, source_ref="source", actor_ref="producer")
     state.update(active_trust_environment="TE-test", trust_environments={"TE-test": {
@@ -124,7 +127,7 @@ def verified_knowledge(environment=None, *, binding=None, identity=True):
         runtime['trust_bindings'] = {'TE-test': deepcopy(binding)}
     verification = formal_result(proposed["lean_code"], ["truth"], state['trust_environments']['TE-test']['toolchain'],
                                  dependency_evidence=('fixture-type', 'fixture-constructor'),
-                                 declaration_evidence=('True', 'True.intro'))
+                                 declaration_evidence=('True', 'True.intro'), **(check or {}))
     state = kr.record_formal_result(state, kid, verification, "TE-test", runtime=runtime)
     if not identity:
         return state, runtime, kid, None

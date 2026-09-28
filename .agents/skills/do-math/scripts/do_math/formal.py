@@ -4,7 +4,6 @@ import hashlib, json, os, re, shutil, subprocess, sys, tempfile, time, traceback
 from pathlib import Path
 from .trust_validation import AXIOMS
 from .file_io import cached_sha256, is_sha256, json_digest
-from .repository import exact_content_hash
 from do_math.windows_job import WindowsJob, process_identity
 
 class VerificationStopped(RuntimeError):
@@ -96,31 +95,46 @@ def constantEvidence (info : ConstantInfo) : CoreM Json := do
     | some value => toJson <$> exprEvidence value
     | none => pure Json.null
   return Json.mkObj [("type", toJson type), ("value", value)]
-def visit (env : Environment) (name : Name) (seen : NameSet) : Except String NameSet := do
-  let mut result := seen
+def directRefs (env : Environment) (name : Name) : Except String (Array Name) := do
+  let some info := env.checked.get.find? name | throw s!"missing constant {name}"
+  let mut refs := info.type.getUsedConstants
+  if let some value := info.value? true then
+    refs := refs ++ value.getUsedConstants
+  if let .inductInfo value := info then
+    refs := refs ++ value.ctors.toArray
+  return refs
+-- The closure of `name`. `known` holds each constant's direct references and is
+-- shared by the audited declarations, so every expression is traversed once.
+def visit (env : Environment) (name : Name) (known : NameMap (Array Name)) :
+    Except String (NameSet × NameMap (Array Name)) := do
+  let mut result : NameSet := {}
+  let mut known := known
   let mut pending := #[name]
   while !pending.isEmpty do
     let current := pending.back!
     pending := pending.pop
     if !result.contains current then
       result := result.insert current
-      let some info := env.checked.get.find? current | throw s!"missing constant {current}"
-      let mut refs := info.type.getUsedConstants
-      if let some value := info.value? true then
-        refs := refs ++ value.getUsedConstants
-      if let .inductInfo value := info then
-        refs := refs ++ value.ctors.toArray
+      let refs ← match known.find? current with
+        | some refs => pure refs
+        | none => directRefs env current
+      known := known.insert current refs
       for ref in refs do
         if !result.contains ref then pending := pending.push ref
-  return result
-def audit (name : Name) (emitted : NameSet) : CoreM (Json × NameSet) := do
+  return (result, known)
+def audit (name : Name) (emitted : NameSet) (known : NameMap (Array Name)) :
+    CoreM (Json × NameSet × NameMap (Array Name)) := do
   let env ← getEnv
   let some info := env.checked.get.find? name | throwError "missing audited declaration"
-  let closure ← match visit env name {} with
-    | .ok names => pure names
+  let (closure, known) ← match visit env name known with
+    | .ok value => pure value
     | .error error => throwError "{error}"
   let names := (closure.toArray.filter (· != name)).qsort Name.lt
-  let axioms ← collectAxioms name
+  -- The axiom constants of the closure; the verifier compares them with `#print axioms`.
+  let axioms := closure.toArray.filter fun constant =>
+    match env.checked.get.find? constant with
+    | some (.axiomInfo _) => true
+    | _ => false
   let mut emitted := emitted
   for dependency in names do
     if !emitted.contains dependency then
@@ -133,19 +147,23 @@ def audit (name : Name) (emitted : NameSet) : CoreM (Json × NameSet) := do
   return (Json.mkObj [("declaration", toJson name.toString),
     ("dependencies", toJson (names.map Name.toString)),
     ("axioms", toJson ((axioms.qsort Name.lt).map Name.toString)),
-    ("evidence", evidence)], emitted)
+    ("evidence", evidence)], emitted, known)
 end DoMathDependencyAudit
 elab "#do_math_dependencies " names:ident+ : command => do
   Lean.Elab.Command.liftCoreM do
     let mut emitted : Lean.NameSet := {}
+    let mut known : Lean.NameMap (Array Lean.Name) := {}
     for name in names do
-      let (evidence, next) ← DoMathDependencyAudit.audit name.getId emitted
-      emitted := next
+      let (evidence, nextEmitted, nextKnown) ← DoMathDependencyAudit.audit name.getId emitted known
+      emitted := nextEmitted
+      known := nextKnown
       IO.println ("__DO_MATH_DEPENDENCIES__" ++ evidence.compress)
 '''
 
 
-# The per-declaration evidence rows of one verification, keyed by declaration name.
+# The kernel evidence of one verification. declaration_evidence, dependency_closure
+# and axioms are keyed by declaration name; dependency_evidence holds one body hash
+# per constant of the union of the closures (knowledge_records.validate_formal_evidence).
 FORMAL_EVIDENCE_FIELDS = ("declaration_evidence", "dependency_closure", "dependency_evidence", "axioms")
 
 
@@ -162,7 +180,8 @@ def forbidden_axioms(axiom_rows: dict, allowed) -> set[str]:
 
 def compare_formal_results(previous: dict, current: dict) -> dict:
     fields = FORMAL_EVIDENCE_FIELDS
-    missing = [field for field in fields if not previous.get(field) or not current.get(field)]
+    # An empty dependency table is evidence: the closures may contain no constant.
+    missing = [field for field in fields if previous.get(field) is None or current.get(field) is None]
     changed = [field for field in fields if field not in missing and previous[field] != current[field]]
     return {"equivalent": not missing and not changed, "missing": missing, "changed": changed,
             "requires_identity_review": bool(missing or changed)}
@@ -444,13 +463,27 @@ def toolchain_identity_errors(toolchain, *, should_stop=None):
     return errors
 
 
+def _check_file(raw: bytes, declarations: list[str], *, extract_evidence: bool) -> bytes:
+    """The compiled file: ``import Lean``, the source, the signature and axiom
+    audits and, when extracting evidence, the dependency extractor and its command."""
+    checks='\n'.join('#eval "__DO_MATH_SIGNATURE_BEGIN_'+x+'__"\n#check '+x+'\n#eval "__DO_MATH_SIGNATURE_END_'+x+'__"\n#print axioms '+x for x in declarations)
+    parts=[b'import Lean',raw,checks.encode()]
+    if extract_evidence:
+        parts+=[_DEPENDENCY_EXTRACTOR.encode(),('#do_math_dependencies '+' '.join(declarations)).encode()]
+    return b'\n'.join(parts)
+
+
 def verify_lean(*, source: str, declarations: list[str], workspace: Path,
                 lean_command: list[str] | None = None,
                 allowed_axioms: tuple[str,...] = AXIOMS, should_stop=None,
-                expected_toolchain: dict | None = None, on_started=None, launch_ticket=None) -> dict:
+                expected_toolchain: dict | None = None, on_started=None, launch_ticket=None,
+                extract_evidence: bool = True) -> dict:
     """Verify Lean to completion.
 
-    All output is preserved. Cancellation remains available through should_stop.
+    The output is preserved except the dependency body rows that a verified result
+    keeps as hashes. Without ``extract_evidence`` (the worker preview) the kernel
+    check, signatures and ``#print axioms`` run and no dependency evidence is made.
+    Cancellation remains available through should_stop.
     """
     if launch_ticket is not None:
         from .launch import validate_start
@@ -486,9 +519,7 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
         return {**base,'status':'unavailable','reason':str(error),'phase':'preparation'}
     with tempfile.TemporaryDirectory(dir=workspace) as directory:
         check=Path(directory)/'proposal.lean'
-        checks='\n'.join('#eval "__DO_MATH_SIGNATURE_BEGIN_'+x+'__"\n#check '+x+'\n#eval "__DO_MATH_SIGNATURE_END_'+x+'__"\n#print axioms '+x for x in declarations)
-        extraction='#do_math_dependencies '+' '.join(declarations)
-        check.write_bytes(b'import Lean\n'+raw+b'\n'+checks.encode()+b'\n'+_DEPENDENCY_EXTRACTOR.encode()+b'\n'+extraction.encode())
+        check.write_bytes(_check_file(raw,declarations,extract_evidence=extract_evidence))
         local_job_usage={}
         def started(identity):
             base['launch_not_created'] = False
@@ -511,17 +542,20 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
         crashed=(code & 0x80000000 != 0) if os.name=='nt' else code<0
         return {**base,'status':'failed','reason':'compiler crashed' if crashed else 'lean rejected'}
     try:
-        return _parse_evidence(base,declarations,allowed_axioms,should_stop)
+        return _parse_evidence(base,declarations,allowed_axioms,should_stop,extract_evidence=extract_evidence)
     except VerificationStopped as error:
         return {**base,'status':'stopped','reason':str(error)}
 
 
-def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
+def _parse_evidence(base, declarations, allowed_axioms, should_stop=None, *, extract_evidence=True):
     """Consume one evidence row at a time; retain hashes, not every dependency body."""
+    # Imported here: Job workers import this module only to start the compiler.
+    from .repository import exact_content_hash
     begin={f'"__DO_MATH_SIGNATURE_BEGIN_{name}__"':name for name in declarations}
     end={f'"__DO_MATH_SIGNATURE_END_{name}__"':name for name in declarations}
     selected=set(declarations); signatures={}; capture=None; fragments=[]
     axiom_rows={}; extracted={}; dependency_hashes={}
+    kept=[]  # The output without the dependency body rows reduced to hashes.
     # Unlike splitlines(), this does not duplicate the complete output as a list of strings.
     for match in re.finditer(r'[^\n]*(?:\n|$)',base['stdout']):
         _check_stop(should_stop)
@@ -532,7 +566,7 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
             signatures[capture]='\n'.join(fragments).strip(); capture=None; fragments=[]
         elif capture is not None:
             fragments.append(line)
-        if line.startswith('__DO_MATH_DEPENDENCY__'):
+        if extract_evidence and line.startswith('__DO_MATH_DEPENDENCY__'):
             try:
                 row=json.loads(line[len('__DO_MATH_DEPENDENCY__'):])
                 name=row['name']
@@ -545,7 +579,9 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
                 del row
             except (KeyError,TypeError,ValueError,RecursionError):
                 return {**base,'status':'failed','reason':'malformed dependency evidence'}
-        elif line.startswith('__DO_MATH_DEPENDENCIES__'):
+            continue
+        kept.append(match.group(0))
+        if extract_evidence and line.startswith('__DO_MATH_DEPENDENCIES__'):
             try:
                 row=json.loads(line[len('__DO_MATH_DEPENDENCIES__'):])
                 name=row['declaration']
@@ -580,6 +616,8 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
     base['signature_hash']=exact_content_hash(signatures)
     if forbidden_axioms(axiom_rows, allowed_axioms):
         return {**base,'status':'rejected','reason':'forbidden axiom'}
+    if not extract_evidence:
+        return {**base,'status':'verified','reason':None}
     if set(extracted)!=selected: return {**base,'status':'failed','reason':'dependency output missing'}
     for declaration,row in extracted.items():
         _check_stop(should_stop)
@@ -590,6 +628,7 @@ def _parse_evidence(base, declarations, allowed_axioms, should_stop=None):
             return {**base,'status':'failed','reason':'dependency output missing'}
         base['dependency_closure'][declaration]=dependencies
         base['declaration_evidence'][declaration]=row['evidence']
-        base.setdefault('dependency_evidence',{})[declaration]={name:dependency_hashes[name] for name in dependencies}
+    # One body hash per constant of the closures; the rows it came from leave the output.
+    base['dependency_evidence']={name:dependency_hashes[name] for names in base['dependency_closure'].values() for name in names}
     base['dependency_hash']=exact_content_hash(base['dependency_closure'])
-    return {**base,'status':'verified','reason':None,'expression_encoding':'lean-expr-dag/1'}
+    return {**base,'stdout':''.join(kept),'status':'verified','reason':None,'expression_encoding':'lean-expr-dag/1'}

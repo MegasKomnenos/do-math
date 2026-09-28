@@ -29,6 +29,70 @@ class LeanPreviewTests(unittest.TestCase):
                 cwd=workspace, capture_output=True, text=True, encoding='utf-8', timeout=30)
             self.assertEqual('stopped', json.loads(result.stdout)['status'])
 
+    def test_worker_commands_use_the_console_interpreter_when_the_engine_runs_windowless(self):
+        """A scheduled engine runs under pythonw.exe, whose output a worker shell cannot read."""
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            interpreters = root / 'Python'
+            interpreters.mkdir()
+            for name in ('python.exe', 'pythonw.exe'):
+                (interpreters / name).write_bytes(b'')
+            workspace = root / 'workspace'
+            workspace.mkdir()
+            context = {"action": {"role": "research_work"}, "snapshot": "fixed",
+                "formal_verifier": {"command": ["definitely-missing-lean"], "allowed_axioms": []}}
+            with patch.object(sys, 'executable', str(interpreters / 'pythonw.exe')):
+                contract = install_tools(workspace, context, schema_for('research_work'), 1000000)
+            self.assertEqual(contract['command'][0], str(interpreters / 'python.exe'))
+            self.assertEqual(context['formal_verifier']['preview']['command'][0], str(interpreters / 'python.exe'))
+
+    def test_preview_attaches_no_dependency_extraction_and_prints_only_worker_fields(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            compiler = workspace / 'compiler.py'
+            compiler.write_text(
+                "import sys\n"
+                "if '--version' in sys.argv:\n    print('Lean fake'); raise SystemExit\n"
+                "if '#do_math_dependencies' in open(sys.argv[-1], encoding='utf-8').read():\n"
+                "    print('dependency extraction attached')\n"
+                "print('\"__DO_MATH_SIGNATURE_BEGIN_good__\"'); print('good : True')\n"
+                "print('\"__DO_MATH_SIGNATURE_END_good__\"'); print(\"'good' does not depend on any axioms\")\n",
+                encoding='utf-8')
+            context = {"action": {"role": "research_work"}, "snapshot": "fixed",
+                "formal_verifier": {"command": [sys.executable, str(compiler)], "allowed_axioms": []}}
+            install_tools(workspace, context, schema_for('research_work'), 1000000)
+            (workspace / 'draft.lean').write_text('theorem good : True := trivial', encoding='utf-8')
+            preview = context['formal_verifier']['preview']
+            result = subprocess.run([*preview['command'], '--source', 'draft.lean', '--declaration', 'good'],
+                cwd=workspace, capture_output=True, text=True, encoding='utf-8', timeout=60)
+        data = json.loads(result.stdout)
+        self.assertEqual(data['status'], 'verified', data)
+        self.assertNotIn('dependency extraction attached', data['stdout'])
+        from do_math.formal_preview import PREVIEW_FIELDS
+        self.assertLessEqual(set(data), set(PREVIEW_FIELDS))
+        self.assertEqual(data['declaration_signatures'], {'good': 'good : True'})
+        self.assertEqual(data['axioms'], {'good': []})
+
+    def test_preview_tool_and_compiler_worker_skip_unneeded_modules(self):
+        """The tool reads its input without the submission checker; the Job worker
+        that only starts the compiler loads no state store or schema library."""
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            context = {"action": {"role": "research_work"}, "snapshot": "fixed",
+                "formal_verifier": {"command": ["definitely-missing-lean"], "allowed_axioms": []}}
+            install_tools(workspace, context, schema_for('research_work'), 1000000)
+            loaded = {}
+            for module in ('do_math.formal_preview', 'do_math.formal'):
+                script = f'import sys; sys.path.insert(0, sys.argv[1]); import {module}; print(" ".join(sys.modules))'
+                result = subprocess.run([sys.executable, '-B', '-c', script,
+                                         str(workspace / 'input/tools/submission-support.zip')],
+                                        capture_output=True, text=True, encoding='utf-8', timeout=60)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                loaded[module] = set(result.stdout.split())
+        self.assertNotIn('do_math.submission', loaded['do_math.formal_preview'])
+        self.assertFalse({'do_math.repository', 'jsonschema'} & loaded['do_math.formal'])
+
     def test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker(self):
         """The worker loads formal.py from a zip, so its path is never the approved path;
         the same bytes are the same checker and pass the identity gate."""
@@ -82,9 +146,11 @@ class LeanPreviewTests(unittest.TestCase):
                 self.assertFalse(data['authoritative'])
                 self.assertEqual(data['toolchain']['configured_command'], command)
                 self.assertEqual(data['input_snapshot'], 'fixed')
+                self.assertFalse({'dependency_closure', 'dependency_evidence', 'declaration_evidence'} & set(data))
+                self.assertNotIn('__DO_MATH_DEPENDENC', data.get('stdout', ''))
                 if expected == 'verified':
-                    self.assertIn(name, data['declaration_evidence'])
-                    self.assertEqual(set(data['dependency_closure'][name]), set(data['dependency_evidence'][name]))
+                    self.assertIn(name, data['declaration_signatures'])
+                    self.assertEqual(data['axioms'][name], [])
             self.assertFalse(any((workspace / family).exists() for family in
                 ('formal_results', 'expositions', 'identity_assessments', 'assessment_uses')))
             (workspace / '.control').mkdir(exist_ok=True)

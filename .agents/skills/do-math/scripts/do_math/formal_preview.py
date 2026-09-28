@@ -5,8 +5,14 @@ import json
 import tempfile
 
 from .context_store import safe_path
+from .file_io import strict_json_loads
 from .formal import verify_lean
-from .submission import load_json
+
+# What a worker reads from a preview (references/공통-실행.md): the verdict and its
+# reason, the checked source and toolchain, signatures, axioms, the compiler's output
+# and the preview's own standing. Central dependency evidence is neither made nor printed.
+PREVIEW_FIELDS = ('status', 'reason', 'source_sha256', 'declarations', 'declaration_signatures', 'axioms',
+                  'toolchain', 'identity_errors', 'stdout', 'stderr', 'authoritative', 'input_snapshot', 'assurance')
 
 
 def main(argv=None):
@@ -16,7 +22,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     workspace = Path.cwd().resolve()
     try:
-        context = load_json((workspace / 'input/submission/context.json').read_bytes())
+        context = strict_json_loads((workspace / 'input/submission/context.json').read_bytes())
         settings = context['formal_verifier']
         source = safe_path(workspace, args.source).read_bytes().decode('utf-8')
         stopped = lambda: (workspace / '.control' / 'stop-request.json').exists()
@@ -32,10 +38,13 @@ def main(argv=None):
                     workspace=Path(directory), lean_command=settings['command'],
                     allowed_axioms=tuple(settings['allowed_axioms']),
                     should_stop=stopped,
-                    expected_toolchain=settings.get('expected_toolchain'))
+                    expected_toolchain=settings.get('expected_toolchain'),
+                    extract_evidence=False)
         result.update(authoritative=False, input_snapshot=context.get('snapshot'),
-            assurance='Same supplied verifier code and configured command; central verification of the submitted source is still required. Shared compiler libraries and Lake caches are not isolated by this preview.')
+            assurance='Same supplied verifier code and configured command for the kernel check, signatures and axioms; '
+                      'dependency evidence is not extracted. Central verification of the submitted source is still required. '
+                      'Shared compiler libraries and Lake caches are not isolated by this preview.')
     except (ValueError, KeyError, OSError) as error:
         result = {'status': 'unavailable', 'reason': str(error), 'authoritative': False}
-    print(json.dumps(result, ensure_ascii=False))
+    print(json.dumps({key: result[key] for key in PREVIEW_FIELDS if key in result}, ensure_ascii=False))
     return 0 if result['status'] == 'verified' else 1

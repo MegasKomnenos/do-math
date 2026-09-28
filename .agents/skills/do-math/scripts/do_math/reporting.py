@@ -53,6 +53,7 @@ def task_status(instance, runtime, *, evaluation_context=None):
     rows = []
     pending_assessments = set(task_contracts.returned_task_ids(runtime.get('tasks', {})))
     live = [e for e in runtime.get("executions", {}).values() if e.get("status") != "ended"]
+    ended = planning.instance_ended(instance, runtime)
     for identifier, task in runtime.get("tasks", {}).items():
         queued = [action for action in runtime.get("queue", []) if action.get("target") == identifier]
         executions = [e for e in live if e.get("action", {}).get("target") == identifier]
@@ -69,7 +70,7 @@ def task_status(instance, runtime, *, evaluation_context=None):
             if action.get('dispatch_wait', {}).get('kind') in ADMISSION_WAITS:
                 waiting.append(action['dispatch_wait'])
         readiness = None
-        if not executions and task.get('status') not in planning.TERMINAL_TASK_STATUSES:
+        if not ended and not executions and task.get('status') not in planning.TERMINAL_TASK_STATUSES:
             readiness = planning.task_ready(task, instance, runtime, include_scheduling_waits=False,
                                             evaluation_context=evaluation_context)
             if readiness['state'] != 'ready':

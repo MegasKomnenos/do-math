@@ -1,6 +1,7 @@
 """Public configuration has one current execution model."""
 from copy import deepcopy
 from pathlib import Path
+import re
 import sys
 import tempfile
 import unittest
@@ -12,6 +13,12 @@ from do_math.execution_profiles import WORK_ROLES, build_profiles
 
 
 class ConfigurationTests(unittest.TestCase):
+    def test_default_input_limit_is_two_million_bytes_in_code_and_config_list(self):
+        # The user's decision; the config list is the one document that states defaults.
+        document = (Path(__file__).resolve().parents[2] / 'references' / 'CLI-실행-계약.md').read_text(encoding='utf-8')
+        documented, = re.findall(r'^\| `max_input_bytes` \| (\d+) \|', document, flags=re.MULTILINE)
+        self.assertEqual((DEFAULT_CONFIG['max_input_bytes'], int(documented)), (2_000_000, 2_000_000))
+
     def test_configuration_outside_the_current_contract_is_rejected_before_creating_an_instance(self):
         # The configuration section is closed: an undeclared key names no setting, and a declared one needs its type.
         for patch, message in (({'invented_setting': 1}, 'outside the stored configuration section: invented_setting'),

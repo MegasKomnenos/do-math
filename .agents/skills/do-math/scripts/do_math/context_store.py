@@ -12,7 +12,7 @@ from pathlib import Path, PurePosixPath
 from .repository import canonical_json, exact_content_hash
 from .file_io import is_sha256, no_reparse, stat_fingerprint
 from .git_store import ARTIFACT_ROOT, PhysicalBoundary, oid_shape
-from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
+from .execution_profiles import PLANNING_ROLES
 
 
 class _ChangedDuringRead(OSError):
@@ -392,6 +392,166 @@ _ROLE_DIRECT = {
 }
 
 
+_PLANNING = ('research_preparation', 'research_plan')
+_INTENT = ('intent_interpretation:interpret', 'intent_interpretation:check')
+# The three input classes (references/공통-실행.md 「기록 지도와 읽기 도구」). A scope is a
+# role, or ``role:mode`` where one role's modes read different inputs (input_scope).
+#
+# Inline and map: context keys the engine builds for many roles. Each key maps to the scopes
+# that carry it inline, because their role contract or submission check reads it; where that
+# is ambiguous the scope keeps it inline. Every other scope receives the key as a map entry:
+# its exact catalog source and item count, which the role opens when it judges it useful.
+# A key not listed is inline for every role the engine gives it.
+INLINE_SCOPES = {
+    'model_policy': (*_PLANNING, 'task_contract_review'),
+    'resources': (*_PLANNING, 'task_contract_review', 'maintenance:general'),
+    'budget_unit': (*_PLANNING, 'task_contract_review', 'maintenance:general'),
+    'academic_requirements': (*_PLANNING, 'task_contract_review', 'goal_audit', *_INTENT),
+    'academic_phase': (*_PLANNING, 'task_contract_review', 'goal_audit'),
+    'academic_validation': ('research_plan', 'goal_audit'),
+    'repetition_holds': (*_PLANNING, 'operational_review'),
+    'goal': (*_INTENT, *_PLANNING, 'task_contract_review', 'research_work', 'supplemental_research:task',
+             'operational_review', 'goal_audit', 'maintenance:general', 'maintenance:impact'),
+    'policies': (*_INTENT, *_PLANNING, 'task_contract_review', 'research_work', 'supplemental_research:task',
+                 'operational_review', 'goal_audit', 'maintenance:general', 'maintenance:impact'),
+    'goal_revision': (*_INTENT, *_PLANNING, 'operational_review', 'goal_audit'),
+    'policy_revision': (*_INTENT, *_PLANNING, 'operational_review', 'goal_audit'),
+    'events': (*_PLANNING, 'operational_review'),
+    'external_operations': (*_PLANNING, 'task_contract_review', 'research_work', 'supplemental_research:task',
+                            'operational_review', 'maintenance:general'),
+    'external_rejections': (*_PLANNING, 'task_contract_review', 'research_work', 'supplemental_research:task',
+                            'goal_audit', 'maintenance:general'),
+    'user_inputs': ('research_preparation', 'research_work', 'supplemental_research:task', 'operational_review',
+                    'maintenance:general'),
+    'open_questions': (*_PLANNING, 'task_contract_review', 'research_work', 'supplemental_research:task',
+                       'operational_review', 'goal_audit'),
+    'recent_history': (*_PLANNING, 'task_contract_review', 'operational_review', 'maintenance:general'),
+    'relations': (*_INTENT, *_PLANNING, 'task_contract_review', 'research_work', 'supplemental_research',
+                  'operational_review', 'goal_audit', 'maintenance:general', 'maintenance:impact'),
+    'formal_verifier': ('intent_interpretation:interpret', *_PLANNING, 'task_contract_review', 'research_work',
+                        'supplemental_research', 'maintenance:general', 'maintenance:impact'),
+    'execution_profiles': (*_INTENT, 'research_preparation', 'task_contract_review', 'identity_review:scope',
+                           'operational_review'),
+    'role_profile_refs': (*_INTENT, 'research_preparation', 'identity_review:scope', 'operational_review'),
+    'decisions': ('intent_interpretation', *_PLANNING, 'task_contract_review', 'research_work', 'supplemental_research',
+                  'operational_review', 'goal_audit', 'maintenance'),
+    'pending_revisions': (*_PLANNING, 'maintenance:general'),
+    'revision_cycles': (*_PLANNING, 'maintenance:general'),
+    'blocked_actions': (*_PLANNING, 'operational_review', 'maintenance:general'),
+    'configuration_source': (*_INTENT, *_PLANNING),
+    'relation_validation_source': ('research_work', 'supplemental_research:task'),
+    'task_readiness': (*_PLANNING, 'research_work'),
+    # The IDs of the records the role may read and cite; record_map summarizes them inline.
+    'record_index': (),
+}
+
+# Blocked: context keys an independent judgment must not receive, by scope, with the contract
+# that forbids reading them. An entry ``root/family`` names a storage family instead: its records
+# leave the scope's record map, so neither record_index nor the read tool reaches them. A blocked
+# scope also reads the execution ledger (GLOSSARY 「실행 원장」) only as far as its input supplies
+# it, because the unpublished work of the executions it must stay independent of lives there; it
+# reads the rest of the research canon (「연구 정본」).
+_REVIEW_PRIVATE = ('tasks', 'recent_history', 'open_questions', 'question_links')
+BLOCKED_KEYS = {
+    # 계약/동일성-검토.md 47, GLOSSARY 「검토 자리」: no unsealed peer result, author or peer context.
+    'identity_review': _REVIEW_PRIVATE,
+    # 계약/보충-조사.md 23: no other reviewer's result, no reviewer's whole execution.
+    'supplemental_research:review': _REVIEW_PRIVATE,
+    # 공통-실행.md 「질문의 소유자와 영향을 받는 대상을 밝힌다」 (review seats' private questions):
+    # an operational review of a review seat reports back to that seat.
+    'operational_review:review': _REVIEW_PRIVATE,
+    # 계약/목표-감사.md 13: provided sources and published reviews, not another auditor's answer.
+    # Each audit slot seals its judgment into the research canon before the round's other slots judge.
+    'goal_audit': ('recent_history', 'research/goal_judgments'),
+    # 계약/의도-해석.md 69: both judges read the same sealed case and not each other's judgment.
+    'intent_interpretation:delegation': ('recent_history', 'user_inputs', 'open_questions', 'question_links'),
+    # 계약/의도-해석.md 50: not the interpreter's hidden context or unfixed work.
+    'intent_interpretation:check': (),
+    # 계약/작업-계약-검토.md 19: published contract and evidence, not the author's unpublished judgment.
+    'task_contract_review': (),
+}
+# Keys only the installed checker and read tool consume; the prompt never carries them.
+CHECKER_ONLY_KEYS = ('control_binding', 'record_store')
+# Roles whose task inputs and completion evidence name records: context['supplied_record_ids'].
+CITED_RECORD_ROLES = ('research_preparation', 'research_plan', 'operational_review')
+
+
+def input_scope(action, runtime):
+    """``role`` or ``role:mode``: the scope of one action's input in the class tables."""
+    role = action.get('role')
+    if role == 'intent_interpretation':
+        mode = ('delegation' if action.get('delegation_application_id')
+                else 'check' if action.get('stage') == 'check' else 'interpret')
+    elif role == 'identity_review':
+        mode = action.get('stage')
+    elif role == 'supplemental_research':
+        mode = 'review' if action.get('review_cycle_id') else 'task'
+    elif role == 'maintenance':
+        mode = ('kind' if action.get('kind_definition_id') else 'impact' if action.get('stage') == 'impact_review'
+                else 'diagnosis' if action.get('initial_submission_diagnosis') else 'general')
+    elif role == 'operational_review':
+        # A review seat's execution belongs to its review lineage (BLOCKED_KEYS).
+        target = runtime.get('executions', {}).get(action.get('target')) or {}
+        mode = 'review' if target.get('action', {}).get('review_cycle_id') else 'general'
+    else:
+        return role
+    return role + ':' + str(mode)
+
+
+def _in_scope(scope, entries):
+    return scope in entries or scope.split(':')[0] in entries
+
+
+def _blocked(scope):
+    """The BLOCKED_KEYS entries of ``scope`` and of its role."""
+    return {entry for name in {scope, scope.split(':')[0]} for entry in BLOCKED_KEYS.get(name, ())}
+
+
+def input_class(scope, key):
+    """``'inline'``, ``'map'`` or ``'blocked'``: how the input of ``scope`` carries context ``key``."""
+    if key in _blocked(scope):
+        return 'blocked'
+    scopes = INLINE_SCOPES.get(key)
+    return 'inline' if scopes is None or _in_scope(scope, scopes) else 'map'
+
+
+def readable_record_index(instance, runtime, scope, supplied):
+    """IDs of the snapshot records the input of ``scope`` may read and cite, by ``root/family``.
+
+    Every identity record of the research canon; every one of the execution ledger, or for a
+    blocked scope only those whose ID the input supplies; none of a family the scope blocks.
+    ``supplied`` is the set of IDs the fixed input shows (submission.supplied_reference_ids).
+    """
+    from .state_contract import default_state_contract
+    ledger, blocked = not _in_scope(scope, BLOCKED_KEYS), _blocked(scope)
+    index = {}
+    for family in default_state_contract().families():
+        if (not family.identity or family.shape not in {'map', 'list'}
+                or family.root + '/' + family.name in blocked):
+            continue
+        container = (instance if family.root == 'research' else runtime).get(family.name)
+        rows = container.values() if isinstance(container, dict) else container if isinstance(container, list) else ()
+        ids = sorted(row['id'] for row in rows if isinstance(row, dict) and isinstance(row.get('id'), str)
+                     and (ledger or family.root == 'research' or row['id'] in supplied))
+        if ids:
+            index[family.root + '/' + family.name] = ids
+    return index
+
+
+def record_map(index, scope, snapshot):
+    """The inline summary of ``index``: what the role may read and cite and how."""
+    ledger = not _in_scope(scope, BLOCKED_KEYS)
+    return {'snapshot': snapshot, 'ledger': 'readable' if ledger else 'supplied_only',
+            'families': {family: len(ids) for family, ids in index.items()},
+            'blocked_keys': sorted(_blocked(scope)),
+            'instruction': 'record_index lists by storage family the IDs of the input snapshot records this role may '
+                           'read and cite. Read a record, or a file of this snapshot, with read_tool; cite a record by '
+                           'its ID. ledger=supplied_only: this independent judgment reads the research canon, except a '
+                           'root/family in blocked_keys, and only the execution-ledger (runtime/) records its input '
+                           'supplies. See 공통 실행 '
+                           '「기록 지도와 읽기 도구」.'}
+
+
 def role_direct_keys(role, context):
     """The comparison population, current request and resume evidence are direct."""
     role_keys = _ROLE_DIRECT.get(role, ())
@@ -404,7 +564,7 @@ def role_direct_keys(role, context):
         *(['impact_review_input'] if context.get('action', {}).get('stage') == 'impact_review' else []),
         *[key for key in ('proposal', 'role_review', 'previous_execution', 'resume_checkpoint',
                          'recovery_materials', 'previous_output_files', 'review_transcript',
-                         'continuity_broken', 'continuation_history', 'candidate_order') if key in context]]))
+                         'continuity_broken', 'continuation_history') if key in context]]))
 
 
 @measured('role_input_preparation')
@@ -425,6 +585,11 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     except ValueError as error:
         raise ValueError('input snapshot must be a fixed Git commit') from error
     value = deepcopy(context)
+    # The scope is that of the role this input is prepared for (the profile's role).
+    scope = input_scope({**value.get('action', {}), 'role': role}, runtime)
+    # Blocked context never reaches this input, not even as a preserved detail file.
+    for key in [key for key in value if input_class(scope, key) == 'blocked']:
+        del value[key]
     detail_sources, detail_bytes = [], {}
     def preserve_detail(name, record):
         raw = canonical_json(record)
@@ -446,8 +611,9 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
                 row['request'] = {k:deepcopy(request[k]) for k in
                     ('id','instance_id','action','origin','created_at') if k in request}
                 row['request_source_ref'] = reference
-    if role in {'research_preparation', 'research_plan', 'intent_interpretation'}:
-        # The configuration is read from state here; the engine does not project it.
+    if input_class(scope, 'configuration_source') == 'inline':
+        # The configuration is read from state here; the engine does not project it. Other
+        # scopes read the configuration record through the record map.
         value['configuration_source'] = preserve_detail('configuration', instance['config'])
     if instance.get('governance'):
         governance_input = governance.governance_view(instance)
@@ -458,7 +624,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     else:
         raise ValueError('role requires adopted governance')
     value.update(snapshot=snapshot, governance=governance_input, execution_profile=deepcopy(profile))
-    private_scope = None
+    private_scope = sealed_order = None
     action = value.get('action', {})
     if role == 'identity_review' and action.get('review_cycle_id'):
         from .review_cycle import context_for, review_action
@@ -594,9 +760,17 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         indexed = {row['id']: row for row in compared}
         task_order = [*order['ids'], *[identifier for identifier in sorted(indexed) if identifier not in order['ids']]]
         value['tasks'] = [indexed[identifier] for identifier in task_order]
-        value['candidate_order'] = order
+        # The order is sealed in the manifest; the role reads it as the order of `tasks`.
+        sealed_order = order
         if role == 'research_plan':
             value['ready_task_ids'] = list(order['ids'])
+    from .submission import supplied_record_ids, supplied_reference_ids
+    value['record_index'] = readable_record_index(instance, runtime, scope, supplied_reference_ids(value))
+    value['record_map'] = record_map(value['record_index'], scope, snapshot)
+    if role in CITED_RECORD_ROLES:
+        # Task inputs and completion evidence name records the role can read (공통-실행.md).
+        from .planning import record_index as family_records
+        value['supplied_record_ids'] = supplied_record_ids(value, family_records(instance, runtime))
     required = role_direct_keys(role, value)
     # Goal and policy text are projections of the approved governance records.
     required = [key for key in required if key not in {'goal', 'policies', 'implementation_documents'}]
@@ -606,11 +780,14 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     documents = documents if documents is not None else contracts.prompt_documents(role)
     schema = output_schema if output_schema is not None else contracts.schema_for(role)
     validation_context = deepcopy(value)
+    # The installed tools read these from the checker context; no role reads them.
+    for key in CHECKER_ONLY_KEYS:
+        value.pop(key, None)
     if role in PLANNING_ROLES:
         # Resolve catalog references independently of the comparison population.
         validation_context['tasks'] = [deepcopy(runtime['tasks'][identifier])
                                        for identifier in sorted(runtime['tasks'])]
-    if role in RESEARCH_PRODUCER_ROLES:
+    if input_class(scope, 'relation_validation_source') == 'inline':
         # A fixed public domain view for the shared relation checker, not a
         # second store or a worker-authored validity assertion.
         # Serialized immediately below; the records are read, not copied.
@@ -628,17 +805,20 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     if install_submission_tools:
         from .submission import install_tools
         install_tools(workspace, validation_context, schema, max_artifact_bytes)
-        for key in ('submission_contract', 'reference_catalog', 'formal_verifier'):
+        for key in ('submission_contract', 'reference_catalog', 'formal_verifier', 'record_map'):
             if key in validation_context:
                 value[key] = deepcopy(validation_context[key])
         required = list(dict.fromkeys([*required, 'submission_contract',
-            *(['formal_verifier'] if 'formal_verifier' in value else [])]))
+            *(['formal_verifier'] if 'formal_verifier' in value
+              and input_class(scope, 'formal_verifier') == 'inline' else [])]))
     limit = profile['input']['max_input_bytes']
     def render(body):
         return prepare_prompt(contracts.render_prompt(role, body, output_schema=schema, documents=documents), profile)
-    overhead = len(render({}).encode('utf-8'))
-    fitted = fit_context(value, max_bytes=max(1, limit - overhead), workspace=workspace,
-                         mandatory_keys=required, role=role, profile_id=profile['id'], activity_id=activity_id)
+    # The context is compared with what the limit leaves after documents, schema and framing.
+    budget = max(1, limit - len(render({}).encode('utf-8')))
+    fitted = fit_context(value, max_bytes=budget, workspace=workspace,
+                         mandatory_keys=required, role=role, profile_id=profile['id'], activity_id=activity_id,
+                         map_keys=[key for key in value if input_class(scope, key) == 'map'])
     prompt = render(fitted['context'])
     actual = len(prompt.encode('utf-8'))
     if actual > limit:
@@ -648,7 +828,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
             actual_bytes=original_bytes, mandatory_bytes=0, max_bytes=limit,
             mandatory_keys=required, role=role, profile_id=profile['id'], activity_id=activity_id)
         overflow.update(original_bytes=original_bytes, actual_bytes=original_bytes,
-                        packed_bytes=actual, limit_bytes=limit, unit='utf8_bytes',
+                        packed_bytes=actual, limit_bytes=limit, context_budget_bytes=budget, unit='utf8_bytes',
                         prompt_metrics=contracts.prompt_metrics(prompt, fitted['context'], schema, documents))
         overflow.setdefault('resolution_question', {'kind': 'input_capacity', 'activity_id': activity_id,
             'question': 'Which authorized profile or scope change should resolve this input overflow?',
@@ -699,8 +879,8 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         prompt={'sha256': hashlib.sha256(prompt.encode('utf-8')).hexdigest(), 'bytes': actual}, required_direct_keys=required,
         private_scope=private_scope)
     manifest['detail_sources'] = detail_sources
-    if 'candidate_order' in value:
-        manifest['candidate_order'] = deepcopy(value['candidate_order'])
+    if sealed_order is not None:
+        manifest['candidate_order'] = deepcopy(sealed_order)
     artifacts = dict(detail_bytes)
     if artifact_prefix is not None:
         # The one archive of this role input: every file sits at its
@@ -882,8 +1062,12 @@ def _input_overflow(reason: str, *, actual_bytes: int, mandatory_bytes: int, max
 
 def fit_context(context: dict, *, max_bytes: int, workspace: Path,
                 mandatory_keys: list[str], role: str | None = None,
-                profile_id: str | None = None, activity_id: str | None = None) -> dict:
-    """Pack optional source references without changing mandatory direct bytes."""
+                profile_id: str | None = None, activity_id: str | None = None, map_keys=()) -> dict:
+    """Pack optional source references without changing mandatory direct bytes.
+
+    A key of ``map_keys`` is always given as its map entry (source reference and item count);
+    other optional keys are referenced only when the context exceeds ``max_bytes``.
+    """
     if not isinstance(context, dict):
         raise TypeError("context must be an object")
     if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes < 1:
@@ -911,18 +1095,20 @@ def fit_context(context: dict, *, max_bytes: int, workspace: Path,
     reference_only = {'execution_profiles', 'role_profile_refs'} if role in _ROLE_DIRECT else set()
     if role in {'research_work', 'supplemental_research', 'task_contract_review'}:
         reference_only.add('tasks')
+    mapped = set(map_keys) - set(mandatory_keys)
     for key in candidates:
         if mandatory_bytes > max_bytes:
             break
-        if key not in reference_only and _object_size(sizes.values()) <= max_bytes:
+        if key not in mapped and key not in reference_only and _object_size(sizes.values()) <= max_bytes:
             continue
         ref = catalog["entries"][key]
         projected = {"source_ref": ref, "total": len(context[key]) if isinstance(context[key], (dict, list)) else None}
         projected_raw = canonical_json(projected)
-        if len(projected_raw) < len(raw[key]):
+        if key in mapped or len(projected_raw) < len(raw[key]):
             fitted[key] = projected
             sizes[key] = _member_size(key, projected_raw)
-            reductions.append({"key": key, "kind": "source_reference", "source_ref": ref})
+            reductions.append({"key": key, "kind": "map_entry" if key in mapped else "source_reference",
+                               "source_ref": ref})
     actual = _object_size(sizes.values())
     overflow = None
     if actual > max_bytes:
@@ -969,3 +1155,151 @@ def read_source(workspace: Path, ref: dict, offset: int = 0,
         return {"status": "error", "path": ref.get("path") if isinstance(ref, dict) else None,
                 "bytes": b"", "sha256": None, "range": None, "truncated": False,
                 "reason": str(error), "error_type": type(error).__name__}
+
+
+# The read tool's log of input snapshot reads (seal_submission preserves it), and the lock its
+# appends and readers share.
+READ_LOG = 'checks/reads.jsonl'
+_READ_LOCK = 'checks/.reads-lock'
+# Record fields a family listing shows so that a role can choose what to read.
+_SUMMARY_FIELDS = ('title', 'kind', 'status', 'lifecycle', 'role', 'stage', 'target', 'outcome', 'decision',
+                   'name', 'created_at')
+
+
+def read_log_bytes(workspace):
+    """One consistent version of the read log of ``workspace``, or None when nothing was read."""
+    from .file_io import os_lock
+    workspace = Path(workspace)
+    log = safe_path(workspace, READ_LOG)
+    if not log.is_file():
+        return None
+    with os_lock(safe_path(workspace, _READ_LOCK), blocking=True):
+        return read_stable(log)
+
+
+def _append_reads(workspace, rows):
+    from .file_io import now, os_lock
+    log = safe_path(workspace, READ_LOG)
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with os_lock(safe_path(workspace, _READ_LOCK), blocking=True), log.open('ab') as stream:
+        for row in rows:
+            stream.write(json.dumps({'at': now(), **row}, ensure_ascii=False, sort_keys=True).encode('utf-8') + b'\n')
+
+
+def readable_snapshot_path(context, path):
+    """Whether the fixed input ``context`` may read ``path`` of its snapshot (the record map's rule).
+
+    Never a file of a family ``record_map.blocked_keys`` names. Otherwise a record file of its
+    record_index; with ``record_map.ledger == 'readable'`` any state file; otherwise research
+    canon files and the files the input itself shows.
+    """
+    from .submission import supplied_locators
+    parts = path.split('/') if isinstance(path, str) else []
+    if (len(parts) < 2 or parts[0] not in {'research', 'runtime'}
+            or parts[0] + '/' + parts[1] in context.get('record_map', {}).get('blocked_keys', ())):
+        return False
+    if (len(parts) == 3 and parts[2].endswith('.json')
+            and parts[2][:-len('.json')] in context.get('record_index', {}).get(parts[0] + '/' + parts[1], ())):
+        return True
+    if context.get('record_map', {}).get('ledger') == 'readable' or parts[0] == 'research':
+        return True
+    return path in supplied_locators(context)
+
+
+def read_main(argv=None):
+    """Read this execution's input snapshot within its record map (input/tools/read_input.py).
+
+    Records come back decoded, other files as text or base64, or written to --output. Every
+    read, refusal and error is appended to checks/reads.jsonl.
+    """
+    import argparse
+    import base64
+    import sys
+    from .file_io import strict_json_loads
+    parser = argparse.ArgumentParser(description=read_main.__doc__)
+    parser.add_argument('--list', action='store_true', help='record_index families, or with --family their records')
+    parser.add_argument('--family', help='a root/family of record_index, with --list')
+    parser.add_argument('--id', action='append', default=[], help='a record ID of record_index (repeatable)')
+    parser.add_argument('--path', action='append', default=[], help='a file path of the input snapshot (repeatable)')
+    parser.add_argument('--output', help='workspace-relative file for the bytes of one --path')
+    args = parser.parse_args(argv)
+    if args.list == bool(args.id or args.path):
+        parser.error('give --list, or one or more --id or --path')
+    if args.family is not None and not args.list:
+        parser.error('--family requires --list')
+    if args.output is not None and (args.id or len(args.path) != 1):
+        parser.error('--output takes exactly one --path')
+    workspace = Path.cwd().resolve()
+    context = strict_json_loads(read_stable(safe_path(workspace, 'input/submission/context.json')))
+    snapshot, index = context.get('snapshot'), context.get('record_index', {})
+    store = []
+
+    def snapshot_store():
+        if not store:
+            from .git_store import GitStateStore
+            binding = context['record_store']
+            store.append(GitStateStore(Path(binding['repository']), binding['instance_id']))
+        return store[0]
+
+    def read(path):
+        return snapshot_store().read_bytes(snapshot, path)
+
+    def entry(request, path, output=None):
+        row = {'request': request, 'path': path, 'snapshot': snapshot}
+        if path is None or not readable_snapshot_path(context, path):
+            return {**row, 'status': 'refused',
+                    'reason': 'outside the record map of this input (record_index and record_map.ledger)'}
+        if output is not None and relative_path(output).parts[0] == 'input':
+            return {**row, 'status': 'refused', 'reason': '--output must not write into the fixed input/'}
+        try:
+            raw = read(path)
+        except (OSError, ValueError, KeyError, RuntimeError) as error:
+            return {**row, 'status': 'error', 'reason': str(error)}
+        row.update(status='ok', sha256=hashlib.sha256(raw).hexdigest(), bytes=len(raw))
+        if output is not None:
+            target = safe_path(workspace, output)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(raw)
+            return {**row, 'output': relative_path(output).as_posix()}
+        if not path.startswith(ARTIFACT_ROOT):
+            from .payloads import decode
+            try:
+                return {**row, 'record': decode(strict_json_loads(raw), read)}
+            except (ValueError, TypeError):
+                pass  # a state file that is not a record envelope, such as a manifest
+        try:
+            return {**row, 'text': raw.decode('utf-8')}
+        except UnicodeDecodeError:
+            return {**row, 'base64': base64.b64encode(raw).decode('ascii')}
+
+    if args.list and args.family is None:
+        result = {'snapshot': snapshot, 'status': 'ok', 'ledger': context.get('record_map', {}).get('ledger'),
+                  'families': {family: len(ids) for family, ids in index.items()}}
+        logged = []
+    elif args.list:
+        result = {'snapshot': snapshot, 'family': args.family, 'status': 'refused', 'records': []}
+        if args.family in index:
+            paths = {identifier: f'{args.family}/{identifier}.json' for identifier in index[args.family]}
+            try:
+                files = snapshot_store().read_many(snapshot, list(paths.values()))
+                result.update(status='ok', records=[
+                    {'id': identifier, 'path': path, 'bytes': len(files[path]),
+                     **{key: value for key, value in strict_json_loads(files[path]).get('record', {}).items()
+                        if key in _SUMMARY_FIELDS and not isinstance(value, (dict, list))}}
+                    for identifier, path in paths.items()])
+            except (OSError, ValueError, KeyError, RuntimeError) as error:
+                result.update(status='error', reason=str(error))
+        logged = [{'request': '--list ' + args.family, 'path': args.family, 'snapshot': snapshot,
+                   'status': result['status'], 'count': len(result['records'])}]
+    else:
+        rows = [entry(identifier, next((f'{family}/{identifier}.json' for family, ids in index.items()
+                                        if identifier in ids), None)) for identifier in args.id]
+        rows += [entry(path, path, args.output) for path in args.path]
+        result = {'snapshot': snapshot, 'status': 'ok' if all(row['status'] == 'ok' for row in rows) else 'incomplete',
+                  'records': rows}
+        logged = [{key: row[key] for key in ('request', 'path', 'snapshot', 'status', 'sha256', 'bytes', 'reason')
+                   if key in row} for row in rows]
+    if logged:
+        _append_reads(workspace, logged)
+    sys.stdout.buffer.write(json.dumps(result, ensure_ascii=False).encode('utf-8') + b'\n')
+    return 0 if result['status'] == 'ok' else 1

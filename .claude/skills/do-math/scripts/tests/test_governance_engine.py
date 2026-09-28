@@ -142,6 +142,22 @@ class CentralGovernanceTests(unittest.TestCase):
             h._governance_control({'action': 'configure', 'origin': 'operator', 'config': {'session_limits': limits}})
         self.assertEqual(h.instance, before)
 
+    def test_intent_input_tasks_carry_the_contract_hash_a_scope_decision_binds(self):
+        # 입력-소비자.md task_scope uses the supplied task edition and hash; the application
+        # compares that hash with planning.contract_hash (governance.apply_decision).
+        import hashlib
+        from do_math.planning import contract_hash
+        from record_fixtures import task_contract
+        h, _, _ = governance_host()
+        text = 'Waive the first obligation.'
+        h.instance['lifecycle'] = {'input_id': 'RAW', 'immutable_input': {
+            'text': text, 'sha256': hashlib.sha256(text.encode()).hexdigest(), 'bytes': len(text.encode())}}
+        h.runtime['inputs'] = [{'id': 'RAW', 'text': text, 'config': {}}]
+        task = task_contract()
+        context = h._governance_context({'role': 'intent_interpretation', 'target': 'RAW'},
+                                        {'tasks': [{**deepcopy(task), 'content_sha256': 'c' * 64}]})
+        self.assertEqual(context['tasks'][0]['contract_sha256'], contract_hash(task))
+
     def test_nfd_original_reaches_actual_context_and_coverage(self):
         import hashlib, unicodedata
         from do_math import governance as gov

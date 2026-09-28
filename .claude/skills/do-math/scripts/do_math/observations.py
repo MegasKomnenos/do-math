@@ -17,6 +17,7 @@ from .control_transport import (CONTROL_SERVER, RECEIPT_TOOL, SAFETY_BOUNDARY, S
                                 SELF_CHECK_TOOL, SUBMIT_TOOL, self_check_request_id, self_check_response_errors)
 from .file_io import is_sha256, now, parse_utc, strict_json_loads
 from .repository import validate_storage_value
+from .state_contract import default_state_contract, validate_record
 from .execution_profiles import OBSERVATION_MODES
 from .file_io import read_bytes_shared, write_bytes_atomic, file_fingerprint, fingerprint_settled
 
@@ -94,6 +95,23 @@ def _raw_json(value: Any) -> str:
     # Provider payloads can contain fractional metrics. Keep their original
     # numeric semantics as JSON text, outside the integer-only state tree.
     return json.dumps(value, ensure_ascii=False, allow_nan=False, sort_keys=True)
+
+
+# The obligation field that holds its response deadline while a research call runs.
+_HELD = "deadline_held_offset_ms"
+
+
+def _stored(family: str, record: dict) -> dict:
+    """``record`` checked by the storage gate's own checker of runtime ``family`` (이음새-정본.md §6)."""
+    validate_record(default_state_contract().family("runtime", family).checker, record,
+                    f"runtime/{family}/{record.get('id')}")
+    return record
+
+
+def _deadline_passed(obligation: dict, offset: int) -> bool:
+    """A held deadline has not passed; it moves when the hold ends (ObservationTracker._hold_deadlines)."""
+    deadline = obligation["deadline_offset_ms"]
+    return deadline is not None and _HELD not in obligation and offset > deadline
 
 
 def persistent_record(record: dict, *, artifact_ref: str | None = None) -> dict:
@@ -178,16 +196,21 @@ def task_rules_from_execution(rules, execution_id):
     return validate_task_rules(checked)
 
 
+def observation_settings_used(profile: dict) -> list[str]:
+    """The observation settings a profile's mode and role use; each is required."""
+    used = []
+    if profile['observation']['mode'] != 'deadline_only':
+        used.extend(['tool_review_window_seconds', 'observation_interval_seconds'])
+    if profile['role'] == 'research_work':
+        used.append('self_check_response_window_seconds')
+    return used
+
+
 def observation_settings_errors(profile: dict) -> list[dict]:
     """Check profile settings without requiring a not-yet-authored task's rules."""
     settings = profile['observation']['settings']
-    required = []
-    if profile['observation']['mode'] != 'deadline_only':
-        required.extend(['tool_review_window_seconds', 'observation_interval_seconds'])
-    if profile['role'] == 'research_work':
-        required.append('self_check_response_window_seconds')
     errors = []
-    for field in required:
+    for field in observation_settings_used(profile):
         try:
             duration_ms(settings.get(field), field, required=True)
         except ValueError as error:
@@ -735,7 +758,35 @@ class ObservationTracker:
                 obligation["deadline_offset_ms"] = (None if self.response_window_ms is None
                     else _offset_ms(self.started, when) + self.response_window_ms)
                 updates.append(deepcopy(obligation))
+        self._hold_deadlines(when)
         return updates
+
+    def _research_call_running(self) -> bool:
+        """An observed research call is in flight: not a control call and not reported at a safe boundary."""
+        control = self.self_check_call_ids | self.boundary_call_ids | self.control_calls.keys()
+        return any(not row["safe_boundary"] and call_id not in control for call_id, row in self.pending_tools.items())
+
+    def _hold_deadlines(self, when: float) -> None:
+        """Stop each open response deadline while research calls run; resume it when they have all ended.
+
+        A worker busy in a tool call cannot read or answer the request, so the
+        time a hold lasts is added to the deadline. A call that starts after the
+        deadline has passed does not hold it.
+        """
+        offset, running = _offset_ms(self.started, when), self._research_call_running()
+        for obligation in self.obligations.values():
+            deadline = obligation["deadline_offset_ms"]
+            if obligation["status"] != "open" or deadline is None:
+                continue
+            if running and _HELD not in obligation and offset <= deadline:
+                obligation[_HELD] = offset
+            elif not running and _HELD in obligation:
+                obligation["deadline_offset_ms"] = deadline + offset - obligation.pop(_HELD)
+
+    def stored_obligations(self, identifiers=None) -> dict:
+        """Copies of the obligations (all, or ``identifiers``) as ENGINE saves them, storage-checked."""
+        return {oid: _stored("self_check_obligations", deepcopy(self.obligations[oid]))
+                for oid in (self.obligations if identifiers is None else identifiers)}
 
     def set_execution_status(self, status: str) -> None:
         if status not in {"running", "stopping", "ended"}:
@@ -860,7 +911,7 @@ class ObservationTracker:
             if response.get("execution_id") != self.execution_id: errors.append("execution_mismatch")
             if response.get("rule_revision") != obligation["rule_revision"]: errors.append("revision_mismatch")
             if obligation["response_availability"] != "available": errors.append("response_boundary_unconfirmed")
-            if obligation["deadline_offset_ms"] is not None and now_offset > obligation["deadline_offset_ms"]:
+            if _deadline_passed(obligation, now_offset):
                 errors.append("response_deadline_passed")
             if obligation.get("missed_reason"): errors.append(obligation["missed_reason"])
             calls = [cid for cid, row in self.control_calls.items() if row["obligation_id"] == obligation_id]
@@ -893,8 +944,6 @@ class ObservationTracker:
                   "obligation_id": obligation_id if isinstance(obligation_id, str) else None,
                   "response_json": _raw_json(response),
                   "received_offset_ms": now_offset, "observed_at": now()}
-        record["control_call_ids"] = [cid for cid, row in self.control_calls.items() if
-            row["obligation_id"] == obligation_id and receipt_id is not None and self.control_requests.get(row["request_id"], {}).get("receipt_id") == receipt_id]
         if errors:
             record.update(errors=sorted(set(errors)), followup={"kind": "operational_review_due",
                 "trigger": "self_check_response_defect", "next_owner": "operational_review",
@@ -923,7 +972,7 @@ class ObservationTracker:
             if "rule_proposal" in response:
                 record["rule_update"] = self._replace_rules(response["rule_proposal"])
         self.response_count += 1
-        return deepcopy(record)
+        return _stored("self_check_responses", deepcopy(record))
 
     def observe(self, event: dict, *, source: dict, evaluate=True, live=True) -> list[dict]:
         """Apply one stream row (or a tick at ``source``'s offset) received as ``source`` describes.
@@ -946,6 +995,7 @@ class ObservationTracker:
                             "reason": str(error), "next_owner": "adapter", "observed_at": now(),
                             "followup": {"kind": "operational_review_due", "trigger": "observation_error", "next_owner": "operational_review"}
                             if self.mode != "deadline_only" else None})
+        self._hold_deadlines(when)
         if event.get("type") != "tick": emitted.append(self.fact("observation_fact", event, when))
         if not evaluate or not self.live_observation:
             # Replaying a terminated stream preserves its order and facts; it
@@ -1006,8 +1056,7 @@ class ObservationTracker:
                 obligation = self._self_check_obligation(due, when)
                 if obligation["status"] == "open": emitted.append(deepcopy(obligation))
             for obligation in self.obligations.values():
-                deadline = obligation["deadline_offset_ms"]
-                if obligation["status"] == "open" and deadline is not None and _offset_ms(self.started, when) > deadline:
+                if obligation["status"] == "open" and _deadline_passed(obligation, _offset_ms(self.started, when)):
                     self._miss(obligation, "response_deadline_passed")
         if self.mode != "deadline_only":
             for call_id, details in self.pending_tools.items():

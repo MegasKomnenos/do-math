@@ -31,6 +31,14 @@ class LocalControlProtocolTests(unittest.TestCase):
         self.transport.pump(self.publish_intent)
         self.assertEqual(self.transport.worker_receipt(self.binding, second['request_id'])['state'], 'accepted')
 
+    def test_sealed_submission_preserves_the_snapshot_read_log(self):
+        log = self.workspace / 'checks/reads.jsonl'
+        log.parent.mkdir(exist_ok=True)
+        log.write_bytes(b'{"request": "DC-1", "status": "ok"}\n')
+        sealed = submission.seal_submission(self.workspace, '.scratch/draft.json', execution_id='EX-worker',
+            context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024)
+        self.assertEqual(sealed['artifacts']['reads.jsonl'], log.read_bytes())
+
     def test_supplied_tool_generates_fresh_sibling_ids_without_publishing(self):
         identifiers = []
         before = sorted(str(path.relative_to(self.workspace)) for path in self.workspace.rglob('*'))

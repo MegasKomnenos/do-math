@@ -161,13 +161,14 @@ class PurposeEngineTests(ActivatedPurposeHarness):
         current_policy = engine._governance()['policy_revision']
         self.assertNotEqual(current_policy, previous_policy)
         self.assertEqual(engine._task_readiness[task['id']]['state'], 'not_ready')
+        # Research work reads the policy edition from its governance input.
         self.drive(engine, predicate=lambda e: any(call['role'] == 'research_work'
-            and call['context']['policy_revision'] == current_policy for call in runner.calls))
+            and call['context']['governance']['policy_revision'] == current_policy for call in runner.calls))
         task = engine.runtime['tasks'][task['id']]
         self.assertTrue(any(r['policy_revision'] == current_policy and r['decision'] == 'approved' for r in task['reviews']))
         work = next(call for call in runner.calls if call['role'] == 'research_work'
-                    and call['context']['policy_revision'] == current_policy)
-        self.assertEqual(work['context']['policy_revision'], current_policy)
+                    and call['context']['governance']['policy_revision'] == current_policy)
+        self.assertEqual(work['context']['governance']['policy_revision'], current_policy)
         self.assertTrue(any(ex['role'] == 'research_work' and ex.get('outcome') == 'output_accepted'
                             for ex in engine.runtime['executions'].values()))
 

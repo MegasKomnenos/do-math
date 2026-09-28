@@ -18,7 +18,7 @@ from purpose_fixtures import purpose_copy
 from review_fixtures import ReviewFakeEngine, defer_review_for_research, deferred_research_cycle, research_answer
 from do_math import knowledge_records as kr
 from do_math.execution_profiles import resolve_profile
-from research_fixtures import local_job_runner, send_control
+from research_fixtures import local_job_runner, role_reach, send_control
 from state_fixtures import ACTIVE_LEAN_COMMAND
 import tempfile
 
@@ -174,36 +174,38 @@ class ReviewResearchEngineTests(ActivatedPurposeHarness):
 
     def test_initial_peer_question_is_not_exposed_before_phase_seal(self):
         engine, runner = self.make_research()
-        original = runner.answer
+        original, secret, reach = runner.answer, 'PRIVATE-PEER-DOMAIN-QUESTION', []
         def question(role, context, workspace):
-            if role == 'identity_review' and context['action']['stage'] == 'initial' and context['action']['slot'] == 'initial-0':
-                return {**common('Review remains uncertain'), 'questions': ['PRIVATE-PEER-DOMAIN-QUESTION'],
+            action = context['action']
+            if role == 'identity_review' and action['stage'] == 'initial' and action['slot'] == 'initial-0':
+                return {**common('Review remains uncertain'), 'questions': [secret],
                     'proposal_digest': context['role_review']['proposal_digest'], 'decision': 'unresolved', 'scope_complete': True, 'findings': []}
+            if role == 'identity_review' and action['stage'] == 'initial' and action['slot'] == 'initial-1':
+                # The peer seat of the unsealed initial phase, as its role actually receives it.
+                reach.append(role_reach(runner.calls[-1]['prompt'], workspace, secret))
             return original(role, context, workspace)
         runner.answer = question
-        self.drive(engine, predicate=lambda e: any(ex['role'] == 'identity_review'
-                                                  and ex['action'].get('stage') == 'initial'
-                                                  and ex['action'].get('slot') == 'initial-0'
-                                                  and ex.get('outcome') == 'output_accepted'
-                                                  for ex in e.runtime['executions'].values()))
-        action = next(a for a in engine.runtime['queue'] if a['role'] == 'identity_review')
-        context = engine._context(action, self.root / 'peer-context')
-        self.assertNotIn('PRIVATE-PEER-DOMAIN-QUESTION', json.dumps(context))
+        self.drive(engine, predicate=lambda e: bool(reach))
+        (reached, held), = reach
+        self.assertTrue(held, 'The input snapshot must hold the peer question for this check to mean anything')
+        self.assertEqual(reached, [])
 
     def test_investigator_does_not_receive_unsealed_peer_summary(self):
         engine, runner = self.make_research()
-        original = runner.answer
+        original, secret, reach = runner.answer, 'PRIVATE-PEER-SUMMARY', []
         def peer_summary(role, context, workspace):
+            if role == 'supplemental_research':
+                # The investigator of initial-0's fixed question, as its role actually receives it.
+                reach.append(role_reach(runner.calls[-1]['prompt'], workspace, secret))
             output = original(role, context, workspace)
             if role == 'identity_review' and context['action']['stage'] == 'initial' and context['action']['slot'] == 'initial-1':
-                output['summary'] = 'PRIVATE-PEER-SUMMARY'
+                output['summary'] = secret
             return output
         runner.answer = peer_summary
-        self.drive(engine, predicate=lambda e: any(ex['role'] == 'identity_review' and ex['action']['slot'] == 'initial-1'
-                    and ex.get('outcome') == 'output_accepted' for ex in e.runtime['executions'].values()))
-        action = next(a for a in engine.runtime['queue'] if a['role'] == 'supplemental_research')
-        context = engine._context(action, self.root / 'investigator-context')
-        self.assertNotIn('PRIVATE-PEER-SUMMARY', json.dumps(context))
+        self.drive(engine, predicate=lambda e: bool(reach))
+        (reached, held), = reach
+        self.assertTrue(held, 'The input snapshot must hold the peer summary for this check to mean anything')
+        self.assertEqual(reached, [])
 
     # Split-record trust recovery is covered in test_knowledge by
     # test_invalidated_environment_recovery_rechecks_all_accepted_results,

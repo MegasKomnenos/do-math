@@ -112,7 +112,7 @@ class ProfileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             transport = ControlTransport(root / "transport")
-            binding = transport.issue("EX-bound", "GR-bound")
+            binding = transport.issue("EX-bound", "GR-bound", self_check=True)  # a research work execution
             adapter = Adapter({"result": "output_collected", "final": {"raw": b'{}'}, "jsonl": {}})
             runner = runner_with(adapter)
             runner.run(prompt=execution_profiles.prepare_prompt("test", profile), input_seal=execution_profiles.prompt_seal(execution_profiles.prepare_prompt("test", profile)), output_schema={}, workspace=root,

@@ -197,7 +197,10 @@ class ObservationCollectionTests(unittest.TestCase):
                                    source=source, evaluate=False)
             self.assertFalse(any(r['kind'] == 'self_check_missed' for r in rows),
                              'Publication after delivery does not establish receipt of this self-check')
-            clock.value = 6
+            # The running command held the deadline from 1s to 2s, so it passes after 6s.
+            clock.value = 2
+            observe(tracker, {'type': 'item.completed', 'item': {'type': 'command_execution', 'id': 'late'}})
+            clock.value = 7
             rows = observe(tracker, {'type': 'tick'})
             self.assertTrue(any(r.get('reason') == 'response_deadline_passed' for r in rows))
 

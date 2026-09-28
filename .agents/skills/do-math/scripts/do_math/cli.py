@@ -18,7 +18,7 @@ from .engine import ResearchEngine, control, initialize, query_records, read_rec
 from .git_store import GitStateStoreConflict, GitStateStoreError, GitStateStoreLockError
 from .payloads import json_safe
 from . import scheduled_operator
-from .file_io import strict_json_loads
+from .file_io import console_python, strict_json_loads
 from .repository import ResearchRepository, canonical_json, exact_content_hash
 from .state_checks import inspection_exit_code
 
@@ -270,7 +270,7 @@ def _schedule_failure(result: dict[str, Any], error: Exception, repository: Path
     def quote(value):
         return "'" + str(value).replace("'", "''") + "'"
     entrypoint = Path(__file__).resolve().parents[1] / "do_math.py"
-    reconcile = ("& " + quote(sys.executable) + " " + quote(entrypoint)
+    reconcile = ("& " + quote(console_python()) + " " + quote(entrypoint)
                  + " operator " + mode + " --repository " + quote(repository.resolve())
                  + " --instance " + quote(instance))
     result["operator_schedule"] = {"status": "failed", "error": str(error), "reconcile": reconcile}

@@ -594,6 +594,12 @@ def evaluate_condition(condition: dict, instance: dict, runtime: dict, *, evalua
     return {"state": state, "basis": basis, "errors": errors}
 
 
+def instance_ended(instance: dict, runtime: dict) -> bool:
+    """Closed or completed research: no lifecycle control, dispatch or task readiness applies any more."""
+    return (runtime.get('status') in {'closed', 'completed'}
+            or bool(instance.get('lifecycle', {}).get('permanently_closed')))
+
+
 def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_waits=True,
                action=None, evaluation_context=None, records=None) -> dict:
     """The same live predicate serves population, receipt, and pre-start checks.

@@ -33,7 +33,8 @@ SAFETY_BOUNDARY, SUBMIT_INTENT = "safety_boundary", "submit_intent"
 SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW = "self_check_response", "submission_preview"
 REQUEST_KINDS = frozenset({SAFETY_BOUNDARY, SUBMIT_INTENT, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW})
 SUBMISSION_KINDS = frozenset({SUBMIT_INTENT, SUBMISSION_PREVIEW})
-# A binding names one execution's endpoint and capability; ``workspace`` is optional.
+# A binding names one execution's endpoint and capability; ``workspace`` is optional, and
+# ``self_check`` (true) marks an execution that answers self checks and so gets that tool.
 BINDING_FIELDS = ("endpoint", "transport_id", "capability", "execution_id", "grant_id")
 
 _TEXT = {"type": "string", "minLength": 1}
@@ -157,7 +158,8 @@ class ControlTransport:
         # The set is read from disk at the first pump: commands that never pump read no transport.
         self._open: set[str] | None = None
 
-    def issue(self, execution_id: str, grant_id: str, *, workspace: Path | str | None = None) -> dict:
+    def issue(self, execution_id: str, grant_id: str, *, workspace: Path | str | None = None,
+              self_check: bool = False) -> dict:
         _require_text(execution_id, "execution_id")
         _require_text(grant_id, "grant_id")
         transport_id, capability = token_urlsafe(18), token_urlsafe(32)
@@ -165,6 +167,8 @@ class ControlTransport:
                    "execution_id": execution_id, "grant_id": grant_id}
         if workspace is not None:
             binding["workspace"] = str(Path(workspace).resolve())
+        if self_check:
+            binding["self_check"] = True
         if self.root is not None:
             endpoint = self.root / transport_id
             binding["endpoint"] = str(endpoint)
@@ -181,7 +185,8 @@ class ControlTransport:
     def validate_binding(binding: Any, *, execution_id: str, cwd: str | None = None) -> None:
         """A worker's binding names this execution, an absolute endpoint and, when given, its cwd."""
         if (not isinstance(binding, dict) or set(BINDING_FIELDS) - set(binding)
-                or set(binding) - set(BINDING_FIELDS) - {"workspace"}
+                or set(binding) - set(BINDING_FIELDS) - {"workspace", "self_check"}
+                or binding.get("self_check", True) is not True
                 or any(not isinstance(binding[key], str) or not binding[key].strip() or "\0" in binding[key]
                        for key in BINDING_FIELDS)
                 or binding["execution_id"] != execution_id
@@ -204,6 +209,8 @@ class ControlTransport:
                      *("--" + key.replace("_", "-") + "=" + binding[key] for key in BINDING_FIELDS)]
         if binding.get("workspace"):
             arguments.append("--workspace=" + binding["workspace"])
+        if binding.get("self_check"):
+            arguments.append("--self-check")
         return {"command": sys.executable, "args": arguments}
 
     def receive(self, request: dict, *, publish: Callable[[dict], dict] | None = None) -> dict:
@@ -552,6 +559,8 @@ def _mcp_server(binding: dict) -> int:
             "An answer's response must match this JSON Schema: " + json.dumps(SELF_CHECK_RESPONSE_SCHEMA, sort_keys=True),
          "inputSchema": {"type": "object", "properties": {"self_check_id": {"type": "string"}, "response": {"type": "object"}}, "required": ["self_check_id"]}}
     ]
+    if not binding.get("self_check"):
+        tools = [tool for tool in tools if tool["name"] != SELF_CHECK_TOOL]
     for line in sys.stdin:
         message = {}
         try:
@@ -586,7 +595,7 @@ def _mcp_server(binding: dict) -> int:
                     result = _mcp_result(value)
                 elif name == RECEIPT_TOOL:
                     result = _mcp_result(ControlTransport.wait_receipt(binding, arguments["request_id"], arguments.get("wait_seconds", 0)))
-                elif name == SELF_CHECK_TOOL:
+                elif name == SELF_CHECK_TOOL and binding.get("self_check"):
                     result = _mcp_result(ControlTransport.worker_self_check(binding, self_check_id=arguments["self_check_id"], response=arguments.get("response")))
                 else:
                     raise ValueError("unknown control tool")
@@ -607,9 +616,11 @@ def main(argv: list[str] | None = None) -> int:
     for name in BINDING_FIELDS:
         mcp.add_argument("--" + name.replace("_", "-"), required=True)
     mcp.add_argument("--workspace")
+    mcp.add_argument("--self-check", action="store_true")
     args = parser.parse_args(argv)
     return _mcp_server({**{name: getattr(args, name) for name in BINDING_FIELDS},
-                        **({"workspace": args.workspace} if args.workspace else {})})
+                        **({"workspace": args.workspace} if args.workspace else {}),
+                        **({"self_check": True} if args.self_check else {})})
 
 
 if __name__ == "__main__":

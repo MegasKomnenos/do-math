@@ -514,7 +514,7 @@ class KnowledgeRecordTests(unittest.TestCase):
         self.assertEqual(activated["active_trust_environment"], "TE-next")
         self.assertTrue(knowledge.assess_use(activated["knowledge"][kid], activated)["valid"])
         self.assertEqual(activated["identity_assessments"][aid], state["identity_assessments"][aid])
-        result["dependency_evidence"]["truth"]["True"] = "changed-type"
+        result["dependency_evidence"]["True"] = exact_content_hash("changed-type")
         transition = knowledge.record_transition_result(state, knowledge.begin_transition(state, "TE-next"), result)
         with self.assertRaises(ValueError):
             knowledge.activate_transition(state, transition)
@@ -610,6 +610,33 @@ class KnowledgeRecordTests(unittest.TestCase):
         verification.pop("dependency_evidence")
         with self.assertRaises(ValueError):
             kr.record_formal_result(state, kid, verification, "TE-test", runtime=runtime)
+
+    def test_dependency_body_evidence_is_one_hash_table_over_the_declared_closures(self):
+        state, runtime, kid = knowledge_io.import_candidate({}, {}, knowledge_candidate(), source_ref="source", actor_ref="producer")
+        fixture, _, _, _ = verified_knowledge()
+        state.update(active_trust_environment="TE-test", trust_environments=fixture["trust_environments"])
+        verification = copy.deepcopy(next(iter(fixture["formal_results"].values()))["verification"])
+        closure = verification["dependency_closure"]["truth"]
+        table = {name: exact_content_hash(name) for name in closure}
+        accepted = kr.record_formal_result(state, kid, {**verification, "dependency_evidence": table}, "TE-test", runtime=runtime)
+        fid = accepted["knowledge"][kid]["formal_result_id"]
+        self.assertEqual(accepted["formal_results"][fid]["verification"]["dependency_evidence"], table)
+        for invalid in ({"truth": table}, {name: table[name] for name in closure[:-1]},
+                        {**table, closure[0]: "not-a-hash"}):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                kr.record_formal_result(state, kid, {**verification, "dependency_evidence": invalid}, "TE-test", runtime=runtime)
+
+    def test_transition_targets_store_the_dependency_hash_table(self):
+        from do_math.state_contract import default_state_contract, validate_record
+        state, runtime, kid, aid = verified_knowledge()
+        state["trust_environments"]["TE-next"] = {"id": "TE-next", "status": "registered", "toolchain": {"version": "next"}, "allowed_axioms": []}
+        transition = knowledge.begin_transition(state, "TE-next")
+        checker = default_state_contract().family("runtime", "trust_transitions").checker
+        validate_record(checker, transition, "transition")
+        nested = copy.deepcopy(transition)
+        nested["targets"][0]["dependency_evidence"] = {"truth": transition["targets"][0]["dependency_evidence"]}
+        with self.assertRaises(ValueError):
+            validate_record(checker, nested, "transition")
 
     def test_changed_approved_toolchain_rejects_before_source_execution(self):
         from do_math import formal
