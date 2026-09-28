@@ -275,7 +275,7 @@ def _worker(request_path: Path) -> int:
 
 
 def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None,
-             on_finished=None, job_name=None):
+             on_finished=None, job_name=None, jobs=None):
     """Wait for the whole Job; only explicit stop terminates it.
 
     The two-second termination check applies only after cancellation, never to computation.
@@ -285,7 +285,9 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
     worker = "import sys; from pathlib import Path; sys.path.insert(0,sys.argv[1]); from do_math.formal import _worker; raise SystemExit(_worker(Path(sys.argv[2])))"
     environment={key:value for key,value in os.environ.items()
                  if not key.upper().startswith(('LEAN_', 'LAKE_', 'ELAN_'))}
-    job=WindowsJob([sys.executable,'-B','-c',worker,str(Path(__file__).resolve().parents[1]),str(request)],cwd=root,env=environment,
+    # The Jobs port; None starts the module's WindowsJob (stage 1b migration).
+    job=(jobs.launch if jobs is not None else WindowsJob)(
+        [sys.executable,'-B','-c',worker,str(Path(__file__).resolve().parents[1]),str(request)],cwd=root,env=environment,
                    name=job_name or 'do-math-formal-'+uuid.uuid4().hex)
     try:
         started={**process_identity(job),'job_name':job.name}
@@ -475,7 +477,7 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
                 lean_command: list[str] | None = None,
                 allowed_axioms: tuple[str,...] = AXIOMS, should_stop=None,
                 expected_toolchain: dict | None = None, on_started=None, launch_ticket=None,
-                extract_evidence: bool = True) -> dict:
+                extract_evidence: bool = True, jobs=None) -> dict:
     """Verify Lean to completion.
 
     The output is preserved except the dependency body rows that a verified result
@@ -527,7 +529,7 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
             _check_stop(should_stop)
             code,stdout,stderr,stopped=_job_run([*command,str(check)],Path(directory),should_stop=should_stop,
                 on_started=started,on_finished=lambda observed:local_job_usage.update(observed),
-                job_name=launch_ticket['job_name'] if launch_ticket is not None else None)
+                job_name=launch_ticket['job_name'] if launch_ticket is not None else None, jobs=jobs)
         except VerificationStopped as error:
             return {**base,'status':'stopped','reason':str(error),'toolchain':toolchain}
         except (OSError,RuntimeError) as error:

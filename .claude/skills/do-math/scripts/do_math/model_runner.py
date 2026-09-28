@@ -27,9 +27,9 @@ class ModelRunner:
     may replace an entry. Capacity remains keyed by the configured model name.
     """
 
-    def __init__(self, codex_path: str | None = None, claude_path: str | None = None) -> None:
+    def __init__(self, codex_path: str | None = None, claude_path: str | None = None, *, jobs=None) -> None:
         paths = {"codex": codex_path, "claude": claude_path}
-        self.adapters = {provider: provider_adapter(provider, paths.get(provider)) for provider in ADAPTERS}
+        self.adapters = {provider: provider_adapter(provider, paths.get(provider), jobs=jobs) for provider in ADAPTERS}
 
     @measured('model_execution')
     def run(self, *, prompt: str, output_schema: dict, workspace: Path, evidence_dir: Path,

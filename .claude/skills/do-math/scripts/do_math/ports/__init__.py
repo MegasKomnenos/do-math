@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from .calls import Calls
 from .clock import Clock
 from .git_backend import GitBackend
+from .jobs import Jobs
 
 
 @dataclass(frozen=True)
@@ -16,3 +17,4 @@ class Ports:
     clock: Clock
     git_backend: GitBackend
     calls: Calls
+    jobs: Jobs

@@ -3,10 +3,11 @@ from .ports import Ports
 from .git_process import GitProcess
 from .parallel import ThreadCalls
 from .system_clock import SystemClock
+from .windows_job import WindowsJobs
 
 
 def real_ports() -> Ports:
-    return Ports(clock=SystemClock(), git_backend=GitProcess(), calls=ThreadCalls())
+    return Ports(clock=SystemClock(), git_backend=GitProcess(), calls=ThreadCalls(), jobs=WindowsJobs())
 
 
 def default_clock():

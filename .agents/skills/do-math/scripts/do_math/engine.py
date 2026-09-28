@@ -7,7 +7,7 @@ boundaries are instructions and do not claim OS isolation.
 from __future__ import annotations
 
 from copy import deepcopy
-from functools import cached_property
+from functools import cached_property, partial
 import base64
 import binascii
 import hashlib
@@ -460,8 +460,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             ports = real_ports()
         self.ports = ports
         self.store = ResearchRepository(repository, instance_id, backend=ports.git_backend)
-        self.runner = runner or ModelRunner()
-        self.formal_verifier = formal_verifier or verify_lean
+        self.runner = runner or ModelRunner(jobs=ports.jobs)
+        self.formal_verifier = formal_verifier or partial(verify_lean, jobs=ports.jobs)
         self.head, self.instance, self.runtime = self.store.load()
         self._init_process_state(
             transport=ControlTransport(Path(self.instance["workspace"]) / "execution-control" / instance_id))

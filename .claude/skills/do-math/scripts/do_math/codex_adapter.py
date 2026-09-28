@@ -133,8 +133,10 @@ class LocalCLIAdapter:
     # Seconds each ``describe`` command may run.
     describe_timeout = 10.0
 
-    def __init__(self, cli_path: str) -> None:
+    def __init__(self, cli_path: str, *, jobs=None) -> None:
         self.cli_path = cli_path
+        # The Jobs port; None starts the module's WindowsJob (stage 1b migration).
+        self.jobs = jobs
 
     def worker_options(self, evidence_dir: Path) -> dict[str, Any]:
         """The provider's worker request fields for one call that writes under ``evidence_dir``."""
@@ -210,7 +212,8 @@ class LocalCLIAdapter:
         snapshot_request = stage / "request.json"; snapshot_request.write_bytes(snapshot_raw)
         worker = Path(self.worker_module.__file__)
         worker_argv = (sys.executable, str(worker), str(snapshot_request))
-        job = WindowsJob(worker_argv, cwd=cwd, env=self.worker_module.sanitized_environment(env),
+        job = (self.jobs.launch if self.jobs is not None else WindowsJob)(
+            worker_argv, cwd=cwd, env=self.worker_module.sanitized_environment(env),
                          name=job_name or "Local\\DoMath-" + uuid.uuid4().hex, resource_limits=request.get("resource_limits"))
         return CLIExecution(hashlib.sha256(snapshot_raw).hexdigest(), hashlib.sha256(prompt_raw).hexdigest(), worker_argv,
                             stdout_path, stderr_path, final_path, status_path, job, schema_sha256,

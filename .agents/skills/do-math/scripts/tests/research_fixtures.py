@@ -203,7 +203,9 @@ def clock_ports(**overrides):
     operations.update(overrides)
     from do_math.git_process import GitProcess
     from do_math.parallel import ThreadCalls
-    return Ports(clock=SimpleNamespace(**operations), git_backend=GitProcess(), calls=ThreadCalls())
+    from do_math.windows_job import WindowsJobs
+    return Ports(clock=SimpleNamespace(**operations), git_backend=GitProcess(), calls=ThreadCalls(),
+                 jobs=WindowsJobs())
 
 
 def bare_engine(instance=None, runtime=None, *, head="fixture-head", store=None, runner=None,

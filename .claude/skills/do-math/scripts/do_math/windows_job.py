@@ -625,3 +625,10 @@ def owner_ended(identity):
         return _kernel32.WaitForSingleObject(handle, 0) == 0
     finally:
         _kernel32.CloseHandle(handle)
+
+
+class WindowsJobs:
+    """Real Jobs port."""
+
+    def launch(self, argv, *, cwd=None, env=None, name=None, resource_limits=None):
+        return WindowsJob(argv, cwd=cwd, env=env, name=name, resource_limits=resource_limits)
