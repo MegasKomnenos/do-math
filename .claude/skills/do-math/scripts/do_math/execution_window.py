@@ -3,9 +3,9 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import json
 from pathlib import Path
-import time
 
-from .file_io import now, write_bytes_atomic
+from .migration_defaults import clock_or_system
+from .file_io import write_bytes_atomic
 
 
 def notice_seconds(config):
@@ -18,7 +18,7 @@ def _write(path, value):
 
 
 def publish(workspace: Path, execution_id: str, deadline: float | None, config: dict, *,
-            clock=time.monotonic, wall_clock=None):
+            clock=None, wall_clock=None):
     """Describe the call's deadline in UTC; only an operational call has one."""
     if deadline is None:
         value = {"execution_id": execution_id, "effective_deadline_at": None,
@@ -26,8 +26,9 @@ def publish(workspace: Path, execution_id: str, deadline: float | None, config: 
                  "finish_notice_at": None, "effective_notice_ms": 0}
         _write(workspace / ".control" / "execution-window.json", value)
         return value
+    clock = clock or clock_or_system(None).monotonic
     remaining_ms = max(0, int((Decimal(str(deadline)) - Decimal(str(clock()))) * 1000))
-    current = wall_clock or datetime.now(timezone.utc)
+    current = wall_clock or clock_or_system(None).wall()
     finish = current + timedelta(milliseconds=remaining_ms)
     notice = notice_seconds(config)
     value = {"execution_id": execution_id, "effective_deadline_at": finish.isoformat(),
@@ -38,13 +39,14 @@ def publish(workspace: Path, execution_id: str, deadline: float | None, config: 
     return value
 
 
-def request_finish(workspace: Path, deadline: float | None, config: dict, *, clock=time.monotonic):
+def request_finish(workspace: Path, deadline: float | None, config: dict, *, clock=None, now_iso=None):
     if deadline is None:
         return False
     path = workspace / ".control" / "finish-request.json"
+    clock = clock or clock_or_system(None).monotonic
     if path.exists() or deadline - clock() > notice_seconds(config):
         return False
-    _write(path, {"requested_at": now(),
+    _write(path, {"requested_at": now_iso or clock_or_system(None).now(),
                   "kind": "finish_notice", "revokes_authority": False,
                   "instruction": "Submit established results, evidence and remaining obligations before the effective deadline. Partial work is acceptable under the role contract."})
     return True

@@ -22,10 +22,12 @@ import urllib.request
 import uuid
 import zipfile
 
-from do_math.formal import LEAN_VERSION, READY_MARKER, discover_lean, mathlib_project, portable_bin, toolchain_root, inspect_toolchain
+from do_math.lean_evidence import LEAN_VERSION, READY_MARKER, mathlib_project, portable_bin
+from do_math.formal import discover_lean, toolchain_root, inspect_toolchain
 from do_math import trust_inventory as records
-from do_math.trust_validation import AXIOMS
-from do_math.file_io import RACY_NS, fingerprint_settled, now
+from do_math.lean_evidence import AXIOMS
+from do_math.file_io import RACY_NS, fingerprint_settled
+from do_math.system_clock import now
 
 LEAN_ZIP = f"https://github.com/leanprover/lean4/releases/download/v{LEAN_VERSION}/lean-{LEAN_VERSION}-windows.zip"
 # Mathlib tags follow Lean releases; the tag equal to the toolchain is the one whose cached .olean files load.

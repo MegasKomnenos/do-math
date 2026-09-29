@@ -10,7 +10,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 
 from do_math.governance import apply_decision, authorize, interpretation_schema
 from do_math import governance as gov, questions, submission
@@ -365,7 +365,7 @@ class RegisteredOwnerTests(unittest.TestCase):
         with self.assertRaises(ValueError): gov.prepare_import(i, rt, source, output, execution_id='E1', input_ref="IN", owner_handlers=handlers)
 
     def test_registered_owner_applies_existing_knowledge_consumer(self):
-        from do_math.repository import new_id
+        from do_math.system_clock import new_id
         candidate = {'id': new_id('KN'), 'kind': 'observation', 'title': 'Observation', 'statement': 'P observed',
                      'explanation': 'Limited observation', 'summary': 'Not a proof', 'lean_code': ''}
         for owner in ('research_record', 'evidence'):

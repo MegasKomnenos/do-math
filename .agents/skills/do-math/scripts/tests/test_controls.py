@@ -12,7 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import maintenance_gate, submission
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.engine import control, ResearchEngine
-from do_math.repository import canonical_json, ResearchRepository
+from do_math.canonical import canonical_json
+from do_math.repository import ResearchRepository
 from engine_fixtures import initialized, initialized_instance, routing_engine, start_submission_history
 from research_fixtures import (install_adapter_fixture, new_instance, observe, restore_template, run_cli,
                                write_checkpoint)

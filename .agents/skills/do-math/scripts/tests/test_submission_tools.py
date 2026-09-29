@@ -10,8 +10,9 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import purpose_fixtures as purpose
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 from do_math import contracts, submission, knowledge_io
+from do_math import submission_tool
 from research_fixtures import await_control, await_stop, git_init, local_job_runner, seal_response
 from purpose_fixtures import CheckedRunner
 from purpose_fixtures import purpose_copy
@@ -22,11 +23,11 @@ class LocalControlProtocolTests(unittest.TestCase):
     def test_a_corrected_draft_at_the_same_path_gets_a_new_submission_attempt(self):
         original = self.draft.read_bytes()
         self.draft.write_bytes(b'{invalid json')
-        first = submission.request_control(self.workspace, '.scratch/draft.json', kind='submit_intent', wait_seconds=0)
+        first = submission_tool.request_control(self.workspace, '.scratch/draft.json', kind='submit_intent', wait_seconds=0)
         self.transport.pump(self.publish_intent)
         self.assertEqual(self.transport.worker_receipt(self.binding, first['request_id'])['state'], 'rejected')
         self.draft.write_bytes(original)
-        second = submission.request_control(self.workspace, '.scratch/draft.json', kind='submit_intent', wait_seconds=0)
+        second = submission_tool.request_control(self.workspace, '.scratch/draft.json', kind='submit_intent', wait_seconds=0)
         self.assertNotEqual(first['request_id'], second['request_id'])
         self.transport.pump(self.publish_intent)
         self.assertEqual(self.transport.worker_receipt(self.binding, second['request_id'])['state'], 'accepted')
@@ -168,11 +169,11 @@ class LocalControlProtocolTests(unittest.TestCase):
     def test_invalid_wait_budget_does_not_queue_a_request(self):
         for budget in (-1, float("nan"), float("inf"), True):
             with self.subTest(budget=budget), self.assertRaises(ValueError):
-                submission.request_control(self.workspace, ".scratch/draft.json", kind="submit_intent", wait_seconds=budget)
+                submission_tool.request_control(self.workspace, ".scratch/draft.json", kind="submit_intent", wait_seconds=budget)
         self.transport.pump(lambda _: self.fail("Invalid budget queued a request"))
 
     def test_preview_is_an_explicit_nonpublication_control_request(self):
-        delivery = submission.request_control(self.workspace, ".scratch/draft.json",
+        delivery = submission_tool.request_control(self.workspace, ".scratch/draft.json",
             kind="submission_preview", wait_seconds=0)
         self.assertEqual("submitted", delivery["state"])
         # This tests transport semantics only; actual domain preview is tested separately.

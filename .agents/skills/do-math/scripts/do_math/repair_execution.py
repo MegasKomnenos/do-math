@@ -6,7 +6,7 @@ from pathlib import Path, PurePosixPath
 
 from . import activities, operational_dispositions
 from .git_store import GitStateStoreError
-from .repository import exact_content_hash
+from .canonical import exact_content_hash
 
 
 def installation_sha256(root):

@@ -14,7 +14,7 @@ if str(SCRIPTS) not in sys.path:
 
 from do_math import execution_profiles
 from do_math.engine import ResearchEngine
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 from runner_fixtures import ScriptedRunner, formal_ok
 from research_fixtures import FixtureAdapter, bare_engine, cli_result, restore_template, run_cli
 from state_fixtures import ACTIVE_CONFIG, active_instance, start_active_copy
@@ -316,7 +316,7 @@ class OverflowConnections(unittest.TestCase):
 
     def test_shared_submission_check_rejects_duplicate_and_unoffered_choices(self):
         from do_math import contracts, submission
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         from runner_fixtures import common
         from research_fixtures import seal_response
         engine, reference = self.fixture()
@@ -364,7 +364,7 @@ class OverflowGitConnection(unittest.TestCase):
         from state_fixtures import start_active_copy
         from do_math.engine import ResearchEngine
         from do_math import execution_profiles
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         from record_fixtures import task_contract as task_fixture, approve_task
         from runner_fixtures import common, context_from
         from research_fixtures import local_job_runner, producer_result

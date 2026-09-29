@@ -23,7 +23,7 @@ import platform
 import shutil
 from typing import Any, Mapping
 
-from do_math.file_io import now
+from do_math.system_clock import now
 from do_math.values import compact_json_bytes, strict_json_loads
 from do_math.windows_job import WindowsJob, process_identity
 from do_math import cli_worker, codex_worker

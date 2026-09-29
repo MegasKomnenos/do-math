@@ -6,6 +6,16 @@ import time
 from .ids import ENTROPY_BYTES, ulid
 
 
+def now() -> str:
+    """The current UTC time as an ISO string, the form ``values.parse_utc`` reads."""
+    return datetime.now(timezone.utc).isoformat()
+
+
+def new_id(prefix: str) -> str:
+    """Create a canonical uppercase ULID with the caller's registry prefix."""
+    return ulid(prefix, time.time_ns() // 1_000_000, secrets.token_bytes(ENTROPY_BYTES))
+
+
 class SystemClock:
     def now(self) -> str:
         return self.wall().isoformat()
@@ -24,3 +34,6 @@ class SystemClock:
 
     def new_id(self, prefix: str) -> str:
         return ulid(prefix, time.time_ns() // 1_000_000, secrets.token_bytes(ENTROPY_BYTES))
+
+    def random_hex(self, nbytes: int) -> str:
+        return secrets.token_hex(nbytes)

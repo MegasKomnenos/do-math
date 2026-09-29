@@ -31,7 +31,7 @@ from unittest.mock import create_autospec
 
 from do_math import governance, knowledge_io, knowledge_records as kr
 from do_math.engine import ResearchEngine
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 from do_math.review_cycle import start_review
 from research_fixtures import governance_start, start_scoped_review
 
@@ -396,7 +396,8 @@ class KnowledgeRoundtripHarness(unittest.TestCase):
     """
 
     def setUp(self):
-        from do_math.repository import ResearchRepository, new_id
+        from do_math.repository import ResearchRepository
+        from do_math.system_clock import new_id
         from do_math.configuration import DEFAULT_CONFIG
         from do_math.execution_profiles import build_profiles
         from knowledge_fixtures import verified_knowledge
@@ -415,7 +416,7 @@ class KnowledgeRoundtripHarness(unittest.TestCase):
         self.state.update(execution_profiles={self.profile['id']: self.profile}, capacity_constraints=profiles['capacity_constraints'])
 
     def cycle(self, decision='match', proposal=None):
-        from do_math.repository import new_id
+        from do_math.system_clock import new_id
         from do_math import activities, execution_lifecycle
         from do_math.execution_profiles import profile_ref
         from do_math.review_cycle import accept_result, next_actions, start_review
@@ -486,7 +487,8 @@ class ImpactReviewHarness(unittest.TestCase):
         from unittest.mock import create_autospec
         from do_math import contracts, submission
         from do_math.execution_lifecycle import transition_execution
-        from do_math.repository import canonical_json, new_id
+        from do_math.canonical import canonical_json
+        from do_math.system_clock import new_id
         from research_fixtures import bare_engine
         schema = contracts.action_schema(fixed['action'])
         submission.install_tools(workspace, fixed, schema, None)

@@ -58,7 +58,7 @@ class ContextStoreTests(unittest.TestCase):
    self.assertEqual(json.loads(store.read_source(root,ref,limit=100000)['bytes']),entries)
  def test_new_catalog_is_hashed_from_the_bytes_it_wrote(self):
   import hashlib
-  from do_math.repository import canonical_json
+  from do_math.canonical import canonical_json
   with tempfile.TemporaryDirectory() as d:
    root=Path(d); context={'goal':'g','tasks':[{'id':'T-1'}]}
    with patch.object(store,'read_stable',side_effect=AssertionError('a new catalog file is never reread')):
@@ -113,7 +113,7 @@ class ContextStoreTests(unittest.TestCase):
    task_reduction=next(x for x in fitted['reductions'] if x['key']=='tasks');self.assertEqual(json.loads(store.read_source(root,task_reduction['source_ref'],limit=10**7)['bytes']),context['tasks'])
    ref=next(x for x in fitted['manifest'] if x['key']=='recent_history');raw=store.read_source(root,ref,limit=10**7);self.assertEqual(json.loads(raw['bytes']),context['recent_history'])
  def test_packed_sizes_equal_the_canonical_bytes_of_the_packed_context(self):
-  from do_math.repository import canonical_json
+  from do_math.canonical import canonical_json
   nested={'deep':[{'a':[1,[2,{}],[]],'b':'\u00e9\u2028'}],'empty':{}}
   contexts=[{'goal':'g','empty_list':[],'empty_map':{},'text':'line\none','nested':nested,'numbers':list(range(30))},
             {'goal':'g'},{'goal':'x'*1000,'recent_history':[1,2,3],'tasks':[{'id':'T','detail':'y'*500}]}]

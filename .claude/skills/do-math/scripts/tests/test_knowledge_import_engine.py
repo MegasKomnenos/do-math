@@ -12,7 +12,7 @@ from knowledge_fixtures import formal_boundary_engine, impact_declaration, knowl
 from test_categories import test_group as category
 from do_math.engine import ResearchEngine, control, query_records
 from do_math import knowledge as k, knowledge_records as kr
-from do_math.repository import new_id
+from do_math.system_clock import new_id
 from do_math import activities, formal
 from research_fixtures import bare_engine, new_instance
 from state_fixtures import owner_calls

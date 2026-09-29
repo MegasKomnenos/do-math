@@ -38,7 +38,8 @@ from .academic_engine import AcademicEngineMixin
 from .governance_engine import GovernanceEngineMixin, bind_host_configuration
 from .repair_execution import RepairExecutionMixin
 from .model_runner import ModelRunner, verified_native_final
-from .repository import ResearchRepository, canonical_json, exact_content_hash
+from .repository import ResearchRepository
+from .canonical import canonical_json, exact_content_hash
 from .repository import mark_artifact_verified, sealed_bytes
 from .state_checks import inspect_state
 from .state_contract import ARTIFACT_ROOT
@@ -170,7 +171,7 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
     with tracing(workspace / 'operations'), phase('initialize'):
         instance, runtime = initialization.initialize_state(instance_id=instance_id, goal=goal,
             workspace=workspace, config=settings, source_input=goal if source_input is None else source_input,
-            title=title, created_at=clock.now())
+            title=title, created_at=clock.now(), clock=clock)
         settings = bind_host_configuration(instance, settings, origin='user')
         instance['config'] = settings
         profiles = execution_profiles.build_profiles(settings)
@@ -642,7 +643,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if requested_state == "running" and not (machine_admission and profile.get("host_resources")):
             execution_lifecycle.transition_execution(execution, "running", at=self.ports.clock.now())
         activities.assign_execution(self.runtime, activity["id"], execution)
-        revisions.record_import_rework(self.instance, self.runtime, action, execution['id'])
+        revisions.record_import_rework(self.instance, self.runtime, action, execution['id'], clock=self.ports.clock)
         return execution
 
     def _machine_started(self, execution_id, identity):
@@ -903,7 +904,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     if (record.get("status") != "withdrawn" and any(row.get("name") == spec["name"] for row in basis)
                             and not sources_current(basis, self.instance)):
                         self.instance, self.runtime = knowledge.suspend_for_source_change(self.instance, self.runtime, kid,
-                            source_name=spec["name"], reason="Required source content changed: " + spec["name"], actor_ref=request["id"])
+                            source_name=spec["name"], reason="Required source content changed: " + spec["name"], actor_ref=request["id"], clock=self.ports.clock)
                 self._invalidate_goal_currentness()
                 if self.runtime["status"] in {"waiting", "capacity_waiting"}: self.runtime["status"] = "ready"
                 self.runtime["processed_controls"].append(request["id"])
@@ -918,7 +919,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 continue
             if handled:
                 if action == 'quiesce' and not (self._calls is not None and self._calls.futures):
-                    settle(self.runtime)
+                    settle(self.runtime, clock=self.ports.clock)
                 self.runtime["processed_controls"].append(request["id"])
                 self._record_control_result(request)
                 self._save()
@@ -1064,7 +1065,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         for path, raw in control_files["files"].items():
             artifacts[f"{prefix}/control/{path}"] = raw
         checkpoint, checkpoint_artifacts = preserve_checkpoint(workspace, artifact_prefix=f"{prefix}/checkpoint",
-            max_bytes=max_bytes, previous=self.runtime.get("checkpoints", {}).get(execution_id))
+            max_bytes=max_bytes, previous=self.runtime.get("checkpoints", {}).get(execution_id), clock=self.ports.clock)
         artifacts.update(checkpoint_artifacts)
         if evidence_dir is not None:
             evidence = collect_outputs(evidence_dir, max_bytes=max_bytes)
@@ -1202,7 +1203,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             return {"state": "rejected", "reason": "execution is no longer running under this grant"}
         if self.runtime.get("status") == "paused" and not self._limited_recovery_allowed(execution["action"]):
             return {"state": "rejected", "reason": "the current pause does not authorize this recovery"}
-        if not governance.authorize(self.instance, {**execution["action"], "grant_id": request["grant_id"]}, runtime=self.runtime)["allowed"]:
+        if not governance.authorize(self.instance, {**execution["action"], "grant_id": request["grant_id"]}, runtime=self.runtime, at=self.ports.clock.now())["allowed"]:
             return {"state": "rejected", "reason": "execution authority no longer permits this request"}
         if not self._clock_guard()["usable"]:
             return {"state": "rejected", "reason": "clock regression prevents new acceptance"}
@@ -1222,7 +1223,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             try:
                 sealed_submission = submission.seal_submission(workspace, draft_path,
                     execution_id=execution["id"], context=context, schema=schema,
-                    max_artifact_bytes=self.instance["config"]["max_artifact_bytes"])
+                    max_artifact_bytes=self.instance["config"]["max_artifact_bytes"], clock=self.ports.clock)
             except (ValueError, KeyError, TypeError, OSError) as error:
                 return {"state": "rejected", "reason": str(error)}
         original_instance, original_runtime = deepcopy(self.instance), deepcopy(self.runtime)
@@ -1414,7 +1415,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if any(row["output"]["decision"] != "within_scope" for row in record["judgments"].values()):
             questions.link(self.runtime, execution_id=execution_id, field="delegation_judgment",
                 owner="user", targets=[record["basis"]["case"]["target_id"]],
-                reason="Independent delegation judgments did not establish authority for this exact case")
+                reason="Independent delegation judgments did not establish authority for this exact case", clock=self.ports.clock)
             return
         request = _user_control_request(self.runtime, action["requested_by"])
         if request is None:
@@ -1435,7 +1436,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if self._instance_closed(): raise ValueError("closed/completed instance cannot apply knowledge controls")
         if operation == "import":
             self.instance, self.runtime, kid = knowledge_io.import_candidate(self.instance, self.runtime, spec["candidate"],
-                source_ref=request["id"], actor_ref=request["id"])
+                source_ref=request["id"], actor_ref=request["id"], clock=self.ports.clock)
             # An omitted source_refs declares no source dependency; it does not mean every imported source.
             self.instance["knowledge"][kid]["source_basis"] = capture_sources(self.instance, spec["candidate"].get("source_refs", []))
             for execution in self.runtime["executions"].values():
@@ -1445,9 +1446,9 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             self._propose_kind(spec["definition"], request["id"])
         elif operation == "withdraw-kind":
             self.instance, self.runtime = knowledge_io.withdraw_kind_definition(self.instance, self.runtime,
-                spec["family"], spec["token"], reason=spec["reason"], actor_ref=request["id"])
+                spec["family"], spec["token"], reason=spec["reason"], actor_ref=request["id"], clock=self.ports.clock)
         else:
-            self.instance, _ = knowledge_io.import_relation(self.instance, spec["relation"], source_ref=request["id"], actor_ref=request["id"])
+            self.instance, _ = knowledge_io.import_relation(self.instance, spec["relation"], source_ref=request["id"], actor_ref=request["id"], clock=self.ports.clock)
         self._invalidate_goal_currentness()
         if self.runtime["status"] == "waiting": self.runtime["status"] = "ready"
         return True
@@ -1983,7 +1984,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             context["recent_history"] = self._planning_history("research_plan", workspace)
             if action["role"] == "research_preparation":
                 context["preparation_history"] = self._planning_history("research_preparation", workspace)
-        # The read tool reads this repository at the input snapshot (context_store.read_main).
+        # The read tool reads this repository at the input snapshot (input_tool.read_main).
         context["record_store"] = {"repository": str(self.store.repository), "instance_id": self.instance["id"]}
         return self._governance_context(action, context)
 
@@ -2086,7 +2087,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 raise CurrentnessChanged([{"field": "sources", "reason": "required source content changed"}])
             if execution.get("academic_requirements_sha256") and execution["academic_requirements_sha256"] != academic.current_requirements(instance).get("sha256"):
                 raise ValueError("academic requirements changed during execution")
-            authority = governance.authorize(instance, action, runtime=runtime)
+            authority = governance.authorize(instance, action, runtime=runtime, at=self.ports.clock.now())
             if not authority["allowed"]:
                 raise ValueError("execution authority was revoked before result acceptance")
             if runtime.get("status") == "paused" and not self._limited_recovery_allowed(action):
@@ -2094,7 +2095,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             for reference in bundle["authority_refs"]:
                 grant = instance.get("grants", {}).get(reference)
                 if grant is not None:
-                    scoped = governance.authorize(instance, {**action, "grant_id": reference}, runtime=runtime)
+                    scoped = governance.authorize(instance, {**action, "grant_id": reference}, runtime=runtime, at=self.ports.clock.now())
                     if not scoped["allowed"]:
                         raise ValueError("bundle authority is no longer current: " + reference)
                 elif reference not in instance.get("decisions", {}):
@@ -2126,7 +2127,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                     self.instance, self.runtime, bundle, actor_ref=execution_id, producer_execution_id=execution_id,
                     input_snapshot=self.runtime["executions"][execution_id]["input_snapshot"],
                     review_execution_id=self._impact_review_execution(self.runtime, action, bundle["integration_id"]),
-                    snapshot=self.head, read_artifact=self.store.read, git_dir=self.store.git_dir)
+                    snapshot=self.head, read_artifact=self.store.read, git_dir=self.store.git_dir, clock=self.ports.clock)
                 self._invalidate_goal_currentness()
             elif integration.mutation_members(bundle["output"], bundle["extensions"]):
                 request = integration.bundle_impact_request(self.instance, self.runtime, bundle,
@@ -2136,7 +2137,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                         action=action, execution_id=execution_id)
                     self.instance, self.runtime = knowledge.apply_impact(self.instance, self.runtime,
                         request["plans"]["bundle"], reason="Apply the validated impact of integration " + bundle["integration_id"],
-                        independent_confirmation=confirmations.get("bundle"))
+                        independent_confirmation=confirmations.get("bundle"), clock=self.ports.clock)
             execution = self.runtime["executions"][execution_id]
             execution["extensions"] = deepcopy(bundle["extensions"])
             execution["integration_id"] = bundle["integration_id"]
@@ -2219,7 +2220,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         workspace = Path(self.instance["workspace"]) / "runs" / execution["id"] / "workspace"
         draft_path = payload.get("draft_path")
         sealed = submission.seal_submission(workspace, draft_path, execution_id=execution["id"],
-            context=context, schema=schema, max_artifact_bytes=self.instance["config"]["max_artifact_bytes"])
+            context=context, schema=schema, max_artifact_bytes=self.instance["config"]["max_artifact_bytes"], clock=self.ports.clock)
         # An ineligible capture may have no parseable output; preview_submission answers from its check.
         output = extensions = None
         if sealed["capture_eligible"]:
@@ -2238,7 +2239,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             validate_current=lambda instance, runtime, bundle: self._validate_bundle_current(
                 instance, runtime, bundle, action=action, execution_id=execution["id"], context=context),
             validate_candidate=lambda instance, runtime, bundle: self._validate_bundle_candidate(
-                instance, runtime, bundle, artifacts=preview_artifacts))
+                instance, runtime, bundle, artifacts=preview_artifacts), clock=self.ports.clock)
 
     def _receive_submission(self, action, result, execution_id, context, schema, workspace, *, preserved=False):
         """Preserve the check and raw candidate even when every bundle is rejected."""
@@ -2276,7 +2277,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 extension_issues = []
             check = submission.check_submission(output, schema, context, extensions, workspace,
                 mode="receiver", execution_id=execution_id,
-                tool_sha256=context["submission_contract"]["tool_sha256"])
+                tool_sha256=context["submission_contract"]["tool_sha256"], clock=self.ports.clock)
             check["issues"].extend(extension_issues)
             check["issues"].append(integration.issue(
                 "submission.sealed_candidate", "submission_receipt",
@@ -2529,7 +2530,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         if (execution.get('submission_receipt', {}).get('recovery_request_id') != request['id']
                 or execution['status'] != 'ended' or execution.get('stop_requested')
                 or self.runtime['status'] == 'paused' or self._instance_closed()
-                or not governance.authorize(self.instance, execution['action'], runtime=self.runtime)['allowed']):
+                or not governance.authorize(self.instance, execution['action'], runtime=self.runtime, at=self.ports.clock.now())['allowed']):
             raise ValueError('native recovery no longer has current request authority')
         action = deepcopy(execution['action'])
         activity = self.runtime['activities'][execution['owner_activity_id']]
@@ -2698,7 +2699,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         live = not batch.is_terminated()
         pending = set(candidate.pending_tools)
         if pending and pending <= candidate.self_check_call_ids:
-            checkpoint = read_checkpoint(candidate.workspace)
+            checkpoint = read_checkpoint(candidate.workspace, clock=self.ports.clock)
             if checkpoint["status"] == "valid" and checkpoint["sha256"] not in candidate.seen_checkpoints:
                 candidate.register_self_check_checkpoint(checkpoint["sha256"])
         artifacts, self_checks, feedback = {}, [], []
@@ -2873,7 +2874,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 or execution.get('authority_revocation') or execution.get('stop_reason')
                 or self._execution_stop_requested(execution['action'], execution)
                 or execution['status'] != ('ended' if recovery_request else 'running')
-                or not governance.authorize(self.instance, execution['action'], runtime=self.runtime)['allowed']
+                or not governance.authorize(self.instance, execution['action'], runtime=self.runtime, at=self.ports.clock.now())['allowed']
                 or not self._clock_guard()['usable']):
             raise ValueError('native candidate no longer has current submission authority')
         changes = decision_basis_changes(execution.get('decision_basis'), self.instance, self.runtime)
@@ -2887,7 +2888,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             raise ValueError('native capture differs from the published input or schema')
         sealed = submission.seal_submission(workspace, execution_id=execution['id'], context=fixed,
             schema=fixed_schema, raw_output=raw, captured_outputs=captured_outputs,
-            max_artifact_bytes=self.instance['config']['max_artifact_bytes'])
+            max_artifact_bytes=self.instance['config']['max_artifact_bytes'], clock=self.ports.clock)
         proof = deepcopy(result)
         proof['output'] = None
         proof['execution']['collect']['final'] = {key: value for key, value in
@@ -3025,7 +3026,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 self._enqueue("research_preparation", action.get("target"), reason="Supply valid observation rules before research starts")
             self._save()
             return True
-        authority = governance.authorize(self.instance, action, runtime=self.runtime)
+        authority = governance.authorize(self.instance, action, runtime=self.runtime, at=self.ports.clock.now())
         if not authority["allowed"]:
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = {"action": action, "reason": authority["reason"]}
             self._remove_action(action)
@@ -3095,7 +3096,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             fitted = prepare_role_input(context, instance=self.instance, runtime=self.runtime, role=role, profile=profile,
                 snapshot=input_head, workspace=workspace, activity_id=activity_id, output_schema=schema,
                 documents=self._documents[role], artifact_prefix=f"{ARTIFACT_ROOT}{input_bundle}",
-                install_submission_tools=True, max_artifact_bytes=config["max_artifact_bytes"])
+                install_submission_tools=True, max_artifact_bytes=config["max_artifact_bytes"], clock=self.ports.clock)
         except (ValueError, KeyError, TypeError, OSError) as error:
             self._discard_prepared_input(base, execution_id, reason=str(error), cancelled=False)
             raise
@@ -3133,7 +3134,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             question = questions.link(self.runtime, execution_id=execution_id, field="resolution_question/question",
                 owner="research" if resolution["next_owner"] == "research_plan" else "user",
                 targets=[action.get("target") or action["id"]], source_ref=overflow_ref,
-                reason=resolution["question"], blocks=resolution["next_owner"] == "user")
+                reason=resolution["question"], blocks=resolution["next_owner"] == "user", clock=self.ports.clock)
             retry = self._pending_input_overflow_retry(action)
             if retry:
                 question_disposition = self._resolve_input_overflow_question(
@@ -3231,7 +3232,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
         self._bind_governance_input(action, execution, fitted["context"])
         self.runtime["executions"][execution_id].update(execution)
         execution = self.runtime["executions"][execution_id]
-        tracker = ObservationTracker(execution_id, workspace, observation_config)
+        tracker = ObservationTracker(execution_id, workspace, observation_config, time_port=self.ports.clock)
         if observation_config['observation_rules']:
             execution['observation_rules'] = deepcopy(observation_config['observation_rules'])
         admitted = self._provider_admit(action, execution_id, profile=profile, execution=execution)
@@ -3271,7 +3272,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                          else self.ports.clock.monotonic() + config["call_timeout_seconds"])
         def started(identity):
             current = self._session_slots().started(execution_id, identity, at=self.ports.clock.now())
-            current["execution_window"] = execution_window.publish(workspace, execution_id, call_deadline, config)
+            current["execution_window"] = execution_window.publish(workspace, execution_id, call_deadline, config,
+                                                                   clock=self.ports.clock.monotonic, wall_clock=self.ports.clock.wall())
             self._save()
         def should_stop():
             # Owner-thread judgment. The owner loop applies controls and conversation
@@ -3280,7 +3282,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             current = self.runtime["executions"][execution_id]
             if role == "operational_review" and action.get("live") and self._obsolete_action_reason(action):
                 current["stop_requested"] = "observation_target_ended"
-            allowed = governance.authorize(self.instance, action, runtime=self.runtime)["allowed"]
+            allowed = governance.authorize(self.instance, action, runtime=self.runtime, at=self.ports.clock.now())["allowed"]
             changed = any(current[key] != value for key, value in self._governance_revisions().items())
             premise_changes = decision_basis_changes(current.get("decision_basis"), self.instance, self.runtime)
             premise_changes.extend(self._execution_requirement_changes(action, evaluation_context=self._evaluation_context()))
@@ -3301,7 +3303,8 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                          or (call_deadline is not None and self.ports.clock.monotonic() >= call_deadline))
             if not requested:
                 # The notice compares the same clock as the deadline above.
-                execution_window.request_finish(workspace, call_deadline, config, clock=self.ports.clock.monotonic)
+                execution_window.request_finish(workspace, call_deadline, config, clock=self.ports.clock.monotonic,
+                                                now_iso=self.ports.clock.now())
                 return False
             reason = current.get("stop_requested") or ("authority_changed" if not allowed or changed else
                 "submission_intent" if current.get("submission_intent") else "user_or_deadline_stop")
@@ -3532,11 +3535,11 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             execution = self.runtime["executions"][execution_id]
             _, _, input_runtime = self.store.view(execution["input_snapshot"])
             self.instance, self.runtime = apply_task_dispositions(self.instance, self.runtime,
-                extension["task_dispositions"], execution_id=execution_id, input_tasks=input_runtime["tasks"])
+                extension["task_dispositions"], execution_id=execution_id, input_tasks=input_runtime["tasks"], clock=self.ports.clock)
         self._apply_queue_plan(execution_id)
         self._apply_academic_resolutions(action, execution_id, extension.get("academic_resolutions", []))
         for relation in extension.get("relations", []):
-            self.instance, _ = knowledge_io.import_relation(self.instance, relation, source_ref=execution_id, actor_ref=execution_id)
+            self.instance, _ = knowledge_io.import_relation(self.instance, relation, source_ref=execution_id, actor_ref=execution_id, clock=self.ports.clock)
         if extension.get("observation_rules"):
             rules = task_rules_from_execution(extension["observation_rules"], execution_id)
             if action.get("target") not in self.runtime["tasks"]:
@@ -3553,7 +3556,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if not request.get("grant_id"):
                 question = questions.link(self.runtime, execution_id=execution_id,
                     field="extensions/external_requests/" + str(index) + "/purpose", owner="user",
-                    targets=[action.get("target") or self.instance["id"]], reason="External action requires a user grant")
+                    targets=[action.get("target") or self.instance["id"]], reason="External action requires a user grant", clock=self.ports.clock)
                 question["question_kind"] = "grant"
                 continue
             integration_id = self.runtime["executions"][execution_id].get("integration_id", action["id"])
@@ -3612,7 +3615,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             candidate.update(explanation=insight.get("explanation", insight["statement"]), lean_code="",
                 declaration_names=[], dependencies=[ref for ref in insight.get("evidence_ids", []) if ref in self.instance["knowledge"]])
             self.instance, self.runtime, kid = knowledge_io.import_candidate(self.instance, self.runtime,
-                candidate, source_ref=producer, actor_ref=producer, plan_nonformal=False)
+                candidate, source_ref=producer, actor_ref=producer, plan_nonformal=False, clock=self.ports.clock)
             imported_insights.append(kid)
             self.instance["knowledge"][kid].update(source_basis=source_basis, created_at=self.ports.clock.now())
             if changed:
@@ -3653,14 +3656,14 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             if ready is None:
                 raise ValueError("knowledge dependencies are missing or cyclic within the declared bundle")
             self.instance, self.runtime, kid = knowledge_io.import_candidate(
-                self.instance, self.runtime, ready, source_ref=execution_id, actor_ref=execution_id, plan_nonformal=False)
+                self.instance, self.runtime, ready, source_ref=execution_id, actor_ref=execution_id, plan_nonformal=False, clock=self.ports.clock)
             self.instance["knowledge"][kid].update(task_id=action.get("target"), created_at=self.ports.clock.now(),
                 source_basis=deepcopy(self.runtime["executions"][execution_id].get("source_basis", [])))
             pending.remove(ready)
         for relation in output.get("relations", []):
             row = {**relation, **{key: identifiers.get(relation[key], relation[key]) for key in ("source", "target")}}
             self.instance, _ = knowledge_io.import_relation(self.instance, row,
-                                                            source_ref=execution_id, actor_ref=execution_id)
+                                                            source_ref=execution_id, actor_ref=execution_id, clock=self.ports.clock)
         return list(identifiers.values())
 
     def _apply(self, action: dict, output: dict, execution_id: str, *, owns_response: bool = True,
@@ -3859,7 +3862,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 or request.get("config", {}).get("role") != "maintenance"
                 or request["config"].get("cleanup_execution_ids") != requested):
             raise ValueError("cleanup has no preserved exact user-approved execution scope")
-        authority = governance.authorize(instance, action, runtime=runtime)
+        authority = governance.authorize(instance, action, runtime=runtime, at=self.ports.clock.now())
         if not authority["allowed"]:
             raise ValueError("maintenance authority no longer permits cleanup")
         return list(requested)
@@ -3926,7 +3929,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
 
     def _propose_kind(self, definition, source_ref):
         self.instance, token = knowledge_io.register_kind_definition(self.instance, definition,
-            source_ref=source_ref, actor_ref=source_ref)
+            source_ref=source_ref, actor_ref=source_ref, clock=self.ports.clock)
         registered = knowledge_io.lookup_definition(self.instance, definition["family"], token)
         self.runtime.setdefault("pending_kind_checks", []).append({"family": definition["family"],
             "token": token, "definition_id": registered["id"], "source_ref": source_ref, "actor_ref": source_ref})
@@ -3958,7 +3961,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                                                if row.get("definition_id") != identifier]
         if verdict == "revision_required":
             self.instance, self.runtime = knowledge_io.withdraw_kind_definition(self.instance, self.runtime,
-                definition["family"], definition["token"], reason="; ".join(output["findings"]), actor_ref=execution_id)
+                definition["family"], definition["token"], reason="; ".join(output["findings"]), actor_ref=execution_id, clock=self.ports.clock)
         if verdict != "approved":
             self._enqueue("research_preparation", reason="Resolve the independent kind definition findings; revise withdrawn definitions or provide the missing evidence for an unresolved candidate",
                           kind_definition_id=identifier, kind_definition_sha256=exact_content_hash(self.instance["kind_definitions"][identifier]))
@@ -4073,13 +4076,13 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             _, _, input_runtime = self.store.view(reviewer["input_snapshot"])
             self.instance, self.runtime = task_scope.apply_task_assessments(self.instance, self.runtime,
                 assessments, execution_id=record["execution_id"], input_tasks=input_runtime["tasks"],
-                evaluation_context=self._evaluation_context())
+                evaluation_context=self._evaluation_context(), clock=self.ports.clock)
             target = self.runtime["executions"][record["target_execution_id"]]
             record = self.runtime.get("operational_dispositions", {}).get(record["id"], record)
         elif kind == "user_decision":
             link = questions.link(self.runtime, execution_id=record["execution_id"],
                 field="output/disposition/question", owner="user", targets=[previous.get("target") or self.instance["id"]],
-                reason=disposition["effect"])
+                reason=disposition["effect"], clock=self.ports.clock)
             record["question_id"] = link["id"]
         record["status"] = "applied"
         target.pop("pending_operational_disposition", None)

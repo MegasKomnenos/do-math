@@ -14,7 +14,8 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import contracts, integration, submission
-from do_math.repository import canonical_json
+from do_math import submission_tool
+from do_math.canonical import canonical_json
 from research_fixtures import git_init, review_items
 from record_fixtures import research_work_context, two_observation_output
 
@@ -56,7 +57,7 @@ class CheckHistoryTests(unittest.TestCase):
 
     def test_installed_checker_uses_latest_schema_bytes_and_prior_check(self):
         import subprocess, zipfile
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         self.assertEqual(canonical_json(self.schema), (self.workspace / "input/submission/schema.json").read_bytes())
         with zipfile.ZipFile(self.workspace / "input/tools/submission-support.zip") as archive:
             for name in ("contracts.py", "submission.py", "task_contracts.py"):
@@ -390,7 +391,7 @@ class SubmissionBoundaryTests(unittest.TestCase):
             draft = workspace / "response.json"
             draft.write_text('{}', encoding="utf-8")
             with patch.object(Path, "cwd", return_value=workspace), contextlib.redirect_stdout(io.StringIO()):
-                self.assertEqual(1, submission.main(["--output", str(draft)]))
+                self.assertEqual(1, submission_tool.main(["--output", str(draft)]))
             records = list((workspace / "checks").glob("*.json"))
             self.assertEqual(1, len(records))
             check = json.loads(records[0].read_bytes())

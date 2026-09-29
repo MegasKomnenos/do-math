@@ -14,7 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine
 from do_math.parallel import ModelCalls
 from do_math.execution_lifecycle import transition_execution
-from do_math.repository import ResearchRepository, new_id
+from do_math.repository import ResearchRepository
+from do_math.system_clock import new_id
 from do_math import knowledge_records
 from engine_fixtures import FakeEngine
 from research_fixtures import FixtureAdapter, await_stop, clock_ports, git_init
@@ -376,8 +377,8 @@ class CallManagerTests(unittest.TestCase):
         execution = create_execution(execution_id='EX-precision', owner_activity_id='AY-precision', actor_kind='machine',
             input_manifest=[], profile_ref=profile_ref(profile), created_at=instant.isoformat())
         execution['role'] = 'formal_check'
-        with patch('datetime.datetime', Clock), patch('do_math.session_slots.time.time', return_value=instant.timestamp() - .000001):
-            self.assertTrue(SessionSlots(runtime, instance).acquire(execution['id'], profile=profile, execution=execution))
+        clock = SimpleNamespace(wall=Clock.now, wall_ns=lambda: int((instant.timestamp() - .000001) * 10**9))
+        self.assertTrue(SessionSlots(runtime, instance, clock=clock).acquire(execution['id'], profile=profile, execution=execution))
         self.assertEqual(execution['transitions'][-1]['at'], instant.isoformat())
 
     @test_group('resource')

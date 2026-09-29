@@ -111,7 +111,7 @@ class SchedulerMixin:
 
     def _abort_parallel_calls(self):
         """Preserve returned evidence and reconcile confirmed Jobs after owner failure."""
-        from .repository import canonical_json
+        from .canonical import canonical_json
         from .governance import timestamp
         returned = []
         for future, generator in self._calls.futures.items():
@@ -140,7 +140,7 @@ class SchedulerMixin:
             execution['stop_requested'] = 'engine_error'
             self._local_call_returned(execution_id, result)
             execution['error'] = 'executor failed while this call was pending; returned evidence was preserved'
-            if self._settle_recovered_execution(execution_id, at=timestamp().isoformat(),
+            if self._settle_recovered_execution(execution_id, at=self.ports.clock.now(),
                     disposition={'kind': 'engine_error', 'result_ref': reference, 'local_result': local_path}):
                 action = execution['action']
                 self._remove_action(action)
@@ -172,7 +172,7 @@ class SchedulerMixin:
         runtime['status'] = 'active'
         try:
             return schedule_reconsideration(self.instance, runtime,
-                now=observed_at, evaluation_context={**self._evaluation_context(), 'now': observed_at})
+                now=observed_at, evaluation_context={**self._evaluation_context(), 'now': observed_at}, clock=self.ports.clock)
         finally:
             # Only the query's status view is undone; its new events and requests stay.
             runtime['status'] = status
@@ -185,7 +185,7 @@ class SchedulerMixin:
 
 
     def _session_resources(self):
-        return SessionSlots(self.runtime, self.instance, observer=True).snapshot()
+        return SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock).snapshot()
 
     def _select_model(self, action):
         if action.get("model_selection"):
@@ -208,8 +208,8 @@ class SchedulerMixin:
             return False
         if not any(a["role"] == "task_contract_review" for a in self.runtime["queue"]):
             return False
-        started = timestamp(action.setdefault("settle_started_at", timestamp().isoformat()))
-        if (timestamp() - started).total_seconds() >= limit:
+        started = timestamp(action.setdefault("settle_started_at", self.ports.clock.now()))
+        if (self.ports.clock.wall() - started).total_seconds() >= limit:
             return False
         action["dispatch_wait"] = {"kind": "plan_settle", "since": action["settle_started_at"], "limit_seconds": limit}
         return True
@@ -268,7 +268,7 @@ class SchedulerMixin:
 
     def _admissible(self, action, profile):
         """Check admission without reserving; a refusal records its wait on the request."""
-        admission = SessionSlots(self.runtime, self.instance, observer=True).admission_check(profile)
+        admission = SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock).admission_check(profile)
         if not admission['allowed']:
             action['dispatch_wait'] = admission['wait']
         return admission['allowed']
@@ -297,7 +297,7 @@ class SchedulerMixin:
                         self._calls.wait(OWNER_POLL_SECONDS)
                         continue
                     from .maintenance_gate import settle
-                    settle(self.runtime)
+                    settle(self.runtime, clock=self.ports.clock)
                     self._save()
                     break
                 limited = self.runtime['status'] == 'paused' and any(

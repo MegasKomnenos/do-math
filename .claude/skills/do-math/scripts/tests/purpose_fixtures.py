@@ -54,7 +54,7 @@ import jsonschema
 from do_math import submission
 from do_math.control_transport import ControlTransport
 from do_math.engine import ResearchEngine, control
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 from research_fixtures import (FixtureAdapter, assessment, await_stop, bind_candidates, charter_change,
                                contract_review, disposition, install_adapter_fixture, intent_response,
                                local_job_runner, observation_batch, planning_model_assessments,

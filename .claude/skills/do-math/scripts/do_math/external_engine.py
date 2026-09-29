@@ -4,7 +4,6 @@ from __future__ import annotations
 from copy import deepcopy
 from .external import prepare_operation, validate_operation, execute_operation, reconcile_operation, prepare_retry, recover_operation
 from .execution_lifecycle import MACHINE_OUTPUT_RECEIPT
-from .repository import new_id
 
 class ExternalEngineMixin:
     def _external_control(self, config, source_ref, *, academic_binding=None):

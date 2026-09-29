@@ -10,7 +10,7 @@ from do_math.configuration import DEFAULT_CONFIG
 from do_math.execution_profiles import build_profiles
 from do_math.initialization import initialize_state, activation_requirements
 from do_math.observations import observation_settings_errors, tracker_config
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 from engine_fixtures import FakeEngine
 
 

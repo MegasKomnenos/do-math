@@ -3,9 +3,10 @@ from __future__ import annotations
 
 from copy import deepcopy
 from .values import is_sha256
-from .formal import FORMAL_EVIDENCE_FIELDS, forbidden_axioms, lean_source_sha256
+from .lean_evidence import FORMAL_EVIDENCE_FIELDS, forbidden_axioms, lean_source_sha256
 from .planning import record_index
-from .repository import exact_content_hash, new_id
+from .canonical import exact_content_hash
+from .migration_defaults import clock_or_system
 
 FAMILIES = ("knowledge", "formal_results", "expositions", "identity_assessments", "assessment_uses")
 # planning.RECORD_FAMILIES keys of the research-space records that all_records indexes.
@@ -54,13 +55,14 @@ def exposition_items(candidate):
     return items
 
 
-def create_candidate(output, candidate, *, source_ref, actor_ref):
+def create_candidate(output, candidate, *, source_ref, actor_ref, clock=None):
     """Write one checked candidate into the caller's own copy; import_candidate owns the checks."""
+    clock = clock_or_system(clock)
     for family in FAMILIES:
         output.setdefault(family, {})
-    kid = candidate.get("id") or new_id("KN")
-    fid = candidate.get("formal_result_ref") or (new_id("FR") if candidate.get("lean_code") else None)
-    xid = new_id("XP")
+    kid = candidate.get("id") or clock.new_id("KN")
+    fid = candidate.get("formal_result_ref") or (clock.new_id("FR") if candidate.get("lean_code") else None)
+    xid = clock.new_id("XP")
     if fid and not candidate.get("formal_result_ref"):
         output["formal_results"][fid] = {
             "id": fid, "family": "formal_results", "lean_code": candidate["lean_code"],
@@ -263,12 +265,13 @@ def record_formal_result(instance, knowledge_id, verification, trust_environment
     return output
 
 
-def record_identity_assessment(instance, knowledge_id, assessment, policy_ref, *, runtime):
-    return seal_identity_assessment(deepcopy(instance), knowledge_id, assessment, policy_ref, runtime=runtime)
+def record_identity_assessment(instance, knowledge_id, assessment, policy_ref, *, runtime, clock=None):
+    return seal_identity_assessment(deepcopy(instance), knowledge_id, assessment, policy_ref, runtime=runtime, clock=clock)
 
 
-def seal_identity_assessment(output, knowledge_id, assessment, policy_ref, *, runtime):
+def seal_identity_assessment(output, knowledge_id, assessment, policy_ref, *, runtime, clock=None):
     """Seal into caller-owned state in place; the caller discards it if this raises."""
+    clock = clock_or_system(clock)
     if not isinstance(policy_ref, str) or not policy_ref.strip():
         raise ValueError("identity assessment requires a fixed policy reference")
     for family in FAMILIES:
@@ -286,7 +289,7 @@ def seal_identity_assessment(output, knowledge_id, assessment, policy_ref, *, ru
     expected_basis = identity_premise(formal, exposition)
     if assessment.get("basis") != expected_basis:
         raise ValueError("identity assessment must name the exact current formal and exposition basis")
-    aid = assessment.get("id") or new_id("IA")
+    aid = assessment.get("id") or clock.new_id("IA")
     sealed = {key: deepcopy(value) for key, value in assessment.items() if key not in {"effective", "status"}}
     sealed.update(id=aid, family="identity_assessments", formal_result_id=fid,
                   exposition_id=xid, policy_ref=policy_ref, basis=expected_basis)
@@ -297,7 +300,7 @@ def seal_identity_assessment(output, knowledge_id, assessment, policy_ref, *, ru
             return output, aid
         raise ValueError("immutable assessment ID already exists")
     output["identity_assessments"][aid] = sealed
-    uid = new_id("AU")
+    uid = clock.new_id("AU")
     output["assessment_uses"][uid] = {"id": uid, "family": "assessment_uses", "assessment_id": aid,
         "status": "active", "history": []}
     return output, aid

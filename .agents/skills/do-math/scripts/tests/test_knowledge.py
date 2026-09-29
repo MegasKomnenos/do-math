@@ -10,10 +10,12 @@ import hashlib
 import os
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import knowledge, knowledge as k, knowledge_io, knowledge_records as kr
-from do_math.repository import exact_content_hash, new_id
+from do_math.canonical import exact_content_hash
+from do_math.system_clock import new_id
 from knowledge_fixtures import (add_knowledge, formal_evidence, impact_declaration, knowledge_graph,
                                 revise_knowledge, seal_knowledge)
-from do_math.formal import portable_bin, toolchain_root, verify_lean
+from do_math.lean_evidence import portable_bin
+from do_math.formal import toolchain_root, verify_lean
 from knowledge_fixtures import knowledge_candidate, verified_knowledge
 from research_fixtures import git_init
 from test_categories import test_group as category
@@ -541,7 +543,8 @@ class KnowledgeRecordTests(unittest.TestCase):
             kr.record_formal_result(state, kid, result, "TE-test", runtime=runtime)
 
     def test_storage_registration_roundtrip_uses_split_family_files(self):
-        from do_math.repository import ResearchRepository, new_id
+        from do_math.repository import ResearchRepository
+        from do_math.system_clock import new_id
         from do_math.state_contract import default_state_contract
         contract = default_state_contract()
         with tempfile.TemporaryDirectory() as directory:

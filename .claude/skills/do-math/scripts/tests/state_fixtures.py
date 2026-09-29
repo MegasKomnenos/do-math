@@ -18,7 +18,8 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-from do_math.repository import ResearchRepository, new_id
+from do_math.repository import ResearchRepository
+from do_math.system_clock import new_id
 
 # FakeEngine.activate registers its active trust environment for this command.
 # Formal checks pin the configured command and must equal that environment, as

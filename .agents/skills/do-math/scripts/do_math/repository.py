@@ -6,7 +6,7 @@ schema/relationship contract; model selection and activation remain elsewhere.
 The process-wide caches below (VERIFIED_ARTIFACTS, _VALIDATED_READS,
 _RETAINED_READS, _ARTIFACT_FACTS, _PUBLISHED_PARENTS) are used only by the
 thread that owns the repositories. Worker threads (parallel.py) take only the
-pure functions canonical_json and exact_content_hash from this module and hand
+pure functions of ``canonical`` (canonical_json, exact_content_hash) and hand
 their results back to the owning thread, so no cache takes a lock. A worker
 thread that reads a repository would need synchronization for all of them.
 """
@@ -22,8 +22,6 @@ import json
 from copy import deepcopy
 from pathlib import Path
 import re
-import secrets
-import time
 from typing import Any
 
 from .operation_trace import measured
@@ -34,10 +32,9 @@ from .values import is_sha256, reject_constant, unique_pairs
 from .state_contract import ARTIFACT_ROOT
 from .git_store import GitStateStore
 from .file_io import PhysicalBoundary
-from .ids import ENTROPY_BYTES, ulid
-# payloads imports this module only inside its functions, so a module-level
-# import is acyclic; canonical_json and its value check run on every node.
-from .payloads import FrozenText, decode, encode, seal_large
+# canonical_json and its value check run on every node of every save.
+from .canonical import FrozenText, canonical_json, exact_content_hash, validate_storage_value
+from .payloads import decode, encode, seal_large
 from .state_contract import STATE_CONTRACT_ID, StateContract, default_state_contract
 
 
@@ -196,28 +193,6 @@ def _learn_publication(git_dir, parent, head, artifacts):
 
 class RepositoryCursorError(ValueError):
     """A query cursor is malformed or bound to another snapshot/query."""
-
-
-_SAFE_INTEGER = (1 << 53) - 1
-_SURROGATE = re.compile(r"[\ud800-\udfff]")
-
-
-def new_id(prefix: str) -> str:
-    """Create a canonical uppercase ULID with the caller's registry prefix."""
-    return ulid(prefix, time.time_ns() // 1_000_000, secrets.token_bytes(ENTROPY_BYTES))
-
-
-def canonical_json(value: Any) -> bytes:
-    """Encode a finite JSON value deterministically without changing Unicode."""
-    if isinstance(value, FrozenText) and hasattr(value, 'payload_bytes'):
-        return value.payload_bytes
-    validate_storage_value(value)
-    return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False) + "\n").encode("utf-8")
-
-
-def exact_content_hash(value: Any) -> str:
-    """Identity of an exact logical payload, not a file or semantic projection."""
-    return hashlib.sha256(canonical_json(value)).hexdigest()
 
 
 class ResearchRepository:
@@ -714,63 +689,6 @@ def _decode_object(data: bytes) -> dict[str, Any]:
     if canonical_json(value) != data:
         raise ValueError("stored document is not canonical JSON")
     return value
-
-
-def validate_storage_value(value: Any) -> None:
-    """Validate the exact storage value domain without constructing JSON bytes.
-
-    Plain ``dict``, ``list`` and ``str`` values, nearly every node of a state,
-    take a direct path with the same rules; string leaves are checked in
-    place, and an ASCII string holds no surrogate. Other types (subclasses,
-    sealed payloads) fall through to the general rules.
-    """
-    kind = type(value)
-    if kind is dict:
-        for key, item in value.items():
-            if type(key) is not str:
-                if not isinstance(key, str):
-                    raise ValueError("JSON object keys must be strings")
-                validate_storage_value(key)
-            elif not key.isascii() and _SURROGATE.search(key):
-                raise ValueError("JSON strings cannot contain surrogate code points")
-            if type(item) is str:
-                if not item.isascii() and _SURROGATE.search(item):
-                    raise ValueError("JSON strings cannot contain surrogate code points")
-            else:
-                validate_storage_value(item)
-        return
-    if kind is list:
-        for item in value:
-            validate_storage_value(item)
-        return
-    if kind is str:
-        if not value.isascii() and _SURROGATE.search(value):
-            raise ValueError("JSON strings cannot contain surrogate code points")
-        return
-    if isinstance(value, FrozenText) and hasattr(value, 'payload_bytes'):
-        return  # Sealing validated exact bytes and these values cannot be edited.
-    if value is None or isinstance(value, (bool, str)):
-        if isinstance(value, str) and _SURROGATE.search(value):
-            raise ValueError("JSON strings cannot contain surrogate code points")
-        return
-    if isinstance(value, int) and not isinstance(value, bool):
-        if abs(value) > _SAFE_INTEGER:
-            raise ValueError("JSON integers must be safe integers")
-        return
-    if isinstance(value, float):
-        raise ValueError("JSON floating-point numbers are not permitted")
-    if isinstance(value, list):
-        for item in value:
-            validate_storage_value(item)
-        return
-    if isinstance(value, dict):
-        for key, item in value.items():
-            if not isinstance(key, str):
-                raise ValueError("JSON object keys must be strings")
-            validate_storage_value(key)
-            validate_storage_value(item)
-        return
-    raise ValueError("value is not JSON-serializable")
 
 
 def _validate_prefix(prefix: str) -> str:

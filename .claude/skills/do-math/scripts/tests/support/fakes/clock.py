@@ -3,9 +3,10 @@
 ``sleep`` advances both clocks, so code that waits finishes at once while its
 elapsed time still counts. ``set_wall`` moves the wall clock alone (backwards
 too); ``advance`` moves both. Identifiers are deterministic: time part from the
-fake wall clock, entropy from a counter.
+fake wall clock, entropy from a counter; random seeds are a hash of the same counter.
 """
 from datetime import datetime, timedelta, timezone
+import hashlib
 
 from do_math.ids import ENTROPY_BYTES, ulid
 
@@ -34,6 +35,10 @@ class FakeClock:
     def new_id(self, prefix: str) -> str:
         self._counter += 1
         return ulid(prefix, self.wall_ns() // 1_000_000, self._counter.to_bytes(ENTROPY_BYTES, 'big'))
+
+    def random_hex(self, nbytes: int) -> str:
+        self._counter += 1
+        return hashlib.shake_256(b'random_hex' + self._counter.to_bytes(8, 'big')).hexdigest(nbytes)
 
     def advance(self, seconds):
         self._wall += timedelta(seconds=seconds)

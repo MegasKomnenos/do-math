@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.repository import new_id
+from do_math.system_clock import new_id
 from do_math.repository import ResearchRepository
 from do_math.reporting import ASSURANCE, render_human_report, snapshot_report, timeline, timeline_csv
 from do_math.cli import build_parser, execute

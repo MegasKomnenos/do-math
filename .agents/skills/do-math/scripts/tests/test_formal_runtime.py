@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from test_categories import test_group as category
-from do_math import formal
+from do_math import formal, lean_evidence
 from provider_fixtures import actual_command
 
 
@@ -28,7 +28,7 @@ def _dependency_rows(source, declarations):
 class FormalRuntimeTests(unittest.TestCase):
     @category('lean')
     def test_shared_expression_evidence_does_not_expand_shared_subterms(self):
-        source = ('import Lean\n' + formal._DEPENDENCY_EXTRACTOR + '\n'
+        source = ('import Lean\n' + lean_evidence.DEPENDENCY_EXTRACTOR + '\n'
                   'open Lean\nrun_elab do\n'
                   '  let mut value := mkRawNatLit 0\n'
                   '  for _ in [:20] do\n'

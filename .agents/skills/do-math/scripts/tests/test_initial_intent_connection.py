@@ -75,7 +75,8 @@ class InitialFailureRetryTests(unittest.TestCase):
         import json
         from unittest.mock import patch
         from do_math.engine import ResearchEngine, control
-        from do_math.repository import ResearchRepository, new_id
+        from do_math.repository import ResearchRepository
+        from do_math.system_clock import new_id
         from do_math import execution_profiles as profiles
         from engine_fixtures import FakeEngine, PublicInitializationRunner
         from research_fixtures import charter_record, install_adapter_fixture
@@ -101,7 +102,7 @@ class InitialFailureRetryTests(unittest.TestCase):
             from do_math.model_policy import selection
             initial=selection(seed.instance['config'],{'role':'intent_interpretation'}, {},{},
                 instance=seed.instance)['profile_ref']
-            from do_math.repository import exact_content_hash
+            from do_math.canonical import exact_content_hash
             seed.control('decision',{'change':{'kind':'initialization',
                 'config_sha256':exact_content_hash(seed.instance['config']),
                 'adopt_current_governance':True,'conversation_loss_policy':'continue_authorized',

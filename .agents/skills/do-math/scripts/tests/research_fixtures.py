@@ -184,10 +184,10 @@ from do_math.contracts import CONTRACT_REVIEW_ITEMS, ROLES
 from do_math.control_transport import ControlTransport
 from do_math.execution_profiles import profile_ref
 from do_math.file_io import sha256_file
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 
 IDENTITY = {"host": "CORE_TESTS synthetic host", "implementation": "CORE_TESTS synthetic adapter"}
-from do_math.trust_validation import AXIOMS
+from do_math.lean_evidence import AXIOMS
 
 
 def clock_ports(**overrides):
@@ -199,7 +199,7 @@ def clock_ports(**overrides):
     from do_math.ports import Ports
     from do_math.system_clock import SystemClock
     real = SystemClock()
-    operations = {name: getattr(real, name) for name in ('now', 'wall', 'wall_ns', 'monotonic', 'sleep', 'new_id')}
+    operations = {name: getattr(real, name) for name in ('now', 'wall', 'wall_ns', 'monotonic', 'sleep', 'new_id', 'random_hex')}
     operations.update(overrides)
     from do_math.git_process import GitProcess
     from do_math.parallel import ThreadCalls
@@ -677,7 +677,7 @@ def dispatched_launch(execution_id, profile):
 def submit_intent(binding, workspace, output):
     if binding is None:
         raise AssertionError("The engine must supply its real control transport")
-    from do_math.submission import request_control
+    from do_math.submission_tool import request_control
     (workspace / "output.json").write_bytes(canonical_json(output))
     delivery = request_control(workspace, "output.json", kind="submit_intent", wait_seconds=0, binding=binding)
     request_id = delivery["request_id"]
@@ -832,7 +832,7 @@ def send_control(engine, action, **kwargs):
 
 def charter_change(engine, **content_changes):
     """Propose explicit changes to the actual current charter; approval stays public."""
-    from do_math.repository import new_id
+    from do_math.system_clock import new_id
     current = engine._governance()["charter"]
     return {"kind": "charter", "record": {"id": new_id("CH"), "kind": "charter",
         "revision": current["revision"] + 1, "supersedes": [current["id"]],
@@ -840,7 +840,7 @@ def charter_change(engine, **content_changes):
 
 
 def policy_change(engine, text):
-    from do_math.repository import new_id
+    from do_math.system_clock import new_id
     return {"kind": "policy", "record": {"id": new_id("PO"), "kind": "policy", "revision": 1,
         "supersedes": [], "content": {"rule_id": "fixture-domain", "text": text,
             "scope": [engine._governance()["goal"]], "reason_refs": [engine._governance()["charter"]["id"]],
@@ -874,7 +874,7 @@ def approved_governance(instance, records, *, source=("S", "User approves P"), a
     governance families first (``governance_start``).
     """
     from do_math import governance
-    from do_math.repository import exact_content_hash
+    from do_math.canonical import exact_content_hash
     preserved = governance.preserve_source(*source, origin="user")
     approval = {"id": approval_id, "actor": "user", "source_ref": preserved["id"], "source_sha256": preserved["sha256"],
                 "record_hashes": {record["id"]: exact_content_hash(record) for record in records}}
@@ -896,7 +896,7 @@ def activate(engine, root, *, initialization_runner, external_policy="disabled",
     if windows:
         send_control(engine, "configure", config=windows)
     expiry = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
-    from do_math.repository import exact_content_hash
+    from do_math.canonical import exact_content_hash
     config_sha256 = exact_content_hash(engine.instance["config"])
     from do_math.model_policy import selection
     initial_ref = selection(engine.instance["config"], {"role": "intent_interpretation"},

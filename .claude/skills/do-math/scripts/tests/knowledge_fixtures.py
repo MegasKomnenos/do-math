@@ -33,8 +33,9 @@ from copy import deepcopy
 from pathlib import Path
 
 from do_math import knowledge as k, knowledge_io as io, knowledge_records as kr
-from do_math.formal import lean_source_sha256
-from do_math.repository import exact_content_hash, new_id
+from do_math.lean_evidence import lean_source_sha256
+from do_math.canonical import exact_content_hash
+from do_math.system_clock import new_id
 
 
 def knowledge_candidate(**changes):
@@ -138,7 +139,7 @@ def formal_boundary_engine(workspace, toolchain=None):
         # The actual installation. Its content baseline is a double: only
         # --rerecord and --check-contents read it.
         from do_math import trust_inventory as records
-        from do_math.repository import exact_content_hash
+        from do_math.canonical import exact_content_hash
         identity = deepcopy(toolchain)
         record = records.new_record(identity, records.new_baseline(records.observe_fingerprint(identity),
             {'files': {}, 'sha256': exact_content_hash({})}, validation_fixture(identity, workspace / 'smoke.lean')))

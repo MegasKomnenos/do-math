@@ -17,7 +17,8 @@ from do_math import (contracts, execution_profiles, integration, knowledge_io, k
                      submission)
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.context_store import fit_context, prepare_role_input
-from do_math.repository import canonical_json, ResearchRepository
+from do_math.canonical import canonical_json
+from do_math.repository import ResearchRepository
 from engine_fixtures import context_engine, package, routing_engine
 from knowledge_fixtures import verified_knowledge
 from purpose_fixtures import ActivatedPurposeHarness, candidate, common as purpose_common

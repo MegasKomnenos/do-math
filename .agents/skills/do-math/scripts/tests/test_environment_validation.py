@@ -13,7 +13,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import setup_lean
 from do_math import trust_inventory as records
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 from do_math.trust_validation import check_environment, environment_errors, register_request_errors
 from research_fixtures import bare_engine, fixture_setup_lean, trust_environment, trust_fixture, validation_fixture
 

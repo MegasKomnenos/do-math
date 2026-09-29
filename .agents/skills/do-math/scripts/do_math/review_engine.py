@@ -6,10 +6,9 @@ import hashlib
 import json
 from pathlib import Path
 
-from .file_io import now
 from .values import compact_json_bytes, json_digest
 from .execution_profiles import review_research
-from .repository import canonical_json, exact_content_hash, new_id
+from .canonical import canonical_json, exact_content_hash
 from .review_cycle import (accept_result, context_for, next_actions, record_turn, stage_schema, start_review,
                           defer_for_research, accept_research_result, research_schema, record_recovery_event,
                           authorize_record_replacement, reserved_review_slots, ReviewRestorationError,
@@ -100,7 +99,7 @@ class ReviewEngineMixin:
                 return None  # Merely naming an IA in an output does not establish that it was read.
             from .knowledge import assessment_reassessment_proposal
             authors = set(assessment_reassessment_proposal(self.instance, assessment['id'], runtime=self.runtime)['producer_execution_ids']) | set(original.get('producer_execution_ids', []))
-            validate_sealed_review(source, self.runtime, instance=self.instance, excluded_execution_ids=authors)
+            validate_sealed_review(source, self.runtime, instance=self.instance, excluded_execution_ids=authors, clock=self.ports.clock)
             entry = source['results'].get(evidence.get('result_key'))
             if entry is None or evidence['result_key'] not in source['sealed']:
                 return None
@@ -150,7 +149,7 @@ class ReviewEngineMixin:
             slot_profiles={}, input_bindings={})
         cycle['review_input_basis'] = capture_review_input_basis(cycle)
         instance, runtime = suspend_assessment_use(self.instance, self.runtime, assessment_id,
-            reason=qualified['reason'], actor_ref=cid, reason_refs=qualified['reason_refs'])
+            reason=qualified['reason'], actor_ref=cid, reason_refs=qualified['reason_refs'], clock=self.ports.clock)
         runtime.setdefault('review_cycles', {})[cid] = cycle
         open_activity(runtime, activity_id=owner, activity_kind='identity_review', owner_ref=assessment_id,
             input_refs=[assessment_id, original['id']], opened_at=self.ports.clock.now(),
@@ -164,10 +163,10 @@ class ReviewEngineMixin:
         from .knowledge import apply_assessment_reassessment
         self._review_cycle(action)
         validate_sealed_review(cycle, self.runtime, instance=self.instance, read_artifact=self.store.read,
-                               git_dir=self.store.git_dir)
+                               git_dir=self.store.git_dir, clock=self.ports.clock)
         aid = cycle['proposal']['assessment_reassessment']['assessment_id']
         self.instance, self.runtime = apply_assessment_reassessment(self.instance, self.runtime, aid, cycle['id'],
-            reason='Sealed independent reassessment of the original judgment: ' + cycle['decision'], actor_ref=execution_id)
+            reason='Sealed independent reassessment of the original judgment: ' + cycle['decision'], actor_ref=execution_id, clock=self.ports.clock)
         use = next(u for u in self.instance['assessment_uses'].values() if u['assessment_id'] == aid)
         conditions = ['new qualified defect evidence', 'changed judgment target or premises', 'explicit source-bound review authority']
         result = {'assessment_id': aid, 'review_cycle_id': cycle['id'], 'status': use['status'],
@@ -581,7 +580,7 @@ class ReviewEngineMixin:
         replacement = cycle.get('replacement_actions', {}).get(key)
         if replacement is None or replacement['action'] != _action(action):
             return {'allowed': False, 'reason': 'replacement does not match the authorized slot'}
-        return replacement_authority(self.instance, self.runtime, cycle, replacement, execution_id)
+        return replacement_authority(self.instance, self.runtime, cycle, replacement, execution_id, clock=self.ports.clock)
 
     def _build_review_context(self, action, workspace: Path, cycle, *, sources=None):
         """cycle is the current cycle _prepare_review_context has just checked."""
@@ -679,7 +678,7 @@ class ReviewEngineMixin:
         """Apply the current GOVERNANCE authorization result without creating a run."""
         cycle = self._review_cycle(action)
         outcome = authorize_record_replacement(cycle, _action(action), self.instance, runtime=self.runtime,
-                                               grant_id=grant_id, delegation_id=delegation_id, case=case, at=at)
+                                               grant_id=grant_id, delegation_id=delegation_id, case=case, at=at, clock=self.ports.clock)
         if delegation_id is not None and outcome['disposition'] == 'replacement_ready' and outcome['cycle'] is not cycle:
             from .delegations import apply_application
             def install(instance, runtime, effect):
@@ -957,7 +956,7 @@ class ReviewEngineMixin:
         assessment = identity_assessment(updated, reason='Complete independent review')
         assessment['basis'] = deepcopy(updated['identity_basis'])
         published, assessment_id = kr.record_identity_assessment(
-            self.instance, knowledge_id, assessment, updated['policy_ref'], runtime=self.runtime)
+            self.instance, knowledge_id, assessment, updated['policy_ref'], runtime=self.runtime, clock=self.ports.clock)
         self.instance = published
         item = self.instance['knowledge'][knowledge_id]
         updated['assessment_id'] = assessment_id

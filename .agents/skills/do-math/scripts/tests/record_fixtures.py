@@ -64,7 +64,7 @@ Submissions and surfaces
 from copy import deepcopy
 
 from do_math import governance as gov, planning
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 from research_fixtures import approved_governance, charter, current_state, review_items
 
 

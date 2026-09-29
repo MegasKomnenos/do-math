@@ -14,10 +14,12 @@ from .values import check_path_segment, is_sha256, parse_utc
 from .state_contract import ARTIFACT_ROOT
 from .governance import GOVERNANCE_STATUSES, GRANT_STATUSES
 from .input_basis import SOURCE_STATUSES
-from .repository import VERIFIED_ARTIFACTS, artifact_key, exact_content_hash, sealed_bytes
+from .repository import VERIFIED_ARTIFACTS, artifact_key, sealed_bytes
+from .canonical import exact_content_hash
 from .review_cycle import CYCLE_STATUSES
 from .task_contracts import LIFECYCLE_STATES, TERMINAL_TASK_STATUSES
 from .trust_validation import ENVIRONMENT_STATUSES
+from .migration_defaults import clock_or_system  # layer: 1c migration default; the value becomes a required argument in 1f
 
 
 CONTRACT_FIELDS = ("id", "revision", "title", "question", "scope", "expected", "description",
@@ -787,7 +789,7 @@ def exhaustion_state(instance, runtime, *, now=None, evaluation_context=None):
             answer.update(reasons=['exhaustion_lineage_hold'],next_owner=hold['next_owner']);return answer
         if not receipt.get('regenerate_after'):
             answer.update(reasons=['regeneration_condition_missing'],next_owner='research_plan');return answer
-        instant=parse_utc(now) if now else datetime.now(timezone.utc)
+        instant=parse_utc(now) if now else clock_or_system(None).wall()
         if instant < parse_utc(receipt['regenerate_after']):
             answer.update(reasons=['regeneration_guard'],reobserve_at=receipt['regenerate_after']);return answer
     answer.update(prepare=True,next_owner='research_preparation');return answer
@@ -809,11 +811,11 @@ def research_wake_reasons(instance, runtime, *, now, evaluation_context=None):
     return reasons
 
 
-def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None):
+def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None, clock=None):
     """Assign preserved due events and exhaustion reasons, coalescing only unstarted preparation.
 
     Due events are recorded beforehand by record_due_events, their one collection path."""
-    from .repository import new_id
+    clock = clock_or_system(clock)
     state=exhaustion_state(instance,runtime,now=now,evaluation_context=evaluation_context)
     if runtime.get('status')!='active' or instance.get('goal_status')=='mathematically_solved': return state
     exhaustion_event=None
@@ -821,7 +823,7 @@ def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None)
         basis_sha256=exact_content_hash(state['basis'])
         exhaustion_event=next((e for e in runtime['events'] if e.get('kind')=='research_exhausted' and e.get('basis_sha256')==basis_sha256),None)
         if not exhaustion_event:
-            exhaustion_event={'id':new_id('EV'),'kind':'research_exhausted','observed_at':now,
+            exhaustion_event={'id':clock.new_id('EV'),'kind':'research_exhausted','observed_at':now,
                 'basis_sha256':basis_sha256,'basis':deepcopy(state['basis']),'regenerate_after':state.get('reobserve_at')}
             runtime['events'].append(exhaustion_event)
     held=assigned_event_refs(runtime)
@@ -845,7 +847,7 @@ def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None)
     queued = next((a for a in runtime.setdefault('queue', []) if a.get('role') == role
                    and (role != 'research_preparation' or not preparation_only(a))), None)
     if not queued:
-        queued={'id':new_id('AC'),'role':role,'reason':'research reconsideration','event_refs':[]}
+        queued={'id':clock.new_id('AC'),'role':role,'reason':'research reconsideration','event_refs':[]}
         runtime['queue'].append(queued)
     assigned=periodic if role=='research_preparation' else selection_events
     queued['event_refs']=list(dict.fromkeys([*queued.get('event_refs',[]),*assigned]))

@@ -14,10 +14,11 @@ from unittest.mock import patch
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
-from do_math import activities, execution_profiles
+from do_math import activities, execution_profiles, submission_tool
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.engine import control, initialize, ResearchEngine
-from do_math.repository import canonical_json, ResearchRepository
+from do_math.canonical import canonical_json
+from do_math.repository import ResearchRepository
 from engine_fixtures import initialized, routing_engine
 from research_fixtures import (activate, candidate, charter_change, current_state, FixtureAdapter, git_init,
                                governance_start, install_adapter_fixture, restore_template, send_control)
@@ -176,7 +177,7 @@ class EngineTests(unittest.TestCase):
         job = WindowsJob([sys.executable, '-c', 'pass'], cwd=self.root,
                          name=crashed['launch_ticket']['job_name'])
         self.addCleanup(job.close)
-        from do_math.file_io import now
+        from do_math.system_clock import now
         engine._session_slots().started(crashed['id'],{**process_identity(job), 'job_name': job.name},at=now())
         job.resume()
         from types import SimpleNamespace
@@ -206,7 +207,7 @@ class EngineTests(unittest.TestCase):
 class QueryIdentity(unittest.TestCase):
     def test_exact_evidence_binds_persisted_bytes_and_code_points(self):
         from do_math.engine import _record_evidence
-        from do_math.repository import exact_content_hash
+        from do_math.canonical import exact_content_hash
         record = {"id": "FR-one", "title": "e\u0301", "verification": {"K": "e\u0301", "K": "é"}}
         def evidence(value):
             raw = canonical_json({"record": value})
@@ -321,7 +322,7 @@ class PublicGitFlow(unittest.TestCase):
                 self.assertEqual(context["control_binding"].get("self_check", False), role == "research_work")
                 # Queue through the real transport; the owner loop receives it on its
                 # next pass and the worker waits for the durable receipt.
-                delivery = submission.request_control(workspace, "draft.json", kind="submit_intent", wait_seconds=0)
+                delivery = submission_tool.request_control(workspace, "draft.json", kind="submit_intent", wait_seconds=0)
                 self.assertIn(delivery["state"], {"submitted", "already_received"}, delivery)
                 receipt = ControlTransport.wait_receipt(arguments["control_binding"], delivery["request_id"], 60)
                 self.assertEqual(receipt["state"], "accepted", receipt)
@@ -363,7 +364,8 @@ class PublicGitFlow(unittest.TestCase):
 class MaintenanceConnections(unittest.TestCase):
     def test_maintenance_archives_complete_run_before_approved_cleanup(self):
         from do_math import execution_lifecycle, governance
-        from do_math.repository import ResearchRepository, new_id
+        from do_math.repository import ResearchRepository
+        from do_math.system_clock import new_id
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             git_init(root / "repo")

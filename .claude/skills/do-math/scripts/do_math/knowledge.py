@@ -10,9 +10,10 @@ import re
 from typing import Any
 
 from .values import require_text
-from .repository import exact_content_hash, new_id
+from .canonical import exact_content_hash
 from .execution_profiles import review_research
 from .planning import READ_REFERENCE_FIELDS, READ_REFERENCE_ID_FIELDS, record_index
+from .migration_defaults import clock_or_system
 
 
 def _hash(record: Any) -> str:
@@ -286,8 +287,9 @@ def _confirmed_impact(plan, confirmation):
     return affected
 
 
-def _apply_impact_effects(instance, runtime, affected, roots, *, reason, impact_digest, in_place=False):
+def _apply_impact_effects(instance, runtime, affected, roots, *, reason, impact_digest, in_place=False, clock=None):
     # in_place is for callers that already hold their own copies of both views.
+    clock = clock_or_system(clock)
     output, new_runtime = (instance, runtime) if in_place else (deepcopy(instance), deepcopy(runtime))
     records = _basis_records(output, new_runtime)
     semantic_only = all(records[rid].get('family') in {'identity_assessments', 'assessment_uses'} for rid in roots)
@@ -334,12 +336,12 @@ def _apply_impact_effects(instance, runtime, affected, roots, *, reason, impact_
         action = {"role": "research_plan", "reason": "knowledge currentness changed", "affected_ids": sorted(affected)}
         if not any(all(queued.get(key) == value for key, value in action.items())
                    for queued in new_runtime.setdefault("queue", [])):
-            action["id"] = action["lineage_id"] = new_id("AC")
+            action["id"] = action["lineage_id"] = clock.new_id("AC")
             new_runtime["queue"].append(action)
     return output, new_runtime
 
 
-def apply_reviewed_impacts(instance, runtime, plans, confirmations, *, reason):
+def apply_reviewed_impacts(instance, runtime, plans, confirmations, *, reason, clock=None):
     """Apply one already-current S0 decision set without recomputing an S1 plan."""
     require_text(reason, "reason")
     if not isinstance(plans, dict) or not plans:
@@ -352,28 +354,28 @@ def apply_reviewed_impacts(instance, runtime, plans, confirmations, *, reason):
     impact_digest = _hash({"plan_digests": sorted(plan["digest"] for plan in plans.values()),
                            "affected_ids": sorted(affected)})
     return _apply_impact_effects(instance, runtime, affected, roots,
-        reason=reason, impact_digest=impact_digest)
+        reason=reason, impact_digest=impact_digest, clock=clock)
 
 
-def apply_impact(instance, runtime, plan, *, reason, independent_confirmation=None):
+def apply_impact(instance, runtime, plan, *, reason, independent_confirmation=None, clock=None):
     require_text(reason, "reason")
     current = plan_impact(instance, runtime, plan["roots"], plan["declared_impact"], sensitive=plan["sensitive"])
     if current != plan:
         raise ValueError("impact plan is stale or altered")
     return _apply_current_plan(instance, runtime, plan, reason=reason,
-        independent_confirmation=independent_confirmation)
+        independent_confirmation=independent_confirmation, clock=clock)
 
 
-def _apply_current_plan(instance, runtime, plan, *, reason, independent_confirmation=None):
+def _apply_current_plan(instance, runtime, plan, *, reason, independent_confirmation=None, clock=None):
     # For a plan the caller has just computed from these same views. A supplied
     # or stored plan goes through apply_impact, which recomputes it first.
     require_text(reason, "reason")
     affected = _confirmed_impact(plan, independent_confirmation)
     return _apply_impact_effects(instance, runtime, affected, set(plan["roots"]),
-        reason=reason, impact_digest=plan["digest"])
+        reason=reason, impact_digest=plan["digest"], clock=clock)
 
 
-def propagate(instance, runtime, roots, reason):
+def propagate(instance, runtime, roots, reason, *, clock=None):
     # System-observed failures have a computed scope and no producer whose
     # declaration an independent review could check, so the computed impact is
     # always applied. References outside the basis records are named in the
@@ -386,7 +388,7 @@ def propagate(instance, runtime, roots, reason):
         reason += "; references outside the recorded basis: " + ", ".join(plan["unresolved_refs"])
     # Callers pass their own copies, and this plan was just computed from them.
     _apply_impact_effects(instance, runtime, set(plan["computed_impact"]), set(plan["roots"]),
-        reason=reason, impact_digest=plan["digest"], in_place=True)
+        reason=reason, impact_digest=plan["digest"], in_place=True, clock=clock)
 
 
 def assessment_reassessment_proposal(instance, assessment_id, *, runtime):
@@ -405,7 +407,7 @@ def assessment_reassessment_proposal(instance, assessment_id, *, runtime):
 
 
 def _assessment_disposition(instance, runtime, assessment_id, status, *, reason, actor_ref,
-                            reason_refs, reassessment_ref=None):
+                            reason_refs, reassessment_ref=None, clock=None):
     from .knowledge_records import set_assessment_use
     output, run = deepcopy(instance), deepcopy(runtime)
     use = next(u for u in output['assessment_uses'].values() if u['assessment_id'] == assessment_id)
@@ -414,7 +416,7 @@ def _assessment_disposition(instance, runtime, assessment_id, status, *, reason,
     old_status = use['status']
     # Calculate fallout while the original support is still visible.
     if status != 'active' and old_status == 'active':
-        propagate(output, run, [assessment_id], reason)
+        propagate(output, run, [assessment_id], reason, clock=clock)
     # Restore the root's state for the transition primitive: propagation can also
     # reach its AU, but its own explicit disposition must retain the actual prior state.
     use = next(u for u in output['assessment_uses'].values() if u['assessment_id'] == assessment_id)
@@ -432,7 +434,7 @@ def _assessment_disposition(instance, runtime, assessment_id, status, *, reason,
     return output, run
 
 
-def suspend_assessment_use(instance, runtime, assessment_id, *, reason, actor_ref, reason_refs):
+def suspend_assessment_use(instance, runtime, assessment_id, *, reason, actor_ref, reason_refs, clock=None):
     """Apply a caller-authorized confirmed defect/independent semantic objection.
 
     This domain transition does not authorize ordinary reports or external actions.
@@ -441,10 +443,10 @@ def suspend_assessment_use(instance, runtime, assessment_id, *, reason, actor_re
     if not isinstance(reason_refs, list) or not reason_refs or any(not isinstance(r, str) or not r for r in reason_refs):
         raise ValueError('suspension requires concrete defect or independent objection references')
     return _assessment_disposition(instance, runtime, assessment_id, 'suspended', reason=reason,
-        actor_ref=actor_ref, reason_refs=reason_refs)
+        actor_ref=actor_ref, reason_refs=reason_refs, clock=clock)
 
 
-def apply_assessment_reassessment(instance, runtime, assessment_id, review_cycle_id, *, reason, actor_ref):
+def apply_assessment_reassessment(instance, runtime, assessment_id, review_cycle_id, *, reason, actor_ref, clock=None):
     """Consume a sealed independent review of the exact original judgment.
 
     Replay uses the existing review state machine, including scope, sealing and
@@ -465,7 +467,7 @@ def apply_assessment_reassessment(instance, runtime, assessment_id, review_cycle
     if not authors <= set(cycle['proposal'].get('producer_execution_ids', [])):
         raise ValueError('reassessment omits original author exclusions')
     replay = reviews.validate_sealed_review(cycle, runtime, instance=instance,
-        excluded_execution_ids=authors)
+        excluded_execution_ids=authors, clock=clock)
     status = {'match': 'active', 'mismatch': 'withdrawn', 'unresolved': 'suspended'}[replay['decision']]
     if status == 'active':
         from .knowledge_records import assessment_current
@@ -474,7 +476,7 @@ def apply_assessment_reassessment(instance, runtime, assessment_id, review_cycle
             status = 'suspended'
     return _assessment_disposition(instance, runtime, assessment_id, status, reason=reason,
         actor_ref=actor_ref, reason_refs=[entry['execution_id'] for entry in replay['results'].values()],
-        reassessment_ref=review_cycle_id)
+        reassessment_ref=review_cycle_id, clock=clock)
 
 
 # The knowledge fields a revision may author. Every other field (identity,
@@ -512,8 +514,9 @@ def _without_checks(queue, knowledge_id):
 
 def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: dict,
                       *, reason: str, actor_ref: str, replacement_id=None,
-                      reserved_dependency_ids=()) -> tuple[dict, dict]:
+                      reserved_dependency_ids=(), clock=None) -> tuple[dict, dict]:
     """Create one replacement after its bundle's impact disposition is complete."""
+    clock = clock_or_system(clock)
     from . import knowledge_records as kr
     require_text(reason, "reason"); require_text(actor_ref, "actor_ref")
     validate_changes(changes)
@@ -526,7 +529,7 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
     from .knowledge_io import import_candidate
     output, new_runtime, actual_replacement_id = import_candidate(instance, runtime, candidate,
         source_ref=(old.get("origin_refs") or [actor_ref])[0], actor_ref=actor_ref,
-        reserved_dependency_ids=reserved_dependency_ids)
+        reserved_dependency_ids=reserved_dependency_ids, clock=clock)
     replacement = output["knowledge"][actual_replacement_id]
     replacement["supersedes"] = knowledge_id
     replacement["revision"] = old.get("revision", 1) + 1
@@ -552,7 +555,7 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
     next_role = "identity_review" if reuse_formal else "formal_check"
     if not replacement.get("formal_result_id"):
         next_role = "research_plan"
-    action_id = new_id("AC")
+    action_id = clock.new_id("AC")
     new_runtime["queue"].append({"id": action_id, "lineage_id": action_id, "role": next_role,
         "target": actual_replacement_id, "reason": reason})
     return output, new_runtime
@@ -560,28 +563,28 @@ def replace_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes:
 
 def revise_knowledge(instance: dict, runtime: dict, knowledge_id: str, changes: dict,
                      *, reason: str, actor_ref: str, declared_impact=None,
-                     independent_confirmation=None, replacement_id=None) -> tuple[dict, dict]:
+                     independent_confirmation=None, replacement_id=None, clock=None) -> tuple[dict, dict]:
     roots = revision_roots(instance, knowledge_id)
     preview = plan_impact(instance, runtime, roots, declared_impact or [])
     # The computed impact applies without a declaration; only a declared record beyond it needs confirmation.
     output, new_runtime = _apply_current_plan(instance, runtime, preview, reason=reason,
-                                              independent_confirmation=independent_confirmation)
+                                              independent_confirmation=independent_confirmation, clock=clock)
     return replace_knowledge(output, new_runtime, knowledge_id, changes,
-        reason=reason, actor_ref=actor_ref, replacement_id=replacement_id)
+        reason=reason, actor_ref=actor_ref, replacement_id=replacement_id, clock=clock)
 
 
 def invalidate_knowledge(instance, runtime, knowledge_id, *, reason, actor_ref,
-                         declared_impact=None, independent_confirmation=None):
+                         declared_impact=None, independent_confirmation=None, clock=None):
     require_text(reason, "reason"); require_text(actor_ref, "actor_ref")
     plan = plan_impact(instance, runtime, [knowledge_id], declared_impact or [])
     output, new_runtime = _apply_current_plan(instance, runtime, plan, reason=reason,
-                                              independent_confirmation=independent_confirmation)
+                                              independent_confirmation=independent_confirmation, clock=clock)
     output["knowledge"][knowledge_id].update(lifecycle="withdrawn", withdrawal_reason=reason, withdrawn_by=actor_ref)
     new_runtime["queue"] = _without_checks(new_runtime.get("queue", []), knowledge_id)
     return output, new_runtime
 
 
-def suspend_for_source_change(instance, runtime, knowledge_id, *, source_name, reason, actor_ref):
+def suspend_for_source_change(instance, runtime, knowledge_id, *, source_name, reason, actor_ref, clock=None):
     require_text(source_name, "source_name"); require_text(reason, "reason"); require_text(actor_ref, "actor_ref")
     output, new_runtime = deepcopy(instance), deepcopy(runtime)
     record = output["knowledge"][knowledge_id]
@@ -594,13 +597,14 @@ def suspend_for_source_change(instance, runtime, knowledge_id, *, source_name, r
                     use.pop("environment_revalidation", None)
                     use.setdefault("use_history", []).append({"reason": reason,
                         "source_name": source_name, "actor_ref": actor_ref})
-    propagate(output, new_runtime, {knowledge_id}, reason)
+    propagate(output, new_runtime, {knowledge_id}, reason, clock=clock)
     return output, new_runtime
 
 
-def begin_transition(instance: dict, new_env_id: str) -> dict:
+def begin_transition(instance: dict, new_env_id: str, *, clock=None) -> dict:
+    clock = clock_or_system(clock)
     from . import knowledge_records as kr
-    from .formal import FORMAL_EVIDENCE_FIELDS, lean_source_sha256
+    from .lean_evidence import FORMAL_EVIDENCE_FIELDS, lean_source_sha256
     environments = instance.get("trust_environments", {})
     if new_env_id not in environments or environments[new_env_id].get("status") == "invalid":
         raise ValueError("unknown or invalid transition environment")
@@ -620,7 +624,7 @@ def begin_transition(instance: dict, new_env_id: str) -> dict:
             "formal_basis": kr.record_digest(formal), "exposition_basis": kr.record_digest(instance["expositions"][record["exposition_id"]]),
             **{field: deepcopy(verification.get(field)) for field in FORMAL_EVIDENCE_FIELDS},
             "previous_environment_ids": [formal.get("trust_environment_id")]})
-    return {"id": new_id("TR"), "from_environment": old_env_id, "to_environment": new_env_id,
+    return {"id": clock.new_id("TR"), "from_environment": old_env_id, "to_environment": new_env_id,
             "targets": targets, "results": {}, "status": "checking"}
 
 
@@ -671,7 +675,7 @@ def _staged_review_basis(instance, transition, knowledge_id):
     }
 
 
-def _validated_staged_identity_review(instance, transition, knowledge_id, receipt, runtime):
+def _validated_staged_identity_review(instance, transition, knowledge_id, receipt, runtime, *, clock=None):
     from . import knowledge_records as kr
     from .review_cycle import validate_sealed_review, identity_assessment
     stored = runtime.get("trust_transitions", {}).get(transition.get("id"))
@@ -697,7 +701,7 @@ def _validated_staged_identity_review(instance, transition, knowledge_id, receip
     }
     if cycle.get("publication_premises") != expected_premises:
         raise ValueError("staged identity review publication premises changed")
-    validate_sealed_review(cycle, runtime, instance=instance)
+    validate_sealed_review(cycle, runtime, instance=instance, clock=clock)
     expected = {
         **identity_assessment(cycle, reason="Sealed staged identity review"),
         "policy_ref": cycle["policy_ref"],
@@ -711,9 +715,10 @@ def _validated_staged_identity_review(instance, transition, knowledge_id, receip
     return expected
 
 
-def activate_transition(instance: dict, transition: dict, *, runtime=None) -> dict:
+def activate_transition(instance: dict, transition: dict, *, runtime=None, clock=None) -> dict:
+    clock = clock_or_system(clock)
     from . import knowledge_records as kr
-    from .formal import compare_formal_results
+    from .lean_evidence import compare_formal_results
     output = deepcopy(instance)
     environments = output.get("trust_environments", {})
     target_env_id = transition["to_environment"]
@@ -746,7 +751,7 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None) -> di
             if runtime is None:
                 raise ValueError("transition requires its sealed staged identity review runtime: " + kid)
             reviewed[kid] = _validated_staged_identity_review(
-                instance, transition, kid, result.get("identity_review", {}), runtime)
+                instance, transition, kid, result.get("identity_review", {}), runtime, clock=clock)
     old_env_id = output.get("active_trust_environment")
     if old_env_id and environments[old_env_id].get("status") != "invalid":
         environments[old_env_id]["status"] = "superseded"
@@ -756,7 +761,7 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None) -> di
         record = output["knowledge"][kid]
         old_formal = output["formal_results"][target["formal_result_id"]]
         old_xid = record["exposition_id"]
-        fid, xid = new_id("FR"), new_id("XP")
+        fid, xid = clock.new_id("FR"), clock.new_id("XP")
         result = {key: deepcopy(value) for key, value in results[kid].items() if key not in {"id", "identity_review"}}
         output["formal_results"][fid] = {**deepcopy(old_formal), "id": fid, "verification": result,
             "trust_environment_id": target_env_id, "formal_use": "active", "transition_id": transition["id"],
@@ -778,7 +783,7 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None) -> di
                 reviewed_identity_basis=deepcopy(receipt["identity_basis"]),
             )
             # output is this activation's own copy; seal in place, not per target.
-            kr.seal_identity_assessment(output, kid, assessment, receipt["policy_ref"], runtime={})
+            kr.seal_identity_assessment(output, kid, assessment, receipt["policy_ref"], runtime={}, clock=clock)
             continue
         # Preserve the old sealed judgment. A new continuity judgment names both
         # exact new inputs and the transition comparison instead of mutating it.
@@ -793,11 +798,11 @@ def activate_transition(instance: dict, transition: dict, *, runtime=None) -> di
             inherited = {key: deepcopy(value) for key, value in assessment.items() if key not in {"id", "formal_result_id", "exposition_id"}}
             inherited.update(basis=kr.identity_basis(output, kid), previous_assessment_id=assessment["id"], transition_id=transition["id"],
                              continuity_comparison=comparisons[kid])
-            kr.seal_identity_assessment(output, kid, inherited, assessment["policy_ref"], runtime={})
+            kr.seal_identity_assessment(output, kid, inherited, assessment["policy_ref"], runtime={}, clock=clock)
     return output
 
 
-def invalidate_environment(instance, runtime, env_id, reason) -> tuple[dict, dict]:
+def invalidate_environment(instance, runtime, env_id, reason, *, clock=None) -> tuple[dict, dict]:
     """Invalidate a trust environment and suspend every formal result verified in it."""
     require_text(reason, "reason")
     output, new_runtime = deepcopy(instance), deepcopy(runtime)
@@ -815,7 +820,7 @@ def invalidate_environment(instance, runtime, env_id, reason) -> tuple[dict, dic
             roots.add(formal["id"])
     previously_active = {uid for uid, use in output.get("assessment_uses", {}).items() if use.get("status") == "active"}
     if roots:
-        propagate(output, new_runtime, roots, reason)
+        propagate(output, new_runtime, roots, reason, clock=clock)
         for uid in previously_active:
             use = output["assessment_uses"][uid]
             if use["status"] == "suspended":

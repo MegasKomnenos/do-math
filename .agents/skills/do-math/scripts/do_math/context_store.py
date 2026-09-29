@@ -9,13 +9,14 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 
-from .repository import canonical_json, exact_content_hash
+from .canonical import canonical_json, exact_content_hash
 from .file_io import no_reparse, stat_fingerprint
 from .values import is_sha256
 from .state_contract import ARTIFACT_ROOT
 from .file_io import PhysicalBoundary
 from .ids import oid_shape
 from .execution_profiles import INITIAL_ROLES, PLANNING_ROLES
+from .migration_defaults import clock_or_system
 
 
 class _ChangedDuringRead(OSError):
@@ -589,7 +590,7 @@ def role_direct_keys(role, context):
 @measured('role_input_preparation')
 def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
                        workspace, activity_id, output_schema=None, documents=None, artifact_prefix=None,
-                       install_submission_tools=False, max_artifact_bytes=None, candidate_order=None):
+                       install_submission_tools=False, max_artifact_bytes=None, candidate_order=None, clock=None):
     """Build and measure the actual role prompt from the current domain records.
 
     The caller must supply only the review seat's authorized private inputs.
@@ -775,7 +776,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
             'capacity_constraints': deepcopy(instance.get('capacity_constraints', {})),
             'task_profile_constraints': {row['id']: deepcopy(row.get('profile_refs', [])) for row in compared}}
         population = value['ready_task_ids'] if role == 'research_plan' else [row['id'] for row in compared]
-        order = _candidate_order(population, snapshot, role, action.get('id'), candidate_order)
+        order = _candidate_order(population, snapshot, role, action.get('id'), candidate_order, clock=clock)
         indexed = {row['id']: row for row in compared}
         task_order = [*order['ids'], *[identifier for identifier in sorted(indexed) if identifier not in order['ids']]]
         value['tasks'] = [indexed[identifier] for identifier in task_order]
@@ -828,7 +829,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
         validation_context['relation_validation_source'] = ref
     if install_submission_tools:
         from .submission import install_tools
-        install_tools(workspace, validation_context, schema, max_artifact_bytes)
+        install_tools(workspace, validation_context, schema, max_artifact_bytes, clock=clock)
         for key in ('submission_contract', 'reference_catalog', 'formal_verifier', 'record_map'):
             if key in validation_context:
                 value[key] = deepcopy(validation_context[key])
@@ -934,10 +935,10 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     return fitted
 
 
-def _candidate_order(ids, snapshot, role, action_id, replay=None):
+def _candidate_order(ids, snapshot, role, action_id, replay=None, *, clock=None):
     algorithm = 'sha256-seed-id-v1'
     basis = {'snapshot': snapshot, 'role': role, 'action_id': action_id}
-    seed = replay.get('seed') if isinstance(replay, dict) else os.urandom(32).hex()
+    seed = replay.get('seed') if isinstance(replay, dict) else clock_or_system(clock).random_hex(32)
     if not is_sha256(seed):
         raise ValueError('candidate order requires a 256-bit seed')
     ordered = sorted(ids, key=lambda identifier: (hashlib.sha256(bytes.fromhex(seed) + b'\0' + identifier.encode()).hexdigest(), identifier))
@@ -1195,13 +1196,6 @@ def read_log_bytes(workspace):
         return read_stable(log)
 
 
-def _append_reads(workspace, rows):
-    from .file_io import now, os_lock
-    log = safe_path(workspace, READ_LOG)
-    log.parent.mkdir(parents=True, exist_ok=True)
-    with os_lock(safe_path(workspace, _READ_LOCK), blocking=True), log.open('ab') as stream:
-        for row in rows:
-            stream.write(json.dumps({'at': now(), **row}, ensure_ascii=False, sort_keys=True).encode('utf-8') + b'\n')
 
 
 def readable_snapshot_path(context, path):
@@ -1223,106 +1217,3 @@ def readable_snapshot_path(context, path):
     if context.get('record_map', {}).get('ledger') == 'readable' or parts[0] == 'research':
         return True
     return path in supplied_locators(context) or path in supplied_reference_ids(context)
-
-
-def read_main(argv=None):
-    """Read this execution's input snapshot within its record map (input/tools/read_input.py).
-
-    Records come back decoded, other files as text or base64, or written to --output. Every
-    read, refusal and error is appended to checks/reads.jsonl.
-    """
-    import argparse
-    import base64
-    import sys
-    from .values import strict_json_loads
-    parser = argparse.ArgumentParser(description=read_main.__doc__)
-    parser.add_argument('--list', action='store_true', help='record_index families, or with --family their records')
-    parser.add_argument('--family', help='a root/family of record_index, with --list')
-    parser.add_argument('--id', action='append', default=[], help='a record ID of record_index (repeatable)')
-    parser.add_argument('--path', action='append', default=[], help='a file path of the input snapshot (repeatable)')
-    parser.add_argument('--output', help='workspace-relative file for the bytes of one --path')
-    args = parser.parse_args(argv)
-    if args.list == bool(args.id or args.path):
-        parser.error('give --list, or one or more --id or --path')
-    if args.family is not None and not args.list:
-        parser.error('--family requires --list')
-    if args.output is not None and (args.id or len(args.path) != 1):
-        parser.error('--output takes exactly one --path')
-    workspace = Path.cwd().resolve()
-    context = strict_json_loads(read_stable(safe_path(workspace, 'input/submission/context.json')))
-    snapshot, index = context.get('snapshot'), context.get('record_index', {})
-    store = []
-
-    def snapshot_store():
-        if not store:
-            from .git_store import GitStateStore
-            binding = context['record_store']
-            store.append(GitStateStore(Path(binding['repository']), binding['instance_id']))
-        return store[0]
-
-    def read(path):
-        return snapshot_store().read_bytes(snapshot, path)
-
-    def entry(request, path, output=None):
-        row = {'request': request, 'path': path, 'snapshot': snapshot}
-        if path is None or not readable_snapshot_path(context, path):
-            return {**row, 'status': 'refused',
-                    'reason': 'outside the record map of this input (record_index and record_map.ledger)'}
-        if output is not None:
-            try:
-                target = safe_path(workspace, output)
-            except ValueError as error:
-                return {**row, 'status': 'refused', 'reason': '--output needs a workspace-relative path: ' + str(error)}
-            if relative_path(output).parts[0] == 'input':
-                return {**row, 'status': 'refused', 'reason': '--output must not write into the fixed input/'}
-        try:
-            raw = read(path)
-        except (OSError, ValueError, KeyError, RuntimeError) as error:
-            return {**row, 'status': 'error', 'reason': str(error)}
-        row.update(status='ok', sha256=hashlib.sha256(raw).hexdigest(), bytes=len(raw))
-        if output is not None:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(raw)
-            return {**row, 'output': relative_path(output).as_posix()}
-        if not path.startswith(ARTIFACT_ROOT):
-            from .payloads import decode
-            try:
-                return {**row, 'record': decode(strict_json_loads(raw), read)}
-            except (ValueError, TypeError):
-                pass  # a state file that is not a record envelope, such as a manifest
-        try:
-            return {**row, 'text': raw.decode('utf-8')}
-        except UnicodeDecodeError:
-            return {**row, 'base64': base64.b64encode(raw).decode('ascii')}
-
-    if args.list and args.family is None:
-        result = {'snapshot': snapshot, 'status': 'ok', 'ledger': context.get('record_map', {}).get('ledger'),
-                  'families': {family: len(ids) for family, ids in index.items()}}
-        logged = []
-    elif args.list:
-        result = {'snapshot': snapshot, 'family': args.family, 'status': 'refused', 'records': []}
-        if args.family in index:
-            paths = {identifier: f'{args.family}/{identifier}.json' for identifier in index[args.family]}
-            try:
-                files = snapshot_store().read_many(snapshot, list(paths.values()))
-                result.update(status='ok', records=[
-                    {'id': identifier, 'path': path, 'bytes': len(files[path]),
-                     **{key: value for key, value in strict_json_loads(files[path]).get('record', {}).items()
-                        if key in _SUMMARY_FIELDS and not isinstance(value, (dict, list))}}
-                    for identifier, path in paths.items()])
-            except (OSError, ValueError, KeyError, RuntimeError) as error:
-                result.update(status='error', reason=str(error))
-        logged = [{'request': '--list ' + args.family, 'path': args.family, 'snapshot': snapshot,
-                   'status': result['status'], 'count': len(result['records'])}]
-    else:
-        rows = [entry(identifier, next((f'{family}/{identifier}.json' for family, ids in index.items()
-                                        if identifier in ids), None)) for identifier in args.id]
-        rows += [entry(path, path, args.output) for path in args.path]
-        result = {'snapshot': snapshot, 'status': 'ok' if all(row['status'] == 'ok' for row in rows) else 'incomplete',
-                  'records': rows}
-        logged = [{key: row[key] for key in ('request', 'path', 'snapshot', 'status', 'sha256', 'bytes', 'reason')
-                   if key in row} for row in rows]
-    if logged:
-        _append_reads(workspace, logged)
-    sys.stdout.buffer.write(json.dumps(result, ensure_ascii=False).encode('utf-8') + b'\n')
-    return 0 if result['status'] == 'ok' else 1

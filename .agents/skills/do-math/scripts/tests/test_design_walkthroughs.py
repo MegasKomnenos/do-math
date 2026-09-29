@@ -17,7 +17,8 @@ from do_math import questions
 from do_math.context_store import fit_context, read_source
 from do_math.observations import ObservationTracker
 from research_fixtures import write_checkpoint
-from do_math.repository import exact_content_hash, new_id
+from do_math.canonical import exact_content_hash
+from do_math.system_clock import new_id
 from do_math.engine import query_records, read_record
 from do_math.repository import ResearchRepository
 from research_fixtures import Clock, git_init, observation_rule, observe

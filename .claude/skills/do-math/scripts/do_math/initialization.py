@@ -5,7 +5,8 @@ from copy import deepcopy
 
 from .execution_profiles import INITIAL_ROLES, match_profile_ref
 from .governance import grant_time_reason, source_record, timestamp
-from .repository import exact_content_hash, new_id
+from .canonical import exact_content_hash
+from .migration_defaults import clock_or_system
 
 
 def original_input_bytes(record):
@@ -278,12 +279,13 @@ def grant_current(instance, gid, at, *, initial):
 
 
 def initialize_state(*, instance_id, goal, workspace, config, source_input,
-                     title="", created_at=None):
+                     title="", created_at=None, clock=None):
+    clock = clock_or_system(clock)
     if not isinstance(source_input, str) or not source_input.strip():
         raise ValueError("initialization requires the original nonempty input")
-    when = timestamp(created_at).isoformat()
+    when = timestamp(created_at, clock=clock).isoformat()
     original = source_record(source_input)
-    input_id = new_id('UI')
+    input_id = clock.new_id('UI')
     instance = {"id": instance_id, "title": title or goal[:80],
         "config": deepcopy(config),
         "workspace": str(workspace), "created_at": when, "knowledge": {}, "relations": [],

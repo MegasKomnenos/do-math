@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import planning, task_scope
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 from record_fixtures import apply_assessment, completed_with_knowledge, specialist_assessment
 
 

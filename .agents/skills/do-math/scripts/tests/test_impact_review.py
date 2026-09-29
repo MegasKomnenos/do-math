@@ -12,12 +12,12 @@ import json
 from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 
 from do_math import contracts, engine as engine_module, integration, knowledge_io, repository, submission
 from do_math.git_store import GitStateStore
 from do_math.knowledge import content_hash
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 from research_fixtures import bare_engine, git_init
 from review_fixtures import ImpactReviewHarness
 from record_fixtures import research_work_context
@@ -469,7 +469,7 @@ class ImpactReviewTests(ImpactReviewHarness):
 
     def test_review_resolver_uses_actual_git_bytes_and_scoped_receipt(self):
         from do_math.git_store import GitStateStore
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         request = self.request()
         action = {"id": "AC-review", "role": "maintenance", "stage": "impact_review", "input_basis": {"impact_review": request}}
         output = self.review_output(request)
@@ -564,7 +564,8 @@ class ImpactReviewTests(ImpactReviewHarness):
 
     def test_sealed_review_allows_real_domain_git_retry_and_rejects_wrong_evidence(self):
         from do_math import activities, execution_profiles, model_policy
-        from do_math.repository import ResearchRepository, canonical_json
+        from do_math.repository import ResearchRepository
+        from do_math.canonical import canonical_json
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             git_init(root)

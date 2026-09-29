@@ -7,7 +7,7 @@ from unittest.mock import create_autospec
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.engine import ResearchEngine
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 from engine_fixtures import goal_audit_host, governance_host, intent_import, intent_verdict, routing_engine
 from research_fixtures import governance_start, new_instance
 
@@ -344,7 +344,6 @@ class PublicGitGovernanceTests(unittest.TestCase):
         from do_math import governance as gov
         from do_math.engine import control
         from research_fixtures import charter
-        from do_math.repository import new_id
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); engine = self.initialized(root)
             iid = engine.instance['id']
@@ -475,7 +474,7 @@ class PublicGitGovernanceTests(unittest.TestCase):
             # before the original execution's final output_accepted bookkeeping.
             import hashlib
             from do_math import integration, execution_lifecycle
-            from do_math.repository import canonical_json
+            from do_math.canonical import canonical_json
             output['integration_bundles'] = [{'integration_id': 'IN-audit', 'members': ['output'],
                 'impact_set': [], 'authority_refs': []}]
             fixed = {**deepcopy(context), 'action': action, 'snapshot': engine.head}

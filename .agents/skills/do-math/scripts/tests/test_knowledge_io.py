@@ -3,7 +3,7 @@ from copy import deepcopy
 import unittest
 from knowledge_fixtures import add_knowledge, knowledge_candidate, knowledge_graph, revise_knowledge
 from do_math import knowledge_io as io, knowledge_records as kr
-from do_math.repository import new_id
+from do_math.system_clock import new_id
 
 
 class KnowledgeIoTests(unittest.TestCase):

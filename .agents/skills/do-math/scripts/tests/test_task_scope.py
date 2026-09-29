@@ -104,7 +104,7 @@ class TaskScopeTests(unittest.TestCase):
         """The sealed extension schema and the submission check own disposition shape and distinct targets."""
         import tempfile
         from do_math.contracts import schema_for
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         from do_math.submission import payload_issues
         from research_fixtures import seal_response
         from runner_fixtures import common

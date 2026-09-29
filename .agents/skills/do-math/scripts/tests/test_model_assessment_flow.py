@@ -21,7 +21,7 @@ from do_math.contracts import schema_for
 from do_math.engine import ResearchEngine
 from do_math.model_policy import MODELS
 from do_math.planning import contract_hash
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 from do_math.submission import payload_issues
 from research_fixtures import producer_result, contract_review, prepared_rule_conditions
 from runner_fixtures import common, context_from, rating
@@ -50,7 +50,7 @@ class AssessmentSubmissionTests(unittest.TestCase):
             supply_observation_rules(self.output['candidates'], extensions)
         (self.workspace / 'activity-extensions.json').write_bytes(canonical_json(extensions))
         output = deepcopy(self.output)
-        from do_math.repository import exact_content_hash
+        from do_math.canonical import exact_content_hash
         for task in self.context['tasks']:
             task.setdefault('content_sha256', exact_content_hash(task))
         seal_response(output, self.context, self.workspace)

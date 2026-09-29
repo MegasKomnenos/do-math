@@ -9,10 +9,11 @@ from unittest.mock import Mock, patch
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math import formal
-from do_math.formal import compare_formal_results, is_lean_identifier, project_source_identity, verify_lean
+from do_math.lean_evidence import compare_formal_results, is_lean_identifier
+from do_math.formal import project_source_identity, verify_lean
 from provider_fixtures import actual_command
 from test_categories import test_group as category
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 
 
 def _evidence_compiler(root):
@@ -311,7 +312,8 @@ class T(unittest.TestCase):
 class ToolchainContractTests(unittest.TestCase):
     @category('lean')
     def test_inspection_matches_actual_formal_verifier(self):
-        from do_math.formal import inspect_toolchain, toolchain_errors, verify_lean, portable_bin, toolchain_root
+        from do_math.formal import inspect_toolchain, verify_lean, toolchain_root
+        from do_math.lean_evidence import toolchain_errors, portable_bin
         command = [str(portable_bin(toolchain_root()) / 'lean.exe')]
         if not Path(command[0]).is_file():
             self.skipTest('portable Lean is not installed')

@@ -18,7 +18,8 @@ from .state_contract import ARTIFACT_ROOT
 from .file_io import PhysicalBoundary
 from .ids import oid_shape
 from .relation_refs import relation_references
-from .repository import canonical_json, sealed_bytes
+from .canonical import canonical_json
+from .repository import sealed_bytes
 from .task_contracts import CONTEXT_INPUT_REFS, TOOL_INPUT_REFS
 
 

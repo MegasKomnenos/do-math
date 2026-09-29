@@ -261,11 +261,8 @@ class PreparationStopTests(StopFlagHarness):
             later = datetime.fromisoformat(grant['expires_at']) + timedelta(seconds=1)
             e._settle_stops()
             self.assertFalse(future.stop.is_set())
-            class Clock(datetime):
-                @classmethod
-                def now(cls, tz=None): return later
             e.lifecycle_clock = lambda: later.isoformat()
-            with patch('do_math.governance.datetime', Clock):
+            with patch.object(e.ports.clock, 'now', return_value=later.isoformat()):
                 e._settle_stops()
             self.assertStopped(e, eid, future, reads, 'authority_changed')
 

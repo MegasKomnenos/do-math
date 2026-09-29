@@ -43,7 +43,7 @@ class WindowTests(unittest.TestCase):
             self.assertFalse((root / ".control" / "finish-request.json").exists())
 
     def test_fractional_clock_is_serialized_as_integer_milliseconds(self):
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         config = {"call_timeout_seconds": 3, "finish_notice_seconds": 1}
         with tempfile.TemporaryDirectory() as directory:
             value = publish(Path(directory), "E", 3.375, config, clock=lambda: 1.125)

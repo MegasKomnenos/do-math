@@ -14,7 +14,8 @@ from research_fixtures import git_init
 class PersistedPreflightTests(unittest.TestCase):
     def setUp(self):
         import subprocess
-        from do_math.repository import ResearchRepository, new_id
+        from do_math.repository import ResearchRepository
+        from do_math.system_clock import new_id
         from do_math.initialization import initialize_state
         self.temp=tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         root=Path(self.temp.name)

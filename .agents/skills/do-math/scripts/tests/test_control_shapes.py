@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from engine_fixtures import QUERY_INSTANCE_ID, start_query_repository
 from do_math.control_contracts import PAYLOADS
 from do_math.engine import ResearchEngine, control
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 
 # Every public control action: the shaped payloads and configure, whose shape is the configuration section.
 ACTIONS = (*PAYLOADS, 'configure')

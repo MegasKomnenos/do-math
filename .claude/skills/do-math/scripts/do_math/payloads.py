@@ -12,17 +12,14 @@ from typing import Any
 
 from .values import bytes_evidence
 from .state_contract import ARTIFACT_ROOT
+from .canonical import FrozenText, canonical_json
 
 LIMIT = 65536
 
 
-class FrozenText(str):
-    def __deepcopy__(self, memo): return self
-
-
 def seal(value, raw=None, digest=None):
     """Seal the string ``value`` with its canonical bytes; ``digest`` is their SHA-256 when already known."""
-    from .repository import canonical_json
+    from .canonical import canonical_json
     raw = canonical_json(value) if raw is None else raw
     result = FrozenText(value)
     result.payload_bytes = raw
@@ -50,7 +47,7 @@ def seal_large(value):
     parent's under ``==`` (``1.0 == 1``) is neither schema-checked nor
     serialized again (StateContract.validate, repository._encode_families).
     """
-    from .repository import canonical_json
+    from .canonical import canonical_json
 
     def walk(value):
         if isinstance(value, FrozenText): return value
@@ -135,7 +132,8 @@ def decode(envelope, read_payload, git_dir=None):
     immutable.
     """
     from .values import is_sha256, reject_constant, unique_pairs
-    from .repository import canonical_json, artifact_verified, mark_artifact_verified
+    from .canonical import canonical_json
+    from .repository import artifact_verified, mark_artifact_verified
     if set(envelope) not in ({'contract_id','family','record'}, {'contract_id','family','record','payloads'}):
         raise ValueError('invalid record envelope fields')
     value = deepcopy(envelope['record'])

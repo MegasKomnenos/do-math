@@ -224,7 +224,7 @@ def _operational_disposition_rules(row):
 
 
 def _academic_seal_rules(row):
-    from ..repository import exact_content_hash
+    from ..canonical import exact_content_hash
     if (not row["evidence_refs"] or set(row["evidence_refs"]) != set(row["evidence_hashes"])
             or row["sha256"] != exact_content_hash({k: v for k, v in row.items() if k != "sha256"})):
         raise ValueError("academic resolution seal/evidence binding is invalid")
@@ -240,7 +240,7 @@ def _observation_fact_rules(row):
 
 
 def _capability_evidence_rules(row):
-    from ..repository import exact_content_hash
+    from ..canonical import exact_content_hash
     if row["id"] != "CE-" + exact_content_hash({k: v for k, v in row.items() if k != "id"}):
         raise ValueError("capability evidence ID differs from its content")
 
@@ -254,7 +254,7 @@ def _intent_import_rules(bundle):
 
 def _delegation_application_rules(application):
     from ..delegations import case_basis_reference_ids
-    from ..repository import exact_content_hash
+    from ..canonical import exact_content_hash
     basis = application["basis"]
     if exact_content_hash(basis) != application["input_sha256"]:
         raise ValueError("delegation application basis hash mismatch")
@@ -310,7 +310,7 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
     """
     from ..activities import validate_activities
     from ..execution_profiles import match_profile_ref, validate_host_constraint
-    from ..formal import compare_formal_results
+    from ..lean_evidence import compare_formal_results
     from ..governance import validate_governance_state, validate_grant_source
     from ..knowledge import plan_digest
     from ..knowledge_io import BUILTIN_DEFINITIONS, validate_stored_relation
@@ -318,7 +318,7 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
     from ..launch import validate as validate_launch
     from ..observations import validate_rules
     from ..questions import open_targets
-    from ..repository import exact_content_hash
+    from ..canonical import exact_content_hash
     from ..review_cycle import (check_proposal, identity_assessment, staged_review_candidate,
                                 validate_resource_disposition)
     from ..review_policy import build_review_policy

@@ -36,8 +36,10 @@ import do_math.model_runner as runner
 from do_math import activities, execution_lifecycle as lifecycle, execution_profiles as profiles, model_policy
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.execution_profiles import build_profiles, profile_ref
-from do_math.formal import portable_bin, toolchain_root
-from do_math.repository import ResearchRepository, new_id
+from do_math.lean_evidence import portable_bin
+from do_math.formal import toolchain_root
+from do_math.repository import ResearchRepository
+from do_math.system_clock import new_id
 from do_math.session_slots import SessionSlots
 
 

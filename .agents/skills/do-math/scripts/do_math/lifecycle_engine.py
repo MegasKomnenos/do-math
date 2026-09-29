@@ -15,7 +15,7 @@ import time
 from .governance import apply_decision, timestamp
 from .planning import (instance_ended, task_ready, contract_hash, record_due_events, contract_review_current, review_basis_key,
                        capture_task_basis, governance_revisions, assigned_event_refs, CONTRACT_REVIEW_MISSING)
-from .repository import canonical_json, exact_content_hash
+from .canonical import canonical_json, exact_content_hash
 from .initialization import activation_requirements, capability_requirements
 from .execution_profiles import INITIAL_ROLES
 from .session_slots import live_action_ids
@@ -426,7 +426,7 @@ class LifecycleEngineMixin:
                 if config.get('change', {}).get('kind') == 'repetition_continue' and request.get('origin', 'user') != 'user':
                     raise ValueError('repetition continuation requires explicit user authority')
                 self.instance, self.runtime, result = apply_decision(self.instance, self.runtime,
-                    config.get('change', {}), source_ref=source_ref, actor='user', at=self._lifecycle_now().isoformat())
+                    config.get('change', {}), source_ref=source_ref, actor='user', at=self._lifecycle_now().isoformat(), clock=self.ports.clock)
                 self._lifecycle_event('user_decision_applied', source_ref=source_ref, decision_id=result['id'])
             elif action == 'knowledge':
                 self._knowledge_control(config, source_ref)

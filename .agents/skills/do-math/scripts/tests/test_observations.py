@@ -201,7 +201,7 @@ class Tests(unittest.TestCase):
         tracker = observations.ObservationTracker("P", self.ws, {"observation_mode": "periodic", "observation_interval_seconds": 3}, clock=self.clock)
         tracker.schedule_review("RECHECK", at="2026-09-20T10:00:00Z", reason="inspect recovery", basis_ref="DISP-1")
         self.clock.value = 3
-        with patch.object(observations, "now", return_value="2026-09-20T10:00:00+00:00"):
+        with patch.object(tracker.time_port, "now", return_value="2026-09-20T10:00:00+00:00"):
             rows = observe(tracker, {"type": "tick"})
             self.assertEqual({r["kind"] for r in rows}, {"periodic_review_due", "explicit_review_due"})
             for row in rows:
@@ -770,7 +770,7 @@ class ObservationRuleTests(unittest.TestCase):
             self.assertTrue(any(r.get("reason") == "response_deadline_passed" for r in rows))
 
     def test_integer_persistence_keeps_raw_adapter_payload_as_text(self):
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         clock = Clock()
         with tempfile.TemporaryDirectory() as directory:
             tracker = self.tracker(Path(directory), clock)
@@ -820,7 +820,7 @@ class ObservationRuleTests(unittest.TestCase):
 
     def test_checkpoint_record_requires_preserved_original_artifact(self):
         from do_math import observations
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             (workspace / "checkpoint.json").write_text(json.dumps({"current_claim": "c", "evidence_paths": [], "attempts": [],

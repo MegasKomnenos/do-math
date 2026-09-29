@@ -14,9 +14,10 @@ from unittest.mock import patch
 import jsonschema
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 
-from do_math.repository import ResearchRepository, canonical_json
+from do_math.repository import ResearchRepository
+from do_math.canonical import canonical_json
 from do_math.events import EventPublisher, check_sequence
 from do_math.git_store import GitStateStoreConflict
 from research_fixtures import current_state, git_init, governance_start, installed_contract, with_validator
@@ -509,7 +510,7 @@ class FamilyRecordStorageTests(unittest.TestCase):
         operation = external.prepare_operation({"method": "POST", "url": "https://example.test/action"}, "GR-http", source_id)
         # Domain requests acquire durable IDs at the lifecycle application
         # boundary; this focused external-ledger fixture supplies that identity.
-        from do_math.repository import new_id
+        from do_math.system_clock import new_id
         for action in runtime["queue"]:
             action.setdefault("id", new_id("AC"))
             action.setdefault("lineage_id", action["id"])

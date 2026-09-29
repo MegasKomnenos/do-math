@@ -14,7 +14,8 @@ from .contracts import MANIFEST_SCHEMA, REFS, TEXT, closed_object
 from .execution_profiles import task_research
 from .values import json_copy
 from .input_basis import CurrentnessChanged
-from .repository import exact_content_hash
+from .canonical import exact_content_hash
+from .migration_defaults import clock_or_system
 
 
 REFERENCE_KEYS = {"dependencies", "inputs", "reuse", "source", "target", "evidence_refs",
@@ -210,10 +211,10 @@ def _reviewed_impact_request(instance, runtime, bundle, *, producer_execution_id
 
 def apply_reviewed_knowledge_changes(instance, runtime, bundle, *, actor_ref, producer_execution_id,
                                      input_snapshot, review_execution_id=None, snapshot=None, read_artifact=None,
-                                     receiving_execution_id=None, git_dir=None):
+                                     receiving_execution_id=None, git_dir=None, clock=None):
     """Apply the reviewed S0 plans once, then create every replacement candidate."""
+    clock = clock_or_system(clock)
     from . import knowledge, knowledge_records
-    from .repository import new_id
     request, confirmations = _reviewed_impact_request(instance, runtime, bundle,
         producer_execution_id=producer_execution_id, input_snapshot=input_snapshot,
         review_execution_id=review_execution_id, snapshot=snapshot, read_artifact=read_artifact,
@@ -224,13 +225,13 @@ def apply_reviewed_knowledge_changes(instance, runtime, bundle, *, actor_ref, pr
     changes = bundle["extensions"].get("knowledge_changes", [])
     reasons = list(dict.fromkeys(change["reason"] for change in changes))
     output, running = knowledge.apply_reviewed_impacts(instance, runtime, plans, confirmations,
-        reason="; ".join(reasons))
-    replacement_ids = [change.get("replacement_id") or new_id("KN") for change in changes]
+        reason="; ".join(reasons), clock=clock)
+    replacement_ids = [change.get("replacement_id") or clock.new_id("KN") for change in changes]
     reserved = set(replacement_ids)
     for change, replacement_id in zip(changes, replacement_ids):
         output, running = knowledge.replace_knowledge(output, running, change["id"], change["changes"],
             reason=change["reason"], actor_ref=actor_ref, replacement_id=replacement_id,
-            reserved_dependency_ids=reserved)
+            reserved_dependency_ids=reserved, clock=clock)
     knowledge_records.validate_knowledge_records(output)
     return output, running
 

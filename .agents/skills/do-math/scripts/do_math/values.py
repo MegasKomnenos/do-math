@@ -25,7 +25,7 @@ def compact_json_bytes(value):
     """Compact sorted UTF-8 JSON, for values outside the state tree.
 
     Provider responses and transport files may hold fractional numbers, which
-    ``repository.canonical_json`` rejects. NaN and infinities are refused.
+    ``canonical.canonical_json`` rejects. NaN and infinities are refused.
     """
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
                       allow_nan=False).encode("utf-8")

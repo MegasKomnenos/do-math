@@ -65,7 +65,7 @@ class RecoveryTests(unittest.TestCase):
         original_action = retried[0]["id"]
         # An already queued independent plan may consume the successful
         # provider probe. Follow the preserved action, not a call ordinal.
-        with patch("do_math.session_slots.time.time", return_value=current + 301):
+        with patch.object(engine.ports.clock, "wall_ns", return_value=int((current + 301) * 10**9)):
             for _ in range(3):
                 engine.run(max_steps=1)
                 resumed = [ctx for ctx in runner.calls[1:] if ctx["action"]["id"] == original_action]

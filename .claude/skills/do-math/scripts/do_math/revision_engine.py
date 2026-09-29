@@ -250,4 +250,4 @@ class RevisionEngineMixin:
 
     def _record_task_receipt(self, action, output, execution_id, *, accepted):
         """Receiver hook for rejected output and non-revision accepted output."""
-        return revisions.record_execution_outcome(self.instance,self.runtime,action,output,execution_id,accepted=accepted)
+        return revisions.record_execution_outcome(self.instance,self.runtime,action,output,execution_id,accepted=accepted, clock=self.ports.clock)

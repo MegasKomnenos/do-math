@@ -3,8 +3,9 @@ from copy import deepcopy
 
 from . import knowledge, planning
 from .values import parse_utc
-from .repository import exact_content_hash
+from .canonical import exact_content_hash
 from .session_slots import live_action_ids
+from .migration_defaults import clock_or_system
 
 
 def regeneration_time_valid(regenerate_after, observed_at) -> bool:
@@ -167,12 +168,12 @@ def action_scope(action):
         'intent_repair', 'review_cycle_id', 'grant_id', 'assessment_targets', 'observation_rule_targets') if key in action}
 
 
-def record_import_rework(instance, runtime, action, execution_id):
+def record_import_rework(instance, runtime, action, execution_id, *, clock=None):
     """Count an actual reauthor attempt in the execution registration publication."""
     if import_rework(runtime, action):
         record_repetition(instance, runtime, lineage='import_rework',
             lineage_id=action['repetition_bases']['import_rework'], event_ref=execution_id,
-            outcome='reauthored', owner='ai', reason='Registered interpretation reauthor attempt')
+            outcome='reauthored', owner='ai', reason='Registered interpretation reauthor attempt', clock=clock)
 
 
 def import_rework(runtime, action):
@@ -186,10 +187,10 @@ def import_rework(runtime, action):
 
 
 def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outcome, owner, reason,
-                      decision_ref=None, regenerate_after=None, observed_at=None, version=None):
+                      decision_ref=None, regenerate_after=None, observed_at=None, version=None, clock=None):
     """Record an idempotent real receipt and its next owner in the same candidate."""
+    clock = clock_or_system(clock)
     from .task_contracts import REPEAT_LINEAGES
-    from .repository import new_id
     if lineage not in REPEAT_LINEAGES or owner not in {'ai','user'}:
         raise ValueError('unknown repetition lineage or owner')
     if not all(isinstance(s,str) and s.strip() for s in (lineage_id,event_ref,outcome,reason)):
@@ -241,7 +242,7 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
             'question': question})
         from .questions import link
         linked = link(runtime, execution_id=event_ref, field=f'{len(history) - 1}/question',
-             owner='user', targets=[event_ref], reason='Configured repetition limit reached; scoped continuation required')
+             owner='user', targets=[event_ref], reason='Configured repetition limit reached; scoped continuation required', clock=clock)
         linked['source_kind'] = 'history'
     no_followup={'accepted','contracts_preserved','continued','premises_changed','waiting',
                  'revised','authored','reauthored'}
@@ -254,7 +255,7 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
         if pending:
             if event_ref not in pending.setdefault('receipt_refs',[]): pending['receipt_refs'].append(event_ref)
         else:
-            queue.append({'id':new_id('AC'),'role':role,'target':event_ref if role=='operational_review' else None,
+            queue.append({'id':clock.new_id('AC'),'role':role,'target':event_ref if role=='operational_review' else None,
                           'reason':reason,'repetition_lineage':[lineage,lineage_id],'receipt_refs':[event_ref]})
     return deepcopy(row)
 
@@ -272,7 +273,7 @@ def proposal_lineage(instance, identifier):
         identifier=parent
 
 
-def continue_repetition(instance, runtime, change, decision):
+def continue_repetition(instance, runtime, change, decision, *, clock=None):
     """Apply a user decision to an existing exact queued/waiting obligation."""
     lineage, key = change.get('lineage'), change.get('lineage_id')
     hold = repetition_hold(runtime, lineage, key)
@@ -300,7 +301,7 @@ def continue_repetition(instance, runtime, change, decision):
         raise ValueError('continuation cannot overlap a live attempt')
     record_repetition(instance, runtime, lineage=lineage, lineage_id=key,
         event_ref=decision['id'], outcome='continued', owner='user',
-        reason=change.get('reason') or 'User authorized the scoped continuation', decision_ref=decision['id'])
+        reason=change.get('reason') or 'User authorized the scoped continuation', decision_ref=decision['id'], clock=clock)
     if create:
         action['reason'] = 'User continued the held empty preparation'
         action['receipt_refs'] = [hold['event_ref']]
@@ -347,7 +348,7 @@ def bind_repetition_bases(instance,runtime,action):
     action['repetition_bases']={lineage:exact_content_hash(common)}
 
 
-def record_execution_outcome(instance, runtime, action, output, execution_id, *, accepted):
+def record_execution_outcome(instance, runtime, action, output, execution_id, *, accepted, clock=None):
     """Called on receipt, after actual candidate application or on rejection."""
     execution=runtime.get('executions',{}).get(execution_id)
     if not execution or execution.get('role') != action.get('role'):
@@ -362,7 +363,7 @@ def record_execution_outcome(instance, runtime, action, output, execution_id, *,
         basis=action.get('repetition_bases',{}).get('selection_failure') or exact_content_hash({
             'instance':instance['id'],'population':execution.get('ready_task_ids',[]),'basis':execution.get('decision_basis',{})})
         record_repetition(instance,runtime,lineage='selection_failure',lineage_id=basis,event_ref=execution_id,
-                          outcome=result,owner='ai',reason=reason)
+                          outcome=result,owner='ai',reason=reason, clock=clock)
     from .model_policy import preparation_only
     if role=='research_preparation' and not preparation_only(action):
         preserved=[t for t in runtime.get('tasks',{}).values() if t.get('producer_execution')==execution_id or
@@ -381,15 +382,15 @@ def record_execution_outcome(instance, runtime, action, output, execution_id, *,
         if preserved or accepted:
             record_repetition(instance,runtime,lineage='exhaustion_empty',lineage_id=basis,event_ref=execution_id,
                               outcome='contracts_preserved' if preserved else 'empty',owner='ai',reason=reason,
-                              observed_at=observed_at, regenerate_after=regenerate_after)
+                              observed_at=observed_at, regenerate_after=regenerate_after, clock=clock)
     for identifier,current in runtime.get('tasks',{}).items():
         previous=action.get('revision_targets',{}).get(identifier,{})
         authored=current.get('producer_execution')==execution_id or any(h.get('execution_id')==execution_id for h in current.get('revision_history',[]))
         if authored or (accepted and previous and current.get('revision',0)>previous.get('revision',0)):
             record_repetition(instance,runtime,lineage='contract_revision',lineage_id=identifier,event_ref=execution_id,
-                outcome='authored' if current['revision']==1 else 'revised',version=current['revision'],owner='ai',reason=reason)
+                outcome='authored' if current['revision']==1 else 'revised',version=current['revision'],owner='ai',reason=reason, clock=clock)
     for identifier,current in instance.get('knowledge',{}).items():
         if current.get('producer_execution')==execution_id:
             root,version=proposal_lineage(instance,identifier)
             record_repetition(instance,runtime,lineage='proposal_version',lineage_id=root,event_ref=execution_id,
-                outcome='authored' if version==1 else 'revised',version=version,owner='ai',reason=reason)
+                outcome='authored' if version==1 else 'revised',version=version,owner='ai',reason=reason, clock=clock)

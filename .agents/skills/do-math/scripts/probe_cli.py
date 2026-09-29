@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import uuid
 
-from do_math.file_io import now
+from do_math.system_clock import now
 from do_math.payloads import json_safe
 from do_math.model_runner import ModelRunner
 from do_math.preflight import inspect_bundle

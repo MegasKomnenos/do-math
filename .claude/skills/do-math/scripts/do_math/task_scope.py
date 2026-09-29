@@ -4,10 +4,10 @@ from __future__ import annotations
 from copy import deepcopy
 
 from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
-from .file_io import now
 from .planning import contract_hash
-from .repository import exact_content_hash
+from .canonical import exact_content_hash
 from .task_contracts import LIFECYCLE_STATES, TERMINAL_TASK_STATUSES
+from .migration_defaults import clock_or_system
 
 
 _WITHDRAWABLE_STATES = LIFECYCLE_STATES - TERMINAL_TASK_STATUSES
@@ -76,12 +76,13 @@ def validate_withdrawal_scope(task, snapshot_task, *, proposed_assessment=None):
 
 
 def apply_task_dispositions(instance: dict, runtime: dict, dispositions: list[dict], *,
-                            execution_id: str, input_tasks: dict) -> tuple[dict, dict]:
+                            execution_id: str, input_tasks: dict, clock=None) -> tuple[dict, dict]:
     """Apply withdrawal requests after snapshot and provenance validation.
 
     The caller owns role authorization.  This function deliberately cannot alter
     goals, policies, grants, academic requirements, or user task-scope records.
     """
+    clock = clock_or_system(clock)
     if not isinstance(execution_id, str) or not execution_id:
         raise ValueError("task dispositions need an execution ID")
     if not isinstance(dispositions, list) or not isinstance(input_tasks, dict):
@@ -121,7 +122,7 @@ def apply_task_dispositions(instance: dict, runtime: dict, dispositions: list[di
         task["scope_disposition"] = {
             "kind": "withdraw", "actor_execution": execution_id, "reason": reason,
             "previous_revision": task.get("revision"), "previous_contract_sha256": previous_hash,
-            "at": now(), "cancelled_queue_actions": removed_queue,
+            "at": clock.now(), "cancelled_queue_actions": removed_queue,
             "cancelled_waiting_actions": removed_waiting,
             'results_sha256': exact_content_hash(task.get('results', [])),
             'assessment_sha256': exact_content_hash(assessment) if assessment else None,
@@ -373,8 +374,9 @@ def designated_judgment(task, obligation, disposition, instance, runtime):
     return None
 
 
-def apply_task_assessments(instance, runtime, assessments, *, execution_id, input_tasks, evaluation_context=None):
+def apply_task_assessments(instance, runtime, assessments, *, execution_id, input_tasks, evaluation_context=None, clock=None):
     """Apply the whole assessment set on copies, including recipient obligations."""
+    clock = clock_or_system(clock)
     from .task_contracts import assessor_is_judge, validate_item_dispositions, contract_obligations, judge_coverage_errors
     from .planning import record_index
     new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)
@@ -440,10 +442,9 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
             'from_obligation_id':obligation['id'], 'obligation_id':row['target_obligation_id'], 'authority_ref':row['authority_ref'], 'execution_id':execution_id})
     for target_id in changed_targets:
         target = tasks[target_id]
-        from .repository import new_id
         cancelled=[a for a in new_runtime.setdefault('queue',[]) if a.get('target')==target_id]
         new_runtime['queue']=[a for a in new_runtime['queue'] if a.get('target')!=target_id]
-        new_runtime['queue'].append({'id':new_id('AC'), 'role':'task_contract_review', 'target':target_id, 'reason':'Inherited obligations require independent approval'})
+        new_runtime['queue'].append({'id':clock.new_id('AC'), 'role':'task_contract_review', 'target':target_id, 'reason':'Inherited obligations require independent approval'})
         new_runtime.setdefault('history',[]).append({'kind':'recipient_contract_revised','target':target_id,'execution_id':execution_id,'cancelled_actions':cancelled})
         target.pop('waiting',None)
         target.pop('revision_requested', None)
@@ -468,7 +469,6 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
                 'target_refs':list(dict.fromkeys(ref for row in unresolved for ref in row['missing_inputs'])),
                 'next_owner':unresolved[0]['next_owner'] if unresolved else 'research_plan', 'basis_ref':execution_id}
             if not unresolved and not any(a.get('role')=='research_plan' for a in new_runtime.setdefault('queue',[])):
-                from .repository import new_id
-                new_runtime['queue'].append({'id':new_id('AC'),'role':'research_plan','reason':'Select continuation for assessed remaining obligations','requested_by':execution_id})
+                new_runtime['queue'].append({'id':clock.new_id('AC'),'role':'research_plan','reason':'Select continuation for assessed remaining obligations','requested_by':execution_id})
         new_runtime.setdefault('history', []).append({'kind':'task_assessed','task_id':task['id'],'execution_id':execution_id,'decision':assessment['decision']})
     return new_instance, new_runtime

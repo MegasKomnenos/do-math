@@ -4,7 +4,6 @@ These helpers do not grant authority or replace a caller's path/receipt checks.
 Retries repeat only the same rename, never the operation described by the file.
 """
 from contextlib import contextmanager
-from datetime import datetime, timezone
 from functools import lru_cache
 import hashlib
 import json
@@ -181,9 +180,6 @@ def fingerprint_settled(fingerprint):
     return time.time_ns()-max(fingerprint[1],fingerprint[2])>RACY_NS  # layer: file times are OS wall-clock times, so the racy check reads the OS clock
 
 
-def now() -> str:
-    """The current UTC time as an ISO string, the form ``parse_utc`` reads."""
-    return datetime.now(timezone.utc).isoformat()  # layer: migration default until every caller takes the clock port (1c)
 
 
 def console_python():

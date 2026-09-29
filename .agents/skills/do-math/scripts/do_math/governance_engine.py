@@ -9,7 +9,7 @@ from pathlib import Path
 from . import governance, academic, knowledge, knowledge_records, execution_profiles
 from .configuration import validate_config
 from .control_contracts import user_decision_changed
-from .repository import new_id, canonical_json, exact_content_hash
+from .canonical import canonical_json, exact_content_hash
 from .session_slots import live_action_ids
 from .task_contracts import TERMINAL_TASK_STATUSES
 
@@ -108,7 +108,7 @@ class GovernanceEngineMixin:
         return result, state
 
     def governance_owner_handlers(self):
-        handlers = governance.import_owner_handlers()
+        handlers = governance.import_owner_handlers(clock=self.ports.clock)
         def configure(instance, runtime, unit, approval):
             return self._configure_candidate(instance, runtime, {'action': 'configure',
                 'origin': approval['actor'], 'config': unit['payload']['config']})
@@ -213,7 +213,7 @@ class GovernanceEngineMixin:
         before_instance, before_runtime = deepcopy(self.instance), deepcopy(self.runtime)
         try:
             self.instance, self.runtime, _ = governance.apply_import_control(self.instance, self.runtime,
-                normalized, owner_handlers=self.governance_owner_handlers())
+                normalized, owner_handlers=self.governance_owner_handlers(), clock=self.ports.clock)
             if not was_applied: self._after_governance_import(change['import_id'])
         except (ValueError, KeyError, TypeError) as error:
             self.instance, self.runtime = before_instance, before_runtime
@@ -235,7 +235,7 @@ class GovernanceEngineMixin:
         handlers = self.governance_owner_handlers()
         if action.get('stage', 'interpret') == 'interpret':
             bundle = governance.prepare_import(self.instance, self.runtime, source, output, execution_id=execution_id,
-                previous_id=action.get('previous_import_id'), owner_handlers=handlers, input_ref=target)
+                previous_id=action.get('previous_import_id'), owner_handlers=handlers, input_ref=target, clock=self.ports.clock)
             self._enqueue('intent_interpretation', target, stage='check', import_id=bundle['id'],
                 **{key: deepcopy(action[key]) for key in ('initialization', 'grant_id', 'profile_ref', 'owner_activity_id') if key in action},
                 lineage_id=action.get('lineage_id', action.get('id', target)),
@@ -257,7 +257,7 @@ class GovernanceEngineMixin:
                 'reason': 'checked interpretation lacks exact change approval', 'next_owner': 'user'}
             return bundle
         self.instance, self.runtime, receipt = governance.apply_import(self.instance, self.runtime, bundle['id'],
-            owner_handlers=handlers)
+            owner_handlers=handlers, clock=self.ports.clock)
         if receipt['status'] == 'awaiting_decision':
             self.runtime.setdefault('waiting_actions', {})[action.get('id', bundle['id'])] = {
                 'action': deepcopy(action), 'kind': 'import_user_decision', 'import_id': bundle['id'],

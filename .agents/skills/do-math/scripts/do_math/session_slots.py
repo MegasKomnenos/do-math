@@ -10,7 +10,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 import math
-import time
+from .migration_defaults import clock_or_system
 
 # Admission wait kinds recorded in a queued request's ``dispatch_wait``.
 PROVIDER_WAIT = 'provider_limit'
@@ -54,7 +54,8 @@ class SessionSlots:
     database is authoritative for this path.
     """
 
-    def __init__(self, runtime: dict, instance: dict, *, observer=False):
+    def __init__(self, runtime: dict, instance: dict, *, observer=False, clock=None):
+        self.clock = clock_or_system(clock)
         self.runtime, self.instance, self.observer = runtime, instance, observer
         self.admission_wait = None
 
@@ -73,7 +74,7 @@ class SessionSlots:
         """The admission wait while this profile's provider gate is closed, else None."""
         from .execution_profiles import profile_ref
         from .provider_wait import gate_open, utc
-        current = time.time() if current_time is None else current_time
+        current = self.clock.wall_ns() / 1_000_000_000 if current_time is None else current_time
         ai = profile.get("ai", {})
         gate = self._gate(ai.get("provider"))
         if gate is None or gate_open(gate, current):
@@ -173,7 +174,7 @@ class SessionSlots:
         A ready result is not a reservation. The real acquire repeats the check
         while publishing its execution and reservations under the writer lock.
         """
-        current = time.time() if current_time is None else current_time
+        current = self.clock.wall_ns() / 1_000_000_000 if current_time is None else current_time
         allowed = self._admission(profile, "EX-admission-check", current) is not None
         return {'allowed': allowed, 'wait': deepcopy(self.admission_wait)}
 
@@ -190,7 +191,7 @@ class SessionSlots:
         if existing is not None and (existing is not execution or "capacity" in existing
                                      or existing.get("status") not in {"queued", "starting"}):
             raise ValueError("execution IDs are single-use; only the registered unreserved execution can be admitted")
-        current = time.time() if current_time is None else current_time
+        current = self.clock.wall_ns() / 1_000_000_000 if current_time is None else current_time
         admitted = self._admission(profile, execution_id, current)
         if admitted is None:
             return False
@@ -198,7 +199,7 @@ class SessionSlots:
         candidate = deepcopy(execution)
         bind_execution(candidate, profile)
         candidate['launch_ticket'] = ticket(execution_id, profile)
-        admitted_at = (datetime.now(timezone.utc) if current_time is None
+        admitted_at = (self.clock.wall() if current_time is None
                        else datetime.fromtimestamp(current, timezone.utc))
         transition_execution(candidate, "starting", at=admitted_at.isoformat())
         provider = profile.get("ai", {}).get("provider")
@@ -273,7 +274,7 @@ class SessionSlots:
         """
         self._writable()
         from .provider_wait import retry_time
-        current = time.time() if current_time is None else current_time
+        current = self.clock.wall_ns() / 1_000_000_000 if current_time is None else current_time
         initial_seconds = config["provider_retry_initial_seconds"]
         maximum_seconds = config["provider_retry_max_seconds"]
         execution = self.runtime.get("executions", {}).get(execution_id, {})
@@ -312,7 +313,7 @@ class SessionSlots:
 
     def provider_snapshot(self, *, current_time=None):
         from .provider_wait import gate_open, utc
-        current = time.time() if current_time is None else current_time
+        current = self.clock.wall_ns() / 1_000_000_000 if current_time is None else current_time
         rows = deepcopy(self.runtime.get("provider_waits", {}))
         for row in rows.values():
             row["open"] = gate_open(row, current)

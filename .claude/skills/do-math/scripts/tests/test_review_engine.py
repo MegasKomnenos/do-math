@@ -16,8 +16,10 @@ from do_math import (execution_profiles, governance, knowledge, knowledge_io, kn
                      review_cycle, review_policy)
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.engine import control, ResearchEngine
-from do_math.file_io import now
-from do_math.repository import canonical_json, exact_content_hash, new_id, ResearchRepository
+from do_math.system_clock import now
+from do_math.canonical import canonical_json, exact_content_hash
+from do_math.repository import ResearchRepository
+from do_math.system_clock import new_id
 from do_math.review_cycle import record_turn
 from engine_fixtures import formal_check_engine, formal_verification, routing_engine
 from purpose_fixtures import ActivatedPurposeHarness, theorem
@@ -143,7 +145,7 @@ class ReviewEngineTests(unittest.TestCase):
             engine._record_review_observation('ORDER', event, artifact_ref='events.jsonl', event_index=1)
 
     def test_public_provider_numbers_survive_storage_and_slot_restoration(self):
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         from do_math.review_cycle import validate_transcript
         engine = self.engine
         cid = engine.start('K1')
@@ -433,9 +435,9 @@ class ReviewEngineTests(unittest.TestCase):
             state.pop('role_profile_refs', None)
             state['lifecycle'] = deepcopy(lifecycle_instance['lifecycle'])
         first = repository.initialize(persisted_before, persisted_runtime_before)
-        from do_math import repository as repository_module
+        from do_math import canonical as canonical_module
         def transition_hashes(save):
-            with patch.object(repository_module, 'exact_content_hash', wraps=repository_module.exact_content_hash) as hashes:
+            with patch.object(canonical_module, 'exact_content_hash', wraps=canonical_module.exact_content_hash) as hashes:
                 head = save()
             return head, [call for call in hashes.call_args_list if isinstance(call.args[0], dict)
                           and {'transition_id', 'from_environment'} <= set(call.args[0])]

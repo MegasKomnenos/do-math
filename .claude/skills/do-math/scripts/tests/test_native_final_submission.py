@@ -129,7 +129,7 @@ class NativeFinalGitTests(unittest.TestCase):
 
     def test_rejected_native_final_leaves_explicit_retry_to_the_existing_fresh_execution_path(self):
         from do_math.payloads import json_safe
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         execution = self.engine.runtime['executions']['EX-history']
         result = native_result(execution, self.context, b'{malformed', self.workspace)
         failed = self.engine._collect_submitted_result(execution, result, self.context, self.schema, self.workspace)

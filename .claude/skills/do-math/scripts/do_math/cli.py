@@ -20,7 +20,8 @@ from .payloads import json_safe
 from . import scheduled_operator
 from .file_io import console_python
 from .values import strict_json_loads
-from .repository import ResearchRepository, canonical_json, exact_content_hash
+from .repository import ResearchRepository
+from .canonical import canonical_json, exact_content_hash
 from .state_checks import inspection_exit_code
 
 # Envelope fields every response carries, before its ``result`` or ``error``.

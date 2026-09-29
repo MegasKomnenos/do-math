@@ -4,14 +4,14 @@ from __future__ import annotations
 from copy import deepcopy
 import re
 
-from .file_io import now
 from .values import require_text
-from .formal import is_lean_identifier
+from .lean_evidence import is_lean_identifier
 from .ids import is_new_id
 from .planning import record_index
-from .repository import canonical_json, new_id
+from .canonical import canonical_json
 from .knowledge import AUTHORED_FIELDS, assess_use, capture_basis, propagate
 from . import knowledge_records
+from .migration_defaults import clock_or_system
 
 
 _TOKEN = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -110,7 +110,8 @@ def catalog_definitions(instance: dict) -> dict:
 
 
 def register_kind_definition(instance: dict, definition: dict, *, source_ref: str,
-                             actor_ref: str) -> tuple[dict, str]:
+                             actor_ref: str, clock=None) -> tuple[dict, str]:
+    clock = clock_or_system(clock)
     require_text(source_ref, "source_ref"); require_text(actor_ref, "actor_ref")
     if not isinstance(definition, dict) or set(definition) != {"family", "token", "meaning", "constraints"}:
         raise ValueError("kind definition requires family, token, meaning and constraints")
@@ -138,10 +139,10 @@ def register_kind_definition(instance: dict, definition: dict, *, source_ref: st
     previous = lookup_definition(output, family, token)
     if previous and previous["status"] != "withdrawn":
         raise ValueError("kind token is already defined")
-    identifier = new_id("KD")
+    identifier = clock.new_id("KD")
     output["kind_definitions"][identifier] = {**deepcopy(definition), "id": identifier, "status": "candidate", "builtin": False,
         "source_ref": source_ref, "actor_ref": actor_ref,
-        "created_at": now()}
+        "created_at": clock.now()}
     if previous:
         output["kind_definitions"][identifier]["supersedes"] = previous["id"]
     return output, token
@@ -171,7 +172,7 @@ def activate_kind_definition(instance, family, token, *, approval_ref, actor_ref
     return output
 
 
-def withdraw_kind_definition(instance, runtime, family, token, *, reason, actor_ref):
+def withdraw_kind_definition(instance, runtime, family, token, *, reason, actor_ref, clock=None):
     require_text(reason, "reason"); require_text(actor_ref, "actor_ref")
     output, new_runtime = deepcopy(instance), deepcopy(runtime)
     definition = lookup_definition(output, family, token)
@@ -187,7 +188,7 @@ def withdraw_kind_definition(instance, runtime, family, token, *, reason, actor_
             else:
                 row["kind_use_suspended"] = True
     if roots:
-        propagate(output, new_runtime, roots, reason)
+        propagate(output, new_runtime, roots, reason, clock=clock)
     return output, new_runtime
 
 
@@ -239,7 +240,8 @@ def validate_insight(instance: dict, runtime: dict, insight: dict) -> None:
 
 
 def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_ref: str,
-                     actor_ref: str, reserved_dependency_ids=(), plan_nonformal=True) -> tuple[dict, dict, str]:
+                     actor_ref: str, reserved_dependency_ids=(), plan_nonformal=True, clock=None) -> tuple[dict, dict, str]:
+    clock = clock_or_system(clock)
     require_text(source_ref, "source_ref"); require_text(actor_ref, "actor_ref")
     if not isinstance(candidate, dict) or set(candidate) - _KNOWLEDGE_FIELDS:
         raise ValueError("candidate has unsupported fields")
@@ -263,7 +265,7 @@ def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_r
         raise ValueError(errors[0])
     definition = _definition_for(output, "knowledge", candidate["kind"])
     dependencies = candidate.get("dependencies", [])
-    record_id = candidate.get("id") or new_id("KN")
+    record_id = candidate.get("id") or clock.new_id("KN")
     if not isinstance(record_id, str) or not is_new_id("KN", record_id):
         raise ValueError("knowledge ID must be a canonical KN-prefixed ULID")
     if record_id in dependencies:
@@ -296,7 +298,7 @@ def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_r
     if set(source_refs) - set(record_index(output, {}, families=(), source_aliases=True)):
         raise ValueError("required source does not exist")
     output, record_id = knowledge_records.create_candidate(output, {**candidate, "id": record_id},
-        source_ref=source_ref, actor_ref=actor_ref)
+        source_ref=source_ref, actor_ref=actor_ref, clock=clock)
     record = output["knowledge"][record_id]
     if actor_ref not in new_runtime.get('executions', {}):
         # User/import provenance is not an execution identity. Review author
@@ -315,7 +317,7 @@ def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_r
         "knowledge_id": record_id, "source_ref": source_ref})
     next_role = "identity_review" if reuse_formal else "formal_check" if record["formal_result_id"] else "research_plan"
     if next_role != 'research_plan' or plan_nonformal:
-        action_id = new_id("AC")
+        action_id = clock.new_id("AC")
         new_runtime.setdefault("queue", []).append({"id": action_id, "lineage_id": action_id, "role": next_role,
             "target": record_id, "reason": "imported candidate requires verification", "source_ref": source_ref})
     return output, new_runtime, record_id
@@ -380,13 +382,14 @@ def validate_relation(instance: dict, relation: dict) -> dict:
 
 
 def import_relation(instance: dict, relation: dict, *, source_ref: str,
-                    actor_ref: str) -> tuple[dict, str]:
+                    actor_ref: str, clock=None) -> tuple[dict, str]:
+    clock = clock_or_system(clock)
     require_text(source_ref, "source_ref"); require_text(actor_ref, "actor_ref")
     result = validate_relation(instance, relation)
     if not result["valid"]:
         raise ValueError("invalid relation: " + ", ".join(result["reasons"]))
     output = ensure_ontology(instance)
-    relation_id = relation.get("id") or new_id("RL")
+    relation_id = relation.get("id") or clock.new_id("RL")
     if not isinstance(relation_id, str) or not is_new_id("RL", relation_id):
         raise ValueError("relation ID must be a canonical RL-prefixed ULID")
     old = next((value for value in output.setdefault("relations", []) if value.get("id") == relation_id), None)
@@ -396,7 +399,7 @@ def import_relation(instance: dict, relation: dict, *, source_ref: str,
                   status="active", source_ref=source_ref, imported_by=actor_ref,
                   kind_definition_id=result["definition"]["id"],
                   authority="mathematical_connection" if mathematical else "research_connection",
-                  imported_at=now())
+                  imported_at=clock.now())
     if old:
         record["history"] = [*deepcopy(old.get("history", [])),
                              {key: deepcopy(value) for key, value in old.items() if key != "history"}]

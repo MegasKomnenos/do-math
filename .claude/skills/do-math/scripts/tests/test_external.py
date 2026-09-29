@@ -4,7 +4,7 @@ from http.server import HTTPServer
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 from do_math.external import *
 from do_math import external
 from provider_fixtures import HTTPFixtureHandler

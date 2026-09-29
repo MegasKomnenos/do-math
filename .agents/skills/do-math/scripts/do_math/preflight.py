@@ -55,7 +55,7 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
         from .governance import interpretation_schema
         from .scheduled_operator import OPERATOR_SCHEMA
         from .submission import extension_schema
-        from .repository import exact_content_hash
+        from .canonical import exact_content_hash
         schemas = {role: schema_for(role) for role in ROLES}
         schemas.update({"identity_review:" + stage: stage_schema(stage) for stage in ("scope", "initial", "organize", "answer", "judge")})
         schemas.update({"intent_interpretation:" + stage: interpretation_schema(stage) for stage in ("interpret", "check")})

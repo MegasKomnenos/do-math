@@ -48,6 +48,13 @@ class ClockContract:
         self.assertRegex(first, re.compile(f'EX-{ULID_PATTERN}'))
         self.assertNotEqual(first, second)
 
+    def test_random_hex_has_the_requested_width_and_differs(self):
+        clock = self.make()
+        first, second = clock.random_hex(32), clock.random_hex(32)
+        self.assertRegex(first, re.compile('[0-9a-f]{64}'))
+        self.assertEqual(len(first), 64)
+        self.assertNotEqual(first, second)
+
     def test_new_id_rejects_a_non_registry_prefix(self):
         with self.assertRaisesRegex(ValueError, 'canonical uppercase registry prefix'):
             self.make().new_id('ex')

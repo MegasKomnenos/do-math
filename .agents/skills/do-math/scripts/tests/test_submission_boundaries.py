@@ -18,7 +18,7 @@ from do_math.engine import control
 from do_math.knowledge import assess_use, revise_knowledge
 from do_math.context_store import fit_context
 from do_math.planning import contract_hash
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 from research_fixtures import FixtureAdapter, await_control, restore_template
 from state_fixtures import ACTIVE_LEAN_COMMAND, active_instance
 from do_math.engine import ResearchEngine
@@ -175,7 +175,7 @@ class AcceptanceTests(unittest.TestCase):
                 self.assertEqual(execution["outcome"], "execution_incomplete" if required else "output_accepted")
 
     def test_changed_prerequisite_task_assessment_invalidates_its_running_consumer(self):
-        from do_math.repository import new_id
+        from do_math.system_clock import new_id
         class Runner:
             def run(inner, **args):
                 context = purpose.parse_context(args["prompt"], args["workspace"])

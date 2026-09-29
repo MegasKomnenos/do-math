@@ -165,7 +165,7 @@ def formal_ok(*, source, declarations, workspace, lean_command,
         signature, dependencies, value = "(n : Nat) -> n + 0 = n", ["Nat", "Nat.add_zero"], "Nat.add_zero"
     else:
         raise AssertionError("No explicit compiler fixture covers this source and declaration set")
-    from do_math.repository import exact_content_hash
+    from do_math.canonical import exact_content_hash
     from knowledge_fixtures import formal_result
     signatures = {name: f"{name} : {signature}" for name in declarations}
     toolchain = expected_toolchain or {"executable": "test-lean", "sha256": "f" * 64,

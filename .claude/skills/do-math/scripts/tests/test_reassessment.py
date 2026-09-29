@@ -10,7 +10,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import knowledge, knowledge_records as kr
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 from review_fixtures import KnowledgeRoundtripHarness, ReassessmentHarness, ReviewFakeEngine, review_stage_output, scoped_start
 
 
@@ -155,7 +155,7 @@ class ReassessmentGitTests(KnowledgeRoundtripHarness):
     def test_actual_split_state_suspend_review_save_reload_and_next_owner(self):
         from do_math import activities, execution_lifecycle
         from do_math.execution_profiles import profile_ref
-        from do_math.repository import new_id
+        from do_math.system_clock import new_id
         aid = self.assessment()
         assessment = self.state['identity_assessments'][aid]
         original = self.runtime['review_cycles'][assessment['review_cycle_id']]

@@ -12,11 +12,13 @@ from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import contracts, execution_lifecycle, integration, knowledge_io, submission
+from do_math import submission_tool
 from do_math.context_store import collect_outputs
 from do_math.control_transport import ControlTransport
 from do_math.engine import ResearchEngine
 from do_math.git_store import GitStateStore
-from do_math.repository import canonical_json, exact_content_hash, ResearchRepository
+from do_math.canonical import canonical_json, exact_content_hash
+from do_math.repository import ResearchRepository
 from engine_fixtures import (approve_contract, native_result, routing_engine, start_submission_history,
                              submit_history)
 from knowledge_fixtures import knowledge_candidate
@@ -232,7 +234,7 @@ class SubmissionFlowTests(unittest.TestCase):
 
     def test_submit_transport_contains_only_the_draft_locator(self):
         with patch.object(ControlTransport, "worker_submit", return_value={"state": "submitted"}) as submit:
-            submission.request_control(self.workspace, ".scratch/draft.json", kind="submit_intent", wait_seconds=0,
+            submission_tool.request_control(self.workspace, ".scratch/draft.json", kind="submit_intent", wait_seconds=0,
                                        binding=self.binding)
         payload = submit.call_args.kwargs["payload"]
         self.assertEqual({"draft_path": ".scratch/draft.json"}, payload)
@@ -544,7 +546,7 @@ class PartialCaptureTests(unittest.TestCase):
     def test_only_independent_local_errors_can_be_captured(self):
         from do_math import contracts
         from record_fixtures import two_observation_output, research_work_context
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             visible = {**research_work_context(), 'execution_id': 'EX-partial'}
@@ -574,7 +576,7 @@ class PartialCaptureGitTests(unittest.TestCase):
     def setUp(self):
         from do_math import contracts, knowledge_io, planning
         from do_math.input_basis import capture_decision_basis
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         from record_fixtures import two_observation_output
         start_submission_history(self)
         action = {'id': 'AC-partial', 'role': 'research_work'}
@@ -618,7 +620,7 @@ class PartialCaptureGitTests(unittest.TestCase):
         self.output['knowledge'][1]['dependencies'] = ['KN-not-supplied']
 
     def test_early_submission_preview_reload_and_partial_application(self):
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         execution = self.engine.runtime['executions']['EX-partial']
         raw = canonical_json(self.output)
         (self.workspace/'draft.json').write_bytes(raw)
@@ -642,7 +644,7 @@ class PartialCaptureGitTests(unittest.TestCase):
         self.assertEqual(repeated['bundles'][0]['status'], 'already_accepted')
 
     def test_native_final_reaches_the_same_partial_candidate(self):
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         execution = self.engine.runtime['executions']['EX-partial']
         result = native_result(execution, self.context, canonical_json(self.output), self.workspace)
         captured = self.engine._collect_submitted_result(execution, result, self.context, self.schema, self.workspace)

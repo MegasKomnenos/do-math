@@ -218,7 +218,7 @@ def remaining_obligations(task: dict, assessment: dict | None = None) -> list[st
 
 def returned_task_ids(tasks):
     from .planning import contract_hash
-    from .repository import exact_content_hash
+    from .canonical import exact_content_hash
     return sorted(identifier for identifier, task in tasks.items()
         if task.get('status') not in TERMINAL_TASK_STATUSES and task.get('results') and (
             task.get('assessment', {}).get('results_sha256') != exact_content_hash(task['results']) or

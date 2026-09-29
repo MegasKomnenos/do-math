@@ -575,10 +575,10 @@ def _mcp_server(binding: dict) -> int:
                     if not binding.get("workspace"):
                         raise ValueError("submission binding has no workspace")
                     if __package__:
-                        from .submission import request_control
+                        from .submission_tool import request_control
                     else:
                         sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-                        from do_math.submission import request_control
+                        from do_math.submission_tool import request_control
                     kind = SUBMISSION_PREVIEW if arguments.get("preview") else SUBMIT_INTENT
                     delivery = request_control(binding["workspace"], arguments["draft_path"], kind=kind,
                         wait_seconds=arguments.get("wait_seconds", 0), binding=binding)

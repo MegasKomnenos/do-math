@@ -7,7 +7,7 @@ import uuid
 from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 from do_math.repository import ResearchRepository
 from research_fixtures import bare_engine
 from do_math import governance as gov
@@ -59,7 +59,7 @@ class GoalAuditSlotTests(unittest.TestCase):
 
     def test_recovery_confirms_termination_before_using_original_seal_without_recollection(self):
         import hashlib
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         from do_math.contracts import schema_reference
         e = self.host()
         action, _ = self.seal(e)

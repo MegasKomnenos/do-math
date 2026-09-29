@@ -21,12 +21,9 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from do_math.git_store import GitStateStoreConflict  # noqa: E402
-from do_math.repository import (  # noqa: E402
-    ResearchRepository,
-    RepositoryCursorError,
-    canonical_json,
-    new_id,
-)
+from do_math.repository import ResearchRepository, RepositoryCursorError
+from do_math.canonical import canonical_json
+from do_math.system_clock import new_id
 from research_fixtures import bare_engine, current_state, git_init  # noqa: E402
 from do_math import repository
 from do_math.state_checks import inspect_state
@@ -483,7 +480,7 @@ class StorageValueTests(unittest.TestCase):
         # 1.0 == 1, so the record equals its parent's and skips its schema check
         # and serialization; sealing the candidate rejects the float first.
         with tempfile.TemporaryDirectory() as directory:
-            store = repository.ResearchRepository(git_init(directory), repository.new_id('RI'))
+            store = repository.ResearchRepository(git_init(directory), new_id('RI'))
             head = store.initialize(*current_state(runtime={'provider_wake': {'measured': 1}}))
             _, instance, runtime = store.load(head)
             runtime['provider_wake']['measured'] = 1.0

@@ -17,7 +17,7 @@ from typing import Any, Callable
 import uuid
 from copy import deepcopy
 
-from .file_io import now
+from .system_clock import now
 from .repository import ResearchRepository
 from .model_runner import ModelRunner
 from .model_policy import selection
@@ -453,7 +453,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
     from .session_slots import SessionSlots
     from .file_io import os_lock
     from contextlib import ExitStack
-    from .repository import new_id
+    from .system_clock import new_id
     from .git_store import GitStateStoreLockError
     from .launch import mark_dispatched, mark_returned
     from .planning import instance_ended

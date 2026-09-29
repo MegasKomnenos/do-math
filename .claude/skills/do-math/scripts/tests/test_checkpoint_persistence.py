@@ -12,7 +12,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.observation_transport import ObservationBatch
 from do_math.observations import ObservationTracker
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 from purpose_fixtures import ActivatedPurposeHarness, CURRENTNESS_CONFIG
 from research_fixtures import dispatched_launch, local_job_runner
 

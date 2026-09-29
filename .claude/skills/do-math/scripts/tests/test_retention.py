@@ -16,7 +16,7 @@ import unittest
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 
-from do_math.repository import new_id
+from do_math.system_clock import new_id
 from do_math.repository import ResearchRepository
 from do_math.retention import cleanup, cleanup_candidates
 from research_fixtures import current_state, git_init

@@ -21,7 +21,7 @@ from do_math.engine import control, initialize, ResearchEngine
 from do_math.execution_profiles import WORK_ROLES
 from do_math.model_policy import assessment_tier, LIMITS, MODELS, selection, validate_policy
 from do_math.planning import seal_contract_review
-from do_math.repository import new_id
+from do_math.system_clock import new_id
 from do_math.session_slots import SessionSlots
 from engine_fixtures import initialized_instance, reassessment_engine, routing_engine
 from purpose_fixtures import ActivatedPurposeHarness
@@ -242,7 +242,7 @@ class SlotTests(unittest.TestCase):
         from do_math.execution_profiles import profile_ref
         from do_math.execution_lifecycle import create_execution, transition_execution
         from do_math.activities import open_activity, assign_execution
-        from do_math.file_io import now
+        from do_math.system_clock import now
         action = {'id': 'AC-' + eid, 'role': role, 'profile_ref': profile_ref(profile)}
         activity = open_activity(e.runtime, activity_id='AY-' + eid, activity_kind=role,
             owner_ref=e.instance['id'], input_refs=[], opened_at=now())
@@ -329,7 +329,7 @@ class SlotTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'requires a Windows Job')
     def test_slot_waits_for_actual_named_job_termination(self):
         from do_math.windows_job import WindowsJob, named_job_empty
-        from do_math.file_io import now
+        from do_math.system_clock import now
         name = 'Local\\DoMath-test-' + uuid.uuid4().hex
         with self.engine.store.writer_lock():
             self.assertTrue(self.reserve('EX-job')[0])
@@ -735,8 +735,8 @@ class DuplicateContractReviewTests(ActivatedPurposeHarness):
         engine._save()
         engine.run(max_steps=1)
         running = next(a for a in engine.runtime["queue"] if a["role"] == "task_contract_review")
-        from do_math.repository import new_id
-        from do_math.file_io import now
+        from do_math.system_clock import new_id
+        from do_math.system_clock import now
         execution = engine._register_execution(running, {"id": new_id("EX"),
             "role": "task_contract_review", "status": "running", "created_at": now(), "input_snapshot": engine.head})
         before_id = running["id"]
@@ -904,7 +904,8 @@ class MachineAdmissionConnections(unittest.TestCase):
         self.assertTrue(all(row["state"] != "settled" for row in engine.runtime["reservations"].values()))
 
     def test_actual_git_snapshot_binds_machine_reservations_and_start_identity(self):
-        from do_math.repository import ResearchRepository, new_id
+        from do_math.repository import ResearchRepository
+        from do_math.system_clock import new_id
         from provider_fixtures import host_capacity_fixture
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

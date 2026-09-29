@@ -16,8 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import (activities, contracts, governance, integration, planning, revisions, submission,
                      task_contracts)
 from do_math.engine import control, ResearchEngine
-from do_math.file_io import now
-from do_math.repository import new_id
+from do_math.system_clock import now
+from do_math.system_clock import new_id
 from engine_fixtures import intent_import, intent_verdict, routing_engine
 from purpose_fixtures import ActivatedPurposeHarness
 
@@ -182,7 +182,7 @@ class RepetitionEngineTests(ActivatedPurposeHarness):
 
     def test_native_plan_failures_reach_receiver_counter_through_preserved_bytes(self):
         from engine_fixtures import native_result
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         from do_math.execution_lifecycle import transition_execution
         engine, _ = self.make_active(selection_failure_limit=3)
         engine.runtime['queue'] = []
@@ -268,7 +268,7 @@ class RepetitionEngineTests(ActivatedPurposeHarness):
             'scope': 'Same held plan', 'replay_safety': 'No external effects or accepted bundles'}
         output = {'summary': 'Retry', 'questions': [], 'used_sources': [], 'disposition': disposition, 'task_assessments': []}
         from engine_fixtures import native_result
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         bundle = new_id('BA')
         prefix = 'runtime/artifacts/' + bundle
         prompt = b'exact sealed prompt'

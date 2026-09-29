@@ -803,7 +803,7 @@ class LifecycleBoundaryTests(unittest.TestCase):
 
     def test_original_unicode_bytes_survive_canonical_roundtrip(self):
         import json
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         from do_math.initialization import original_input_bytes
         with tempfile.TemporaryDirectory() as root:
             source = 'Cafe\u0301'

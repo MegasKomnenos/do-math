@@ -9,10 +9,11 @@ from copy import deepcopy
 from pathlib import Path
 import re
 
-from .file_io import file_fingerprint, fingerprint_json, now
+from .file_io import file_fingerprint, fingerprint_json
 from .values import SHA256_SCHEMA as _HASH, is_sha256
+from .migration_defaults import clock_or_system
+from .lean_evidence import AXIOMS
 
-AXIOMS = ('propext', 'Classical.choice', 'Quot.sound')
 _AXIOM_SET = frozenset(AXIOMS)
 # The ID of one shared toolchain record; its file is trust_inventory.record_path.
 RECORD_ID_PATTERN = '^TC-[0-9a-f]{64}$'
@@ -114,19 +115,20 @@ def environment_changed(instance, detail):
     return wait_detail(instance) != {key: detail.get(key) for key in ('environment_id', 'record_state')}
 
 
-def check_environment(environment, binding, *, identity=True):
+def check_environment(environment, binding, *, identity=True, clock=None):
     """Live admission: record contract, identity and the olean fingerprint.
 
     A different fingerprint is accepted only when it equals the record's current
     baseline, the bound baseline is older and the identity still matches. The
     caller then rebinds; this function never writes a baseline.
     """
+    clock = clock_or_system(clock)
     from .trust_inventory import read_record, usable_errors, observe_fingerprint, binding as baseline_binding, changed_files
     from .formal import toolchain_identity_errors
-    from .repository import exact_content_hash
+    from .canonical import exact_content_hash
     reference = environment['toolchain_record']
     result = {'environment_id': environment.get('id'), 'toolchain_record': deepcopy(reference),
-              'record_state': record_state(environment), 'checked_at': now(),
+              'record_state': record_state(environment), 'checked_at': clock.now(),
               'identity_sha256': exact_content_hash(environment['toolchain']), 'binding': deepcopy(binding)}
     try:
         record = read_record(reference['path'])
@@ -168,9 +170,9 @@ def check_environment(environment, binding, *, identity=True):
                        'setup_lean.py --rerecord (user or operator) or a new record and transition is required']}
 
 
-def verify_formal(*, environment, binding, verifier, **arguments):
+def verify_formal(*, environment, binding, verifier, clock=None, **arguments):
     """Check the record and fingerprint before compiling; nothing is re-observed afterwards."""
-    check = check_environment(environment, binding, identity=False)
+    check = check_environment(environment, binding, identity=False, clock=clock)
     if check['status'] != 'verified':
         return {'status': 'failed', 'reason': 'environment admission failed: ' + '; '.join(check['errors']),
                 'error_kind': 'trust_environment', 'environment_check': check, 'launch_not_created': True}

@@ -29,7 +29,7 @@ class RuleSubmissionTests(unittest.TestCase):
 
     def issues(self, extensions, candidates=None):
         output = {**common('research_preparation'), 'candidates': candidates or []}
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         (self.workspace / 'activity-extensions.json').write_bytes(canonical_json(extensions))
         seal_response(output, self.context, self.workspace)
         return payload_issues(output, action_schema(self.action), self.context, extensions, self.workspace)

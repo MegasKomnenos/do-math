@@ -45,14 +45,15 @@ import tempfile
 from unittest.mock import create_autospec
 
 from do_math import contracts, execution_lifecycle, execution_profiles as profiles, knowledge_io, knowledge_records as kr
-from do_math import planning, submission
+from do_math import planning, submission, submission_tool
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.context_store import prepare_role_input
 from do_math.engine import ResearchEngine
 from do_math.governance import OPERATING_ROLES, TASK_WORK_ROLES
 from do_math.initialization import governance_working_view, initialize_state
-from do_math.repository import ResearchRepository, canonical_json, exact_content_hash
-from do_math.trust_validation import AXIOMS
+from do_math.repository import ResearchRepository
+from do_math.canonical import canonical_json, exact_content_hash
+from do_math.lean_evidence import AXIOMS
 from research_fixtures import (FixtureAdapter, StateStore, approved_governance, bare_engine, charter, governance_start,
                                review_items)
 from record_fixtures import surface_state
@@ -262,7 +263,7 @@ class PublicInitializationRunner:
     def run(self, *, workspace, on_started, should_stop, control_binding, **kwargs):
         import json
         from do_math import submission
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         from research_fixtures import intent_response, seal_response
         context = json.loads((workspace/'input/submission/context.json').read_bytes())
         if context['action']['role'] != 'intent_interpretation':
@@ -270,7 +271,7 @@ class PublicInitializationRunner:
         on_started({'job_name':kwargs['launch_ticket']['job_name']})
         output = seal_response(intent_response(context), context, workspace)
         (workspace/'draft.json').write_bytes(canonical_json(output))
-        delivery = submission.request_control(workspace, 'draft.json', kind='submit_intent', wait_seconds=0, binding=control_binding)
+        delivery = submission_tool.request_control(workspace, 'draft.json', kind='submit_intent', wait_seconds=0, binding=control_binding)
         # The owner loop receives the request on its next pass. submit_intent closes
         # further research authority; the flag it sets is the expected barrier.
         from do_math.control_transport import ControlTransport
@@ -494,7 +495,7 @@ def start_submission_history(test):
     from do_math.control_transport import ControlTransport
     from do_math.engine import ResearchEngine
     from do_math.planning import governance_revisions
-    from do_math.repository import canonical_json
+    from do_math.canonical import canonical_json
     from research_fixtures import seal_response
     from state_fixtures import start_active_copy
     start_active_copy(test)

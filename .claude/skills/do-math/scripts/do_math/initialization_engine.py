@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
-from .repository import exact_content_hash, new_id
+from .canonical import exact_content_hash
 
 
 def _require_current_config(instance, change):

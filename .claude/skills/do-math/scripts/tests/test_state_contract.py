@@ -10,7 +10,8 @@ from copy import deepcopy
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.state_contract import StateContract, default_state_contract
 from research_fixtures import current_state, git_init, installed_contract, with_validator
-from do_math.repository import ResearchRepository, new_id
+from do_math.repository import ResearchRepository
+from do_math.system_clock import new_id
 
 RECORD = {"type": "object", "additionalProperties": False,
           "properties": {"id": {"type": "string"}}, "required": ["id"]}

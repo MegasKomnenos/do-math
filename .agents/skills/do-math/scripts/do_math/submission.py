@@ -5,7 +5,6 @@ The receiving engine separately rechecks current authority and dependencies.
 """
 from __future__ import annotations
 
-import argparse
 from copy import deepcopy
 from functools import lru_cache
 import hashlib
@@ -28,11 +27,12 @@ from .external import prepare_operation, validate_operation
 from .model_policy import ASSESSMENT_SCHEMA, assessment_key, validate_assessments, preparation_only
 from .observations import read_checkpoint, checkpoint_value, CHECKPOINT_MAX_BYTES
 from .values import reject_constant, unique_pairs
-from .repository import canonical_json, exact_content_hash
+from .canonical import canonical_json, exact_content_hash
 from .contracts import REFS, TEXT, closed_object
 from .questions import QUESTION_OWNERS
 from .task_contracts import CONTEXT_INPUT_REFS, TERMINAL_TASK_STATUSES
 from . import integration
+from .migration_defaults import clock_or_system
 
 
 class SealedSubmissionError(ValueError):
@@ -818,10 +818,10 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
     kind_instance = {"kind_definitions": {row["family"] + ":" + row["token"]: deepcopy(row)
                      for rows in definitions.values() for row in rows if "family" in row}}
     for index, definition in enumerate(extensions.get("kind_definitions", [])):
-        def check_kind(definition=definition):
+        def check_kind(definition=definition, *, clock=None):
             nonlocal kind_instance
             kind_instance, _ = knowledge_io.register_kind_definition(kind_instance, definition,
-                source_ref="submission-preview", actor_ref="producer")
+                source_ref="submission-preview", actor_ref="producer", clock=clock)
             family = "knowledge" if definition["family"] == "knowledge" else "relations"
             require(definition["token"] not in {row["token"] for row in definitions.get(family, [])}, "kind token already exists")
             definitions.setdefault(family, []).append(definition)
@@ -1098,14 +1098,14 @@ def _captured_checkpoint(files: dict[str, bytes]) -> dict:
         return {"status": "invalid", "error": f"{type(error).__name__}: {error}"}
 
 
-def _workspace_checks(context, workspace, candidate=None):
+def _workspace_checks(context, workspace, candidate=None, *, clock=None):
     issues = []
     limits = context.get("submission_contract", {}).get("limits", {})
     files = (candidate if candidate is not None else
              collect_outputs(workspace, max_bytes=limits["max_artifact_bytes"])
              if limits.get("max_artifact_bytes") is not None else {"files": {}, "manifest": [], "omitted": []})
     issues.extend(_issue(row["path"], row["reason"], "artifact.preservation") for row in files["omitted"])
-    checkpoint = _captured_checkpoint(files["files"]) if candidate is not None else read_checkpoint(workspace)
+    checkpoint = _captured_checkpoint(files["files"]) if candidate is not None else read_checkpoint(workspace, clock=clock)
     if checkpoint["status"] not in {"missing", "valid"}:
         issues.append(_issue("checkpoint.json", checkpoint.get("error", checkpoint["status"]), "checkpoint.schema"))
     elif checkpoint["status"] == "valid":
@@ -1189,13 +1189,13 @@ def _failed_check(mode, context, raw, error, phase, execution_id):
 
 
 def check_submission(output, schema, context, extensions, workspace, *, mode,
-                     execution_id, tool_sha256, previous=None, candidate=None):
+                     execution_id, tool_sha256, previous=None, candidate=None, clock=None):
     """Record deterministic payload checks; producer records never grant authority."""
     if mode not in {"producer", "receiver", "preview"}:
         raise ValueError("unknown submission check mode")
     candidate_files = candidate["files"] if candidate is not None else None
     issues = payload_issues(output, schema, context, extensions, workspace, candidate_files=candidate_files)
-    workspace_issues, files = _workspace_checks(context, workspace, candidate)
+    workspace_issues, files = _workspace_checks(context, workspace, candidate, clock=clock)
     issues.extend(workspace_issues)
     hashes = _check_hashes(output, schema, context, extensions)
     skipped = list(NOT_MACHINE_CHECKED)
@@ -1233,7 +1233,7 @@ def check_submission(output, schema, context, extensions, workspace, *, mode,
 
 def preview_submission(output, schema, context, extensions, workspace, *, execution_id,
                        tool_sha256, instance, runtime, apply_bundle, validate_current,
-                       validate_candidate, previous=None, check=None):
+                       validate_candidate, previous=None, check=None, clock=None):
     """Central-only candidate preview with a closed, producer-visible response.
 
     ENGINE supplies its actual pure candidate callbacks. No publisher is supplied
@@ -1244,7 +1244,7 @@ def preview_submission(output, schema, context, extensions, workspace, *, execut
     not_checked = ["mathematical_meaning", "Lean", "future_application_currentness"]
     check = deepcopy(check) if check is not None else check_submission(
         output, schema, context, extensions, workspace, mode="preview",
-        execution_id=execution_id, tool_sha256=tool_sha256, previous=previous)
+        execution_id=execution_id, tool_sha256=tool_sha256, previous=previous, clock=clock)
     response = {"contract_id": PREVIEW_CONTRACT_ID, "check_id": check["id"],
                 "schema_ref": check["schema_ref"], "input_hashes": check["input_hashes"], "authoritative": False}
     if check.get("capture_eligible") is False:
@@ -1437,11 +1437,12 @@ def _support_archive(package: Path, sources: tuple[tuple[str, str], ...]) -> byt
     return archive.getvalue()
 
 
-def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_bytes: int | None) -> dict:
+def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_bytes: int | None, *, clock=None) -> dict:
     """Copy one installed code edition, never the central research state.
 
     The read tool reads that state only at the input snapshot and within the record map.
     """
+    clock = clock_or_system(clock)
     context["reference_catalog"] = reference_catalog(context, workspace)
     package = Path(__file__).resolve().parent
     # The installed edition is identified by fingerprint-cached digests; code
@@ -1455,10 +1456,10 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
     files = {"tools/submission-support.zip": archive}
     files["tools/check_submission.py"] = (b"import sys\nfrom pathlib import Path\nsys.dont_write_bytecode = True\n"
         b"sys.path.insert(0, str(Path(__file__).with_name('submission-support.zip')))\n"
-        b"from do_math.submission import main\nraise SystemExit(main())\n")
+        b"from do_math.submission_tool import main\nraise SystemExit(main())\n")
     files["tools/read_input.py"] = (b"import sys\nfrom pathlib import Path\nsys.dont_write_bytecode = True\n"
         b"sys.path.insert(0, str(Path(__file__).with_name('submission-support.zip')))\n"
-        b"from do_math.context_store import read_main\nraise SystemExit(read_main())\n")
+        b"from do_math.input_tool import read_main\nraise SystemExit(read_main())\n")
     if "record_map" in context:
         from .context_store import READ_LOG
         context["record_map"]["read_tool"] = {
@@ -1475,13 +1476,12 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
             "arguments": "--source <workspace-relative .lean file> --declaration <name> (repeat for each declaration)",
             "authoritative": False,
             "environment": "Same verifier edition and configured command for the kernel check, signatures and axioms; dependency evidence is not extracted. Shared libraries and Lake caches are not isolated. Central verification is mandatory."}
-    from .file_io import now
     from .contracts import schema_reference
     contract = {"command": [console_python(), "-B", "input/tools/check_submission.py"],
         "schema_ref": schema_reference(schema),
         "delivery": "Normal delivery is one complete JSON final. Central validation captures its exact bytes after verified CLI completion and local termination. Draft submission is optional and early; an accepted draft cannot be replaced by a later final.",
         "arguments": "--output <workspace-relative draft>; add --preview or --submit and --wait-seconds <remaining caller budget> for central control; --new-knowledge-id prints a fresh replacement_id without submission or reservation",
-        "basis_time": context.get("observed_at") or now(),
+        "basis_time": context.get("observed_at") or clock.now(),
         "tool_sha256": hashlib.sha256(archive).hexdigest(), "checks_directory": "checks",
         "workspace": str(workspace.resolve()),
         "schema_path": "input/submission/schema.json", "context_path": "input/submission/context.json",
@@ -1496,7 +1496,7 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
     return contract
 
 
-def producer_check(workspace, draft):
+def producer_check(workspace, draft, *, clock=None):
     """Serialize local checks; immutable predecessors, not timestamps, own order."""
     workspace = Path(workspace).resolve()
     directory = safe_path(workspace, "checks")
@@ -1513,7 +1513,7 @@ def producer_check(workspace, draft):
             head = safe_path(workspace, "checks/.producer-head")
             history = (read_producer_checks(workspace, load_json(read_stable(head, boundary=boundary))["check_id"],
                                             boundary=boundary) if head.exists() else [])
-            result = _producer_check(workspace, draft, history)
+            result = _producer_check(workspace, draft, history, clock=clock)
             _validated_check(read_stable(safe_path(workspace, "checks/" + result["id"] + ".json"), boundary=boundary),
                              result["id"])
             pending = safe_path(workspace, "checks/.producer-head.pending")
@@ -1524,7 +1524,7 @@ def producer_check(workspace, draft):
         lock.unlink()
 
 
-def _producer_check(workspace, draft, history):
+def _producer_check(workspace, draft, history, *, clock=None):
     """Read exact local bytes and seal a check, including malformed drafts."""
     workspace = Path(workspace).resolve()
     raw = None
@@ -1552,7 +1552,7 @@ def _producer_check(workspace, draft, history):
             raise ValueError("installed response schema differs from its exact contract reference")
         result = check_submission(output, schema, context, extensions, workspace, mode="producer",
             execution_id=context.get("execution_id") or context.get("action", {}).get("execution_id"),
-            tool_sha256=tool_hash, previous=history[-1] if history else None)
+            tool_sha256=tool_hash, previous=history[-1] if history else None, clock=clock)
     except (ValueError, TypeError, KeyError, OSError) as error:
         result = _failed_check("producer", context, raw, error, phase, context.get("execution_id"))
     from .contracts import schema_reference
@@ -1575,7 +1575,7 @@ def _producer_check(workspace, draft, history):
     return result
 
 
-def seal_submission(workspace, draft=None, *, execution_id, context, schema, max_artifact_bytes, raw_output=None, captured_outputs=None):
+def seal_submission(workspace, draft=None, *, execution_id, context, schema, max_artifact_bytes, raw_output=None, captured_outputs=None, clock=None):
     """Capture one research candidate, validate those bytes, and return detached CAS artifacts."""
     workspace = Path(workspace).resolve()
     result = {"passed": False, "capture_eligible": False, "check": None, "intent": None, "manifest": [], "artifacts": {}}
@@ -1608,7 +1608,7 @@ def seal_submission(workspace, draft=None, *, execution_id, context, schema, max
         phase = 'check'
         check = check_submission(output, schema, context, extensions, workspace, mode="receiver",
             execution_id=execution_id, tool_sha256=context["submission_contract"]["tool_sha256"],
-            candidate=collected)
+            candidate=collected, clock=clock)
         if check['issues'] and collected.get('complete'):
             check['failure_kind'] = 'output_validation'
     except (ValueError, TypeError, KeyError, OSError) as error:
@@ -1640,72 +1640,3 @@ def seal_submission(workspace, draft=None, *, execution_id, context, schema, max
     result.update(passed=check['passed'], capture_eligible=True, check=check, manifest=collected["manifest"], artifacts=artifacts,
         intent={"candidate_id": candidate_id, **identity})
     return result
-
-
-def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
-    """Send one draft locator; central capture owns validation and immutable receipt bytes."""
-    from .control_transport import ControlTransport, SUBMISSION_KINDS, SUBMISSION_PREVIEW
-    if kind not in SUBMISSION_KINDS:
-        raise ValueError("unsupported submission control kind")
-    if not isinstance(wait_seconds, (int, float)) or isinstance(wait_seconds, bool) or not 0 <= wait_seconds < float("inf"):
-        raise ValueError("wait_seconds must be a finite nonnegative caller budget")
-    workspace = Path(workspace).resolve()
-    context = load_json(read_stable(safe_path(workspace, "input/submission/context.json")))
-    binding = binding or context.get("control_binding")
-    if not isinstance(binding, dict) or binding.get("execution_id") != context.get("execution_id"):
-        raise ValueError("draft has no matching execution control binding")
-    draft_path = (workspace / Path(draft)).resolve(strict=False)
-    if not draft_path.is_relative_to(workspace):
-        raise ValueError("submission draft must be inside this workspace")
-    relative = draft_path.relative_to(workspace).as_posix()
-    safe_path(workspace, relative)
-    payload = {"draft_path": relative}
-    # A locator is mutable; a corrected draft at the same path is a new call.
-    # Query the returned request_id to resume waiting on the existing call.
-    from .repository import new_id
-    request_id = ("preview-" if kind == SUBMISSION_PREVIEW else "submit-") + new_id("RQ")
-    delivery = ControlTransport.worker_submit(binding, request_id=request_id, kind=kind, payload=payload)
-    if delivery["state"] == "closed":
-        return delivery
-    return ControlTransport.wait_receipt(binding, request_id, wait_seconds) or delivery
-
-
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path)
-    mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--preview", action="store_true")
-    mode.add_argument("--submit", action="store_true")
-    mode.add_argument("--new-knowledge-id", action="store_true",
-                      help="Print a fresh KN replacement_id for sibling references; does not reserve or publish it")
-    parser.add_argument("--wait-seconds", type=float)
-    args = parser.parse_args(argv)
-    if args.new_knowledge_id:
-        if args.output is not None or args.wait_seconds is not None:
-            parser.error("--new-knowledge-id does not take output or wait arguments")
-        from .repository import new_id
-        print(json.dumps({"replacement_id": new_id("KN")}))
-        return 0
-    if args.output is None:
-        parser.error("--output is required for checking, preview and submission")
-    if (args.preview or args.submit) and args.wait_seconds is None:
-        parser.error("central control requires an explicit --wait-seconds budget")
-    from .control_transport import SUBMISSION_PREVIEW, SUBMIT_INTENT
-    workspace = Path.cwd().resolve()
-    if args.submit:
-        try:
-            delivery = request_control(workspace, args.output, kind=SUBMIT_INTENT, wait_seconds=args.wait_seconds)
-        except (ValueError, TypeError, KeyError, OSError) as error:
-            delivery = {"state": "rejected", "reason": str(error)}
-        print(json.dumps({"delivery": delivery}, ensure_ascii=False))
-        return 0 if delivery.get("state") == "accepted" else 1
-    result = producer_check(workspace, args.output)
-    if args.preview:
-        try:
-            delivery = request_control(workspace, args.output, kind=SUBMISSION_PREVIEW, wait_seconds=args.wait_seconds)
-        except (ValueError, TypeError, KeyError, OSError) as error:
-            delivery = {"state": "rejected", "reason": str(error)}
-        print(json.dumps({"check": result, "delivery": delivery}, ensure_ascii=False))
-        return 0 if delivery.get("state") == "previewed" else 1
-    print(json.dumps(result, ensure_ascii=False))
-    return 0 if result["passed"] else 1

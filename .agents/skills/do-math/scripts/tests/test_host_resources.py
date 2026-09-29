@@ -104,7 +104,7 @@ class HostReservations(unittest.TestCase):
         # Exercise the real Git publication primitive. Repository schema
         # integration is separately tested below; this is no schema assurance.
         from do_math.git_store import GitStateStore, GitStateStoreConflict
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         instance, selected, _ = host_capacity_fixture()
         runtime = {"executions": {}, "reservations": {}}
         with tempfile.TemporaryDirectory() as directory:
@@ -377,7 +377,7 @@ class HostJobTests(unittest.TestCase):
                                     for r in runtime["reservations"].values()))
 
     def test_native_process_identity_round_trips_without_integer_precision_loss(self):
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         from do_math.windows_job import process_identity
         with WindowsJob([sys.executable, "-c", "pass"]) as job:
             value = process_identity(job)

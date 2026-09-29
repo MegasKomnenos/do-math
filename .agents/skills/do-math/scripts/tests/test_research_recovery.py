@@ -104,7 +104,7 @@ def paused_limited_recovery(root, shared, *, config):
 class RecoveryStorageConnectionTests(unittest.TestCase):
     def test_operational_retry_producer_survives_actual_git_storage(self):
         from state_fixtures import active_repository
-        from do_math.file_io import now
+        from do_math.system_clock import now
         from do_math.execution_lifecycle import transition_execution
         _, self.repo, self.identifier = active_repository()
         engine = ResearchEngine(self.repo, self.identifier)

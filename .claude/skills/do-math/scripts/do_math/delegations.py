@@ -3,7 +3,8 @@ from copy import deepcopy
 from datetime import datetime, timezone
 
 from .values import parse_utc
-from .repository import exact_content_hash
+from .canonical import exact_content_hash
+from .migration_defaults import clock_or_system  # layer: 1c migration default; the value becomes a required argument in 1f
 
 
 def case_basis_reference_ids(case):
@@ -43,7 +44,7 @@ def validate_delegation(delegation, *, now_iso=None):
     if not isinstance(delegation.get("resource_limits", {}), dict): raise ValueError("resource limits must be mapped")
     if any(type(v) is not int or v < 0 for v in delegation.get("resource_limits", {}).values()):
         raise ValueError("invalid delegation resource limit")
-    if delegation.get("expires_at") and parse_utc(delegation["expires_at"]) <= (parse_utc(now_iso) if now_iso is not None else datetime.now(timezone.utc)): raise ValueError("delegation expired")
+    if delegation.get("expires_at") and parse_utc(delegation["expires_at"]) <= (parse_utc(now_iso) if now_iso is not None else clock_or_system(None).wall()): raise ValueError("delegation expired")
     return deepcopy(delegation)
 
 

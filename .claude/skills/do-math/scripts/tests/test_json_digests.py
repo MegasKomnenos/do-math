@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import academic, external
 from do_math.values import json_digest
 from do_math.observations import _raw_json
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 
 
 # State-tree values: strings in both Unicode normal forms, escapes, nesting,

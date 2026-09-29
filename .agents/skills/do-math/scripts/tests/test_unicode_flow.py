@@ -13,7 +13,8 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from do_math.context_store import build_role_manifest, read_source, write_source_catalog
-from do_math.repository import ResearchRepository, canonical_json
+from do_math.repository import ResearchRepository
+from do_math.canonical import canonical_json
 from research_fixtures import current_state, git_init, installed_contract
 
 

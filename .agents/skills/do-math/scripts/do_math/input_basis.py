@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from .repository import exact_content_hash
+from .canonical import exact_content_hash
 
 # The state of a registered source; a replaced source moves into the history of its successor.
 SOURCE_STATUSES = frozenset({"active"})

@@ -7,7 +7,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import integration
 from do_math.engine import control
 from do_math.question_engine import QuestionEngineMixin
-from do_math.repository import canonical_json, ResearchRepository
+from do_math.canonical import canonical_json
+from do_math.repository import ResearchRepository
 from engine_fixtures import context_engine
 from purpose_fixtures import ActivatedPurposeHarness, parse_context, purpose_copy, PurposeRunner
 from research_fixtures import bare_engine, local_job_runner, producer_result

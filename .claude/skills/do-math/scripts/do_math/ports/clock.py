@@ -1,4 +1,4 @@
-"""Clock and identifier port: wall time, monotonic time, waiting, and new registry IDs."""
+"""Clock and identifier port: wall time, monotonic time, waiting, new registry IDs and random seeds."""
 from datetime import datetime
 from typing import Protocol
 
@@ -21,3 +21,6 @@ class Clock(Protocol):
 
     def new_id(self, prefix: str) -> str:
         """A new ``PREFIX-ULID`` whose time part is the current wall time."""
+
+    def random_hex(self, nbytes: int) -> str:
+        """``nbytes`` fresh random bytes as lowercase hexadecimal, for seeds that are not identifiers."""

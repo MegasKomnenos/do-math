@@ -89,7 +89,7 @@ class ProbeBatchTests(unittest.TestCase):
 
     def test_probe_without_named_editions_observes_every_current_ai_role_profile(self):
         from do_math.initialization import observed_profile_refs
-        from do_math.repository import exact_content_hash
+        from do_math.canonical import exact_content_hash
         change = {"operation": "probe", "config_sha256": exact_content_hash(self.engine.instance["config"])}
         with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
             self.engine._initialization_control(change, "source")

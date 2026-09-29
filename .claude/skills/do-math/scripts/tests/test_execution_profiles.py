@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 from research_fixtures import dispatched_launch
 from do_math import execution_profiles, model_policy
 from provider_fixtures import PROFILE_CONFIG
@@ -503,7 +503,7 @@ class ProfileTests(unittest.TestCase):
 
     def test_provider_wait_is_canonical_and_serializes_retry_probe(self):
         from do_math.session_slots import SessionSlots
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         instance = execution_profiles.build_profiles(PROFILE_CONFIG)
         runtime = {"executions": {}, "reservations": {}, "provider_waits": {}}
         profile = next(p for p in instance["execution_profiles"].values() if p["role"] == "research_work")
@@ -838,7 +838,7 @@ class MachineAndProviderEvidenceTests(unittest.TestCase):
 
     def test_native_provider_observation_has_canonical_storage_projection(self):
         from do_math import execution_profiles as ep
-        from do_math.repository import canonical_json
+        from do_math.canonical import canonical_json
         observation = {"stop_reason": "max_tokens", "usage": {"input_tokens": 4, "cost_usd": 0.125},
                        "operation_count": "unknown", "remote_termination": "unknown"}
         stored = ep.execution_observation({"provider_observation": observation})

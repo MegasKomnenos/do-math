@@ -1,7 +1,7 @@
 """Source-linked questions and explicitly scoped user decision requirements."""
 from copy import deepcopy
 
-from .repository import new_id
+from .migration_defaults import clock_or_system
 
 # Who answers a question: the user, the research roles or the operational roles.
 QUESTION_OWNERS = frozenset({"user", "research", "operations"})
@@ -32,7 +32,8 @@ def user_waits(action, instance, runtime, *, records=None):
             and targets & set(open_targets(row))]
 
 
-def link(runtime, *, execution_id, field, owner, targets, source_ref=None, reason=None, blocks=False, checked_by=None):
+def link(runtime, *, execution_id, field, owner, targets, source_ref=None, reason=None, blocks=False, checked_by=None, clock=None):
+    clock = clock_or_system(clock)
     if owner not in QUESTION_OWNERS or type(blocks) is not bool:
         raise ValueError("question owner and blocking decision required")
     if not isinstance(targets, list) or any(not isinstance(t, str) or not t for t in targets) or (blocks and not targets):
@@ -43,7 +44,7 @@ def link(runtime, *, execution_id, field, owner, targets, source_ref=None, reaso
         if (existing["owner"], existing["target_ids"], existing.get("blocks", False)) != (owner, list(dict.fromkeys(targets)), blocks):
             raise ValueError("question source cannot be rerouted silently")
         return existing
-    row = {"id": new_id("QU"), "origin_execution_id": execution_id, "origin_field": field,
+    row = {"id": clock.new_id("QU"), "origin_execution_id": execution_id, "origin_field": field,
            "owner": owner, "target_ids": list(dict.fromkeys(targets)), "unresolved_target_ids": list(dict.fromkeys(targets)),
            "blocks": blocks, "status": "open", "resolution_ref": None, "checked_by": checked_by}
     if source_ref:

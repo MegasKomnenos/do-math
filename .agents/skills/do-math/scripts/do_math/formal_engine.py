@@ -5,7 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 from .knowledge import begin_transition, record_transition_result, activate_transition, invalidate_environment, validate_basis
 from .execution_lifecycle import MACHINE_OUTPUT_RECEIPT
-from .repository import canonical_json, exact_content_hash, new_id
+from .canonical import canonical_json, exact_content_hash
 from .state_contract import ARTIFACT_ROOT
 
 def _toolchain_matches(expected, actual):
@@ -54,7 +54,7 @@ class FormalEngineMixin:
                 raise ValueError('transition needs an exact executable fingerprint')
             if any(t.get('status') in {'checking', 'ready'} for t in self.runtime['trust_transitions'].values()):
                 raise ValueError('a trust transition is already in progress')
-            transition = begin_transition(self.instance, environment_id)
+            transition = begin_transition(self.instance, environment_id, clock=self.ports.clock)
             errors = environment_errors(environment, self.runtime.get('trust_bindings', {}).get(environment_id))
             if errors:
                 raise ValueError('; '.join(errors))
@@ -70,7 +70,7 @@ class FormalEngineMixin:
             self._lifecycle_event('trust_transition_started', target=transition['id'], source_ref=source_ref)
         elif operation == 'invalidate':
             self.instance, self.runtime = invalidate_environment(self.instance, self.runtime,
-                config.get('env_id'), config.get('reason', 'Trust environment invalidated by explicit user decision'))
+                config.get('env_id'), config.get('reason', 'Trust environment invalidated by explicit user decision'), clock=self.ports.clock)
             self._lifecycle_event('trust_environment_invalidated', target=config.get('env_id'), source_ref=source_ref)
         else:
             raise ValueError('trust operation must be register, transition or invalidate')
@@ -118,7 +118,7 @@ class FormalEngineMixin:
                     self._formal_environment()
                 except ValueError:
                     continue
-                if not authorize(self.instance, waiting['action'], runtime=self.runtime)['allowed']:
+                if not authorize(self.instance, waiting['action'], runtime=self.runtime, at=self.ports.clock.now())['allowed']:
                     continue
             else:
                 continue
@@ -258,7 +258,7 @@ class FormalEngineMixin:
                     not _toolchain_matches(toolchain, result.get('toolchain'))):
                 result = {**result, 'status': 'rejected', 'reason': 'Compiler fingerprint or source differs from the fixed transition input'}
             if result.get('status') == 'verified':
-                from .formal import compare_formal_results
+                from .lean_evidence import compare_formal_results
                 result['identity_comparison'] = compare_formal_results(target, result)
         except Exception as error:
             result = {'status': 'failed', 'reason': f'{type(error).__name__}: {error}'}
@@ -320,8 +320,7 @@ class FormalEngineMixin:
         """
         from .activities import continue_activity, wait_for
         from .execution_profiles import machine_invocation
-        from .file_io import now
-        from .formal import lean_source_sha256
+        from .lean_evidence import lean_source_sha256
         from .governance import authorize
         from .input_basis import capture_decision_basis, decision_basis_changes
         from .knowledge_records import proposal_view, record_formal_result
@@ -342,7 +341,7 @@ class FormalEngineMixin:
         except ValueError as error:
             environment, environment_error = None, str(error)
         environment_id = environment['id'] if environment else None
-        authority = authorize(self.instance, action, runtime=self.runtime)
+        authority = authorize(self.instance, action, runtime=self.runtime, at=self.ports.clock.now())
         if not authority['allowed'] or environment is None:
             activity = self._activity_for_action(action)
             reason = authority['reason'] if not authority['allowed'] else environment_error
@@ -393,7 +392,7 @@ class FormalEngineMixin:
                 reasons.add('instance_paused')
             if self.runtime['executions'][execution_id].get('stop_requested'):
                 reasons.add('execution_stop_requested')
-            if not authorize(self.instance, action, runtime=self.runtime)['allowed']:
+            if not authorize(self.instance, action, runtime=self.runtime, at=self.ports.clock.now())['allowed']:
                 reasons.add('authority_changed')
             if (self.instance.get('active_trust_environment') != environment_id
                     or self.instance.get('trust_environments', {}).get(environment_id) != environment):
@@ -493,7 +492,7 @@ class FormalEngineMixin:
                     or verification.get('identity_sha256') != exact_content_hash(environment['toolchain'])
                     or verification.get('binding') != self.runtime.get('trust_bindings', {}).get(transition['to_environment'])):
                 raise ValueError('current environment check required: ' + '; '.join(verification.get('errors', [])))
-            from .formal import compare_formal_results
+            from .lean_evidence import compare_formal_results
             reviewed = {}
             pending = False
             for target in transition['targets']:
@@ -514,9 +513,9 @@ class FormalEngineMixin:
                 candidate = deepcopy(transition)
                 for kid, receipt in reviewed.items():
                     candidate['results'][kid]['identity_review'] = receipt
-                self.instance = activate_transition(self.instance, candidate, runtime=self.runtime)
+                self.instance = activate_transition(self.instance, candidate, runtime=self.runtime, clock=self.ports.clock)
             else:
-                self.instance = activate_transition(self.instance, transition, runtime=self.runtime)
+                self.instance = activate_transition(self.instance, transition, runtime=self.runtime, clock=self.ports.clock)
         except ValueError as error:
             transition['status'] = 'failed'
             transition.setdefault('history', []).append({'kind': 'activation_failed', 'reason': str(error),

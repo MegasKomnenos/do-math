@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.repository import exact_content_hash
+from do_math.canonical import exact_content_hash
 from test_categories import test_group as category
 from do_math import knowledge, knowledge_io
 from do_math import knowledge_records as kr
@@ -106,7 +106,7 @@ class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
         from do_math.configuration import DEFAULT_CONFIG
         from do_math import activities, execution_lifecycle
         from do_math.execution_profiles import build_profiles, profile_ref
-        from do_math.repository import new_id
+        from do_math.system_clock import new_id
         from unittest.mock import create_autospec
         from research_fixtures import bare_engine
         self.assessment()

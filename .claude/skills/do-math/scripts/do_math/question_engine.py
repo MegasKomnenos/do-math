@@ -73,7 +73,7 @@ class QuestionEngineMixin:
             targets = route.get("target_ids", [self.instance["id"]] if owner == "user" else [action["target"]] if action.get("target") else [])
             field = ("results/" + review_source + "/output/" if review_source else "") + "questions/" + str(index)
             row = questions.link(self.runtime, execution_id=execution_id, field=field,
-                owner=owner, targets=targets, source_ref=source, reason=route.get("reason"), blocks=route.get("blocks", False))
+                owner=owner, targets=targets, source_ref=source, reason=route.get("reason"), blocks=route.get("blocks", False), clock=self.ports.clock)
             if review_source:
                 row.update(source_kind="review_cycle", source_id=action["review_cycle_id"])
 
@@ -109,7 +109,7 @@ class QuestionEngineMixin:
                       for number, _ in enumerate(entry.get("research_requests", [])))
         for field in fields:
             row = questions.link(self.runtime, execution_id=execution_id, field=field, owner="research",
-                                 targets=[cycle.get("knowledge_id")] if cycle.get("knowledge_id") else [])
+                                 targets=[cycle.get("knowledge_id")] if cycle.get("knowledge_id") else [], clock=self.ports.clock)
             row.update(source_kind="review_cycle", source_id=cycle["id"])
 
     def _user_questions(self):

@@ -6,9 +6,10 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.repository import ResearchRepository, new_id
+from do_math.repository import ResearchRepository
+from do_math.system_clock import new_id
 from do_math.payloads import decode, encode, seal_large
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 from copy import deepcopy
 from unittest.mock import patch
 from do_math import payloads

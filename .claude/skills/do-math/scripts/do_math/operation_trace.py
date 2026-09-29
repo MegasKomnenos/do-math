@@ -10,7 +10,8 @@ import uuid
 import warnings
 from functools import wraps
 from inspect import signature
-from .file_io import atomic_replace, now, read_bytes_shared
+from .file_io import atomic_replace, read_bytes_shared
+from .system_clock import now
 
 _sink = ContextVar('do_math_operation_trace', default=None)
 # The live progress snapshot lags the trace by at most this many seconds.

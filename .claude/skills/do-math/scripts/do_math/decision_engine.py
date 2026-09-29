@@ -4,7 +4,7 @@ from copy import deepcopy
 from . import planning, submission
 from .execution_profiles import task_research
 from .input_basis import capture_decision_basis, decision_basis_changes, CurrentnessChanged
-from .repository import exact_content_hash, new_id
+from .canonical import exact_content_hash
 from .session_slots import held_reservations
 from .task_contracts import TERMINAL_TASK_STATUSES
 
@@ -147,7 +147,7 @@ class DecisionEngineMixin:
             if row['kind']=='selected' and planning.task_ready(current,self.instance,self.runtime,evaluation_context=evaluation_context)['state']!='ready':
                 raise ValueError('selected task is no longer ready')
         instance,runtime=apply_task_assessments(self.instance,self.runtime,output.get('task_assessments',[]),
-            execution_id=execution_id,input_tasks=input_tasks,evaluation_context=evaluation_context)
+            execution_id=execution_id,input_tasks=input_tasks,evaluation_context=evaluation_context, clock=self.ports.clock)
         for row in output['dispositions']:
             task=runtime['tasks'][row['task_id']]
             if row['kind']=='selected' and planning.contract_hash(task)!=planning.contract_hash(input_tasks[task['id']]):
@@ -186,7 +186,7 @@ class DecisionEngineMixin:
         execution.update(outcome="execution_incomplete", error_kind="currentness_changed", currentness_changes=deepcopy(changes),
                          error="Decision premises changed; see currentness_changes")
         from .revisions import record_execution_outcome
-        record_execution_outcome(self.instance,self.runtime,action,{},execution_id,accepted=False)
+        record_execution_outcome(self.instance,self.runtime,action,{},execution_id,accepted=False, clock=self.ports.clock)
         if action.get("refresh", {}).get("attempt", 0) < 1:
             # The refresh continues the execution whose premises changed, as an output repair continues
             # the returned one, even when this action already continues an earlier execution: that

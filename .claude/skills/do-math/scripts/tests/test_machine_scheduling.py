@@ -21,7 +21,7 @@ from do_math.parallel import ModelCalls
 class MachineSchedulingTests(unittest.TestCase):
     def test_plan_settle_action_survives_the_persisted_queue_contract(self):
         from do_math.record_schemas import RECORDS
-        from do_math.repository import new_id
+        from do_math.system_clock import new_id
         from jsonschema import Draft202012Validator
         scheduler = bare_engine({'config': {'plan_settle_seconds': 300}}, {'queue': [{'role': 'task_contract_review'}]})
         action = {'id': new_id('AC'), 'role': 'research_plan'}

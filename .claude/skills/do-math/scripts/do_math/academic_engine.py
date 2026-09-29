@@ -2,8 +2,7 @@
 from copy import deepcopy
 
 from . import academic, governance
-from .file_io import now
-from .repository import exact_content_hash, new_id
+from .canonical import exact_content_hash
 
 
 class AcademicEngineMixin:

@@ -90,7 +90,7 @@ def identify_schema(schema: dict) -> dict:
     The URI hashes the canonical schema excluding its own $id. The evidence
     reference separately hashes the complete installed schema, including $id.
     """
-    from .repository import exact_content_hash
+    from .canonical import exact_content_hash
     result = json_copy(schema)
     result.pop("$id", None)
     digest = exact_content_hash(result)
@@ -99,7 +99,7 @@ def identify_schema(schema: dict) -> dict:
 
 
 def schema_reference(schema: dict) -> dict:
-    from .repository import exact_content_hash
+    from .canonical import exact_content_hash
     return {"family": schema.get("x-contract-id", RESPONSE_CONTRACT_ID), "id": schema.get("$id"),
             "sha256": exact_content_hash(schema)}
 

@@ -11,7 +11,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 from do_math.review_cycle import next_actions, context_for, accept_research_result, accept_result
 from purpose_fixtures import ActivatedPurposeHarness, PurposeRunner, common, EXPLANATION, parse_context
 from purpose_fixtures import purpose_copy

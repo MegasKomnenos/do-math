@@ -8,7 +8,8 @@ from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .provider_wait import epoch_seconds
-from .repository import exact_content_hash, ResearchRepository
+from .canonical import exact_content_hash
+from .repository import ResearchRepository
 from .session_slots import ADMISSION_WAITS, live_action_ids
 from .state_checks import inspect_state
 

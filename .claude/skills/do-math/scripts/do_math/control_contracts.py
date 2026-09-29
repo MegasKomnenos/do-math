@@ -40,7 +40,7 @@ def control_request_id(instance_id, action, *, text='', config=None, origin='use
     the latest accepted opposite control of a default pause or resume ID (ENGINE's
     ``control``), so a pause after a resume is a new request while a resend replays.
     """
-    from .repository import exact_content_hash
+    from .canonical import exact_content_hash
     if idempotency_key is not None and (not isinstance(idempotency_key, str) or not idempotency_key):
         raise ValueError('idempotency_key must be a nonempty string')
     value = {'schema_version': 5, 'command': action, 'caller': origin,

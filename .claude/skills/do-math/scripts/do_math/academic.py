@@ -5,7 +5,7 @@ from copy import deepcopy
 from functools import lru_cache
 import hashlib
 
-from .repository import exact_content_hash
+from .canonical import exact_content_hash
 from .values import distinct_texts
 
 

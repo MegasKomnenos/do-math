@@ -14,9 +14,9 @@ import jsonschema
 
 from do_math.claude_adapter import ADAPTERS, provider_adapter, request_provider
 from do_math.provider_wait import provider_for
-from do_math.file_io import now
+from do_math.system_clock import now
 from do_math.values import strict_json_loads
-from do_math.repository import canonical_json
+from do_math.canonical import canonical_json
 from do_math.session_slots import local_termination_confirmed
 from .observation_transport import ObservationBatch, decode_observation_row
 

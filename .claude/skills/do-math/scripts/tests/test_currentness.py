@@ -22,7 +22,7 @@ from do_math.planning import task_ready
 from purpose_fixtures import (ActivatedPurposeHarness, common, CURRENTNESS_CONFIG, formal_fixture,
                               PurposeRunner)
 from do_math.state_contract import ARTIFACT_ROOT
-from do_math.repository import new_id
+from do_math.system_clock import new_id
 from research_fixtures import (await_control, local_job_runner, observe, producer_result, read_fixture_context,
                                restore_template, send_control, write_checkpoint)
 
@@ -356,8 +356,8 @@ class SolvedStateCurrentnessTests(ActivatedPurposeHarness):
 
     def test_live_conversation_guard_expires_without_new_scheduler_activity(self):
         from datetime import datetime
-        from do_math.repository import new_id
-        from do_math.file_io import now
+        from do_math.system_clock import new_id
+        from do_math.system_clock import now
         engine, _ = self.make()
         send_control(engine, 'conversation', config={'operation': 'attach', 'id': 'C', 'generation': 1,
             'lease_seconds': 3600, 'disconnect_policy': 'pause'})

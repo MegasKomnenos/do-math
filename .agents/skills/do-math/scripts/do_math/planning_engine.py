@@ -88,7 +88,7 @@ class PlanningEngineMixin:
     def _rule_deferral_inputs(self, deferrals):
         from .input_basis import aliases
         from .planning import record_index
-        from .repository import exact_content_hash
+        from .canonical import exact_content_hash
         records = record_index(self.instance, self.runtime)
         values = {}
         for ref in {ref for row in deferrals for ref in row['missing_inputs']}:
@@ -162,7 +162,6 @@ class PlanningEngineMixin:
             if uncovered:
                 targets[field] = uncovered
         if targets:
-            from .repository import new_id
             self.runtime["queue"].append({"id": self.ports.clock.new_id("AC"), "role": "research_preparation",
                 **targets, 'reason': 'Prepare the assigned ratings and observation rules before independent review. '
                 'Preserve the user contract. Read prior reviews and preparation histories when repairing rejected preparation.'})

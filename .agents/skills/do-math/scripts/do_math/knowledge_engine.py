@@ -50,10 +50,10 @@ class KnowledgeEngineMixin:
         if operation == 'revise':
             self.instance, self.runtime = revise_knowledge(self.instance, self.runtime, knowledge_id,
                 config.get('changes', {}), reason=reason, actor_ref=source_ref,
-                declared_impact=config.get('declared_impact'), independent_confirmation=config.get('independent_confirmation'))
+                declared_impact=config.get('declared_impact'), independent_confirmation=config.get('independent_confirmation'), clock=self.ports.clock)
         else:
             self.instance, self.runtime = invalidate_knowledge(self.instance, self.runtime, knowledge_id,
                 reason=reason, actor_ref=source_ref, declared_impact=config.get('declared_impact'),
-                independent_confirmation=config.get('independent_confirmation'))
+                independent_confirmation=config.get('independent_confirmation'), clock=self.ports.clock)
         self._lifecycle_event('knowledge_' + operation, target=knowledge_id, source_ref=source_ref, reason=reason)
         self._enqueue('research_plan', reason=reason, knowledge_id=knowledge_id, source_ref=source_ref)

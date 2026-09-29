@@ -7,16 +7,18 @@ against the preserved original request by a separate execution.
 from __future__ import annotations
 
 from copy import deepcopy
+from functools import partial
 from datetime import datetime, timezone
 import hashlib
 from typing import Any
 
 from .values import SHA256_SCHEMA, distinct_texts, is_sha256, json_copy, parse_utc, require_text
-from .repository import exact_content_hash, new_id
+from .canonical import exact_content_hash
 from .academic import requirement_record
 from .execution_profiles import PLANNING_ROLES, WORK_ROLES as _SLOT_WORK_ROLES
 from .external import recover_operation
 from .task_contracts import TERMINAL_TASK_STATUSES
+from .migration_defaults import clock_or_system
 
 # Roles that carry out or judge task work: the slot-reserving work roles and
 # the machine formal check. A governance change stops their unended executions.
@@ -295,11 +297,12 @@ def validate_goal_additional_audits(instance, judgments, *, runtime=None):
             if actual["decision"] != "satisfied": raise ValueError("additional audit does not establish goal satisfaction")
 
 
-def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
+def _apply_domain_decision(instance, runtime, change, source_ref, actor, at, *, clock=None):
+    clock = clock_or_system(clock)
     if actor != "user": raise ValueError("preserved user decision required")
     validate_source(instance.get("governance_sources", {}).get(source_ref))
     result, state = deepcopy(instance), deepcopy(runtime)
-    decision_id = change.get("decision_id") or new_id("DC")
+    decision_id = change.get("decision_id") or clock.new_id("DC")
     old = result["decisions"].get(decision_id)
     if old:
         if old.get("change") != change or old.get("source_ref") != source_ref: raise ValueError("decision ID reused")
@@ -314,7 +317,7 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
                      == {k: v for k, v in record.get("content", {}).items() if k != "academic_requirements"}
                      and previous_charter.get("document") == record.get("document"))
     event = {"id": decision_id, "kind": change["kind"], "actor": "user", "change": deepcopy(change), "source_ref": source_ref,
-             "source_sha256": result["governance_sources"][source_ref]["sha256"], "created_at": timestamp(at).isoformat(), "affected": []}
+             "source_sha256": result["governance_sources"][source_ref]["sha256"], "created_at": timestamp(at, clock=clock).isoformat(), "affected": []}
     result["decisions"][decision_id] = event
     _install_record(result, record, decision_id, source_ref)
     validate_governance_state(result)
@@ -333,7 +336,7 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
             execution["stop_requested"] = "governance_changed"
             event["affected"].append(execution["id"])
     _queue(state, "research_plan" if academic_only else "research_preparation", "approved governance changed",
-           decision_id=decision_id, affected_ids=event["affected"])
+           decision_id=decision_id, affected_ids=event["affected"], clock=clock)
     if change.get("resolves_questions"):
         from .questions import resolve_user
         resolve_user(state, change["resolves_questions"], resolution_ref=decision_id, affected_ids=[result["id"], record["id"], *event["affected"]])
@@ -341,9 +344,9 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at):
     return result, state, event
 
 
-def timestamp(value: str | None = None) -> datetime:
-    """A stored zoned time as UTC; None means the current time."""
-    return datetime.now(timezone.utc) if value is None else parse_utc(value)
+def timestamp(value: str | None = None, *, clock=None) -> datetime:
+    """A stored zoned time as UTC; None means the clock's current time."""
+    return clock_or_system(clock).wall() if value is None else parse_utc(value)
 
 
 def grant_case_id(action, runtime):
@@ -487,8 +490,9 @@ def authorize_review_replacement(instance, runtime, action, *, delegation_id=Non
         return {"allowed": False, "grant_id": action.get("grant_id"), "reason": str(error)}
 
 
-def _queue(runtime: dict, role: str, reason: str, **fields: Any) -> None:
-    action = {"id": new_id("AC"), "role": role, "reason": reason, **fields}
+def _queue(runtime: dict, role: str, reason: str, clock=None, **fields: Any) -> None:
+    clock = clock_or_system(clock)
+    action = {"id": clock.new_id("AC"), "role": role, "reason": reason, **fields}
     action.setdefault("lineage_id", action["id"])
     runtime.setdefault("queue", []).append(action)
 
@@ -510,19 +514,20 @@ def _dispose_grant_consumers(runtime, gid, event, reason):
 
 
 def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: str,
-                   actor: str = "user", at: str | None = None) -> tuple[dict, dict, dict]:
+                   actor: str = "user", at: str | None = None, clock=None) -> tuple[dict, dict, dict]:
     """Apply one explicit decision atomically to copies of the two roots."""
+    clock = clock_or_system(clock)
     from .control_contracts import validate_decision_shape
     validate_decision_shape(change)
     if actor != "user" or not source_ref:
         raise ValueError("a preserved user decision is required")
     if change.get("kind") in GOVERNANCE_KINDS:
-        return _apply_domain_decision(instance, runtime, change, source_ref, actor, at)
+        return _apply_domain_decision(instance, runtime, change, source_ref, actor, at, clock=clock)
     instance, runtime = deepcopy(instance), deepcopy(runtime)
     validate_source(instance.get("governance_sources", {}).get(source_ref, {}))
-    when = timestamp(at).isoformat()
+    when = timestamp(at, clock=clock).isoformat()
     kind = change.get("kind")
-    decision_id = change.get("decision_id") or new_id("DC")
+    decision_id = change.get("decision_id") or clock.new_id("DC")
     if decision_id in instance["decisions"]:
         old = instance["decisions"][decision_id]
         if old["change"] != change or old["source_ref"] != source_ref:
@@ -551,7 +556,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
                 raise ValueError("HTTP grant must specify origins and methods")
             if not isinstance(spec.get("credential_env", {}), dict):
                 raise ValueError("credential_env contains names, not credential values")
-        gid = spec.get("id") or new_id("GR")
+        gid = spec.get("id") or clock.new_id("GR")
         if gid in instance["grants"]:
             raise ValueError("grant ID already exists; revoke it before replacing authority")
         spec = normalized_grant(spec, gid=gid, created_at=when, source_ref=source_ref, decision_id=decision_id)
@@ -576,7 +581,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         if not initializing:
             # The decision is a reason to reconsider, not the permission for
             # that planning execution. Activation opens the first research work.
-            _queue(runtime, "research_plan", "new execution authority", decision_id=decision_id)
+            _queue(runtime, "research_plan", "new execution authority", decision_id=decision_id, clock=clock)
     elif kind == "revoke":
         gid = change.get("grant_id")
         if gid not in instance["grants"]:
@@ -607,7 +612,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
     elif kind == 'repetition_continue':
         from .revisions import continue_repetition
         instance['decisions'][decision_id] = event
-        continue_repetition(instance, runtime, change, event)
+        continue_repetition(instance, runtime, change, event, clock=clock)
     elif kind == "question_answer":
         require_text(change.get("text"), "answer text")
         identifiers = change.get("resolves_questions", [])
@@ -647,12 +652,12 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
                     raise ValueError("scope transfer requires a distinct unfinished recipient")
                 validate_task_contract(recipient)
             # This is authority, not a second application of TASKS' lifecycle.
-            _queue(runtime, "research_plan", reason, scope_decision_id=decision_id)
+            _queue(runtime, "research_plan", reason, scope_decision_id=decision_id, clock=clock)
         else:
             task["revision_requested"] = {"source": decision_id, "revision": task["revision"], "reason": reason}
             from .revisions import capture_targets
             _queue(runtime, "research_preparation", reason, target=tid,
-                   revision_targets=capture_targets(instance, runtime, [tid], required=True, source_ref=decision_id))
+                   revision_targets=capture_targets(instance, runtime, [tid], required=True, source_ref=decision_id), clock=clock)
         event["affected"].append(tid)
     else:
         raise ValueError(f"unsupported governance decision: {kind}")
@@ -748,21 +753,21 @@ def import_consumer_catalog(handlers=None):
     return rows
 
 
-def _knowledge_import(instance, runtime, unit, approval):
+def _knowledge_import(instance, runtime, unit, approval, *, clock=None):
     from .knowledge_io import import_candidate
     result, state, _ = import_candidate(instance, runtime, unit["payload"]["record"],
-        source_ref=approval["source_ref"], actor_ref=approval.get("execution_id", approval["source_ref"]))
+        source_ref=approval["source_ref"], actor_ref=approval.get("execution_id", approval["source_ref"]), clock=clock)
     return result, state
 
 
-def _validate_knowledge_import(instance, runtime, unit):
+def _validate_knowledge_import(instance, runtime, unit, *, clock=None):
     from .knowledge_io import import_candidate
     if not unit["payload"]: return
     candidate = unit["payload"].get("record")
     if not isinstance(candidate, dict) or candidate.get("id") != unit["owner_ref"]:
         raise ValueError("knowledge import must name its exact candidate ID")
     # Pure owner API on copies; no publication, execution or verification occurs.
-    import_candidate(instance, runtime, candidate, source_ref="import-validation", actor_ref="import-validation")
+    import_candidate(instance, runtime, candidate, source_ref="import-validation", actor_ref="import-validation", clock=clock)
 
 
 def _knowledge_import_basis(instance, runtime, unit):
@@ -778,7 +783,7 @@ def _knowledge_import_basis(instance, runtime, unit):
             "source_basis": capture_sources(instance, candidate.get("source_refs", []))}
 
 
-def import_owner_handlers():
+def import_owner_handlers(*, clock=None):
     """Built-in research candidates/evidence; extension tokens are not a closed list.
 
     These owners use the ordinary knowledge candidate contract. Evidence here
@@ -788,8 +793,8 @@ def import_owner_handlers():
     """
     handlers = {}
     for kind in ("research_record", "evidence"):
-        register_import_owner(handlers, kind, apply=_knowledge_import,
-                              validate=_validate_knowledge_import, basis=_knowledge_import_basis)
+        register_import_owner(handlers, kind, apply=partial(_knowledge_import, clock=clock),
+                              validate=partial(_validate_knowledge_import, clock=clock), basis=_knowledge_import_basis)
     return handlers
 
 
@@ -811,10 +816,17 @@ def register_configuration_owner(handlers, *, apply):
     return register_import_owner(handlers, "configuration", apply=apply, validate=validate, basis=basis)
 
 
+def _unbound(adapter):
+    """An owner adapter with its clock binding removed, to recognize the built-in owners."""
+    return {key: getattr(value, "func", value) for key, value in adapter.items()} if isinstance(adapter, dict) else adapter
+
+
 def _owner_handlers(handlers):
     result = import_owner_handlers()
     for kind, adapter in (handlers or {}).items():
-        if kind in result and adapter == result[kind]: continue
+        if kind in result and _unbound(adapter) == _unbound(result[kind]):
+            result[kind] = adapter  # the same owner, bound to the caller's clock
+            continue
         if not isinstance(adapter, dict): raise ValueError("owner registration needs apply/validate/basis")
         register_import_owner(result, kind, **adapter)
     return result
@@ -923,8 +935,9 @@ def import_input_source(instance, runtime, input_id):
     return preserve_source(identifier, text, origin=request.get('origin', 'user'))
 
 
-def prepare_import(instance, runtime, source, output, *, execution_id, input_ref, previous_id=None, owner_handlers=None):
+def prepare_import(instance, runtime, source, output, *, execution_id, input_ref, previous_id=None, owner_handlers=None, clock=None):
     """Seal an interpretation of the public input ``input_ref``, whose exact source is ``source``."""
+    clock = clock_or_system(clock)
     require_text(execution_id, "author execution")
     if import_input_source(instance, runtime, input_ref) != source:
         raise ValueError('source differs from the exact public input')
@@ -951,7 +964,7 @@ def prepare_import(instance, runtime, source, output, *, execution_id, input_ref
         if not changed and not premise_changed: raise ValueError("unchanged import resumes application; it does not need a new check")
     known = instance.get("governance_sources", {}).get(source["id"])
     if known and known != source: raise ValueError("source identity reused with different bytes")
-    identifier = new_id("IM")
+    identifier = clock.new_id("IM")
     bundle = {"id": identifier, "source": deepcopy(source), "output": deepcopy(output), "execution_id": execution_id,
               "basis_sha256": _import_basis(instance, runtime, output),
               "owner_basis": _owner_basis(instance, runtime, output, _owner_handlers(owner_handlers)),
@@ -1064,7 +1077,7 @@ def import_approval_draft(instance, runtime, import_id, *, owner_handlers=None):
             'unit_hashes':{u['unit_id']:exact_content_hash(u['payload']) for u in bundle['output']['import_units'] if u['payload']}}
 
 
-def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers=None):
+def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers=None, clock=None):
     from .control_contracts import validate_import_approvals
     approvals = {} if approvals is None else approvals
     validate_import_approvals(approvals)
@@ -1083,7 +1096,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
     from .questions import link
     for q in bundle["output"].get("question_details", []):
         row = link(state, execution_id=bundle["execution_id"], field=f"output/questions/{q['question_index']}", owner="user",
-                   targets=q["target_ids"], blocks=q["blocks"], reason=q["reason"], checked_by=check["execution_id"])
+                   targets=q["target_ids"], blocks=q["blocks"], reason=q["reason"], checked_by=check["execution_id"], clock=clock)
         row.update(source_kind="intent_import", source_id=import_id)
     if any(q["blocks"] for q in bundle["output"].get("question_details", [])):
         outcome = {"status": "awaiting_decision", "import_id": import_id, "applied_units": []}
@@ -1101,7 +1114,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
                 result, state = owner_handlers[unit["owner_kind"]]["apply"](result, state, deepcopy(unit),
                     {**deepcopy(approval), "execution_id": bundle["execution_id"]})
             else:
-                result, state, _ = apply_decision(result, state, change, source_ref=source_ref)
+                result, state, _ = apply_decision(result, state, change, source_ref=source_ref, clock=clock)
             applied.append(unit["unit_id"])
         outcome = {"status": "applied", "import_id": import_id, "applied_units": applied}
     outcome["post_basis_sha256"] = _import_basis(result, state, bundle["output"])
@@ -1114,7 +1127,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
     return result, state, outcome
 
 
-def apply_import_control(instance, runtime, request, *, owner_handlers=None):
+def apply_import_control(instance, runtime, request, *, owner_handlers=None, clock=None):
     """Apply-only resume from the public user's exact sealed-import approval.
 
     ENGINE routes decision/config.kind=import_approval here, preserving request
@@ -1139,7 +1152,7 @@ def apply_import_control(instance, runtime, request, *, owner_handlers=None):
     result["governance_sources"][source["id"]] = source
     approvals = {uid: {"actor": "user", "source_ref": source["id"], "source_sha256": source["sha256"],
                       "change_sha256": value} for uid, value in required.items()}
-    result, state, receipt = apply_import(result, runtime, bundle["id"], approvals=approvals, owner_handlers=owner_handlers)
+    result, state, receipt = apply_import(result, runtime, bundle["id"], approvals=approvals, owner_handlers=owner_handlers, clock=clock)
     if receipt["status"] == "applied":
         state["waiting_actions"] = {key: row for key, row in state.get("waiting_actions", {}).items()
             if not (row.get("kind") == "import_application_authority" and row.get("import_id") == bundle["id"])}

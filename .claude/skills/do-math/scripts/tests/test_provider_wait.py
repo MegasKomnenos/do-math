@@ -80,7 +80,7 @@ class ProviderTests(unittest.TestCase):
                   "model_selection": {"tier": "high", "model": PROVIDER_MODEL, "assessment": None,
                                       "reason": "Provider-limit fixture assignment"}}
         runtime["queue"] = [action]
-        with patch("do_math.session_slots.time.time", return_value=399):
+        with patch.object(engine.ports.clock, "wall_ns", return_value=399 * 10**9):
             engine._requeue_provider_action(action, "EX-original", gate)
         self.assertNotIn(action["id"], runtime.get("waiting_actions", {}))
         queued, = [item for item in runtime["queue"] if item["id"] == action["id"]]
