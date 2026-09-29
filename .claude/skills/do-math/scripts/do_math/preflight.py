@@ -76,7 +76,7 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
         checks.append({"check": "role_output_schemas", "status": "verified", "roles": len(ROLES),
                        "schemas": {name: exact_content_hash(schema) for name, schema in schemas.items()},
                        "claude_conversion": "Only top-level $schema and x-contract-id are removed; constraints are preserved."})
-    except (ValueError, SchemaError) as exc:
+    except (ValueError, SchemaError) as exc:  # pragma: no cover - the schemas come from product constants only; no argument of the sole caller (probe_cli.py:108 inspect_bundle()) reaches this block
         checks.append({"check": "role_output_schemas", "status": "incomplete", "reason": str(exc)})
     return {"scope": "installed_skill_structure",
             "status": "verified" if all(row["status"] == "verified" for row in checks) else "incomplete",

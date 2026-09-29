@@ -41,6 +41,11 @@ def raw(value):
     return Answer(lambda out, ctx: value, sealed=False)
 
 
+def amend(**fields):
+    """The default response with ``fields`` set, then bound and sealed like any default answer."""
+    return Answer(lambda out, ctx: {**out, **fields})
+
+
 class Rule:
     def __init__(self, role, conditions):
         self.role, self.conditions, self.answers, self.used = role, conditions, [], 0

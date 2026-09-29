@@ -16,7 +16,7 @@ from pathlib import Path
 SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'foundation': '''
         test_academic test_budget test_claude_adapter test_claude_stream test_cli_surface
-        test_codex_adapter test_completion_settlement test_configuration test_context_store
+        test_codex_adapter test_completion_settlement test_context_store
         test_contract_checks test_contracts test_control_transport test_decision_basis
         test_delegations test_design_walkthroughs test_environment_validation
         test_execution_lifecycle test_execution_profiles test_execution_window
@@ -36,14 +36,14 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'host': '''
         test_background_processes test_diagnosed_installation_recovery test_external test_formal
         test_formal_runtime test_host_resources test_launch_recovery test_lean_preview
-        test_machine_parallel test_operator test_operator_bootstrap test_preflight test_probe_cli
+        test_machine_parallel test_operator test_operator_bootstrap test_probe_cli
         test_provider_wait test_schedule_lifetime test_schedule_pythonw test_windows_job
         test_worker_temporary_outputs''',
     'lifecycle': '''
         test_checkpoint_persistence test_cli test_cli_advanced test_control_shapes test_controls
         test_engine test_formal_engine test_governance_engine test_initial_intent_connection
-        test_initialization_probe_batch test_input_recovery test_lifecycle_engine
-        test_live_observation test_observation_admission test_operation_trace
+        test_input_recovery test_lifecycle_engine
+        test_live_observation test_operation_trace
         test_planning_engine test_provider_recovery test_role_input test_stop_flags
         test_task_completion''',
     'research': '''

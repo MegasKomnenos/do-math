@@ -166,11 +166,13 @@ class Sim:
         self.jobs.owner = {**self.jobs.owner, 'pid': self.jobs.owner['pid'] + 4}
         self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports)
 
-    def activate(self):
+    def activate(self, *, initial_roles=('intent_interpretation',)):
         """The public activation: approvals, grants, probe and trust by control, then owner passes until active.
 
         The synthetic approval, trust and capability inputs are this Sim's; the
         engine applies the lifecycle changes and checks every activation gate.
+        ``initial_roles`` are the roles of the initial grant (the product's
+        initialization roles are intent interpretation and maintenance).
         """
         from datetime import timedelta
         from do_math.canonical import exact_content_hash
@@ -190,7 +192,7 @@ class Sim:
         controls = [
             ('decision', {'change': {'kind': 'initialization', 'operation': 'governance', 'records': [charter]}}),
             ('decision', {'change': {'kind': 'grant', 'grant': {'id': 'GR-initial-sim', 'kind': 'local',
-                'roles': ['intent_interpretation'], 'reuse': 'reusable', 'expires_at': expiry}}}),
+                'roles': list(initial_roles), 'reuse': 'reusable', 'expires_at': expiry}}}),
             ('decision', {'change': {'kind': 'grant', 'grant': {'id': 'GR-research-sim', 'kind': 'local',
                 'roles': list(ROLES) + ['formal_check'], 'reuse': 'reusable', 'expires_at': expiry}}}),
             ('decision', {'change': {'kind': 'initialization', 'operation': 'probe', 'config_sha256': config_sha256}}),

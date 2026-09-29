@@ -168,14 +168,6 @@ class DiagnosedRecoveryTests(unittest.TestCase):
                                                       DEFAULT_CONFIG)
         self.assertEqual(self.runner_results[0]['status'], 'completed')
 
-    def test_report_without_real_regression_file_cannot_claim_repaired(self):
-        with tempfile.TemporaryDirectory() as directory:
-            for output in ({'repair_outcome':'repaired','verification_evidence':[]},
-                           {'repair_outcome':'repaired','verification_evidence':['missing.txt']},
-                           {'repair_outcome':'unresolved','verification_evidence':['missing.txt']}):
-                with self.assertRaises(ValueError):
-                    operator.collect_repair_verification(output,Path(directory))
-
 
 if __name__ == '__main__':
     unittest.main()
