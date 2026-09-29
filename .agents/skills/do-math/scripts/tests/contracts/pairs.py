@@ -12,9 +12,14 @@ Each ``Pair`` names a producer and the check that receives what it makes:
   requires or accepts that no producer makes is how a receiver drifts from its
   producers (조사 B-02; 설계 10절 A20).
 - ``written(value)`` gives the fields a value writes (default: its top-level keys).
+  ``fields=None`` states that the receiving check names no field (a serializer).
 
 ``tests/contracts/test_pairs.py`` walks every pair. To add a pair, add a ``Pair``
-to ``PAIRS``; a pair with no samples or no named fields fails the walk.
+to ``PAIRS``; a pair with no samples fails the walk. A branch a pair's receiver
+rejects today is a known defect: it stays out of the samples, and a test of its
+own in ``test_pairs.py`` carries the ledger mark. The storage families' pair is
+two whole-product checks in ``tests/structure/test_storage_fields.py``
+(설계 10절 A22).
 """
 from __future__ import annotations
 
@@ -29,7 +34,7 @@ class Pair:
     name: str
     samples: Callable[[Path], list[tuple[str, Any]]]
     receive: Callable[[Any], Any]
-    fields: frozenset
+    fields: frozenset | None
     written: Callable[[Any], set] = lambda value: set(value)
 
 
@@ -89,6 +94,194 @@ def _receive_worker_request(provider):
     return receive
 
 
+def _trust_request_samples(root):
+    """Registration requests ``trust_inventory.registration_request`` makes for a Lean core and a Lake project
+    toolchain, from the record's first baseline and from a rerecorded (second) baseline."""
+    import hashlib
+    from do_math import formal, trust_inventory as records
+    from do_math.file_io import sha256_file
+    from research_fixtures import validation_fixture
+    from support.fakes.clock import FakeClock
+    rows = []
+    for kind in ('core', 'project'):
+        directory = root / kind
+        for relative in ('toolchain/bin/lean.exe', 'toolchain/bin/lake.exe', 'toolchain/lib/lean/Init/Prelude.olean'):
+            path = directory / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b'synthetic ' + relative.encode())
+        lean, lake = (directory / 'toolchain/bin/lean.exe').resolve(), (directory / 'toolchain/bin/lake.exe').resolve()
+        checker = Path(formal.__file__).resolve()
+        project = None
+        if kind == 'project':
+            (directory / 'project' / '.lake').mkdir(parents=True)
+            (directory / 'project' / 'lakefile.lean').write_text('-- synthetic', encoding='utf-8')
+            project = {'manifest_hashes': {'lakefile.lean': hashlib.sha256(b'-- synthetic').hexdigest()},
+                       'source_identity': {'root': str((directory / 'project').resolve())},
+                       'search_paths': [str((directory / 'project' / '.lake').resolve())]}
+        identity = {'executable': str(lean), 'sha256': sha256_file(lean), 'version': 'Lean 4.32.0',
+                    'version_exit': 0, 'configured_command': [str(lean)],
+                    'verifier_sha256': sha256_file(checker), 'verifier_path': str(checker),
+                    'executables': {str(lean): sha256_file(lean), str(lake): sha256_file(lake)}, 'project': project}
+        fingerprint = records.observe_fingerprint(identity)
+        content = records.content_hashes(identity, fingerprint['files'])
+        validation = validation_fixture(identity, directory / 'smoke.lean')
+        record = records.new_record(identity, records.new_baseline(fingerprint, content, validation, clock=FakeClock()))
+        path = records.record_path(directory / 'records', record['id'])
+        records.write_record(path, record)
+        rows.append((kind + ', first baseline', records.registration_request(record, path, records.binding(record))))
+        record['baselines'].append(records.new_baseline(fingerprint, content, validation, clock=FakeClock()))
+        records.write_record(path, record)
+        rows.append((kind + ', rerecorded', records.registration_request(record, path, records.binding(record))))
+    return rows
+
+
+def _receive_trust_request(value):
+    from do_math.trust_validation import register_request_errors
+    errors = register_request_errors(value)
+    if errors:
+        raise ValueError('; '.join(errors))
+
+
+def _trust_request_fields():
+    from do_math.trust_validation import REGISTER_FIELDS
+    return frozenset(REGISTER_FIELDS)
+
+
+# Rule IDs the observation tracker accepts (``observations.validate_rules``) that the stored review rows
+# (``runtime.observations``) keep; ones the tracker accepts and storage rejects are KD-0007.
+STORABLE_RULE_IDS = ('R-1', 'progress_check', 'rule.2', 'attempts-3')
+UNSTORABLE_RULE_IDS = ('progress check', '규칙', 'r:1')
+
+
+def accepted_rule_ids(ids):
+    """``(id, {'rule_ids': [id]})`` for each rule ID the tracker accepts in a rule."""
+    from do_math.observations import OPERATORS, validate_rules
+    rows = []
+    for rule_id in ids:
+        rule = {'id': rule_id, 'operator': 'counter_gte', 'subject': {'kind': 'counter', 'id': 'attempts'},
+                'basis': {'source': OPERATORS['counter_gte']['source'], 'unit': OPERATORS['counter_gte']['unit']},
+                'threshold': 2, 'required_evidence': ['EV-1']}
+        validate_rules([rule])  # the tracker's own acceptance: a rule it rejects is not its output
+        rows.append((rule_id, {'rule_ids': [rule_id]}))
+    return rows
+
+
+def stored_rule_id_errors(value):
+    """What the stored review row's ``rule_ids`` check (read from the storage contract) says of ``value``."""
+    import jsonschema
+    from do_math.state_contract import default_state_contract
+    row = default_state_contract().family('runtime', 'observations').schema['additionalProperties']
+    return [error.message for error in jsonschema.Draft202012Validator(row['properties']['rule_ids'])
+            .iter_errors(value['rule_ids'])]
+
+
+def receive_stored_rule_ids(value):
+    errors = stored_rule_id_errors(value)
+    if errors:
+        raise ValueError('; '.join(errors))
+
+
+def accepted_condition(space, family, pointer, value):
+    """Whether the condition grammar accepts ``record_field_equals`` on ``family``'s ``pointer`` with ``value``."""
+    from do_math.planning import validate_condition
+    try:
+        validate_condition({'op': 'record_field_equals', 'space': space, 'family': family, 'pointer': pointer,
+                            'record_id': 'X-1', 'value': value})
+    except ValueError:
+        return False
+    return True
+
+
+def enumerated_pointers():
+    """``(family, space, pointer, stored enumeration)`` for every exposed pointer whose stored field is enumerated."""
+    from do_math import planning
+    from do_math.state_contract import default_state_contract
+    contract, rows = default_state_contract(), []
+    for family, pointers in sorted(planning.EXPOSED_FIELDS.items()):
+        space, key = planning.RECORD_FAMILIES.get(family, (None, None))
+        if key is None:
+            continue
+        properties = contract.family(space, key).schema.get('properties', {})
+        for pointer in sorted(pointers):
+            stored = properties.get(pointer.lstrip('/'), {})
+            if 'enum' in stored:
+                rows.append((family, space, pointer, tuple(stored['enum'])))
+    return rows
+
+
+def _condition_pairs():
+    """One pair per enumerated (condition family, pointer) (조사 C-25): the values the condition grammar accepts
+    among the stored enumeration and the family's lifecycle values, against the stored enumeration.
+    A value outside the enumeration that the grammar accepts is KD-0008."""
+    from do_math.planning import lifecycle_values
+    pairs = []
+    for family, space, pointer, enumeration in enumerated_pointers():
+        lifecycle = set(lifecycle_values().get(family, ())) if pointer in ('/status', '/lifecycle') else set()
+        candidates = sorted(set(enumeration) | lifecycle)
+
+        def samples(root, family=family, space=space, pointer=pointer, candidates=candidates):
+            return [(str(value), {'value': value}) for value in candidates
+                    if accepted_condition(space, family, pointer, value)]
+
+        def receive(value, enumeration=enumeration):
+            if value['value'] not in enumeration:
+                raise ValueError(repr(value['value']) + ' is outside the stored enumeration')
+        pairs.append(Pair(f'condition {family}{pointer}', samples, receive, frozenset(enumeration),
+                          written=lambda value: {value['value']}))
+    return pairs
+
+
+def _runner_result_samples(root):
+    """Runner results ``model_call.classify_run`` makes from collections carrying raw bytes, both providers."""
+    import hashlib
+    from do_math.claude_stream import parse_stream
+    from do_math.codex_stream import parse_jsonl
+    from do_math.model_call import classify_run
+    from support.fakes.clock import FakeClock
+    from support.model import codex_stream_bytes
+    claude = ('{"type":"system","subtype":"init","model":"claude-sonnet-5"}\n'
+              '{"type":"result","subtype":"success","result":"{}","usage":{"input_tokens":1,"output_tokens":1},'
+              '"total_cost_usd":0.0123,"modelUsage":{"claude-sonnet-5":{"inputTokens":1}}}\n').encode()
+    rows = []
+    for provider, raw, parse in (('codex', codex_stream_bytes('{}'), parse_jsonl), ('claude', claude, parse_stream)):
+        artifact = {'raw': raw, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+        for outcome, stopped, binding in (('collected', False, None), ('collected, bound', False, {'bound': True}),
+                                          ('incomplete', False, None), ('stopped', True, None)):
+            collected = {'result': 'incomplete' if outcome == 'incomplete' else 'output_collected',
+                         'reasons': ['fixture'], 'jsonl': parse(raw), 'stdout': artifact, 'final': {'raw': b'{}'},
+                         'provider_observation': {'usage': {'input_tokens': 1}}}
+            rows.append((provider + ', ' + outcome, classify_run(
+                collected, started={'pid': 1}, stopped=stopped, cli_model='model', claude_only_assigned_model=False,
+                control_binding=binding, output_schema={'type': 'object'}, evidence_dir=root,
+                execution_id='EX-1', reference=None, provider_failure=lambda parsed: None, now=FakeClock().now)))
+    return rows
+
+
+def _receive_stored_result(value):
+    """The engine keeps a runner result as a stored artifact: ``canonical_json(json_safe(result))``."""
+    from do_math.canonical import canonical_json
+    from do_math.payloads import json_safe
+    canonical_json(json_safe(value))
+
+
+def _receive_operator_record(value):
+    """The scheduled operator writes a runner result file with ``scheduled_operator._json(path, value)``."""
+    import tempfile
+    from do_math.scheduled_operator import _json
+    with tempfile.TemporaryDirectory() as directory:
+        try:
+            _json(Path(directory) / 'runner-result.json', value)
+        except (TypeError, ValueError) as error:
+            raise ValueError(str(error)) from None
+
+
 PAIRS = [Pair('worker request (' + provider + ')', _worker_request_samples(provider),
               _receive_worker_request(provider), _worker_request_fields(provider))
-         for provider in ('codex', 'claude')]
+         for provider in ('codex', 'claude')] + [
+    Pair('trust registration request', _trust_request_samples, _receive_trust_request, _trust_request_fields()),
+    Pair('observation rule id', lambda root: accepted_rule_ids(STORABLE_RULE_IDS), receive_stored_rule_ids,
+         frozenset({'rule_ids'})),
+    *_condition_pairs(),
+    Pair('runner result (stored artifact)', _runner_result_samples, _receive_stored_result, None),
+    Pair('runner result (operator file)', _runner_result_samples, _receive_operator_record, None),
+]

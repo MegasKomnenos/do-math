@@ -44,6 +44,33 @@
       "found_by": "1e obligation 2-A: request ID collision and redelivery (the third input class) on the control transport's inbox",
       "missed_kind": "Transport tests delivered each request ID once; no test rewrote a delivery after its rejection",
       "status": "open"
+    },
+    {
+      "id": "KD-0006",
+      "summary": "FormalEngineMixin._apply_trust_rebind records the trust_environment_rebound lifecycle event with toolchain_record, previous, current and recorded_at, which the closed event schema rejects, so publishing after a toolchain rerecord rebinds stops on storage validation",
+      "category": 1,
+      "reproduction": "structure.test_storage_fields.StorageFieldTests.test_the_trust_rebind_event_passes_only_declared_event_fields",
+      "found_by": "1e obligation 1-A (storage-family pair): a census of lifecycle event calls against the closed event schema; the pair survey confirmed the storage checker rejects the four fields",
+      "missed_kind": "The legacy tests of the rebind (test_lifecycle_engine, test_machine_parallel) run on the StateStore double, which skips storage validation, and assert these fields as expected values",
+      "status": "open"
+    },
+    {
+      "id": "KD-0007",
+      "summary": "The observation tracker accepts any nonempty rule ID (observations.validate_rules), but a stored review row keeps rule_ids under the storage ID pattern, so an observation_unavailable row for a rule named with a space, a colon or non-ASCII letters is rejected on publication",
+      "category": 1,
+      "reproduction": "contracts.test_pairs.KnownPairDefectTests.test_every_rule_id_the_tracker_accepts_is_storable",
+      "found_by": "1e obligation 1-C (value domains): the observation rule ID pair, tracker acceptance against the stored rule_ids check; the pair survey confirmed 'progress check'",
+      "missed_kind": "Rule fixtures used IDs such as R-1; no test fed the tracker's accepted domain to the stored schema",
+      "status": "open"
+    },
+    {
+      "id": "KD-0008",
+      "summary": "The condition grammar (planning.validate_condition) checks record_field_equals values only for /status and /lifecycle, so a condition on an enumerated field (formal-result /publication_state and /formal_use, identity-assessment /decision, execution /outcome) with a value outside the stored enumeration is accepted and can never hold",
+      "category": 3,
+      "reproduction": "contracts.test_pairs.KnownPairDefectTests.test_the_condition_grammar_rejects_values_outside_every_stored_enumeration",
+      "found_by": "1e obligation 1-A: one pair per enumerated condition pointer, the grammar's accepted values against the stored enumeration (조사 C-25 form)",
+      "missed_kind": "The C-25 fix shared the lifecycle constants with the grammar; pointers without a lifecycle constant kept no value check and no test compared them with storage",
+      "status": "open"
     }
   ]
 }
