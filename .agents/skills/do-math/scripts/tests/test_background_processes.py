@@ -96,7 +96,7 @@ assert store.read_bytes(snap.head,'runtime/artifacts/actual/binary')==raw
                           and function.value.id == 'subprocess'
                           and function.attr in {'run', 'Popen'})
                 # The scheduler port's real adapter calls the injected ``self.runner``.
-                injected = (path.name == 'scheduled_operator.py'
+                injected = (path.name == 'powershell_scheduler.py'
                             and ((isinstance(function, ast.Name) and function.id == 'runner')
                                  or (isinstance(function, ast.Attribute) and function.attr == 'runner'
                                      and isinstance(function.value, ast.Name) and function.value.id == 'self')))
@@ -106,7 +106,7 @@ assert store.read_bytes(snap.head,'runtime/artifacts/actual/binary')==raw
         # The scan must reach every launching module. Both providers share one
         # capability probe (codex_adapter) and one worker launch (cli_worker.run_cli),
         # so the product has ten call sites: cli 2, codex_adapter 1, cli_worker 1,
-        # formal 2, git_process 1, scheduled_operator 3.
+        # formal 2, git_process 1, scheduled_operator 2, powershell_scheduler 1.
         self.assertGreaterEqual(len(calls), 10)
 
     @unittest.skipUnless(os.name == 'nt', 'Windows console semantics')

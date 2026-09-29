@@ -11,7 +11,7 @@ from pathlib import Path, PurePosixPath
 
 from .canonical import canonical_json, exact_content_hash
 from .file_io import no_reparse, stat_fingerprint
-from .values import is_sha256
+from .values import is_sha256, strict_json_loads
 from .state_contract import ARTIFACT_ROOT
 from .file_io import PhysicalBoundary
 from .ids import oid_shape
@@ -1217,3 +1217,47 @@ def readable_snapshot_path(context, path):
     if context.get('record_map', {}).get('ledger') == 'readable' or parts[0] == 'research':
         return True
     return path in supplied_locators(context) or path in supplied_reference_ids(context)
+
+
+def read_refusal(context: dict, workspace, path, output) -> str | None:
+    """Why the read tool refuses one read, or None.
+
+    The path must be in this input's record map; an ``--output`` must be
+    workspace-relative and outside the fixed ``input/``.
+    """
+    if path is None or not readable_snapshot_path(context, path):
+        return 'outside the record map of this input (record_index and record_map.ledger)'
+    if output is not None:
+        try:
+            safe_path(workspace, output)
+        except ValueError as error:
+            return '--output needs a workspace-relative path: ' + str(error)
+        if relative_path(output).parts[0] == 'input':
+            return '--output must not write into the fixed input/'
+    return None
+
+
+def read_content(path: str, raw: bytes, read) -> dict:
+    """How the read tool returns one file: a decoded record, else text, else base64.
+
+    ``read`` reads further snapshot paths that a record envelope refers to.
+    """
+    import base64
+    from .payloads import decode
+    if not path.startswith(ARTIFACT_ROOT):
+        try:
+            return {'record': decode(strict_json_loads(raw), read)}
+        except (ValueError, TypeError):
+            pass  # a state file that is not a record envelope, such as a manifest
+    try:
+        return {'text': raw.decode('utf-8')}
+    except UnicodeDecodeError:
+        return {'base64': base64.b64encode(raw).decode('ascii')}
+
+
+def record_summaries(paths: dict, files: dict) -> list[dict]:
+    """The read tool's ``--list`` rows: each record's size and its scalar summary fields."""
+    return [{'id': identifier, 'path': path, 'bytes': len(files[path]),
+             **{key: value for key, value in strict_json_loads(files[path]).get('record', {}).items()
+                if key in _SUMMARY_FIELDS and not isinstance(value, (dict, list))}}
+            for identifier, path in paths.items()]

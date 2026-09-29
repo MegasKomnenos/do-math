@@ -1640,3 +1640,28 @@ def seal_submission(workspace, draft=None, *, execution_id, context, schema, max
     result.update(passed=check['passed'], capture_eligible=True, check=check, manifest=collected["manifest"], artifacts=artifacts,
         intent={"candidate_id": candidate_id, **identity})
     return result
+
+
+def control_request_payload(workspace, draft, *, kind, wait_seconds, binding=None):
+    """The binding and payload of one draft-locator control request, once the request may be sent.
+
+    The kind is a submission kind, the wait is a finite nonnegative caller
+    budget, the binding belongs to this workspace's execution, and the draft
+    lies inside the workspace.
+    """
+    from .control_protocol import SUBMISSION_KINDS
+    if kind not in SUBMISSION_KINDS:
+        raise ValueError("unsupported submission control kind")
+    if not isinstance(wait_seconds, (int, float)) or isinstance(wait_seconds, bool) or not 0 <= wait_seconds < float("inf"):
+        raise ValueError("wait_seconds must be a finite nonnegative caller budget")
+    workspace = Path(workspace).resolve()
+    context = load_json(read_stable(safe_path(workspace, "input/submission/context.json")))
+    binding = binding or context.get("control_binding")
+    if not isinstance(binding, dict) or binding.get("execution_id") != context.get("execution_id"):
+        raise ValueError("draft has no matching execution control binding")
+    draft_path = (workspace / Path(draft)).resolve(strict=False)
+    if not draft_path.is_relative_to(workspace):
+        raise ValueError("submission draft must be inside this workspace")
+    relative = draft_path.relative_to(workspace).as_posix()
+    safe_path(workspace, relative)
+    return binding, {"draft_path": relative}

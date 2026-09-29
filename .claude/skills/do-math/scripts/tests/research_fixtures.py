@@ -206,7 +206,7 @@ def clock_ports(**overrides):
     from do_math.parallel import ThreadCalls
     from do_math.windows_job import WindowsJobs
     from do_math.http_transport import UrllibHttp
-    from do_math.scheduled_operator import PowerShellScheduler
+    from do_math.powershell_scheduler import PowerShellScheduler
     return Ports(clock=SimpleNamespace(**operations), git_backend=GitProcess(), calls=ThreadCalls(),
                  jobs=WindowsJobs(), scheduler=PowerShellScheduler(), http=UrllibHttp())
 

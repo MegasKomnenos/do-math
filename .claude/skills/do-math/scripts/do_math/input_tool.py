@@ -11,10 +11,9 @@ import hashlib
 import json
 from pathlib import Path
 
-from .context_store import (READ_LOG, _READ_LOCK, _SUMMARY_FIELDS, read_stable, readable_snapshot_path,
+from .context_store import (READ_LOG, _READ_LOCK, read_content, read_refusal, read_stable, record_summaries,
                             relative_path, safe_path)
 from .file_io import os_lock
-from .state_contract import ARTIFACT_ROOT
 from .system_clock import SystemClock
 
 
@@ -33,7 +32,6 @@ def read_main(argv=None):
     read, refusal and error is appended to checks/reads.jsonl.
     """
     import argparse
-    import base64
     import sys
     from .values import strict_json_loads
     parser = argparse.ArgumentParser(description=read_main.__doc__)
@@ -66,35 +64,20 @@ def read_main(argv=None):
 
     def entry(request, path, output=None):
         row = {'request': request, 'path': path, 'snapshot': snapshot}
-        if path is None or not readable_snapshot_path(context, path):
-            return {**row, 'status': 'refused',
-                    'reason': 'outside the record map of this input (record_index and record_map.ledger)'}
-        if output is not None:
-            try:
-                target = safe_path(workspace, output)
-            except ValueError as error:
-                return {**row, 'status': 'refused', 'reason': '--output needs a workspace-relative path: ' + str(error)}
-            if relative_path(output).parts[0] == 'input':
-                return {**row, 'status': 'refused', 'reason': '--output must not write into the fixed input/'}
+        refusal = read_refusal(context, workspace, path, output)
+        if refusal:
+            return {**row, 'status': 'refused', 'reason': refusal}
         try:
             raw = read(path)
         except (OSError, ValueError, KeyError, RuntimeError) as error:
             return {**row, 'status': 'error', 'reason': str(error)}
         row.update(status='ok', sha256=hashlib.sha256(raw).hexdigest(), bytes=len(raw))
         if output is not None:
+            target = safe_path(workspace, output)
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(raw)
             return {**row, 'output': relative_path(output).as_posix()}
-        if not path.startswith(ARTIFACT_ROOT):
-            from .payloads import decode
-            try:
-                return {**row, 'record': decode(strict_json_loads(raw), read)}
-            except (ValueError, TypeError):
-                pass  # a state file that is not a record envelope, such as a manifest
-        try:
-            return {**row, 'text': raw.decode('utf-8')}
-        except UnicodeDecodeError:
-            return {**row, 'base64': base64.b64encode(raw).decode('ascii')}
+        return {**row, **read_content(path, raw, read)}
 
     if args.list and args.family is None:
         result = {'snapshot': snapshot, 'status': 'ok', 'ledger': context.get('record_map', {}).get('ledger'),
@@ -106,11 +89,7 @@ def read_main(argv=None):
             paths = {identifier: f'{args.family}/{identifier}.json' for identifier in index[args.family]}
             try:
                 files = snapshot_store().read_many(snapshot, list(paths.values()))
-                result.update(status='ok', records=[
-                    {'id': identifier, 'path': path, 'bytes': len(files[path]),
-                     **{key: value for key, value in strict_json_loads(files[path]).get('record', {}).items()
-                        if key in _SUMMARY_FIELDS and not isinstance(value, (dict, list))}}
-                    for identifier, path in paths.items()])
+                result.update(status='ok', records=record_summaries(paths, files))
             except (OSError, ValueError, KeyError, RuntimeError) as error:
                 result.update(status='error', reason=str(error))
         logged = [{'request': '--list ' + args.family, 'path': args.family, 'snapshot': snapshot,

@@ -12,8 +12,7 @@ import json
 from pathlib import Path
 
 from . import submission
-from .context_store import read_stable, safe_path
-from .submission import load_json, producer_check
+from .submission import producer_check
 from .system_clock import SystemClock
 
 
@@ -21,22 +20,9 @@ def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
     """Send one draft locator; central capture owns validation and immutable receipt bytes."""
     from .control_server import wait_receipt
     from .control_transport import ControlTransport
-    from .control_protocol import SUBMISSION_KINDS, SUBMISSION_PREVIEW
-    if kind not in SUBMISSION_KINDS:
-        raise ValueError("unsupported submission control kind")
-    if not isinstance(wait_seconds, (int, float)) or isinstance(wait_seconds, bool) or not 0 <= wait_seconds < float("inf"):
-        raise ValueError("wait_seconds must be a finite nonnegative caller budget")
-    workspace = Path(workspace).resolve()
-    context = load_json(read_stable(safe_path(workspace, "input/submission/context.json")))
-    binding = binding or context.get("control_binding")
-    if not isinstance(binding, dict) or binding.get("execution_id") != context.get("execution_id"):
-        raise ValueError("draft has no matching execution control binding")
-    draft_path = (workspace / Path(draft)).resolve(strict=False)
-    if not draft_path.is_relative_to(workspace):
-        raise ValueError("submission draft must be inside this workspace")
-    relative = draft_path.relative_to(workspace).as_posix()
-    safe_path(workspace, relative)
-    payload = {"draft_path": relative}
+    from .control_protocol import SUBMISSION_PREVIEW
+    binding, payload = submission.control_request_payload(workspace, draft, kind=kind, wait_seconds=wait_seconds,
+                                                          binding=binding)
     # A locator is mutable; a corrected draft at the same path is a new call.
     # Query the returned request_id to resume waiting on the existing call.
     request_id = ("preview-" if kind == SUBMISSION_PREVIEW else "submit-") + SystemClock().new_id("RQ")

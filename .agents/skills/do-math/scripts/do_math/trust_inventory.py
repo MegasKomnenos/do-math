@@ -238,3 +238,87 @@ def records_for(directory, identity):
         if record['identity_sha256'] == wanted:
             found.append((path, record))
     return found
+
+
+# Judgments of the toolchain record writer (``setup_lean``); it observes, locks and writes.
+
+def check_evidence_outside_roots(directory, identity) -> None:
+    """Validation evidence must not be written inside the recorded toolchain or project."""
+    if any(directory.is_relative_to(root.resolve()) for root in roots(identity).values()):
+        raise ValueError('validation evidence must be outside the recorded toolchain and project roots')
+
+
+def validation_status(code, stopped) -> str:
+    """A representative compile is verified only when it ran to exit code 0."""
+    return 'verified' if not stopped and code == 0 else 'failed'
+
+
+def baseline_refusal(validation: dict) -> dict | None:
+    """A baseline needs a verified representative compile."""
+    if validation['status'] != 'verified':
+        return {'status': 'failed', 'reason': 'the representative compile did not succeed', 'validation': validation}
+    return None
+
+
+def fingerprint_moved_refusal(observed: dict, fingerprint: dict) -> dict | None:
+    """A baseline needs the judgment files unchanged while it was recorded."""
+    if observed['sha256'] != fingerprint['sha256']:
+        return {'status': 'failed', 'reason': 'judgment files changed while the baseline was being recorded'}
+    return None
+
+
+def reusable_record(candidates, fingerprint: dict):
+    """The ``(path, record)`` whose current baseline has this fingerprint and is usable, or None."""
+    for path, record in candidates:
+        if record['baselines'][-1]['fingerprint']['sha256'] == fingerprint['sha256'] and not usable_errors(record):
+            return path, record
+    return None
+
+
+def rerecord_required(path) -> dict:
+    """The installed bytes match an existing record whose metadata or check history changed."""
+    return {'status': 'rerecord_required', 'record_path': str(path),
+            'reason': 'the installed bytes match this record but its metadata or check history changed; '
+                      'a user or operator decides whether to run --rerecord'}
+
+
+def only_record(candidates):
+    """The one record of the current identity; otherwise the command must name it."""
+    if len(candidates) != 1:
+        raise ValueError('name the record with --record; records of the current identity: '
+                         + (', '.join(record['id'] for _, record in candidates) or 'none'))
+    return candidates[0]
+
+
+def identity_refusal(record: dict, identity: dict, path) -> dict | None:
+    """A rerecord keeps the record's identity; a different identity needs a new record."""
+    if record['identity'] != identity:
+        return {'status': 'refused', 'record_path': str(path),
+                'reason': 'the installed identity differs from the record; create a new record and register and transition to it'}
+    return None
+
+
+def contents_refusal(record: dict, content: dict, path) -> dict | None:
+    """A rerecord covers metadata-only changes; changed judgment file contents need a new record."""
+    mismatched = changed_files(record['baselines'][-1]['content']['files'], content['files'])
+    if mismatched:
+        return {'status': 'refused', 'record_path': str(path), 'mismatched': mismatched,
+                'reason': 'judgment file contents differ from the current baseline; create a new record and '
+                          'register and transition to it'}
+    return None
+
+
+def content_check(record: dict, content: dict, *, checked_at: str) -> dict:
+    """The comparison of the current judgment file contents with the current baseline."""
+    current = len(record['baselines']) - 1
+    mismatched = changed_files(record['baselines'][current]['content']['files'], content['files'])
+    return {'checked_at': checked_at, 'baseline': current,
+            'result': 'mismatch' if mismatched else 'passed', 'mismatched': mismatched}
+
+
+def registration_request(record: dict, record_path, binding) -> dict:
+    """A registration request binding the record's identity and one baseline."""
+    from .lean_evidence import AXIOMS
+    return {'operation': 'register', 'toolchain': record['identity'], 'allowed_axioms': sorted(AXIOMS),
+            'toolchain_record': {'path': str(Path(record_path).resolve()), 'id': record['id']},
+            'binding': binding}

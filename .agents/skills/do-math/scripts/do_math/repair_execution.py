@@ -1,6 +1,8 @@
 """Preserve failed submissions and route accepted installation repairs."""
 from __future__ import annotations
 
+import hashlib
+import json
 from copy import deepcopy
 from pathlib import Path, PurePosixPath
 
@@ -211,3 +213,155 @@ class RepairExecutionMixin:
         if record['status'] in {'installation_repair_pending', 'installation_repair_waiting', 'applied'}:
             return record
         return self.request_installation_repair(record)
+
+
+# Judgments of the failure-only installation recovery (``scheduled_operator.recovery``);
+# it holds the locks, runs the recovery AI and writes the evidence.
+
+def check_recovery_failure(failure) -> None:
+    """A given failure must be preserved engine-failure or installation-defect evidence with its error."""
+    if failure is not None and (failure.get("kind") not in {"engine_unavailable", "installation_defect"}
+                                or not failure.get("error")):
+        raise ValueError("recovery requires preserved engine failure evidence")
+
+
+def recovery_block_outcome(block, failure) -> dict | None:
+    """The result when supervision blocks a recovery (disabled, or any block but an installation repair), else None."""
+    if block == 'disabled':
+        return {"outcome": "recovery_disabled", "failure": failure}
+    if block not in {None, 'installation_repair'}:
+        return {"outcome": "held"}
+    return None
+
+
+def failure_to_repair(runtime: dict, failure):
+    """The failure this recovery repairs: the given one, else the pending installation repair's; None when none is pending."""
+    if failure is not None:
+        return failure
+    pending = pending_installation_repair(runtime)
+    return None if pending is None else installation_failure(runtime, pending)
+
+
+def matching_diagnosis(runtime: dict, failure: dict):
+    """The published diagnosis of an installation defect; it must describe exactly this failure."""
+    diagnosis = None
+    if failure['kind'] == 'installation_defect':
+        diagnosis = runtime.get('operational_dispositions', {}).get(failure.get('diagnosis_id'))
+        if diagnosis is None or installation_failure(runtime, diagnosis) != failure:
+            raise ValueError('installation diagnosis is missing or differs from its published record')
+    return diagnosis
+
+
+def unconfirmed_termination(runtime: dict, *, jobs=None):
+    """The first unended execution whose local termination is not confirmed, or None.
+
+    ``jobs`` is the Jobs port; without it the migration default asks the real
+    Windows Jobs (the recovery path receives the port in 1d).
+    """
+    from .launch import termination_confirmed
+    for execution in runtime.get("executions", {}).values():
+        if execution.get("status") == "ended":
+            continue
+        if not execution.get('launch_ticket') or not termination_confirmed(execution['launch_ticket'], recovering=True,
+                                                                           jobs=jobs):
+            return execution["id"]
+    return None
+
+
+RECOVERY_FAILURE_FIELDS = ('kind', 'diagnosis_id', 'error', 'repair_target', 'verification',
+                           'target_execution_id', 'evidence_refs', 'installation_sha256', 'evidence_path',
+                           'engine_run_directory')
+
+
+def failure_identity(failure: dict, diagnosis) -> str:
+    """The identity of an actual failure: a diagnosis's recorded hash, else the hash of the failure's identifying fields."""
+    if diagnosis:
+        return failure['failure_sha256']
+    return hashlib.sha256(json.dumps({key: failure[key] for key in RECOVERY_FAILURE_FIELDS if key in failure},
+        ensure_ascii=False, sort_keys=True).encode('utf-8')).hexdigest()
+
+
+def already_attempted(runtime: dict, failure_sha256: str, installation_sha256: str) -> bool:
+    """One automatic repair per actual failure and installation edition.
+
+    A call that judged no repair does not count: the provider limit refused it,
+    or a HOLD, pause or close held it before its repair report was received. A
+    held call with a received report still counts. The provider gate and the
+    supervision blocks pace a retry.
+    """
+    def attempted(execution):
+        disposition = execution.get('result_disposition')
+        recovery = disposition.get('recovery') if isinstance(disposition, dict) else None
+        unjudged = (recovery == 'recovery_provider_limited'
+                    or (recovery == 'recovery_held' and not execution.get('submission_receipt')))
+        return (execution.get('role') == 'recovery'
+                and execution.get('input_manifest', {}).get('repair_identity') == {
+                    'failure_sha256': failure_sha256, 'installation_sha256': installation_sha256}
+                and not unjudged)
+    return any(attempted(e) for e in runtime.get('executions', {}).values())
+
+
+def repair_prompt(failure: dict, failure_inputs: list, *, diagnosed: bool, installation, repository, instance: str,
+                  execution_id: str, reference) -> str:
+    """The recovery AI's instruction and its failure record, before the profile's prompt preparation."""
+    return (
+        ("Repair only the independently diagnosed do-math installation defect that blocks the preserved submission. "
+         if diagnosed else "Repair only the do-math installation defect that prevents this engine from starting. ")
+        + "Reproduce the recorded failure, make the smallest code repair, and run relevant checks. "
+        "Preserve failure evidence, verification commands and changed file paths in your report. "
+        "For a diagnosed submission defect, report repair_outcome=repaired only after reproducing and fixing it; "
+        "otherwise report unresolved. Write regression logs inside this workspace and list their relative paths in verification_evidence. "
+        "Do not change research records, goals, budgets, grants, user configuration or scheduled tasks. "
+        "Do not start the engine or wait for research: the launcher owns restart after releasing its lock. "
+        "Existing installation-repair approval applies; a new research or external-action authority does not.\n"
+        + json.dumps({"failure": failure, "failure_inputs": failure_inputs,
+                      "installation": str(installation), "repository": str(repository),
+                      "instance": instance, "execution_id": execution_id, "profile_ref": reference}, ensure_ascii=False))
+
+
+def runner_outcome(result: dict) -> str:
+    """The recovery outcome the runner's result gives before verification and holds."""
+    outcome = "repaired" if result.get("status") == "completed" else "recovery_failed"
+    if result.get("error_kind") == "provider_limit":
+        outcome = "recovery_provider_limited"
+    return outcome
+
+
+def recovery_report_receipt(execution_id: str, *, evidence_ref: str, observed_at: str) -> dict:
+    """The receipt of a structured recovery report; it is not a research integration."""
+    from .execution_lifecycle import RECOVERY_REPORT_RECEIPT
+    return {"kind": RECOVERY_REPORT_RECEIPT, "state": "accepted", "execution_id": execution_id,
+            "receiver": "recovery_launcher", "observed_at": observed_at,
+            "evidence_ref": evidence_ref,
+            "scope": "structured_recovery_report_not_research_integration"}
+
+
+def recovery_held(held: bool, state: dict, runtime: dict) -> bool:
+    """A HOLD marker, a pause or an ended instance holds the recovery's outcome."""
+    from .planning import instance_ended
+    return bool(held or runtime.get('user_pause') or runtime.get('status') == 'paused'
+                or instance_ended(state, runtime))
+
+
+def record_recovery_attempt(runtime: dict, execution: dict, *, activity_id: str, owner: dict, outcome: str,
+                            diagnosis, execution_id: str, at: str) -> None:
+    """End a released recovery execution, settle its activity and record the attempt on its diagnosis."""
+    from . import activities, execution_lifecycle
+    execution_lifecycle.transition_execution(execution, "stopping", at=at, reason=outcome)
+    execution_lifecycle.transition_execution(execution, "ended", at=at,
+        outcome="output_accepted" if execution.get("submission_receipt") else "execution_incomplete",
+        disposition={"recovery": outcome})
+    if outcome == "repaired":
+        activities.finish_activity(runtime, activity_id, result_refs=[execution_id], unresolved=[], followups=[], at=at)
+    else:
+        activities.wait_for(runtime, activity_id, reason=outcome,
+            condition={"kind": "installation_repair_retry", "failure": owner},
+            next_owner="recovery", at=at)
+    if diagnosis:
+        current_diagnosis = runtime['operational_dispositions'][diagnosis['id']]
+        if outcome == 'repaired':
+            resume_installation_repair(runtime, current_diagnosis, repaired_by=execution_id, at=at)
+        else:
+            current_diagnosis['status'] = 'installation_repair_waiting'
+            current_diagnosis.setdefault('result', {})['installation_repair'].update(
+                status=outcome, attempted_by=execution_id)

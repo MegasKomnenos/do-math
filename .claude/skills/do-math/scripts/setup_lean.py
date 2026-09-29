@@ -25,7 +25,6 @@ import zipfile
 from do_math.lean_evidence import LEAN_VERSION, READY_MARKER, mathlib_project, portable_bin
 from do_math.formal import discover_lean, toolchain_root, inspect_toolchain
 from do_math import trust_inventory as records
-from do_math.lean_evidence import AXIOMS
 from do_math.file_io import RACY_NS, fingerprint_settled
 from do_math.system_clock import now
 
@@ -57,8 +56,7 @@ def observe_identity(command):
 def verify_environment(command, evidence_root, identity):
     """Compile the representative examples through the exact command; nothing is adopted."""
     directory = evidence_root.resolve() / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid.uuid4().hex)
-    if any(directory.is_relative_to(root.resolve()) for root in records.roots(identity).values()):
-        raise ValueError('validation evidence must be outside the recorded toolchain and project roots')
+    records.check_evidence_outside_roots(directory, identity)
     directory.mkdir(parents=True)
     source = directory / 'smoke.lean'
     source_text, scope = records.validation_program(identity)
@@ -73,9 +71,7 @@ def verify_environment(command, evidence_root, identity):
         with tracing(directory / 'operations'), phase('environment_smoke_compile') as metrics:
             code, stdout, stderr, stopped = _job_run([*command, str(source)], directory,
                 on_started=lambda process: metrics.update(process=process))
-        validation.update(exit_code=code, stdout=stdout, stderr=stderr)
-        if not stopped and code == 0:
-            validation['status'] = 'verified'
+        validation.update(exit_code=code, stdout=stdout, stderr=stderr, status=records.validation_status(code, stopped))
     except Exception as error:
         validation['error'] = f'{type(error).__name__}: {error}'
     validation['finished_at'] = now()
@@ -85,10 +81,11 @@ def verify_environment(command, evidence_root, identity):
 
 def _baseline(command, evidence_root, identity, fingerprint, content):
     validation = verify_environment(command, evidence_root, identity)
-    if validation['status'] != 'verified':
-        raise Refused({'status': 'failed', 'reason': 'the representative compile did not succeed', 'validation': validation})
-    if records.observe_fingerprint(identity)['sha256'] != fingerprint['sha256']:
-        raise Refused({'status': 'failed', 'reason': 'judgment files changed while the baseline was being recorded'})
+    refusal = records.baseline_refusal(validation)
+    if refusal is None:
+        refusal = records.fingerprint_moved_refusal(records.observe_fingerprint(identity), fingerprint)
+    if refusal is not None:
+        raise Refused(refusal)
     return records.new_baseline(fingerprint, content, validation)
 
 
@@ -118,15 +115,13 @@ def record_installation(command, records_dir, evidence_root):
     identity = observe_identity(command)
     with records.writer_lock(records_dir):
         fingerprint = _settled_fingerprint(identity)
-        for path, record in records.records_for(records_dir, identity):
-            if record['baselines'][-1]['fingerprint']['sha256'] == fingerprint['sha256'] and not records.usable_errors(record):
-                return _summary(path, record, status='recorded', created=False)
+        reusable = records.reusable_record(records.records_for(records_dir, identity), fingerprint)
+        if reusable is not None:
+            return _summary(*reusable, status='recorded', created=False)
         content = records.content_hashes(identity, fingerprint['files'])
         path = records.record_path(records_dir, records.record_id(identity, content['sha256']))
         if path.exists():
-            raise Refused({'status': 'rerecord_required', 'record_path': str(path),
-                'reason': 'the installed bytes match this record but its metadata or check history changed; '
-                          'a user or operator decides whether to run --rerecord'})
+            raise Refused(records.rerecord_required(path))
         record = records.new_record(identity, _baseline(command, evidence_root, identity, fingerprint, content))
         records.write_record(path, record)
         return _summary(path, record, status='recorded', created=True)
@@ -137,11 +132,7 @@ def resolve_record(records_dir, record_id, identity):
     if record_id is not None:
         path = records.record_path(records_dir, record_id)
         return path, records.read_record(path)
-    candidates = records.records_for(records_dir, identity())
-    if len(candidates) != 1:
-        raise ValueError('name the record with --record; records of the current identity: '
-                         + (', '.join(record['id'] for _, record in candidates) or 'none'))
-    return candidates[0]
+    return records.only_record(records.records_for(records_dir, identity()))
 
 
 def rerecord(command, records_dir, evidence_root, record_id):
@@ -149,16 +140,14 @@ def rerecord(command, records_dir, evidence_root, record_id):
     identity = observe_identity(command)
     with records.writer_lock(records_dir):
         path, record = resolve_record(records_dir, record_id, lambda: identity)
-        if record['identity'] != identity:
-            raise Refused({'status': 'refused', 'record_path': str(path),
-                'reason': 'the installed identity differs from the record; create a new record and register and transition to it'})
+        refusal = records.identity_refusal(record, identity, path)
+        if refusal is not None:
+            raise Refused(refusal)
         fingerprint = _settled_fingerprint(identity)
         content = records.content_hashes(identity, fingerprint['files'])
-        mismatched = records.changed_files(record['baselines'][-1]['content']['files'], content['files'])
-        if mismatched:
-            raise Refused({'status': 'refused', 'record_path': str(path), 'mismatched': mismatched,
-                'reason': 'judgment file contents differ from the current baseline; create a new record and '
-                          'register and transition to it'})
+        refusal = records.contents_refusal(record, content, path)
+        if refusal is not None:
+            raise Refused(refusal)
         record['baselines'].append(_baseline(command, evidence_root, identity, fingerprint, content))
         records.write_record(path, record)
         return _summary(path, record, status='recorded')
@@ -168,12 +157,9 @@ def check_contents(records_dir, record_id, command):
     """Hash every judgment file and append the comparison with the current baseline."""
     with records.writer_lock(records_dir):
         path, record = resolve_record(records_dir, record_id, lambda: observe_identity(command))
-        current = len(record['baselines']) - 1
         fingerprint = records.observe_fingerprint(record['identity'])
         content = records.content_hashes(record['identity'], fingerprint['files'])
-        mismatched = records.changed_files(record['baselines'][current]['content']['files'], content['files'])
-        check = {'checked_at': now(), 'baseline': current,
-                 'result': 'mismatch' if mismatched else 'passed', 'mismatched': mismatched}
+        check = records.content_check(record, content, checked_at=now())
         record['checks'].append(check)
         records.write_record(path, record)
         return _summary(path, record, status=check['result'], check=check)
@@ -182,9 +168,7 @@ def check_contents(records_dir, record_id, command):
 def write_trust_request(result, destination):
     """A registration request binding the record's identity and one baseline."""
     record = records.read_record(result['record_path'])
-    request = {'operation': 'register', 'toolchain': record['identity'], 'allowed_axioms': sorted(AXIOMS),
-               'toolchain_record': {'path': str(Path(result['record_path']).resolve()), 'id': record['id']},
-               'binding': result['binding']}
+    request = records.registration_request(record, result['record_path'], result['binding'])
     destination = destination.resolve()
     destination.parent.mkdir(parents=True, exist_ok=True)
     with destination.open('x', encoding='utf-8') as stream:

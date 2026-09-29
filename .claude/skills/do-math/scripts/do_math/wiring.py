@@ -5,7 +5,7 @@ from .parallel import ThreadCalls
 from .system_clock import SystemClock
 from .windows_job import WindowsJobs
 from .http_transport import UrllibHttp
-from .scheduled_operator import PowerShellScheduler
+from .powershell_scheduler import PowerShellScheduler
 
 
 def real_ports() -> Ports:
