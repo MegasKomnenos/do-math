@@ -15,12 +15,12 @@ from pathlib import Path
 
 SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'foundation': '''
-        test_academic test_budget test_claude_adapter test_claude_stream test_cli_surface
+        test_academic test_budget test_claude_adapter test_claude_stream
         test_codex_adapter test_completion_settlement test_context_store
         test_contract_checks test_contracts test_control_transport test_decision_basis
         test_delegations test_design_walkthroughs test_environment_validation
         test_execution_lifecycle test_execution_profiles test_execution_window
-        test_external_operations test_family_records test_file_io test_formal_input_manifest
+        test_external_operations test_file_io test_formal_input_manifest
         test_git_store test_goal_audit test_governance test_impact_review
         test_installation_discovery test_integration_bundles test_json_digests test_knowledge
         test_knowledge_import_engine test_knowledge_io test_knowledge_storage test_lifecycle_gates
@@ -28,7 +28,7 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_owned_job_children test_payloads test_planning test_preparation_cache
         test_provider_final_contract test_query_records test_questions test_reading_map
         test_reassessment test_reference_catalog test_relation_dependencies test_repair_execution
-        test_reporting test_repository test_retention test_review_cycle test_review_policy
+        test_reporting test_repository test_review_cycle test_review_policy
         test_review_scope_wire test_revision_obligations test_scholarly test_standalone
         test_state_checks test_state_contract test_submission_checks test_supervisor_recovery
         test_task_contracts test_task_scope test_test_runner test_trust_continuation
