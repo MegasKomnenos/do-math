@@ -19,6 +19,7 @@ from .system_clock import SystemClock
 
 def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
     """Send one draft locator; central capture owns validation and immutable receipt bytes."""
+    from .control_server import wait_receipt
     from .control_transport import ControlTransport
     from .control_protocol import SUBMISSION_KINDS, SUBMISSION_PREVIEW
     if kind not in SUBMISSION_KINDS:
@@ -42,7 +43,7 @@ def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
     delivery = ControlTransport.worker_submit(binding, request_id=request_id, kind=kind, payload=payload)
     if delivery["state"] == "closed":
         return delivery
-    return ControlTransport.wait_receipt(binding, request_id, wait_seconds) or delivery
+    return wait_receipt(binding, request_id, wait_seconds) or delivery
 
 
 def main(argv=None):

@@ -12,7 +12,8 @@ from unittest.mock import patch
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 from do_math import claude_worker, cli_worker, codex_worker
-from do_math.codex_adapter import CLIExecution, CodexExecAdapter, _parse_jsonl
+from do_math.codex_adapter import CLIExecution, CodexExecAdapter
+from do_math.codex_stream import parse_jsonl as _parse_jsonl
 from do_math.windows_job import JobInspection
 from provider_fixtures import FakeJob
 

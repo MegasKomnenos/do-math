@@ -13,12 +13,12 @@ from typing import Any, Mapping
 
 try:  # This module is also the direct ``python codex_worker.py`` Job root.
     from do_math.control_protocol import CONTROL_SERVER
-    from do_math.control_transport import ControlTransport
+    from do_math.control_server import mcp_server_config
     from do_math.values import strict_json_loads
     from do_math.cli_worker import allowed_environment, check_common_request, run_cli
 except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regression.
     from control_protocol import CONTROL_SERVER
-    from control_transport import ControlTransport
+    from control_server import mcp_server_config
     from values import strict_json_loads
     from cli_worker import allowed_environment, check_common_request, run_cli
 
@@ -59,7 +59,7 @@ def build_argv(request: Mapping[str, Any]) -> list[str]:
     if "windows_sandbox" in request:
         argv.extend(["--config", 'windows.sandbox="' + request["windows_sandbox"] + '"'])
     if "control_binding" in request:
-        control = ControlTransport.mcp_server_config(request["control_binding"])
+        control = mcp_server_config(request["control_binding"])
         argv.extend(["--config", f"mcp_servers.{CONTROL_SERVER}.command=" + json.dumps(control["command"], ensure_ascii=False),
                      "--config", f"mcp_servers.{CONTROL_SERVER}.args=" + json.dumps(control["args"], ensure_ascii=False)])
     server = request.get("scholarly_server")

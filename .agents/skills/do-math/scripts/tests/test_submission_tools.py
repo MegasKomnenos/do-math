@@ -11,6 +11,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import purpose_fixtures as purpose
 from do_math.canonical import canonical_json
+from do_math.control_server import mcp_server_config
 from do_math import contracts, submission, knowledge_io
 from do_math import submission_tool
 from research_fixtures import await_control, await_stop, git_init, local_job_runner, seal_response
@@ -82,7 +83,7 @@ class LocalControlProtocolTests(unittest.TestCase):
 
     def mcp(self, name, arguments):
         from do_math.control_transport import ControlTransport
-        server = ControlTransport.mcp_server_config(self.binding)
+        server = mcp_server_config(self.binding)
         request = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
                    "params": {"name": name, "arguments": arguments}}
         process = subprocess.run([server["command"], *server["args"]],
@@ -122,8 +123,13 @@ class LocalControlProtocolTests(unittest.TestCase):
 
     def test_mcp_configuration_preserves_leading_hyphen_tokens(self):
         from unittest.mock import patch
-        with patch("do_math.control_transport.token_urlsafe", side_effect=["-transport-token", "-capability-token"]):
+
+        class HyphenTokens:  # The clock port's random source; a first byte 0xf8 encodes as a leading "-".
+            def random_hex(self, nbytes):
+                return "f8" + "00" * (nbytes - 1)
+        with patch.object(self.transport, "clock", HyphenTokens()):
             self.binding = self.transport.issue("EX-worker", "GR-worker")
+        self.assertTrue(self.binding["transport_id"].startswith("-") and self.binding["capability"].startswith("-"))
         result = self.mcp("control_receipt", {"request_id": "CT-not-submitted", "wait_seconds": 0})
         self.assertIsNone(result)
 

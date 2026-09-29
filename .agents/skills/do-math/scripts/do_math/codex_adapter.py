@@ -26,7 +26,8 @@ from typing import Any, Mapping
 from do_math.system_clock import now
 from do_math.values import compact_json_bytes, strict_json_loads
 from do_math.windows_job import WindowsJob, process_identity
-from do_math.codex_stream import artifact as _artifact, parse_jsonl as _parse_jsonl, provider_observation as _provider_observation
+from do_math.codex_stream import artifact as _artifact, parse_response as _parse_codex, provider_observation as _provider_observation
+from do_math.provider_final import EXECUTABLE_KEYS, final_bytes as _final_bytes, final_mismatch
 from do_math import cli_worker, codex_worker
 
 
@@ -245,15 +246,11 @@ class LocalCLIAdapter:
     @staticmethod
     def final_bytes(parsed: dict) -> bytes | None:
         """The exact final response bytes the stream selected, if any."""
-        if "final_text" in parsed:
-            return parsed["final_text"].encode("utf-8")
-        if "structured_output" in parsed:
-            return json.dumps(parsed["structured_output"], ensure_ascii=False, allow_nan=False).encode("utf-8")
-        return None
+        return _final_bytes(parsed)
 
     def validate_final(self, parsed: dict, final: bytes) -> list[str]:
         """The final response must be the stream's own selected completion."""
-        return [] if final == self.final_bytes(parsed) else ["final_response_mismatch"]
+        return final_mismatch(parsed, final)
 
     def provider_failure(self, parsed: dict) -> dict | None:
         """A native admission rejection the provider reported; none by default."""
@@ -265,7 +262,7 @@ class CodexExecAdapter(LocalCLIAdapter):
 
     provider = "codex"
     worker_module = codex_worker
-    executable_key = "codex_path"
+    executable_key = EXECUTABLE_KEYS["codex"]
     help_commands = ((("--help",), (b"--ask-for-approval",)),
                      (("exec", "--help"), (b"--json", b"--output-last-message", b"--model", b"--sandbox", b"--ephemeral",
                                            b"--ignore-user-config", b"--ignore-rules", b"--skip-git-repo-check",
@@ -275,7 +272,7 @@ class CodexExecAdapter(LocalCLIAdapter):
                             "provider_stop_reason", "automatic_compaction_control",
                             "per_execution_read_isolation", "cross_profile_noninterference")
     identity_modules = ("cli_worker", "codex_worker", "control_transport", "control_protocol", "file_io", "values",
-                        "windows_job", "scholarly", "codex_adapter", "codex_stream")
+                        "windows_job", "scholarly", "codex_adapter", "codex_stream", "provider_final", "control_server")
 
     def worker_options(self, evidence_dir: Path) -> dict[str, Any]:
         # The adopted local permission mode: existing user permissions, approval never.
@@ -285,6 +282,6 @@ class CodexExecAdapter(LocalCLIAdapter):
                 "final_path": str(evidence_dir / "final.txt")}
 
     def parse_response(self, raw: bytes | None, request: dict) -> dict:
-        return _parse_jsonl(raw)
+        return _parse_codex(raw, request)
 
 

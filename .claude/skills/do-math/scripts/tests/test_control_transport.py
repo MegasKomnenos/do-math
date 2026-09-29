@@ -16,6 +16,7 @@ import os
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import control_transport as transport_module
+from do_math.control_server import wait_receipt, mcp_server_config
 from do_math.control_transport import ControlTransport
 
 
@@ -210,7 +211,7 @@ class ControlTransportIoTests(unittest.TestCase):
         self.assertIn("JSON", receipt["reason"])
         self.assertEqual(raw, source.read_bytes())
         self.assertEqual(receipt, ControlTransport.worker_receipt(self.binding, request_id))
-        self.assertEqual(receipt, ControlTransport.wait_receipt(self.binding, request_id, 0))
+        self.assertEqual(receipt, wait_receipt(self.binding, request_id, 0))
         self.assertEqual(receipt, self.transport.pump(lambda _: self.fail("replay must not publish"))[0])
         source.write_bytes(b'{"different":')
         with self.assertRaisesRegex(ValueError, "different content"):
@@ -298,7 +299,7 @@ class ControlPreviewTests(unittest.TestCase):
             self.assertTrue(receipt["result"]["valid"])
             self.assertNotIn("publication_id", receipt)
             self.assertNotIn("snapshot", receipt)
-            self.assertEqual(ControlTransport.wait_receipt(binding, "preview-1", 0), receipt)
+            self.assertEqual(wait_receipt(binding, "preview-1", 0), receipt)
             self.assertEqual(ControlTransport(directory).pump(lambda _: self.fail("duplicate preview"))[0], receipt)
             self.assertEqual(len(calls), 1)
 
@@ -315,7 +316,7 @@ class ControlPreviewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             transport = ControlTransport(directory)
             binding = transport.issue("EX-preview", "GR-preview")
-            server = transport.mcp_server_config(binding)
+            server = mcp_server_config(binding)
             child = subprocess.Popen([server["command"], *server["args"]], stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
@@ -352,7 +353,7 @@ class ControlTransportTests(unittest.TestCase):
             for self_check in (True, False):
                 binding = transport.issue("EX-" + str(self_check), "GR-1", self_check=self_check)
                 ControlTransport.validate_binding(binding, execution_id=binding["execution_id"])
-                server = transport.mcp_server_config(binding)
+                server = mcp_server_config(binding)
                 child = subprocess.Popen([server["command"], *server["args"]], stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
@@ -409,7 +410,7 @@ class ControlTransportTests(unittest.TestCase):
             published = []
             receipts = transport.pump(lambda request: (published.append(request) or {"state": "accepted", "published": True, "snapshot": "SN-1", "publication_id": "PR-1"}))
             self.assertEqual(receipts[0]["state"], "accepted")
-            query = "import json,sys; from do_math.control_transport import ControlTransport; b=json.loads(sys.argv[1]); print(json.dumps(ControlTransport.wait_receipt(b, 'CT-1', 0)))"
+            query = "import json,sys; from do_math.control_server import wait_receipt; b=json.loads(sys.argv[1]); print(json.dumps(wait_receipt(b, 'CT-1', 0)))"
             self.assertEqual(child(query, binding)["snapshot"], "SN-1")
             recovered = ControlTransport(root)
             self.assertEqual(recovered.pump(lambda _: self.fail("published request must not republish"))[0]["publication_id"], "PR-1")

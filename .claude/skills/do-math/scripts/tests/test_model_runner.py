@@ -12,7 +12,7 @@ class Tests(unittest.TestCase):
    root=Path(d); ws=root/'ws'; ws.mkdir(); ev=root/'e'; r=runner_with(Adapter(collected))
    return r.run(prompt='x',output_schema={'type':'object','required':['x']},workspace=ws,evidence_dir=ev,model='m',effort='low',timeout_seconds=1)
  def test_completed_only_after_schema(self):
-  # The collector's parsed stream lists one usage row per report (codex_adapter._parse_jsonl).
+  # The collector's parsed stream lists one usage row per report (codex_stream.parse_jsonl).
   x=self.run_with({'result':'output_collected','final':{'raw':b'{"x":1}'},'jsonl':{'usage':[{'input_tokens':1}]}})
   self.assertEqual(x['status'],'completed')
   self.assertEqual(x['usage'],{'input_tokens':1})

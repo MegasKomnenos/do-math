@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.codex_adapter import _artifact
-from do_math.model_runner import verified_native_final
+from do_math.native_final import verified_native_final
 from engine_fixtures import native_result, start_native_final, submit_history
 
 

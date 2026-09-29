@@ -7,16 +7,13 @@ worker to an execution; it is not strong same-user authentication.
 """
 from __future__ import annotations
 
+import base64
 from copy import deepcopy
-import argparse
 import hashlib
 import json
 import os
 from pathlib import Path
-from secrets import token_urlsafe
-import sys
 import tempfile
-import time
 from typing import Any, Callable
 if __package__:
     from .control_protocol import (CONTROL_SERVER, SUBMIT_TOOL, RECEIPT_TOOL, SELF_CHECK_TOOL, SAFETY_BOUNDARY, SUBMIT_INTENT, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, REQUEST_KINDS, SUBMISSION_KINDS, BINDING_FIELDS, SELF_CHECK_RESPONSE_SCHEMA, self_check_request_id, self_check_response_errors)
@@ -28,7 +25,7 @@ else:
     from values import compact_json_bytes, check_path_segment, json_digest, require_text
 
 
-_FINAL_RECEIPTS = frozenset({"accepted", "rejected", "closed", "previewed"})
+FINAL_RECEIPTS = frozenset({"accepted", "rejected", "closed", "previewed"})
 
 
 def _require_text(value: Any, name: str) -> str:
@@ -102,10 +99,21 @@ def _decode_json(path: Path, raw: bytes) -> dict:
     return value
 
 
+
+def _token(clock, nbytes: int) -> str:
+    """``secrets.token_urlsafe(nbytes)``'s format, drawn from the clock port's random source."""
+    return base64.urlsafe_b64encode(bytes.fromhex(clock.random_hex(nbytes))).rstrip(b"=").decode("ascii")
+
+
 class ControlTransport:
     """A pumpable local transport; it neither starts a daemon nor owns state."""
 
-    def __init__(self, root: Path | str | None = None):
+    def __init__(self, root: Path | str | None = None, *, clock=None):
+        """``clock`` is the clock port; its random source draws the transport and capability tokens."""
+        if clock is None:
+            from .migration_defaults import clock_or_system
+            clock = clock_or_system(clock)
+        self.clock = clock
         self.root = None if root is None else Path(root).resolve()
         self._capabilities: dict[str, dict] = {}
         self._receipts: dict[tuple[str | None, str], dict] = {}  # (transport_id, request_id) -> receipt
@@ -118,7 +126,7 @@ class ControlTransport:
               self_check: bool = False) -> dict:
         _require_text(execution_id, "execution_id")
         _require_text(grant_id, "grant_id")
-        transport_id, capability = token_urlsafe(18), token_urlsafe(32)
+        transport_id, capability = _token(self.clock, 18), _token(self.clock, 32)
         binding = {"transport_id": transport_id, "capability": capability,
                    "execution_id": execution_id, "grant_id": grant_id}
         if workspace is not None:
@@ -157,18 +165,6 @@ class ControlTransport:
                     or not Path(cwd).is_absolute() or Path(workspace).resolve() != Path(cwd).resolve()):
                 raise ValueError("control binding workspace differs from execution cwd")
 
-    @staticmethod
-    def mcp_server_config(binding: dict) -> dict:
-        if any(key not in binding for key in BINDING_FIELDS):
-            raise ValueError("file transport binding lacks an MCP endpoint")
-        arguments = [str(Path(__file__).resolve()), "mcp",
-                     *("--" + key.replace("_", "-") + "=" + binding[key] for key in BINDING_FIELDS)]
-        if binding.get("workspace"):
-            arguments.append("--workspace=" + binding["workspace"])
-        if binding.get("self_check"):
-            arguments.append("--self-check")
-        return {"command": sys.executable, "args": arguments}
-
     def receive(self, request: dict, *, publish: Callable[[dict], dict] | None = None) -> dict:
         """Validate and publish a request, or record its non-final receipt.
 
@@ -188,7 +184,7 @@ class ControlTransport:
         if previous is not None:
             if previous.get("request_sha256") != request_sha256:
                 raise ValueError("request_id was reused with different content")
-            if previous.get("state") in _FINAL_RECEIPTS:
+            if previous.get("state") in FINAL_RECEIPTS:
                 return previous
         try:
             request = self._validate_request(request)
@@ -249,7 +245,7 @@ class ControlTransport:
             except ValueError as error:
                 receipt = self._reject_delivery_file(path, error)
             results.append(receipt)
-            if (receipt.get('state') in _FINAL_RECEIPTS and fingerprint_settled(mark)
+            if (receipt.get('state') in FINAL_RECEIPTS and fingerprint_settled(mark)
                     and file_fingerprint(path) == mark):
                 self._pump_cache[path] = (mark, deepcopy(receipt))
         return results
@@ -342,19 +338,6 @@ class ControlTransport:
         _require_file_name(request_id, "request_id")
         _require_file_name(binding.get("transport_id"), "transport_id")
         return _json(ControlTransport._endpoint(binding) / "outbox" / (request_id + ".json"))
-
-    @staticmethod
-    def wait_receipt(binding: dict, request_id: str, timeout_seconds: float | None) -> dict | None:
-        if timeout_seconds is not None and (isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)) or timeout_seconds < 0):
-            raise ValueError("timeout_seconds must be nonnegative or null")
-        until = None if timeout_seconds is None else time.monotonic() + timeout_seconds
-        while True:
-            receipt = ControlTransport.worker_receipt(binding, request_id)
-            if receipt is not None and receipt.get("state") in _FINAL_RECEIPTS:
-                return receipt
-            if until is not None and time.monotonic() >= until:
-                return receipt
-            time.sleep(0.05)
 
     @staticmethod
     def worker_self_check(binding: dict, *, self_check_id: str, response: dict | None = None) -> dict | None:
@@ -495,89 +478,3 @@ class ControlTransport:
         if not isinstance(endpoint, str) or not endpoint:
             raise ValueError("transport binding has no file endpoint")
         return Path(endpoint).resolve()
-
-
-def _mcp_result(value: Any) -> dict:
-    return {"content": [{"type": "text", "text": json.dumps(value, ensure_ascii=False, sort_keys=True)}]}
-
-
-def _mcp_server(binding: dict) -> int:
-    # Tool input schemas keep the node shapes preserved provider runs accepted; the
-    # exact answer shape is described in text and checked by self_check_response_errors.
-    tools = [
-        {"name": "submit_draft", "description": "Validate and submit one workspace-relative draft; internal checks and hashes are derived automatically.",
-         "inputSchema": {"type": "object", "properties": {"draft_path": {"type": "string"}, "preview": {"type": "boolean"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["draft_path"]}},
-        {"name": SUBMIT_TOOL, "description": "Submit a safety boundary, a workspace-relative draft (payload draft_path) for submission or preview, or a self-check answer to the central execution pump.",
-         "inputSchema": {"type": "object", "properties": {"request_id": {"type": "string"}, "kind": {"enum": sorted(REQUEST_KINDS)}, "payload": {"type": "object"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["request_id", "kind", "payload"]}},
-        {"name": RECEIPT_TOOL, "description": "Read or wait for the central receipt using a caller-provided duration.",
-         "inputSchema": {"type": "object", "properties": {"request_id": {"type": "string"}, "wait_seconds": {"type": "number", "minimum": 0}}, "required": ["request_id"]}},
-        {"name": SELF_CHECK_TOOL, "description": "Poll or answer a central self-check request. Omit response to poll. "
-            "An answer's response must match this JSON Schema: " + json.dumps(SELF_CHECK_RESPONSE_SCHEMA, sort_keys=True),
-         "inputSchema": {"type": "object", "properties": {"self_check_id": {"type": "string"}, "response": {"type": "object"}}, "required": ["self_check_id"]}}
-    ]
-    if not binding.get("self_check"):
-        tools = [tool for tool in tools if tool["name"] != SELF_CHECK_TOOL]
-    for line in sys.stdin:
-        message = {}
-        try:
-            message = json.loads(line)
-            method, params = message.get("method"), message.get("params", {})
-            if method == "notifications/initialized":
-                continue
-            if method == "initialize":
-                result = {"protocolVersion": params.get("protocolVersion", "2024-11-05"), "capabilities": {"tools": {}},
-                          "serverInfo": {"name": "do-math-control-transport", "version": "5"}}
-            elif method == "tools/list":
-                result = {"tools": tools}
-            elif method == "tools/call":
-                arguments, name = params.get("arguments", {}), params.get("name")
-                if name == "submit_draft":
-                    if not binding.get("workspace"):
-                        raise ValueError("submission binding has no workspace")
-                    if __package__:
-                        from .submission_tool import request_control
-                    else:
-                        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-                        from do_math.submission_tool import request_control
-                    kind = SUBMISSION_PREVIEW if arguments.get("preview") else SUBMIT_INTENT
-                    delivery = request_control(binding["workspace"], arguments["draft_path"], kind=kind,
-                        wait_seconds=arguments.get("wait_seconds", 0), binding=binding)
-                    value = {"delivery": delivery}
-                    result = _mcp_result(value)
-                elif name == SUBMIT_TOOL:
-                    value = ControlTransport.worker_submit(binding, request_id=arguments["request_id"], kind=arguments["kind"], payload=arguments["payload"])
-                    if "wait_seconds" in arguments:
-                        value["receipt"] = ControlTransport.wait_receipt(binding, arguments["request_id"], arguments["wait_seconds"])
-                    result = _mcp_result(value)
-                elif name == RECEIPT_TOOL:
-                    result = _mcp_result(ControlTransport.wait_receipt(binding, arguments["request_id"], arguments.get("wait_seconds", 0)))
-                elif name == SELF_CHECK_TOOL and binding.get("self_check"):
-                    result = _mcp_result(ControlTransport.worker_self_check(binding, self_check_id=arguments["self_check_id"], response=arguments.get("response")))
-                else:
-                    raise ValueError("unknown control tool")
-            else:
-                raise ValueError("unsupported MCP method")
-            if "id" in message:
-                print(json.dumps({"jsonrpc": "2.0", "id": message["id"], "result": result}, ensure_ascii=False), flush=True)
-        except Exception as error:
-            if "id" in message:
-                print(json.dumps({"jsonrpc": "2.0", "id": message["id"], "error": {"code": -32602, "message": str(error)}}, ensure_ascii=False), flush=True)
-    return 0
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="command", required=True)
-    mcp = subparsers.add_parser("mcp")
-    for name in BINDING_FIELDS:
-        mcp.add_argument("--" + name.replace("_", "-"), required=True)
-    mcp.add_argument("--workspace")
-    mcp.add_argument("--self-check", action="store_true")
-    args = parser.parse_args(argv)
-    return _mcp_server({**{name: getattr(args, name) for name in BINDING_FIELDS},
-                        **({"workspace": args.workspace} if args.workspace else {}),
-                        **({"self_check": True} if args.self_check else {})})
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

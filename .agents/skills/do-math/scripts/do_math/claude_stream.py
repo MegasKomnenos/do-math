@@ -173,3 +173,8 @@ def parse_stream(raw: bytes | None, *, require_structured_output: bool = True) -
                                         if "output_sha256" in row and row != selected[0]]
         parsed["turn_completed"] = True
     return parsed
+
+
+def parse_response(raw: bytes | None, request: dict) -> dict:
+    """The collector's parse of a Claude worker's stream; a request with an output schema requires structured output."""
+    return parse_stream(raw, require_structured_output="output_schema_path" in request)

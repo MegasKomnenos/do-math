@@ -12,12 +12,12 @@ import sys
 try:
     from do_math.cli_worker import allowed_environment, check_common_request, run_cli
     from do_math.control_protocol import CONTROL_SERVER
-    from do_math.control_transport import ControlTransport
+    from do_math.control_server import mcp_server_config
     from do_math.values import strict_json_loads
 except ModuleNotFoundError:  # Direct Python worker inside the Windows Job.
     from cli_worker import allowed_environment, check_common_request, run_cli
     from control_protocol import CONTROL_SERVER
-    from control_transport import ControlTransport
+    from control_server import mcp_server_config
     from values import strict_json_loads
 
 
@@ -51,7 +51,7 @@ def build_argv(request: dict) -> list[str]:
                              "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1"})
     servers = {}
     if "control_binding" in request:
-        servers[CONTROL_SERVER] = ControlTransport.mcp_server_config(request["control_binding"])
+        servers[CONTROL_SERVER] = mcp_server_config(request["control_binding"])
     server = request.get("scholarly_server")
     if server is not None:
         servers["scholarly"] = {**server, "args": [*server["args"], "--data-dir",

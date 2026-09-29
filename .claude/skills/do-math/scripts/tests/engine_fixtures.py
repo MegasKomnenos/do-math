@@ -45,6 +45,7 @@ import tempfile
 from unittest.mock import create_autospec
 
 from do_math import contracts, execution_lifecycle, execution_profiles as profiles, knowledge_io, knowledge_records as kr
+from do_math.control_server import wait_receipt
 from do_math import planning, submission, submission_tool
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.context_store import prepare_role_input
@@ -275,7 +276,7 @@ class PublicInitializationRunner:
         # The owner loop receives the request on its next pass. submit_intent closes
         # further research authority; the flag it sets is the expected barrier.
         from do_math.control_transport import ControlTransport
-        ControlTransport.wait_receipt(control_binding, delivery['request_id'], 60)
+        wait_receipt(control_binding, delivery['request_id'], 60)
         return {'status':'completed','output':output,'usage':{},'error':None}
 
 def context_engine(instance=None, runtime=None):

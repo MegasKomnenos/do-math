@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import claude_adapter, claude_worker, model_runner
+from do_math import claude_stream as claude_stream_module
 from do_math.configuration import DEFAULT_CONFIG, validate_config
 from do_math.model_policy import selection
 from do_math.session_slots import SessionSlots
@@ -139,23 +140,23 @@ class ClaudeTests(unittest.TestCase):
         self.assertEqual(args.provider, "claude")
 
     def test_native_success_extracts_structured_output_and_usage(self):
-        adapter = claude_adapter
-        parsed = adapter.parse_jsonl(claude_stream(CLAUDE_INIT, {"type": "rate_limit_event"}, CLAUDE_RESULT))
+        adapter = claude_stream_module
+        parsed = adapter.parse_stream(claude_stream(CLAUDE_INIT, {"type": "rate_limit_event"}, CLAUDE_RESULT))
         self.assertTrue(parsed["parse_complete"])
         self.assertTrue(parsed["turn_completed"])
         self.assertEqual(parsed["structured_output"], {"ok": True})
         self.assertEqual(parsed["usage"], [CLAUDE_RESULT["usage"]])
 
     def test_rate_notification_can_precede_init_but_work_cannot(self):
-        adapter = claude_adapter
+        adapter = claude_stream_module
         # Observed with Claude 2.1.274 while connecting scholarly MCP.
         notification = {"type": "rate_limit_event", "session_id": "session-one"}
-        self.assertTrue(adapter.parse_jsonl(claude_stream(notification, CLAUDE_INIT, CLAUDE_RESULT))["parse_complete"])
+        self.assertTrue(adapter.parse_stream(claude_stream(notification, CLAUDE_INIT, CLAUDE_RESULT))["parse_complete"])
         for events in (({"type": "assistant"}, CLAUDE_INIT, CLAUDE_RESULT),
                        ({**notification, "session_id": "other"}, CLAUDE_INIT, CLAUDE_RESULT),
                        ({**CLAUDE_INIT, "session_id": 7}, {**CLAUDE_RESULT, "session_id": 7})):
             with self.subTest(events=events):
-                self.assertFalse(adapter.parse_jsonl(claude_stream(*events))["parse_complete"])
+                self.assertFalse(adapter.parse_stream(claude_stream(*events))["parse_complete"])
 
     def test_final_is_selected_from_the_stream_and_preserved_bytes_must_match_it(self):
         adapter = claude_adapter.ClaudePrintAdapter("unused")
@@ -169,14 +170,14 @@ class ClaudeTests(unittest.TestCase):
         self.assertIsNone(adapter.final_bytes(adapter.parse_response(claude_stream(CLAUDE_INIT), {})))
 
     def test_error_truncation_duplicate_terminal_and_session_mismatch_fail(self):
-        adapter = claude_adapter
+        adapter = claude_stream_module
         for raw in (claude_stream(CLAUDE_INIT), claude_stream(CLAUDE_INIT, CLAUDE_RESULT, CLAUDE_RESULT),
                     claude_stream(CLAUDE_INIT, CLAUDE_RESULT) + b'{"type":',
                     claude_stream(CLAUDE_INIT, {**CLAUDE_RESULT, "session_id": "another"}),
                     claude_stream(CLAUDE_RESULT), claude_stream(CLAUDE_INIT, CLAUDE_RESULT, {"type": "assistant"})):
             with self.subTest(raw=raw):
-                self.assertFalse(adapter.parse_jsonl(raw)["parse_complete"])
-        parsed = adapter.parse_jsonl(claude_stream(CLAUDE_INIT, {**CLAUDE_RESULT, "subtype": "error_max_turns", "is_error": True}))
+                self.assertFalse(adapter.parse_stream(raw)["parse_complete"])
+        parsed = adapter.parse_stream(claude_stream(CLAUDE_INIT, {**CLAUDE_RESULT, "subtype": "error_max_turns", "is_error": True}))
         self.assertTrue(parsed["turn_failed"])
         self.assertFalse(parsed["turn_completed"])
 

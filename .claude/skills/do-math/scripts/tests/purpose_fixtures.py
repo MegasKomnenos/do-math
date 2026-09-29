@@ -52,6 +52,7 @@ from unittest.mock import patch
 import jsonschema
 
 from do_math import submission
+from do_math.control_server import wait_receipt
 from do_math.control_transport import ControlTransport
 from do_math.engine import ResearchEngine, control
 from do_math.canonical import canonical_json
@@ -565,7 +566,7 @@ class CheckedRunner:
             payload = {"draft_path": check["raw_output_path"]}
             request_id = "submit-" + check["id"]
             ControlTransport.worker_submit(binding, request_id=request_id, kind="submit_intent", payload=payload)
-            ControlTransport.wait_receipt(binding, request_id, 60)  # The owner receives it on its next pass.
+            wait_receipt(binding, request_id, 60)  # The owner receives it on its next pass.
         return result
 
 ASSESSMENT_CONFIG = PurposeHarness.fixture_config(scholarly_enabled=False, operator_enabled=False)

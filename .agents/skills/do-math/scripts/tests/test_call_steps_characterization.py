@@ -9,10 +9,12 @@ the digests still name the step and field that changed). The files carry what
 the state records only by hash, such as preserved outputs; a JSON file is
 compared as its value. Values that differ between equal runs or checkouts are
 normalized: the temporary root, the checkout's ``scripts`` path, content
-hashes, Git object IDs, the fixture child's OS
-process identity, file modification times, the synthetic trust directory's
-random suffix, the worker's request and check IDs (minted from the worker's own
-clock and randomness) and the control transport's tokens.
+hashes, Git object IDs, the fixture child's OS process identity, file
+modification times, the synthetic trust directory's random suffix, the worker's
+request and check IDs (minted from the worker's own clock and randomness) and
+the control transport's tokens. The shipped submission-support archive is
+recorded by its members and its size is dropped, because its bytes are the
+product code of the worker's tools, not behaviour of the scenario.
 
 The prompt documents are an input the product reads from the checkout, and a
 checkout's line endings change their bytes (the main working tree can hold CRLF
@@ -31,6 +33,7 @@ at both versions and compare the two files.
 from datetime import datetime, timezone
 from functools import partial
 import hashlib
+import io
 import json
 from pathlib import Path
 import re
@@ -39,6 +42,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.contracts import all_prompt_documents
@@ -82,7 +86,10 @@ def changed_files(repository: Path, before: str, after: str) -> dict:
     for name in present:  # Each object is "<oid> <type> <size>\n<content>\n".
         header, batch = batch.split(b'\n', 1)
         size = int(header.split()[2])
-        texts[name], batch = batch[:size].decode('utf-8', 'replace'), batch[size + 1:]
+        raw, batch = batch[:size], batch[size + 1:]
+        # An archive ships product code (the worker's submission support); its members are the trace, not its bytes.
+        texts[name] = ({'archive_members': sorted(zipfile.ZipFile(io.BytesIO(raw)).namelist())}
+                       if name.endswith('.zip') else raw.decode('utf-8', 'replace'))
     return {name: texts.get(name) for _, name in rows}
 
 
@@ -119,6 +126,8 @@ def normalized(value, root: str, key=None):
     if key in TOKEN_KEYS and isinstance(value, (str, int)):
         return '<token>'
     if isinstance(value, dict):
+        if isinstance(value.get('path'), str) and value['path'].endswith('.zip') and 'bytes' in value:
+            value = {**value, 'bytes': '<archive>'}  # the size of shipped product code
         pairs = [[normalized(k, root), normalized(v, root, k)] for k, v in value.items()]
         return sorted(pairs, key=lambda pair: json.dumps(pair, sort_keys=True))
     if isinstance(value, list):

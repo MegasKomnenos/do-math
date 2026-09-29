@@ -68,6 +68,11 @@ def parse_jsonl(raw: bytes | None) -> dict[str, Any]:
     return parsed
 
 
+def parse_response(raw: bytes | None, request: dict) -> dict[str, Any]:
+    """The collector's parse of a Codex worker's stream; the request adds nothing for Codex."""
+    return parse_jsonl(raw)
+
+
 def provider_observation(request: dict, parsed: dict, stdout: bytes | None) -> dict[str, Any]:
     """The provider-reported facts of one collection, including an unconfirmed barrier."""
     return {"execution_id": request.get("execution_id"), "operation_ids": "unknown", "operation_count": "unknown",

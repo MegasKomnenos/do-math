@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.canonical import exact_content_hash
+from do_math.control_server import mcp_server_config
 from research_fixtures import dispatched_launch
 from do_math import execution_profiles, model_policy
 from provider_fixtures import PROFILE_CONFIG
@@ -119,7 +120,7 @@ class ProfileTests(unittest.TestCase):
             self.assertEqual(adapter.request["control_binding"], binding)
             request = codex_worker.load_request(root / "evidence" / "request.json")
             argv = codex_worker.build_argv(request)
-            config = ControlTransport.mcp_server_config(binding)
+            config = mcp_server_config(binding)
             self.assertIn("mcp_servers.execution_control.command=" + json.dumps(config["command"], ensure_ascii=False), argv)
             self.assertIn("mcp_servers.execution_control.args=" + json.dumps(config["args"], ensure_ascii=False), argv)
             claude_request = {k: v for k, v in request.items()
@@ -464,7 +465,7 @@ class ProfileTests(unittest.TestCase):
                 request = worker.load_request(request_path)
                 self.assertEqual(request['control_binding'], binding)
                 self.assertIn('--workspace=' + str(workspace.resolve()),
-                              ControlTransport.mcp_server_config(binding)['args'])
+                              mcp_server_config(binding)['args'])
                 self.assertTrue(worker.build_argv(request))
                 variants = [dict(binding, unexpected='reject'), dict(binding, execution_id='EX-other'),
                             dict(binding, endpoint='relative'), dict(binding, workspace='relative'),
@@ -544,10 +545,10 @@ class ProfileTests(unittest.TestCase):
         from do_math.claude_adapter import ClaudePrintAdapter
         self.assertEqual(set(CodexExecAdapter("codex").capability_identity()["module_sha256"]),
                          {"cli_worker", "codex_worker", "control_transport", "control_protocol", "file_io", "values", "windows_job",
-                          "scholarly", "codex_adapter", "codex_stream"})
+                          "scholarly", "codex_adapter", "codex_stream", "provider_final", "control_server"})
         self.assertEqual(set(ClaudePrintAdapter("claude").capability_identity()["module_sha256"]),
                          {"claude_worker", "cli_worker", "codex_worker", "control_transport", "control_protocol", "file_io", "values", "windows_job",
-                          "scholarly", "codex_adapter", "codex_stream", "claude_adapter", "claude_stream"})
+                          "scholarly", "codex_adapter", "codex_stream", "provider_final", "control_server", "claude_adapter", "claude_stream"})
 
     def test_unchanged_cli_and_sources_are_not_rehashed_for_each_identity(self):
         from do_math import file_io

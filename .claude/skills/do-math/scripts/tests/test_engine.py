@@ -15,6 +15,7 @@ from unittest.mock import patch
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 from do_math import activities, execution_profiles, submission_tool
+from do_math.control_server import wait_receipt
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.engine import control, initialize, ResearchEngine
 from do_math.canonical import canonical_json
@@ -324,7 +325,7 @@ class PublicGitFlow(unittest.TestCase):
                 # next pass and the worker waits for the durable receipt.
                 delivery = submission_tool.request_control(workspace, "draft.json", kind="submit_intent", wait_seconds=0)
                 self.assertIn(delivery["state"], {"submitted", "already_received"}, delivery)
-                receipt = ControlTransport.wait_receipt(arguments["control_binding"], delivery["request_id"], 60)
+                receipt = wait_receipt(arguments["control_binding"], delivery["request_id"], 60)
                 self.assertEqual(receipt["state"], "accepted", receipt)
                 return {"status": "completed", "output": output, "usage": {}}
         with tempfile.TemporaryDirectory() as temporary:

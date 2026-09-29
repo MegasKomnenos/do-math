@@ -38,7 +38,8 @@ from .planning_engine import PlanningEngineMixin
 from .academic_engine import AcademicEngineMixin
 from .governance_engine import GovernanceEngineMixin, bind_host_configuration
 from .repair_execution import RepairExecutionMixin
-from .model_runner import ModelRunner, verified_native_final
+from .model_runner import ModelRunner
+from .native_final import verified_native_final
 from .repository import ResearchRepository
 from .canonical import canonical_json, exact_content_hash
 from .repository import mark_artifact_verified, sealed_bytes
@@ -131,10 +132,7 @@ def _installation_listing(root, documents):
     return rows
 
 
-def _evaluation_context_for(store, snapshot, *, lean_available, clock=None):
-    if clock is None:
-        from .wiring import default_clock  # layer: 1b migration default until entry points pass Ports
-        clock = default_clock()
+def _evaluation_context_for(store, snapshot, *, lean_available, clock):
     def read_artifact(path, commit):
         if not isinstance(path, str) or not path.startswith(ARTIFACT_ROOT):
             raise ValueError("task evidence must identify an immutable archived artifact")
@@ -459,7 +457,8 @@ class ResearchEngine(CallEngineMixin, QuestionEngineMixin, RevisionEngineMixin, 
         self.formal_verifier = formal_verifier or partial(verify_lean, jobs=ports.jobs)
         self.head, self.instance, self.runtime = self.store.load()
         self._init_process_state(
-            transport=ControlTransport(Path(self.instance["workspace"]) / "execution-control" / instance_id))
+            transport=ControlTransport(Path(self.instance["workspace"]) / "execution-control" / instance_id,
+                                       clock=ports.clock))
 
     def _init_process_state(self, *, transport=None):
         """Process-local owner state that no repository holds.

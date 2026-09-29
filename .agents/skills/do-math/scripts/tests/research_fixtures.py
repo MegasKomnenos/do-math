@@ -181,6 +181,7 @@ import tempfile
 from unittest.mock import patch
 
 from do_math.contracts import CONTRACT_REVIEW_ITEMS, ROLES
+from do_math.control_server import wait_receipt
 from do_math.control_transport import ControlTransport
 from do_math.execution_profiles import profile_ref
 from do_math.file_io import sha256_file
@@ -682,7 +683,7 @@ def submit_intent(binding, workspace, output):
     delivery = request_control(workspace, "output.json", kind="submit_intent", wait_seconds=0, binding=binding)
     request_id = delivery["request_id"]
     # The owner loop receives transport requests every pass; the worker only waits.
-    receipt = ControlTransport.wait_receipt(binding, request_id, 60)
+    receipt = wait_receipt(binding, request_id, 60)
     if not receipt or receipt["state"] != "accepted":
         raise AssertionError("Submission intent did not receive engine acceptance: " + repr(receipt))
 
