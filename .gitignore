@@ -70,3 +70,6 @@ __pycache__/
 
 # do-math graphify local graph, semantic cache, and execution records.
 /.claude/graphify/
+
+# do-math 시험 선택 색인. T3 실행이 작업 트리마다 만드는 생성물이다(시험-재편 설계 5.3).
+/.*/skills/do-math/scripts/tests/.selection-index*

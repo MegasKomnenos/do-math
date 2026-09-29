@@ -11,6 +11,16 @@ missing from ``SHARDS`` stops the run. The report states the number of open
 entries in ``tests/known_defects.json``. When and what to run is in
 ``tests/시험-지침.md``.
 
+T0 adds to the structure checks the tests that ran the changed lines, by the
+selection index and its safety rules (``tests/support/selection.py``). T3 runs
+the T2 folders under branch coverage with a context per test
+(``tests/support/branch_gate.py``): the branch-reach gate over layer 1-3
+modules fails the run when a branch or line is unreached, and a full T3 run
+rewrites the selection index ``tests/.selection-index.json``. With
+``--mutation-base <commit>`` T3 then mutates the functions changed since that
+commit (``tests/support/mutation.py``) and fails while ``tests/pseudo_tested.json``
+has an entry without a reason.
+
 Lean and resource tests run per class in an owned Windows Job with a per-phase
 deadline. Normal unittest discovery still works but imposes no outer deadlines.
 This runner never changes the product's Lean time limits.
@@ -33,7 +43,6 @@ import unittest
 import uuid
 
 from test_categories import SHARDS, isolation_for, shard_for, unregistered_modules
-from do_math.file_io import write_bytes_atomic, read_bytes_shared
 
 SCRIPTS = Path(__file__).resolve().parent
 TESTS = SCRIPTS / 'tests'
@@ -91,11 +100,14 @@ def discover(loader=None):
     return list(flatten(loader.discover(str(TESTS), pattern='test_*.py', top_level_dir=str(TESTS))))
 
 
+# do_math is imported on first use, not at module import: T3 starts coverage before any product import.
 def _write_json(path, value):
+    from do_math.file_io import write_bytes_atomic
     write_bytes_atomic(path,(json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
 
 
 def _read_json(path):
+    from do_math.file_io import read_bytes_shared
     try:
         return json.loads(read_bytes_shared(path).decode('utf-8'))
     except FileNotFoundError:
@@ -111,9 +123,9 @@ def flatten(suite):
 
 
 class TimedResult(unittest.TextTestResult):
-    def __init__(self, *args, directory, checkpoint=False, **kwargs):
+    def __init__(self, *args, directory, checkpoint=False, measurement=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.directory, self.checkpoint = directory, checkpoint
+        self.directory, self.checkpoint, self.measurement = directory, checkpoint, measurement
         self.rows, self.starts, self.sequence = {}, {}, 0
 
     def _progress(self, identifier, phase):
@@ -126,6 +138,8 @@ class TimedResult(unittest.TextTestResult):
                 'sequence': self.sequence, 'test_id': identifier, 'phase': phase})
 
     def startTest(self, test):
+        if self.measurement is not None:
+            self.measurement.test_started(test.id())
         super().startTest(test)
         self.starts[test.id()] = time.monotonic()
         self.rows[test.id()] = {'id': test.id(), 'outcome': 'running', 'seconds': 0, 'details': []}
@@ -185,6 +199,8 @@ class TimedResult(unittest.TextTestResult):
     def stopTest(self, test):
         self.rows[test.id()]['seconds'] = time.monotonic() - self.starts.pop(test.id())
         super().stopTest(test)
+        if self.measurement is not None:
+            self.measurement.test_stopped(test.id())
         self._progress(None, 'fixture_or_shutdown')
 
     def preserve(self, *, complete):
@@ -194,10 +210,10 @@ class TimedResult(unittest.TextTestResult):
         return report
 
 
-def _run_suite(tests, directory, *, checkpoint=False):
+def _run_suite(tests, directory, *, checkpoint=False, measurement=None):
     directory.mkdir(parents=True, exist_ok=True)
     result = unittest.TextTestRunner(verbosity=2, resultclass=lambda *a, **k: TimedResult(
-        *a, directory=directory, checkpoint=checkpoint, **k)).run(unittest.TestSuite(tests))
+        *a, directory=directory, checkpoint=checkpoint, measurement=measurement, **k)).run(unittest.TestSuite(tests))
     report = result.preserve(complete=True)
     reported = {row['id'] for row in report['rows']}
     fixtures = [row for row in report['rows'] if row.get('fixture')]
@@ -327,26 +343,52 @@ def main(argv=None):
     parser.add_argument('--list', action='store_true', help='discover and list without running tests')
     parser.add_argument('--timeout', type=float, default=300, help='seconds per isolated test/fixture phase (default: 300)')
     parser.add_argument('--output', type=Path, help='new or empty results directory; default: a unique temporary directory')
+    parser.add_argument('--mutation-base', help='with --tier T3: extreme-mutate the functions changed since this commit')
     parser.add_argument('--worker', type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.worker:
         return _worker(args.worker)
     if not math.isfinite(args.timeout) or args.timeout <= 0:
         parser.error('--timeout must be finite and positive')
+    tiers = args.tier or []
+    if args.mutation_base and 'T3' not in tiers:
+        parser.error('--mutation-base runs with --tier T3')
     missing, stale = unregistered_modules(TESTS)
     if missing or stale:
         print('scripts/test_categories.py SHARDS is out of date. Unregistered: ' + (', '.join(missing) or '-')
               + '. Listed but absent: ' + (', '.join(stale) or '-'), file=sys.stderr)
         return 2
     before = _edition()
+    started_run = time.monotonic()
+    measurement = None
+    if 'T3' in tiers:
+        if str(TESTS) not in sys.path:
+            sys.path.insert(0, str(TESTS))
+        from support.branch_gate import Measurement, repository_root
+        measurement = Measurement(repository_root())
+        measurement.start()  # before discovery, so import-time lines count
+
+    def bail(code):
+        if measurement is not None:
+            measurement.abandon()
+        return code
+
     loader = unittest.TestLoader()
     discovered = discover(loader)
     if loader.errors:
         print('\n'.join(loader.errors), file=sys.stderr)
-        return 2
+        return bail(2)
+    selection = None
     if args.tier or args.shard:
-        pool = select_tiers(discovered, args.tier or []) + [
+        pool = select_tiers(discovered, tiers) + [
             test for test in discovered if folder_of(test) is None and args.shard and shard_for(test) in args.shard]
+        if 'T0' in tiers:
+            from do_math.layers import LAYERS
+            from support.branch_gate import repository_root
+            from support.selection import choose
+            selection = choose(repository_root(), LAYERS)
+            chosen = {test.id() for test in pool}
+            pool += [test for test in discovered if test.id() not in chosen and selection.picks(test.id())]
     elif args.tests:
         pool = discovered
     else:
@@ -359,22 +401,28 @@ def main(argv=None):
     if unknown:
         # A mistyped ID would otherwise drop out silently and read as a pass.
         print('No test matches: ' + ', '.join(unknown), file=sys.stderr)
-        return 2
+        return bail(2)
     if not selected:
         print('No tests selected; no pass was established.', file=sys.stderr)
-        return 2
+        return bail(2)
     if args.list:
         for test in selected:
             print(group_of(test) + '\t' + test.id())
-        return 0
+        return bail(0)
     directory = args.output.resolve() if args.output else Path(tempfile.mkdtemp(prefix='do-math-tests-'))
     if directory.exists() and any(directory.iterdir()):
+        bail(None)
         parser.error('--output must be new or empty; previous evidence is never overwritten')
     directory.mkdir(parents=True, exist_ok=True)
     from support.known_defects import open_count  # tests/ is importable after discovery
     open_defects = open_count()
     print(f'Open known defects: {open_defects}', flush=True)
+    if selection is not None:
+        print(selection_summary(selection), flush=True)
     reports, shard_seconds = [], {}
+    if measurement is not None:
+        measurement.begin([test.id() for shard in (*SHARDS, *FOLDERS) for test in selected
+                           if group_of(test) == shard and isolation_for(test) is None])
     for shard in (*SHARDS, *FOLDERS):
         tests = [test for test in selected if group_of(test) == shard]
         if not tests:
@@ -383,7 +431,7 @@ def main(argv=None):
         print(f'[{shard}] {len(tests)} tests', flush=True)
         in_process = [test for test in tests if isolation_for(test) is None]
         if in_process:
-            reports.append({'shard': shard, **_run_suite(in_process, directory / shard)})
+            reports.append({'shard': shard, **_run_suite(in_process, directory / shard, measurement=measurement)})
         classes = defaultdict(list)
         for test in tests:
             if isolation_for(test) is not None:
@@ -398,9 +446,13 @@ def main(argv=None):
     after = _edition()
     changed = sorted(path for path in before.keys() | after.keys() if before.get(path) != after.get(path))
     rows = [row for report in reports for row in report['rows']]
-    total = round(sum(shard_seconds.values()), 1)
+    complete = all(report['complete'] for report in reports)
+    t3 = _finish_t3(measurement, directory, selected, args, complete and not changed) if measurement else {}
+    # T3's whole run, analysis and mutation included, is held to the T3 budget (설계 5.1, 5.2).
+    total = round(time.monotonic() - started_run if measurement else sum(shard_seconds.values()), 1)
     budget = budget_report(rows, args.tier or [], total, json.loads((TESTS / 'budgets.json').read_text(encoding='utf-8')))
-    result = {'open_known_defects': open_defects, 'budget': budget,
+    result = {'open_known_defects': open_defects, 'budget': budget, **t3,
+        't0_selection': selection.report() if selection is not None else None,
         'complete': all(report['complete'] for report in reports),
         'successful': not changed and all(report['successful'] for report in reports),
         'selected': [test.id() for test in selected], 'discovered': len(discovered),
@@ -413,6 +465,8 @@ def main(argv=None):
                           key=lambda row: row['seconds'], reverse=True)[:20]}
     _write_json(directory / 'report.json', result)
     tier = budget['tier']
+    for line in t3.get('summary', []):
+        print(line, flush=True)
     print(f"Over budget: {len(budget['over_budget'])} tests"
           + (f"; {'+'.join(tier['tiers'])} ran {tier['seconds']}s of {tier['budget_seconds']}s"
              + (' (over)' if tier['over'] else '') if tier else ''), flush=True)
@@ -425,7 +479,49 @@ def main(argv=None):
     if changed:
         print('Files changed during the run, so this is not a pass: ' + ', '.join(changed), file=sys.stderr)
     print('Report: ' + str(directory / 'report.json'))
-    return 0 if result['successful'] else 1
+    return 0 if result['successful'] and t3.get('passed', True) else 1
+
+
+def selection_summary(selection):
+    """T0's selection in one line, then one line per changed path and rule."""
+    lines = [f"T0 selection ({selection.mode}{': ' + selection.reason if selection.reason else ''}): "
+             f"{len(selection.tests)} tests, modules {sorted(selection.modules) or '-'}, folders {sorted(selection.folders) or '-'}"]
+    lines += [f"  {change['path']}: {change['rule']}" for change in selection.reasons]
+    return '\n'.join(lines)
+
+
+def _finish_t3(measurement, directory, selected, args, clean):
+    """Stop measuring; judge the gate, rewrite the index after a full clean run, and mutate on request.
+
+    The index is written only when the run was the whole T3 selection (no test
+    IDs, no --match), every group completed and no file changed during it; a
+    partial run would drop tests from the index.
+    """
+    from do_math.layers import LAYERS
+    from support import branch_gate
+    report = measurement.finish(directory)
+    prefix = SCRIPTS.relative_to(measurement.root).as_posix()
+    gate = branch_gate.gate(report['files'], LAYERS, prefix)
+    summary = [branch_gate.gate_summary(gate)]
+    index = None
+    if clean and not args.tests and not args.match:
+        tests = [test.id() for test in selected if isolation_for(test) is None]
+        index = branch_gate.write_index(measurement, report, tests)
+        summary.append(f"Selection index: {index['tests']} tests, {index['measured_files']} measured files, "
+                       f"{index['inputs']} inputs, commit {index['commit'][:12]} -> {index['path']}")
+    else:
+        summary.append('Selection index not written: the run was partial, incomplete or saw files change.')
+    mutation = None
+    if args.mutation_base:
+        from support import mutation as mutation_tool
+        from support.selection import read_index
+        current, _ = read_index()
+        mutation = mutation_tool.run(args.mutation_base, current if index else None, LAYERS, measurement.root,
+                                     directory / 'mutation', timeout=args.timeout)
+        summary.append(mutation_tool.summary(mutation))
+        summary += [f'  survived: {name}' for name in mutation['survived']]
+    passed = gate['passed'] and (mutation is None or mutation['unreasoned_entries'] == 0)
+    return {'branch_gate': gate, 'selection_index': index, 'mutation': mutation, 'summary': summary, 'passed': passed}
 
 
 if __name__ == '__main__':
