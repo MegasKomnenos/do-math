@@ -238,8 +238,13 @@ def _child_run(spec, directory, timeout):
     return set(result['failing']), time.monotonic() - started
 
 
-def run(base, index, layers, root, directory, *, only=(), timeout=300.0, listing_path=PSEUDO_TESTED):
-    """Mutate the functions changed since ``base`` and report; see the module docstring."""
+def run(base, index, layers, root, directory, *, only=(), every=False, timeout=300.0, listing_path=PSEUDO_TESTED):
+    """Mutate the functions changed since ``base`` and report; see the module docstring.
+
+    ``every`` targets every function of the chosen modules, as if ``base`` lacked
+    them: stage 1f moves tests without changing the product, so the check that
+    moved tests look at results mutates the functions those tests reach.
+    """
     from support.branch_gate import git_blobs
     started = time.monotonic()
     resolved = _git(root, 'rev-parse', '--verify', '--quiet', f'{base}^{{commit}}')
@@ -262,7 +267,7 @@ def run(base, index, layers, root, directory, *, only=(), timeout=300.0, listing
         path = f'{prefix}/{module}'
         text = (SCRIPTS / module).read_text(encoding='utf-8')
         shown = _git(root, 'show', f'{base}:{path}')
-        base_text = shown.stdout.decode('utf-8') if shown.returncode == 0 else ''
+        base_text = shown.stdout.decode('utf-8') if shown.returncode == 0 and not every else ''
         for key, node in changed_functions(base_text, text):
             rule, mutant = mutate(text, node)
             outcome = {'module': module, 'function': key, 'rule': rule, 'line': node.lineno}
@@ -307,7 +312,7 @@ def run(base, index, layers, root, directory, *, only=(), timeout=300.0, listing
     if update_list(listing, outcomes, base):
         Path(listing_path).write_text(json.dumps(listing, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     counts = Counter(o['status'] for o in outcomes)
-    return {'base': base, 'functions': len(outcomes), 'counts': dict(counts),
+    return {'base': base, 'every': every, 'functions': len(outcomes), 'counts': dict(counts),
             'baseline_failing': sorted(baseline), 'unreasoned_entries': unreasoned(listing),
             'list': str(listing_path), 'seconds': round(time.monotonic() - started, 1),
             'survived': [f"{o['module']}:{o['function']}" for o in outcomes if o['status'] == 'survived'],
@@ -316,7 +321,8 @@ def run(base, index, layers, root, directory, *, only=(), timeout=300.0, listing
 
 def summary(report):
     counts = report['counts']
-    return (f"Extreme mutation since {report['base'][:12]}: {report['functions']} changed functions; "
+    scope = 'every function of the chosen modules' if report.get('every') else f"since {report['base'][:12]}"
+    return (f"Extreme mutation, {scope}: {report['functions']} functions; "
             + ', '.join(f'{name} {counts[name]}' for name in sorted(counts))
             + f"; unreasoned pseudo-tested entries: {report['unreasoned_entries']} ({report['seconds']}s)")
 
@@ -366,6 +372,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--base', help='commit the changed functions are compared with')
     parser.add_argument('--only', action='append', default=[], help='scripts-relative module glob; repeat')
+    parser.add_argument('--every', action='store_true',
+                        help='mutate every function of the chosen modules, not only those changed since --base')
     parser.add_argument('--timeout', type=float, default=300.0, help='seconds per mutant run (default: 300)')
     parser.add_argument('--output', type=Path, help='work directory; default: a new temporary directory')
     parser.add_argument('--child', type=Path, help=argparse.SUPPRESS)
@@ -383,7 +391,7 @@ def main(argv=None):
     if index is None:
         print(f'Selection index unusable ({reason}); every mutant runs its layer folders.', flush=True)
     directory = args.output or Path(tempfile.mkdtemp(prefix='do-math-mutation-'))
-    report = run(args.base, index, LAYERS, root, directory, only=args.only, timeout=args.timeout)
+    report = run(args.base, index, LAYERS, root, directory, only=args.only, every=args.every, timeout=args.timeout)
     (Path(directory) / 'mutation.json').write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding='utf-8')
     print(summary(report))
     for name in report['survived']:
