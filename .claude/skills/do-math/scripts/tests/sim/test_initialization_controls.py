@@ -14,44 +14,12 @@ import unittest
 from do_math.canonical import exact_content_hash
 from do_math.execution_profiles import profile_ref
 from do_math.initialization import _capability_batch_requirements, capability_requirements, observed_profile_refs
-from support.fakes.host import FakeHost
+from support.fakes.host import ObservedHost
 from support.sim import Sim, warm_template
 
 setUpModule = warm_template
 
 WINDOWS = {'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}
-
-
-class ObservedHost(FakeHost):
-    """The fake host with counted CLI observations; ``failures`` raises at the given describe call numbers.
-
-    ``per_profile`` gives each profile its own observation key, as distinct CLI
-    installations would, so a batch observes profiles one by one.
-    """
-
-    def __init__(self, *, failures=(), per_profile=False, **facts):
-        super().__init__(**facts)
-        self.key_calls = self.identity_calls = self.describe_calls = 0
-        self.failures, self.per_profile = set(failures), per_profile
-        self.description = None
-
-    def observations(self):
-        """``(key, identity, describe)`` call counts: every CLI observation the host was asked for."""
-        return self.key_calls, self.identity_calls, self.describe_calls
-
-    def cli_observation_key(self, profile):
-        self.key_calls += 1
-        return ('fake', profile['id']) if self.per_profile else super().cli_observation_key(profile)
-
-    def cli_identity(self, profile):
-        self.identity_calls += 1
-        return super().cli_identity(profile)
-
-    def cli_describe(self, profile):
-        self.describe_calls += 1
-        if self.describe_calls in self.failures:
-            raise RuntimeError('probe failed')
-        return deepcopy(self.description) if self.description is not None else super().cli_describe(profile)
 
 
 def _history_row(sim, request):

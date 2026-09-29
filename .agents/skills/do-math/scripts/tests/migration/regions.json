@@ -1,0 +1,331 @@
+{
+ "note": "Region of every stage-1f legacy test module and every layer 1-3 product module (진행.md, 영역 차례). A region worker migrates its legacy modules and closes the branch gate and the extreme mutation of its product modules; kernel modules are the main session's.",
+ "regions": {
+  "storage": {
+   "legacy_modules": [
+    "test_cli_surface",
+    "test_context_store",
+    "test_family_records",
+    "test_file_io",
+    "test_git_store",
+    "test_json_digests",
+    "test_payloads",
+    "test_query_records",
+    "test_reporting",
+    "test_repository",
+    "test_retention",
+    "test_state_checks",
+    "test_state_contract",
+    "test_unicode_flow"
+   ],
+   "product_modules": [
+    "do_math/canonical.py",
+    "do_math/context_store.py",
+    "do_math/file_io.py",
+    "do_math/git_store.py",
+    "do_math/ids.py",
+    "do_math/payloads.py",
+    "do_math/record_schemas/__init__.py",
+    "do_math/record_schemas/schemas.py",
+    "do_math/reporting.py",
+    "do_math/repository.py",
+    "do_math/retention.py",
+    "do_math/state_checks.py",
+    "do_math/state_contract.py",
+    "do_math/values.py"
+   ]
+  },
+  "submission": {
+   "legacy_modules": [
+    "test_completion_settlement",
+    "test_contract_checks",
+    "test_contracts",
+    "test_integration_bundles",
+    "test_lean_preview",
+    "test_native_final_submission",
+    "test_preparation_cache",
+    "test_reference_catalog",
+    "test_submission_boundaries",
+    "test_submission_checks",
+    "test_submission_flow",
+    "test_submission_tools"
+   ],
+   "product_modules": [
+    "do_math/contracts.py",
+    "do_math/formal_preview.py",
+    "do_math/input_tool.py",
+    "do_math/integration.py",
+    "do_math/native_final.py",
+    "do_math/submission.py",
+    "do_math/submission_tool.py"
+   ]
+  },
+  "governance": {
+   "legacy_modules": [
+    "test_decision_basis",
+    "test_delegations",
+    "test_goal_audit",
+    "test_governance",
+    "test_governance_engine",
+    "test_initial_intent_connection",
+    "test_question_flow",
+    "test_questions"
+   ],
+   "product_modules": [
+    "do_math/decision_engine.py",
+    "do_math/delegations.py",
+    "do_math/governance.py",
+    "do_math/governance_engine.py",
+    "do_math/input_basis.py",
+    "do_math/question_engine.py",
+    "do_math/questions.py"
+   ]
+  },
+  "planning": {
+   "legacy_modules": [
+    "test_planning",
+    "test_planning_engine",
+    "test_reading_map",
+    "test_relation_dependencies",
+    "test_repetition",
+    "test_revision_obligations",
+    "test_task_completion",
+    "test_task_contracts",
+    "test_task_scope"
+   ],
+   "product_modules": [
+    "do_math/planning.py",
+    "do_math/planning_engine.py",
+    "do_math/relation_refs.py",
+    "do_math/revision_engine.py",
+    "do_math/revisions.py",
+    "do_math/task_contracts.py",
+    "do_math/task_scope.py"
+   ]
+  },
+  "knowledge": {
+   "legacy_modules": [
+    "test_currentness",
+    "test_formal",
+    "test_formal_engine",
+    "test_formal_input_manifest",
+    "test_formal_runtime",
+    "test_impact_review",
+    "test_knowledge",
+    "test_knowledge_import_engine",
+    "test_knowledge_io",
+    "test_knowledge_storage",
+    "test_reassessment"
+   ],
+   "product_modules": [
+    "do_math/formal.py",
+    "do_math/formal_engine.py",
+    "do_math/knowledge.py",
+    "do_math/knowledge_engine.py",
+    "do_math/knowledge_io.py",
+    "do_math/knowledge_records.py",
+    "do_math/lean_evidence.py"
+   ]
+  },
+  "review": {
+   "legacy_modules": [
+    "test_review_cycle",
+    "test_review_engine",
+    "test_review_policy",
+    "test_review_research",
+    "test_review_scope_wire"
+   ],
+   "product_modules": [
+    "do_math/review_cycle.py",
+    "do_math/review_engine.py",
+    "do_math/review_policy.py"
+   ]
+  },
+  "engine": {
+   "legacy_modules": [
+    "test_call_steps_characterization",
+    "test_checkpoint_persistence",
+    "test_cli",
+    "test_cli_advanced",
+    "test_control_shapes",
+    "test_control_transport",
+    "test_controls",
+    "test_design_walkthroughs",
+    "test_engine",
+    "test_input_recovery",
+    "test_lifecycle_engine",
+    "test_lifecycle_gates",
+    "test_operation_trace",
+    "test_purpose_engine",
+    "test_role_input",
+    "test_stop_flags"
+   ],
+   "product_modules": [
+    "do_math.py",
+    "do_math/activities.py",
+    "do_math/cli.py",
+    "do_math/cli_contract.py",
+    "do_math/control_contracts.py",
+    "do_math/control_protocol.py",
+    "do_math/control_server.py",
+    "do_math/control_transport.py",
+    "do_math/core_engine.py",
+    "do_math/engine.py",
+    "do_math/events.py",
+    "do_math/input_recovery.py",
+    "do_math/lifecycle_engine.py",
+    "do_math/maintenance_gate.py",
+    "do_math/operation_trace.py",
+    "do_math/operational_dispositions.py",
+    "do_math/trace_report.py"
+   ]
+  },
+  "initialization": {
+   "legacy_modules": [
+    "test_configuration",
+    "test_diagnosed_installation_recovery",
+    "test_environment_validation",
+    "test_initialization_probe_batch",
+    "test_installation_discovery",
+    "test_observation_admission",
+    "test_preflight",
+    "test_repair_execution",
+    "test_trust_continuation"
+   ],
+   "product_modules": [
+    "do_math/configuration.py",
+    "do_math/initialization.py",
+    "do_math/initialization_engine.py",
+    "do_math/local_host.py",
+    "do_math/preflight.py",
+    "do_math/repair_execution.py",
+    "do_math/trust_inventory.py",
+    "do_math/trust_validation.py",
+    "setup_lean.py"
+   ]
+  },
+  "provider": {
+   "legacy_modules": [
+    "test_claude_adapter",
+    "test_claude_stream",
+    "test_codex_adapter",
+    "test_execution_lifecycle",
+    "test_execution_profiles",
+    "test_execution_window",
+    "test_live_observation",
+    "test_model_metadata_boundary",
+    "test_model_runner",
+    "test_observations",
+    "test_provider_final_contract",
+    "test_provider_recovery",
+    "test_provider_wait",
+    "test_worker_temporary_outputs"
+   ],
+   "product_modules": [
+    "do_math/claude_adapter.py",
+    "do_math/claude_stream.py",
+    "do_math/claude_worker.py",
+    "do_math/cli_execution.py",
+    "do_math/cli_worker.py",
+    "do_math/codex_adapter.py",
+    "do_math/codex_stream.py",
+    "do_math/codex_worker.py",
+    "do_math/execution_lifecycle.py",
+    "do_math/execution_profiles.py",
+    "do_math/execution_window.py",
+    "do_math/model_call.py",
+    "do_math/model_runner.py",
+    "do_math/observation_transport.py",
+    "do_math/observations.py",
+    "do_math/provider_engine.py",
+    "do_math/provider_final.py",
+    "do_math/provider_wait.py",
+    "do_math/worker_request.py"
+   ]
+  },
+  "scheduling": {
+   "legacy_modules": [
+    "test_background_processes",
+    "test_budget",
+    "test_host_resources",
+    "test_launch_recovery",
+    "test_machine_parallel",
+    "test_machine_scheduling",
+    "test_owned_job_children",
+    "test_research_recovery",
+    "test_session_scheduler",
+    "test_supervisor_recovery",
+    "test_windows_job"
+   ],
+   "product_modules": [
+    "do_math/budget.py",
+    "do_math/call_engine.py",
+    "do_math/dispatch_engine.py",
+    "do_math/launch.py",
+    "do_math/parallel.py",
+    "do_math/scheduler.py",
+    "do_math/session_slots.py",
+    "do_math/supervision.py"
+   ]
+  },
+  "operator": {
+   "legacy_modules": [
+    "test_operator",
+    "test_operator_bootstrap",
+    "test_probe_cli",
+    "test_schedule_lifetime",
+    "test_schedule_pythonw",
+    "test_standalone"
+   ],
+   "product_modules": [
+    "do_math/scheduled_operator.py",
+    "operator_bootstrap.py",
+    "probe_cli.py"
+   ]
+  },
+  "academic": {
+   "legacy_modules": [
+    "test_academic",
+    "test_academic_engine",
+    "test_academic_preparation",
+    "test_external",
+    "test_external_operations",
+    "test_model_assessment_flow",
+    "test_scholarly"
+   ],
+   "product_modules": [
+    "do_math/academic.py",
+    "do_math/academic_engine.py",
+    "do_math/external.py",
+    "do_math/external_engine.py",
+    "do_math/http_request.py",
+    "do_math/model_policy.py",
+    "do_math/scholarly.py",
+    "do_math/scholarly_config.py"
+   ]
+  },
+  "runner": {
+   "legacy_modules": [
+    "test_test_runner"
+   ],
+   "product_modules": []
+  },
+  "kernel": {
+   "legacy_modules": [],
+   "product_modules": [
+    "do_math/__init__.py",
+    "do_math/layers.py",
+    "do_math/migration_defaults.py",
+    "do_math/ports/__init__.py",
+    "do_math/ports/calls.py",
+    "do_math/ports/clock.py",
+    "do_math/ports/git_backend.py",
+    "do_math/ports/host.py",
+    "do_math/ports/http.py",
+    "do_math/ports/jobs.py",
+    "do_math/ports/scheduler.py",
+    "do_math/wiring.py"
+   ]
+  }
+ }
+}

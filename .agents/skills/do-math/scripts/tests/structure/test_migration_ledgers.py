@@ -2,9 +2,11 @@
 
 ``tests/migration/legacy_ids.txt`` is every legacy test (``tests/test_*.py``) at
 the start of 1f, and ``preserved_knowledge.json`` lists the required rules of
-the 조사 3부 list. Both stay as they are. Each product region that migrates
-writes its own ``dispositions/<region>.json``, so parallel region workers never
-edit the same file:
+the 조사 3부 list. Both stay as they are. ``regions.json`` gives every legacy
+test module and every layer 1-3 product module one region. Each batch of a
+region that migrates writes its own ``dispositions/<region>.json`` or
+``dispositions/<region>.<batch>.json``, so parallel workers never edit the same
+file, and it disposes of only its region's legacy tests:
 
 * ``legacy``: one entry per removed legacy test, ``moved`` to new test IDs that
   exist, or ``retired`` with the reason its property is checked elsewhere or no
@@ -66,6 +68,29 @@ class MigrationLedgerTests(unittest.TestCase):
                     self.assertTrue(entry['reason'].strip())
                 if 'known_defect' in entry:
                     self.assertIn(entry['known_defect'], open_defects)
+
+    def test_every_legacy_module_and_gate_module_belongs_to_exactly_one_region(self):
+        from do_math.layers import LAYERS
+        regions = json.loads((MIGRATION / 'regions.json').read_text(encoding='utf-8'))['regions']
+        baseline = {test_id.split('.')[0] for test_id in (MIGRATION / 'legacy_ids.txt').read_text(encoding='utf-8').split()}
+        for key, universe in (('legacy_modules', baseline),
+                              ('product_modules', {m for m, layer in LAYERS.items() if layer in ('1', '2', '3')})):
+            listed = [module for region in regions.values() for module in region[key]]
+            with self.subTest(key=key):
+                self.assertEqual(sorted({m for m in listed if listed.count(m) > 1}), [], 'a module in two regions')
+                self.assertEqual(sorted(universe - set(listed)), [], 'modules no region holds')
+                self.assertEqual(sorted(set(listed) - universe), [], 'modules the region table names that do not exist')
+
+    def test_a_region_file_disposes_of_only_its_own_legacy_tests(self):
+        regions = json.loads((MIGRATION / 'regions.json').read_text(encoding='utf-8'))['regions']
+        for path in sorted((MIGRATION / 'dispositions').glob('*.json')):
+            region = path.stem.split('.')[0]
+            with self.subTest(file=path.name):
+                self.assertIn(region, regions)
+                own = set(regions[region]['legacy_modules'])
+                foreign = [entry['legacy_id'] for entry in json.loads(path.read_text(encoding='utf-8')).get('legacy', [])
+                           if entry['legacy_id'].split('.')[0] not in own]
+                self.assertEqual(foreign, [], 'legacy tests of another region')
 
     def test_every_required_rule_has_a_disposition_before_the_legacy_tests_retire(self):
         rules = json.loads((MIGRATION / 'preserved_knowledge.json').read_text(encoding='utf-8'))['rules']

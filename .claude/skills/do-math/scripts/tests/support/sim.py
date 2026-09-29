@@ -19,6 +19,12 @@ clock moves and restarts. They never replace engine methods or the store.
   process state and builds the engine again from the repository.
 - ``real_time_leaks()`` lists stored timestamps a real clock made while this Sim ran.
 
+Two engine behaviours catch tests that hold state across a step. ``engine._save()``
+may replace ``engine.runtime`` with the published object, so read
+``sim.runtime`` (or ``engine.runtime``) again after anything that saves rather
+than keeping an earlier reference. A public control reloads the published
+state, so a change made directly on the engine and not saved before it is lost.
+
 Determinism: one sequence of events and calls-port choices runs one way, and
 every time and identifier from the clock port is the same between runs. The
 file system is real, so what the product derives from it is not: the trust
