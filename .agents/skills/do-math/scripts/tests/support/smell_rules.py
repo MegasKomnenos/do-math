@@ -5,7 +5,9 @@ They apply to new-system test files (tests/<tier folder>/test_*.py):
   and no helper listed in ASSERTION_HELPERS;
 * unpinned_rejection: assertRaises(Type) whose exception is never inspected; use
   assertRaisesRegex with a distinctive phrase or compare an issue code;
-* product_patch: patch/patch.object aimed at a do_math name; put doubles in a port;
+* product_patch: patch/patch.object aimed at a do_math name anywhere in the file
+  (setUp, helpers, decorators too); put doubles in a port. ``patch_issues``
+  applies this rule alone to test-side helper modules;
 * fixed_sleep: time.sleep; poll a condition with a bound or advance virtual time;
 * unreasoned_skip: skip/skipIf/skipUnless/skipTest without a reason text;
 * broad_except: a bare except or except Exception/BaseException in a test.
@@ -43,7 +45,29 @@ def _reason_given(call, position):
         or any(not isinstance(a, ast.Constant) for a in arguments)
 
 
-def _test_issues(method, path, product):
+def _patches_product(node, product):
+    called = _name(node.func)
+    if called not in ('patch', 'object') or not node.args:
+        return False
+    target = node.args[0]
+    if isinstance(target, ast.Constant) and isinstance(target.value, str):
+        return target.value.startswith('do_math')
+    if called == 'object' and _name(node.func.value) == 'patch':
+        while isinstance(target, ast.Attribute):
+            target = target.value
+        return isinstance(target, ast.Name) and target.id in product
+    return False
+
+
+def patch_issues(source, path):
+    """product_patch anywhere in ``source``, for test files and test-side helper modules."""
+    tree = ast.parse(source)
+    product = _product_names(tree)
+    return [{'file': path, 'rule': 'product_patch', 'line': node.lineno} for node in ast.walk(tree)
+            if isinstance(node, ast.Call) and _patches_product(node, product)]
+
+
+def _test_issues(method, path):
     issues = []
     asserted = False
     raises_as = {}
@@ -54,16 +78,6 @@ def _test_issues(method, path, product):
                 asserted = True
             if called == 'sleep' and isinstance(node.func, ast.Attribute) and _name(node.func.value) == 'time':
                 issues.append('fixed_sleep')
-            if called in ('patch', 'object') and node.args:
-                target = node.args[0]
-                if isinstance(target, ast.Constant) and isinstance(target.value, str) and target.value.startswith('do_math'):
-                    issues.append('product_patch')
-                elif called == 'object' and _name(node.func.value) == 'patch':
-                    root = target
-                    while isinstance(root, ast.Attribute):
-                        root = root.value
-                    if isinstance(root, ast.Name) and root.id in product:
-                        issues.append('product_patch')
             if called == 'skipTest' and not _reason_given(node, 0):
                 issues.append('unreasoned_skip')
         if isinstance(node, ast.withitem) and isinstance(node.context_expr, ast.Call) \
@@ -89,13 +103,12 @@ def _test_issues(method, path, product):
 
 def smell_issues(source, path):
     tree = ast.parse(source)
-    product = _product_names(tree)
-    issues = []
+    issues = patch_issues(source, path)
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
             for method in node.body:
                 if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef)) and method.name.startswith('test'):
-                    issues += _test_issues(method, path, product)
+                    issues += _test_issues(method, path)
     return issues
 
 

@@ -65,6 +65,19 @@ class SmellTests(unittest.TestCase):
                         self.assertTrue(True)
         '''), ['product_patch', 'product_patch'])
 
+    def test_patching_a_product_name_outside_a_test_method_is_reported(self):
+        self.assertEqual(_rules('''
+            from unittest.mock import patch
+            def helper():
+                return patch('do_math.engine.run')
+            @patch('do_math.formal.discover_lean')
+            class T:
+                def setUp(self):
+                    patch('do_math.engine.run').start()
+                def test_a(self):
+                    self.assertTrue(True)
+        '''), ['product_patch', 'product_patch', 'product_patch'])
+
     def test_fixed_sleep_skip_without_reason_and_broad_except_are_reported(self):
         self.assertEqual(_rules('''
             import time, unittest
