@@ -26,10 +26,14 @@ MARKER = "You are the do-math role: "
 
 
 class Answer:
-    """How one call's output is made from the default response and the input context."""
+    """How one call's output is made from the default response and the input context.
 
-    def __init__(self, make, *, sealed=True):
-        self.make, self.sealed = make, sealed
+    ``after_binding(output, context)``, when given, changes a sealed answer after
+    candidate binding and before the integration seal.
+    """
+
+    def __init__(self, make, *, sealed=True, after_binding=None):
+        self.make, self.sealed, self.after_binding = make, sealed, after_binding
 
 
 def default():
@@ -44,6 +48,11 @@ def raw(value):
 def amend(**fields):
     """The default response with ``fields`` set, then bound and sealed like any default answer."""
     return Answer(lambda out, ctx: {**out, **fields})
+
+
+def rebound(change):
+    """The default response, bound like any default answer, then ``change(output, context)`` before the seal."""
+    return Answer(lambda out, ctx: out, after_binding=change)
 
 
 class Rule:
@@ -88,6 +97,8 @@ class ModelDouble:
         out = answer.make(self.responder.respond(role, ctx, workspace), ctx)
         if answer.sealed:
             bind_candidates(out, ctx)
+            if answer.after_binding is not None:
+                answer.after_binding(out, ctx)
             seal_response(out, ctx, workspace)
         return out
 
