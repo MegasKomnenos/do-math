@@ -10,14 +10,14 @@ from threading import Lock
 import time
 from typing import Callable
 
-import jsonschema
 
 from do_math.claude_adapter import ADAPTERS, provider_adapter
 from do_math.provider_wait import provider_for
 from do_math.system_clock import now
-from do_math.values import strict_json_loads
 from do_math.canonical import canonical_json
-from .observation_transport import ObservationBatch, decode_observation_row
+from .observation_transport import ObservationBatch
+from .model_call import (classify_run, frame_rows, launch_conflict_result, runner_assignment,
+                         unsupported_result, worker_request_fields)
 
 
 class ModelRunner:
@@ -44,41 +44,17 @@ class ModelRunner:
             should_stop: Callable[[], bool] | None = None,
             on_started: Callable[[dict], None] | None = None,
             on_observation: Callable[[ObservationBatch], None] | None = None) -> dict:
-        reference = None
-        resource_limits = None
         provider = provider_for(model)
         adapter = self.adapters[provider]
         # A Claude model is configured as ``claude:<name>``; its CLI receives the bare name.
         cli_model = model.removeprefix("claude:")
-        if provider == "claude" and not cli_model.strip():
-            raise ValueError("claude: requires a Claude model name or alias")
-        from .worker_request import validate_max_runtime
-        validate_max_runtime(timeout_seconds)  # The worker applies the same rule to its request.
-        if profile is not None:
-            from .launch import validate_start
-            validate_start(launch_ticket, jobs=self.jobs, execution_id=execution_id, profile_sha256=profile['sha256'])
-            from .execution_profiles import profile_ref, prompt_seal, job_resource_limits, WORK_ROLES
-            reference = profile_ref(profile)
-            resource_limits = job_resource_limits(profile)
-            if resource_limits is not None and not callable(on_started):
-                raise ValueError("host-bound runner requires on_started publication before resume")
-            ai = profile.get("ai", {})
-            if not execution_id or cli_model != ai.get("model", "").removeprefix("claude:") or effort != ai.get("effort"):
-                raise ValueError("runner assignment differs from the pinned execution profile")
-            if profile["role"] not in WORK_ROLES and (
-                    timeout_seconds is None or timeout_seconds > profile["window"]["call_timeout_seconds"]):
-                raise ValueError("runner deadline exceeds the pinned profile")
-            # A pinned profile alone supplies the runner's tools and model lock.
-            if scholarly_server is not None or claude_only_assigned_model is not None:
-                raise ValueError("a pinned profile supplies scholarly_server and claude_only_assigned_model")
-            scholarly_server = ai.get("scholarly_server")
-            claude_only_assigned_model = ai["claude_only_assigned_model"]
-            if not isinstance(input_seal, dict) or any(input_seal.get(k) != v for k, v in prompt_seal(prompt).items()):
-                raise ValueError("runner input differs from its UTF-8 seal")
-            if input_seal["bytes"] > profile["input"]["max_input_bytes"]:
-                raise ValueError("sealed input exceeds the pinned profile limit")
-        elif execution_id is not None:
-            raise ValueError("execution identity requires a pinned profile")
+        assignment = runner_assignment(provider=provider, cli_model=cli_model, effort=effort,
+            timeout_seconds=timeout_seconds, execution_id=execution_id, profile=profile, launch_ticket=launch_ticket,
+            jobs=self.jobs, scholarly_server=scholarly_server, claude_only_assigned_model=claude_only_assigned_model,
+            input_seal=input_seal, prompt=prompt, publishes_start=callable(on_started))
+        reference, resource_limits = assignment["reference"], assignment["resource_limits"]
+        scholarly_server = assignment["scholarly_server"]
+        claude_only_assigned_model = assignment["claude_only_assigned_model"]
         if control_binding is not None:
             from .worker_request import validate_execution_binding
             validate_execution_binding({"execution_id": execution_id, "profile_ref": reference,
@@ -91,28 +67,18 @@ class ModelRunner:
         evidence_dir.mkdir(parents=True)
         prompt_path = evidence_dir / "input.txt"
         prompt_path.write_bytes(prompt.encode("utf-8"))
-        request = {**adapter.worker_options(evidence_dir), "prompt_path": str(prompt_path),
-                   "cwd": str(workspace), "model": cli_model, "effort": effort, "max_runtime_seconds": timeout_seconds,
-                   "stdout_path": str(evidence_dir / "stdout.jsonl"), "stderr_path": str(evidence_dir / "stderr.txt"),
-                   "status_path": str(evidence_dir / "worker-status.json")}
+        schema_path = None
         if control_binding is None:
             # Unbound consumers use the structured final response, so only they
             # hand the CLI a schema file. Research binds its full schema to the
             # central draft submission instead; its input bundle preserves that schema.
             schema_path = evidence_dir / "output.schema.json"
             schema_path.write_text(json.dumps(output_schema, ensure_ascii=False, sort_keys=True), encoding="utf-8")
-            request["output_schema_path"] = str(schema_path)
-        if reference is not None:
-            request.update(execution_id=execution_id, profile_ref=reference)
-        if resource_limits is not None:
-            request["resource_limits"] = resource_limits
-        if control_binding is not None:
-            from copy import deepcopy
-            request["control_binding"] = deepcopy(control_binding)
-        if scholarly_server is not None:
-            request["scholarly_server"] = scholarly_server
-        if claude_only_assigned_model and "claude_path" in request:
-            request["claude_only_assigned_model"] = True
+        request = worker_request_fields(adapter.worker_options(evidence_dir), prompt_path=prompt_path,
+            workspace=workspace, evidence_dir=evidence_dir, cli_model=cli_model, effort=effort,
+            timeout_seconds=timeout_seconds, schema_path=schema_path, execution_id=execution_id, reference=reference,
+            resource_limits=resource_limits, control_binding=control_binding, scholarly_server=scholarly_server,
+            claude_only_assigned_model=claude_only_assigned_model)
         request_path = evidence_dir / "request.json"
         request_path.write_text(json.dumps(request, ensure_ascii=False, sort_keys=True), encoding="utf-8")
         from .windows_job import WindowsJobUnsupportedError
@@ -120,15 +86,11 @@ class ModelRunner:
             execution = adapter.start(request_path, cwd=evidence_dir, env=os.environ,
                 **({'job_name':launch_ticket['job_name']} if launch_ticket is not None else {}))
         except FileExistsError as error:
-            return {'status':'failed','output':None,'usage':{},'error_kind':'launch_conflict',
-                    'error':str(error),'launch_not_created':True,'evidence_dir':str(evidence_dir),
-                    'execution_id':execution_id,'profile_ref':reference}
+            return launch_conflict_result(error, evidence_dir=evidence_dir, execution_id=execution_id,
+                                          reference=reference)
         except WindowsJobUnsupportedError as error:
-            result = {"status": "failed", "output": None, "usage": {}, "evidence_dir": str(evidence_dir),
-                    "execution_id": execution_id, "profile_ref": reference, "assigned_model": cli_model,
-                    "error_kind": "profile_unsupported", "error": str(error), "launch_not_created":True,
-                    "capability_failure": {"capability": getattr(error, "capability", "atomic_local_job"), "status": "unsupported",
-                                           "execution_profile_ref": reference, "error_type": type(error).__name__}}
+            result = unsupported_result(error, evidence_dir=evidence_dir, execution_id=execution_id,
+                                        reference=reference, cli_model=cli_model)
             # Only a failed start records the local identity it failed under.
             if profile is not None:
                 identity = adapter.capability_identity()
@@ -165,20 +127,7 @@ class ModelRunner:
                     stream.seek(offset)
                     chunk = stream.read(1024 * 1024)
                     offset = stream.tell()
-            data = buffer + chunk
-            end = len(data) if final else data.rfind(b"\n") + 1
-            buffer = data[end:]
-            events, offsets, rows = [], [], []
-            position = 0
-            while position < end:
-                stop = data.find(b"\n", position, end)
-                stop = end if stop < 0 else stop + 1
-                row = data[position:stop]
-                if row.strip():
-                    events.append(decode_observation_row(row))
-                    offsets.append((begin + position, begin + stop))
-                    rows.append(row)
-                position = stop
+            events, offsets, rows, buffer = frame_rows(buffer + chunk, begin, final=final)
             current = time.monotonic()
             if chunk or final or current - last_tick >= 1:
                 last_tick = current
@@ -233,48 +182,7 @@ class ModelRunner:
             with job_guard:
                 job_closed = True
             execution.job.close()
-        parsed = collected.get("jsonl", {})
-        observation = collected["provider_observation"]
-        usage = observation["usage"]
-        result = {"status": "stopped" if stopped else "failed", "output": None,
-                  "usage": usage if isinstance(usage, dict) else {}, "evidence_dir": str(evidence_dir),
-                  "execution": {"started": started, "collect": collected}, "error": None,
-                  "error_kind": "execution_failure", "assigned_model": cli_model}
-        result.update(execution_id=execution_id, profile_ref=reference, provider_observation=observation)
-        for key in ("usage_segments", "model_usage_reported", "usage_scope", "reported_models", "selected_result", "post_result_events", "background_events"):
-            if key in parsed:
-                result[key] = parsed[key]
-        if claude_only_assigned_model and any(name != cli_model for name in parsed.get("reported_models", [])):
-            result.update(error="reported model differs from the locked assignment", error_kind="model_policy")
-            return result
-        if stopped:
-            result["error"] = "stop requested or timeout"
-            return result
-        if collected.get("result") != "output_collected":
-            result["error"] = "; ".join(collected.get("reasons", ["collection incomplete"]))
-            limit = adapter.provider_failure(parsed)
-            if limit:
-                result.update(error_kind="provider_limit", failure={**limit,
-                    "observed_at": now(),
-                    "evidence_ref": str(evidence_dir / "stdout.jsonl")})
-            return result
-        if control_binding is not None:
-            result.update(status="completed", output=None, collection="provider_evidence_only")
-            result.pop("error_kind", None)
-            return result
-        raw = collected["final"].get("raw")
-        try:
-            output = strict_json_loads(raw.decode("utf-8"))
-            canonical_json(output)
-            result["output"] = output
-            jsonschema.validate(output, output_schema)
-        except jsonschema.ValidationError as exc:
-            path = "output" + "".join("/" + str(part) for part in exc.absolute_path)
-            result.update(error=path + ": " + exc.message, error_kind="output_validation")
-            return result
-        except Exception as exc:
-            result.update(error=f"output JSON: {type(exc).__name__}: {exc}", error_kind="output_validation")
-            return result
-        result.update(status="completed", output=output)
-        result.pop("error_kind", None)
-        return result
+        return classify_run(collected, started=started, stopped=stopped, cli_model=cli_model,
+                            claude_only_assigned_model=claude_only_assigned_model, control_binding=control_binding,
+                            output_schema=output_schema, evidence_dir=evidence_dir, execution_id=execution_id,
+                            reference=reference, provider_failure=adapter.provider_failure, now=now)

@@ -2,9 +2,14 @@
 from __future__ import annotations
 import hashlib, json, os, re, shutil, subprocess, sys, tempfile, time, traceback, uuid
 from pathlib import Path
-from .lean_evidence import (AXIOMS, FORMAL_EVIDENCE_FIELDS, LEAN_VERSION, READY_MARKER, VerificationStopped,
-                            _check_stop, compare_formal_results, forbidden_axioms, is_lean_identifier,
-                            lean_source_sha256, mathlib_project, portable_bin, toolchain_errors)
+from .lean_evidence import (AXIOMS, FORMAL_EVIDENCE_FIELDS, LAKE_PROJECT_FILES, LEAN_VERSION, READY_MARKER,
+                            VerificationStopped, _check_stop, approved_toolchain_differs, check_completion_status,
+                            check_lean_command, check_search_path_observation, command_verdict,
+                            compare_formal_results, compiler_failure_reason, declaration_rejection, forbidden_axioms,
+                            identity_rejection_reason, is_lake_project_command,
+                            lake_env_prefix, lake_project_dir, lean_source_sha256, mathlib_project, portable_bin,
+                            project_inputs_changed, toolchain_errors)
+from .cli_execution import termination_confirmed
 from .lean_evidence import check_file as _check_file, parse_evidence as _parse_evidence
 from .file_io import cached_sha256
 from .values import is_sha256, json_digest
@@ -77,7 +82,7 @@ def project_source_identity(project_root: Path, *, should_stop=None) -> dict:
         dirs[:]=[x for x in dirs if x!='.lake']
         for path in (Path(directory)/name for name in names):
             _check_stop(should_stop)
-            if path.suffix=='.lean' or path.name in {'lean-toolchain','lake-manifest.json','lakefile.lean','lakefile.toml'}:
+            if path.suffix=='.lean' or path.name in LAKE_PROJECT_FILES:
                 tracked=path.relative_to(gitroot).as_posix() in tracked_paths
                 if not tracked: untracked[path.relative_to(root).as_posix()]=cached_sha256(path)
     # Consumers compare project identity; no runtime consumer reads individual
@@ -128,16 +133,13 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
         while True:
             if should_stop and should_stop():
                 job.terminate(); stopped=True; break
-            if job.wait(0):
-                observed=job.inspect()
-                if observed.root_signaled and not observed.active_processes and not observed.process_ids:
-                    break
+            if job.wait(0) and termination_confirmed(job.inspect()):
+                break
             time.sleep(.02)
         if stopped:
             termination_deadline=time.monotonic()+2
             while True:
-                observed=job.inspect()
-                if observed.root_signaled and not observed.active_processes and not observed.process_ids: break
+                if termination_confirmed(job.inspect()): break
                 if time.monotonic()>=termination_deadline:
                     raise RuntimeError('formal Job termination could not be confirmed')
                 time.sleep(.02)
@@ -150,9 +152,7 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
             raise RuntimeError('formal worker completion status missing' + (': '+stderr if stderr else ''))
         try:
             data=json.loads(status.read_text())
-            if (not isinstance(data,dict) or data.get('state') not in {'exited','worker_error'}
-                    or (data['state']=='exited' and type(data.get('exit')) is not int)):
-                raise ValueError('invalid completion status')
+            check_completion_status(data)
         except ValueError as error:
             raise RuntimeError('formal worker completion status invalid: '+str(error)) from error
         if data['state']=='worker_error': raise RuntimeError('formal worker failed: '+stderr)
@@ -161,22 +161,15 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
 
 
 def _project_identity(command, should_stop=None, *, workspace=None, expected=None):
-    if not Path(command[0]).name.lower().startswith('lake') or '--dir' not in command:
+    if not is_lake_project_command(command):
         return None
     _check_stop(should_stop)
-    index = command.index('--dir') + 1
-    if index >= len(command):
-        raise ValueError('Lake --dir requires a project path')
-    root = Path(command[index]).resolve(strict=True)
-    names = ('lean-toolchain', 'lake-manifest.json', 'lakefile.lean', 'lakefile.toml')
-    identity={'manifest_hashes': {name: cached_sha256(root/name) for name in names if (root/name).is_file()},
+    root = Path(lake_project_dir(command)).resolve(strict=True)
+    identity={'manifest_hashes': {name: cached_sha256(root/name) for name in LAKE_PROJECT_FILES if (root/name).is_file()},
               'source_identity': project_source_identity(root,should_stop=should_stop)}
-    # Never execute changed project code merely to discover its environment.
-    if expected is not None and any(identity[k]!=expected.get(k) for k in identity):
+    if project_inputs_changed(identity, expected):
         return {**identity,'search_paths':[]}
-    if workspace is None or 'env' not in command:
-        raise ValueError('Lake environment observation requires env and an observation workspace')
-    prefix=command[:command.index('env')+1]
+    prefix=lake_env_prefix(command, workspace)
     # Lake derives the search paths from its executable and the inputs identified
     # above; unchanged inputs give the same paths, so one observation per process.
     lake=Path(shutil.which(prefix[0]) or prefix[0])
@@ -189,9 +182,7 @@ def _project_identity(command, should_stop=None, *, workspace=None, expected=Non
     if stopped:raise VerificationStopped('project environment observation stopped')
     if code!=0:raise RuntimeError('project environment observation failed: '+err)
     observed=json.loads(out)
-    if (not isinstance(observed,dict) or not isinstance(observed.get('cwd'),str)
-            or not isinstance(observed.get('paths'),list) or any(not isinstance(p,str) for p in observed['paths'])):
-        raise ValueError('invalid project environment observation')
+    check_search_path_observation(observed)
     identity['search_paths']=sorted({str((Path(observed['cwd'])/p).resolve()) for p in observed['paths']})
     _SEARCH_PATHS[key]=tuple(identity['search_paths'])
     return identity
@@ -200,8 +191,7 @@ def _project_identity(command, should_stop=None, *, workspace=None, expected=Non
 def inspect_toolchain(command, workspace, *, should_stop=None):
     """Observe exact tool identity; this does not run environment validation."""
     command = list(command)
-    if not command or any(not isinstance(p, str) or not p or '\x00' in p for p in command):
-        raise ValueError('a nonempty Lean command is required')
+    check_lean_command(command)
     _check_stop(should_stop)
     resolved = Path(shutil.which(command[0]) or command[0]).resolve(strict=True)
     code, stdout, stderr, stopped = _job_run([*command, '--version'], Path(workspace), should_stop=should_stop)
@@ -270,31 +260,27 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
     Cancellation remains available through should_stop.
     """
     if launch_ticket is not None:
-        from .launch import validate_start
+        from .launch import require_dispatched_native, validate_start
         validate_start(launch_ticket, jobs=jobs)
-        if launch_ticket['kind'] != 'native_job' or launch_ticket['phase'] != 'dispatched':
-            raise ValueError('formal runner needs the dispatched native launch ticket')
+        require_dispatched_native(launch_ticket)
     workspace=workspace.resolve(); raw=source.encode(); base={"source_sha256":lean_source_sha256(source),"declarations":declarations,"axioms":{},"declaration_signatures":{},"dependency_closure":{},"declaration_evidence":{},"signature_hash":None,"stdout":"","stderr":"","command":None,"toolchain":None,"reason":None}
     base['launch_not_created'] = True
-    if not all(is_lean_identifier(x) for x in declarations): return {**base,"status":"rejected","reason":"invalid declaration"}
-    if not declarations: return {**base,"status":"rejected","reason":"no declaration to audit"}
+    rejection=declaration_rejection(declarations)
+    if rejection: return {**base,"status":"rejected","reason":rejection}
     command=list(lean_command) if lean_command else (discover_lean() or [])
-    if not command or not command[0]: return {**base,"status":"unavailable","reason":"lean not found"}
-    if any(not isinstance(x,str) or '\x00' in x for x in command):
-        return {**base,"status":"rejected","reason":"unsafe command"}
+    verdict=command_verdict(command)
+    if verdict: return {**base,"status":verdict[0],"reason":verdict[1]}
     try:
         _check_stop(should_stop)
         # Compare the same canonical executable identity that inspect_toolchain records.
         resolved=Path(shutil.which(command[0]) or command[0]).resolve()
         if expected_toolchain is not None:
-            if expected_toolchain.get('configured_command') != command or expected_toolchain.get('executable') != str(resolved):
+            if approved_toolchain_differs(expected_toolchain, command, str(resolved)):
                 return {**base,'status':'rejected','reason':'approved toolchain changed before execution',
                         'error_kind':'trust_environment'}
             identity_errors=toolchain_identity_errors(expected_toolchain,should_stop=should_stop)
             if identity_errors:
-                reason=('approved project inputs changed before execution' if identity_errors == ['approved project inputs changed']
-                        else 'approved toolchain changed before execution')
-                return {**base,'status':'rejected','reason':reason,'identity_errors':identity_errors,
+                return {**base,'status':'rejected','reason':identity_rejection_reason(identity_errors),'identity_errors':identity_errors,
                         'error_kind':'trust_environment'}
         toolchain=inspect_toolchain(command,workspace,should_stop=should_stop) if expected_toolchain is None else dict(expected_toolchain)
     except VerificationStopped as error:
@@ -323,8 +309,7 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
                 local_job_usage=local_job_usage)
     if stopped: return {**base,'status':'stopped','reason':'stopped'}
     if code:
-        crashed=(code & 0x80000000 != 0) if os.name=='nt' else code<0
-        return {**base,'status':'failed','reason':'compiler crashed' if crashed else 'lean rejected'}
+        return {**base,'status':'failed','reason':compiler_failure_reason(code, os.name)}
     try:
         return _parse_evidence(base,declarations,allowed_axioms,should_stop,extract_evidence=extract_evidence)
     except VerificationStopped as error:

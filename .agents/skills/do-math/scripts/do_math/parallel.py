@@ -15,10 +15,7 @@ from contextvars import copy_context
 from queue import Empty, Queue
 from threading import Event, Lock, Thread
 
-
-def failed_result(error):
-    """The one result a call records when its calculation raised instead of returning."""
-    return {"status": "failed", "output": None, "usage": {}, "error": f"{type(error).__name__}: {error}"}
+from .model_call import failed_result, judged_result
 
 
 class ModelCalls:
@@ -188,10 +185,7 @@ class ModelCalls:
                     result = future.result()
                 except Exception as error:
                     result = failed_result(error)
-                error = future.judge_error
-                if error is not None and isinstance(result, dict):
-                    result = {**result, "status": "failed",
-                              "error": f"stop judgment failed: {type(error).__name__}: {error}"}
+                result = judged_result(result, future.judge_error)
                 if self.on_returned is not None:
                     self.on_returned(future.execution_id, result)
                 try:

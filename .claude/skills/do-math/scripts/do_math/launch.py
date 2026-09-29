@@ -41,6 +41,14 @@ def validate(value, *, execution_id=None, profile_sha256=None):
     return value
 
 
+
+def require_dispatched_native(value):
+    """A native calculation starts only under its dispatched native-Job ticket."""
+    if value['kind'] != 'native_job' or value['phase'] != 'dispatched':
+        raise ValueError('formal runner needs the dispatched native launch ticket')
+    return value
+
+
 def mark_dispatched(value):
     """The owner handed the reserved launch to its runner or calculation."""
     if value['phase'] != 'reserved':

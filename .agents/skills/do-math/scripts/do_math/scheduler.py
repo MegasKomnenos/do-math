@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .parallel import failed_result
+from .model_call import failed_result
 from .payloads import json_safe
 
 # Upper bound of an owner wait while calls run, and the idle --watch pause.

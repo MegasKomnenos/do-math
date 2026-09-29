@@ -236,6 +236,91 @@ def toolchain_errors(toolchain):
     return errors
 
 
+
+# The Lake project's input files; a project's identity covers them and its .lean sources.
+LAKE_PROJECT_FILES = ('lean-toolchain', 'lake-manifest.json', 'lakefile.lean', 'lakefile.toml')
+
+
+def check_completion_status(data) -> None:
+    """The formal worker's status: exited with an integer exit code, or worker_error."""
+    if (not isinstance(data, dict) or data.get('state') not in {'exited', 'worker_error'}
+            or (data['state'] == 'exited' and type(data.get('exit')) is not int)):
+        raise ValueError('invalid completion status')
+
+
+def is_lake_project_command(command) -> bool:
+    """A Lake command that names its project with ``--dir``."""
+    return Path(command[0]).name.lower().startswith('lake') and '--dir' in command
+
+
+def lake_project_dir(command) -> str:
+    """The project path after ``--dir`` in a Lake project command."""
+    index = command.index('--dir') + 1
+    if index >= len(command):
+        raise ValueError('Lake --dir requires a project path')
+    return command[index]
+
+
+def project_inputs_changed(identity: dict, expected: dict | None) -> bool:
+    """Changed project inputs; changed project code is never executed merely to discover its environment."""
+    return expected is not None and any(identity[k] != expected.get(k) for k in identity)
+
+
+def lake_env_prefix(command, workspace) -> list:
+    """The ``lake ... env`` prefix that runs a program in the project's environment."""
+    if workspace is None or 'env' not in command:
+        raise ValueError('Lake environment observation requires env and an observation workspace')
+    return command[:command.index('env') + 1]
+
+
+def check_search_path_observation(observed) -> None:
+    """The environment observation reports its cwd and a list of search paths."""
+    if (not isinstance(observed, dict) or not isinstance(observed.get('cwd'), str)
+            or not isinstance(observed.get('paths'), list) or any(not isinstance(p, str) for p in observed['paths'])):
+        raise ValueError('invalid project environment observation')
+
+
+def check_lean_command(command) -> None:
+    """A Lean command is a nonempty list of nonempty, NUL-free strings."""
+    if not command or any(not isinstance(p, str) or not p or '\x00' in p for p in command):
+        raise ValueError('a nonempty Lean command is required')
+
+
+def declaration_rejection(declarations) -> str | None:
+    """Why the declarations to audit cannot be verified, or None."""
+    if not all(is_lean_identifier(x) for x in declarations):
+        return 'invalid declaration'
+    if not declarations:
+        return 'no declaration to audit'
+    return None
+
+
+def command_verdict(command) -> tuple[str, str] | None:
+    """``(status, reason)`` when the Lean command cannot run, or None."""
+    if not command or not command[0]:
+        return 'unavailable', 'lean not found'
+    if any(not isinstance(x, str) or '\x00' in x for x in command):
+        return 'rejected', 'unsafe command'
+    return None
+
+
+def approved_toolchain_differs(expected: dict, command, executable: str) -> bool:
+    """The approved toolchain names another command or executable than the one about to run."""
+    return expected.get('configured_command') != command or expected.get('executable') != executable
+
+
+def identity_rejection_reason(identity_errors) -> str:
+    """The rejection reason for an approved toolchain whose local facts changed."""
+    return ('approved project inputs changed before execution' if identity_errors == ['approved project inputs changed']
+            else 'approved toolchain changed before execution')
+
+
+def compiler_failure_reason(code: int, os_name: str) -> str:
+    """A nonzero compiler exit: a crash (an NTSTATUS error on Windows, a signal elsewhere) or Lean's rejection."""
+    crashed = (code & 0x80000000 != 0) if os_name == 'nt' else code < 0
+    return 'compiler crashed' if crashed else 'lean rejected'
+
+
 def check_file(raw: bytes, declarations: list[str], *, extract_evidence: bool) -> bytes:
     """The compiled file: ``import Lean``, the source, the signature and axiom
     audits and, when extracting evidence, the dependency extractor and its command."""
