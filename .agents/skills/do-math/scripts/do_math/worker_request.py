@@ -123,6 +123,11 @@ def check_common_request(value: Any, *, required: frozenset, optional: frozenset
         value["scholarly_server"] = validate_scholarly_server(value["scholarly_server"])
     return value
 
+# Each provider's own request fields, beyond the common ones.
+CODEX_REQUIRED = frozenset({"codex_path", "approval_policy", "sandbox", "final_path"})
+CODEX_OPTIONAL = frozenset({"windows_sandbox"})
+CLAUDE_REQUIRED = frozenset({"claude_path"})
+CLAUDE_OPTIONAL = frozenset({"claude_only_assigned_model"})
 CODEX_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh", "max", "ultra"})
 CODEX_SANDBOXES = frozenset({"read-only", "workspace-write", "danger-full-access"})
 CODEX_WINDOWS_SANDBOXES = frozenset({"unelevated", "elevated"})
@@ -130,9 +135,7 @@ CODEX_WINDOWS_SANDBOXES = frozenset({"unelevated", "elevated"})
 
 def check_codex_request(value: Any) -> dict[str, Any]:
     """A Codex worker request: the shared fields, then Codex's effort, approval and sandbox fields."""
-    value = check_common_request(value,
-                                 required=frozenset({"codex_path", "approval_policy", "sandbox", "final_path"}),
-                                 optional=frozenset({"windows_sandbox"}))
+    value = check_common_request(value, required=CODEX_REQUIRED, optional=CODEX_OPTIONAL)
     if value["effort"] not in CODEX_EFFORTS or value["approval_policy"] != "never":
         raise ValueError("unsupported effort or approval policy")
     if value["sandbox"] not in CODEX_SANDBOXES:
@@ -175,8 +178,7 @@ CLAUDE_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max"})
 
 def check_claude_request(value: Any) -> dict:
     """A Claude worker request: the shared fields, then Claude's schema, effort and model-lock fields."""
-    request = check_common_request(value, required=frozenset({"claude_path"}),
-                                   optional=frozenset({"claude_only_assigned_model"}))
+    request = check_common_request(value, required=CLAUDE_REQUIRED, optional=CLAUDE_OPTIONAL)
     if "output_schema_path" not in request and "control_binding" not in request:
         raise ValueError("an unbound Claude worker requires its structured final schema")
     if request["effort"] not in CLAUDE_EFFORTS:
