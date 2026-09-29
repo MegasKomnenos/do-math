@@ -467,7 +467,7 @@ class ObservationTransactions(unittest.TestCase):
             tracker = ObservationTracker("EX-one", Path(temporary), {"observation_rules": [observation_rule()], "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}, clock=Clock())
             before = deepcopy(engine.runtime)
             engine._save = create_autospec(engine._save, side_effect=ValueError("CAS failure"))
-            with patch("do_math.engine.deepcopy", wraps=deepcopy) as copied,                     self.assertRaisesRegex(ValueError, "CAS"):
+            with patch("do_math.core_engine.deepcopy", wraps=deepcopy) as copied,                     self.assertRaisesRegex(ValueError, "CAS"):
                 engine._observe_running("EX-one", tracker, observation_batch(
                     received_monotonic=tracker.clock(), stream_path=Path(temporary) / "stdout.jsonl"))
             self.assertFalse(any(call.args[0] is before or call.args[0] == before for call in copied.call_args_list))
@@ -489,7 +489,7 @@ class ObservationTransactions(unittest.TestCase):
             engine._save.assert_called_once()
             engine._save.reset_mock()
             before = deepcopy(engine.runtime)
-            with patch("do_math.engine.deepcopy", wraps=deepcopy) as copied:
+            with patch("do_math.core_engine.deepcopy", wraps=deepcopy) as copied:
                 engine._observe_running("EX-one", tracker, tick())
             engine._save.assert_not_called()
             self.assertFalse(any(call.args[0] is engine.runtime for call in copied.call_args_list))
@@ -569,8 +569,8 @@ class TaskObservationRoleTests(unittest.TestCase):
                 engine._register_execution = create_autospec(engine._register_execution, side_effect=BeforeInput)
                 action = {"id": "AC-one", "role": role, "target": "TK-one"}
                 with patch("do_math.call_engine.tracker_config", wraps=tracker_config) as configured, \
-                     patch("do_math.engine.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}), \
-                     patch("do_math.engine.planning.task_ready", return_value={"state": "ready"}):
+                     patch("do_math.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}), \
+                     patch("do_math.planning.task_ready", return_value={"state": "ready"}):
                     with self.assertRaises(BeforeInput):
                         next(engine._call_steps(action))
                 eid = engine._register_execution.call_args.args[1]["id"]

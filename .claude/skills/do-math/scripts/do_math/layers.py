@@ -32,8 +32,11 @@ LAYERS = {
     'do_math/control_protocol.py': '1',
     'do_math/control_server.py': '3',
     'do_math/control_transport.py': '2',
+    'do_math/core_engine.py': '2',
     'do_math/decision_engine.py': '2',
     'do_math/delegations.py': '2',
+    'do_math/dispatch_engine.py': '2',
+    'do_math/engine.py': '3',
     'do_math/events.py': '1',
     'do_math/execution_lifecycle.py': '2',
     'do_math/execution_window.py': '2',
@@ -125,7 +128,6 @@ LAYERS = {
 }
 
 PENDING = {
-    'do_math/engine.py': '2',
     'do_math/execution_profiles.py': '1',
     'do_math/initialization.py': '2',
     'do_math/trust_validation.py': '2',

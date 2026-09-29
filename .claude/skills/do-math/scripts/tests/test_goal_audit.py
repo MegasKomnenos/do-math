@@ -92,7 +92,7 @@ class GoalAuditSlotTests(unittest.TestCase):
         e.store.git_dir = 'git-' + uuid.uuid4().hex
         e._session_slots = create_autospec(e._session_slots, return_value=SessionSlots(e.runtime, e.instance))
         with patch.object(e, '_save'), patch('do_math.windows_job.named_job_empty', return_value=True), \
-                patch('do_math.engine.collect_outputs', side_effect=AssertionError('must retain original files')):
+                patch('do_math.core_engine.collect_outputs', side_effect=AssertionError('must retain original files')):
             e._recover_disappeared()
         self.assertEqual(ex['status'], 'stopping')
         self.assertEqual(e.runtime['waiting_actions'], {})
@@ -100,7 +100,7 @@ class GoalAuditSlotTests(unittest.TestCase):
         ex['launch_ticket'] = dispatched_launch(ex['id'], {'sha256':'a'*64, 'actor_kind':'ai', 'role':'goal_audit'})
         with patch.object(e, '_save'), patch('do_math.windows_job.owner_ended', return_value=True), \
                 patch('do_math.windows_job.named_job_empty', return_value=True), \
-                patch('do_math.engine.collect_outputs', side_effect=AssertionError('must retain original files')):
+                patch('do_math.core_engine.collect_outputs', side_effect=AssertionError('must retain original files')):
             e._recover_disappeared()
         self.assertEqual(ex['status'], 'ended')
         self.assertEqual(ex['result_ref'], 'original-result')

@@ -483,7 +483,7 @@ class WaitOwnershipTests(unittest.TestCase):
         # Sealing is covered separately; this fixture starts at a captured
         # submission so the wait ownership rule is the behavior under test.
         sealed = {'output': output, 'extensions': {}, 'check': {'issues': []}, 'output_ref': 'out'}
-        with patch('do_math.engine.submission.read_sealed_submission', return_value=sealed):
+        with patch('do_math.submission.read_sealed_submission', return_value=sealed):
             engine._receive_submission(action, {}, 'EX-one', {}, {}, Path('.'))
         return engine.runtime
 
@@ -877,7 +877,7 @@ class LivePreviewConnections(unittest.TestCase):
                 "--output", "draft.json", "--preview", "--wait-seconds", "20"], cwd=workspace,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             try:
-                with patch("do_math.engine.governance.authorize", return_value={"allowed": True}), patch.object(engine, "_apply_bundle_candidate", wraps=engine._apply_bundle_candidate) as candidate:
+                with patch("do_math.governance.authorize", return_value={"allowed": True}), patch.object(engine, "_apply_bundle_candidate", wraps=engine._apply_bundle_candidate) as candidate:
                     deadline = time.monotonic() + 25
                     while process.poll() is None and time.monotonic() < deadline:
                         transport.pump(engine._publish_control_request)

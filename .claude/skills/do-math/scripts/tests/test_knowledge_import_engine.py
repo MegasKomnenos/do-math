@@ -121,7 +121,7 @@ class FormalBoundaryTests(unittest.TestCase):
     def test_formal_consumer_passes_runtime_and_preapproved_toolchain(self):
         with tempfile.TemporaryDirectory() as d:
             e, kid = formal_boundary_engine(Path(d))
-            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
+            with patch('do_math.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
                 e._formal({'id': new_id('AC'), 'role': 'formal_check', 'target': kid})
             self.assertEqual(e.formal_verifier.call_args.kwargs['expected_toolchain'],
                              e.instance['trust_environments']['TE-old']['toolchain'])
@@ -140,7 +140,7 @@ class FormalBoundaryTests(unittest.TestCase):
             e, kid = formal_boundary_engine(Path(d))
             e._start_identity_review.side_effect = ValueError('adopted review policy is required before review admission')
             action = {'id': new_id('AC'), 'role': 'formal_check', 'target': kid}
-            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
+            with patch('do_math.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
                 e._formal(action)
             identifier, waiting = next(iter(e.runtime['waiting_actions'].items()))
             self.assertNotEqual(identifier, action['id'])
@@ -168,7 +168,7 @@ class FormalBoundaryTests(unittest.TestCase):
             environment = e.instance['trust_environments']['TE-old']
             olean = Path(environment['toolchain']['executable']).parents[1] / 'lib/lean/Init/Prelude.olean'
             olean.write_text('changed', encoding='utf-8')
-            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
+            with patch('do_math.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
                 e._formal({'id': new_id('AC'), 'role': 'formal_check', 'target': kid})
             e.formal_verifier.assert_not_called()
             execution = next(iter(e.runtime['executions'].values()))
@@ -234,7 +234,7 @@ class PortableFormalBoundaryTests(unittest.TestCase):
                 change(e)
             return result
         e.formal_verifier = Mock(side_effect=verify)
-        with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
+        with patch('do_math.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
             e._formal({'id': new_id('AC'), 'role': 'formal_check', 'target': kid})
         artifacts = {path: raw for call in e._save.call_args_list for path, raw in (call.args[0] if call.args else {}).items()}
         result = json.loads(next(raw for path, raw in artifacts.items() if path.endswith('/formal.json')))
@@ -271,7 +271,7 @@ class PortableFormalBoundaryTests(unittest.TestCase):
                 observed.append(result)
                 return result
             e.formal_verifier = Mock(side_effect=verify)
-            with patch('do_math.engine.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
+            with patch('do_math.governance.authorize', return_value={'allowed': True, 'grant_id': 'GR-fixture'}), owner_calls(e):
                 e._formal({'id': new_id('AC'), 'role': 'formal_check', 'target': kid})
             record = e.instance['formal_results'][record['id']]
             self.assertEqual(record['publication_state'], 'accepted')

@@ -398,7 +398,7 @@ class ImpactReviewRetryTests(unittest.TestCase):
         engine._hold_unreadable_impact_submission = create_autospec(engine._hold_unreadable_impact_submission)
         engine.store = create_autospec(repository.ResearchRepository, instance=True)
         engine.store.git_dir = 'git-' + uuid.uuid4().hex
-        with patch.object(engine_module.submission, 'read_sealed_submission',
+        with patch.object(submission, 'read_sealed_submission',
                           side_effect=submission.SealedSubmissionError('unreadable fixture')) as read:
             # Control processing retries every waiting item; a pending review reads nothing.
             engine._retry_impact_reviews()

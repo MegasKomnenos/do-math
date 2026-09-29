@@ -955,7 +955,7 @@ class FinalBoundaryConnections(unittest.TestCase):
         engine._evaluation_context = create_autospec(engine._evaluation_context, return_value={"snapshot": "current"})
         record = {"id": "OD-one", "execution_id": "EX-review", "target_execution_id": "EX-work", "disposition": {"kind": "task_disposition", "task_id": "TK-one", "task_state": "completed"}}
         completed = deepcopy(engine.runtime); completed["tasks"]["TK-one"]["status"] = "completed"
-        with patch("do_math.engine.task_scope.apply_task_assessments", return_value=(engine.instance, completed)) as apply:
+        with patch("do_math.task_scope.apply_task_assessments", return_value=(engine.instance, completed)) as apply:
             engine._complete_operational_disposition(record)
         self.assertEqual(apply.call_args.args[2], [assessment])
         self.assertEqual(apply.call_args.kwargs["execution_id"], "EX-review")

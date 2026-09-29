@@ -217,7 +217,7 @@ class FormalBindingConnections(unittest.TestCase):
         engine._check_conversations = create_autospec(engine._check_conversations, return_value=False)
         engine._action_lifecycle_gate = create_autospec(engine._action_lifecycle_gate); engine._formal_environment = create_autospec(engine._formal_environment, return_value=deepcopy(environment))
         engine.formal_verifier = Mock(return_value=result)
-        with patch("do_math.engine.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}),                 owner_calls(engine):
+        with patch("do_math.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}),                 owner_calls(engine):
             engine._formal({"id": "AC-formal", "role": "formal_check", "target": kid})
         return engine, environment
 

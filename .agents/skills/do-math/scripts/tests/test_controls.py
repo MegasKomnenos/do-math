@@ -197,7 +197,7 @@ class ControlReceipts(unittest.TestCase):
 
     def test_receipt_requires_successful_cas_and_replay_does_not_reapply(self):
         engine, request = self.make_engine()
-        with patch("do_math.engine.submission.seal_submission", return_value=self.sealed()):
+        with patch("do_math.submission.seal_submission", return_value=self.sealed()):
             receipt = engine._publish_control_request(request)
         self.assertEqual(receipt["snapshot"], "published")
         self.assertEqual(receipt["state"], "accepted")
@@ -206,7 +206,7 @@ class ControlReceipts(unittest.TestCase):
         stored = next(iter(engine.runtime["control_receipts"].values()))
         self.assertNotIn("capability", stored["request"])
         engine.store.read.side_effect = [canonical_json({}), canonical_json({})]
-        with patch("do_math.engine.submission.seal_submission", return_value=self.sealed()):
+        with patch("do_math.submission.seal_submission", return_value=self.sealed()):
             engine._publish_control_request(request)
         self.assertEqual(engine._save.call_count, 1)
 
@@ -338,7 +338,7 @@ class ControlReceipts(unittest.TestCase):
     def test_failed_cas_does_not_acknowledge_submission(self):
         engine, request = self.make_engine()
         engine._save.side_effect = ValueError("CAS failed")
-        with patch("do_math.engine.submission.seal_submission", return_value=self.sealed()):
+        with patch("do_math.submission.seal_submission", return_value=self.sealed()):
             receipt = engine._publish_control_request(request)
         self.assertEqual(receipt["state"], "rejected")
         self.assertNotIn("submission_receipt", engine.runtime["executions"]["EX-work"])
@@ -432,7 +432,7 @@ class UserControlIdentity(unittest.TestCase):
             engine.instance["workspace"] = str(root / "work")
             store = create_autospec(ResearchRepository, instance=True)
             store.load.return_value = ("snapshot", engine.instance, engine.runtime)
-            with patch("do_math.engine.ResearchRepository", return_value=store):
+            with patch("do_math.core_engine.ResearchRepository", return_value=store):
                 first = control(root, "RI-test", "request", config={"role": "maintenance"}, request_id="UC-explicit")
                 engine.runtime["status"] = "closed"
                 replay = control(root, "RI-test", "request", config={"role": "maintenance"}, request_id="UC-explicit")
@@ -490,7 +490,7 @@ class UserControlIdentity(unittest.TestCase):
             store = create_autospec(ResearchRepository, instance=True); store.load.return_value = ("snapshot", engine.instance, engine.runtime)
             spec = {"name": "source.txt", "body_base64": base64.b64encode(b"original").decode(),
                     "sha256": hashlib.sha256(b"original").hexdigest(), "bytes": 8}
-            with patch("do_math.engine.ResearchRepository", return_value=store):
+            with patch("do_math.core_engine.ResearchRepository", return_value=store):
                 result = control(root, "RI-test", "source", config=spec, idempotency_key="source-once")
                 self.assertEqual(result["request_id"], control_request_id("RI-test", "source", config=spec, idempotency_key="source-once"))
                 with self.assertRaisesRegex(ValueError, "hash or size"):

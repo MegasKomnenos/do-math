@@ -1217,14 +1217,14 @@ class ImpactReviewRouting(unittest.TestCase):
         self.assertEqual(review_action["input_basis"]["impact_review"], request)
         self.assertNotIn("continuation_of", review_action)
         engine._receive_submission = create_autospec(engine._receive_submission); engine._save = create_autospec(engine._save); engine._settle_activity = create_autospec(engine._settle_activity)
-        with patch("do_math.engine.submission.read_sealed_submission",
+        with patch("do_math.submission.read_sealed_submission",
                    side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
             engine._retry_impact_reviews()
         engine._receive_submission.assert_not_called()
         engine.runtime["executions"]["EX-review"] = {"id": "EX-review", "status": "ended", "outcome": "output_accepted",
             "action": review_action, "output": source.review_output(request)}
         engine.store = create_autospec(ResearchRepository, instance=True); engine.store.read.return_value = b"{}"
-        with patch("do_math.engine.submission.read_sealed_submission",
+        with patch("do_math.submission.read_sealed_submission",
                    side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
             engine._retry_impact_reviews()
         self.assertEqual(engine._receive_submission.call_args.args[2], "EX-producer")
@@ -1260,7 +1260,7 @@ class ImpactReviewRouting(unittest.TestCase):
             "action": deepcopy(next(row for row in engine.runtime["queue"] if row.get("stage") == "impact_review")), "output": output}
         engine._record_task_receipt = create_autospec(engine._record_task_receipt); engine._save = create_autospec(engine._save); engine._receive_submission = create_autospec(engine._receive_submission)
         engine.store = create_autospec(ResearchRepository, instance=True); engine.store.git_dir = 'git-' + uuid.uuid4().hex
-        with patch("do_math.engine.submission.read_sealed_submission",
+        with patch("do_math.submission.read_sealed_submission",
                    side_effect=lambda execution, *_, **__: {"output": execution["output"]}):
             engine._retry_impact_reviews(); engine._retry_impact_reviews()
         engine._receive_submission.assert_not_called()
@@ -1336,7 +1336,7 @@ class AssessmentReassessmentConnections(unittest.TestCase):
         engine.instance["workspace"] = owner.directory.name
         store = create_autospec(ResearchRepository, instance=True); store.load.return_value = (engine.head, engine.instance, engine.runtime)
         config = {"role": "identity_review", "assessment_reassessment": owner.request({"kind": "report", "text": "Read this original judgment"})}
-        with patch("do_math.engine.ResearchRepository", return_value=store):
+        with patch("do_math.core_engine.ResearchRepository", return_value=store):
             result = control(Path(owner.directory.name), "RI-test", "request", config=config)
             self.assertTrue(result["accepted"])
             wrong = deepcopy(config); wrong["assessment_reassessment"]["assessment_sha256"] = "0" * 64
