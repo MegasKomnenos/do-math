@@ -3,7 +3,8 @@ import ast
 import inspect
 import unittest
 
-from support.mutation import changed_functions, functions, line_map, mutate, rule_of, tests_for, unreasoned, update_list
+from support.mutation import (changed_functions, functions, line_map, mutant_timeout, mutate, rule_of, tests_for,
+                               unreasoned, update_list)
 
 SOURCE = '''class Store:
     def put(self, key, value):
@@ -138,6 +139,14 @@ class ListTests(unittest.TestCase):
         self.assertEqual(unreasoned(listing), 1)
         self.assertFalse(update_list(listing, outcomes, 'b1'))
 
+
+
+class MutantTimeoutTests(unittest.TestCase):
+    def test_a_mutant_gets_three_times_the_unmutated_run_within_a_floor_and_the_ceiling(self):
+        self.assertEqual(mutant_timeout(40.0, 300.0), 120.0)
+        self.assertEqual(mutant_timeout(2.0, 300.0), 30.0)
+        self.assertEqual(mutant_timeout(200.0, 300.0), 300.0)
+        self.assertEqual(mutant_timeout(2.0, 10.0), 10.0)
 
 if __name__ == '__main__':
     unittest.main()

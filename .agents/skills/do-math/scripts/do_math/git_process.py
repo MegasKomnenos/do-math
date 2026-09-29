@@ -1,7 +1,15 @@
-"""Real Git backend port: the git executable, isolated from user configuration and hooks."""
+"""Real Git backend port: the git executable, isolated from user configuration and hooks.
+
+Objects are written in process as loose objects, the form Git itself writes;
+the git executable reads them back.
+"""
+import hashlib
 import os
 from pathlib import Path
+import stat
 import subprocess
+import tempfile
+import zlib
 
 from .ports.git_backend import GitBackendError
 
@@ -9,6 +17,7 @@ from .ports.git_backend import GitBackendError
 class GitProcess:
     def __init__(self):
         self._git_dirs = {}
+        self._objects = {}
 
     def _run(self, repository, *arguments, input=None):
         repository = Path(repository).absolute()
@@ -38,8 +47,49 @@ class GitProcess:
                               "--git-path", "objects").decode("utf-8").strip().splitlines()
         if len(facts) != 3:
             raise GitBackendError("git rev-parse did not report the Git directory, object format and objects")
-        self._git_dirs[Path(repository).absolute()] = Path(facts[0]).absolute()
+        key = Path(repository).absolute()
+        self._git_dirs[key] = Path(facts[0]).absolute()
+        # --git-path is relative to the work tree unless Git reports it absolute
+        # (a linked worktree's common directory, GIT_OBJECT_DIRECTORY).
+        self._objects[key] = (facts[1].strip(), key / facts[2].strip())
         return facts[0], facts[1].strip(), facts[2].strip()
+
+    def write_object(self, repository, kind, body):
+        """Store one loose object as installed Git does by default, returning its OID.
+
+        The OID hashes ``"<kind> <size>\\0"`` and the exact body, so writing is
+        idempotent: an existing loose object is kept, and a concurrent writer of
+        the same object only loses the final rename. Like Git for Windows
+        (``core.fsyncObjectFiles=true`` by default) each new object is flushed
+        before its final name appears; the directory is not, as Git does not.
+        """
+        key = Path(repository).absolute()
+        if key not in self._objects:
+            self.describe(repository)  # GitStateStore has already described it; no second git process then
+        object_format, directory = self._objects[key]
+        data = b"%s %d\0" % (kind.encode("ascii"), len(body)) + body
+        oid = hashlib.new(object_format, data).hexdigest()
+        target = directory / oid[:2] / oid[2:]
+        if target.exists():
+            return oid
+        target.parent.mkdir(exist_ok=True)
+        # Git's prefix, so ``git prune`` removes a temporary a crash leaves behind.
+        descriptor, temporary = tempfile.mkstemp(prefix="tmp_obj_", dir=target.parent)
+        try:
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(zlib.compress(data, 1))  # core.looseCompression default
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.chmod(temporary, 0o444)  # Git's mode for loose objects (read-only on Windows)
+            try:
+                os.rename(temporary, target)
+            except FileExistsError:
+                pass  # Windows: another writer stored the identical object first
+        finally:
+            if os.path.lexists(temporary):
+                os.chmod(temporary, stat.S_IREAD | stat.S_IWRITE)
+                os.unlink(temporary)
+        return oid
 
     def object_info(self, repository, specs):
         if not specs:

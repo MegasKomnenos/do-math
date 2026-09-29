@@ -29,8 +29,9 @@ branch gate reports it, and it does not enter the pseudo-tested list.
 Execution: never in the working tree. The mutant source is written to a
 temporary file, and a child interpreter (``--child``) imports it in place of the
 module through a meta-path loader that keeps the original ``__file__``. It runs
-the chosen tests with unittest; each mutant has a time limit. One baseline child
-first runs the union of all chosen tests unmutated; a mutant is ``killed`` when a
+the chosen tests with unittest. One baseline child first runs the union of all
+chosen tests unmutated; each mutant's time limit is three times that run (at
+least 30 s, at most ``--timeout``, ``mutant_timeout``). A mutant is ``killed`` when a
 test fails, errors or unexpectedly passes that did not at baseline, or when the
 child exceeds its limit (``timeout``). Otherwise it ``survived``.
 
@@ -218,6 +219,17 @@ def _git(root, *arguments):
     return subprocess.run(['git', *arguments], cwd=root, capture_output=True, check=False)
 
 
+def mutant_timeout(baseline_seconds, ceiling):
+    """A mutant's time limit: three times the unmutated run of the same tests, at least 30 s, at most ``ceiling``.
+
+    A mutant that hangs counts as killed either way, so the limit only has to
+    let a mutant that survives but runs slower (a result it throws away is
+    recomputed) finish; the unmutated run is the union of every mutant's tests,
+    so it bounds each mutant's own share.
+    """
+    return min(ceiling, max(30.0, 3 * baseline_seconds))
+
+
 def _child_run(spec, directory, timeout):
     """Run one child; returns (failing test ids or None on timeout, seconds)."""
     directory.mkdir(parents=True, exist_ok=True)
@@ -293,6 +305,7 @@ def run(base, index, layers, root, directory, *, only=(), every=False, timeout=3
         union = {'tests': sorted({t for _, _, s in plans for t in s['tests']}),
                  'folders': sorted({f for _, _, s in plans for f in s['folders']})}
         baseline, seconds = _child_run({**union, 'target': None, 'mutant': None}, Path(directory) / 'baseline', timeout)
+        limit = mutant_timeout(seconds, timeout)
         if baseline is None:
             raise RuntimeError(f'baseline run of the chosen tests exceeded {timeout} s')
     for number, (outcome, mutant, chosen) in enumerate(plans):
@@ -300,7 +313,7 @@ def run(base, index, layers, root, directory, *, only=(), every=False, timeout=3
         work.mkdir(parents=True, exist_ok=True)
         (work / 'mutant.py').write_text(mutant, encoding='utf-8')
         failing, seconds = _child_run({**chosen, 'target': str(SCRIPTS / outcome['module']),
-                                       'mutant': str(work / 'mutant.py')}, work, timeout)
+                                       'mutant': str(work / 'mutant.py')}, work, limit)
         outcome['seconds'] = round(seconds, 2)
         if failing is None:
             outcome['status'] = 'timeout'
@@ -374,7 +387,9 @@ def main(argv=None):
     parser.add_argument('--only', action='append', default=[], help='scripts-relative module glob; repeat')
     parser.add_argument('--every', action='store_true',
                         help='mutate every function of the chosen modules, not only those changed since --base')
-    parser.add_argument('--timeout', type=float, default=300.0, help='seconds per mutant run (default: 300)')
+    parser.add_argument('--timeout', type=float, default=300.0,
+                        help='ceiling in seconds of the unmutated run and of each mutant run (default: 300); '
+                             'a mutant gets three times the unmutated run, at least 30 s')
     parser.add_argument('--output', type=Path, help='work directory; default: a new temporary directory')
     parser.add_argument('--child', type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)

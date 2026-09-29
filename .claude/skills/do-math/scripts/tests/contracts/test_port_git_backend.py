@@ -104,6 +104,27 @@ class GitBackendContract:
             ('tree', 'research'), ('blob', 'research/state.json'), ('tree', 'runtime'), ('blob', 'runtime/queue.json')])
         self.assertEqual({row[3]: row[2] for row in rows}['research/state.json'], self.blob)
 
+    def test_write_object_stores_the_exact_object_under_gits_oid_once(self):
+        body = b'{"written": true}\n'
+        raw = b'blob %d\0' % len(body) + body
+        expected = (hashlib.sha256 if self.object_format == 'sha256' else hashlib.sha1)(raw).hexdigest()
+        self.assertEqual(self.backend.write_object(self.repo, 'blob', body), expected)
+        self.assertEqual(self.backend.write_object(self.repo, 'blob', body), expected)
+        self.assertEqual(self.backend.read_objects(self.repo, [expected]), [('blob', body)])
+        self.assertEqual(self.backend.object_info(self.repo, [expected]), [(expected, 'blob', len(body))])
+
+    def test_written_trees_and_commits_resolve_like_objects_already_in_the_repository(self):
+        blob = self.backend.write_object(self.repo, 'blob', b'written\n')
+        written_tree = self.backend.write_object(self.repo, 'tree', b'40000 research\0' + bytes.fromhex(self.research)
+                                                 + b'100644 state.json\0' + bytes.fromhex(blob))
+        signature = 'do-math <do-math@invalid> 1700000000 +0000'
+        written = self.backend.write_object(self.repo, 'commit', (
+            f'tree {written_tree}\nparent {self.first}\nauthor {signature}\ncommitter {signature}\n\ndo-math state\n'
+        ).encode())
+        self.assertEqual(self.backend.read_objects(self.repo, [f'{written}:state.json', f'{written}:research/state.json']),
+                         [('blob', b'written\n'), ('blob', b'{"a": 1}\n')])
+        self.assertEqual(self.backend.first_parent_line(self.repo, self.first, written), [written])
+
     def test_first_parent_line_lists_commits_after_parent_up_to_head_in_order(self):
         self.assertEqual(self.backend.first_parent_line(self.repo, self.first, self.third), [self.second, self.third])
         self.assertEqual(self.backend.first_parent_line(self.repo, self.third, self.third), [])

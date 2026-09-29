@@ -69,13 +69,13 @@ class Sim:
                                       ports=self.ports)['instance_id']
         self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports)
 
-    def _wire(self, clock, host):
+    def _wire(self, clock, host, objects=None):
         self.started = datetime.now(timezone.utc).replace(microsecond=0)  # real time, to recognize leaks
         self.clock = clock
         self.model = ModelDouble(self.clock)
         self.lean = LeanDouble()
         self.jobs = FakeJobs(self._programs())
-        self.ports = Ports(clock=self.clock, git_backend=fake_git(), calls=fake_calls(self.clock), jobs=self.jobs,
+        self.ports = Ports(clock=self.clock, git_backend=fake_git(objects), calls=fake_calls(self.clock), jobs=self.jobs,
                            scheduler=fake_scheduler(), http=fake_http({}), host=host or fake_host())
 
     @classmethod
@@ -90,15 +90,16 @@ class Sim:
         return sim
 
     def process_state(self):
-        """What the fakes hold outside the files: the clock and the Job fake's process identities."""
-        return {'clock': self.clock.state(), 'next_pid': self.jobs._next_pid, 'owner': dict(self.jobs.owner)}
+        """What the fakes hold outside the files: the clock, the Job fake's process identities and the Git objects."""
+        return {'clock': self.clock.state(), 'next_pid': self.jobs._next_pid, 'owner': dict(self.jobs.owner),
+                'git_objects': _copy_objects(self.ports.git_backend.objects)}
 
     @classmethod
     def restored(cls, root, shared, instance_id, state):
         """A new process on a repository and workspace a template copied back to ``root``."""
         sim = cls.__new__(cls)
         sim.root, sim.shared = Path(root).resolve(), Path(shared).resolve()
-        sim._wire(FakeClock(*state['clock']), None)
+        sim._wire(FakeClock(*state['clock']), None, _copy_objects(state['git_objects']))
         sim.jobs._next_pid, sim.jobs.owner = state['next_pid'], dict(state['owner'])
         sim.repository, sim.instance_id = sim.root / 'repository', instance_id
         sim.engine = ResearchEngine(sim.repository, instance_id, ports=sim.ports)
@@ -239,6 +240,11 @@ def _remove(path):
         function(target)
     if Path(path).exists():
         shutil.rmtree(path, onexc=unlock)
+
+
+def _copy_objects(objects):
+    """A copy of the Git fake's object maps; the objects themselves are immutable and shared."""
+    return {git_dir: dict(stored) for git_dir, stored in objects.items()}
 
 
 class _Template:

@@ -1,10 +1,16 @@
-"""In-process Git backend fake: reads loose objects and ref files of the same repository.
+"""In-process Git backend fake: objects in memory, loose objects and ref files on disk.
 
-GitStateStore writes objects itself, so a repository used by tests holds only
-loose objects; this fake does not read packfiles. Refs are plain files under
-``.git/refs``; ``update_ref`` is a compare-and-swap guarded by an exclusive
-``<ref>.lock`` file, as Git's own ref transaction is.
+Objects written through the port stay in ``objects`` (one map per Git
+directory), which stands for the disk: they outlive an engine restart that keeps
+the ports, and a Sim template hands a copy to each restore. They are never
+files, so a test pays no file write, copy or removal per object; objects are
+immutable, so a copy of the map shares the bytes. Reads also find loose objects
+already on disk (repositories a test wrote without the port); packfiles are not
+read. Refs are plain files under ``.git/refs``; ``update_ref`` is a
+compare-and-swap guarded by an exclusive ``<ref>.lock`` file, as Git's own ref
+transaction is.
 """
+import hashlib
 import os
 from pathlib import Path
 import zlib
@@ -14,6 +20,9 @@ from do_math.ports.git_backend import GitBackendError
 
 
 class InProcessGit:
+    def __init__(self, objects=None):
+        self.objects = objects if objects is not None else {}
+
     def _git_dir(self, repository):
         repository = Path(repository)
         return repository / '.git' if (repository / '.git').is_dir() else repository
@@ -29,6 +38,9 @@ class InProcessGit:
         return str(git_dir.absolute()), self._format(git_dir), os.path.relpath(git_dir / 'objects', Path(repository))
 
     def _object(self, git_dir, oid):
+        stored = self.objects.get(str(git_dir.absolute()), {}).get(oid)
+        if stored is not None:
+            return stored
         path = git_dir / 'objects' / oid[:2] / oid[2:]
         if not path.is_file():
             return None
@@ -74,6 +86,13 @@ class InProcessGit:
                 return None
             current = match[0][2]
         return current
+
+    def write_object(self, repository, kind, body):
+        git_dir = self._git_dir(repository)
+        data = kind.encode('ascii') + b' %d\0' % len(body) + body
+        oid = hashlib.new(self._format(git_dir), data).hexdigest()
+        self.objects.setdefault(str(git_dir.absolute()), {}).setdefault(oid, (kind, bytes(body)))
+        return oid
 
     def object_info(self, repository, specs):
         git_dir, result = self._git_dir(repository), []
@@ -150,5 +169,5 @@ def make_repository(root, object_format='sha1'):
 
 
 
-def make_fake():
-    return InProcessGit()
+def make_fake(objects=None):
+    return InProcessGit(objects)

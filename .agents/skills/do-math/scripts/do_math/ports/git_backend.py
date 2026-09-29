@@ -1,7 +1,7 @@
 """Git backend port: the repository operations GitStateStore needs, in meaning-sized steps.
 
-Objects are written by GitStateStore itself; this port reads them back and
-moves the state ref. A missing object or path answers None; an unexpected Git
+The port writes and reads the objects of the state commits and moves the state
+ref. A missing object or path answers None; an unexpected Git
 failure raises ``GitBackendError``.
 """
 from pathlib import Path
@@ -15,6 +15,9 @@ class GitBackendError(RuntimeError):
 class GitBackend(Protocol):
     def describe(self, repository: Path) -> tuple:
         """(absolute Git directory, object format 'sha1'|'sha256', objects directory as Git names it)."""
+
+    def write_object(self, repository: Path, kind: str, body: bytes) -> str:
+        """Store one object (``kind``: blob, tree or commit) and return its OID; an existing object is kept."""
 
     def object_info(self, repository: Path, specs: list) -> list:
         """For each ``ref``, ``oid`` or ``rev:path``: (oid, type, size), or None when absent."""

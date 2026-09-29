@@ -12,15 +12,11 @@ from .operation_trace import measured  # layer: telemetry span only; results do 
 from collections.abc import Iterator, Mapping
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-import hashlib
 import os
 from pathlib import Path
 import re
-import tempfile
-import stat
 import time
 from typing import Final
-import zlib
 
 from .file_io import PhysicalBoundary, no_reparse, os_lock
 from .values import check_path_segment
@@ -107,9 +103,6 @@ class GitStateStore:
         if self.object_format not in {"sha1", "sha256"}:
             raise GitStateStoreError(f"unsupported Git object format: {self.object_format!r}")
         self.oid_length = 40 if self.object_format == "sha1" else 64
-        # --git-path is relative to the work tree unless Git reports it absolute
-        # (a linked worktree's common directory, GIT_OBJECT_DIRECTORY).
-        self._objects = self.repository / facts[2].strip()
         # The trees this store last published and last read (see _tree).
         self._published: _Tree | None = None
         self._read: _Tree | None = None
@@ -206,37 +199,8 @@ class GitStateStore:
             raise ValueError('missing must be "raise" or "omit"')
 
     def _write_object(self, kind: bytes, body: bytes) -> str:
-        """Store one loose object as installed Git does by default, returning its OID.
-
-        The OID hashes ``"<kind> <size>\\0"`` and the exact body, so writing is
-        idempotent: an existing loose object is kept, and a concurrent writer of
-        the same object only loses the final rename. Like Git for Windows
-        (``core.fsyncObjectFiles=true`` by default) each new object is flushed
-        before its final name appears; the directory is not, as Git does not.
-        """
-        data = b"%s %d\0" % (kind, len(body)) + body
-        oid = hashlib.new(self.object_format, data).hexdigest()
-        target = self._objects / oid[:2] / oid[2:]
-        if target.exists():
-            return oid
-        target.parent.mkdir(exist_ok=True)
-        # Git's prefix, so ``git prune`` removes a temporary a crash leaves behind.
-        descriptor, temporary = tempfile.mkstemp(prefix="tmp_obj_", dir=target.parent)
-        try:
-            with os.fdopen(descriptor, "wb") as stream:
-                stream.write(zlib.compress(data, 1))  # core.looseCompression default
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.chmod(temporary, 0o444)  # Git's mode for loose objects (read-only on Windows)
-            try:
-                os.rename(temporary, target)
-            except FileExistsError:
-                pass  # Windows: another writer stored the identical object first
-        finally:
-            if os.path.lexists(temporary):
-                os.chmod(temporary, stat.S_IREAD | stat.S_IWRITE)
-                os.unlink(temporary)
-        return oid
+        """Store one object through the Git port, returning its OID; writing is idempotent."""
+        return self._call("write_object", kind.decode("ascii"), body)
 
     def _write_tree(self, parent: Mapping[str, Mapping[str, tuple[str, str]]],
                     changes: Mapping[str, bytes | None]) -> tuple[str, dict[str, dict[str, tuple[str, str]]]]:
