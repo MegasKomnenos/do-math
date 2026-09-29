@@ -10,7 +10,8 @@ HTTP ports, and a fake host. Tests inject events: controls, owner passes,
 clock moves and restarts. They never replace engine methods or the store.
 
 - ``Sim(root)``: an initialized instance; ``Sim.activated(root)`` also runs the
-  public activation.
+  public activation. ``Sim.activated()`` restores a copy of one activation this
+  process built (설계 4.4): the public path costs seconds, a restore a fraction.
 - ``control(action, text=..., config=...)``: queue a public control.
 - ``step()`` runs one owner pass; ``run_until(condition, max_steps)`` runs passes
   until ``condition(sim)`` holds and otherwise fails with the waiting items.
@@ -26,10 +27,15 @@ the content hashes and Git object IDs built on it differ between runs.
 """
 from __future__ import annotations
 
+import atexit
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import re
+import shutil
+import stat
+import tempfile
 
 from do_math.engine import ResearchEngine, control, initialize
 from do_math.ports import Ports
@@ -46,31 +52,56 @@ from support.model import ModelDouble
 GOAL = 'Establish that adding zero to any natural number leaves it unchanged.'
 WALL_YEAR = 2090
 # The product's defaults, except what a Sim cannot offer: no scholarly server, no scheduled
-# operator, and the synthetic trust environment's Lean (``activate`` builds it at ``root/trust``).
+# operator, and the synthetic trust environment's Lean (``activate`` builds it at ``shared/trust``).
 CONFIG = {'scholarly_enabled': False, 'operator_enabled': False}
 TIMESTAMP = re.compile(r'\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
 
 
 class Sim:
-    def __init__(self, root, *, goal=GOAL, config=None, host=None):
-        self.root = Path(root)
-        self.started = datetime.now(timezone.utc).replace(microsecond=0)  # real time, to recognize leaks
-        self.clock = FakeClock(wall=datetime(WALL_YEAR, 1, 1, tzinfo=timezone.utc))
-        self.model = ModelDouble(self.clock)
-        self.lean = LeanDouble()
-        self.jobs = FakeJobs(self._programs())
-        self.ports = Ports(clock=self.clock, git_backend=fake_git(), calls=fake_calls(self.clock), jobs=self.jobs,
-                           scheduler=fake_scheduler(), http=fake_http({}), host=host or fake_host())
+    def __init__(self, root, *, goal=GOAL, config=None, host=None, shared=None):
+        """``shared`` holds the synthetic trust toolchain (default: ``root``); a template never copies it."""
+        self.root = Path(root).resolve()
+        self.shared = Path(shared).resolve() if shared is not None else self.root
+        self._wire(FakeClock(wall=datetime(WALL_YEAR, 1, 1, tzinfo=timezone.utc)), host)
         self.repository = make_repository(self.root / 'repository')
         self.instance_id = initialize(self.repository, goal=goal, workspace=self.root / 'work',
                                       config={**CONFIG, 'lean_command': [str(self.trust_lean)], **(config or {})},
                                       ports=self.ports)['instance_id']
         self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports)
 
+    def _wire(self, clock, host):
+        self.started = datetime.now(timezone.utc).replace(microsecond=0)  # real time, to recognize leaks
+        self.clock = clock
+        self.model = ModelDouble(self.clock)
+        self.lean = LeanDouble()
+        self.jobs = FakeJobs(self._programs())
+        self.ports = Ports(clock=self.clock, git_backend=fake_git(), calls=fake_calls(self.clock), jobs=self.jobs,
+                           scheduler=fake_scheduler(), http=fake_http({}), host=host or fake_host())
+
     @classmethod
-    def activated(cls, root, **options):
+    def activated(cls, root=None, **options):
+        """An active instance: built at ``root``, or without one restored from this process's template."""
+        if root is None:
+            if options:
+                raise ValueError('the template Sim has the default options; pass a root to build another')
+            return _template().restore()
         sim = cls(root, **options)
         sim.activate()
+        return sim
+
+    def process_state(self):
+        """What the fakes hold outside the files: the clock and the Job fake's process identities."""
+        return {'clock': self.clock.state(), 'next_pid': self.jobs._next_pid, 'owner': dict(self.jobs.owner)}
+
+    @classmethod
+    def restored(cls, root, shared, instance_id, state):
+        """A new process on a repository and workspace a template copied back to ``root``."""
+        sim = cls.__new__(cls)
+        sim.root, sim.shared = Path(root).resolve(), Path(shared).resolve()
+        sim._wire(FakeClock(*state['clock']), None)
+        sim.jobs._next_pid, sim.jobs.owner = state['next_pid'], dict(state['owner'])
+        sim.repository, sim.instance_id = sim.root / 'repository', instance_id
+        sim.engine = ResearchEngine(sim.repository, instance_id, ports=sim.ports)
         return sim
 
     def _programs(self):
@@ -90,8 +121,8 @@ class Sim:
 
     @property
     def trust_lean(self):
-        """The synthetic toolchain's Lean executable; ``activate`` creates it under ``root/trust``."""
-        return (self.root / 'trust' / 'toolchain' / 'bin' / 'lean.exe').resolve()
+        """The synthetic toolchain's Lean executable; ``activate`` creates it under ``shared/trust``."""
+        return self.shared / 'trust' / 'toolchain' / 'bin' / 'lean.exe'
 
     @property
     def instance(self):
@@ -163,7 +194,7 @@ class Sim:
             ('decision', {'change': {'kind': 'grant', 'grant': {'id': 'GR-research-sim', 'kind': 'local',
                 'roles': list(ROLES) + ['formal_check'], 'reuse': 'reusable', 'expires_at': expiry}}}),
             ('decision', {'change': {'kind': 'initialization', 'operation': 'probe', 'config_sha256': config_sha256}}),
-            ('trust', trust_fixture(self.root, self.instance['config']['lean_command'], directory=self.root / 'trust'))]
+            ('trust', trust_fixture(self.shared, self.instance['config']['lean_command'], directory=self.shared / 'trust'))]
         for action, config in controls:
             self.control(action, text=text, config=config)
         self.engine.process_controls()
@@ -198,3 +229,55 @@ class Sim:
         now = datetime.now(timezone.utc)
         return sorted({match.group(0) for match in TIMESTAMP.finditer(text)
                        if self.started <= datetime.fromisoformat(match.group(0)).replace(tzinfo=timezone.utc) <= now})
+
+
+def _remove(path):
+    def unlock(function, target, _):
+        os.chmod(target, stat.S_IWRITE)  # Git objects are written read-only
+        function(target)
+    if Path(path).exists():
+        shutil.rmtree(path, onexc=unlock)
+
+
+class _Template:
+    """One activation built in this process, its untouched copy, and the fixed path copies are restored to.
+
+    The same absolute path keeps the absolute paths inside the state true, so a
+    restore replaces the previous copy: finish with one Sim before asking for the
+    next. ``shared`` holds the trust toolchain and is never copied or cleared:
+    the trust record fingerprints its files by creation time, which a copy changes.
+    """
+
+    def __init__(self):
+        self.base = Path(tempfile.mkdtemp(prefix='do-math-sim-')).resolve()
+        atexit.register(_remove, self.base)
+        self.live, self.pristine, self.shared = (self.base / name for name in ('live', 'pristine', 'shared'))
+        sim = Sim.activated(self.live, shared=self.shared)
+        self.instance_id, self.state = sim.instance_id, sim.process_state()
+        shutil.copytree(self.live, self.pristine)
+        self.used = False
+
+    def restore(self):
+        if self.used:
+            _remove(self.live)
+            shutil.copytree(self.pristine, self.live)
+        self.used = True
+        return Sim.restored(self.live, self.shared, self.instance_id, self.state)
+
+
+_TEMPLATE = []
+
+
+def warm_template():
+    """Build this process's template now; a test module's ``setUpModule`` so no test pays the build."""
+    _template()
+
+
+def _template():
+    """This process's template; a failed build is not retried, since every later test would repeat its cost."""
+    if not _TEMPLATE:
+        _TEMPLATE.append('failed')
+        _TEMPLATE[0] = _Template()
+    elif _TEMPLATE[0] == 'failed':
+        raise AssertionError('the Sim template failed to build earlier in this process')
+    return _TEMPLATE[0]

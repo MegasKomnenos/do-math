@@ -65,6 +65,23 @@ def select_tiers(tests, tiers):
     return [test for test in tests if folder_of(test) in folders]
 
 
+def budget_report(rows, tiers, seconds, budgets):
+    """Tests over their folder's budget and the named tiers' run time against their budget (설계 5.2).
+
+    ``rows`` are report rows; legacy modules and fixture rows have no budget.
+    Several tiers in one run are held to the largest of their budgets.
+    """
+    per_test = budgets['per_test_seconds']
+    over = sorted(({'id': row['id'], 'seconds': row['seconds'], 'budget_seconds': per_test[row['id'].split('.')[0]]}
+                   for row in rows if not row.get('fixture') and row['id'].split('.')[0] in per_test
+                   and row['seconds'] > per_test[row['id'].split('.')[0]]), key=lambda row: row['id'])
+    tier = None
+    if tiers:
+        limit = max(budgets['tier_seconds'][name] for name in tiers)
+        tier = {'tiers': sorted(tiers), 'budget_seconds': limit, 'seconds': seconds, 'over': seconds > limit}
+    return {'over_budget': over, 'tier': tier}
+
+
 def group_of(test):
     return folder_of(test) or shard_for(test)
 
@@ -381,17 +398,26 @@ def main(argv=None):
     after = _edition()
     changed = sorted(path for path in before.keys() | after.keys() if before.get(path) != after.get(path))
     rows = [row for report in reports for row in report['rows']]
-    result = {'open_known_defects': open_defects, 'complete': all(report['complete'] for report in reports),
+    total = round(sum(shard_seconds.values()), 1)
+    budget = budget_report(rows, args.tier or [], total, json.loads((TESTS / 'budgets.json').read_text(encoding='utf-8')))
+    result = {'open_known_defects': open_defects, 'budget': budget,
+        'complete': all(report['complete'] for report in reports),
         'successful': not changed and all(report['successful'] for report in reports),
         'selected': [test.id() for test in selected], 'discovered': len(discovered),
         'shards': sorted(args.shard or []), 'tiers': sorted(args.tier or []), 'tests': args.tests,
-        'shard_seconds': shard_seconds, 'total_seconds': round(sum(shard_seconds.values()), 1),
+        'shard_seconds': shard_seconds, 'total_seconds': total,
         'counts': dict(Counter(row['outcome'] for row in rows if not row.get('fixture'))),
         'fixture_counts': dict(Counter(row['outcome'] for row in rows if row.get('fixture'))),
         'source_sha256': before, 'changed_during_run': changed, 'reports': reports,
         'slowest': sorted((row for row in rows if not row.get('fixture')),
                           key=lambda row: row['seconds'], reverse=True)[:20]}
     _write_json(directory / 'report.json', result)
+    tier = budget['tier']
+    print(f"Over budget: {len(budget['over_budget'])} tests"
+          + (f"; {'+'.join(tier['tiers'])} ran {tier['seconds']}s of {tier['budget_seconds']}s"
+             + (' (over)' if tier['over'] else '') if tier else ''), flush=True)
+    for row in budget['over_budget']:
+        print(f"  {row['seconds']:9.3f}s > {row['budget_seconds']}s {row['id']}")
     print(json.dumps({name: result[name] for name in ('complete', 'successful', 'counts', 'shard_seconds', 'total_seconds')},
                      ensure_ascii=False))
     for row in result['slowest']:

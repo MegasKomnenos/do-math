@@ -14,8 +14,12 @@ EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 class FakeClock:
-    def __init__(self, wall=datetime(2026, 1, 1, tzinfo=timezone.utc), monotonic=1000.0):
-        self._wall, self._monotonic, self._counter = wall, float(monotonic), 0
+    def __init__(self, wall=datetime(2026, 1, 1, tzinfo=timezone.utc), monotonic=1000.0, counter=0):
+        self._wall, self._monotonic, self._counter = wall, float(monotonic), counter
+
+    def state(self):
+        """``(wall, monotonic, counter)``; ``FakeClock(*state)`` continues from here."""
+        return self._wall, self._monotonic, self._counter
 
     def now(self) -> str:
         return self.wall().isoformat()

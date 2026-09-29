@@ -13,6 +13,7 @@ class PublicActivationTests(unittest.TestCase):
         self.root = Path(directory.name)
 
     def test_public_activation_reaches_active_through_the_worker_with_all_time_from_the_clock_port(self):
+        """About 7 s, over the 2 s Sim budget: the public path from an empty repository is what it checks."""
         sim = Sim.activated(self.root)
         self.assertEqual(sim.instance['lifecycle']['state'], 'active')
         # The initial interpretation ran through the product's runner, adapter and worker to the model double.

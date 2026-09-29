@@ -1,15 +1,21 @@
-"""The Lean double on the Sim (설계 4.1): the engine's formal verifier checks a theorem through the Job and worker."""
+"""The Lean double on the Sim (설계 4.1): the engine's formal verifier checks a theorem through the Job and worker.
+
+It runs on a restored template, so it also shows that a restore keeps the trust
+environment valid: the shared toolchain the trust record fingerprints is not copied.
+"""
 from pathlib import Path
 import tempfile
 import unittest
 
-from support.sim import Sim
+from support.sim import Sim, warm_template
+
+setUpModule = warm_template
 
 
 class FormalCheckTests(unittest.TestCase):
     def test_the_engine_verifier_checks_a_theorem_through_the_lean_worker_in_the_active_trust_environment(self):
         with tempfile.TemporaryDirectory() as directory:
-            sim = Sim.activated(Path(directory))
+            sim = Sim.activated()
             environment = sim.instance['trust_environments'][sim.instance['active_trust_environment']]
             workspace = Path(directory) / 'check'
             workspace.mkdir()

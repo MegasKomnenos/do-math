@@ -39,6 +39,7 @@ class TierTests(unittest.TestCase):
 
 class ReportTests(unittest.TestCase):
     def test_report_states_the_number_of_open_known_defects(self):
+        """About 0.3 s, over the 0.2 s unit budget: it runs the runner's whole main, discovery included."""
         import json, tempfile
         from contextlib import redirect_stdout
         import io
@@ -50,6 +51,29 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn('open_known_defects', report)
         self.assertIsInstance(report['open_known_defects'], int)
+
+
+
+class BudgetTests(unittest.TestCase):
+    """Budgets are observed, not enforced per test (설계 5.2): the report lists what exceeds them."""
+
+    BUDGETS = {'per_test_seconds': {'unit': 0.2, 'sim': 2.0}, 'tier_seconds': {'T1': 180, 'T2': 300}}
+
+    def test_only_new_system_tests_over_their_folder_budget_are_listed(self):
+        rows = [{'id': 'unit.test_a.T.test_fast', 'seconds': 0.1, 'outcome': 'passed'},
+                {'id': 'unit.test_a.T.test_slow', 'seconds': 0.5, 'outcome': 'passed'},
+                {'id': 'sim.test_b.T.test_slow', 'seconds': 7.0, 'outcome': 'failed'},
+                {'id': 'test_legacy.T.test_slow', 'seconds': 90.0, 'outcome': 'passed'},
+                {'id': 'sim.test_b.T.setUpClass', 'seconds': 9.0, 'outcome': 'passed', 'fixture': True}]
+        report = run_tests.budget_report(rows, ['T2'], 400.0, self.BUDGETS)
+        self.assertEqual([(row['id'], row['budget_seconds']) for row in report['over_budget']],
+                         [('sim.test_b.T.test_slow', 2.0), ('unit.test_a.T.test_slow', 0.2)])
+        self.assertEqual(report['tier'], {'tiers': ['T2'], 'budget_seconds': 300, 'seconds': 400.0, 'over': True})
+
+    def test_a_run_without_a_tier_has_no_tier_budget(self):
+        self.assertIsNone(run_tests.budget_report([], [], 10.0, self.BUDGETS)['tier'])
+        combined = run_tests.budget_report([], ['T1', 'T2'], 250.0, self.BUDGETS)['tier']
+        self.assertEqual((combined['budget_seconds'], combined['over']), (300, False))
 
 
 if __name__ == '__main__':
