@@ -128,12 +128,20 @@ class FakeCLI:
     def _write_stream(self, final):
         if Path(self.command[0]).stem.lower() != "codex":
             raise NotImplementedError("the model double writes only the Codex event stream: " + self.command[0])
-        events = [{"type": "thread.started", "thread_id": "fake-thread"}, {"type": "turn.started"},
-                  {"type": "item.completed", "item": {"id": "item_0", "type": "agent_message", "text": final}},
-                  {"type": "turn.completed", "usage": {"input_tokens": 1, "cached_input_tokens": 0, "output_tokens": 1}}]
-        self.stdout.write("".join(json.dumps(event) + "\n" for event in events).encode("utf-8"))
+        self.stdout.write(codex_stream_bytes(final))
         final_path = self.command[self.command.index("--output-last-message") + 1]
         Path(final_path).write_bytes(final.encode("utf-8"))
 
     def kill(self):
         self.returncode = 1
+
+
+def codex_stream_bytes(final):
+    """A completed ``codex exec --json`` stream whose last agent message is ``final``."""
+    events = [{"type": "thread.started", "thread_id": "fake-thread"}, {"type": "turn.started"},
+              {"type": "item.completed", "item": {"id": "item_0", "type": "agent_message", "text": final}},
+              # The usage row carries the fields a recorded Codex stream reports (corpus).
+              {"type": "turn.completed", "usage": {"input_tokens": 1, "cached_input_tokens": 0,
+                                                   "cache_write_input_tokens": 0, "output_tokens": 1,
+                                                   "reasoning_output_tokens": 0}}]
+    return "".join(json.dumps(event) + "\n" for event in events).encode("utf-8")

@@ -5,7 +5,7 @@ runs the real ``ResearchEngine`` on a Ports bundle of fakes: a clock whose
 wall time is a distant year (a real-clock value that reaches the state stands
 out), a process-free Git repository, the deterministic calls port, a Jobs fake
 whose programs run the product's worker modules in process with the model
-double (and, later, the Lean double) at their spawn seam, fake scheduler and
+and Lean doubles at their spawn seam, fake scheduler and
 HTTP ports, and a fake host. Tests inject events: controls, owner passes,
 clock moves and restarts. They never replace engine methods or the store.
 
@@ -40,13 +40,14 @@ from support.fakes.host import make_fake as fake_host
 from support.fakes.http import make_fake as fake_http
 from support.fakes.jobs import FakeJobs
 from support.fakes.scheduler import make_fake as fake_scheduler
+from support.lean import LeanDouble
 from support.model import ModelDouble
 
 GOAL = 'Establish that adding zero to any natural number leaves it unchanged.'
 WALL_YEAR = 2090
 # The product's defaults, except what a Sim cannot offer: no scholarly server, no scheduled
-# operator, and a Lean command for the synthetic trust environment.
-CONFIG = {'scholarly_enabled': False, 'operator_enabled': False, 'lean_command': ['lean']}
+# operator, and the synthetic trust environment's Lean (``activate`` builds it at ``root/trust``).
+CONFIG = {'scholarly_enabled': False, 'operator_enabled': False}
 TIMESTAMP = re.compile(r'\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
 
 
@@ -56,12 +57,14 @@ class Sim:
         self.started = datetime.now(timezone.utc).replace(microsecond=0)  # real time, to recognize leaks
         self.clock = FakeClock(wall=datetime(WALL_YEAR, 1, 1, tzinfo=timezone.utc))
         self.model = ModelDouble(self.clock)
+        self.lean = LeanDouble()
         self.jobs = FakeJobs(self._programs())
         self.ports = Ports(clock=self.clock, git_backend=fake_git(), calls=fake_calls(self.clock), jobs=self.jobs,
                            scheduler=fake_scheduler(), http=fake_http({}), host=host or fake_host())
         self.repository = make_repository(self.root / 'repository')
         self.instance_id = initialize(self.repository, goal=goal, workspace=self.root / 'work',
-                                      config={**CONFIG, **(config or {})}, ports=self.ports)['instance_id']
+                                      config={**CONFIG, 'lean_command': [str(self.trust_lean)], **(config or {})},
+                                      ports=self.ports)['instance_id']
         self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports)
 
     @classmethod
@@ -76,8 +79,19 @@ class Sim:
         def worker(module):
             return lambda argv, cwd, env: module.run(Path(argv[2]), spawn=self.model.spawn)
 
+        def lean(argv, cwd, env):
+            from do_math import formal
+            return formal._worker(Path(argv[5]), spawn=self.lean.spawn)
+
         return [(lambda argv: Path(argv[1]).name == 'codex_worker.py', worker(codex_worker)),
-                (lambda argv: Path(argv[1]).name == 'claude_worker.py', worker(claude_worker))]
+                (lambda argv: Path(argv[1]).name == 'claude_worker.py', worker(claude_worker)),
+                # formal._job_run: [python, -B, -c, <import formal._worker>, <scripts>, <request>]
+                (lambda argv: argv[1:3] == ['-B', '-c'] and 'do_math.formal import _worker' in argv[3], lean)]
+
+    @property
+    def trust_lean(self):
+        """The synthetic toolchain's Lean executable; ``activate`` creates it under ``root/trust``."""
+        return (self.root / 'trust' / 'toolchain' / 'bin' / 'lean.exe').resolve()
 
     @property
     def instance(self):

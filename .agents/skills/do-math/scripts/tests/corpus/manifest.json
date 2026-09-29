@@ -1,0 +1,98 @@
+{
+ "entries": [
+  {
+   "id": "codex-operational-review-completed",
+   "kind": "codex_stream",
+   "path": "codex/codex-operational-review-completed.jsonl",
+   "tool_version": "not recorded by the run",
+   "recorded_at": "2026-09-27",
+   "command": "codex exec --json (do-math codex_worker)",
+   "role": "operational_review",
+   "source": "nat-add-zero-20260927-01 EX-01M3HN3ZY2R4T481A5DV93QJ9P evidence/stdout.jsonl",
+   "verdict": {
+    "turn_completed": true,
+    "parse_complete": true,
+    "usage_fields": [
+     "cache_write_input_tokens",
+     "cached_input_tokens",
+     "input_tokens",
+     "output_tokens",
+     "reasoning_output_tokens"
+    ],
+    "unknown_events": [],
+    "final_sha256": "1f534a08280c31b798a2eae56e4c8ad830896bae82df3f30af1b50293568836f",
+    "final_is_selected_text": true
+   },
+   "final_path": "codex/codex-operational-review-completed.final.txt"
+  },
+  {
+   "id": "codex-cut-mid-turn",
+   "kind": "codex_stream",
+   "path": "codex/codex-cut-mid-turn.jsonl",
+   "tool_version": "not recorded by the run",
+   "recorded_at": "2026-09-27",
+   "command": "codex exec --json (do-math codex_worker)",
+   "role": "operational_review",
+   "source": "nat-add-zero-20260927-01 EX-01M3HN8JM42QXA1V9KG3RD68RM evidence/stdout.jsonl",
+   "verdict": {
+    "turn_completed": false,
+    "parse_complete": false,
+    "usage_fields": [],
+    "unknown_events": [
+     "invalid_terminal_count_or_position"
+    ]
+   }
+  },
+  {
+   "id": "lean-nat-add-zero-beq",
+   "kind": "lean_output",
+   "path": "lean/lean-nat-add-zero-beq.txt",
+   "source_path": "lean/lean-nat-add-zero-beq.lean",
+   "tool_version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+   "recorded_at": "2026-09-27",
+   "command": "lean proposal.lean (do-math formal._worker); dependency rows cut",
+   "role": "formal_check",
+   "source": "nat-add-zero-20260927-01 KN-01M3HN9RSFZME2KHX6KCS0X83V formal.stdout",
+   "declarations": [
+    "natAddZeroBeqGoal",
+    "natAddZeroBeq_zero",
+    "natAddZeroBeq_one",
+    "natAddZeroBeq_two",
+    "natAddZeroBeq_all"
+   ],
+   "verdict": {
+    "status": "verified",
+    "declaration_signatures": {
+     "natAddZeroBeqGoal": "natAddZeroBeqGoal (n : Nat) : Prop",
+     "natAddZeroBeq_zero": "natAddZeroBeq_zero : natAddZeroBeqGoal 0",
+     "natAddZeroBeq_one": "natAddZeroBeq_one : natAddZeroBeqGoal 1",
+     "natAddZeroBeq_two": "natAddZeroBeq_two : natAddZeroBeqGoal 2",
+     "natAddZeroBeq_all": "natAddZeroBeq_all (n : Nat) : natAddZeroBeqGoal n"
+    },
+    "axioms": {
+     "natAddZeroBeqGoal": [],
+     "natAddZeroBeq_zero": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+     ],
+     "natAddZeroBeq_one": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+     ],
+     "natAddZeroBeq_two": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+     ],
+     "natAddZeroBeq_all": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+     ]
+    }
+   }
+  }
+ ]
+}
