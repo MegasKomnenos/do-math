@@ -24,6 +24,9 @@ from .model_policy import selection
 from .provider_wait import epoch_seconds
 from .session_slots import PROVIDER_WAIT
 from .operation_trace import workspace_operation, child_environment
+from .migration_defaults import clock_or_system
+from .supervision import (OPERATOR_SCHEMA, SUPERVISION_BLOCKS, hold_pause_reason, supervision_block,
+                          supervision_facts)
 
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -33,23 +36,7 @@ LIVE_INSTALLATION_ROOT = SKILL_ROOT
 # The adapter finds operator_bootstrap.py beside itself. Its ValidateSet is the one
 # action list: an unsupported action fails there and ``schedule`` raises its error.
 SCHEDULE_SCRIPT = SCRIPTS / "operator_schedule.ps1"
-# Supervision blockers in priority order; the first present one decides.
-# ``held`` is the local HOLD file and ``disabled`` the operator setting.
-SUPERVISION_BLOCKS = ('held', 'disabled', 'user_pause', 'maintenance', 'model_policy',
-                      'paused', 'closed', 'completed', 'conversation_lost', 'installation_repair')
-
 Runner = Callable[..., subprocess.CompletedProcess[str]]
-OPERATOR_SCHEMA = {
-    "type": "object", "additionalProperties": False,
-    "properties": {
-        "summary": {"type": "string"}, "observed_status": {"type": "string"},
-        "actions": {"type": "array", "items": {"type": "string"}},
-        "evidence_paths": {"type": "array", "items": {"type": "string"}},
-        "user_questions": {"type": "array", "items": {"type": "string"}},
-        "next_step": {"type": "string"},
-    },
-    "required": ["summary", "observed_status", "actions", "evidence_paths", "user_questions", "next_step"],
-}
 
 
 def repair_report_schema(*, diagnosed=False):
@@ -176,39 +163,6 @@ def cancel_wake(repository: Path, instance: str, workspace: Path) -> dict[str, A
     result = schedule("cancel-wake", repository=repository, instance=instance, workspace=workspace)
     (_operator_dir(workspace) / "wake-registration.json").unlink(missing_ok=True)
     return result
-
-
-def hold_pause_reason(hold_id: str) -> str:
-    """The user pause a HOLD requests; its release resumes only this exact pause."""
-    return "User requested scheduled operator HOLD " + hold_id
-
-
-def supervision_facts(instance: dict, runtime: dict) -> dict[str, Any]:
-    """The persisted facts that decide whether supervision may start research or repair."""
-    from .repair_execution import pending_installation_repair
-    return {'status': runtime.get('status'), 'user_pause': deepcopy(runtime.get('user_pause')),
-            'maintenance_fence': deepcopy(runtime.get('maintenance_fence')),
-            'model_policy_violation': deepcopy(runtime.get('model_policy_violation')),
-            'conversation_lost': (runtime.get('stop_requested') == 'conversation_lost'
-                                  and instance.get('conversation_loss_policy') == 'pause'),
-            'installation_repair': deepcopy(pending_installation_repair(runtime)),
-            'operator_enabled': instance.get('config', {}).get('operator_enabled') is True}
-
-
-def supervision_block(facts: dict[str, Any]) -> str | None:
-    """The first supervision blocker present in ``facts``, or None.
-
-    Facts without ``held`` or ``operator_enabled`` never report those blockers;
-    a persisted-state view or an explicit engine start omits them.
-    """
-    present = {'held': facts.get('held'),
-               'disabled': 'operator_enabled' in facts and not facts['operator_enabled'],
-               'user_pause': facts.get('user_pause'), 'maintenance': facts.get('maintenance_fence'),
-               'model_policy': facts.get('model_policy_violation'),
-               'conversation_lost': facts.get('conversation_lost'),
-               'installation_repair': facts.get('installation_repair'),
-               **{state: facts.get('status') == state for state in ('paused', 'closed', 'completed')}}
-    return next((code for code in SUPERVISION_BLOCKS if present[code]), None)
 
 
 def _held(workspace: Path) -> bool:
@@ -341,7 +295,7 @@ def engine_start_guard(repository: Path, instance: str, workspace: Path, *, stat
 
 
 def reconcile_wake(repository: Path, instance: str, workspace: Path, *, facts: dict, providers: dict,
-                   scheduler=None) -> dict:
+                   scheduler=None, clock=None) -> dict:
     """Repair a missing/stale one-shot reservation before invoking any model.
 
     ``facts`` are the caller's supervision facts and ``providers`` its provider
@@ -362,7 +316,7 @@ def reconcile_wake(repository: Path, instance: str, workspace: Path, *, facts: d
     wanted = {"key": key, "retry_at": row["retry_at"]}
     observed = schedule("status", repository=repository, instance=instance, workspace=workspace, scheduler=scheduler)
     actual = observed.get("wake")
-    future_trigger = actual and (epoch_seconds(actual.get("next_run")) or 0) > datetime.now(timezone.utc).timestamp()
+    future_trigger = actual and (epoch_seconds(actual.get("next_run")) or 0) > clock_or_system(clock).wall().timestamp()
     running = (observed.get("engine") or {}).get("state") == "Running" or (actual or {}).get("state") == "Running"
     if previous == wanted and actual and actual.get("description") == key and (future_trigger or running):
         return {"status": "scheduled", **wanted, "observed": observed}

@@ -54,8 +54,9 @@ class SessionSlots:
     database is authoritative for this path.
     """
 
-    def __init__(self, runtime: dict, instance: dict, *, observer=False, clock=None):
+    def __init__(self, runtime: dict, instance: dict, *, observer=False, clock=None, jobs=None):
         self.clock = clock_or_system(clock)
+        self.jobs = jobs
         self.runtime, self.instance, self.observer = runtime, instance, observer
         self.admission_wait = None
 
@@ -198,7 +199,7 @@ class SessionSlots:
         profile, records = admitted
         candidate = deepcopy(execution)
         bind_execution(candidate, profile)
-        candidate['launch_ticket'] = ticket(execution_id, profile)
+        candidate['launch_ticket'] = ticket(execution_id, profile, jobs=self.jobs, clock=self.clock)
         admitted_at = (self.clock.wall() if current_time is None
                        else datetime.fromtimestamp(current, timezone.utc))
         transition_execution(candidate, "starting", at=admitted_at.isoformat())
@@ -247,7 +248,7 @@ class SessionSlots:
         # The launch ticket, not missing process metadata, establishes the
         # barrier; for a native Job it already requires the named Job empty.
         # A suspended root may exist before on_started is saved.
-        if not execution.get('launch_ticket') or not termination_confirmed(execution['launch_ticket']):
+        if not execution.get('launch_ticket') or not termination_confirmed(execution['launch_ticket'], jobs=self.jobs):
             capacity['local_termination'] = 'unknown'
             return False
         evidence = [{"execution_id": execution_id, "job_name": identity.get("job_name") if identity else None,

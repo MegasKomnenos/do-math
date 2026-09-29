@@ -204,7 +204,7 @@ def clock_ports(**overrides):
     from do_math.git_process import GitProcess
     from do_math.parallel import ThreadCalls
     from do_math.windows_job import WindowsJobs
-    from do_math.external import UrllibHttp
+    from do_math.http_transport import UrllibHttp
     from do_math.scheduled_operator import PowerShellScheduler
     return Ports(clock=SimpleNamespace(**operations), git_backend=GitProcess(), calls=ThreadCalls(),
                  jobs=WindowsJobs(), scheduler=PowerShellScheduler(), http=UrllibHttp())
@@ -539,7 +539,7 @@ def acknowledge(tracker, obligation_id):
 
     After this, a research action the tracker observes violates the open request.
     """
-    from do_math.control_transport import CONTROL_SERVER, SELF_CHECK_TOOL
+    from do_math.control_protocol import CONTROL_SERVER, SELF_CHECK_TOOL
     request = tracker.issue_self_check(obligation_id)
     previous = tracker.observation_source
     tracker.record_delivery(obligation_id, source_offset=previous["end_offset"] if previous is not None else 0)

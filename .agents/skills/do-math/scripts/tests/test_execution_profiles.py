@@ -157,7 +157,7 @@ class ProfileTests(unittest.TestCase):
                 # The worker sees the kinds the transport accepts and the answer schema it will be checked against.
                 # The answer schema travels in the description; the input node keeps the plain object shape
                 # that preserved provider runs accepted.
-                from do_math.control_transport import REQUEST_KINDS, SELF_CHECK_RESPONSE_SCHEMA
+                from do_math.control_protocol import REQUEST_KINDS, SELF_CHECK_RESPONSE_SCHEMA
                 self.assertEqual(set(tools["control_submit"]["properties"]["kind"]["enum"]), REQUEST_KINDS)
                 self.assertEqual(tools["control_self_check"]["properties"]["response"], {"type": "object"})
                 self.assertIn(json.dumps(SELF_CHECK_RESPONSE_SCHEMA, sort_keys=True), listed["control_self_check"]["description"])
@@ -543,11 +543,11 @@ class ProfileTests(unittest.TestCase):
         # Every module a worker runs in its Job, or its collector uses, identifies the implementation.
         from do_math.claude_adapter import ClaudePrintAdapter
         self.assertEqual(set(CodexExecAdapter("codex").capability_identity()["module_sha256"]),
-                         {"cli_worker", "codex_worker", "control_transport", "file_io", "values", "windows_job", "scholarly",
-                          "codex_adapter"})
+                         {"cli_worker", "codex_worker", "control_transport", "control_protocol", "file_io", "values", "windows_job",
+                          "scholarly", "codex_adapter", "codex_stream"})
         self.assertEqual(set(ClaudePrintAdapter("claude").capability_identity()["module_sha256"]),
-                         {"claude_worker", "cli_worker", "codex_worker", "control_transport", "file_io", "values", "windows_job",
-                          "scholarly", "codex_adapter", "claude_adapter", "claude_stream"})
+                         {"claude_worker", "cli_worker", "codex_worker", "control_transport", "control_protocol", "file_io", "values", "windows_job",
+                          "scholarly", "codex_adapter", "codex_stream", "claude_adapter", "claude_stream"})
 
     def test_unchanged_cli_and_sources_are_not_rehashed_for_each_identity(self):
         from do_math import file_io

@@ -19,7 +19,7 @@ from .canonical import exact_content_hash
 from .review_cycle import CYCLE_STATUSES
 from .task_contracts import LIFECYCLE_STATES, TERMINAL_TASK_STATUSES
 from .trust_validation import ENVIRONMENT_STATUSES
-from .migration_defaults import clock_or_system  # layer: 1c migration default; the value becomes a required argument in 1f
+from .migration_defaults import clock_or_system
 
 
 CONTRACT_FIELDS = ("id", "revision", "title", "question", "scope", "expected", "description",

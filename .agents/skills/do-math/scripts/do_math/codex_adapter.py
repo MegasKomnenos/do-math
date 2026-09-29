@@ -26,6 +26,7 @@ from typing import Any, Mapping
 from do_math.system_clock import now
 from do_math.values import compact_json_bytes, strict_json_loads
 from do_math.windows_job import WindowsJob, process_identity
+from do_math.codex_stream import artifact as _artifact, parse_jsonl as _parse_jsonl, provider_observation as _provider_observation
 from do_math import cli_worker, codex_worker
 
 
@@ -53,63 +54,6 @@ def _read(path: Path | None) -> bytes | None:
         return path.read_bytes()
     except FileNotFoundError:
         return None
-
-
-def _parse_jsonl(raw: bytes | None) -> dict[str, Any]:
-    if raw is None:
-        return {"parsed_bytes": 0, "unparsed_tail_bytes": 0, "events": [], "thread_id": None,
-                "turn_completed": False, "turn_failed": False, "usage": [], "unknown_events": ["stdout_missing"],
-                "parse_complete": False}
-    events, usage, unknown = [], [], []
-    offset = 0
-    thread_id = None
-    completed = failed = False
-    message = None  # (event index, text) of the latest completed agent message
-    for line in raw.splitlines(keepends=True):
-        body = line.rstrip(b"\r\n")
-        if not body:
-            offset += len(line)
-            continue
-        try:
-            event = strict_json_loads(body)
-        except (UnicodeError, ValueError):
-            unknown.append({"kind": "invalid_jsonl", "offset": offset})
-            return {"parsed_bytes": offset, "unparsed_tail_bytes": len(raw) - offset, "events": events,
-                    "thread_id": thread_id, "turn_completed": completed, "turn_failed": failed,
-                    "usage": usage, "unknown_events": unknown, "parse_complete": False}
-        if not isinstance(event, dict) or not isinstance(event.get("type"), str):
-            unknown.append({"kind": "unknown_jsonl_event", "offset": offset})
-        else:
-            event_type = event["type"]
-            events.append(event_type)
-            if not (event_type in {"thread.started", "turn.started", "turn.completed", "turn.failed", "error"}
-                    or event_type.startswith("item.")):
-                unknown.append({"kind": "unknown_event_type", "offset": offset, "length": len(line), "type": event_type})
-            if event_type == "thread.started" and isinstance(event.get("thread_id"), str):
-                thread_id = event["thread_id"]
-            completed |= event_type == "turn.completed"
-            failed |= event_type == "turn.failed"
-            if "usage" in event:
-                usage.append(event["usage"])
-            item = event.get("item")
-            if (event_type == "item.completed" and isinstance(item, dict) and item.get("type") == "agent_message"
-                    and isinstance(item.get("text"), str)):
-                message = (len(events) - 1, item["text"])
-        offset += len(line)
-    terminals = [index for index, item in enumerate(events) if item in {"turn.completed", "turn.failed"}]
-    if not thread_id or len(events) < 3 or events[0] != "thread.started" or events[1] != "turn.started":
-        unknown.append({"kind": "invalid_lifecycle_order"})
-    if len(terminals) != 1 or terminals and terminals[0] != len(events) - 1:
-        unknown.append({"kind": "invalid_terminal_count_or_position"})
-    if any(not item.startswith("item.") for item in events[2:-1]):
-        unknown.append({"kind": "invalid_event_between_turn_start_and_terminal"})
-    parsed = {"parsed_bytes": len(raw), "unparsed_tail_bytes": 0, "events": events, "thread_id": thread_id,
-              "turn_completed": completed, "turn_failed": failed, "usage": usage, "unknown_events": unknown,
-              "parse_complete": not unknown}
-    # The final response is the agent message immediately before the terminal event.
-    if message is not None and message[0] == len(events) - 2:
-        parsed["final_text"] = message[1]
-    return parsed
 
 
 class LocalCLIAdapter:
@@ -330,8 +274,8 @@ class CodexExecAdapter(LocalCLIAdapter):
     unknown_capabilities = ("actual_input_bytes", "provider_operation_ids", "remote_termination", "per_call_usage",
                             "provider_stop_reason", "automatic_compaction_control",
                             "per_execution_read_isolation", "cross_profile_noninterference")
-    identity_modules = ("cli_worker", "codex_worker", "control_transport", "file_io", "values", "windows_job",
-                        "scholarly", "codex_adapter")
+    identity_modules = ("cli_worker", "codex_worker", "control_transport", "control_protocol", "file_io", "values",
+                        "windows_job", "scholarly", "codex_adapter", "codex_stream")
 
     def worker_options(self, evidence_dir: Path) -> dict[str, Any]:
         # The adopted local permission mode: existing user permissions, approval never.
@@ -344,18 +288,3 @@ class CodexExecAdapter(LocalCLIAdapter):
         return _parse_jsonl(raw)
 
 
-def _provider_observation(request: dict, parsed: dict, stdout: bytes | None) -> dict[str, Any]:
-    """The provider-reported facts of one collection, including an unconfirmed barrier."""
-    return {"execution_id": request.get("execution_id"), "operation_ids": "unknown", "operation_count": "unknown",
-            "remote_termination": "unknown", "stop_reason": parsed.get("stop_reason", "unknown"),
-            "usage": parsed.get("usage_total", parsed.get("usage", [])[-1] if parsed.get("usage") else {}),
-            "usage_scope": "reported_execution_counters_not_invoice",
-            "model_usage_reported": parsed.get("model_usage_reported", {}),
-            "model_usage_scope": "last_reported_cumulative_not_added_to_segment_usage",
-            "evidence_sha256": hashlib.sha256(stdout).hexdigest() if stdout is not None else None}
-
-
-def _artifact(raw: bytes | None, sha256: str | None = None) -> dict[str, Any]:
-    """Describe collected bytes; a caller may supply the digest it already computed."""
-    return {"present": raw is not None, "bytes": None if raw is None else len(raw),
-            "sha256": None if raw is None else sha256 or hashlib.sha256(raw).hexdigest(), "raw": raw}

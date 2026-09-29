@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from do_math.canonical import exact_content_hash
 from do_math.external import *
-from do_math import external
+from do_math import external, http_transport
 from provider_fixtures import HTTPFixtureHandler
 class Tests(unittest.TestCase):
  def test_method_body_contract_matches_preparation_validation_and_http_bytes(self):
@@ -23,9 +23,9 @@ class Tests(unittest.TestCase):
      operation=prepare_operation(request,'G','S')
      validate_operation(operation,grant,'2026-01-01T00:00:00Z')
      response=MagicMock();response.__enter__.return_value.status=200;response.__enter__.return_value.read.return_value=b'ok'
-     with patch.object(external,'build_opener') as opener:
+     with patch.object(http_transport,'build_opener') as opener:
       opener.return_value.open.return_value=response
-      self.assertEqual(external._http(operation,[],5)['body'],b'ok')
+      self.assertEqual(http_transport._http(operation,[],5)['body'],b'ok')
       sent=opener.return_value.open.call_args.args[0]
       self.assertEqual(sent.get_method(),method)
       self.assertEqual(sent.data,b'\xc3\xa9' if body == 'é' else None)

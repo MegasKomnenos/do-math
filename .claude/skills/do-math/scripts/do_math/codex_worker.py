@@ -12,11 +12,13 @@ import sys
 from typing import Any, Mapping
 
 try:  # This module is also the direct ``python codex_worker.py`` Job root.
-    from do_math.control_transport import CONTROL_SERVER, ControlTransport
+    from do_math.control_protocol import CONTROL_SERVER
+    from do_math.control_transport import ControlTransport
     from do_math.values import strict_json_loads
     from do_math.cli_worker import allowed_environment, check_common_request, run_cli
 except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regression.
-    from control_transport import CONTROL_SERVER, ControlTransport
+    from control_protocol import CONTROL_SERVER
+    from control_transport import ControlTransport
     from values import strict_json_loads
     from cli_worker import allowed_environment, check_common_request, run_cli
 

@@ -41,7 +41,7 @@ def bind_host_configuration(instance, config, *, origin):
 class GovernanceEngineMixin:
     def _configure_candidate(self, instance, runtime, request):
         """Single transition for public configure and checked configuration units."""
-        from .scholarly import resolve_scholarly_server
+        from .scholarly_config import resolve_scholarly_server
         from .session_slots import RESOURCE_WAITS, quiescence
         patch = request.get('config', {})
         if not isinstance(patch, dict): raise ValueError('configuration patch must be an object')

@@ -9,7 +9,8 @@ from unittest.mock import patch
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from do_math.scholarly import resolve_scholarly_server, validate_scholarly_server
+from do_math.scholarly_config import resolve_scholarly_server
+from do_math.scholarly import validate_scholarly_server
 
 
 class ScholarlyServerTests(unittest.TestCase):

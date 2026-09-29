@@ -632,3 +632,12 @@ class WindowsJobs:
 
     def launch(self, argv, *, cwd=None, env=None, name=None, resource_limits=None):
         return WindowsJob(argv, cwd=cwd, env=env, name=name, resource_limits=resource_limits)
+
+    def owner_identity(self) -> dict:
+        return owner_identity()
+
+    def owner_ended(self, identity: dict) -> bool | None:
+        return owner_ended(identity)
+
+    def named_job_empty(self, name: str) -> bool | None:
+        return named_job_empty(name)

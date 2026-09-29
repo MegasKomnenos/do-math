@@ -12,7 +12,7 @@ import jsonschema
 from . import execution_profiles, model_policy
 from .record_schemas import config_schema
 from .scholarly import validate_scholarly_server
-from .migration_defaults import host_or_local  # layer: 1c migration default; the value becomes a required argument in 1f
+from .migration_defaults import host_or_local
 
 
 DEFAULT_CONFIG = {

@@ -12,8 +12,8 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 from .context_store import is_excluded, read_stable, safe_path
-from .control_transport import (CONTROL_SERVER, RECEIPT_TOOL, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE,
-                                SELF_CHECK_TOOL, SUBMIT_TOOL, self_check_request_id, self_check_response_errors)
+from .control_protocol import (CONTROL_SERVER, RECEIPT_TOOL, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SELF_CHECK_TOOL,
+                               SUBMIT_TOOL, self_check_request_id, self_check_response_errors)
 from .values import is_sha256, parse_utc, strict_json_loads
 from .canonical import validate_storage_value
 from .state_contract import default_state_contract, validate_record

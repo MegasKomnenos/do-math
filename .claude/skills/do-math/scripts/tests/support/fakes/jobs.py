@@ -3,7 +3,9 @@
 ``programs`` is a list of ``(matches(argv), run(argv, cwd, env) -> exit code)``;
 the first match runs. An argv no entry matches is an error rather than a silent
 success, so a fake never hides a program the product started. Inspection after
-the program returns shows the termination barrier the product waits for.
+the program returns shows the termination barrier the product waits for. The
+launching owner is one fixed identity; a named Job is empty unless a launched,
+unfinished Job carries that name.
 """
 from do_math.windows_job import JobInspection, validate_resource_limits
 
@@ -63,6 +65,21 @@ class FakeJobs:
     def __init__(self, programs=()):
         self.programs = list(programs)
         self.launched = []
+        self.owner = {'pid': 4242, 'creation_filetime': '133000000000000000', 'host': 'fake-host', 'session': 1}
+
+    def owner_identity(self):
+        return dict(self.owner)
+
+    def owner_ended(self, identity):
+        if identity.get('host') != self.owner['host'] or identity.get('session') != self.owner['session']:
+            return None
+        if identity.get('pid') == self.owner['pid']:
+            return identity.get('creation_filetime') != self.owner['creation_filetime']
+        return None  # another live process of this fake host is not modelled
+
+    def named_job_empty(self, name):
+        jobs = [job for job in self.launched if job.name == name]
+        return all(job.done for job in jobs)
 
     def launch(self, argv, *, cwd=None, env=None, name=None, resource_limits=None):
         program = next((run for matches, run in self.programs if matches(list(argv))), None)

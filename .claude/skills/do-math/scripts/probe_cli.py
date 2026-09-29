@@ -10,7 +10,7 @@ from do_math.payloads import json_safe
 from do_math.model_runner import ModelRunner
 from do_math.preflight import inspect_bundle
 from do_math.observations import read_checkpoint
-from do_math.scholarly import resolve_scholarly_server
+from do_math.scholarly_config import resolve_scholarly_server
 from do_math.provider_wait import provider_for
 
 

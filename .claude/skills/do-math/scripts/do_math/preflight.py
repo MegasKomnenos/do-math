@@ -53,7 +53,7 @@ def inspect_bundle(skill_root: Path | None = None) -> dict:
     try:
         from .review_cycle import stage_schema, research_schema
         from .governance import interpretation_schema
-        from .scheduled_operator import OPERATOR_SCHEMA
+        from .supervision import OPERATOR_SCHEMA
         from .submission import extension_schema
         from .canonical import exact_content_hash
         schemas = {role: schema_for(role) for role in ROLES}

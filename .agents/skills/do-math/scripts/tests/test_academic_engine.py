@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from do_math.engine import ResearchEngine, control
 from do_math import external as external_module
+from do_math import http_transport as http_transport_module
 from research_fixtures import charter_change, send_control, assessment, restore_template
 from purpose_fixtures import (SOLVED_REQUIREMENT_CRITERIA, AcademicRunner, ActivatedPurposeHarness, requirement,
                               solved_instance)
@@ -288,14 +289,14 @@ class AcademicEngineTests(ActivatedPurposeHarness):
         self._set_requirements(engine, ["send manuscript"], required_inputs=["context:goal"],
             external_effects=[{"id": "submit", "scope": "send manuscript", "grant_id": "HTTP"}])
         transport_errors = []
-        original_http = external_module._http
+        original_http = http_transport_module._http
         def observed_http(*args):
             try:
                 return original_http(*args)
             except BaseException as error:
                 transport_errors.append({"type": type(error).__name__, "errno": getattr(error, "errno", None), "text": str(error)})
                 raise
-        with patch.object(external_module, "_http", observed_http):
+        with patch.object(http_transport_module, "_http", observed_http):
             self.drive(engine, predicate=lambda current: current.runtime["status"] == "completed", limit=35)
         task = self._academic_tasks(engine)[0]
         self.assertEqual(task["inputs"][-1], "context:goal")

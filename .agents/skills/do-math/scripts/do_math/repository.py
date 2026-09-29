@@ -24,7 +24,7 @@ from pathlib import Path
 import re
 from typing import Any
 
-from .operation_trace import measured
+from .operation_trace import measured  # layer: telemetry span only; results do not depend on it
 
 from .events import EventPublisher, check_sequence, event_rows
 from .file_io import no_reparse
@@ -249,7 +249,7 @@ class ResearchRepository:
         A head this process did not publish (startup, another writer after a
         CAS conflict) is validated in full the first time it is read.
         """
-        from .operation_trace import phase
+        from .operation_trace import phase  # layer: telemetry span only; results do not depend on it
         key = self._read_key(head)
         cached = _VALIDATED_READS.get(key)
         if cached is not None:

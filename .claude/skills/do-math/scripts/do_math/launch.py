@@ -1,16 +1,16 @@
 """Durable pre-launch identity; absence of a callback is never an exit receipt."""
-import uuid
 import re
-from . import windows_job
 from .execution_profiles import LEAN_ROLES
+from .migration_defaults import clock_or_system, jobs_or_windows
 from .values import is_sha256
 
 
-def ticket(execution_id, profile):
+def ticket(execution_id, profile, *, jobs=None, clock=None):
+    """``jobs`` names the launching owner; ``clock`` draws the native Job's name."""
     native = profile['actor_kind'] == 'ai' or profile['role'] in LEAN_ROLES
     return {'execution_id':execution_id, 'profile_sha256':profile['sha256'],
-            'kind':'native_job' if native else 'owner_thread', 'owner':windows_job.owner_identity(),
-            'job_name':'Local\\DoMath-' + uuid.uuid4().hex if native else None,
+            'kind':'native_job' if native else 'owner_thread', 'owner':jobs_or_windows(jobs).owner_identity(),
+            'job_name':'Local\\DoMath-' + clock_or_system(clock).random_hex(16) if native else None,
             'phase':'reserved'}
 
 
@@ -64,15 +64,16 @@ def mark_returned(value, result=None):
     return value
 
 
-def validate_start(value, **binding):
+def validate_start(value, *, jobs=None, **binding):
     validate(value, **binding)
-    if value['phase'] != 'dispatched' or value['owner'] != windows_job.owner_identity():
+    if value['phase'] != 'dispatched' or value['owner'] != jobs_or_windows(jobs).owner_identity():
         raise ValueError('launch ticket does not belong to this dispatched owner')
     return value
 
 
-def termination_confirmed(value, *, recovering=False):
-    ended = windows_job.owner_ended(value['owner'])
+def termination_confirmed(value, *, recovering=False, jobs=None):
+    jobs = jobs_or_windows(jobs)
+    ended = jobs.owner_ended(value['owner'])
     if ended is None:
         return False
     if recovering:
@@ -83,5 +84,5 @@ def termination_confirmed(value, *, recovering=False):
     if value['phase'] == 'not_started':
         return True  # A local start failure receipt, never absence of metadata.
     if value['kind'] == 'native_job':
-        return windows_job.named_job_empty(value['job_name']) is True
+        return jobs.named_job_empty(value['job_name']) is True
     return ended is True or value['phase'] in {'reserved','finished'}

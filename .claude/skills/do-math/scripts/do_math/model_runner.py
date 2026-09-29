@@ -30,6 +30,7 @@ class ModelRunner:
 
     def __init__(self, codex_path: str | None = None, claude_path: str | None = None, *, jobs=None) -> None:
         paths = {"codex": codex_path, "claude": claude_path}
+        self.jobs = jobs
         self.adapters = {provider: provider_adapter(provider, paths.get(provider), jobs=jobs) for provider in ADAPTERS}
 
     @measured('model_execution')
@@ -56,7 +57,7 @@ class ModelRunner:
         validate_max_runtime(timeout_seconds)  # The worker applies the same rule to its request.
         if profile is not None:
             from .launch import validate_start
-            validate_start(launch_ticket, execution_id=execution_id, profile_sha256=profile['sha256'])
+            validate_start(launch_ticket, jobs=self.jobs, execution_id=execution_id, profile_sha256=profile['sha256'])
             from .execution_profiles import profile_ref, prompt_seal, job_resource_limits, WORK_ROLES
             reference = profile_ref(profile)
             resource_limits = job_resource_limits(profile)

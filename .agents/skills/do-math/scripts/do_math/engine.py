@@ -24,7 +24,8 @@ from .formal import verify_lean, discover_lean
 from . import governance, knowledge, planning, knowledge_io, knowledge_records, academic, task_scope, delegations
 from .input_basis import capture_sources, sources_current, capture_decision_basis, decision_basis_changes, CurrentnessChanged
 from .context_store import collect_outputs, prepare_role_input, defer_input_overflow, input_class, input_scope, materialize_inputs, restore_continuation, verify_manifest_artifacts
-from .operation_trace import engine_operation, tracing, phase, measured, progress as operation_progress
+from .operation_trace import engine_operation, tracing, phase, measured
+from .trace_report import progress as operation_progress
 from .observation_transport import ObservationBatch
 from .observations import ObservationTracker, CHECKPOINT_SCHEMA, checkpoint_value, preserve_checkpoint, request_checkpoint, validate_rules, write_checkpoint_reminder, publish_worker_feedback, tracker_config, persistent_record, read_checkpoint, observation_settings_errors, task_rules_from_execution, bind_task_rules, capture_checkpoint_files
 from .review_engine import ReviewEngineMixin
@@ -44,7 +45,7 @@ from .repository import mark_artifact_verified, sealed_bytes
 from .state_checks import inspect_state
 from .state_contract import ARTIFACT_ROOT
 from .git_store import GitStateStoreError
-from .scholarly import resolve_scholarly_server
+from .scholarly_config import resolve_scholarly_server
 from .task_scope import apply_task_dispositions
 from . import model_policy
 from .scheduler import SchedulerMixin
@@ -59,7 +60,9 @@ from . import activities, execution_lifecycle, execution_profiles, initializatio
 from .provider_engine import record_model_policy_violation
 from .session_slots import held_reservations, live_action_ids, local_termination_confirmed
 from . import task_contracts, operational_dispositions, retention, repair_execution
-from .control_transport import ControlTransport, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, SUBMIT_INTENT, self_check_response_errors
+from .control_transport import ControlTransport
+from .control_protocol import (SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, SUBMIT_INTENT,
+                               self_check_response_errors)
 from .file_io import cached_sha256, fingerprint_settled, os_lock, stat_fingerprint, write_bytes_atomic
 from .configuration import DEFAULT_CONFIG, validate_config
 from .control_contracts import (OPERATOR_ACTIONS, REQUESTABLE_ROLES, user_decision_changed, control_request_id,
@@ -1469,7 +1472,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             "research_observed_at": evaluation_context["now"],
             "research_wake_reasons": planning.research_wake_reasons(self.instance, self.runtime,
                 now=evaluation_context["now"], evaluation_context=evaluation_context),
-            "operation_progress": operation_progress(Path(self.instance['workspace']) / 'operations'),
+            "operation_progress": operation_progress(Path(self.instance['workspace']) / 'operations', clock=self.ports.clock),
             "pending_controls": len(self._inbox()),
             "budget": self._session_resources(),
             "provider_waits": self._provider_status()}, evaluation_context=evaluation_context)
@@ -1572,7 +1575,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
                 self._transport.close(transport, reason="executor restarted")
             local_ended = False
             if execution.get('launch_ticket'):
-                local_ended = launch.termination_confirmed(execution['launch_ticket'], recovering=True)
+                local_ended = launch.termination_confirmed(execution['launch_ticket'], recovering=True, jobs=self.ports.jobs)
             disposition = {"execution_id": eid, "local_termination_confirmed": local_ended,
                            "remote_termination": "unknown", "next_owner": "operator"}
             if not local_ended:

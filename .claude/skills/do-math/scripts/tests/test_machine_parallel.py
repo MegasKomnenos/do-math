@@ -377,7 +377,8 @@ class CallManagerTests(unittest.TestCase):
         execution = create_execution(execution_id='EX-precision', owner_activity_id='AY-precision', actor_kind='machine',
             input_manifest=[], profile_ref=profile_ref(profile), created_at=instant.isoformat())
         execution['role'] = 'formal_check'
-        clock = SimpleNamespace(wall=Clock.now, wall_ns=lambda: int((instant.timestamp() - .000001) * 10**9))
+        clock = SimpleNamespace(wall=Clock.now, wall_ns=lambda: int((instant.timestamp() - .000001) * 10**9),
+                                random_hex=lambda nbytes: '0f' * nbytes)
         self.assertTrue(SessionSlots(runtime, instance, clock=clock).acquire(execution['id'], profile=profile, execution=execution))
         self.assertEqual(execution['transitions'][-1]['at'], instant.isoformat())
 

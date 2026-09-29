@@ -4,7 +4,7 @@ from .git_process import GitProcess
 from .parallel import ThreadCalls
 from .system_clock import SystemClock
 from .windows_job import WindowsJobs
-from .external import UrllibHttp
+from .http_transport import UrllibHttp
 from .scheduled_operator import PowerShellScheduler
 
 

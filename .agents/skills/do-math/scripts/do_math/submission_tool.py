@@ -19,7 +19,8 @@ from .system_clock import SystemClock
 
 def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
     """Send one draft locator; central capture owns validation and immutable receipt bytes."""
-    from .control_transport import ControlTransport, SUBMISSION_KINDS, SUBMISSION_PREVIEW
+    from .control_transport import ControlTransport
+    from .control_protocol import SUBMISSION_KINDS, SUBMISSION_PREVIEW
     if kind not in SUBMISSION_KINDS:
         raise ValueError("unsupported submission control kind")
     if not isinstance(wait_seconds, (int, float)) or isinstance(wait_seconds, bool) or not 0 <= wait_seconds < float("inf"):
@@ -63,7 +64,7 @@ def main(argv=None):
         parser.error("--output is required for checking, preview and submission")
     if (args.preview or args.submit) and args.wait_seconds is None:
         parser.error("central control requires an explicit --wait-seconds budget")
-    from .control_transport import SUBMISSION_PREVIEW, SUBMIT_INTENT
+    from .control_protocol import SUBMISSION_PREVIEW, SUBMIT_INTENT
     workspace = Path.cwd().resolve()
     if args.submit:
         try:

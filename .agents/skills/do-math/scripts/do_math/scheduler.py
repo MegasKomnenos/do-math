@@ -28,6 +28,22 @@ OWNER_RESCAN_SECONDS = 1.0
 
 
 class SchedulerMixin:
+    def _schedule_provider_wake(self):
+        """Register or cancel the operator's one-shot wake for the earliest provider wait (layer 3 wiring)."""
+        from .scheduled_operator import reconcile_wake
+        from .supervision import supervision_facts
+        facts = supervision_facts(self.instance, self.runtime)
+        if not facts["operator_enabled"] and not self.runtime.get('provider_wake'):
+            return
+        try:
+            result = reconcile_wake(self.store.repository, self.instance["id"], Path(self.instance["workspace"]),
+                                    facts=facts, providers=self._provider_status()["providers"],
+                                    scheduler=self.ports.scheduler, clock=self.ports.clock)
+            result.pop("observed", None)
+        except Exception as error:
+            result = {"status": "failed", "error": str(error)}
+        self.runtime["provider_wake"] = result
+
     def _local_call_returned(self, execution_id, result):
         if execution_id is None:
             return
@@ -185,7 +201,7 @@ class SchedulerMixin:
 
 
     def _session_resources(self):
-        return SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock).snapshot()
+        return SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs).snapshot()
 
     def _select_model(self, action):
         if action.get("model_selection"):
@@ -268,7 +284,7 @@ class SchedulerMixin:
 
     def _admissible(self, action, profile):
         """Check admission without reserving; a refusal records its wait on the request."""
-        admission = SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock).admission_check(profile)
+        admission = SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs).admission_check(profile)
         if not admission['allowed']:
             action['dispatch_wait'] = admission['wait']
         return admission['allowed']

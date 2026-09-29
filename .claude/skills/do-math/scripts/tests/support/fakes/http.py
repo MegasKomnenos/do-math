@@ -1,7 +1,7 @@
 """Fake HTTP port: a response table keyed by URL path, with the product's request checks and redirect refusal."""
 from urllib.parse import urlsplit
 
-from do_math.external import _body, _url
+from do_math.http_request import check_body, check_url
 
 
 class FakeHttp:
@@ -9,8 +9,8 @@ class FakeHttp:
         self.table, self.requests = dict(table), []
 
     def request(self, request, header, timeout):
-        _url(request["request"])
-        _body(request["request"])
+        check_url(request["request"])
+        check_body(request["request"])
         self.requests.append((request, list(header), timeout))
         status, body, location = self.table[urlsplit(request["request"]["url"]).path]
         if location is not None and 300 <= status < 400:

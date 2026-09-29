@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from .values import parse_utc
 from .canonical import exact_content_hash
-from .migration_defaults import clock_or_system  # layer: 1c migration default; the value becomes a required argument in 1f
+from .migration_defaults import clock_or_system
 
 
 def case_basis_reference_ids(case):

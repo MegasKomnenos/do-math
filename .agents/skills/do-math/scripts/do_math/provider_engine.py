@@ -1,6 +1,5 @@
 """Connect shared provider admission to preserved research actions."""
 from copy import deepcopy
-from pathlib import Path
 
 from .planning import instance_ended
 from .session_slots import SessionSlots
@@ -17,7 +16,7 @@ def record_model_policy_violation(instance, runtime, execution_id, model, result
 class ProviderEngineMixin:
     def _session_slots(self):
         """A fresh ledger view over the engine's current state; it holds no state of its own."""
-        return SessionSlots(self.runtime, self.instance, clock=self.ports.clock)
+        return SessionSlots(self.runtime, self.instance, clock=self.ports.clock, jobs=self.ports.jobs)
 
     def _settle_recovered_execution(self, execution_id, *, at, disposition=None):
         """Stage local reservation settlement and execution end for one CAS.
@@ -43,7 +42,7 @@ class ProviderEngineMixin:
         return True
 
     def _provider_status(self):
-        return SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock).provider_snapshot()
+        return SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs).provider_snapshot()
 
     def _provider_admit(self, action, execution_id, *, profile, execution):
         """Reserve a registered profile's capacity and its starting execution together.
@@ -70,20 +69,6 @@ class ProviderEngineMixin:
         if self.runtime.get('provider_wake') != previous:
             self._save()
 
-    def _schedule_provider_wake(self):
-        from .scheduled_operator import reconcile_wake, supervision_facts
-        facts = supervision_facts(self.instance, self.runtime)
-        if not facts["operator_enabled"] and not self.runtime.get('provider_wake'):
-            return
-        try:
-            result = reconcile_wake(self.store.repository, self.instance["id"], Path(self.instance["workspace"]),
-                                    facts=facts, providers=self._provider_status()["providers"],
-                                    scheduler=self.ports.scheduler)
-            result.pop("observed", None)
-        except Exception as error:
-            result = {"status": "failed", "error": str(error)}
-        self.runtime["provider_wake"] = result
-
     def _requeue_provider_action(self, action, execution_id, gate):
         """A provider-limited request waits in the queue for its gate, like any admission wait."""
         from .activities import wait_for
@@ -92,7 +77,7 @@ class ProviderEngineMixin:
         restored = {**deepcopy(action), "recovery": {"execution_id": execution_id,
                     "reason": "provider admission retry", "provider_generation": gate.get("generation")}}
         profile = match_profile_ref(self.instance["execution_profiles"], action["profile_ref"])
-        wait = SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock).provider_wait(profile)
+        wait = SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs).provider_wait(profile)
         if wait is not None:
             restored["dispatch_wait"] = wait
             activity_id = self.runtime["executions"][execution_id]["owner_activity_id"]

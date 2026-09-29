@@ -1,15 +1,13 @@
 """Auditable, grant-bounded external HTTP operations."""
 from __future__ import annotations
 import base64, hashlib, os
-from datetime import datetime, timezone
 from typing import Any, Callable
-from urllib.error import HTTPError, URLError
-from urllib.parse import urlsplit, unquote
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.error import URLError
 
-from .system_clock import now
 from .values import parse_utc
 from .canonical import exact_content_hash
+from .http_request import check_body, check_url
+from .migration_defaults import clock_or_system, transport_or_http
 
 # The states of one external operation; its EX execution reports the same set.
 OPERATION_STATUSES = frozenset({"prepared", "confirmed", "failed", "unknown", "cancelled"})
@@ -26,28 +24,11 @@ def retry_evidence_bound(operation: dict, evidence: dict) -> bool:
     return (evidence.get("request_sha256") == operation.get("request_sha256")
             and evidence.get("idempotency_key") == operation.get("idempotency_key") and bool(evidence.get("evidence_ref")))
 
-def _url(request: dict):
-    if not isinstance(request, dict) or request.get("method") not in {"GET","POST","PUT","DELETE"} or not isinstance(request.get("url"),str): raise ValueError("request needs HTTP method and URL")
-    parsed=urlsplit(request["url"])
-    if parsed.scheme not in {"http","https"} or not parsed.netloc or parsed.username or parsed.password or parsed.fragment: raise ValueError("unsafe external URL")
-    decoded=unquote(parsed.path)
-    if any(part in {".",".."} for part in decoded.split("/")): raise ValueError("path traversal forbidden")
-    return parsed
-
-
-def _body(request: dict) -> str:
-    body = request.get("body", "")
-    if not isinstance(body, str):
-        raise ValueError("body must be text")
-    if request["method"] in {"GET", "DELETE"} and body:
-        raise ValueError("GET and DELETE cannot carry a nonempty body")
-    return body
-
 def prepare_operation(request: dict, grant_id: str, source_ref: str, operation_id: str|None=None, *,
                       target_id=None, purpose=None, subject=None, actor_kind=None) -> dict:
-    parsed=_url(request)
+    parsed=check_url(request)
     if not isinstance(grant_id,str) or not isinstance(source_ref,str) or not grant_id or not source_ref: raise ValueError("grant and source refs required")
-    normalized={"method":request["method"],"url":parsed.geturl(),"body":_body(request)}
+    normalized={"method":request["method"],"url":parsed.geturl(),"body":check_body(request)}
     digest=exact_content_hash(normalized); oid=operation_id or hashlib.sha256((grant_id+source_ref+digest).encode()).hexdigest()[:24]
     scope = {key: value for key, value in {"target_id": target_id, "purpose": purpose, "subject": subject,
              "actor_kind": actor_kind}.items() if value is not None}
@@ -62,8 +43,8 @@ def validate_operation(operation: dict, grant: dict, now_iso: str, *, runtime=No
     if time_reason: raise ValueError(time_reason)
     if any(header.lower() in {"idempotency-key", "host", "content-length"} for header in grant.get("credential_env", {})):
         raise ValueError("credential headers cannot override operation identity or routing")
-    parsed=_url(operation.get("request")); origin=f"{parsed.scheme}://{parsed.netloc}"
-    _body(operation["request"])
+    parsed=check_url(operation.get("request")); origin=f"{parsed.scheme}://{parsed.netloc}"
+    check_body(operation["request"])
     if origin not in grant.get("allowed_origins",[]): raise ValueError("origin outside grant")
     if operation["request"]["method"] not in grant.get("allowed_methods",[]): raise ValueError("method outside grant")
     if not any(parsed.path.startswith(prefix) for prefix in grant.get("allowed_path_prefixes",[])): raise ValueError("path outside grant")
@@ -81,29 +62,9 @@ def validate_operation(operation: dict, grant: dict, now_iso: str, *, runtime=No
     if not request_binding_current(operation): raise ValueError("request bytes or idempotency key changed")
     if operation.get("status") != "prepared": raise ValueError("operation is not startable")
 
-class _NoRedirect(HTTPRedirectHandler):
-    def redirect_request(self,*_): raise ValueError("redirect forbidden")
-
-def _http(request: dict, header: list[tuple[str,str]], timeout: int) -> dict:
-    headers={"Idempotency-Key":request["idempotency_key"]}
-    for name,value in header: headers[name]=value
-    _url(request["request"])
-    body = _body(request["request"])
-    data=body.encode() if request["request"]["method"] in {"POST", "PUT"} and body else None
-    req=Request(request["request"]["url"],data=data,headers=headers,method=request["request"]["method"])
-    try:
-        with build_opener(_NoRedirect).open(req,timeout=timeout) as response: body=response.read(); return {"http_status":response.status,"body":body}
-    except HTTPError as error: return {"http_status":error.code,"body":error.read()}
-
-class UrllibHttp:
-    """Real HTTP port."""
-
-    def request(self, request: dict, header: list, timeout: int) -> dict:
-        return _http(request, header, timeout)
-
-
 def execute_operation(operation: dict, grant: dict, *, persist: Callable[[dict],Any], timeout_seconds=30, should_stop=None, transport=None,
-                      runtime=None, academic_check=None, current_grant=None) -> dict:
+                      runtime=None, academic_check=None, current_grant=None, clock=None) -> dict:
+    clock = clock_or_system(clock)
     if operation.get("status")=="unknown": raise ValueError("unknown operation requires reconciliation")
     if operation.get("transmitted") or operation.get("transmission_phase") == "recorded":
         raise ValueError("recorded transmission requires recovery before another send")
@@ -112,10 +73,10 @@ def execute_operation(operation: dict, grant: dict, *, persist: Callable[[dict],
         if not retry_evidence_bound(operation, retry):
             raise ValueError("retry lacks request-bound evidence")
         if retry.get("kind") not in {"effect_absent", "verified_idempotency"}: raise ValueError("invalid retry evidence kind")
-        if retry["kind"] == "verified_idempotency" and (not retry.get("valid_until") or parse_utc(retry["valid_until"]) <= datetime.now(timezone.utc)):
+        if retry["kind"] == "verified_idempotency" and (not retry.get("valid_until") or parse_utc(retry["valid_until"]) <= clock.wall()):
             raise ValueError("idempotency assurance expired")
     grant = current_grant(operation["grant_id"]) if current_grant else grant
-    validate_operation(operation,grant,now(),runtime=runtime,academic_check=academic_check)
+    validate_operation(operation,grant,clock.now(),runtime=runtime,academic_check=academic_check)
     def save(record):
         if persist(record) is False: raise ValueError("operation ledger is stale; recover recorded transmission before retry")
         return record
@@ -129,18 +90,18 @@ def execute_operation(operation: dict, grant: dict, *, persist: Callable[[dict],
     if grant.get("credential_env"):
         names=[]
         for header,env in grant["credential_env"].items():
-            value=os.environ.get(env)
+            value=os.environ.get(env)  # layer: a credential is read only at send time and never stored
             if value is None:
                 result={**prepared,"credential_env":[env],"waiting_reason":{"kind":"credential_unavailable","secret_ref":env},"transmitted":False}; return save(result)
             credential.append((header,value)); names.append(env)
         prepared["credential_env"]=names
     if should_stop and should_stop(): return save({**prepared,"status":"cancelled","transmitted":False})
     grant = current_grant(operation["grant_id"]) if current_grant else grant
-    validate_operation(operation,grant,now(),runtime=runtime,academic_check=academic_check)
+    validate_operation(operation,grant,clock.now(),runtime=runtime,academic_check=academic_check)
     try:
         sending={**prepared,"transmitted":True,"transmission_phase":"recorded","attempts":[*prepared.get("attempts",[]),{"request_sha256":prepared["request_sha256"]}]}
         save(sending)
-        response=(transport or _http)(sending,credential,timeout_seconds)
+        response=transport_or_http(transport)(sending,credential,timeout_seconds)
     except (TimeoutError,URLError,OSError):
         result={**sending,"status":"unknown","error":"transport outcome unknown","transmitted":True}; return save(result)
     body=response.get("body",b"")
@@ -171,7 +132,7 @@ def prepare_retry(operation, evidence, *, source, now_iso=None):
     if evidence.get("kind") == "effect_absent":
         if operation.get("status") != "failed" or operation.get("effect_absent") is not True: raise ValueError("effect absence not established")
     elif evidence.get("kind") == "verified_idempotency":
-        if not evidence.get("valid_until") or parse_utc(evidence["valid_until"]) <= parse_utc(now_iso or now()): raise ValueError("idempotency evidence expired")
+        if not evidence.get("valid_until") or parse_utc(evidence["valid_until"]) <= (parse_utc(now_iso) if now_iso else clock_or_system(None).wall()): raise ValueError("idempotency evidence expired")
     else: raise ValueError("unsupported retry evidence")
     return {**operation,"status":"prepared","transmitted":False,"transmission_phase":"not_started",
             "retry_evidence": {**evidence, "source":source}, "previous_outcome":operation["status"]}

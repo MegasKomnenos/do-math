@@ -1,6 +1,6 @@
 """Lossless input catalogs, bounded prompt contexts, and workspace collection."""
 from __future__ import annotations
-from .operation_trace import measured
+from .operation_trace import measured  # layer: telemetry span only; results do not depend on it
 
 
 from copy import deepcopy

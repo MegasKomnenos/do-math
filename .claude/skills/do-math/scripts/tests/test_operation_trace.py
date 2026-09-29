@@ -8,7 +8,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.operation_trace import LIVE_INTERVAL, OperationTrace, phase, phase_rows, progress, tracing
+from do_math.operation_trace import LIVE_INTERVAL, OperationTrace, phase, tracing
+from do_math.trace_report import phase_rows, progress
 
 
 class OperationTraceTests(unittest.TestCase):

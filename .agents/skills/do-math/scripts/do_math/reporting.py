@@ -104,7 +104,7 @@ def task_status(instance, runtime, *, evaluation_context=None):
 
 def operating_summary(instance, runtime):
     """One persisted-state handoff view; scheduler/process observations stay separate."""
-    from .scheduled_operator import supervision_block, supervision_facts
+    from .supervision import supervision_block, supervision_facts
     lifecycle=instance.get('lifecycle',{})
     facts=supervision_facts(instance,runtime)
     code=supervision_block({key:value for key,value in facts.items() if key!='operator_enabled'})
@@ -168,7 +168,7 @@ def status_report(store, head, instance, runtime, *, observation=None, requested
     from .knowledge_records import knowledge_view
     from .question_engine import question_view, user_questions
     from .retention import pending_cleanup_failures
-    from .scheduled_operator import supervision_facts
+    from .supervision import supervision_facts
     from .session_slots import SLOT_WAITS
     observed = dict.fromkeys(OBSERVED_FIELDS)
     unknown = set(observation or {}) - set(OBSERVED_FIELDS)
@@ -320,7 +320,7 @@ def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name
                     a.get(key, {}).get("execution_id") == execution["id"] for key in ("repair", "refresh", "recovery"))],
             "evidence_source": {"kind": "research_snapshot", "snapshot": head}})
     if include_operations:
-        from .operation_trace import phase_rows
+        from .trace_report import phase_rows
         for row in phase_rows(Path(instance['workspace']) / 'operations'):
             row['snapshot'] = None
             row['created_at_local'] = _display(row['created_at_utc'], zone)

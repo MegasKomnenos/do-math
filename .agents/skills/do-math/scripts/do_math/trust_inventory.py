@@ -8,7 +8,7 @@ damage). A fingerprint row is the scandir metadata of one judgment file, so
 bytes changed while size and both times are preserved are found only by an
 explicit content check against the recorded full hashes.
 """
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor  # layer: parallel file hashing; the digests do not depend on thread scheduling
 from contextlib import contextmanager
 import json
 import math

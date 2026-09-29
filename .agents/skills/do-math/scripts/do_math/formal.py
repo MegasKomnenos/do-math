@@ -271,7 +271,7 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
     """
     if launch_ticket is not None:
         from .launch import validate_start
-        validate_start(launch_ticket)
+        validate_start(launch_ticket, jobs=jobs)
         if launch_ticket['kind'] != 'native_job' or launch_ticket['phase'] != 'dispatched':
             raise ValueError('formal runner needs the dispatched native launch ticket')
     workspace=workspace.resolve(); raw=source.encode(); base={"source_sha256":lean_source_sha256(source),"declarations":declarations,"axioms":{},"declaration_signatures":{},"dependency_closure":{},"declaration_evidence":{},"signature_hash":None,"stdout":"","stderr":"","command":None,"toolchain":None,"reason":None}

@@ -4,12 +4,12 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
-from .control_transport import SUBMIT_INTENT
+from .control_protocol import SUBMIT_INTENT
 from .values import require_text
 from .session_slots import local_termination_confirmed
 
 # Acceptance receipt kinds. A control submission's receipt keeps its request
-# kind (control_transport.SUBMIT_INTENT); the others name their own receiver.
+# kind (control_protocol.SUBMIT_INTENT); the others name their own receiver.
 NATIVE_FINAL_RECEIPT = "native_final"
 MACHINE_OUTPUT_RECEIPT = "machine_output"
 RECOVERY_REPORT_RECEIPT = "recovery_report"

@@ -536,7 +536,7 @@ class LifecycleTests(unittest.TestCase):
         e=self.engine; op=self.http('http://127.0.0.1:1/effect')
         e.control('decision',{'change':{'kind':'revoke','grant_id':'GR-http'}})
         self.assertEqual(e.runtime['external_operations'][op['id']]['status'],'cancelled')
-        with patch('do_math.external._http') as transport:
+        with patch('do_math.http_transport._http') as transport:
             e._run_external_action({'role':'external_action','target':op['id'],'grant_id':'GR-http'})
             transport.assert_not_called()
 
@@ -564,7 +564,7 @@ class LifecycleTests(unittest.TestCase):
 
     def test_http_success_finishes_activity_without_changing_effect_fact(self):
         e=self.engine; op=self.http('http://127.0.0.1:1/effect')
-        with patch('do_math.external._http',return_value={'http_status':201,'body':b'created'}):
+        with patch('do_math.http_transport._http',return_value={'http_status':201,'body':b'created'}):
             e.machine('external_action')
         op=e.runtime['external_operations'][op['id']]
         self.assertEqual(op['status'],'confirmed'); self.assertIs(op['succeeded'],True)
@@ -580,7 +580,7 @@ class LifecycleTests(unittest.TestCase):
             if count[0]==4: e.instance['grants']['GR-http']['status']='revoked'
         # The external stop judgment applies the inbox (a revoking control) before each send step.
         e._apply_inbox=create_autospec(e._apply_inbox,side_effect=controls)
-        with patch('do_math.external._http') as transport:
+        with patch('do_math.http_transport._http') as transport:
             e.machine('external_action'); transport.assert_not_called()
         self.assertEqual(e.runtime['external_operations'][op['id']]['status'],'cancelled')
 
@@ -850,7 +850,7 @@ class GrantAndExternalEffectTests(unittest.TestCase):
         event=next(row for row in e.runtime['events']
                    if row['kind']=='external_operation_prepared' and row['target']==op['id'])
         self.assertIn(event['source_ref'],e.instance['governance_sources'])
-        with patch('do_math.external._http',return_value={'http_status':201,'body':b'ok'}):
+        with patch('do_math.http_transport._http',return_value={'http_status':201,'body':b'ok'}):
             e.machine('external_action')
         validate(e.runtime['external_operations'][op['id']],'external_operations')
         environment=e.environment('audit-schema')
@@ -981,7 +981,7 @@ class GrantAndExternalEffectTests(unittest.TestCase):
         e.control('external',{**config,**fields})
         op=e.runtime['external_operations'][config['id']]
         self.assertEqual({k:op[k] for k in fields},fields)
-        with patch('do_math.external._http',return_value={'http_status':201,'body':b'ok'}) as send:
+        with patch('do_math.http_transport._http',return_value={'http_status':201,'body':b'ok'}) as send:
             e.machine('external_action'); self.assertEqual(send.call_count,1)
         with self.assertRaises(ValueError):
             e.control('external',{**config,**fields,'purpose':'different'})
@@ -989,7 +989,7 @@ class GrantAndExternalEffectTests(unittest.TestCase):
     def test_once_http_first_send_and_distinct_request(self):
         e=self.engine; config=self.prepare_http(once=True)
         e.control('external',config)
-        with patch('do_math.external._http',return_value={'http_status':201,'body':b'ok'}) as send:
+        with patch('do_math.http_transport._http',return_value={'http_status':201,'body':b'ok'}) as send:
             e.machine('external_action'); self.assertEqual(send.call_count,1)
         self.assertEqual(e.runtime['external_operations'][config['id']]['status'],'confirmed')
         with self.assertRaises(ValueError): e.control('external',{**config,'id':'OP-other'})
@@ -998,13 +998,13 @@ class GrantAndExternalEffectTests(unittest.TestCase):
         e=self.engine; config=self.prepare_http(once=True)
         e.control('external',config)
         action=next(a for a in e.runtime['queue'] if a['role']=='external_action')
-        with patch('do_math.external._http',side_effect=TimeoutError) as send:
+        with patch('do_math.http_transport._http',side_effect=TimeoutError) as send:
             e.machine('external_action'); self.assertEqual(send.call_count,1)
         before=deepcopy(e.runtime['external_operations'][config['id']])
         self.assertEqual(before['status'],'unknown')
         with self.assertRaises(ValueError):
             e.control('external',{'operation':'retry','id':config['id'],'grant_id':config['grant_id']})
-        with patch('do_math.external._http') as send:
+        with patch('do_math.http_transport._http') as send:
             e._run_external_action(action); send.assert_not_called()
         self.assertEqual(e.runtime['external_operations'][config['id']]['execution_id'],before['execution_id'])
 
@@ -1023,7 +1023,7 @@ class GrantAndExternalEffectTests(unittest.TestCase):
         self.assertEqual(op['academic_basis'],{'solution_basis':basis,
             'requirements_sha256':current_requirements(e.instance)['sha256']})
         e.instance['goal_status']='unsolved'
-        with patch('do_math.external._http') as send:
+        with patch('do_math.http_transport._http') as send:
             e.machine('external_action'); send.assert_not_called()
         self.assertEqual(e.runtime['external_operations'][config['id']]['status'],'cancelled')
 
@@ -1044,7 +1044,7 @@ class GrantAndExternalEffectTests(unittest.TestCase):
         e.lifecycle_clock=None; e.lifecycle_monotonic=time.monotonic
         e._clock_anchor=None
         e.control('external',config)
-        with patch.dict(os.environ), patch('do_math.external._http') as send:
+        with patch.dict(os.environ), patch('do_math.http_transport._http') as send:
             os.environ.pop('LIFECYCLE_AUDIT_TEST_TOKEN',None)
             e.machine('external_action'); send.assert_not_called()
         before=deepcopy(e.runtime['external_operations'][config['id']])

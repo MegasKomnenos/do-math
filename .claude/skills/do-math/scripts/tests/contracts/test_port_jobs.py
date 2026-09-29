@@ -82,6 +82,42 @@ class JobsContract:
         with self.assertRaisesRegex(RuntimeError, 'already been resumed'):
             job.resume()
 
+    # Owner queries (설계 A13 개정): who launched, and whether that owner or a named Job has ended.
+
+    def test_the_owner_identity_names_this_process_stably(self):
+        owner = self.jobs.owner_identity()
+        self.assertEqual(set(owner), {'pid', 'creation_filetime', 'host', 'session'})
+        self.assertGreater(owner['pid'], 0)
+        self.assertTrue(owner['creation_filetime'].isdigit())
+        self.assertEqual(self.jobs.owner_identity(), owner)
+
+    def test_the_current_owner_has_not_ended(self):
+        self.assertIs(self.jobs.owner_ended(self.jobs.owner_identity()), False)
+
+    def test_the_same_pid_with_another_creation_time_has_ended(self):
+        owner = self.jobs.owner_identity()
+        reused = {**owner, 'creation_filetime': str(int(owner['creation_filetime']) + 1)}
+        self.assertIs(self.jobs.owner_ended(reused), True)
+
+    def test_an_owner_on_another_host_is_unknown(self):
+        owner = self.jobs.owner_identity()
+        self.assertIsNone(self.jobs.owner_ended({**owner, 'host': owner['host'] + '-elsewhere'}))
+
+    def test_a_job_name_nobody_created_is_empty(self):
+        self.assertIs(self.jobs.named_job_empty('Local\\DoMath-' + os.urandom(16).hex()), True)
+
+    def test_a_named_job_is_not_empty_until_its_program_ends(self):
+        job = self.launch()
+        self.assertIs(self.jobs.named_job_empty(job.name), False)
+        job.resume()
+        job.wait(30)
+        # Job accounting can lag the root's exit signal, so emptiness is polled for (as above).
+        for _ in range(500):
+            if self.jobs.named_job_empty(job.name):
+                break
+            job.wait(0.02)
+        self.assertIs(self.jobs.named_job_empty(job.name), True)
+
 
 class FakeJobsContract(JobsContract, unittest.TestCase):
     def make(self):
