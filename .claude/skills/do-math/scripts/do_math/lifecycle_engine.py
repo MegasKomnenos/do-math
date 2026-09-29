@@ -726,7 +726,7 @@ class LifecycleEngineMixin:
                          environment=environment, binding=binding, verifier=self.formal_verifier, **invocation,
                          allowed_axioms=tuple(environment['allowed_axioms']),
                          launch_ticket=deepcopy(self.runtime['executions'][execution_id]['launch_ticket']),
-                         should_stop=should_stop)
+                         should_stop=should_stop, clock=self.ports.clock)
         if should_stop():
             return {'status': 'stopped', 'reason': stopped_reason}
         result = yield execution_id, arguments

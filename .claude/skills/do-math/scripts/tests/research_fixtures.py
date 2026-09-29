@@ -821,7 +821,7 @@ def trust_environment(request, *, environment_id='TE-fixture', status='active', 
 
 def send_control(engine, action, **kwargs):
     from do_math.engine import control
-    request = control(engine.store.repository, engine.instance["id"], action, **kwargs)
+    request = control(engine.store.repository, engine.instance["id"], action, clock=engine.ports.clock, **kwargs)
     engine.process_controls()
     rejected = [h for h in engine.runtime["history"] if h.get("kind") == "rejected_user_control"
                 and h.get("request", {}).get("id") == request["request_id"]]
@@ -895,7 +895,7 @@ def activate(engine, root, *, initialization_runner, external_policy="disabled",
         if key not in engine.instance["config"]}
     if windows:
         send_control(engine, "configure", config=windows)
-    expiry = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+    expiry = (engine.ports.clock.wall() + timedelta(days=1)).isoformat()
     from do_math.canonical import exact_content_hash
     config_sha256 = exact_content_hash(engine.instance["config"])
     from do_math.model_policy import selection
@@ -912,7 +912,7 @@ def activate(engine, root, *, initialization_runner, external_policy="disabled",
                                          "config_sha256": config_sha256}})]
     controls += [("trust", trust_fixture(root, engine.instance["config"]["lean_command"]))]
     for action, config in controls:
-        control(engine.store.repository, engine.instance["id"], action,
+        control(engine.store.repository, engine.instance["id"], action, clock=engine.ports.clock,
             text="Synthetic CORE_TESTS input; not actual host verification or user approval", config=config)
     engine.process_controls()
     rejected = [h for h in engine.runtime["history"] if h.get("kind") == "rejected_user_control"]

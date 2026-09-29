@@ -154,10 +154,12 @@ class ScriptedRunner:
 
 
 def formal_ok(*, source, declarations, workspace, lean_command,
-              allowed_axioms=(), should_stop=None, expected_toolchain=None, on_started=None, launch_ticket=None):
+              allowed_axioms=(), should_stop=None, expected_toolchain=None, on_started=None, launch_ticket=None,
+              jobs=None):
+    """``jobs`` is the engine's Jobs port, bound as the product binds it to ``verify_lean``."""
     if launch_ticket is not None:
         from do_math.launch import validate_start
-        validate_start(launch_ticket)
+        validate_start(launch_ticket, jobs=jobs)
     if source == "theorem t : True := by trivial" and declarations == ["t"]:
         signature, dependencies, value = "True", ["True", "True.intro"], "True.intro"
     elif (source == "theorem add_zero_fixture (n : Nat) : n + 0 = n := Nat.add_zero n"

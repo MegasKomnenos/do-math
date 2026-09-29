@@ -15,6 +15,7 @@ LAYERS = {
     'do_math/academic_engine.py': '2',
     'do_math/activities.py': '1',
     'do_math/budget.py': '1',
+    'do_math/call_engine.py': '2',
     'do_math/canonical.py': '1',
     'do_math/claude_adapter.py': '3',
     'do_math/claude_stream.py': '1',

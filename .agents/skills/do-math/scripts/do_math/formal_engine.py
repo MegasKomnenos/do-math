@@ -159,7 +159,7 @@ class FormalEngineMixin:
         environment = deepcopy(self.instance['trust_environments'][transition['to_environment']])
         binding = deepcopy(self.runtime.get('trust_bindings', {}).get(transition['to_environment']))
         # One record read, identity check and fingerprint scan; there is no long scan to cancel.
-        verification = yield execution_id, {'environment': environment, 'binding': binding}
+        verification = yield execution_id, {'environment': environment, 'binding': binding, 'clock': self.ports.clock}
         self._live_execution_ids.discard(execution_id)
         execution = self.runtime['executions'][execution_id]
         if (self._execution_stop_requested(action, execution) or bool(self.runtime.get('maintenance_fence'))

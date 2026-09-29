@@ -52,7 +52,8 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_native_final_submission test_question_flow test_repetition test_review_engine
         test_review_research test_submission_boundaries test_submission_flow test_submission_tools''',
     'academic': '''
-        test_academic_engine test_academic_preparation test_model_assessment_flow''',
+        test_academic_engine test_academic_preparation test_call_steps_characterization
+        test_model_assessment_flow''',
 }.items()}
 LABELS = ('lean', 'resource')
 _SHARD_OF = {module: name for name, modules in SHARDS.items() for module in modules}

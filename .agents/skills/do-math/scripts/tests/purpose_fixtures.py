@@ -99,12 +99,13 @@ def theorem():
 
 
 def formal_fixture(*, source, declarations, workspace, lean_command,
-                   allowed_axioms=(), should_stop=None, expected_toolchain=None, on_started=None, launch_ticket=None):
+                   allowed_axioms=(), should_stop=None, expected_toolchain=None, on_started=None, launch_ticket=None,
+                   jobs=None):
     if source != SOURCE or declarations != ['add_zero_fixture']:
         raise AssertionError('The explicit formal test fixture only covers SOURCE/add_zero_fixture')
     result = formal_ok(source=source, declarations=declarations, workspace=workspace,
         lean_command=lean_command, allowed_axioms=allowed_axioms, expected_toolchain=expected_toolchain,
-        launch_ticket=launch_ticket)
+        launch_ticket=launch_ticket, jobs=jobs)
     result['reason'] = 'Explicit compiler fixture; not an actual Lean invocation'
     return result
 

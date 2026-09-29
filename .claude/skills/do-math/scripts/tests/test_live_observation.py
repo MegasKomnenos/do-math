@@ -568,7 +568,7 @@ class TaskObservationRoleTests(unittest.TestCase):
                 engine._activity_for_action = create_autospec(engine._activity_for_action, return_value={"id": "AY-one"})
                 engine._register_execution = create_autospec(engine._register_execution, side_effect=BeforeInput)
                 action = {"id": "AC-one", "role": role, "target": "TK-one"}
-                with patch("do_math.engine.tracker_config", wraps=tracker_config) as configured, \
+                with patch("do_math.call_engine.tracker_config", wraps=tracker_config) as configured, \
                      patch("do_math.engine.governance.authorize", return_value={"allowed": True, "grant_id": "GR-one"}), \
                      patch("do_math.engine.planning.task_ready", return_value={"state": "ready"}):
                     with self.assertRaises(BeforeInput):
