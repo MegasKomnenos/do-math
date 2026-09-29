@@ -1,8 +1,8 @@
 """Installation registry and domain semantic checks for persisted families."""
 from .schemas import (BOOL, EVIDENCE, NAT, RECORDS, RESEARCH_FIELDS, RUNTIME_FIELDS, TEXT,
                       array, enum, nullable, obj)
-from ..file_io import json_copy
-from ..git_store import ARTIFACT_ROOT
+from ..values import json_copy
+from ..state_contract import ARTIFACT_ROOT
 
 
 def refs(*fields, lists=()):
@@ -232,7 +232,7 @@ def _academic_seal_rules(row):
 
 def _observation_fact_rules(row):
     import hashlib
-    from ..file_io import strict_json_loads
+    from ..values import strict_json_loads
     if "event_json" in row:
         strict_json_loads(row["event_json"])
         if hashlib.sha256(row["event_json"].encode()).hexdigest() != row["event_sha256"]:
@@ -288,7 +288,7 @@ def validate_lifecycle(instance, runtime):
     if lifecycle.get("permanently_closed") and status != "closed":
         raise ValueError("current lifecycle contract: a permanently closed instance cannot have a live projection")
     observed = runtime.get("last_observed_utc")
-    from ..file_io import parse_utc
+    from ..values import parse_utc
     try:
         if observed is None or not observed.endswith(("Z", "+00:00")):
             raise ValueError("UTC offset required")

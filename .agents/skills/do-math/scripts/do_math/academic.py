@@ -6,7 +6,7 @@ from functools import lru_cache
 import hashlib
 
 from .repository import exact_content_hash
-from .file_io import distinct_texts
+from .values import distinct_texts
 
 
 @lru_cache(maxsize=None)

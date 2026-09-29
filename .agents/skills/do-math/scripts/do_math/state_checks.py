@@ -10,7 +10,7 @@ from typing import Any
 
 from .academic import academic_status
 from .execution_profiles import review_research
-from .git_store import ARTIFACT_ROOT
+from .state_contract import ARTIFACT_ROOT
 from .task_contracts import TERMINAL_TASK_STATUSES
 
 

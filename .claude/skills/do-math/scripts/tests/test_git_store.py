@@ -64,7 +64,7 @@ class GitStateStoreTests(unittest.TestCase):
         }
 
     def test_oid_shape_is_separate_from_instance_format(self):
-        from do_math.git_store import oid_shape
+        from do_math.ids import oid_shape
         self.assertEqual(oid_shape("a" * 64), "sha256")
         with self.assertRaises(ValueError):
             self.store.validate_oid("a" * 64)

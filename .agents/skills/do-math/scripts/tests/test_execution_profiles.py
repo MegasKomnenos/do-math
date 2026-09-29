@@ -543,10 +543,10 @@ class ProfileTests(unittest.TestCase):
         # Every module a worker runs in its Job, or its collector uses, identifies the implementation.
         from do_math.claude_adapter import ClaudePrintAdapter
         self.assertEqual(set(CodexExecAdapter("codex").capability_identity()["module_sha256"]),
-                         {"cli_worker", "codex_worker", "control_transport", "file_io", "windows_job", "scholarly",
+                         {"cli_worker", "codex_worker", "control_transport", "file_io", "values", "windows_job", "scholarly",
                           "codex_adapter"})
         self.assertEqual(set(ClaudePrintAdapter("claude").capability_identity()["module_sha256"]),
-                         {"claude_worker", "cli_worker", "codex_worker", "control_transport", "file_io", "windows_job",
+                         {"claude_worker", "cli_worker", "codex_worker", "control_transport", "file_io", "values", "windows_job",
                           "scholarly", "codex_adapter", "claude_adapter", "claude_stream"})
 
     def test_unchanged_cli_and_sources_are_not_rehashed_for_each_identity(self):

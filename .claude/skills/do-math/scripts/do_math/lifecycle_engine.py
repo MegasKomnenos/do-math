@@ -19,7 +19,7 @@ from .repository import canonical_json, exact_content_hash
 from .initialization import activation_requirements, capability_requirements
 from .execution_profiles import INITIAL_ROLES
 from .session_slots import live_action_ids
-from .git_store import ARTIFACT_ROOT
+from .state_contract import ARTIFACT_ROOT
 from .task_contracts import LIFECYCLE_STATES, TERMINAL_TASK_STATUSES
 
 _SCHEDULABLE = LIFECYCLE_STATES - TERMINAL_TASK_STATUSES

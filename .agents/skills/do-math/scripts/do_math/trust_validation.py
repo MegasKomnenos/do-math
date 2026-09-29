@@ -9,7 +9,8 @@ from copy import deepcopy
 from pathlib import Path
 import re
 
-from .file_io import SHA256_SCHEMA as _HASH, file_fingerprint, fingerprint_json, is_sha256, now
+from .file_io import file_fingerprint, fingerprint_json, now
+from .values import SHA256_SCHEMA as _HASH, is_sha256
 
 AXIOMS = ('propext', 'Classical.choice', 'Quot.sound')
 _AXIOM_SET = frozenset(AXIOMS)

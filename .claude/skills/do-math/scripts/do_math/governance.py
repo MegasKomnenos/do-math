@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import hashlib
 from typing import Any
 
-from .file_io import SHA256_SCHEMA, distinct_texts, is_sha256, json_copy, parse_utc, require_text
+from .values import SHA256_SCHEMA, distinct_texts, is_sha256, json_copy, parse_utc, require_text
 from .repository import exact_content_hash, new_id
 from .academic import requirement_record
 from .execution_profiles import PLANNING_ROLES, WORK_ROLES as _SLOT_WORK_ROLES

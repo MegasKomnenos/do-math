@@ -29,8 +29,11 @@ from typing import Any
 from .operation_trace import measured
 
 from .events import EventPublisher, check_sequence, event_rows
-from .file_io import is_sha256, no_reparse, reject_constant, unique_pairs
-from .git_store import ARTIFACT_ROOT, GitStateStore, PhysicalBoundary
+from .file_io import no_reparse
+from .values import is_sha256, reject_constant, unique_pairs
+from .state_contract import ARTIFACT_ROOT
+from .git_store import GitStateStore
+from .file_io import PhysicalBoundary
 from .ids import ENTROPY_BYTES, ulid
 # payloads imports this module only inside its functions, so a module-level
 # import is acyclic; canonical_json and its value check run on every node.
@@ -221,8 +224,8 @@ class ResearchRepository:
     """Read and publish the record-family files of the installed state contract through one Git CAS."""
 
     def __init__(self, repository: Path, instance_id: str, *, contract: StateContract | None = None,
-                 backend=None) -> None:
-        self._store = GitStateStore(repository, instance_id, backend=backend)
+                 backend=None, clock=None) -> None:
+        self._store = GitStateStore(repository, instance_id, backend=backend, clock=clock)
         self.contract = contract or default_state_contract()
 
     @property

@@ -3,7 +3,7 @@ from copy import deepcopy
 import json
 
 from . import academic, questions
-from .git_store import ARTIFACT_ROOT
+from .state_contract import ARTIFACT_ROOT
 
 
 def resolve_pointer(value, pointer):

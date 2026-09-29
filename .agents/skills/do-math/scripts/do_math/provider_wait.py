@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 import math
 
-from .file_io import parse_utc
+from .values import parse_utc
 
 
 def provider_for(model: str) -> str:

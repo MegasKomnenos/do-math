@@ -3,7 +3,8 @@ from __future__ import annotations
 import hashlib, json, os, re, shutil, subprocess, sys, tempfile, time, traceback, uuid
 from pathlib import Path
 from .trust_validation import AXIOMS
-from .file_io import cached_sha256, is_sha256, json_digest
+from .file_io import cached_sha256
+from .values import is_sha256, json_digest
 from do_math.windows_job import WindowsJob, process_identity
 
 class VerificationStopped(RuntimeError):

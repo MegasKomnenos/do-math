@@ -9,7 +9,7 @@ from copy import deepcopy
 import hashlib
 import json
 
-from .file_io import validate_profile_ref
+from .values import validate_profile_ref
 from .model_policy import ROLE_TIERS, TIERS
 from .repository import exact_content_hash
 from .provider_wait import provider_for

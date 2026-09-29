@@ -18,7 +18,8 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 from .repository import exact_content_hash
-from .file_io import SHA256_SCHEMA as _HASH, fingerprint_json, now, os_lock, parse_utc, sha256_file, stat_fingerprint
+from .file_io import fingerprint_json, now, os_lock, sha256_file, stat_fingerprint
+from .values import SHA256_SCHEMA as _HASH, parse_utc
 from .trust_validation import RECORD_ID_PATTERN
 
 SMOKE = 'import Mathlib\nexample (n : Nat) : n + 0 = n := by rfl\nexample : (2 : ℝ) + 2 = 4 := by norm_num\n'

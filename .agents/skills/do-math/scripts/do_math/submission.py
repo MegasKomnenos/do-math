@@ -16,16 +16,18 @@ import re
 import zipfile
 
 import jsonschema
-from .file_io import atomic_replace, console_python, json_copy
+from .file_io import atomic_replace, console_python
+from .values import json_copy
 
 from . import knowledge_io, planning, review_cycle
 from .context_store import collect_outputs, materialize_inputs, read_source, safe_path, is_excluded, read_stable, relative_path
-from .git_store import ARTIFACT_ROOT, ULID_PATTERN
+from .state_contract import ARTIFACT_ROOT
+from .ids import ULID_PATTERN
 from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, review_research, task_research
 from .external import prepare_operation, validate_operation
 from .model_policy import ASSESSMENT_SCHEMA, assessment_key, validate_assessments, preparation_only
 from .observations import read_checkpoint, checkpoint_value, CHECKPOINT_MAX_BYTES
-from .file_io import reject_constant, unique_pairs
+from .values import reject_constant, unique_pairs
 from .repository import canonical_json, exact_content_hash
 from .contracts import REFS, TEXT, closed_object
 from .questions import QUESTION_OWNERS
@@ -1352,7 +1354,7 @@ def read_producer_checks(workspace, check_id, *, boundary=None):
 
     One physical boundary of the workspace serves every read in the chain.
     """
-    from .git_store import PhysicalBoundary
+    from .file_io import PhysicalBoundary
     workspace = Path(workspace).resolve()
     rows, seen = [], set()
     while check_id is not None:
@@ -1506,7 +1508,7 @@ def producer_check(workspace, draft):
         raise ValueError("another producer check owns this workspace") from error
     try:
         with handle:
-            from .git_store import PhysicalBoundary
+            from .file_io import PhysicalBoundary
             boundary = PhysicalBoundary(workspace)  # one root proof for this check's reads
             head = safe_path(workspace, "checks/.producer-head")
             history = (read_producer_checks(workspace, load_json(read_stable(head, boundary=boundary))["check_id"],

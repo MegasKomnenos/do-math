@@ -12,8 +12,11 @@ from pathlib import Path
 import shutil
 
 from .context_store import read_stable
-from .file_io import check_path_segment, file_fingerprint, fingerprint_settled, no_reparse
-from .git_store import ARTIFACT_ROOT, PhysicalBoundary, oid_shape
+from .file_io import file_fingerprint, fingerprint_settled, no_reparse
+from .values import check_path_segment
+from .state_contract import ARTIFACT_ROOT
+from .file_io import PhysicalBoundary
+from .ids import oid_shape
 from .relation_refs import relation_references
 from .repository import canonical_json, sealed_bytes
 from .task_contracts import CONTEXT_INPUT_REFS, TOOL_INPUT_REFS

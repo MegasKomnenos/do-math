@@ -7,7 +7,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit, unquote
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from .file_io import now, parse_utc
+from .file_io import now
+from .values import parse_utc
 from .repository import exact_content_hash
 
 # The states of one external operation; its EX execution reports the same set.

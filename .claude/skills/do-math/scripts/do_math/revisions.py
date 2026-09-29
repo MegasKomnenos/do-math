@@ -2,7 +2,7 @@
 from copy import deepcopy
 
 from . import knowledge, planning
-from .file_io import parse_utc
+from .values import parse_utc
 from .repository import exact_content_hash
 from .session_slots import live_action_ids
 

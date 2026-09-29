@@ -19,11 +19,11 @@ import tempfile
 import time
 from typing import Any, Callable
 if __package__:
-    from .file_io import (compact_json_bytes, read_bytes_shared, file_fingerprint, fingerprint_settled,
-                          check_path_segment, json_digest, require_text, write_bytes_atomic)
+    from .file_io import read_bytes_shared, file_fingerprint, fingerprint_settled, write_bytes_atomic
+    from .values import compact_json_bytes, check_path_segment, json_digest, require_text
 else:
-    from file_io import (compact_json_bytes, read_bytes_shared, file_fingerprint, fingerprint_settled,
-                         check_path_segment, json_digest, require_text, write_bytes_atomic)
+    from file_io import read_bytes_shared, file_fingerprint, fingerprint_settled, write_bytes_atomic
+    from values import compact_json_bytes, check_path_segment, json_digest, require_text
 
 
 # Control vocabulary shared by the workers, the MCP server and the observers.

@@ -37,6 +37,12 @@ def _file_io():
     return file_io
 
 
+def _json_digest(value):
+    # Loaded from the same snapshot package as _file_io(), which put it on sys.path.
+    from do_math.values import json_digest
+    return json_digest(value)
+
+
 def _marks(root: Path):
     try:
         value = json.loads((root / MARKS).read_text(encoding="utf-8"))
@@ -61,7 +67,7 @@ def verify_snapshot(manifest_path: Path):
     if manifest["format"] != FORMAT or not isinstance(manifest["files"], dict):
         raise ValueError("unsupported bootstrap manifest")
     basis = {key: manifest[key] for key in ("format", "installation_root", "files")}
-    if file_io.json_digest(basis) != manifest["snapshot_sha256"]:
+    if _json_digest(basis) != manifest["snapshot_sha256"]:
         raise ValueError("bootstrap manifest identity mismatch")
     root = manifest_path.parent.resolve(strict=True)
     if root.name != manifest["snapshot_sha256"]:
@@ -100,7 +106,7 @@ def freeze(installation_root: Path, workspace: Path):
         raise ValueError("installation has no supervisor")
     files = _source_files(installation_root, file_io)
     basis = {"format": FORMAT, "installation_root": str(installation_root), "files": files}
-    identity = file_io.json_digest(basis)
+    identity = _json_digest(basis)
     parent = workspace / "operator/bootstrap"
     file_io.no_reparse(parent)
     parent.mkdir(parents=True, exist_ok=True)

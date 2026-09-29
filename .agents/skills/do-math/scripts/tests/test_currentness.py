@@ -21,7 +21,7 @@ from do_math.observations import ObservationTracker, validate_rules
 from do_math.planning import task_ready
 from purpose_fixtures import (ActivatedPurposeHarness, common, CURRENTNESS_CONFIG, formal_fixture,
                               PurposeRunner)
-from do_math.git_store import ARTIFACT_ROOT
+from do_math.state_contract import ARTIFACT_ROOT
 from do_math.repository import new_id
 from research_fixtures import (await_control, local_job_runner, observe, producer_result, read_fixture_context,
                                restore_template, send_control, write_checkpoint)

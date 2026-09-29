@@ -16,11 +16,13 @@ from typing import Any, Mapping
 try:  # A worker imports this module both as a package module and as a direct Job script.
     from do_math.scholarly import validate_scholarly_server
     from do_math.control_transport import ControlTransport
-    from do_math.file_io import compact_json_bytes, validate_profile_ref, write_bytes_atomic
+    from do_math.file_io import write_bytes_atomic
+    from do_math.values import compact_json_bytes, validate_profile_ref
 except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regressions.
     from scholarly import validate_scholarly_server
     from control_transport import ControlTransport
-    from file_io import compact_json_bytes, validate_profile_ref, write_bytes_atomic
+    from file_io import write_bytes_atomic
+    from values import compact_json_bytes, validate_profile_ref
 
 
 # Request fields every worker binds to its status, and the collector compares.

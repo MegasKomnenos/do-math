@@ -10,8 +10,11 @@ import os
 from pathlib import Path, PurePosixPath
 
 from .repository import canonical_json, exact_content_hash
-from .file_io import is_sha256, no_reparse, stat_fingerprint
-from .git_store import ARTIFACT_ROOT, PhysicalBoundary, oid_shape
+from .file_io import no_reparse, stat_fingerprint
+from .values import is_sha256
+from .state_contract import ARTIFACT_ROOT
+from .file_io import PhysicalBoundary
+from .ids import oid_shape
 from .execution_profiles import INITIAL_ROLES, PLANNING_ROLES
 
 
@@ -1231,7 +1234,7 @@ def read_main(argv=None):
     import argparse
     import base64
     import sys
-    from .file_io import strict_json_loads
+    from .values import strict_json_loads
     parser = argparse.ArgumentParser(description=read_main.__doc__)
     parser.add_argument('--list', action='store_true', help='record_index families, or with --family their records')
     parser.add_argument('--family', help='a root/family of record_index, with --list')

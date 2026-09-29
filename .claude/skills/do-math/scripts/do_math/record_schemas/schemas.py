@@ -15,7 +15,7 @@ from ..execution_lifecycle import EXECUTION_STATUSES as _EXECUTION_STATUSES, OUT
 from ..execution_profiles import (OBSERVATION_KEYS as _OBSERVATION_KEYS, OBSERVATION_MODES as _OBSERVATION_MODES,
                                   PROFILE_ROLES as _PROFILE_ROLES, WINDOW_KEYS as _WINDOW_KEYS)
 from ..external import OPERATION_STATUSES as _OPERATION_STATUSES
-from ..file_io import SHA256_SCHEMA as HASH
+from ..values import SHA256_SCHEMA as HASH
 from ..governance import (GOVERNANCE_STATUSES as _GOVERNANCE_STATUSES, GRANT_STATUSES as _GRANT_STATUSES,
                           interpretation_schema as _interpretation_schema)
 from ..input_basis import SOURCE_STATUSES as _SOURCE_STATUSES

@@ -41,7 +41,8 @@ from .model_runner import ModelRunner, verified_native_final
 from .repository import ResearchRepository, canonical_json, exact_content_hash
 from .repository import mark_artifact_verified, sealed_bytes
 from .state_checks import inspect_state
-from .git_store import ARTIFACT_ROOT, GitStateStoreError
+from .state_contract import ARTIFACT_ROOT
+from .git_store import GitStateStoreError
 from .scholarly import resolve_scholarly_server
 from .task_scope import apply_task_dispositions
 from . import model_policy
@@ -176,7 +177,7 @@ def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | N
         execution_profiles.apply_editions(instance, profiles)
         instance = knowledge_io.ensure_ontology(instance)
         instance = knowledge_records.initialize_families(instance)
-        store = ResearchRepository(repository, instance_id)
+        store = ResearchRepository(repository, instance_id, clock=clock)
         with store.writer_lock():
             head = store.initialize(instance, runtime)
             if source_inputs:
@@ -459,7 +460,7 @@ class ResearchEngine(QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMix
             from .wiring import real_ports  # layer: 1b migration default until entry points pass Ports
             ports = real_ports()
         self.ports = ports
-        self.store = ResearchRepository(repository, instance_id, backend=ports.git_backend)
+        self.store = ResearchRepository(repository, instance_id, backend=ports.git_backend, clock=ports.clock)
         self.runner = runner or ModelRunner(jobs=ports.jobs)
         self.formal_verifier = formal_verifier or partial(verify_lean, jobs=ports.jobs)
         self.head, self.instance, self.runtime = self.store.load()

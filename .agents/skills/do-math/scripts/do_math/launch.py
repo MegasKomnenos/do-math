@@ -3,7 +3,7 @@ import uuid
 import re
 from . import windows_job
 from .execution_profiles import LEAN_ROLES
-from .file_io import is_sha256
+from .values import is_sha256
 
 
 def ticket(execution_id, profile):

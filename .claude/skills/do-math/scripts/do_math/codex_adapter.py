@@ -23,7 +23,8 @@ import platform
 import shutil
 from typing import Any, Mapping
 
-from do_math.file_io import compact_json_bytes, now, strict_json_loads
+from do_math.file_io import now
+from do_math.values import compact_json_bytes, strict_json_loads
 from do_math.windows_job import WindowsJob, process_identity
 from do_math import cli_worker, codex_worker
 
@@ -329,8 +330,8 @@ class CodexExecAdapter(LocalCLIAdapter):
     unknown_capabilities = ("actual_input_bytes", "provider_operation_ids", "remote_termination", "per_call_usage",
                             "provider_stop_reason", "automatic_compaction_control",
                             "per_execution_read_isolation", "cross_profile_noninterference")
-    identity_modules = ("cli_worker", "codex_worker", "control_transport", "file_io", "windows_job", "scholarly",
-                        "codex_adapter")
+    identity_modules = ("cli_worker", "codex_worker", "control_transport", "file_io", "values", "windows_job",
+                        "scholarly", "codex_adapter")
 
     def worker_options(self, evidence_dir: Path) -> dict[str, Any]:
         # The adopted local permission mode: existing user permissions, approval never.

@@ -12,7 +12,7 @@ import jsonschema
 
 from .contracts import MANIFEST_SCHEMA, REFS, TEXT, closed_object
 from .execution_profiles import task_research
-from .file_io import json_copy
+from .values import json_copy
 from .input_basis import CurrentnessChanged
 from .repository import exact_content_hash
 

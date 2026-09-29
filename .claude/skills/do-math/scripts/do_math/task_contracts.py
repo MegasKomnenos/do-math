@@ -8,7 +8,7 @@ from __future__ import annotations
 from copy import deepcopy
 from collections import Counter
 
-from .file_io import require_text
+from .values import require_text
 
 from .contracts import ITEM_DISPOSITION
 
@@ -249,7 +249,7 @@ def validate_plan_dispositions(plan: dict, tasks: dict, ready_ids: list[str]) ->
             if not revisit.get('event_refs') and not revisit.get('at'):
                 raise ValueError('nonselection requires a reobservation condition')
             if revisit.get('at'):
-                from .file_io import parse_utc
+                from .values import parse_utc
                 parse_utc(revisit['at'])
         if row['kind'] == 'not_assessable' and not row.get('missing_inputs'):
             raise ValueError('not_assessable requires missing inputs')

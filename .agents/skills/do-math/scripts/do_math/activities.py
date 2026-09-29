@@ -9,7 +9,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
-from .file_io import require_text
+from .values import require_text
 
 
 ACTIVITY_STATUSES = frozenset({"ready", "working", "waiting", "finished"})

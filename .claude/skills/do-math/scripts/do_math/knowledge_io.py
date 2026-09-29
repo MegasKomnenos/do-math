@@ -4,9 +4,10 @@ from __future__ import annotations
 from copy import deepcopy
 import re
 
-from .file_io import now, require_text
+from .file_io import now
+from .values import require_text
 from .formal import is_lean_identifier
-from .git_store import is_new_id
+from .ids import is_new_id
 from .planning import record_index
 from .repository import canonical_json, new_id
 from .knowledge import AUTHORED_FIELDS, assess_use, capture_basis, propagate

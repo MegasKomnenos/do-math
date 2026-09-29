@@ -10,8 +10,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .file_io import bytes_evidence
-from .git_store import ARTIFACT_ROOT
+from .values import bytes_evidence
+from .state_contract import ARTIFACT_ROOT
 
 LIMIT = 65536
 
@@ -134,7 +134,7 @@ def decode(envelope, read_payload, git_dir=None):
     for canonical encoding again: its path is its digest and bundles are
     immutable.
     """
-    from .file_io import is_sha256, reject_constant, unique_pairs
+    from .values import is_sha256, reject_constant, unique_pairs
     from .repository import canonical_json, artifact_verified, mark_artifact_verified
     if set(envelope) not in ({'contract_id','family','record'}, {'contract_id','family','record','payloads'}):
         raise ValueError('invalid record envelope fields')

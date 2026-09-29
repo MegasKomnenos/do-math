@@ -10,8 +10,8 @@ from .activities import ACTIVITY_STATUSES
 from .execution_lifecycle import EXECUTION_STATUSES
 from .execution_profiles import RESEARCH_PRODUCER_ROLES
 from .external import OPERATION_STATUSES
-from .file_io import check_path_segment, is_sha256, parse_utc
-from .git_store import ARTIFACT_ROOT
+from .values import check_path_segment, is_sha256, parse_utc
+from .state_contract import ARTIFACT_ROOT
 from .governance import GOVERNANCE_STATUSES, GRANT_STATUSES
 from .input_basis import SOURCE_STATUSES
 from .repository import VERIFIED_ARTIFACTS, artifact_key, exact_content_hash, sealed_bytes

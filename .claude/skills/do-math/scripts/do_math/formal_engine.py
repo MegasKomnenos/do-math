@@ -6,7 +6,7 @@ from pathlib import Path
 from .knowledge import begin_transition, record_transition_result, activate_transition, invalidate_environment, validate_basis
 from .execution_lifecycle import MACHINE_OUTPUT_RECEIPT
 from .repository import canonical_json, exact_content_hash, new_id
-from .git_store import ARTIFACT_ROOT
+from .state_contract import ARTIFACT_ROOT
 
 def _toolchain_matches(expected, actual):
     return isinstance(actual, dict) and bool(actual.get('sha256')) and expected == actual

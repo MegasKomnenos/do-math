@@ -12,11 +12,11 @@ import sys
 try:
     from do_math.cli_worker import allowed_environment, check_common_request, run_cli
     from do_math.control_transport import CONTROL_SERVER, ControlTransport
-    from do_math.file_io import strict_json_loads
+    from do_math.values import strict_json_loads
 except ModuleNotFoundError:  # Direct Python worker inside the Windows Job.
     from cli_worker import allowed_environment, check_common_request, run_cli
     from control_transport import CONTROL_SERVER, ControlTransport
-    from file_io import strict_json_loads
+    from values import strict_json_loads
 
 
 def sanitized_environment(source=None):

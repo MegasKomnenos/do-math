@@ -6,7 +6,8 @@ import hashlib
 import json
 from pathlib import Path
 
-from .file_io import compact_json_bytes, json_digest, now
+from .file_io import now
+from .values import compact_json_bytes, json_digest
 from .execution_profiles import review_research
 from .repository import canonical_json, exact_content_hash, new_id
 from .review_cycle import (accept_result, context_for, next_actions, record_turn, stage_schema, start_review,

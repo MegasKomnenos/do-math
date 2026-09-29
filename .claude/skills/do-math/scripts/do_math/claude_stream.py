@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 import hashlib
 import math
 
-from .file_io import json_digest, strict_json_loads
+from .values import json_digest, strict_json_loads
 
 
 def _number(value):

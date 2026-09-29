@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from .execution_profiles import RESEARCH_PRODUCER_ROLES
-from .file_io import SHA256_SCHEMA, json_copy
+from .values import SHA256_SCHEMA, json_copy
 
 
 # The response contract every role output schema carries (``x-contract-id``).

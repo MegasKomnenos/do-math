@@ -18,7 +18,8 @@ from .engine import ResearchEngine, control, initialize, query_records, read_rec
 from .git_store import GitStateStoreConflict, GitStateStoreError, GitStateStoreLockError
 from .payloads import json_safe
 from . import scheduled_operator
-from .file_io import console_python, strict_json_loads
+from .file_io import console_python
+from .values import strict_json_loads
 from .repository import ResearchRepository, canonical_json, exact_content_hash
 from .state_checks import inspection_exit_code
 

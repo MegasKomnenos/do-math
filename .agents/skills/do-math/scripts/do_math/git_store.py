@@ -6,7 +6,7 @@ semantic decisions belong to callers above this storage primitive.
 """
 
 from __future__ import annotations
-from .operation_trace import measured
+from .operation_trace import measured  # layer: telemetry span only; results do not depend on it
 
 
 from collections.abc import Iterator, Mapping
@@ -22,7 +22,10 @@ import time
 from typing import Final
 import zlib
 
-from .file_io import check_path_segment, no_reparse, os_lock
+from .file_io import PhysicalBoundary, no_reparse, os_lock
+from .values import check_path_segment
+from .ids import is_new_id, oid_shape
+from .state_contract import ARTIFACT_ROOT
 
 
 class GitStateStoreError(RuntimeError):
@@ -60,23 +63,6 @@ class _Tree:
 _FILE_MODE: Final = "100644"
 _TREE_MODE: Final = "40000"
 
-# ULID in Crockford base32: 26 digits, the first at most 7 (48-bit time + 80 random bits).
-from .ids import ULID_ALPHABET, ULID_LENGTH, ULID_PATTERN  # noqa: F401  (re-exported)
-_HEX = re.compile(r"[0-9a-f]+\Z")
-# Archived artifacts live under this prefix; an existing bundle there never changes.
-ARTIFACT_ROOT: Final = "runtime/artifacts/"
-
-
-def is_new_id(prefix: str, value) -> bool:
-    """True for ``<prefix>-<ULID>``, the form ``repository.new_id`` creates."""
-    return isinstance(value, str) and re.fullmatch(re.escape(prefix) + "-" + ULID_PATTERN, value) is not None
-
-
-def oid_shape(oid: str) -> str:
-    """Validate only OID syntax, not object existence or this instance's format."""
-    if not isinstance(oid, str) or len(oid) not in {40, 64} or not _HEX.fullmatch(oid):
-        raise ValueError("OID must be a lowercase 40/64-character hexadecimal string")
-    return "sha1" if len(oid) == 40 else "sha256"
 
 
 class GitStateStore:
@@ -94,7 +80,7 @@ class GitStateStore:
     tampering, outside the accidental-change threat model.
     """
 
-    def __init__(self, repository: str | os.PathLike[str], instance_id: str, *, backend=None) -> None:
+    def __init__(self, repository: str | os.PathLike[str], instance_id: str, *, backend=None, clock=None) -> None:
         if not isinstance(instance_id, str) or not is_new_id("RI", instance_id):
             raise ValueError("instance_id must be the registry RI-prefixed canonical ULID")
         self.repository = Path(repository).absolute()
@@ -104,9 +90,12 @@ class GitStateStore:
         self.instance_id = instance_id
         self.ref = f"refs/heads/do-math/{instance_id}"
         if backend is None:
-            from .git_process import GitProcess
+            from .git_process import GitProcess  # layer: 1b migration default until entry points pass Ports
             backend = GitProcess()
-        self._backend = backend
+        if clock is None:
+            from .system_clock import SystemClock  # layer: 1c migration default until entry points pass Ports
+            clock = SystemClock()
+        self._backend, self._clock = backend, clock
         # Until Git reports its directory, the work tree stands in for it when
         # a failure re-proves the boundaries.
         self.git_dir = self.repository
@@ -295,8 +284,8 @@ class GitStateStore:
             f"{mode} {name}\0".encode("utf-8") + bytes.fromhex(oid) for _, name, mode, oid in rows))
 
     def _write_commit(self, tree: str, parent: str | None) -> str:
-        """The commit ``git commit-tree`` wrote for do-math: fixed identity, now, local offset."""
-        seconds = int(time.time())
+        """The commit ``git commit-tree`` wrote for do-math: fixed identity, the clock's now, local offset."""
+        seconds = self._clock.wall_ns() // 1_000_000_000
         minutes = time.localtime(seconds).tm_gmtoff // 60
         signature = "do-math <do-math@invalid> %d %s%02d%02d" % (
             seconds, "-" if minutes < 0 else "+", abs(minutes) // 60, abs(minutes) % 60)
@@ -508,97 +497,3 @@ class GitStateStore:
             self._repository_boundary.check()
             self._git_boundary.check()
             raise GitStateStoreError(str(error)) from error
-
-
-def _windows_handle_facts(handle):
-    import ctypes
-    from ctypes import wintypes
-    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
-    final = kernel.GetFinalPathNameByHandleW
-    final.argtypes = [wintypes.HANDLE, wintypes.LPWSTR, wintypes.DWORD, wintypes.DWORD]
-    final.restype = wintypes.DWORD
-    buffer = ctypes.create_unicode_buffer(32768)
-    count = final(handle, buffer, len(buffer), 0)
-    if not count or count >= len(buffer):
-        raise ctypes.WinError(ctypes.get_last_error())
-    path = buffer.value
-    if path.startswith("\\\\?\\UNC\\"):
-        raise ValueError("storage requires a local fixed NTFS volume")
-    path = path.removeprefix("\\\\?\\")
-    volume = ctypes.create_unicode_buffer(32768)
-    volume_path = kernel.GetVolumePathNameW
-    volume_path.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
-    if not volume_path(path, volume, len(volume)):
-        raise ctypes.WinError(ctypes.get_last_error())
-    drive_type = kernel.GetDriveTypeW
-    drive_type.argtypes = [wintypes.LPCWSTR]
-    if drive_type(volume.value) != 3:
-        raise ValueError("storage requires a local fixed volume")
-    serial = wintypes.DWORD()
-    fs = ctypes.create_unicode_buffer(256)
-    info = kernel.GetVolumeInformationW
-    info.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD),
-                     ctypes.POINTER(wintypes.DWORD), ctypes.POINTER(wintypes.DWORD), wintypes.LPWSTR, wintypes.DWORD]
-    if not info(volume.value, None, 0, ctypes.byref(serial), None, None, fs, len(fs)):
-        raise ctypes.WinError(ctypes.get_last_error())
-    if fs.value.upper() != "NTFS":
-        raise ValueError("storage requires NTFS")
-    return Path(path), (volume.value.casefold(), serial.value)
-
-
-class PhysicalBoundary:
-    """A root proved physical once, when the boundary is opened.
-
-    ``check`` proves the root: no reparse ancestor, the same local fixed NTFS
-    volume, and a directory handle whose final path is the lexical root.
-    Opening a file below the root only rejects reparse points between the root
-    and the file. Handles are not re-verified after opening: swapping a path
-    between check and use is deliberate tampering, not an accidental change.
-    Does not assert an unspecified ACL policy.
-    """
-    def __init__(self, root):
-        self.root = Path(os.path.abspath(root))
-        no_reparse(self.root)
-        if not self.root.is_dir():
-            raise ValueError("physical boundary root must be an existing directory")
-        self.device = self.root.stat().st_dev
-        self.check()
-
-    def check(self):
-        no_reparse(self.root)
-        if self.root.stat().st_dev != self.device:
-            raise ValueError("physical root volume changed")
-        if os.name == "nt":
-            import ctypes
-            from ctypes import wintypes
-            kernel = ctypes.WinDLL("kernel32", use_last_error=True)
-            create = kernel.CreateFileW
-            create.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
-                               wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
-            create.restype = wintypes.HANDLE
-            close = kernel.CloseHandle
-            close.argtypes = [wintypes.HANDLE]
-            handle = create(str(self.root), 0, 3, None, 3, 0x02000000 | 0x00200000, None)
-            if handle == wintypes.HANDLE(-1).value:
-                raise ctypes.WinError(ctypes.get_last_error())
-            try:
-                final, volume = _windows_handle_facts(handle)
-                if os.path.normcase(str(final)) != os.path.normcase(str(self.root)):
-                    raise ValueError("physical directory handle resolves elsewhere")
-                if hasattr(self, "volume") and volume != self.volume:
-                    raise ValueError("physical volume identity changed")
-                self.volume = volume
-            finally:
-                close(handle)
-
-    @contextmanager
-    def open(self, path, mode):
-        if mode not in {"rb", "xb"}:
-            raise ValueError("physical boundary supports read or exclusive creation")
-        path = Path(os.path.abspath(path))
-        if not path.is_relative_to(self.root):
-            raise ValueError("file path is outside the physical boundary")
-        # The root and its ancestors were proved when this boundary opened.
-        no_reparse(path, below=self.root)
-        with path.open(mode) as stream:
-            yield stream

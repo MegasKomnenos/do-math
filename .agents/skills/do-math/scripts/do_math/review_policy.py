@@ -6,7 +6,7 @@ from copy import deepcopy
 import jsonschema
 
 from .contracts import PROFILE_REF, REFS, TEXT, closed_object
-from .file_io import distinct_texts
+from .values import distinct_texts
 from .state_contract import validate_record
 
 

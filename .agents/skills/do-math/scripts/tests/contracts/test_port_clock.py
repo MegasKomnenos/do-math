@@ -7,7 +7,7 @@ from datetime import timezone
 import re
 import unittest
 
-from do_math.file_io import parse_utc
+from do_math.values import parse_utc
 from do_math.ids import ULID_PATTERN
 from support.fakes.clock import make_fake
 

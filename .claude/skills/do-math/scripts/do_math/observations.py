@@ -15,7 +15,8 @@ from jsonschema import Draft202012Validator
 from .context_store import is_excluded, read_stable, safe_path
 from .control_transport import (CONTROL_SERVER, RECEIPT_TOOL, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE,
                                 SELF_CHECK_TOOL, SUBMIT_TOOL, self_check_request_id, self_check_response_errors)
-from .file_io import is_sha256, now, parse_utc, strict_json_loads
+from .file_io import now
+from .values import is_sha256, parse_utc, strict_json_loads
 from .repository import validate_storage_value
 from .state_contract import default_state_contract, validate_record
 from .execution_profiles import OBSERVATION_MODES
@@ -433,7 +434,7 @@ def read_checkpoint(workspace: Path) -> dict:
 
 def capture_checkpoint_files(workspace, checkpoint, *, max_bytes):
     """Capture only named evidence with stable reads, preserving explicit omissions."""
-    from .git_store import PhysicalBoundary
+    from .file_io import PhysicalBoundary
     files, omitted, total = {}, [], 0
     boundary = None
     for name in dict.fromkeys(checkpoint['evidence_paths']):

@@ -5,7 +5,7 @@ import json
 import tempfile
 
 from .context_store import safe_path
-from .file_io import strict_json_loads
+from .values import strict_json_loads
 from .formal import verify_lean
 
 # What a worker reads from a preview (references/공통-실행.md): the verdict and its

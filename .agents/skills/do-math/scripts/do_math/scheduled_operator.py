@@ -85,7 +85,8 @@ def collect_repair_verification(output, workspace):
 
 
 def _json(path: Path, value: dict[str, Any]) -> None:
-    from .file_io import bytes_evidence, write_bytes_atomic
+    from .file_io import write_bytes_atomic
+    from .values import bytes_evidence
     def evidence_default(item):
         if isinstance(item, bytes):
             return bytes_evidence(item)

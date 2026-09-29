@@ -14,7 +14,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError
 
 from .contracts import OPERATING_DOCUMENTS, ROLES, all_prompt_documents, schema_for, action_schema
-from .file_io import compact_json_bytes
+from .values import compact_json_bytes
 
 # Installed documents checked besides the role reading map.
 INSTALLED_DOCUMENTS = ("README.md", "references/CLI-실행-계약.md", "requirements.txt", *OPERATING_DOCUMENTS)

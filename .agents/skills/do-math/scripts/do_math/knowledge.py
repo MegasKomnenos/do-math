@@ -9,7 +9,7 @@ from copy import deepcopy
 import re
 from typing import Any
 
-from .file_io import require_text
+from .values import require_text
 from .repository import exact_content_hash, new_id
 from .execution_profiles import review_research
 from .planning import READ_REFERENCE_FIELDS, READ_REFERENCE_ID_FIELDS, record_index

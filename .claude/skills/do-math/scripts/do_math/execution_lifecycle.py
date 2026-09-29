@@ -5,7 +5,7 @@ from copy import deepcopy
 from typing import Any
 
 from .control_transport import SUBMIT_INTENT
-from .file_io import require_text
+from .values import require_text
 from .session_slots import local_termination_confirmed
 
 # Acceptance receipt kinds. A control submission's receipt keeps its request

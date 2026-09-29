@@ -12,7 +12,7 @@ import json
 import jsonschema
 
 from .contracts import REFS, TEXT, closed_object
-from .file_io import compact_json_bytes, json_copy, json_digest
+from .values import compact_json_bytes, json_copy, json_digest
 from .repository import exact_content_hash
 from .review_policy import SCOPE_ASSESSMENT, build_review_policy, validate_scope_assessment, minimum_scope_executions
 

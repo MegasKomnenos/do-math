@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from .file_io import is_sha256
+from .values import is_sha256
 from .formal import FORMAL_EVIDENCE_FIELDS, forbidden_axioms, lean_source_sha256
 from .planning import record_index
 from .repository import exact_content_hash, new_id

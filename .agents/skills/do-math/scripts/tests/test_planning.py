@@ -69,7 +69,7 @@ class PlanningTests(unittest.TestCase):
 
     def test_artifact_condition_grammar_is_the_reader_prefix_and_state_segments(self):
         import hashlib
-        from do_math.git_store import ARTIFACT_ROOT
+        from do_math.state_contract import ARTIFACT_ROOT
         ref={'snapshot':'SN-1','sha256':hashlib.sha256(b'x').hexdigest()}
         planning.validate_condition({'op':'artifact_valid','artifact_ref':{**ref,'path':ARTIFACT_ROOT+'BA-1/proof.txt'}})
         for path in ('out/proof.txt',ARTIFACT_ROOT+'BA-1/../proof.txt',ARTIFACT_ROOT+'BA-1/con.txt',

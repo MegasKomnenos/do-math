@@ -9,7 +9,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from .execution_profiles import LEAN_ROLES, MACHINE_ROLES, PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, task_research
-from .git_store import ARTIFACT_ROOT
+from .state_contract import ARTIFACT_ROOT
 from .model_policy import selection
 from .parallel import failed_result
 from .payloads import json_safe

@@ -2,7 +2,7 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 
-from .file_io import parse_utc
+from .values import parse_utc
 from .repository import exact_content_hash
 
 
