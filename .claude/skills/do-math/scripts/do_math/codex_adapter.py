@@ -17,13 +17,11 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
-import time
 import uuid
 import platform
 import shutil
 from typing import Any, Mapping
 
-from do_math.system_clock import now
 from do_math.values import compact_json_bytes, strict_json_loads
 from do_math.windows_job import WindowsJob, process_identity
 from do_math.codex_stream import artifact as _artifact, parse_response as _parse_codex, provider_observation as _provider_observation
@@ -81,10 +79,13 @@ class LocalCLIAdapter:
     # Seconds each ``describe`` command may run.
     describe_timeout = 10.0
 
-    def __init__(self, cli_path: str, *, jobs=None) -> None:
+    def __init__(self, cli_path: str, *, jobs=None, clock=None) -> None:
         self.cli_path = cli_path
         # The Jobs port; None starts the module's WindowsJob (stage 1b migration).
         self.jobs = jobs
+        # The clock port for stop receipts and the termination wait (default: the system clock).
+        from .system_clock import SystemClock
+        self.clock = clock or SystemClock()
 
     def worker_options(self, evidence_dir: Path) -> dict[str, Any]:
         """The provider's worker request fields for one call that writes under ``evidence_dir``."""
@@ -152,20 +153,20 @@ class LocalCLIAdapter:
     def stop(self, execution: CLIExecution) -> dict[str, Any]:
         execution.job.terminate()
         receipt = {"accepted": True, "operation": "TerminateJobObject",
-                   "observed_at": now(),
+                   "observed_at": self.clock.now(),
                    **process_identity(execution.job)}
         execution.stop_receipts.append(receipt)
         return receipt
 
     def wait_for_termination(self, execution: CLIExecution, timeout: float | None) -> bool:
         """Observe the Job barrier; a signaled root alone is insufficient."""
-        deadline = None if timeout is None else time.monotonic() + timeout
+        deadline = None if timeout is None else self.clock.monotonic() + timeout
         while True:
             if termination_confirmed(execution.job.inspect()):
                 return True
-            if deadline is not None and time.monotonic() >= deadline:
+            if deadline is not None and self.clock.monotonic() >= deadline:
                 return False
-            time.sleep(0.02)
+            self.clock.sleep(0.02)
 
     def collect(self, execution: CLIExecution) -> dict[str, Any]:
         # The private request and prompt snapshots are the bytes ``start`` wrote and hashed.

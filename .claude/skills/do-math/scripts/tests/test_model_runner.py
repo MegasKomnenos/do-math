@@ -55,10 +55,12 @@ class WithoutDeadlineTests(unittest.TestCase):
             root = Path(directory)
             adapter = LiveAdapter({'result': 'output_collected', 'final': {'raw': b'{}'}, 'jsonl': {}})
             worker = runner_with(adapter)
-            with patch.object(runner.time, 'monotonic', side_effect=lambda: clock[0]), patch.object(runner.time, 'sleep'):
-                result = worker.run(prompt='x', output_schema={}, workspace=root, evidence_dir=root / 'evidence',
-                    model='m', effort='low', timeout_seconds=timeout,
-                    should_stop=lambda: stop and adapter.polls >= 4)
+            from types import SimpleNamespace
+            from do_math.system_clock import SystemClock
+            worker.clock = SimpleNamespace(monotonic=lambda: clock[0], sleep=lambda seconds: None, now=SystemClock().now)
+            result = worker.run(prompt='x', output_schema={}, workspace=root, evidence_dir=root / 'evidence',
+                model='m', effort='low', timeout_seconds=timeout,
+                should_stop=lambda: stop and adapter.polls >= 4)
             return result, adapter
 
     def test_observation_burst_preserves_order_and_split_utf8_tail(self):
@@ -88,7 +90,7 @@ class WithoutDeadlineTests(unittest.TestCase):
             root = Path(directory)
             worker = runner_with(BurstAdapter({"result": "output_collected", "final": {"raw": b"{}"}, "jsonl": {}}))
             observed = []
-            with patch.object(runner.time, "sleep"):
+            with patch.object(worker.clock, "sleep"):
                 result = worker.run(prompt="fixture", output_schema={}, workspace=root, evidence_dir=root / "evidence",
                     model="fixture", effort="low", timeout_seconds=None, on_observation=observed.append)
         self.assertEqual(result["status"], "completed")

@@ -7,13 +7,12 @@ import json
 import os
 from pathlib import Path
 from threading import Lock
-import time
 from typing import Callable
 
 
 from do_math.claude_adapter import ADAPTERS, provider_adapter
 from do_math.provider_wait import provider_for
-from do_math.system_clock import now
+from do_math.system_clock import SystemClock
 from do_math.canonical import canonical_json
 from .observation_transport import ObservationBatch
 from .model_call import (classify_run, frame_rows, launch_conflict_result, runner_assignment,
@@ -27,10 +26,14 @@ class ModelRunner:
     may replace an entry. Capacity remains keyed by the configured model name.
     """
 
-    def __init__(self, codex_path: str | None = None, claude_path: str | None = None, *, jobs=None) -> None:
+    def __init__(self, codex_path: str | None = None, claude_path: str | None = None, *, jobs=None,
+                 clock=None) -> None:
         paths = {"codex": codex_path, "claude": claude_path}
         self.jobs = jobs
-        self.adapters = {provider: provider_adapter(provider, paths.get(provider), jobs=jobs) for provider in ADAPTERS}
+        # The clock port: observation times, run deadlines and polling (default: the system clock).
+        self.clock = clock or SystemClock()
+        self.adapters = {provider: provider_adapter(provider, paths.get(provider), jobs=jobs, clock=self.clock)
+                         for provider in ADAPTERS}
 
     @measured('model_execution')
     def run(self, *, prompt: str, output_schema: dict, workspace: Path, evidence_dir: Path,
@@ -99,7 +102,7 @@ class ModelRunner:
                 failure_path.write_bytes(canonical_json({**result["capability_failure"], "error": str(error),
                                                         "identity": identity, "execution_id": execution_id}))
                 result["capability_evidence"] = structural_failure_evidence(profile, identity,
-                    observed_at=now(), execution_id=execution_id,
+                    observed_at=self.clock.now(), execution_id=execution_id,
                     evidence_ref=str(failure_path), capability=result["capability_failure"]["capability"])
             return result
         offset = 0
@@ -128,11 +131,11 @@ class ModelRunner:
                     chunk = stream.read(1024 * 1024)
                     offset = stream.tell()
             events, offsets, rows, buffer = frame_rows(buffer + chunk, begin, final=final)
-            current = time.monotonic()
+            current = self.clock.monotonic()
             if chunk or final or current - last_tick >= 1:
                 last_tick = current
                 on_observation(ObservationBatch(events, offsets, rows, rows_emitted,
-                    now(), current, offset, stdout_path, terminated))
+                    self.clock.now(), current, offset, stdout_path, terminated))
                 rows_emitted += len(rows)
         from .windows_job import process_identity
         started = {**process_identity(execution.job),
@@ -155,16 +158,16 @@ class ModelRunner:
                         "provider_observation": collected["provider_observation"],
                         "execution":{"started":started,"collect":collected},"error":"stop requested before resume"}
             adapter.resume(execution)
-            deadline = None if timeout_seconds is None else time.monotonic() + timeout_seconds
+            deadline = None if timeout_seconds is None else self.clock.monotonic() + timeout_seconds
             stopped = False
             while not adapter.wait_for_termination(execution, 0):
                 observe()
                 if adapter.wait_for_termination(execution, 0):
                     break
                 if not stopped and ((should_stop and should_stop()) or
-                                    (deadline is not None and time.monotonic() >= deadline)):
+                                    (deadline is not None and self.clock.monotonic() >= deadline)):
                     adapter.stop(execution); stopped = True
-                time.sleep(.2)
+                self.clock.sleep(.2)
             # Drain complete local stream bytes once the Job has ended. The
             # batch's fresh barrier probe prevents replay from opening live work.
             stdout_path = evidence_dir / "stdout.jsonl"
@@ -185,4 +188,4 @@ class ModelRunner:
         return classify_run(collected, started=started, stopped=stopped, cli_model=cli_model,
                             claude_only_assigned_model=claude_only_assigned_model, control_binding=control_binding,
                             output_schema=output_schema, evidence_dir=evidence_dir, execution_id=execution_id,
-                            reference=reference, provider_failure=adapter.provider_failure, now=now)
+                            reference=reference, provider_failure=adapter.provider_failure, now=self.clock.now)

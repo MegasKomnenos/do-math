@@ -78,7 +78,7 @@ class ResearchEngine(CallEngineMixin, CoreEngineMixin, QuestionEngineMixin, Revi
             ports = real_ports()
         self.ports = ports
         self.store = ResearchRepository(repository, instance_id, backend=ports.git_backend, clock=ports.clock)
-        self.runner = runner or ModelRunner(jobs=ports.jobs)
+        self.runner = runner or ModelRunner(jobs=ports.jobs, clock=ports.clock)
         self.formal_verifier = formal_verifier or partial(verify_lean, jobs=ports.jobs)
         self.head, self.instance, self.runtime = self.store.load()
         self._init_process_state(

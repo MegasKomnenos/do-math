@@ -46,8 +46,7 @@ class WorkerTemporaryOutputTests(unittest.TestCase):
                         return None, None
 
                 # Both workers launch their CLI through the shared cli_worker.run_cli.
-                with patch.object(cli_worker.subprocess, 'Popen', Provider):
-                    self.assertEqual(worker.run(path), 0)
+                self.assertEqual(worker.run(path, spawn=Provider), 0)
                 self.assertEqual(json.loads((root / 'status.json').read_text())['state'], 'exited')
                 self.assertEqual(timeouts, [None], 'a work request must reach subprocess without a time limit')
                 collected = collect_outputs(workspace)

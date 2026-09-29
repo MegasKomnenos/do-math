@@ -136,5 +136,19 @@ class InProcessGit:
         return list(reversed(line)) if current == parent else []
 
 
+def make_repository(root, object_format='sha1'):
+    """A new repository at ``root`` without a git process: the minimal layout Git reads."""
+    git = Path(root) / '.git'
+    (git / 'objects').mkdir(parents=True)
+    (git / 'refs' / 'heads').mkdir(parents=True)
+    (git / 'HEAD').write_bytes(b'ref: refs/heads/main\n')
+    extensions = '[extensions]\n\tobjectformat = sha256\n' if object_format == 'sha256' else ''
+    version = 1 if object_format == 'sha256' else 0
+    (git / 'config').write_text(f'[core]\n\trepositoryformatversion = {version}\n\tbare = false\n{extensions}',
+                                encoding='utf-8')
+    return Path(root)
+
+
+
 def make_fake():
     return InProcessGit()

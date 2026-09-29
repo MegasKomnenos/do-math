@@ -93,13 +93,14 @@ def project_source_identity(project_root: Path, *, should_stop=None) -> dict:
     return {'root':str(root),'git_tree':tree,'working_diff_hash':hashlib.sha256(diff).hexdigest(),
             'untracked_file_count':len(untracked),'untracked_sha256':untracked_digest}
 
-def _worker(request_path: Path) -> int:
+def _worker(request_path: Path, *, spawn=subprocess.Popen) -> int:
+    """The Lean Job's root: run the request's command; ``spawn`` starts it (``subprocess.Popen``'s shape)."""
     q=json.loads(request_path.read_text())
     code=None
     try:
         # Files receive all bytes directly: no PIPE buffers, reader threads or output truncation.
         with open(q['stdout'],'wb',buffering=0) as out, open(q['stderr'],'wb',buffering=0) as err:
-            with subprocess.Popen(q['command'],cwd=q['cwd'],stdout=out,stderr=err,
+            with spawn(q['command'],cwd=q['cwd'],stdout=out,stderr=err,
                     shell=False,creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)) as process:
                 code=process.wait()
         state='exited'

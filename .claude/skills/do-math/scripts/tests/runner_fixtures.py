@@ -77,6 +77,15 @@ class ScriptedRunner:
         on_started()
         if role == self.fail_role:
             return {"status": "failed", "output": None, "usage": {}, "error": "interrupted"}
+        out = self.respond(role, ctx, workspace)
+        bind_candidates(out, ctx)
+        seal_response(out, ctx, workspace)
+        jsonschema.validate(out, output_schema)
+        submit_intent(control_binding, workspace, out)
+        return {"status": "completed", "output": out, "usage": {"calls": 1}, "error": None}
+
+    def respond(self, role, ctx, workspace):
+        """The role output, before binding and sealing, and the activity extensions it writes to ``workspace``."""
         out = common(role)
         if role == "intent_interpretation":
             out = intent_response(ctx)
@@ -146,11 +155,7 @@ class ScriptedRunner:
                         for row in extensions["model_assessments"]]
             if extensions:
                 path.write_text(json.dumps(extensions), encoding="utf-8")
-        bind_candidates(out, ctx)
-        seal_response(out, ctx, workspace)
-        jsonschema.validate(out, output_schema)
-        submit_intent(control_binding, workspace, out)
-        return {"status": "completed", "output": out, "usage": {"calls": 1}, "error": None}
+        return out
 
 
 def formal_ok(*, source, declarations, workspace, lean_command,

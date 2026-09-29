@@ -66,8 +66,7 @@ class CodexWorkerTests(unittest.TestCase):
                 def communicate(self, input=None, timeout=None): captured["stdin"] = input; return b"", b""
             old = os.environ.get("OPENAI_API_KEY"); os.environ["OPENAI_API_KEY"] = "must-not-pass"
             try:
-                with patch.object(cli_worker.subprocess, "Popen", Process):
-                    self.assertEqual(codex_worker.run(request_path), 0)
+                self.assertEqual(codex_worker.run(request_path, spawn=Process), 0)
             finally:
                 if old is None: os.environ.pop("OPENAI_API_KEY", None)
                 else: os.environ["OPENAI_API_KEY"] = old

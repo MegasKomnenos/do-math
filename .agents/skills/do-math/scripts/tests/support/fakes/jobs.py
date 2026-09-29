@@ -16,13 +16,10 @@ _ZERO_USAGE = {"limits": {"memory_bytes": None, "cpu_rate_basis_points": None},
 
 
 class FakeJob:
-    _next_pid = 40000
-
-    def __init__(self, program, argv, cwd, env, name, resource_limits):
+    def __init__(self, program, argv, cwd, env, name, resource_limits, pid):
         self.program, self.argv, self.cwd, self.env, self.name = program, list(argv), cwd, env, name
         self.resource_limits = validate_resource_limits(resource_limits)
-        FakeJob._next_pid += 4
-        self.pid, self.creation_filetime = FakeJob._next_pid, 133_000_000_000_000_000 + FakeJob._next_pid
+        self.pid, self.creation_filetime = pid, 133_000_000_000_000_000 + pid
         self.resumed = self.done = self.closed = False
         self.exit_code = None
 
@@ -66,6 +63,7 @@ class FakeJobs:
     def __init__(self, programs=()):
         self.programs = list(programs)
         self.launched = []
+        self._next_pid = 40000  # per fake, so equal scenarios see equal process identities
         self.owner = {'pid': 4242, 'creation_filetime': '133000000000000000', 'host': 'fake-host', 'session': 1}
 
     def owner_identity(self):
@@ -86,7 +84,8 @@ class FakeJobs:
         program = next((run for matches, run in self.programs if matches(list(argv))), None)
         if program is None:
             raise LookupError("no fake program for argv: " + repr(list(argv)[:3]))
-        job = FakeJob(program, argv, cwd, env, name, resource_limits)
+        self._next_pid += 4
+        job = FakeJob(program, argv, cwd, env, name, resource_limits, self._next_pid)
         self.launched.append(job)
         return job
 

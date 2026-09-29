@@ -346,7 +346,7 @@ class ObservationCollectionTests(unittest.TestCase):
                     Path(self.request['stdout_path']).write_text(
                         ''.join(json.dumps(e) + '\n' for e in events), encoding='utf-8')
                 return self.polls >= 2
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.model_runner.time.sleep'):
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.system_clock.time.sleep'):
             root = Path(directory)
             runner = runner_with(Burst({'result': 'output_collected', 'final': {'raw': b'{}'}, 'jsonl': {}}))
             delivered = []

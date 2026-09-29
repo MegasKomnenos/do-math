@@ -16,8 +16,11 @@ from .submission import producer_check
 from .system_clock import SystemClock
 
 
-def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
-    """Send one draft locator; central capture owns validation and immutable receipt bytes."""
+def request_control(workspace, draft, *, kind, wait_seconds, binding=None, clock=None):
+    """Send one draft locator; central capture owns validation and immutable receipt bytes.
+
+    ``clock`` makes the request ID (default: this process's system clock).
+    """
     from .control_server import wait_receipt
     from .control_transport import ControlTransport
     from .control_protocol import SUBMISSION_PREVIEW
@@ -25,7 +28,7 @@ def request_control(workspace, draft, *, kind, wait_seconds, binding=None):
                                                           binding=binding)
     # A locator is mutable; a corrected draft at the same path is a new call.
     # Query the returned request_id to resume waiting on the existing call.
-    request_id = ("preview-" if kind == SUBMISSION_PREVIEW else "submit-") + SystemClock().new_id("RQ")
+    request_id = ("preview-" if kind == SUBMISSION_PREVIEW else "submit-") + (clock or SystemClock()).new_id("RQ")
     delivery = ControlTransport.worker_submit(binding, request_id=request_id, kind=kind, payload=payload)
     if delivery["state"] == "closed":
         return delivery

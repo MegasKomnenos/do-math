@@ -779,16 +779,21 @@ def validation_fixture(toolchain, source):
 SYNTHETIC_TOOLCHAIN_FILES = ('bin/lean.exe', 'bin/lake.exe', 'bin/libleanshared.dll', 'lib/lean/Init/Prelude.olean')
 
 
-def trust_fixture(root, command):
+def trust_fixture(root, command, *, directory=None):
     """A synthetic installation, its shared toolchain record and the registration request.
 
     The checker identity is the real formal.py, so publication gates recompute a
-    consistent identity. Each call owns a new directory and record.
+    consistent identity. Each call owns a new directory and record; ``directory``
+    names it (a new empty directory) where a run must be reproducible.
     """
     import tempfile
     from do_math import formal, trust_inventory as records
     Path(root).mkdir(parents=True, exist_ok=True)
-    directory = Path(tempfile.mkdtemp(prefix='synthetic-trust-', dir=root)).resolve()
+    if directory is None:
+        directory = tempfile.mkdtemp(prefix='synthetic-trust-', dir=root)
+    else:
+        Path(directory).mkdir(parents=True)
+    directory = Path(directory).resolve()
     for relative in SYNTHETIC_TOOLCHAIN_FILES:
         path = directory / 'toolchain' / relative
         path.parent.mkdir(parents=True, exist_ok=True)

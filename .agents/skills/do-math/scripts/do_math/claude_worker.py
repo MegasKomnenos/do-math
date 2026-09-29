@@ -6,6 +6,7 @@ worker only runs the CLI and records its status.
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
 import sys
 
 try:
@@ -34,9 +35,10 @@ def build_argv(request: dict) -> list[str]:
     return claude_argv(request, control=control, data_dir=data_dir, schema=schema)
 
 
-def run(request_path: Path) -> int:
+def run(request_path: Path, *, spawn=subprocess.Popen) -> int:
+    """Run the checked request's Claude command; ``spawn`` starts it (``subprocess.Popen``'s shape)."""
     request = load_request(request_path)
-    return run_cli(request_path, request, build_argv(request), sanitized_environment())
+    return run_cli(request_path, request, build_argv(request), sanitized_environment(), spawn=spawn)
 
 
 if __name__ == "__main__":

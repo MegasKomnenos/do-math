@@ -39,8 +39,11 @@ def argv_inputs(request: Mapping[str, Any]) -> tuple[dict | None, str | None]:
 
 
 def run_cli(request_path: Path, request: Mapping[str, Any], command: list[str],
-            environment: dict[str, str]) -> int:
-    """Run one CLI with its stdin prompt and record the status the collector checks."""
+            environment: dict[str, str], *, spawn=subprocess.Popen) -> int:
+    """Run one CLI with its stdin prompt and record the status the collector checks.
+
+    ``spawn`` starts the CLI (``subprocess.Popen``'s shape); tests put the model double there.
+    """
     prompt = Path(request["prompt_path"]).read_bytes()
     schema = Path(request["output_schema_path"]).read_bytes() if "output_schema_path" in request else None
     stdout_path, stderr_path = Path(request["stdout_path"]), Path(request["stderr_path"])
@@ -57,7 +60,7 @@ def run_cli(request_path: Path, request: Mapping[str, Any], command: list[str],
     environment = {**environment, "TEMP": str(temporary.resolve()), "TMP": str(temporary.resolve())}
     try:
         with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
-            process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
+            process = spawn(command, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr,
                                        cwd=request["cwd"], env=environment, shell=False,
                                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             try:

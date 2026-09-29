@@ -1,7 +1,7 @@
 """Git backend port contract (설계 2.2): the git process and the in-process fake answer alike.
 
-Repositories are built without a git process: ``make_repository`` writes the
-minimal layout Git reads (HEAD, config, objects/, refs/heads/) and
+Repositories are built without a git process: ``make_repository`` (the fake's
+module) writes the minimal layout Git reads (HEAD, config, objects/, refs/heads/) and
 ``write_object`` writes loose objects, the form GitStateStore itself writes.
 The real side (boundary/test_port_git_backend.py) checks that git reads this
 layout too.
@@ -12,21 +12,9 @@ import tempfile
 import unittest
 import zlib
 
-from support.fakes.git_backend import make_fake
+from support.fakes.git_backend import make_fake, make_repository
 
 REF = 'refs/heads/do-math/RI-01M3HM0X0000000000000000AB'
-
-
-def make_repository(root, object_format='sha1'):
-    git = Path(root) / '.git'
-    (git / 'objects').mkdir(parents=True)
-    (git / 'refs' / 'heads').mkdir(parents=True)
-    (git / 'HEAD').write_bytes(b'ref: refs/heads/main\n')
-    extensions = '[extensions]\n\tobjectformat = sha256\n' if object_format == 'sha256' else ''
-    version = 1 if object_format == 'sha256' else 0
-    (git / 'config').write_text(f'[core]\n\trepositoryformatversion = {version}\n\tbare = false\n{extensions}',
-                                encoding='utf-8')
-    return Path(root)
 
 
 def write_object(repository, kind, body, object_format='sha1'):

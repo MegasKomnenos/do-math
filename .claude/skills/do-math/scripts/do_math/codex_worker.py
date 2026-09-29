@@ -7,6 +7,7 @@ in ``cli_worker``.
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
 import sys
 from typing import Any, Mapping
 
@@ -35,9 +36,10 @@ def build_argv(request: Mapping[str, Any]) -> list[str]:
     return codex_argv(request, control=control, data_dir=data_dir)
 
 
-def run(request_path: Path) -> int:
+def run(request_path: Path, *, spawn=subprocess.Popen) -> int:
+    """Run the checked request's Codex command; ``spawn`` starts it (``subprocess.Popen``'s shape)."""
     request = load_request(request_path)
-    return run_cli(request_path, request, build_argv(request), sanitized_environment())
+    return run_cli(request_path, request, build_argv(request), sanitized_environment(), spawn=spawn)
 
 
 def main(argv: list[str] | None = None) -> int:
