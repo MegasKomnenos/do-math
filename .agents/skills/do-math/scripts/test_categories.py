@@ -30,7 +30,7 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_reassessment test_reference_catalog test_relation_dependencies test_repair_execution
         test_reporting test_repository test_review_cycle test_review_policy
         test_review_scope_wire test_revision_obligations test_scholarly test_standalone
-        test_state_checks test_state_contract test_submission_checks test_supervisor_recovery
+        test_state_contract test_submission_checks test_supervisor_recovery
         test_task_contracts test_task_scope test_test_runner test_trust_continuation
         test_unicode_flow''',
     'host': '''

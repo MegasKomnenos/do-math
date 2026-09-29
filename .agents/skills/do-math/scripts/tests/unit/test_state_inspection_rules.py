@@ -1,19 +1,35 @@
-"""Persisted state checks against records made by actual domain producers and adversarial mutations."""
-from copy import deepcopy
-from pathlib import Path
-import sys
-import unittest
-import hashlib
-from unittest.mock import Mock, create_autospec
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+"""Persisted-state inspection (``state_checks``, layer 2) and the load-time state contract, on records made by domain producers.
 
-from do_math import external, knowledge_records, repository
+``inspect_state`` receives loaded states, so a condition the state contract
+checks when a state loads is asserted against ``default_state_contract``
+(``assertRejectedAtLoad``) and the inspection only reports what a loaded state
+can still get wrong. The batch-read rules of the ``record_storage`` area take
+their readers as arguments. The engine's entry inspection and its ``check``
+(``core_engine``, layer 2) run on the real engine over a real repository on the
+in-process Git fake; artifact bytes that differ from their seal are made by
+another writer's commit (``rewrite_commit``), since the product never
+publishes them.
+"""
+from copy import deepcopy
+import hashlib
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import Mock
+
+import jsonschema
+
+from do_math import external, knowledge_records
+from do_math.context_store import prefetch_artifacts
+from do_math.engine import ResearchEngine
+from do_math.git_store import GitStateStoreError
 from do_math.state_checks import inspect_state
 from do_math.state_contract import default_state_contract
-from research_fixtures import bare_engine, current_state
 from record_fixtures import surface_state
-from do_math.context_store import prefetch_artifacts
-from do_math.git_store import GitStateStoreError
+from research_fixtures import current_state
+from support.fakes.clock import FakeClock
+from support.storage_git import ObservedGit, rewrite_commit
+from support.storage_records import INSTANCE_ID, fake_ports, record_store
 
 
 def storage_state(refs):
@@ -61,6 +77,13 @@ class StateCheckTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, pattern):
             default_state_contract().validate(instance, runtime)
 
+    def area(self, instance, runtime, name):
+        return inspect_state(instance, runtime, requested_areas=[name])
+
+    def assertError(self, instance, runtime, text, area):
+        errors = self.area(instance, runtime, area)['findings']
+        self.assertTrue(any(text in row['message'] for row in errors), errors)
+
     def test_valid_rule_payload_is_not_an_error_list(self):
         from research_fixtures import supply_observation_rules
         instance, runtime = surface_state()
@@ -72,13 +95,6 @@ class StateCheckTests(unittest.TestCase):
         self.assertEqual(self.area(instance, runtime, 'self_check_stop')['status'], 'healthy')
         runtime['executions']['EX-1']['observation_rules'][0]['threshold'] = 0
         self.assertError(instance, runtime, 'positive integer', 'self_check_stop')
-
-    def area(self, instance, runtime, name):
-        return inspect_state(instance, runtime, requested_areas=[name])
-
-    def assertError(self, instance, runtime, text, area):
-        errors = self.area(instance, runtime, area)['findings']
-        self.assertTrue(any(text in row['message'] for row in errors), errors)
 
     def test_domain_created_activity_execution_profiles_are_clean(self):
         instance, runtime = surface_state()
@@ -154,13 +170,16 @@ class StateCheckTests(unittest.TestCase):
 
     def test_completion_requires_all_obligations_and_authoritative_waiver(self):
         from record_fixtures import task_contract
+        from do_math.execution_profiles import profile_ref
         instance, runtime = surface_state()
         value = task_contract()
         value['status'] = 'completed'
-        from do_math.execution_profiles import profile_ref
-        value['profile_refs'] = [profile_ref(next(p for p in instance['execution_profiles'].values() if p['role']=='research_work'))]
-        value['assessment'] = {'task_id':value['id'],'decision':'completed','reason':'Obligations assessed', 'item_dispositions': [
-            {'obligation_id': 'OB-1', 'kind': 'fulfilled', 'evidence_refs': ['EV-1']}], 'unresolved': []}
+        value['profile_refs'] = [profile_ref(next(p for p in instance['execution_profiles'].values()
+                                                  if p['role'] == 'research_work'))]
+        value['assessment'] = {'task_id': value['id'], 'decision': 'completed', 'reason': 'Obligations assessed',
+                               'item_dispositions': [
+                                   {'obligation_id': 'OB-1', 'kind': 'fulfilled', 'evidence_refs': ['EV-1']}],
+                               'unresolved': []}
         # Loading checks the dispositions of every recorded assessment.
         loaded = deepcopy(runtime)
         loaded['tasks'][value['id']] = {**deepcopy(value), 'authority_refs': []}
@@ -176,8 +195,8 @@ class StateCheckTests(unittest.TestCase):
     def test_solved_goal_requires_current_complete_audits(self):
         instance, runtime = surface_state()
         instance.update(goal_status='mathematically_solved', goal_assessment_basis='GB')
-        instance['goal_judgments'] = [{'id': 'GJ-1', 'execution_id': 'EX-1', 'basis': 'GB', 'required': 1, 'slot': 'one',
-                                     'decision': 'satisfied', 'scope_complete': True}]
+        instance['goal_judgments'] = [{'id': 'GJ-1', 'execution_id': 'EX-1', 'basis': 'GB', 'required': 1,
+                                       'slot': 'one', 'decision': 'satisfied', 'scope_complete': True}]
         self.assertEqual(self.area(instance, runtime, 'mathematical_effect')['status'], 'healthy')
         instance['goal_judgments'][0]['current'] = False
         self.assertError(instance, runtime, 'current agreeing audits', 'mathematical_effect')
@@ -191,14 +210,14 @@ class StateCheckTests(unittest.TestCase):
         self.assertError(instance, runtime, 'queued investigation is not linked', 'preparation_selection')
 
     def test_external_error_http_remains_unknown_and_reconciliation_is_distinct(self):
-        instance, runtime = surface_state()
-        operation = external.prepare_operation({'method': 'POST', 'url': 'https://example.test/', 'body': ''}, 'GR', 'SRC', 'OP')
-        operation['producer_executions'] = ['EX-1']
-        import jsonschema
         from do_math.record_schemas import RECORDS, REFERENCES
+        instance, runtime = surface_state()
+        operation = external.prepare_operation({'method': 'POST', 'url': 'https://example.test/', 'body': ''},
+                                               'GR', 'SRC', 'OP')
+        operation['producer_executions'] = ['EX-1']
         jsonschema.validate(operation, RECORDS['external_operations'])
         self.assertIn(('EX-1', 'executions'), list(REFERENCES['external_operations'](operation)))
-        with self.assertRaises(jsonschema.ValidationError):
+        with self.assertRaisesRegex(jsonschema.ValidationError, "1 is not of type 'string'"):
             jsonschema.validate({**operation, 'producer_executions': [1]}, RECORDS['external_operations'])
         # An actual domain transport response, not a fabricated successful receipt.
         grant = {'id': 'GR', 'status': 'active', 'allowed_origins': ['https://example.test'],
@@ -233,7 +252,8 @@ class StateCheckTests(unittest.TestCase):
 
     def test_execution_outcome_is_a_closed_value_at_load(self):
         instance, runtime = surface_state()
-        runtime['executions']['EX-1'].update(status='ended', ended_at='2026-01-01T00:00:00+00:00', outcome='finished')
+        runtime['executions']['EX-1'].update(status='ended', ended_at='2026-01-01T00:00:00+00:00',
+                                             outcome='finished')
         self.assertRejectedAtLoad(instance, runtime, 'outcome')
 
     def test_reservation_requires_balanced_settlement_and_existing_owner(self):
@@ -342,60 +362,101 @@ class BatchedInspectionTests(unittest.TestCase):
             read('one')
         self.assertEqual(read('another'), b'single')
 
+
+class EngineEntryInspectionTests(unittest.TestCase):
     def test_engine_entry_checks_presence_and_length_while_check_compares_bytes(self):
-        head = 'a' * 40
+        """The run/controls entry inspection (``_inspect_before_write``) reads stored lengths only; ``check`` compares bytes.
+
+        Over the in-process Git fake every artifact byte read is a
+        ``read_objects`` port call and every length query an ``object_info``
+        one. Changed, removed and shortened artifacts are later commits of
+        another writer. The repository answers lengths it published itself from
+        memory, so length queries reach Git only on those later commits; there
+        the fake moves ``engine.head`` at the first artifact query, and a later
+        query that read the engine's head instead of the snapshot it observed
+        would name another commit.
+        About 0.5 s, over the 0.2 s unit budget: the real engine loads and
+        validates the stored state, and three more commits are loaded again.
+        """
         output_path = 'runtime/artifacts/BA-output/result.bin'
         input_path = 'runtime/artifacts/BA-input/input.txt'
-        files = {output_path: b'\x00\xff'}
-        instance, runtime = storage_state([artifact(output_path, files[output_path])])
-        runtime['executions']['EX-1'].update(input_bundle='BA-input',
-            input_manifest=archived_role_input('BA-input', head, files))
-        engine = bare_engine(instance, runtime, head=head, store=create_autospec(repository.ResearchRepository, instance=True))
-        engine.store.load.return_value = (head, instance, runtime)
-        engine.store.read.side_effect = AssertionError('normal inspection must use batch reads')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            clock, backend = FakeClock(), ObservedGit()
+            repository = record_store(root / 'repository', backend=backend, clock=clock)
+            instance, runtime = at_load(*surface_state())
+            instance['workspace'] = str(root / 'work')
+            first = repository.initialize(instance, runtime)
+            files = {output_path: b'\x00\xff'}
+            runtime['executions']['EX-1'].update(
+                output_files=[{**artifact(output_path, files[output_path]), 'path': 'result.bin'}],
+                input_bundle='BA-input', input_manifest=archived_role_input('BA-input', first, files))
+            head = repository.save_with_state(first, instance, runtime, artifacts=files)[0]
+            engine = ResearchEngine(repository.repository, INSTANCE_ID, ports=fake_ports(clock, backend))
+            self.assertEqual(engine.head, head)
+            manifest_paths = sorted(path for path in files if path.startswith('runtime/artifacts/BA-input/'))
 
-        # Both batch readers leave paths absent from the snapshot out of their result.
-        def batch(paths, snapshot, *, missing='raise'):
-            self.assertEqual((snapshot, missing), (head, 'omit'))
-            engine.head = 'b' * 40  # Later callbacks must retain the observed snapshot.
-            return {path: files[path] for path in paths if path in files}
+            def move_head(operation, arguments):
+                if operation in ('object_info', 'read_objects') and any(':runtime/artifacts/' in spec
+                                                                        for spec in arguments[0]):
+                    engine.head = first
+            backend.before = move_head
 
-        def sizes(paths, snapshot, *, missing='raise'):
-            self.assertEqual((snapshot, missing), (head, 'omit'))
-            return {path: len(files[path]) for path in paths if path in files}
+            def named_commits(operation, since):
+                return {spec.partition(':')[0] for specs in backend.artifact_specs(operation, since) for spec in specs}
 
-        engine.store.read_many.side_effect = batch
-        engine.store.blob_sizes.side_effect = sizes
-        engine._inspect_before_write()
-        # Entry to run/controls reads no artifact bytes: same-length changes are check's.
-        self.assertEqual(engine.store.read_many.call_count, 0)
-        self.assertTrue(engine.check(requested_areas=['start_import_input'])['passed'])
-        engine.head = head
-        files[input_path] = b'exact prompX'
-        engine._inspect_before_write()
-        # The start_import_input area compares each archived role input, prompt included.
-        result = engine.check(requested_areas=['start_import_input'])
-        self.assertFalse(result['passed'])
-        self.assertIn('EX-1: input artifact bytes differ: prompt',
-                      [row['message'] for row in result['inspection']['findings']])
-        del files[input_path]
-        engine.head = head
-        with self.assertRaisesRegex(ValueError, 'current input artifact is missing: EX-1'):
+            mark = len(backend.calls)
             engine._inspect_before_write()
-        files[output_path] = b'\x00'
-        with self.assertRaisesRegex(ValueError, 'repaired before publication'):
+            # Entry to run/controls reads no artifact bytes: same-length changes are check's.
+            self.assertNotIn('read_objects', backend.operations(mark))
+            mark = len(backend.calls)
+            self.assertTrue(engine.check(requested_areas=['start_import_input'])['passed'])
+            # One batch read of every archived role input, at the loaded snapshot; no single-file reads.
+            reads = backend.artifact_specs('read_objects', mark)
+            self.assertEqual(len(reads), 1)
+            self.assertEqual(sorted(reads[0]), [head + ':' + path for path in manifest_paths])
+
+            # The start_import_input area compares each archived role input, prompt included.
+            changed = rewrite_commit(repository, head, {input_path: b'exact prompX'})
+            engine._reload()
+            self.assertEqual(engine.head, changed)
+            mark = len(backend.calls)
             engine._inspect_before_write()
-        engine.store.read.assert_not_called()
+            self.assertNotIn('read_objects', backend.operations(mark))
+            self.assertEqual(named_commits('object_info', mark), {changed})
+            self.assertEqual(engine.head, first)  # the fake did move it
+            result = engine.check(requested_areas=['start_import_input'])
+            self.assertFalse(result['passed'])
+            self.assertIn('EX-1: input artifact bytes differ: prompt',
+                          [row['message'] for row in result['inspection']['findings']])
+
+            removed = rewrite_commit(repository, changed, {input_path: None})
+            engine._reload()
+            with self.assertRaisesRegex(ValueError, 'current input artifact is missing: EX-1'):
+                engine._inspect_before_write()
+            # Both batch readers leave a path absent from the snapshot out of their result.
+            result = engine.check(requested_areas=['start_import_input'])
+            self.assertEqual(result['snapshot'], removed)
+            self.assertIn('EX-1: input artifact is missing: prompt',
+                          [row['message'] for row in result['inspection']['findings']])
+
+            shortened = rewrite_commit(repository, removed, {output_path: b'\x00'})
+            engine._reload()
+            self.assertEqual(engine.head, shortened)
+            with self.assertRaisesRegex(ValueError, 'repaired before publication'):
+                engine._inspect_before_write()
+            self.assertTrue(all(len(specs) == len(manifest_paths)
+                                for specs in backend.artifact_specs('read_objects')))
 
 
 class CheckAreaTests(unittest.TestCase):
     def test_cleanup_aborted_attempt_is_not_healthy(self):
         instance, runtime = surface_state()
-        runtime['history'] = [{'kind':'maintenance_cleanup_failed','execution_id':'EX-maint',
-                              'paths':['runs/EX-1'],'completed_paths':[],
-                              'reason':'root inaccessible','next_owner':'maintenance'}]
-        result=inspect_state(instance,runtime,requested_areas=['record_storage'])
-        self.assertEqual(result['status'],'degraded')
+        runtime['history'] = [{'kind': 'maintenance_cleanup_failed', 'execution_id': 'EX-maint',
+                               'paths': ['runs/EX-1'], 'completed_paths': [],
+                               'reason': 'root inaccessible', 'next_owner': 'maintenance'}]
+        result = inspect_state(instance, runtime, requested_areas=['record_storage'])
+        self.assertEqual(result['status'], 'degraded')
 
     def test_cleanup_history_is_the_degraded_source(self):
         instance, runtime = surface_state()
@@ -410,9 +471,12 @@ class CheckAreaTests(unittest.TestCase):
         self.assertEqual(inspect_state(instance, runtime, requested_areas=['record_storage'])['status'], 'healthy')
 
     def test_area_errors_are_not_copied_to_unrelated_areas(self):
-        result = inspect_state({'sources': [{'sha256': 'a' * 64}]}, {'activities': {}, 'executions': {}, 'tasks': {}}, requested_areas=['record_storage', 'tasks_activities_executions'])
-        self.assertTrue(any(f['area'] == 'record_storage' and 'source[0]: missing name' in f['message'] for f in result['findings']))
-        self.assertFalse(any(f['area'] == 'tasks_activities_executions' and 'source[0]' in f['message'] for f in result['findings']))
+        result = inspect_state({'sources': [{'sha256': 'a' * 64}]}, {'activities': {}, 'executions': {}, 'tasks': {}},
+                               requested_areas=['record_storage', 'tasks_activities_executions'])
+        self.assertTrue(any(f['area'] == 'record_storage' and 'source[0]: missing name' in f['message']
+                            for f in result['findings']))
+        self.assertFalse(any(f['area'] == 'tasks_activities_executions' and 'source[0]' in f['message']
+                             for f in result['findings']))
 
     def test_requested_check_areas_distinguish_unchecked_from_healthy(self):
         instance = {"sources": [], "knowledge": {}, "trust_environments": {}}
@@ -424,9 +488,10 @@ class CheckAreaTests(unittest.TestCase):
         unknown = inspect_state(instance, runtime, requested_areas=["not_an_area"])
         self.assertEqual(unknown["status"], "incomplete")
         self.assertEqual(unknown["not_checked"], ["not_an_area"])
-        self.assertEqual(unknown["areas"], [{"name": "not_an_area", "status": "incomplete", "checked": False, "findings": 1}])
+        self.assertEqual(unknown["areas"], [{"name": "not_an_area", "status": "incomplete", "checked": False,
+                                             "findings": 1}])
         self.assertEqual(unknown["findings"][0]["next_owner"], "operator")
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main()
