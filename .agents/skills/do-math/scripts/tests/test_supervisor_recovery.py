@@ -78,7 +78,7 @@ class SupervisorRecoveryTests(unittest.TestCase):
                 self.assertEqual(scheduled_operator.recovery(root, iid, root, failure=failure)["outcome"], "engine_running")
                 runner.assert_not_called()
             with patch.object(scheduled_operator.ModelRunner, "run", return_value={"status": "failed", "error": "fixture"}), \
-                 patch("do_math.initialization.adapter_for", return_value=self.capability_adapter()):
+                 patch("do_math.local_host.adapter_for", return_value=self.capability_adapter()):
                 result = scheduled_operator.recovery(root, iid, root, failure=failure)
             self.assertEqual(result["outcome"], "recovery_failed")
             new_head, instance, runtime = repository.load()
@@ -127,7 +127,7 @@ class SupervisorRecoveryTests(unittest.TestCase):
                                         for e in published["executions"].values()))
                 return {"outcome": "engine_requested"}
             with patch.object(scheduled_operator.ModelRunner, "run", side_effect=repaired), \
-                 patch("do_math.initialization.adapter_for", return_value=self.capability_adapter()), \
+                 patch("do_math.local_host.adapter_for", return_value=self.capability_adapter()), \
                  patch('do_math.repair_execution.installation_sha256', return_value='b' * 64), \
                  patch.object(scheduled_operator.subprocess, "run", side_effect=verification), \
                  patch.object(scheduled_operator, "wake", side_effect=restart), \
@@ -160,7 +160,7 @@ class SupervisorRecoveryTests(unittest.TestCase):
                 arguments["on_started"]({"job_name": arguments["launch_ticket"]["job_name"], "pid": 42})
                 return {"status": "completed", "output": {"summary": "report is not termination evidence"}}
             with patch.object(scheduled_operator, "ResearchRepository", return_value=repo), \
-                 patch("do_math.initialization.adapter_for", return_value=self.capability_adapter()), \
+                 patch("do_math.local_host.adapter_for", return_value=self.capability_adapter()), \
                  patch.object(scheduled_operator, "LIVE_INSTALLATION_ROOT", root / "live-installation", create=True), \
                  patch.object(scheduled_operator.ModelRunner, "run", side_effect=model), \
                  patch.object(scheduled_operator.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "ok", "")) as verify, \
@@ -186,7 +186,7 @@ class SupervisorRecoveryTests(unittest.TestCase):
             runtime = {"executions": {}, "reservations": {}, "status": "ready"}
             repo = repository_double(root, instance, runtime, published="capability-published")
             with patch.object(scheduled_operator, "ResearchRepository", return_value=repo), \
-                 patch("do_math.initialization.adapter_for", return_value=self.capability_adapter(supported=False)), \
+                 patch("do_math.local_host.adapter_for", return_value=self.capability_adapter(supported=False)), \
                  patch.object(scheduled_operator.ModelRunner, "run") as runner:
                 result = scheduled_operator.recovery(root, "test", root,
                     failure={"kind": "engine_unavailable", "error": "fixture"})

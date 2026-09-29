@@ -41,6 +41,7 @@ LAYERS = {
     'do_math/engine.py': '3',
     'do_math/events.py': '1',
     'do_math/execution_lifecycle.py': '2',
+    'do_math/execution_profiles.py': '2',
     'do_math/execution_window.py': '2',
     'do_math/external.py': '2',
     'do_math/external_engine.py': '2',
@@ -55,6 +56,7 @@ LAYERS = {
     'do_math/http_request.py': '1',
     'do_math/http_transport.py': 'adapter',
     'do_math/ids.py': '1',
+    'do_math/initialization.py': '2',
     'do_math/initialization_engine.py': '2',
     'do_math/input_basis.py': '2',
     'do_math/input_recovery.py': '2',
@@ -68,6 +70,7 @@ LAYERS = {
     'do_math/layers.py': '1',
     'do_math/lean_evidence.py': '1',
     'do_math/lifecycle_engine.py': '2',
+    'do_math/local_host.py': '3',
     'do_math/maintenance_gate.py': '2',
     'do_math/migration_defaults.py': '2',
     'do_math/model_call.py': '2',
@@ -86,6 +89,7 @@ LAYERS = {
     'do_math/ports/calls.py': '1',
     'do_math/ports/clock.py': '1',
     'do_math/ports/git_backend.py': '1',
+    'do_math/ports/host.py': '1',
     'do_math/ports/http.py': '1',
     'do_math/ports/jobs.py': '1',
     'do_math/ports/scheduler.py': '1',
@@ -123,6 +127,7 @@ LAYERS = {
     'do_math/task_scope.py': '2',
     'do_math/trace_report.py': '2',
     'do_math/trust_inventory.py': '2',
+    'do_math/trust_validation.py': '2',
     'do_math/values.py': '1',
     'do_math/windows_job.py': 'adapter',
     'do_math/wiring.py': '3',
@@ -132,8 +137,4 @@ LAYERS = {
     'setup_lean.py': '3',
 }
 
-PENDING = {
-    'do_math/execution_profiles.py': '1',
-    'do_math/initialization.py': '2',
-    'do_math/trust_validation.py': '2',
-}
+PENDING = {}

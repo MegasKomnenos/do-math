@@ -398,7 +398,7 @@ class DesignWalkthroughs(unittest.TestCase):
 class PriorityVectorTests(unittest.TestCase):
     def test_v45_scheduler_blocks_other_activity_and_allows_ended_retry(self):
         e = evidence_engine(); task = reviewed_task(e)
-        from do_math.initialization import adapter_for
+        from do_math.local_host import adapter_for
         # Fixture behavioral capability observations are bound to actual local
         # adapter/worker identity. Reading hashes does not execute the CLI.
         e.instance['capability_evidence'] = {}

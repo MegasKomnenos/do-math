@@ -47,7 +47,7 @@ def prepared_tasks(root, shared, *, config, count):
     runner.answer = answer
     instance_id = active_instance(root, shared, config=config)
     engine = ResearchEngine(root / "repository", instance_id, runner=runner, formal_verifier=purpose.formal_fixture)
-    with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
+    with patch("do_math.local_host.adapter_for", return_value=FixtureAdapter()):
         for _ in range(45):
             engine.run(max_steps=1)
             if sum(a["role"] == "research_work" for a in engine.runtime["queue"]) == count:

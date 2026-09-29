@@ -8,6 +8,7 @@ import unittest
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
+from do_math.local_host import LocalHost
 
 from do_math.initialization import (  # noqa: E402
     activation_requirements,
@@ -38,8 +39,8 @@ class ActivationGateTests(unittest.TestCase):
         self.assertEqual(instance["lifecycle"]["state"], "initializing")
         self.assertEqual(runtime["status"], "initializing")
         self.assertEqual(runtime["queue"], [])
-        self.assertIn("governance", activation_requirements(instance, runtime)["missing"])
-        self.assertIn("trust_environment", activation_requirements(instance, runtime)["missing"])
+        self.assertIn("governance", activation_requirements(instance, runtime, host=LocalHost())["missing"])
+        self.assertIn("trust_environment", activation_requirements(instance, runtime, host=LocalHost())["missing"])
         self.assertEqual(runtime["availability"]["state"], "blocked")
 
     def test_formal_use_cannot_register_or_activate_an_environment(self):
@@ -79,7 +80,7 @@ class ActivationGateTests(unittest.TestCase):
         from engine_fixtures import FakeEngine
         from research_fixtures import FixtureAdapter
         from unittest.mock import patch
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for',return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.local_host.adapter_for',return_value=FixtureAdapter()):
             engine=FakeEngine(root)
             self.assertFalse(engine._activate_initialization()['activated'])
             engine.activate()

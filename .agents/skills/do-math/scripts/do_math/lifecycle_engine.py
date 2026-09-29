@@ -113,7 +113,8 @@ class LifecycleEngineMixin:
         return guard['observed_utc']
 
     def _capability_requirements(self, reference):
-        return capability_requirements(self.instance, reference, at=self._lifecycle_now().isoformat())
+        return capability_requirements(self.instance, reference, at=self._lifecycle_now().isoformat(),
+                                       host=self.ports.host)
 
     def _instance_closed(self):
         return instance_ended(self.instance, self.runtime)
@@ -182,6 +183,7 @@ class LifecycleEngineMixin:
         from .session_slots import quiescence
         self.runtime['recovery_checked'] = not any(quiescence(self.runtime).values())
         requirements = activation_requirements(self.instance, self.runtime, at=self._lifecycle_now().isoformat(),
+                                               host=self.ports.host,
             owner_handlers=self.governance_owner_handlers())
         lifecycle.setdefault('activation', {})['missing'] = requirements['missing']
         lifecycle['activation']['observation_errors'] = requirements['observation_errors']

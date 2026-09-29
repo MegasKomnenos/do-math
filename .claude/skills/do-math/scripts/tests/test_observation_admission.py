@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.local_host import LocalHost
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.execution_profiles import build_profiles
 from do_math.initialization import initialize_state, activation_requirements
@@ -19,7 +20,7 @@ class ObservationAdmissionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             instance, runtime = initialize_state(instance_id='RI-default', goal='A goal', workspace=root, config=deepcopy(DEFAULT_CONFIG), source_input='Original request')
             instance.update(build_profiles(instance['config']))
-            result = activation_requirements(instance, runtime)
+            result = activation_requirements(instance, runtime, host=LocalHost())
             self.assertFalse(result['satisfied'])
             # The current role profiles are the adopted editions; no separate profile list is required.
             self.assertNotIn('profiles', result['missing'])
@@ -80,7 +81,7 @@ class ObservationAdmissionTests(unittest.TestCase):
         from do_math.engine import ResearchEngine
         from research_fixtures import FixtureAdapter
         from unittest.mock import patch
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             engine = FakeEngine(root)
             engine.activate()
             engine._execution_profile = MethodType(ResearchEngine._execution_profile, engine)

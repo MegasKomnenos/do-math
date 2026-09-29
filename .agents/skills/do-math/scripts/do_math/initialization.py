@@ -19,20 +19,18 @@ def original_input_bytes(record):
     return text.encode('utf-8')
 
 
-def adapter_for(profile):
-    from .claude_adapter import provider_adapter
-    return provider_adapter(profile["ai"]["provider"])
+def capability_requirements(instance, reference, *, current_identity=None, at=None, host=None):
+    """Use exact profile/host/implementation evidence, never profile booleans.
 
-
-def capability_requirements(instance, reference, *, current_identity=None, at=None):
-    """Use exact profile/host/implementation evidence, never profile booleans."""
+    Without ``current_identity`` the host port observes the profile's CLI.
+    """
     missing = []
     try:
         profile = match_profile_ref(instance.get("execution_profiles", {}), reference)
         missing = sorted(set(profile.get("required_capabilities", [])))
         if profile["actor_kind"] == "machine":
             return {"satisfied": not missing, "missing": missing, "profile_ref": reference, "evidence_refs": []}
-        identity = current_identity if current_identity is not None else adapter_for(profile).capability_identity()
+        identity = current_identity if current_identity is not None else host.cli_identity(profile)
         current_time = timestamp(at)
         evidence = [row for row in instance.get("capability_evidence", {}).values()
                     if row.get("execution_profile_ref") == reference and row.get("identity") == identity
@@ -56,18 +54,17 @@ def capability_requirements(instance, reference, *, current_identity=None, at=No
         return {"satisfied": False, "missing": missing, "profile_ref": reference, "reason": str(exc)}
 
 
-def _capability_batch_requirements(instance, references, *, at=None):
-    """Observe each provider once for this check; validate every exact profile."""
+def _capability_batch_requirements(instance, references, *, at=None, host=None):
+    """Observe each provider once for this check through the host port; validate every exact profile."""
     identities = {}
     for reference in references:
         try:
             profile = match_profile_ref(instance.get("execution_profiles", {}), reference)
             identity = None
             if profile["actor_kind"] == "ai":
-                adapter = adapter_for(profile)
-                key = (profile['ai']['provider'], adapter.observation_key())
+                key = (profile['ai']['provider'], host.cli_observation_key(profile))
                 if key not in identities:
-                    identities[key] = adapter.capability_identity()
+                    identities[key] = host.cli_identity(profile)
                 identity = identities[key]
             yield capability_requirements(instance, reference, current_identity=identity, at=at)
         except (ValueError, KeyError, TypeError, OSError) as exc:
@@ -187,7 +184,7 @@ def observation_window_warnings(instance, runtime):
     return warnings
 
 
-def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
+def activation_requirements(instance, runtime, *, at=None, owner_handlers=None, host=None):
     """Evaluate current evidence; none of these checks creates authority."""
     lifecycle = instance.get("lifecycle", {})
     adoption = lifecycle.get("adoption", {})
@@ -248,7 +245,7 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None):
         observation_errors.extend(observation_settings_errors(profile))
     if observation_errors:
         missing.append('observation_configuration')
-    for capability in _capability_batch_requirements(instance, references, at=at):
+    for capability in _capability_batch_requirements(instance, references, at=at, host=host):
         if not capability["satisfied"]:
             missing.append("capability_evidence")
             break

@@ -6,13 +6,10 @@ from .system_clock import SystemClock
 from .windows_job import WindowsJobs
 from .http_transport import UrllibHttp
 from .powershell_scheduler import PowerShellScheduler
+from .local_host import LocalHost
 
 
 def real_ports() -> Ports:
     return Ports(clock=SystemClock(), git_backend=GitProcess(), calls=ThreadCalls(), jobs=WindowsJobs(),
-                 scheduler=PowerShellScheduler(), http=UrllibHttp())
-
-
-def default_clock():
-    """The real clock for callers not yet handed a Ports bundle (stage 1b migration only)."""
-    return real_ports().clock
+                 scheduler=PowerShellScheduler(), http=UrllibHttp(),
+                 host=LocalHost())

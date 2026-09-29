@@ -631,7 +631,7 @@ class ArchivedControlInputTests(unittest.TestCase):
         from engine_fixtures import FakeEngine
         from research_fixtures import FixtureAdapter
         from do_math.context_store import prepare_role_input
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             root = Path(directory)
             owner = FakeEngine(root); owner.activate()
             import base64

@@ -56,7 +56,7 @@ def ready_work(root, shared, *, count, public, config):
     engine = ResearchEngine(root / "repository", instance_id, runner=ScriptedRunner(
         preparation_candidates=[candidate(str(i)) for i in range(count)],
         model_rating={"difficulty": "high", "importance": "medium", "reason": "Independent novel fixture approaches"}))
-    with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
+    with patch("do_math.local_host.adapter_for", return_value=FixtureAdapter()):
         engine.run(max_steps=1)
         if public:
             engine.run(max_steps=count)
@@ -826,7 +826,7 @@ class SchedulingResponsibilityTests(unittest.TestCase):
     def test_initial_preparation_owns_initial_events_until_accepted(self):
         from engine_fixtures import FakeEngine
         from research_fixtures import FixtureAdapter
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             engine = FakeEngine(directory); engine.activate()
             engine.instance['lifecycle']['state'] = 'initializing'
             engine.runtime['status'] = 'initializing'
@@ -841,7 +841,7 @@ class SchedulingResponsibilityTests(unittest.TestCase):
     def test_normal_dispatch_occupancy_does_not_request_a_new_plan(self):
         from engine_fixtures import FakeEngine
         from research_fixtures import FixtureAdapter
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             engine = FakeEngine(directory); engine.activate(); task = engine.task()
             engine._refresh_readiness()
             engine.runtime['queue'] = [{'id': 'AC-work', 'role': 'research_work', 'target': task['id']}]

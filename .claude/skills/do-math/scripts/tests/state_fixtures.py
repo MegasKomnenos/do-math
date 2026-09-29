@@ -42,7 +42,7 @@ def active_instance(root, shared, *, config, external_policy='explicit_grants', 
     git_init(repository)
     workspace = root / "work-0"
     workspace.mkdir(parents=True, exist_ok=True)
-    with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
+    with patch("do_math.local_host.adapter_for", return_value=FixtureAdapter()):
         seed = FakeEngine(workspace, config=config)
         seed.root = Path(shared)
         seed.activate(external_policy=external_policy, review_policy=review_policy)
@@ -76,7 +76,7 @@ def start_active_copy(test):
     The adapter observation stays replaced by ``FixtureAdapter`` until the test ends.
     """
     from research_fixtures import FixtureAdapter
-    test.enterContext(patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()))
+    test.enterContext(patch("do_math.local_host.adapter_for", return_value=FixtureAdapter()))
     test.root, test.repo, test.identifier = active_repository()
 
 

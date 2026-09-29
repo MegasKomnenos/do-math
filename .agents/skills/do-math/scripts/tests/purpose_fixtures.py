@@ -486,7 +486,7 @@ def solved_instance(root, shared, *, criteria):
     from research_fixtures import activated_instance
     instance_id = activated_instance(root, shared, goal=GOAL, config=PurposeHarness.fixture_config())
     engine = ResearchEngine(root / "repository", instance_id, runner=AcademicRunner(), formal_verifier=formal_fixture)
-    with patch("do_math.initialization.adapter_for", side_effect=lambda profile: FixtureAdapter()):
+    with patch("do_math.local_host.adapter_for", side_effect=lambda profile: FixtureAdapter()):
         if criteria is not None:
             send_control(engine, "decision", config={"change": charter_change(engine,
                 academic_requirements=[requirement(criteria)])})
@@ -518,7 +518,7 @@ def purpose_state(root, shared, *, config, until, review_policy=None, external_p
                                   review_policy=review_policy)
     engine = ResearchEngine(root / 'repository', instance_id, runner=PurposeRunner(),
                             formal_verifier=signed_formal_fixture if signed else formal_fixture)
-    with patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+    with patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
         for _ in range(45):
             engine.run(max_steps=1)
             if _STOPS[until](engine):

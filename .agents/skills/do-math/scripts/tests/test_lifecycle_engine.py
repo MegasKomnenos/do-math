@@ -184,7 +184,7 @@ class PublicLifecycleTests(unittest.TestCase):
 class LifecycleTests(unittest.TestCase):
     def setUp(self):
         temp=tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
-        mock=patch('do_math.initialization.adapter_for',return_value=FixtureAdapter())
+        mock=patch('do_math.local_host.adapter_for',return_value=FixtureAdapter())
         mock.start(); self.addCleanup(mock.stop)
         self.engine=FakeEngine(temp.name); self.engine.activate()
     def test_controls_reach_active_and_separate_initial_authority(self):
@@ -625,7 +625,7 @@ class LifecycleBoundaryTests(unittest.TestCase):
             self.assertEqual(e.runtime['last_observed_utc'],approved.isoformat())
 
     def test_scheduler_scopes_maintenance_dispatch_with_executor_double(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate(); e._pause_lifecycle('user_pause')
             e.grant('GR-repair',http={'kind':'local','roles':['maintenance'],
                 'reuse':'once','included_targets':['RI-test']})
@@ -655,7 +655,7 @@ class LifecycleBoundaryTests(unittest.TestCase):
             self.assertEqual(e.runtime['queue'][0]['id'],'AC-general')
 
     def test_wrong_pinned_trust_command_ends_attempt_without_verifier(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate(); e.knowledge('K1')
             old_ref = profiles.profile_ref(e._execution_profile({'role':'trust_check'}))
             env = e.environment('next')
@@ -681,7 +681,7 @@ class LifecycleBoundaryTests(unittest.TestCase):
             validate_lifecycle(e.instance,e.runtime)
 
     def test_scheduler_runs_only_approved_machine_recovery_and_stays_paused(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate()
             env = e.environment('repair')
             e.control('trust', {'operation':'transition','env_id':env})
@@ -707,7 +707,7 @@ class LifecycleBoundaryTests(unittest.TestCase):
             self.assertEqual(repair['submission_receipt']['state'],'accepted')
 
     def test_changed_transition_opens_real_review_without_live_publication(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate(); e.knowledge('K1')
             new = e.environment('next')
             before = deepcopy(e.instance)
@@ -728,7 +728,7 @@ class LifecycleBoundaryTests(unittest.TestCase):
                 self.assertEqual(e.instance.get(family), before.get(family))
 
     def test_trust_verifier_uses_registered_command_without_deadline(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate(); e.knowledge('K1')
             new = e.environment('next')
             command = e.instance['trust_environments'][new]['toolchain']['configured_command']
@@ -743,7 +743,7 @@ class LifecycleBoundaryTests(unittest.TestCase):
             self.assertEqual(e.formal_calls[0]['lean_command'],command)
 
     def test_paused_recovery_is_exact_authorized_and_revocable(self):
-        with tempfile.TemporaryDirectory() as root, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as root, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             e = FakeEngine(root); e.activate(); e._pause_lifecycle('user_pause')
             e.grant('GR-repair', http={'kind':'local','roles':['maintenance'],'included_targets':['RI-test'],
                 'purposes':['restore sealed input'],'reuse':'once'})

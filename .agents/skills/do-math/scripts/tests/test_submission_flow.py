@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import create_autospec, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.local_host import LocalHost
 from do_math import contracts, execution_lifecycle, integration, knowledge_io, submission
 from do_math import submission_tool
 from do_math.context_store import collect_outputs
@@ -955,7 +956,7 @@ class SubmissionPublicationWaitTests(unittest.TestCase):
         apply = engine._apply
         def gated_apply(*args, **kwargs):
             # Synthetic domain consumer; the publication gate and wait are the real ones.
-            require_active_environment(engine.instance, engine.runtime, current_identity=True)
+            require_active_environment(engine.instance, engine.runtime, current_identity=True, host=LocalHost())
             return apply(*args, **kwargs)
         with patch.object(engine, '_apply', side_effect=gated_apply):
             lake.write_bytes(b'accidentally replaced launcher')

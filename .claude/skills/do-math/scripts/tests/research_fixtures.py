@@ -207,8 +207,9 @@ def clock_ports(**overrides):
     from do_math.windows_job import WindowsJobs
     from do_math.http_transport import UrllibHttp
     from do_math.powershell_scheduler import PowerShellScheduler
+    from do_math.local_host import LocalHost
     return Ports(clock=SimpleNamespace(**operations), git_backend=GitProcess(), calls=ThreadCalls(),
-                 jobs=WindowsJobs(), scheduler=PowerShellScheduler(), http=UrllibHttp())
+                 jobs=WindowsJobs(), scheduler=PowerShellScheduler(), http=UrllibHttp(), host=LocalHost())
 
 
 def bare_engine(instance=None, runtime=None, *, head="fixture-head", store=None, runner=None,
@@ -743,7 +744,7 @@ def install_adapter_fixture(test_case):
     """Replace only external observation; retain evidence hashing and capability gates."""
     def adapter(profile):
         return FixtureAdapter()
-    mocked = patch("do_math.initialization.adapter_for", side_effect=adapter)
+    mocked = patch("do_math.local_host.adapter_for", side_effect=adapter)
     mocked.start()
     test_case.addCleanup(mocked.stop)
 
@@ -953,7 +954,7 @@ def activated_instance(root, shared, *, goal, config, external_policy='disabled'
     from do_math.engine import ResearchEngine, initialize
     from runner_fixtures import ScriptedRunner
     repository = git_init(root / 'repository')
-    with patch('do_math.initialization.adapter_for', side_effect=lambda profile: FixtureAdapter()):
+    with patch('do_math.local_host.adapter_for', side_effect=lambda profile: FixtureAdapter()):
         instance_id = initialize(repository, goal=goal, workspace=root / 'work-0', config=config)['instance_id']
         engine = ResearchEngine(repository, instance_id, runner=ScriptedRunner(), formal_verifier=_no_formal_check)
         activate(engine, shared, initialization_runner=ScriptedRunner(), external_policy=external_policy,

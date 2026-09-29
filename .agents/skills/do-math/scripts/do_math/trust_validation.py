@@ -115,8 +115,10 @@ def environment_changed(instance, detail):
     return wait_detail(instance) != {key: detail.get(key) for key in ('environment_id', 'record_state')}
 
 
-def check_environment(environment, binding, *, identity=True, clock=None):
+def check_environment(environment, binding, *, identity=True, clock=None, host=None):
     """Live admission: record contract, identity and the olean fingerprint.
+
+    ``host`` (the host port) observes the toolchain identity where the check needs it.
 
     A different fingerprint is accepted only when it equals the record's current
     baseline, the bound baseline is older and the identity still matches. The
@@ -124,7 +126,6 @@ def check_environment(environment, binding, *, identity=True, clock=None):
     """
     clock = clock_or_system(clock)
     from .trust_inventory import read_record, usable_errors, observe_fingerprint, binding as baseline_binding, changed_files
-    from .formal import toolchain_identity_errors
     from .canonical import exact_content_hash
     reference = environment['toolchain_record']
     result = {'environment_id': environment.get('id'), 'toolchain_record': deepcopy(reference),
@@ -141,7 +142,7 @@ def check_environment(environment, binding, *, identity=True, clock=None):
         errors.append('toolchain record identity differs from the registered environment')
     errors.extend(usable_errors(record))
     if not errors and identity:
-        errors.extend(toolchain_identity_errors(environment['toolchain']))
+        errors.extend(host.toolchain_identity_errors(environment['toolchain']))
     if errors:
         return {**result, 'status': 'invalid', 'errors': errors}
     try:
@@ -154,7 +155,7 @@ def check_environment(environment, binding, *, identity=True, clock=None):
     current = baseline_binding(record)
     if fingerprint['sha256'] == current['fingerprint_sha256'] and current != binding:
         if not identity:
-            errors.extend(toolchain_identity_errors(environment['toolchain']))
+            errors.extend(host.toolchain_identity_errors(environment['toolchain']))
         if not errors:
             entry = record['baselines'][current['baseline']]
             return {**result, 'status': 'verified', 'errors': [], 'binding': current,
@@ -170,9 +171,9 @@ def check_environment(environment, binding, *, identity=True, clock=None):
                        'setup_lean.py --rerecord (user or operator) or a new record and transition is required']}
 
 
-def verify_formal(*, environment, binding, verifier, clock=None, **arguments):
+def verify_formal(*, environment, binding, verifier, clock=None, host=None, **arguments):
     """Check the record and fingerprint before compiling; nothing is re-observed afterwards."""
-    check = check_environment(environment, binding, identity=False, clock=clock)
+    check = check_environment(environment, binding, identity=False, clock=clock, host=host)
     if check['status'] != 'verified':
         return {'status': 'failed', 'reason': 'environment admission failed: ' + '; '.join(check['errors']),
                 'error_kind': 'trust_environment', 'environment_check': check, 'launch_not_created': True}
@@ -181,7 +182,7 @@ def verify_formal(*, environment, binding, verifier, clock=None, **arguments):
     return result
 
 
-def require_active_environment(instance, runtime, *, current_identity=False):
+def require_active_environment(instance, runtime, *, current_identity=False, host=None):
     """Formal-use admission: an active, structurally valid environment and, at
     publication gates, the current local identity of its executables, checker and project."""
     if any(row.get('status') in {'checking', 'ready'} for row in runtime.get('trust_transitions', {}).values()):
@@ -192,8 +193,7 @@ def require_active_environment(instance, runtime, *, current_identity=False):
     if not environment or environment.get('status') != 'active' or errors:
         raise ValueError('approved fixed trust environment required: ' + '; '.join(errors))
     if current_identity:
-        from .formal import toolchain_identity_errors
-        errors = toolchain_identity_errors(environment['toolchain'])
+        errors = host.toolchain_identity_errors(environment['toolchain'])
         if errors:
             raise EnvironmentUnavailable('current trust identity required: ' + '; '.join(errors), wait_detail(instance))
     return deepcopy(environment)

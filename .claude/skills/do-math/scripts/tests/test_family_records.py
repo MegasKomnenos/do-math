@@ -14,6 +14,7 @@ from unittest.mock import patch
 import jsonschema
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.local_host import LocalHost
 from do_math.canonical import exact_content_hash
 
 from do_math.repository import ResearchRepository
@@ -1084,7 +1085,7 @@ class FamilyRecordStorageTests(unittest.TestCase):
         self.assertEqual(environment_errors(environment, binding), [])
         self.assertEqual(binding, config["binding"])
         send_control(engine, "trust", config={"operation": "transition", "env_id": eid})
-        check = check_environment(environment, binding)
+        check = check_environment(environment, binding, host=LocalHost())
         self.assertEqual((check["status"], check["fingerprint_sha256"]), ("verified", binding["fingerprint_sha256"]))
         engine._finish_trust_transition(next(reversed(engine.runtime["trust_transitions"])), check)
         engine._save()

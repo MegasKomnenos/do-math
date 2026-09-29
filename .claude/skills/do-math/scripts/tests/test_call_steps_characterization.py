@@ -48,6 +48,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.contracts import all_prompt_documents
 from do_math.engine import ResearchEngine, initialize
 from do_math.git_process import GitProcess
+from do_math.local_host import LocalHost
 from do_math.parallel import ThreadCalls
 from do_math.ports import Ports
 from purpose_fixtures import AcademicRunner, GOAL, PurposeHarness, formal_fixture
@@ -98,9 +99,9 @@ def scenario_trace(root: Path) -> list:
     (root / 'shared').mkdir()
     clock = FakeClock(wall=datetime(2026, 9, 29, tzinfo=timezone.utc))
     ports = Ports(clock=clock, git_backend=GitProcess(), calls=ThreadCalls(), jobs=fake_jobs(),
-                  scheduler=fake_scheduler(), http=fake_http({}))
+                  scheduler=fake_scheduler(), http=fake_http({}), host=LocalHost())
     trace = []
-    with patch('do_math.initialization.adapter_for', side_effect=lambda profile: FixtureAdapter()):
+    with patch('do_math.local_host.adapter_for', side_effect=lambda profile: FixtureAdapter()):
         repository = git_init(root / 'repository')
         instance_id = initialize(repository, goal=GOAL, workspace=root / 'work-0',
                                  config=PurposeHarness.fixture_config(), clock=clock)['instance_id']

@@ -20,7 +20,7 @@ def _require_current_config(instance, change):
 class InitializationEngineMixin:
     def _initialization_control(self, change, source_ref):
         """Existing decision control adopts settings or refreshes observed CLI evidence."""
-        from .initialization import governance_basis, grant_current, adapter_for, observed_profile_refs
+        from .initialization import governance_basis, grant_current, observed_profile_refs
         from .execution_profiles import match_profile_ref, capability_evidence
         from .review_policy import build_review_policy
         lifecycle = self.instance['lifecycle']
@@ -64,10 +64,9 @@ class InitializationEngineMixin:
                 raise ValueError('CLI capability probe requires AI profiles')
             observations, rows = {}, []
             for profile in profiles:
-                adapter = adapter_for(profile)
-                key = (profile['ai']['provider'], adapter.observation_key())
+                key = (profile['ai']['provider'], self.ports.host.cli_observation_key(profile))
                 if key not in observations:
-                    observations[key] = adapter.describe()
+                    observations[key] = self.ports.host.cli_describe(profile)
                 rows.append(capability_evidence(profile, observations[key], observed_at=self._lifecycle_now().isoformat()))
             # A failed observation leaves the previous evidence intact. These
             # remain individual observed facts, never an aggregate permission.

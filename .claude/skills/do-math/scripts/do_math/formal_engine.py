@@ -1,6 +1,7 @@
 """Engine integration for Lean verification: trust environments, their transitions and checks, and formal checks."""
 from __future__ import annotations
 
+from functools import partial
 from copy import deepcopy
 from pathlib import Path
 from .knowledge import begin_transition, record_transition_result, activate_transition, invalidate_environment, validate_basis
@@ -133,7 +134,8 @@ class FormalEngineMixin:
 
     def _run_trust_activation(self, action):
         from .trust_validation import check_environment
-        return self._run_machine_steps(self._trust_activation_steps(action), calculator=check_environment)
+        return self._run_machine_steps(self._trust_activation_steps(action),
+                                       calculator=partial(check_environment, host=self.ports.host))
 
     def _record_machine_continuation(self, action, execution_id):
         # A save replaces the state objects while this generator is suspended.
@@ -203,7 +205,8 @@ class FormalEngineMixin:
 
     def _run_trust_check(self, action):
         from .trust_validation import verify_formal
-        return self._run_machine_steps(self._trust_check_steps(action), calculator=verify_formal)
+        return self._run_machine_steps(self._trust_check_steps(action),
+                                       calculator=partial(verify_formal, host=self.ports.host))
 
     def _trust_check_steps(self, action):
         transition_id, knowledge_id = action['transition_id'], action['target']
@@ -308,7 +311,8 @@ class FormalEngineMixin:
 
     def _formal(self, action):
         from .trust_validation import verify_formal
-        return self._run_machine_steps(self._formal_steps(deepcopy(action)), calculator=verify_formal)
+        return self._run_machine_steps(self._formal_steps(deepcopy(action)),
+                                       calculator=partial(verify_formal, host=self.ports.host))
 
     def _formal_steps(self, action):
         """One central Lean check of a knowledge proposal (the ``formal_check`` machine role).

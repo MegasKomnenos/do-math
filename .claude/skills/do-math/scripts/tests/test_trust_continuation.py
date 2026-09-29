@@ -7,12 +7,13 @@ sys.path[:0] = [str(SCRIPTS), str(SCRIPTS / 'tests')]
 from unittest.mock import create_autospec, patch
 from research_fixtures import bare_engine, FixtureAdapter, trust_fixture
 from state_fixtures import active_repository
+from do_math.local_host import LocalHost
 from do_math.engine import ResearchEngine
 from do_math import maintenance_gate
 from do_math.trust_validation import check_environment
 
 def interrupted_activation():
-    with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
+    with patch("do_math.local_host.adapter_for", return_value=FixtureAdapter()):
         root, repo, identifier = active_repository()
         owner = ResearchEngine(repo, identifier)
         old = owner.instance['trust_environments'][owner.instance['active_trust_environment']]
@@ -30,7 +31,7 @@ def interrupted_activation():
         maintenance_gate.apply_control(owner.runtime, {'id':'UC-fence', 'action':'quiesce', 'origin':'user',
             'text':'audit controlled interruption', 'created_at':owner.runtime['last_observed_utc']})
         # The short check completes; the fence found after it interrupts the activation.
-        result = check_environment(**arguments)
+        result = check_environment(**arguments, host=LocalHost())
         assert result['status'] == 'verified', result
         owner._local_call_returned(execution_id, result)
         try: generator.send(result)
@@ -48,7 +49,7 @@ def interrupted_activation():
         second_id, second_args = next(second_generator)
         successor = deepcopy(owner.runtime['executions'][second_id])
         owner._live_execution_ids.add(second_id)
-        second_result = check_environment(**second_args)
+        second_result = check_environment(**second_args, host=LocalHost())
         owner._local_call_returned(second_id, second_result)
         try: second_generator.send(second_result)
         except StopIteration: pass

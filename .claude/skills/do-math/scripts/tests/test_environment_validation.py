@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.local_host import LocalHost
 import setup_lean
 from do_math import trust_inventory as records
 from do_math.canonical import exact_content_hash
@@ -65,7 +66,7 @@ class ToolchainRecordTests(unittest.TestCase):
     def test_current_environment_is_verified_from_record_identity_and_fingerprint(self):
         self.assertEqual(environment_errors(self.environment, self.binding), [])
         self.assertEqual(register_request_errors({k: v for k, v in self.request.items()}), [])
-        result = check_environment(self.environment, self.binding)
+        result = check_environment(self.environment, self.binding, host=LocalHost())
         self.assertEqual(result['status'], 'verified')
         self.assertEqual(result['identity_sha256'], exact_content_hash(self.request['toolchain']))
         self.assertEqual(result['fingerprint_sha256'], self.binding['fingerprint_sha256'])
@@ -80,7 +81,7 @@ class ToolchainRecordTests(unittest.TestCase):
             with self.subTest(change=change):
                 original = self.record_path.read_bytes()
                 self.rewrite(change)
-                result = check_environment(self.environment, self.binding)
+                result = check_environment(self.environment, self.binding, host=LocalHost())
                 self.assertEqual(result['status'], 'invalid')
                 self.assertIn('toolchain record unavailable', result['errors'][0])
                 self.record_path.write_bytes(original)
@@ -90,7 +91,7 @@ class ToolchainRecordTests(unittest.TestCase):
             with self.subTest(change=change):
                 original = self.record_path.read_bytes()
                 self.rewrite(lambda r: r['baselines'][-1]['validation'].update(change))
-                result = check_environment(self.environment, self.binding)
+                result = check_environment(self.environment, self.binding, host=LocalHost())
                 self.assertIn('current toolchain baseline has no successful representative check', result['errors'])
                 self.record_path.write_bytes(original)
 
@@ -151,7 +152,7 @@ class ToolchainRecordTests(unittest.TestCase):
             self.olean.write_bytes(original)
             os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns))
             set_birthtime(self.olean, info.st_birthtime_ns)
-            self.assertEqual(check_environment(self.environment, self.binding)['status'], 'verified')
+            self.assertEqual(check_environment(self.environment, self.binding, host=LocalHost())['status'], 'verified')
         changes = {
             'size': lambda: self.olean.write_bytes(original + b'x'),
             'modification time': lambda: os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9)),
@@ -163,7 +164,7 @@ class ToolchainRecordTests(unittest.TestCase):
         for name, change in changes.items():
             with self.subTest(change=name):
                 change()
-                result = check_environment(self.environment, self.binding)
+                result = check_environment(self.environment, self.binding, host=LocalHost())
                 self.assertEqual(result['status'], 'invalid')
                 self.assertIn('olean fingerprint differs', result['errors'][0])
                 self.assertTrue(result['changed_files'])
@@ -178,31 +179,31 @@ class ToolchainRecordTests(unittest.TestCase):
             stream.write(bytes([raw[0] ^ 1]))
         os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns))
         self.assertEqual(os.stat(self.olean).st_birthtime_ns, info.st_birthtime_ns)
-        self.assertEqual(check_environment(self.environment, self.binding)['status'], 'verified')
+        self.assertEqual(check_environment(self.environment, self.binding, host=LocalHost())['status'], 'verified')
         with self.recorded():
             result = setup_lean.check_contents(self.record_path.parent, None, ['synthetic-lean'])
         self.assertEqual(result['status'], 'mismatch')
         self.assertEqual(result['check']['mismatched'], ['toolchain/lib/lean/Init/Prelude.olean'])
-        blocked = check_environment(self.environment, self.binding)
+        blocked = check_environment(self.environment, self.binding, host=LocalHost())
         self.assertEqual(blocked['status'], 'invalid')
         self.assertIn('a content check found files that differ from the current toolchain baseline', blocked['errors'])
 
     def test_content_check_passes_records_history_and_never_blocks_readers(self):
         with records.writer_lock(self.record_path.parent):
             # Instances only read the record; a running writer never blocks them.
-            self.assertEqual(check_environment(self.environment, self.binding)['status'], 'verified')
+            self.assertEqual(check_environment(self.environment, self.binding, host=LocalHost())['status'], 'verified')
             with self.assertRaises(OSError):
                 self.rerecord()
         result = setup_lean.check_contents(self.record_path.parent, self.request['toolchain_record']['id'], None)
         self.assertEqual((result['status'], result['check']['baseline']), ('passed', 0))
         self.assertEqual(self.record()['checks'], [result['check']])
-        self.assertEqual(check_environment(self.environment, self.binding)['status'], 'verified')
+        self.assertEqual(check_environment(self.environment, self.binding, host=LocalHost())['status'], 'verified')
 
     def test_rerecord_after_metadata_only_change_rebinds_each_instance_once(self):
         other_environment, other_binding = trust_environment(self.request, environment_id='TE-other')
         info = os.stat(self.olean)
         os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))
-        self.assertEqual(check_environment(self.environment, self.binding)['status'], 'invalid')
+        self.assertEqual(check_environment(self.environment, self.binding, host=LocalHost())['status'], 'invalid')
         result = self.rerecord()
         self.assertEqual(result['status'], 'recorded')
         record = self.record()
@@ -211,12 +212,12 @@ class ToolchainRecordTests(unittest.TestCase):
         current = records.binding(record)
         self.assertEqual(result['binding'], current)
         for environment, binding in ((self.environment, self.binding), (other_environment, other_binding)):
-            checked = check_environment(environment, binding)
+            checked = check_environment(environment, binding, host=LocalHost())
             self.assertEqual(checked['status'], 'verified')
             self.assertEqual(checked['rebind']['previous'], binding)
             self.assertEqual(checked['rebind']['current'], current)
             self.assertEqual(checked['binding'], current)
-        followed = check_environment(self.environment, current)
+        followed = check_environment(self.environment, current, host=LocalHost())
         self.assertEqual(followed['status'], 'verified')
         self.assertNotIn('rebind', followed)
 
@@ -243,11 +244,11 @@ class ToolchainRecordTests(unittest.TestCase):
         os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))
         self.rerecord()
         os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 2 * 10**9))
-        self.assertEqual(check_environment(self.environment, self.binding)['status'], 'invalid')
+        self.assertEqual(check_environment(self.environment, self.binding, host=LocalHost())['status'], 'invalid')
         os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))
         replaced = Path(self.request['toolchain']['executable'])
         replaced.write_bytes(b'different launcher')
-        result = check_environment(self.environment, self.binding, identity=False)
+        result = check_environment(self.environment, self.binding, identity=False, host=LocalHost())
         self.assertEqual(result['status'], 'invalid')
         self.assertNotIn('rebind', result)
 

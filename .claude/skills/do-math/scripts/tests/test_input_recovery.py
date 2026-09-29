@@ -58,7 +58,7 @@ def overflowed_maintenance(root, shared):
     from unittest.mock import patch
     identifier = active_instance(root, shared, config=ACTIVE_CONFIG)
     repository = root / "repository"
-    with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
+    with patch("do_math.local_host.adapter_for", return_value=FixtureAdapter()):
         apply_limit(root, repository, identifier, 1, "UC-limit-small")
         requested = cli_result(root, "request", "--repository", str(repository), "--instance", identifier,
                         "--role", "maintenance", "--reason", "Check the installed recovery boundary",

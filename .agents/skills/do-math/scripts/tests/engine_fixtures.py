@@ -44,6 +44,7 @@ from pathlib import Path
 import tempfile
 from unittest.mock import create_autospec
 
+from do_math.local_host import LocalHost
 from do_math import contracts, execution_lifecycle, execution_profiles as profiles, knowledge_io, knowledge_records as kr
 from do_math.control_server import wait_receipt
 from do_math import planning, submission, submission_tool
@@ -134,7 +135,7 @@ class FakeEngine(ResearchEngine):
             self._trust_control({'operation':'transition','env_id':eid},'UI-transition-'+name)
             from do_math.trust_validation import check_environment
             self._finish_trust_transition(next(reversed(self.runtime['trust_transitions'])),
-                check_environment(self.instance['trust_environments'][eid], self.runtime['trust_bindings'][eid]))
+                check_environment(self.instance['trust_environments'][eid], self.runtime['trust_bindings'][eid], host=LocalHost()))
         return eid
     def activate(self, *, external_policy='explicit_grants', review_policy=None):
         """Activate through the adoption decision; ``review_policy`` None adopts the default policy."""
@@ -219,7 +220,7 @@ def formal_check_engine(test):
     command. The adapter patch and the temporary root end with ``test``.
     """
     from unittest.mock import patch
-    adapter = patch('do_math.initialization.adapter_for', return_value=FixtureAdapter())
+    adapter = patch('do_math.local_host.adapter_for', return_value=FixtureAdapter())
     adapter.start()
     test.addCleanup(adapter.stop)
     directory = tempfile.TemporaryDirectory()

@@ -118,7 +118,7 @@ def waiting_action(root, shared, *, case):
     """
     identifier = active_instance(root, shared, config=CONFIG)
     (root / 'work-0' / 'runs').mkdir(exist_ok=True)
-    with patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+    with patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
         engine = ResearchEngine(root / 'repository', identifier, runner=ScriptedRunner())
         return {'instance_id': identifier, **PREPARE[case](engine, root)}
 
@@ -127,7 +127,7 @@ class StopFlagHarness(unittest.TestCase):
     case = 'preparation'
 
     def setUp(self):
-        self.enterContext(patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()))
+        self.enterContext(patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()))
         self.root, value = restore_template(waiting_action, case=self.case)
         self.repo = self.root / 'repository'
         self.engine = ResearchEngine(self.repo, value['instance_id'], runner=ScriptedRunner())

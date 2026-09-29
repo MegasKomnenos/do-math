@@ -81,7 +81,7 @@ class InitialFailureRetryTests(unittest.TestCase):
         from engine_fixtures import FakeEngine, PublicInitializationRunner
         from research_fixtures import charter_record, install_adapter_fixture
         install_adapter_fixture(self)
-        from do_math.initialization import adapter_for
+        from do_math.local_host import adapter_for
         class FailingRunner:
             def run(self, **arguments):
                 raise ValueError('synthetic pre-start binding failure')

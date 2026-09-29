@@ -203,8 +203,11 @@ def validate_host_resources(host) -> None:
         raise ValueError('host demands must name capped roles only')
 
 
-def build_profiles(config: dict) -> dict:
+def build_profiles(config: dict, *, host=None) -> dict:
     """Freeze the profile editions of every role from adopted values.
+
+    ``host`` (the host port) discovers the Lean command when the configuration names
+    none; without it such a configuration freezes no Lean command.
 
     No new capacity, permission or measured limit is invented.
     """
@@ -219,7 +222,7 @@ def build_profiles(config: dict) -> dict:
         constraints[identifier] = {"id": identifier, "kind": "concurrency", "model": model,
             "accounting_unit": "execution", "work_slots": work, "scope": "local_execution_not_provider_operations"}
     profiles, refs = {}, {}
-    lean = _lean_contract(config)
+    lean = _lean_contract(config, host)
     for role in sorted(PROFILE_ROLES):
         machine = role in MACHINE_ROLES
         mode = (config["observation_mode"] if role == "research_work" else
@@ -328,9 +331,9 @@ def runtime_config(profile: dict) -> dict:
                      "max_input_bytes": profile["input"]["max_input_bytes"]})
 
 
-def _lean_contract(config: dict) -> dict:
-    from .formal import discover_lean
-    return {"lean_command": deepcopy(config.get("lean_command") or discover_lean())}
+def _lean_contract(config: dict, host) -> dict:
+    command = config.get("lean_command") or (host.discover_lean() if host is not None else None)
+    return {"lean_command": deepcopy(command)}
 
 
 def machine_invocation(profile: dict, *, trust_environment: dict, on_started=None) -> dict:

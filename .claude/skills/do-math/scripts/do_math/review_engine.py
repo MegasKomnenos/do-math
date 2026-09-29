@@ -952,7 +952,7 @@ class ReviewEngineMixin:
             # Publication rechecks the current identity; the olean fingerprint was
             # checked before compiling and a later change surfaces at the next check.
             from .trust_validation import require_active_environment
-            require_active_environment(self.instance, self.runtime, current_identity=True)
+            require_active_environment(self.instance, self.runtime, current_identity=True, host=self.ports.host)
         assessment = identity_assessment(updated, reason='Complete independent review')
         assessment['basis'] = deepcopy(updated['identity_basis'])
         published, assessment_id = kr.record_identity_assessment(

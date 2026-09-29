@@ -62,7 +62,7 @@ class DiagnosedRecoveryTests(unittest.TestCase):
             (operator,'ResearchRepository',repository), (operator,'LIVE_INSTALLATION_ROOT',installation),
         ):
             stack.enter_context(patch.object(owner,name,return_value=value) if name=='ResearchRepository' else patch.object(owner,name,value))
-        stack.enter_context(patch('do_math.initialization.adapter_for',return_value=SimpleNamespace(capability_identity=lambda:{})))
+        stack.enter_context(patch('do_math.local_host.adapter_for',return_value=SimpleNamespace(capability_identity=lambda:{})))
         stack.enter_context(patch('do_math.initialization.capability_requirements',return_value={'satisfied':True}))
         stack.enter_context(patch('do_math.session_slots.SessionSlots',return_value=slots))
         stack.enter_context(patch('do_math.file_io.os_lock',return_value=nullcontext()))

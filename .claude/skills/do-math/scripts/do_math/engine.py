@@ -11,7 +11,7 @@ from functools import cached_property, partial
 from pathlib import Path
 from typing import Any
 from .contracts import all_prompt_documents
-from .formal import verify_lean, discover_lean
+from .formal import verify_lean
 from .operation_trace import engine_operation, tracing
 from .review_engine import ReviewEngineMixin
 from .lifecycle_engine import LifecycleEngineMixin
@@ -40,26 +40,34 @@ from .core_engine import (CoreEngineMixin, _query_record, _record_evidence, init
 def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | None = None,
                title: str = "",
                instance_id: str | None = None, sources: list[Path] | None = None,
-               source_input: str | None = None, clock=None) -> dict:
-    """Create a research instance: the public entry point chooses the clock, the working directory and tracing."""
-    if clock is None:
-        from .wiring import default_clock  # layer: 1b migration default until entry points pass Ports
-        clock = default_clock()
+               source_input: str | None = None, clock=None, ports=None) -> dict:
+    """Create a research instance: the public entry point chooses the ports, the working directory and tracing.
+
+    ``clock`` replaces the bundle's clock (legacy callers pass only a clock).
+    """
+    if ports is None:
+        from .wiring import real_ports  # layer: 1b migration default until entry points pass Ports
+        ports = real_ports()
     return initialize_instance(repository, goal=goal, workspace=workspace, config=config, title=title,
                                instance_id=instance_id, sources=sources, source_input=source_input,
-                               clock=clock, cwd=Path.cwd, trace=tracing)
+                               clock=clock or ports.clock, cwd=Path.cwd, trace=tracing, host=ports.host,
+                               git_backend=ports.git_backend)
 
 
 def control(repository: Path, instance_id: str, action: str, *, text: str = "", config: dict | None = None,
             origin: str = "user", request_id: str | None = None, idempotency_key: str | None = None,
-            clock=None) -> dict:
-    """Queue user commands; only the owning engine publishes authority changes."""
-    if clock is None:
-        from .wiring import default_clock  # layer: 1b migration default until entry points pass Ports
-        clock = default_clock()
+            clock=None, ports=None) -> dict:
+    """Queue user commands; only the owning engine publishes authority changes.
+
+    ``clock`` replaces the bundle's clock (legacy callers pass only a clock).
+    """
+    if ports is None:
+        from .wiring import real_ports  # layer: 1b migration default until entry points pass Ports
+        ports = real_ports()
     return submit_control(repository, instance_id, action, text=text, config=config, origin=origin,
-                          request_id=request_id, idempotency_key=idempotency_key, clock=clock,
-                          lean_available=lambda: discover_lean() is not None)
+                          request_id=request_id, idempotency_key=idempotency_key, clock=clock or ports.clock,
+                          lean_available=lambda: ports.host.discover_lean() is not None,
+                          git_backend=ports.git_backend)
 
 
 class ResearchEngine(CallEngineMixin, CoreEngineMixin, QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMixin, ProviderEngineMixin, DispatchEngineMixin, SchedulerMixin, PlanningEngineMixin, ReviewEngineMixin, LifecycleEngineMixin, InitializationEngineMixin, KnowledgeEngineMixin, ExternalEngineMixin, FormalEngineMixin, AcademicEngineMixin, GovernanceEngineMixin, RepairExecutionMixin):
@@ -153,14 +161,6 @@ class ResearchEngine(CallEngineMixin, CoreEngineMixin, QuestionEngineMixin, Revi
                 return self.status()
             self._run_parallel(max_steps=max_steps, watch=watch, until_active=until_active)
         return self.status()
-
-    def _lean_discovered(self) -> bool:
-        """Rediscover the local Lean at most once per second, the installation-check period."""
-        current = self.ports.clock.monotonic()
-        if current >= self._next_lean_discovery:
-            self._next_lean_discovery = current + 1.0
-            self._lean_found = discover_lean() is not None
-        return self._lean_found
 
     def _call_steps(self, action: dict):
         """Prepare and run one AI action as a generator that yields the runner arguments.

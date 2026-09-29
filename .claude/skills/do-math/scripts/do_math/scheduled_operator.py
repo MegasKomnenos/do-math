@@ -338,20 +338,21 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                 # The one role selection rule; it picks the adopted recovery edition.
                 chosen = selection(config, {"role": "recovery"}, {}, {}, instance=state)
                 profile = state["execution_profiles"][chosen["profile_ref"]["id"]]
-                from .initialization import adapter_for, capability_requirements
-                adapter = adapter_for(profile)
+                from .initialization import capability_requirements
+                from .local_host import LocalHost
+                host = LocalHost()
                 reference = profile_ref(profile)
                 checked_at = now()
                 capability = capability_requirements(state, reference,
-                    current_identity=adapter.capability_identity(), at=checked_at)
+                    current_identity=host.cli_identity(profile), at=checked_at)
                 if not capability["satisfied"]:
-                    description = adapter.describe()  # CLI version/help only; never a model call.
-                    description.setdefault("identity", adapter.capability_identity())
+                    description = host.cli_describe(profile)  # CLI version/help only; never a model call.
+                    description.setdefault("identity", host.cli_identity(profile))
                     evidence = capability_evidence(profile, description, observed_at=checked_at)
                     state.setdefault("capability_evidence", {})[evidence["id"]] = evidence
                     head = repo.save_with_state(head, state, runtime)[0]
                     capability = capability_requirements(state, reference,
-                        current_identity=adapter.capability_identity(), at=now())
+                        current_identity=host.cli_identity(profile), at=now())
                 if not capability["satisfied"]:
                     return {"outcome": "recovery_waiting", "reason": "profile_capability_unavailable",
                             "capability": capability}

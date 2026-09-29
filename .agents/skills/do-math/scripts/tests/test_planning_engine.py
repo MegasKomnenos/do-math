@@ -17,7 +17,7 @@ from research_fixtures import FixtureAdapter
 
 class WorkProfileAdmissionTests(unittest.TestCase):
     def test_policy_change_reprepares_an_unstarted_incompatible_contract(self):
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             engine=FakeEngine(directory);engine.activate()
             task=engine.task(approved=False)
             task['model_assessment']={'difficulty':'low','importance':'low','reason':'local'}
@@ -33,7 +33,7 @@ class WorkProfileAdmissionTests(unittest.TestCase):
                                  for a in engine.runtime['queue']))
 
     def test_reviewed_contract_cannot_be_ready_with_an_inadequate_allowed_profile(self):
-        with tempfile.TemporaryDirectory() as directory, patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()):
+        with tempfile.TemporaryDirectory() as directory, patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()):
             engine = FakeEngine(directory)
             engine.activate()
             task = engine.task(approved=False)

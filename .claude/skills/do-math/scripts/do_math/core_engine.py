@@ -122,8 +122,11 @@ def _evaluation_context_for(store, snapshot, *, lean_available, clock):
 
 def initialize_instance(repository: Path, *, goal: str, workspace: Path, config: dict | None, title: str,
                         instance_id: str | None, sources: list[Path] | None, source_input: str | None,
-                        clock, cwd, trace) -> dict:
-    """``initialize`` after its entry-point choices; ``cwd`` and ``trace`` are called where the state is made."""
+                        clock, cwd, trace, host, git_backend=None) -> dict:
+    """``initialize`` after its entry-point choices; ``cwd`` and ``trace`` are called where the state is made.
+
+    ``host`` is the host port and ``git_backend`` the Git backend port (None: the git process).
+    """
     if not goal.strip():
         raise ValueError("a nonempty mathematical goal is required")
     settings = deepcopy(DEFAULT_CONFIG)
@@ -141,11 +144,11 @@ def initialize_instance(repository: Path, *, goal: str, workspace: Path, config:
             title=title, created_at=clock.now(), clock=clock)
         settings = bind_host_configuration(instance, settings, origin='user')
         instance['config'] = settings
-        profiles = execution_profiles.build_profiles(settings)
+        profiles = execution_profiles.build_profiles(settings, host=host)
         execution_profiles.apply_editions(instance, profiles)
         instance = knowledge_io.ensure_ontology(instance)
         instance = knowledge_records.initialize_families(instance)
-        store = ResearchRepository(repository, instance_id, clock=clock)
+        store = ResearchRepository(repository, instance_id, backend=git_backend, clock=clock)
         with store.writer_lock():
             head = store.initialize(instance, runtime)
             if source_inputs:
@@ -224,7 +227,8 @@ def _last_opposite_control(inbox: Path, runtime: dict, action: str) -> str | Non
 
 
 def submit_control(repository: Path, instance_id: str, action: str, *, text: str, config: dict | None, origin: str,
-                   request_id: str | None, idempotency_key: str | None, clock, lean_available) -> dict:
+                   request_id: str | None, idempotency_key: str | None, clock, lean_available,
+                   git_backend=None) -> dict:
     """``control`` after its entry-point choices; ``lean_available`` observes the host only when a request needs it."""
     config = {} if config is None else config
     validate_control_payload(action, text, config)
@@ -234,7 +238,7 @@ def submit_control(repository: Path, instance_id: str, action: str, *, text: str
         raise ValueError("operator controls are limited to " + ", ".join(sorted(OPERATOR_ACTIONS)))
     if request_id is not None:
         validate_request_id(request_id)
-    store = ResearchRepository(repository, instance_id)
+    store = ResearchRepository(repository, instance_id, backend=git_backend)
     head, instance, runtime = store.load()
     if request_id is not None and idempotency_key is not None:
         raise ValueError("request_id and idempotency_key are mutually exclusive")
@@ -407,6 +411,14 @@ def read_record(repository: Path, instance_id: str, record_id: str, *, snapshot:
 
 
 class CoreEngineMixin:
+    def _lean_discovered(self) -> bool:
+        """Rediscover the local Lean through the host port at most once per second, the installation-check period."""
+        current = self.ports.clock.monotonic()
+        if current >= self._next_lean_discovery:
+            self._next_lean_discovery = current + 1.0
+            self._lean_found = self.ports.host.discover_lean() is not None
+        return self._lean_found
+
     def _evaluation_context(self, snapshot=None):
         return _evaluation_context_for(self.store, snapshot or self.head, lean_available=self._lean_discovered(),
                                        clock=self.ports.clock)

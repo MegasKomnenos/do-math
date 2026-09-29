@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import Mock, create_autospec, patch
 from knowledge_fixtures import formal_boundary_engine, impact_declaration, knowledge_candidate, knowledge_graph
 from test_categories import test_group as category
+from do_math.local_host import LocalHost
 from do_math.engine import ResearchEngine, control, query_records
 from do_math import knowledge as k, knowledge_records as kr
 from do_math.system_clock import new_id
@@ -298,7 +299,7 @@ class PortableFormalBoundaryTests(unittest.TestCase):
             self.assertEqual((observed[0]['status'], result['status']), ('verified', 'verified'))
             self.assertEqual(e.instance['formal_results'][e.instance['knowledge'][kid]['formal_result_id']]['publication_state'], 'accepted')
             with self.assertRaises(EnvironmentUnavailable) as caught:
-                require_active_environment(e.instance, e.runtime, current_identity=True)
+                require_active_environment(e.instance, e.runtime, current_identity=True, host=LocalHost())
             self.assertIn('approved toolchain file changed: ' + str(checker(e)), str(caught.exception))
 
     def test_current_environment_change_after_actual_compile_prevents_publication(self):

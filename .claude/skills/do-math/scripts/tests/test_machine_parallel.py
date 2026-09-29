@@ -89,7 +89,7 @@ class MachineSchedulerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.enterContext(patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()))
+        self.enterContext(patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()))
         self.enterContext(patch('do_math.windows_job.named_job_empty', return_value=True))
         self.host = Host(self.temp.name)
         self.host.ports = clock_ports(monotonic=lambda: self.host.tick)

@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.configuration import DEFAULT_CONFIG
+from do_math.local_host import LocalHost
 from do_math.execution_profiles import build_profiles, profile_ref
 from research_fixtures import FixtureAdapter, bare_engine
 
@@ -26,28 +27,28 @@ class ProbeBatchTests(unittest.TestCase):
             'scope':'cli_command_surface_only',
             'supported':{'jsonl':True, 'model':True, 'structured_output':True}}
         adapter.capability_identity.return_value = identity
-        with patch('do_math.initialization.adapter_for', return_value=adapter):
+        with patch('do_math.local_host.adapter_for', return_value=adapter):
             self.engine._initialization_control({'operation':'probe','profile_refs':references}, 'source')
             at = datetime.now(timezone.utc).isoformat()
             expected = [capability_requirements(self.engine.instance, ref, current_identity=identity, at=at)
                         for ref in references]
-            actual = list(_capability_batch_requirements(self.engine.instance, references, at=at))
+            actual = list(_capability_batch_requirements(self.engine.instance, references, at=at, host=LocalHost()))
             self.assertEqual(actual, expected)
             self.assertEqual(adapter.capability_identity.call_count, 1)
             self.assertTrue(all(row['evidence_refs'] for row in actual))
             adapter.capability_identity.return_value = {'host':'changed'}
-            fresh = list(_capability_batch_requirements(self.engine.instance, references, at=at))
+            fresh = list(_capability_batch_requirements(self.engine.instance, references, at=at, host=LocalHost()))
             self.assertEqual(adapter.capability_identity.call_count, 2)
             self.assertTrue(all(not row['satisfied'] and not row['evidence_refs'] for row in fresh))
             bad = dict(references[-1], sha256='0'*64)
-            self.assertFalse(list(_capability_batch_requirements(self.engine.instance, [bad], at=at))[0]['satisfied'])
+            self.assertFalse(list(_capability_batch_requirements(self.engine.instance, [bad], at=at, host=LocalHost()))[0]['satisfied'])
 
     def test_batch_preserves_each_profile_and_observed_capability_scope(self):
         class Adapter(FixtureAdapter):
             def describe(self):
                 return {"identity": {"host": "fixture"}, "verified": True,
                         "scope": "cli_command_surface_only", "supported": {"jsonl": True, "local_job": True}}
-        with patch("do_math.initialization.adapter_for", return_value=Adapter()):
+        with patch("do_math.local_host.adapter_for", return_value=Adapter()):
             self.engine._initialization_control({"operation": "probe", "profile_refs": [profile_ref(p) for p in self.profiles]}, "source")
         rows = list(self.engine.instance["capability_evidence"].values())
         self.assertEqual({row["execution_profile_ref"]["id"] for row in rows}, {p["id"] for p in self.profiles})
@@ -55,7 +56,7 @@ class ProbeBatchTests(unittest.TestCase):
         self.assertTrue(all(row["capabilities"]["local_job"]["status"] == "unknown" for row in rows))
 
     def test_invalid_reference_is_rejected_before_probing_or_mutating_evidence(self):
-        with patch("do_math.initialization.adapter_for") as adapter:
+        with patch("do_math.local_host.adapter_for") as adapter:
             with self.assertRaises(ValueError):
                 self.engine._initialization_control({"operation": "probe", "profile_refs": [profile_ref(self.profiles[0]),
                     {"id": "missing", "revision": 1, "sha256": "a" * 64}]}, "source")
@@ -66,7 +67,7 @@ class ProbeBatchTests(unittest.TestCase):
         class Adapter(FixtureAdapter):
             def describe(self):
                 return {"identity": {"host": "fixture"}}
-        with patch("do_math.initialization.adapter_for", side_effect=[Adapter(), RuntimeError("probe failed")]):
+        with patch("do_math.local_host.adapter_for", side_effect=[Adapter(), RuntimeError("probe failed")]):
             with self.assertRaisesRegex(RuntimeError, "probe failed"):
                 self.engine._initialization_control({"operation": "probe", "profile_refs": [profile_ref(p) for p in self.profiles]}, "source")
         self.assertFalse(self.engine.instance.get("capability_evidence"))
@@ -78,7 +79,7 @@ class ProbeBatchTests(unittest.TestCase):
             def describe(self):
                 return {"identity": {"host": "fixture"}, "verified": True,
                         "scope": "cli_command_surface_only", "supported": {"jsonl": True}}
-        with patch("do_math.initialization.adapter_for", return_value=Adapter()):
+        with patch("do_math.local_host.adapter_for", return_value=Adapter()):
             self.engine._initialization_control({"operation": "probe",
                 "profile_ref": profile_ref(self.profiles[0])}, "source")
         self.assertTrue(self.engine.instance["capability_evidence"])
@@ -91,7 +92,7 @@ class ProbeBatchTests(unittest.TestCase):
         from do_math.initialization import observed_profile_refs
         from do_math.canonical import exact_content_hash
         change = {"operation": "probe", "config_sha256": exact_content_hash(self.engine.instance["config"])}
-        with patch("do_math.initialization.adapter_for", return_value=FixtureAdapter()):
+        with patch("do_math.local_host.adapter_for", return_value=FixtureAdapter()):
             self.engine._initialization_control(change, "source")
         observed = {row["execution_profile_ref"]["id"] for row in self.engine.instance["capability_evidence"].values()}
         current = {ref["id"] for ref in observed_profile_refs(self.engine.instance)
@@ -99,7 +100,7 @@ class ProbeBatchTests(unittest.TestCase):
         self.assertEqual(observed, current)
 
     def test_probe_without_named_editions_must_name_the_current_configuration(self):
-        with patch("do_math.initialization.adapter_for") as adapter:
+        with patch("do_math.local_host.adapter_for") as adapter:
             for change in ({"operation": "probe"}, {"operation": "probe", "config_sha256": "0" * 64}):
                 with self.subTest(change=change), self.assertRaisesRegex(ValueError, "config_sha256"):
                     self.engine._initialization_control(change, "source")

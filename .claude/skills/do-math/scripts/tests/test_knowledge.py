@@ -9,6 +9,7 @@ import tempfile
 import hashlib
 import os
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from do_math.local_host import LocalHost
 from do_math import knowledge, knowledge as k, knowledge_io, knowledge_records as kr
 from do_math.canonical import exact_content_hash
 from do_math.system_clock import new_id
@@ -559,7 +560,7 @@ class KnowledgeRecordTests(unittest.TestCase):
             environment, binding = trust_environment(trust_fixture(Path(directory), ['synthetic-lean']),
                                                      environment_id='TE-test', source_ref='synthetic:approval')
             self.assertEqual(environment_errors(environment, binding), [])
-            self.assertEqual(check_environment(environment, binding)['status'], 'verified')
+            self.assertEqual(check_environment(environment, binding, host=LocalHost())['status'], 'verified')
             state, runtime, kid, _ = verified_knowledge(environment, binding=binding, identity=False)
             profiles = build_profiles(DEFAULT_CONFIG)
             profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'identity_review')

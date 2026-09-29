@@ -489,7 +489,7 @@ class QueuedPreparationTests(unittest.TestCase):
                 job.close()
 
     def setUp(self):
-        self.enterContext(patch('do_math.initialization.adapter_for', return_value=FixtureAdapter()))
+        self.enterContext(patch('do_math.local_host.adapter_for', return_value=FixtureAdapter()))
         self.open(charter=False)
 
     def open(self, *, charter):

@@ -18,7 +18,7 @@ class ToolDiscoveryTests(unittest.TestCase):
         engine.runtime = {'tasks': {}}
         clock = [100.0]
         engine.ports = clock_ports(monotonic=lambda: clock[0])
-        with patch.object(engine_module, 'discover_lean', return_value=['lean']) as discover:
+        with patch('do_math.formal.discover_lean', return_value=['lean']) as discover:
             for _ in range(5):
                 self.assertIn('tool:lean', engine._available_inputs())
             self.assertEqual(discover.call_count, 1)

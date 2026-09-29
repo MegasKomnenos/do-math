@@ -59,7 +59,7 @@ class GovernanceEngineMixin:
             raise ValueError('host resource changes require a stopped executor with no live execution or held reservation')
         if candidate['scholarly_enabled']:
             candidate['scholarly_server'] = resolve_scholarly_server(candidate['scholarly_server'], start=Path.cwd())
-        editions = execution_profiles.build_profiles(candidate)
+        editions = execution_profiles.build_profiles(candidate, host=self.ports.host)
         result['config'] = candidate
         execution_profiles.apply_editions(result, editions)
         live = live_action_ids(state)
@@ -420,7 +420,7 @@ class GovernanceEngineMixin:
             and all(a['decision'] == 'satisfied' for a in j['additional_audits']) for j in judgments)
         if satisfied:
             from .trust_validation import require_active_environment
-            require_active_environment(self.instance, self.runtime, current_identity=True)
+            require_active_environment(self.instance, self.runtime, current_identity=True, host=self.ports.host)
             self.instance = academic.apply_goal_assurance(self.instance, decision='mathematically_solved',
                 basis=action['basis'], judgments=judgments, runtime=self.runtime)
             self.runtime['status'] = 'completed'
