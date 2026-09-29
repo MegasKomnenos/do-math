@@ -9,7 +9,9 @@ from dataclasses import dataclass
 from .calls import Calls
 from .clock import Clock
 from .git_backend import GitBackend
+from .http import Http
 from .jobs import Jobs
+from .scheduler import Scheduler
 
 
 @dataclass(frozen=True)
@@ -18,3 +20,5 @@ class Ports:
     git_backend: GitBackend
     calls: Calls
     jobs: Jobs
+    scheduler: Scheduler
+    http: Http

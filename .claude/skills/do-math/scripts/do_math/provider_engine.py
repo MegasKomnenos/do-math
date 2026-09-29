@@ -77,7 +77,8 @@ class ProviderEngineMixin:
             return
         try:
             result = reconcile_wake(self.store.repository, self.instance["id"], Path(self.instance["workspace"]),
-                                    facts=facts, providers=self._provider_status()["providers"])
+                                    facts=facts, providers=self._provider_status()["providers"],
+                                    scheduler=self.ports.scheduler)
             result.pop("observed", None)
         except Exception as error:
             result = {"status": "failed", "error": str(error)}

@@ -121,6 +121,7 @@ def schedule(
     wake_at: str | None = None,
     wake_key: str | None = None,
     runner: Runner = subprocess.run,
+    scheduler=None,
 ) -> dict[str, Any]:
     """Call the narrow PowerShell scheduler adapter and decode its JSON result.
 
@@ -132,35 +133,41 @@ def schedule(
     names = task_names(repository, instance)
     pythonw = Path(sys.executable).with_name("pythonw.exe")
     executable = str(pythonw) if pythonw.is_file() else sys.executable
-    powershell = shutil.which("powershell.exe") or shutil.which("powershell") or "powershell.exe"
-    command = [
-        powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SCHEDULE_SCRIPT),
-        "-Action", action,
-        "-Repository", str(repository.resolve()),
-        "-Instance", instance,
-        "-Workspace", str(workspace.resolve()),
-        "-Python", executable,
-        "-OperatorTask", names["operator"],
-        "-EngineTask", names["engine"],
-        "-WakeTask", names["wake"],
-    ]
+    arguments = {"Repository": str(repository.resolve()), "Instance": instance, "Workspace": str(workspace.resolve()),
+                 "Python": executable, "OperatorTask": names["operator"], "EngineTask": names["engine"],
+                 "WakeTask": names["wake"]}
     if action == "install":
-        command.extend(["-IntervalSeconds", str(interval_seconds),
-                        "-OperatorTimeoutSeconds", str(operator_timeout_seconds)])
+        arguments.update(IntervalSeconds=str(interval_seconds), OperatorTimeoutSeconds=str(operator_timeout_seconds))
     if action == "schedule-wake":
         if epoch_seconds(wake_at) is None or not wake_key:
             raise ValueError("wake requires a timezone-aware retry time and generation key")
-        command.extend(["-WakeAt", wake_at, "-WakeKey", wake_key])
-    completed = runner(command, capture_output=True, text=True, encoding="utf-8", check=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-    if completed.returncode:
-        raise RuntimeError(completed.stderr.strip() or completed.stdout.strip() or "scheduled-task operation failed")
-    try:
-        value = json.loads(completed.stdout)
-    except json.JSONDecodeError as error:
-        raise RuntimeError("scheduled-task adapter returned invalid JSON") from error
-    if not isinstance(value, dict):
-        raise RuntimeError("scheduled-task adapter result must be an object")
-    return value
+        arguments.update(WakeAt=wake_at, WakeKey=wake_key)
+    return (scheduler or PowerShellScheduler(runner)).run(action, arguments)
+
+
+class PowerShellScheduler:
+    """Real scheduler port: the PowerShell adapter ``operator_schedule.ps1``."""
+
+    def __init__(self, runner: Runner = subprocess.run):
+        self.runner = runner
+
+    def run(self, action: str, arguments: dict) -> dict:
+        powershell = shutil.which("powershell.exe") or shutil.which("powershell") or "powershell.exe"
+        command = [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SCHEDULE_SCRIPT),
+                   "-Action", action]
+        for name, value in arguments.items():
+            command.extend(["-" + name, value])
+        completed = self.runner(command, capture_output=True, text=True, encoding="utf-8", check=False,
+                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        if completed.returncode:
+            raise RuntimeError(completed.stderr.strip() or completed.stdout.strip() or "scheduled-task operation failed")
+        try:
+            value = json.loads(completed.stdout)
+        except json.JSONDecodeError as error:
+            raise RuntimeError("scheduled-task adapter returned invalid JSON") from error
+        if not isinstance(value, dict):
+            raise RuntimeError("scheduled-task adapter result must be an object")
+        return value
 
 
 def cancel_wake(repository: Path, instance: str, workspace: Path) -> dict[str, Any]:
@@ -332,7 +339,8 @@ def engine_start_guard(repository: Path, instance: str, workspace: Path, *, stat
     return {"outcome": "startable", "before": status}
 
 
-def reconcile_wake(repository: Path, instance: str, workspace: Path, *, facts: dict, providers: dict) -> dict:
+def reconcile_wake(repository: Path, instance: str, workspace: Path, *, facts: dict, providers: dict,
+                   scheduler=None) -> dict:
     """Repair a missing/stale one-shot reservation before invoking any model.
 
     ``facts`` are the caller's supervision facts and ``providers`` its provider
@@ -351,13 +359,13 @@ def reconcile_wake(repository: Path, instance: str, workspace: Path, *, facts: d
     row = min(waits, key=lambda value: epoch_seconds(value["retry_at"]))
     key = row["provider"] + ":" + str(row["generation"])
     wanted = {"key": key, "retry_at": row["retry_at"]}
-    observed = schedule("status", repository=repository, instance=instance, workspace=workspace)
+    observed = schedule("status", repository=repository, instance=instance, workspace=workspace, scheduler=scheduler)
     actual = observed.get("wake")
     future_trigger = actual and (epoch_seconds(actual.get("next_run")) or 0) > datetime.now(timezone.utc).timestamp()
     running = (observed.get("engine") or {}).get("state") == "Running" or (actual or {}).get("state") == "Running"
     if previous == wanted and actual and actual.get("description") == key and (future_trigger or running):
         return {"status": "scheduled", **wanted, "observed": observed}
-    schedule("schedule-wake", repository=repository, instance=instance, workspace=workspace,
+    schedule("schedule-wake", repository=repository, instance=instance, workspace=workspace, scheduler=scheduler,
              wake_at=row["retry_at"], wake_key=key)
     _json(marker, wanted)
     return {"status": "scheduled", **wanted, "observed": observed}

@@ -208,7 +208,7 @@ class ExternalEngineMixin:
             result = execute_operation(deepcopy(operation), deepcopy(grant), persist=persist,
                 timeout_seconds=fixed_profile['window']['call_timeout_seconds'], should_stop=should_stop,
                 runtime=self.runtime, academic_check=self._external_prerequisite,
-                current_grant=lambda gid: self.instance['grants'].get(gid, {}))
+                current_grant=lambda gid: self.instance['grants'].get(gid, {}), transport=self.ports.http.request)
         except Exception as error:
             result = deepcopy(self.runtime['external_operations'][operation_id])
             sent = result.get('transmitted') is True

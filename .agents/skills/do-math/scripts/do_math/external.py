@@ -94,6 +94,13 @@ def _http(request: dict, header: list[tuple[str,str]], timeout: int) -> dict:
         with build_opener(_NoRedirect).open(req,timeout=timeout) as response: body=response.read(); return {"http_status":response.status,"body":body}
     except HTTPError as error: return {"http_status":error.code,"body":error.read()}
 
+class UrllibHttp:
+    """Real HTTP port."""
+
+    def request(self, request: dict, header: list, timeout: int) -> dict:
+        return _http(request, header, timeout)
+
+
 def execute_operation(operation: dict, grant: dict, *, persist: Callable[[dict],Any], timeout_seconds=30, should_stop=None, transport=None,
                       runtime=None, academic_check=None, current_grant=None) -> dict:
     if operation.get("status")=="unknown": raise ValueError("unknown operation requires reconciliation")

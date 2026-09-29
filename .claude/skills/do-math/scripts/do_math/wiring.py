@@ -4,10 +4,13 @@ from .git_process import GitProcess
 from .parallel import ThreadCalls
 from .system_clock import SystemClock
 from .windows_job import WindowsJobs
+from .external import UrllibHttp
+from .scheduled_operator import PowerShellScheduler
 
 
 def real_ports() -> Ports:
-    return Ports(clock=SystemClock(), git_backend=GitProcess(), calls=ThreadCalls(), jobs=WindowsJobs())
+    return Ports(clock=SystemClock(), git_backend=GitProcess(), calls=ThreadCalls(), jobs=WindowsJobs(),
+                 scheduler=PowerShellScheduler(), http=UrllibHttp())
 
 
 def default_clock():

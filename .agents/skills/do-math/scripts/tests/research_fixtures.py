@@ -204,8 +204,10 @@ def clock_ports(**overrides):
     from do_math.git_process import GitProcess
     from do_math.parallel import ThreadCalls
     from do_math.windows_job import WindowsJobs
+    from do_math.external import UrllibHttp
+    from do_math.scheduled_operator import PowerShellScheduler
     return Ports(clock=SimpleNamespace(**operations), git_backend=GitProcess(), calls=ThreadCalls(),
-                 jobs=WindowsJobs())
+                 jobs=WindowsJobs(), scheduler=PowerShellScheduler(), http=UrllibHttp())
 
 
 def bare_engine(instance=None, runtime=None, *, head="fixture-head", store=None, runner=None,
