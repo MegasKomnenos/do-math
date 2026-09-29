@@ -10,6 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.canonical import exact_content_hash
 from do_math.control_server import mcp_server_config
+from do_math.worker_request import validate_execution_binding
 from research_fixtures import dispatched_launch
 from do_math import execution_profiles, model_policy
 from provider_fixtures import PROFILE_CONFIG
@@ -209,7 +210,7 @@ class ProfileTests(unittest.TestCase):
             for worker_request in (request, claude_request):
                 worker_request["control_binding"] = {**binding, "execution_id": "EX-other"}
                 with self.assertRaises(ValueError):
-                    cli_worker.validate_execution_binding(worker_request)
+                    validate_execution_binding(worker_request)
             with self.assertRaises(ValueError):
                 runner.run(prompt=execution_profiles.prepare_prompt("wrong", profile), input_seal=execution_profiles.prompt_seal(execution_profiles.prepare_prompt("wrong", profile)), output_schema={}, workspace=root, evidence_dir=root / "wrong",
                     model=profile["ai"]["model"], effort=profile["ai"]["effort"], timeout_seconds=600,
@@ -545,10 +546,10 @@ class ProfileTests(unittest.TestCase):
         from do_math.claude_adapter import ClaudePrintAdapter
         self.assertEqual(set(CodexExecAdapter("codex").capability_identity()["module_sha256"]),
                          {"cli_worker", "codex_worker", "control_transport", "control_protocol", "file_io", "values", "windows_job",
-                          "scholarly", "codex_adapter", "codex_stream", "provider_final", "control_server"})
+                          "scholarly", "codex_adapter", "codex_stream", "provider_final", "control_server", "worker_request", "cli_execution"})
         self.assertEqual(set(ClaudePrintAdapter("claude").capability_identity()["module_sha256"]),
                          {"claude_worker", "cli_worker", "codex_worker", "control_transport", "control_protocol", "file_io", "values", "windows_job",
-                          "scholarly", "codex_adapter", "codex_stream", "provider_final", "control_server", "claude_adapter", "claude_stream"})
+                          "scholarly", "codex_adapter", "codex_stream", "provider_final", "control_server", "worker_request", "cli_execution", "claude_adapter", "claude_stream"})
 
     def test_unchanged_cli_and_sources_are_not_rehashed_for_each_identity(self):
         from do_math import file_io

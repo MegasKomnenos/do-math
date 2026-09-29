@@ -28,7 +28,9 @@ from do_math.values import compact_json_bytes, strict_json_loads
 from do_math.windows_job import WindowsJob, process_identity
 from do_math.codex_stream import artifact as _artifact, parse_response as _parse_codex, provider_observation as _provider_observation
 from do_math.provider_final import EXECUTABLE_KEYS, final_bytes as _final_bytes, final_mismatch
-from do_math import cli_worker, codex_worker
+from do_math.cli_execution import (checked_start_paths, collection_reasons, decode_status, surface_report,
+                                   termination_confirmed)
+from do_math import codex_worker
 
 
 @dataclass
@@ -115,35 +117,14 @@ class LocalCLIAdapter:
             helps = [(run(arguments), flags) for arguments, flags in self.help_commands]
         except (OSError, subprocess.TimeoutExpired) as exc:
             return {"cli_path": self.cli_path, "verified": False, "error_type": type(exc).__name__}
-        verified = version.returncode == 0 and all(result.returncode == 0 and all(flag in result.stdout for flag in flags)
-                                                   for result, flags in helps)
-        help_bytes = helps[-1][0].stdout
-        return {"scope": "cli_command_surface_only", "identity": self.capability_identity(), "provider": self.provider,
-                "cli_path": self.cli_path, "version_bytes": version.stdout,
-                "version_sha256": hashlib.sha256(version.stdout).hexdigest(),
-                "exec_help_bytes": help_bytes, "exec_help_sha256": hashlib.sha256(help_bytes).hexdigest(),
-                "verified": verified,
-                "supported": {**{name: verified for name in self.surface_capabilities}, "local_job_stop": True},
-                "unknown": list(self.unknown_capabilities)}
+        return surface_report(version, helps, identity=self.capability_identity(), provider=self.provider,
+                              cli_path=self.cli_path, surface=self.surface_capabilities,
+                              unknown=self.unknown_capabilities)
 
     def start(self, request_path: Path, *, cwd: Path, env: Mapping[str, str], job_name=None) -> CLIExecution:
         request = self.worker_module.load_request(request_path)
-        prompt_path, stdout_path, stderr_path, status_path = (Path(request[name]) for name in
-            ("prompt_path", "stdout_path", "stderr_path", "status_path"))
-        final_path = Path(request["final_path"]) if "final_path" in request else None
-        if Path(request[self.executable_key]).resolve() != Path(self.cli_path).resolve():
-            raise ValueError("request CLI executable differs from adapter executable")
-        outputs = [path for path in (stdout_path, stderr_path, final_path, status_path) if path is not None]
-        paths = [request_path, prompt_path, *outputs]
-        if "output_schema_path" in request:
-            paths.append(Path(request["output_schema_path"]))
-        if len({path.resolve() for path in paths}) != len(paths):
-            raise ValueError("request, prompt, and output paths must be distinct")
-        if any(path.exists() for path in outputs):
-            raise FileExistsError("output paths must be newly allocated")
-        workspace = Path(request["cwd"]).resolve()
-        if any(path.resolve().is_relative_to(workspace) for path in outputs):
-            raise ValueError("worker outputs and status must be outside the model workspace")
+        prompt_path, stdout_path, stderr_path, status_path, final_path, workspace = checked_start_paths(
+            request, request_path, cli_path=self.cli_path, executable_key=self.executable_key)
         prompt_raw = prompt_path.read_bytes()
         stage = Path(tempfile.mkdtemp(prefix="do-math-cli-", dir=workspace.parent))
         snapshot_prompt = stage / "prompt.bin"; snapshot_prompt.write_bytes(prompt_raw)
@@ -180,8 +161,7 @@ class LocalCLIAdapter:
         """Observe the Job barrier; a signaled root alone is insufficient."""
         deadline = None if timeout is None else time.monotonic() + timeout
         while True:
-            state = execution.job.inspect()
-            if state.root_signaled and state.active_processes == 0 and state.process_ids == ():
+            if termination_confirmed(execution.job.inspect()):
                 return True
             if deadline is not None and time.monotonic() >= deadline:
                 return False
@@ -192,7 +172,7 @@ class LocalCLIAdapter:
         request_raw, prompt_raw = execution.request_raw, execution.prompt_raw
         request = json.loads(request_raw)
         job_state = execution.job.inspect()
-        barrier = job_state.root_signaled and job_state.active_processes == 0 and job_state.process_ids == ()
+        barrier = termination_confirmed(job_state)
         if not barrier:
             return {"result": "incomplete", "reasons": ["termination_barrier_unconfirmed"],
                     "termination_barrier": {"active_processes": job_state.active_processes,
@@ -201,31 +181,12 @@ class LocalCLIAdapter:
                     "provider_observation": _provider_observation(request, {}, None)}
         stdout, stderr, final_file, status_raw = (_read(path) for path in (execution.stdout_path,
                                                   execution.stderr_path, execution.final_path, execution.status_path))
-        status = None
-        if status_raw is not None:
-            try:
-                status = json.loads(status_raw)
-            except (UnicodeDecodeError, json.JSONDecodeError):
-                status = {"state": "invalid_status_json"}
+        status = decode_status(status_raw)
         parsed = self.parse_response(stdout, request)
         final = self.final_bytes(parsed) if self.final_from_stream else final_file
-        reasons = []
-        if not isinstance(status, dict): reasons.append("worker_status_missing")
-        elif status.get("state") == "timeout": reasons.append("max_runtime_elapsed")
-        elif status.get("state") != "exited": reasons.append("worker_not_exited")
-        elif status.get("cli_exit_code") != 0: reasons.append("cli_nonzero_exit")
-        elif status.get("stdin_sha256") != execution.prompt_sha256: reasons.append("worker_stdin_hash_mismatch")
-        elif status.get("request_sha256") != execution.request_sha256: reasons.append("worker_request_hash_mismatch")
-        elif status.get("schema_sha256") != execution.schema_sha256: reasons.append("worker_schema_hash_mismatch")
-        if isinstance(status, dict):
-            for key in cli_worker.STATUS_BINDING_KEYS:
-                if key in request and status.get(key) != request[key]:
-                    reasons.append("worker_" + key + "_mismatch")
-        if parsed["turn_failed"]: reasons.append("turn_failed")
-        if not parsed["turn_completed"]: reasons.append("turn_completed_missing")
-        if not parsed["parse_complete"]: reasons.append("jsonl_parse_incomplete")
-        if final is None: reasons.append("final_message_missing")
-        else: reasons.extend(self.validate_final(parsed, final))
+        reasons = collection_reasons(status, parsed, final, request, prompt_sha256=execution.prompt_sha256,
+                                     request_sha256=execution.request_sha256, schema_sha256=execution.schema_sha256,
+                                     final_check=self.validate_final)
         return {"source_request": _artifact(request_raw, execution.request_sha256),
                 "source_prompt": _artifact(prompt_raw, execution.prompt_sha256),
                 "host_resources": execution.job.resource_usage() if request.get("resource_limits") is not None else None,
@@ -272,7 +233,8 @@ class CodexExecAdapter(LocalCLIAdapter):
                             "provider_stop_reason", "automatic_compaction_control",
                             "per_execution_read_isolation", "cross_profile_noninterference")
     identity_modules = ("cli_worker", "codex_worker", "control_transport", "control_protocol", "file_io", "values",
-                        "windows_job", "scholarly", "codex_adapter", "codex_stream", "provider_final", "control_server")
+                        "windows_job", "scholarly", "codex_adapter", "codex_stream", "provider_final", "control_server", "worker_request",
+                        "cli_execution")
 
     def worker_options(self, evidence_dir: Path) -> dict[str, Any]:
         # The adopted local permission mode: existing user permissions, approval never.

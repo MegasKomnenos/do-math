@@ -7,7 +7,8 @@ the program returns shows the termination barrier the product waits for. The
 launching owner is one fixed identity; a named Job is empty unless a launched,
 unfinished Job carries that name.
 """
-from do_math.windows_job import JobInspection, validate_resource_limits
+from do_math.windows_job import JobInspection
+from do_math.worker_request import validate_resource_limits
 
 _ZERO_USAGE = {"limits": {"memory_bytes": None, "cpu_rate_basis_points": None},
                "peak_job_memory_bytes": 0, "cpu_time_100ns": 0,

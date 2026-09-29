@@ -16,6 +16,7 @@ import os
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import control_transport as transport_module
+from do_math.worker_request import validate_control_binding
 from do_math.control_server import wait_receipt, mcp_server_config
 from do_math.control_transport import ControlTransport
 
@@ -352,7 +353,7 @@ class ControlTransportTests(unittest.TestCase):
             transport = ControlTransport(directory)
             for self_check in (True, False):
                 binding = transport.issue("EX-" + str(self_check), "GR-1", self_check=self_check)
-                ControlTransport.validate_binding(binding, execution_id=binding["execution_id"])
+                validate_control_binding(binding, execution_id=binding["execution_id"])
                 server = mcp_server_config(binding)
                 child = subprocess.Popen([server["command"], *server["args"]], stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,

@@ -15,6 +15,8 @@ import sys
 from collections.abc import Mapping, Sequence
 from typing import Final
 
+from .worker_request import validate_resource_limits  # re-exported: Job owners and the Jobs fake check limits with it
+
 
 class WindowsJobUnsupportedError(RuntimeError):
     """The host cannot provide atomic Job-list process creation."""
@@ -24,17 +26,6 @@ class WindowsJobResourceError(WindowsJobUnsupportedError, OSError):
     """Required local Job settings failed before creating the user process."""
 
     capability = "local_job_resources"
-
-
-def validate_resource_limits(value):
-    if value is None:
-        return None
-    if (not isinstance(value, Mapping) or set(value) != {"memory_bytes", "cpu_rate_basis_points"}
-            or any(type(v) is not int or v <= 0 for v in value.values())
-            or value["memory_bytes"] > (1 << (8 * ctypes.sizeof(ctypes.c_size_t))) - 1
-            or value["cpu_rate_basis_points"] > 10000):
-        raise ValueError("Job limits need positive commit bytes and CPU hard-cap basis points in 1..10000")
-    return dict(value)
 
 
 def process_identity(job) -> dict:

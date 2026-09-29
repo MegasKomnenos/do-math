@@ -52,7 +52,7 @@ class ModelRunner:
         cli_model = model.removeprefix("claude:")
         if provider == "claude" and not cli_model.strip():
             raise ValueError("claude: requires a Claude model name or alias")
-        from .cli_worker import validate_max_runtime
+        from .worker_request import validate_max_runtime
         validate_max_runtime(timeout_seconds)  # The worker applies the same rule to its request.
         if profile is not None:
             from .launch import validate_start
@@ -80,7 +80,7 @@ class ModelRunner:
         elif execution_id is not None:
             raise ValueError("execution identity requires a pinned profile")
         if control_binding is not None:
-            from .cli_worker import validate_execution_binding
+            from .worker_request import validate_execution_binding
             validate_execution_binding({"execution_id": execution_id, "profile_ref": reference,
                                         "control_binding": control_binding, "cwd": str(workspace.resolve())})
         workspace, evidence_dir = workspace.resolve(), evidence_dir.resolve()

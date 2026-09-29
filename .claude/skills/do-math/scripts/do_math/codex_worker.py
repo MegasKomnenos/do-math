@@ -6,26 +6,18 @@ in ``cli_worker``.
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 import sys
 from typing import Any, Mapping
 
 try:  # This module is also the direct ``python codex_worker.py`` Job root.
-    from do_math.control_protocol import CONTROL_SERVER
-    from do_math.control_server import mcp_server_config
     from do_math.values import strict_json_loads
-    from do_math.cli_worker import allowed_environment, check_common_request, run_cli
+    from do_math.cli_worker import allowed_environment, argv_inputs, run_cli
+    from do_math.worker_request import check_codex_request, codex_argv
 except ModuleNotFoundError:  # pragma: no cover - exercised by the direct-script regression.
-    from control_protocol import CONTROL_SERVER
-    from control_server import mcp_server_config
     from values import strict_json_loads
-    from cli_worker import allowed_environment, check_common_request, run_cli
-
-
-_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh", "max", "ultra"})
-_SANDBOXES = frozenset({"read-only", "workspace-write", "danger-full-access"})
-_WINDOWS_SANDBOXES = frozenset({"unelevated", "elevated"})
+    from cli_worker import allowed_environment, argv_inputs, run_cli
+    from worker_request import check_codex_request, codex_argv
 
 
 def sanitized_environment(source: Mapping[str, str] | None = None) -> dict[str, str]:
@@ -34,42 +26,13 @@ def sanitized_environment(source: Mapping[str, str] | None = None) -> dict[str, 
 
 
 def load_request(path: Path) -> dict[str, Any]:
-    value = check_common_request(strict_json_loads(path.read_text(encoding="utf-8")),
-                                 required=frozenset({"codex_path", "approval_policy", "sandbox", "final_path"}),
-                                 optional=frozenset({"windows_sandbox"}))
-    if value["effort"] not in _EFFORTS or value["approval_policy"] != "never":
-        raise ValueError("unsupported effort or approval policy")
-    if value["sandbox"] not in _SANDBOXES:
-        raise ValueError("a supported sandbox is required")
-    if "windows_sandbox" in value and value["windows_sandbox"] not in _WINDOWS_SANDBOXES:
-        raise ValueError("windows_sandbox must be elevated or unelevated when present")
-    return value
+    return check_codex_request(strict_json_loads(path.read_text(encoding="utf-8")))
 
 
 def build_argv(request: Mapping[str, Any]) -> list[str]:
-    """Use only documented non-interactive flags and a stdin prompt sentinel; ``load_request`` checked the request."""
-    argv = [request["codex_path"], "--ask-for-approval", request["approval_policy"], "exec",
-            "--json", "--color", "never", "--output-last-message", request["final_path"],
-            "--model", request["model"], "--cd", request["cwd"],
-            "--strict-config", "--config", 'model_reasoning_effort="' + request["effort"] + '"',
-            "--config", "project_doc_max_bytes=0",
-            "--ephemeral", "--ignore-user-config", "--ignore-rules", "--skip-git-repo-check"]
-    if "output_schema_path" in request:
-        argv.extend(["--output-schema", request["output_schema_path"]])
-    if "windows_sandbox" in request:
-        argv.extend(["--config", 'windows.sandbox="' + request["windows_sandbox"] + '"'])
-    if "control_binding" in request:
-        control = mcp_server_config(request["control_binding"])
-        argv.extend(["--config", f"mcp_servers.{CONTROL_SERVER}.command=" + json.dumps(control["command"], ensure_ascii=False),
-                     "--config", f"mcp_servers.{CONTROL_SERVER}.args=" + json.dumps(control["args"], ensure_ascii=False)])
-    server = request.get("scholarly_server")
-    if server is not None:
-        data_dir = str((Path(request["cwd"]).resolve() / "scholarly-data"))
-        args = [*server["args"], "--data-dir", data_dir]
-        argv.extend(["--config", "mcp_servers.scholarly.command=" + json.dumps(server["command"], ensure_ascii=False),
-                     "--config", "mcp_servers.scholarly.args=" + json.dumps(args, ensure_ascii=False)])
-    argv.extend(["--sandbox", request["sandbox"]])
-    return [*argv, "-"]
+    """The Codex command for a request ``load_request`` has checked."""
+    control, data_dir = argv_inputs(request)
+    return codex_argv(request, control=control, data_dir=data_dir)
 
 
 def run(request_path: Path) -> int:

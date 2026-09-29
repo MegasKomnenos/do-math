@@ -145,26 +145,6 @@ class ControlTransport:
         self._capabilities[transport_id] = deepcopy(binding)
         return deepcopy(binding)
 
-    @staticmethod
-    def validate_binding(binding: Any, *, execution_id: str, cwd: str | None = None) -> None:
-        """A worker's binding names this execution, an absolute endpoint and, when given, its cwd."""
-        if (not isinstance(binding, dict) or set(BINDING_FIELDS) - set(binding)
-                or set(binding) - set(BINDING_FIELDS) - {"workspace", "self_check"}
-                or binding.get("self_check", True) is not True
-                or any(not isinstance(binding[key], str) or not binding[key].strip() or "\0" in binding[key]
-                       for key in BINDING_FIELDS)
-                or binding["execution_id"] != execution_id
-                or not Path(binding["endpoint"]).is_absolute()):
-            raise ValueError("control binding must identify this execution and an absolute local endpoint")
-        if "workspace" in binding:
-            workspace = binding["workspace"]
-            if (not isinstance(workspace, str) or not workspace.strip() or "\0" in workspace
-                    or not Path(workspace).is_absolute()):
-                raise ValueError("control binding workspace must be an absolute local path")
-            if cwd is not None and (not isinstance(cwd, str) or not cwd.strip() or "\0" in cwd
-                    or not Path(cwd).is_absolute() or Path(workspace).resolve() != Path(cwd).resolve()):
-                raise ValueError("control binding workspace differs from execution cwd")
-
     def receive(self, request: dict, *, publish: Callable[[dict], dict] | None = None) -> dict:
         """Validate and publish a request, or record its non-final receipt.
 
