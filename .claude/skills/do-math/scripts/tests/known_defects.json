@@ -107,6 +107,15 @@
       "found_by": "1f migration of test_lifecycle_engine.GrantAndExternalEffectTests.test_machine_records_use_registered_schema_and_existing_source_provenance: running its provenance check also over a transition activated after its re-checks",
       "missed_kind": "The legacy provenance test activated only an empty transition, whose activation the control queues, and ran the re-checks of a second transition without activating it; the execution schema does not require source_ref",
       "status": "open"
+    },
+    {
+      "id": "KD-0600",
+      "summary": "Preparing an impact review reads the held producer's sealed submission (call_engine._prepare_call -> core_engine._context), and an unreadable one raises out of the owner pass: a SealedSubmissionError (hash or receipt mismatch) ends the review attempt start_failed and is raised again from run while the review action stays queued (_continue_prepared_action), so every later pass prepares, fails and stops at the same action; a GitStateStoreError (missing object) is caught by no handler on that path. The retry path (_retry_impact_reviews) holds the same condition as a submission_failure wait, but it reads the bytes only after the review ended, so a submission unreadable before its review never reaches that hold",
+      "category": 2,
+      "reproduction": "flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests.test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared",
+      "found_by": "1f knowledge.2 (impact_review migration): a held producer's sealed output changed in the repository before its impact review was prepared, on the Sim; confirmed by the strength review's code trace",
+      "missed_kind": "No test made a held submission unreadable before its review started: the legacy retry test replaced read_sealed_submission only around the retry, and the review's own preparation read ran only on readable bytes. In the reproduction a missing object is stopped earlier by the owner's pre-write presence and length inspection (_inspect_before_write), so the uncaught GitStateStoreError branch is known from the code, not run",
+      "status": "open"
     }
   ]
 }

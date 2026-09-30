@@ -19,12 +19,12 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_delegations test_design_walkthroughs test_environment_validation
         test_execution_window
         test_external_operations test_file_io
-        test_git_store test_goal_audit test_impact_review
+        test_git_store test_goal_audit
         test_installation_discovery test_json_digests
-        test_knowledge_import_engine test_knowledge_io test_knowledge_storage test_lifecycle_gates
+        test_lifecycle_gates
         test_machine_scheduling test_model_metadata_boundary
         test_owned_job_children test_payloads test_preparation_cache test_provider_final_contract test_query_records test_reading_map
-        test_reassessment test_reference_catalog test_relation_dependencies test_repair_execution
+        test_reference_catalog test_relation_dependencies test_repair_execution
         test_reporting test_repository test_review_policy test_revision_obligations test_scholarly test_standalone test_state_contract test_supervisor_recovery
         test_test_runner test_trust_continuation
         test_unicode_flow''',
@@ -41,7 +41,7 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_planning_engine test_provider_recovery test_role_input
         test_task_completion''',
     'research': '''
-        test_currentness test_purpose_engine test_research_recovery test_session_scheduler''',
+        test_purpose_engine test_research_recovery test_session_scheduler''',
     'review': '''
         test_native_final_submission test_repetition test_review_research test_submission_boundaries test_submission_tools''',
     'academic': '''

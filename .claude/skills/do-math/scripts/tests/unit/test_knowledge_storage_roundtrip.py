@@ -1,71 +1,76 @@
-"""Knowledge records through actual Git storage: shared formal results, exact source and compiler text, and revision roundtrips."""
-import copy
-import sys
-import unittest
-from pathlib import Path
+"""Knowledge records stored and reloaded through the real ``ResearchRepository`` (layer 2): shared formal results,
+exact source and compiler text, and revision round trips.
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math.canonical import exact_content_hash
-from test_categories import test_group as category
-from do_math import knowledge, knowledge_io
-from do_math import knowledge_records as kr
-from knowledge_fixtures import formal_boundary_engine, knowledge_candidate
-from review_fixtures import KnowledgeRoundtripHarness
+Every test starts from ``support.knowledge_roundtrip.KnowledgeRoundtripHarness``:
+a verified, not yet reviewed theorem "Truth" in the active environment
+``TE-test``, with synthetic sealed reviews recorded through the pure review
+cycle, and a repository on the Git port's fake whose storage contract
+validates every publication. Unicode that normalization would change is
+written as escapes, so no editor can rewrite a test input.
+"""
+import copy
 import hashlib
+import json
+import unittest
+
+from do_math import knowledge, knowledge_io, knowledge_records as kr
+from do_math.canonical import exact_content_hash
+from knowledge_fixtures import knowledge_candidate
+from support.knowledge_roundtrip import KnowledgeRoundtripHarness
 
 
 class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
-    """Actual Git roundtrips with domain-produced sealed, synthetic reviews."""
     def test_shared_formal_result_continuity_round_trips_for_each_exposition(self):
+        """About 0.35 s, over the 0.2 s unit budget: the split state is published and reloaded through the storage contract five times."""
         first = self.kid
         first_assessment = self.assessment()
-        shared = self.state["knowledge"][first]["formal_result_id"]
+        shared = self.state['knowledge'][first]['formal_result_id']
         proposed = knowledge_candidate(formal_result_ref=shared)
-        proposed.update(title="Second explanation", explanation="An independent account of True")
+        proposed.update(title='Second explanation', explanation='An independent account of True')
         self.state, self.runtime, second = knowledge_io.import_candidate(
-            self.state, self.runtime, proposed, source_ref="second-source", actor_ref="second-author")
+            self.state, self.runtime, proposed, source_ref='second-source', actor_ref='second-author')
         self.kid = second
         second_assessment = self.assessment()
         self.roundtrip()
-        self.assertEqual(self.state["knowledge"][second]["formal_result_id"], shared)
+        self.assertEqual(self.state['knowledge'][second]['formal_result_id'], shared)
         previous_assessments = {first: first_assessment, second: second_assessment}
-        for environment_id in ("TE-next", "TE-third"):
-            current_environment = self.state["active_trust_environment"]
-            self.state["trust_environments"][environment_id] = {
-                **copy.deepcopy(self.state["trust_environments"][current_environment]),
-                "id": environment_id, "status": "registered"}
+        for environment_id in ('TE-next', 'TE-third'):
+            current_environment = self.state['active_trust_environment']
+            self.state['trust_environments'][environment_id] = {
+                **copy.deepcopy(self.state['trust_environments'][current_environment]),
+                'id': environment_id, 'status': 'registered'}
             # Registering the same shared toolchain record again binds the same baseline.
-            self.runtime["trust_bindings"][environment_id] = copy.deepcopy(self.runtime["trust_bindings"][current_environment])
+            self.runtime['trust_bindings'][environment_id] = copy.deepcopy(self.runtime['trust_bindings'][current_environment])
             transition = knowledge.begin_transition(self.state, environment_id)
-            self.assertEqual({target["id"] for target in transition["targets"]}, {first, second})
-            for target in transition["targets"]:
-                self.assertEqual(target["exposition_id"],
-                                 self.state["knowledge"][target["id"]]["exposition_id"])
-                result = copy.deepcopy(self.state["formal_results"][target["formal_result_id"]]["verification"])
-                result.update(id=target["id"], toolchain=copy.deepcopy(
-                    self.state["trust_environments"][environment_id]["toolchain"]))
+            self.assertEqual({target['id'] for target in transition['targets']}, {first, second})
+            for target in transition['targets']:
+                self.assertEqual(target['exposition_id'],
+                                 self.state['knowledge'][target['id']]['exposition_id'])
+                result = copy.deepcopy(self.state['formal_results'][target['formal_result_id']]['verification'])
+                result.update(id=target['id'], toolchain=copy.deepcopy(
+                    self.state['trust_environments'][environment_id]['toolchain']))
                 transition = knowledge.record_transition_result(self.state, transition, result)
-            self.runtime.setdefault("trust_transitions", {})[transition["id"]] = transition
+            self.runtime.setdefault('trust_transitions', {})[transition['id']] = transition
             self.roundtrip()
-            transition = self.runtime["trust_transitions"][transition["id"]]
+            transition = self.runtime['trust_transitions'][transition['id']]
             self.state = knowledge.activate_transition(self.state, transition)
-            transition["status"] = "active"
+            transition['status'] = 'active'
             self.roundtrip()
             for kid, old_assessment in list(previous_assessments.items()):
-                inherited = next(row for row in self.state["identity_assessments"].values()
-                                 if row.get("previous_assessment_id") == old_assessment)
-                self.assertEqual(self.state["expositions"][inherited["exposition_id"]]["supersedes"],
-                                 self.state["identity_assessments"][old_assessment]["exposition_id"])
+                inherited = next(row for row in self.state['identity_assessments'].values()
+                                 if row.get('previous_assessment_id') == old_assessment)
+                self.assertEqual(self.state['expositions'][inherited['exposition_id']]['supersedes'],
+                                 self.state['identity_assessments'][old_assessment]['exposition_id'])
                 self.assertTrue(kr.usable_links(self.state, kid))
-                previous_assessments[kid] = inherited["id"]
+                previous_assessments[kid] = inherited['id']
             broken = copy.deepcopy(self.runtime)
-            targets = broken["trust_transitions"][transition["id"]]["targets"]
-            targets[0]["exposition_id"] = targets[1]["exposition_id"]
-            with self.assertRaises(ValueError):
+            targets = broken['trust_transitions'][transition['id']]['targets']
+            targets[0]['exposition_id'] = targets[1]['exposition_id']
+            with self.assertRaisesRegex(ValueError, '^identity continuity requires the actual activated transition$'):
                 self.repo.validate_candidate(self.state, broken)
             missing = copy.deepcopy(self.runtime)
-            del missing["trust_transitions"][transition["id"]]["targets"][0]["exposition_id"]
-            with self.assertRaises(ValueError):
+            del missing['trust_transitions'][transition['id']]['targets'][0]['exposition_id']
+            with self.assertRaisesRegex(ValueError, 'exposition_id'):
                 self.repo.validate_candidate(self.state, missing)
 
     def test_unicode_currentness_and_impact_survive_actual_storage(self):
@@ -103,12 +108,13 @@ class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
         self.assertEqual(kr.usable_links(self.state, self.kid), [])
 
     def test_central_explanation_revision_reuses_formal_and_schedules_only_replacement(self):
+        """About 0.2 s, over the 0.2 s unit budget: every round trip publishes and reloads the split state through the storage contract.
+
+        The engine's candidate application (``_apply_bundle_candidate``) on the product engine loaded from the
+        repository; its planner wake-up and goal currentness are real, where the legacy test replaced both."""
         from do_math.configuration import DEFAULT_CONFIG
         from do_math import activities, execution_lifecycle
         from do_math.execution_profiles import build_profiles, profile_ref
-        from do_math.system_clock import new_id
-        from unittest.mock import create_autospec
-        from research_fixtures import bare_engine
         self.assessment()
         self.roundtrip()
         original_fid = self.state['knowledge'][self.kid]['formal_result_id']
@@ -119,9 +125,9 @@ class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
         profiles = build_profiles({**DEFAULT_CONFIG, 'lean_command': ['synthetic-lean']})
         profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'research_work')
         self.state['execution_profiles'][profile['id']] = profile
-        activity = activities.open_activity(self.runtime, activity_id=new_id('AT'), activity_kind='research_work',
+        activity = activities.open_activity(self.runtime, activity_id=self.clock.new_id('AT'), activity_kind='research_work',
             owner_ref=self.kid, input_refs=[self.kid], opened_at='2026-09-20T00:00:00Z')
-        eid, action_id = new_id('EX'), new_id('AC')
+        eid, action_id = self.clock.new_id('EX'), self.clock.new_id('AC')
         action = {'id': action_id, 'lineage_id': action_id, 'role': 'research_work', 'target': self.kid}
         execution = execution_lifecycle.create_execution(execution_id=eid, owner_activity_id=activity['id'],
             actor_kind='ai', input_manifest={'source': self.kid}, profile_ref=profile_ref(profile), created_at='2026-09-20T00:00:00Z')
@@ -130,24 +136,24 @@ class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
         activities.assign_execution(self.runtime, activity['id'], execution)
         for status in ('starting', 'running'):
             execution_lifecycle.transition_execution(execution, status, at='2026-09-20T00:00:00Z')
-        stale_id = new_id('AC')
+        stale_id = self.clock.new_id('AC')
         self.runtime['queue'].append({'id': stale_id, 'lineage_id': stale_id, 'role': 'formal_check', 'target': self.kid})
-        retained_id = new_id('AC')
+        retained_id = self.clock.new_id('AC')
         retained = {'id': retained_id, 'lineage_id': retained_id, 'role': 'research_work', 'target': self.kid}
         self.runtime['queue'].append(retained)
-        prior_history = copy.deepcopy(self.runtime.get('history', []))
-        engine = bare_engine(self.state, self.runtime, head=self.head, store=self.repo)
-        engine._enqueue = create_autospec(engine._enqueue)  # Unrelated planner wake-up; domain follow-up remains real.
-        engine._invalidate_goal_currentness = create_autospec(engine._invalidate_goal_currentness)  # Goal consensus is another owner's consumer.
         execution['input_snapshot'] = self.head
+        self.roundtrip()
+        prior_history = copy.deepcopy(self.runtime.get('history', []))
+        engine = self.engine()
         # Candidate application now owns knowledge revisions; extension-only
         # bundles do not own the separate research response/task disposition.
-        bundle = {'integration_id': new_id('IN'), 'payload_sha256': exact_content_hash(execution['extensions']),
-            'members': ['activity-extensions.json/knowledge_changes/0'], 'extensions': execution['extensions'],
+        extensions = engine.runtime['executions'][eid]['extensions']
+        bundle = {'integration_id': self.clock.new_id('IN'), 'payload_sha256': exact_content_hash(extensions),
+            'members': ['activity-extensions.json/knowledge_changes/0'], 'extensions': extensions,
             'output': {}, 'owns_response': False, 'impact_set': impact,
-            'previous_hashes': {self.kid: knowledge.content_hash(self.state['knowledge'][self.kid])}}
-        engine._apply_bundle_candidate(self.state, self.runtime, bundle, action=action, execution_id=eid,
-            extensions=execution['extensions'])
+            'previous_hashes': {self.kid: knowledge.content_hash(engine.instance['knowledge'][self.kid])}}
+        engine._apply_bundle_candidate(engine.instance, engine.runtime, bundle, action=action, execution_id=eid,
+            extensions=extensions)
         self.state, self.runtime = engine.instance, engine.runtime
         replacements = [k for k in self.state['knowledge'].values() if k.get('supersedes') == self.kid]
         self.assertEqual(len(replacements), 1)
@@ -164,7 +170,8 @@ class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
 class ExactSourceTests(KnowledgeRoundtripHarness):
     def test_actual_git_candidate_preserves_exact_source_and_declaration_names(self):
         source = 'theorem \u212a : True := True.intro\n-- e\u0301\r\n'
-        data = knowledge_candidate(); data.update(lean_code=source, declaration_names=['\u212a'])
+        data = knowledge_candidate()
+        data.update(lean_code=source, declaration_names=['\u212a'])
         self.state, self.runtime, kid = knowledge_io.import_candidate(self.state, self.runtime, data,
             source_ref='raw-source-fixture', actor_ref='raw-source-author')
         record = self.state['knowledge'][kid]
@@ -228,7 +235,6 @@ class ExactSourceTests(KnowledgeRoundtripHarness):
         self.assertTrue(kr.formal_usable(self.state, self.state['formal_results'][formal['id']]))
 
     def test_source_catalog_delivers_exact_proposal_text_and_compiler_keys(self):
-        import json
         from do_math.context_store import write_source_catalog
         formal = self.state['formal_results'][self.state['knowledge'][self.kid]['formal_result_id']]
         formal['lean_code'] += '\n-- e\u0301\r\n'
@@ -240,73 +246,6 @@ class ExactSourceTests(KnowledgeRoundtripHarness):
         self.assertEqual(hashlib.sha256(raw).hexdigest(), row['sha256'])
         self.assertEqual(json.loads(raw), proposal)
 
-    @category('lean')
-    def test_actual_lean_git_revision_and_transition_preserve_exact_inputs_and_evidence(self):
-        self._actual_lean_revision_transition(self.roundtrip)
 
-    @category('lean')
-    def test_actual_lean_domain_revision_and_transition_preserve_exact_inputs_and_evidence(self):
-        self._actual_lean_revision_transition(lambda: None)
-
-    def _actual_lean_revision_transition(self, persist):
-        from do_math import formal
-        from provider_fixtures import actual_command
-        source = 'theorem \u212a (\u2126 : True) : True := \u2126\r\ntheorem K : True := True.intro\n-- e\u0301\n'
-        names = ['\u212a', 'K']
-        observed = formal.verify_lean(source=source, declarations=names, workspace=self.root, lean_command=actual_command())
-        self.assertEqual(observed['status'], 'verified', observed.get('reason'))
-        # Installed compiler; authority adoption and noncompiler clean-build evidence
-        # are the same explicit synthetic fixtures as the central boundary tests.
-        engine, self.kid = formal_boundary_engine(self.root, observed['toolchain'])
-        profiles, constraints = self.state['execution_profiles'], self.state['capacity_constraints']
-        from research_fixtures import current_state
-        # Every stored state passes the current lifecycle gate.
-        self.state, self.runtime = current_state(
-            {**engine.instance, 'execution_profiles': profiles, 'capacity_constraints': constraints},
-            {'queue': [], 'history': [], 'trust_bindings': copy.deepcopy(engine.runtime['trust_bindings'])})
-        fid = self.state['knowledge'][self.kid]['formal_result_id']
-        self.state['formal_results'][fid].update(lean_code=source, declaration_names=names)
-        persist()  # The Git case checks candidate transport before compilation.
-        proposal = kr.proposal_view(self.state, self.kid)
-        self.assertEqual(proposal['lean_code'].encode(), source.encode())
-        observed = formal.verify_lean(source=proposal['lean_code'], declarations=proposal['declaration_names'],
-            workspace=self.root, lean_command=actual_command(), expected_toolchain=observed['toolchain'])
-        self.assertEqual(observed['status'], 'verified', observed.get('reason'))
-        self.state = kr.record_formal_result(self.state, self.kid, observed, 'TE-old', runtime=self.runtime)
-        expected = copy.deepcopy(self.state['formal_results'][fid])
-        persist()
-        self.assertEqual(self.state['formal_results'][fid], expected)
-        self.assertEqual(self.state['formal_results'][fid]['verification']['source_sha256'], hashlib.sha256(source.encode()).hexdigest())
-        changes = {'summary': 'Exact compiler expression \u2126 preserved in a clearer explanation'}
-        roots = knowledge.revision_roots(self.state, self.kid)
-        scope = knowledge.plan_impact(self.state, self.runtime, roots, [])['computed_impact']
-        old = self.kid
-        self.state, self.runtime = knowledge.revise_knowledge(self.state, self.runtime, old, changes,
-            reason='Explanation only', actor_ref='synthetic:author', declared_impact=scope)
-        self.kid = next(k for k, row in self.state['knowledge'].items() if row.get('supersedes') == old)
-        persist()
-        self.assertEqual(self.state['knowledge'][self.kid]['formal_result_id'], fid)
-        self.assertEqual(self.state['formal_results'][fid], expected)
-        self.assertEqual(kr.proposal_view(self.state, self.kid)['summary'], changes['summary'])
-        self.state['trust_environments']['TE-next'] = {**copy.deepcopy(self.state['trust_environments']['TE-old']),
-            'id': 'TE-next', 'status': 'registered', 'source_ref': 'synthetic:next-adoption'}
-        self.runtime['trust_bindings']['TE-next'] = copy.deepcopy(self.runtime['trust_bindings']['TE-old'])
-        transition = knowledge.begin_transition(self.state, 'TE-next')
-        transition = knowledge.record_transition_result(self.state, transition, {'id': self.kid, **observed})
-        self.runtime['trust_transitions'] = {transition['id']: transition}
-        persist()
-        stored_transition = self.runtime['trust_transitions'][transition['id']]
-        self.assertEqual(stored_transition['results'][self.kid]['declaration_evidence'], observed['declaration_evidence'])
-        self.state = knowledge.activate_transition(self.state, stored_transition)
-        stored_transition['status'] = 'active'
-        persist()
-        new_formal = self.state['formal_results'][self.state['knowledge'][self.kid]['formal_result_id']]
-        self.assertEqual(new_formal['lean_code'].encode(), source.encode())
-        self.assertEqual(new_formal['declaration_names'], names)
-        self.assertEqual(new_formal['verification']['declaration_evidence'], observed['declaration_evidence'])
-        self.assertEqual(self.state['formal_results'][fid], expected)
-        self.assertTrue(kr.formal_usable(self.state, new_formal))
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
