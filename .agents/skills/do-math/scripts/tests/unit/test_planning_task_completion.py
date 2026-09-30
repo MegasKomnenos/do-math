@@ -1,15 +1,14 @@
-"""Task completion, transfer and withdrawal (``do_math.task_scope``).
+"""Task completion, transfer and withdrawal (``task_scope``; layer 2), moved from ``test_task_completion``.
 
 Which submitted evidence keeps a completion assessment current, how an
-assessment transfers obligations, and what a withdrawal preserves. Pure
-functions over record fixtures.
+assessment transfers obligations, and what a withdrawal preserves. The tests
+call the product's pure functions on the record fixtures; nothing of the
+product is replaced. Where the legacy tests checked only the exception type,
+the product's rejection message is pinned.
 """
-import sys
 import unittest
 from copy import deepcopy
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import planning, task_scope
 from do_math.canonical import exact_content_hash
 from record_fixtures import apply_assessment, completed_with_knowledge, specialist_assessment
@@ -23,42 +22,44 @@ class PartialWithdrawalTests(unittest.TestCase):
         task = changed['tasks']['TK-AI']
         task_scope.validate_withdrawal_record(task)
         self.assertIsNone(task['scope_disposition']['assessment_sha256'])
-        for key in ('results_sha256', 'remaining_obligation_ids'):
+        for key, reason in (('results_sha256', '^withdrawal results changed$'),
+                            ('remaining_obligation_ids', '^withdrawal residual scope differs$')):
             with self.subTest(missing=key):
                 broken = deepcopy(task)
                 broken['scope_disposition'].pop(key)
-                with self.assertRaises(ValueError):
+                with self.assertRaisesRegex(ValueError, reason):
                     task_scope.validate_withdrawal_record(broken)
 
     def fixture(self):
         from record_fixtures import withdrawable_task
         instance, runtime, _ = withdrawable_task()
         task = runtime['tasks']['TK-AI']
-        task.update(status='waiting', results=[{'execution_id':'EX-work','outcome':'partial'}])
+        task.update(status='waiting', results=[{'execution_id': 'EX-work', 'outcome': 'partial'}])
         # A stored assessment is the planner's task assessment plus receiver fields (apply_task_assessments).
-        assessment = {'task_id':task['id'], 'decision':'incomplete', 'reason':'The partial result leaves every obligation open',
-            'execution_id':'EX-plan',
-            'item_dispositions':[{'obligation_id':o['id'],'kind':'open','evidence_refs':[]}
-                                 for o in task['completion_obligations']], 'unresolved':[]}
+        assessment = {'task_id': task['id'], 'decision': 'incomplete', 'reason': 'The partial result leaves every obligation open',
+            'execution_id': 'EX-plan',
+            'item_dispositions': [{'obligation_id': o['id'], 'kind': 'open', 'evidence_refs': []}
+                                  for o in task['completion_obligations']], 'unresolved': []}
         assessment.update(contract_sha256=planning.contract_hash(task), results_sha256=exact_content_hash(task['results']),
             current=True, basis=task_scope.assessment_basis(task, assessment, instance, runtime))
         task['assessment'] = assessment
-        return instance, runtime, {task['id']:deepcopy(task)}
+        return instance, runtime, {task['id']: deepcopy(task)}
 
     def test_assessed_partial_work_closes_without_becoming_complete(self):
         instance, runtime, snapshot = self.fixture()
         _, changed = task_scope.apply_task_dispositions(instance, runtime,
-            [{'task_id':'TK-AI','disposition':'withdraw','reason':'This optional approach is no longer useful'}],
+            [{'task_id': 'TK-AI', 'disposition': 'withdraw', 'reason': 'This optional approach is no longer useful'}],
             execution_id='EX-next-plan', input_tasks=snapshot)
         task = changed['tasks']['TK-AI']
         self.assertEqual(task['status'], 'closed')
         self.assertEqual(task['results'], snapshot['TK-AI']['results'])
         self.assertNotIn('assessment', task)
         self.assertEqual(task['assessment_history'][-1], snapshot['TK-AI']['assessment'])
-        self.assertEqual(task['scope_disposition']['remaining_obligation_ids'], ['OB-1','OB-2'])
+        self.assertEqual(task['scope_disposition']['remaining_obligation_ids'], ['OB-1', 'OB-2'])
         task_scope.validate_withdrawal_record(task)
         task['scope_disposition']['remaining_obligation_ids'] = []
-        with self.assertRaises(ValueError): task_scope.validate_withdrawal_record(task)
+        with self.assertRaisesRegex(ValueError, '^withdrawal residual scope differs$'):
+            task_scope.validate_withdrawal_record(task)
 
     def test_unassessed_new_results_and_protected_scope_are_not_withdrawable(self):
         # Each change is rejected by its own withdrawal rule, not by the stored-record schema.
@@ -68,12 +69,15 @@ class PartialWithdrawalTests(unittest.TestCase):
             with self.subTest(change=change):
                 instance, runtime, snapshot = self.fixture()
                 task = runtime['tasks']['TK-AI']
-                if change == 'new_result': task['results'].append({'execution_id':'EX-new'})
-                elif change == 'stale_assessment': task['assessment']['current'] = False
-                else: task[change] = True
+                if change == 'new_result':
+                    task['results'].append({'execution_id': 'EX-new'})
+                elif change == 'stale_assessment':
+                    task['assessment']['current'] = False
+                else:
+                    task[change] = True
                 with self.assertRaisesRegex(ValueError, reason):
-                    task_scope.apply_task_dispositions(instance,runtime,
-                        [{'task_id':'TK-AI','disposition':'withdraw','reason':'not authorized'}],
+                    task_scope.apply_task_dispositions(instance, runtime,
+                        [{'task_id': 'TK-AI', 'disposition': 'withdraw', 'reason': 'not authorized'}],
                         execution_id='EX-next', input_tasks=snapshot)
 
 
@@ -149,18 +153,23 @@ class TransferReferenceTests(unittest.TestCase):
         _, changed = apply_task_assessments(instance, runtime, [assessment], execution_id='EX-plan',
             input_tasks=original)
         self.assertEqual(changed['tasks']['TK-2']['completion_obligations'][-1]['id'], 'OB-inherited')
-        for mutate in (lambda r: r['tasks']['TK-2'].update(revision=2),
-                       lambda r: r['tasks']['TK-2'].update(status='closed'),
-                       lambda r: r['executions'].update({'EX-peer': {'status': 'running', 'action': {'target': 'TK-2'}}})):
-            candidate = deepcopy(runtime)
-            mutate(candidate)
-            with self.assertRaises(ValueError):
-                apply_task_assessments(instance, candidate, [assessment], execution_id='EX-plan',
-                    input_tasks=original)
-        with self.assertRaisesRegex(ValueError, 'recipient'):
+        for name, mutate, reason in (
+                ('revised', lambda r: r['tasks']['TK-2'].update(revision=2),
+                 '^transfer recipient must be bound to the current input$'),
+                ('closed', lambda r: r['tasks']['TK-2'].update(status='closed'),
+                 '^transfer requires a distinct unfinished recipient outside this assessment set$'),
+                ('live', lambda r: r['executions'].update({'EX-peer': {'status': 'running', 'action': {'target': 'TK-2'}}}),
+                 '^transfer recipient has a live execution$')):
+            with self.subTest(recipient=name):
+                candidate = deepcopy(runtime)
+                mutate(candidate)
+                with self.assertRaisesRegex(ValueError, reason):
+                    apply_task_assessments(instance, candidate, [assessment], execution_id='EX-plan',
+                        input_tasks=original)
+        with self.assertRaisesRegex(ValueError, '^transfer recipient must be bound to the current input$'):
             apply_task_assessments(instance, runtime, [assessment], execution_id='EX-plan',
                 input_tasks={'TK-1': original['TK-1']})
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

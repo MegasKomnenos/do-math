@@ -18,10 +18,7 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_context_store
         test_environment_validation
         test_execution_window
-        test_git_store
-        test_installation_discovery test_model_metadata_boundary test_owned_job_children test_preparation_cache test_provider_final_contract test_reading_map
-        test_reference_catalog test_relation_dependencies test_repair_execution
-        test_review_policy test_revision_obligations test_standalone test_supervisor_recovery
+        test_git_store test_installation_discovery test_model_metadata_boundary test_owned_job_children test_preparation_cache test_provider_final_contract test_reference_catalog test_repair_execution test_review_policy test_standalone test_supervisor_recovery
         test_test_runner test_trust_continuation
         ''',
     'host': '''
@@ -34,12 +31,12 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_checkpoint_persistence test_engine test_formal_engine
         test_lifecycle_engine
         test_live_observation
-        test_planning_engine test_provider_recovery test_role_input
-        test_task_completion''',
+         test_provider_recovery test_role_input
+        ''',
     'research': '''
         test_purpose_engine test_research_recovery test_session_scheduler''',
     'review': '''
-        test_repetition test_review_research test_submission_tools''',
+        test_review_research test_submission_tools''',
     'academic': '',
 }.items()}
 LABELS = ('lean', 'resource')

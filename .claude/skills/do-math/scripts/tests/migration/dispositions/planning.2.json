@@ -1,0 +1,357 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_planning_engine.DuplicateRevisionConnections.test_same_task_replacements_are_rejected_before_any_receiver_mutation",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_engine_connections.DuplicateRevisionConnections.test_same_task_replacements_are_rejected_before_any_receiver_mutation"
+      ]
+    },
+    {
+      "legacy_id": "test_planning_engine.EvaluationConnections.test_artifact_condition_reads_exact_snapshot_and_validates_bytes",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_engine_connections.EvaluationConnections.test_artifact_condition_reads_exact_snapshot_and_validates_bytes"
+      ]
+    },
+    {
+      "legacy_id": "test_planning_engine.EvaluationConnections.test_declared_observation_and_repetition_values_can_be_adopted",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_engine_connections.EvaluationConnections.test_declared_observation_and_repetition_values_can_be_adopted"
+      ]
+    },
+    {
+      "legacy_id": "test_planning_engine.KindSemanticConnections.test_proposed_kind_is_checked_by_a_separate_execution_before_activation",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_engine_connections.KindSemanticConnections.test_proposed_kind_is_checked_by_a_separate_execution_before_activation"
+      ],
+      "note": "The check now runs as the owner starts the queued maintenance action (model double answer), so its execution and input basis are the product's; the legacy EX-check row is gone and checked_by is that execution. Synthetic state kept from the legacy test: the ended EX-author's kind definition extension is set in place (it is the receipt of a research work)."
+    },
+    {
+      "legacy_id": "test_planning_engine.PlanningConnections.test_live_work_defers_reassessment_until_end_and_unrelated_changes_do_not_reopen",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_engine_connections.PlanningConnections.test_live_work_defers_reassessment_until_end_and_unrelated_changes_do_not_reopen"
+      ],
+      "note": "Sources other.txt and new.txt arrive by the public source control and EX-live is registered by the engine (_register_execution) and ended by execution transitions; the legacy test injected source rows and an execution row. The source events queue a plan to reconsider them, so the legacy \"no research_plan while work runs\" is asserted as the exact whole queue: the snapshot before the refresh with only the new source's source_imported event joined to that plan, and the assessment still current; after the work ends the one plan names TK-1."
+    },
+    {
+      "legacy_id": "test_planning_engine.PlanningConnections.test_plan_assessment_reaches_assignment_without_changing_contract",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_engine_connections.PlanningConnections.test_plan_assessment_reaches_assignment_without_changing_contract"
+      ]
+    },
+    {
+      "legacy_id": "test_planning_engine.PlanningConnections.test_readiness_refresh_requests_reassessment_while_other_work_remains",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_engine_connections.PlanningConnections.test_readiness_refresh_requests_reassessment_while_other_work_remains"
+      ],
+      "note": "The missing input is the source name new.txt and it arrives by the public source control (the assessment finds it by name, task_scope alias lookup); the legacy test injected a source row SO-new. The reassessment joins the plan the source events queue, so the one research_plan also carries their reason; TK-1 in its reason and the count of one are asserted as before."
+    },
+    {
+      "legacy_id": "test_planning_engine.PlanningConnections.test_terminal_history_remains_closed_when_assessment_evidence_changes",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_engine_connections.PlanningConnections.test_terminal_history_remains_closed_when_assessment_evidence_changes"
+      ],
+      "note": "The missing input arrives by the public source control. Synthetic state kept from the legacy test: TK-1 is closed in place while holding a current incomplete assessment that waits for a missing input. The product does not make that state: a withdrawal moves the assessment to the task history (asserted by unit.test_planning_task_completion.PartialWithdrawalTests.test_assessed_partial_work_closes_without_becoming_complete) and closing by assessment records a terminal decision. Reaching the terminal branch of _refresh_readiness publicly needs a terminally assessed task whose cited evidence later changes, a different scene."
+    },
+    {
+      "legacy_id": "test_planning_engine.WorkProfileAdmissionTests.test_policy_change_reprepares_an_unstarted_incompatible_contract",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_engine_connections.WorkProfileAdmissionTests.test_policy_change_reprepares_an_unstarted_incompatible_contract"
+      ]
+    },
+    {
+      "legacy_id": "test_planning_engine.WorkProfileAdmissionTests.test_reviewed_contract_cannot_be_ready_with_an_inadequate_allowed_profile",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_engine_connections.WorkProfileAdmissionTests.test_reviewed_contract_cannot_be_ready_with_an_inadequate_allowed_profile"
+      ]
+    },
+    {
+      "legacy_id": "test_reading_map.DocumentContextTests.test_declared_documents_have_recoverable_input_copies",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_document_context.DocumentContextTests.test_declared_documents_have_recoverable_input_copies"
+      ]
+    },
+    {
+      "legacy_id": "test_reading_map.DocumentContextTests.test_installed_reference_changes_are_part_of_the_version_check",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_document_context.DocumentContextTests.test_installed_reference_changes_are_part_of_the_version_check"
+      ]
+    },
+    {
+      "legacy_id": "test_reading_map.ReadingMapTests.test_changing_the_declared_role_path_changes_the_supplied_document",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_reading_map.ReadingMapTests.test_changing_the_declared_role_path_changes_the_supplied_document"
+      ]
+    },
+    {
+      "legacy_id": "test_reading_map.ReadingMapTests.test_declared_shared_procedures_are_supplied_in_reading_order",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_reading_map.ReadingMapTests.test_declared_shared_procedures_are_supplied_in_reading_order"
+      ]
+    },
+    {
+      "legacy_id": "test_reading_map.ReadingMapTests.test_missing_or_ambiguous_reading_map_is_an_error",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_reading_map.ReadingMapTests.test_missing_or_ambiguous_reading_map_is_an_error"
+      ]
+    },
+    {
+      "legacy_id": "test_reading_map.ReadingMapTests.test_missing_required_reference_is_not_silently_omitted",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_reading_map.ReadingMapTests.test_missing_required_reference_is_not_silently_omitted"
+      ]
+    },
+    {
+      "legacy_id": "test_reading_map.ReadingMapTests.test_role_rows_add_their_references_after_the_common_documents",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_reading_map.ReadingMapTests.test_role_rows_add_their_references_after_the_common_documents"
+      ]
+    },
+    {
+      "legacy_id": "test_relation_dependencies.RelationEvidenceTests.test_impact_analysis_does_not_turn_evidence_file_locators_into_record_dependencies",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_relation_evidence.RelationEvidenceTests.test_impact_analysis_does_not_turn_evidence_file_locators_into_record_dependencies"
+      ]
+    },
+    {
+      "legacy_id": "test_relation_dependencies.RelationEvidenceTests.test_output_and_extension_relations_report_every_explicit_reference",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_relation_evidence.RelationEvidenceTests.test_output_and_extension_relations_report_every_explicit_reference"
+      ]
+    },
+    {
+      "legacy_id": "test_relation_dependencies.RelationEvidenceTests.test_relation_endpoints_still_bind_submitted_content_not_later_review_bookkeeping",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_relation_evidence.RelationEvidenceTests.test_relation_endpoints_still_bind_submitted_content_not_later_review_bookkeeping"
+      ]
+    },
+    {
+      "legacy_id": "test_relation_dependencies.RelationEvidenceTests.test_relation_judgment_edges_keep_formal_and_assessment_use_current",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_relation_evidence.RelationEvidenceTests.test_relation_judgment_edges_keep_formal_and_assessment_use_current"
+      ]
+    },
+    {
+      "legacy_id": "test_relation_dependencies.RelationReadTests.test_indirect_endpoints_obey_both_revision_directions_and_question_gates",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_relation_reads.RelationReadTests.test_indirect_endpoints_obey_both_revision_directions_and_question_gates"
+      ]
+    },
+    {
+      "legacy_id": "test_repetition.RepetitionEngineTests.test_empty_preparation_preserves_machine_time_and_opens_one_due_regeneration",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_repetition_engine.RepetitionEngineTests.test_empty_preparation_preserves_machine_time_and_opens_one_due_regeneration"
+      ]
+    },
+    {
+      "legacy_id": "test_repetition.RepetitionEngineTests.test_native_plan_failures_reach_receiver_counter_through_preserved_bytes",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_repetition_engine.RepetitionEngineTests.test_native_plan_failures_reach_receiver_counter_through_preserved_bytes"
+      ]
+    },
+    {
+      "legacy_id": "test_repetition.RepetitionEngineTests.test_operational_retry_is_idempotent_and_waits_for_user_at_the_limit",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_repetition_engine.RepetitionEngineTests.test_operational_retry_is_idempotent_and_waits_for_user_at_the_limit"
+      ]
+    },
+    {
+      "legacy_id": "test_repetition.RepetitionEngineTests.test_public_continue_releases_exact_hold_and_replay_is_idempotent",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_repetition_engine.RepetitionEngineTests.test_public_continue_releases_exact_hold_and_replay_is_idempotent"
+      ]
+    },
+    {
+      "legacy_id": "test_repetition.RepetitionLineageTests.test_continue_after_successful_empty_preparation_creates_its_missing_request",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_repetition_lineages.RepetitionLineageTests.test_continue_after_successful_empty_preparation_creates_its_missing_request"
+      ]
+    },
+    {
+      "legacy_id": "test_repetition.RepetitionLineageTests.test_generation_time_is_checked_only_when_no_candidate_is_proposed",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_repetition_lineages.RepetitionLineageTests.test_generation_time_is_checked_only_when_no_candidate_is_proposed"
+      ]
+    },
+    {
+      "legacy_id": "test_repetition.RepetitionLineageTests.test_generation_time_uses_fixed_machine_observation_and_excludes_supplement",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_repetition_lineages.RepetitionLineageTests.test_generation_time_uses_fixed_machine_observation_and_excludes_supplement"
+      ]
+    },
+    {
+      "legacy_id": "test_repetition.RepetitionLineageTests.test_real_intent_rework_producer_keeps_original_lineage",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_planning_intent_rework.RepetitionLineageTests.test_real_intent_rework_producer_keeps_original_lineage"
+      ]
+    },
+    {
+      "legacy_id": "test_repetition.RepetitionLineageTests.test_receiver_failure_categories_count_once_and_success_ends_streak",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_repetition_lineages.RepetitionLineageTests.test_receiver_failure_categories_count_once_and_success_ends_streak"
+      ]
+    },
+    {
+      "legacy_id": "test_repetition.RepetitionLineageTests.test_supplement_does_not_increment_or_reset_empty_generation",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_repetition_lineages.RepetitionLineageTests.test_supplement_does_not_increment_or_reset_empty_generation"
+      ]
+    },
+    {
+      "legacy_id": "test_revision_obligations.RevisionObligationTests.test_closed_delegate_keeps_obligation_for_new_preparer",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_revision_obligations.RevisionObligationTests.test_closed_delegate_keeps_obligation_for_new_preparer"
+      ],
+      "note": "Synthetic state kept from the legacy test: the delegation of EX-prep (extension set in place), the delegate TK-1 closed in place and the waiting row failed-child. The product reaches this state only through receipts of whole role flows (a preparation delegating a revision, a work revising it), which the model double cannot author as activity extensions for a single mixin call; the legacy test injected the same rows and the tested method reads them as the product would."
+    },
+    {
+      "legacy_id": "test_revision_obligations.RevisionObligationTests.test_closed_target_does_not_erase_other_targets_or_merged_new_request",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_revision_obligations.RevisionObligationTests.test_closed_target_does_not_erase_other_targets_or_merged_new_request"
+      ],
+      "note": "Synthetic state kept from the legacy test: TK-2 is a copy of TK-1, the tasks are closed and unbound_request is set in place. A closure goes through task_scope dispositions and unbound_request through _enqueue merges; here _retire_closed_revision_targets is judged on exactly those fields."
+    },
+    {
+      "legacy_id": "test_revision_obligations.RevisionObligationTests.test_delegated_work_and_review_do_not_block_on_own_obligation",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_revision_obligations.RevisionObligationTests.test_delegated_work_and_review_do_not_block_on_own_obligation"
+      ],
+      "note": "Synthetic state kept from the legacy test: the ended EX-prep and EX-work carry revision resolutions and a knowledge change as extensions set in place, and the theorem gets revision=2 in place, which the product never writes (knowledge.replace_knowledge makes a replacement under a new ID) and _apply_revision_followup does not read (the audit ran the scene with and without it: same result). The product reaches this state only through receipts of whole role flows (a preparation delegating a revision, a work revising it), which the model double cannot author as activity extensions for a single mixin call; the legacy test injected the same rows and the tested method reads them as the product would."
+    },
+    {
+      "legacy_id": "test_revision_obligations.RevisionObligationTests.test_maintenance_can_read_pending_revisions_and_cycles",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_revision_obligations.RevisionObligationTests.test_maintenance_can_read_pending_revisions_and_cycles"
+      ],
+      "note": "Synthetic state kept from the legacy test: the ended EX-prep carries its delegated revision resolution as an extension set in place. The product reaches this state only through receipts of whole role flows (a preparation delegating a revision, a work revising it), which the model double cannot author as activity extensions for a single mixin call; the legacy test injected the same rows and the tested method reads them as the product would."
+    },
+    {
+      "legacy_id": "test_revision_obligations.RevisionObligationTests.test_plan_selection_and_predispatch_use_actual_current_input",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_revision_obligations.RevisionObligationTests.test_plan_selection_and_predispatch_use_actual_current_input"
+      ],
+      "note": "Synthetic state kept from the legacy test: the source's sha256 and the task's external_event wait are changed in place. The public source control that replaces content also marks and reopens the tasks reading it in its own branch (core_engine source control, tasks naming the source), so _selected_action_current would no longer be the first to see the change it is tested on."
+    },
+    {
+      "legacy_id": "test_revision_obligations.RevisionObligationTests.test_revision_blocks_consumer_but_independent_work_can_overlap",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_revision_obligations.RevisionObligationTests.test_revision_blocks_consumer_but_independent_work_can_overlap"
+      ],
+      "note": "Synthetic state kept from the legacy test: TK-B and TK-C are copies of TK-1 without reviews, and the running reader EX-reader is a bare execution row whose status is set in place; planning.revision_waits reads only those fields."
+    },
+    {
+      "legacy_id": "test_revision_obligations.RevisionObligationTests.test_revision_cannot_omit_target_or_cancel_required_repair_as_unchanged",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_revision_obligations.RevisionObligationTests.test_revision_cannot_omit_target_or_cancel_required_repair_as_unchanged"
+      ]
+    },
+    {
+      "legacy_id": "test_task_completion.CompletionBasisTests.test_actual_submitted_source_change_still_invalidates_completion",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_task_completion.CompletionBasisTests.test_actual_submitted_source_change_still_invalidates_completion"
+      ]
+    },
+    {
+      "legacy_id": "test_task_completion.CompletionBasisTests.test_new_identity_assessment_does_not_change_submission_content_basis",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_task_completion.CompletionBasisTests.test_new_identity_assessment_does_not_change_submission_content_basis"
+      ]
+    },
+    {
+      "legacy_id": "test_task_completion.CompletionBasisTests.test_relation_endpoint_contents_remain_part_of_completion_evidence",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_task_completion.CompletionBasisTests.test_relation_endpoint_contents_remain_part_of_completion_evidence"
+      ]
+    },
+    {
+      "legacy_id": "test_task_completion.CompletionBasisTests.test_specialist_dependency_use_is_not_reduced_to_submission_content",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_task_completion.CompletionBasisTests.test_specialist_dependency_use_is_not_reduced_to_submission_content"
+      ]
+    },
+    {
+      "legacy_id": "test_task_completion.CompletionBasisTests.test_specialist_support_still_requires_its_current_trust_and_use",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_task_completion.CompletionBasisTests.test_specialist_support_still_requires_its_current_trust_and_use"
+      ]
+    },
+    {
+      "legacy_id": "test_task_completion.CompletionBasisTests.test_submission_completion_survives_later_formal_verification_and_review_id",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_task_completion.CompletionBasisTests.test_submission_completion_survives_later_formal_verification_and_review_id"
+      ]
+    },
+    {
+      "legacy_id": "test_task_completion.PartialWithdrawalTests.test_assessed_partial_work_closes_without_becoming_complete",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_task_completion.PartialWithdrawalTests.test_assessed_partial_work_closes_without_becoming_complete"
+      ]
+    },
+    {
+      "legacy_id": "test_task_completion.PartialWithdrawalTests.test_current_unperformed_withdrawal_preserves_results_and_residual_scope",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_task_completion.PartialWithdrawalTests.test_current_unperformed_withdrawal_preserves_results_and_residual_scope"
+      ]
+    },
+    {
+      "legacy_id": "test_task_completion.PartialWithdrawalTests.test_unassessed_new_results_and_protected_scope_are_not_withdrawable",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_task_completion.PartialWithdrawalTests.test_unassessed_new_results_and_protected_scope_are_not_withdrawable"
+      ]
+    },
+    {
+      "legacy_id": "test_task_completion.TransferReferenceTests.test_transfer_recipient_is_bound_to_the_fixed_input_population",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_planning_task_completion.TransferReferenceTests.test_transfer_recipient_is_bound_to_the_fixed_input_population"
+      ]
+    }
+  ]
+}

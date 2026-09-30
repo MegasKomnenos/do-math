@@ -1,50 +1,20 @@
-"""Relations expose the same dependencies to scheduling, judgments and submission."""
-from copy import deepcopy
-from pathlib import Path
-import sys
+"""Relations expose the same references to impact analysis, submission and judgments (``relation_refs`` through
+``knowledge.plan_impact``, ``submission.reported_references`` and ``task_scope.assessment_basis``; layer 2),
+moved from ``test_relation_dependencies`` (``RelationEvidenceTests``).
+
+The tests call the product's pure functions on plain records and the record
+fixtures; nothing of the product is replaced.
+"""
 import unittest
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math import planning, questions, revisions, task_scope, submission
-from engine_fixtures import start_query_repository
-from record_fixtures import approved_task, approve_task
 
-
-class RelationReadTests(unittest.TestCase):
-    def test_indirect_endpoints_obey_both_revision_directions_and_question_gates(self):
-        start_query_repository(self)
-        _, stored, _ = self.repository.load(self.old_head)
-        task, instance, runtime = approved_task()
-        for family in ('knowledge', 'formal_results', 'expositions', 'identity_assessments',
-                       'assessment_uses', 'kind_definitions', 'relations'):
-            instance[family] = deepcopy(stored[family])
-        task['inputs'].append(self.relation_id)
-        approve_task(task, instance, runtime)
-        self.assertEqual(planning.task_ready(task, instance, runtime)['state'], 'ready')
-        reader = {'id': 'AC-reader', 'role': 'research_work', 'target': task['id']}
-        for endpoint in self.kids:
-            with self.subTest(endpoint=endpoint):
-                writer = {'id': 'AC-writer', 'role': 'research_preparation',
-                    'revision_targets': revisions.capture_targets(instance, runtime, [endpoint])}
-                runtime['executions'] = {'EX-reader': {'id': 'EX-reader', 'status': 'running', 'action': reader}}
-                self.assertTrue(planning.revision_waits(writer, instance, runtime))
-                runtime['executions'] = {}
-                runtime['queue'] = [writer]
-                self.assertTrue(planning.revision_waits(reader, instance, runtime))
-                runtime['queue'] = []
-                runtime['question_links'] = []
-                question = questions.link(runtime, execution_id='EX-question', field='answer',
-                    owner='user', targets=[endpoint], blocks=True)
-                self.assertEqual(questions.user_waits(reader, instance, runtime)[0]['question_id'], question['id'])
-        runtime['question_links'] = []
-        questions.link(runtime, execution_id='EX-other', field='answer', owner='user', targets=['KN-unrelated'], blocks=True)
-        self.assertEqual(questions.user_waits(reader, instance, runtime), [])
+from do_math import submission, task_scope
 
 
 class RelationEvidenceTests(unittest.TestCase):
     def test_impact_analysis_does_not_turn_evidence_file_locators_into_record_dependencies(self):
         from do_math.knowledge import plan_impact
         instance = {'knowledge': {'KN-a': {'id': 'KN-a', 'dependencies': []}}, 'relations': [
-            {'id': 'RL-a', 'source': 'KN-a', 'target': 'KN-a', 'evidence_refs': ['workspace:proof.md']} ]}
+            {'id': 'RL-a', 'source': 'KN-a', 'target': 'KN-a', 'evidence_refs': ['workspace:proof.md']}]}
         plan = plan_impact(instance, {}, ['KN-a'], ['RL-a'])
         self.assertEqual(plan['unresolved_refs'], [])
         self.assertFalse(plan['requires_independent_review'])
