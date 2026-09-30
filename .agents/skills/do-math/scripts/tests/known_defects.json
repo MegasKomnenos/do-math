@@ -116,6 +116,15 @@
       "found_by": "1f knowledge.2 (impact_review migration): a held producer's sealed output changed in the repository before its impact review was prepared, on the Sim; confirmed by the strength review's code trace",
       "missed_kind": "No test made a held submission unreadable before its review started: the legacy retry test replaced read_sealed_submission only around the retry, and the review's own preparation read ran only on readable bytes. In the reproduction a missing object is stopped earlier by the owner's pre-write presence and length inspection (_inspect_before_write), so the uncaught GitStateStoreError branch is known from the code, not run",
       "status": "open"
+    },
+    {
+      "id": "KD-1200",
+      "summary": "A charter decision that changes only the academic requirements, applied through the public control after the goal was solved, un-solves the goal: the engine's goal-currentness check (knowledge_engine._invalidate_goal_currentness) compares each current goal judgment's goal_revision with the governance view's goal_revision, which is the charter revision, so any new charter edition marks the judgments stale ('The actual judgment basis changed'), sets goal_status unsolved and leaves no solution basis, and the academic follow-up generates no task for the new requirements. The governance rule keeps the goal solved for an academic-only change (governance._apply_domain_decision, academic_only) and the solution basis leaves the requirements out of its goal reference (academic.current_solution_basis), so two copies of one rule disagree. The check runs in two places, and a repair must cover both: after every extended control (lifecycle_engine._apply_extended_control, lifecycle_engine.py 448) and in every owner pass's readiness refresh (lifecycle_engine._refresh_readiness, lifecycle_engine.py 581, which scheduler.py 161 calls each pass), so a requirement change applied without the control step is un-solved at the next pass too. Besides the reproduction, the four moved requirement-change tests' public-control versions (sim.test_academic_requirement_changes.AcademicRequirementChangeTests) carry this mark",
+      "category": 5,
+      "reproduction": "sim.test_academic_requirement_changes.AcademicOnlyCharterControlTests.test_an_academic_only_charter_control_keeps_the_solved_goal_and_its_basis",
+      "found_by": "1f academic.1 (test_academic_engine migration): the requirement-change tests moved onto a goal the configured goal auditors solved on the Sim; the first public requirement change after the solution left the goal unsolved",
+      "missed_kind": "The legacy requirement-change tests set goal_status directly with no goal judgments and patched the engine's _solution_basis to a constant, so the currentness check had no judgment to mark stale and the basis never changed; the pure governance test applied the decision without the engine's control step",
+      "status": "open"
     }
   ]
 }

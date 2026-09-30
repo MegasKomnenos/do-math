@@ -15,18 +15,17 @@ from pathlib import Path
 
 SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'foundation': '''
-        test_academic test_context_store test_decision_basis
+        test_context_store test_decision_basis
         test_delegations test_environment_validation
         test_execution_window
-        test_external_operations
         test_git_store test_goal_audit
         test_installation_discovery test_model_metadata_boundary test_owned_job_children test_preparation_cache test_provider_final_contract test_reading_map
         test_reference_catalog test_relation_dependencies test_repair_execution
-        test_review_policy test_revision_obligations test_scholarly test_standalone test_supervisor_recovery
+        test_review_policy test_revision_obligations test_standalone test_supervisor_recovery
         test_test_runner test_trust_continuation
         ''',
     'host': '''
-        test_diagnosed_installation_recovery test_external
+        test_diagnosed_installation_recovery
         test_formal_runtime test_host_resources test_lean_preview
         test_machine_parallel test_operator test_operator_bootstrap test_probe_cli
         test_provider_wait test_schedule_lifetime test_schedule_pythonw
@@ -41,9 +40,7 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_purpose_engine test_research_recovery test_session_scheduler''',
     'review': '''
         test_repetition test_review_research test_submission_tools''',
-    'academic': '''
-        test_academic_engine test_academic_preparation
-        test_model_assessment_flow''',
+    'academic': '',
 }.items()}
 LABELS = ('lean', 'resource')
 _SHARD_OF = {module: name for name, modules in SHARDS.items() for module in modules}
