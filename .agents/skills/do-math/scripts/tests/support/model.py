@@ -21,6 +21,7 @@ import json
 from pathlib import Path
 
 from support.fakes.calls import owner_turn
+from support.fakes.jobs import job_turn
 
 MARKER = "You are the do-math role: "
 
@@ -142,9 +143,13 @@ class FakeCLI:
         raise AssertionError("the owner did not receipt submission " + delivery["request_id"] + " in 100 passes")
 
     def _write_stream(self, final):
+        """Write the stream a row at a time; a live Job (``support.fakes.jobs``) lets its runner observe each row."""
         if Path(self.command[0]).stem.lower() != "codex":
             raise NotImplementedError("the model double writes only the Codex event stream: " + self.command[0])
-        self.stdout.write(codex_stream_bytes(final))
+        for row in codex_stream_bytes(final).splitlines(keepends=True):
+            self.stdout.write(row)
+            self.stdout.flush()
+            job_turn()
         final_path = self.command[self.command.index("--output-last-message") + 1]
         Path(final_path).write_bytes(final.encode("utf-8"))
 
