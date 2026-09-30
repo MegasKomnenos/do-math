@@ -74,11 +74,12 @@ class RunnerTests(unittest.TestCase):
         self.assertTrue(all(row.split('\t')[1].startswith('test_test_runner.RunnerTests.') for row in rows))
         self.assertTrue(all(row.split('\t')[0] == 'foundation' for row in rows))
         with redirect_stdout(io.StringIO()) as out, redirect_stderr(io.StringIO()):
-            run_tests.main(['--list', 'test_knowledge'])
-        # test_knowledge_io and test_knowledge_storage share the name as a prefix.
+            run_tests.main(['--list', 'boundary.test_engine_cli'])
+        # boundary.test_engine_cli_advanced and ..._control_shapes share the name as a prefix. The
+        # example is a new-system module, which 1f does not delete (the old test_knowledge was).
         rows = out.getvalue().splitlines()
         self.assertTrue(rows)
-        self.assertTrue(all(row.split('\t')[1].split('.')[0] == 'test_knowledge' for row in rows))
+        self.assertTrue(all(row.split('\t')[1].rsplit('.', 2)[0] == 'boundary.test_engine_cli' for row in rows))
 
     def test_an_id_that_matches_no_test_refuses_the_whole_selection(self):
         # A mistyped ID beside valid ones must not drop out and leave the rest to read as a pass.

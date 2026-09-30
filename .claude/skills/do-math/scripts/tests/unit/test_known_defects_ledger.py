@@ -30,6 +30,18 @@ class LedgerRuleTests(unittest.TestCase):
         issues = ledger_issues([_entry('KD-0004', 'unit.test_a.A.test_x')], {'KD-0004': ['unit.test_a.A.test_y']})
         self.assertEqual([issue['rule'] for issue in issues], ['reproduction_mismatch'])
 
+    def test_moved_legacy_tests_the_dispositions_name_may_carry_the_mark_too(self):
+        """설계 9.1, A28: a moved old test that the defect breaks on the real path keeps the entry's mark."""
+        marks = {'KD-0009': ['unit.test_a.A.test_x', 'sim.test_b.B.test_moved']}
+        moved = {'KD-0009': {'sim.test_b.B.test_moved'}}
+        self.assertEqual(ledger_issues([_entry('KD-0009', 'unit.test_a.A.test_x')], marks, moved), [])
+
+    def test_an_extra_mark_no_disposition_names_is_reported(self):
+        marks = {'KD-0010': ['unit.test_a.A.test_x', 'sim.test_b.B.test_other']}
+        moved = {'KD-0010': {'sim.test_b.B.test_moved'}}
+        issues = ledger_issues([_entry('KD-0010', 'unit.test_a.A.test_x')], marks, moved)
+        self.assertEqual([issue['rule'] for issue in issues], ['reproduction_mismatch'])
+
     def test_closed_entry_must_not_keep_its_mark(self):
         issues = ledger_issues([_entry('KD-0005', 'unit.test_a.A.test_x', 'closed')],
                                {'KD-0005': ['unit.test_a.A.test_x']})

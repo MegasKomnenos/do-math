@@ -50,7 +50,16 @@ def find_marks(root=TESTS):
     return marks
 
 
-def ledger_issues(entries, marks):
+def ledger_issues(entries, marks, moved=None):
+    """Issues between the ledger and the marks.
+
+    An open entry's marks are its reproduction and, beside it, only the moved old
+    tests that ``moved`` names for it (설계 9.1, A28): an old test that pinned the
+    defect, or that the defect breaks on the real path, is moved as it was and
+    keeps the entry's mark. ``moved`` maps a defect id to those new test ids, as
+    the migration dispositions' ``known_defect`` fields give them.
+    """
+    moved = moved or {}
     issues = []
     known = {}
     for entry in entries:
@@ -64,12 +73,22 @@ def ledger_issues(entries, marks):
                 issues.append({'rule': 'closed_entry_still_marked', 'id': entry['id'], 'tests': marked})
         elif not marked:
             issues.append({'rule': 'open_entry_without_mark', 'id': entry['id']})
-        elif marked != [entry['reproduction']]:
+        elif entry['reproduction'] not in marked or not set(marked) - {entry['reproduction']} <= moved.get(entry['id'], set()):
             issues.append({'rule': 'reproduction_mismatch', 'id': entry['id'], 'tests': marked})
     for defect_id, tests in marks.items():
         if defect_id not in known and not any(issue.get('id') == defect_id for issue in issues):
             issues.append({'rule': 'mark_without_entry', 'id': defect_id, 'tests': tests})
     return issues
+
+
+def moved_marks(root=TESTS):
+    """{defect id: new test ids} of the moved old tests whose dispositions name the defect (``known_defect``)."""
+    moved = {}
+    for path in sorted((Path(root) / 'migration' / 'dispositions').glob('*.json')):
+        for entry in json.loads(path.read_text(encoding='utf-8')).get('legacy', []):
+            if entry.get('known_defect'):
+                moved.setdefault(entry['known_defect'], set()).update(entry.get('new_ids', []))
+    return moved
 
 
 def open_count(path=LEDGER):
