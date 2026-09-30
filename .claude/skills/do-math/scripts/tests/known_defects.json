@@ -71,6 +71,42 @@
       "found_by": "1e obligation 1-A: one pair per enumerated condition pointer, the grammar's accepted values against the stored enumeration (조사 C-25 form)",
       "missed_kind": "The C-25 fix shared the lifecycle constants with the grammar; pointers without a lifecycle constant kept no value check and no test compared them with storage",
       "status": "open"
+    },
+    {
+      "id": "KD-0800",
+      "summary": "A trust re-check that follows a re-recorded toolchain baseline cannot finish: its environment check rebinds the environment (FormalEngineMixin._apply_trust_rebind), the trust_environment_rebound event carries the four fields the closed event schema rejects (KD-0006), and the storage validation error raises out of the owner collection (ModelCalls.collect), so the re-check execution stays running, the transition records no result for the target and the transition cannot activate",
+      "category": 1,
+      "reproduction": "flows.test_lifecycle_engine_trust.TransitionTests.test_rerecorded_baseline_is_followed_once_with_an_event",
+      "found_by": "1f migration of test_lifecycle_engine.LifecycleTests.test_rerecorded_baseline_is_followed_once_with_an_event onto the Sim: the same scenario on real storage",
+      "missed_kind": "The legacy test ran on FakeEngine, whose StateStore double records saves without storage validation, and asserted the rebound event fields as expected values (the KD-0006 defect)",
+      "status": "open"
+    },
+    {
+      "id": "KD-0801",
+      "summary": "A queued trust re-check pinned to a trust_check profile edition that is no longer adopted is never dispatched: the lifecycle gate's profile selection refuses the pinned edition (\"profile selection must resolve to exactly one permitted role/model edition\"), _dispatchable records that as a lifecycle dispatch wait and keeps the action queued while the instance reports ready, so the transition stays checking, which blocks formal admission and any new transition. A re-check stopped by a pause keeps the edition its gate pinned, so pausing it, configuring another Lean command and resuming reaches this state; the attempt is expected to end without the verifier instead",
+      "category": 4,
+      "reproduction": "flows.test_lifecycle_engine_trust.TransitionTests.test_wrong_pinned_trust_command_ends_attempt_without_verifier",
+      "found_by": "1f migration of test_lifecycle_engine.LifecycleBoundaryTests.test_wrong_pinned_trust_command_ends_attempt_without_verifier onto the Sim with the owner pass instead of FakeEngine's own profile selection",
+      "missed_kind": "FakeEngine replaced _execution_profile with a copy of the selection rule that accepts any pinned profile reference, so the legacy test reached the trust re-check steps the real gate never reaches",
+      "status": "open"
+    },
+    {
+      "id": "KD-0802",
+      "summary": "Any control that arrives while an external action begins its send steps cancels the effect: ExternalEngineMixin._run_external_action gives the operation a new execution_id before the execution is registered, the external stop judgment then applies the inbox (core_engine._apply_inbox) and publishes, the storage check refuses the operation's reference to the unregistered execution (\"external_operations references unknown record\"), and that error cancels the operation as a failure before sending, even for a control unrelated to it (a new grant) that requests no stop",
+      "category": 7,
+      "reproduction": "sim.test_lifecycle_engine_external.SendTests.test_an_unrelated_control_during_the_send_steps_does_not_cancel_the_effect",
+      "found_by": "1f migration of test_lifecycle_engine.LifecycleTests.test_failure_before_any_send_step_is_an_untransmitted_cancellation onto the Sim: a control delivered at the first inbox read of the send steps on real storage",
+      "missed_kind": "The legacy tests ran the send steps on FakeEngine, whose _save records copies without storage validation, and made controls arrive by replacing _apply_inbox, which never published",
+      "status": "open"
+    },
+    {
+      "id": "KD-0803",
+      "summary": "The trust activation that a finished trust re-check queues (FormalEngineMixin._trust_check_steps, _enqueue('trust_activate', transition_id=...)) carries no source_ref, so its execution record names no source, while the activation the transition control queues for an empty transition carries the control as its source: the two places that queue the same action differ",
+      "category": 3,
+      "reproduction": "flows.test_lifecycle_engine_trust.TransitionTests.test_the_activation_a_finished_recheck_queues_names_its_source",
+      "found_by": "1f migration of test_lifecycle_engine.GrantAndExternalEffectTests.test_machine_records_use_registered_schema_and_existing_source_provenance: running its provenance check also over a transition activated after its re-checks",
+      "missed_kind": "The legacy provenance test activated only an empty transition, whose activation the control queues, and ran the re-checks of a second transition without activating it; the execution schema does not require source_ref",
+      "status": "open"
     }
   ]
 }

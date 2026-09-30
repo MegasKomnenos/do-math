@@ -24,10 +24,13 @@ class TierTests(unittest.TestCase):
     def test_tier_selects_only_its_folders_and_never_legacy_modules(self):
         tests = [_case('structure.test_a'), _case('unit.test_b'), _case('sim.test_c'),
                  _case('contracts.test_d'), _case('boundary.test_e'), _case('smoke.test_f'),
-                 _case('test_git_store')]
+                 _case('flows.test_g'), _case('test_git_store')]
         chosen = lambda tier: sorted(run_tests.folder_of(t) for t in run_tests.select_tiers(tests, [tier]))
         self.assertEqual(chosen('T1'), ['contracts', 'structure', 'unit'])
         self.assertEqual(chosen('T2'), ['contracts', 'sim', 'structure', 'unit'])
+        # Flows (Sim scenarios longer than the Sim budget, 설계 6.1) run at T3 and in the default whole run.
+        self.assertEqual(chosen('T3'), ['contracts', 'flows', 'sim', 'structure', 'unit'])
+        self.assertIn('flows', run_tests.DEFAULT_FOLDERS)
         self.assertEqual(chosen('T4'), ['boundary'])
         self.assertEqual(chosen('T5'), ['smoke'])
 

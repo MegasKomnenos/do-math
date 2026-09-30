@@ -6,7 +6,7 @@ self-check obligations, misses and facts. Its monotonic clock is a settable
 ``Clock``; its wall clock is the fake clock port where a test fixes wall time.
 Events arrive as the runner delivers them, one stream row at a time
 (``research_fixtures.observe``). The engine that applies the rows is
-``sim.test_observation_application``.
+``flows.test_observation_application``.
 """
 from copy import deepcopy
 from datetime import datetime, timezone

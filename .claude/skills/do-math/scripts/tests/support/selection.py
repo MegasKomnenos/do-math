@@ -56,7 +56,7 @@ import subprocess
 from support.branch_gate import FORMAT, INDEX, SCRIPTS, git_blobs, scripts_python
 
 SELECTABLE = ('unit', 'contracts', 'sim')
-TEST_FOLDERS = ('structure', 'unit', 'contracts', 'sim', 'boundary', 'smoke')
+TEST_FOLDERS = ('structure', 'unit', 'contracts', 'sim', 'flows', 'boundary', 'smoke')
 LAYER_FOLDERS = {'1': ('unit', 'contracts'), '2': ('unit', 'contracts'), '3': ('sim',), 'adapter': ('contracts',)}
 
 

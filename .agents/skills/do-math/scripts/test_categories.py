@@ -44,7 +44,7 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_engine test_formal_engine test_governance_engine test_initial_intent_connection
         test_input_recovery test_lifecycle_engine
         test_live_observation test_operation_trace
-        test_planning_engine test_provider_recovery test_role_input test_stop_flags
+        test_planning_engine test_provider_recovery test_role_input
         test_task_completion''',
     'research': '''
         test_currentness test_purpose_engine test_research_recovery test_session_scheduler''',
@@ -52,7 +52,7 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_native_final_submission test_question_flow test_repetition test_review_engine
         test_review_research test_submission_boundaries test_submission_flow test_submission_tools''',
     'academic': '''
-        test_academic_engine test_academic_preparation test_call_steps_characterization
+        test_academic_engine test_academic_preparation
         test_model_assessment_flow''',
 }.items()}
 LABELS = ('lean', 'resource')

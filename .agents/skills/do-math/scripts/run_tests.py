@@ -49,18 +49,19 @@ TESTS = SCRIPTS / 'tests'
 # New-system tests live in these packages under tests/; the folder is the tier
 # group (docs/do-math/시험-재편-2026-09-29/설계.md 5.4). Legacy tests/test_*.py
 # modules keep their SHARDS until they are retired.
-FOLDERS = ('structure', 'unit', 'sim', 'contracts', 'boundary', 'smoke')
+FOLDERS = ('structure', 'unit', 'sim', 'flows', 'contracts', 'boundary', 'smoke')
 TIERS = {
     'T0': ('structure',),
     'T1': ('structure', 'unit', 'contracts'),
     'T2': ('structure', 'unit', 'contracts', 'sim'),
-    'T3': ('structure', 'unit', 'contracts', 'sim'),
+    # flows: Sim scenarios longer than the Sim budget, moved to the rarer tier (설계 6.1, 결정 A26).
+    'T3': ('structure', 'unit', 'contracts', 'sim', 'flows'),
     'T4': ('boundary',),
     'T5': ('smoke',),
 }
 # Folders that run when no --tier/--shard/test ID narrows the selection. Boundary
 # and smoke tests need real tools or model calls, so they run only when asked.
-DEFAULT_FOLDERS = TIERS['T2']
+DEFAULT_FOLDERS = TIERS['T3']
 
 
 def folder_of(test):

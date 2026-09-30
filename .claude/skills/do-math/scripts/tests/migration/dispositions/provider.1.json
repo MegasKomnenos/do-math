@@ -256,8 +256,8 @@
    "legacy_id": "test_observations.Tests.test_engine_answers_reminder_without_opening_model_review",
    "disposition": "moved",
    "new_ids": [
-    "sim.test_observation_application.ReminderApplicationTests.test_engine_answers_reminder_without_opening_model_review",
-    "sim.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
+    "flows.test_observation_application.ReminderApplicationTests.test_engine_answers_reminder_without_opening_model_review",
+    "flows.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
    ]
   },
   {
@@ -525,8 +525,8 @@
    "legacy_id": "test_live_observation.ObservationCollectionTests.test_owner_distinguishes_preview_and_boundary_from_self_check",
    "disposition": "moved",
    "new_ids": [
-    "sim.test_observation_application.OwnerCallClassificationTests.test_owner_distinguishes_preview_and_boundary_from_self_check",
-    "sim.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
+    "flows.test_observation_application.OwnerCallClassificationTests.test_owner_distinguishes_preview_and_boundary_from_self_check",
+    "flows.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
    ]
   },
   {
@@ -554,16 +554,16 @@
    "legacy_id": "test_live_observation.ObservationCollectionTests.test_checkpoint_capture_preserves_its_evidence_before_live_file_changes",
    "disposition": "moved",
    "new_ids": [
-    "sim.test_observation_application.CapturedCheckpointTests.test_checkpoint_capture_preserves_its_evidence_before_live_file_changes",
-    "sim.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
+    "flows.test_observation_application.CapturedCheckpointTests.test_checkpoint_capture_preserves_its_evidence_before_live_file_changes",
+    "flows.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
    ]
   },
   {
    "legacy_id": "test_live_observation.ObservationCollectionTests.test_rejected_input_of_a_deadline_only_execution_is_recorded_without_a_review",
    "disposition": "moved",
    "new_ids": [
-    "sim.test_observation_application.DeadlineOnlyApplicationTests.test_rejected_input_of_a_deadline_only_execution_is_recorded_without_a_review",
-    "sim.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
+    "flows.test_observation_application.DeadlineOnlyApplicationTests.test_rejected_input_of_a_deadline_only_execution_is_recorded_without_a_review",
+    "flows.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
    ]
   },
   {
@@ -584,8 +584,8 @@
    "legacy_id": "test_live_observation.ObservationCollectionTests.test_terminated_stream_replay_preserves_events_without_live_reviews",
    "disposition": "moved",
    "new_ids": [
-    "sim.test_observation_application.DeadlineOnlyApplicationTests.test_terminated_stream_replay_preserves_events_without_live_reviews",
-    "sim.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
+    "flows.test_observation_application.DeadlineOnlyApplicationTests.test_terminated_stream_replay_preserves_events_without_live_reviews",
+    "flows.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
    ]
   },
   {
@@ -600,39 +600,39 @@
    "disposition": "moved",
    "new_ids": [
     "boundary.test_observation_real_job.RealJobObservationTests.test_real_job_completion_is_observed_before_delayed_batch_application",
-    "sim.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
+    "flows.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
    ]
   },
   {
    "legacy_id": "test_live_observation.ObservationTransactions.test_failed_observation_publication_does_not_advance_the_tracker",
    "disposition": "moved",
    "new_ids": [
-    "sim.test_observation_application.ObservationTransactionTests.test_failed_observation_publication_does_not_advance_the_tracker",
-    "sim.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
+    "flows.test_observation_application.ObservationTransactionTests.test_failed_observation_publication_does_not_advance_the_tracker",
+    "flows.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
    ]
   },
   {
    "legacy_id": "test_live_observation.ObservationTransactions.test_failed_observation_rolls_back_to_the_published_state_without_copying_it_first",
    "disposition": "moved",
    "new_ids": [
-    "sim.test_observation_application.ObservationTransactionTests.test_failed_observation_rolls_back_to_the_published_state_without_copying_it_first",
-    "sim.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
+    "flows.test_observation_application.ObservationTransactionTests.test_failed_observation_rolls_back_to_the_published_state_without_copying_it_first",
+    "flows.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
    ]
   },
   {
    "legacy_id": "test_live_observation.ObservationTransactions.test_idle_observation_tick_neither_copies_nor_publishes_the_runtime",
    "disposition": "moved",
    "new_ids": [
-    "sim.test_observation_application.ObservationTransactionTests.test_idle_observation_tick_neither_copies_nor_publishes_the_runtime",
-    "sim.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
+    "flows.test_observation_application.ObservationTransactionTests.test_idle_observation_tick_neither_copies_nor_publishes_the_runtime",
+    "flows.test_observation_application.ModelCallObservationTests.test_a_model_calls_stream_reaches_the_owner_as_its_observation_facts"
    ]
   },
   {
    "legacy_id": "test_live_observation.TaskObservationRoleTests.test_task_rules_follow_the_selected_roles_observation_contract",
    "disposition": "moved",
    "new_ids": [
-    "sim.test_observation_application.TaskObservationRoleTests.test_a_research_work_call_binds_the_tasks_initial_rules_to_its_execution",
-    "sim.test_observation_application.TaskObservationRoleTests.test_a_supplemental_research_call_takes_no_task_rules_or_self_checks"
+    "flows.test_observation_application.TaskObservationRoleTests.test_a_research_work_call_binds_the_tasks_initial_rules_to_its_execution",
+    "flows.test_observation_application.TaskObservationRoleTests.test_a_supplemental_research_call_takes_no_task_rules_or_self_checks"
    ]
   }
  ]

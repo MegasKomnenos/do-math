@@ -173,13 +173,15 @@ class Sim:
         self.jobs.owner = {**self.jobs.owner, 'pid': self.jobs.owner['pid'] + 4}
         self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports)
 
-    def activate(self, *, initial_roles=('intent_interpretation',)):
+    def activate(self, *, initial_roles=('intent_interpretation',), external_policy='disabled'):
         """The public activation: approvals, grants, probe and trust by control, then owner passes until active.
 
         The synthetic approval, trust and capability inputs are this Sim's; the
         engine applies the lifecycle changes and checks every activation gate.
         ``initial_roles`` are the roles of the initial grant (the product's
         initialization roles are intent interpretation and maintenance).
+        ``external_policy`` is the adopted external policy; an active contract
+        cannot change it later, so a Sim for HTTP effects adopts ``'explicit_grants'`` here.
         """
         from datetime import timedelta
         from do_math.canonical import exact_content_hash
@@ -212,7 +214,7 @@ class Sim:
         self._apply('trust', config={'operation': 'transition', 'env_id': environment})
         self._apply('decision', config={'change': {'kind': 'initialization', 'config_sha256': config_sha256,
             'adopt_current_governance': True, 'conversation_loss_policy': 'continue_authorized',
-            'external_policy': 'disabled', 'adopt_default_review_policy': True, 'initial_profile_ref': initial_ref,
+            'external_policy': external_policy, 'adopt_default_review_policy': True, 'initial_profile_ref': initial_ref,
             'initial_grant_ids': ['GR-initial-sim'], 'research_grant_ids': ['GR-research-sim']}})
         self.engine.run(until_active=True)
         if self.instance['lifecycle']['state'] != 'active':
@@ -262,11 +264,12 @@ class _Template:
     the trust record fingerprints its files by creation time, which a copy changes.
     """
 
-    def __init__(self):
+    def __init__(self, build=None):
+        """``build(root, shared)`` returns the Sim to copy; by default the public activation."""
         self.base = Path(tempfile.mkdtemp(prefix='do-math-sim-')).resolve()
         atexit.register(_remove, self.base)
         self.live, self.pristine, self.shared = (self.base / name for name in ('live', 'pristine', 'shared'))
-        sim = Sim.activated(self.live, shared=self.shared)
+        sim = build(self.live, self.shared) if build is not None else Sim.activated(self.live, shared=self.shared)
         self.instance_id, self.state = sim.instance_id, sim.process_state()
         shutil.copytree(self.live, self.pristine)
         self.used = False
@@ -295,3 +298,22 @@ def _template():
     elif _TEMPLATE[0] == 'failed':
         raise AssertionError('the Sim template failed to build earlier in this process')
     return _TEMPLATE[0]
+
+
+_BUILT = {}
+
+
+def built(name, build):
+    """A restored copy of this process's template ``name``, which ``build(root, shared)`` makes once.
+
+    For a start state the public path reaches only through slow steps (another
+    activation option, model calls): the build runs once per process and every
+    test restores its copy, as ``Sim.activated()`` does for the default activation.
+    A failed build is not retried.
+    """
+    if name not in _BUILT:
+        _BUILT[name] = 'failed'
+        _BUILT[name] = _Template(build)
+    elif _BUILT[name] == 'failed':
+        raise AssertionError(f'the Sim template {name!r} failed to build earlier in this process')
+    return _BUILT[name].restore()

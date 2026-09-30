@@ -5,6 +5,7 @@
   "unit": 0.2,
   "contracts": 0.2,
   "sim": 2.0,
+  "flows": 60.0,
   "boundary": 30.0,
   "smoke": 600.0
  },

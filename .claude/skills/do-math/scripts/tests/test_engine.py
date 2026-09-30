@@ -1,7 +1,7 @@
 """The research engine's own operations: initialization and activation, queueing, dispatch, publication and installation checks.
 
 Stage 1f moved the other tests of this module to unit.test_engine_record_rules,
-sim.test_engine_queue, sim.test_engine_flow and boundary.test_engine_model_process.
+sim.test_engine_queue, flows.test_engine_flow and boundary.test_engine_model_process.
 These remain: three replace the installation manifest (no seam reaches it) and one
 forbids the owner's periodic upkeep during input preparation (no port observes it).
 """

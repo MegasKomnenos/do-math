@@ -1,6 +1,6 @@
 """The real Windows Job behaviour the engine region's Sim tests take from the Jobs fake.
 
-``sim.test_engine_queue`` ends a call's model process and ``sim.test_engine_flow``
+``sim.test_engine_queue`` ends a call's model process and ``flows.test_engine_flow``
 recovers a crashed launch whose Job has emptied; both use Jobs-fake Jobs. The
 legacy tests also checked these on real Jobs, so they stay here: a model process
 ended while running or before it was resumed is gone within ten seconds and

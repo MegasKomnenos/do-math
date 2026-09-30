@@ -8,11 +8,11 @@ from pathlib import Path
 import unittest
 
 from do_math.layers import LAYERS, PENDING
+from run_tests import FOLDERS  # every new-system tier folder, so a new folder cannot escape the check
 from support.smell_rules import patch_issues, pragma_issues, smell_issues
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 TESTS = SCRIPTS / 'tests'
-FOLDERS = ('structure', 'unit', 'sim', 'contracts', 'boundary', 'smoke')
 
 
 class SmellTests(unittest.TestCase):
