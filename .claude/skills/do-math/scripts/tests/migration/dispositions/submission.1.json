@@ -1,0 +1,649 @@
+{
+ "legacy": [
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_bundle_receipt_and_records_share_real_git_publication",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundlePublicationTests.test_bundle_receipt_and_records_share_real_git_publication"
+   ],
+   "note": "Input: the real Git repository (git_init and Git processes) is the in-process Git fake behind the Git port, under the real ResearchRepository with a fake clock. The parent commit the legacy test read with `git rev-parse <head>^` is checked as GitStateStore.first_descendant(partial head, final head) == final head, and that partial head holds only A and the IN-A receipt."
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_cross_bundle_new_reference_requires_merge",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_cross_bundle_new_reference_requires_merge"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_current_authority_failure_precedes_mutation",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_current_authority_failure_precedes_mutation"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_failed_candidate_does_not_undo_other_bundle",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_failed_candidate_does_not_undo_other_bundle"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_local_schema_failure_does_not_block_valid_bundle",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_local_schema_failure_does_not_block_valid_bundle"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_metadata_cannot_split_from_its_new_record",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_metadata_cannot_split_from_its_new_record"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_missing_member_is_rejected",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_missing_member_is_rejected"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_plan_is_one_bundle",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_plan_is_one_bundle"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_preview_applies_candidate_without_publishing_or_mutating_input",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_preview_applies_candidate_without_publishing_or_mutating_input"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_proposed_kind_and_consumer_must_share_bundle",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_proposed_kind_and_consumer_must_share_bundle"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_publish_failure_does_not_claim_acceptance",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_publish_failure_does_not_claim_acceptance"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_receipt_is_published_with_state_and_replay_has_no_effect",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_receipt_is_published_with_state_and_replay_has_no_effect"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_retry_only_failed_bundle_does_not_repeat_response_finalization",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_retry_only_failed_bundle_does_not_repeat_response_finalization"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_structural_failure_never_crashes_on_wrong_record_type",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_structural_failure_never_crashes_on_wrong_record_type"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.BundleApplicationTests.test_structural_top_level_failure_returns_without_candidate_application",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.BundleApplicationTests.test_structural_top_level_failure_returns_without_candidate_application"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.DefaultBundleTests.test_explicit_split_stays_split_and_orphan_impact_fails_structurally",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.DefaultBundleTests.test_explicit_split_stays_split_and_orphan_impact_fails_structurally"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.DefaultBundleTests.test_missing_manifest_is_one_deterministic_unit_without_editing_original",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.DefaultBundleTests.test_missing_manifest_is_one_deterministic_unit_without_editing_original"
+   ]
+  },
+  {
+   "legacy_id": "test_integration_bundles.DefaultBundleTests.test_revision_and_partial_acceptance_still_require_explicit_declarations",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_integration_bundles.DefaultBundleTests.test_revision_and_partial_acceptance_still_require_explicit_declarations"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.CheckHistoryTests.test_central_submission_does_not_require_optional_producer_history",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.CheckHistoryTests.test_central_submission_does_not_require_optional_producer_history"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.CheckHistoryTests.test_changed_failure_message_is_not_a_successful_repair",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.CheckHistoryTests.test_changed_failure_message_is_not_a_successful_repair"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.CheckHistoryTests.test_different_target_does_not_resolve_a_failure",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.CheckHistoryTests.test_different_target_does_not_resolve_a_failure"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.CheckHistoryTests.test_installed_checker_uses_latest_schema_bytes_and_prior_check",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_installed_tool.InstalledCheckerTests.test_installed_checker_uses_latest_schema_bytes_and_prior_check"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.CheckHistoryTests.test_producer_rechecks_preserve_order_and_resolve_real_prior_failure",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.CheckHistoryTests.test_producer_rechecks_preserve_order_and_resolve_real_prior_failure"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.CheckHistoryTests.test_receiver_parse_failure_is_resolved_by_a_later_valid_receiver_check",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.CheckHistoryTests.test_receiver_parse_failure_is_resolved_by_a_later_valid_receiver_check"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.CheckHistoryTests.test_snapshot_summary_reads_real_git_central_checks_and_counts_attempts",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.CheckHistoryTests.test_snapshot_summary_reads_real_git_central_checks_and_counts_attempts"
+   ],
+   "note": "Input: the real Git repository (git_init, Git processes) is GitStateStore on the in-process Git fake behind the Git port. The three ValueError cases now pin their product phrases (event order, published twice, artifact hash or size)."
+  },
+  {
+   "legacy_id": "test_submission_checks.CheckHistoryTests.test_snapshot_summary_rejects_nonobject_central_check",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.CheckHistoryTests.test_snapshot_summary_rejects_nonobject_central_check"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.CheckHistoryTests.test_wire_candidate_id_revision_and_profiles_match_stored_contract",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.CheckHistoryTests.test_wire_candidate_id_revision_and_profiles_match_stored_contract"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_central_capture_uses_exact_current_draft_after_optional_local_check",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_central_capture_uses_exact_current_draft_after_optional_local_check"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_central_check_uses_issued_schema_despite_local_tool_mutation",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_central_check_uses_issued_schema_despite_local_tool_mutation"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_central_preview_does_not_disclose_private_candidate_or_exception",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_central_preview_does_not_disclose_private_candidate_or_exception"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_central_rejection_preserves_malformed_draft_and_available_sidecar",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_central_rejection_preserves_malformed_draft_and_available_sidecar"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_check_summary_preserves_unresolved_failures_outside_window",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_check_summary_preserves_unresolved_failures_outside_window"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_comparison_uses_fixed_context_not_unreferenced_local_input_files",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_comparison_uses_fixed_context_not_unreferenced_local_input_files"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_contract_review_evidence_must_be_supplied",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_contract_review_evidence_must_be_supplied"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_governance_and_split_evidence_are_visible_but_arbitrary_nested_ids_are_not",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_governance_and_split_evidence_are_visible_but_arbitrary_nested_ids_are_not"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_ineligible_sealed_preview_has_the_same_response_skeleton_without_application",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_ineligible_sealed_preview_has_the_same_response_skeleton_without_application"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_installed_zip_runs_and_seals_real_producer_check",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_installed_tool.InstalledCheckerTests.test_installed_zip_runs_and_seals_real_producer_check"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_intent_source_coverage_is_checked_before_independent_review",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_intent_source_coverage_is_checked_before_independent_review"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_knowledge_change_cannot_self_confirm_its_impact",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_knowledge_change_cannot_self_confirm_its_impact"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_machine_check_compares_checkpoint_failures_in_both_modes",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_machine_check_compares_checkpoint_failures_in_both_modes"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_machine_checks_compare_exact_inputs_and_preserve_skipped_checks",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_machine_checks_compare_exact_inputs_and_preserve_skipped_checks"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_malformed_metadata_returns_its_bundle_without_losing_independent_output",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_malformed_metadata_returns_its_bundle_without_losing_independent_output"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_operational_review_can_request_contract_revision",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_operational_review_can_request_contract_revision"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_parse_failure_is_sealed_without_discarding_original_bytes",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_installed_tool.InstalledCheckerTests.test_parse_failure_is_sealed_without_discarding_original_bytes"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_preview_records_are_written_even_when_schema_is_invalid",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_tool_entry.ToolMainTests.test_preview_records_are_written_even_when_schema_is_invalid"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_producer_check_binds_exact_schema_and_raw_output_on_parse_failure",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_producer_check_binds_exact_schema_and_raw_output_on_parse_failure"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_same_response_can_propose_a_kind_definition",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_same_response_can_propose_a_kind_definition"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_valid_bundles_pass_same_preview_checker",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_valid_bundles_pass_same_preview_checker"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionBoundaryTests.test_valid_schema_bundle_is_semantically_checked_even_with_invalid_sibling",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionBoundaryTests.test_valid_schema_bundle_is_semantically_checked_even_with_invalid_sibling"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionShapeTests.test_early_bundle_rejection_keeps_schema_errors_first",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionShapeTests.test_early_bundle_rejection_keeps_schema_errors_first"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionShapeTests.test_inner_entry_still_rejects_unchecked_malformed_input",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionShapeTests.test_inner_entry_still_rejects_unchecked_malformed_input"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionShapeTests.test_split_keeps_local_errors_and_checks_valid_siblings",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionShapeTests.test_split_keeps_local_errors_and_checks_valid_siblings"
+   ],
+   "note": "The legacy test counted _schema_issues by patching it with wraps; ObservedCalls counts the calls of the unchanged function."
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionShapeTests.test_split_original_validation_is_not_replaced_by_generated_bundle",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionShapeTests.test_split_original_validation_is_not_replaced_by_generated_bundle"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_checks.SubmissionShapeTests.test_unsplit_explicit_and_generated_bundles_check_shapes_once",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_checks.SubmissionShapeTests.test_unsplit_explicit_and_generated_bundles_check_shapes_once"
+   ],
+   "note": "The legacy test counted _schema_issues by patching it with wraps; ObservedCalls (sys.monitoring start events of its code object) counts the calls of the unchanged function and captures the first call's value argument when the call starts."
+  },
+  {
+   "legacy_id": "test_submission_flow.BundleConnections.test_independent_commit_survives_later_bundle_failure_and_retry",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.BundleConnections.test_independent_commit_survives_later_bundle_failure_and_retry"
+   ],
+   "note": "The legacy autospec store, stubbed validators, domain follow-ups and an _apply raising for the title 'invalid' are the research scene's real engine: the second bundle's record names an undefined kind, so the storage contract returns it. The legacy exact accepted titles ['valid'] are the records new since the start: exactly one, titled A, after both the first and the second application. Publications are ResearchRepository.save_validated calls counted over both applications (1); _record_task_receipt calls are counted (0); the published runtime holds IN-A and not IN-B."
+  },
+  {
+   "legacy_id": "test_submission_flow.CentralSubmissionEvidence.test_retry_receives_prior_accepted_response_across_multiple_attempts",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.CentralSubmissionEvidence.test_retry_receives_prior_accepted_response_across_multiple_attempts"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_flow.CentralSubmissionEvidence.test_unsealed_runner_output_is_preserved_but_cannot_be_integrated",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.CentralSubmissionEvidence.test_unsealed_runner_output_is_preserved_but_cannot_be_integrated"
+   ],
+   "note": "The legacy stubs (_response_schema with a one-field schema, _apply_submission_bundles, _remove_action, _record_task_receipt, _save) all run: the schema is the issued maintenance schema. The issues passed to _apply_submission_bundles and the artifacts passed to _save are captured by ObservedCalls as the calls start; added: the saved output bytes are published at the execution's submitted_output_ref."
+  },
+  {
+   "legacy_id": "test_submission_flow.CentralSubmissionHistoryTests.test_orphan_impact_is_returned_then_default_bundle_preserves_raw_git_input",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.CentralSubmissionHistoryTests.test_orphan_impact_is_returned_then_default_bundle_preserves_raw_git_input"
+   ],
+   "note": "Input: start_submission_history's synthetic active copy is the history scene on a Sim's public activation; reopening the engine is sim.restart()."
+  },
+  {
+   "legacy_id": "test_submission_flow.CentralSubmissionHistoryTests.test_rejected_corrected_replayed_and_snapshot_bound_central_checks",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.CentralSubmissionHistoryTests.test_rejected_corrected_replayed_and_snapshot_bound_central_checks"
+   ],
+   "note": "The Sim's public activation already sealed its own central checks, so the seal counts 1 and 2 are the activation's count plus 1 and 2 (the activation's summary is checked verified with no unresolved failure). The legacy patch.dict clearing repository.VERIFIED_ARTIFACTS and the store.read patch returning tampered bytes are a copy of the repository at another path (a Git directory this process never matched) whose draft bytes another writer changed (engine_context.damage): its summary is incomplete. Added: the same change on the matched repository still summarizes as verified."
+  },
+  {
+   "legacy_id": "test_submission_flow.ContinuationConnections.test_bundle_requires_live_prior_hash_and_review_only_for_impact_beyond_the_closure",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.ContinuationConnections.test_bundle_requires_live_prior_hash_and_review_only_for_impact_beyond_the_closure"
+   ],
+   "note": "Input: routing_engine is a Sim's engine and the producer's input snapshot is its head (the legacy 'fixed'). The rejections now pin 'designated independent impact review required' and 'bundle previous semantic hash changed: <record>' (the legacy regex was hash|changed)."
+  },
+  {
+   "legacy_id": "test_submission_flow.ContinuationConnections.test_same_domain_callback_is_available_to_preview_without_publication",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.ContinuationConnections.test_same_domain_callback_is_available_to_preview_without_publication"
+   ],
+   "note": "The legacy _apply stub appended {'kind': 'candidate'} to the copy's history, and seven domain follow-ups were stubbed; here every callback runs on the research scene's bundle IN-A. The domain application runs exactly once (ResearchEngine._apply counted by ObservedCalls), and its effect on the copy is exactly one new record, titled A, absent from the engine. _save and _record_task_receipt calls are counted (0); added: the head is unchanged."
+  },
+  {
+   "legacy_id": "test_submission_flow.FixedResearchReferenceTests.test_fixed_sources_and_collectable_workspace_paths",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.FixedResearchReferenceTests.test_fixed_sources_and_collectable_workspace_paths"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_flow.KnowledgeConnections.test_independent_bundle_does_not_repeat_the_task_report",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.KnowledgeConnections.test_independent_bundle_does_not_repeat_the_task_report"
+   ],
+   "note": "Input: routing_engine is a Sim's engine, as in the test above."
+  },
+  {
+   "legacy_id": "test_submission_flow.KnowledgeConnections.test_research_receipt_creates_separate_knowledge_authorities",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.KnowledgeConnections.test_research_receipt_creates_separate_knowledge_authorities"
+   ],
+   "note": "Input: routing_engine's in-memory state and its three stubs are a Sim's engine; the legacy instance.update(sources=[], kind_definitions={}) is not repeated, since the Sim's instance holds its own. The imported record is the one new record."
+  },
+  {
+   "legacy_id": "test_submission_flow.LivePreviewConnections.test_installed_preview_uses_receiver_domain_callback_without_publication",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_installed_tool.LivePreviewConnections.test_installed_preview_uses_receiver_domain_callback_without_publication"
+   ],
+   "note": "The owner is a Sim's engine with its real grant: the legacy patch of governance.authorize, the autospec store and the stubbed validators and follow-ups are gone. _apply_bundle_candidate, save_validated and save_with_state are counted by ObservedCalls; the receipts are the transport pump's results instead of transport._receipts. The poll waits on the child process with a 20 ms timeout instead of time.sleep."
+  },
+  {
+   "legacy_id": "test_submission_flow.PartialCaptureGitTests.test_early_submission_preview_reload_and_partial_application",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.PartialCaptureGitTests.test_early_submission_preview_reload_and_partial_application"
+   ],
+   "note": "Input: the same scene on a Sim (support.submission_receiver.research); reopening the engine is sim.restart()."
+  },
+  {
+   "legacy_id": "test_submission_flow.PartialCaptureGitTests.test_native_final_reaches_the_same_partial_candidate",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.PartialCaptureGitTests.test_native_final_reaches_the_same_partial_candidate"
+   ],
+   "note": "Input: engine_fixtures.native_result drew the launch ticket from the host's Windows Job and system clock; support.submission_receiver.native_result draws it from the Sim's Jobs and clock ports."
+  },
+  {
+   "legacy_id": "test_submission_flow.PartialCaptureTests.test_only_independent_local_errors_can_be_captured",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.PartialCaptureTests.test_only_independent_local_errors_can_be_captured"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_flow.ReceiptPreservationTests.test_accepted_batch_opens_one_plan_and_preserves_all_evidence",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.ReceiptPreservationTests.test_accepted_batch_opens_one_plan_and_preserves_all_evidence",
+    "unit.test_submission_capture.ReceiptPreservationTests.test_direct_imports_open_a_plan_for_nonformal_and_a_formal_check_otherwise"
+   ],
+   "note": "The engine part runs _apply on a Sim's engine without routing_engine's three stubs, from one saved in-memory start per knowledge count (the queue emptied first, so the one research_plan is counted in the whole queue; added: the count of new records). The two direct imports at the end are the unit test."
+  },
+  {
+   "legacy_id": "test_submission_flow.ReceiptPreservationTests.test_dependency_impact_keeps_execution_and_activity_receipts_unchanged",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.ReceiptPreservationTests.test_dependency_impact_keeps_execution_and_activity_receipts_unchanged"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_central_candidate_is_read_from_its_git_receipt_without_legacy_fields",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.SealedCaptureTests.test_central_candidate_is_read_from_its_git_receipt_without_legacy_fields"
+   ],
+   "note": "Input: the real Git repository is GitStateStore on the in-process Git fake. The legacy patch of submission.hashlib with a raising double is CallSites(hashlib.sha256): the read with git_dir makes no sha256 call from submission.py; added: the first read with git_dir makes three from repository.py and the second none (the per-process memo the comment names, which the legacy double could not see, 지도 8.2). The five tamper cases now pin 'EX-flow: sealed check does not bind this candidate'."
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_central_candidate_rejects_malformed_draft_bytes",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.SealedCaptureTests.test_central_candidate_rejects_malformed_draft_bytes"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_central_candidate_rejects_missing_workspace_reference",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.SealedCaptureTests.test_central_candidate_rejects_missing_workspace_reference"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_central_capture_never_mixes_checked_draft_with_a_later_file_version",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.SealedCaptureTests.test_central_capture_never_mixes_checked_draft_with_a_later_file_version"
+   ],
+   "note": "The legacy test replaced submission.collect_outputs with a racing wrapper; ObservedCalls' capture hook rewrites the draft as the unchanged collect_outputs starts, and counts that one call. Added: the sealed output equals the original bytes."
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_central_seal_uses_actual_bytes_and_survives_original_draft_change",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.SealedCaptureTests.test_central_seal_uses_actual_bytes_and_survives_original_draft_change"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_control_changes_do_not_change_candidate_hashes_or_output_manifest",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.SealedCaptureTests.test_control_changes_do_not_change_candidate_hashes_or_output_manifest"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_empty_known_extension_is_normalized_at_capture_and_sealed_read",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.SealedCaptureTests.test_empty_known_extension_is_normalized_at_capture_and_sealed_read"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_illegal_draft_reference_is_rejected_before_transport",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.SealedCaptureTests.test_illegal_draft_reference_is_rejected_before_transport"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_issued_input_is_parsed_once_per_content_and_returned_as_copies",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.IssuedInputTests.test_issued_input_is_parsed_once_per_content_and_returned_as_copies"
+   ],
+   "note": "The legacy test counted parses by patching submission.load_json with wraps; ObservedCalls counts the calls of the unchanged function."
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_lifecycle_accepts_only_central_sealed_candidate_not_worker_manifest",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_capture.LifecycleIntentTests.test_lifecycle_accepts_only_central_sealed_candidate_not_worker_manifest"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_real_preview_entry_accepts_questions_without_publishing",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.PreviewEntryTests.test_real_preview_entry_accepts_questions_without_publishing"
+   ],
+   "note": "Input: the legacy context_engine with an autospec store and a stubbed _validate_bundle_current is the history scene on a Sim (support.submission_receiver.history), where _validate_bundle_current runs. The store's read side effect that failed on any other path is ObservedCalls on ResearchRepository.read, whose read paths over both previews equal exactly the two issued input paths; validate_candidate is counted cumulatively over both previews (1). The head is also checked unchanged."
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_result_file_recovery_uses_the_receipt_snapshot_not_live_workspace",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.SealedRecoveryTests.test_result_file_recovery_uses_the_receipt_snapshot_not_live_workspace"
+   ],
+   "note": "Input: the file refs the legacy test mapped to an autospec store are the published file refs of an actual submission receipt on a Sim."
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_stopped_provider_recovers_the_frozen_submission_without_reading_original",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.SealedRecoveryTests.test_stopped_provider_recovers_the_frozen_submission_without_reading_original"
+   ],
+   "note": "Input: the bare engine with an autospec store returning the sealed bytes and a stubbed _clock_guard is the history scene on a Sim; the draft is sealed by an actual submission receipt, so the recovery reads the published intent and bytes."
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionFlowTests.test_submit_transport_contains_only_the_draft_locator",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_tool_entry.RequestControlTests.test_submit_transport_contains_only_the_draft_locator"
+   ],
+   "note": "The legacy test replaced ControlTransport.worker_submit and read its call_args; the real worker_submit runs, ObservedCalls captures its payload as the call starts, and the request the transport then delivers carries the same payload."
+  },
+  {
+   "legacy_id": "test_submission_flow.SubmissionPublicationWaitTests.test_sealed_response_waits_for_a_record_change_after_a_failed_identity_check",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_waits.SubmissionPublicationWaitTests.test_sealed_response_waits_for_a_record_change_after_a_failed_identity_check"
+   ],
+   "note": "The legacy gated_apply (a synthetic consumer calling require_active_environment) is the product's own publication gate of an identity review, reached by a theorem import on a Sim built at its own root. The replaced lake.exe is the host port answering 'approved toolchain file changed' and restoring it is the host answering again; the patched _receive_submission is ObservedCalls counting 0 retries; fixture_setup_lean with setup_lean.rerecord is the trust_inventory re-record setup_lean.rerecord performs (as flows.test_lifecycle_engine_trust does); the sealed bytes are compared with the draft the model double wrote; the status() patches of formal.toolchain_identity_errors and trust_inventory.observe_fingerprint are ObservedCalls on the host port's identity check and observe_fingerprint (0 each). The legacy test's shared-folder writes (지도 8.2) are gone."
+  },
+  {
+   "legacy_id": "test_submission_flow.TaskReceiptTests.test_task_receipt_occurs_once_after_the_complete_bundle_result",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.TaskReceiptTests.test_task_receipt_occurs_once_after_the_complete_bundle_result"
+   ],
+   "note": "The legacy stubs of _apply_submission_bundles (returning a chosen result) and _record_task_receipt are ObservedCalls on the unchanged methods recording the start order and, for each start, the observed calls still on the stack: the receipt starts once, after the application returned (no _apply_submission_bundles frame encloses it). The engine-owned return is a real publication failure (the instance ref's lock held during the receipt), and the queue is emptied and saved first so it is compared whole."
+  },
+  {
+   "legacy_id": "test_submission_flow.WaitOwnershipTests.test_new_user_wait_survives_successful_response",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_waits.WaitOwnershipTests.test_new_user_wait_survives_successful_response"
+   ],
+   "note": "The legacy bare engine with an autospec _apply_submission_bundles that created the wait and a patched read_sealed_submission is a Sim: the user's input is interpreted and checked by two role calls, and the check's accepted response (receipt accepted, outcome output_accepted) applies the import, which leaves import_application_authority (a charter change) or import_user_decision (a blocking question) for that same action. About 6 s per kind, so it is a flow."
+  },
+  {
+   "legacy_id": "test_submission_flow.WaitOwnershipTests.test_resolved_publication_and_impact_waits_are_removed",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_receiver.WaitOwnershipTests.test_resolved_publication_and_impact_waits_are_removed",
+    "sim.test_submission_receiver.WaitOwnershipTests.test_a_publication_wait_left_by_a_failed_compare_and_swap_ends_with_the_retried_receipt"
+   ],
+   "note": "The waits are set on the real receiver of an actually sealed maintenance response (the legacy test stubbed the application and the sealed read). The added wiring test reaches the submission_publication wait through a failed publication compare-and-swap (the instance ref's lock held) and ends it with the owner's retry."
+  }
+ ]
+}
