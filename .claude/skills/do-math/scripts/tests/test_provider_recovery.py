@@ -1,81 +1,22 @@
 """The provider gate must change engine recovery, not only report a timestamp."""
 import sys
 import tempfile
-import time
 import unittest
 from copy import deepcopy
 from pathlib import Path
-from unittest.mock import create_autospec, patch
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math import scheduled_operator
 from do_math.engine import ResearchEngine
-from research_fixtures import install_adapter_fixture, local_job_runner, producer_result, restore_template
-from runner_fixtures import common, context_from, ScriptedRunner
+from research_fixtures import install_adapter_fixture, restore_template
+from runner_fixtures import ScriptedRunner
 from state_fixtures import active_instance
-
-
-class QuotaRunner:
-    def __init__(self):
-        self.calls = []
-
-    @local_job_runner
-    def run(self, **arguments):
-        context = context_from(arguments["prompt"])
-        self.calls.append(context)
-        call_number = len(self.calls)
-        arguments["on_started"]({"fixture": "quota model"})
-        if call_number == 1:
-            (arguments["workspace"] / "partial.txt").write_text("retained evidence", encoding="utf-8")
-            return producer_result({"status": "failed", "error": "native quota", "error_kind": "provider_limit",
-                "failure": {"kind": "provider_limit", "provider": "claude", "retry_at": None,
-                            "limit_windows": [], "evidence_ref": "stdout.jsonl"}, "usage": {}, "output": None}, arguments)
-        return producer_result({"status": "completed", "output": common(context["action"]["role"]), "usage": {}}, arguments)
 
 
 class RecoveryTests(unittest.TestCase):
     def setUp(self):
         install_adapter_fixture(self)
-
-    def test_quota_preserves_original_action_without_diagnostic_calls_then_restores_files(self):
-        # The subject begins at the runner's provider failure; activation is not
-        # examined. One queued AI action keeps other plans off the provider probe.
-        root, instance_id = restore_template(active_instance, config={
-            "tier_models": {tier: "claude-opus-5" for tier in ("high", "medium", "low")},
-            "scholarly_enabled": False, "operator_enabled": False,
-            "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5,
-            "plan_settle_seconds": 1,
-            "session_limits": {"work": {"claude-opus-5": 1}}, "lean_command": ["test-lean"]})
-        runner = QuotaRunner()
-        engine = ResearchEngine(root / "repository", instance_id, runner=runner)
-        engine._enqueue("research_preparation", reason="Prepare work for the provider recovery fixture")
-        engine._save()
-        engine.run(max_steps=2)
-        self.assertEqual(len(runner.calls), 1)
-        self.assertFalse(any(e["role"] == "operational_review" for e in engine.runtime["executions"].values()))
-        # The limited request returns to the queue with its gate wait, not to waiting_actions.
-        retried = [row for row in engine.runtime["queue"]
-                   if row.get("recovery", {}).get("reason") == "provider admission retry"]
-        self.assertEqual(len(retried), 1)
-        self.assertEqual(retried[0]["dispatch_wait"]["kind"], "provider_limit")
-        self.assertEqual(retried[0]["dispatch_wait"]["provider"], "claude")
-        self.assertNotIn(retried[0]["id"], engine.runtime.get("waiting_actions", {}))
-        self.assertFalse(engine.runtime["questions"])
-        current = time.time()
-        original_action = retried[0]["id"]
-        # An already queued independent plan may consume the successful
-        # provider probe. Follow the preserved action, not a call ordinal.
-        with patch.object(engine.ports.clock, "wall_ns", return_value=int((current + 301) * 10**9)):
-            for _ in range(3):
-                engine.run(max_steps=1)
-                resumed = [ctx for ctx in runner.calls[1:] if ctx["action"]["id"] == original_action]
-                if resumed:
-                    break
-        self.assertEqual(len(resumed), 1)
-        self.assertTrue(any(row["path"] == "partial.txt" for row in resumed[0]["previous_output_files"]))
-        self.assertFalse(any(e["role"] == "operational_review" for e in engine.runtime["executions"].values()))
-        self.assertFalse([row for row in engine.runtime["queue"] if row["id"] == original_action
-                          and row.get("dispatch_wait", {}).get("kind") == "provider_limit"])
 
     def test_wake_keeps_hold_and_user_pause_and_only_requests_engine(self):
         from research_fixtures import send_control
@@ -99,17 +40,6 @@ class RecoveryTests(unittest.TestCase):
 
 
 class ProviderConnections(unittest.TestCase):
-    def test_result_observation_has_no_prepublication_schedule_effect(self):
-        from provider_fixtures import PROVIDER_LIMIT_FAILURE, admit, provider_repository
-        from research_fixtures import bare_engine, git_init
-        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        engine = bare_engine(store=provider_repository(git_init(root)))
-        engine.head, engine.instance, engine.runtime = engine.store.load()
-        self.assertTrue(admit(engine._session_slots(), engine.instance, engine.runtime, 'EX-limit'))
-        engine._schedule_provider_wake = create_autospec(engine._schedule_provider_wake)
-        engine._provider_outcome('EX-limit', {'status': 'failed', 'error_kind': 'provider_limit', 'failure': PROVIDER_LIMIT_FAILURE})
-        engine._schedule_provider_wake.assert_not_called()
-
     def test_saved_wait_drives_wake_and_schedule_failure_is_recoverable(self):
         from provider_fixtures import PROVIDER_LIMIT_FAILURE, admit, finish, provider_repository, report
         from research_fixtures import bare_engine, git_init

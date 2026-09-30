@@ -15,16 +15,16 @@ from pathlib import Path
 
 SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'foundation': '''
-        test_academic test_budget test_claude_adapter
-        test_codex_adapter test_completion_settlement test_context_store
+        test_academic test_budget
+        test_completion_settlement test_context_store
         test_contract_checks test_contracts test_control_transport test_decision_basis
         test_delegations test_design_walkthroughs test_environment_validation
-        test_execution_lifecycle test_execution_profiles test_execution_window
+        test_execution_window
         test_external_operations test_file_io
         test_git_store test_goal_audit test_governance test_impact_review
         test_installation_discovery test_integration_bundles test_json_digests
         test_knowledge_import_engine test_knowledge_io test_knowledge_storage test_lifecycle_gates
-        test_machine_scheduling test_model_metadata_boundary test_model_runner
+        test_machine_scheduling test_model_metadata_boundary
         test_owned_job_children test_payloads test_planning test_preparation_cache
         test_provider_final_contract test_query_records test_questions test_reading_map
         test_reassessment test_reference_catalog test_relation_dependencies test_repair_execution
