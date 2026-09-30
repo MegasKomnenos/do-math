@@ -374,7 +374,10 @@ class Measurement:
             before_report(self)
         (Path(directory) / ENTERED).write_text(json.dumps(self.entered()), encoding='utf-8')
         path = Path(directory) / 'coverage.json'
-        self.coverage.json_report(outfile=str(path))
+        # Code a test compiled under a path with no file, or a module it wrote and removed, has no source to
+        # report; left in, it failed the whole report. The gate judges product files, which persist.
+        present = [name for name in self.coverage.get_data().measured_files() if Path(name).is_file()]
+        self.coverage.json_report(outfile=str(path), morfs=present)
         report = json.loads(path.read_text(encoding='utf-8'))
         report['files'] = {(Path.cwd() / name).resolve().relative_to(self.root).as_posix(): value
                            for name, value in report['files'].items()}
