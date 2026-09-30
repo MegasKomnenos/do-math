@@ -18,6 +18,11 @@ inside the repository that is not Python source and is opened under a context.
 A file opened under the import context is credited to the tests that ran any
 line of the innermost measured module on the stack at the open.
 
+A parallel T3 (``--jobs``) measures in each worker process instead: a worker
+starts its own ``Measurement`` before it loads its tests and keeps the data and
+the opened inputs (``save``); the parent combines them (``merge``) and judges
+the gate and writes the index from the combined data as a one-process run does.
+
 Measured: every ``.py`` under ``scripts/`` except test modules
 (``tests/**/test_*.py``), the legacy fixtures (``tests/*_fixtures.py``), the
 runner pair (``run_tests.py``, ``test_categories.py``) and this module, whose
@@ -61,6 +66,7 @@ GATED_LAYERS = ('1', '2', '3')
 # A coverage exclusion counts only with a reason after the mark (설계 5.5, 6.2).
 REASONED_EXCLUSION = r'#\s*pragma: no cover[ \-:]*[^ \-:\s]'
 FIXTURE = 'fixture:'
+DATA, OPENED = 'coverage.data', 'opened.json'  # a parallel T3 worker's measurement, in its directory
 
 
 def repository_root(start=SCRIPTS):
@@ -92,16 +98,16 @@ def fixture_label(before, after):
 class Measurement:
     """One T3 coverage session in this process; see the module docstring."""
 
-    def __init__(self, root):
+    def __init__(self, root, data_file=None):
         import coverage
-        self.root = root
+        self.root, self.started = root, False
         self.context = ''
         self.order, self.position = [], {}
         self.opens = defaultdict(set)      # context -> repo paths
         self.import_opens = defaultdict(set)  # repo path -> opener module repo paths
         omit = [str(TESTS / 'test_*.py'), str(TESTS / '*' / 'test_*.py'), str(TESTS / '*_fixtures.py'),
                 str(SCRIPTS / 'run_tests.py'), str(SCRIPTS / 'test_categories.py'), str(Path(__file__).resolve())]
-        self.coverage = coverage.Coverage(data_file=None, branch=True, source=[str(SCRIPTS)], omit=omit,
+        self.coverage = coverage.Coverage(data_file=str(data_file) if data_file else None, branch=True, source=[str(SCRIPTS)], omit=omit,
                                           config_file=False)
         self.coverage.set_option('report:exclude_lines', [REASONED_EXCLUSION])
         self.coverage.set_option('report:partial_branches', [])
@@ -112,6 +118,7 @@ class Measurement:
         _ACTIVE = self
         _install_hook()
         self.coverage.start()
+        self.started = True
 
     def begin(self, order):
         """Tests will run in ``order``; label the first fixture phase."""
@@ -156,11 +163,32 @@ class Measurement:
         _ACTIVE = None
         self.coverage.stop()
 
+    def save(self, directory):
+        """A worker of a parallel T3: stop measuring; keep the data file and the opened inputs for the parent."""
+        global _ACTIVE
+        _ACTIVE = None
+        self.coverage.stop()
+        self.coverage.save()
+        opened = {'opens': {context: sorted(paths) for context, paths in self.opens.items()},
+                  'import_opens': {path: sorted(openers) for path, openers in self.import_opens.items()}}
+        (Path(directory) / OPENED).write_text(json.dumps(opened), encoding='utf-8')
+
+    def merge(self, directories):
+        """The parent of a parallel T3: combine the workers' data files and opened inputs into this measurement."""
+        self.coverage.combine([str(Path(directory) / DATA) for directory in directories], keep=True)
+        for directory in directories:
+            opened = json.loads((Path(directory) / OPENED).read_text(encoding='utf-8'))
+            for context, paths in opened['opens'].items():
+                self.opens[context].update(paths)
+            for path, openers in opened['import_opens'].items():
+                self.import_opens[path].update(openers)
+
     def finish(self, directory):
         """Stop measuring; return the coverage JSON with repository-relative file keys."""
         global _ACTIVE
         _ACTIVE = None
-        self.coverage.stop()
+        if self.started:
+            self.coverage.stop()
         path = Path(directory) / 'coverage.json'
         self.coverage.json_report(outfile=str(path))
         report = json.loads(path.read_text(encoding='utf-8'))

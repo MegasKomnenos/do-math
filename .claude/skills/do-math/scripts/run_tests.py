@@ -14,7 +14,8 @@ entries in ``tests/known_defects.json``. When and what to run is in
 T0 adds to the structure checks the tests that ran the changed lines, by the
 selection index and its safety rules (``tests/support/selection.py``). T3 runs
 the T2 folders under branch coverage with a context per test
-(``tests/support/branch_gate.py``): the branch-reach gate over layer 1-3
+(``tests/support/branch_gate.py``; with ``--jobs`` each worker process measures
+its modules and the runner combines the data): the branch-reach gate over layer 1-3
 modules fails the run when a branch or line is unreached, and a full T3 run
 rewrites the selection index ``tests/.selection-index.json``. With
 ``--mutation-base <commit>`` T3 then mutates the functions changed since that
@@ -298,11 +299,13 @@ def wait_for_worker(job, progress_path, timeout, *, clock=None, pause=None):
         pause(.05)
 
 
-def _isolated(tests, directory, timeout):
+def _isolated(tests, directory, timeout, *, measure=False):
     from do_math.windows_job import WindowsJob
     directory.mkdir(parents=True)
     identifiers = [test.id() for test in tests]
     _write_json(directory / 'requested.json', identifiers)
+    if measure:  # a parallel T3 worker measures its own tests (support/branch_gate.py)
+        _write_json(directory / 'measure.json', True)
     scratch = directory / 'scratch'
     scratch.mkdir()
     environment = {**os.environ, 'TMP': str(scratch), 'TEMP': str(scratch), 'TMPDIR': str(scratch)}
@@ -345,12 +348,26 @@ def _isolated(tests, directory, timeout):
 
 def _worker(directory):
     sys.path.insert(0, str(TESTS))
+    measurement = None
+    if (directory / 'measure.json').exists():
+        from support.branch_gate import DATA, Measurement, repository_root
+        measurement = Measurement(repository_root(), data_file=directory / DATA)
+        measurement.start()  # before the tests load, so import-time lines count
     with (directory / 'stdout.txt').open('w', encoding='utf-8', buffering=1) as out, \
             (directory / 'stderr.txt').open('w', encoding='utf-8', buffering=1) as err, \
             redirect_stdout(out), redirect_stderr(err):
         loader = unittest.TestLoader()
-        suite = loader.loadTestsFromNames(_read_json(directory / 'requested.json'))
-        report = _run_suite(list(flatten(suite)), directory, checkpoint=True)
+        if measurement is not None:
+            # Import every test module as a one-process T3 does in discovery, so import-time lines
+            # carry no test context here either; a module first imported inside a test would
+            # otherwise credit its module-level lines to that one test, and T0 would select only it.
+            discover(loader)
+        tests = list(flatten(loader.loadTestsFromNames(_read_json(directory / 'requested.json'))))
+        if measurement is not None:
+            measurement.begin([test.id() for test in tests])
+        report = _run_suite(tests, directory, checkpoint=True, measurement=measurement)
+    if measurement is not None:
+        measurement.save(directory)
     return 0 if report['successful'] else 1
 
 
@@ -371,7 +388,8 @@ def main(argv=None):
     parser.add_argument('--mutation-base', help='with --tier T3: extreme-mutate the functions changed since this commit')
     parser.add_argument('--jobs', type=int, default=1,
                         help='run new-system in-process tests in this many worker processes, modules balanced by '
-                             'their last recorded time (default: 1; T3 measures in one process)')
+                             'their last recorded time (default: 1); with T3 each worker measures and the runner '
+                             'combines their data')
     parser.add_argument('--worker', type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.worker:
@@ -381,8 +399,8 @@ def main(argv=None):
     tiers = args.tier or []
     if args.mutation_base and 'T3' not in tiers:
         parser.error('--mutation-base runs with --tier T3')
-    if args.jobs < 1 or (args.jobs > 1 and 'T3' in tiers):
-        parser.error('--jobs is a positive count, and T3 measures in one process')
+    if args.jobs < 1:
+        parser.error('--jobs is a positive count')
     missing, stale = unregistered_modules(TESTS)
     if missing or stale:
         print('scripts/test_categories.py SHARDS is out of date. Unregistered: ' + (', '.join(missing) or '-')
@@ -396,7 +414,8 @@ def main(argv=None):
             sys.path.insert(0, str(TESTS))
         from support.branch_gate import Measurement, repository_root
         measurement = Measurement(repository_root())
-        measurement.start()  # before discovery, so import-time lines count
+        if args.jobs == 1:
+            measurement.start()  # before discovery, so import-time lines count
 
     def bail(code):
         if measurement is not None:
@@ -450,13 +469,20 @@ def main(argv=None):
     if selection is not None:
         print(selection_summary(selection), flush=True)
     reports, shard_seconds = [], {}
-    if measurement is not None:
+    if measurement is not None and not measurement.started:
+        # Parallel T3: the workers measure; this measurement only combines their data.
+        from support.branch_gate import Measurement, repository_root
+        measurement = Measurement(repository_root(), data_file=directory / 'coverage.data')
+    if measurement is not None and measurement.started:
         measurement.begin([test.id() for shard in (*SHARDS, *FOLDERS) for test in selected
                            if group_of(test) == shard and isolation_for(test) is None])
-    parallel = args.jobs > 1 and measurement is None
+    parallel = args.jobs > 1
     if parallel:
-        reports += _run_parallel([test for test in selected if folder_of(test) and isolation_for(test) is None],
-                                 directory, args.jobs, args.timeout, shard_seconds)
+        workers = _run_parallel([test for test in selected if folder_of(test) and isolation_for(test) is None],
+                                directory, args.jobs, args.timeout, shard_seconds, measure=measurement is not None)
+        reports += workers
+        if measurement is not None:
+            measurement.merge([report['directory'] for report in workers])
     for shard in (*SHARDS, *FOLDERS):
         tests = [test for test in selected if group_of(test) == shard]
         if not tests:
@@ -465,7 +491,8 @@ def main(argv=None):
         print(f'[{shard}] {len(tests)} tests', flush=True)
         in_process = [test for test in tests if isolation_for(test) is None and not (parallel and shard in FOLDERS)]
         if in_process:
-            reports.append({'shard': shard, **_run_suite(in_process, directory / shard, measurement=measurement)})
+            reports.append({'shard': shard, **_run_suite(
+                in_process, directory / shard, measurement=measurement if measurement and measurement.started else None)})
         classes = defaultdict(list)
         for test in tests:
             if isolation_for(test) is not None:
@@ -517,7 +544,7 @@ def main(argv=None):
     return 0 if result['successful'] and t3.get('passed', True) else 1
 
 
-def _run_parallel(tests, directory, jobs, timeout, shard_seconds):
+def _run_parallel(tests, directory, jobs, timeout, shard_seconds, *, measure=False):
     """New-system in-process tests in ``jobs`` worker processes, whole modules per worker (설계 5.4).
 
     A module stays in one process because its ``setUpModule`` and the Sim
@@ -536,7 +563,8 @@ def _run_parallel(tests, directory, jobs, timeout, shard_seconds):
     started = time.monotonic()
     with ThreadPoolExecutor(len(groups)) as pool:
         futures = [pool.submit(_isolated, [test for module in group for test in by_module[module]],
-                               directory / f'parallel-{index}', timeout) for index, group in enumerate(groups)]
+                               directory / f'parallel-{index}', timeout, measure=measure)
+                   for index, group in enumerate(groups)]
         reports = [{'shard': f'parallel-{index}', **future.result()} for index, future in enumerate(futures)]
     for report in reports:
         print(f"  {report['shard']}: " + str(dict(Counter(row['outcome'] for row in report['rows'] if not row.get('fixture'))))
