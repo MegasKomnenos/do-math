@@ -20,9 +20,9 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_contract_checks test_contracts test_control_transport test_decision_basis
         test_delegations test_design_walkthroughs test_environment_validation
         test_execution_lifecycle test_execution_profiles test_execution_window
-        test_external_operations test_file_io test_formal_input_manifest
+        test_external_operations test_file_io
         test_git_store test_goal_audit test_governance test_impact_review
-        test_installation_discovery test_integration_bundles test_json_digests test_knowledge
+        test_installation_discovery test_integration_bundles test_json_digests
         test_knowledge_import_engine test_knowledge_io test_knowledge_storage test_lifecycle_gates
         test_machine_scheduling test_model_metadata_boundary test_model_runner
         test_owned_job_children test_payloads test_planning test_preparation_cache
@@ -34,7 +34,7 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_task_contracts test_task_scope test_test_runner test_trust_continuation
         test_unicode_flow''',
     'host': '''
-        test_background_processes test_diagnosed_installation_recovery test_external test_formal
+        test_background_processes test_diagnosed_installation_recovery test_external
         test_formal_runtime test_host_resources test_launch_recovery test_lean_preview
         test_machine_parallel test_operator test_operator_bootstrap test_probe_cli
         test_provider_wait test_schedule_lifetime test_schedule_pythonw test_windows_job
