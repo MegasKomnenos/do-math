@@ -1,0 +1,225 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_missing_scope_opens_an_independent_scope_action_before_initial_reviews",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.ReviewScopeTests.test_missing_scope_opens_an_independent_scope_action_before_initial_reviews"
+      ]
+    },
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_scope_then_initial_organization_and_independent_judgment_use_only_sealed_stages",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.ReviewScopeTests.test_scope_then_initial_organization_and_independent_judgment_use_only_sealed_stages"
+      ]
+    },
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_scope_assessment_freezes_required_slots_profile_and_activity_budget",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.ReviewScopeTests.test_scope_assessment_freezes_required_slots_profile_and_activity_budget"
+      ]
+    },
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_scope_assessment_rejects_missing_required_perspective",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.ReviewScopeTests.test_scope_assessment_rejects_missing_required_perspective"
+      ]
+    },
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_executed_scope_cannot_merge_initial_and_private_judge_slots",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.ReviewScopeTests.test_executed_scope_cannot_merge_initial_and_private_judge_slots"
+      ]
+    },
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_scope_assessment_rejects_a_blank_text_as_the_scope_wire_does",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.ReviewScopeTests.test_scope_assessment_rejects_a_blank_text_as_the_scope_wire_does"
+      ]
+    },
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_scope_added_expertise_requires_an_actual_assigned_slot",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.ReviewScopeTests.test_scope_added_expertise_requires_an_actual_assigned_slot"
+      ]
+    },
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_permanent_restoration_loss_blocks_its_slot_until_a_current_grant_authorizes_a_replacement",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.ReviewScopeTests.test_permanent_restoration_loss_blocks_its_slot_until_a_current_grant_authorizes_a_replacement"
+      ],
+      "note": "Input: the old test built the instance that holds the replacement grant on review_fixtures.ReviewFakeEngine (no repository, _save an autospec double). The new test applies the same grant (review_fixtures.grant_replacement) to the product ResearchEngine over the stored review state of support.review_scene.ReviewScene; the cycle and replacement calls are the same pure functions."
+    },
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_review_input_basis_detects_policy_scope_and_profile_drift",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.ReviewScopeTests.test_review_input_basis_detects_policy_scope_and_profile_drift"
+      ]
+    },
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_engine_freezes_adopted_policy_and_opens_every_review_at_its_scope_stage",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.EngineScopeTests.test_engine_freezes_adopted_policy_and_opens_every_review_at_its_scope_stage",
+        "sim.test_review_policy_opening.OwnerOpenedReviewTests.test_owner_opened_review_freezes_the_adopted_policy_and_starts_at_its_scope_stage"
+      ],
+      "note": "Input: the old test ran on review_fixtures.ReviewFakeEngine (no repository, _save an autospec double, a store that read no artifact). The unit test makes the same calls on the product ResearchEngine over the stored review state of support.review_scene.ReviewScene; nothing is replaced. The sim test is the owner path to the same opening: the public activation adopted the review policy, and the owner's formal check opened the review with that policy frozen at its scope stage."
+    },
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_engine_returns_a_structured_slot_recovery_instead_of_reraising_restore_failure",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.EngineScopeTests.test_engine_returns_a_structured_slot_recovery_instead_of_reraising_restore_failure"
+      ],
+      "note": "Input: the old test ran on review_fixtures.ReviewFakeEngine (no repository, _save an autospec double, a store that read no artifact). The new test makes the same calls on the product ResearchEngine over the stored review state of support.review_scene.ReviewScene; nothing is replaced. The owner path from its preparation of a review attempt to a recorded restoration recovery is sim.test_review_owner_path.PreparationFailureTests.test_review_materialization_failure_ends_preparation_and_saves_recovery."
+    },
+    {
+      "legacy_id": "test_review_policy.ReviewScopeTests.test_scope_execution_minimum_in_the_review_contract_matches_the_policy",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_policy_scope.ReviewScopeTests.test_scope_execution_minimum_in_the_review_contract_matches_the_policy"
+      ]
+    },
+    {
+      "legacy_id": "test_review_research.PureResearchTests.test_completed_investigation_is_private_until_its_requester_seals",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_research_slots.PureResearchTests.test_completed_investigation_is_private_until_its_requester_seals"
+      ]
+    },
+    {
+      "legacy_id": "test_review_research.PureResearchTests.test_wrong_question_and_partial_answer_are_not_accepted",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_research_slots.PureResearchTests.test_wrong_question_and_partial_answer_are_not_accepted"
+      ]
+    },
+    {
+      "legacy_id": "test_review_research.PureResearchTests.test_deferred_initial_slot_does_not_allow_peer_to_finish_the_cycle",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_research_slots.PureResearchTests.test_deferred_initial_slot_does_not_allow_peer_to_finish_the_cycle"
+      ]
+    },
+    {
+      "legacy_id": "test_review_research.SplitReviewResearchTests.test_producer_and_receiver_reject_an_unassigned_used_source",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_research_slots.SceneResearchTests.test_producer_and_receiver_reject_an_unassigned_used_source"
+      ],
+      "note": "Input: the old test ran on review_fixtures.ReviewFakeEngine (no repository, _save an autospec double, a store that read no artifact) with review_fixtures.defer_review_for_research. The new test makes the same calls on the product ResearchEngine over the stored review state of support.review_scene.ReviewScene, deferred by support.review_research.defer_review_for_research (the same question, execution and deferral check); nothing is replaced. The owner path through the investigation input, receiver and resumption is flows.test_review_research_flows.ResearchFlowTests.test_all_fixed_questions_return_before_resuming_the_deferred_slot."
+    },
+    {
+      "legacy_id": "test_review_research.SplitReviewResearchTests.test_session_mode_does_not_let_optional_research_spend_reserved_followup",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_research_slots.SceneResearchTests.test_session_mode_does_not_let_optional_research_spend_reserved_followup"
+      ],
+      "note": "Input: the old test ran on review_fixtures.ReviewFakeEngine (no repository, _save an autospec double, a store that read no artifact) with review_fixtures.defer_review_for_research. The new test makes the same calls on the product ResearchEngine over the stored review state of support.review_scene.ReviewScene, deferred by support.review_research.defer_review_for_research; nothing is replaced. The owner path that closes a review whose further investigation does not fit is flows.test_review_research_flows.ResearchFlowTests.test_repeated_unanswered_request_closes_unresolved_at_the_activity_limit."
+    },
+    {
+      "legacy_id": "test_review_research.SplitReviewResearchTests.test_split_scope_fixed_research_and_resumed_review_publish_exact_assessment",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_research_slots.SceneResearchTests.test_split_scope_fixed_research_and_resumed_review_publish_exact_assessment"
+      ],
+      "note": "Input: the old test ran on review_fixtures.ReviewFakeEngine (no repository, _save an autospec double, a store that read no artifact) with review_fixtures.defer_review_for_research. The new test makes the same calls on the product ResearchEngine over the stored review state of support.review_scene.ReviewScene, deferred by support.review_research.defer_review_for_research; nothing is replaced. The owner path from the investigation through the resumed slot to the published match is flows.test_review_research_flows.ResearchFlowTests.test_all_fixed_questions_return_before_resuming_the_deferred_slot."
+    },
+    {
+      "legacy_id": "test_review_research.SplitReviewResearchTests.test_unadmitted_supplemental_execution_is_not_counted_late_at_acceptance",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_research_slots.SceneResearchTests.test_unadmitted_supplemental_execution_is_not_counted_late_at_acceptance"
+      ],
+      "note": "Input: the old test ran on review_fixtures.ReviewFakeEngine (no repository, _save an autospec double, a store that read no artifact) with review_fixtures.defer_review_for_research. The new test makes the same calls on the product ResearchEngine over the stored review state of support.review_scene.ReviewScene, deferred by support.review_research.defer_review_for_research; nothing is replaced. The owner's registration admits every review-owned attempt before binding it: unit.test_review_engine_admission.AdmissionTests.test_every_review_owned_attempt_uses_owner_admission_before_registration."
+    },
+    {
+      "legacy_id": "test_review_research.SplitReviewResearchTests.test_corrupt_fixed_research_source_is_a_local_diagnostic_on_slot_resume",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_research_slots.SceneResearchTests.test_corrupt_fixed_research_source_is_a_local_diagnostic_on_slot_resume"
+      ],
+      "note": "Input: the old test ran on review_fixtures.ReviewFakeEngine (no repository, _save an autospec double, a store that read no artifact) with review_fixtures.defer_review_for_research. The new test makes the same calls on the product ResearchEngine over the stored review state of support.review_scene.ReviewScene, deferred by support.review_research.defer_review_for_research; nothing is replaced. The owner path from its preparation of a review attempt to a recorded restoration recovery is sim.test_review_owner_path.PreparationFailureTests.test_review_materialization_failure_ends_preparation_and_saves_recovery."
+    },
+    {
+      "legacy_id": "test_review_research.SplitReviewResearchTests.test_split_stopped_investigation_returns_to_its_original_slot",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_research_slots.SceneResearchTests.test_split_stopped_investigation_returns_to_its_original_slot"
+      ],
+      "note": "Input: the old test ran on review_fixtures.ReviewFakeEngine (no repository, _save an autospec double, a store that read no artifact) with review_fixtures.defer_review_for_research. The new test makes the same calls on the product ResearchEngine over the stored review state of support.review_scene.ReviewScene, deferred by support.review_research.defer_review_for_research; nothing is replaced. The owner path from a stopped investigation to its requesting slot is flows.test_review_research_flows.ResearchFlowTests.test_inline_stop_returns_execution_incomplete_to_the_requesting_slot."
+    },
+    {
+      "legacy_id": "test_review_research.ReviewResearchEngineTests.test_common_document_overflow_waits_without_reconstructing_the_proposal",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_review_research_flows.ResearchFlowTests.test_common_document_overflow_waits_without_reconstructing_the_proposal"
+      ],
+      "note": "Input: the old test enlarged the engine's loaded role document (engine._documents['identity_review'][0], the memo of contracts.all_prompt_documents over the installed skill files) past the profile limit of 2,000,000 bytes. A Sim test changes no engine state behind the product (설계 4.1), so the new test reaches the same product condition from the other side: after the review opened, the public configure and probe (support.engine_overflow.apply_limit, as the CLI's configure) adopt a profile edition whose limit is the byte size of the identity review's installed documents, and the attempt is prepared under that edition, so the mandatory common documents alone exceed its actual limit. The old test avoided editing the configuration projection behind the profile registry; the public path changes the registry itself. Every old assertion is kept; the added one pins the product's cause (common_documents_or_governance) and the limit in the overflow record. Start state as the other moved engine tests: the purpose scenario on a Sim (support.review_research.research_sim) instead of purpose_fixtures.purpose_state on real Jobs with the signed formal fixture and adapter_for patched."
+    },
+    {
+      "legacy_id": "test_review_research.ReviewResearchEngineTests.test_all_fixed_questions_return_before_resuming_the_deferred_slot",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_review_research_flows.ResearchFlowTests.test_all_fixed_questions_return_before_resuming_the_deferred_slot"
+      ],
+      "note": "Input: the old test drove the real engine from purpose_fixtures.purpose_state(until='review') (the signed formal fixture as verifier, adapter_for patched) with InvestigationRunner in real Windows Jobs. The new test restores the same purpose scenario on a Sim (support.review_research.research_sim: the same fixture configuration and review policy, adopted by the public activation; the owner verified task A's theorem through the product's formal check and the Lean double) and answers with the same InvestigationRunner through the model double (support.review_research.InvestigationResponder), keeping its input checks (K-46), the purpose runner's checks (K-32) and the bounded drive (K-33)."
+    },
+    {
+      "legacy_id": "test_review_research.ReviewResearchEngineTests.test_repeated_unanswered_request_closes_unresolved_at_the_activity_limit",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_review_research_flows.ResearchFlowTests.test_repeated_unanswered_request_closes_unresolved_at_the_activity_limit"
+      ],
+      "note": "Input: the old test drove the real engine from purpose_fixtures.purpose_state(until='review') with InvestigationRunner in real Windows Jobs; the new test restores the same purpose scenario on a Sim (support.review_research.research_sim with review_research_limit=1) and answers with the same InvestigationRunner through the model double, keeping its input checks. The added assertions pin why the review closed (the investigation_limit_closed event with limit 1 and no budget, and the follow-up reason)."
+    },
+    {
+      "legacy_id": "test_review_research.ReviewResearchEngineTests.test_initial_peer_question_is_not_exposed_before_phase_seal",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_review_research_reach.ResearchReachTests.test_initial_peer_question_is_not_exposed_before_phase_seal"
+      ],
+      "note": "Input: the old test drove the real engine from purpose_fixtures.purpose_state(until='review') with InvestigationRunner in real Windows Jobs and a real Git repository. The new test restores the same purpose scenario on a Sim (support.review_research.research_sim) and answers through the model double; research_fixtures.role_reach (K-48) reads the prompt the model double's CLI received (support.review_research.record_prompts) and, after the Sim's Git objects are written out as loose objects (support.review_sim.export_objects), the snapshot through a real git and the installed read tool in a child process, which place it with the boundary tests."
+    },
+    {
+      "legacy_id": "test_review_research.ReviewResearchEngineTests.test_investigator_does_not_receive_unsealed_peer_summary",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_review_research_reach.ResearchReachTests.test_investigator_does_not_receive_unsealed_peer_summary"
+      ],
+      "note": "Input: the old test drove the real engine from purpose_fixtures.purpose_state(until='review') with InvestigationRunner in real Windows Jobs and a real Git repository. The new test restores the same purpose scenario on a Sim (support.review_research.research_sim) and answers through the model double; research_fixtures.role_reach (K-48) reads the prompt the model double's CLI received (support.review_research.record_prompts) and, after the Sim's Git objects are written out as loose objects (support.review_sim.export_objects), the snapshot through a real git and the installed read tool in a child process, which place it with the boundary tests."
+    },
+    {
+      "legacy_id": "test_review_research.ReviewResearchEngineTests.test_user_revision_cancels_old_investigation_and_reviews_new_revision",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_review_research_flows.ResearchFlowTests.test_user_revision_cancels_old_investigation_and_reviews_new_revision"
+      ],
+      "note": "Input: the old test drove the real engine from purpose_fixtures.purpose_state(until='review') with InvestigationRunner in real Windows Jobs and revised by research_fixtures.send_control; the new test restores the same purpose scenario on a Sim (support.review_research.research_sim), answers with the same InvestigationRunner through the model double, and revises by the same public control (support.engine_lifecycle.applied, which fails on a rejected control as send_control did, K-35)."
+    },
+    {
+      "legacy_id": "test_review_research.ReviewResearchEngineTests.test_supplemental_evidence_is_readable_again_in_the_next_revision",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_review_research_flows.ResearchFlowTests.test_supplemental_evidence_is_readable_again_in_the_next_revision"
+      ],
+      "note": "Input: the old test drove the real engine from purpose_fixtures.purpose_state(until='review') with InvestigationRunner in real Windows Jobs and revised by research_fixtures.send_control; the new test restores the same purpose scenario on a Sim (support.review_research.research_sim), answers with the same InvestigationRunner through the model double, and revises by the same public control (support.engine_lifecycle.applied, K-35)."
+    },
+    {
+      "legacy_id": "test_review_research.ReviewResearchEngineTests.test_inline_stop_returns_execution_incomplete_to_the_requesting_slot",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_review_research_flows.ResearchFlowTests.test_inline_stop_returns_execution_incomplete_to_the_requesting_slot"
+      ],
+      "note": "Input: the old runner (StoppedInvestigator) returned status 'stopped' for the investigation without any stop request (it called should_stop and ignored the answer). The product runner reports 'stopped' only after the owner's stop judgment (model_runner sets stopped when should_stop() is true or the runner's own deadline passes, and an investigation is a work role without a call deadline), so that input cannot arise from the product. The new test makes a real stop of that one execution: with the Jobs fake live, the investigator writes the same blocked checkpoint while the user replaces the research grant it holds by public control; the owner revokes that grant, requests a stop of its consumers (grant_revoked) and terminates the Job at the investigator's next turn, while the instance keeps running. Every old assertion is kept; the added ones pin that stop path (the execution's stop reason and outcome, the failed_investigation_returned history row). Start state as the other moved engine tests (support.review_research.research_sim)."
+    }
+  ]
+}

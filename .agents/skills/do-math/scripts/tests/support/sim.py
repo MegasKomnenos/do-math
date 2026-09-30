@@ -175,7 +175,7 @@ class Sim:
         self.jobs.owner = {**self.jobs.owner, 'pid': self.jobs.owner['pid'] + 4}
         self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports)
 
-    def activate(self, *, initial_roles=('intent_interpretation',), external_policy='disabled'):
+    def activate(self, *, initial_roles=('intent_interpretation',), external_policy='disabled', review_policy=None):
         """The public activation: approvals, grants, probe and trust by control, then owner passes until active.
 
         The synthetic approval, trust and capability inputs are this Sim's; the
@@ -184,6 +184,8 @@ class Sim:
         initialization roles are intent interpretation and maintenance).
         ``external_policy`` is the adopted external policy; an active contract
         cannot change it later, so a Sim for HTTP effects adopts ``'explicit_grants'`` here.
+        ``review_policy``, when given, is the review policy the initialization
+        decision adopts instead of the configured default (the product validates it).
         """
         from datetime import timedelta
         from do_math.canonical import exact_content_hash
@@ -216,7 +218,9 @@ class Sim:
         self._apply('trust', config={'operation': 'transition', 'env_id': environment})
         self._apply('decision', config={'change': {'kind': 'initialization', 'config_sha256': config_sha256,
             'adopt_current_governance': True, 'conversation_loss_policy': 'continue_authorized',
-            'external_policy': external_policy, 'adopt_default_review_policy': True, 'initial_profile_ref': initial_ref,
+            'external_policy': external_policy,
+            **({'review_policy': review_policy} if review_policy is not None else {'adopt_default_review_policy': True}),
+            'initial_profile_ref': initial_ref,
             'initial_grant_ids': ['GR-initial-sim'], 'research_grant_ids': ['GR-research-sim']}})
         self.engine.run(until_active=True)
         if self.instance['lifecycle']['state'] != 'active':
