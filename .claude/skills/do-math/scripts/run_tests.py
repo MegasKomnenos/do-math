@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import nullcontext, redirect_stderr, redirect_stdout
 import fnmatch
 import hashlib
 import json
@@ -127,17 +127,25 @@ def discover(loader=None):
 
 
 # do_math is imported on first use, not at module import: T3 starts coverage before any product import.
+def _unmeasured():
+    """The T3 measurement's pause while the runner itself touches files (support/branch_gate.py, 결함 D5)."""
+    gate = sys.modules.get('support.branch_gate')
+    return gate.unmeasured() if gate is not None else nullcontext()
+
+
 def _write_json(path, value):
     from do_math.file_io import write_bytes_atomic
-    write_bytes_atomic(path,(json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
+    with _unmeasured():
+        write_bytes_atomic(path,(json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
 
 
 def _read_json(path):
     from do_math.file_io import read_bytes_shared
-    try:
-        return json.loads(read_bytes_shared(path).decode('utf-8'))
-    except FileNotFoundError:
-        return None
+    with _unmeasured():
+        try:
+            return json.loads(read_bytes_shared(path).decode('utf-8'))
+        except FileNotFoundError:
+            return None
 
 
 def flatten(suite):
@@ -482,7 +490,8 @@ def main(argv=None):
                                 directory, args.jobs, args.timeout, shard_seconds, measure=measurement is not None)
         reports += workers
         if measurement is not None:
-            measurement.merge([report['directory'] for report in workers])
+            measurement.missing_workers = [str(path) for path in
+                                           measurement.merge([report['directory'] for report in workers])]
     for shard in (*SHARDS, *FOLDERS):
         tests = [test for test in selected if group_of(test) == shard]
         if not tests:
@@ -604,6 +613,9 @@ def _finish_t3(measurement, directory, selected, args, clean):
     prefix = SCRIPTS.relative_to(measurement.root).as_posix()
     gate = branch_gate.gate(report['files'], LAYERS, prefix)
     summary = [branch_gate.gate_summary(gate)]
+    missing = getattr(measurement, 'missing_workers', [])
+    if missing:  # 결함 D6: a worker that left no measurement leaves its tests unmeasured
+        summary.append('Measurement missing from workers (the gate does not pass): ' + ', '.join(missing))
     index = None
     if clean and not args.tests and not args.match:
         tests = [test.id() for test in selected if isolation_for(test) is None]
@@ -621,8 +633,9 @@ def _finish_t3(measurement, directory, selected, args, clean):
                                      directory / 'mutation', timeout=args.timeout)
         summary.append(mutation_tool.summary(mutation))
         summary += [f'  survived: {name}' for name in mutation['survived']]
-    passed = gate['passed'] and (mutation is None or mutation['unreasoned_entries'] == 0)
-    return {'branch_gate': gate, 'selection_index': index, 'mutation': mutation, 'summary': summary, 'passed': passed}
+    passed = gate['passed'] and not missing and (mutation is None or mutation['unreasoned_entries'] == 0)
+    return {'branch_gate': gate, 'selection_index': index, 'mutation': mutation, 'summary': summary, 'passed': passed,
+            'measurement_missing': missing}
 
 
 if __name__ == '__main__':

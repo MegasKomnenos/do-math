@@ -18,13 +18,13 @@ at nested functions, and ignoring the return annotation:
 The docstring stays. A body that is only ``pass`` or ``...`` is ``trivial`` and not
 mutated, because its mutant would be the function itself.
 
-Tests: those the selection index credits with running any code line of the
-function's body. When the file changed since the index was measured, current
-lines map to measured lines through the ``difflib`` equal blocks against the
-measured text. A code line that does not map, a measured text that git no
-longer has, or a missing or stale index adds the module's layer folders
-(``selection.LAYER_FOLDERS``). A function no test runs is ``not_executed``; the
-branch gate reports it, and it does not enter the pseudo-tested list.
+Tests: those the selection index credits with entering the function (its
+qualified name, without the ``#n`` of a repeated name). A function the index
+does not know in a file that changed since the index was measured, or a
+missing or stale index, adds the module's layer folders
+(``selection.LAYER_FOLDERS``). A function no test entered in an unchanged file
+is ``not_executed``; the branch gate reports it, and it does not enter the
+pseudo-tested list.
 
 Execution: never in the working tree. The mutant source is written to a
 temporary file, and a child interpreter (``--child``) imports it in place of the
@@ -49,7 +49,6 @@ from __future__ import annotations
 import argparse
 import ast
 from collections import Counter
-import difflib
 import fnmatch
 import json
 import os
@@ -158,36 +157,16 @@ def mutate(text, node):
     return rule, mutated.decode('utf-8')
 
 
-def body_lines(node):
-    statements = body(node)
-    first = statements[0]
-    start = min([first.lineno] + [d.lineno for d in getattr(first, 'decorator_list', [])])
-    return range(start, statements[-1].end_lineno + 1)
-
-
-def line_map(old_text, new_text):
-    """{new line: old line} for lines inside difflib's equal blocks."""
-    matcher = difflib.SequenceMatcher(None, old_text.splitlines(), new_text.splitlines(), autojunk=False)
-    return {b + k + 1: a + k + 1 for a, b, size in matcher.get_matching_blocks() for k in range(size)}
-
-
-def tests_for(entry, current_blob, read_blob, text, lines, layer):
-    """(test ids as ordinals, fallback folders) for code ``lines`` of the current ``text`` (see module docstring)."""
-    from support.selection import LAYER_FOLDERS, SELECTABLE, code_owners
+def tests_for(entry, current_blob, key, layer):
+    """(test ids as ordinals, fallback folders) for the function ``key`` (see module docstring)."""
+    from support.selection import LAYER_FOLDERS, SELECTABLE
     folders = tuple(LAYER_FOLDERS.get(layer, SELECTABLE))
-    if entry is None or 'lines' not in entry:
+    if entry is None or 'functions' not in entry:
         return set(), folders
-    owners = code_owners(text) or {}
-    code = [line for line in lines if line in owners]
-    if entry.get('blob') == current_blob:
-        mapping = {line: line for line in code}
-    else:
-        old_text = read_blob(entry.get('blob'))
-        if old_text is None:
-            return set(), folders
-        mapping = line_map(old_text, text)
-    ordinals = {o for line in code if line in mapping for o in entry['lines'].get(str(mapping[line]), ())}
-    return ordinals, folders if any(line not in mapping for line in code) else ()
+    ordinals = set(entry['functions'].get(key.split('#', 1)[0], ()))
+    if ordinals or entry.get('blob') == current_blob:
+        return ordinals, ()
+    return set(), folders
 
 
 def read_list(path=PSEUDO_TESTED):
@@ -269,11 +248,6 @@ def run(base, index, layers, root, directory, *, only=(), every=False, timeout=3
     modules = sorted(m for m, layer in layers.items() if layer in ('1', '2', '3')
                      and (not only or any(fnmatch.fnmatchcase(m, pattern) for pattern in only)))
     blobs = git_blobs(root, [f'{prefix}/{m}' for m in modules])
-
-    def read_blob(blob):
-        result = _git(root, 'cat-file', 'blob', blob) if blob else None
-        return result.stdout.decode('utf-8') if result is not None and result.returncode == 0 else None
-
     outcomes, plans = [], []
     for module in modules:
         path = f'{prefix}/{module}'
@@ -293,7 +267,7 @@ def run(base, index, layers, root, directory, *, only=(), every=False, timeout=3
                 outcome.update(status='mutation_error', detail=str(error))
                 continue
             entry = index['files'].get(path) if index else None
-            ordinals, folders = tests_for(entry, blobs[path], read_blob, text, body_lines(node), layers[module])
+            ordinals, folders = tests_for(entry, blobs[path], key, layers[module])
             if not ordinals and not folders:
                 outcome['status'] = 'not_executed'
                 continue

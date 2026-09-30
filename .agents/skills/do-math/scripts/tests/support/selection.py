@@ -13,20 +13,23 @@ older commit. For each changed path:
 * a test file of a selectable folder: that whole test module (5.3 row 1);
 * a measured ``.py`` whose measured text is still in git: the changed regions
   are found with ``difflib`` against that text. A region that touches code
-  (not blank, comment or docstring lines) is anchored at the statements it
-  replaces or deletes, mapped to the statement's first line as coverage
-  records it; a test that ran none of them runs the same after the change. A
-  pure insertion is anchored at the nearest statement before and after it,
-  since the tests passing through the new code pass through a neighbour. The
-  tests that ran any anchor are chosen. A region whose anchors no test ran (a new or
-  import-only line the index does not know) takes the module's fallback
-  (5.3 row 2);
+  (not blank, comment or docstring lines) is owned by the innermost function
+  whose *body* holds each touched line, in the measured text for replaced or
+  deleted lines and in the current text for inserted ones; a definition's
+  header (decorators, signature, defaults) runs in the enclosing scope and
+  belongs to it. Only a test that entered the owning function can run a
+  changed body line, inserted ones included, so the tests the index credits
+  with entering the owners are chosen. A touched line outside every function
+  body (module or class level, run at import) takes the module's fallback
+  (5.3 row 2). A function no test entered selects nothing: its body runs in no
+  test until other code changes;
 * a measured ``.py`` whose measured text is gone from git, or that was deleted:
-  every test that ran any of its lines, plus the module's fallback;
+  every test that entered any of its functions, plus the module's fallback;
 * an unmeasured or new ``.py``: the module's fallback;
-* a non-Python input the index saw opened: the tests that opened it (5.3 row 3).
-  New inputs have no reader yet; the change that makes a test read one selects
-  that test.
+* a non-Python input the index saw opened: the tests that opened it (5.3 row 3);
+  an input opened with no test to credit (an import-time open whose opener no
+  test entered) takes every selectable folder. New inputs have no reader yet;
+  the change that makes a test read one selects that test.
 
 Fallback of a module (also the whole rule when the index is missing, of
 another format, or stale, 5.3 row 4). The fallback is the module-level
@@ -193,8 +196,52 @@ def region_anchors(old_text, new_text):
     return regions
 
 
-def tests_of_lines(entry, lines):
-    return {o for line in lines for o in entry.get('lines', {}).get(str(line), ())}
+def body_owners(text):
+    """{line: qualified name of the innermost function whose body holds it}, or None on a syntax error.
+
+    A body runs from its first statement to the function's last line; the
+    header (decorators, signature, defaults) belongs to the enclosing scope.
+    Qualified names follow ``co_qualname`` (``Class.method``, ``f.<locals>.g``).
+    """
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return None
+    owners = {}
+
+    def visit(node, prefix):
+        for child in ast.iter_child_nodes(node):
+            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                name = prefix + child.name
+                for line in range(child.body[0].lineno, child.end_lineno + 1):
+                    owners[line] = name
+                visit(child, name + '.<locals>.')
+            elif isinstance(child, ast.ClassDef):
+                visit(child, prefix + child.name + '.')
+            else:
+                visit(child, prefix)
+    visit(tree, '')
+    return owners
+
+
+def region_owners(old_text, new_text, region):
+    """(qualified names owning the region's touched code lines, whether a touched line lies outside every body)."""
+    names, outside = set(), False
+    for text, (start, end) in ((old_text, region['old']), (new_text, region['new'])):
+        code = code_owners(text)
+        code = _text_code(text) if code is None else code
+        owners = body_owners(text) or {}
+        for line in range(start, end + 1):
+            if line in code:
+                if line in owners:
+                    names.add(owners[line])
+                else:
+                    outside = True
+    return names, outside
+
+
+def tests_of_functions(entry, names):
+    return {o for name in names for o in entry.get('functions', {}).get(name, ())}
 
 
 def import_graph(scripts):
@@ -281,26 +328,31 @@ def select_with_index(index, current, read_blob, read_text, paths, graph):
                 fallback(selection, paths, path, graph)
             continue
         if 'readers' in entry:
-            selection.add(path, 'input readers', tests={tests[o] for o in entry['readers']})
+            if entry['readers']:
+                selection.add(path, 'input readers', tests={tests[o] for o in entry['readers']})
+            else:
+                selection.add(path, 'input opened at import with no test to credit', folders=SELECTABLE)
             continue
         if not path.endswith('.py'):
             continue
-        if 'lines' not in entry:
+        if 'functions' not in entry:
             fallback(selection, paths, path, graph)
             continue
-        everything = {tests[o] for ordinals in entry['lines'].values() for o in ordinals}
+        everything = {tests[o] for ordinals in entry['functions'].values() for o in ordinals}
         old_text = read_blob(old) if new is not None else None
         if old_text is None:
             selection.add(path, 'deleted' if new is None else 'measured text gone', tests=everything)
             fallback(selection, paths, path, graph)
             continue
-        for region in region_anchors(old_text, read_text(path)):
-            chosen = {tests[o] for o in tests_of_lines(entry, region['anchors'])}
+        new_text = read_text(path)
+        for region in region_anchors(old_text, new_text):
+            names, outside = region_owners(old_text, new_text, region)
+            chosen = {tests[o] for o in tests_of_functions(entry, names)}
             if chosen:
-                selection.add(f"{path}:{region['new'][0]}", 'tests that ran the changed lines', tests=chosen)
-            else:
+                selection.add(f"{path}:{region['new'][0]}", 'tests that entered the changed functions', tests=chosen)
+            if outside:
                 fallback(selection, paths, path, graph,
-                         note=f" (lines {region['new'][0]}-{region['new'][1]} unknown to the index)")
+                         note=f" (lines {region['new'][0]}-{region['new'][1]} run at import)")
     return selection
 
 

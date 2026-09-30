@@ -3,8 +3,8 @@ import ast
 import inspect
 import unittest
 
-from support.mutation import (changed_functions, functions, line_map, mutant_timeout, mutate, rule_of, tests_for,
-                               unreasoned, update_list)
+from support.mutation import (changed_functions, functions, mutant_timeout, mutate, rule_of, tests_for, unreasoned,
+                               update_list)
 
 SOURCE = '''class Store:
     def put(self, key, value):
@@ -109,19 +109,17 @@ class ChangeTests(unittest.TestCase):
 
 
 class SelectionTests(unittest.TestCase):
-    ENTRY = {'blob': 'b1', 'lines': {'2': [0], '3': [1, 2]}}
-    OLD = 'def f(x):\n    y = x\n    return y\n'
+    ENTRY = {'blob': 'b1', 'functions': {'f': [0, 1, 2], 'C.m': [1]}}
 
-    def test_the_tests_that_ran_the_body_are_chosen_through_moved_lines(self):
-        self.assertEqual(tests_for(self.ENTRY, 'b1', {}.get, self.OLD, range(2, 4), '2'), ({0, 1, 2}, ()))
-        moved = '# header\n\n' + self.OLD
-        self.assertEqual(line_map(self.OLD, moved)[5], 3)
-        self.assertEqual(tests_for(self.ENTRY, 'b2', {'b1': self.OLD}.get, moved, range(4, 6), '2'), ({0, 1, 2}, ()))
+    def test_the_tests_that_entered_the_function_are_chosen_whatever_moved(self):
+        self.assertEqual(tests_for(self.ENTRY, 'b1', 'f', '2'), ({0, 1, 2}, ()))
+        self.assertEqual(tests_for(self.ENTRY, 'b2', 'f', '2'), ({0, 1, 2}, ()))
+        self.assertEqual(tests_for(self.ENTRY, 'b1', 'C.m#2', '2'), ({1}, ()))
 
-    def test_an_unknown_line_or_a_missing_index_adds_the_layer_folders(self):
-        changed = 'def f(x):\n    y = x + 1\n    return y\n'
-        self.assertEqual(tests_for(self.ENTRY, 'b2', {'b1': self.OLD}.get, changed, range(2, 4), '3'), ({1, 2}, ('sim',)))
-        self.assertEqual(tests_for(None, 'b1', {}.get, self.OLD, range(2, 4), '1'), (set(), ('unit', 'contracts')))
+    def test_an_unknown_function_of_a_changed_file_or_a_missing_index_adds_the_layer_folders(self):
+        self.assertEqual(tests_for(self.ENTRY, 'b1', 'g', '3'), (set(), ()))
+        self.assertEqual(tests_for(self.ENTRY, 'b2', 'g', '3'), (set(), ('sim',)))
+        self.assertEqual(tests_for(None, 'b1', 'f', '1'), (set(), ('unit', 'contracts')))
 
 
 class ListTests(unittest.TestCase):
