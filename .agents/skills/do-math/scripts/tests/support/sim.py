@@ -9,7 +9,8 @@ and Lean doubles at their spawn seam, fake scheduler and
 HTTP ports, and a fake host. Tests inject events: controls, owner passes,
 clock moves and restarts. They never replace engine methods or the store.
 
-- ``Sim(root)``: an initialized instance; ``Sim.activated(root)`` also runs the
+- ``Sim(root)``: an initialized instance (``sources``: files the public
+  ``initialize`` preserves as the instance's sources); ``Sim.activated(root)`` also runs the
   public activation. ``Sim.activated()`` restores a copy of one activation this
   process built (설계 4.4): the public path costs seconds, a restore a fraction.
 - ``control(action, text=..., config=...)``: queue a public control.
@@ -64,7 +65,7 @@ TIMESTAMP = re.compile(r'\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
 
 
 class Sim:
-    def __init__(self, root, *, goal=GOAL, config=None, host=None, shared=None):
+    def __init__(self, root, *, goal=GOAL, config=None, host=None, shared=None, sources=None):
         """``shared`` holds the synthetic trust toolchain (default: ``root``); a template never copies it."""
         self.root = Path(root).resolve()
         self.shared = Path(shared).resolve() if shared is not None else self.root
@@ -72,7 +73,7 @@ class Sim:
         self.repository = make_repository(self.root / 'repository')
         self.instance_id = initialize(self.repository, goal=goal, workspace=self.root / 'work',
                                       config={**CONFIG, 'lean_command': [str(self.trust_lean)], **(config or {})},
-                                      ports=self.ports)['instance_id']
+                                      sources=sources, ports=self.ports)['instance_id']
         self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports)
 
     def _wire(self, clock, host, objects=None):
