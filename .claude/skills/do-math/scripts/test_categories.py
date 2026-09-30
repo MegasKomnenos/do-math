@@ -17,16 +17,13 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'foundation': '''
         test_context_store
         test_environment_validation
-        test_execution_window
-        test_git_store test_installation_discovery test_model_metadata_boundary test_owned_job_children test_preparation_cache test_provider_final_contract test_reference_catalog test_repair_execution test_standalone test_supervisor_recovery
+        test_git_store test_installation_discovery test_owned_job_children test_preparation_cache test_reference_catalog test_repair_execution test_standalone test_supervisor_recovery
         test_test_runner test_trust_continuation
         ''',
     'host': '''
         test_diagnosed_installation_recovery
         test_formal_runtime test_host_resources test_lean_preview
-        test_machine_parallel test_operator test_probe_cli
-        test_provider_wait
-        test_worker_temporary_outputs''',
+        test_machine_parallel test_operator test_probe_cli''',
     'lifecycle': '''
         test_checkpoint_persistence test_engine test_formal_engine
         test_lifecycle_engine
