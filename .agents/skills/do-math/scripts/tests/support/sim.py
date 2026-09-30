@@ -46,6 +46,7 @@ import tempfile
 
 from do_math.engine import ResearchEngine, control, initialize
 from do_math.ports import Ports
+from support import branch_gate
 from support.fakes.calls import make_fake as fake_calls
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import make_fake as fake_git, make_repository
@@ -265,17 +266,24 @@ class _Template:
     the trust record fingerprints its files by creation time, which a copy changes.
     """
 
-    def __init__(self, build=None):
-        """``build(root, shared)`` returns the Sim to copy; by default the public activation."""
+    def __init__(self, build=None, key='sim:activated'):
+        """``build(root, shared)`` returns the Sim to copy; by default the public activation.
+
+        Under a T3 measurement the build is credited to every test that restores
+        this template (``key``), not to the one that happened to build it (결함 D2).
+        """
         self.base = Path(tempfile.mkdtemp(prefix='do-math-sim-')).resolve()
         atexit.register(_remove, self.base)
         self.live, self.pristine, self.shared = (self.base / name for name in ('live', 'pristine', 'shared'))
-        sim = build(self.live, self.shared) if build is not None else Sim.activated(self.live, shared=self.shared)
-        self.instance_id, self.state = sim.instance_id, sim.process_state()
+        self.key = key
+        with branch_gate.shared_state(key):
+            sim = build(self.live, self.shared) if build is not None else Sim.activated(self.live, shared=self.shared)
+            self.instance_id, self.state = sim.instance_id, sim.process_state()
         shutil.copytree(self.live, self.pristine)
         self.used = False
 
     def restore(self):
+        branch_gate.used_state(self.key)
         if self.used:
             _remove(self.live)
             shutil.copytree(self.pristine, self.live)
@@ -314,7 +322,7 @@ def built(name, build):
     """
     if name not in _BUILT:
         _BUILT[name] = 'failed'
-        _BUILT[name] = _Template(build)
+        _BUILT[name] = _Template(build, key='sim:built:' + name)
     elif _BUILT[name] == 'failed':
         raise AssertionError(f'the Sim template {name!r} failed to build earlier in this process')
     return _BUILT[name].restore()

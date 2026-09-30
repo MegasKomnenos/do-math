@@ -28,12 +28,18 @@ pseudo-tested list.
 
 Execution: never in the working tree. The mutant source is written to a
 temporary file, and a child interpreter (``--child``) imports it in place of the
-module through a meta-path loader that keeps the original ``__file__``. It runs
-the chosen tests with unittest. One baseline child first runs the union of all
-chosen tests unmutated; each mutant's time limit is three times that run (at
-least 30 s, at most ``--timeout``, ``mutant_timeout``). A mutant is ``killed`` when a
-test fails, errors or unexpectedly passes that did not at baseline, or when the
-child exceeds its limit (``timeout``). Otherwise it ``survived``.
+module through a meta-path loader that keeps the original ``__file__``. One
+failing test kills a mutant, so the child runs the chosen tests cheapest first
+(the unmeasured module times of ``tests/.timings.json`` per chosen test, a
+module's tests kept together) and stops at the first failure (``failfast``).
+There is no baseline run of every chosen test (결함 D9): a test that failed a
+mutant is run once unmutated, alone, and remembered. A mutant is ``killed`` when
+a test fails, errors or unexpectedly passes that passes unmutated, or when a
+test module fails to load, or when the child exceeds its limit (``timeout``). A
+failing test that also fails unmutated is set aside and the mutant runs again
+without it. Otherwise the mutant ``survived``. Each mutant's time limit is three
+times the recorded seconds of the modules it runs (at least 30 s, at most
+``--timeout``, ``mutant_timeout``).
 
 List: ``tests/pseudo_tested.json`` holds ``{"entries": [{module, function, rule,
 base, reason}]}``. A survivor without an entry gains one with an empty reason;
@@ -61,6 +67,8 @@ import time
 SCRIPTS = Path(__file__).resolve().parents[2]
 TESTS = SCRIPTS / 'tests'
 PSEUDO_TESTED = TESTS / 'pseudo_tested.json'
+TIMINGS = TESTS / '.timings.json'  # the runner's unmeasured module seconds; a mutant child runs unmeasured
+UNKNOWN_TEST_SECONDS = 0.5  # a module the record does not know, per test (as run_tests)
 NOTE = ('Pseudo-tested functions (설계 6.3): the extreme mutant of each survived every test that runs the '
         'function. An entry closes a sub-stage only with a reason; a function whose None return equals '
         'its behaviour says so in the reason.')
@@ -198,15 +206,44 @@ def _git(root, *arguments):
     return subprocess.run(['git', *arguments], cwd=root, capture_output=True, check=False)
 
 
-def mutant_timeout(baseline_seconds, ceiling):
-    """A mutant's time limit: three times the unmutated run of the same tests, at least 30 s, at most ``ceiling``.
+def mutant_timeout(expected_seconds, ceiling):
+    """A mutant's time limit: three times the expected unmutated run, at least 30 s, at most ``ceiling``.
 
     A mutant that hangs counts as killed either way, so the limit only has to
     let a mutant that survives but runs slower (a result it throws away is
-    recomputed) finish; the unmutated run is the union of every mutant's tests,
-    so it bounds each mutant's own share.
+    recomputed) finish. The expectation is the recorded seconds of every module
+    the mutant's tests belong to, which bounds the run of a part of them.
     """
-    return min(ceiling, max(30.0, 3 * baseline_seconds))
+    return min(ceiling, max(30.0, 3 * expected_seconds))
+
+
+def recorded_seconds():
+    """The runner's unmeasured seconds per test module (``tests/.timings.json``), or none."""
+    try:
+        return json.loads(Path(TIMINGS).read_text(encoding='utf-8'))
+    except (FileNotFoundError, ValueError):
+        return {}
+
+
+def expected_seconds(chosen, seconds):
+    """Recorded seconds of the modules of ``chosen`` tests and of every module of its folders."""
+    modules = {test.rsplit('.', 2)[0] for test in chosen['tests']}
+    modules |= {module for module in seconds if module.split('.')[0] in chosen['folders']}
+    return sum(seconds.get(module, UNKNOWN_TEST_SECONDS) for module in modules)
+
+
+def cheapest_first(tests, seconds):
+    """``tests`` ordered by their module's recorded seconds per chosen test, cheapest first, modules kept together."""
+    modules = [type(test).__module__ for test in tests]
+    counts = Counter(modules)
+    cost = {module: seconds.get(module, UNKNOWN_TEST_SECONDS * counts[module]) / counts[module] for module in counts}
+    order = sorted(range(len(tests)), key=lambda i: (cost[modules[i]], modules[i], i))
+    return [tests[i] for i in order]
+
+
+def _is_test_id(name):
+    """A failing entry that names a test, not a loader error's text."""
+    return bool(name) and not any(character.isspace() for character in name)
 
 
 def _child_run(spec, directory, timeout):
@@ -274,27 +311,39 @@ def run(base, index, layers, root, directory, *, only=(), every=False, timeout=3
             outcome['tests'] = len(ordinals)
             outcome['folders'] = list(folders)
             plans.append((outcome, mutant, {'tests': sorted(tests[o] for o in ordinals), 'folders': list(folders)}))
-    baseline = set()
-    if plans:
-        union = {'tests': sorted({t for _, _, s in plans for t in s['tests']}),
-                 'folders': sorted({f for _, _, s in plans for f in s['folders']})}
-        baseline, seconds = _child_run({**union, 'target': None, 'mutant': None}, Path(directory) / 'baseline', timeout)
-        limit = mutant_timeout(seconds, timeout)
-        if baseline is None:
-            raise RuntimeError(f'baseline run of the chosen tests exceeded {timeout} s')
+    seconds = recorded_seconds()
+    unmutated = {}  # test id -> whether it fails with no mutant
+
+    def fails_unmutated(test):
+        if test not in unmutated:
+            failing, _ = _child_run({'tests': [test], 'folders': [], 'exclude': [], 'target': None, 'mutant': None},
+                                    Path(directory) / f'unmutated-{len(unmutated):04}', timeout)
+            unmutated[test] = failing is None or test in failing
+        return unmutated[test]
+
     for number, (outcome, mutant, chosen) in enumerate(plans):
         work = Path(directory) / f'mutant-{number:04}'
         work.mkdir(parents=True, exist_ok=True)
         (work / 'mutant.py').write_text(mutant, encoding='utf-8')
-        failing, seconds = _child_run({**chosen, 'target': str(SCRIPTS / outcome['module']),
-                                       'mutant': str(work / 'mutant.py')}, work, limit)
-        outcome['seconds'] = round(seconds, 2)
-        if failing is None:
-            outcome['status'] = 'timeout'
-        else:
-            new = sorted(failing - baseline)
-            outcome['status'] = 'killed' if new else 'survived'
-            outcome['killed_by'] = new[:5]
+        limit, excluded, took = mutant_timeout(expected_seconds(chosen, seconds), timeout), set(), 0.0
+        while True:
+            failing, spent = _child_run({'tests': [t for t in chosen['tests'] if t not in excluded],
+                                         'folders': chosen['folders'], 'exclude': sorted(excluded),
+                                         'target': str(SCRIPTS / outcome['module']), 'mutant': str(work / 'mutant.py')},
+                                        work, limit)
+            took += spent
+            if failing is None:
+                outcome['status'] = 'timeout'
+                break
+            broken = {t for t in failing if _is_test_id(t) and fails_unmutated(t)}
+            killers = sorted(failing - broken)
+            if killers or not broken:
+                outcome['status'] = 'killed' if killers else 'survived'
+                outcome['killed_by'] = killers[:5]
+                break
+            excluded |= broken  # it fails unmutated too: run the mutant again without it
+        outcome['seconds'] = round(took, 2)
+    baseline = {test for test, fails in unmutated.items() if fails}
     listing = read_list(listing_path)
     if update_list(listing, outcomes, base):
         Path(listing_path).write_text(json.dumps(listing, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
@@ -312,6 +361,14 @@ def summary(report):
     return (f"Extreme mutation, {scope}: {report['functions']} functions; "
             + ', '.join(f'{name} {counts[name]}' for name in sorted(counts))
             + f"; unreasoned pseudo-tested entries: {report['unreasoned_entries']} ({report['seconds']}s)")
+
+
+def _flatten(suite):
+    for item in suite:
+        if hasattr(item, '__iter__'):
+            yield from _flatten(item)
+        else:
+            yield item
 
 
 def _child(spec_path):
@@ -347,7 +404,10 @@ def _child(spec_path):
     names = [name for name in spec['tests'] if name.split('.')[0] not in covered]
     if names:
         suite.addTests(loader.loadTestsFromNames(names))
-    result = unittest.TextTestRunner(stream=sys.stdout, verbosity=1).run(suite)
+    excluded = set(spec.get('exclude', ()))
+    tests = [test for test in _flatten(suite) if test.id() not in excluded]
+    ordered = unittest.TestSuite(cheapest_first(tests, recorded_seconds()))
+    result = unittest.TextTestRunner(stream=sys.stdout, verbosity=1, failfast=True).run(ordered)
     failing = [test.id() for test, _ in result.failures + result.errors] \
         + [test.id() for test in result.unexpectedSuccesses]
     failing += [str(error) for error in loader.errors]

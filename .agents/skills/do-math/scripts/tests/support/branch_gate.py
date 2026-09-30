@@ -83,6 +83,9 @@ REASONED_EXCLUSION = r'#\s*pragma: no cover[ \-:]*[^ \-:\s]'
 FIXTURE = 'fixture:'
 DATA, OPENED, ENTERED = 'coverage.data', 'opened.json', 'entered.json'  # a parallel T3 worker's measurement
 MONITOR_TOOL = 3  # sys.monitoring tool id; 0 debugger, 1 coverage, 2 profiler and 5 optimizer are taken by convention
+# Test state built once per process and restored by many tests (a Sim template, 결함 D2): what its build enters is
+# recorded under ``shared:<key>``, and each label that restores it gets the pair [SHARED_USE, key] in its record.
+SHARED, SHARED_USE = 'shared:', '<shared>'
 # Code objects that are not functions of their own: credited to the function that holds them.
 _ANONYMOUS = ('<lambda>', '<genexpr>', '<listcomp>', '<dictcomp>', '<setcomp>')
 
@@ -117,6 +120,7 @@ class FunctionRecorder:
         self.current = None
         self.paused = False
         self.entered = defaultdict(set)
+        self.users = defaultdict(set)  # shared state key -> labels that restored it
 
     def _on_event(self, code, offset):
         if self.paused:
@@ -136,6 +140,18 @@ class FunctionRecorder:
     def switch(self, label):
         self.current = self.entered[label] if label else None
         sys.monitoring.restart_events()
+
+    @contextmanager
+    def building(self, key):
+        """Record what runs in this block under ``shared:<key>``, then return to the label it interrupted."""
+        previous = self.current
+        self.current = self.entered[SHARED + key]
+        sys.monitoring.restart_events()
+        try:
+            yield
+        finally:
+            self.current = previous
+            sys.monitoring.restart_events()
 
     def stop(self):
         monitoring = sys.monitoring
@@ -162,6 +178,9 @@ class FunctionRecorder:
                 if path:
                     keys.add((path, function_key(code.co_qualname)))
             out[label] = sorted([path, key] for path, key in keys if key)
+        for key, labels in self.users.items():
+            for label in labels:
+                out[label] = sorted(out.get(label, []) + [[SHARED_USE, key]])
         return out
 
 
@@ -185,6 +204,23 @@ def scripts_python(root):
                   if '__pycache__' not in path.parts)
 
 
+def process_caches(prefix):
+    """The ``functools`` caches (``cache``, ``lru_cache``) alive in this process whose function lies under ``prefix``.
+
+    A cached body runs in the first test that calls it and never again in the
+    process, so the recorder would credit it, and what it calls, to that test
+    alone (결함 D2). The measurement clears these before every test. Caches made
+    after ``begin`` (a function decorated inside another) and ``cached_property``
+    values (held per instance) are not cleared.
+    """
+    import functools
+    import gc
+    wrapper = type(functools.lru_cache()(lambda: None))
+    return [item for item in gc.get_objects() if isinstance(item, wrapper)
+            and getattr(getattr(item, '__wrapped__', None), '__code__', None) is not None
+            and item.__wrapped__.__code__.co_filename.startswith(prefix)]
+
+
 def fixture_label(before, after):
     """Context label of the fixture phase between two test ids (either may be None)."""
     modules = sorted({test.rsplit('.', 2)[0] for test in (before, after) if test})
@@ -197,8 +233,9 @@ class Measurement:
     def __init__(self, root, data_file=None):
         import coverage
         self.root, self.started = root, False
+        self.data_file = Path(data_file) if data_file else None
         self.context = ''
-        self.order, self.position = [], {}
+        self.order, self.position, self.caches = [], {}, []
         self.opens = defaultdict(set)      # context -> repo paths
         self.import_opens = defaultdict(set)  # repo path -> opener module repo paths
         omit = [str(TESTS / 'test_*.py'), str(TESTS / '*' / 'test_*.py'), str(TESTS / '*_fixtures.py'),
@@ -219,9 +256,10 @@ class Measurement:
         self.started = True
 
     def begin(self, order):
-        """Tests will run in ``order``; label the first fixture phase."""
+        """Tests will run in ``order``; find the process caches to clear; label the first fixture phase."""
         self.order = list(order)
         self.position = {test: index for index, test in enumerate(self.order)}
+        self.caches = process_caches(self.calls.prefix)
         self._switch(fixture_label(None, self.order[0] if self.order else None))
 
     def _switch(self, label):
@@ -233,12 +271,18 @@ class Measurement:
             self.coverage.switch_context(context)
 
     def test_started(self, test_id):
+        for cache in self.caches:  # 결함 D2: each test recomputes what a process cache held, so it enters it
+            cache.cache_clear()
         self._switch(test_id)
 
+    def module_started(self, module):
+        """A test module's own suite begins: its setUpModule and setUpClass run under its fixture label."""
+        self._switch(FIXTURE + module)
+
     def test_stopped(self, test_id):
-        index = self.position.get(test_id)
-        after = self.order[index + 1] if index is not None and index + 1 < len(self.order) else None
-        self._switch(fixture_label(test_id, after))
+        """Until the next test, fixtures are those of this test's module: the runner gives each module its own
+        suite, so a module's tear-downs run before the next module starts (A29: a module's measurement is its own)."""
+        self._switch(FIXTURE + test_id.rsplit('.', 2)[0])
 
     def record_open(self, path):
         try:
@@ -309,9 +353,25 @@ class Measurement:
             return {label: sorted(list(key) for key in keys) for label, keys in merged.items()}
         return self.calls.records(self.root)
 
-    def finish(self, directory):
-        """Stop measuring; keep the entered functions (``entered.json``); return the coverage JSON with repo-relative keys."""
+    def absorb(self, entered, opens):
+        """Join stored records (a T3 store's reused modules, A29) to this run's entered functions and opened inputs."""
+        merged = defaultdict(set)
+        for records in (self.entered(), entered):
+            for label, keys in records.items():
+                merged[label].update(tuple(key) for key in keys)
+        self.merged_entered = merged
+        for label, paths in opens.items():
+            self.opens[label].update(paths)
+
+    def finish(self, directory, before_report=None):
+        """Stop measuring; keep the entered functions (``entered.json``); return the coverage JSON with repo-relative keys.
+
+        ``before_report(self)`` runs after measuring stops and before the report:
+        an incremental T3 joins its reused measurement there.
+        """
         self._stop()
+        if before_report is not None:
+            before_report(self)
         (Path(directory) / ENTERED).write_text(json.dumps(self.entered()), encoding='utf-8')
         path = Path(directory) / 'coverage.json'
         self.coverage.json_report(outfile=str(path))
@@ -358,6 +418,30 @@ def unmeasured():
 
 
 _PAUSED = False
+
+
+@contextmanager
+def shared_state(key):
+    """Build test state that many tests restore (a Sim template) inside this block (결함 D2).
+
+    The build runs once per process, in whichever test or fixture asks first, so
+    what it enters would be credited to that one. Recorded under ``shared:<key>``,
+    it is credited to every label that ``used_state(key)`` names. Outside a T3
+    measurement this does nothing.
+    """
+    active = _ACTIVE
+    if active is None or _PAUSED:
+        yield
+        return
+    with active.calls.building(key):
+        yield
+
+
+def used_state(key):
+    """The running test or fixture restores the shared state ``key``; see ``shared_state``."""
+    active = _ACTIVE
+    if active is not None and active.context:
+        active.calls.users[key].add(active.context)
 
 
 def _hook(event, arguments):
@@ -443,11 +527,20 @@ def build_index(entered, tests, opens, import_opens, blobs, commit, created=None
         tests_by_module[test.rsplit('.', 2)[0]].add(index)
     entries = {path: {'blob': blob} for path, blob in blobs.items()}
     functions = defaultdict(lambda: defaultdict(set))
+    users = defaultdict(set)  # shared state key -> labels that restored it
     for label, keys in entered.items():
-        credited = _credited(label, tests_by_module, ordinal)
+        users_of = [key for path, key in keys if path == SHARED_USE]
+        for key in users_of:
+            users[key].add(label)
+    for label, keys in entered.items():
+        if label.startswith(SHARED):  # a shared build: credited to every label that restored it
+            credited = set().union(*(_credited(user, tests_by_module, ordinal) for user in users[label[len(SHARED):]]))
+        else:
+            credited = _credited(label, tests_by_module, ordinal)
         if credited:
             for path, key in keys:
-                functions[path][key] |= credited
+                if path != SHARED_USE:
+                    functions[path][key] |= credited
     for path, entry in entries.items():
         if path.endswith('.py') and path.startswith(scripts_prefix + '/') and not _test_module(path, scripts_prefix):
             entry['functions'] = {key: sorted(o) for key, o in sorted(functions.get(path, {}).items())}

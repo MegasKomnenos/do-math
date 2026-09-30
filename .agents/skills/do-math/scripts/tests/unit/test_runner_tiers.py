@@ -1,7 +1,13 @@
 """The runner places new-system tests in tiers by folder and selects them with --tier."""
+import contextlib
+import io
+import json
 from pathlib import Path
 import sys
+import tempfile
+import types
 import unittest
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 if str(SCRIPTS) not in sys.path:
@@ -91,6 +97,110 @@ class ParallelGroupTests(unittest.TestCase):
         counts = {'unit.test_x': 4, 'sim.test_y': 2}
         self.assertEqual(run_tests.module_seconds(counts, {'unit.test_x': 3.5}),
                          {'unit.test_x': 3.5, 'sim.test_y': 2 * run_tests.UNKNOWN_TEST_SECONDS})
+
+
+class TimingRecordTests(unittest.TestCase):
+    """Measured T3 times (2-3x, unevenly by module) stay out of the T2 balance record (결함 D11)."""
+
+    def test_a_measured_run_keeps_its_times_apart_and_balances_by_them_with_t2_as_fallback(self):
+        rows = [{'id': 'sim.test_a.T.test_x', 'seconds': 9.0, 'outcome': 'passed'}]
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        t2, t3 = root / 't2.json', root / 't3.json'
+        t2.write_text('{"sim.test_a": 3.0, "unit.test_b": 1.0}', encoding='utf-8')
+        self.enterContext(mock.patch.object(run_tests, 'TIMINGS', t2))
+        self.enterContext(mock.patch.object(run_tests, 'TIMINGS_T3', t3))
+        run_tests._record_timings(rows, measured=True)
+        self.assertEqual(json.loads(t2.read_text(encoding='utf-8')), {'sim.test_a': 3.0, 'unit.test_b': 1.0})
+        self.assertEqual(json.loads(t3.read_text(encoding='utf-8')), {'sim.test_a': 9.0})
+        self.assertEqual(run_tests.recorded_seconds(measured=True), {'sim.test_a': 9.0, 'unit.test_b': 1.0})
+        self.assertEqual(run_tests.recorded_seconds(measured=False), {'sim.test_a': 3.0, 'unit.test_b': 1.0})
+        run_tests._record_timings(rows, measured=False)
+        self.assertEqual(json.loads(t2.read_text(encoding='utf-8')), {'sim.test_a': 9.0, 'unit.test_b': 1.0})
+
+
+class StoredModuleTests(unittest.TestCase):
+    def test_a_module_with_a_test_that_did_not_pass_is_not_stored_so_the_next_run_measures_it_again(self):
+        """A reused module does not run: a stored failure would vanish from T3 while its reach still counted."""
+        chosen = {'unit.test_a': ['unit.test_a.T.test_1'], 'unit.test_b': ['unit.test_b.T.test_1', 'unit.test_b.T.test_2'],
+                  'unit.test_c': ['unit.test_c.T.test_1'], 'unit.test_d': ['unit.test_d.T.test_1'],
+                  'unit.test_e': ['unit.test_e.T.test_1']}
+        store = {'chosen': chosen, 'partial': {'unit.test_c'},
+                 'plan': types.SimpleNamespace(measure={'unit.test_a', 'unit.test_b', 'unit.test_c', 'unit.test_d'})}
+        rows = [{'id': 'unit.test_a.T.test_1', 'outcome': 'passed'},
+                {'id': 'unit.test_b.T.test_1', 'outcome': 'expected_failure'},
+                {'id': 'unit.test_b.T.test_2', 'outcome': 'failed'},
+                {'id': 'unit.test_c.T.test_1', 'outcome': 'passed'},
+                {'id': 'unit.test_d.T.test_1', 'outcome': 'not_run'},
+                {'id': 'setUpModule (unit.test_a)', 'outcome': 'passed', 'fixture': True}]
+        self.assertEqual(run_tests.storable_modules(store, rows), {'unit.test_a': ['unit.test_a.T.test_1']})
+
+
+class _NoCoverage:
+    def switch_context(self, label):
+        pass
+
+
+class ModuleFixtureTests(unittest.TestCase):
+    def test_a_measured_run_sets_up_and_tears_down_each_module_under_its_own_fixture_label(self):
+        """A29: a module's fixtures belong to that module alone, so its reused measurement keeps them."""
+        import types
+        from support.branch_gate import FunctionRecorder, Measurement, repository_root
+        seen = []
+        self.enterContext(mock.patch.dict(sys.modules))
+        tests = []
+        for name in ('unit.test_fixture_probe_a', 'unit.test_fixture_probe_b'):
+            module = types.ModuleType(name)
+            module.setUpModule = lambda name=name: seen.append(('setUp ' + name, measurement.context))
+            module.tearDownModule = lambda name=name: seen.append(('tearDown ' + name, measurement.context))
+            sys.modules[name] = module
+            case = type('Case', (unittest.TestCase,), {'test_x': lambda self: None, '__module__': name})
+            tests.append(case('test_x'))
+        measurement = Measurement(repository_root())
+        measurement.coverage = _NoCoverage()
+        measurement.calls = FunctionRecorder(str(Path(tempfile.gettempdir()) / 'no-such-prefix'), tool=4)
+        measurement.calls.start()
+        try:
+            measurement.begin([test.id() for test in tests])
+            with contextlib.redirect_stderr(io.StringIO()):
+                run_tests._run_suite(tests, Path(self.enterContext(tempfile.TemporaryDirectory())) / 'run',
+                                     measurement=measurement)
+        finally:
+            measurement.calls.stop()
+        self.assertEqual(seen, [('setUp unit.test_fixture_probe_a', 'fixture:unit.test_fixture_probe_a'),
+                                ('tearDown unit.test_fixture_probe_a', 'fixture:unit.test_fixture_probe_a'),
+                                ('setUp unit.test_fixture_probe_b', 'fixture:unit.test_fixture_probe_b'),
+                                ('tearDown unit.test_fixture_probe_b', 'fixture:unit.test_fixture_probe_b')])
+
+
+class _FinishedMeasurement:
+    """A measurement that has already run: ``finish`` hands back an empty coverage report."""
+
+    def __init__(self, root):
+        self.root = root
+
+    def finish(self, directory, before_report=None):
+        return {'files': {}}
+
+
+class MutationIndexTests(unittest.TestCase):
+    def test_a_run_that_writes_no_index_still_mutates_on_the_usable_index(self):
+        """A partial T3 with --mutation-base hands mutation the fresh index it finds, not none (결함 D13)."""
+        from support import branch_gate, mutation, selection
+        index = {'format': selection.FORMAT, 'commit': 'c0', 'tests': [], 'files': {}}
+        seen = {}
+
+        def run(base, given, layers, root, directory, **options):
+            seen['index'] = given
+            return {'base': base, 'every': False, 'functions': 0, 'counts': {}, 'unreasoned_entries': 0,
+                    'seconds': 0.0, 'survived': []}
+        self.enterContext(mock.patch.object(selection, 'read_index', lambda: (index, '')))
+        self.enterContext(mock.patch.object(selection, 'is_ancestor_of_head', lambda root: lambda commit: True))
+        self.enterContext(mock.patch.object(mutation, 'run', run))
+        directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        args = mock.Mock(tests=['unit.test_ids'], match=[], mutation_base='HEAD', timeout=5.0)
+        result = run_tests._finish_t3(_FinishedMeasurement(branch_gate.repository_root()), directory, [], args, False)
+        self.assertIsNone(result['selection_index'])
+        self.assertIs(seen['index'], index)
 
 if __name__ == '__main__':
     unittest.main()

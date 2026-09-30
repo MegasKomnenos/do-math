@@ -1,8 +1,16 @@
 """Extreme mutation rules and bookkeeping (설계 6.3), judged on small synthetic modules."""
 import ast
+import contextlib
 import inspect
+import io
+import json
+from pathlib import Path
+import sys
+import tempfile
 import unittest
+from unittest import mock
 
+from support import mutation
 from support.mutation import (changed_functions, functions, mutant_timeout, mutate, rule_of, tests_for, unreasoned,
                                update_list)
 
@@ -145,6 +153,81 @@ class MutantTimeoutTests(unittest.TestCase):
         self.assertEqual(mutant_timeout(2.0, 300.0), 30.0)
         self.assertEqual(mutant_timeout(200.0, 300.0), 300.0)
         self.assertEqual(mutant_timeout(2.0, 10.0), 10.0)
+
+
+PROBE = '''import unittest
+from pathlib import Path
+MARK = Path(__file__).with_suffix('.ran')
+
+
+class T(unittest.TestCase):
+    def test_1_fails(self):
+        self.fail('first failure')
+
+    def test_2_runs(self):
+        MARK.write_text('ran', encoding='utf-8')
+'''
+
+
+class ChildRunTests(unittest.TestCase):
+    """A mutant needs one failing test to die, so its child stops at the first and tries the cheapest first (D9)."""
+
+    def _child(self, root, tests, seconds):
+        self.enterContext(mock.patch.object(sys, 'path', [str(root), *sys.path]))
+        self.enterContext(mock.patch.object(sys, 'dont_write_bytecode', True))
+        self.enterContext(mock.patch.dict(sys.modules))
+        timings = root / 'timings.json'
+        timings.write_text(json.dumps(seconds), encoding='utf-8')
+        self.enterContext(mock.patch.object(mutation, 'TIMINGS', timings, create=True))
+        spec = root / 'spec.json'
+        spec.write_text(json.dumps({'tests': tests, 'folders': [], 'target': None, 'mutant': None}), encoding='utf-8')
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            mutation._child(spec)
+        return json.loads((root / 'result.json').read_text(encoding='utf-8'))['failing']
+
+    def test_a_mutant_child_stops_at_the_first_failing_test(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        (root / 'mutation_probe_one.py').write_text(PROBE, encoding='utf-8')
+        failing = self._child(root, ['mutation_probe_one.T.test_1_fails', 'mutation_probe_one.T.test_2_runs'], {})
+        self.assertEqual(failing, ['mutation_probe_one.T.test_1_fails'])
+        self.assertFalse((root / 'mutation_probe_one.ran').exists())
+
+    def test_the_tests_of_the_module_with_the_cheapest_recorded_tests_run_first(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        for name in ('mutation_probe_slow', 'mutation_probe_cheap'):
+            (root / f'{name}.py').write_text(PROBE, encoding='utf-8')
+        failing = self._child(root, ['mutation_probe_slow.T.test_1_fails', 'mutation_probe_cheap.T.test_1_fails'],
+                              {'mutation_probe_slow': 50.0, 'mutation_probe_cheap': 1.0})
+        self.assertEqual(failing, ['mutation_probe_cheap.T.test_1_fails'])
+
+
+class LazyBaselineTests(unittest.TestCase):
+    def test_only_a_test_that_failed_a_mutant_is_rechecked_unmutated_and_one_failing_unmutated_is_set_aside(self):
+        """No union baseline: a mutant's failing test counts only if it passes unmutated (D9)."""
+        from support.branch_gate import git_blobs, repository_root
+        root = repository_root()
+        module = 'do_math/http_request.py'
+        path = f'{mutation.SCRIPTS.relative_to(root).as_posix()}/{module}'
+        index = {'tests': ['t0', 't1', 't2'],
+                 'files': {path: {'blob': git_blobs(root, [path])[path],
+                                  'functions': {'check_url': [1], 'check_body': [0, 2]}}}}
+        calls = []
+
+        def child(spec, directory, timeout):
+            tests = spec['tests']
+            calls.append((spec['mutant'] is not None, tests))
+            if spec['mutant'] is None:
+                return {'t0'} & set(tests), 0.1
+            return ({'t1'} if 't1' in tests else {'t0'} if 't0' in tests else set()), 0.1
+        self.enterContext(mock.patch.object(mutation, '_child_run', child))
+        directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        report = mutation.run('HEAD', index, {module: '1'}, root, directory, only=[module], every=True, timeout=60.0,
+                              listing_path=directory / 'pseudo_tested.json')
+        self.assertEqual({o['function']: o['status'] for o in report['outcomes']},
+                         {'check_url': 'killed', 'check_body': 'survived'})
+        self.assertEqual([tests for mutated, tests in calls if not mutated], [['t1'], ['t0']])
+        self.assertEqual(report['baseline_failing'], ['t0'])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -75,3 +75,7 @@ __pycache__/
 /.*/skills/do-math/scripts/tests/.selection-index*
 # do-math 병렬 실행의 모듈별 시간 기록. 실행기가 작업 트리마다 갱신한다(시험-재편 설계 5.4).
 /.*/skills/do-math/scripts/tests/.timings.json
+# 측정한 T3의 시간 기록은 따로 둔다(시험-재편 설계 A29, 결함 D11).
+/.*/skills/do-math/scripts/tests/.timings-t3.json
+# do-math T3 증분 측정의 저장소. 실행기가 작업 트리마다 만든다(시험-재편 설계 A29).
+/.*/skills/do-math/scripts/tests/.t3-store/

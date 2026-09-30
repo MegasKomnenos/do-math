@@ -1041,17 +1041,23 @@ def remove_tree(path):
 class _Template:
     """One built tree, its untouched copy, and the fixed path copies are restored to."""
 
-    def __init__(self, build, parameters):
+    def __init__(self, build, parameters, key):
+        """Under a T3 measurement the build is credited to every test that restores it (``key``, 결함 D2)."""
+        from support import branch_gate
         self.base = Path(tempfile.mkdtemp(prefix='do-math-template-')).resolve()
         atexit.register(self.remove)
         self.live, self.pristine, self.shared = (self.base / name for name in ('live', 'pristine', 'shared'))
         self.live.mkdir()
         self.shared.mkdir()
-        self.value = build(self.live, self.shared, **parameters)
+        self.key = key
+        with branch_gate.shared_state(key):
+            self.value = build(self.live, self.shared, **parameters)
         shutil.copytree(self.live, self.pristine, symlinks=True)
         self.used = False
 
     def restore(self):
+        from support import branch_gate
+        branch_gate.used_state(self.key)
         if self.used:
             remove_tree(self.live)
             shutil.copytree(self.pristine, self.live, symlinks=True)
@@ -1095,7 +1101,7 @@ def restore_template(build, **parameters):
     if template is None:
         # A failed build is not retried: each later test would repeat its cost.
         _TEMPLATES[key] = 'failed'
-        template = _TEMPLATES[key] = _Template(build, parameters)
+        template = _TEMPLATES[key] = _Template(build, parameters, 'fixtures:' + json.dumps(list(key)))
     elif template == 'failed':
         raise AssertionError('This template failed to build earlier in this process: ' + repr(key))
     return template.restore()

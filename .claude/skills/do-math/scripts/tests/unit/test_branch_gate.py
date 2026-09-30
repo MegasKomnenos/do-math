@@ -131,5 +131,74 @@ class RecorderTests(unittest.TestCase):
         self.assertEqual(named, {'unit.test_a.A.test_one': ['f', 'g'], 'unit.test_a.A.test_two': ['g']})
 
 
+class _NoCoverage:
+    """Coverage that is not running: a measurement's context switches go nowhere."""
+
+    def switch_context(self, label):
+        pass
+
+
+def _recording(prefix):
+    """A measurement whose function recorder watches ``prefix`` on a spare tool id, coverage left off."""
+    from support.branch_gate import Measurement, repository_root
+    measurement = Measurement(repository_root())
+    measurement.coverage = _NoCoverage()
+    measurement.calls = FunctionRecorder(prefix, tool=4)
+    return measurement
+
+
+class ProcessCacheTests(unittest.TestCase):
+    TESTS = ['unit.test_a.A.test_one', 'unit.test_a.A.test_two']
+
+    def test_every_test_that_calls_a_cached_function_enters_it_and_what_it_calls(self):
+        """결함 D2: a process cache ran its body in the first test only; each test must be credited."""
+        namespace = {}
+        exec(compile('import functools\n\n\n@functools.lru_cache(maxsize=None)\ndef table():\n    return helper()\n\n\n'
+                     'def helper():\n    return 1\n', __file__, 'exec'), namespace)
+        measurement = _recording(__file__)
+        measurement.calls.start()
+        try:
+            measurement.begin(self.TESTS)
+            for test in self.TESTS:
+                measurement.test_started(test)
+                namespace['table']()
+                measurement.test_stopped(test)
+        finally:
+            measurement.calls.stop()
+        named = {label: sorted(code.co_qualname for code in codes if code.co_qualname in ('table', 'helper'))
+                 for label, codes in measurement.calls.entered.items()}
+        self.assertEqual((named.get(self.TESTS[0]), named.get(self.TESTS[1])), (['helper', 'table'], ['helper', 'table']))
+
+    def test_what_a_shared_template_build_ran_is_credited_to_every_test_that_restores_the_template(self):
+        """결함 D2: a Sim template is built once per process; the tests that only restore it rely on its build too."""
+        from pathlib import Path
+        from unittest import mock
+        from support import branch_gate
+        root = branch_gate.repository_root()
+        source = branch_gate.TESTS / 'support' / 'shared_state_probe.py'  # a support path; the file need not exist
+        namespace = {}
+        exec(compile('def build():\n    return activate()\n\n\ndef activate():\n    return 1\n', str(source), 'exec'),
+             namespace)
+        measurement = _recording(str(source))
+        self.enterContext(mock.patch.object(branch_gate, '_ACTIVE', measurement))
+        measurement.calls.start()
+        try:
+            measurement.begin(self.TESTS)
+            measurement.test_started(self.TESTS[0])
+            with branch_gate.shared_state('probe'):
+                namespace['build']()
+            branch_gate.used_state('probe')
+            measurement.test_stopped(self.TESTS[0])
+            measurement.test_started(self.TESTS[1])
+            branch_gate.used_state('probe')
+            measurement.test_stopped(self.TESTS[1])
+        finally:
+            measurement.calls.stop()
+        path = Path(source).relative_to(root).as_posix()
+        prefix = branch_gate.SCRIPTS.relative_to(root).as_posix()
+        index = build_index(measurement.entered(), self.TESTS, {}, {}, {path: 'b1'}, 'c0', scripts_prefix=prefix)
+        self.assertEqual(index['files'][path]['functions'], {'activate': [0, 1], 'build': [0, 1]})
+
+
 if __name__ == '__main__':
     unittest.main()

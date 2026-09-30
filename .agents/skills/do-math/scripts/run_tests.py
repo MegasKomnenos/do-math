@@ -22,6 +22,15 @@ rewrites the selection index ``tests/.selection-index.json``. With
 commit (``tests/support/mutation.py``) and fails while ``tests/pseudo_tested.json``
 has an entry without a reason.
 
+T3 is incremental (설계 A29, ``tests/support/t3_store.py``): a clean run keeps
+its measurement in a store (``tests/.t3-store``, or ``--t3-store``), and the
+next run measures again only the test modules whose measurement may have
+changed, joining the stored measurement of the rest. ``--full`` reuses nothing.
+The report states ``t3_store`` (the plan: measured, reused and dropped modules
+and why) and ``closing_eligible``: only a clean run of the whole T3 that reused
+nothing may close a sub-stage or region. Measured runs keep their times in
+``tests/.timings-t3.json``, apart from the T2 balance record (결함 D11).
+
 Lean and resource tests run per class in an owned Windows Job with a per-phase
 deadline. Normal unittest discovery still works but imposes no outer deadlines.
 This runner never changes the product's Lean time limits.
@@ -79,6 +88,8 @@ def select_tiers(tests, tiers):
 # A new-system module the timing record does not know yet is estimated at this per test.
 UNKNOWN_TEST_SECONDS = 0.5
 TIMINGS = TESTS / '.timings.json'
+# A measured T3 runs 2-3x slower, unevenly by module; its times balance only measured runs (결함 D11).
+TIMINGS_T3 = TESTS / '.timings-t3.json'
 
 
 def module_seconds(counts, recorded):
@@ -244,10 +255,42 @@ class TimedResult(unittest.TextTestResult):
         return report
 
 
+class _ModuleSuites(unittest.TestSuite):
+    """A measured run: each test module runs as its own top-level suite (A29).
+
+    A module's setUpModule, setUpClass and their tear-downs then run inside its
+    own suite, under its fixture label, so a T3 store can drop or keep one
+    module's measurement whole. After a module's suite its tear-downs have run;
+    the result forgets its class, so the next suite does not tear it down again.
+    """
+
+    def __init__(self, tests, measurement):
+        super().__init__()
+        self.groups, self.measurement = [], measurement
+        for test in tests:
+            module = type(test).__module__
+            if not self.groups or self.groups[-1][0] != module:
+                self.groups.append((module, []))
+            self.groups[-1][1].append(test)
+
+    def countTestCases(self):
+        return sum(len(group) for _, group in self.groups)
+
+    def run(self, result, debug=False):
+        for module, group in self.groups:
+            if result.shouldStop:
+                break
+            self.measurement.module_started(module)
+            unittest.TestSuite(group).run(result)
+            result._previousTestClass = None
+        return result
+
+
 def _run_suite(tests, directory, *, checkpoint=False, measurement=None):
     directory.mkdir(parents=True, exist_ok=True)
+    suite = _ModuleSuites(tests, measurement) if measurement is not None else unittest.TestSuite(tests)
     result = unittest.TextTestRunner(verbosity=2, resultclass=lambda *a, **k: TimedResult(
-        *a, directory=directory, checkpoint=checkpoint, measurement=measurement, **k)).run(unittest.TestSuite(tests))
+        *a, directory=directory, checkpoint=checkpoint, measurement=measurement, **k)).run(suite)
     report = result.preserve(complete=True)
     reported = {row['id'] for row in report['rows']}
     fixtures = [row for row in report['rows'] if row.get('fixture')]
@@ -398,6 +441,11 @@ def main(argv=None):
                         help='run new-system in-process tests in this many worker processes, modules balanced by '
                              'their last recorded time (default: 1); with T3 each worker measures and the runner '
                              'combines their data')
+    parser.add_argument('--full', action='store_true',
+                        help='with --tier T3: measure every selected module, reusing nothing from the T3 store '
+                             '(a closing run, 설계 A29)')
+    parser.add_argument('--t3-store', type=Path,
+                        help='with --tier T3: the store of the incremental measurement (default: tests/.t3-store)')
     parser.add_argument('--worker', type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.worker:
@@ -407,6 +455,8 @@ def main(argv=None):
     tiers = args.tier or []
     if args.mutation_base and 'T3' not in tiers:
         parser.error('--mutation-base runs with --tier T3')
+    if (args.full or args.t3_store) and 'T3' not in tiers:
+        parser.error('--full and --t3-store run with --tier T3')
     if args.jobs < 1:
         parser.error('--jobs is a positive count')
     missing, stale = unregistered_modules(TESTS)
@@ -421,9 +471,13 @@ def main(argv=None):
         if str(TESTS) not in sys.path:
             sys.path.insert(0, str(TESTS))
         from support.branch_gate import Measurement, repository_root
-        measurement = Measurement(repository_root())
         if args.jobs == 1:
+            # On disk, so a T3 store can join its reused data and keep this run's (A29).
+            measurement = Measurement(repository_root(),
+                                      data_file=Path(tempfile.mkdtemp(prefix='do-math-t3-data-')) / 'coverage.data')
             measurement.start()  # before discovery, so import-time lines count
+        else:
+            measurement = Measurement(repository_root())
 
     def bail(code):
         if measurement is not None:
@@ -466,13 +520,22 @@ def main(argv=None):
         for test in selected:
             print(group_of(test) + '\t' + test.id())
         return bail(0)
+    store = None
+    if measurement is not None:
+        # Incremental T3 (설계 A29): the modules the store's measurement still holds for are not run again.
+        store = _t3_plan(args, discovered, selected)
+        plan = store['plan']
+        print(f"T3 store ({plan.mode}: {plan.reason}): measuring {len(plan.measure)} modules, "
+              f"reusing {len(plan.reuse)}", flush=True)
+        selected = [test for test in selected if not (folder_of(test) and module_of(test) in plan.reuse)]
     directory = args.output.resolve() if args.output else Path(tempfile.mkdtemp(prefix='do-math-tests-'))
     if directory.exists() and any(directory.iterdir()):
         bail(None)
         parser.error('--output must be new or empty; previous evidence is never overwritten')
     directory.mkdir(parents=True, exist_ok=True)
     from support.known_defects import open_count  # tests/ is importable after discovery
-    open_defects = open_count()
+    with _unmeasured():  # the runner's own reading of the ledger is no test's input (결함 D5)
+        open_defects = open_count()
     print(f'Open known defects: {open_defects}', flush=True)
     if selection is not None:
         print(selection_summary(selection), flush=True)
@@ -516,9 +579,9 @@ def main(argv=None):
     after = _edition()
     changed = sorted(path for path in before.keys() | after.keys() if before.get(path) != after.get(path))
     rows = [row for report in reports for row in report['rows']]
-    _record_timings(rows)
+    _record_timings(rows, measured=measurement is not None)
     complete = all(report['complete'] for report in reports)
-    t3 = _finish_t3(measurement, directory, selected, args, complete and not changed) if measurement else {}
+    t3 = _finish_t3(measurement, directory, selected, args, complete and not changed, store, rows) if measurement else {}
     # T3's whole run, analysis and mutation included, is held to the T3 budget (설계 5.1, 5.2).
     total = round(time.monotonic() - started_run if measurement else sum(shard_seconds.values()), 1)
     budget = budget_report(rows, args.tier or [], total, json.loads((TESTS / 'budgets.json').read_text(encoding='utf-8')))
@@ -561,13 +624,14 @@ def _run_parallel(tests, directory, jobs, timeout, shard_seconds, *, measure=Fal
     recorded seconds (``tests/.timings.json``).
     """
     from concurrent.futures import ThreadPoolExecutor
-    if not tests:
+    if not tests and not measure:
         return []
     by_module = defaultdict(list)
     for test in tests:
         by_module[module_of(test)].append(test)
-    recorded = _read_json(TIMINGS) or {}
-    groups = lpt_groups(module_seconds({m: len(t) for m, t in by_module.items()}, recorded), jobs)
+    recorded = recorded_seconds(measure)
+    # An incremental T3 with no module to measure still measures import time in one worker (A29).
+    groups = lpt_groups(module_seconds({m: len(t) for m, t in by_module.items()}, recorded), jobs) or [[]]
     print(f'[parallel] {len(tests)} tests in {len(groups)} workers', flush=True)
     started = time.monotonic()
     with ThreadPoolExecutor(len(groups)) as pool:
@@ -582,14 +646,24 @@ def _run_parallel(tests, directory, jobs, timeout, shard_seconds, *, measure=Fal
     return reports
 
 
-def _record_timings(rows):
-    """Keep each new-system module's seconds for the next parallel run's balance; a partial run updates its modules."""
+def recorded_seconds(measured):
+    """Module seconds for a parallel balance: the T2 record, overridden by the T3 record when measuring."""
+    recorded = _read_json(TIMINGS) or {}
+    return {**recorded, **(_read_json(TIMINGS_T3) or {})} if measured else recorded
+
+
+def _record_timings(rows, measured=False):
+    """Keep each new-system module's seconds for the next parallel run's balance; a partial run updates its modules.
+
+    A measured run keeps them in its own record, so T2's balance never sees measured times.
+    """
     seconds = defaultdict(float)
     for row in rows:
         if not row.get('fixture') and row['id'].split('.', 1)[0] in FOLDERS:
             seconds[row['id'].rsplit('.', 2)[0]] += row['seconds']
     if seconds:
-        _write_json(TIMINGS, {**(_read_json(TIMINGS) or {}), **{m: round(v, 3) for m, v in seconds.items()}})
+        path = TIMINGS_T3 if measured else TIMINGS
+        _write_json(path, {**(_read_json(path) or {}), **{m: round(v, 3) for m, v in seconds.items()}})
 
 
 def selection_summary(selection):
@@ -600,25 +674,85 @@ def selection_summary(selection):
     return '\n'.join(lines)
 
 
-def _finish_t3(measurement, directory, selected, args, clean):
-    """Stop measuring; judge the gate, rewrite the index after a full clean run, and mutate on request.
+T3_STORE = TESTS / '.t3-store'
 
-    The index is written only when the run was the whole T3 selection (no test
-    IDs, no --match), every group completed and no file changed during it; a
-    partial run would drop tests from the index.
+
+def _t3_plan(args, discovered, selected):
+    """The T3 store's plan for this run (support/t3_store.py, 설계 A29) and what the finish needs to keep it.
+
+    A module only partly selected (test IDs, ``--match``) is measured and not
+    stored: its stored measurement would stand for tests this run did not choose.
+    """
+    import coverage
+    from support import t3_store
+    from support.branch_gate import repository_root
+    root = repository_root()
+
+    def by_module(tests):
+        modules = defaultdict(list)
+        for test in tests:
+            if folder_of(test) in TIERS['T3']:
+                modules[module_of(test)].append(test.id())
+        return modules
+    chosen, every = by_module(selected), by_module(discovered)
+    partial = {module for module, ids in chosen.items() if set(ids) != set(every[module])}
+    path = (args.t3_store or T3_STORE).resolve()
+    records = t3_store.read(path)
+    tree = t3_store.Tree(root)
+    plan = t3_store.plan(records, set(chosen), set(every), tree, SCRIPTS.relative_to(root).as_posix(),
+                         coverage_version=coverage.__version__, full=args.full)
+    for module in partial & plan.reuse:
+        plan.reuse.discard(module)
+        plan.measure.add(module)
+        plan.why[module] = 'partly selected'
+    return {'path': path, 'records': records, 'tree': tree, 'plan': plan, 'root': root, 'chosen': chosen,
+            'partial': partial, 'coverage_version': coverage.__version__}
+
+
+def closing_eligible(args, clean, missing, plan):
+    """A run that may close a sub-stage or region (A29): the whole T3, clean, fully measured, nothing reused."""
+    return bool(not args.tests and not args.match and clean and not missing and plan is not None and not plan.reuse)
+
+
+def _finish_t3(measurement, directory, selected, args, clean, store=None, rows=()):
+    """Stop measuring; judge the gate, rewrite the index and the T3 store after a clean run, and mutate on request.
+
+    With a store plan the reused modules' stored measurement joins this run's
+    before the gate is judged (A29). The index is written only when the run was
+    the whole T3 selection (no test IDs, no --match), every group completed and
+    no file changed during it; a partial run would drop tests from the index.
+    The store is written after every clean run with no missing worker; a module
+    only partly selected or with a test that did not pass is not stored.
     """
     from do_math.layers import LAYERS
     from support import branch_gate
-    report = measurement.finish(directory)
+    plan = store['plan'] if store else None
+    absorb = None
+    if plan is not None and plan.reuse:
+        from coverage import CoverageData
+        from support import t3_store
+        mapper = t3_store.path_mapper(store['records']['root'], store['root'])
+
+        def absorb(measured):
+            kept = t3_store.reused_data(store['path'], plan.reuse, directory / 'reused.data')
+            measured.coverage.get_data().update(CoverageData(basename=str(kept)), map_path=mapper)
+            measured.absorb(*t3_store.stored_entries(store['records'], plan.reuse))
+    report = measurement.finish(directory, before_report=absorb)
     prefix = SCRIPTS.relative_to(measurement.root).as_posix()
     gate = branch_gate.gate(report['files'], LAYERS, prefix)
     summary = [branch_gate.gate_summary(gate)]
     missing = getattr(measurement, 'missing_workers', [])
     if missing:  # 결함 D6: a worker that left no measurement leaves its tests unmeasured
         summary.append('Measurement missing from workers (the gate does not pass): ' + ', '.join(missing))
+    eligible = closing_eligible(args, clean, missing, plan)
+    if plan is not None:
+        summary.append(f"T3 store ({plan.mode}): measured {len(plan.measure)} modules, reused {len(plan.reuse)}; "
+                       + ('a closing run' if eligible else 'not a closing run (설계 A29)'))
+    reused_tests = [test for module in sorted(plan.reuse) for test in store['records']['modules'][module]['tests']] \
+        if plan is not None else []
     index = None
     if clean and not args.tests and not args.match:
-        tests = [test.id() for test in selected if isolation_for(test) is None]
+        tests = [test.id() for test in selected if isolation_for(test) is None] + reused_tests
         index = branch_gate.write_index(measurement, report, tests)
         summary.append(f"Selection index: {index['tests']} tests, {index['measured_files']} measured files, "
                        f"{index['inputs']} inputs, commit {index['commit'][:12]} -> {index['path']}")
@@ -627,15 +761,54 @@ def _finish_t3(measurement, directory, selected, args, clean):
     mutation = None
     if args.mutation_base:
         from support import mutation as mutation_tool
-        from support.selection import read_index
-        current, _ = read_index()
-        mutation = mutation_tool.run(args.mutation_base, current if index else None, LAYERS, measurement.root,
+        from support import selection
+        # The index this run wrote, or a usable older one: a partial run writes none (결함 D13).
+        current, _ = selection.usable(*selection.read_index(), selection.is_ancestor_of_head(measurement.root))
+        mutation = mutation_tool.run(args.mutation_base, current, LAYERS, measurement.root,
                                      directory / 'mutation', timeout=args.timeout)
         summary.append(mutation_tool.summary(mutation))
         summary += [f'  survived: {name}' for name in mutation['survived']]
+    written = False
+    if plan is not None and clean and not missing:
+        _write_t3_store(measurement, store, directory, rows)
+        written = True
     passed = gate['passed'] and not missing and (mutation is None or mutation['unreasoned_entries'] == 0)
     return {'branch_gate': gate, 'selection_index': index, 'mutation': mutation, 'summary': summary, 'passed': passed,
-            'measurement_missing': missing}
+            'measurement_missing': missing, 'closing_eligible': eligible,
+            't3_store': {**plan.report(), 'path': str(store['path']), 'written': written} if plan is not None else None}
+
+
+def storable_modules(store, rows):
+    """The measured modules the T3 store keeps: wholly selected ones whose tests all passed.
+
+    A stored module is reused without running, so a failure stored with it would
+    vanish from the next T3 while its reach still counted; it is measured again.
+    """
+    ok = {'passed', 'skipped', 'expected_failure'}
+    failed = {row['id'].rsplit('.', 2)[0] for row in rows if not row.get('fixture') and row['outcome'] not in ok}
+    return {module: ids for module, ids in store['chosen'].items()
+            if module in store['plan'].measure and module not in store['partial'] and module not in failed}
+
+
+def _write_t3_store(measurement, store, directory, rows):
+    """Keep this run's measurement and the still valid stored one in the T3 store (support/t3_store.py)."""
+    from support import t3_store
+    plan, records, root = store['plan'], store['records'], store['root']
+    whole = storable_modules(store, rows)
+    entered, opens = measurement.entered(), {label: sorted(paths) for label, paths in measurement.opens.items()}
+    prefix = SCRIPTS.relative_to(root).as_posix()
+    modules = t3_store.module_records(whole, entered, opens, store['tree'], prefix)
+    keep, extra = set(), None
+    if plan.mode == 'incremental':
+        outside = set(records.get('modules', {})) - set(store['chosen']) - plan.drop
+        keep = plan.reuse | outside
+        if outside:
+            extra = (t3_store.reused_data(store['path'], outside, directory / 'outside.data'),
+                     t3_store.path_mapper(records['root'], root))
+    record = t3_store.records(root, SCRIPTS, modules, entered, opens, measurement.import_opens, store['tree'],
+                              store['coverage_version'], stored=records if plan.mode == 'incremental' else None,
+                              keep=keep)
+    t3_store.write(store['path'], measurement.data_file, record, extra=extra)
 
 
 if __name__ == '__main__':

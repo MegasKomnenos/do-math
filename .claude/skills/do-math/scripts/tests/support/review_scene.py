@@ -50,6 +50,7 @@ from do_math.configuration import DEFAULT_CONFIG
 from do_math.engine import ResearchEngine
 from do_math.execution_profiles import build_profiles, profile_ref
 from research_fixtures import current_state, start_scoped_review
+from support import branch_gate
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.sim import _remove
@@ -82,22 +83,26 @@ class _Template:
         self.base = Path(tempfile.mkdtemp(prefix='do-math-review-')).resolve()
         atexit.register(_remove, self.base)
         self.live, self.pristine, shared = (self.base / name for name in ('live', 'pristine', 'shared'))
-        instance, runtime, self.scope = review_candidate_state(shared / 'trust', rounds=rounds)
-        # The whole configuration the profiles were built from, as every initialized instance has;
-        # the owner's registration reads it (model selection).
-        instance['config'] = {**deepcopy(DEFAULT_CONFIG), **instance['config']}
-        empty_instance, empty_runtime = initialized_families()
-        instance = {**empty_instance, **instance, 'object_format': 'sha1'}
-        instance['capacity_constraints'] = build_profiles(DEFAULT_CONFIG)['capacity_constraints']
-        instance, runtime = current_state(instance, {**empty_runtime, **runtime})
-        clock, backend = FakeClock(), InProcessGit()
-        store = record_store(self.live / 'repository', backend=backend, clock=clock)
-        engine_on(store, instance, runtime, workspace=self.live / 'work', ports=fake_ports(clock, backend))
+        # Under a T3 measurement the build is credited to every scene that restores it (결함 D2).
+        self.key = f'review_scene:{rounds}'
+        with branch_gate.shared_state(self.key):
+            instance, runtime, self.scope = review_candidate_state(shared / 'trust', rounds=rounds)
+            # The whole configuration the profiles were built from, as every initialized instance has;
+            # the owner's registration reads it (model selection).
+            instance['config'] = {**deepcopy(DEFAULT_CONFIG), **instance['config']}
+            empty_instance, empty_runtime = initialized_families()
+            instance = {**empty_instance, **instance, 'object_format': 'sha1'}
+            instance['capacity_constraints'] = build_profiles(DEFAULT_CONFIG)['capacity_constraints']
+            instance, runtime = current_state(instance, {**empty_runtime, **runtime})
+            clock, backend = FakeClock(), InProcessGit()
+            store = record_store(self.live / 'repository', backend=backend, clock=clock)
+            engine_on(store, instance, runtime, workspace=self.live / 'work', ports=fake_ports(clock, backend))
         self.objects, self.clock = backend.objects, clock.state()
         shutil.copytree(self.live, self.pristine)
         self.used = False
 
     def restore(self):
+        branch_gate.used_state(self.key)
         if self.used:
             _remove(self.live)
             shutil.copytree(self.pristine, self.live)
