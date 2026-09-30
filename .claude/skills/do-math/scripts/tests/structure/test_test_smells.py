@@ -9,7 +9,7 @@ import unittest
 
 from do_math.layers import LAYERS, PENDING
 from run_tests import FOLDERS  # every new-system tier folder, so a new folder cannot escape the check
-from support.smell_rules import patch_issues, pragma_issues, smell_issues
+from support.smell_rules import normalization_issues, patch_issues, pragma_issues, smell_issues
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 TESTS = SCRIPTS / 'tests'
@@ -30,6 +30,12 @@ class SmellTests(unittest.TestCase):
         issues = [issue for path in helpers
                   for issue in patch_issues(path.read_text(encoding='utf-8'), path.relative_to(TESTS).as_posix())]
         self.assertEqual(issues, [], '\n'.join(str(issue) for issue in issues))
+
+    def test_test_sources_are_unchanged_by_unicode_normalization(self):
+        files = [path for folder in (*FOLDERS, 'support') for path in sorted((TESTS / folder).rglob('*.py'))]
+        issues = [issue for path in files
+                  for issue in normalization_issues(path.read_text(encoding='utf-8'), path.relative_to(TESTS).as_posix())]
+        self.assertEqual(issues, [], 'write such characters as escapes: ' + ', '.join(f"{i['file']}:{i['line']}" for i in issues))
 
     def test_product_coverage_exclusions_state_a_reason(self):
         issues = [issue for module in sorted({**LAYERS, **PENDING})

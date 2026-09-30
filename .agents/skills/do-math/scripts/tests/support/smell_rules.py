@@ -11,9 +11,11 @@ They apply to new-system test files (tests/<tier folder>/test_*.py):
 * fixed_sleep: time.sleep; poll a condition with a bound or advance virtual time;
 * unreasoned_skip: skip/skipIf/skipUnless/skipTest without a reason text;
 * broad_except: a bare except or except Exception/BaseException in a test.
+``normalization_issues`` applies to test files and helper modules: no line changes under NFC.
 ``pragma_issues`` checks product code: a coverage exclusion states its reason.
 """
 import ast
+import unicodedata
 
 # Helpers that assert internally; a test calling one of them has an assertion.
 ASSERTION_HELPERS = {'assert_reaches'}
@@ -110,6 +112,17 @@ def smell_issues(source, path):
                 if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef)) and method.name.startswith('test'):
                     issues += _test_issues(method, path)
     return issues
+
+
+def normalization_issues(source, path):
+    """Lines that Unicode normalization (NFC) would change; such characters belong in escapes.
+
+    A test whose input is a decomposed or compatibility character (a combining
+    accent, the Kelvin sign) silently changes its input, and may pass without
+    testing anything, once an editor or a tool normalizes the file.
+    """
+    return [{'file': path, 'rule': 'unnormalized_text', 'line': number}
+            for number, line in enumerate(source.splitlines(), 1) if unicodedata.normalize('NFC', line) != line]
 
 
 def pragma_issues(source, path):

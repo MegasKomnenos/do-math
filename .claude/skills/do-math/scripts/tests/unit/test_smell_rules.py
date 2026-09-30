@@ -2,7 +2,7 @@
 import textwrap
 import unittest
 
-from support.smell_rules import pragma_issues, smell_issues
+from support.smell_rules import normalization_issues, pragma_issues, smell_issues
 
 
 def _rules(source):
@@ -103,6 +103,15 @@ class SmellTests(unittest.TestCase):
                 def test_a(self):
                     self.assertTrue(True)
         '''), [])
+
+
+class NormalizationTests(unittest.TestCase):
+    def test_a_character_that_normalization_changes_is_reported_by_line_and_an_escape_is_not(self):
+        combining = 'x = "e' + chr(0x301) + '"\n'
+        kelvin = 'y = "' + chr(0x212A) + '"\n'
+        issues = normalization_issues('a = 1\n' + combining + kelvin, 'unit/test_x.py')
+        self.assertEqual([(i['rule'], i['line']) for i in issues], [('unnormalized_text', 2), ('unnormalized_text', 3)])
+        self.assertEqual(normalization_issues('x = "e\\u0301"\n', 'unit/test_x.py'), [])
 
 
 class PragmaTests(unittest.TestCase):
