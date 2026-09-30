@@ -1,0 +1,646 @@
+{
+ "legacy": [
+  {
+   "legacy_id": "test_planning.ActivityConditionTests.test_activity_kind_uses_the_stored_activity_contract",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.ActivityConditionTests.test_activity_kind_uses_the_stored_activity_contract"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.ArtifactConditionTests.test_artifact_condition_reads_and_validates_a_sealed_artifact_once",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.ArtifactConditionTests.test_artifact_condition_reads_and_validates_a_sealed_artifact_once"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.ArtifactConditionTests.test_artifact_verdict_belongs_to_its_validator_and_needs_no_repository",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.ArtifactConditionTests.test_artifact_verdict_belongs_to_its_validator_and_needs_no_repository"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.ConditionIndexTests.test_compound_condition_scans_one_population_and_rechecks_the_next_evaluation",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.ConditionIndexTests.test_compound_condition_scans_one_population_and_rechecks_the_next_evaluation"
+   ],
+   "note": "The legacy patch.object(planning, \"record_index\", wraps=...) is replaced by support.provider_probes.ObservedCalls on the unchanged planning.record_index; the count is of every start of that code object from any caller (the legacy count saw only calls through the planning module attribute), and the same == 1 is asserted."
+  },
+  {
+   "legacy_id": "test_planning.PlanningTests.test_a_revision_request_of_an_earlier_revision_is_already_answered",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.PlanningTests.test_a_revision_request_of_an_earlier_revision_is_already_answered"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.PlanningTests.test_artifact_condition_grammar_is_the_reader_prefix_and_state_segments",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.PlanningTests.test_artifact_condition_grammar_is_the_reader_prefix_and_state_segments"
+   ],
+   "note": "The five type-only rejections now pin their product messages (reader prefix, invalid segment, reserved device name, Windows-invalid segment, invalid segment for the root itself)."
+  },
+  {
+   "legacy_id": "test_planning.PlanningTests.test_conditions_and_errors_preserve_basis",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.PlanningTests.test_conditions_and_errors_preserve_basis"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.PlanningTests.test_contract_hash_only_changes_for_contract_fields",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.PlanningTests.test_contract_hash_only_changes_for_contract_fields"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.PlanningTests.test_due_events_are_unique_and_paused_preserves_pending",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.PlanningTests.test_due_events_are_unique_and_paused_preserves_pending"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.PlanningTests.test_instance_conditions_and_bases_read_one_projection_of_either_instance_form",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.PlanningTests.test_instance_conditions_and_bases_read_one_projection_of_either_instance_form"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.PlanningTests.test_one_input_request_is_one_event_across_observations_and_scheduling",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.PlanningTests.test_one_input_request_is_one_event_across_observations_and_scheduling"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.PlanningTests.test_periodic_exploration_is_not_consumed_by_preparation_only",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.PlanningTests.test_periodic_exploration_is_not_consumed_by_preparation_only"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.PlanningTests.test_relation_condition_rechecks_its_proof_after_import",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.PlanningTests.test_relation_condition_rechecks_its_proof_after_import"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.PlanningTests.test_source_arrival_and_trust_transition_are_machine_conditions",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.PlanningTests.test_source_arrival_and_trust_transition_are_machine_conditions"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.PlanningTests.test_task_ready_rechecks_reviews_inputs_and_conditions",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.PlanningTests.test_task_ready_rechecks_reviews_inputs_and_conditions"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.ReadinessConditionTests.test_documented_readiness_examples_match_the_live_grammar",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.ReadinessConditionTests.test_documented_readiness_examples_match_the_live_grammar"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.ReadinessConditionTests.test_nonformal_research_reuse_is_ready_but_not_certified",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.ReadinessConditionTests.test_nonformal_research_reuse_is_ready_but_not_certified"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.ReadinessConditionTests.test_readiness_document_tables_match_the_condition_grammar",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.ReadinessConditionTests.test_readiness_document_tables_match_the_condition_grammar"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.ReadinessConditionTests.test_required_certification_condition_tracks_current_identity_effect",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.ReadinessConditionTests.test_required_certification_condition_tracks_current_identity_effect"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.ReadinessCopyTests.test_borrowed_inputs_and_copied_results_match_prior_evaluation",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.ReadinessCopyTests.test_borrowed_inputs_and_copied_results_match_prior_evaluation"
+   ]
+  },
+  {
+   "legacy_id": "test_planning.ReadinessCopyTests.test_historical_judgment_cannot_override_changed_governance_or_sources",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_conditions.ReadinessCopyTests.test_historical_judgment_cannot_override_changed_governance_or_sources"
+   ],
+   "note": "Input: the legacy test patched do_math.knowledge_records.usable_links to return one link. The judged knowledge is now knowledge_fixtures.verified_knowledge (merged into record_fixtures.domain_governance as record_fixtures.specialist_assessment merges it), whose identity link is current by the product rule, and each judgment also asserts usable_links is non-empty so that only the source or edition change makes the result None."
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_bare_unrelated_or_changed_authority_cannot_transfer",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_bare_unrelated_or_changed_authority_cannot_transfer"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_changed_decision_source_invalidates_scope_assessment_and_decision_condition",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_changed_decision_source_invalidates_scope_assessment_and_decision_condition"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_foreign_stale_or_cycle_only_receipt_does_not_authorize_completion",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_foreign_stale_or_cycle_only_receipt_does_not_authorize_completion"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_goal_judgment_must_cover_this_tasks_result_and_remain_current",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_goal_judgment_must_cover_this_tasks_result_and_remain_current"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_incomplete_open_work_is_available_for_a_later_continuation_plan",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_incomplete_open_work_is_available_for_a_later_continuation_plan"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_missing_assessment_input_arrival_reopens_assessment_without_new_work",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_missing_assessment_input_arrival_reopens_assessment_without_new_work"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_nonselection_revisit_is_an_actual_machine_event",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_nonselection_revisit_is_an_actual_machine_event"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_plan_covers_every_ready_and_returned_task_and_rejects_double_disposition",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_plan_covers_every_ready_and_returned_task_and_rejects_double_disposition"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_planner_can_aggregate_the_tasks_current_specialist_receipt",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_planner_can_aggregate_the_tasks_current_specialist_receipt"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_transfer_binds_receiving_contract_and_blocks_incomplete_recipient_completion",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_transfer_binds_receiving_contract_and_blocks_incomplete_recipient_completion"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_unresolved_has_one_owner_and_can_be_reassessed_after_evidence_arrives",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_unresolved_has_one_owner_and_can_be_reassessed_after_evidence_arrives"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_unresolved_inspection_preserves_missing_input_and_owner",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_unresolved_inspection_preserves_missing_input_and_owner"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.AssessmentApplicationTests.test_waiver_is_a_scope_decision_not_missing_evidence",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_assessments.AssessmentApplicationTests.test_waiver_is_a_scope_decision_not_missing_evidence"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.PreparationReceiptClassificationTests.test_partially_accepted_contract_still_records_its_real_production",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_repetition.PreparationReceiptClassificationTests.test_partially_accepted_contract_still_records_its_real_production"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.PreparationReceiptClassificationTests.test_rejected_preparation_does_not_count_as_an_empty_research_result",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_repetition.PreparationReceiptClassificationTests.test_rejected_preparation_does_not_count_as_an_empty_research_result"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.RepetitionLineageTests.test_a_technical_retry_does_not_reset_the_configured_user_limit",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_repetition.RepetitionLineageTests.test_a_technical_retry_does_not_reset_the_configured_user_limit"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.RepetitionLineageTests.test_empty_regeneration_cannot_immediately_repeat_and_periodic_is_independent",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_repetition.RepetitionLineageTests.test_empty_regeneration_cannot_immediately_repeat_and_periodic_is_independent"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.RepetitionLineageTests.test_new_request_ids_do_not_reset_semantic_lineage",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_repetition.RepetitionLineageTests.test_new_request_ids_do_not_reset_semantic_lineage"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.RepetitionLineageTests.test_one_case_grant_is_available_before_reservation_but_not_after_other_use",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_repetition.RepetitionLineageTests.test_one_case_grant_is_available_before_reservation_but_not_after_other_use"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.RepetitionLineageTests.test_one_regeneration_diagnosis_waits_for_a_new_basis_after_its_attempt",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_repetition.RepetitionLineageTests.test_one_regeneration_diagnosis_waits_for_a_new_basis_after_its_attempt"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.RepetitionLineageTests.test_real_receipts_produce_all_five_lineages_and_initial_versions",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_repetition.RepetitionLineageTests.test_real_receipts_produce_all_five_lineages_and_initial_versions"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.RepetitionLineageTests.test_repetition_receipt_produces_followup_once",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_repetition.RepetitionLineageTests.test_repetition_receipt_produces_followup_once"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.RepetitionLineageTests.test_repetition_threshold_counts_validation_failures_once_per_execution",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_repetition.RepetitionLineageTests.test_repetition_threshold_counts_validation_failures_once_per_execution"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.RepetitionLineageTests.test_technical_plan_failures_do_not_count_and_acceptance_ends_the_sequence",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_repetition.RepetitionLineageTests.test_technical_plan_failures_do_not_count_and_acceptance_ends_the_sequence"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractReviewTests.test_actual_charter_replacement_invalidates_review_without_top_level_fields",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractReviewTests.test_actual_charter_replacement_invalidates_review_without_top_level_fields"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractReviewTests.test_closed_transfer_never_satisfies_a_completion_dependency",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractReviewTests.test_closed_transfer_never_satisfies_a_completion_dependency"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractReviewTests.test_common_reference_closure_does_not_split_grant_reuse_string",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractReviewTests.test_common_reference_closure_does_not_split_grant_reuse_string"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractReviewTests.test_profile_ref_shape_and_exact_resolution_are_both_required",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractReviewTests.test_profile_ref_shape_and_exact_resolution_are_both_required"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractReviewTests.test_raw_governance_review_is_current_in_raw_and_projected_consumers",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractReviewTests.test_raw_governance_review_is_current_in_raw_and_projected_consumers"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractReviewTests.test_repetition_basis_changes_with_actual_policy_not_flat_projection",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractReviewTests.test_repetition_basis_changes_with_actual_policy_not_flat_projection"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractReviewTests.test_review_ignores_flat_projection_and_rejects_real_governance_changes",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractReviewTests.test_review_ignores_flat_projection_and_rejects_real_governance_changes"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractReviewTests.test_terminal_disposition_consistency_is_checked_by_shared_validator",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractReviewTests.test_terminal_disposition_consistency_is_checked_by_shared_validator"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractReviewTests.test_transfer_cannot_complete_original_obligations",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractReviewTests.test_transfer_cannot_complete_original_obligations"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractReviewTests.test_wire_profile_reference_remains_identical_in_stored_contract",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractReviewTests.test_wire_profile_reference_remains_identical_in_stored_contract"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractStorageTests.test_actual_engine_candidate_and_review_receiver_round_trip",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_planning_engine_receivers.PreparationReceiverTests.test_actual_engine_candidate_and_review_receiver_round_trip"
+   ],
+   "note": "Input: the engine is a restored Sim instead of bare_engine on record_store state; the legacy create_autospec of engine._issued_input is replaced by the real method reading the issued input {\"available_input_refs\": [], \"supplied_record_ids\": []} archived below the author execution's input bundle (support.engine_context.issue), so the test passes the point the legacy double cut. The candidate names the Sim's adopted research grant instead of GR-audit, and the reload is sim.restart(). The engine's own call of _apply on a real receipt is also run by flows.test_engine_flow.PublicGitFlow.test_public_activation_work_receipt_assessment_and_next_plan."
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractStorageTests.test_candidate_review_profile_selection_and_governance_survive_git_reload",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_storage.TaskContractStorageTests.test_candidate_review_profile_selection_and_governance_survive_git_reload"
+   ],
+   "note": "Input: the repository is the real ResearchRepository on the in-process Git fake (support.storage_records.record_store) instead of a git_init repository, and the receiver is the real engine loaded from the first publication (engine_on, which publishes the state with its workspace) instead of bare_engine on the loaded state; the test also asserts the engine loaded that same state. The type-only rejections now pin the stale profile reference message and that CurrentnessChanged names goal_or_policy_revision."
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractStorageTests.test_transfer_closes_without_completion_and_recipient_obligation_survives_reload",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_storage.TaskContractStorageTests.test_transfer_closes_without_completion_and_recipient_obligation_survives_reload"
+   ],
+   "note": "Input: the repository is the real ResearchRepository on the in-process Git fake (support.storage_records.record_store) instead of a git_init repository."
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractsTest.test_contract_has_stable_obligations_and_completion_requires_every_disposition",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractsTest.test_contract_has_stable_obligations_and_completion_requires_every_disposition"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractsTest.test_decision_and_artifact_conditions_preserve_effect_and_validity",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractsTest.test_decision_and_artifact_conditions_preserve_effect_and_validity"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractsTest.test_family_qualified_condition_does_not_read_a_same_id_from_another_family",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractsTest.test_family_qualified_condition_does_not_read_a_same_id_from_another_family"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractsTest.test_planning_routes_tasks_to_derived_readiness_and_item_plan_checks",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractsTest.test_planning_routes_tasks_to_derived_readiness_and_item_plan_checks"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractsTest.test_prose_requirement_does_not_require_a_future_id_equal_to_the_description",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractsTest.test_prose_requirement_does_not_require_a_future_id_equal_to_the_description"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractsTest.test_readiness_is_derived_not_a_saved_task_state",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractsTest.test_readiness_is_derived_not_a_saved_task_state"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractsTest.test_repetition_lineages_keep_ai_repair_distinct_from_user_authority",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractsTest.test_repetition_lineages_keep_ai_repair_distinct_from_user_authority"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractsTest.test_unresolved_inspection_is_not_a_false_or_open_disposition",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractsTest.test_unresolved_inspection_is_not_a_false_or_open_disposition"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskContractsTest.test_waiver_and_transfer_need_authoritative_links",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskContractsTest.test_waiver_and_transfer_need_authoritative_links"
+   ],
+   "note": "The three type-only rejections now pin the message that rejects each input (the test map records that the transfer row is rejected for missing evidence_refs and the third input for the undisposed OB-2)."
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskDependencyTests.test_engine_preserves_primary_dependency_when_extension_only_sets_condition",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_planning_engine_receivers.PreparationReceiverTests.test_engine_preserves_primary_dependency_when_extension_only_sets_condition"
+   ],
+   "note": "Input: the engine is a restored Sim instead of bare_engine on record_fixtures.approved_task; the four create_autospec doubles (_record_output_questions, _evaluation_context, _issued_input, _governance) are gone, so all four run as they are: the issued input {} is archived below EX-prepare's input bundle, and the output carries the preparation's neutral fields (runner_fixtures.common) the real question recorder reads. The prior task is support.engine_lifecycle.task(\"TK-prior\") instead of approved_task's TK-1."
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskDependencyTests.test_primary_and_extension_dependencies_are_preserved",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskDependencyTests.test_primary_and_extension_dependencies_are_preserved"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_artifact_metadata_is_not_evidence_of_readable_bytes",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_artifact_metadata_is_not_evidence_of_readable_bytes"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_each_actual_premise_change_blocks_an_otherwise_ready_task",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_each_actual_premise_change_blocks_an_otherwise_ready_task"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_empty_queue_is_not_exhaustion_when_work_is_running",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_empty_queue_is_not_exhaustion_when_work_is_running"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_external_wait_and_formal_work_are_not_research_exhaustion",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_external_wait_and_formal_work_are_not_research_exhaustion"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_missing_input_cannot_be_approved_into_existence",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_missing_input_cannot_be_approved_into_existence"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_missing_returned_work_cannot_be_silently_omitted",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_missing_returned_work_cannot_be_silently_omitted"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_new_contract_fields_are_in_approval_digest",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_new_contract_fields_are_in_approval_digest"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_open_obligation_does_not_require_evidence_of_fulfilment",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_open_obligation_does_not_require_evidence_of_fulfilment"
+   ],
+   "note": "The legacy test had no assertion (it passed by not raising); the validator returning None and remaining_obligations == [\"OB-1\", \"OB-2\"] are now asserted."
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_profile_edition_and_fixed_trust_must_still_apply",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_profile_edition_and_fixed_trust_must_still_apply"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_review_cannot_be_replaced_by_an_unsubstantiated_summary",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_review_cannot_be_replaced_by_an_unsubstantiated_summary"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_split_knowledge_evidence_is_part_of_review_currentness",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_split_knowledge_evidence_is_part_of_review_currentness"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TaskReadinessTests.test_stale_approval_and_absent_input",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TaskReadinessTests.test_stale_approval_and_absent_input"
+   ]
+  },
+  {
+   "legacy_id": "test_task_contracts.TransferredContractRevisionTests.test_replacement_preserves_inherited_obligation_and_machine_provenance",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_contracts.TransferredContractRevisionTests.test_replacement_preserves_inherited_obligation_and_machine_provenance"
+   ]
+  },
+  {
+   "legacy_id": "test_task_scope.EngineIntegrationTest.test_engine_applies_task_disposition_extension",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_planning_engine_receivers.EngineIntegrationTest.test_engine_applies_task_disposition_extension",
+    "sim.test_planning_engine_receivers.EngineIntegrationTest.test_withdrawal_reads_the_plans_input_snapshot"
+   ],
+   "note": "Input: the engine is a restored Sim instead of bare_engine with an autospec ResearchRepository whose view returned the current runtime; the task is support.engine_lifecycle.task(\"TK-AI\", approved=False) (evidence_task shape, produced by the ended preparation EX-preparation) instead of record_fixtures.task_contract, and the plan EX-plan names the published head as its input snapshot. The second test is the wiring the legacy store double cut: the real store.view of that snapshot supplies the tasks, so a contract changed after the snapshot refuses the withdrawal."
+  },
+  {
+   "legacy_id": "test_task_scope.SourceCorrectionTest.test_same_source_bytes_can_revise_a_misread_claim_and_suspend_dependents",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_withdrawal.SourceCorrectionTest.test_same_source_bytes_can_revise_a_misread_claim_and_suspend_dependents"
+   ]
+  },
+  {
+   "legacy_id": "test_task_scope.TaskScopeTests.test_partial_work_requires_item_disposition_and_preserves_results_on_rejection",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_withdrawal.TaskScopeTests.test_partial_work_requires_item_disposition_and_preserves_results_on_rejection"
+   ]
+  },
+  {
+   "legacy_id": "test_task_scope.TaskScopeTests.test_rejects_changed_snapshot_user_or_academic_task_and_live_or_terminal_task",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_withdrawal.TaskScopeTests.test_rejects_changed_snapshot_user_or_academic_task_and_live_or_terminal_task"
+   ],
+   "note": "The seven type-only rejections now pin the product message that rejects each one (the academic case is rejected by the snapshot check, as the test map notes); an eighth case with the academic requirement in the snapshot too pins the protected-obligation rule."
+  },
+  {
+   "legacy_id": "test_task_scope.TaskScopeTests.test_selected_unstarted_withdrawal_excludes_only_its_authorizing_execution",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_withdrawal.TaskScopeTests.test_selected_unstarted_withdrawal_excludes_only_its_authorizing_execution"
+   ]
+  },
+  {
+   "legacy_id": "test_task_scope.TaskScopeTests.test_submission_rejects_nonwithdraw_and_duplicate_requests",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_withdrawal.TaskScopeTests.test_submission_rejects_nonwithdraw_and_duplicate_requests"
+   ]
+  },
+  {
+   "legacy_id": "test_task_scope.TaskScopeTests.test_terminal_assessment_cannot_withdraw_even_without_results",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_withdrawal.TaskScopeTests.test_terminal_assessment_cannot_withdraw_even_without_results"
+   ]
+  },
+  {
+   "legacy_id": "test_task_scope.TaskScopeTests.test_withdrawal_preserves_contract_and_cancels_only_prestart_actions",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_planning_task_withdrawal.TaskScopeTests.test_withdrawal_preserves_contract_and_cancels_only_prestart_actions"
+   ]
+  }
+ ]
+}

@@ -25,11 +25,11 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_installation_discovery test_json_digests
         test_knowledge_import_engine test_knowledge_io test_knowledge_storage test_lifecycle_gates
         test_machine_scheduling test_model_metadata_boundary
-        test_owned_job_children test_payloads test_planning test_preparation_cache
+        test_owned_job_children test_payloads test_preparation_cache
         test_provider_final_contract test_query_records test_questions test_reading_map
         test_reassessment test_reference_catalog test_relation_dependencies test_repair_execution
         test_reporting test_repository test_review_policy test_revision_obligations test_scholarly test_standalone test_state_contract test_supervisor_recovery
-        test_task_contracts test_task_scope test_test_runner test_trust_continuation
+        test_test_runner test_trust_continuation
         test_unicode_flow''',
     'host': '''
         test_background_processes test_diagnosed_installation_recovery test_external
