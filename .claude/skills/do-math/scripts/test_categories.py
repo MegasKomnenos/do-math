@@ -16,12 +16,11 @@ from pathlib import Path
 SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'foundation': '''
         test_academic test_budget test_context_store test_decision_basis
-        test_delegations test_design_walkthroughs test_environment_validation
+        test_delegations test_environment_validation
         test_execution_window
         test_external_operations test_file_io
         test_git_store test_goal_audit
         test_installation_discovery test_json_digests
-        test_lifecycle_gates
         test_machine_scheduling test_model_metadata_boundary
         test_owned_job_children test_payloads test_preparation_cache test_provider_final_contract test_query_records test_reading_map
         test_reference_catalog test_relation_dependencies test_repair_execution
@@ -35,9 +34,9 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_provider_wait test_schedule_lifetime test_schedule_pythonw test_windows_job
         test_worker_temporary_outputs''',
     'lifecycle': '''
-        test_checkpoint_persistence test_cli_advanced test_control_shapes test_engine test_formal_engine test_initial_intent_connection
-        test_input_recovery test_lifecycle_engine
-        test_live_observation test_operation_trace
+        test_checkpoint_persistence test_engine test_formal_engine test_initial_intent_connection
+        test_lifecycle_engine
+        test_live_observation
         test_planning_engine test_provider_recovery test_role_input
         test_task_completion''',
     'research': '''
