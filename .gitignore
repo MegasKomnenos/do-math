@@ -73,3 +73,5 @@ __pycache__/
 
 # do-math 시험 선택 색인. T3 실행이 작업 트리마다 만드는 생성물이다(시험-재편 설계 5.3).
 /.*/skills/do-math/scripts/tests/.selection-index*
+# do-math 병렬 실행의 모듈별 시간 기록. 실행기가 작업 트리마다 갱신한다(시험-재편 설계 5.4).
+/.*/skills/do-math/scripts/tests/.timings.json

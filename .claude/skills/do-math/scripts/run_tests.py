@@ -74,6 +74,30 @@ def select_tiers(tests, tiers):
     return [test for test in tests if folder_of(test) in folders]
 
 
+# A new-system module the timing record does not know yet is estimated at this per test.
+UNKNOWN_TEST_SECONDS = 0.5
+TIMINGS = TESTS / '.timings.json'
+
+
+def module_seconds(counts, recorded):
+    """Each module's expected seconds: its recorded time, else its test count times ``UNKNOWN_TEST_SECONDS``."""
+    return {module: recorded.get(module, count * UNKNOWN_TEST_SECONDS) for module, count in counts.items()}
+
+
+def lpt_groups(seconds, jobs):
+    """Modules in at most ``jobs`` groups, longest first to the lightest group (LPT, 설계 5.4)."""
+    groups = [[0.0, index, []] for index in range(jobs)]
+    for module, cost in sorted(seconds.items(), key=lambda item: (-item[1], item[0])):
+        lightest = min(groups, key=lambda group: (group[0], group[1]))
+        lightest[0] += cost
+        lightest[2].append(module)
+    return [group[2] for group in groups if group[2]]
+
+
+def module_of(test):
+    return test.id().rsplit('.', 2)[0]
+
+
 def budget_report(rows, tiers, seconds, budgets):
     """Tests over their folder's budget and the named tiers' run time against their budget (설계 5.2).
 
@@ -344,6 +368,9 @@ def main(argv=None):
     parser.add_argument('--timeout', type=float, default=300, help='seconds per isolated test/fixture phase (default: 300)')
     parser.add_argument('--output', type=Path, help='new or empty results directory; default: a unique temporary directory')
     parser.add_argument('--mutation-base', help='with --tier T3: extreme-mutate the functions changed since this commit')
+    parser.add_argument('--jobs', type=int, default=1,
+                        help='run new-system in-process tests in this many worker processes, modules balanced by '
+                             'their last recorded time (default: 1; T3 measures in one process)')
     parser.add_argument('--worker', type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.worker:
@@ -353,6 +380,8 @@ def main(argv=None):
     tiers = args.tier or []
     if args.mutation_base and 'T3' not in tiers:
         parser.error('--mutation-base runs with --tier T3')
+    if args.jobs < 1 or (args.jobs > 1 and 'T3' in tiers):
+        parser.error('--jobs is a positive count, and T3 measures in one process')
     missing, stale = unregistered_modules(TESTS)
     if missing or stale:
         print('scripts/test_categories.py SHARDS is out of date. Unregistered: ' + (', '.join(missing) or '-')
@@ -423,13 +452,17 @@ def main(argv=None):
     if measurement is not None:
         measurement.begin([test.id() for shard in (*SHARDS, *FOLDERS) for test in selected
                            if group_of(test) == shard and isolation_for(test) is None])
+    parallel = args.jobs > 1 and measurement is None
+    if parallel:
+        reports += _run_parallel([test for test in selected if folder_of(test) and isolation_for(test) is None],
+                                 directory, args.jobs, args.timeout, shard_seconds)
     for shard in (*SHARDS, *FOLDERS):
         tests = [test for test in selected if group_of(test) == shard]
         if not tests:
             continue
         started = time.monotonic()
         print(f'[{shard}] {len(tests)} tests', flush=True)
-        in_process = [test for test in tests if isolation_for(test) is None]
+        in_process = [test for test in tests if isolation_for(test) is None and not (parallel and shard in FOLDERS)]
         if in_process:
             reports.append({'shard': shard, **_run_suite(in_process, directory / shard, measurement=measurement)})
         classes = defaultdict(list)
@@ -446,6 +479,7 @@ def main(argv=None):
     after = _edition()
     changed = sorted(path for path in before.keys() | after.keys() if before.get(path) != after.get(path))
     rows = [row for report in reports for row in report['rows']]
+    _record_timings(rows)
     complete = all(report['complete'] for report in reports)
     t3 = _finish_t3(measurement, directory, selected, args, complete and not changed) if measurement else {}
     # T3's whole run, analysis and mutation included, is held to the T3 budget (설계 5.1, 5.2).
@@ -480,6 +514,44 @@ def main(argv=None):
         print('Files changed during the run, so this is not a pass: ' + ', '.join(changed), file=sys.stderr)
     print('Report: ' + str(directory / 'report.json'))
     return 0 if result['successful'] and t3.get('passed', True) else 1
+
+
+def _run_parallel(tests, directory, jobs, timeout, shard_seconds):
+    """New-system in-process tests in ``jobs`` worker processes, whole modules per worker (설계 5.4).
+
+    A module stays in one process because its ``setUpModule`` and the Sim
+    template belong to that process. Groups are balanced by the modules' last
+    recorded seconds (``tests/.timings.json``).
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    if not tests:
+        return []
+    by_module = defaultdict(list)
+    for test in tests:
+        by_module[module_of(test)].append(test)
+    recorded = _read_json(TIMINGS) or {}
+    groups = lpt_groups(module_seconds({m: len(t) for m, t in by_module.items()}, recorded), jobs)
+    print(f'[parallel] {len(tests)} tests in {len(groups)} workers', flush=True)
+    started = time.monotonic()
+    with ThreadPoolExecutor(len(groups)) as pool:
+        futures = [pool.submit(_isolated, [test for module in group for test in by_module[module]],
+                               directory / f'parallel-{index}', timeout) for index, group in enumerate(groups)]
+        reports = [{'shard': f'parallel-{index}', **future.result()} for index, future in enumerate(futures)]
+    for report in reports:
+        print(f"  {report['shard']}: " + str(dict(Counter(row['outcome'] for row in report['rows'] if not row.get('fixture'))))
+              + f" in {round(report['worker_seconds'], 1)}s", flush=True)
+    shard_seconds['parallel'] = round(time.monotonic() - started, 1)
+    return reports
+
+
+def _record_timings(rows):
+    """Keep each new-system module's seconds for the next parallel run's balance; a partial run updates its modules."""
+    seconds = defaultdict(float)
+    for row in rows:
+        if not row.get('fixture') and row['id'].split('.', 1)[0] in FOLDERS:
+            seconds[row['id'].rsplit('.', 2)[0]] += row['seconds']
+    if seconds:
+        _write_json(TIMINGS, {**(_read_json(TIMINGS) or {}), **{m: round(v, 3) for m, v in seconds.items()}})
 
 
 def selection_summary(selection):

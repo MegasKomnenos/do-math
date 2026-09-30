@@ -76,5 +76,18 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual((combined['budget_seconds'], combined['over']), (300, False))
 
 
+
+class ParallelGroupTests(unittest.TestCase):
+    def test_modules_go_longest_first_to_the_lightest_group(self):
+        groups = run_tests.lpt_groups({'a': 10.0, 'b': 6.0, 'c': 5.0, 'd': 4.0, 'e': 1.0}, 2)
+        self.assertEqual(groups, [['a', 'd'], ['b', 'c', 'e']])
+        self.assertEqual(run_tests.lpt_groups({'a': 1.0}, 3), [['a']])
+        self.assertEqual(run_tests.lpt_groups({}, 3), [])
+
+    def test_a_module_without_a_recorded_time_is_estimated_from_its_test_count(self):
+        counts = {'unit.test_x': 4, 'sim.test_y': 2}
+        self.assertEqual(run_tests.module_seconds(counts, {'unit.test_x': 3.5}),
+                         {'unit.test_x': 3.5, 'sim.test_y': 2 * run_tests.UNKNOWN_TEST_SECONDS})
+
 if __name__ == '__main__':
     unittest.main()
