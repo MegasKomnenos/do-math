@@ -1,0 +1,651 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_review_scope_wire.ScopeWireTests.test_review_storage_keeps_local_source_alias_without_widening_source_records",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_scope_wire.ScopeWireTests.test_review_storage_keeps_local_source_alias_without_widening_source_records"
+      ]
+    },
+    {
+      "legacy_id": "test_review_scope_wire.ScopeWireTests.test_review_action_keeps_replacement_authority_only_for_a_replacement",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_scope_wire.ScopeWireTests.test_review_action_keeps_replacement_authority_only_for_a_replacement"
+      ]
+    },
+    {
+      "legacy_id": "test_review_scope_wire.ScopeWireTests.test_one_real_response_contract_reaches_the_consumer",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_scope_wire.ScopeWireTests.test_one_real_response_contract_reaches_the_consumer"
+      ]
+    },
+    {
+      "legacy_id": "test_review_scope_wire.ScopeWireTests.test_submission_checks_scope_with_the_conditions_the_review_accepts",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_scope_wire.ScopeWireTests.test_submission_checks_scope_with_the_conditions_the_review_accepts"
+      ]
+    },
+    {
+      "legacy_id": "test_review_scope_wire.ScopeWireTests.test_wire_rejects_missing_proposal_binding_and_invalid_scope_details",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_scope_wire.ScopeWireTests.test_wire_rejects_missing_proposal_binding_and_invalid_scope_details"
+      ]
+    },
+    {
+      "legacy_id": "test_review_scope_wire.ExpandedScopeRevisionTests.test_revision_retains_all_prior_slots_above_the_policy_minimum",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_scope_wire.ExpandedScopeRevisionTests.test_revision_retains_all_prior_slots_above_the_policy_minimum"
+      ],
+      "note": "Input: the old test opened the revision on bare_engine with _settle_review_resource_dispositions, _review_publication_premises and _queue_identity_actions replaced by autospec doubles and do_math.review_engine._proposal and kr.identity_basis patched. The new test completes a real three-slot review of K1 on the real engine over the stored review state (support.review_scene), revises K1 to K2 and opens K2's review with the product's own proposal, identity basis, premises and queueing. The old recorder assertion (queued == [(kid, cid)]) is the assertion that the queue holds exactly one identity_review action for (K2, cid), at the scope stage."
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_allocation_duplicates_and_judge_count",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_allocation_duplicates_and_judge_count"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_answer_batch_hides_peer_results_and_covers_assignments",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_answer_batch_hides_peer_results_and_covers_assignments"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_answer_new_findings_and_split_reach_fresh_judgment",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_answer_new_findings_and_split_reach_fresh_judgment"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_approved_objection_closes_mismatch",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_approved_objection_closes_mismatch"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_incomplete_transcript_manifest_is_a_local_restoration_error",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_incomplete_transcript_manifest_is_a_local_restoration_error"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_initial_barrier_and_blindness",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_initial_barrier_and_blindness"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_initial_unanimity_and_purity",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_initial_unanimity_and_purity"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_judge_new_findings_get_organizer_assignment_and_answer",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_judge_new_findings_get_organizer_assignment_and_answer"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_manifest_peer_and_judge_origin_checks",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_manifest_peer_and_judge_origin_checks"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_new_finding_at_cap_cannot_be_approved",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_new_finding_at_cap_cannot_be_approved"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_organizer_omission_forgery_and_owner_checks",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_organizer_omission_forgery_and_owner_checks"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_partial_judges_never_aggregate_or_leak",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_partial_judges_never_aggregate_or_leak"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_proposal_mutation_and_execution_identity",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_proposal_mutation_and_execution_identity"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_rejection_returns_to_original_slot_and_same_judges",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_rejection_returns_to_original_slot_and_same_judges"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_revision_full_restart_and_old_output_blocked",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_revision_full_restart_and_old_output_blocked"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_round_limit_split_votes_unresolved_and_last_rejection",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_round_limit_split_votes_unresolved_and_last_rejection"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_round_three_reuses_slots_without_execution_keys_colliding",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_round_three_reuses_slots_without_execution_keys_colliding"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_scope_false_match_rejected_and_incomplete_not_reviewed",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_scope_false_match_rejected_and_incomplete_not_reviewed"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_stage_schema_is_specific",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_stage_schema_is_specific"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.ReviewCycleTests.test_transcript_restore_reference_and_integrity",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_cycle_stages.ReviewCycleTests.test_transcript_restore_reference_and_integrity"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.SealedReplayTests.test_authorized_replacement_keeps_full_authority_and_sealed_input",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_sealed_replay.SealedReplayTests.test_authorized_replacement_keeps_full_authority_and_sealed_input"
+      ],
+      "note": "Input: the old test ran on review_fixtures.ReviewFakeEngine (no repository, _save an autospec double, a store that read no artifact). The new test runs the same review on the real engine over the stored review state (support.review_scene.ReviewScene); the reviewer answers and the admission and application calls are the same."
+    },
+    {
+      "legacy_id": "test_review_cycle.SealedReplayTests.test_budget_closed_investigation_is_verified_unresolved_not_an_unfinished_vote",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_sealed_replay.SealedReplayTests.test_budget_closed_investigation_is_verified_unresolved_not_an_unfinished_vote"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.SealedReplayTests.test_fixed_private_research_is_replayed_before_requesters_final_vote",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_sealed_replay.SealedReplayTests.test_fixed_private_research_is_replayed_before_requesters_final_vote"
+      ]
+    },
+    {
+      "legacy_id": "test_review_cycle.SealedReplayTests.test_previous_review_must_resolve_to_its_actual_preserved_cycle",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_sealed_replay.SealedReplayTests.test_previous_review_must_resolve_to_its_actual_preserved_cycle"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.AssessmentReassessmentConnections.test_central_control_consumes_qualified_evidence_and_retains_bounded_followup",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_reassessment.QualifiedReassessmentTests.test_central_control_consumes_qualified_evidence_and_retains_bounded_followup",
+        "flows.test_review_reassessment.OwnerReassessmentTests.test_public_qualified_report_reopens_the_judgment_and_the_owner_settles_a_bounded_followup"
+      ],
+      "note": "The flow test is the owner path: the qualified report enters by public control on support.review_sim.produced_sim, the owner runs the reassessment review and settles its activity itself (the old test attached the executions and called _settle_activity)."
+    },
+    {
+      "legacy_id": "test_review_engine.AssessmentReassessmentConnections.test_cli_report_reaches_qualified_reassessment_and_replay_is_idempotent",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_review_cli_reassessment.CliReassessmentReportTests.test_cli_report_reaches_qualified_reassessment_and_replay_is_idempotent",
+        "unit.test_review_reassessment.QualifiedReassessmentTests.test_the_same_qualified_report_replayed_names_the_open_reassessment"
+      ],
+      "note": "Input: the patch of do_math.cli._control that sent the request straight to the fake engine is the real CLI on the real ports over a repository a real git reads (the produced Sim's objects written as loose objects); _control's action, text and config are observed as it starts. The real control derives the request ID from the request, so the identical second CLI report replays the first receipt (same request ID and snapshot, replayed) and processes nothing again: the stored history holds one reassessment_opened. The engine's already_open for the same report sent as a distinct request, with the same review cycle ID, is the unit test (and the flow test with an idempotency key)."
+    },
+    {
+      "legacy_id": "test_review_engine.AssessmentReassessmentConnections.test_ordinary_report_cannot_suspend_and_closed_control_cannot_open_review",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_reassessment.OrdinaryReportTests.test_ordinary_report_cannot_suspend_and_closed_control_cannot_open_review"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.AssessmentReassessmentConnections.test_public_admission_binds_original_assessment_hash",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_review_owner_path.PublicReassessmentTests.test_public_admission_binds_original_assessment_hash"
+      ],
+      "note": "Input: control() with do_math.engine.ResearchRepository patched to an autospec store is the public control on the Sim (support.review_sim.reviewed_sim, a review the owner ran to a match). The new test also processes the accepted report (report_only, use active)."
+    },
+    {
+      "legacy_id": "test_review_engine.DelegationConnections.test_actual_blind_judgments_apply_the_approved_review_recovery",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_replacement.DelegatedReplacementTests.test_actual_blind_judgments_apply_the_approved_review_recovery"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ImpactReviewRouting.test_exact_request_waits_for_accepted_review_without_new_producer",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_review_impact_routing.ImpactReviewRoutingTests.test_exact_request_waits_for_accepted_review_without_new_producer"
+      ],
+      "note": "Input: ImpactReviewHarness on routing_engine with _receive_submission, _save and _settle_activity replaced by autospec doubles, do_math.submission.read_sealed_submission patched, an injected EX-review and an autospec store is the Sim scene support.review_sim.impact_sim: real research work whose bundle the receiver held for impact review, a real maintenance impact review run by the owner through the model double, and the owner's retry reading both sealed submissions. The receipt call (execution ID, preserved) and the held entry's review_execution_ids are observed as the receipt call starts (ObservedCalls), since the real receipt then clears the wait; the new test also checks the revisions of A and C."
+    },
+    {
+      "legacy_id": "test_review_engine.ImpactReviewRouting.test_shared_candidate_applies_actual_domain_revision_without_mutating_preview_source",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_review_impact_candidate.SharedCandidateTests.test_shared_candidate_applies_actual_domain_revision_without_mutating_preview_source"
+      ],
+      "note": "Input: the harness bundle on routing_engine is the bundle support.review_sim.impact_sim holds, split from the producer's sealed submission and issued input as the receiver splits it, applied on the Sim's engine."
+    },
+    {
+      "legacy_id": "test_review_engine.ImpactReviewRouting.test_unresolved_review_remains_held_and_has_one_final_rejected_receipt",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_review_impact_routing.ImpactReviewRoutingTests.test_unresolved_review_remains_held_and_has_one_final_rejected_receipt"
+      ],
+      "note": "Input: the harness on routing_engine with _record_task_receipt, _save and _receive_submission replaced and an injected review execution is the Sim scene support.review_sim.impact_sim with the model's impact review leaving one scope unresolved; the review runs in one owner pass and the retry runs again. The task receipts are observed (ObservedCalls): the producer gets exactly one, rejected (the review's own accepted receipt is its receipt, not the producer's). The old \"one impact_review action\" held because the injected review never ran; here the review ran once, so the check is one impact review execution and none queued."
+    },
+    {
+      "legacy_id": "test_review_engine.ReleasedInsightTests.test_released_incidental_insights_plan_only_preserved_items",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_released_insights.ReleasedInsightTests.test_released_incidental_insights_plan_only_preserved_items"
+      ],
+      "note": "Input: routing_engine (NoRepository, _bind_revision_action, _cancel_selected_revision_targets and _record_output_questions replaced) with _apply_queue_plan and _apply_academic_resolutions replaced by autospec doubles is the real engine over the stored review state (support.review_scene), nothing replaced. That state already holds K1, so the old comparisons with an empty knowledge map are exact comparisons with the knowledge snapshot taken before the extensions: the released records are exactly three new ones and the plan evidence, and with invalid kinds the knowledge equals the snapshot."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewAttemptAdmissionTests.test_every_review_owned_attempt_uses_owner_admission_before_registration",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.AdmissionTests.test_every_review_owned_attempt_uses_owner_admission_before_registration",
+        "sim.test_review_owner_path.OwnerReviewTests.test_owner_registration_admits_every_review_attempt_and_publishes_the_initial_match"
+      ],
+      "note": "Input: routing_engine with _execution_profile, _admit_review_execution and _request_review_resource_disposition replaced by autospec doubles is the real engine over the stored review state (support.review_scene) with a review whose reserved slots the supplemental attempt would consume; the two calls are observed as they start (ObservedCalls). The admission detail is the real one (disposition review_followup_reserved for this attempt, equal to the detail the resource disposition records) instead of the double's fixed dict, and the profile is the one the owner selects for the action."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_actual_profile_and_restored_input_remain_bound_to_the_logical_slot",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_stages.InitialStageTests.test_actual_profile_and_restored_input_remain_bound_to_the_logical_slot"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_actual_prompt_and_public_provider_events_restore_only_to_their_slot",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_transcripts.ObservedTranscriptTests.test_actual_prompt_and_public_provider_events_restore_only_to_their_slot"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_admission_cannot_reseal_changed_policy_or_scope",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.AdmissionTests.test_admission_cannot_reseal_changed_policy_or_scope"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_admission_counts_failed_and_retried_executions_before_results",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.AdmissionTests.test_admission_counts_failed_and_retried_executions_before_results",
+        "sim.test_review_owner_path.OwnerReviewTests.test_owner_registration_admits_every_review_attempt_and_publishes_the_initial_match"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_adopted_instance_policy_is_the_only_opening_and_publication_policy",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.AdoptedPolicyTests.test_adopted_instance_policy_is_the_only_opening_and_publication_policy"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_approved_replacement_omits_malformed_manifest_without_rethrowing",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_replacement.UserGrantReplacementTests.test_approved_replacement_omits_malformed_manifest_without_rethrowing"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_central_replacement_control_releases_wait_and_queues_next_execution",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_replacement.UserGrantReplacementTests.test_central_replacement_control_releases_wait_and_queues_next_execution"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_checked_delegation_replacement_survives_its_own_recorded_input",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_replacement.DelegatedReplacementTests.test_checked_delegation_replacement_survives_its_own_recorded_input"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_complete_rejected_objection_round_trip",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_stages.DisputeTests.test_complete_rejected_objection_round_trip",
+        "flows.test_review_owner_flows.DisputeFlowTests.test_owner_runs_a_rejected_objection_through_organize_judge_and_answer_to_a_match"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_completed_staged_review_is_consumed_by_transition_activation",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_staged.StagedReviewTests.test_completed_staged_review_is_consumed_by_transition_activation"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_corrupt_slot_can_be_replaced_from_verified_records_under_real_user_grant",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_replacement.UserGrantReplacementTests.test_corrupt_slot_can_be_replaced_from_verified_records_under_real_user_grant"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_environment_transition_during_review_invalidates_old_environment_use",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.PublicationTests.test_environment_transition_during_review_invalidates_old_environment_use"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_final_match_does_not_override_suspension_or_formal_change",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.PublicationTests.test_final_match_does_not_override_suspension_or_formal_change"
+      ],
+      "note": "The five failure cases, which the old test checked by exception type only, are pinned to their reasons."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_fresh_exact_formal_check_preserves_eligibility",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.PublicationTests.test_fresh_exact_formal_check_preserves_eligibility"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_initial_match_activates_only_after_all_slots",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_stages.InitialStageTests.test_initial_match_activates_only_after_all_slots",
+        "sim.test_review_owner_path.OwnerReviewTests.test_owner_registration_admits_every_review_attempt_and_publishes_the_initial_match"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_input_delta_is_not_a_recursive_transcript_copy",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_transcripts.ObservedTranscriptTests.test_input_delta_is_not_a_recursive_transcript_copy",
+        "flows.test_review_owner_flows.DisputeFlowTests.test_owner_runs_a_rejected_objection_through_organize_judge_and_answer_to_a_match"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_kernel_evidence_outside_the_reviewed_projection_still_binds_publication",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.AdoptedPolicyTests.test_kernel_evidence_outside_the_reviewed_projection_still_binds_publication"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_mismatch_and_round_limit_return_precise_followup",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_stages.DisputeTests.test_mismatch_and_round_limit_return_precise_followup"
+      ],
+      "note": "The one-round case runs on a second scene with round limit 1."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_mutated_proposal_and_old_action_are_rejected",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.PublicationTests.test_mutated_proposal_and_old_action_are_rejected"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_new_judge_finding_is_assigned_answered_and_fully_judged",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_stages.DisputeTests.test_new_judge_finding_is_assigned_answered_and_fully_judged"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_new_revision_restarts_all_slots_and_retains_own_conversation",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_stages.InitialStageTests.test_new_revision_restarts_all_slots_and_retains_own_conversation"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_observed_public_events_reject_out_of_order_append_but_allow_exact_replay",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_transcripts.ObservedTranscriptTests.test_observed_public_events_reject_out_of_order_append_but_allow_exact_replay"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_optional_research_cannot_consume_mandatory_followup_reservations",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.AdmissionTests.test_optional_research_cannot_consume_mandatory_followup_reservations"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_public_provider_numbers_survive_storage_and_slot_restoration",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_transcripts.ObservedTranscriptTests.test_public_provider_numbers_survive_storage_and_slot_restoration"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_replacement_rejects_forged_grant_source_and_revocation_before_input",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_replacement.UserGrantReplacementTests.test_replacement_rejects_forged_grant_source_and_revocation_before_input"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_replacement_unresolved_question_keeps_organizer_finding_coordinates",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_replacement.UserGrantReplacementTests.test_replacement_unresolved_question_keeps_organizer_finding_coordinates"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_restore_diagnostics_keep_exact_coordinate_hashes_and_verified_prefix",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_transcripts.RestorationFailureTests.test_restore_diagnostics_keep_exact_coordinate_hashes_and_verified_prefix"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_restored_exact_bytes_release_the_held_slot_without_a_replacement",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_transcripts.RestorationFailureTests.test_restored_exact_bytes_release_the_held_slot_without_a_replacement"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_runtime_trust_barrier_leaves_final_slot_pending_for_retry",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.PublicationTests.test_runtime_trust_barrier_leaves_final_slot_pending_for_retry"
+      ],
+      "note": "The old regex \"trust transition\" is pinned to the reason the product raises here, \"formal admission is blocked during a trust transition\" (trust_validation.require_active_environment); the old fake raised the same reason (the test map names a different message)."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_scope_admission_propagates_actual_activity_and_selected_profile_to_initial_actions",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_stages.ScopeStageTests.test_scope_admission_propagates_actual_activity_and_selected_profile_to_initial_actions",
+        "sim.test_review_owner_path.OwnerReviewTests.test_owner_registration_admits_every_review_attempt_and_publishes_the_initial_match"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_scope_to_answer_and_judgment_publishes_the_same_links_consumed_by_goal_audit",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_stages.DisputeTests.test_scope_to_answer_and_judgment_publishes_the_same_links_consumed_by_goal_audit"
+      ],
+      "note": "The goal audit ran on bare_engine sharing the state with _render_prompt and _record_output_questions replaced by autospec doubles; the new test binds the governance input and applies the goal audit on the same real engine with nothing replaced. The stored state has a lifecycle, so the first charter's source text is its immutable input."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_source_recovery_has_exact_bytes_hash_and_relative_path",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_transcripts.ObservedTranscriptTests.test_source_recovery_has_exact_bytes_hash_and_relative_path"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_split_proposal_binds_real_formal_exposition_and_current_basis",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.PublicationTests.test_split_proposal_binds_real_formal_exposition_and_current_basis"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_staged_activation_git_round_trip_preserves_old_and_loads_new_records",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_activation_git_round_trip_preserves_old_and_loads_new_records"
+      ],
+      "note": "The round trip stores in a ResearchRepository on the Git port fake instead of a real git init (the property is the stored records, not the Git process). The wraps patch of do_math.canonical.exact_content_hash is ObservedCalls on its code object, which sees every call whatever the caller's import."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_staged_activation_rejects_tampered_receipt_and_stale_policy",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_staged.StagedReviewTests.test_staged_activation_rejects_tampered_receipt_and_stale_policy"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_staged_assessment_survives_a_second_transition_and_git_round_trip",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_assessment_survives_a_second_transition_and_git_round_trip"
+      ],
+      "note": "The round trips store in a ResearchRepository on the Git port fake instead of a real git init. The wraps patch of do_math.canonical.exact_content_hash is ObservedCalls on its code object, which sees every call whatever the caller's import; the third save still computes no transition hash."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_staged_candidate_uses_the_same_scope_cycle_without_publication",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_staged.StagedReviewTests.test_staged_candidate_uses_the_same_scope_cycle_without_publication"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_tampered_materialized_source_records_the_exact_file_hashes",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_transcripts.RestorationFailureTests.test_tampered_materialized_source_records_the_exact_file_hashes"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_temporary_io_failure_preserves_reason_and_can_be_retried",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_transcripts.RestorationFailureTests.test_temporary_io_failure_preserves_reason_and_can_be_retried",
+        "sim.test_review_owner_path.PreparationFailureTests.test_review_materialization_failure_ends_preparation_and_saves_recovery"
+      ],
+      "note": "The old patch of the engine method _build_review_context (OSError EAGAIN) is the operating system refusing the review-sources folder: Path.mkdir raises the same OSError while the real context is built. The new test also pins the disposition slot_restore_retry and next owner review_recovery."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_v5_missing_adopted_policy_does_not_use_config_default",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_admission.AdoptedPolicyTests.test_v5_missing_adopted_policy_does_not_use_config_default"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewEngineTests.test_v5_scope_execution_selects_initial_slots_before_the_initial_phase",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_engine_stages.ScopeStageTests.test_v5_scope_execution_selects_initial_slots_before_the_initial_phase"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewInputOverflowTests.test_actual_proposal_overflow_ends_preparation_and_reaches_plan_input",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_review_owner_flows.InputOverflowTests.test_actual_proposal_overflow_ends_preparation_and_reaches_plan_input"
+      ],
+      "note": "Input: the synthetic active copy with a candidate created by knowledge_records.create_candidate and a formal_verification double is the Sim review scene: the oversized candidate is imported by public control (kind theorem, since the Sim ontology registers no lemma kind and the old test bypassed the import), the Lean double verifies it and the owner opens its review. next(engine._call_steps(action)) ending without arguments is one owner pass over the scope action that starts no model call."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewPreparationFailureTests.test_failed_review_slot_keeps_its_live_sibling_running",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_review_owner_flows.SiblingSlotTests.test_failed_review_slot_keeps_its_live_sibling_running"
+      ],
+      "note": "Input: ActivatedPurposeHarness (a synthetic active copy, PurposeRunner in real Jobs, a runner wrapper blocking initial-0 on an event) and a patch of the engine method _prepare_review_context are replaced by the Sim review scene (support.review_sim.opened_sim): the owner runs two steps with both initial slots dispatched, and the operating system refuses only initial-1's review source folder (Path.mkdir raising for the review-sources folder under that execution's runs workspace). The observation that initial-0 was still running when initial-1 was prepared is taken in that refusal."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewPreparationFailureTests.test_review_materialization_failure_ends_preparation_and_saves_recovery",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_review_owner_path.PreparationFailureTests.test_review_materialization_failure_ends_preparation_and_saves_recovery"
+      ],
+      "note": "Input: ActivatedPurposeHarness with owner_calls/start_model_call is the Sim review scene (support.review_sim.opened_sim) and one owner pass over the scope action; the reload is a new engine on the Sim repository. The new test also checks that no model call started."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewScopeBudgetTests.test_exhaustion_drains_only_owned_attempts_before_publishing_followup",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_scope_budget.ResourceDispositionTests.test_exhaustion_drains_only_owned_attempts_before_publishing_followup"
+      ],
+      "note": "Input: formal_check_engine (the in-memory FakeEngine) with _adopted_review_policy replaced by an autospec double is the real engine over the stored review state (support.review_scene) whose adopted policy carries the tested limit; the attempts register through the owner's _register_execution as before, on the Sim clock port."
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewScopeBudgetTests.test_floor_counts_scope_and_mandatory_followup",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_scope_budget.ScopeFloorTests.test_floor_counts_scope_and_mandatory_followup"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewScopeBudgetTests.test_scope_context_exposes_actual_attempt_usage",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_scope_budget.ScopeFloorTests.test_scope_context_exposes_actual_attempt_usage"
+      ]
+    },
+    {
+      "legacy_id": "test_review_engine.ReviewScopeBudgetTests.test_unaffordable_scope_returns_to_plan_without_fabricating_a_judgment",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_review_scope_budget.ResourceDispositionTests.test_unaffordable_scope_returns_to_plan_without_fabricating_a_judgment"
+      ],
+      "note": "Input: formal_check_engine (the in-memory FakeEngine) with _adopted_review_policy replaced by an autospec double is the real engine over the stored review state (support.review_scene) whose adopted policy carries the limit and overflow disposition."
+    }
+  ]
+}
