@@ -1,0 +1,673 @@
+{
+ "legacy": [
+  {
+   "legacy_id": "test_completion_settlement.CleanupInterruptionTests.test_failed_final_save_does_not_reopen_already_deleted_paths",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_cleanup_interruption.CleanupInterruptionTests.test_failed_final_save_does_not_reopen_already_deleted_paths"
+   ]
+  },
+  {
+   "legacy_id": "test_completion_settlement.CleanupInterruptionTests.test_later_exact_deletion_resolves_an_interrupted_attempt",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_cleanup_interruption.CleanupInterruptionTests.test_later_exact_deletion_resolves_an_interrupted_attempt"
+   ]
+  },
+  {
+   "legacy_id": "test_completion_settlement.CompletionSettlementTests.test_academic_completion_uses_the_same_settlement",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_completion_settlement.CompletionSettlementTests.test_academic_completion_uses_the_same_settlement"
+   ],
+   "note": "Input: the legacy test patched academic.current_requirements (no item) and replaced _solution_basis and _academic_status (not_applicable) on a bare engine. Here the configured goal auditors solved the goal on a reviewed theorem of the engine region's lifecycle template (support.engine_lifecycle.lifecycle_sim, solve_goal), so the solution basis is current and, the charter having no academic requirement, the real status is not_applicable (both asserted); the settlement's first history row is the first row the follow-up appended."
+  },
+  {
+   "legacy_id": "test_completion_settlement.CompletionSettlementTests.test_completion_records_input_and_held_submission_before_finishing_activities",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_completion_settlement.CompletionSettlementTests.test_completion_records_input_and_held_submission_before_finishing_activities"
+   ],
+   "note": "Input: research_fixtures.bare_engine (no __init__, an in-memory store) with a hand-written minimal instance and runtime is a restored Sim's real engine; the legacy runtime's three research activities, queued and waiting actions and status are added to its runtime. The legacy history and question lists started empty, so their assertions are over the rows the settlement appended (the exact list of superseded action IDs, all of kind goal_completion_superseded_action); 'every activity finished' is over the three activities, and the Sim's other activities are asserted unchanged."
+  },
+  {
+   "legacy_id": "test_completion_settlement.CompletionSettlementTests.test_delayed_publication_settles_each_role_and_preserves_pending_followups",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_publication_retry.DelayedPublicationTests.test_delayed_publication_settles_each_role_and_preserves_pending_followups"
+   ],
+   "note": "Input: the legacy test replaced _receive_submission, the store and _save on a bare engine, so each role was a label on hand-written records. Here each role's call runs through the worker and its sealed answer reaches the real receiver while the instance ref is held during its bundle publication (support.submission_scenes.withhold_publication), which leaves the submission_publication wait; the retry and its receipt are the product's. Each scene makes that receipt its activity's last open work: maintenance (a queued action), research work (ready_work_sim), an identity review's final initial slot (opened_sim) and the first of two goal audits (lifecycle_sim; the second would solve the goal, whose completion supersedes queued work). The follow-up appears inside the retry's receipt, as the legacy receipt double added it: when the receipt reaches its academic follow-up check (after it applied the bundles and ended the wait), an ObservedCalls hook on _ensure_academic_followup adds A-next for the activity to the engine's queue; the test asserts it was added once, inside _receive_submission. The legacy result_refs [result_ref] is asserted exactly for the single-attempt activities; the identity review's activity holds its scope and both initial slots, so its result_refs are asserted as every attempt's result in order, including this one. receive once and save once are one _receive_submission and one _save of the retry outside the receipt (support.submission_receiver.order); the receipt's own publication runs inside it."
+  },
+  {
+   "legacy_id": "test_completion_settlement.CompletionSettlementTests.test_live_activity_finishes_only_after_its_attempt_and_keeps_undispatched_work",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_completion_settlement.CompletionSettlementTests.test_live_activity_finishes_only_after_its_attempt_and_keeps_undispatched_work"
+   ],
+   "note": "Input: research_fixtures.bare_engine (no __init__, an in-memory store) with a hand-written minimal instance and runtime is a restored Sim's real engine; the legacy runtime's three research activities, queued and waiting actions and status are added to its runtime. The legacy autospec no-op for _settle_review_resource_dispositions is the real method, which has nothing to settle: the instance has no review cycle (asserted)."
+  },
+  {
+   "legacy_id": "test_contract_checks.ContractCheckTests.test_a_boundary_may_not_silently_depend_on_a_sibling_under_revision",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contract_checks.ContractCheckTests.test_a_boundary_may_not_silently_depend_on_a_sibling_under_revision"
+   ]
+  },
+  {
+   "legacy_id": "test_contract_checks.ContractCheckTests.test_a_cited_record_must_exist",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contract_checks.ContractCheckTests.test_a_cited_record_must_exist"
+   ]
+  },
+  {
+   "legacy_id": "test_contract_checks.ContractCheckTests.test_a_cited_sibling_contract_is_declared_at_its_current_revision",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contract_checks.ContractCheckTests.test_a_cited_sibling_contract_is_declared_at_its_current_revision"
+   ]
+  },
+  {
+   "legacy_id": "test_contract_checks.ContractCheckTests.test_a_pending_revision_of_the_sibling_counts_as_under_revision",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contract_checks.ContractCheckTests.test_a_pending_revision_of_the_sibling_counts_as_under_revision"
+   ]
+  },
+  {
+   "legacy_id": "test_contract_checks.ContractCheckTests.test_a_revision_request_on_the_sibling_counts_as_under_revision",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contract_checks.ContractCheckTests.test_a_revision_request_on_the_sibling_counts_as_under_revision"
+   ]
+  },
+  {
+   "legacy_id": "test_contract_checks.ContractCheckTests.test_every_candidate_needs_exactly_one_self_check",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contract_checks.ContractCheckTests.test_every_candidate_needs_exactly_one_self_check"
+   ]
+  },
+  {
+   "legacy_id": "test_contract_checks.ContractCheckTests.test_primary_and_extension_dependencies_both_wait_for_a_sibling_under_revision",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contract_checks.ContractCheckTests.test_primary_and_extension_dependencies_both_wait_for_a_sibling_under_revision"
+   ]
+  },
+  {
+   "legacy_id": "test_contract_checks.ContractCheckTests.test_revision_condition_is_matched_by_existing_id",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contract_checks.ContractCheckTests.test_revision_condition_is_matched_by_existing_id"
+   ]
+  },
+  {
+   "legacy_id": "test_contract_checks.ContractCheckTests.test_self_check_declares_only_sibling_boundaries",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contract_checks.ContractCheckTests.test_self_check_declares_only_sibling_boundaries"
+   ]
+  },
+  {
+   "legacy_id": "test_contract_checks.ContractCheckTests.test_sibling_boundary_is_read_from_the_checker_task_not_its_detail_copy",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contract_checks.ContractCheckTests.test_sibling_boundary_is_read_from_the_checker_task_not_its_detail_copy"
+   ]
+  },
+  {
+   "legacy_id": "test_contract_checks.ContractCheckTests.test_title_and_revision_id_cannot_supply_two_conditions_for_one_candidate",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contract_checks.ContractCheckTests.test_title_and_revision_id_cannot_supply_two_conditions_for_one_candidate"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_academic_resolution_carries_real_evidence_references",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_academic_resolution_carries_real_evidence_references"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_declared_role_documents_are_complete",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_declared_role_documents_are_complete"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_every_role_has_closed_schema",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_every_role_has_closed_schema"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_exact_schema_identity_distinguishes_variants_and_is_idempotent",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_exact_schema_identity_distinguishes_variants_and_is_idempotent"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_invalid_decisions_fail",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_invalid_decisions_fail"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_knowledge_change_requires_a_declared_impact_set",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_knowledge_change_requires_a_declared_impact_set"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_manifest_is_optional_but_explicit_declarations_remain_typed",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_manifest_is_optional_but_explicit_declarations_remain_typed"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_operational_response_uses_six_dispositions",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_operational_response_uses_six_dispositions"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_plan_assessment_fields_are_required",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_plan_assessment_fields_are_required"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_profile_references_use_the_sealed_provider_identity",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_profile_references_use_the_sealed_provider_identity"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_prompt_contains_actual_documents_context_and_schema",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_prompt_contains_actual_documents_context_and_schema"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_role_document_missing_fails",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_role_document_missing_fails"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_schema_builders_return_copies_that_share_no_node",
+   "disposition": "retired",
+   "reason": "structure.test_schema_builders.SchemaBuilderTests.test_results_share_no_node_with_each_other_or_a_module_global calls every builder of the legacy list with the same arguments (schema_for of every role, action_schema of the same four roles, disposition_schema, extension_schema of research_work with RC-1, impact_review_response_schema of the same request, the five review stage schemas, research_schema and research_request_schema, both interpretation stages, config_schema, and repair_report_schema, now supervision.repair_report_schema which scheduled_operator imports, with diagnosed True as the legacy test and also False) and asserts the same two properties over the same do_math module globals: no node appears twice in one result and no result holds a module-global node; it also asserts that no result shares a node with an earlier one. Its companion test_every_schema_function_is_declared fails when a new builder is missing."
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_scope_planning_schema_reaches_domain_scope_validator",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_scope_planning_schema_reaches_domain_scope_validator"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_specialized_role_schema_uses_same_envelope",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_specialized_role_schema_uses_same_envelope"
+   ]
+  },
+  {
+   "legacy_id": "test_contracts.ContractTests.test_structured_task_candidate_has_one_completion_authority",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_contracts.ContractTests.test_structured_task_candidate_has_one_completion_authority"
+   ]
+  },
+  {
+   "legacy_id": "test_native_final_submission.NativeFinalGitTests.test_explicit_early_seal_precedes_different_final_and_damage_never_falls_back",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_native_capture.NativeFinalGitTests.test_explicit_early_seal_precedes_different_final_and_damage_never_falls_back"
+   ],
+   "note": "Input: engine_fixtures.start_native_final (the synthetic active copy with a running maintenance execution EX-history) is support.submission_scenes.native_scene, the same execution on a restored Sim (support.submission_receiver.history plus its decision basis); native_result draws the launch ticket from the Sim's Jobs and clock ports instead of the host's Windows Job and system clock. The legacy test patched engine.store.read to return damaged bytes for every read and cleared repository.VERIFIED_ARTIFACTS, as a process that has not matched the sealed row; here the engine of a copy of the repository at another path (a Git directory this process never matched, support.submission_scenes.unmatched) reads its sealed output after that artifact was changed in Git (support.engine_context.damage). The failed result, its None output and the unchanged head are asserted as before, and the error now pins the hash mismatch."
+  },
+  {
+   "legacy_id": "test_native_final_submission.NativeFinalGitTests.test_lost_cas_acknowledgment_resolves_one_native_capture",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_native_capture.NativeFinalGitTests.test_lost_cas_acknowledgment_resolves_one_native_capture"
+   ],
+   "note": "Input: engine_fixtures.start_native_final (the synthetic active copy with a running maintenance execution EX-history) is support.submission_scenes.native_scene, the same execution on a restored Sim (support.submission_receiver.history plus its decision basis); native_result draws the launch ticket from the Sim's Jobs and clock ports instead of the host's Windows Job and system clock. The legacy test replaced engine._save with a save that raised OSError after the actual commit; here the Git port fake's ref update moves the ref and then raises OSError (support.submission_scenes.lost_acknowledgment), so the loss happens inside the real save. The seal count compared with 1 is the activation's count plus 1."
+  },
+  {
+   "legacy_id": "test_native_final_submission.NativeFinalGitTests.test_malformed_native_json_is_preserved_as_one_rejected_central_check",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_native_capture.NativeFinalGitTests.test_malformed_native_json_is_preserved_as_one_rejected_central_check"
+   ],
+   "note": "Input: engine_fixtures.start_native_final (the synthetic active copy with a running maintenance execution EX-history) is support.submission_scenes.native_scene, the same execution on a restored Sim (support.submission_receiver.history plus its decision basis); native_result draws the launch ticket from the Sim's Jobs and clock ports instead of the host's Windows Job and system clock. The seal count compared with 1 is the activation's count plus 1."
+  },
+  {
+   "legacy_id": "test_native_final_submission.NativeFinalGitTests.test_native_capture_git_reload_summary_and_early_seal_precedence",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_native_job.NativeFinalJobTests.test_native_capture_git_reload_summary_and_early_seal_precedence"
+   ],
+   "note": "Input: engine_fixtures.start_native_final (the synthetic active copy with a running maintenance execution EX-history) is support.submission_scenes.native_scene, the same execution on a restored Sim (support.submission_receiver.history plus its decision basis); native_result draws the launch ticket from the Sim's Jobs and clock ports instead of the host's Windows Job and system clock. The real Windows Job and the Codex adapter collection stay (a boundary test); reopening the engine on its repository is sim.restart(). The legacy start had no control receipt, so 'no control receipt' is here 'the capture added none: the receipts equal those before it and none names EX-history'; the seal count compared with 1 is the activation's count plus 1."
+  },
+  {
+   "legacy_id": "test_native_final_submission.NativeFinalGitTests.test_rejected_native_final_leaves_explicit_retry_to_the_existing_fresh_execution_path",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_native_capture.NativeFinalGitTests.test_rejected_native_final_leaves_explicit_retry_to_the_existing_fresh_execution_path"
+   ],
+   "note": "Input: engine_fixtures.start_native_final (the synthetic active copy with a running maintenance execution EX-history) is support.submission_scenes.native_scene, the same execution on a restored Sim (support.submission_receiver.history plus its decision basis); native_result draws the launch ticket from the Sim's Jobs and clock ports instead of the host's Windows Job and system clock."
+  },
+  {
+   "legacy_id": "test_native_final_submission.NativeFinalGitTests.test_stopped_currentness_and_revoked_authority_preserve_without_capture",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_native_capture.NativeFinalGitTests.test_stopped_currentness_and_revoked_authority_preserve_without_capture"
+   ],
+   "note": "Input: engine_fixtures.start_native_final (the synthetic active copy with a running maintenance execution EX-history) is support.submission_scenes.native_scene, the same execution on a restored Sim (support.submission_receiver.history plus its decision basis); native_result draws the launch ticket from the Sim's Jobs and clock ports instead of the host's Windows Job and system clock. The legacy start held no submission_checked event, so 'no such event' is here 'the activation's submission_checked events are exactly those before the capture, and none targets EX-history'."
+  },
+  {
+   "legacy_id": "test_native_final_submission.NativeFinalProtocolTests.test_changed_creation_identity_or_pid_and_float_identity_are_rejected",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_native_final.NativeFinalProtocolTests.test_changed_creation_identity_or_pid_and_float_identity_are_rejected"
+   ],
+   "note": "Input: engine_fixtures.native_result is support.submission_receiver.native_result on the Jobs and clock port fakes (the launch ticket came from the host's Windows Job and system clock). Each rejection now pins the product's message."
+  },
+  {
+   "legacy_id": "test_native_final_submission.NativeFinalProtocolTests.test_collected_digests_are_compared_as_records_without_rehashing",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_native_final.NativeFinalProtocolTests.test_collected_digests_are_compared_as_records_without_rehashing"
+   ],
+   "note": "Input: engine_fixtures.native_result is support.submission_receiver.native_result on the Jobs and clock port fakes (the launch ticket came from the host's Windows Job and system clock). Each rejection now pins the product's message. The legacy test patched hashlib.sha256 with a double that raised; support.submission_probes.CallSites(hashlib.sha256) records every call of the unchanged function from any code, and the test asserts there is none."
+  },
+  {
+   "legacy_id": "test_native_final_submission.NativeFinalProtocolTests.test_status_alone_bad_stream_changed_request_and_unconfirmed_barrier_rejected",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_native_final.NativeFinalProtocolTests.test_status_alone_bad_stream_changed_request_and_unconfirmed_barrier_rejected"
+   ],
+   "note": "Input: engine_fixtures.native_result is support.submission_receiver.native_result on the Jobs and clock port fakes (the launch ticket came from the host's Windows Job and system clock). Each rejection now pins the product's message."
+  },
+  {
+   "legacy_id": "test_native_final_submission.NativeFinalProtocolTests.test_verified_native_stream_retains_exact_bytes_and_serialized_evidence",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_native_final.NativeFinalProtocolTests.test_verified_native_stream_retains_exact_bytes_and_serialized_evidence"
+   ],
+   "note": "Input: engine_fixtures.native_result is support.submission_receiver.native_result on the Jobs and clock port fakes (the launch ticket came from the host's Windows Job and system clock). Each rejection now pins the product's message."
+  },
+  {
+   "legacy_id": "test_native_final_submission.NativeRepairTests.test_normal_malformed_final_routes_back_to_producer",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_native_capture.NativeRepairTests.test_normal_malformed_final_routes_back_to_producer"
+   ],
+   "note": "Input: engine_fixtures.start_native_final (the synthetic active copy with a running maintenance execution EX-history) is support.submission_scenes.native_scene, the same execution on a restored Sim (support.submission_receiver.history plus its decision basis); native_result draws the launch ticket from the Sim's Jobs and clock ports instead of the host's Windows Job and system clock. The stopping transition's time is the Sim clock's now instead of a fixed 2026 time."
+  },
+  {
+   "legacy_id": "test_submission_boundaries.AcceptanceTests.test_changed_prerequisite_task_assessment_invalidates_its_running_consumer",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_acceptance.AcceptanceTests.test_changed_prerequisite_task_assessment_invalidates_its_running_consumer"
+   ],
+   "note": "Input: the prepared_tasks build on the synthetic active state is support.scheduling_parallel.ready_work_sim (tasks actually prepared, contract-reviewed and selected by a plan) on a Sim's public activation with max_output_repairs 0, the purpose fixture's other settings being the Sim's defaults. CheckedRunner around the scripted runner is the Sim's model double (support.submission_calls): the scripted output is bound, sealed and submitted with the workspace tool by the product's worker in a Job of the Jobs fake, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns (a control is applied through the owner loop, support.submission_calls.applied_now, for research_fixtures.await_control). The acceptance of the concurrent revision the legacy runner asserted inside the call is recorded there and asserted after the step; new action IDs come from the Sim clock."
+  },
+  {
+   "legacy_id": "test_submission_boundaries.AcceptanceTests.test_execution_failure_is_parked_before_diagnosis",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_acceptance.AcceptanceTests.test_execution_failure_is_parked_before_diagnosis"
+   ],
+   "note": "Input: the prepared_tasks build on the synthetic active state is support.scheduling_parallel.ready_work_sim (tasks actually prepared, contract-reviewed and selected by a plan) on a Sim's public activation with max_output_repairs 0, the purpose fixture's other settings being the Sim's defaults. CheckedRunner around the scripted runner is the Sim's model double (support.submission_calls): the scripted output is bound, sealed and submitted with the workspace tool by the product's worker in a Job of the Jobs fake, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns (a control is applied through the owner loop, support.submission_calls.applied_now, for research_fixtures.await_control). The failed call is a provider CLI that exits with an error (support.submission_calls.failed)."
+  },
+  {
+   "legacy_id": "test_submission_boundaries.AcceptanceTests.test_failed_request_does_not_stop_a_running_independent_worker",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_acceptance.AcceptanceTests.test_failed_request_does_not_stop_a_running_independent_worker"
+   ],
+   "note": "Input: the prepared_tasks build on the synthetic active state is support.scheduling_parallel.ready_work_sim (tasks actually prepared, contract-reviewed and selected by a plan) on a Sim's public activation with max_output_repairs 0, the purpose fixture's other settings being the Sim's defaults. CheckedRunner around the scripted runner is the Sim's model double (support.submission_calls): the scripted output is bound, sealed and submitted with the workspace tool by the product's worker in a Job of the Jobs fake, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns (a control is applied through the owner loop, support.submission_calls.applied_now, for research_fixtures.await_control). The legacy peer polled its should_stop flag for 2 s after a threading event; here the failing call hands the turn back until the peer entered (support.scheduling_parallel.round_robin lets the peer start), and the peer watches, for 20 owner passes, the stop request the owner's stop judgment writes into its workspace (call_engine._call_stop_requested, observations.request_checkpoint), the channel the product's worker reads. It also asserts that the failed request was parked during that watch. The failed calls are provider CLIs that exit with an error (support.submission_calls.failed); the resume is a public control the owner applied."
+  },
+  {
+   "legacy_id": "test_submission_boundaries.AcceptanceTests.test_identity_review_ignores_unrelated_source_change_but_checks_required_source",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_acceptance.AcceptanceTests.test_identity_review_ignores_unrelated_source_change_but_checks_required_source"
+   ],
+   "note": "Input: make_active with the active Lean command and runner_fixtures.formal_ok is the Sim's default activation, whose Lean double verifies the imported theorem through the product's formal check; engine._enqueue('formal_check') is the check the import itself queues, and each owner pass keeps only that knowledge's formal check and identity review, as the legacy loop did. The scope stage is the default responder's scope response (CheckedRunner answered it the same way); the initial slots answer the default identity review with used_sources ['proposal:statement'] (the role review's proposal digest, decision match, no findings, scope complete, as the legacy output). The source change and its re-supply by control run in the call (support.submission_calls)."
+  },
+  {
+   "legacy_id": "test_submission_boundaries.AcceptanceTests.test_large_accepted_report_survives_revision_review_and_resumed_work",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_acceptance.AcceptanceTests.test_large_accepted_report_survives_revision_review_and_resumed_work"
+   ],
+   "note": "Input: the prepared_tasks build on the synthetic active state is support.scheduling_parallel.ready_work_sim (tasks actually prepared, contract-reviewed and selected by a plan) on a Sim's public activation with max_output_repairs 0, the purpose fixture's other settings being the Sim's defaults. CheckedRunner around the scripted runner is the Sim's model double (support.submission_calls): the scripted output is bound, sealed and submitted with the workspace tool by the product's worker in a Job of the Jobs fake, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns (a control is applied through the owner loop, support.submission_calls.applied_now, for research_fixtures.await_control). The legacy runner's in-call checks of the resumed work (the 600 000-character report and the partial evidence bytes) are recorded in the call and asserted after the drive; the legacy runner raised on any other role, and the test asserts that no other role was called."
+  },
+  {
+   "legacy_id": "test_submission_boundaries.AcceptanceTests.test_newly_reported_knowledge_dependencies_bind_the_read_snapshot",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_acceptance.AcceptanceTests.test_newly_reported_knowledge_dependencies_bind_the_read_snapshot"
+   ],
+   "note": "Input: the prepared_tasks build on the synthetic active state is support.scheduling_parallel.ready_work_sim (tasks actually prepared, contract-reviewed and selected by a plan) on a Sim's public activation with max_output_repairs 0, the purpose fixture's other settings being the Sim's defaults. CheckedRunner around the scripted runner is the Sim's model double (support.submission_calls): the scripted output is bound, sealed and submitted with the workspace tool by the product's worker in a Job of the Jobs fake, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns (a control is applied through the owner loop, support.submission_calls.applied_now, for research_fixtures.await_control). The input statement the legacy runner asserted inside the call is recorded there and asserted after the step."
+  },
+  {
+   "legacy_id": "test_submission_boundaries.AcceptanceTests.test_same_oversized_contract_is_not_automatically_requeued",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_acceptance.AcceptanceTests.test_same_oversized_contract_is_not_automatically_requeued"
+   ],
+   "note": "Input: the prepared_tasks build on the synthetic active state is support.scheduling_parallel.ready_work_sim (tasks actually prepared, contract-reviewed and selected by a plan) on a Sim's public activation with max_output_repairs 0, the purpose fixture's other settings being the Sim's defaults. CheckedRunner around the scripted runner is the Sim's model double (support.submission_calls): the scripted output is bound, sealed and submitted with the workspace tool by the product's worker in a Job of the Jobs fake, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns (a control is applied through the owner loop, support.submission_calls.applied_now, for research_fixtures.await_control). The legacy runner raised if it was called; the model double records every call and the test asserts there was none."
+  },
+  {
+   "legacy_id": "test_submission_boundaries.HistoricalInputTests.test_large_checkpoint_and_operational_evidence_use_exact_readable_references",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_historical_inputs.HistoricalInputTests.test_large_checkpoint_and_operational_evidence_use_exact_readable_references"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_boundaries.HistoricalInputTests.test_large_repair_action_and_previous_execution_remain_readable_by_reference",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_historical_inputs.HistoricalInputTests.test_large_repair_action_and_previous_execution_remain_readable_by_reference"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_boundaries.HistoricalInputTests.test_large_task_history_is_readable_without_inflating_the_current_contract",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_historical_inputs.HistoricalInputTests.test_large_task_history_is_readable_without_inflating_the_current_contract"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_boundaries.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_historical_inputs.HistoricalInputTests.test_preserved_history_does_not_recreate_current_knowledge_dependencies"
+   ]
+  },
+  {
+   "legacy_id": "test_submission_tools.LocalControlProtocolTests.test_a_corrected_draft_at_the_same_path_gets_a_new_submission_attempt",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_control_protocol.LocalControlProtocolTests.test_a_corrected_draft_at_the_same_path_gets_a_new_submission_attempt"
+   ],
+   "note": "Input: the legacy setUp's real Git repository (git_init) and system clock are support.submission_protocol.ProtocolScene: the real GitStateStore on the Git port's in-process fake and a fake clock."
+  },
+  {
+   "legacy_id": "test_submission_tools.LocalControlProtocolTests.test_accepted_submission_is_unchanged_when_original_draft_changes_later",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_mcp_server.LocalControlProtocolTests.test_accepted_submission_is_unchanged_when_original_draft_changes_later"
+   ],
+   "note": "Input: the legacy setUp's real Git repository (git_init) and system clock are support.submission_protocol.ProtocolScene: the real GitStateStore on the Git port's in-process fake and a fake clock."
+  },
+  {
+   "legacy_id": "test_submission_tools.LocalControlProtocolTests.test_installed_submit_command_waits_for_real_central_receipt",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_mcp_server.LocalControlProtocolTests.test_installed_submit_command_waits_for_real_central_receipt"
+   ],
+   "note": "Input: the legacy setUp's real Git repository (git_init) and system clock are support.submission_protocol.ProtocolScene: the real GitStateStore on the Git port's in-process fake and a fake clock. The installed launcher runs in its own interpreter; the pump loop's time.sleep(.02) is the child's wait(timeout=.02)."
+  },
+  {
+   "legacy_id": "test_submission_tools.LocalControlProtocolTests.test_invalid_wait_budget_does_not_queue_a_request",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_control_protocol.LocalControlProtocolTests.test_invalid_wait_budget_does_not_queue_a_request"
+   ],
+   "note": "Input: the legacy setUp's real Git repository (git_init) and system clock are support.submission_protocol.ProtocolScene: the real GitStateStore on the Git port's in-process fake and a fake clock. The rejection is pinned by its message, and the transport inbox is asserted empty."
+  },
+  {
+   "legacy_id": "test_submission_tools.LocalControlProtocolTests.test_mcp_configuration_preserves_leading_hyphen_tokens",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_mcp_server.LocalControlProtocolTests.test_mcp_configuration_preserves_leading_hyphen_tokens"
+   ],
+   "note": "Input: the legacy setUp's real Git repository (git_init) and system clock are support.submission_protocol.ProtocolScene: the real GitStateStore on the Git port's in-process fake and a fake clock. The legacy test patched the transport's clock attribute; the binding comes from a transport made with a clock port whose random bytes begin with 0xf8."
+  },
+  {
+   "legacy_id": "test_submission_tools.LocalControlProtocolTests.test_preview_is_an_explicit_nonpublication_control_request",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_mcp_server.LocalControlProtocolTests.test_preview_is_an_explicit_nonpublication_control_request"
+   ],
+   "note": "Input: the legacy setUp's real Git repository (git_init) and system clock are support.submission_protocol.ProtocolScene: the real GitStateStore on the Git port's in-process fake and a fake clock."
+  },
+  {
+   "legacy_id": "test_submission_tools.LocalControlProtocolTests.test_real_mcp_intent_and_receipt_share_preserved_git_evidence",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_mcp_server.LocalControlProtocolTests.test_real_mcp_intent_and_receipt_share_preserved_git_evidence"
+   ],
+   "note": "Input: the legacy setUp's real Git repository (git_init) and system clock are support.submission_protocol.ProtocolScene: the real GitStateStore on the Git port's in-process fake and a fake clock. The MCP server runs as its own child process."
+  },
+  {
+   "legacy_id": "test_submission_tools.LocalControlProtocolTests.test_sealed_submission_preserves_the_snapshot_read_log",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_producer_seal.SealedReadLogTests.test_sealed_submission_preserves_the_snapshot_read_log"
+   ],
+   "note": "Input: the legacy setUp's real Git repository (git_init) and system clock are support.submission_protocol.ProtocolScene: the real GitStateStore on the Git port's in-process fake and a fake clock."
+  },
+  {
+   "legacy_id": "test_submission_tools.LocalControlProtocolTests.test_submit_draft_mcp_derives_internal_evidence_from_one_path",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_mcp_server.LocalControlProtocolTests.test_submit_draft_mcp_derives_internal_evidence_from_one_path"
+   ],
+   "note": "Input: the legacy setUp's real Git repository (git_init) and system clock are support.submission_protocol.ProtocolScene: the real GitStateStore on the Git port's in-process fake and a fake clock. The inbox is also asserted to hold exactly that one request."
+  },
+  {
+   "legacy_id": "test_submission_tools.LocalControlProtocolTests.test_supplied_tool_generates_fresh_sibling_ids_without_publishing",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_control_protocol.LocalControlProtocolTests.test_supplied_tool_generates_fresh_sibling_ids_without_publishing"
+   ],
+   "note": "Input: the legacy setUp's real Git repository (git_init) and system clock are support.submission_protocol.ProtocolScene: the real GitStateStore on the Git port's in-process fake and a fake clock. The installed command's child interpreter is submission_tool.main (what the launcher runs) in this process with the workspace as the working directory; the launcher's own process is covered by boundary.test_submission_mcp_server.InstalledToolTests and boundary.test_submission_installed_tool."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_empty_known_extension_family_remains_a_semantic_noop",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_producer_tool.ProducerToolTests.test_empty_known_extension_family_remains_a_semantic_noop"
+   ],
+   "note": "Input: the installed command in a child interpreter is submission_tool.main (what the launcher runs) in this process with the producer workspace as the working directory (support.submission_protocol.check_output keeps the exit code, passed and unchanged-draft checks); the launcher's own process and its engine-free archive are boundary.test_submission_mcp_server.InstalledToolTests."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_live_review_validates_sidecar_before_applying_continue",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_engine_calls.LiveReviewTests.test_live_review_validates_sidecar_before_applying_continue"
+   ],
+   "note": "Input: the legacy flow (purpose_copy until prepared, PurposeRunner observation continue) opened the live review from the observations an in-flight research call streamed. The Jobs fake runs a worker to its end inside the Job's resume (seam ledger 18), so the same stream is handed to the owner's core_engine._observe_running directly, as a runner delivers it: running research work published through the product's lifecycle functions (support.provider_live.running_execution, with its argument file and checkpoint as the legacy worker wrote them), a tracker built by observations.tracker_config from its adopted profile, a batch with the agent message and the tool start, the Sim clock past the profile's tool review window, and the tick batch. The engine's trigger branch (core_engine._observe_running, the tool_review_due trigger) queues the live review, which is asserted (no review before the window; one live operational review of the running work after it, carrying the recorded observation refs), and the review then runs through the worker and the model double. A second case with a valid sidecar shows that this scene applies continue (the continuation and its disposition are recorded), so the rejection is the sidecar's; the rejection is also pinned by the central check's research_insights/0/kind issue."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_local_call_timeout_parks_only_the_timed_out_request",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_engine_calls.ProducerCallTests.test_local_call_timeout_parks_only_the_timed_out_request"
+   ],
+   "note": "Input: make_active on the synthetic active state with CheckedRunner around a scripted runner is a restored Sim (support.submission_calls.configured_sim for a configuration the legacy fixture set). The owner's call steps prepare the timed-out call (engine._call_steps, as sim.test_engine_queue does); its model process is a Jobs-fake Job reported started. The legacy runner slept 1.05 s (a fixed sleep) and waited for should_stop; here the Sim clock moves 1.05 s past the one-second deadline, and should_stop, false before, is true after it, with the stop request written into the workspace. The legacy runner's result {'status': 'stopped'} is sent into the steps after the calls port's on_returned callback (engine._local_call_returned) reported the call returned, so the product routes a stopped result (call_engine, the branch that parks a stopped call of a running instance as its own execution_failure wait). The legacy assertions follow, with the wait kind and the ended execution_incomplete execution."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_producer_check_reuses_the_prepared_tool_digest",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_submission_producer_seal.ToolDigestTests.test_producer_check_reuses_the_prepared_tool_digest"
+   ],
+   "note": "The legacy test patched submission.read_stable with wraps; support.provider_probes.ObservedCalls records every call of the unchanged function (from any module) with its path, and the test asserts that some file was read and none was the support archive."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_producer_checks_checkpoint_evidence_paths",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_producer_tool.ProducerToolTests.test_producer_checks_checkpoint_evidence_paths"
+   ],
+   "note": "Input: the installed command in a child interpreter is submission_tool.main (what the launcher runs) in this process with the producer workspace as the working directory (support.submission_protocol.check_output keeps the exit code, passed and unchanged-draft checks); the launcher's own process and its engine-free archive are boundary.test_submission_mcp_server.InstalledToolTests."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_producer_checks_live_checkpoint_but_not_a_rules_file",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_producer_tool.ProducerToolTests.test_producer_checks_live_checkpoint_but_not_a_rules_file"
+   ],
+   "note": "Input: the installed command in a child interpreter is submission_tool.main (what the launcher runs) in this process with the producer workspace as the working directory (support.submission_protocol.check_output keeps the exit code, passed and unchanged-draft checks); the launcher's own process and its engine-free archive are boundary.test_submission_mcp_server.InstalledToolTests."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_producer_checks_main_shape_and_preserves_precise_failure_coordinates",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_producer_tool.ProducerToolTests.test_producer_checks_main_shape_and_preserves_precise_failure_coordinates"
+   ],
+   "note": "Input: the installed command in a child interpreter is submission_tool.main (what the launcher runs) in this process with the producer workspace as the working directory (support.submission_protocol.check_output keeps the exit code, passed and unchanged-draft checks); the launcher's own process and its engine-free archive are boundary.test_submission_mcp_server.InstalledToolTests. The rejection is also pinned by its rule and path (schema.required at output/candidates)."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_producer_checks_planning_population_and_exact_completion_criteria",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_producer_tool.ProducerToolTests.test_producer_checks_planning_population_and_exact_completion_criteria"
+   ],
+   "note": "Input: the installed command in a child interpreter is submission_tool.main (what the launcher runs) in this process with the producer workspace as the working directory (support.submission_protocol.check_output keeps the exit code, passed and unchanged-draft checks); the launcher's own process and its engine-free archive are boundary.test_submission_mcp_server.InstalledToolTests. Input: the task record built from research_fixtures.candidate() carried the candidate field revises_task_id, which a stored task cannot have (the task schema rejects it), and the last check was rejected for that field ('task/: Additional properties are not allowed') rather than its completion criteria. The record here omits it, and the last rejection is pinned by its rule and message ('every obligation requires a disposition or unresolved inspection'); the first two checks keep their legacy assertions."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_producer_checks_sidecar_kinds_references_and_self_repair",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_producer_tool.ProducerToolTests.test_producer_checks_sidecar_kinds_references_and_self_repair"
+   ],
+   "note": "Input: the installed command in a child interpreter is submission_tool.main (what the launcher runs) in this process with the producer workspace as the working directory (support.submission_protocol.check_output keeps the exit code, passed and unchanged-draft checks); the launcher's own process and its engine-free archive are boundary.test_submission_mcp_server.InstalledToolTests."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_producer_checks_used_sources",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_producer_tool.ProducerToolTests.test_producer_checks_used_sources"
+   ],
+   "note": "Input: the installed command in a child interpreter is submission_tool.main (what the launcher runs) in this process with the producer workspace as the working directory (support.submission_protocol.check_output keeps the exit code, passed and unchanged-draft checks); the launcher's own process and its engine-free archive are boundary.test_submission_mcp_server.InstalledToolTests. The rejection, unpinned in the legacy test, is pinned by its rule, path and message naming KN-missing."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_producer_receives_artifact_and_checkpoint_limits_and_excludes_disposable_scratch",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_producer_tool.ProducerToolTests.test_producer_receives_artifact_and_checkpoint_limits_and_excludes_disposable_scratch"
+   ],
+   "note": "Input: the installed command in a child interpreter is submission_tool.main (what the launcher runs) in this process with the producer workspace as the working directory (support.submission_protocol.check_output keeps the exit code, passed and unchanged-draft checks); the launcher's own process and its engine-free archive are boundary.test_submission_mcp_server.InstalledToolTests. The checkpoint limit is also compared with observations.CHECKPOINT_MAX_BYTES."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_receiver_rejects_unknown_insight_kind_and_missing_evidence",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_engine_calls.ProducerCallTests.test_receiver_rejects_unknown_insight_kind_and_missing_evidence"
+   ],
+   "note": "Input: make_active on the synthetic active state with CheckedRunner around a scripted runner is a restored Sim (support.submission_calls.configured_sim for a configuration the legacy fixture set). The output is submitted with the workspace tool. The legacy assertion read execution['submitted_output_ref'], which only the receiver's unsealed branch records for a runner result that carries its output; a real call's output reaches the engine only through the central submission. The central check rejects the insight (pinned by its path and message) and preserves the submitted output beside its check. The legacy test compared that output with the runner's output after CheckedRunner sealed it in place; here the preserved bytes are compared exactly with the draft the model wrote and submitted (workspace output.json, read in the call), which carries the seal's integration_bundles and regenerate_after, and apart from those two fields (asserted to be the only additions) the output equals the runner's output."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_reference_support_includes_visible_execution_history_and_supplied_catalogs",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_producer_tool.ProducerToolTests.test_reference_support_includes_visible_execution_history_and_supplied_catalogs"
+   ],
+   "note": "Input: the installed command in a child interpreter is submission_tool.main (what the launcher runs) in this process with the producer workspace as the working directory (support.submission_protocol.check_output keeps the exit code, passed and unchanged-draft checks); the launcher's own process and its engine-free archive are boundary.test_submission_mcp_server.InstalledToolTests."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_revoked_original_grant_preserves_late_output_despite_alternative_grant",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_engine_calls.ProducerCallTests.test_revoked_original_grant_preserves_late_output_despite_alternative_grant"
+   ],
+   "note": "Input: make_active on the synthetic active state with CheckedRunner around a scripted runner is a restored Sim (support.submission_calls.configured_sim for a configuration the legacy fixture set) whose owner runs the call through the worker and the model double; the output is submitted with the workspace tool, a failed call is a provider CLI that exits with an error, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns. The alternative grant is a grant decision by control with the same roles (the legacy test copied the grant into the state); the revocation is a control applied during the call. The legacy runner returned its output in the runner result, which the engine kept at result_ref; a real provider result carries no output that capture refused, so the late output is asserted where the product preserves it: the execution's output file output.json (the model's draft) holds the report. result_ref is asserted to be the preserved result of this execution."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_supplied_checker_is_standalone_and_does_not_mutate_fixed_inputs",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_submission_mcp_server.InstalledToolTests.test_supplied_checker_is_standalone_and_does_not_mutate_fixed_inputs"
+   ],
+   "note": "The installed command still runs in its own interpreter (support.submission_protocol.check_output with process=True)."
+  },
+  {
+   "legacy_id": "test_submission_tools.ProducerToolTests.test_unsealed_invalid_runner_output_is_preserved_for_operational_review",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_engine_calls.ProducerCallTests.test_unsealed_invalid_runner_output_is_preserved_for_operational_review"
+   ],
+   "note": "Input: make_active on the synthetic active state with CheckedRunner around a scripted runner is a restored Sim (support.submission_calls.configured_sim for a configuration the legacy fixture set) whose owner runs the call through the worker and the model double; the output is submitted with the workspace tool, a failed call is a provider CLI that exits with an error, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns. The legacy runner reported an output validation failure of an empty output; here the empty output is sealed and submitted like CheckedRunner's, the central check rejects it and the native final fails central structural validation (error_kind output_schema and the output_validation wait are asserted besides the legacy assertions)."
+  },
+  {
+   "legacy_id": "test_submission_tools.ReviewFailureTests.test_explicit_diagnosis_can_open_one_new_attempt_of_a_failed_action",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_engine_calls.ReviewFailureTests.test_explicit_diagnosis_can_open_one_new_attempt_of_a_failed_action"
+   ],
+   "note": "Input: make_active on the synthetic active state with CheckedRunner around a scripted runner is a restored Sim (support.submission_calls.configured_sim for a configuration the legacy fixture set) whose owner runs the call through the worker and the model double; the output is submitted with the workspace tool, a failed call is a provider CLI that exits with an error, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns."
+  },
+  {
+   "legacy_id": "test_submission_tools.ReviewFailureTests.test_failed_contract_review_is_not_regenerated_while_waiting_for_diagnosis",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_engine_calls.ReviewFailureTests.test_failed_contract_review_is_not_regenerated_while_waiting_for_diagnosis"
+   ],
+   "note": "Input: make_active on the synthetic active state with CheckedRunner around a scripted runner is a restored Sim (support.submission_calls.configured_sim for a configuration the legacy fixture set) whose owner runs the call through the worker and the model double; the output is submitted with the workspace tool, a failed call is a provider CLI that exits with an error, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns. The first step is the default responder's preparation of one task; the failing call is asserted to be that task's contract review."
+  },
+  {
+   "legacy_id": "test_submission_tools.ReviewFailureTests.test_failed_identity_slot_is_not_regenerated_after_its_peer_finishes",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_engine_calls.ReviewFailureTests.test_failed_identity_slot_is_not_regenerated_after_its_peer_finishes"
+   ],
+   "note": "Input: the legacy review scenes (purpose_copy until review, after the synthetic task flow) are support.review_sim.opened_sim: a theorem imported by control, verified by the Lean double and its identity review opened by the owner with the scope action queued. Input: make_active on the synthetic active state with CheckedRunner around a scripted runner is a restored Sim (support.submission_calls.configured_sim for a configuration the legacy fixture set) whose owner runs the call through the worker and the model double; the output is submitted with the workspace tool, a failed call is a provider CLI that exits with an error, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns. The peer slot initial-1 is asserted to have run."
+  },
+  {
+   "legacy_id": "test_submission_tools.ReviewFailureTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_review_inputs.ReviewInputTests.test_fixed_question_resolver_accepts_the_supplied_source_aliases"
+   ],
+   "note": "Input: the legacy review scenes (purpose_copy until review, after the synthetic task flow) are support.review_sim.opened_sim: a theorem imported by control, verified by the Lean double and its identity review opened by the owner with the scope action queued. The source is supplied by a public control the owner applied."
+  },
+  {
+   "legacy_id": "test_submission_tools.ReviewFailureTests.test_large_own_review_history_does_not_request_mathematical_reconstruction",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_submission_review_inputs.ReviewInputTests.test_large_own_review_history_does_not_request_mathematical_reconstruction"
+   ],
+   "note": "Input: the legacy review scenes (purpose_copy until review, after the synthetic task flow) are support.review_sim.opened_sim: a theorem imported by control, verified by the Lean double and its identity review opened by the owner with the scope action queued. The legacy runner.calls count is the model double's calls, asserted empty after the step."
+  },
+  {
+   "legacy_id": "test_submission_tools.ReviewFailureTests.test_late_identity_result_is_preserved_without_retrying_a_superseded_slot",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_engine_calls.ReviewFailureTests.test_late_identity_result_is_preserved_without_retrying_a_superseded_slot"
+   ],
+   "note": "Input: the legacy review scenes (purpose_copy until review, after the synthetic task flow) are support.review_sim.opened_sim: a theorem imported by control, verified by the Lean double and its identity review opened by the owner with the scope action queued. Input: make_active on the synthetic active state with CheckedRunner around a scripted runner is a restored Sim (support.submission_calls.configured_sim for a configuration the legacy fixture set) whose owner runs the call through the worker and the model double; the output is submitted with the workspace tool, a failed call is a provider CLI that exits with an error, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns. The revision runs after the review's answer was submitted and received, as the legacy runner revised after its run; the preserved submission output is also asserted to be a JSON object."
+  },
+  {
+   "legacy_id": "test_submission_tools.ReviewFailureTests.test_private_insight_rechecks_its_own_basis_when_published_after_peer_review",
+   "disposition": "moved",
+   "new_ids": [
+    "flows.test_submission_engine_calls.ReviewFailureTests.test_private_insight_rechecks_its_own_basis_when_published_after_peer_review"
+   ],
+   "note": "Input: the legacy test drove the whole synthetic task flow from an imported observation to the identity review of the theorem the work produced; here the observation is imported on support.review_sim.opened_sim and the review of its imported theorem runs, the queue keeping only that review. Input: make_active on the synthetic active state with CheckedRunner around a scripted runner is a restored Sim (support.submission_calls.configured_sim for a configuration the legacy fixture set) whose owner runs the call through the worker and the model double; the output is submitted with the workspace tool, a failed call is a provider CLI that exits with an error, and what the legacy runner did during its call runs in the call's hook while the owner takes its turns. The revision after initial-1 is asserted to have happened once."
+  }
+ ]
+}

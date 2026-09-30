@@ -1,30 +1,42 @@
-from __future__ import annotations
+"""The role response contract (``do-math-cli/5``): schema shape, closure, identity, role documents and the prompt.
 
-import sys
-import tempfile
-import shutil
-import unittest
+The schema builders and the prompt assembly are layer-1 functions of
+``contracts`` and the schema functions of ``submission``, ``review_cycle`` and
+``governance``; the tests call them directly. A rejection is pinned by the
+validator's error (the keyword and the location it failed at), so the value
+fails for the rule the test names and not for another one.
+"""
 from pathlib import Path
+import shutil
+import tempfile
+import unittest
 
 import jsonschema
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math import contracts
-from do_math.contracts import ROLES, reading_map, prompt_documents, render_prompt, schema_for
-from research_fixtures import review_items
+from do_math import contracts, governance, review_cycle, submission
+from do_math.contracts import ROLES, prompt_documents, reading_map, render_prompt, schema_for
 from record_fixtures import two_observation_output
+from research_fixtures import review_items
+
+SKILL = Path(__file__).resolve().parents[3]
+
+
+def failures(schema, value):
+    """``{(validator keyword, location)}`` of every error ``value`` has against ``schema``."""
+    return {(error.validator, tuple(error.absolute_path))
+            for error in jsonschema.Draft202012Validator(schema).iter_errors(value)}
 
 
 class ContractTests(unittest.TestCase):
     def test_knowledge_change_requires_a_declared_impact_set(self):
-        from do_math import submission
         schema = submission.extension_schema({"role": "research_work"})
         change = {"id": "KN-source", "changes": {"statement": "Corrected"},
                   "reason": "Correct the statement", "impact_set": ["TK-consumer"]}
         jsonschema.validate({"knowledge_changes": [change]}, schema)
         without_impact = {key: value for key, value in change.items() if key != "impact_set"}
-        with self.assertRaises(jsonschema.ValidationError):
+        with self.assertRaisesRegex(jsonschema.ValidationError, "'impact_set' is a required property") as raised:
             jsonschema.validate({"knowledge_changes": [without_impact]}, schema)
+        self.assertEqual(list(raised.exception.absolute_path), ["knowledge_changes", 0])
 
     def test_exact_schema_identity_distinguishes_variants_and_is_idempotent(self):
         ordinary = contracts.action_schema({"role": "research_preparation"})
@@ -35,69 +47,39 @@ class ContractTests(unittest.TestCase):
 
     def test_profile_references_use_the_sealed_provider_identity(self):
         reference = {"id": "EP-test", "revision": 1, "sha256": "a" * 64}
-        from do_math import review_cycle
         scope = review_cycle.stage_schema("scope")["properties"]["scope_assessment"]
-        shapes = [contracts.TASK_CANDIDATE["properties"]["profile_refs"]["items"],
-                  scope["properties"]["selected_profile_ref"]]
-        for shape in shapes:
+        candidate_shape = contracts.TASK_CANDIDATE["properties"]["profile_refs"]["items"]
+        scope_shape = scope["properties"]["selected_profile_ref"]
+        invalid = {"text": "EP-test", "version": {"id": "EP-test", "version": 1},
+                   "digest": {**reference, "sha256": "wrong"}}
+        for shape in (candidate_shape, scope_shape):
             self.assertTrue(jsonschema.Draft202012Validator(shape).is_valid(reference))
-            for invalid in ("EP-test", {"id": "EP-test", "version": 1}, {**reference, "sha256": "wrong"}):
-                self.assertFalse(jsonschema.Draft202012Validator(shape).is_valid(invalid))
+            for name, value in invalid.items():
+                with self.subTest(name=name):
+                    self.assertFalse(jsonschema.Draft202012Validator(shape).is_valid(value))
+        # The task candidate's reference is the closed sealed shape itself; each value fails its own rule.
+        self.assertEqual(failures(candidate_shape, invalid["text"]), {("type", ())})
+        self.assertEqual(failures(candidate_shape, invalid["version"]),
+                         {("additionalProperties", ()), ("required", ())})
+        self.assertEqual(failures(candidate_shape, invalid["digest"]), {("pattern", ("sha256",))})
+        # The scope's reference admits that same shape among its alternatives and nothing else.
+        for value in invalid.values():
+            self.assertEqual(failures(scope_shape, value), {("anyOf", ())})
 
     def test_academic_resolution_carries_real_evidence_references(self):
-        from do_math.submission import extension_schema
-        shape = extension_schema({"role": "research_plan"})["properties"]["academic_resolutions"]["items"]
+        shape = submission.extension_schema({"role": "research_plan"})["properties"]["academic_resolutions"]["items"]
         row = {"id": "ER-1", "decision": "resolved", "evidence": "Exact assessment", "evidence_refs": ["EX-evidence"]}
         self.assertTrue(jsonschema.Draft202012Validator(shape).is_valid(row))
-        self.assertFalse(jsonschema.Draft202012Validator(shape).is_valid({k: v for k, v in row.items() if k != "evidence_refs"}))
-
-    def test_schema_builders_return_copies_that_share_no_node(self):
-        """A builder's result shares no container with a module global or within itself.
-
-        A caller may then change any node in place without changing another
-        field of the same schema or a schema built later in the process.
-        """
-        from do_math import governance, integration, record_schemas, review_cycle, scheduled_operator, submission
-
-        def containers(value):
-            found, pending = [], [value]
-            while pending:
-                node = pending.pop()
-                if isinstance(node, (dict, list)):
-                    found.append(node)
-                    pending.extend(node.values() if isinstance(node, dict) else node)
-            return found
-
-        request = {"integration_id": "IN-1", "payload_sha256": "a" * 64, "producer_execution_id": "EX-1",
-                   "input_snapshot": "b" * 40, "plans": {"scope": {"digest": "c" * 64}}}
-        built = {
-            **{"schema_for " + role: schema_for(role) for role in ROLES},
-            **{"action_schema " + role: contracts.action_schema({"role": role})
-               for role in ("research_preparation", "research_work", "maintenance", "intent_interpretation")},
-            "disposition_schema": contracts.disposition_schema(),
-            "extension_schema": submission.extension_schema({"role": "research_work", "review_cycle_id": "RC-1"}),
-            "impact_review_response_schema": integration.impact_review_response_schema(request),
-            **{"stage_schema " + stage: review_cycle.stage_schema(stage)
-               for stage in ("scope", "initial", "organize", "answer", "judge")},
-            "research_schema": review_cycle.research_schema(),
-            "research_request_schema": review_cycle.research_request_schema(),
-            **{"interpretation_schema " + stage: governance.interpretation_schema(stage) for stage in ("interpret", "check")},
-            "config_schema": record_schemas.config_schema(),
-            "repair_report_schema": scheduled_operator.repair_report_schema(diagnosed=True),
-        }
-        global_nodes = set()
-        for name, module in list(sys.modules.items()):
-            if name == "do_math" or name.startswith("do_math."):
-                for value in vars(module).values():
-                    global_nodes.update(id(node) for node in containers(value))
-        for name, schema in built.items():
-            with self.subTest(builder=name):
-                nodes = [id(node) for node in containers(schema)]
-                self.assertEqual(len(nodes), len(set(nodes)), "a node appears twice in the result")
-                self.assertFalse(global_nodes & set(nodes), "the result holds a module-global node")
+        without = {k: v for k, v in row.items() if k != "evidence_refs"}
+        self.assertFalse(jsonschema.Draft202012Validator(shape).is_valid(without))
+        self.assertEqual([error.message for error in jsonschema.Draft202012Validator(shape).iter_errors(without)],
+                         ["'evidence_refs' is a required property"])
 
     def test_every_role_has_closed_schema(self):
-        """Every object with declared properties, at any depth, rejects fields it does not declare."""
+        """Every object with declared properties, at any depth, rejects fields it does not declare.
+
+        About 0.35 s, over the 0.2 s unit budget: it builds and meta-validates every role's full schema.
+        """
         def objects(node, path):
             if isinstance(node, dict):
                 if "properties" in node:
@@ -119,29 +101,37 @@ class ContractTests(unittest.TestCase):
         base = {"summary": "Checked", "used_sources": [], "questions": [], "integration_bundles": [
             {"integration_id": "IN-review", "members": ["output"], "impact_set": [], "authority_refs": []}]}
         cases = {
-            "task_contract_review": review_items(["TK-1"], next_owner="research_preparation"),
-            "identity_review": {"decision": "match", "findings": [], "scope_complete": True},
-            "goal_audit": {"decision": "satisfied", "reason": "Checked evidence", "scope_complete": True},
-            "operational_review": {"disposition": {"kind": "continue", "basis_refs": ["EX-1"],
-                "next_owner": "worker", "reason": "Progress evidenced", "next_review": None}}}
-        for role, fields in cases.items():
+            "task_contract_review": (review_items(["TK-1"], next_owner="research_preparation"),
+                                     {("enum", ("item_reviews", 0, "decision"))}),
+            "identity_review": ({"decision": "match", "findings": [], "scope_complete": True}, {("enum", ("decision",))}),
+            "goal_audit": ({"decision": "satisfied", "reason": "Checked evidence", "scope_complete": True},
+                           {("enum", ("decision",))}),
+            # The disposition is one of six closed variants, so an unknown kind matches none of them.
+            "operational_review": ({"disposition": {"kind": "continue", "basis_refs": ["EX-1"],
+                "next_owner": "worker", "reason": "Progress evidenced", "next_review": None}},
+                {("anyOf", ("disposition",))})}
+        for role, (fields, rejected) in cases.items():
             value = {**base, **fields}
             validator = jsonschema.Draft202012Validator(schema_for(role))
             self.assertTrue(validator.is_valid(value), role)
-            if role == "task_contract_review": value["item_reviews"][0]["decision"] = "invalid"
-            elif role == "operational_review": value["disposition"]["kind"] = "invalid"
-            else: value["decision"] = "invalid"
+            if role == "task_contract_review":
+                value["item_reviews"][0]["decision"] = "invalid"
+            elif role == "operational_review":
+                value["disposition"]["kind"] = "invalid"
+            else:
+                value["decision"] = "invalid"
             self.assertFalse(validator.is_valid(value), role)
+            self.assertEqual(failures(schema_for(role), value), rejected, role)
 
     def test_role_document_missing_fails(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "계약").mkdir()
-            source = Path(__file__).resolve().parents[2]
-            shutil.copy2(source / "SKILL.md", root / "SKILL.md")
-            shutil.copytree(source / "references", root / "references")
+            shutil.copy2(SKILL / "SKILL.md", root / "SKILL.md")
+            shutil.copytree(SKILL / "references", root / "references")
             (root / "GLOSSARY.md").write_text("x", encoding="utf-8")
-            with self.assertRaises(FileNotFoundError):
+            # The reading map's research_work row declares 계약/연구-수행.md, which this root lacks.
+            with self.assertRaisesRegex(FileNotFoundError, "연구-수행\\.md"):
                 prompt_documents("research_work", skill_root=root)
 
     def test_prompt_contains_actual_documents_context_and_schema(self):
@@ -158,11 +148,13 @@ class ContractTests(unittest.TestCase):
 
     def test_plan_assessment_fields_are_required(self):
         schema = schema_for("research_plan")
-        self.assertTrue({"dispositions", "preparation_requests", "goal_audit", "task_assessments"} <= set(schema["required"]))
+        self.assertTrue({"dispositions", "preparation_requests", "goal_audit", "task_assessments"}
+                        <= set(schema["required"]))
         assessment = schema["properties"]["task_assessments"]["items"]
         self.assertEqual(set(assessment["required"]), {"task_id", "decision", "reason", "item_dispositions", "unresolved"})
 
     def test_structured_task_candidate_has_one_completion_authority(self):
+        """The name says one completion authority; like the legacy test, this checks the structured obligations and the object scope."""
         props = contracts.schema_for("research_preparation")["properties"]["candidates"]["items"]["properties"]
         self.assertIn("completion_obligations", props)
         self.assertEqual("object", props["scope"]["type"])
@@ -172,7 +164,6 @@ class ContractTests(unittest.TestCase):
         self.assertIn("disposition", props)
 
     def test_specialized_role_schema_uses_same_envelope(self):
-        from do_math import governance
         schema = contracts.action_schema({"role": "intent_interpretation", "stage": "check"})
         expected = governance.interpretation_schema("check")
         self.assertTrue(set(expected["properties"]) <= set(schema["properties"]))
@@ -180,7 +171,6 @@ class ContractTests(unittest.TestCase):
         self.assertNotIn("integration_bundles", schema["required"])
 
     def test_scope_planning_schema_reaches_domain_scope_validator(self):
-        from do_math import review_cycle
         props = review_cycle.stage_schema("scope")["properties"]
         self.assertIn("scope_assessment", props)
         self.assertIn("initial_slots", props["scope_assessment"]["properties"])
@@ -188,12 +178,16 @@ class ContractTests(unittest.TestCase):
     def test_manifest_is_optional_but_explicit_declarations_remain_typed(self):
         schema = contracts.schema_for("research_work")
         self.assertNotIn("integration_bundles", schema["required"])
-        validator = __import__("jsonschema").Draft202012Validator(schema)
-        output = two_observation_output(); output.pop("integration_bundles")
+        validator = jsonschema.Draft202012Validator(schema)
+        output = two_observation_output()
+        output.pop("integration_bundles")
         self.assertEqual(list(validator.iter_errors(output)), [])
-        for value in (None, [], [{}]):
+        expected = {"null": {("type", ("integration_bundles",))}, "empty": {("minItems", ("integration_bundles",))},
+                    "untyped": {("required", ("integration_bundles", 0))}}
+        for name, value in {"null": None, "empty": [], "untyped": [{}]}.items():
             with self.subTest(value=value):
                 self.assertTrue(list(validator.iter_errors({**output, "integration_bundles": value})))
+                self.assertEqual(failures(schema, {**output, "integration_bundles": value}), expected[name])
 
 
 if __name__ == "__main__":

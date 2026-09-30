@@ -15,7 +15,7 @@ from pathlib import Path
 
 SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'foundation': '''
-        test_academic test_budget test_completion_settlement test_context_store test_contract_checks test_contracts test_decision_basis
+        test_academic test_budget test_context_store test_decision_basis
         test_delegations test_design_walkthroughs test_environment_validation
         test_execution_window
         test_external_operations test_file_io
@@ -43,7 +43,7 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'research': '''
         test_purpose_engine test_research_recovery test_session_scheduler''',
     'review': '''
-        test_native_final_submission test_repetition test_review_research test_submission_boundaries test_submission_tools''',
+        test_repetition test_review_research test_submission_tools''',
     'academic': '''
         test_academic_engine test_academic_preparation
         test_model_assessment_flow''',
