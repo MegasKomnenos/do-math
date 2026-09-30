@@ -15,18 +15,15 @@ from pathlib import Path
 
 SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'foundation': '''
-        test_academic test_budget
-        test_completion_settlement test_context_store
-        test_contract_checks test_contracts test_control_transport test_decision_basis
+        test_academic test_budget test_completion_settlement test_context_store test_contract_checks test_contracts test_decision_basis
         test_delegations test_design_walkthroughs test_environment_validation
         test_execution_window
         test_external_operations test_file_io
-        test_git_store test_goal_audit test_governance test_impact_review
+        test_git_store test_goal_audit test_impact_review
         test_installation_discovery test_json_digests
         test_knowledge_import_engine test_knowledge_io test_knowledge_storage test_lifecycle_gates
         test_machine_scheduling test_model_metadata_boundary
-        test_owned_job_children test_payloads test_preparation_cache
-        test_provider_final_contract test_query_records test_questions test_reading_map
+        test_owned_job_children test_payloads test_preparation_cache test_provider_final_contract test_query_records test_reading_map
         test_reassessment test_reference_catalog test_relation_dependencies test_repair_execution
         test_reporting test_repository test_review_policy test_revision_obligations test_scholarly test_standalone test_state_contract test_supervisor_recovery
         test_test_runner test_trust_continuation
@@ -38,8 +35,7 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
         test_provider_wait test_schedule_lifetime test_schedule_pythonw test_windows_job
         test_worker_temporary_outputs''',
     'lifecycle': '''
-        test_checkpoint_persistence test_cli test_cli_advanced test_control_shapes test_controls
-        test_engine test_formal_engine test_governance_engine test_initial_intent_connection
+        test_checkpoint_persistence test_cli_advanced test_control_shapes test_engine test_formal_engine test_initial_intent_connection
         test_input_recovery test_lifecycle_engine
         test_live_observation test_operation_trace
         test_planning_engine test_provider_recovery test_role_input
@@ -47,7 +43,7 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'research': '''
         test_currentness test_purpose_engine test_research_recovery test_session_scheduler''',
     'review': '''
-        test_native_final_submission test_question_flow test_repetition test_review_research test_submission_boundaries test_submission_tools''',
+        test_native_final_submission test_repetition test_review_research test_submission_boundaries test_submission_tools''',
     'academic': '''
         test_academic_engine test_academic_preparation
         test_model_assessment_flow''',
