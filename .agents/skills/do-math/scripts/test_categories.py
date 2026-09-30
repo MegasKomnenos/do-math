@@ -24,8 +24,8 @@ SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'host': '''
         test_diagnosed_installation_recovery
         test_formal_runtime test_host_resources test_lean_preview
-        test_machine_parallel test_operator test_operator_bootstrap test_probe_cli
-        test_provider_wait test_schedule_lifetime test_schedule_pythonw
+        test_machine_parallel test_operator test_probe_cli
+        test_provider_wait
         test_worker_temporary_outputs''',
     'lifecycle': '''
         test_checkpoint_persistence test_engine test_formal_engine

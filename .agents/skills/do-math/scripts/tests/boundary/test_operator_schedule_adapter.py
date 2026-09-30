@@ -1,4 +1,11 @@
-"""Exercise the production PowerShell adapter with pythonw, without OS task changes."""
+"""The production PowerShell scheduler adapter itself (``operator_schedule.ps1``), without changing OS tasks.
+
+The registration tests run the real adapter under a wrapper that defines the
+Task Scheduler cmdlets as no-ops recording each registration, with the real
+``pythonw.exe`` as the interpreter the adapter freezes the supervisor with.
+The lifetime test parses the adapter and exports the actual settings
+expressions it builds, without registering them.
+"""
 import json
 import os
 from pathlib import Path
@@ -8,7 +15,8 @@ import sys
 import tempfile
 import unittest
 
-SCRIPTS = Path(__file__).resolve().parents[1]
+
+SCRIPTS = Path(__file__).resolve().parents[2]
 PYTHONW = Path(sys.executable).with_name('pythonw.exe')
 
 
@@ -38,6 +46,7 @@ function Register-ScheduledTask { Add-Content -LiteralPath $Registrations -Value
         return result, registrations
 
     def test_real_freeze_json_is_collected_before_registration(self):
+        """About 3 s: the adapter freezes a copy of the whole installed skill under pythonw."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             result, registrations = self.run_adapter(root, SCRIPTS / 'operator_schedule.ps1')
@@ -59,3 +68,47 @@ function Register-ScheduledTask { Add-Content -LiteralPath $Registrations -Value
             self.assertNotEqual(result.returncode, 0)
             self.assertIn('Could not freeze', result.stderr)
             self.assertFalse(registrations.exists())
+
+
+@unittest.skipUnless(os.name == 'nt', 'Windows Task Scheduler required')
+class ScheduleLifetimeTests(unittest.TestCase):
+    def test_exported_engine_is_unlimited_and_operator_remains_bounded(self):
+        source = SCRIPTS / 'operator_schedule.ps1'
+        script = r'''
+param([string]$Source)
+$ErrorActionPreference = 'Stop'
+$tokens = $null; $errors = $null
+$ast = [System.Management.Automation.Language.Parser]::ParseFile($Source, [ref]$tokens, [ref]$errors)
+if ($errors.Count) { throw 'Scheduler script does not parse' }
+$OperatorTimeoutSeconds = 7
+$results = @{}
+foreach ($variable in @('engineSettings', 'operatorSettings')) {
+    $assignment = $ast.Find({ param($node)
+        $node -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+        $node.Left.Extent.Text -eq ('$' + $variable)
+    }, $true)
+    $settings = & ([scriptblock]::Create($assignment.Right.Extent.Text))
+    $definition = New-ScheduledTask -Action (New-ScheduledTaskAction -Execute 'cmd.exe' -Argument '/c exit 0') -Settings $settings
+    [xml]$xml = Export-ScheduledTask -InputObject $definition
+    $results[$variable] = @{
+        limit = [string]$xml.Task.Settings.ExecutionTimeLimit
+        multiple = [string]$xml.Task.Settings.MultipleInstancesPolicy
+        hidden = [string]$xml.Task.Settings.Hidden
+    }
+}
+$results | ConvertTo-Json -Compress
+'''
+        with tempfile.TemporaryDirectory() as root:
+            path = Path(root) / 'inspect.ps1'
+            path.write_text(script, encoding='utf-8')
+            result = subprocess.run(['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+                                     '-File', str(path), '-Source', str(source)], capture_output=True, text=True,
+                                    timeout=30, creationflags=subprocess.CREATE_NO_WINDOW)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        settings = json.loads(result.stdout)
+        self.assertEqual(settings['engineSettings'], {'limit': 'PT0S', 'multiple': 'IgnoreNew', 'hidden': 'true'})
+        self.assertEqual(settings['operatorSettings']['limit'], 'PT5M7S')
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import io
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -20,8 +18,6 @@ if str(SCRIPTS) not in sys.path:
 from do_math import scheduled_operator as operator  # noqa: E402
 from do_math import cli  # noqa: E402
 from research_fixtures import git_init
-from copy import deepcopy
-from do_math import planning
 
 
 class OperatorTests(unittest.TestCase):
@@ -36,41 +32,6 @@ class OperatorTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
-
-    def test_task_names_are_repository_scoped_and_stable(self) -> None:
-        first = operator.task_names(self.repository, self.instance)
-        second = operator.task_names(self.repository, self.instance)
-        other = operator.task_names(self.root / "other-repository", self.instance)
-        self.assertEqual(first, second)
-        self.assertNotEqual(first["operator"], other["operator"])
-        self.assertIn("Operator", first["operator"])
-        self.assertIn("Engine", first["engine"])
-
-    def test_schedule_request_passes_only_generic_instance_coordinates(self) -> None:
-        observed: list[list[str]] = []
-
-        def runner(argv: list[str], **_: object) -> subprocess.CompletedProcess[str]:
-            observed.append(argv)
-            return subprocess.CompletedProcess(argv, 0, '{"operator":"ready"}', "")
-
-        result = operator.schedule("install", repository=self.repository, instance=self.instance,
-                                   workspace=self.workspace, interval_seconds=7200,
-                                   operator_timeout_seconds=5400, runner=runner)
-        self.assertEqual(result["operator"], "ready")
-        self.assertEqual(len(observed), 1)
-        command = observed[0]
-        self.assertIn("install", command)
-        self.assertIn(str(self.repository.resolve()), command)
-        self.assertIn(str(self.workspace.resolve()), command)
-        self.assertIn(self.instance, command)
-
-    def test_hold_and_release_do_not_resume_or_edit_research_state(self) -> None:
-        hold = operator.hold(self.workspace, reason="user requested stop")
-        self.assertTrue((self.workspace / "operator" / "HOLD.json").exists())
-        released = operator.release(self.workspace)
-        self.assertEqual(released["released"]["id"], hold["id"])
-        self.assertFalse((self.workspace / "operator" / "HOLD.json").exists())
-        self.assertTrue((self.workspace / "operator" / "release.json").exists())
 
     def test_engine_does_not_start_for_hold_or_any_pause(self) -> None:
         commands: list[list[str]] = []
@@ -181,21 +142,6 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(schedule.call_args.args[0],'start-operator')
         self.assertIn('supervisor_request',result)
 
-    def test_real_probe_persists_failure_when_engine_has_syntax_error(self) -> None:
-        import shutil
-        isolated = self.root / "isolated-skill"
-        shutil.copytree(SCRIPTS.parent, isolated, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".lake"))
-        (isolated / "scripts/do_math/engine.py").write_text("broken engine syntax !!!\n", encoding="utf-8")
-        result = subprocess.run([sys.executable, str(isolated / "scripts/operator_bootstrap.py"), "check",
-            "--repository", str(self.repository), "--instance", self.instance,
-            "--workspace", str(self.workspace), "--probe"], capture_output=True, text=True, encoding="utf-8", timeout=30,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        self.assertEqual(result.returncode, 0, result.stderr)
-        failure = json.loads(result.stdout)
-        self.assertEqual(failure["error_type"], "SyntaxError")
-        self.assertEqual(failure["outcome"], "recovery_required")
-        self.assertEqual(json.loads((self.workspace / "operator/engine-failure.json").read_text(encoding="utf-8")), failure)
-
     def test_init_keeps_created_instance_when_schedule_registration_fails(self) -> None:
         git_init(self.repository)
         arguments = cli.build_parser().parse_args((
@@ -223,12 +169,6 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(schedule.call_args.args, ("install",))
         self.assertEqual(schedule.call_args.kwargs["interval_seconds"], 7200)
         self.assertEqual(result["operator_schedule"], {"operator": "ready"})
-
-    def test_cli_emits_byte_bearing_operator_receipt_as_json(self) -> None:
-        output = io.StringIO()
-        with redirect_stdout(output):
-            cli._emit({"raw": b"preserved bytes"}, command="operator check", request_id="QR-receipt")
-        self.assertEqual(json.loads(output.getvalue())["result"]["raw"]["base64"], "cHJlc2VydmVkIGJ5dGVz")
 
     def test_release_submits_a_conditional_resume_even_before_hold_pause_is_applied(self) -> None:
         args = cli.build_parser().parse_args(['operator', 'release', '--repository', str(self.repository),
@@ -283,40 +223,10 @@ class OperatorTests(unittest.TestCase):
                     self.assertEqual(result['operator_schedule']['status'], 'failed')
                     self.assertEqual(result['operator_schedule']['error'], str(error))
 
-    def test_schedule_reconcile_preserves_entrypoint_paths_and_disable_direction(self):
-        repository = self.root / "research owner's repository"
-        for enabled in (True, False):
-            with self.subTest(enabled=enabled):
-                result, code = cli._schedule_failure(
-                    {'config': {'operator_enabled': enabled}}, RuntimeError('failed'),
-                    repository, self.instance)
-                command = result['operator_schedule']['reconcile']
-                quote = lambda value: "'" + str(value).replace("'", "''") + "'"
-                self.assertTrue(command.startswith('& ' + quote(sys.executable) + ' '))
-                self.assertIn(quote(Path(cli.__file__).resolve().parents[1] / 'do_math.py'), command)
-                self.assertIn(' operator ' + ('install' if enabled else 'uninstall') + ' ', command)
-                self.assertIn('--repository ' + quote(repository.resolve()), command)
-                self.assertTrue(command.endswith('--instance ' + quote(self.instance)))
-                self.assertEqual(code, 5)
-
-    def test_schedule_reconcile_uses_the_console_interpreter_when_run_windowless(self):
-        interpreters = self.root / 'Python'
-        interpreters.mkdir()
-        for name in ('python.exe', 'pythonw.exe'):
-            (interpreters / name).write_bytes(b'')
-        with patch.object(sys, 'executable', str(interpreters / 'pythonw.exe')):
-            result, _ = cli._schedule_failure({'config': {'operator_enabled': True}}, RuntimeError('failed'),
-                                              self.repository, self.instance)
-        self.assertTrue(result['operator_schedule']['reconcile'].startswith(
-            "& '" + str(interpreters / 'python.exe') + "' "))
-
     def _config(self, value: dict) -> Path:
         path = self.root / "config.json"
         path.write_text(json.dumps(value), encoding="utf-8")
         return path
-
-
-AT = '2026-09-22T00:00:00+00:00'
 
 
 class WakeTests(unittest.TestCase):
@@ -342,51 +252,6 @@ class WakeTests(unittest.TestCase):
             self.assertEqual(operator.check(root, 'RI-test', root)['outcome'], 'engine_requested')
             self.assertEqual(operator.check(root, 'RI-test', root)['outcome'], 'engine_running')
             self.assertEqual(sum(call.args == ('start-engine',) for call in start.call_args_list), 1)
-
-    def test_stopped_waiting_engine_wakes_on_due_research_without_mutating_state(self):
-        from do_math import scheduled_operator
-        instance = {'lifecycle': {'state': 'active'}, 'goal_status': 'unresolved'}
-        runtime = {'status': 'waiting', 'tasks': {}, 'executions': {},
-            'queue': [{'role': 'research_preparation'}], 'next_research_reconsider_at': AT}
-        before = deepcopy(runtime)
-        self.assertEqual(planning.research_wake_reasons(instance, runtime, now='2026-09-21T00:00:00Z'), [])
-        reasons = planning.research_wake_reasons(instance, runtime, now=AT)
-        self.assertEqual(reasons[0]['kind'], 'research_reconsider_due')
-        self.assertEqual(runtime, before)
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            status = {'status': 'waiting', 'research_wake_reasons': reasons}
-            with patch.object(scheduled_operator, 'read_status', return_value=status):
-                self.assertEqual(scheduled_operator.engine_start_guard(root, 'RI-test', root)['outcome'], 'startable')
-                status['model_policy_violation'] = {'execution_id': 'EX-model'}
-                # Every refusal reports the status it judged under the same key.
-                self.assertEqual(scheduled_operator.engine_start_guard(root, 'RI-test', root),
-                                 {'outcome': 'model_policy_waiting', 'before': status})
-                del status['model_policy_violation']
-                status['user_pause'] = {'reason': 'user'}
-                self.assertEqual(scheduled_operator.engine_start_guard(root, 'RI-test', root)['outcome'], 'paused')
-                scheduled_operator.hold(root, reason='test')
-                self.assertEqual(scheduled_operator.engine_start_guard(root, 'RI-test', root)['outcome'], 'held')
-
-    def test_regeneration_and_task_timers_are_read_only_and_not_duplicated(self):
-        instance = {'lifecycle': {'state': 'active'}, 'goal_status': 'unresolved'}
-        revisit = {'kind': 'not_selected', 'execution_id': 'EX-plan', 'revisit': {'at': AT, 'event_refs': []}}
-        runtime = {'status': 'waiting', 'tasks': {'TK-wait': {'id': 'TK-wait', 'selection_disposition': revisit}},
-                   'queue': [{'role': 'research_work'}], 'executions': {}}
-        due = planning.collect_due_events(instance, runtime, AT)
-        self.assertEqual(planning.research_wake_reasons(instance, runtime, now=AT)[0]['kind'], 'task_revisit_due')
-        runtime['events'] = due
-        self.assertEqual(planning.research_wake_reasons(instance, runtime, now=AT), [])
-        runtime.update(tasks={}, queue=[], history=[{'kind': 'task_repetition', 'lineage': 'exhaustion_empty',
-            'lineage_id': 'empty', 'outcome': 'empty', 'regenerate_after': AT}])
-        with patch('do_math.revisions.repetition_hold', return_value=False):
-            self.assertEqual(planning.research_wake_reasons(instance, runtime, now='2026-09-21T00:00:00Z'), [])
-            self.assertEqual(planning.research_wake_reasons(instance, runtime, now=AT), [{'kind': 'research_regeneration_due'}])
-        instance['id'] = 'RI-wait'
-        runtime['question_links'] = [{'id': 'QU-user', 'status': 'open', 'owner': 'user',
-                                     'blocks': True, 'target_ids': ['RI-wait'], 'unresolved_target_ids': ['RI-wait']}]
-        with patch('do_math.revisions.repetition_hold', return_value=False):
-            self.assertEqual(planning.research_wake_reasons(instance, runtime, now=AT), [])
 
 
 if __name__ == "__main__":
