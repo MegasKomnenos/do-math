@@ -1,25 +1,28 @@
-"""Background commands must not allocate consoles when launched by pythonw."""
-from pathlib import Path
-import ast
+"""Background commands launched by pythonw allocate no console (``git_store`` over the real ``git_process`` backend).
+
+do-math may run as a scheduled ``pythonw.exe``; a console-less parent that
+starts a console program gets a new console window unless the start passes
+``CREATE_NO_WINDOW``. A child ``pythonw.exe`` runs the product's Git store on
+a real repository and reports what the kernel shows. That every product
+process start passes the flag is a static check
+(``structure.test_boundary_invariants``).
+"""
+import importlib.util
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
-import importlib.util
 
-SCRIPTS = Path(__file__).resolve().parents[1]
+SCRIPTS = Path(__file__).resolve().parents[2]
+PYTHONW = str(Path(sys.executable).with_name('pythonw.exe'))
 
-
-class BackgroundProcessTests(unittest.TestCase):
-    @unittest.skipUnless(os.name == 'nt' and importlib.util.find_spec('psutil'),
-                         'Windows process-tree observation requires psutil')
-    def test_real_git_descendants_are_observed_without_visible_windows(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            script = root / 'actual_git_probe.py'
-            script.write_text(r'''import ctypes,json,subprocess,sys,time,psutil
+# Observe the Git process the store starts, with the arguments it passes, and
+# its descendants: consoles (AttachConsole) and visible windows (EnumWindows).
+# The positive control starts the same command with a new hidden console.
+DESCENDANTS_PROBE = r'''import ctypes,json,subprocess,sys,time,psutil
 from pathlib import Path
 sys.path.insert(0,sys.argv[1])
 from do_math.git_store import GitStateStore
@@ -73,52 +76,11 @@ snap=store.publish(None,{'research/instance.json':b'{}','runtime/state.json':b'{
     'runtime/artifacts/actual/binary':raw})
 assert store.read_bytes(snap.head,'runtime/artifacts/actual/binary')==raw
 (root/'actual.json').write_text(json.dumps(results))
-''', encoding='utf-8')
-            process = subprocess.run([str(Path(sys.executable).with_name('pythonw.exe')), str(script), str(SCRIPTS), str(root)],
-                           capture_output=True, text=True, timeout=60, creationflags=subprocess.CREATE_NO_WINDOW)
-            self.assertEqual(process.returncode, 0, process.stderr)
-            positive, observed = json.loads((root / 'actual.json').read_text())
-            self.assertTrue(any(positive['consoles']), positive)
-            self.assertTrue(any('git' in name.lower() for name in observed['names']), observed)
-            self.assertTrue(observed['consoles'])
-            self.assertFalse(any(observed['consoles']), observed)
-            self.assertEqual(observed['visible'], [])
+'''
 
-    def test_all_managed_subprocess_calls_explicitly_prevent_console_creation(self):
-        calls = []
-        for path in (SCRIPTS / 'do_math').glob('*.py'):
-            for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
-                if not isinstance(node, ast.Call):
-                    continue
-                function = node.func
-                direct = (isinstance(function, ast.Attribute)
-                          and isinstance(function.value, ast.Name)
-                          and function.value.id == 'subprocess'
-                          and function.attr in {'run', 'Popen'})
-                # The scheduler port's real adapter calls the injected ``self.runner``.
-                injected = (path.name == 'powershell_scheduler.py'
-                            and ((isinstance(function, ast.Name) and function.id == 'runner')
-                                 or (isinstance(function, ast.Attribute) and function.attr == 'runner'
-                                     and isinstance(function.value, ast.Name) and function.value.id == 'self')))
-                # The workers start their external program through the injected ``spawn`` (Popen's shape).
-                spawned = (path.name in {'cli_worker.py', 'formal.py'}
-                           and isinstance(function, ast.Name) and function.id == 'spawn')
-                if direct or injected or spawned:
-                    calls.append((path.name, node.lineno))
-                    self.assertIn('creationflags', {k.arg for k in node.keywords}, calls[-1])
-        # The scan must reach every launching module. Both providers share one
-        # capability probe (codex_adapter) and one worker launch (cli_worker.run_cli,
-        # through ``spawn``), so the product has ten call sites: cli 2, codex_adapter 1,
-        # cli_worker 1, formal 2 (one through ``spawn``), git_process 1, scheduled_operator 2,
-        # powershell_scheduler 1.
-        self.assertGreaterEqual(len(calls), 10)
-
-    @unittest.skipUnless(os.name == 'nt', 'Windows console semantics')
-    def test_pythonw_git_calls_have_no_console_and_preserve_binary_state(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            script = root / 'probe.py'
-            script.write_text('''import ctypes,json,subprocess,sys
+# The first Git call's own flags start a probe child that reports its console;
+# two publications show binary bytes and the parent link survive.
+FIRST_CALL_PROBE = '''import ctypes,json,subprocess,sys
 from pathlib import Path
 sys.path.insert(0,sys.argv[1])
 from do_math.git_store import GitStateStore
@@ -143,9 +105,34 @@ result={'parent_console':int(ctypes.windll.kernel32.GetConsoleWindow()),
     'child_consoles':consoles,'binary_unchanged':store.read_bytes(second.head,'runtime/artifacts/one/binary')==raw,
     'parent_preserved':store._backend._run(store.repository,'rev-parse',second.head+'^').stdout.decode().strip()==first.head}
 (root/'result.json').write_text(json.dumps(result))
-''', encoding='utf-8')
-            subprocess.run([str(Path(sys.executable).with_name('pythonw.exe')), str(script),
-                            str(SCRIPTS), str(root)], check=True, timeout=60,
+'''
+
+
+class BackgroundProcessTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == 'nt' and importlib.util.find_spec('psutil'),
+                         'Windows process-tree observation requires psutil')
+    def test_real_git_descendants_are_observed_without_visible_windows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            script = root / 'actual_git_probe.py'
+            script.write_text(DESCENDANTS_PROBE, encoding='utf-8')
+            process = subprocess.run([PYTHONW, str(script), str(SCRIPTS), str(root)], capture_output=True, text=True,
+                                     timeout=60, creationflags=subprocess.CREATE_NO_WINDOW)
+            self.assertEqual(process.returncode, 0, process.stderr)
+            positive, observed = json.loads((root / 'actual.json').read_text())
+            self.assertTrue(any(positive['consoles']), positive)
+            self.assertTrue(any('git' in name.lower() for name in observed['names']), observed)
+            self.assertTrue(observed['consoles'])
+            self.assertFalse(any(observed['consoles']), observed)
+            self.assertEqual(observed['visible'], [])
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows console semantics')
+    def test_pythonw_git_calls_have_no_console_and_preserve_binary_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            script = root / 'probe.py'
+            script.write_text(FIRST_CALL_PROBE, encoding='utf-8')
+            subprocess.run([PYTHONW, str(script), str(SCRIPTS), str(root)], check=True, timeout=60,
                            creationflags=subprocess.CREATE_NO_WINDOW)
             result = json.loads((root / 'result.json').read_text())
             self.assertEqual(result['parent_console'], 0)

@@ -15,23 +15,21 @@ from pathlib import Path
 
 SHARDS = {name: frozenset(modules.split()) for name, modules in {
     'foundation': '''
-        test_academic test_budget test_context_store test_decision_basis
+        test_academic test_context_store test_decision_basis
         test_delegations test_environment_validation
         test_execution_window
         test_external_operations
         test_git_store test_goal_audit
-        test_installation_discovery
-        test_machine_scheduling test_model_metadata_boundary
-        test_owned_job_children test_preparation_cache test_provider_final_contract test_reading_map
+        test_installation_discovery test_model_metadata_boundary test_owned_job_children test_preparation_cache test_provider_final_contract test_reading_map
         test_reference_catalog test_relation_dependencies test_repair_execution
         test_review_policy test_revision_obligations test_scholarly test_standalone test_supervisor_recovery
         test_test_runner test_trust_continuation
         ''',
     'host': '''
-        test_background_processes test_diagnosed_installation_recovery test_external
-        test_formal_runtime test_host_resources test_launch_recovery test_lean_preview
+        test_diagnosed_installation_recovery test_external
+        test_formal_runtime test_host_resources test_lean_preview
         test_machine_parallel test_operator test_operator_bootstrap test_probe_cli
-        test_provider_wait test_schedule_lifetime test_schedule_pythonw test_windows_job
+        test_provider_wait test_schedule_lifetime test_schedule_pythonw
         test_worker_temporary_outputs''',
     'lifecycle': '''
         test_checkpoint_persistence test_engine test_formal_engine test_initial_intent_connection

@@ -11,7 +11,8 @@ By default a resumed program runs to its end inside ``resume``, so the runner's
 poll loop first looks at a finished Job. With ``live`` set (이음매 장부 18) the
 program runs on its own thread beside the runner, and the two take turns as the
 calls fake's calculations and owner do: ``resume`` runs the program to its first
-``job_turn()``, and each barrier probe (``inspect``) first gives the owner one
+``job_turn()``, and each probe of the Job (``inspect``, as the model runner's
+adapter polls, or ``wait``, as ``formal._job_run`` polls) first gives the owner one
 pass, when the runner is a call's calculation, then runs the program to its
 next turn. So the runner's observations of a running program are live, and a
 stop the owner requests reaches the program: ``terminate`` ends it at its turn,
@@ -99,6 +100,7 @@ class FakeJob:
         return self._thread is not None and not self.done
 
     def wait(self, timeout=None):
+        self._probe()
         return self.done
 
     def terminate(self, exit_code=1):
@@ -110,12 +112,16 @@ class FakeJob:
             self._step()
         self.done = True
 
-    def inspect(self):
+    def _probe(self):
+        """A runner looks at a live Job: the owner gets a pass (when the runner is a calculation), the program a step."""
         if self._running():
             if getattr(calls._current, 'turn', None) is not None:
                 calls.owner_turn()
             if not self.done:
                 self._step()
+
+    def inspect(self):
+        self._probe()
         return JobInspection(active_processes=0 if self.done else 1,
                              process_ids=() if self.done else (self.pid,), root_signaled=self.done)
 

@@ -162,6 +162,12 @@ class LiveFakeJobTests(unittest.TestCase):
         self.assertEqual((observed.root_signaled, observed.active_processes, observed.process_ids), (True, 0, ()))
         self.assertEqual((self.mark.read_text(), self.job.exit_code), ('ab', 0))
 
+    def test_a_runner_polling_with_wait_also_runs_the_program_on(self):
+        """``formal._job_run`` polls ``wait(0)`` rather than ``inspect``; both are the runner's probe."""
+        self.job.resume()
+        self.assertIs(self.job.wait(0), True)
+        self.assertEqual((self.mark.read_text(), self.job.exit_code), ('ab', 0))
+
     def test_termination_ends_the_program_at_its_turn(self):
         self.job.resume()
         self.job.terminate(7)

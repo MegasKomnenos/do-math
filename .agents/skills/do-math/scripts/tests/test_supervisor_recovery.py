@@ -197,28 +197,6 @@ class SupervisorRecoveryTests(unittest.TestCase):
             evidence = next(iter(instance["capability_evidence"].values()))
             self.assertEqual(evidence["capabilities"]["structured_output"]["status"], "unsupported")
 
-    def test_recovery_cannot_ignore_hold(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            scheduled_operator.hold(root, reason="test")
-            with patch.object(scheduled_operator.ModelRunner, "run") as runner:
-                self.assertEqual(scheduled_operator.recovery(root, "unused", root,
-                    failure={"kind": "engine_unavailable", "error": "fixture"})["outcome"], "held")
-                runner.assert_not_called()
-
-    def test_recovery_waits_for_unended_execution_without_confirmed_termination(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            instance = {**execution_profiles.build_profiles(PROFILE_CONFIG), "config": {**PROFILE_CONFIG, "operator_enabled": True}}
-            runtime = {"executions": {"EX-live": {"id": "EX-live", "status": "running"}}, "reservations": {}, "status": "ready"}
-            repo = repository_double(root, instance, runtime, published="unused")
-            with patch.object(scheduled_operator, "ResearchRepository", return_value=repo), \
-                 patch.object(scheduled_operator.ModelRunner, "run") as runner:
-                result = scheduled_operator.recovery(root, "test", root,
-                    failure={"kind": "engine_unavailable", "error": "fixture"})
-            self.assertEqual((result["outcome"], result["execution_id"]), ("recovery_waiting", "EX-live"))
-            runner.assert_not_called()
-
 
 if __name__ == "__main__":
     unittest.main()

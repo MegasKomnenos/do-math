@@ -1,0 +1,524 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_budget.BudgetTests.test_one_profile_reserves_its_work_slot_and_host_demands_atomically",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_budget.BudgetTests.test_one_profile_reserves_its_work_slot_and_host_demands_atomically"
+      ]
+    },
+    {
+      "legacy_id": "test_budget.BudgetTests.test_a_profile_without_capacities_reserves_nothing",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_budget.BudgetTests.test_a_profile_without_capacities_reserves_nothing"
+      ]
+    },
+    {
+      "legacy_id": "test_budget.BudgetTests.test_host_capacity_is_checked_separately_and_keeps_the_control_reserve",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_budget.BudgetTests.test_host_capacity_is_checked_separately_and_keeps_the_control_reserve"
+      ]
+    },
+    {
+      "legacy_id": "test_budget.BudgetTests.test_returned_slot_is_reusable_but_held_slot_remains_occupied",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_budget.BudgetTests.test_returned_slot_is_reusable_but_held_slot_remains_occupied"
+      ]
+    },
+    {
+      "legacy_id": "test_budget.BudgetTests.test_settlement_is_exactly_once_and_requires_full_accounting",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_budget.BudgetTests.test_settlement_is_exactly_once_and_requires_full_accounting"
+      ]
+    },
+    {
+      "legacy_id": "test_windows_job.WindowsJobTests.test_root_is_suspended_until_explicit_resume",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_windows_job.WindowsJobTests.test_root_is_suspended_until_explicit_resume"
+      ]
+    },
+    {
+      "legacy_id": "test_windows_job.WindowsJobTests.test_wait_timeout_keeps_job_owned_until_explicit_close",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_windows_job.WindowsJobTests.test_wait_timeout_keeps_job_owned_until_explicit_close"
+      ]
+    },
+    {
+      "legacy_id": "test_windows_job.WindowsJobTests.test_direct_createprocess_receives_requested_cwd_and_environment",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_windows_job.WindowsJobTests.test_direct_createprocess_receives_requested_cwd_and_environment"
+      ]
+    },
+    {
+      "legacy_id": "test_windows_job.WindowsJobTests.test_terminate_ends_descendant_processes_and_job_becomes_empty",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_windows_job.WindowsJobTests.test_terminate_ends_descendant_processes_and_job_becomes_empty"
+      ]
+    },
+    {
+      "legacy_id": "test_windows_job.WindowsJobTests.test_owner_process_loss_closes_job_and_ends_root",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_windows_job.WindowsJobTests.test_owner_process_loss_closes_job_and_ends_root"
+      ]
+    },
+    {
+      "legacy_id": "test_windows_job.WindowsJobTests.test_job_handle_is_not_inheritable_and_breakaway_is_disabled",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_windows_job.WindowsJobTests.test_job_handle_is_not_inheritable_and_breakaway_is_disabled"
+      ]
+    },
+    {
+      "legacy_id": "test_windows_job.WindowsJobTests.test_create_failure_leaves_no_live_job_root",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_windows_job.WindowsJobTests.test_create_failure_leaves_no_live_job_root"
+      ]
+    },
+    {
+      "legacy_id": "test_windows_job.WindowsJobTests.test_root_cannot_signal_an_unrelated_inheritable_parent_handle",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_windows_job.WindowsJobTests.test_root_cannot_signal_an_unrelated_inheritable_parent_handle"
+      ]
+    },
+    {
+      "legacy_id": "test_launch_recovery.LaunchRecoveryTests.test_current_owner_and_foreign_session_are_not_dead",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_launch_recovery.LaunchRecoveryTests.test_current_owner_and_foreign_session_are_not_dead"
+      ]
+    },
+    {
+      "legacy_id": "test_launch_recovery.LaunchRecoveryTests.test_crash_before_and_after_suspended_root_creation_is_recoverable",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_launch_recovery.LaunchRecoveryTests.test_crash_before_and_after_suspended_root_creation_is_recoverable"
+      ]
+    },
+    {
+      "legacy_id": "test_launch_recovery.LaunchRecoveryTests.test_job_name_collision_cannot_attach_or_kill_the_original",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_launch_recovery.LaunchRecoveryTests.test_job_name_collision_cannot_attach_or_kill_the_original"
+      ]
+    },
+    {
+      "legacy_id": "test_launch_recovery.LaunchRecoveryTests.test_ticket_cannot_be_rebound_to_another_execution",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_launch_ticket.LaunchTicketTests.test_ticket_cannot_be_rebound_to_another_execution"
+      ]
+    },
+    {
+      "legacy_id": "test_background_processes.BackgroundProcessTests.test_real_git_descendants_are_observed_without_visible_windows",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_background_processes.BackgroundProcessTests.test_real_git_descendants_are_observed_without_visible_windows"
+      ]
+    },
+    {
+      "legacy_id": "test_background_processes.BackgroundProcessTests.test_pythonw_git_calls_have_no_console_and_preserve_binary_state",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_background_processes.BackgroundProcessTests.test_pythonw_git_calls_have_no_console_and_preserve_binary_state"
+      ]
+    },
+    {
+      "legacy_id": "test_background_processes.BackgroundProcessTests.test_all_managed_subprocess_calls_explicitly_prevent_console_creation",
+      "disposition": "retired",
+      "reason": "structure.test_boundary_invariants.BoundaryInvariantTests.test_process_starts_are_declared_and_open_no_console_window checks the same property more strictly: every direct subprocess start (run, Popen, call, check_call, check_output) and every injected start (spawn, runner, self.runner) in do_math/ with its subpackages and in scripts/ must pass creationflags, except setup_lean.run in scripts/setup_lean.py, which the check exempts as WINDOWED because it still opens without the flag (open known defect KD-0003, a site outside the legacy test's do_math/ scan); and the sites found must equal the declared PROCESS_STARTS and INJECTED_STARTS. All ten sites the legacy test scanned get the same creationflags assertion. A scan that missed a launching module would lose a declared site and fail the equality, which the legacy test approximated with its floor of ten sites."
+    },
+    {
+      "legacy_id": "test_owned_job_children.IsolatedHostTests.test_owned_process_identity_does_not_follow_a_changed_pid_field",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_owned_job_children.IsolatedHostTests.test_owned_process_identity_does_not_follow_a_changed_pid_field"
+      ]
+    },
+    {
+      "legacy_id": "test_owned_job_children.IsolatedHostTests.test_nested_job_child_remains_owned_by_outer_job",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_owned_job_children.IsolatedHostTests.test_nested_job_child_remains_owned_by_outer_job"
+      ]
+    },
+    {
+      "legacy_id": "test_owned_job_children.IsolatedHostTests.test_local_control_receipt_remains_responsive_during_child_cpu_load",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_owned_job_children.IsolatedHostTests.test_local_control_receipt_remains_responsive_during_child_cpu_load"
+      ]
+    },
+    {
+      "legacy_id": "test_supervisor_recovery.SupervisorRecoveryTests.test_recovery_cannot_ignore_hold",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_supervisor_hold.HoldTests.test_recovery_cannot_ignore_hold"
+      ]
+    },
+    {
+      "legacy_id": "test_supervisor_recovery.SupervisorRecoveryTests.test_recovery_waits_for_unended_execution_without_confirmed_termination",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_supervisor_recovery.SupervisorRecoveryTests.test_recovery_waits_for_unended_execution_without_confirmed_termination"
+      ],
+      "note": "Input: the legacy test fed recovery an autospec repository whose runtime was a bare dict with {'id': 'EX-live', 'status': 'running'}. recovery constructs its ResearchRepository itself and takes no ports (seam ledger 4), so the new test gives it a real Git repository initialized through the public initialize with the real ports, holding a stored running maintenance execution without a launch ticket; the same unconfirmed-termination branch (no ticket) answers. The reason text is now fixed as well."
+    },
+    {
+      "legacy_id": "test_machine_scheduling.MachineSchedulingTests.test_plan_settle_action_survives_the_persisted_queue_contract",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_machine_admission.MachineSchedulingTests.test_plan_settle_action_survives_the_persisted_queue_contract"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_scheduling.MachineSchedulingTests.test_operational_review_of_targetless_preparation_has_only_real_references",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_machine_admission.MachineSchedulingTests.test_operational_review_of_targetless_preparation_has_only_real_references"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_scheduling.MachineSchedulingTests.test_blocked_machine_does_not_hide_a_smaller_ready_machine",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_machine_admission.MachineSchedulingTests.test_blocked_machine_does_not_hide_a_smaller_ready_machine"
+      ],
+      "note": "The five autospec doubles of the legacy test (_execution_profile, _action_lifecycle_gate, _revision_dispatch_waits, _selected_action_current, _evaluation_context) are gone: _dispatchable runs them on a Sim's active instance whose host approval was configured by control. Input: the two host-capped Lean editions (the legacy big formal_check and small trust_check demands) are added to execution_profiles and, since the real profile selection admits only adopted role profiles, appended to role_profile_refs beside the current uncapped editions, in memory and unsaved. This is a synthetic state the product cannot make: build_profiles caps only HOST_ROLES, validate_host_resources refuses a Lean demand (capped roles only), and apply_editions replaces a role's adopted editions, so no product path, past or present, yields a capped Lean edition or two editions under one role. The legacy fixture state (host_capacity_fixture capping formal_check) was equally synthetic. The case takes the admission's defensive path, which counts a capped machine edition's demands (session_slots._admission, its uncapped_lean clause)."
+    },
+    {
+      "legacy_id": "test_machine_scheduling.ModelCallTests.test_parallel_call_carries_a_distinct_execution_id",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_machine_admission.ModelCallTests.test_parallel_call_carries_a_distinct_execution_id"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostReservations.test_work_operations_machine_share_capacity_and_preserve_control",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.HostReservations.test_work_operations_machine_share_capacity_and_preserve_control"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostReservations.test_each_constraint_refuses_without_partial_ai_or_host_records",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.HostReservations.test_each_constraint_refuses_without_partial_ai_or_host_records"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostReservations.test_no_approval_stays_unmeasured_machine_has_no_ai_budget",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.HostReservations.test_no_approval_stays_unmeasured_machine_has_no_ai_budget"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostReservations.test_other_host_refused_and_unknown_termination_retains_reservations",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.HostReservations.test_other_host_refused_and_unknown_termination_retains_reservations"
+      ],
+      "note": "Input: the legacy test patched platform.node to 'different-host' against a profile bound to this host; the new test binds the profile to an adopted approval for 'different-host' against this host, which reaches the same comparison (execution_profiles.job_resource_limits: 'profile host differs from this local host', now fixed exactly instead of the regex 'host'). The unknown Job end is a Jobs port fake whose named_job_empty answers None instead of the patched windows_job.named_job_empty."
+    },
+    {
+      "legacy_id": "test_host_resources.HostReservations.test_actual_git_cas_publishes_start_and_all_demands_together",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.HostReservations.test_actual_git_cas_publishes_start_and_all_demands_together"
+      ],
+      "note": "The store's publication runs on the in-process Git port fake instead of a git process; the ref compare-and-swap it asserts is the port's update_ref, whose real and fake sides agree by contracts.test_port_git_backend and boundary.test_port_git_backend. The stale publication's refusal is now fixed by its message."
+    },
+    {
+      "legacy_id": "test_host_resources.HostReservations.test_old_profile_editions_do_not_open_an_independent_host_pool",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.HostReservations.test_old_profile_editions_do_not_open_an_independent_host_pool"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostReservations.test_unbound_profiles_cannot_bypass_shared_approval",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.HostReservations.test_unbound_profiles_cannot_bypass_shared_approval"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostReservations.test_explicit_authoring_covers_every_capped_role",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.HostReservations.test_explicit_authoring_covers_every_capped_role"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostReservations.test_legacy_host_capped_lean_profile_requires_replacement",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.HostReservations.test_legacy_host_capped_lean_profile_requires_replacement"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostRepositoryContract.test_positive_host_records_pass_real_repository_and_round_trip",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.HostRepositoryContract.test_positive_host_records_pass_real_repository_and_round_trip",
+        "boundary.test_scheduling_host_jobs.HostRepositoryJobTests.test_positive_host_records_round_trip_with_a_real_windows_job"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostJobTests.test_host_bound_runner_requires_start_publication_callback",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_host_configuration.HostRunnerTests.test_host_bound_runner_requires_start_publication_callback"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostJobTests.test_resource_setting_failure_is_distinct_capability_and_starts_nothing",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_host_jobs.HostJobTests.test_resource_setting_failure_is_distinct_capability_and_starts_nothing"
+      ],
+      "note": "Input: the legacy test patched windows_job._kernel32.SetInformationJobObject to fail with ERROR_NOT_SUPPORTED (50) and WindowsJob._create_suspended_root to count its calls. The new test gives the profile a one-byte Job memory demand, which the kernel itself refuses with ERROR_INVALID_PARAMETER (87); the adapter classifies both codes as WindowsJobResourceError, so the runner's result is the same missing local_job_resources capability. The root creation is counted on the unchanged product (ObservedCalls)."
+    },
+    {
+      "legacy_id": "test_host_resources.HostJobTests.test_both_real_adapters_receive_limits_before_user_code_or_model_call",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_host_jobs.HostJobTests.test_both_real_adapters_receive_limits_before_user_code_or_model_call"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostJobTests.test_real_creation_failure_and_normal_abnormal_termination_return_once",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_host_jobs.HostJobTests.test_real_creation_failure_and_normal_abnormal_termination_return_once"
+      ],
+      "note": "Input: the setting_failure case's Job now fails because the kernel refuses a one-byte Job memory limit, not because SetInformationJobObject was patched to return 0; both raise OSError before any process exists. The two refusals are now fixed by their messages."
+    },
+    {
+      "legacy_id": "test_host_resources.HostJobTests.test_native_process_identity_round_trips_without_integer_precision_loss",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_host_jobs.HostJobTests.test_native_process_identity_round_trips_without_integer_precision_loss"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostJobTests.test_commit_limit_is_applied_before_resume_and_denies_child_allocation",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_host_jobs.HostJobTests.test_commit_limit_is_applied_before_resume_and_denies_child_allocation"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostJobTests.test_cpu_hard_cap_reduces_local_cpu_time_in_isolated_busy_child",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_host_jobs.HostJobTests.test_cpu_hard_cap_reduces_local_cpu_time_in_isolated_busy_child"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostJobTests.test_invalid_limits_or_setting_failure_never_create_root",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_host_jobs.HostJobTests.test_invalid_limits_or_setting_failure_never_create_root"
+      ],
+      "note": "Input: the setting failure is the kernel's refusal of a one-byte Job memory limit instead of SetInformationJobObject patched to return 0, and WindowsJob._create_suspended_root is counted on the unchanged product (ObservedCalls) instead of a patch. Both refusals are now fixed by their messages."
+    },
+    {
+      "legacy_id": "test_host_resources.HostConfigurationTests.test_host_demands_accept_only_capped_roles",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.HostConfigurationTests.test_host_demands_accept_only_capped_roles"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostConfigurationTests.test_unstarted_role_defaults_refresh_while_task_profiles_require_preparation",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_host_configuration.HostConfigurationTests.test_unstarted_role_defaults_refresh_while_task_profiles_require_preparation"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostConfigurationTests.test_public_init_configure_and_removal",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_host_configuration.HostConfigurationTests.test_public_init_configure_and_removal"
+      ]
+    },
+    {
+      "legacy_id": "test_host_resources.HostConfigurationTests.test_host_configuration_builds_profiles_once_per_step",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_host_configuration.HostConfigurationTests.test_host_configuration_builds_profiles_once_per_step"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.CallManagerTests.test_collection_releases_finished_threads_but_retains_a_live_call",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_call_manager.CallManagerTests.test_collection_releases_finished_threads_but_retains_a_live_call"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.CallManagerTests.test_admission_transition_preserves_native_utc_precision",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_scheduling_host_reservations.AdmissionClockTests.test_admission_transition_preserves_native_utc_precision"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.CallManagerTests.test_close_sets_every_stop_flag_and_fails_pending_start_callbacks",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_call_manager.CallManagerTests.test_close_sets_every_stop_flag_and_fails_pending_start_callbacks"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.CallManagerTests.test_owner_wait_wakes_on_a_returned_call_not_its_bound",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_call_manager.CallManagerTests.test_owner_wait_wakes_on_a_returned_call_not_its_bound"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.CallManagerTests.test_stop_flag_reads_never_wait_for_the_owner",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_call_manager.CallManagerTests.test_stop_flag_reads_never_wait_for_the_owner"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.CallManagerTests.test_owner_judgment_sets_the_flag_once_and_stops_the_calculation",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_call_manager.CallManagerTests.test_owner_judgment_sets_the_flag_once_and_stops_the_calculation"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.CallManagerTests.test_failed_judgment_fails_only_its_own_call",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_call_manager.CallManagerTests.test_failed_judgment_fails_only_its_own_call"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.CallManagerTests.test_observations_queue_without_waiting_and_apply_before_collection",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_call_manager.CallManagerTests.test_observations_queue_without_waiting_and_apply_before_collection"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.CallManagerTests.test_one_pump_applies_only_the_rows_queued_before_it",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_scheduling_call_manager.CallManagerTests.test_one_pump_applies_only_the_rows_queued_before_it"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.CallManagerTests.test_failed_start_publication_never_resumes_the_real_job",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_call_jobs.CallJobTests.test_failed_start_publication_never_resumes_the_real_job"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.CallManagerTests.test_real_job_cancellation_uses_owner_judgment_and_collects_once",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_scheduling_call_jobs.CallJobTests.test_real_job_cancellation_uses_owner_judgment_and_collects_once"
+      ]
+    },
+    {
+      "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_formal_allows_ai_collection_after_long_elapsed_time",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_formal_allows_ai_collection_after_long_elapsed_time"
+      ],
+      "note": "Host (a FakeEngine with _call_steps, _controls, _save, _check_installation, _refresh_readiness, _settle_activity and _start_identity_review replaced) and the legacy verifier double are gone: the scenario runs the real owner loop on a Sim with the engine's default formal verifier (verify_lean on the Jobs port fake), the real maintenance call, admission, collection, identity review and storage. formal._job_run publishes the Lean worker Job's own start (asserted: the published pid is that Job's) and reads its stop flag itself. What is held open is the Lean double's check inside that Job (support.scheduling_machine.HeldLean): it hands the calculation's turn to the owner until the maintenance call has ended and one owner pass has run on the moved clock. Input: the legacy test moved only the monotonic clock of the port bundle it swapped in after construction, by 100000 s; the clock port now serves the scheduler and the lifecycle clock guard, which refuses monotonic time running ahead of wall time, so the Sim clock moves both by three hours (beyond every call time limit, within the Sim grants' day). The legacy observed == [False] is the preserved raw return verified (the calculation read its flag clear after three hours), and output_accepted is asserted as well."
+    },
+    {
+      "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_formal_user_stop_rejects_a_late_verified_result",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_formal_user_stop_rejects_a_late_verified_result"
+      ],
+      "note": "Host (a FakeEngine with _call_steps, _controls, _save, _check_installation, _refresh_readiness, _settle_activity and _start_identity_review replaced) and the legacy verifier double are gone: the scenario runs the real owner loop on a Sim with the engine's default formal verifier (verify_lean on the Jobs port fake), the real maintenance call, admission, collection, identity review and storage. formal._job_run publishes the Lean worker Job's own start (asserted: the published pid is that Job's) and reads its stop flag itself. What is held open is the Lean double's check inside that Job (support.scheduling_machine.HeldLean): it hands the calculation's turn to the owner until the maintenance call has ended and one owner pass has run on the moved clock. Input: the legacy test moved only the monotonic clock of the port bundle it swapped in after construction, by 100000 s; the clock port now serves the scheduler and the lifecycle clock guard, which refuses monotonic time running ahead of wall time, so the Sim clock moves both by three hours (beyond every call time limit, within the Sim grants' day). The stop is queued as the check answers. The legacy verifier read its flag set and returned a success anyway (observed == [True]); the product calculation reads its flag after the check answers and would honour a set flag, so a late success can reach the owner only when the stop is published after that read. Here it is: the calculation reads the flag clear and returns the success (the preserved raw return is verified, which replaces the legacy observed flag), the owner publishes the stop in its next pass before it collects, and its currentness judgment turns the result into a stop (the judged result is stopped). The stop is the public pause control."
+    },
+    {
+      "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_trust_check_allows_ai_collection_after_long_elapsed_time",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_trust_check_allows_ai_collection_after_long_elapsed_time"
+      ],
+      "note": "Host (a FakeEngine with _call_steps, _controls, _save, _check_installation, _refresh_readiness, _settle_activity and _start_identity_review replaced) and the legacy verifier double are gone: the scenario runs the real owner loop on a Sim with the engine's default formal verifier (verify_lean on the Jobs port fake), the real maintenance call, admission, collection, identity review and storage. formal._job_run publishes the Lean worker Job's own start (asserted: the published pid is that Job's) and reads its stop flag itself. What is held open is the Lean double's check inside that Job (support.scheduling_machine.HeldLean): it hands the calculation's turn to the owner until the maintenance call has ended and one owner pass has run on the moved clock. Input: the legacy test moved only the monotonic clock of the port bundle it swapped in after construction, by 100000 s; the clock port now serves the scheduler and the lifecycle clock guard, which refuses monotonic time running ahead of wall time, so the Sim clock moves both by three hours (beyond every call time limit, within the Sim grants' day). The legacy observed == [False] is the preserved raw return verified, and output_accepted is asserted as well. Input: the trust check is the first target's check in a transition from the engine region's lifecycle template (two reviewed theorems, a prepared second toolchain) instead of FakeEngine.knowledge and FakeEngine.environment, and the second Lean request is the formal check of a candidate imported by control."
+    },
+    {
+      "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_trust_check_user_stop_rejects_a_late_verified_result",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_trust_check_user_stop_rejects_a_late_verified_result"
+      ],
+      "note": "Host (a FakeEngine with _call_steps, _controls, _save, _check_installation, _refresh_readiness, _settle_activity and _start_identity_review replaced) and the legacy verifier double are gone: the scenario runs the real owner loop on a Sim with the engine's default formal verifier (verify_lean on the Jobs port fake), the real maintenance call, admission, collection, identity review and storage. formal._job_run publishes the Lean worker Job's own start (asserted: the published pid is that Job's) and reads its stop flag itself. What is held open is the Lean double's check inside that Job (support.scheduling_machine.HeldLean): it hands the calculation's turn to the owner until the maintenance call has ended and one owner pass has run on the moved clock. Input: the legacy test moved only the monotonic clock of the port bundle it swapped in after construction, by 100000 s; the clock port now serves the scheduler and the lifecycle clock guard, which refuses monotonic time running ahead of wall time, so the Sim clock moves both by three hours (beyond every call time limit, within the Sim grants' day). The stop is queued as the check answers. The legacy verifier read its flag set and returned a success anyway (observed == [True]); the product calculation reads its flag after the check answers and would honour a set flag, so a late success can reach the owner only when the stop is published after that read. Here it is: the calculation reads the flag clear and returns the success (the preserved raw return is verified, which replaces the legacy observed flag), the owner publishes the stop in its next pass before it collects, and its currentness judgment turns the result into a stop (the judged result is stopped). The stop is the public pause control. Input: the trust check is the first target's check in a transition from the engine region's lifecycle template (two reviewed theorems, a prepared second toolchain) instead of FakeEngine.knowledge and FakeEngine.environment, and the second Lean request is the formal check of a candidate imported by control."
+    },
+    {
+      "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_revoked_authority_rejects_both_kinds_of_formal_result",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_revoked_authority_rejects_both_kinds_of_formal_result"
+      ],
+      "note": "Host (a FakeEngine with _call_steps, _controls, _save, _check_installation, _refresh_readiness, _settle_activity and _start_identity_review replaced) and the legacy verifier double are gone: the scenario runs the real owner loop on a Sim with the engine's default formal verifier (verify_lean on the Jobs port fake), the real maintenance call, admission, collection, identity review and storage. formal._job_run publishes the Lean worker Job's own start (asserted: the published pid is that Job's) and reads its stop flag itself. What is held open is the Lean double's check inside that Job (support.scheduling_machine.HeldLean): it hands the calculation's turn to the owner until the maintenance call has ended and one owner pass has run on the moved clock. Input: the legacy test moved only the monotonic clock of the port bundle it swapped in after construction, by 100000 s; the clock port now serves the scheduler and the lifecycle clock guard, which refuses monotonic time running ahead of wall time, so the Sim clock moves both by three hours (beyond every call time limit, within the Sim grants' day). The stop is queued as the check answers. The legacy verifier read its flag set and returned a success anyway (observed == [True]); the product calculation reads its flag after the check answers and would honour a set flag, so a late success can reach the owner only when the stop is published after that read. Here it is: the calculation reads the flag clear and returns the success (the preserved raw return is verified, which replaces the legacy observed flag), the owner publishes the stop in its next pass before it collects, and its currentness judgment turns the result into a stop (the judged result is stopped). Every active grant is revoked by public decision controls instead of a direct status write."
+    },
+    {
+      "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_revoking_research_grants_does_not_stop_a_trust_check",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_revoking_research_grants_does_not_stop_a_trust_check"
+      ],
+      "note": "Host (a FakeEngine with _call_steps, _controls, _save, _check_installation, _refresh_readiness, _settle_activity and _start_identity_review replaced) and the legacy verifier double are gone: the scenario runs the real owner loop on a Sim with the engine's default formal verifier (verify_lean on the Jobs port fake), the real maintenance call, admission, collection, identity review and storage. formal._job_run publishes the Lean worker Job's own start (asserted: the published pid is that Job's) and reads its stop flag itself. What is held open is the Lean double's check inside that Job (support.scheduling_machine.HeldLean): it hands the calculation's turn to the owner until the maintenance call has ended and one owner pass has run on the moved clock. Input: the legacy test moved only the monotonic clock of the port bundle it swapped in after construction, by 100000 s; the clock port now serves the scheduler and the lifecycle clock guard, which refuses monotonic time running ahead of wall time, so the Sim clock moves both by three hours (beyond every call time limit, within the Sim grants' day). Every active grant is revoked by public decision controls, queued as the check answers and published before the owner collects; the trust check's result is still accepted. Input: the trust check is the first target's check in a transition from the engine region's lifecycle template (two reviewed theorems, a prepared second toolchain) instead of FakeEngine.knowledge and FakeEngine.environment, and the second Lean request is the formal check of a candidate imported by control."
+    },
+    {
+      "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_machine_artifacts_publish_to_real_immutable_git_bundles",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_machine_artifacts_publish_to_real_immutable_git_bundles"
+      ],
+      "note": "Host (a FakeEngine with _call_steps, _controls, _save, _check_installation, _refresh_readiness, _settle_activity and _start_identity_review replaced) and the legacy verifier double are gone: the scenario runs the real owner loop on a Sim with the engine's default formal verifier (verify_lean on the Jobs port fake), the real maintenance call, admission, collection, identity review and storage. formal._job_run publishes the Lean worker Job's own start (asserted: the published pid is that Job's) and reads its stop flag itself. What is held open is the Lean double's check inside that Job (support.scheduling_machine.HeldLean): it hands the calculation's turn to the owner until the maintenance call has ended and one owner pass has run on the moved clock. Input: the legacy test moved only the monotonic clock of the port bundle it swapped in after construction, by 100000 s; the clock port now serves the scheduler and the lifecycle clock guard, which refuses monotonic time running ahead of wall time, so the Sim clock moves both by three hours (beyond every call time limit, within the Sim grants' day). The legacy test copied each artifact publication into a separate GitStateStore through a wrapped _save; the new test reads the bundles from the engine's own store (the real ResearchRepository on the Git port fake), where the product published them."
+    },
+    {
+      "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_stop_request_reaches_the_calculation_within_one_owner_pass",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_stop_request_reaches_the_calculation_within_one_owner_pass"
+      ],
+      "note": "The legacy verifier double is gone: the engine's default verifier runs the Lean check in its worker Job, formal._job_run publishes that Job's start and polls the stop flag, and the Lean double's check, held open inside the Job, queues the public pause and answers once it sees the pause applied. The calculation's own poll then stops it: the preserved raw return is ('stopped', 'stopped'), the reason of _job_run's stop branch. Input: the public pause control also requests a stop of every running execution (lifecycle_engine._pause_lifecycle, _request_stop_all), so the judged stop reasons are exactly ['execution_stop_requested', 'instance_paused']; the legacy control wrote the paused status directly and saw ['instance_paused'] alone. 'The publication itself sets the flag' is observed on the unchanged product (support.scheduling_machine.PassProbe): exactly one _save starts with the call's flag clear and returns with it set, and passes are counted at each _controls start; the check answers within one pass of that publication and the calculation reads the flag at once."
+    },
+    {
+      "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_owner_exception_stops_worker_preserves_result_and_reconciles_capacity",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_owner_exception_stops_worker_preserves_result_and_reconciles_capacity"
+      ],
+      "note": "Input: the owner failure is a real publication conflict (another writer holds the instance ref's lock while the owner applies a queued control) instead of a replaced _controls raising RuntimeError('injected owner failure'); the raised GitStateStoreConflict is fixed by its message. The stored result and settlement are read from the real store instead of FakeEngine.saves and an autospec load. The engine's formal verifier is replaced here (a constructor argument, support.scheduling_machine.use_verifier), publishing a synthetic Job identity, because the preserved evidence under test (raw stdout bytes kept as base64, a float usage kept as reported_decimal) cannot come from the product verifier, whose stdout is text and which reports no usage."
+    },
+    {
+      "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_publication_failure_keeps_local_result_and_durable_unsettled_record",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_publication_failure_keeps_local_result_and_durable_unsettled_record"
+      ],
+      "note": "Input: the failing publication is a real ref-lock conflict from the moment the calculation returns (every later publication fails, as every artifact publication did in the legacy test) instead of an OSError from a wrapped _save; the raised GitStateStoreConflict is fixed by its message, and the durable record is read from the real store. The engine's formal verifier is replaced here, as in the legacy test, by one that returns a failed result at once; the case concerns the owner's publication after any returned result."
+    }
+  ]
+}
