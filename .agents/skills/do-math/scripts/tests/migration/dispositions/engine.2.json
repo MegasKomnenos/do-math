@@ -1,0 +1,583 @@
+{
+ "legacy": [
+  {
+   "legacy_id": "test_role_input.OperationalInputTests.test_assigned_role_uses_exact_registry_references_even_below_input_limit",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.InputFittingTests.test_assigned_role_uses_exact_registry_references_even_below_input_limit"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.InputConnections.test_missing_reader_task_is_an_input_error",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.InputFittingTests.test_missing_reader_task_is_an_input_error"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputBoundaryTests.test_large_task_catalog_moves_to_fixed_source_without_shrinking_selection",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.InputFittingTests.test_large_task_catalog_moves_to_fixed_source_without_shrinking_selection"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputBoundaryTests.test_missing_population_is_input_error",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.InputFittingTests.test_missing_population_is_input_error"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.PreparedInputTests.test_continuation_preserves_older_files_and_latest_replacements",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.InputFittingTests.test_continuation_preserves_older_files_and_latest_replacements"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.FormalJudgmentInputTests.test_identity_review_proposal_carries_only_the_judged_formal_fields",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.FormalJudgmentInputTests.test_identity_review_proposal_carries_only_the_judged_formal_fields"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.FormalJudgmentInputTests.test_judged_formal_view_states_its_environment_allowed_axioms",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.FormalJudgmentInputTests.test_judged_formal_view_states_its_environment_allowed_axioms"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.FormalJudgmentInputTests.test_reviewed_proposal_fixes_the_sources_it_used",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.FormalJudgmentInputTests.test_reviewed_proposal_fixes_the_sources_it_used"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_role_input_maps_context_its_scope_does_not_inline",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_role_input_maps_context_its_scope_does_not_inline"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_independent_judgment_never_receives_its_blocked_context",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_independent_judgment_never_receives_its_blocked_context"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_record_index_lists_the_snapshot_records_the_role_may_read",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_record_index_lists_the_snapshot_records_the_role_may_read"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_snapshot_record_outside_the_prompt_passes_the_shared_reference_check",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_snapshot_record_outside_the_prompt_passes_the_shared_reference_check"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_independent_judgment_cites_the_research_canon_but_not_an_unsupplied_ledger_record",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_independent_judgment_cites_the_research_canon_but_not_an_unsupplied_ledger_record"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_contract_reviewer_reads_the_ledger_records_its_contract_names",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_contract_reviewer_reads_the_ledger_records_its_contract_names"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_review_seat_operational_review_reads_the_evidence_its_input_supplies",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_review_seat_operational_review_reads_the_evidence_its_input_supplies"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_citable_records_cover_every_readable_work_record",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_citable_records_cover_every_readable_work_record"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_citable_record_list_reaches_the_prompt_as_a_map_entry",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_citable_record_list_reaches_the_prompt_as_a_map_entry"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_scope_follows_the_role_the_input_is_prepared_for",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_scope_follows_the_role_the_input_is_prepared_for"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_control_binding_reaches_the_checker_context_but_not_the_prompt",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_control_binding_reaches_the_checker_context_but_not_the_prompt"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.OperationalInputTests.test_live_review_receives_the_already_sealed_target_checkpoint",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.OperationalInputTests.test_live_review_receives_the_already_sealed_target_checkpoint"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.OperationalInputTests.test_large_checkpoint_stays_readable_without_becoming_mandatory_prompt_text",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.OperationalInputTests.test_large_checkpoint_stays_readable_without_becoming_mandatory_prompt_text"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.OperationalInputTests.test_review_gets_the_same_canonical_basis_set_as_application",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.OperationalInputTests.test_review_gets_the_same_canonical_basis_set_as_application"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.OperationalInputTests.test_live_review_receives_exact_checkpoint_evidence_files",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.OperationalInputTests.test_live_review_receives_exact_checkpoint_evidence_files"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.OperationalInputTests.test_packaged_operational_submission_checks_the_advertised_basis",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.OperationalInputTests.test_packaged_operational_submission_checks_the_advertised_basis"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.OperationalInputTests.test_every_advertised_basis_ref_passes_the_submission_check",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.OperationalInputTests.test_every_advertised_basis_ref_passes_the_submission_check"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.OperationalInputTests.test_next_review_of_the_same_target_can_resolve_an_exhausted_review",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.OperationalInputTests.test_next_review_of_the_same_target_can_resolve_an_exhausted_review"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.OperationalInputTests.test_changed_checkpoint_file_bytes_are_rejected_before_review",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.OperationalInputTests.test_changed_checkpoint_file_bytes_are_rejected_before_review"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.InputConnections.test_task_result_paths_survive_packaging_without_entering_validation_hashes",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.PackagedInputTests.test_task_result_paths_survive_packaging_without_entering_validation_hashes"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputBoundaryTests.test_planning_keeps_completed_report_and_active_work_as_readable_context",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.PackagedInputTests.test_planning_keeps_completed_report_and_active_work_as_readable_context"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputBoundaryTests.test_manifest_batch_read_keeps_exact_validation_and_missing_bindings",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.PackagedInputTests.test_manifest_batch_read_keeps_exact_validation_and_missing_bindings"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputBoundaryTests.test_catalog_keeps_aliases_identity_and_only_effective_summaries",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.PackagedInputTests.test_catalog_keeps_aliases_identity_and_only_effective_summaries"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputBoundaryTests.test_relation_uses_sealed_domain_records_at_local_and_central_check",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.PackagedInputTests.test_relation_uses_sealed_domain_records_at_local_and_central_check"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.InputManifestConnections.test_delivered_previous_hashes_pass_the_actual_live_impact_gate",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.InputManifestConnections.test_delivered_previous_hashes_pass_the_actual_live_impact_gate"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.InputManifestConnections.test_input_artifacts_preserve_the_exact_role_manifest_and_catalog",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.InputManifestConnections.test_input_artifacts_preserve_the_exact_role_manifest_and_catalog"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.PreparedInputTests.test_discard_records_cancelled_preparation_and_explicit_continuation",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.PreparedInputTests.test_discard_records_cancelled_preparation_and_explicit_continuation"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.PreparedInputTests.test_runner_takes_its_tools_only_from_the_pinned_profile",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.PreparedInputTests.test_runner_takes_its_tools_only_from_the_pinned_profile"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.ArchivedControlInputTests.test_large_control_is_archived_before_reference_catalog_construction",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.ArchivedControlInputTests.test_large_control_is_archived_before_reference_catalog_construction"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.FormalJudgmentInputTests.test_goal_audit_receives_the_judged_formal_result",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.FormalJudgmentInputTests.test_goal_audit_receives_the_judged_formal_result"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.FormalJudgmentInputTests.test_knowledge_files_carry_the_judged_formal_result",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.FormalJudgmentInputTests.test_knowledge_files_carry_the_judged_formal_result"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_self_check_evidence_follows_the_submission_citation_rule",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.RoleScopeContextTests.test_self_check_evidence_follows_the_submission_citation_rule"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_task_readiness_reaches_its_readers_in_their_scope",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.RoleScopeContextTests.test_task_readiness_reaches_its_readers_in_their_scope"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_completed_review_record_reaches_only_the_goal_audit",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.RoleScopeContextTests.test_completed_review_record_reaches_only_the_goal_audit"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.FollowupDocumentTests.test_planning_roles_receive_the_complete_current_settings",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.FollowupDocumentTests.test_planning_roles_receive_the_complete_current_settings"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.FollowupDocumentTests.test_prepared_observation_rule_reaches_contract_review",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.FollowupDocumentTests.test_prepared_observation_rule_reaches_contract_review"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.FollowupDocumentTests.test_old_rejected_preparation_remains_readable_after_recent_history_moves",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.FollowupDocumentTests.test_old_rejected_preparation_remains_readable_after_recent_history_moves"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_goal_auditor_cannot_reach_another_auditors_judgment",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_role_input_snapshot_reach.SnapshotReachTests.test_goal_auditor_cannot_reach_another_auditors_judgment"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_operational_review_of_an_audit_slot_cannot_reach_another_slots_judgment",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_role_input_snapshot_reach.SnapshotReachTests.test_operational_review_of_an_audit_slot_cannot_reach_another_slots_judgment"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_independent_judgment_cannot_reach_unpublished_work_of_the_execution_ledger",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_role_input_snapshot_reach.SnapshotReachTests.test_independent_judgment_cannot_reach_unpublished_work_of_the_execution_ledger"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.SnapshotReadToolTests.test_indexed_record_is_read_from_the_input_snapshot_and_logged",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_indexed_record_is_read_from_the_input_snapshot_and_logged"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.SnapshotReadToolTests.test_record_outside_the_index_is_refused_and_logged",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_record_outside_the_index_is_refused_and_logged"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.SnapshotReadToolTests.test_ledger_artifact_is_readable_only_where_the_ledger_is",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_ledger_artifact_is_readable_only_where_the_ledger_is"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.SnapshotReadToolTests.test_family_listing_summarizes_its_indexed_records",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_family_listing_summarizes_its_indexed_records"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.SnapshotReadToolTests.test_invalid_output_path_is_refused_in_the_json_result",
+   "disposition": "moved",
+   "new_ids": [
+    "boundary.test_role_input_snapshot_reach.SnapshotReadToolTests.test_invalid_output_path_is_refused_in_the_json_result"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueryIdentity.test_exact_evidence_binds_persisted_bytes_and_code_points",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_engine_record_rules.QueryIdentity.test_exact_evidence_binds_persisted_bytes_and_code_points"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueryIdentity.test_duplicate_id_is_rejected_across_families",
+   "disposition": "moved",
+   "new_ids": [
+    "unit.test_engine_record_rules.QueryIdentity.test_duplicate_id_is_rejected_across_families"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.ObservationMerge.test_merged_review_keeps_all_obligations_and_evidence_refs",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.ObservationMerge.test_merged_review_keeps_all_obligations_and_evidence_refs"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_pending_preparation_keeps_every_reason_without_duplicate_text",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_pending_preparation_keeps_every_reason_without_duplicate_text"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_stopping_execution_input_is_never_merged",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_stopping_execution_input_is_never_merged"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_active_charter_update_can_plan_and_preserves_its_event",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_active_charter_update_can_plan_and_preserves_its_event"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_charter_replanning_preserves_ongoing_preparation_and_consumes_its_event",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_charter_replanning_preserves_ongoing_preparation_and_consumes_its_event"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_regular_empty_plan_can_still_dispatch",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_regular_empty_plan_can_still_dispatch"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_pause_before_model_resume_has_no_checkpoint_grace",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_pause_before_model_resume_has_no_checkpoint_grace",
+    "boundary.test_engine_model_process.ModelProcessJobTests.test_a_model_process_ended_before_resume_leaves_no_process_within_ten_seconds"
+   ],
+   "note": "The model process is a Jobs-fake Job that is never resumed; the legacy teardown's real-Job check (a Job ended before resume is done within ten seconds and leaves no process) is boundary.test_engine_model_process.ModelProcessJobTests.test_a_model_process_ended_before_resume_leaves_no_process_within_ten_seconds."
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_execution_effort_is_its_pinned_profile_effort_not_the_current_setting",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_execution_effort_is_its_pinned_profile_effort_not_the_current_setting"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_running_model_stops_immediately_after_public_pause",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_running_model_stops_immediately_after_public_pause",
+    "boundary.test_engine_model_process.ModelProcessJobTests.test_a_running_model_process_is_ended_within_ten_seconds_and_leaves_no_process"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_initial_wait_ends_on_new_independent_user_decision",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_initial_wait_ends_on_new_independent_user_decision"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_empty_or_failed_initial_preparation_does_not_wait_forever",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_empty_or_failed_initial_preparation_does_not_wait_forever"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_plan_receives_public_running_preparation_without_private_output",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_plan_receives_public_running_preparation_without_private_output"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_task_result_materialization_batches_reads_without_losing_files",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_task_result_materialization_batches_reads_without_losing_files"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_repeated_idle_save_does_not_publish_but_real_changes_do",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_repeated_idle_save_does_not_publish_but_real_changes_do"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_reopened_idle_engine_does_not_publish_again",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_reopened_idle_engine_does_not_publish_again"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_merged_user_requests_keep_all_request_references",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_merged_user_requests_keep_all_request_references"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.QueuedPreparationTests.test_readiness_is_derived_and_changes_with_contract_review_evidence",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_queue.QueuedPreparationTests.test_readiness_is_derived_and_changes_with_contract_review_evidence"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.EngineTests.test_initialization_reports_missing_values_without_model_dispatch",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_flow.EngineTests.test_initialization_reports_missing_values_without_model_dispatch"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.EngineTests.test_public_initialization_reaches_active_with_distinct_interpretation",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_flow.EngineTests.test_public_initialization_reaches_active_with_distinct_interpretation"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.EngineTests.test_nonformal_mathematical_goal_is_not_solved",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_flow.EngineTests.test_nonformal_mathematical_goal_is_not_solved"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.EngineTests.test_formal_requires_two_blind_reviews_and_failure_does_not_create_k",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_flow.EngineTests.test_formal_requires_two_blind_reviews_and_failure_does_not_create_k"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.EngineTests.test_plan_rejects_missing_candidate_and_criterion",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_flow.EngineTests.test_plan_rejects_missing_candidate_and_criterion"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.EngineTests.test_crash_recovery_and_artifact_immutability",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_flow.EngineTests.test_crash_recovery_and_artifact_immutability",
+    "boundary.test_engine_model_process.ModelProcessJobTests.test_the_collector_barrier_sees_an_ended_job_empty",
+    "boundary.test_engine_model_process.ModelProcessJobTests.test_an_exited_owner_process_has_ended"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.PublicGitFlow.test_public_activation_work_receipt_assessment_and_next_plan",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_flow.PublicGitFlow.test_public_activation_work_receipt_assessment_and_next_plan"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.MaintenanceConnections.test_maintenance_archives_complete_run_before_approved_cleanup",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_flow.MaintenanceConnections.test_maintenance_archives_complete_run_before_approved_cleanup"
+   ]
+  },
+  {
+   "legacy_id": "test_engine.SourceIntegrityCheckTests.test_current_corrupt_source_is_found_by_the_explicit_full_byte_check",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_engine_flow.SourceIntegrityCheckTests.test_current_corrupt_source_is_found_by_the_explicit_full_byte_check"
+   ]
+  },
+  {
+   "legacy_id": "test_role_input.RoleInputClassTests.test_identity_review_maps_what_it_does_not_inline_and_never_receives_its_private_keys",
+   "disposition": "moved",
+   "new_ids": [
+    "sim.test_role_input_context.ReviewSeatInputTests.test_identity_review_maps_what_it_does_not_inline_and_never_receives_its_private_keys"
+   ]
+  }
+ ]
+}
