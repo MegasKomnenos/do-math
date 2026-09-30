@@ -128,6 +128,12 @@ def budget_report(rows, tiers, seconds, budgets):
     return {'over_budget': over, 'tier': tier}
 
 
+def budget_tiers(tiers, store):
+    """The budget names of a run's tiers: a T3 that measured every module is held to ``T3_full`` (설계 A29)."""
+    full = store is not None and store['plan'].mode == 'full'
+    return ['T3_full' if name == 'T3' and full else name for name in tiers]
+
+
 def group_of(test):
     return folder_of(test) or shard_for(test)
 
@@ -584,7 +590,7 @@ def main(argv=None):
     t3 = _finish_t3(measurement, directory, selected, args, complete and not changed, store, rows) if measurement else {}
     # T3's whole run, analysis and mutation included, is held to the T3 budget (설계 5.1, 5.2).
     total = round(time.monotonic() - started_run if measurement else sum(shard_seconds.values()), 1)
-    budget = budget_report(rows, args.tier or [], total, json.loads((TESTS / 'budgets.json').read_text(encoding='utf-8')))
+    budget = budget_report(rows, budget_tiers(args.tier or [], store), total, json.loads((TESTS / 'budgets.json').read_text(encoding='utf-8')))
     result = {'open_known_defects': open_defects, 'budget': budget, **t3,
         't0_selection': selection.report() if selection is not None else None,
         'complete': all(report['complete'] for report in reports),

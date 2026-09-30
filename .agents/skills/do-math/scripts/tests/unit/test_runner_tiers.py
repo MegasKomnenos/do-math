@@ -84,6 +84,16 @@ class BudgetTests(unittest.TestCase):
         combined = run_tests.budget_report([], ['T1', 'T2'], 250.0, self.BUDGETS)['tier']
         self.assertEqual((combined['budget_seconds'], combined['over']), (300, False))
 
+    def test_a_t3_that_measured_everything_is_held_to_the_full_measurement_budget(self):
+        """설계 A29: the daily incremental T3 keeps its budget; a run measuring every module has its own."""
+        full = types.SimpleNamespace(mode='full')
+        incremental = types.SimpleNamespace(mode='incremental')
+        self.assertEqual(run_tests.budget_tiers(['T3'], {'plan': full}), ['T3_full'])
+        self.assertEqual(run_tests.budget_tiers(['T3'], {'plan': incremental}), ['T3'])
+        self.assertEqual(run_tests.budget_tiers(['T1', 'T2'], None), ['T1', 'T2'])
+        budgets = json.loads((SCRIPTS / 'tests' / 'budgets.json').read_text(encoding='utf-8'))['tier_seconds']
+        self.assertGreater(budgets['T3_full'], budgets['T3'])
+
 
 
 class ParallelGroupTests(unittest.TestCase):
