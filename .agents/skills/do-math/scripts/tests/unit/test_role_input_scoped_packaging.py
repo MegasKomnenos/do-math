@@ -17,8 +17,8 @@ import unittest
 from do_math import contracts, knowledge_records, submission
 from do_math.canonical import canonical_json
 from do_math.context_store import fit_context, input_class, prepare_role_input, read_source, restore_continuation
-from knowledge_fixtures import verified_knowledge
-from record_fixtures import surface_state
+from support.knowledge_builders import verified_knowledge
+from support.record_builders import surface_state
 from support.engine_context import (DERIVED_KEYS, INTENT_DIRECT, JUDGED, OPERATIONAL_DIRECT, PLANNING_DIRECT,
                                     central_check_knowledge, context_state, is_map_entry, prepare)
 
@@ -61,6 +61,8 @@ class InputFittingTests(unittest.TestCase):
             self.assertEqual((ref['sha256'], ref['bytes']), (hashlib.sha256(raw).hexdigest(), len(raw)))
 
     def test_missing_reader_task_is_an_input_error(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime = surface_state()
         runtime['tasks'] = {'TK': {'id': 'TK', 'status': 'waiting', 'results': [{'report': 'evidence'}]}}
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_plan')
@@ -68,16 +70,18 @@ class InputFittingTests(unittest.TestCase):
             prepare_role_input({'action': {'role': 'research_plan'}, 'ready_task_ids': [],
                 'tasks': [], 'resources': {}, 'knowledge_catalog': []}, instance=instance,
                 runtime=runtime, role='research_plan', profile=profile, snapshot='a' * 40,
-                workspace=Path(directory), activity_id='AY')
+                workspace=Path(directory), activity_id='AY', clock=_entry.ports.clock)
 
     def test_missing_population_is_input_error(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime = context_state()
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_plan')
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaisesRegex(ValueError, 'fixed ready_task_ids'):
                 prepare_role_input({'action': {'role': 'research_plan'}, 'resources': {}, 'knowledge_catalog': []},
                     instance=instance, runtime=runtime, role='research_plan', profile=profile,
-                    snapshot='a' * 40, workspace=Path(directory), activity_id='AC-1')
+                    snapshot='a' * 40, workspace=Path(directory), activity_id='AC-1', clock=_entry.ports.clock)
 
     def test_continuation_preserves_older_files_and_latest_replacements(self):
         raw = {"old": b"old proof", "new": b"new proof", "notes": b"old notes", "result-first": b"first", "result-second": b"second"}
@@ -245,7 +249,7 @@ class RoleInputClassTests(unittest.TestCase):
                     self.assertNotIn('TK-private', canonical_json(fitted['validation_context']).decode())
 
     def test_record_index_lists_the_snapshot_records_the_role_may_read(self):
-        from record_fixtures import task_contract
+        from support.record_builders import task_contract
         instance, runtime = surface_state()
         runtime['tasks'] = {'TK-1': task_contract()}
         governance_sources = sorted(instance['governance_sources'])
@@ -270,6 +274,8 @@ class RoleInputClassTests(unittest.TestCase):
 
     def test_snapshot_record_outside_the_prompt_passes_the_shared_reference_check(self):
         # A record of the input snapshot is citable although no inline key shows it (R5).
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             fitted = prepare({'role': 'maintenance'}, extra={'execution_id': 'EX-check'}, root=root)
@@ -278,13 +284,13 @@ class RoleInputClassTests(unittest.TestCase):
             output = {'summary': 'Inspect', 'used_sources': ['AC-1'], 'questions': [],
                       'report': 'Inspected the activity record', 'remaining_work': []}
             schema = contracts.schema_for('maintenance')
-            self.assertEqual(submission.payload_issues(output, schema, fixed, {}, root), [])
+            self.assertEqual(submission.payload_issues(output, schema, fixed, {}, root, clock=_entry.ports.clock), [])
             output['used_sources'] = ['AC-absent']
-            self.assertEqual([row['path'] for row in submission.payload_issues(output, schema, fixed, {}, root)],
+            self.assertEqual([row['path'] for row in submission.payload_issues(output, schema, fixed, {}, root, clock=_entry.ports.clock)],
                              ['output/used_sources/0'])
 
     def test_independent_judgment_cites_the_research_canon_but_not_an_unsupplied_ledger_record(self):
-        from record_fixtures import task_contract
+        from support.record_builders import task_contract
         instance, runtime = surface_state()
         runtime['tasks'] = {'TK-1': task_contract()}
         # A published exposition that no key of this input shows.
@@ -302,7 +308,7 @@ class RoleInputClassTests(unittest.TestCase):
     def test_contract_reviewer_reads_the_ledger_records_its_contract_names(self):
         # 계약/작업-계약-검토.md 21·43·85: the reviewer reads the records the published contract cites.
         # An academic task's inputs name the goal audit executions of its solution basis.
-        from record_fixtures import task_contract
+        from support.record_builders import task_contract
         instance, runtime = surface_state()
         task = {**task_contract(), 'inputs': ['EX-1'], 'basis_refs': ['KN-1', 'AC-1']}
         runtime['tasks'] = {'TK-1': task}
@@ -360,17 +366,21 @@ class RoleInputClassTests(unittest.TestCase):
 
     def test_scope_follows_the_role_the_input_is_prepared_for(self):
         # prepare_role_input vouches for its role (the selected profile's role), not for action fields.
+        from support.entry import entry
+        _entry = entry()
         planning = {'tasks': [], 'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': [], 'blocked_actions': []}
         instance, runtime = surface_state()
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_plan')
         with tempfile.TemporaryDirectory() as directory:
             context = prepare_role_input({'action': {'id': 'AC-plan'}, 'model_policy': {}, **planning},
                 instance=instance, runtime=runtime, role='research_plan', profile=profile, snapshot='a' * 40,
-                workspace=Path(directory), activity_id='AC-1')['context']
+                workspace=Path(directory), activity_id='AC-1', clock=_entry.ports.clock)['context']
         self.assertEqual({'model_policy', 'configuration_source'} - context.keys(), set())
 
     def test_control_binding_reaches_the_checker_context_but_not_the_prompt(self):
         """About 0.25 s, over the 0.2 s unit budget: it installs the submission and read tools it inspects."""
+        from support.entry import entry
+        _entry = entry()
         instance, runtime = surface_state()
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_work')
         binding = {'execution_id': 'EX-work', 'grant_id': 'GR-1', 'capability': 'secret-capability'}
@@ -379,7 +389,7 @@ class RoleInputClassTests(unittest.TestCase):
             fitted = prepare_role_input({'action': {'id': 'AC-work', 'role': 'research_work'}, 'task': {'id': 'TK-1'},
                 'control_binding': binding}, instance=instance, runtime=runtime, role='research_work', profile=profile,
                 snapshot='a' * 40, workspace=root, activity_id='AC-1', install_submission_tools=True,
-                max_artifact_bytes=100000)
+                max_artifact_bytes=100000, clock=_entry.ports.clock)
             checker = json.loads((root / 'input/submission/context.json').read_bytes())
         self.assertEqual(checker['control_binding'], binding)
         self.assertNotIn('control_binding', fitted['context'])

@@ -46,8 +46,10 @@ class WindowTests(unittest.TestCase):
         self.assertEqual((notice["kind"], notice["requested_at"]), ("finish_notice", NOTICE_AT))
 
     def test_work_without_deadline_has_no_finish_notice_after_long_elapsed_time(self):
+        from support.entry import entry
+        _entry = entry()
         config = {"call_timeout_seconds": 30, "finish_notice_seconds": 60}
-        value = publish(self.root, "E", None, config)
+        value = publish(self.root, "E", None, config, clock=_entry.ports.clock.monotonic, wall_clock=_entry.ports.clock.wall())
         self.assertIsNone(value["effective_deadline_at"])
         self.assertEqual(value["deadline_source"], "none")
         self.assertIsNone(value["remaining_ms_at_start"])

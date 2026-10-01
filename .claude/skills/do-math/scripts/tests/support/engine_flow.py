@@ -24,9 +24,8 @@ from support.model import FakeCLI, ModelDouble
 class BoundedObservationResponder:
     def respond(self, role, ctx, workspace):
         from do_math import execution_profiles, task_contracts
-        from research_fixtures import (assessment, candidate, contract_review, intent_response,
-                                       planning_model_assessments)
-        from runner_fixtures import contract_checks
+        from support.role_answers import assessment, candidate, contract_review, intent_response, planning_model_assessments
+        from support.default_responder import contract_checks
         output = {"summary": role, "used_sources": [], "questions": []}
         if role == "intent_interpretation":
             output = intent_response(ctx)
@@ -86,7 +85,7 @@ def record_submissions(sim, responder=None):
             context = json.loads((self.workspace / "input" / "submission" / "context.json").read_bytes())
             row = {"role": context["action"]["role"], "binding": context["control_binding"], "delivery": delivery["state"]}
             for _ in range(100):
-                receipt = wait_receipt(row["binding"], delivery["request_id"], 0)
+                receipt = wait_receipt(row["binding"], delivery["request_id"], 0, clock=sim.ports.clock)
                 if receipt and receipt.get("state") in FINAL_RECEIPTS:
                     self.model.submissions.append({**row, "receipt": receipt["state"]})
                     return json.dumps({"submission": delivery["request_id"], "receipt": receipt["state"]})

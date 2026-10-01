@@ -6,7 +6,7 @@ import unittest
 
 from do_math.lean_evidence import compare_formal_results, is_lean_identifier
 from do_math.trust_validation import environment_errors, register_request_errors
-from research_fixtures import trust_environment, trust_fixture
+from support.trust_inputs import trust_environment, trust_fixture
 
 
 class LeanEvidenceRuleTests(unittest.TestCase):

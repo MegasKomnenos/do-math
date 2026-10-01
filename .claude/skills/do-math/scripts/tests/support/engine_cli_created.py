@@ -24,15 +24,17 @@ from contextlib import contextmanager
 import inspect
 import json
 import sys
+from support.monitoring_slots import reserve_tool
 import threading
 import unittest
 
 from do_math.repository import ResearchRepository
-from research_fixtures import restore_template, run_cli
+from support.cli_images import initialized_cli
+from support.cli_inputs import run_cli
 from support.engine_cli import body
 
 
-def created_instance(root, shared):
+def created_instance(root):
     """``restore_template`` build: ``init --create-repository`` through the CLI; returns the instance ID."""
     configuration = root / 'config.json'
     configuration.write_text(json.dumps({'operator_enabled': False}), encoding='utf-8')
@@ -46,7 +48,7 @@ def created_instance(root, shared):
 
 class CreatedCliTest(unittest.TestCase):
     def setUp(self):
-        self.root, self.instance_id = restore_template(created_instance)
+        self.root, self.instance_id = initialized_cli('created')
         self.repo = self.root / 'repo'
 
     def cli(self, *arguments):
@@ -62,11 +64,13 @@ class CreatedCliTest(unittest.TestCase):
         return result
 
     def load(self):
-        return ResearchRepository(self.repo, self.instance_id).load()
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
+        return ResearchRepository(self.repo, self.instance_id, backend=_entry.ports.git_backend, clock=_entry.ports.clock).load()
 
 
-def _free_tool():
-    return next(tool for tool in (3, 4, 0, 2) if sys.monitoring.get_tool(tool) is None)
 
 
 @contextmanager
@@ -81,8 +85,7 @@ def control_at_first_sleep(send, seconds):
     from do_math.system_clock import SystemClock
     code, thread, state = SystemClock.sleep.__code__, threading.get_ident(), {'sent': None}
     monitoring = sys.monitoring
-    tool = _free_tool()
-    monitoring.use_tool_id(tool, 'do-math control at sleep')
+    tool = reserve_tool('do-math control at sleep')
 
     def started(started_code, offset):
         if threading.get_ident() != thread or state['sent'] is not None \
@@ -107,8 +110,7 @@ class ReturnedValues:
 
     def __enter__(self):
         monitoring = sys.monitoring
-        self.tool = _free_tool()
-        monitoring.use_tool_id(self.tool, 'do-math returned values')
+        self.tool = reserve_tool('do-math returned values')
 
         def returned(code, offset, value):
             self.values[self.names[code]].append(value)

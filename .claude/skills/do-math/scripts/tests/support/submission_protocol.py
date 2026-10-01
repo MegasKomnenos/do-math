@@ -63,7 +63,7 @@ INSTANCE_ID = 'RI-01ARZ3NDEKTSV4RRFFQ69G5FAV'
 
 class ProtocolScene:
     def __init__(self, root, *, clock=None):
-        from research_fixtures import seal_response
+        from support.role_answers import seal_response
         self.root = Path(root)
         self.clock = clock or FakeClock()
         self.workspace = self.root / 'worker'
@@ -128,8 +128,10 @@ def producer_workspace(root, role='research_preparation', *, context_values=None
 
 
 def check_output(case, workspace, context, output, extension=None, *, process=False):
+    from support.entry import entry
+    _entry = entry()
     from do_math import submission_tool
-    from research_fixtures import seal_response
+    from support.role_answers import seal_response
     output = deepcopy(output)
     draft = workspace / '.scratch/submission.json'
     draft.parent.mkdir(exist_ok=True)
@@ -145,7 +147,7 @@ def check_output(case, workspace, context, output, extension=None, *, process=Fa
     else:
         stdout = io.StringIO()
         with contextlib.chdir(workspace), contextlib.redirect_stdout(stdout):
-            code = submission_tool.main(['--output', str(draft)])
+            code = submission_tool.main(['--output', str(draft)], ports=_entry.ports, environment=_entry.environment)
         printed, errors = stdout.getvalue(), ''
     case.assertIn(code, (0, 1), errors)
     result = json.loads(printed)

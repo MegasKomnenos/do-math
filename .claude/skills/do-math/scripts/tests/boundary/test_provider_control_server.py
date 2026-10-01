@@ -16,12 +16,18 @@ import unittest
 from do_math.control_protocol import REQUEST_KINDS, SELF_CHECK_RESPONSE_SCHEMA
 from do_math.control_server import mcp_server_config
 from do_math.control_transport import ControlTransport
+from test_categories import test_group
 
 
+@test_group('resource')
 class ControlServerTests(unittest.TestCase):
     def test_execution_control_is_registered_and_round_trips_in_child(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as directory:
-            transport = ControlTransport(Path(directory) / "transport")
+            transport = ControlTransport(Path(directory) / "transport", clock=_entry.ports.clock)
             binding = transport.issue("EX-bound", "GR-bound", self_check=True)  # a research work execution
             config = mcp_server_config(binding)
             process = subprocess.Popen([config["command"], *config["args"]], stdin=subprocess.PIPE,

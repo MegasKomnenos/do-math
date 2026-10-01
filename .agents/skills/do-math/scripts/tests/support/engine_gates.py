@@ -30,10 +30,11 @@ class GateClock(FakeClock):
         self._monotonic += seconds
 
 
-def gate_engine(sim):
+def gate_engine(sim, *, resolutions=None):
     """Rewire ``sim`` onto a ``GateClock`` continuing its clock and build a new engine; returns the clock."""
-    clock = GateClock(*sim.clock.state())
+    state = sim.clock.state()
+    clock = GateClock(*state[:3], *(state[3:] if resolutions is None else resolutions))
     sim.clock = clock
     sim.ports = replace(sim.ports, clock=clock)
-    sim.engine = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports)
+    sim.engine = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
     return clock

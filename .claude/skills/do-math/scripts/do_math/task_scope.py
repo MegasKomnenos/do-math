@@ -7,7 +7,6 @@ from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES
 from .planning import contract_hash
 from .canonical import exact_content_hash
 from .task_contracts import LIFECYCLE_STATES, TERMINAL_TASK_STATUSES
-from .migration_defaults import clock_or_system
 
 
 _WITHDRAWABLE_STATES = LIFECYCLE_STATES - TERMINAL_TASK_STATUSES
@@ -76,13 +75,12 @@ def validate_withdrawal_scope(task, snapshot_task, *, proposed_assessment=None):
 
 
 def apply_task_dispositions(instance: dict, runtime: dict, dispositions: list[dict], *,
-                            execution_id: str, input_tasks: dict, clock=None) -> tuple[dict, dict]:
+                            execution_id: str, input_tasks: dict, clock) -> tuple[dict, dict]:
     """Apply withdrawal requests after snapshot and provenance validation.
 
     The caller owns role authorization.  This function deliberately cannot alter
     goals, policies, grants, academic requirements, or user task-scope records.
     """
-    clock = clock_or_system(clock)
     if not isinstance(execution_id, str) or not execution_id:
         raise ValueError("task dispositions need an execution ID")
     if not isinstance(dispositions, list) or not isinstance(input_tasks, dict):
@@ -374,9 +372,8 @@ def designated_judgment(task, obligation, disposition, instance, runtime):
     return None
 
 
-def apply_task_assessments(instance, runtime, assessments, *, execution_id, input_tasks, evaluation_context=None, clock=None):
+def apply_task_assessments(instance, runtime, assessments, *, execution_id, input_tasks, evaluation_context=None, clock):
     """Apply the whole assessment set on copies, including recipient obligations."""
-    clock = clock_or_system(clock)
     from .task_contracts import assessor_is_judge, validate_item_dispositions, contract_obligations, judge_coverage_errors
     from .planning import record_index
     new_instance, new_runtime = deepcopy(instance), deepcopy(runtime)

@@ -17,22 +17,26 @@ from do_math import governance as gov, questions, revisions
 from do_math.governance import preserve_source
 from do_math.question_engine import question_view, user_questions
 from do_math.record_schemas import RECORDS
-from record_fixtures import domain_governance
+from support.record_builders import domain_governance
 
 
 class QuestionTests(unittest.TestCase):
     def setUp(self):
+        from support.entry import entry
+        _entry = entry()
         self.instance = {"id": "I", "knowledge": {}}
         self.runtime = {"tasks": {"A": {"id": "A"}, "B": {"id": "B"}}, "question_links": []}
-        self.a = questions.link(self.runtime, execution_id="E1", field="output/questions/0", owner="user", targets=["A"], blocks=True)
-        self.b = questions.link(self.runtime, execution_id="E2", field="output/questions/0", owner="user", targets=["B"], blocks=True)
+        self.a = questions.link(self.runtime, execution_id="E1", field="output/questions/0", owner="user", targets=["A"], blocks=True, clock=_entry.ports.clock)
+        self.b = questions.link(self.runtime, execution_id="E2", field="output/questions/0", owner="user", targets=["B"], blocks=True, clock=_entry.ports.clock)
 
     def test_only_the_explicitly_affected_task_waits_and_plan_can_choose_other_tasks(self):
+        from support.entry import entry
+        _entry = entry()
         waits = questions.user_waits({"role": "research_work", "target": "A"}, self.instance, self.runtime)
         self.assertEqual([row["question_id"] for row in waits], [self.a["id"]])
         self.assertEqual(questions.user_waits({"role": "research_work", "target": "C"}, self.instance, self.runtime), [])
         self.assertEqual(questions.user_waits({"role": "research_plan"}, self.instance, self.runtime), [])
-        whole = questions.link(self.runtime, execution_id="E3", field="output/questions/0", owner="user", targets=["I"], blocks=True)
+        whole = questions.link(self.runtime, execution_id="E3", field="output/questions/0", owner="user", targets=["I"], blocks=True, clock=_entry.ports.clock)
         waits = questions.user_waits({"role": "research_plan"}, self.instance, self.runtime)
         self.assertEqual([row["question_id"] for row in waits], [whole["id"]])
         self.assertEqual(questions.user_waits({"role": "intent_interpretation"}, self.instance, self.runtime), [])
@@ -54,15 +58,19 @@ class QuestionTests(unittest.TestCase):
             "message": "only distinct open research or operations questions can be resolved by an AI extension"}])
 
     def test_source_identity_not_equal_text_controls_deduplication(self):
-        same = questions.link(self.runtime, execution_id="E1", field="output/questions/0", owner="user", targets=["A"], blocks=True)
+        from support.entry import entry
+        _entry = entry()
+        same = questions.link(self.runtime, execution_id="E1", field="output/questions/0", owner="user", targets=["A"], blocks=True, clock=_entry.ports.clock)
         self.assertEqual(same["id"], self.a["id"])
         self.assertEqual(len(self.runtime["question_links"]), 2)
         self.assertNotEqual(self.a["id"], self.b["id"])
         self.assertNotIn("text", self.a)
 
     def test_retry_bypasses_only_the_question_for_its_held_overflow(self):
+        from support.entry import entry
+        _entry = entry()
         other = questions.link(self.runtime, execution_id="E3", field="output/questions/0",
-                               owner="user", targets=["A"], blocks=True)
+                               owner="user", targets=["A"], blocks=True, clock=_entry.ports.clock)
         action = {"id": "AC-1", "role": "research_work", "target": "A",
                   "input_overflow_retry": {"question_id": self.a["id"], "state": "pending"}}
         waits = questions.user_waits(action, self.instance, self.runtime)
@@ -93,6 +101,8 @@ class RepetitionQuestionTests(unittest.TestCase):
     """A repetition limit's hold question, read through ``question_view`` from the history row it points to."""
 
     def held(self):
+        from support.entry import entry
+        _entry = entry()
         instance = {'id': 'I', 'config': {'selection_failure_limit': 1},
             'governance_sources': {'S': preserve_source('S', 'Authorize the exact continuation.', origin='user')},
             'decisions': {}}
@@ -101,7 +111,7 @@ class RepetitionQuestionTests(unittest.TestCase):
             'EX-first': {'id': 'EX-first', 'role': 'research_plan', 'status': 'ended', 'action': deepcopy(action)}}}
         revisions.record_repetition(instance, runtime, lineage='selection_failure',
             lineage_id='population', event_ref='EX-first', outcome='rejected', owner='ai',
-            reason='The returned plan omitted a candidate.')
+            reason='The returned plan omitted a candidate.', clock=_entry.ports.clock)
         return instance, runtime, action
 
     def view(self, instance, runtime):
@@ -125,16 +135,18 @@ class RepetitionQuestionTests(unittest.TestCase):
         self.assertTrue(revisions.action_repetition_waits(instance, runtime, action))
 
     def test_scoped_continuation_resolves_only_the_current_hold_question(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime, action = self.held()
         first = runtime['question_links'][0]
-        questions.link(runtime, execution_id='EX-other', field='error', owner='user', targets=['I'], blocks=False)
+        questions.link(runtime, execution_id='EX-other', field='error', owner='user', targets=['I'], blocks=False, clock=_entry.ports.clock)
         runtime['executions']['EX-other'] = {'id': 'EX-other', 'error': 'A separate choice remains.'}
         change = {'kind': 'repetition_continue', 'lineage': 'selection_failure',
             'lineage_id': 'population', 'hold_event_ref': 'EX-first',
             'allowed_action': revisions.action_scope(action), 'reason': 'Continue the exact held plan.'}
         decision = {'id': 'DC-continue', 'actor': 'user', 'source_ref': 'S', 'change': change}
         instance['decisions'][decision['id']] = decision
-        revisions.continue_repetition(instance, runtime, change, decision)
+        revisions.continue_repetition(instance, runtime, change, decision, clock=_entry.ports.clock)
         self.assertEqual(first['status'], 'resolved')
         self.assertEqual(first['resolution_ref'], decision['id'])
         self.assertEqual(user_questions(self.view(instance, runtime)), ['A separate choice remains.'])
@@ -143,7 +155,7 @@ class RepetitionQuestionTests(unittest.TestCase):
             'status': 'ended', 'action': deepcopy(action)}
         revisions.record_repetition(instance, runtime, lineage='selection_failure',
             lineage_id='population', event_ref='EX-second', outcome='rejected', owner='ai',
-            reason='The next returned plan still omitted a candidate.')
+            reason='The next returned plan still omitted a candidate.', clock=_entry.ports.clock)
         current = runtime['question_links'][-1]
         self.assertNotEqual(first['origin_field'], current['origin_field'])
         self.assertEqual(current['status'], 'open')
@@ -153,18 +165,22 @@ class RepetitionQuestionTests(unittest.TestCase):
 
 class GovernanceQuestionTests(unittest.TestCase):
     def test_question_advice_does_not_block_and_partial_target_answer_does_not_erase_wait(self):
-        rt = {}; questions.link(rt, execution_id="E", field="questions/0", owner="user", targets=["I"], blocks=False)
+        from support.entry import entry
+        _entry = entry()
+        rt = {}; questions.link(rt, execution_id="E", field="questions/0", owner="user", targets=["I"], blocks=False, clock=_entry.ports.clock)
         self.assertEqual(questions.user_waits({"role": "research_preparation"}, {"id": "I"}, rt), [])
-        blocking = questions.link(rt, execution_id="E", field="questions/1", owner="user", targets=["A", "B"], blocks=True)
+        blocking = questions.link(rt, execution_id="E", field="questions/1", owner="user", targets=["A", "B"], blocks=True, clock=_entry.ports.clock)
         questions.resolve_user(rt, [blocking["id"]], resolution_ref="D", affected_ids=["A"])
         self.assertEqual(blocking["status"], "open")
         self.assertEqual(blocking["unresolved_target_ids"], ["B"])
 
     def test_actual_answer_preserves_other_affected_targets(self):
+        from support.entry import entry
+        _entry = entry()
         i = domain_governance(); rt = {"tasks": {"A": {"id": "A"}, "B": {"id": "B"}}, "executions": {}, "queue": []}
-        q = questions.link(rt, execution_id="E", field="q/0", owner="user", targets=["A", "B"], blocks=True)
+        q = questions.link(rt, execution_id="E", field="q/0", owner="user", targets=["A", "B"], blocks=True, clock=_entry.ports.clock)
         _, updated, _ = gov.apply_decision(i, rt, {"kind": "question_answer", "text": "Answer A", "target_ids": ["A"],
-                                                   "resolves_questions": [q["id"]]}, source_ref="S")
+                                                   "resolves_questions": [q["id"]]}, source_ref="S", clock=_entry.ports.clock)
         self.assertEqual(updated["question_links"][0]["unresolved_target_ids"], ["B"])
         self.assertEqual(updated["question_links"][0]["status"], "open")
 

@@ -20,7 +20,7 @@ from do_math import activities, questions
 from do_math.execution_profiles import profile_ref
 from do_math.governance import validate_grant_source
 from do_math.record_schemas import RECORDS
-from research_fixtures import policy_change
+from support.state_builders import policy_change
 from do_math.engine import ResearchEngine
 from support.engine_lifecycle import (ObservedCalls, approve, artifact_reader_code, clear_work, code_of, extended, grant,
                                       next_environment, queue_work, research_grant, task, transition)
@@ -476,6 +476,8 @@ class InitialQueueTests(unittest.TestCase):
 
 class InputOverflowRetryTests(unittest.TestCase):
     def test_retry_reuses_the_exact_held_action_and_current_authority(self):
+        from support.entry import entry
+        _entry = entry()
         e = Sim.activated().engine
         action = {'id': 'AC-held-overflow', 'role': 'research_preparation'}
         e._action_lifecycle_gate(action)
@@ -484,7 +486,7 @@ class InputOverflowRetryTests(unittest.TestCase):
         activities.wait_for(e.runtime, activity['id'], reason='input_overflow', condition=condition,
                             next_owner='user', at=e._lifecycle_now().isoformat())
         question = questions.link(e.runtime, execution_id='EX-overflow', field='resolution_question/question',
-                                  owner='user', targets=[action['id']], blocks=True)
+                                  owner='user', targets=[action['id']], blocks=True, clock=_entry.ports.clock)
         e.runtime['queue'].clear()
         e.runtime.setdefault('waiting_actions', {})[action['id']] = {'action': deepcopy(action), 'kind': 'input_overflow',
                                                       'reason': 'input_overflow', 'question_id': question['id'],
@@ -503,6 +505,39 @@ class InputOverflowRetryTests(unittest.TestCase):
 
 
 class LimitedRecoveryTests(unittest.TestCase):
+    def test_limited_recovery_refuses_unbound_requests_and_surfaces_check_defects(self):
+        from support.provider_probes import ObservedCalls
+        from support.engine_lifecycle import applied
+        sim = Sim.activated()
+        e = sim.engine
+        with ObservedCalls(check=e._check_limited_recovery) as calls:
+            self.assertFalse(e._limited_recovery_allowed({'id': 'AC-plain', 'role': 'maintenance'}))
+        self.assertEqual(calls.count('check'), 0)
+        applied(sim, 'pause', text='repair paused research')
+        applied(sim, 'decision', config={'change': {'kind': 'grant', 'grant': {
+            'id': 'GR-repair', 'kind': 'local', 'roles': ['maintenance'], 'included_targets': ['RI-test'],
+            'purposes': ['restore sealed input'], 'reuse': 'once'}}})
+        e._enqueue('maintenance', 'RI-test', purpose='restore sealed input')
+        action = next(a for a in e.runtime['queue'] if a['role'] == 'maintenance' and a.get('target') == 'RI-test')
+        e._save()
+        applied(sim, 'decision', config={'change': {'kind': 'limited_recovery', 'action_id': action['id'],
+            'grant_id': 'GR-repair', 'profile_ref': e._select_model(action)['profile_ref'],
+            'purpose': 'restore sealed input', 'procedure': 'Restore the sealed input and verify its digest',
+            'expires_at': (sim.clock.wall() + timedelta(minutes=5)).isoformat()}})
+        action = next(a for a in e.runtime['queue'] if a['id'] == action['id'])
+        self.assertTrue(e._limited_recovery_allowed(action))
+        malformed = deepcopy(action)
+        malformed['repair']['limited_recovery']['source_ref'] = 'UC-one'
+        with ObservedCalls(check=e._check_limited_recovery) as calls:
+            with self.assertRaises(KeyError) as caught:
+                e._limited_recovery_allowed(malformed)
+            self.assertEqual(caught.exception.args, ('UC-one',))
+        self.assertEqual(calls.count('check'), 1)
+        stale = deepcopy(action)
+        stale['repair']['limited_recovery']['pause_basis'] = 'stale'
+        self.assertFalse(e._limited_recovery_allowed(stale))
+        self.assertTrue(e._limited_recovery_allowed(action))
+
     def test_paused_recovery_is_exact_authorized_and_revocable(self):
         sim = Sim.activated()
         e = sim.engine

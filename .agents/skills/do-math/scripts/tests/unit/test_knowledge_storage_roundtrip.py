@@ -15,20 +15,22 @@ import unittest
 
 from do_math import knowledge, knowledge_io, knowledge_records as kr
 from do_math.canonical import exact_content_hash
-from knowledge_fixtures import knowledge_candidate
+from support.knowledge_builders import knowledge_candidate
 from support.knowledge_roundtrip import KnowledgeRoundtripHarness
 
 
 class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
     def test_shared_formal_result_continuity_round_trips_for_each_exposition(self):
         """About 0.35 s, over the 0.2 s unit budget: the split state is published and reloaded through the storage contract five times."""
+        from support.entry import entry
+        _entry = entry()
         first = self.kid
         first_assessment = self.assessment()
         shared = self.state['knowledge'][first]['formal_result_id']
         proposed = knowledge_candidate(formal_result_ref=shared)
         proposed.update(title='Second explanation', explanation='An independent account of True')
         self.state, self.runtime, second = knowledge_io.import_candidate(
-            self.state, self.runtime, proposed, source_ref='second-source', actor_ref='second-author')
+            self.state, self.runtime, proposed, source_ref='second-source', actor_ref='second-author', clock=_entry.ports.clock)
         self.kid = second
         second_assessment = self.assessment()
         self.roundtrip()
@@ -41,7 +43,7 @@ class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
                 'id': environment_id, 'status': 'registered'}
             # Registering the same shared toolchain record again binds the same baseline.
             self.runtime['trust_bindings'][environment_id] = copy.deepcopy(self.runtime['trust_bindings'][current_environment])
-            transition = knowledge.begin_transition(self.state, environment_id)
+            transition = knowledge.begin_transition(self.state, environment_id, clock=_entry.ports.clock)
             self.assertEqual({target['id'] for target in transition['targets']}, {first, second})
             for target in transition['targets']:
                 self.assertEqual(target['exposition_id'],
@@ -53,7 +55,7 @@ class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
             self.runtime.setdefault('trust_transitions', {})[transition['id']] = transition
             self.roundtrip()
             transition = self.runtime['trust_transitions'][transition['id']]
-            self.state = knowledge.activate_transition(self.state, transition)
+            self.state = knowledge.activate_transition(self.state, transition, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
             transition['status'] = 'active'
             self.roundtrip()
             for kid, old_assessment in list(previous_assessments.items()):
@@ -112,6 +114,8 @@ class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
 
         The engine's candidate application (``_apply_bundle_candidate``) on the product engine loaded from the
         repository; its planner wake-up and goal currentness are real, where the legacy test replaced both."""
+        from support.entry import entry
+        _entry = entry()
         from do_math.configuration import DEFAULT_CONFIG
         from do_math import activities, execution_lifecycle
         from do_math.execution_profiles import build_profiles, profile_ref
@@ -122,7 +126,7 @@ class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
         changes = {'summary': 'Clearer summary of the unchanged formal proposition'}
         roots = knowledge.revision_roots(self.state, self.kid)
         impact = knowledge.plan_impact(self.state, self.runtime, roots, [])['computed_impact']
-        profiles = build_profiles({**DEFAULT_CONFIG, 'lean_command': ['synthetic-lean']})
+        profiles = build_profiles({**DEFAULT_CONFIG, 'lean_command': ['synthetic-lean']}, host=_entry.ports.host)
         profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'research_work')
         self.state['execution_profiles'][profile['id']] = profile
         activity = activities.open_activity(self.runtime, activity_id=self.clock.new_id('AT'), activity_kind='research_work',
@@ -169,11 +173,13 @@ class KnowledgeRoundtripTests(KnowledgeRoundtripHarness):
 
 class ExactSourceTests(KnowledgeRoundtripHarness):
     def test_actual_git_candidate_preserves_exact_source_and_declaration_names(self):
+        from support.entry import entry
+        _entry = entry()
         source = 'theorem \u212a : True := True.intro\n-- e\u0301\r\n'
         data = knowledge_candidate()
         data.update(lean_code=source, declaration_names=['\u212a'])
         self.state, self.runtime, kid = knowledge_io.import_candidate(self.state, self.runtime, data,
-            source_ref='raw-source-fixture', actor_ref='raw-source-author')
+            source_ref='raw-source-fixture', actor_ref='raw-source-author', clock=_entry.ports.clock)
         record = self.state['knowledge'][kid]
         basis = knowledge.capture_basis(self.state, self.runtime, [record['formal_result_id'], record['exposition_id']])
         impact = knowledge.plan_impact(self.state, self.runtime, [record['formal_result_id']], [])['computed_impact']
@@ -201,9 +207,11 @@ class ExactSourceTests(KnowledgeRoundtripHarness):
         self.assertNotEqual(first, kr.identity_basis(self.state, self.kid))
 
     def test_synthetic_transition_review_cannot_cover_a_changed_unicode_expression(self):
+        from support.entry import entry
+        _entry = entry()
         self.state['trust_environments']['TE-next'] = {**copy.deepcopy(self.state['trust_environments']['TE-test']),
             'id': 'TE-next', 'status': 'registered'}
-        transition = knowledge.begin_transition(self.state, 'TE-next')
+        transition = knowledge.begin_transition(self.state, 'TE-next', clock=_entry.ports.clock)
         result = copy.deepcopy(self.state['formal_results'][self.state['knowledge'][self.kid]['formal_result_id']]['verification'])
         result['id'] = self.kid
         result['declaration_evidence']['truth']['type'] = 'Exact expression \u212a'
@@ -212,12 +220,12 @@ class ExactSourceTests(KnowledgeRoundtripHarness):
         before = copy.deepcopy(self.state)
         synthetic = knowledge.record_transition_result(self.state, transition, result)
         with self.assertRaisesRegex(ValueError, 'sealed staged identity review runtime'):
-            knowledge.activate_transition(self.state, synthetic)
+            knowledge.activate_transition(self.state, synthetic, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual(self.state, before)
         result['declaration_evidence']['truth']['type'] = 'Exact expression K'
         invalid = knowledge.record_transition_result(self.state, transition, result)
         with self.assertRaisesRegex(ValueError, 'sealed staged identity review runtime'):
-            knowledge.activate_transition(self.state, invalid)
+            knowledge.activate_transition(self.state, invalid, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual(self.state, before)
 
     def test_actual_git_preserves_exact_compiler_result_and_mathematical_exposition(self):

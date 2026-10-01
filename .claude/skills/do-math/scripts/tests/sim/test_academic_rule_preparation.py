@@ -15,8 +15,9 @@ from copy import deepcopy
 import unittest
 
 from do_math.model_policy import assessment_basis
-from research_fixtures import candidate, prepared_rule_conditions
-from runner_fixtures import rating
+from support.role_answers import candidate
+from support.observation_inputs import prepared_rule_conditions
+from support.default_responder import rating
 from support.academic_scenes import ended, rule_prepared, warm_assessment
 from support.sim import Sim, warm_template
 

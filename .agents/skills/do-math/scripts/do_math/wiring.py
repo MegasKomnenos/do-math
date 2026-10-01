@@ -9,7 +9,8 @@ from .powershell_scheduler import PowerShellScheduler
 from .local_host import LocalHost
 
 
-def real_ports() -> Ports:
-    return Ports(clock=SystemClock(), git_backend=GitProcess(), calls=ThreadCalls(), jobs=WindowsJobs(),
+def real_ports(*, environment) -> Ports:
+    clock, jobs = SystemClock(), WindowsJobs()
+    return Ports(clock=clock, git_backend=GitProcess(environment=environment), calls=ThreadCalls(), jobs=jobs,
                  scheduler=PowerShellScheduler(), http=UrllibHttp(),
-                 host=LocalHost())
+                 host=LocalHost(jobs=jobs, clock=clock, environment=environment))

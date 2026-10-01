@@ -11,6 +11,7 @@
 """
 from pathlib import Path
 import sys
+from support.monitoring_slots import reserve_tool
 
 
 class CallSites:
@@ -20,8 +21,7 @@ class CallSites:
     def __enter__(self):
         monitoring = sys.monitoring
         # A tool slot no debugger, coverage tool, profiler or ObservedCalls holds.
-        self.tool = next(tool for tool in (4, 3, 0, 2) if monitoring.get_tool(tool) is None)
-        monitoring.use_tool_id(self.tool, 'do-math submission call sites')
+        self.tool = reserve_tool('do-math submission call sites')
 
         def called(code, offset, callable_, argument):
             if callable_ is self.target:

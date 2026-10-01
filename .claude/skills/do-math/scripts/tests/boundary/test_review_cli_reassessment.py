@@ -45,8 +45,8 @@ class CliReassessmentReportTests(unittest.TestCase):
             args = ['request', '--repository', str(sim.repository), '--instance', sim.instance_id,
                     '--assessment-reassessment-file', str(path)]
             with ObservedCalls(control=cli._control) as observed:
-                first, code = cli.execute(cli.build_parser().parse_args(args))
-                second, second_code = cli.execute(cli.build_parser().parse_args(args))
+                first, code = cli.execute(cli.build_parser().parse_args(args), codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id, ports=sim.ports)
+                second, second_code = cli.execute(cli.build_parser().parse_args(args), codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id, ports=sim.ports)
         self.assertEqual((code, second_code), (0, 0))
         for captured in observed.captured('control'):
             self.assertEqual((captured['action'], captured['text']), ('request', text))
@@ -56,7 +56,7 @@ class CliReassessmentReportTests(unittest.TestCase):
         # The same report is the same request: the second run replays its receipt and processes nothing again.
         self.assertEqual((second['request_id'], second['replayed'], second['snapshot']),
                          (first['request_id'], True, first['snapshot']))
-        _, instance, runtime = ResearchRepository(sim.repository, sim.instance_id).load()
+        _, instance, runtime = ResearchRepository(sim.repository, sim.instance_id, backend=sim.ports.git_backend, clock=sim.ports.clock).load()
         results = [row['result'] for row in runtime['history'] if row.get('kind') == 'assessment_reassessment_control']
         self.assertEqual([row['disposition'] for row in results], ['reassessment_opened'])
         cycle = runtime['review_cycles'][results[0]['review_cycle_id']]

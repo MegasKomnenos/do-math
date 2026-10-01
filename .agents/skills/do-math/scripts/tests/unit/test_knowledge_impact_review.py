@@ -21,18 +21,18 @@ import jsonschema
 from do_math import contracts, integration, knowledge_io, submission
 from do_math.canonical import canonical_json, exact_content_hash
 from do_math.knowledge import content_hash
-from record_fixtures import research_work_context
-from review_fixtures import ImpactReviewHarness
+from support.record_builders import research_work_context
+from support.knowledge_impact import ImpactCase
 from support.knowledge_impact import fixture_store, seal_review
 from support.storage_records import record_store
 
 
-class ImpactCase(ImpactReviewHarness):
+class ImpactReviewCase(ImpactCase):
     def seal(self, execution, output, fixed, workspace):
         return seal_review(execution, output, fixed, workspace)
 
 
-class ImpactBundleTests(ImpactCase):
+class ImpactBundleTests(ImpactReviewCase):
     def _request(self):
         return integration.bundle_impact_request(self.instance, self.runtime, self.bundle,
                                                  producer_execution_id='EX-producer', input_snapshot='fixed-input')
@@ -66,6 +66,8 @@ class ImpactBundleTests(ImpactCase):
 
     def test_coupled_changes_use_the_single_reviewed_s0_plan(self):
         """About 0.25 s, over the 0.2 s unit budget: the review is sealed by the product's central capture on a real engine and published to a repository."""
+        from support.entry import entry
+        _entry = entry()
         first, dependent, second = self.ids
         self.instance['knowledge'][dependent]['dependencies'] = [first]
         self.instance = knowledge_io.ensure_ontology(self.instance)
@@ -84,7 +86,7 @@ class ImpactBundleTests(ImpactCase):
         request = self._request()
         args = self._seal_review(request)
         changed, running = integration.apply_reviewed_knowledge_changes(
-            self.instance, self.runtime, self.bundle, actor_ref='EX-producer', **args)
+            self.instance, self.runtime, self.bundle, actor_ref='EX-producer', **args, clock=_entry.ports.clock)
         self.assertEqual(before_instance, canonical_json(self.instance))
         self.assertNotEqual(before_runtime, canonical_json(running))
         self.assertEqual({dependent, first},
@@ -97,6 +99,8 @@ class ImpactBundleTests(ImpactCase):
 
     def test_bundle_level_reviewed_effect_is_applied_once(self):
         """About 0.5 s, over the 0.2 s unit budget: the review is sealed by the product's central capture on a real engine and published to a repository."""
+        from support.entry import entry
+        _entry = entry()
         target = self.ids[0]
         task_id = 'TK-external-premise'
         self.runtime['tasks'] = {task_id: {'id': task_id, 'status': 'open', 'assessment': {'current': True, 'basis': []}}}
@@ -110,7 +114,7 @@ class ImpactBundleTests(ImpactCase):
         request = self._request()
         args = self._seal_review(request)
         changed, running = integration.apply_reviewed_knowledge_changes(
-            self.instance, self.runtime, self.bundle, actor_ref='EX-producer', **args)
+            self.instance, self.runtime, self.bundle, actor_ref='EX-producer', **args, clock=_entry.ports.clock)
         self.assertFalse(running['tasks'][task_id]['assessment']['current'])
         self.assertEqual(1, len([row for row in running['history'] if row.get('kind') == 'knowledge_reassessment_required']))
 
@@ -143,6 +147,8 @@ class ImpactBundleTests(ImpactCase):
         self.assertTrue(extra['requires_independent_review'])
 
     def test_explicit_replacement_ids_support_forward_sibling_dependencies(self):
+        from support.entry import entry
+        _entry = entry()
         first, dependent = self.ids[:2]
         new_first = 'KN-01ARZ3NDEKTSV4RRFFQ69G5FAA'
         new_dependent = 'KN-01ARZ3NDEKTSV4RRFFQ69G5FAB'
@@ -160,7 +166,7 @@ class ImpactBundleTests(ImpactCase):
         before_instance = canonical_json(self.instance)
         before_runtime = canonical_json(self.runtime)
         changed, running = integration.apply_reviewed_knowledge_changes(self.instance, self.runtime, self.bundle,
-            actor_ref='EX-producer', producer_execution_id='EX-producer', input_snapshot='fixed-input')
+            actor_ref='EX-producer', producer_execution_id='EX-producer', input_snapshot='fixed-input', clock=_entry.ports.clock)
         self.assertEqual([new_first], changed['knowledge'][new_dependent]['dependencies'])
         self.assertEqual(first, changed['knowledge'][new_first]['supersedes'])
         self.assertEqual(dependent, changed['knowledge'][new_dependent]['supersedes'])
@@ -169,6 +175,8 @@ class ImpactBundleTests(ImpactCase):
         self.assertNotEqual(before_runtime, canonical_json(running))
 
     def test_replacement_id_schema_and_global_uniqueness_are_enforced(self):
+        from support.entry import entry
+        _entry = entry()
         replacement_id = 'KN-01ARZ3NDEKTSV4RRFFQ69G5FAC'
         row = {'id': self.ids[0], 'replacement_id': replacement_id, 'changes': {'summary': 'Revised'},
                'reason': 'Correct the record', 'impact_set': []}
@@ -191,12 +199,12 @@ class ImpactBundleTests(ImpactCase):
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             response_schema = contracts.schema_for('research_work')
-            submission.install_tools(workspace, producer_context, response_schema, None)
+            submission.install_tools(workspace, producer_context, response_schema, None, clock=_entry.ports.clock)
             draft = workspace / '.scratch/draft.json'
             draft.parent.mkdir()
             draft.write_bytes(canonical_json(producer_output))
             (workspace / 'activity-extensions.json').write_bytes(canonical_json(producer_extensions))
-            producer_check = submission.producer_check(workspace, draft)
+            producer_check = submission.producer_check(workspace, draft, clock=_entry.ports.clock)
             self.assertTrue(producer_check['passed'], producer_check['issues'])
 
         def bundle_for(rows):
@@ -213,16 +221,16 @@ class ImpactBundleTests(ImpactCase):
         # import_candidate rejects the second use of one replacement ID.
         with self.assertRaisesRegex(ValueError, 'already exists'):
             integration.apply_reviewed_knowledge_changes(self.instance, self.runtime, bundle_for(duplicate),
-                actor_ref='EX-producer', producer_execution_id='EX-producer', input_snapshot='fixed-input')
+                actor_ref='EX-producer', producer_execution_id='EX-producer', input_snapshot='fixed-input', clock=_entry.ports.clock)
         reused = [{**row, 'replacement_id': self.ids[2]}]
         with self.assertRaisesRegex(ValueError, 'already exists'):
             integration.apply_reviewed_knowledge_changes(self.instance, self.runtime, bundle_for(reused),
-                actor_ref='EX-producer', producer_execution_id='EX-producer', input_snapshot='fixed-input')
+                actor_ref='EX-producer', producer_execution_id='EX-producer', input_snapshot='fixed-input', clock=_entry.ports.clock)
         self.assertEqual(original_instance, canonical_json(self.instance))
         self.assertEqual(original_runtime, canonical_json(self.runtime))
 
 
-class ImpactReviewTests(ImpactCase):
+class ImpactReviewTests(ImpactReviewCase):
     def test_request_cannot_relabel_the_original_producer_snapshot(self):
         with self.assertRaisesRegex(ValueError, '^impact request snapshot differs from its original producer input$'):
             self.api.bundle_impact_request(self.instance, self.runtime, self.bundle,
@@ -230,6 +238,8 @@ class ImpactReviewTests(ImpactCase):
 
     def test_designated_review_has_producible_closed_schema_and_exact_scope(self):
         """About 0.25 s, over the 0.2 s unit budget: the installed producer check runs twice on a real workspace."""
+        from support.entry import entry
+        _entry = entry()
         request = self.request()
         action = {'role': 'maintenance', 'stage': 'impact_review', 'input_basis': {'impact_review': request}}
         output = self.review_output(request)
@@ -250,15 +260,15 @@ class ImpactReviewTests(ImpactCase):
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             ctx = {'action': action, 'execution_id': 'EX-review', 'snapshot': 'review-input', 'kind_definitions': {}}
-            submission.install_tools(workspace, ctx, schema, None)
+            submission.install_tools(workspace, ctx, schema, None, clock=_entry.ports.clock)
             draft = workspace / '.scratch/draft.json'
             draft.parent.mkdir()
             draft.write_text(json.dumps(output), encoding='utf-8')
-            self.assertTrue(submission.producer_check(workspace, draft)['passed'])
+            self.assertTrue(submission.producer_check(workspace, draft, clock=_entry.ports.clock)['passed'])
             bad = deepcopy(output)
             bad['impact_review']['plan_decisions'] = [bad['impact_review']['plan_decisions'][0]] * 3
             draft.write_text(json.dumps(bad), encoding='utf-8')
-            self.assertFalse(submission.producer_check(workspace, draft)['passed'],
+            self.assertFalse(submission.producer_check(workspace, draft, clock=_entry.ports.clock)['passed'],
                              'Installed producer must reject duplicate scope judgments')
 
     def test_review_required_is_a_waiting_disposition_not_a_producer_retry(self):
@@ -305,7 +315,7 @@ class ImpactReviewTests(ImpactCase):
             confirmations = self.api.require_bundle_impact_review(self.instance, self.runtime, self.bundle, **args)
             self.assertEqual(set(request['plans']), set(confirmations))
             changed, running = self.api.apply_reviewed_knowledge_changes(self.instance, self.runtime, self.bundle,
-                actor_ref='EX-producer', **args)
+                actor_ref='EX-producer', **args, clock=self.clock)
             self.assertEqual({self.ids[0], self.ids[2]},
                 {row['supersedes'] for row in changed['knowledge'].values() if row.get('supersedes')})
             saved = store.publish(head, {'research/domain-result.json': canonical_json(changed),
@@ -374,14 +384,16 @@ class ImpactReviewTests(ImpactCase):
 
     def test_sealed_review_allows_real_domain_git_retry_and_rejects_wrong_evidence(self):
         """About 0.7 s, over the 0.2 s unit budget: the review and the producer bundle are published through the storage contract."""
+        from support.entry import entry
+        _entry = entry()
         from do_math import activities, execution_profiles, model_policy
-        from research_fixtures import current_state
+        from support.state_builders import current_state
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             profiles = execution_profiles.build_profiles({'session_limits': model_policy.LIMITS,
                 'tier_models': model_policy.MODELS, 'observation_mode': 'event_driven', 'max_input_bytes': 500000,
                 'effort': 'medium', 'operator_effort': 'high', 'operator_timeout_seconds': 600,
-                'scholarly_enabled': True, 'scholarly_server': None, 'claude_only_assigned_model': False})
+                'scholarly_enabled': True, 'scholarly_server': None, 'claude_only_assigned_model': False}, host=_entry.ports.host)
             self.instance.update({k: v for k, v in profiles.items() if k != 'role_profile_refs'})
             self.runtime['queue'] = []
 
@@ -399,7 +411,7 @@ class ImpactReviewTests(ImpactCase):
             execution('EX-producer', 'research_work', {'id': 'AC-producer', 'role': 'research_work', 'target': None})
             # Every stored state passes the current lifecycle gate.
             self.instance, self.runtime = current_state(self.instance, self.runtime)
-            repo = record_store(root)
+            repo = record_store(root, clock=self.clock)
             head = repo.initialize(self.instance, self.runtime)
             self.runtime['executions']['EX-producer']['input_snapshot'] = head
             request = self.request()
@@ -414,10 +426,10 @@ class ImpactReviewTests(ImpactCase):
             schema = contracts.schema_for('maintenance')
             schema['properties']['impact_review'] = self.api.impact_review_response_schema(request)
             schema['required'].append('impact_review')
-            submission.install_tools(workspace, fixed, schema, None)
+            submission.install_tools(workspace, fixed, schema, None, clock=_entry.ports.clock)
             (workspace / 'draft.json').write_bytes(canonical_json(output))
             sealed = submission.seal_submission(workspace, 'draft.json', execution_id='EX-review',
-                context=fixed, schema=schema, max_artifact_bytes=1024 * 1024)
+                context=fixed, schema=schema, max_artifact_bytes=1024 * 1024, clock=_entry.ports.clock)
             self.assertTrue(sealed['passed'], sealed['check']['issues'])
             reviewer.update(input_bundle='BA-review-input', submitted_output_ref='runtime/artifacts/BA-review-output/output.json',
                             output=output, input_snapshot=head)
@@ -468,7 +480,7 @@ class ImpactReviewTests(ImpactCase):
                     self.api.require_bundle_impact_review(i, r, b, **a)
 
             def apply_changes(i, r, b):
-                updated, running = self.api.apply_reviewed_knowledge_changes(i, r, b, actor_ref='EX-producer', **args)
+                updated, running = self.api.apply_reviewed_knowledge_changes(i, r, b, actor_ref='EX-producer', **args, clock=self.clock)
                 i.clear(); i.update(updated)
                 r.clear(); r.update(running)
             result = self.api.apply_bundles(self.instance, self.runtime, self.output, self.extensions, research_work_context(),

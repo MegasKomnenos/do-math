@@ -1,0 +1,15 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_environment_failure_waits_for_rerecord_before_compiler_retry",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_machine_foundation_environment.MachineFoundationEnvironmentTests.test_foundation_environment_failure_waits_for_rerecord_before_compiler_retry",
+        "sim.test_machine_foundation_environment.MachineFoundationEnvironmentTests.test_foundation_default_engine_verifier_uses_jobs_and_clock_and_publishes",
+        "sim.test_machine_foundation_environment.MachineFoundationEnvironmentTests.test_publication_observer_rejects_engine_and_repository_on_non_owner_thread"
+      ],
+      "note": "Real Sim engine and repository replace FakeEngine/Mock verifier. Original unused rerecord input, metadata rewrite, no-verifier call observation, formal_environment owner, continuation, accepted result and exact single rebound event assertions retained. Real storage exposes existing KD-0006 at formal_engine._apply_trust_rebind: closed event schema rejects previous/current/recorded_at/toolchain_record; no product repair in phase 1. 감사 F1 교정: 407db136 Host._save:49의 소유 스레드 거부를 실제 ResearchEngine._save/ResearchRepository.save_with_state 진입 관찰로 복원한다. scene 준비·재기록 전 대기·재시도 전체를 관찰하고 성공한 각 실제 게시의 머리 전진 및 갱신된 머리에서 정지 판정 후 저장 반환 순서를 검사한다. 현행 _save의 변경 없는 no-op은 게시와 구분한다. 같은 관찰을 KD 표시 없는 정상 게시 시험에도 적용하고, 별도 실제 다른 스레드 호출 음성 탐침은 엔진과 저장소 진입 둘 다 거부한다. KD-0006 시험의 cleanup은 expectedFailure 밖에서 관찰값과 ValueError/닫힌 events 스키마의 정확한 네 거부 필드 및 validate_record traceback을 검사하여 도우미 오류가 알려진 결함으로 숨지 못하게 한다. 재결박 뒤 성공 게시와 원문 최종 결과·결박·단일 사건 단언은 KD-0006 때문에 여전히 실행 미완이다.",
+      "known_defect": "KD-0006"
+    }
+  ]
+}

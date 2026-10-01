@@ -60,6 +60,7 @@ def import_theorem(sim, candidate=None):
     Work the import queued besides the review is dropped and the state published.
     Returns the knowledge ID.
     """
+    sim.lean.allow(THEOREM['lean_code'], ['k1'], signatures={'k1': 'k1 : 1 = 1'})
     candidate = candidate or THEOREM
     clear_work(sim)
     applied(sim, 'knowledge', config={'operation': 'import', 'candidate': candidate})
@@ -88,10 +89,10 @@ def _build_reviewed(root, shared):
 
 
 def _build_produced(root, shared):
-    from runner_fixtures import ScriptedRunner
+    from support.default_responder import DefaultResponder
     sim = Sim(root, shared=shared)
     sim.activate()
-    sim.model.responder = ScriptedRunner(formal=True)
+    sim.model.responder = DefaultResponder(formal=True)
 
     def reviewed(s):
         return any(kr.usable_links(s.instance, kid) for kid in s.instance['knowledge'])
@@ -101,14 +102,16 @@ def _build_produced(root, shared):
 
 
 def opened_sim():
-    return built('review-opened', _build_opened)
+    sim = built('review-opened', _build_opened)
+    sim.lean.allow(THEOREM['lean_code'], ['k1'], signatures={'k1': 'k1 : 1 = 1'})
+    return sim
 
 
 def produced_sim():
     """An active instance whose research work produced a formal theorem the owner verified and reviewed to a match.
 
     The owner ran preparation, contract review, planning and the research work
-    with the formal default responder (``runner_fixtures.ScriptedRunner(formal=True)``),
+    with the formal default responder (``support.default_responder.DefaultResponder(formal=True)``),
     then the formal check and the identity review; the reviewed theorem's
     proposal names that research work execution as its producer. The queue and
     pending events are empty.
@@ -139,9 +142,9 @@ def impact_work_responder(ids):
     double's seal declares the output and the extension rows as one bundle.
     """
     import json
-    from runner_fixtures import ScriptedRunner
+    from support.default_responder import DefaultResponder
 
-    class ImpactWork(ScriptedRunner):
+    class ImpactWork(DefaultResponder):
         def respond(self, role, ctx, workspace):
             out = super().respond(role, ctx, workspace)
             if role == 'research_work':
@@ -157,7 +160,7 @@ def impact_work_responder(ids):
 
 
 def _build_impact(root, shared):
-    from record_fixtures import observation_knowledge
+    from support.record_builders import observation_knowledge
     from support.engine_lifecycle import approve, only, queue_work, task
     sim = Sim(root, shared=shared)
     sim.activate()
@@ -227,7 +230,9 @@ def export_objects(sim):
 
 
 def reviewed_sim():
-    return built('review-reviewed', _build_reviewed)
+    sim = built('review-reviewed', _build_reviewed)
+    sim.lean.allow(THEOREM['lean_code'], ['k1'], signatures={'k1': 'k1 : 1 = 1'})
+    return sim
 
 
 def warm_opened():

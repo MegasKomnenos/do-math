@@ -1,6 +1,6 @@
 """Purpose-level flows of the real engine with explicitly scripted semantics, on a Sim.
 
-The model double answers every role as the legacy ``purpose_fixtures.PurposeRunner``
+The model double answers every role as the legacy ``support.purpose_answers.PurposeAnswers``
 did (``support.engine_purpose.PurposeResponder``); the worker submits each answer
 with the workspace tool, the Lean double answers the formal checks the product's
 ``verify_lean`` runs, and every other external resource is a port fake. Each
@@ -29,7 +29,7 @@ class PurposeFlowTests(unittest.TestCase):
     def test_task_dependency_extension_blocks_A_until_B_completed_then_solves_goal(self):
         sim, responder = self.start('dependency')
         drive(self, sim)
-        # The responder also refuses work on A while B is not completed (PurposeRunner.answer).
+        # The responder also refuses work on A while B is not completed (PurposeAnswers.answer).
         self.assertEqual(responder.work_order, ['B', 'A'])
         tasks = {task['title']: task for task in sim.runtime['tasks'].values()}
         self.assertEqual(tasks['A']['dependencies'], [tasks['B']['id']])

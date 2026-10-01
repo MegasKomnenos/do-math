@@ -2,7 +2,7 @@
 
 The legacy tests ran these on a synthetic active template with a scripted runner
 that started a real Windows Job per call; here the model double answers at the
-workers' spawn seam (``runner_fixtures.ScriptedRunner``'s answers), the Lean
+workers' spawn seam (``support.default_responder.DefaultResponder``'s answers), the Lean
 double at the formal worker's, and every other external resource is a port fake.
 """
 from datetime import timedelta
@@ -15,7 +15,7 @@ import unittest
 from do_math.engine import ResearchEngine
 from do_math.repository import ResearchRepository
 from do_math.windows_job import process_identity
-from runner_fixtures import ScriptedRunner
+from support.default_responder import DefaultResponder
 from support.engine_context import damage, record_contexts
 from support.model import Answer
 from support.sim import Sim, warm_template
@@ -53,7 +53,13 @@ class EngineTests(unittest.TestCase):
 
     def test_public_initialization_reaches_active_with_distinct_interpretation(self):
         """About 4 s, over the 2 s Sim budget: the public path from an empty repository is what it checks."""
-        engine = Sim.activated(self.root).engine
+        from do_math import formal
+        from support.provider_probes import ObservedCalls
+        with ObservedCalls(verifier=formal.verify_lean, worker=formal._worker) as calls:
+            sim = Sim.activated(self.root)
+        engine = sim.engine
+        self.assertEqual((calls.count('verifier'), calls.count('worker')), (0, 0))
+        self.assertEqual(sim.lean.checks, [])
         self.assertEqual(engine.instance["lifecycle"]["state"], "active")
         check = engine.instance["lifecycle"]["intent_check"]
         self.assertNotEqual(check["interpretation_execution_id"], check["check_execution_id"])
@@ -81,7 +87,7 @@ class EngineTests(unittest.TestCase):
         """About 34 s, over the 2 s Sim budget: formal work, its check and two blind reviews run through every role, twice."""
         from do_math.knowledge_records import usable_links
         sim = Sim.activated()
-        model = record_contexts(sim, ScriptedRunner(formal=True))
+        model = record_contexts(sim, DefaultResponder(formal=True))
         engine = sim.engine
         for step in range(0, 30, 4):
             solved = engine.run(max_steps=min(4, 30 - step))
@@ -121,7 +127,7 @@ class EngineTests(unittest.TestCase):
         # The same flow whose central check fails: the work names a declaration its source does not
         # define, so Lean exits with an unknown identifier (a compile failure, not sorry evidence).
         failed = Sim.activated()
-        failed.model.responder = ScriptedRunner(formal=True)
+        failed.model.responder = DefaultResponder(formal=True)
         failed.model.on('research_work').reply(Answer(lambda out, ctx: {**out, 'knowledge': [
             {**row, 'declaration_names': ['t', 'u']} for row in out['knowledge']]}))
         for _ in range(0, 20, 4):
@@ -141,7 +147,7 @@ class EngineTests(unittest.TestCase):
             sim.control('configure', config={'max_output_repairs': 0})
             sim.engine.process_controls()
             self.assertEqual(sim.instance['config']['max_output_repairs'], 0)
-            sim.model.responder = ScriptedRunner(invalid_plan=invalid)
+            sim.model.responder = DefaultResponder(invalid_plan=invalid)
             engine = sim.engine
             for _ in range(20):
                 state = engine.run(max_steps=1)
@@ -185,7 +191,7 @@ class EngineTests(unittest.TestCase):
         self.assertTrue(job.wait(10))
         self.assertEqual(job.inspect().active_processes, 0)
         engine._save()
-        ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports).run(max_steps=1)
+        ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id).run(max_steps=1)
         _, _, runtime = ResearchRepository(sim.repository, sim.instance_id, backend=sim.ports.git_backend,
                                            clock=sim.clock).load()
         self.assertEqual(runtime['executions']['EX-crash']['outcome'], 'execution_incomplete')
@@ -321,7 +327,7 @@ class SourceIntegrityCheckTests(unittest.TestCase):
             # Damage from outside do-math: the head's source bytes differ from their recorded hash.
             damaged = damage(store, path, b"corrupt bytes")
             # run and controls check artifact presence and length only; full bytes belong to check.
-            report = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports).check(requested_areas=["record_storage"])
+            report = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id).check(requested_areas=["record_storage"])
             self.assertFalse(report["passed"])
             self.assertTrue(any(path in row["evidence"] for row in report["inspection"]["findings"]),
                             report["inspection"]["findings"])

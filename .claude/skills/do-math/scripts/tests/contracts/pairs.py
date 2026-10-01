@@ -40,6 +40,8 @@ class Pair:
 
 def _worker_request_samples(provider):
     """The worker request ``ModelRunner`` writes (``model_call.worker_request_fields``) on each assignment branch."""
+    from support.entry import entry
+    _entry = entry()
     def samples(root):
         from copy import deepcopy
         from do_math.claude_adapter import ADAPTERS
@@ -50,8 +52,8 @@ def _worker_request_samples(provider):
         from support.fakes.clock import FakeClock
         workspace, evidence = root / 'workspace', root / 'evidence'
         workspace.mkdir()
-        options = ADAPTERS[provider](str(root / (provider + '.exe'))).worker_options(evidence)
-        profile = next(iter(build_profiles(deepcopy(DEFAULT_CONFIG))['execution_profiles'].values()))
+        options = ADAPTERS[provider](str(root / (provider + '.exe')), jobs=_entry.ports.jobs, clock=_entry.ports.clock).worker_options(evidence)
+        profile = next(iter(build_profiles(deepcopy(DEFAULT_CONFIG), host=_entry.ports.host)['execution_profiles'].values()))
         reference, execution_id = profile_ref(profile), 'EX-01M3HM0X0000000000000000AB'
         binding = ControlTransport(root / 'control', clock=FakeClock()).issue(execution_id, 'GR-pair',
                                                                                 workspace=workspace)
@@ -100,7 +102,7 @@ def _trust_request_samples(root):
     import hashlib
     from do_math import formal, trust_inventory as records
     from do_math.file_io import sha256_file
-    from research_fixtures import validation_fixture
+    from support.trust_inputs import validation_fixture
     from support.fakes.clock import FakeClock
     rows = []
     for kind in ('core', 'project'):

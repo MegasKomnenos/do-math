@@ -255,7 +255,7 @@ class PublicMaintenanceFenceTests(unittest.TestCase):
         fence = sim.runtime['maintenance_fence']
         self.assertEqual((fence['state'], fence['request_id']), ('quiescent', request['request_id']))
         guard = engine_start_guard(sim.repository, sim.instance_id, Path(sim.instance['workspace']),
-                                   status=sim.engine.status())
+                                   status=sim.engine.status(), codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id, ports=sim.ports)
         self.assertEqual(guard['outcome'], 'maintenance_waiting')
         sim.control('pause', origin='user', text='separate user pause')
         sim.engine.process_controls()

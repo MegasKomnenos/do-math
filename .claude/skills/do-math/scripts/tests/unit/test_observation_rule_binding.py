@@ -24,11 +24,13 @@ OTHER_EXECUTION = 'persisted rule refers to another execution'
 class PreparationRuleTests(unittest.TestCase):
     def test_producer_reports_missing_initial_rules_before_contract_review(self):
         """A preparation whose candidate declares no initial rules draws one issue on that candidate."""
+        from support.entry import entry
+        _entry = entry()
         from do_math.contracts import schema_for
         from do_math.submission import payload_issues
-        from record_fixtures import contract_check, preparation_context
-        from research_fixtures import candidate
-        from runner_fixtures import common, rating
+        from support.record_builders import contract_check, preparation_context
+        from support.role_answers import candidate
+        from support.default_responder import common, rating
         output = {**common("research_preparation"), "candidates": [candidate('one')]}
         # The extensions of ``record_fixtures.preparation_issues`` without the fixture's observation rules.
         extensions = {"model_assessments": [rating(task_title='one')], "contract_checks": [contract_check()]}
@@ -37,7 +39,7 @@ class PreparationRuleTests(unittest.TestCase):
             "impact_set": [], "authority_refs": []}]
         with tempfile.TemporaryDirectory() as directory:
             issues = payload_issues(output, schema_for("research_preparation"), preparation_context(), extensions,
-                                    Path(directory))
+                                    Path(directory), clock=_entry.ports.clock)
         self.assertIn('initial_observation_rules', json.dumps(issues, ensure_ascii=False))
         self.assertEqual([(issue['rule_id'], issue['path'], issue['message']) for issue in issues],
                          [('submission.output.candidates.*.initial_observation_rules',
@@ -55,8 +57,10 @@ class ExecutionBindingTests(unittest.TestCase):
             observations.task_rules_from_execution(rules, 'EX-new')
 
     def test_one_task_rule_can_start_two_distinct_executions(self):
+        from support.entry import entry
+        _entry = entry()
         profile = next(p for p in execution_profiles.build_profiles({**deepcopy(DEFAULT_CONFIG),
-            'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5})['execution_profiles'].values()
+            'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}, host=_entry.ports.host)['execution_profiles'].values()
                        if p['role'] == 'research_work')
         rules = [deepcopy(CHECKPOINTS)]
         binder = getattr(observations, 'bind_task_rules', None)
@@ -65,7 +69,7 @@ class ExecutionBindingTests(unittest.TestCase):
             for eid in ('EX-first', 'EX-second'):
                 bound = binder(rules, eid)
                 config = observations.tracker_config(profile, initial_self_check_rules=bound)
-                tracker = observations.ObservationTracker(eid, Path(directory), config)
+                tracker = observations.ObservationTracker(eid, Path(directory), config, time_port=_entry.ports.clock)
                 self.assertEqual(tracker.rules[0]['subject']['id'], eid)
         self.assertEqual(rules[0]['subject']['id'], '$execution')
 

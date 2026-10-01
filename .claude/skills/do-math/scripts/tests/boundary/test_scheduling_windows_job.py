@@ -17,6 +17,7 @@ import time
 import unittest
 
 from do_math.windows_job import WindowsJob
+from test_categories import test_group
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 WAIT_TIMEOUT = 258  # WaitForSingleObject: the object is not signaled
@@ -96,6 +97,7 @@ def reached(predicate, timeout=15.0):
     return predicate()
 
 
+@test_group('resource')
 @unittest.skipUnless(os.name == "nt", "requires a Windows host")
 class WindowsJobTests(unittest.TestCase):
     def setUp(self):
@@ -272,3 +274,58 @@ class WindowsJobTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@test_group('resource')
+@unittest.skipUnless(os.name == 'nt', 'requires real suspended Windows processes')
+class KernelFailureTests(unittest.TestCase):
+    def test_transient_resource_exhaustion_is_not_a_structural_unsupported_fact(self):
+        from do_math import windows_job
+        from support.storage_finish_kernel import KernelFailure
+        for information in (windows_job._JobObjectExtendedLimitInformation, windows_job._JobObjectCpuRateControlInformation):
+            with self.subTest(information=information):
+                kernel = KernelFailure(information_class=information)
+                with self.assertRaises(OSError) as caught:
+                    WindowsJob([sys.executable, '-c', 'pass'], kernel=kernel,
+                               resource_limits={'memory_bytes': 128 * 1024 ** 2, 'cpu_rate_basis_points': 1000})
+                self.assertEqual(caught.exception.winerror, 8)
+                self.assertNotIsInstance(caught.exception, windows_job.WindowsJobUnsupportedError)
+                closed = [args[0] for name, args in kernel.calls if name == 'CloseHandle']
+                settings = [args for name, args in kernel.calls if name == 'SetInformationJobObject']
+                self.assertEqual(closed, [settings[0][0]])
+                self.assertEqual(settings[-1][1], information)
+                self.assertNotIn('CreateProcessW', [name for name, _ in kernel.calls])
+
+    def test_resume_failure_never_runs_the_suspended_child(self):
+        from do_math import windows_job
+        from support.storage_finish_kernel import KernelFailure
+        with tempfile.TemporaryDirectory() as directory:
+            marker = Path(directory) / 'substantive-action'
+            code = f'from pathlib import Path; Path({str(marker)!r}).write_text("ran")'
+            kernel = KernelFailure(resume=True)
+            with WindowsJob([sys.executable, '-c', code], kernel=kernel) as job:
+                created = next(args for name, args in kernel.calls if name == 'CreateProcessW')
+                self.assertTrue(created[5] & windows_job._CREATE_SUSPENDED)
+                self.assertEqual(job.inspect().active_processes, 1)
+                thread = job._thread
+                with self.assertRaises(OSError) as caught:
+                    job.resume()
+                self.assertEqual(caught.exception.winerror, 8)
+                self.assertFalse(job._resumed)
+                self.assertFalse(marker.exists())
+                job.terminate()
+                self.assertTrue(job.wait(5))
+                # Preserve the original ten-second barrier: no final predicate
+                # read after the deadline can turn a timeout into success.
+                deadline = time.monotonic() + 10.0
+                pause = threading.Event()
+                while time.monotonic() < deadline:
+                    if job.inspect().active_processes == 0:
+                        break
+                    pause.wait(0.02)
+                else:
+                    self.fail('isolated child did not reach its boundary before timeout')
+                self.assertEqual(job.inspect().active_processes, 0)
+            self.assertIsNone(job._thread)
+            self.assertIn(('CloseHandle', (thread,)), kernel.calls)
+            self.assertFalse(marker.exists())

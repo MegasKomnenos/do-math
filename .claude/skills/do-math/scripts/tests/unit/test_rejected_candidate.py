@@ -19,6 +19,8 @@ from support.fakes.git_backend import make_fake, make_repository
 
 class PersistedCandidateTests(unittest.TestCase):
     def setUp(self):
+        from support.entry import entry
+        _entry = entry()
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -27,7 +29,7 @@ class PersistedCandidateTests(unittest.TestCase):
         self.store = ResearchRepository(make_repository(root / 'repository'), identifier, backend=make_fake(),
                                         clock=self.clock)
         self.instance, self.runtime = initialize_state(instance_id=identifier, goal='G', workspace=root / 'work',
-                                                       config={}, source_input='Original request', clock=self.clock)
+                                                       config={}, source_input='Original request', clock=self.clock, host=_entry.ports.host)
         self.head = self.store.initialize(self.instance, self.runtime)
 
     def test_good_head_preserves_rejected_raw_not_candidate_state(self):

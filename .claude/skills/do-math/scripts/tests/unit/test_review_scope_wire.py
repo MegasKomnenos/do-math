@@ -15,7 +15,7 @@ import jsonschema
 
 from do_math import contracts, execution_profiles, review_cycle, review_policy
 from do_math.configuration import DEFAULT_CONFIG
-from research_fixtures import scope_response
+from support.role_answers import scope_response
 from support.review_scene import ReviewScene, warm
 
 
@@ -25,8 +25,10 @@ def setUpModule():
 
 class ScopeWireTests(unittest.TestCase):
     def setUp(self):
+        from support.entry import entry
+        _entry = entry()
         self.policy = review_policy.build_review_policy(None, reviewer_count=2, max_rounds=2)
-        profile = next(p for p in execution_profiles.build_profiles(deepcopy(DEFAULT_CONFIG))['execution_profiles'].values()
+        profile = next(p for p in execution_profiles.build_profiles(deepcopy(DEFAULT_CONFIG), host=_entry.ports.host)['execution_profiles'].values()
                        if p['role'] == 'identity_review')
         self.response = {'summary': 'Scope the complete fixture proposal', 'used_sources': [], 'questions': [],
             **scope_response({'role_review': {'review_policy': self.policy, 'proposal_digest': 'fixture-proposal'},
@@ -78,6 +80,8 @@ class ScopeWireTests(unittest.TestCase):
                          body['scope_assessment'])
 
     def test_submission_checks_scope_with_the_conditions_the_review_accepts(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import submission
         cycle = review_cycle.start_review({'revision': 1}, 2, max_rounds=2, policy=self.policy)
         cycle['execution_accounting']['executions_used'] = ['EX-scope']
@@ -87,10 +91,10 @@ class ScopeWireTests(unittest.TestCase):
         wire = self.installed_wire(cycle['proposal_digest'])
         response = {**deepcopy(self.response), 'proposal_digest': cycle['proposal_digest']}
         with tempfile.TemporaryDirectory() as directory:
-            self.assertEqual(submission._payload_issues(response, wire, context, {}, Path(directory)), [])
+            self.assertEqual(submission._payload_issues(response, wire, context, {}, Path(directory), clock=_entry.ports.clock), [])
             other_policy = deepcopy(response)
             other_policy['scope_assessment']['policy_id'] = 'RP-other'
-            issues = submission._payload_issues(other_policy, wire, context, {}, Path(directory))
+            issues = submission._payload_issues(other_policy, wire, context, {}, Path(directory), clock=_entry.ports.clock)
             self.assertEqual([row['path'] for row in issues], ['output'], issues)
             self.assertIn('scope assessment belongs to another review policy', issues[0]['message'])
             with self.assertRaisesRegex(ValueError, 'scope assessment belongs to another review policy'):
@@ -99,7 +103,7 @@ class ScopeWireTests(unittest.TestCase):
             # An honest partial reading and an open question are reported, not refused:
             # the sealed scope result carries both to every initial seat.
             reported = {**deepcopy(response), 'scope_complete': False, 'questions': ['Which domain is intended?']}
-            self.assertEqual(submission._payload_issues(reported, wire, context, {}, Path(directory)), [])
+            self.assertEqual(submission._payload_issues(reported, wire, context, {}, Path(directory), clock=_entry.ports.clock), [])
             scoped = review_cycle.accept_result(cycle, action, {key: value for key, value in reported.items()
                                                                 if key != 'integration_bundles'}, 'EX-scope-result')
             initial = review_cycle.next_actions(scoped)[0]

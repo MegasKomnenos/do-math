@@ -15,7 +15,7 @@ from do_math import payloads
 from do_math.canonical import canonical_json
 from do_math.git_store import GitStateStore
 from do_math.payloads import decode, encode, seal_large
-from research_fixtures import current_state, installed_contract
+from support.state_builders import current_state, installed_contract
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.provider_probes import ObservedCalls

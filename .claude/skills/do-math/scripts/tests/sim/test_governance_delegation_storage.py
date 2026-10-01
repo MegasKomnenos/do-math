@@ -31,17 +31,17 @@ class DelegationStorageTests(unittest.TestCase):
             instance, runtime, _ = governance.apply_decision(instance, runtime,
                 {"kind": "grant", "decision_id": "DC-original", "grant": {
                     "id": "GR-original", "kind": "local", "roles": ["maintenance"], "reuse": "reusable"}},
-                source_ref="GS-delegation")
+                source_ref="GS-delegation", clock=sim.ports.clock)
             instance, runtime, _ = governance.apply_decision(instance, runtime,
                 {"kind": "delegation", "decision_id": "DC-delegation", "delegation": {
                     "id": "DG-source", "status": "active", "decision_kind": "grant",
                     "original_decision_id": "DC-original", "included_targets": [source_id],
                     "excluded_targets": [], "external_effects": [], "resource_limits": {}, "expires_at": None}},
-                source_ref="GS-delegation")
+                source_ref="GS-delegation", clock=sim.ports.clock)
             case = {"id": "CASE-source", "decision_kind": "grant", "target_id": source_id,
                     "external_effects": [], "resources": {}, "effect": {"operation": "bounded source review"},
                     "basis_refs": [{"id": source_id}]}
-            application = prepare_application(instance, runtime, "DG-source", case)
+            application = prepare_application(instance, runtime, "DG-source", case, now_iso=sim.ports.clock.now())
             head = store.save_with_state(head, instance, runtime)[0]
             head, instance, runtime = store.load(head)
 
@@ -63,13 +63,13 @@ class DelegationStorageTests(unittest.TestCase):
                     execution_id=execution_id, stage=stage)
             head = store.save_with_state(head, instance, runtime)[0]
             head, instance, runtime = store.load(head)
-            allowed = authorize_delegated_case(instance, "DG-source", {"application_id": application["id"]}, runtime=runtime)
+            allowed = authorize_delegated_case(instance, "DG-source", {"application_id": application["id"]}, runtime=runtime, now_iso=sim.ports.clock.now())
             self.assertTrue(allowed["allowed"], allowed)
 
             instance["sources"][0]["revision"] = 2
             head = store.save_with_state(head, instance, runtime)[0]
             _, instance, runtime = store.load(head)
-            rejected = authorize_delegated_case(instance, "DG-source", {"application_id": application["id"]}, runtime=runtime)
+            rejected = authorize_delegated_case(instance, "DG-source", {"application_id": application["id"]}, runtime=runtime, now_iso=sim.ports.clock.now())
             self.assertFalse(rejected["allowed"])
             self.assertEqual(rejected["reason"], "delegation application stale")
 

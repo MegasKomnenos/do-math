@@ -3,9 +3,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import uuid
 
-from do_math.system_clock import now
 from do_math.payloads import json_safe
 from do_math.model_runner import ModelRunner
 from do_math.preflight import inspect_bundle
@@ -14,11 +12,11 @@ from do_math.scholarly_config import resolve_scholarly_server
 from do_math.provider_wait import provider_for
 
 
-def run_case(destination, case, *, provider, model, effort, timeout, only_assigned, scholarly=False):
+def run_case(destination, case, *, ports, provider, model, effort, timeout, only_assigned, scholarly=False, codex_home, environment, host_id):
     root = destination / case
     workspace = root / "workspace"
     workspace.mkdir(parents=True)
-    nonce = uuid.uuid4().hex
+    nonce = ports.clock.random_hex(16)
     schema = {"type": "object", "additionalProperties": False,
               "properties": {"status": {"const": "CLI_OK"}, "nonce": {"const": nonce},
                              "phase": {"enum": ["finished", "pending"]}}, "required": ["status", "nonce", "phase"]}
@@ -62,8 +60,8 @@ def run_case(destination, case, *, provider, model, effort, timeout, only_assign
     def observe(batch):
         for event in batch.events:
             observe_event(event)
-    server = resolve_scholarly_server(None, start=Path.cwd()) if scholarly else None
-    runner = ModelRunner()
+    server = resolve_scholarly_server(None, start=Path.cwd(), codex_home=codex_home) if scholarly else None
+    runner = ModelRunner(jobs=ports.jobs, clock=ports.clock, environment=environment, host_id=host_id)
     routed_model = model if provider_for(model) == provider else "claude:" + model
     result = runner.run(prompt=prompt, output_schema=schema, workspace=workspace, evidence_dir=root / "evidence",
         model=routed_model, effort=effort, timeout_seconds=timeout, claude_only_assigned_model=only_assigned,
@@ -77,7 +75,7 @@ def run_case(destination, case, *, provider, model, effort, timeout, only_assign
         checks["structured_result"] = result["status"] == "completed" and result["output"] == {"status": "CLI_OK", "nonce": nonce, "phase": "finished"}
     if case == "files":
         checks["preserved_file"] = (workspace / "probe-evidence.txt").is_file() and (workspace / "probe-evidence.txt").read_text(encoding="utf-8").strip() == nonce
-        checks["checkpoint"] = read_checkpoint(workspace)["status"] == "valid"
+        checks["checkpoint"] = read_checkpoint(workspace, clock=ports.clock)["status"] == "valid"
         if scholarly:
             checks["scholarly_actual_tool"] = any(name and "scholarly" in name and "list_sources" in name for name in native_tool_names)
     if case == "background":
@@ -92,7 +90,15 @@ def run_case(destination, case, *, provider, model, effort, timeout, only_assign
     return {"case": case, "passed": report["passed"], "checks": checks, "report": str(root / "report.json")}
 
 
-def main(argv=None):
+def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=None):
+    import os
+    import platform
+    from do_math.wiring import real_ports
+    environment = dict(os.environ) if environment is None else environment
+    host_id = platform.node() if host_id is None else host_id
+    codex_home = (Path(environment["CODEX_HOME"]) if environment.get("CODEX_HOME") else Path.home() / ".codex") if codex_home is None else codex_home
+    ports = real_ports(environment=environment) if ports is None else ports
+    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skill-only", action="store_true")
     parser.add_argument("--provider", choices=("claude", "codex"))
@@ -123,12 +129,12 @@ def main(argv=None):
     for case in args.cases:
         print("probe " + case, flush=True)
         try:
-            results.append(run_case(args.output_dir, case, provider=args.provider, model=args.model, effort=args.effort,
-                timeout=args.timeout_seconds, only_assigned=args.only_assigned_model, scholarly=args.scholarly and case == "files"))
+            results.append(run_case(args.output_dir, case, ports=ports, provider=args.provider, model=args.model, effort=args.effort,
+                timeout=args.timeout_seconds, only_assigned=args.only_assigned_model, scholarly=args.scholarly and case == "files", codex_home=codex_home, environment=environment, host_id=host_id))
         except Exception as error:
             results.append({"case": case, "passed": False, "error": type(error).__name__ + ": " + str(error)})
     root = Path(__file__).parent
-    report = {"at": now(), "provider": args.provider, "model": args.model,
+    report = {"at": ports.clock.now(), "provider": args.provider, "model": args.model,
               "passed": all(row["passed"] for row in results), "cases": results,
               "sources": {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in (root / "do_math").rglob("*.py")},
               "scope": "representative local CLI protocol, files, tool and stop boundaries; no research efficacy claim"}

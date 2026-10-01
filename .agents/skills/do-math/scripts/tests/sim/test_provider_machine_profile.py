@@ -15,14 +15,16 @@ from unittest.mock import patch
 
 from do_math import execution_profiles as ep
 from do_math import formal
-from provider_fixtures import PROFILE_CONFIG
+from support.provider_inputs import PROFILE_CONFIG
 from support.provider_runs import ProviderJobs
 
 SOURCE = "theorem t : True := True.intro"
 
 
 def profiles(**changes):
-    return ep.build_profiles({**PROFILE_CONFIG, "lean_command": ["lean-A"], **changes})
+    from support.entry import entry
+    _entry = entry()
+    return ep.build_profiles({**PROFILE_CONFIG, "lean_command": ["lean-A"], **changes}, host=_entry.ports.host)
 
 
 def formal_profile(state):
@@ -41,6 +43,8 @@ def approved(tool, command):
 
 class MachineProfileTests(unittest.TestCase):
     def test_machine_profile_pins_the_command_and_the_verifier_checks_tool_bytes(self):
+        from support.entry import entry
+        _entry = entry()
         a, b = profiles(), profiles(lean_command=["lean-B"])
         self.assertNotEqual(ep.profile_ref(formal_profile(a)), ep.profile_ref(formal_profile(b)))
         with tempfile.TemporaryDirectory() as directory:
@@ -58,7 +62,7 @@ class MachineProfileTests(unittest.TestCase):
             self.assertEqual(ep.profile_ref(p), ep.profile_ref(formal_profile(second)))
             self.assertEqual(ep.machine_invocation(p, trust_environment=env), args)
             jobs = ProviderJobs()
-            result = formal.verify_lean(source=SOURCE, declarations=["t"], workspace=Path(directory), jobs=jobs, **args)
+            result = formal.verify_lean(source=SOURCE, declarations=["t"], workspace=Path(directory), jobs=jobs, **args, clock=_entry.ports.clock, environment=_entry.environment)
             self.assertEqual(jobs.launched, [], "changed tool was started")
             self.assertEqual((result["status"], result["reason"]), ("rejected", "approved toolchain changed before execution"))
             self.assertEqual(result["identity_errors"], ["approved toolchain file changed: " + str(tool.resolve())])
@@ -68,6 +72,8 @@ class MachineProfileTests(unittest.TestCase):
                                       trust_environment={"toolchain": {"configured_command": ["different"]}})
 
     def test_machine_command_alias_keeps_adopted_argv_and_the_verifier_checks_resolution(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "approved").mkdir()
@@ -82,7 +88,7 @@ class MachineProfileTests(unittest.TestCase):
             other.write_bytes(b"edition")
             jobs = ProviderJobs()
             with patch.dict(os.environ, {"PATH": str(other.parent)}):
-                result = formal.verify_lean(source=SOURCE, declarations=["t"], workspace=root, jobs=jobs, **args)
+                result = formal.verify_lean(source=SOURCE, declarations=["t"], workspace=root, jobs=jobs, **args, clock=_entry.ports.clock, environment=_entry.environment)
             self.assertEqual(jobs.launched, [], "another resolution was started")
             self.assertEqual((result["status"], result["reason"]), ("rejected", "approved toolchain changed before execution"))
             self.assertEqual(result["error_kind"], "trust_environment")

@@ -12,7 +12,6 @@ from typing import Callable
 
 from do_math.claude_adapter import ADAPTERS, provider_adapter
 from do_math.provider_wait import provider_for
-from do_math.system_clock import SystemClock
 from do_math.canonical import canonical_json
 from .observation_transport import ObservationBatch
 from .model_call import (classify_run, frame_rows, launch_conflict_result, runner_assignment,
@@ -26,12 +25,13 @@ class ModelRunner:
     may replace an entry. Capacity remains keyed by the configured model name.
     """
 
-    def __init__(self, codex_path: str | None = None, claude_path: str | None = None, *, jobs=None,
-                 clock=None) -> None:
+    def __init__(self, codex_path: str | None = None, claude_path: str | None = None, *, jobs,
+                 clock, environment, host_id) -> None:
         paths = {"codex": codex_path, "claude": claude_path}
         self.jobs = jobs
-        # The clock port: observation times, run deadlines and polling (default: the system clock).
-        self.clock = clock or SystemClock()
+        self.host_id, self.environment = host_id, environment
+        # The clock port: observation times, run deadlines and polling.
+        self.clock = clock
         self.adapters = {provider: provider_adapter(provider, paths.get(provider), jobs=jobs, clock=self.clock)
                          for provider in ADAPTERS}
 
@@ -54,7 +54,7 @@ class ModelRunner:
         assignment = runner_assignment(provider=provider, cli_model=cli_model, effort=effort,
             timeout_seconds=timeout_seconds, execution_id=execution_id, profile=profile, launch_ticket=launch_ticket,
             jobs=self.jobs, scholarly_server=scholarly_server, claude_only_assigned_model=claude_only_assigned_model,
-            input_seal=input_seal, prompt=prompt, publishes_start=callable(on_started))
+            input_seal=input_seal, prompt=prompt, publishes_start=callable(on_started), host_id=self.host_id)
         reference, resource_limits = assignment["reference"], assignment["resource_limits"]
         scholarly_server = assignment["scholarly_server"]
         claude_only_assigned_model = assignment["claude_only_assigned_model"]
@@ -86,7 +86,7 @@ class ModelRunner:
         request_path.write_text(json.dumps(request, ensure_ascii=False, sort_keys=True), encoding="utf-8")
         from .windows_job import WindowsJobUnsupportedError
         try:
-            execution = adapter.start(request_path, cwd=evidence_dir, env=os.environ,
+            execution = adapter.start(request_path, cwd=evidence_dir, env=self.environment,
                 **({'job_name':launch_ticket['job_name']} if launch_ticket is not None else {}))
         except FileExistsError as error:
             return launch_conflict_result(error, evidence_dir=evidence_dir, execution_id=execution_id,

@@ -21,7 +21,7 @@ from do_math import activities, execution_lifecycle
 from do_math.cli import build_parser, execute
 from do_math.repository import ResearchRepository
 from do_math.reporting import ASSURANCE, render_human_report, snapshot_report, timeline, timeline_csv
-from record_fixtures import stored_surface_state
+from support.record_builders import stored_surface_state
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import make_repository
 from support.storage_probes import Returns
@@ -29,11 +29,15 @@ from support.storage_probes import Returns
 
 class StoredCase(unittest.TestCase):
     def setUp(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = make_repository(Path(temporary.name))
         self.identifier = FakeClock().new_id('RI')
-        self.store = ResearchRepository(self.root, self.identifier)
+        self.store = ResearchRepository(self.root, self.identifier, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
 
     def surface(self):
         """``stored_surface_state`` owned by this instance: one activity ``AC-1`` and its execution ``EX-1``."""
@@ -45,6 +49,10 @@ class StoredCase(unittest.TestCase):
 
 class ReportingTests(StoredCase):
     def test_claude_usage_projection_survives_git_and_timeline(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         from do_math.claude_stream import parse_stream
         from do_math.execution_profiles import execution_observation
         from do_math.payloads import json_safe
@@ -68,7 +76,7 @@ class ReportingTests(StoredCase):
             "provider_observation": {key: parsed[key] for key in keys}})
         head = self.store.initialize(instance, runtime)
         saved = self.store.load(head)[2]["executions"]["EX-1"]
-        report = timeline(self.root, self.identifier, snapshot=head)["rows"][0]
+        report = timeline(self.root, self.identifier, snapshot=head, backend=_entry.ports.git_backend, clock=_entry.ports.clock)["rows"][0]
         for key in keys:
             self.assertEqual(saved[key], projected[key])
             self.assertEqual(report[key], projected[key])
@@ -78,6 +86,10 @@ class ReportingTests(StoredCase):
         self.assertEqual(saved["model_usage_reported"]["claude-opus-5"]["costUSD"], {"reported_decimal": "0.01"})
 
     def test_timeline_preserves_explicit_continuation_and_pending_successor(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         instance, runtime = self.surface()
         template = runtime['executions'].pop('EX-1')
         runtime['activities']['AC-1']['assigned_execution_ids'] = []
@@ -91,7 +103,7 @@ class ReportingTests(StoredCase):
         runtime['queue'] = [pending, {'id': 'AC-other', 'role': 'maintenance', 'continuation_of': 'EX-unrelated'}]
         head = self.store.initialize(instance, runtime)
         with Returns(ResearchRepository.load, snapshot=deepcopy) as loaded:
-            value = timeline(self.root, self.identifier, snapshot=head)
+            value = timeline(self.root, self.identifier, snapshot=head, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         rows = {row['id']: row for row in value['rows']}
         self.assertIsNone(rows['EX-first']['continuation_of'])
         self.assertEqual(rows['EX-second']['continuation_of'], 'EX-first')
@@ -107,6 +119,10 @@ class ReportingTests(StoredCase):
         self.assertEqual(loaded.values[0], loaded.snapshots[0])
 
     def test_fixed_snapshot_preserves_unknown_times_and_crosses_the_kst_date(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         instance, runtime = self.surface()
         runtime['executions']['EX-1'].update(status='ended',
             action={'id': 'A', 'role': 'research_work', 'lineage_id': 'L'}, model='claude-opus-5',
@@ -115,7 +131,7 @@ class ReportingTests(StoredCase):
         instance['title'] = 'later metadata'
         later = self.store.save_with_state(head, instance, runtime)[0]
         self.assertNotEqual(later, head)
-        value = timeline(self.root, self.identifier, snapshot=head)
+        value = timeline(self.root, self.identifier, snapshot=head, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual(value['counts_by_unit'], {'internal_execution': 1})
         row = value['rows'][0]
         self.assertEqual(row['created_at_local'], '2026-09-19T00:01:02+09:00')
@@ -126,7 +142,7 @@ class ReportingTests(StoredCase):
         self.assertEqual(csv_row['started_at_utc'], '')
         args = build_parser().parse_args(['timeline', '--repository', str(self.root), '--instance', self.identifier,
                                           '--snapshot', head, '--format', 'csv'])
-        actual, code = execute(args)
+        actual, code = execute(args, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
         self.assertEqual(code, 0)
         self.assertEqual(actual, timeline_csv(value))
 
@@ -134,18 +150,26 @@ class ReportingTests(StoredCase):
 class StatusSnapshotTests(StoredCase):
     def test_snapshot_report_passes_the_requested_areas_to_the_status_projection(self):
         """``snapshot_report`` hands ``requested_areas`` to ``status_report``: record storage alone is healthy, all areas are not."""
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         head = self.store.initialize(*self.surface())
-        scoped = snapshot_report(self.root, self.identifier, snapshot=head, requested_areas=['record_storage'])
+        scoped = snapshot_report(self.root, self.identifier, snapshot=head, requested_areas=['record_storage'], backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual(scoped['snapshot'], head)
         self.assertEqual(scoped['inspection']['status'], 'healthy')
         # Without the scope every area is inspected, and the unadopted initial input is incomplete.
-        self.assertEqual(snapshot_report(self.root, self.identifier, snapshot=head)['inspection']['status'], 'incomplete')
+        self.assertEqual(snapshot_report(self.root, self.identifier, snapshot=head, backend=_entry.ports.git_backend, clock=_entry.ports.clock)['inspection']['status'], 'incomplete')
 
     def test_json_and_human_status_share_one_snapshot(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         head = self.store.initialize(*self.surface())
         budget = {"work-model": {"limit": 1, "used": 0, "execution_ids": []}}
         report = snapshot_report(self.root, self.identifier, snapshot=head, host_observation={
-            "budget": budget, "research_observed_at": "2026-09-20T00:00:00Z"})
+            "budget": budget, "research_observed_at": "2026-09-20T00:00:00Z"}, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual(report["snapshot"], head)
         self.assertEqual(report["goal"], "Prove P")
         self.assertEqual(report["assurance"], ASSURANCE)
@@ -158,7 +182,7 @@ class StatusSnapshotTests(StoredCase):
         self.assertIn("work-model 0/1", human)
         with self.assertRaisesRegex(ValueError, "^status observation has unknown fields: observed_at$"):
             snapshot_report(self.root, self.identifier, snapshot=head,
-                            host_observation={"observed_at": "2026-09-20T00:00:00Z"})
+                            host_observation={"observed_at": "2026-09-20T00:00:00Z"}, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
 
 
 if __name__ == '__main__':

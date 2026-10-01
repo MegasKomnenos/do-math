@@ -16,7 +16,7 @@ def record_model_policy_violation(instance, runtime, execution_id, model, result
 class ProviderEngineMixin:
     def _session_slots(self):
         """A fresh ledger view over the engine's current state; it holds no state of its own."""
-        return SessionSlots(self.runtime, self.instance, clock=self.ports.clock, jobs=self.ports.jobs)
+        return SessionSlots(self.runtime, self.instance, clock=self.ports.clock, jobs=self.ports.jobs, host_id=self.host_id)
 
     def _settle_recovered_execution(self, execution_id, *, at, disposition=None):
         """Stage local reservation settlement and execution end for one CAS.
@@ -42,7 +42,7 @@ class ProviderEngineMixin:
         return True
 
     def _provider_status(self):
-        return SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs).provider_snapshot()
+        return SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs, host_id=self.host_id).provider_snapshot()
 
     def _provider_admit(self, action, execution_id, *, profile, execution):
         """Reserve a registered profile's capacity and its starting execution together.
@@ -77,7 +77,7 @@ class ProviderEngineMixin:
         restored = {**deepcopy(action), "recovery": {"execution_id": execution_id,
                     "reason": "provider admission retry", "provider_generation": gate.get("generation")}}
         profile = match_profile_ref(self.instance["execution_profiles"], action["profile_ref"])
-        wait = SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs).provider_wait(profile)
+        wait = SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs, host_id=self.host_id).provider_wait(profile)
         if wait is not None:
             restored["dispatch_wait"] = wait
             activity_id = self.runtime["executions"][execution_id]["owner_activity_id"]

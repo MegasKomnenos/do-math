@@ -18,7 +18,7 @@ OPERATOR_LIMIT = 'operator controls are limited to configure, pause, quiesce, re
 
 
 def send(sim, action, clock, **options):
-    return control(sim.repository, sim.instance_id, action, ports=with_clock(sim, clock), **options)
+    return control(sim.repository, sim.instance_id, action, ports=with_clock(sim, clock), **options, host_id=sim.host_id)
 
 
 class AcceptanceOrderTests(unittest.TestCase):

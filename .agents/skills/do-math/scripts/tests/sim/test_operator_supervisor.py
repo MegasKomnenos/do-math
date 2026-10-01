@@ -7,6 +7,7 @@ only the operator's marker files. ``engine_start_guard`` checks the HOLD marker
 before it reads any status and then judges the status it is given.
 """
 from copy import deepcopy
+from do_math.powershell_scheduler import PowerShellScheduler
 import json
 from pathlib import Path
 import subprocess
@@ -34,6 +35,8 @@ class OperatorFolders(unittest.TestCase):
 
 class ScheduleRequestTests(OperatorFolders):
     def test_schedule_request_passes_only_generic_instance_coordinates(self):
+        from support.entry import entry
+        _entry = entry()
         observed = []
 
         def runner(argv, **_):
@@ -42,7 +45,7 @@ class ScheduleRequestTests(OperatorFolders):
 
         result = scheduled_operator.schedule('install', repository=self.repository, instance=INSTANCE,
                                              workspace=self.workspace, interval_seconds=7200,
-                                             operator_timeout_seconds=5400, runner=runner)
+                                             operator_timeout_seconds=5400, scheduler=PowerShellScheduler(runner))
         self.assertEqual(result['operator'], 'ready')
         self.assertEqual(len(observed), 1)
         command = observed[0]
@@ -67,9 +70,11 @@ class ScheduleRequestTests(OperatorFolders):
 
 class HoldTests(OperatorFolders):
     def test_hold_and_release_do_not_resume_or_edit_research_state(self):
-        hold = scheduled_operator.hold(self.workspace, reason='user requested stop')
+        from support.entry import entry
+        _entry = entry()
+        hold = scheduled_operator.hold(self.workspace, reason='user requested stop', clock=_entry.ports.clock)
         self.assertTrue((self.workspace / 'operator' / 'HOLD.json').exists())
-        released = scheduled_operator.release(self.workspace)
+        released = scheduled_operator.release(self.workspace, clock=_entry.ports.clock)
         self.assertEqual(released['released']['id'], hold['id'])
         self.assertFalse((self.workspace / 'operator' / 'HOLD.json').exists())
         self.assertTrue((self.workspace / 'operator' / 'release.json').exists())
@@ -82,33 +87,33 @@ class StartGuardTests(OperatorFolders):
     def test_guard_reports_each_refusal_under_the_status_it_judged(self):
         """The judgment over one status; the status arrives as the ``status`` argument.
 
-        The legacy test patched ``read_status`` to hand over the same status.
-        That read opens the engine with the real ports and takes no Ports, so the
-        wiring from ``read_status`` to this guard is not run here (see the
-        migration ledger note). The HOLD case passes no status: the marker is
-        read first and no status is read at all.
+        The original status-only judgment cases remain here. Actual engine
+        status wiring now runs in test_operator_finish_supervision and
+        test_operator_finish_recovery, including pending diagnosis and HOLD.
         """
+        from support.entry import entry
+        _entry = entry()
         instance = {'lifecycle': {'state': 'active'}, 'goal_status': 'unresolved'}
         runtime = {'status': 'waiting', 'tasks': {}, 'executions': {},
                    'queue': [{'role': 'research_preparation'}], 'next_research_reconsider_at': AT}
         reasons = planning.research_wake_reasons(instance, runtime, now=AT)
         status = {'status': 'waiting', 'research_wake_reasons': reasons}
         self.assertEqual(scheduled_operator.engine_start_guard(self.repository, 'RI-test', self.workspace,
-                                                               status=status),
+                                                               status=status, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports),
                          {'outcome': 'startable', 'before': status, 'reason': 'research reconsideration due',
                           'research_wake_reasons': reasons})
         status['model_policy_violation'] = {'execution_id': 'EX-model'}
         # Every refusal reports the status it judged under the same key.
         self.assertEqual(scheduled_operator.engine_start_guard(self.repository, 'RI-test', self.workspace,
-                                                               status=deepcopy(status)),
+                                                               status=deepcopy(status), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports),
                          {'outcome': 'model_policy_waiting', 'before': status})
         del status['model_policy_violation']
         status['user_pause'] = {'reason': 'user'}
         self.assertEqual(scheduled_operator.engine_start_guard(self.repository, 'RI-test', self.workspace,
-                                                               status=status)['outcome'], 'paused')
-        scheduled_operator.hold(self.workspace, reason='test')
+                                                               status=status, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)['outcome'], 'paused')
+        scheduled_operator.hold(self.workspace, reason='test', clock=_entry.ports.clock)
         with ObservedCalls(read=scheduled_operator.read_status) as observed:
-            self.assertEqual(scheduled_operator.engine_start_guard(self.repository, 'RI-test', self.workspace),
+            self.assertEqual(scheduled_operator.engine_start_guard(self.repository, 'RI-test', self.workspace, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports),
                              {'outcome': 'held'})
         self.assertEqual(observed.count('read'), 0)
 

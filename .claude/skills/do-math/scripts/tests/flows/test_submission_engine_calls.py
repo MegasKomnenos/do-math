@@ -16,7 +16,7 @@ import unittest
 
 from do_math.canonical import canonical_json
 from do_math.knowledge import assess_use, plan_impact, revision_roots
-from purpose_fixtures import common
+from support.purpose_answers import common
 from support.engine_lifecycle import applied
 from support.model import Answer
 from support.review_sim import opened_sim
@@ -118,7 +118,7 @@ class LiveReviewTests(unittest.TestCase):
         applies a valid ``continue``, so the invalid case is rejected for its sidecar.
         """
         from do_math.observations import ObservationTracker, tracker_config
-        from research_fixtures import observation_rule
+        from support.observation_inputs import observation_rule
         from support.provider_live import batch, running_execution
 
         def proceed(out, context):

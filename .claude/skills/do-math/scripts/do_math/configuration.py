@@ -12,7 +12,6 @@ import jsonschema
 from . import execution_profiles, model_policy
 from .record_schemas import config_schema
 from .scholarly import validate_scholarly_server
-from .migration_defaults import host_or_local
 
 
 DEFAULT_CONFIG = {
@@ -35,7 +34,7 @@ DEFAULT_CONFIG = {
 }
 
 
-def validate_config(config: dict, *, host_id=None) -> None:
+def validate_config(config: dict, *, host_id) -> None:
     """The configuration section fixes keys, types and ranges; only cross-field rules remain here."""
     schema = config_schema()
     unknown = set(config) - set(schema["properties"])
@@ -58,5 +57,5 @@ def validate_config(config: dict, *, host_id=None) -> None:
         raise ValueError("lean_command arguments must be NUL-free strings")
     if config.get('host_resources') is not None:
         execution_profiles.validate_host_resources(config['host_resources'])
-        if config['host_resources']['constraint']['host_id'] != host_or_local(host_id):
+        if config['host_resources']['constraint']['host_id'] != host_id:
             raise ValueError('host_resources must name this local host')

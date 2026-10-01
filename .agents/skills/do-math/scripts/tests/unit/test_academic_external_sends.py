@@ -47,6 +47,8 @@ class ExternalSendTests(unittest.TestCase):
     def test_method_body_contract_matches_preparation_validation_and_http_bytes(self):
         """Preparation and validation apply one method/body rule; a legacy GET or DELETE record with a body is refused
         before transport. The bytes urllib sends for each accepted pair: ``boundary.test_academic_http_bytes``."""
+        from support.entry import entry
+        _entry = entry()
         grant = {**self.grant, 'allowed_methods': ['GET', 'POST', 'PUT', 'DELETE'], 'credential_env': {}}
         for method in ('GET', 'POST', 'PUT', 'DELETE'):
             for body in (None, '', E_ACUTE, 7):
@@ -72,14 +74,16 @@ class ExternalSendTests(unittest.TestCase):
                         calls = []
                         with self.assertRaisesRegex(ValueError, '^GET and DELETE cannot carry a nonempty body$'):
                             execute_operation(old, grant, persist=lambda _: True, clock=self.clock,
-                                              transport=lambda *_: calls.append(1))
+                                              transport=lambda *_: calls.append(1), environment=dict(os.environ))
                         self.assertEqual(calls, [])
 
     def test_persist_before_send_confirm_and_redact(self):
+        from support.entry import entry
+        _entry = entry()
         http = make_fake({'/ok': ACCEPTED})
         calls = []
         out = execute_operation(self.post('x'), self.grant, persist=lambda x: calls.append(x) or True, clock=self.clock,
-                                transport=http.request)
+                                transport=http.request, environment=dict(os.environ))
         self.assertEqual([x['status'] for x in calls], ['prepared', 'prepared', 'confirmed'])
         self.assertTrue(calls[1]['transmitted'])  # the send marker is stored before the response
         self.assertEqual(out['status'], 'confirmed')
@@ -88,12 +92,14 @@ class ExternalSendTests(unittest.TestCase):
         self.assertEqual([header for _, header, _ in http.requests], [[('X-Key', 'secret')]])
 
     def test_unknown_retry_reconcile_and_scope(self):
+        from support.entry import entry
+        _entry = entry()
         op = self.post('')
-        unknown = execute_operation(op, self.grant, persist=lambda x: True, clock=self.clock, transport=timeout)
+        unknown = execute_operation(op, self.grant, persist=lambda x: True, clock=self.clock, transport=timeout, environment=dict(os.environ))
         self.assertEqual(unknown['status'], 'unknown')
         http = make_fake({'/ok': ACCEPTED})
         with self.assertRaisesRegex(ValueError, '^unknown operation requires reconciliation$'):
-            execute_operation(unknown, self.grant, persist=lambda x: True, clock=self.clock, transport=http.request)
+            execute_operation(unknown, self.grant, persist=lambda x: True, clock=self.clock, transport=http.request, environment=dict(os.environ))
         self.assertEqual(http.requests, [])
         with self.assertRaisesRegex(ValueError, '^invalid reconciliation$'):
             reconcile_operation(unknown, 'receipt', 'confirmed', source='adapter')
@@ -110,17 +116,21 @@ class ExternalSendTests(unittest.TestCase):
             prepare_operation({'method': 'GET', 'url': ORIGIN + '/ok/%2e%2e/outside'}, 'G', 'S')
 
     def test_redirect_and_stale_ledger(self):
+        from support.entry import entry
+        _entry = entry()
         op = prepare_operation({'method': 'GET', 'url': ORIGIN + '/ok', 'body': ''}, 'G', 'S')
         http = make_fake({'/ok': REDIRECT})
         with self.assertRaisesRegex(ValueError, '^operation ledger is stale; recover recorded transmission before retry$'):
-            execute_operation(op, self.grant, persist=lambda _: False, clock=self.clock, transport=http.request)
+            execute_operation(op, self.grant, persist=lambda _: False, clock=self.clock, transport=http.request, environment=dict(os.environ))
         self.assertEqual(http.requests, [])  # the refused first save stops before any send
         # The port refuses the redirect; the refusal is not taken for an unknown outcome.
         with self.assertRaisesRegex(ValueError, '^redirect forbidden$'):
-            execute_operation(op, self.grant, persist=lambda _: True, clock=self.clock, transport=http.request)
+            execute_operation(op, self.grant, persist=lambda _: True, clock=self.clock, transport=http.request, environment=dict(os.environ))
         self.assertEqual(len(http.requests), 1)
 
     def test_tampered_key_and_terminal_persist(self):
+        from support.entry import entry
+        _entry = entry()
         op = self.post('')
         op['idempotency_key'] = 'bad'
         with self.assertRaisesRegex(ValueError, '^request bytes or idempotency key changed$'):
@@ -128,19 +138,23 @@ class ExternalSendTests(unittest.TestCase):
         calls = []
         os.environ.pop('EXT_TEST_KEY')  # setUp's patch.dict restores the environment
         out = execute_operation(self.post(''), self.grant, persist=lambda x: calls.append(x) or True, clock=self.clock,
-                                transport=timeout)
+                                transport=timeout, environment=dict(os.environ))
         self.assertEqual(out['status'], 'prepared')
         self.assertFalse(out['transmitted'])
         self.assertEqual(calls[-1]['waiting_reason']['kind'], 'credential_unavailable')
 
     def test_stop_before_send_is_explicitly_untransmitted(self):
+        from support.entry import entry
+        _entry = entry()
         http = make_fake({'/ok': ACCEPTED})
         out = execute_operation(self.post(''), self.grant, persist=lambda _: True, should_stop=lambda: True,
-                                clock=self.clock, transport=http.request)
+                                clock=self.clock, transport=http.request, environment=dict(os.environ))
         self.assertEqual((out['status'], out['transmitted']), ('cancelled', False))
         self.assertEqual(http.requests, [])
 
     def test_terminal_persist_failure_is_not_returned_as_committed_success(self):
+        from support.entry import entry
+        _entry = entry()
         op = self.post(None)
         calls = []
 
@@ -151,16 +165,18 @@ class ExternalSendTests(unittest.TestCase):
             return True
         http = make_fake({'/ok': ACCEPTED})
         with self.assertRaisesRegex(ValueError, '^operation ledger is stale; recover recorded transmission before retry$'):
-            execute_operation(op, self.grant, persist=persist, clock=self.clock, transport=http.request)
+            execute_operation(op, self.grant, persist=persist, clock=self.clock, transport=http.request, environment=dict(os.environ))
         self.assertEqual(len(http.requests), 1)  # it was sent; only its confirmation was not stored
         self.assertEqual((calls[-1]['status'], calls[-1]['transmitted']), ('prepared', True))
         recovered = recover_operation(calls[-1])
         self.assertEqual(recovered['status'], 'unknown')
         with self.assertRaisesRegex(ValueError, '^unknown operation requires reconciliation$'):
-            execute_operation(recovered, self.grant, persist=lambda _: True, clock=self.clock, transport=http.request)
+            execute_operation(recovered, self.grant, persist=lambda _: True, clock=self.clock, transport=http.request, environment=dict(os.environ))
         self.assertEqual(len(http.requests), 1)
 
     def test_fresh_revocation_before_send_prevents_transport(self):
+        from support.entry import entry
+        _entry = entry()
         op = self.post(None)
         current = dict(self.grant)
         sent = []
@@ -170,11 +186,13 @@ class ExternalSendTests(unittest.TestCase):
             return True
         with self.assertRaisesRegex(ValueError, '^grant is inactive$'):
             execute_operation(op, self.grant, persist=persist, current_grant=lambda _: current, clock=self.clock,
-                              transport=lambda *_: sent.append(1))
+                              transport=lambda *_: sent.append(1), environment=dict(os.environ))
         self.assertEqual(sent, [])
 
     def test_retries_need_exact_nonexpired_idempotency_evidence(self):
-        op = execute_operation(self.post(None), self.grant, persist=lambda _: True, clock=self.clock, transport=timeout)
+        from support.entry import entry
+        _entry = entry()
+        op = execute_operation(self.post(None), self.grant, persist=lambda _: True, clock=self.clock, transport=timeout, environment=dict(os.environ))
         evidence = {'kind': 'verified_idempotency', 'request_sha256': op['request_sha256'],
                     'idempotency_key': op['idempotency_key'], 'valid_until': '2099-01-01T00:00:00Z',
                     'evidence_ref': 'verified-service-contract'}
@@ -185,10 +203,12 @@ class ExternalSendTests(unittest.TestCase):
         retry = prepare_retry(op, evidence, source='adapter', now_iso=NOW)
         http = make_fake({'/ok': ACCEPTED})
         self.assertEqual(execute_operation(retry, self.grant, persist=lambda _: True, clock=self.clock,
-                                           transport=http.request)['status'], 'confirmed')
+                                           transport=http.request, environment=dict(os.environ))['status'], 'confirmed')
         self.assertEqual(len(http.requests), 1)
 
     def test_credential_resume_loopback_clears_wait_and_preserves_identity(self):
+        from support.entry import entry
+        _entry = entry()
         grant = {**self.grant, 'kind': 'http', 'reuse': 'reusable'}
         op = prepare_operation({'method': 'POST', 'url': ORIGIN + '/ok', 'body': 'credential-resume'}, 'G', 'S', 'OP-resume')
         runtime = {'external_operations': {}, 'executions': {}}
@@ -198,16 +218,16 @@ class ExternalSendTests(unittest.TestCase):
             runtime['external_operations'][row['id']] = row
             return True
         with patch.dict(os.environ, {}, clear=True):
-            waiting = execute_operation(op, grant, persist=persist, runtime=runtime, clock=self.clock, transport=http.request)
+            waiting = execute_operation(op, grant, persist=persist, runtime=runtime, clock=self.clock, transport=http.request, environment=dict(os.environ))
         self.assertEqual(waiting['waiting_reason']['kind'], 'credential_unavailable')
         self.assertEqual(http.requests, [])
-        result = execute_operation(waiting, grant, persist=persist, runtime=runtime, clock=self.clock, transport=http.request)
+        result = execute_operation(waiting, grant, persist=persist, runtime=runtime, clock=self.clock, transport=http.request, environment=dict(os.environ))
         self.assertEqual(result['status'], 'confirmed')
         self.assertNotIn('waiting_reason', result)
         for key in ('id', 'request_sha256', 'idempotency_key'):
             self.assertEqual(result[key], op[key])
         with self.assertRaisesRegex(ValueError, '^recorded transmission requires recovery before another send$'):
-            execute_operation(result, grant, persist=persist, runtime=runtime, clock=self.clock, transport=http.request)
+            execute_operation(result, grant, persist=persist, runtime=runtime, clock=self.clock, transport=http.request, environment=dict(os.environ))
         self.assertEqual(len(http.requests), 1)
 
 

@@ -80,7 +80,7 @@ class FormalEngineMixin:
         """The active environment's stored contract; live files are checked by the formal step."""
         self._require_action_clock()
         from .trust_validation import require_active_environment
-        return require_active_environment(self.instance, self.runtime)
+        return require_active_environment(self.instance, self.runtime, host=self.ports.host)
 
     def _apply_trust_rebind(self, check):
         """Follow a baseline that setup_lean.py --rerecord appended; never author one."""
@@ -517,9 +517,9 @@ class FormalEngineMixin:
                 candidate = deepcopy(transition)
                 for kid, receipt in reviewed.items():
                     candidate['results'][kid]['identity_review'] = receipt
-                self.instance = activate_transition(self.instance, candidate, runtime=self.runtime, clock=self.ports.clock)
+                self.instance = activate_transition(self.instance, candidate, runtime=self.runtime, clock=self.ports.clock, at=self.ports.clock.now())
             else:
-                self.instance = activate_transition(self.instance, transition, runtime=self.runtime, clock=self.ports.clock)
+                self.instance = activate_transition(self.instance, transition, runtime=self.runtime, clock=self.ports.clock, at=self.ports.clock.now())
         except ValueError as error:
             transition['status'] = 'failed'
             transition.setdefault('history', []).append({'kind': 'activation_failed', 'reason': str(error),

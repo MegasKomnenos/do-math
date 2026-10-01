@@ -23,9 +23,10 @@ from do_math.review_cycle import accept_result, identity_assessment, next_action
 from do_math.state_contract import default_state_contract, validate_record
 from do_math.system_clock import new_id
 from do_math.trust_validation import check_environment, environment_errors
-from knowledge_fixtures import knowledge_candidate, verified_knowledge
-from research_fixtures import current_state, trust_environment, trust_fixture
-from review_fixtures import scoped_start
+from support.knowledge_builders import knowledge_candidate, verified_knowledge
+from support.state_builders import current_state
+from support.trust_inputs import trust_environment, trust_fixture
+from support.review_inputs import scoped_start
 from support.fakes.git_backend import make_fake, make_repository
 
 REFERENCES = Path(__file__).resolve().parents[3] / 'references'
@@ -38,8 +39,10 @@ def next_environment(state):
 
 class AuthorityTests(unittest.TestCase):
     def test_import_separates_formal_and_exposition_authority(self):
+        from support.entry import entry
+        _entry = entry()
         state, runtime, kid = knowledge_io.import_candidate({}, {}, knowledge_candidate(), source_ref='source',
-                                                            actor_ref='producer')
+                                                            actor_ref='producer', clock=_entry.ports.clock)
         record = state['knowledge'][kid]
         self.assertNotIn('lean_code', record)
         self.assertNotIn('formal', record)
@@ -47,12 +50,14 @@ class AuthorityTests(unittest.TestCase):
         self.assertIn(record['exposition_id'], state['expositions'])
 
     def test_explanation_revision_preserves_formal_evidence_and_old_judgment(self):
+        from support.entry import entry
+        _entry = entry()
         state, runtime, kid, aid = verified_knowledge()
         formal = copy.deepcopy(state['formal_results'])
         assessment = copy.deepcopy(state['identity_assessments'][aid])
         declared = [aid, next(u['id'] for u in state['assessment_uses'].values() if u['assessment_id'] == aid)]
         revised, _ = knowledge.revise_knowledge(state, runtime, kid, {'summary': 'Revised summary'},
-                                                reason='clarify', actor_ref='author', declared_impact=declared)
+                                                reason='clarify', actor_ref='author', declared_impact=declared, clock=_entry.ports.clock)
         self.assertEqual(revised['formal_results'], formal)
         self.assertEqual(revised['identity_assessments'][aid], assessment)
         self.assertEqual(revised['knowledge'][kid]['lifecycle'], 'superseded')
@@ -68,13 +73,15 @@ class AuthorityTests(unittest.TestCase):
         self.assertEqual(knowledge.decision_reference(state['knowledge'][kid], state)['trust_environment_id'], 'TE-test')
 
     def test_revision_reuses_candidate_kind_and_dependency_validation(self):
+        from support.entry import entry
+        _entry = entry()
         state, runtime, kid, aid = verified_knowledge()
         declared = [aid, next(u['id'] for u in state['assessment_uses'].values() if u['assessment_id'] == aid)]
         for changes, reason in (({'kind': 'unregistered_kind'}, 'unknown knowledge kind: unregistered_kind'),
                                 ({'dependencies': ['KN-missing']}, 'candidate dependencies do not exist: KN-missing')):
             with self.subTest(changes=changes), self.assertRaisesRegex(ValueError, re.escape(reason)):
                 knowledge.revise_knowledge(state, runtime, kid, changes, reason='revision', actor_ref='author',
-                                           declared_impact=declared)
+                                           declared_impact=declared, clock=_entry.ports.clock)
 
     def test_revision_changes_name_only_authored_fields(self):
         # The producer check and the application share this one rule.
@@ -95,12 +102,14 @@ class AuthorityTests(unittest.TestCase):
         self.assertEqual(set(re.findall(r'`(\w+)`', match.group(1))), knowledge.AUTHORED_FIELDS)
 
     def test_import_captures_required_source_and_rejects_unknown_source(self):
+        from support.entry import entry
+        _entry = entry()
         state = {'sources': [{'name': 'paper', 'path': 'research/sources/paper.txt', 'sha256': 'original'}]}
         with self.assertRaisesRegex(ValueError, 'required source does not exist'):
             knowledge_io.import_candidate(state, {}, knowledge_candidate(source_refs=['absent']), source_ref='submission',
-                                          actor_ref='author')
+                                          actor_ref='author', clock=_entry.ports.clock)
         changed, _, kid = knowledge_io.import_candidate(state, {}, knowledge_candidate(source_refs=['paper']),
-                                                        source_ref='submission', actor_ref='author')
+                                                        source_ref='submission', actor_ref='author', clock=_entry.ports.clock)
         self.assertEqual(changed['knowledge'][kid]['source_basis'][0]['sha256'], 'original')
 
     def test_assessment_suspension_is_local_and_reversible(self):
@@ -114,36 +123,44 @@ class AuthorityTests(unittest.TestCase):
         self.assertTrue(knowledge.assess_use(restored['knowledge'][kid], restored)['valid'])
 
     def test_independent_expositions_share_one_formal_result(self):
+        from support.entry import entry
+        _entry = entry()
         state, runtime, kid, aid = verified_knowledge()
         fid = state['knowledge'][kid]['formal_result_id']
         data = knowledge_candidate(formal_result_ref=fid)
         data['explanation'] = 'A second explanation'
         state, runtime, other = knowledge_io.import_candidate(state, runtime, data, source_ref='second-source',
-                                                              actor_ref='other-author')
+                                                              actor_ref='other-author', clock=_entry.ports.clock)
         self.assertEqual(len(state['formal_results']), 1)
         self.assertEqual(runtime['queue'][-1]['role'], 'identity_review')
         state, second_assessment = kr.record_identity_assessment(
-            state, other, {'decision': 'match', 'basis': kr.identity_basis(state, other)}, 'policy:1', runtime=runtime)
+            state, other, {'decision': 'match', 'basis': kr.identity_basis(state, other)}, 'policy:1', runtime=runtime, clock=_entry.ports.clock)
         state = kr.set_assessment_use(state, aid, 'suspended', 'first explanation defect', 'reviewer')
         self.assertFalse(knowledge.assess_use(state['knowledge'][kid], state)['valid'])
         self.assertTrue(knowledge.assess_use(state['knowledge'][other], state)['valid'])
 
     def test_import_rejects_malformed_registry_id(self):
+        from support.entry import entry
+        _entry = entry()
         with self.assertRaisesRegex(ValueError, 'knowledge ID must be a canonical KN-prefixed ULID'):
             knowledge_io.import_candidate({}, {}, knowledge_candidate(id='KN-not-a-ulid'), source_ref='source',
-                                          actor_ref='author')
+                                          actor_ref='author', clock=_entry.ports.clock)
 
     def test_rejects_unapproved_environment_and_replayed_identity_basis(self):
+        from support.entry import entry
+        _entry = entry()
         state, runtime, kid, aid = verified_knowledge()
         assessment = {'decision': 'match', 'basis': {'formal': 'old', 'exposition': 'old'}}
         with self.assertRaisesRegex(ValueError, 'identity assessment must name the exact current formal and exposition basis'):
-            kr.record_identity_assessment(state, kid, assessment, 'policy:1', runtime=runtime)
+            kr.record_identity_assessment(state, kid, assessment, 'policy:1', runtime=runtime, clock=_entry.ports.clock)
         result = state['formal_results'][state['knowledge'][kid]['formal_result_id']]['verification']
         state['trust_environments']['TE-test']['status'] = 'registered'
         with self.assertRaisesRegex(ValueError, 'formal verification requires a preapproved active environment'):
             kr.record_formal_result(state, kid, result, 'TE-test', runtime=runtime)
 
     def test_publication_reads_runtime_transition_barrier(self):
+        from support.entry import entry
+        _entry = entry()
         state, runtime, kid, aid = verified_knowledge()
         runtime['trust_transitions'] = {'TR-test': {'status': 'checking'}}
         result = state['formal_results'][state['knowledge'][kid]['formal_result_id']]['verification']
@@ -151,11 +168,13 @@ class AuthorityTests(unittest.TestCase):
             kr.record_formal_result(state, kid, result, 'TE-test', runtime=runtime)
         with self.assertRaisesRegex(ValueError, 'identity publication waits for the trust transition'):
             kr.record_identity_assessment(state, kid, {'decision': 'match', 'basis': kr.identity_basis(state, kid)},
-                                          'policy:1', runtime=runtime)
+                                          'policy:1', runtime=runtime, clock=_entry.ports.clock)
 
 
 class KindTests(unittest.TestCase):
     def test_installed_relation_kinds_are_active_from_installation(self):
+        from support.entry import entry
+        _entry = entry()
         state = knowledge_io.ensure_ontology({})
         installed = {row['token'] for row in knowledge_io.BUILTIN_DEFINITIONS if row['family'] == 'relation'}
         catalog = knowledge_io.catalog_definitions(state)['relations']
@@ -165,29 +184,35 @@ class KindTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'already defined'):
             knowledge_io.register_kind_definition(state, {key: supports[key] for key in
                                                           ('family', 'token', 'meaning', 'constraints')},
-                                                  source_ref='source', actor_ref='producer')
+                                                  source_ref='source', actor_ref='producer', clock=_entry.ports.clock)
 
     def test_kind_registration_requires_explicit_check_and_activation(self):
+        from support.entry import entry
+        _entry = entry()
         definition = dict(family='knowledge', token='bounded_result', meaning='A bounded result', constraints={})
-        state, token = knowledge_io.register_kind_definition({}, definition, source_ref='source', actor_ref='producer')
+        state, token = knowledge_io.register_kind_definition({}, definition, source_ref='source', actor_ref='producer', clock=_entry.ports.clock)
         definition = next(r for r in state['kind_definitions'].values() if r['token'] == token)
         self.assertEqual(definition['status'], 'candidate')
 
     def test_kind_definitions_use_record_ids_and_allow_explicit_replacement(self):
+        from support.entry import entry
+        _entry = entry()
         state = knowledge_io.ensure_ontology({})
         self.assertTrue(all(key == value['id'] for key, value in state['kind_definitions'].items()))
         state, runtime = knowledge_io.withdraw_kind_definition(state, {}, 'knowledge', 'theorem', reason='replacement',
-                                                               actor_ref='review')
+                                                               actor_ref='review', clock=_entry.ports.clock)
         state, token = knowledge_io.register_kind_definition(
             state, {'family': 'knowledge', 'token': 'theorem', 'meaning': 'Revised theorem kind', 'constraints': {}},
-            source_ref='revision', actor_ref='author')
+            source_ref='revision', actor_ref='author', clock=_entry.ports.clock)
         replacement = next(d for d in state['kind_definitions'].values() if d['token'] == token and d['status'] == 'candidate')
         self.assertIn(replacement['supersedes'], state['kind_definitions'])
 
     def test_kind_constraints_and_withdrawal(self):
+        from support.entry import entry
+        _entry = entry()
         definition = dict(family='knowledge', token='bounded_result', meaning='A bounded result',
                           constraints={'allowed_epistemic_statuses': ['tentative'], 'required_fields': ['confirmed_scope']})
-        state, token = knowledge_io.register_kind_definition({}, definition, source_ref='source', actor_ref='author')
+        state, token = knowledge_io.register_kind_definition({}, definition, source_ref='source', actor_ref='author', clock=_entry.ports.clock)
         with self.assertRaisesRegex(ValueError, 'kind definition must be checked before activation'):
             knowledge_io.activate_kind_definition(state, 'knowledge', token, approval_ref='review', actor_ref='reviewer')
         state = knowledge_io.check_kind_definition(state, 'knowledge', token, check_ref='check', actor_ref='checker')
@@ -195,11 +220,11 @@ class KindTests(unittest.TestCase):
         data = knowledge_candidate()
         data['kind'] = token
         with self.assertRaisesRegex(ValueError, 'epistemic_status is not allowed by the kind definition'):
-            knowledge_io.import_candidate(state, {}, data, source_ref='source', actor_ref='author')
+            knowledge_io.import_candidate(state, {}, data, source_ref='source', actor_ref='author', clock=_entry.ports.clock)
         data.update(epistemic_status='tentative', confirmed_scope='finite case')
-        state, runtime, kid = knowledge_io.import_candidate(state, {}, data, source_ref='source', actor_ref='author')
+        state, runtime, kid = knowledge_io.import_candidate(state, {}, data, source_ref='source', actor_ref='author', clock=_entry.ports.clock)
         state, runtime = knowledge_io.withdraw_kind_definition(state, runtime, 'knowledge', token, reason='bad semantics',
-                                                               actor_ref='reviewer')
+                                                               actor_ref='reviewer', clock=_entry.ports.clock)
         self.assertTrue(state['knowledge'][kid]['kind_use_suspended'])
 
 
@@ -217,15 +242,17 @@ class RelationTests(unittest.TestCase):
         self.assertFalse(knowledge_io.validate_relation(stopped, relation)['valid'])
 
     def test_relation_claim_is_bound_through_import_and_identity(self):
+        from support.entry import entry
+        _entry = entry()
         state, runtime, kid, aid = verified_knowledge()
         token = 'formally_implies'
         claim = {'kind': token, 'source': kid, 'target': kid, 'confirmed_scope': 'reflexive'}
         state, runtime, proof = knowledge_io.import_candidate(state, runtime, knowledge_candidate(relation_claim=claim),
-                                                              source_ref='source', actor_ref='author')
+                                                              source_ref='source', actor_ref='author', clock=_entry.ports.clock)
         verification = copy.deepcopy(state['formal_results'][state['knowledge'][kid]['formal_result_id']]['verification'])
         state = kr.record_formal_result(state, proof, verification, 'TE-test', runtime=runtime)
         state, identity = kr.record_identity_assessment(
-            state, proof, {'decision': 'match', 'basis': kr.identity_basis(state, proof)}, 'policy:1', runtime=runtime)
+            state, proof, {'decision': 'match', 'basis': kr.identity_basis(state, proof)}, 'policy:1', runtime=runtime, clock=_entry.ports.clock)
         relation = {**claim, 'formal_result_refs': [state['knowledge'][proof]['formal_result_id']],
                     'assessment_refs': [identity], 'evidence_refs': [kid]}
         self.assertTrue(knowledge_io.validate_relation(state, relation)['valid'])
@@ -236,8 +263,10 @@ class RelationTests(unittest.TestCase):
 class FormalEvidenceTests(unittest.TestCase):
     def imported(self):
         """A fresh candidate in a state whose active environment is the fixture's, and the fixture's verification."""
+        from support.entry import entry
+        _entry = entry()
         state, runtime, kid = knowledge_io.import_candidate({}, {}, knowledge_candidate(), source_ref='source',
-                                                            actor_ref='producer')
+                                                            actor_ref='producer', clock=_entry.ports.clock)
         fixture, _, _, _ = verified_knowledge()
         state.update(active_trust_environment='TE-test', trust_environments=fixture['trust_environments'])
         return state, runtime, kid, copy.deepcopy(next(iter(fixture['formal_results'].values()))['verification'])
@@ -266,28 +295,32 @@ class FormalEvidenceTests(unittest.TestCase):
 
 class TrustTransitionEvidenceTests(unittest.TestCase):
     def test_trust_transition_uses_split_results_and_compares_evidence(self):
+        from support.entry import entry
+        _entry = entry()
         state, runtime, kid, aid = verified_knowledge()
         next_environment(state)
-        transition = knowledge.begin_transition(state, 'TE-next')
+        transition = knowledge.begin_transition(state, 'TE-next', clock=_entry.ports.clock)
         self.assertEqual(len(transition['targets']), 1)
         self.assertIn('dependency_closure', transition['targets'][0])
         self.assertIn('axioms', transition['targets'][0])
         result = copy.deepcopy(state['formal_results'][state['knowledge'][kid]['formal_result_id']]['verification'])
         result.update(id=kid, toolchain={'version': 'next'})
         transition = knowledge.record_transition_result(state, transition, result)
-        activated = knowledge.activate_transition(state, transition)
+        activated = knowledge.activate_transition(state, transition, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual(activated['active_trust_environment'], 'TE-next')
         self.assertTrue(knowledge.assess_use(activated['knowledge'][kid], activated)['valid'])
         self.assertEqual(activated['identity_assessments'][aid], state['identity_assessments'][aid])
         result['dependency_evidence']['True'] = exact_content_hash('changed-type')
-        transition = knowledge.record_transition_result(state, knowledge.begin_transition(state, 'TE-next'), result)
+        transition = knowledge.record_transition_result(state, knowledge.begin_transition(state, 'TE-next', clock=_entry.ports.clock), result)
         with self.assertRaisesRegex(ValueError, 'transition requires its sealed staged identity review runtime: ' + kid):
-            knowledge.activate_transition(state, transition)
+            knowledge.activate_transition(state, transition, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
     def test_identity_review_cannot_replace_missing_new_kernel_evidence(self):
+        from support.entry import entry
+        _entry = entry()
         state, runtime, kid, aid = verified_knowledge()
         next_environment(state)
-        transition = knowledge.begin_transition(state, 'TE-next')
+        transition = knowledge.begin_transition(state, 'TE-next', clock=_entry.ports.clock)
         result = copy.deepcopy(state['formal_results'][state['knowledge'][kid]['formal_result_id']]['verification'])
         result.update(id=kid, toolchain={'version': 'next'})
         result.pop('dependency_closure')
@@ -295,12 +328,14 @@ class TrustTransitionEvidenceTests(unittest.TestCase):
                                      'review_ref': 'review', 'policy_ref': 'policy:1'}
         transition = knowledge.record_transition_result(state, transition, result)
         with self.assertRaisesRegex(ValueError, 'verification evidence incomplete: dependency_closure'):
-            knowledge.activate_transition(state, transition)
+            knowledge.activate_transition(state, transition, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
     def test_transition_targets_store_the_dependency_hash_table(self):
+        from support.entry import entry
+        _entry = entry()
         state, runtime, kid, aid = verified_knowledge()
         next_environment(state)
-        transition = knowledge.begin_transition(state, 'TE-next')
+        transition = knowledge.begin_transition(state, 'TE-next', clock=_entry.ports.clock)
         checker = default_state_contract().family('runtime', 'trust_transitions').checker
         validate_record(checker, transition, 'transition')
         nested = copy.deepcopy(transition)
@@ -320,6 +355,8 @@ class ImpactPlanTests(unittest.TestCase):
         self.assertIn('RL-a', plan['computed_impact'])
 
     def test_impact_mismatch_and_staleness_reject_without_mutation(self):
+        from support.entry import entry
+        _entry = entry()
         state = {'knowledge': {'KN-a': {'id': 'KN-a', 'lifecycle': 'active'},
                                'KN-b': {'id': 'KN-b', 'lifecycle': 'active'}},
                  'relations': [{'id': 'RL-a', 'source': 'KN-a', 'target': 'KN-a', 'status': 'active'}]}
@@ -327,12 +364,12 @@ class ImpactPlanTests(unittest.TestCase):
         # A declared record beyond the computed closure needs an independent confirmation.
         mismatch = knowledge.plan_impact(state, {}, ['KN-a'], ['RL-a', 'KN-b'])
         with self.assertRaisesRegex(ValueError, 'impact requires independent scope and disposition confirmation'):
-            knowledge.apply_impact(state, {}, mismatch, reason='change')
+            knowledge.apply_impact(state, {}, mismatch, reason='change', clock=_entry.ports.clock)
         self.assertEqual(state, before)
         plan = knowledge.plan_impact(state, {}, ['KN-a'], ['RL-a'])
         state['relations'][0]['target'] = 'KN-changed'
         with self.assertRaisesRegex(ValueError, 'impact plan is stale or altered'):
-            knowledge.apply_impact(state, {}, plan, reason='change')
+            knowledge.apply_impact(state, {}, plan, reason='change', clock=_entry.ports.clock)
 
     def test_impact_tracks_origin_refs_and_missing_split_refs(self):
         state = {'knowledge': {'KN-a': {'id': 'KN-a', 'lifecycle': 'active'},
@@ -343,12 +380,14 @@ class ImpactPlanTests(unittest.TestCase):
         self.assertIn('FR-missing', plan['unresolved_refs'])
 
     def test_impact_preserves_terminal_task_and_suspends_its_judgment(self):
+        from support.entry import entry
+        _entry = entry()
         state = {'knowledge': {'KN-a': {'id': 'KN-a', 'lifecycle': 'active'}},
                  'goal_judgments': [{'id': 'GJ-a', 'used_sources': ['KN-a'], 'current': True}]}
         runtime = {'tasks': {'TK-a': {'id': 'TK-a', 'status': 'completed', 'inputs': ['KN-a'],
                                       'assessment': {'current': True}}}}
         plan = knowledge.plan_impact(state, runtime, ['KN-a'], ['TK-a', 'GJ-a'])
-        changed, run = knowledge.apply_impact(state, runtime, plan, reason='premise changed')
+        changed, run = knowledge.apply_impact(state, runtime, plan, reason='premise changed', clock=_entry.ports.clock)
         self.assertEqual(run['tasks']['TK-a']['status'], 'completed')
         self.assertFalse(run['tasks']['TK-a']['assessment']['current'])
         self.assertFalse(changed['goal_judgments'][0]['current'])
@@ -358,14 +397,16 @@ class StorageRoundTripTests(unittest.TestCase):
     def test_storage_registration_roundtrip_uses_split_family_files(self):
         """Real ResearchRepository and domain validators over the in-process Git backend; compiler, reviewer and
         approval evidence is synthetic."""
+        from support.entry import entry
+        _entry = entry()
         contract = default_state_contract()
         with tempfile.TemporaryDirectory() as directory:
             environment, binding = trust_environment(trust_fixture(Path(directory), ['synthetic-lean']),
                                                      environment_id='TE-test', source_ref='synthetic:approval')
             self.assertEqual(environment_errors(environment, binding), [])
-            self.assertEqual(check_environment(environment, binding, host=LocalHost())['status'], 'verified')
+            self.assertEqual(check_environment(environment, binding, host=LocalHost(clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs), clock=_entry.ports.clock)['status'], 'verified')
             state, runtime, kid, _ = verified_knowledge(environment, binding=binding, identity=False)
-            profiles = build_profiles(DEFAULT_CONFIG)
+            profiles = build_profiles(DEFAULT_CONFIG, host=_entry.ports.host)
             profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'identity_review')
             state.update(execution_profiles={profile['id']: profile}, capacity_constraints=profiles['capacity_constraints'])
             activity = activities.open_activity(runtime, activity_id=new_id('AT'), activity_kind='identity_review',
@@ -395,9 +436,9 @@ class StorageRoundTripTests(unittest.TestCase):
             runtime['review_cycles'] = {cycle['id']: cycle}
             assessment = identity_assessment(cycle, reason='Synthetic sealed review')
             state, aid = kr.record_identity_assessment(state, kid, {**assessment, 'basis': cycle['identity_basis']},
-                                                       cycle['policy_ref'], runtime=runtime)
+                                                       cycle['policy_ref'], runtime=runtime, clock=_entry.ports.clock)
             repo = ResearchRepository(make_repository(Path(directory) / 'repository'), new_id('RI'), contract=contract,
-                                      backend=make_fake())
+                                      backend=make_fake(), clock=_entry.ports.clock)
             # Every stored state passes the current lifecycle gate.
             state, runtime = current_state(state, runtime)
             repo.initialize(state, runtime)

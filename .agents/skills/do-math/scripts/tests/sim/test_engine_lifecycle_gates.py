@@ -11,8 +11,6 @@ replaces an engine method or the store.
 """
 from datetime import timedelta
 import unittest
-from unittest.mock import patch
-from types import SimpleNamespace
 
 from support.engine_gates import gate_engine, initialized_sim
 from support.sim import Sim, warm_template
@@ -102,15 +100,13 @@ class LifecycleTransitionTests(unittest.TestCase):
 
 class ClockResolutionTests(unittest.TestCase):
     def test_windows_quantization_interval_is_not_a_regression(self):
-        """The host reports Windows' 15.625 ms tick (``time.get_clock_info``, the OS's report, not a do-math name)."""
         sim = initialized_sim()
-        clock = gate_engine(sim)
+        clock = gate_engine(sim, resolutions=(.015625, .015625))
         engine = sim.engine
-        with patch('time.get_clock_info', return_value=SimpleNamespace(resolution=.015625)):
-            self.assertTrue(engine._clock_guard()['usable'])
-            clock.move_monotonic(.015625)  # one tick on the monotonic clock
-            clock.set_wall(clock.wall() + timedelta(milliseconds=3))
-            self.assertTrue(engine._clock_guard()['usable'])
+        self.assertTrue(engine._clock_guard()['usable'])
+        clock.move_monotonic(.015625)
+        clock.set_wall(clock.wall() + timedelta(milliseconds=3))
+        self.assertTrue(engine._clock_guard()['usable'])
 
     def test_direct_utc_regressions_have_no_quantization_tolerance(self):
         sim = initialized_sim()

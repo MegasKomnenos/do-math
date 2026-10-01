@@ -5,7 +5,7 @@ the limit, and the planner's choice of an offered larger profile. Every step is
 a public control or an owner pass on the Sim; model calls run through the
 worker and the model double (``support.scheduling_model`` records every call and
 lets a test act inside one). The legacy tests drove the CLI on the synthetic
-active state and replaced the model runner with ``ScriptedRunner`` or a local
+active state and replaced the model runner with ``DefaultResponder`` or a local
 runner in real Windows Jobs; the CLI's ``configure``, ``request --retry-action``
 and ``close`` send exactly the controls used here, and
 ``boundary/test_engine_cli.py`` runs that command surface.
@@ -16,7 +16,7 @@ import re
 import unittest
 
 from do_math import execution_profiles, planning
-from runner_fixtures import ScriptedRunner
+from support.default_responder import DefaultResponder
 from support.engine_lifecycle import applied, approve, clear_work, research_grant, task
 from support.engine_overflow import apply_limit, gate_closes_before_admission, held, overflowed_sim, retry
 from support.scheduling_model import scenario_model
@@ -41,7 +41,7 @@ class InputRecoveryPublicTests(unittest.TestCase):
     def test_public_retry_replays_refails_resolves_and_rejects_after_close(self):
         """About 4 s: a restored held request, three owner passes and one maintenance call through the worker."""
         sim = overflowed_sim()
-        model = scenario_model(sim, ScriptedRunner())
+        model = scenario_model(sim, DefaultResponder())
         # The copied state is the first overflow: a public configure (limit 1),
         # a public maintenance request and one owner pass.
         self.assertEqual(len(sim.runtime.get('input_overflows', [])), 1, sim.waiting())
@@ -94,7 +94,7 @@ class InputRecoveryPublicTests(unittest.TestCase):
     def test_resolved_retry_marker_survives_provider_deferral_and_repreparation(self):
         """About 4 s: a restored held request, a deferred pass and one maintenance call through the worker."""
         sim = overflowed_sim()
-        model = scenario_model(sim, ScriptedRunner())
+        model = scenario_model(sim, DefaultResponder())
         action_id, waiting = held(sim)
         question_id = waiting['question_id']
         apply_limit(sim, 3_000_000, 'UC-marker-limit-large')
@@ -161,7 +161,7 @@ class OverflowGitConnection(unittest.TestCase):
                   'selected_contract_sha256': planning.contract_hash(row), 'model_assessment': deepcopy(row['model_assessment'])}
         engine.runtime['queue'] = [action]
         engine._save()
-        model = scenario_model(sim, ScriptedRunner())
+        model = scenario_model(sim, DefaultResponder())
 
         def choose(context, workspace):
             request = context['input_overflow_requests'][0]

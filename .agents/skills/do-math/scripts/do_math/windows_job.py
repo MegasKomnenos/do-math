@@ -257,9 +257,11 @@ class WindowsJob:
         env: Mapping[str, str] | None = None,
         name: str | None = None,
         resource_limits: Mapping[str, int] | None = None,
+        kernel=None,
     ) -> None:
         self.resource_limits = validate_resource_limits(resource_limits)
         _require_windows_10_job_list()
+        self._kernel = _kernel32 if kernel is None else kernel
         command_line = _command_line(argv)
         environment = _environment_block(env)
         current_directory = None if cwd is None else os.fspath(cwd)
@@ -300,39 +302,39 @@ class WindowsJob:
 
     def _create_job(self) -> int:
         ctypes.set_last_error(0)
-        handle = _kernel32.CreateJobObjectW(None, self.name)
+        handle = self._kernel.CreateJobObjectW(None, self.name)
         if not handle:
             _raise_last_error("CreateJobObjectW")
         if self.name and ctypes.get_last_error() == 183:
-            _kernel32.CloseHandle(handle)
+            self._kernel.CloseHandle(handle)
             raise FileExistsError('execution Job name already exists')
-        if not _kernel32.SetHandleInformation(handle, _HANDLE_FLAG_INHERIT, 0):
+        if not self._kernel.SetHandleInformation(handle, _HANDLE_FLAG_INHERIT, 0):
             error = ctypes.get_last_error()
-            _kernel32.CloseHandle(handle)
+            self._kernel.CloseHandle(handle)
             raise OSError(error, "SetHandleInformation failed", None, error)
         limits = _JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
         limits.BasicLimitInformation.LimitFlags = _JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
         if self.resource_limits is not None:
             limits.BasicLimitInformation.LimitFlags |= _JOB_OBJECT_LIMIT_JOB_MEMORY
             limits.JobMemoryLimit = self.resource_limits["memory_bytes"]
-        if not _kernel32.SetInformationJobObject(
+        if not self._kernel.SetInformationJobObject(
             handle,
             _JobObjectExtendedLimitInformation,
             ctypes.byref(limits),
             ctypes.sizeof(limits),
         ):
             error = ctypes.get_last_error()
-            _kernel32.CloseHandle(handle)
+            self._kernel.CloseHandle(handle)
             kind = (WindowsJobResourceError if self.resource_limits is not None and error in (
                 _ERROR_NOT_SUPPORTED, _ERROR_CALL_NOT_IMPLEMENTED, _ERROR_INVALID_PARAMETER, _ERROR_ACCESS_DENIED) else OSError)
             raise kind(error, "SetInformationJobObject(ExtendedLimit) failed", None, error)
         if self.resource_limits is not None:
             cpu = _JOBOBJECT_CPU_RATE_CONTROL_INFORMATION(
                 _CPU_RATE_ENABLE_HARD_CAP, self.resource_limits["cpu_rate_basis_points"])
-            if not _kernel32.SetInformationJobObject(handle, _JobObjectCpuRateControlInformation,
+            if not self._kernel.SetInformationJobObject(handle, _JobObjectCpuRateControlInformation,
                     ctypes.byref(cpu), ctypes.sizeof(cpu)):
                 error = ctypes.get_last_error()
-                _kernel32.CloseHandle(handle)
+                self._kernel.CloseHandle(handle)
                 kind = (WindowsJobResourceError if error in (_ERROR_NOT_SUPPORTED, _ERROR_CALL_NOT_IMPLEMENTED,
                     _ERROR_INVALID_PARAMETER, _ERROR_ACCESS_DENIED) else OSError)
                 raise kind(error, "SetInformationJobObject(CpuRate) failed", None, error)
@@ -345,7 +347,7 @@ class WindowsJob:
         accounting = _JOBOBJECT_BASIC_ACCOUNTING_INFORMATION()
         for info_class, value in ((_JobObjectExtendedLimitInformation, extended),
                 (_JobObjectCpuRateControlInformation, cpu), (_JobObjectBasicAccountingInformation, accounting)):
-            if not _kernel32.QueryInformationJobObject(self.job_handle, info_class,
+            if not self._kernel.QueryInformationJobObject(self.job_handle, info_class,
                     ctypes.byref(value), ctypes.sizeof(value), None):
                 _raise_last_error("QueryInformationJobObject(resources)")
         memory_enabled = bool(extended.BasicLimitInformation.LimitFlags & _JOB_OBJECT_LIMIT_JOB_MEMORY)
@@ -365,7 +367,7 @@ class WindowsJob:
         attribute_count = 1
         attribute_size = _SIZE_T()
         ctypes.set_last_error(0)
-        _kernel32.InitializeProcThreadAttributeList(None, attribute_count, 0, ctypes.byref(attribute_size))
+        self._kernel.InitializeProcThreadAttributeList(None, attribute_count, 0, ctypes.byref(attribute_size))
         if ctypes.get_last_error() != _ERROR_INSUFFICIENT_BUFFER or not attribute_size.value:
             error = ctypes.get_last_error()
             raise WindowsJobUnsupportedError(
@@ -376,7 +378,7 @@ class WindowsJob:
         attribute_list = ctypes.cast(attributes_buffer, ctypes.c_void_p)
         initialized = False
         try:
-            if not _kernel32.InitializeProcThreadAttributeList(
+            if not self._kernel.InitializeProcThreadAttributeList(
                 attribute_list, attribute_count, 0, ctypes.byref(attribute_size)
             ):
                 error = ctypes.get_last_error()
@@ -385,7 +387,7 @@ class WindowsJob:
                 )
             initialized = True
             job_list = (_HANDLE * 1)(_HANDLE(self.job_handle))
-            if not _kernel32.UpdateProcThreadAttribute(
+            if not self._kernel.UpdateProcThreadAttribute(
                 attribute_list,
                 0,
                 _PROC_THREAD_ATTRIBUTE_JOB_LIST,
@@ -411,7 +413,7 @@ class WindowsJob:
                 | _CREATE_UNICODE_ENVIRONMENT
             )
             environment_pointer = None if environment is None else ctypes.cast(environment, ctypes.c_void_p)
-            if not _kernel32.CreateProcessW(
+            if not self._kernel.CreateProcessW(
                 None,
                 mutable_command_line,
                 None,
@@ -432,14 +434,14 @@ class WindowsJob:
             return int(process_info.hProcess), int(process_info.hThread), int(process_info.dwProcessId)
         finally:
             if initialized:
-                _kernel32.DeleteProcThreadAttributeList(attribute_list)
+                self._kernel.DeleteProcThreadAttributeList(attribute_list)
 
     def _process_creation_filetime(self) -> int:
         created = _FILETIME()
         exited = _FILETIME()
         kernel = _FILETIME()
         user = _FILETIME()
-        if not _kernel32.GetProcessTimes(
+        if not self._kernel.GetProcessTimes(
             self.process_handle,
             ctypes.byref(created),
             ctypes.byref(exited),
@@ -454,10 +456,10 @@ class WindowsJob:
         if self._resumed:
             raise RuntimeError("root thread has already been resumed")
         thread = self._require_open_handle(self._thread, "root thread")
-        if _kernel32.ResumeThread(thread) == _WAIT_FAILED:
+        if self._kernel.ResumeThread(thread) == _WAIT_FAILED:
             _raise_last_error("ResumeThread")
         self._resumed = True
-        if not _kernel32.CloseHandle(thread):
+        if not self._kernel.CloseHandle(thread):
             self._thread = None
             _raise_last_error("CloseHandle(root thread)")
         self._thread = None
@@ -470,7 +472,7 @@ class WindowsJob:
             if timeout < 0:
                 raise ValueError("timeout must be non-negative")
             milliseconds = min(int(timeout * 1000), _INFINITE - 1)
-        result = _kernel32.WaitForSingleObject(self.process_handle, milliseconds)
+        result = self._kernel.WaitForSingleObject(self.process_handle, milliseconds)
         if result == _WAIT_OBJECT_0:
             return True
         if result == _WAIT_TIMEOUT:
@@ -481,14 +483,14 @@ class WindowsJob:
         """Terminate every process in the Job, including descendants."""
         if not 0 <= exit_code <= 0xFFFFFFFF:
             raise ValueError("exit_code must fit in DWORD")
-        if not _kernel32.TerminateJobObject(self.job_handle, exit_code):
+        if not self._kernel.TerminateJobObject(self.job_handle, exit_code):
             _raise_last_error("TerminateJobObject")
 
     def inspect(self) -> JobInspection:
         """Read active count, live Job PIDs, and the root handle's signal state."""
         accounting = _JOBOBJECT_BASIC_ACCOUNTING_INFORMATION()
         returned = _DWORD()
-        if not _kernel32.QueryInformationJobObject(
+        if not self._kernel.QueryInformationJobObject(
             self.job_handle,
             _JobObjectBasicAccountingInformation,
             ctypes.byref(accounting),
@@ -497,7 +499,7 @@ class WindowsJob:
         ):
             _raise_last_error("QueryInformationJobObject(BasicAccounting)")
         process_ids = self._job_process_ids()
-        wait = _kernel32.WaitForSingleObject(self.process_handle, 0)
+        wait = self._kernel.WaitForSingleObject(self.process_handle, 0)
         if wait == _WAIT_FAILED:
             _raise_last_error("WaitForSingleObject")
         return JobInspection(
@@ -511,7 +513,7 @@ class WindowsJob:
         while True:
             buffer = ctypes.create_string_buffer(8 + ctypes.sizeof(_DWORD_PTR) * capacity)
             returned = _DWORD()
-            if _kernel32.QueryInformationJobObject(
+            if self._kernel.QueryInformationJobObject(
                 self.job_handle,
                 _JobObjectBasicProcessIdList,
                 buffer,
@@ -536,7 +538,7 @@ class WindowsJob:
         for attribute in ("_thread", "_job", "_process"):
             handle = getattr(self, attribute)
             setattr(self, attribute, None)
-            if handle is not None and not _kernel32.CloseHandle(handle) and first_error is None:
+            if handle is not None and not self._kernel.CloseHandle(handle) and first_error is None:
                 error = ctypes.get_last_error()
                 first_error = OSError(error, f"CloseHandle({attribute}) failed", None, error)
         if first_error is not None:

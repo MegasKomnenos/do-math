@@ -35,7 +35,7 @@ def judged_result(result, judge_error):
 
 def runner_assignment(*, provider: str, cli_model: str, effort: str, timeout_seconds, execution_id, profile,
                       launch_ticket, jobs, scholarly_server, claude_only_assigned_model, input_seal, prompt,
-                      publishes_start: bool) -> dict[str, Any]:
+                      publishes_start: bool, host_id) -> dict[str, Any]:
     """Check the runner's assignment against its pinned profile.
 
     Returns the profile reference, the Job resource limits and the tools the
@@ -54,7 +54,7 @@ def runner_assignment(*, provider: str, cli_model: str, effort: str, timeout_sec
         validate_start(launch_ticket, jobs=jobs, execution_id=execution_id, profile_sha256=profile['sha256'])
         from .execution_profiles import profile_ref, prompt_seal, job_resource_limits, WORK_ROLES
         reference = profile_ref(profile)
-        resource_limits = job_resource_limits(profile)
+        resource_limits = job_resource_limits(profile, host_id=host_id)
         if resource_limits is not None and not publishes_start:
             raise ValueError("host-bound runner requires on_started publication before resume")
         ai = profile.get("ai", {})

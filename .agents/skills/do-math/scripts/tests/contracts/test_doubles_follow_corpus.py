@@ -48,14 +48,14 @@ class LeanDoubleOutputTests(unittest.TestCase):
         recorded = ENTRIES['lean-nat-add-zero-beq']
         verdict = recorded['verdict']
         lean = LeanDouble()
-        for name in recorded['declarations']:
-            lean.declare(name, signature=verdict['declaration_signatures'][name], axioms=verdict['axioms'][name])
         source = (CORPUS / recorded['source_path']).read_text(encoding='utf-8')
+        lean.allow(source, recorded['declarations'], signatures=verdict['declaration_signatures'],
+                   axioms=verdict['axioms'])
         code, stdout, _ = self.run_check(lean, source, recorded['declarations'], extract_evidence=False)
         self.assertEqual(code, 0)
         self.assertEqual(stdout, (CORPUS / recorded['path']).read_text(encoding='utf-8'))
 
-    def test_a_source_theorem_verifies_with_evidence_by_default(self):
+    def test_only_the_default_producer_source_verifies_with_evidence_by_default(self):
         source = 'theorem t : True := by trivial'
         code, stdout, _ = self.run_check(LeanDouble(), source, ['t'], extract_evidence=True)
         self.assertEqual(code, 0)
@@ -68,7 +68,32 @@ class LeanDoubleOutputTests(unittest.TestCase):
         code, _, stderr = self.run_check(LeanDouble(), 'theorem t : True := by trivial', ['missing'],
                                          extract_evidence=False)
         self.assertEqual(code, 1)
-        self.assertIn("unknown identifier 'missing'", stderr)
+        self.assertIn('unregistered synthetic Lean source/declarations', stderr)
+
+    def test_a_changed_body_or_declaration_set_has_no_implicit_success(self):
+        for source, names in (
+                ('theorem t : True := by invalid_proof', ['t']),
+                ('theorem other : True := by trivial', ['other']),
+                ('theorem t : True := by trivial\n', ['t']),
+                ('theorem t : True := by trivial', ['t', 't'])):
+            with self.subTest(source=source, declarations=names):
+                lean = LeanDouble()
+                code, stdout, stderr = self.run_check(lean, source, names, extract_evidence=True)
+                self.assertEqual((code, stdout), (1, ''))
+                self.assertIn('unregistered synthetic Lean source/declarations', stderr)
+                self.assertEqual(lean.checks[-1]['registered'], False)
+
+    def test_explicit_facts_still_pass_through_signature_and_forbidden_axiom_checks(self):
+        source = 'axiom explicit : False'
+        lean = LeanDouble().allow(source, ['explicit'], signatures={'explicit': 'explicit : False'},
+                                  axioms={'explicit': ['sorryAx']})
+        code, stdout, _ = self.run_check(lean, source, ['explicit'], extract_evidence=True)
+        self.assertEqual(code, 0)
+        result = parse_evidence({'stdout': stdout}, ['explicit'], ['sorryAx'], extract_evidence=True)
+        self.assertEqual((result['status'], result['reason']), ('rejected', 'forbidden axiom'))
+        code, _, error = self.run_check(lean, source + '\n-- changed', ['explicit'], extract_evidence=True)
+        self.assertEqual(code, 1)
+        self.assertIn('unregistered synthetic Lean source/declarations', error)
 
 
 if __name__ == '__main__':

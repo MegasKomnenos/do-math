@@ -23,7 +23,7 @@ from do_math import activities, execution_lifecycle, formal, knowledge_records a
 from do_math.execution_profiles import profile_ref
 from do_math.knowledge import assess_use, plan_impact, revision_roots
 from do_math.state_contract import default_state_contract
-from knowledge_fixtures import knowledge_candidate
+from support.knowledge_builders import knowledge_candidate
 from support.engine_lifecycle import (applied, clear_work, next_environment, only, recorded_verifier, run_machine,
                                       task, transition)
 from support.provider_probes import ObservedCalls
@@ -154,7 +154,9 @@ class KnowledgeImportTests(unittest.TestCase):
 class FormalConsumerTests(unittest.TestCase):
     def test_formal_consumer_passes_runtime_and_preapproved_toolchain(self):
         sim = Sim.activated()
-        calls = recorded_verifier(sim)
+        sim.lean.allow('theorem truth : True := True.intro', ['truth'],
+                       signatures={'truth': 'truth : True'})
+        calls = self.enterContext(recorded_verifier())
         kid = imported(sim, knowledge_candidate())
         only(sim, 'formal_check')
         sim.engine._save()
@@ -175,6 +177,8 @@ class FormalConsumerTests(unittest.TestCase):
     def test_review_start_failure_produces_a_storable_wait_after_formal_acceptance(self):
         """The review start fails for real: the instance has no adopted review policy when the formal result is accepted."""
         sim = Sim.activated()
+        sim.lean.allow('theorem truth : True := True.intro', ['truth'],
+                       signatures={'truth': 'truth : True'})
         kid = imported(sim, knowledge_candidate())
         only(sim, 'formal_check')
         sim.engine.instance.pop('review_policy')

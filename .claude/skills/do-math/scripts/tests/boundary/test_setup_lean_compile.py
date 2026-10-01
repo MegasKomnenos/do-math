@@ -1,7 +1,7 @@
 """The setup tool's representative compile through a real Windows Job (``setup_lean.verify_environment``).
 
-``setup_lean`` starts the compile with ``formal._job_run`` and no Jobs port, so
-the compile is a real Job. The compiler is a small Python program standing in
+With no explicit ports, ``setup_lean`` starts the compile with the real Job
+and clock defaults through ``formal._job_run``. The compiler is a small Python program standing in
 for Lean: it writes its own arguments (or a fixed output) and an exit code, so
 the evidence the tool keeps can be compared with what the program received and did.
 """
@@ -13,6 +13,7 @@ import tempfile
 import unittest
 
 import setup_lean
+from test_categories import test_group
 
 COMPILER = '''import json, sys
 sys.stdout.write(json.dumps(sys.argv) if {echo!r} else {stdout!r})
@@ -21,6 +22,7 @@ raise SystemExit({code})
 '''
 
 
+@test_group('resource')
 class RepresentativeCompileTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
@@ -35,8 +37,12 @@ class RepresentativeCompileTests(unittest.TestCase):
         return [sys.executable, str(path)]
 
     def test_validation_preserves_source_output_and_exact_command(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         command = self.compiler(echo=True)
-        record = setup_lean.verify_environment(command, self.root / 'evidence', self.identity)
+        record = setup_lean.verify_environment(command, self.root / 'evidence', self.identity, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         self.assertEqual(record['status'], 'verified')
         self.assertEqual(record['scope'], 'lean_core_representative_proofs')
         self.assertEqual(record['command'], [*command, record['source']])
@@ -48,8 +54,12 @@ class RepresentativeCompileTests(unittest.TestCase):
         self.assertEqual(preserved, record)
 
     def test_failure_and_stop_never_produce_verified_evidence(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         record = setup_lean.verify_environment(self.compiler(stderr='diagnostic', code=1), self.root / 'evidence',
-                                               self.identity)
+                                               self.identity, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         self.assertEqual(record['status'], 'failed')
         self.assertEqual((record['exit_code'], record['stderr']), (1, 'diagnostic'))
         self.assertNotIn('error', record)

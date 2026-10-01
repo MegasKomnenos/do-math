@@ -12,10 +12,13 @@ import tempfile
 import zlib
 
 from .ports.git_backend import GitBackendError
+from .storage_finish_git_output import parse_object_info, parse_read_objects
 
 
 class GitProcess:
-    def __init__(self):
+    def __init__(self, *, environment, run=subprocess.run):
+        self._run_process = run
+        self.environment = environment
         self._git_dirs = {}
         self._objects = {}
 
@@ -23,9 +26,9 @@ class GitProcess:
         repository = Path(repository).absolute()
         # Until Git reports its directory, the work tree stands in for it (hooks path).
         git_dir = self._git_dirs.get(repository, repository)
-        environment = os.environ.copy()
+        environment = dict(self.environment)
         environment.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull, "GIT_OPTIONAL_LOCKS": "0"})
-        return subprocess.run(
+        return self._run_process(
             ["git", "-C", str(repository), "-c", "user.name=do-math", "-c", "user.email=do-math@invalid",
              "-c", f"core.hooksPath={git_dir / 'do-math-disabled-hooks'}", *arguments],
             input=input, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment, check=False,
@@ -95,45 +98,16 @@ class GitProcess:
         if not specs:
             return []
         arguments = ("cat-file", "--batch-check=%(objectname) %(objecttype) %(objectsize)")
-        rows = self._checked(repository, *arguments,
-                             input="".join(spec + "\n" for spec in specs).encode("utf-8")).decode("utf-8").splitlines()
-        if len(rows) != len(specs):
-            raise GitBackendError("batch object check response count differs")
-        result = []
-        for spec, row in zip(specs, rows):
-            if row == f"{spec} missing":
-                result.append(None)
-                continue
-            fields = row.split()
-            if len(fields) != 3 or not fields[2].isdigit():
-                raise GitBackendError("invalid batch object check row for " + spec)
-            result.append((fields[0], fields[1], int(fields[2])))
-        return result
+        raw = self._checked(repository, *arguments,
+                            input="".join(spec + "\n" for spec in specs).encode("utf-8"))
+        return parse_object_info(specs, raw)
 
     def read_objects(self, repository, specs):
         if not specs:
             return []
         raw = self._checked(repository, "cat-file", "--batch",
                             input="".join(spec + "\n" for spec in specs).encode("utf-8"))
-        result, offset = [], 0
-        for spec in specs:
-            end = raw.find(b"\n", offset)
-            if end >= 0 and raw[offset:end] == f"{spec} missing".encode("utf-8"):
-                result.append(None)
-                offset = end + 1
-                continue
-            header = raw[offset:end].split() if end >= 0 else []
-            if len(header) != 3 or not header[2].isdigit():
-                raise GitBackendError("batch read returned no object header for " + spec)
-            size = int(header[2])
-            start, offset = end + 1, end + 1 + size
-            if raw[offset:offset + 1] != b"\n":
-                raise GitBackendError("truncated batch object: " + spec)
-            result.append((header[1].decode("ascii"), raw[start:offset]))
-            offset += 1
-        if offset != len(raw):
-            raise GitBackendError("unexpected trailing batch output")
-        return result
+        return parse_read_objects(specs, raw)
 
     def ref_oid(self, repository, ref):
         arguments = ("rev-parse", "--verify", "--quiet", ref)

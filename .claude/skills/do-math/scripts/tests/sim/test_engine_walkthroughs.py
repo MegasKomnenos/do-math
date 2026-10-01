@@ -21,7 +21,7 @@ from do_math.context_store import fit_context, read_source
 from do_math.governance import governance_view
 from do_math.task_contracts import validate_task_contract
 from do_math.task_scope import apply_task_dispositions
-from engine_fixtures import evidence_task
+from support.record_builders import evidence_task
 from support.engine_context import issue
 from support.engine_lifecycle import _ended_execution, research_grant, task
 from support.engine_walkthroughs import (accept_knowledge, apply_plan, audit_goal, evidence_sim, plan_output,
@@ -78,7 +78,7 @@ class DesignWalkthroughs(unittest.TestCase):
                                         {'id': 'EX-running', 'role': 'research_work', 'status': 'running',
                                          'input_snapshot': e.head, 'input_manifest': []})
         planning.record_due_events(e.instance, e.runtime, now)
-        state = planning.schedule_reconsideration(e.instance, e.runtime, now=now)
+        state = planning.schedule_reconsideration(e.instance, e.runtime, now=now, clock=sim.ports.clock)
         self.assertFalse(state['exhausted'])
         preparation = next(a for a in e.runtime['queue'] if a['role'] == 'research_preparation')
         self.assertTrue(preparation['event_refs'])
@@ -123,6 +123,8 @@ class DesignWalkthroughs(unittest.TestCase):
 
     def test_w04_counterexample_audit_depends_on_charter_and_keeps_certificate(self):
         """About 2.3 s, over the 2 s Sim budget: each of the two charters is a template restore and a public decision."""
+        from support.entry import entry
+        _entry = entry()
         # Auditor responses distinguish proof-only from prove-or-refute. Their
         # mathematical correctness is a fixture, not inferred by the engine.
         for goal, decision, solved in [('Prove C or exhibit a counterexample', 'satisfied', True),
@@ -139,7 +141,7 @@ class DesignWalkthroughs(unittest.TestCase):
                     proposed = truth_candidate(statement, '')
                     proposed.update(kind=kind, declaration_names=[])
                     e.instance, e.runtime, endpoint = knowledge_io.import_candidate(e.instance, e.runtime,
-                        proposed, source_ref='fixture:finite-calculation', actor_ref='EX-calculation')
+                        proposed, source_ref='fixture:finite-calculation', actor_ref='EX-calculation', clock=_entry.ports.clock)
                     if kind == 'observation':
                         calculation_id = endpoint
                     else:
@@ -152,7 +154,7 @@ class DesignWalkthroughs(unittest.TestCase):
                 relation = {**claim, 'formal_result_refs': [e.instance['knowledge'][kid]['formal_result_id']],
                             'assessment_refs': [aid], 'evidence_refs': [calculation_id, kid]}
                 e.instance, rid = knowledge_io.import_relation(e.instance, relation,
-                    source_ref='fixture:counterexample', actor_ref='EX-relation')
+                    source_ref='fixture:counterexample', actor_ref='EX-relation', clock=_entry.ports.clock)
                 self.assertEqual(next(r for r in e.instance['relations'] if r['id'] == rid)['kind'], 'refutes')
                 formal_before = deepcopy(e.instance['formal_results'])
                 self.assertEqual(e.instance['goal_judgments'], [])
@@ -162,17 +164,19 @@ class DesignWalkthroughs(unittest.TestCase):
                 self.assertTrue(e.instance['goal_judgments'][0]['dependencies'])
 
     def test_w05_waiting_task_keeps_obligations_and_other_work_can_proceed(self):
+        from support.entry import entry
+        _entry = entry()
         e = evidence_sim().engine
         waiting = reviewed_task(e, 'TK-waiting')
         peer = reviewed_task(e, 'TK-independent')
         waiting['status'] = 'waiting'
         question = questions.link(e.runtime, execution_id='EX-old', field='questions/0', owner='user',
-                                  targets=[waiting['id']], reason='Approve external scope?', blocks=True)
+                                  targets=[waiting['id']], reason='Approve external scope?', blocks=True, clock=_entry.ports.clock)
         before = deepcopy(waiting['completion_obligations'])
         _ended_execution(e, 'EX-old', 'research_work')
         e.runtime['executions']['EX-old'].update(outcome='waiting', action={'target': waiting['id']})
-        self.assertNotEqual(planning.task_ready(waiting, e.instance, e.runtime)['state'], 'ready')
-        self.assertEqual(planning.task_ready(peer, e.instance, e.runtime)['state'], 'ready')
+        self.assertNotEqual(planning.task_ready(waiting, e.instance, e.runtime, evaluation_context=e._evaluation_context())['state'], 'ready')
+        self.assertEqual(planning.task_ready(peer, e.instance, e.runtime, evaluation_context=e._evaluation_context())['state'], 'ready')
         with self.assertRaisesRegex(ValueError, '^the applied decision does not affect the question target: '
                                                 + question['id'] + '$'):
             questions.resolve_user(e.runtime, [question['id']], resolution_ref='DC-unrelated', affected_ids=[peer['id']])
@@ -180,14 +184,16 @@ class DesignWalkthroughs(unittest.TestCase):
         self.assertEqual(question['resolution_ref'], 'DC-answer')
         next_action = {'id': 'AC-resume', 'role': 'research_work', 'target': waiting['id'],
                        'continuation_of': 'EX-old', 'resolution_ref': 'DC-answer'}
-        readiness = planning.task_ready(waiting, e.instance, e.runtime, action=next_action)
+        readiness = planning.task_ready(waiting, e.instance, e.runtime, action=next_action, evaluation_context=e._evaluation_context())
         self.assertEqual(readiness['state'], 'ready', repr(readiness))
         e.instance['grants'][research_grant(e)]['status'] = 'revoked'
-        self.assertNotEqual(planning.task_ready(waiting, e.instance, e.runtime, action=next_action)['state'], 'ready')
+        self.assertNotEqual(planning.task_ready(waiting, e.instance, e.runtime, action=next_action, evaluation_context=e._evaluation_context())['state'], 'ready')
         self.assertEqual(waiting['completion_obligations'], before)
         self.assertEqual(e.runtime['executions']['EX-old']['status'], 'ended')
 
     def test_w06_exposition_revision_invalidates_consumers_not_formal_result(self):
+        from support.entry import entry
+        _entry = entry()
         e = evidence_sim().engine
         kid, aid = accept_knowledge(e)
         audit_goal(e, kid)
@@ -198,7 +204,7 @@ class DesignWalkthroughs(unittest.TestCase):
         roots = knowledge.revision_roots(e.instance, kid)
         impact = knowledge.plan_impact(e.instance, e.runtime, roots, [])
         e.instance, e.runtime = knowledge.revise_knowledge(e.instance, e.runtime, kid, changes,
-            reason='Confirmed explanation defect', actor_ref='EX-internal-review', declared_impact=impact['computed_impact'])
+            reason='Confirmed explanation defect', actor_ref='EX-internal-review', declared_impact=impact['computed_impact'], clock=_entry.ports.clock)
         self.assertEqual(e.instance['formal_results'], formal_before)
         self.assertEqual(e.instance['knowledge'][kid]['lifecycle'], 'superseded')
         self.assertFalse(knowledge.assess_use(e.instance['knowledge'][kid], e.instance)['valid'])
@@ -207,7 +213,7 @@ class DesignWalkthroughs(unittest.TestCase):
         self.assertFalse(knowledge.assess_use(replacement, e.instance)['valid'])
         e.instance, new_assessment = kr.record_identity_assessment(e.instance, replacement['id'],
             {'decision': 'match', 'basis': kr.identity_basis(e.instance, replacement['id'])}, 'policy:fixture',
-            runtime=e.runtime)
+            runtime=e.runtime, clock=_entry.ports.clock)
         self.assertNotEqual(new_assessment, aid)
         self.assertTrue(knowledge.assess_use(e.instance['knowledge'][replacement['id']], e.instance)['valid'])
         audit_goal(e, replacement['id'])
@@ -220,7 +226,7 @@ class DesignWalkthroughs(unittest.TestCase):
         e = evidence_sim().engine
         first = reviewed_task(e, 'TK-a')
         second = reviewed_task(e, 'TK-b')
-        self.assertEqual(planning.ready_task_ids(e.runtime, e.instance), ['TK-a', 'TK-b'])
+        self.assertEqual(planning.ready_task_ids(e.runtime, e.instance, evaluation_context=e._evaluation_context()), ['TK-a', 'TK-b'])
         with self.assertRaisesRegex(ValueError, EVERY_READY):
             apply_plan(e, plan_output(dispositions=[disposition(first['id'])]))
         apply_plan(e, plan_output(dispositions=[disposition(first['id']), disposition(second['id'], 'not_selected')]),
@@ -259,7 +265,7 @@ class DesignWalkthroughs(unittest.TestCase):
         # Occurrence truth is not a replacement for independent review.
         work['occurrence_condition'] = condition
         work['reviews'] = []
-        self.assertNotEqual(planning.task_ready(work, e.instance, e.runtime)['state'], 'ready')
+        self.assertNotEqual(planning.task_ready(work, e.instance, e.runtime, evaluation_context=e._evaluation_context())['state'], 'ready')
 
 
 class PriorityVectorTests(unittest.TestCase):
@@ -312,6 +318,8 @@ class PriorityVectorTests(unittest.TestCase):
         self.assertEqual(work['assessment']['item_dispositions'], assessment['item_dispositions'])
 
     def test_v82_withdrawal_preserves_separate_formal_assessment_and_use(self):
+        from support.entry import entry
+        _entry = entry()
         e = evidence_sim().engine
         kid, aid = accept_knowledge(e)
         work = task(e, 'TK-1', approved=False)
@@ -320,14 +328,14 @@ class PriorityVectorTests(unittest.TestCase):
                     ('knowledge', 'formal_results', 'expositions', 'identity_assessments', 'assessment_uses')}
         request = [{'task_id': work['id'], 'disposition': 'withdraw', 'reason': 'Different direction'}]
         changed, runtime = apply_task_dispositions(e.instance, e.runtime, request,
-            execution_id='EX-planner', input_tasks=deepcopy(e.runtime['tasks']))
+            execution_id='EX-planner', input_tasks=deepcopy(e.runtime['tasks']), clock=_entry.ports.clock)
         self.assertEqual(runtime['tasks'][work['id']]['status'], 'closed')
         self.assertEqual(runtime['queue'], [])
         self.assertEqual({name: changed[name] for name in families}, families)
         self.assertTrue(knowledge.assess_use(changed['knowledge'][kid], changed)['valid'])
         e.instance = kr.set_assessment_use(e.instance, aid, 'suspended', 'check objection', 'reviewer')
         changed, _ = apply_task_dispositions(e.instance, e.runtime, request,
-            execution_id='EX-planner', input_tasks=deepcopy(e.runtime['tasks']))
+            execution_id='EX-planner', input_tasks=deepcopy(e.runtime['tasks']), clock=_entry.ports.clock)
         self.assertFalse(knowledge.assess_use(changed['knowledge'][kid], changed)['valid'])
         self.assertEqual(changed['formal_results'], families['formal_results'])
 

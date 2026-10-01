@@ -21,7 +21,7 @@ import unittest
 
 from do_math import knowledge_records as kr, submission
 from do_math.review_cycle import accept_research_result, accept_result, context_for, next_actions, validate_sealed_review
-from review_fixtures import deferred_research_cycle, research_answer
+from support.review_inputs import deferred_research_cycle, research_answer
 from support.review_research import defer_review_for_research, research_profile
 from support.review_scene import ReviewScene, warm
 
@@ -74,6 +74,8 @@ class SceneResearchTests(unittest.TestCase):
         self.engine = self.scene.engine
 
     def test_producer_and_receiver_reject_an_unassigned_used_source(self):
+        from support.entry import entry
+        _entry = entry()
         engine = self.engine
         defer_review_for_research(self.scene)
         action = next(a for a in engine.runtime['queue'] if a['role'] == 'supplemental_research')
@@ -89,8 +91,8 @@ class SceneResearchTests(unittest.TestCase):
         # The same answer citing only its fixed source passes: the receiver's
         # schema binds the request identity without constraining other fields.
         assigned = {**output, 'used_sources': [research['sources'][0]['ref']]}
-        self.assertEqual(submission._payload_issues(assigned, schema, context, {}, workspace), [])
-        issues = submission._payload_issues(output, schema, context, {}, workspace)
+        self.assertEqual(submission._payload_issues(assigned, schema, context, {}, workspace, clock=_entry.ports.clock), [])
+        issues = submission._payload_issues(output, schema, context, {}, workspace, clock=_entry.ports.clock)
         self.assertTrue(any(row['path'] == 'output/used_sources/0' and 'fixed source set' in row['message']
                             for row in issues), issues)
         execution = {'id': 'INV-unassigned', 'role': 'supplemental_research', 'action': action,
@@ -108,6 +110,8 @@ class SceneResearchTests(unittest.TestCase):
         self.assertEqual(self.engine.runtime['review_cycles'][cid]['decision'], 'unresolved')
 
     def test_split_scope_fixed_research_and_resumed_review_publish_exact_assessment(self):
+        from support.entry import entry
+        _entry = entry()
         engine, scene = self.engine, self.scene
         cid = defer_review_for_research(scene)
         scene.execute({'summary': 'PRIVATE-INITIAL-PEER'})
@@ -136,7 +140,7 @@ class SceneResearchTests(unittest.TestCase):
         self.assertTrue(scene.usable())
         self.assertIn('INV-answer', engine.runtime['review_cycles'][cid]['execution_accounting']['executions_used'])
         self.assertEqual(validate_sealed_review(engine.runtime['review_cycles'][cid], engine.runtime,
-            instance=engine.instance)['decision'], 'match')
+            instance=engine.instance, at=_entry.ports.clock.now(), clock=_entry.ports.clock)['decision'], 'match')
 
     def test_unadmitted_supplemental_execution_is_not_counted_late_at_acceptance(self):
         engine = self.engine

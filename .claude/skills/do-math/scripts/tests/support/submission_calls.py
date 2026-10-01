@@ -66,7 +66,7 @@ class _Failure(Exception):
 
 class SubmissionCLI(FakeCLI):
     def communicate(self, input=None, timeout=None):
-        from runner_fixtures import context_from
+        from support.default_responder import context_from
         prompt = input.decode('utf-8')
         role = prompt.split(MARKER, 1)[1].split('.', 1)[0]
         ctx = context_from(prompt, self.workspace)
@@ -108,7 +108,7 @@ class SubmissionModel(ModelDouble):
         return SubmissionCLI(self, list(command), stdout, stderr, Path(cwd))
 
     def output(self, role, ctx, workspace):
-        from research_fixtures import bind_candidates, seal_response
+        from support.role_answers import bind_candidates, seal_response
         rule = next((rule for rule in self.rules if rule.answers and rule.matches(role, ctx)), None)
         answer = rule.next() if rule else default()
         if isinstance(answer, Failed):
@@ -131,9 +131,12 @@ def submission_model(sim, responder=None):
 
 
 def configured_sim(**config):
-    from support.sim import Sim, built
-    return built('submission-configured-' + repr(sorted(config.items())),
-                 lambda root, shared: Sim.activated(root, shared=shared, config=config))
+    from support.sim import built
+
+    def build(root, shared, *, config):
+        from support.sim import Sim
+        return Sim.activated(root, shared=shared, config=config)
+    return built('submission-configured', build, config=config)
 
 
 def applied_now(sim, action, **options):

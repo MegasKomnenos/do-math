@@ -5,7 +5,7 @@ import unittest
 from do_math.canonical import canonical_json, exact_content_hash
 from do_math.engine import _record_evidence
 from do_math.state_contract import default_state_contract
-from research_fixtures import current_state
+from support.state_builders import current_state
 
 
 class QueryIdentity(unittest.TestCase):

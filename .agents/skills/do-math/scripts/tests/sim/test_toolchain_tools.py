@@ -17,7 +17,7 @@ from unittest.mock import patch
 import setup_lean
 from do_math import formal, trust_inventory as records
 from do_math.initialization import observation_window_warnings
-from research_fixtures import trust_fixture
+from support.trust_inputs import trust_fixture
 from support.sim import Sim
 
 WINDOWS = {'tool_review_window_seconds': 120, 'self_check_response_window_seconds': 60}
@@ -31,15 +31,17 @@ class HostIdentityTests(unittest.TestCase):
         self.request = trust_fixture(self.root, ['synthetic-lean'])
 
     def test_identity_detects_executable_checker_and_project_input_changes(self):
+        from support.entry import entry
+        _entry = entry()
         toolchain_identity_errors = formal.toolchain_identity_errors
-        self.assertEqual(toolchain_identity_errors(self.request['toolchain']), [])
+        self.assertEqual(toolchain_identity_errors(self.request['toolchain'], clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment), [])
         # Each recorded hash holds on its own, even when the executable is also a command file.
         wrong = {**self.request['toolchain'], 'sha256': '0' * 64}
-        self.assertEqual(toolchain_identity_errors(wrong),
+        self.assertEqual(toolchain_identity_errors(wrong, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment),
                          ['approved toolchain file changed: ' + self.request['toolchain']['executable']])
         lake = Path(self.request['toolchain']['executable']).with_name('lake.exe')
         lake.write_bytes(b'replaced by an update')
-        self.assertEqual(toolchain_identity_errors(self.request['toolchain']),
+        self.assertEqual(toolchain_identity_errors(self.request['toolchain'], clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment),
                          ['approved toolchain file changed: ' + str(lake)])
         # The checker is its running bytes: a copy elsewhere is the same checker,
         # other recorded bytes are not.
@@ -47,10 +49,10 @@ class HostIdentityTests(unittest.TestCase):
         copy.write_bytes(Path(self.request['toolchain']['verifier_path']).read_bytes())
         moved = {**self.request['toolchain'], 'verifier_path': str(copy)}
         lake_changed = 'approved toolchain file changed: ' + str(lake)
-        self.assertEqual(toolchain_identity_errors(moved), [lake_changed])
+        self.assertEqual(toolchain_identity_errors(moved, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment), [lake_changed])
         copy.write_bytes(b'another checker')
         other = {**moved, 'verifier_sha256': hashlib.sha256(b'another checker').hexdigest()}
-        self.assertEqual(toolchain_identity_errors(other), ['approved checker is not the running checker', lake_changed])
+        self.assertEqual(toolchain_identity_errors(other, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment), ['approved checker is not the running checker', lake_changed])
         project = self.root / 'project'
         project.mkdir()
         (project / 'lean-toolchain').write_text('leanprover/lean4:v4.32.0\n', encoding='utf-8')
@@ -58,7 +60,7 @@ class HostIdentityTests(unittest.TestCase):
         command = ['lake', '--dir', str(project), 'env', 'lean']
         with tempfile.TemporaryDirectory() as workspace:
             observed = formal._project_identity(command, workspace=Path(workspace),
-                                                expected={'manifest_hashes': None, 'source_identity': None})
+                                                expected={'manifest_hashes': None, 'source_identity': None}, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         self.assertEqual(observed['search_paths'], [])
         lake.write_bytes(('CORE_TESTS synthetic bin/lake.exe for synthetic-lean').encode())
         for name, text in (('lean-toolchain', 'leanprover/lean4:v4.33.0\n'), ('lake-manifest.json', '{"packages": [1]}')):
@@ -66,7 +68,7 @@ class HostIdentityTests(unittest.TestCase):
                 original = (project / name).read_bytes()
                 (project / name).write_text(text, encoding='utf-8')
                 chain = {**self.request['toolchain'], 'configured_command': command, 'project': observed}
-                self.assertEqual(toolchain_identity_errors(chain), ['approved project inputs changed'])
+                self.assertEqual(toolchain_identity_errors(chain, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment), ['approved project inputs changed'])
                 (project / name).write_bytes(original)
 
 
@@ -87,9 +89,11 @@ class SetupToolTests(unittest.TestCase):
             setup_lean.write_trust_request(result, self.root / 'request.json')
 
     def test_evidence_inside_a_recorded_root_is_rejected(self):
+        from support.entry import entry
+        _entry = entry()
         identity = {'executable': str(self.root / 'lean/bin/lean.exe'), 'project': None}
         with self.assertRaisesRegex(ValueError, 'validation evidence must be outside the recorded toolchain and project roots'):
-            setup_lean.verify_environment(['test-lean'], self.root / 'lean/evidence', identity)
+            setup_lean.verify_environment(['test-lean'], self.root / 'lean/evidence', identity, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         self.assertFalse((self.root / 'lean').exists())
 
 
@@ -106,11 +110,13 @@ class RecordingJobs:
 
 class CompilerJobTests(unittest.TestCase):
     def test_compiler_job_does_not_inherit_unregistered_library_overrides(self):
+        from support.entry import entry
+        _entry = entry()
         jobs = RecordingJobs()
         overrides = {'LEAN_PATH': 'outside', 'LEAN_SYSROOT': 'outside', 'LAKE_HOME': 'outside', 'ELAN_HOME': 'outside'}
         with tempfile.TemporaryDirectory() as directory, patch.dict('os.environ', overrides):
             with self.assertRaisesRegex(RuntimeError, 'observe job arguments'):
-                formal._job_run(['unused-compiler'], Path(directory), jobs=jobs)
+                formal._job_run(['unused-compiler'], Path(directory), jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment)
         launch, = jobs.launches
         for name in overrides:
             self.assertNotIn(name, launch['env'])

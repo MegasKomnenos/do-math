@@ -16,6 +16,8 @@ def setUpModule():
 class FormalAttemptLineageTests(unittest.TestCase):
     def test_public_pause_restart_resume_preserves_formal_attempt_lineage(self):
         sim, action = scene(source='theorem resume_fixture : 1 = 1 := rfl', declarations=('resume_fixture',))
+        sim.lean.allow('theorem resume_fixture : 1 = 1 := rfl', ['resume_fixture'],
+                       signatures={'resume_fixture': 'resume_fixture : 1 = 1'})
         stop_with_control(sim, action, 'pause')
         first, = attempts(sim)
         self.assertEqual(first['status'], 'ended')

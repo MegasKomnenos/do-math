@@ -125,6 +125,24 @@
       "found_by": "1f academic.1 (test_academic_engine migration): the requirement-change tests moved onto a goal the configured goal auditors solved on the Sim; the first public requirement change after the solution left the goal unsolved",
       "missed_kind": "The legacy requirement-change tests set goal_status directly with no goal judgments and patched the engine's _solution_basis to a constant, so the currentness check had no judgment to mark stale and the basis never changed; the pure governance test applied the decision without the engine's control step",
       "status": "open"
+    },
+    {
+      "id": "KD-1600",
+      "summary": "scheduled_operator의 두 자식 호출을 공유 Job으로 전환한 뒤 외부 spawn/wait 오류의 원 예외형·메시지가 소실된다. 407db136의 subprocess.run은 FileNotFoundError/OSError 원형을 전달하지만 formal._worker는 worker_error와 traceback만 저장하고 _job_run은 RuntimeError로 바꾼다. run_engine result.error와 recovery execution.error.type/message가 달라진다. main의 evidence_dir/decode_errors 교정 뒤에도 이 경로는 같다.",
+      "category": 9,
+      "reproduction": "sim.test_operator_finish_children.EngineChildTests.test_command_start_error_preserves_original_exception",
+      "found_by": "operator-audit 전체 행동 대조 및 operator-fix-first-report.json(2026-10-01, 49.6초). 원 subprocess.run을 존재하지 않는 executable로 호출하여 받은 FileNotFoundError를 실제 formal worker의 외부 spawn 경계에 그대로 주입했다. engine/recovery 두 소비자 모두 RuntimeError를 기록해 마지막 전체 오류 목록 비교에서 실패했다. 최초 실패 보고서와 failure JSON 보존.",
+      "missed_kind": "기존 operator 이행 시험은 정상 stdout/stderr/exit와 scheduler 오류만 관찰했으며, 공유 worker가 바꾼 원 child 생성 예외형을 비교하지 않았다. 시험은 원 동작을 기대하고 새 오류를 정답으로 고정하지 않는다.; corrected during stage-1 integration: the new shared worker now transports checked OSError facts for the two operator callers, preserving the original exception class/message. The reproduction remains unmarked as regression; Lean retains its original worker_error contract.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-1900",
+      "summary": "An accepted empty initial preparation starts one research_plan worker despite having no tasks, returned results or preparation requests to decide; three further owner passes observe preparation=1 and plan=1 instead of 11-A's plan=0.",
+      "category": 11,
+      "reproduction": "flows.test_cross_role_calls.EmptyPreparationDefectTests.test_empty_preparation_has_no_planning_target",
+      "found_by": "Cross obligations on main-wip snapshot e440bf7: real Sim activation, accepted empty provider submission, model call log and actual Jobs worker request IDs; cross-initial.log reproduced the unexpected research_plan call. Setup, accepted outcomes and request/call correspondence are checked outside expectedFailure.",
+      "missed_kind": "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_preparation_without_any_pending_review_still_opens_a_plan pins the empty-plan enqueue as expected; no targetless model/Job zero-count assertion covered the subsequent owner passes.",
+      "status": "open"
     }
   ]
 }

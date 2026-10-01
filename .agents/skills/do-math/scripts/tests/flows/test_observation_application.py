@@ -18,7 +18,7 @@ import unittest
 from do_math.control_transport import ControlTransport
 from do_math.git_store import GitStateStoreConflict
 from do_math.observations import ObservationTracker
-from research_fixtures import acknowledge, observation_rule, observe, write_checkpoint
+from support.observation_inputs import acknowledge, observation_rule, observe, write_checkpoint
 from support.provider_live import batch, running_execution
 from support.provider_probes import ObservedCalls
 from support.sim import Sim, warm_template
@@ -243,9 +243,9 @@ RULE = {"id": "checkpoints", "operator": "checkpoint_count_gte",
 
 def task_rule_responder():
     """The default responder, whose preparation gives each candidate task the execution-bound ``RULE``."""
-    from runner_fixtures import ScriptedRunner
+    from support.default_responder import DefaultResponder
 
-    class TaskRuleResponder(ScriptedRunner):
+    class TaskRuleResponder(DefaultResponder):
         def respond(self, role, ctx, workspace):
             out = super().respond(role, ctx, workspace)
             if role == 'research_preparation':

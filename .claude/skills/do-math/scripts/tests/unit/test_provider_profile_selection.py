@@ -15,13 +15,15 @@ from do_math import contracts, execution_profiles, model_policy
 from do_math.canonical import canonical_json
 from do_math.initialization import capability_requirements
 from do_math.observations import observation_rule_contract, tracker_config
-from provider_fixtures import PROFILE_CONFIG
-from research_fixtures import observation_rule
+from support.provider_inputs import PROFILE_CONFIG
+from support.observation_inputs import observation_rule
 from support.provider_probes import ObservedCalls
 
 
 def profiles(**changes):
-    return execution_profiles.build_profiles({**PROFILE_CONFIG, "lean_command": ["lean-A"], **changes})
+    from support.entry import entry
+    _entry = entry()
+    return execution_profiles.build_profiles({**PROFILE_CONFIG, "lean_command": ["lean-A"], **changes}, host=_entry.ports.host)
 
 
 def role_profile(state, role, **ai):
@@ -31,11 +33,13 @@ def role_profile(state, role, **ai):
 
 class SelectionTests(unittest.TestCase):
     def test_selection_cost_depends_on_allowed_profiles_not_retained_editions(self):
+        from support.entry import entry
+        _entry = entry()
         registry = {}
         for edition in range(12):
             config = {**deepcopy(PROFILE_CONFIG), "max_input_bytes": 500000 + edition,
                       "lean_command": ["fixture-no-lean"]}
-            current = execution_profiles.build_profiles(config)
+            current = execution_profiles.build_profiles(config, host=_entry.ports.host)
             registry.update(current["execution_profiles"])
         allowed = current["role_profile_refs"]["maintenance"]
         instance = {"execution_profiles": registry, "role_profile_refs": current["role_profile_refs"]}
@@ -65,8 +69,10 @@ class SelectionTests(unittest.TestCase):
                 requirement, allowed_refs=allowed)
 
     def test_ai_selection_uses_adopted_editions_without_building_or_reading_lean(self):
+        from support.entry import entry
+        _entry = entry()
         config = {**deepcopy(PROFILE_CONFIG), "lean_command": ["fixture-no-lean"]}
-        instance = execution_profiles.build_profiles(config)
+        instance = execution_profiles.build_profiles(config, host=_entry.ports.host)
         registry = instance["execution_profiles"]
         with ObservedCalls(lean=execution_profiles._lean_contract, seal=execution_profiles.seal_profile) as calls:
             chosen = model_policy.selection(config, {"role": "maintenance"}, {}, {}, instance=instance)
@@ -76,12 +82,14 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(calls.count("seal"), 0)
         # The same probe sees both functions when profiles are authored.
         with ObservedCalls(lean=execution_profiles._lean_contract, seal=execution_profiles.seal_profile) as authoring:
-            execution_profiles.build_profiles(config)
+            execution_profiles.build_profiles(config, host=_entry.ports.host)
         self.assertGreater(authoring.count("lean"), 0)
         self.assertGreater(authoring.count("seal"), 0)
 
     def test_selection_is_pinned_and_contract_allowlist_is_enforced(self):
-        state = execution_profiles.build_profiles(PROFILE_CONFIG)
+        from support.entry import entry
+        _entry = entry()
+        state = execution_profiles.build_profiles(PROFILE_CONFIG, host=_entry.ports.host)
         action = {"role": "research_work", "model_assessment": {
             "difficulty": "low", "importance": "low", "reason": "bounded arithmetic"}}
         selected = model_policy.selection(PROFILE_CONFIG, action, {}, {}, instance=state)
@@ -97,7 +105,7 @@ class SelectionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "execution profile content differs from its immutable identity"):
             execution_profiles.validate_profile(broken[profile["id"]])
         changed = {**deepcopy(PROFILE_CONFIG), "max_input_bytes": 400000}
-        editions = execution_profiles.build_profiles(changed)
+        editions = execution_profiles.build_profiles(changed, host=_entry.ports.host)
         registry = {**state["execution_profiles"], **editions["execution_profiles"]}
         newest = model_policy.selection(changed, action, {}, {}, instance={
             "execution_profiles": registry, "role_profile_refs": editions["role_profile_refs"]})
@@ -131,6 +139,8 @@ class SelectionTests(unittest.TestCase):
 
 class AuthoringTests(unittest.TestCase):
     def test_profile_authoring_rejects_missing_unknown_and_invalid_host_demands(self):
+        from support.entry import entry
+        _entry = entry()
         constraint = execution_profiles.host_constraint(host_id="fixture-host",
             limits={"jobs": 3, "memory_bytes": 4096, "cpu_rate_basis_points": 10000},
             control_reserve={"jobs": 1, "memory_bytes": 1024, "cpu_rate_basis_points": 1000},
@@ -139,7 +149,7 @@ class AuthoringTests(unittest.TestCase):
                    for role in execution_profiles.HOST_ROLES}
         config = {**deepcopy(PROFILE_CONFIG), "lean_command": ["fixture-no-lean"],
                   "host_resources": {"constraint": constraint, "demands_by_role": demands}}
-        self.assertEqual(execution_profiles.build_profiles(config)["host_capacity_ref"], constraint["id"])
+        self.assertEqual(execution_profiles.build_profiles(config, host=_entry.ports.host)["host_capacity_ref"], constraint["id"])
         for defect, message in (("missing", "every capped role needs an explicit host demand"),
                                 ("unknown", "host demands must name capped roles only"),
                                 ("invalid", r"host amounts must be explicit nonnegative integers \(positive for a demand\)")):
@@ -152,10 +162,12 @@ class AuthoringTests(unittest.TestCase):
             else:
                 rows["research_work"]["memory_bytes"] = 0
             with self.subTest(defect=defect), self.assertRaisesRegex(ValueError, message):
-                execution_profiles.build_profiles(bad)
+                execution_profiles.build_profiles(bad, host=_entry.ports.host)
 
     def test_normal_final_delivery_rendering_preserves_the_sealed_profile(self):
-        profile = role_profile(execution_profiles.build_profiles(PROFILE_CONFIG), "research_work")
+        from support.entry import entry
+        _entry = entry()
+        profile = role_profile(execution_profiles.build_profiles(PROFILE_CONFIG, host=_entry.ports.host), "research_work")
         original = deepcopy(profile)
         role_prompt = contracts.render_prompt('research_work', {'action': {'role': 'research_work'}}, documents=[])
         delivered = execution_profiles.prepare_prompt(role_prompt, profile)
@@ -172,7 +184,9 @@ class AuthoringTests(unittest.TestCase):
             execution_profiles.validate_profile(changed)
 
     def test_modes_machine_fields_and_profile_rebinding(self):
-        state = execution_profiles.build_profiles(PROFILE_CONFIG)
+        from support.entry import entry
+        _entry = entry()
+        state = execution_profiles.build_profiles(PROFILE_CONFIG, host=_entry.ports.host)
         mode = {p["role"]: p["observation"]["mode"] for p in state["execution_profiles"].values()}
         self.assertEqual(mode["research_work"], "event_driven")
         self.assertEqual(mode["identity_review"], "periodic")
@@ -185,15 +199,17 @@ class AuthoringTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "execution role differs from profile"):
             execution_profiles.bind_execution(execution, role_profile(state, "trust_check"))
         # Another edition of the same role cannot take the execution either.
-        other_edition = role_profile(execution_profiles.build_profiles({**PROFILE_CONFIG, "lean_command": ["lean-B"]}),
+        other_edition = role_profile(execution_profiles.build_profiles({**PROFILE_CONFIG, "lean_command": ["lean-B"]}, host=_entry.ports.host),
                                      "formal_check")
         self.assertNotEqual(other_edition["id"], machine["id"])
         with self.assertRaisesRegex(ValueError, "an execution cannot change its profile"):
             execution_profiles.bind_execution(execution, other_edition)
 
     def test_research_profile_binds_all_implemented_signal_kinds_not_counter_names(self):
+        from support.entry import entry
+        _entry = entry()
         profile = role_profile(execution_profiles.build_profiles({**PROFILE_CONFIG, "tool_review_window_seconds": 60,
-                               "self_check_response_window_seconds": 60}), "research_work")
+                               "self_check_response_window_seconds": 60}, host=_entry.ports.host), "research_work")
         rule = observation_rule(threshold=1, id="SC-attempts", required_evidence=["checkpoint.json"])
         config = tracker_config(profile, initial_self_check_rules=[rule])
         self.assertEqual(config["observation_rule_bindings"], observation_rule_contract())
@@ -209,7 +225,9 @@ class AuthoringTests(unittest.TestCase):
 
 class EvidenceTests(unittest.TestCase):
     def test_capability_evidence_does_not_promote_surface_to_job_proof(self):
-        profile = next(p for p in execution_profiles.build_profiles(PROFILE_CONFIG)["execution_profiles"].values()
+        from support.entry import entry
+        _entry = entry()
+        profile = next(p for p in execution_profiles.build_profiles(PROFILE_CONFIG, host=_entry.ports.host)["execution_profiles"].values()
                        if p["actor_kind"] == "ai")
         description = {"scope": "cli_command_surface_only", "verified": True,
             "identity": {"cli_sha256": "a" * 64, "worker_sha256": "b" * 64, "host": {"node": "test"}},
@@ -222,6 +240,8 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(evidence["capabilities"]["remote_termination"]["status"], "unknown")
 
     def test_negative_job_fact_vetoes_next_matching_assignment(self):
+        from support.entry import entry
+        _entry = entry()
         state = profiles()
         p = role_profile(state, "maintenance")
         identity = {"host": {"node": "one"}, "cli_sha256": "a" * 64}
@@ -232,7 +252,7 @@ class EvidenceTests(unittest.TestCase):
                                                                   execution_id="EX-failed", evidence_ref="failure.json")
         state["capability_evidence"] = {r["id"]: r for r in (positive, negative)}
         reference = execution_profiles.profile_ref(p)
-        current = capability_requirements(state, reference, current_identity=identity, at="2026-09-20T00:00:02Z")
+        current = capability_requirements(state, reference, current_identity=identity, at="2026-09-20T00:00:02Z", host=_entry.ports.host)
         self.assertFalse(current["satisfied"], "actual structural failure did not block the next identical assignment")
         changed = {"host": {"node": "two"}, "cli_sha256": "a" * 64}
         other = execution_profiles.capability_evidence(p, {"identity": changed, "verified": True,
@@ -240,7 +260,7 @@ class EvidenceTests(unittest.TestCase):
             observed_at="2026-09-20T00:00:02Z")
         state["capability_evidence"][other["id"]] = other
         self.assertTrue(capability_requirements(state, reference, current_identity=changed,
-                        at="2026-09-20T00:00:03Z")["satisfied"], "failure was generalized to a different host")
+                        at="2026-09-20T00:00:03Z", host=_entry.ports.host)["satisfied"], "failure was generalized to a different host")
 
     def test_native_provider_observation_has_canonical_storage_projection(self):
         observation = {"stop_reason": "max_tokens", "usage": {"input_tokens": 4, "cost_usd": 0.125},

@@ -14,15 +14,18 @@ from do_math.canonical import canonical_json
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.initialization import capability_requirements, initialize_state, original_input_bytes
 from do_math.record_schemas import validate_lifecycle
-from research_fixtures import IDENTITY, FixtureAdapter
+from support.execution_inputs import IDENTITY
+from support.fakes.host import FakeHost
 
 AT = datetime(2090, 1, 1, tzinfo=timezone.utc)
 
 
 def state(source='Original user request'):
+    from support.entry import entry
+    _entry = entry()
     with tempfile.TemporaryDirectory() as root:
         return initialize_state(instance_id='RI-unicode', goal=source, workspace=root, config=DEFAULT_CONFIG,
-                                source_input=source, created_at=AT.isoformat())
+                                source_input=source, created_at=AT.isoformat(), clock=_entry.ports.clock, host=_entry.ports.host)
 
 
 class LifecycleRecordTests(unittest.TestCase):
@@ -50,20 +53,22 @@ class LifecycleRecordTests(unittest.TestCase):
 
 class CapabilityEvidenceTests(unittest.TestCase):
     def test_negative_job_is_not_cleared_by_later_help_probe(self):
+        from support.entry import entry
+        _entry = entry()
         instance, _ = state()
-        instance.update(profiles.build_profiles(instance['config']))
+        instance.update(profiles.build_profiles(instance['config'], host=_entry.ports.host))
         profile = profiles.resolve_profile(instance['execution_profiles'], instance['role_profile_refs']['maintenance'][0])
         reference = profiles.profile_ref(profile)
-        positive = profiles.capability_evidence(profile, FixtureAdapter().describe(),
+        positive = profiles.capability_evidence(profile, FakeHost(identity=IDENTITY).cli_describe(profile),
                                                 observed_at=(AT + timedelta(seconds=1)).isoformat())
         instance['capability_evidence'] = {positive['id']: positive}
         at = (AT + timedelta(seconds=2)).isoformat()
-        self.assertTrue(capability_requirements(instance, reference, current_identity=IDENTITY, at=at)['satisfied'],
+        self.assertTrue(capability_requirements(instance, reference, current_identity=IDENTITY, at=at, host=_entry.ports.host)['satisfied'],
                         'the help probe alone satisfies the profile')
         negative = profiles.structural_failure_evidence(profile, IDENTITY, observed_at=AT.isoformat(),
                                                          execution_id='EX-failed', evidence_ref='failure.json')
         instance['capability_evidence'] = {row['id']: row for row in (negative, positive)}
-        outcome = capability_requirements(instance, reference, current_identity=IDENTITY, at=at)
+        outcome = capability_requirements(instance, reference, current_identity=IDENTITY, at=at, host=_entry.ports.host)
         self.assertFalse(outcome['satisfied'])
         self.assertIn('atomic_local_job', outcome['missing'])
 

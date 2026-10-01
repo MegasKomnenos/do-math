@@ -6,6 +6,7 @@ that matches ``CHECKPOINT_SCHEMA``) and every evidence path it names must be a
 preserved workspace file. The workspace is a real temporary folder; reads are
 counted with a profile hook, so no product name is replaced.
 """
+from support.observation_clock import scripted_clock
 import json
 from pathlib import Path
 import tempfile
@@ -16,7 +17,7 @@ import jsonschema
 from do_math import observations
 from do_math.canonical import canonical_json
 from do_math.submission import _captured_checkpoint
-from research_fixtures import Clock, observation_rule
+from support.observation_inputs import Clock, observation_rule
 from support.provider_probes import ObservedCalls, junction, settle
 
 FIELDS = {"current_claim": "c", "evidence_paths": [], "attempts": [], "remaining_work": [], "next_step": "n",
@@ -34,7 +35,9 @@ class CheckpointCase(unittest.TestCase):
         (self.ws / "checkpoint.json").write_text(json.dumps({**FIELDS, **changes}), encoding="utf-8")
 
     def read(self):
-        return observations.read_checkpoint(self.ws)
+        from support.entry import entry
+        _entry = entry()
+        return observations.read_checkpoint(self.ws, clock=_entry.ports.clock)
 
 
 class CheckpointReadTests(CheckpointCase):
@@ -60,9 +63,11 @@ class CheckpointReadTests(CheckpointCase):
 
     def test_live_polling_rereads_the_checkpoint_only_after_a_change(self):
         """The tracker skips a read only on a settled fingerprint of a valid read; an invalid read is read again."""
+        from support.entry import entry
+        _entry = entry()
         import os
         tracker = observations.ObservationTracker("E", self.ws, {"observation_rules": [observation_rule()],
-            "self_check_response_window_seconds": 5, "tool_review_window_seconds": 60}, clock=Clock())
+            "self_check_response_window_seconds": 5, "tool_review_window_seconds": 60},  time_port=scripted_clock(Clock()))
         checkpoint = self.ws / "checkpoint.json"
         self.write(evidence_paths=["proof.txt"])
         # Fresh files are inside the racy window; age this one's times instead of shortening the window.
@@ -81,8 +86,10 @@ class CheckpointReadTests(CheckpointCase):
             self.assertEqual(reads.count("read"), 3)
 
     def test_duplicate_checkpoint_keys_are_invalid_live_and_at_final_capture(self):
+        from support.entry import entry
+        _entry = entry()
         self.write(current_claim="last valid", counters={"attempts": 1})
-        prior, _ = observations.preserve_checkpoint(self.ws, artifact_prefix="runtime/artifacts/prior", max_bytes=100000)
+        prior, _ = observations.preserve_checkpoint(self.ws, artifact_prefix="runtime/artifacts/prior", max_bytes=100000, clock=_entry.ports.clock)
         raw = (self.ws / "checkpoint.json").read_bytes()
         variants = [("current_claim", raw.replace(b'"current_claim": "last valid"',
                                                   b'"current_claim": "first", "current_claim": "last valid"')),
@@ -95,7 +102,7 @@ class CheckpointReadTests(CheckpointCase):
                 self.assertEqual(_captured_checkpoint({"checkpoint.json": malformed}),
                                  {"status": "invalid", "error": reason})
                 preserved, artifacts = observations.preserve_checkpoint(self.ws, previous=prior,
-                    artifact_prefix="runtime/artifacts/final", max_bytes=100000)
+                    artifact_prefix="runtime/artifacts/final", max_bytes=100000, clock=_entry.ports.clock)
                 self.assertEqual(preserved["sha256"], prior["sha256"])
                 self.assertEqual(preserved["final_observation"]["checkpoint_status"], "invalid")
                 self.assertEqual(artifacts, {})
@@ -127,6 +134,8 @@ class CheckpointReadTests(CheckpointCase):
     def test_checkpoint_is_refused_through_a_workspace_reparse_point(self):
         # The checkpoint obeys the workspace path rule (context_store.safe_path) like every other
         # workspace file: a junction on the path is refused even when it resolves back inside.
+        from support.entry import entry
+        _entry = entry()
         import os
         real, link = self.ws / "real", self.ws / "link"
         real.mkdir()
@@ -134,8 +143,8 @@ class CheckpointReadTests(CheckpointCase):
         junction(link, real)
         self.assertTrue(os.path.isjunction(link) if os.name == "nt" else link.is_symlink())
         try:
-            self.assertEqual(observations.read_checkpoint(real)["status"], "valid")
-            refused = observations.read_checkpoint(link)
+            self.assertEqual(observations.read_checkpoint(real, clock=_entry.ports.clock)["status"], "valid")
+            refused = observations.read_checkpoint(link, clock=_entry.ports.clock)
             self.assertEqual(refused["status"], "invalid")
             self.assertRegex(refused["error"], "reparse|symlink")
         finally:

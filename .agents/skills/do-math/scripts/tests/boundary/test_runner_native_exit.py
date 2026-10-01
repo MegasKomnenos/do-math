@@ -13,8 +13,10 @@ import unittest
 from unittest.mock import patch
 
 import run_tests
+from test_categories import test_group
 
 
+@test_group('resource')
 class NativeExitTests(unittest.TestCase):
     def test_native_worker_failure_cannot_be_hidden_by_a_successful_json_report(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
@@ -34,6 +36,8 @@ class NativeExitTests(unittest.TestCase):
         self.assertTrue(original['successful'])
         self.assertEqual(original['rows'][0]['id'], identifier)
         self.assertEqual(original['rows'][0]['outcome'], 'passed')
+        self.assertEqual(set(original['module_total_seconds']), {'runner_exit_specimen'})
+        self.assertEqual(report['module_total_seconds'], original['module_total_seconds'])
         self.assertFalse(report['successful'])
         self.assertEqual(report['returncode'], 7)
 

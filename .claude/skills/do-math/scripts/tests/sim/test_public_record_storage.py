@@ -57,7 +57,7 @@ class PublicRecordStorageTests(unittest.TestCase):
     def test_public_trust_owner_flow_round_trip_requires_the_current_record_shape(self):
         from do_math.local_host import LocalHost
         from do_math.trust_validation import check_environment, environment_errors
-        from research_fixtures import trust_fixture
+        from support.trust_inputs import trust_fixture
         sim = Sim(self.root, goal='Check a synthetic environment contract')
         # Real files/owner flow, synthetic toolchain bytes: this is not Lean evidence.
         config = trust_fixture(self.root, ['synthetic-lean'])
@@ -68,7 +68,7 @@ class PublicRecordStorageTests(unittest.TestCase):
         self.assertEqual(binding, config['binding'])
         apply_control(sim, 'trust', config={'operation': 'transition', 'env_id': eid})
         # The real host observation of the synthetic toolchain, as the legacy test made it.
-        check = check_environment(environment, binding, host=LocalHost())
+        check = check_environment(environment, binding, host=LocalHost(clock=sim.ports.clock, environment=sim.environment, jobs=sim.ports.jobs), clock=sim.ports.clock)
         self.assertEqual((check['status'], check['fingerprint_sha256']), ('verified', binding['fingerprint_sha256']))
         sim.engine._finish_trust_transition(next(reversed(sim.runtime['trust_transitions'])), check)
         sim.engine._save()

@@ -5,6 +5,7 @@ on a settable clock with the worker's checkpoint in a temporary workspace, and
 the pure ``review_cycle`` state machine with declared reviewer responses. Model
 and reviewer verdicts are fixtures, as in the legacy walkthroughs.
 """
+from support.observation_clock import scripted_clock
 from pathlib import Path
 import tempfile
 import unittest
@@ -12,7 +13,7 @@ import unittest
 from do_math import review_cycle as review
 from do_math.observations import ObservationTracker
 from do_math.system_clock import new_id
-from research_fixtures import Clock, observation_rule, observe, write_checkpoint
+from support.observation_inputs import Clock, observation_rule, observe, write_checkpoint
 
 
 def start_review(proposal=None, *, previous=None, rounds=2):
@@ -69,9 +70,11 @@ class DesignWalkthroughs(unittest.TestCase):
         return Path(directory.name)
 
     def test_w08_self_check_defect_and_late_objection_reach_fresh_judges(self):
+        from support.entry import entry
+        _entry = entry()
         workspace = self.workspace()
         tracker = ObservationTracker('EX-repeat', workspace, {
-            'self_check_revision': 1, 'observation_rules': [rule()], 'self_check_response_window_seconds': 5}, clock=Clock())
+            'self_check_revision': 1, 'observation_rules': [rule()], 'self_check_response_window_seconds': 5},  time_port=scripted_clock(Clock()))
         write_checkpoint(workspace, counters={'attempts': 2})
         due = next(r for r in observe(tracker, {'type': 'tick'}) if r['kind'] == 'self_check_due')
         receipt = self_check(tracker, due, 'defect')
@@ -112,9 +115,11 @@ class DesignWalkthroughs(unittest.TestCase):
         self.assertNotEqual(lost.get('decision'), 'match')
 
     def test_w10_rule_revision_preserves_old_obligation_deadline_and_rejects_replay(self):
+        from support.entry import entry
+        _entry = entry()
         workspace = self.workspace()
         tracker = ObservationTracker('EX-adapt', workspace, {
-            'self_check_revision': 1, 'observation_rules': [rule()], 'self_check_response_window_seconds': 5}, clock=Clock())
+            'self_check_revision': 1, 'observation_rules': [rule()], 'self_check_response_window_seconds': 5},  time_port=scripted_clock(Clock()))
         write_checkpoint(workspace, counters={'attempts': 2})
         due = next(r for r in observe(tracker, {'type': 'tick'}) if r['kind'] == 'self_check_due')
         deadline = due['deadline_offset_ms']

@@ -21,7 +21,7 @@ import unittest
 
 from do_math.git_store import GitStateStoreError
 from do_math.submission import PREVIEW_CONTRACT_ID
-from research_fixtures import observation_rule, self_check_response, write_checkpoint
+from support.observation_inputs import observation_rule, self_check_response, write_checkpoint
 from support.engine_control import held_ref, running_work
 from support.provider_probes import ObservedCalls
 from support.sim import Sim, warm_template

@@ -4,8 +4,8 @@ import unittest
 
 from do_math import submission
 from do_math.canonical import canonical_json
-from purpose_fixtures import common
-from research_fixtures import seal_response
+from support.purpose_answers import common
+from support.role_answers import seal_response
 from support.provider_probes import ObservedCalls
 from support.submission_protocol import ProtocolScene, producer_workspace
 
@@ -25,6 +25,8 @@ class SealedReadLogTests(unittest.TestCase):
 
 class ToolDigestTests(unittest.TestCase):
     def test_producer_check_reuses_the_prepared_tool_digest(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             workspace, context = producer_workspace(directory)
             output = {**common("No proposal."), "candidates": []}
@@ -34,7 +36,7 @@ class ToolDigestTests(unittest.TestCase):
             draft.write_bytes(canonical_json(output))
             # The legacy test wrapped read_stable with a patch; the unchanged function's calls are observed.
             with ObservedCalls(read=submission.read_stable) as read:
-                result = submission._producer_check(workspace, ".scratch/submission.json", [])
+                result = submission._producer_check(workspace, ".scratch/submission.json", [], clock=_entry.ports.clock)
             self.assertEqual(result["tool_sha256"], context["submission_contract"]["tool_sha256"])
             paths = [str(arguments["path"]) for arguments in read.captured("read")]
             self.assertTrue(paths, 'the check read no file')

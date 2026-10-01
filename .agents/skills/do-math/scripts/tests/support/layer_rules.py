@@ -23,7 +23,7 @@ NOT_PRODUCT = {'run_tests.py', 'test_categories.py'}
 BANNED_MODULES = {'subprocess', 'threading', 'multiprocessing', 'ctypes', 'socket', 'msvcrt', '_winapi',
                   'winreg', 'concurrent', 'secrets'}
 BANNED_NAMES = {
-    'time.time', 'time.time_ns', 'time.monotonic', 'time.monotonic_ns', 'time.perf_counter', 'time.sleep',
+    'time.get_clock_info', 'time.time', 'time.time_ns', 'time.monotonic', 'time.monotonic_ns', 'time.perf_counter', 'time.sleep',
     'datetime.datetime.now', 'datetime.datetime.utcnow', 'datetime.datetime.today', 'datetime.date.today',
     'os.urandom', 'os.environ', 'os.getenv', 'os.system', 'os.popen', 'os.startfile', 'os.getpid',
     'uuid.uuid1', 'uuid.uuid4', 'platform.node',

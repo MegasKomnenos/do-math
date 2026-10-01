@@ -126,27 +126,27 @@ class RevisionObligationTests(unittest.TestCase):
         self.assertEqual(planning.revision_cycles(h.instance, h.runtime), [])
 
     def test_plan_selection_and_predispatch_use_actual_current_input(self):
-        from record_fixtures import task_disposition
-        from research_fixtures import contract_review
+        from support.record_builders import task_disposition
+        from support.role_answers import contract_review
         h = self.engine
         _ended_execution(h, 'EX-plan', 'research_plan')
         plan = {'dispositions': [task_disposition('TK-1')], 'task_assessments': [], 'preparation_requests': []}
-        h._apply_task_plan(plan, 'EX-plan', deepcopy(h.runtime['tasks']), ['TK-1'])
+        h._apply_task_plan(plan, 'EX-plan', deepcopy(h.runtime['tasks']), ['TK-1'], evaluation_context=h._evaluation_context())
         action = next(a for a in h.runtime['queue'] if a['role'] == 'research_work')
-        self.assertTrue(h._selected_action_current(action))
+        self.assertTrue(h._selected_action_current(action, evaluation_context=h._evaluation_context()))
         h.instance['sources'][0]['sha256'] = 'b' * 64
-        self.assertFalse(h._selected_action_current(action))
+        self.assertFalse(h._selected_action_current(action, evaluation_context=h._evaluation_context()))
         self.assertFalse(any(a['role'] == 'research_work' for a in h.runtime['queue']))
         self.assertTrue(any(a['role'] == 'research_plan' for a in h.runtime['queue']))
         task = h.runtime['tasks']['TK-1']
         review_action = {'role': 'task_contract_review', 'target': task['id']}
         h._apply(review_action, contract_review({'task': task}), 'EX-fresh-review', owns_response=False)
         self.assertNotIn('waiting', task)
-        self.assertEqual(planning.task_ready(task, h.instance, h.runtime)['state'], 'ready')
+        self.assertEqual(planning.task_ready(task, h.instance, h.runtime, evaluation_context=h._evaluation_context())['state'], 'ready')
         task['waiting'] = {'kind': 'external_event', 'next_owner': 'user'}
         h._apply(review_action, contract_review({'task': task}), 'EX-other-review', owns_response=False)
         self.assertEqual(task['waiting'], {'kind': 'external_event', 'next_owner': 'user'})
-        self.assertEqual(planning.task_ready(task, h.instance, h.runtime)['state'], 'not_ready')
+        self.assertEqual(planning.task_ready(task, h.instance, h.runtime, evaluation_context=h._evaluation_context())['state'], 'not_ready')
 
     def test_revision_cannot_omit_target_or_cancel_required_repair_as_unchanged(self):
         h = self.engine

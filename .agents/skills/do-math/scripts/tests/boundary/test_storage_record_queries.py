@@ -12,7 +12,7 @@ import unittest
 
 from do_math.engine import query_records, read_record
 from do_math.knowledge_io import import_candidate
-from engine_fixtures import QUERY_INSTANCE_ID, start_query_repository
+from support.query_scene import QUERY_INSTANCE_ID, start_query_repository
 
 
 class QueryRecordTests(unittest.TestCase):
@@ -20,7 +20,11 @@ class QueryRecordTests(unittest.TestCase):
         start_query_repository(self)
 
     def test_record_cursor_reuses_its_old_snapshot_after_head_advances(self):
-        first = query_records(self.git, QUERY_INSTANCE_ID, snapshot=self.old_head, limit=1)
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
+        first = query_records(self.git, QUERY_INSTANCE_ID, snapshot=self.old_head, limit=1, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual(first["snapshot"], self.old_head)
         self.assertTrue(first["truncated"])
 
@@ -28,29 +32,33 @@ class QueryRecordTests(unittest.TestCase):
         instance, runtime, third = import_candidate(instance, runtime,
             {"kind": "question", "title": "Three", "statement": "new", "summary": "new",
              "explanation": "A later query record", "lean_code": "", "declaration_names": [], "dependencies": []},
-            source_ref=QUERY_INSTANCE_ID, actor_ref=QUERY_INSTANCE_ID)
+            source_ref=QUERY_INSTANCE_ID, actor_ref=QUERY_INSTANCE_ID, clock=_entry.ports.clock)
         later = self.repository.save_with_state(self.file_head, instance, runtime)[0]
         self.assertNotEqual(later, self.file_head)  # the head advanced past the snapshots already published
 
-        resumed = query_records(self.git, QUERY_INSTANCE_ID, cursor=first["next_cursor"], limit=10)
+        resumed = query_records(self.git, QUERY_INSTANCE_ID, cursor=first["next_cursor"], limit=10, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual(resumed["snapshot"], self.old_head)
         self.assertNotIn(third, {item["record"]["id"] for item in resumed["items"]})
 
     def test_relations_direction_hash_and_absent_record(self):
+        from support.entry import entry
+        from do_math.wiring import real_ports
+        _entry = entry()
+        _entry.ports = real_ports(environment=_entry.environment)
         outgoing = query_records(self.git, QUERY_INSTANCE_ID, snapshot=self.old_head, related_to=self.kids[0],
-                                 direction="outgoing", limit=10)
+                                 direction="outgoing", limit=10, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual({item["record"]["id"] for item in outgoing["items"]}, {self.kids[1], self.relation_id})
         incoming = query_records(self.git, QUERY_INSTANCE_ID, snapshot=self.old_head, related_to=self.kids[1],
-                                 direction="incoming", limit=10)
+                                 direction="incoming", limit=10, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual({item["record"]["id"] for item in incoming["items"]}, {self.kids[0], self.relation_id})
-        record = read_record(self.git, QUERY_INSTANCE_ID, self.kids[0], snapshot=self.old_head)
+        record = read_record(self.git, QUERY_INSTANCE_ID, self.kids[0], snapshot=self.old_head, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual(record["sha256"],
                          hashlib.sha256(self.repository.read(record["path"], self.old_head)).hexdigest())
         self.assertNotIn("summary", record["record"])
-        exposition = read_record(self.git, QUERY_INSTANCE_ID, record["record"]["exposition_id"], snapshot=self.old_head)
+        exposition = read_record(self.git, QUERY_INSTANCE_ID, record["record"]["exposition_id"], snapshot=self.old_head, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertTrue(any(item["text"] == "alpha" for item in exposition["record"]["items"]))
         with self.assertRaises(KeyError) as absent:
-            read_record(self.git, QUERY_INSTANCE_ID, "K-absent", snapshot=self.old_head)
+            read_record(self.git, QUERY_INSTANCE_ID, "K-absent", snapshot=self.old_head, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual(absent.exception.args, ("record not found: K-absent",))
 
 

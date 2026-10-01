@@ -3,7 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from support.t3_store import FORMAT, categories_mark, code_digests, module_records, path_mapper, plan, records, reused_data
+from support.t3_store import FORMAT, code_digests, module_records, path_mapper, plan, records, reused_data
 
 SOURCE = '''"""A module."""
 import os
@@ -121,16 +121,15 @@ class PlanTests(unittest.TestCase):
             self.assertEqual((result.mode, result.reuse), ('full', set()), changes)
             self.assertEqual(result.measure, {'unit.test_a', 'unit.test_b', 'unit.test_new'})
 
-    def test_test_categories_is_runner_code_except_its_legacy_shard_list(self):
-        """Every migration batch edits SHARDS, which names legacy modules only; T3 runs none, so that alone reuses."""
-        categories = "SHARDS = {'host': 'test_a'}\nLABELS = ('lean',)\n\n\ndef isolation_for(test):\n    return None\n"
+    def test_every_categories_change_invalidates_the_runner_measurement(self):
         stored = _records()
-        stored['runner'] = {**stored['runner'], 's/test_categories.py': categories_mark(categories)}
-        shards = categories.replace("SHARDS = {'host': 'test_a'}", "SHARDS = {\n    'host': 'test_a test_b'}")
-        labels = categories.replace("('lean',)", "('lean', 'resource')")
-        self.assertEqual(_plan(texts={'s/test_categories.py': categories}, records=stored).mode, 'incremental')
-        self.assertEqual(_plan(texts={'s/test_categories.py': shards}, records=stored).mode, 'incremental')
-        self.assertEqual(_plan(texts={'s/test_categories.py': labels}, records=stored).reason, 'the runner changed')
+        stored['runner']['s/test_categories.py'] = 'categories-blob'
+        self.assertEqual(_plan(blobs={'s/test_categories.py': 'categories-blob'}, records=stored).mode, 'incremental')
+        for blob in ('changed-labels', 'changed-isolation-body', 'changed-comment', None):
+            with self.subTest(blob=blob):
+                result = _plan(blobs={'s/test_categories.py': blob}, records=stored)
+                self.assertEqual((result.mode, result.reason, result.reuse), ('full', 'the runner changed', set()))
+                self.assertEqual(result.measure, {'unit.test_a', 'unit.test_b', 'unit.test_new'})
 
     def test_no_store_another_coverage_or_a_forced_full_run_measures_everything(self):
         self.assertEqual(_plan(records={}).mode, 'full')

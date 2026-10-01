@@ -29,6 +29,9 @@ class SystemClock:
     def monotonic(self) -> float:
         return time.monotonic()
 
+    def resolutions(self) -> tuple[float, float]:
+        return time.get_clock_info('time').resolution, time.get_clock_info('monotonic').resolution
+
     def sleep(self, seconds: float) -> None:
         time.sleep(seconds)
 

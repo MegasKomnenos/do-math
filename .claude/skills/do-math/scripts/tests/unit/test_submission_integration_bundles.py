@@ -15,8 +15,8 @@ import unittest
 from do_math import activities, contracts, execution_profiles, integration, knowledge_io, model_policy, submission
 from do_math.canonical import exact_content_hash
 from do_math.repository import ResearchRepository
-from record_fixtures import observation_knowledge, research_work_context, two_observation_output
-from research_fixtures import current_state
+from support.record_builders import observation_knowledge, research_work_context, two_observation_output
+from support.state_builders import current_state
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import make_fake, make_repository
 
@@ -77,6 +77,8 @@ class DefaultBundleTests(unittest.TestCase):
 class BundlePublicationTests(unittest.TestCase):
     def test_bundle_receipt_and_records_share_real_git_publication(self):
         """About 0.2-0.45 s, over the 0.2 s unit budget: three publications through the storage contract."""
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             clock = FakeClock()
@@ -86,7 +88,7 @@ class BundlePublicationTests(unittest.TestCase):
                 "session_limits": model_policy.LIMITS, "tier_models": model_policy.MODELS,
                 "observation_mode": "event_driven", "max_input_bytes": 500000,
                 "effort": "medium", "operator_effort": "high", "operator_timeout_seconds": 600,
-                "scholarly_enabled": True, "scholarly_server": None, "claude_only_assigned_model": False})
+                "scholarly_enabled": True, "scholarly_server": None, "claude_only_assigned_model": False}, host=_entry.ports.host)
             instance, runtime = current_state({"knowledge": {}, "expositions": {},
                 **{k: v for k, v in profile_state.items() if k != "role_profile_refs"}}, {"executions": {}})
             instance = knowledge_io.ensure_ontology(instance)
@@ -156,11 +158,13 @@ class BundlePublicationTests(unittest.TestCase):
 
 class BundleApplicationTests(unittest.TestCase):
     def test_local_schema_failure_does_not_block_valid_bundle(self):
+        from support.entry import entry
+        _entry = entry()
         output = two_observation_output()
         del output["knowledge"][1]["statement"]
         with tempfile.TemporaryDirectory() as directory:
             issues = submission.payload_issues(output, contracts.schema_for("research_work"),
-                                               research_work_context(), {}, Path(directory))
+                                               research_work_context(), {}, Path(directory), clock=_entry.ports.clock)
         self.assertEqual({"IN-B"}, {row.get("integration_id") for row in issues})
         result = integration.apply_bundles({}, {}, output, {}, research_work_context(), execution_id="EX-1",
             apply_bundle=lambda i, r, b: i.update({b["integration_id"]: True}),

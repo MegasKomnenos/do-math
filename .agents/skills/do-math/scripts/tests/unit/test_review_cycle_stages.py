@@ -14,7 +14,7 @@ import unittest
 
 from do_math.review_cycle import (ReviewRestorationError, accept_result, context_for, next_actions, record_turn,
                                   stage_schema, start_review, validate_review_independence)
-from review_fixtures import review_stage_output, scoped_start
+from support.review_inputs import review_stage_output, scoped_start
 
 
 class ReviewCycleTests(unittest.TestCase):

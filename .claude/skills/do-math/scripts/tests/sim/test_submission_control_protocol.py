@@ -44,13 +44,15 @@ class LocalControlProtocolTests(unittest.TestCase):
 
     def test_supplied_tool_generates_fresh_sibling_ids_without_publishing(self):
         """The launcher's ``main`` runs in this process with the workspace as its working directory."""
+        from support.entry import entry
+        _entry = entry()
         scene = self.scene
         identifiers = []
         before = sorted(str(path.relative_to(scene.workspace)) for path in scene.workspace.rglob('*'))
         for _ in range(2):
             printed = io.StringIO()
             with contextlib.chdir(scene.workspace), contextlib.redirect_stdout(printed):
-                code = submission_tool.main(['--new-knowledge-id'])
+                code = submission_tool.main(['--new-knowledge-id'], ports=_entry.ports, environment=_entry.environment)
             self.assertEqual(code, 0, printed.getvalue())
             identifier = json.loads(printed.getvalue())['replacement_id']
             self.assertRegex(identifier, r'^KN-[0-7][0-9A-HJKMNP-TV-Z]{25}$')

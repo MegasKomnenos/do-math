@@ -7,19 +7,24 @@ import sys
 import tempfile
 import unittest
 
-from provider_fixtures import actual_command
+from support.provider_inputs import actual_command
 from test_categories import test_group as category
 from do_math.submission import install_tools
 from do_math.contracts import schema_for
 
 
+@category('resource')
 class LeanPreviewTests(unittest.TestCase):
     def test_control_stop_is_consumed_before_any_compiler_start(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             context = {"action": {"role": "research_work"}, "snapshot": "fixed",
                 "formal_verifier": {"command": ["definitely-missing-lean"], "allowed_axioms": []}}
-            install_tools(workspace, context, schema_for('research_work'), 1000000)
+            install_tools(workspace, context, schema_for('research_work'), 1000000, clock=_entry.ports.clock)
             (workspace / 'draft.lean').write_text('theorem good : True := by trivial', encoding='utf-8')
             (workspace / '.control').mkdir()
             (workspace / '.control/stop-request.json').write_text('{}', encoding='utf-8')
@@ -29,6 +34,10 @@ class LeanPreviewTests(unittest.TestCase):
             self.assertEqual('stopped', json.loads(result.stdout)['status'])
 
     def test_preview_attaches_no_dependency_extraction_and_prints_only_worker_fields(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             compiler = workspace / 'compiler.py'
@@ -42,7 +51,7 @@ class LeanPreviewTests(unittest.TestCase):
                 encoding='utf-8')
             context = {"action": {"role": "research_work"}, "snapshot": "fixed",
                 "formal_verifier": {"command": [sys.executable, str(compiler)], "allowed_axioms": []}}
-            install_tools(workspace, context, schema_for('research_work'), 1000000)
+            install_tools(workspace, context, schema_for('research_work'), 1000000, clock=_entry.ports.clock)
             (workspace / 'draft.lean').write_text('theorem good : True := trivial', encoding='utf-8')
             preview = context['formal_verifier']['preview']
             result = subprocess.run([*preview['command'], '--source', 'draft.lean', '--declaration', 'good'],
@@ -58,11 +67,15 @@ class LeanPreviewTests(unittest.TestCase):
     def test_preview_tool_and_compiler_worker_skip_unneeded_modules(self):
         """The tool reads its input without the submission checker; the Job worker
         that only starts the compiler loads no state store or schema library."""
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             context = {"action": {"role": "research_work"}, "snapshot": "fixed",
                 "formal_verifier": {"command": ["definitely-missing-lean"], "allowed_axioms": []}}
-            install_tools(workspace, context, schema_for('research_work'), 1000000)
+            install_tools(workspace, context, schema_for('research_work'), 1000000, clock=_entry.ports.clock)
             loaded = {}
             for module in ('do_math.formal_preview', 'do_math.formal'):
                 script = f'import sys; sys.path.insert(0, sys.argv[1]); import {module}; print(" ".join(sys.modules))'
@@ -77,6 +90,10 @@ class LeanPreviewTests(unittest.TestCase):
     def test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker(self):
         """The worker loads formal.py from a zip, so its path is never the approved path;
         the same bytes are the same checker and pass the identity gate."""
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         from do_math import formal
         from do_math.file_io import sha256_file
         checker = Path(formal.__file__).resolve()
@@ -88,7 +105,7 @@ class LeanPreviewTests(unittest.TestCase):
             workspace = Path(directory)
             context = {"action": {"role": "research_work"}, "snapshot": "fixed",
                 "formal_verifier": {"command": [str(python)], "allowed_axioms": [], "expected_toolchain": approved}}
-            install_tools(workspace, context, schema_for('research_work'), 1000000)
+            install_tools(workspace, context, schema_for('research_work'), 1000000, clock=_entry.ports.clock)
             script = ('import json, sys; sys.path.insert(0, sys.argv[1]); from do_math import formal; '
                       'print(json.dumps({"file": formal.__file__, '
                       '"errors": formal.toolchain_identity_errors(json.loads(sys.argv[2]))}))')
@@ -103,13 +120,17 @@ class LeanPreviewTests(unittest.TestCase):
     @category('lean')
     def test_actual_standalone_preview_checks_code_axioms_and_stop(self):
         """25-106 s: six real Lean inputs and the installed CLI must cross the process boundary."""
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         command = actual_command()
         self.assertIsNotNone(command, 'this integration test requires the real compiler')
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             context = {"action": {"role": "research_work"}, "snapshot": "fixed",
                 "formal_verifier": {"command": command, "allowed_axioms": ["propext", "Classical.choice", "Quot.sound"]}}
-            install_tools(workspace, context, schema_for('research_work'), 1000000)
+            install_tools(workspace, context, schema_for('research_work'), 1000000, clock=_entry.ports.clock)
             preview = context['formal_verifier'].get('preview')
             self.assertIsNotNone(preview, 'worker must receive the compiler preview command')
             for source, expected, name in [('theorem good : True := by trivial', 'verified', 'good'),

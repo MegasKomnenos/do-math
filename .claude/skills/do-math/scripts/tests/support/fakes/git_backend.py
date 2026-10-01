@@ -12,6 +12,7 @@ transaction is.
 """
 import hashlib
 import os
+import re
 from pathlib import Path
 import zlib
 
@@ -109,7 +110,13 @@ class InProcessGit:
 
     def ref_oid(self, repository, ref):
         path = self._git_dir(repository) / ref
-        return path.read_text(encoding='ascii').strip() if path.is_file() else None
+        if not path.is_file():
+            return None
+        raw = path.read_bytes().strip()
+        width = 64 if self._format(self._git_dir(repository)) == 'sha256' else 40
+        if re.fullmatch(rb'[0-9a-fA-F]{%d}' % width, raw) is None:
+            raise GitBackendError('broken reference: ' + ref)
+        return raw.decode('ascii').lower()
 
     def update_ref(self, repository, ref, new, old):
         path = self._git_dir(repository) / ref

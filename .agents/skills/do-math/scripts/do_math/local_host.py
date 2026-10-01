@@ -7,24 +7,27 @@ observations the product makes of its host.
 from . import formal
 
 
-def adapter_for(profile):
+def adapter_for(profile, *, clock, jobs):
     """The provider adapter whose CLI ``profile`` runs."""
     from .claude_adapter import provider_adapter
-    return provider_adapter(profile["ai"]["provider"])
+    return provider_adapter(profile["ai"]["provider"], clock=clock, jobs=jobs)
 
 
 class LocalHost:
+    def __init__(self, *, jobs, clock, environment):
+        self.jobs, self.clock, self.environment = jobs, clock, environment
+
     def discover_lean(self):
         return formal.discover_lean()
 
     def toolchain_identity_errors(self, toolchain, *, should_stop=None):
-        return formal.toolchain_identity_errors(toolchain, should_stop=should_stop)
+        return formal.toolchain_identity_errors(toolchain, should_stop=should_stop, jobs=self.jobs, clock=self.clock, environment=self.environment)
 
     def cli_observation_key(self, profile):
-        return adapter_for(profile).observation_key()
+        return adapter_for(profile, clock=self.clock, jobs=self.jobs).observation_key()
 
     def cli_identity(self, profile):
-        return adapter_for(profile).capability_identity()
+        return adapter_for(profile, clock=self.clock, jobs=self.jobs).capability_identity()
 
     def cli_describe(self, profile):
-        return adapter_for(profile).describe()
+        return adapter_for(profile, clock=self.clock, jobs=self.jobs).describe()

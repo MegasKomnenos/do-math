@@ -1,0 +1,18 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_preparation_cache.PreparationCacheTests.test_same_code_reuses_compression_but_each_workspace_keeps_its_own_context",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_submission_installed_tool.PreparationCacheTests.test_same_code_reuses_compression_but_each_workspace_keeps_its_own_context"
+      ]
+    },
+    {
+      "legacy_id": "test_preparation_cache.PreparationCacheTests.test_unchanged_code_is_not_reread_and_an_edit_ships_new_bytes",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_submission_installed_tool.PreparationCacheTests.test_unchanged_code_is_not_reread_and_an_edit_ships_new_bytes"
+      ]
+    }
+  ]
+}

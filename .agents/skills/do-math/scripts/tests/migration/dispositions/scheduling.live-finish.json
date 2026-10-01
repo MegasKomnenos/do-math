@@ -1,0 +1,45 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_research_recovery.LimitedRecoveryCallTests.test_actual_ai_call_keeps_pause_and_honors_a_new_stop",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_scheduling.LimitedRecoveryCallTests.test_actual_ai_call_keeps_pause_and_honors_a_new_stop"
+      ],
+      "note": "Both stop_again cases use public pause and limited-recovery decision with fake-clock five-minute expiry. Real runner should_stop argument is observed, false inside the running call and true after the second pause. Exactly one call, accepted/cancelled, lifecycle/runtime paused and user_pause retained."
+    },
+    {
+      "legacy_id": "test_session_scheduler.ParallelEngineTests.test_pause_reaches_all_parallel_calls_and_releases_their_slots",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_scheduling.ParallelEngineTests.test_pause_reaches_all_parallel_calls_and_releases_their_slots"
+      ],
+      "note": "Real live ModelRunner/worker and fair calls turns, actual idle observations and stop flags. Three started calls cancel and release all slots. Full work pool admits operating review beyond max_steps with original continue output. Unlike the old runner, real runner observes independent work too: only parent 0 review fails, independent reviews continue; independent work remains accepted after the parent review fails. No default harness behavior changed."
+    },
+    {
+      "legacy_id": "test_session_scheduler.ParallelEngineTests.test_live_operations_can_run_when_work_is_full_and_step_limit_is_reached",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_scheduling.ParallelEngineTests.test_live_operations_can_run_when_work_is_full_and_step_limit_is_reached"
+      ],
+      "note": "Real live ModelRunner/worker and fair calls turns, actual idle observations and stop flags. Three started calls cancel and release all slots. Full work pool admits operating review beyond max_steps with original continue output. Unlike the old runner, real runner observes independent work too: only parent 0 review fails, independent reviews continue; independent work remains accepted after the parent review fails. No default harness behavior changed."
+    },
+    {
+      "legacy_id": "test_session_scheduler.ParallelEngineTests.test_failed_live_review_stops_its_parent_and_preserves_independent_work",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_scheduling.ParallelEngineTests.test_failed_live_review_stops_its_parent_and_preserves_independent_work"
+      ],
+      "note": "Real live ModelRunner/worker and fair calls turns, actual idle observations and stop flags. Three started calls cancel and release all slots. Full work pool admits operating review beyond max_steps with original continue output. Unlike the old runner, real runner observes independent work too: only parent 0 review fails, independent reviews continue; independent work remains accepted after the parent review fails. No default harness behavior changed."
+    },
+    {
+      "legacy_id": "test_session_scheduler.SlotTests.test_regular_supervision_observes_without_creating_an_ai_execution",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_live_finish_supervision.SlotTests.test_regular_supervision_observes_without_creating_an_ai_execution"
+      ],
+      "note": "Waited for the validated operator Ports seam (039440ce, dependent on foundation 8166ea0c), merged only after independent 18 migrations. Real public initialized Sim with operator_enabled and per-model slot1; check passes ports into read_status and actual Repository. Outcome observed, model_called false and empty stored executions retained; actual scheduled_operator ModelRunner construction count, all runner execution count and Jobs launch count are zero. The original patch covered the operator binding only; read_status legitimately constructs an idle engine runner. No read_status/Repository/ModelRunner patch or configuration-only bypass."
+    }
+  ],
+  "knowledge": []
+}

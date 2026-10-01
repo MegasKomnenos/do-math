@@ -4,10 +4,10 @@
 moved from ``test_repetition`` (``RepetitionEngineTests``; the intent rework is ``flows.test_planning_intent_rework``).
 
 The legacy tests ran on the synthetic active template (``ActivatedPurposeHarness``,
-with the provider adapter patched), answered a preparation with ``ScriptedRunner``
+with the provider adapter patched), answered a preparation with ``DefaultResponder``
 inside a real Windows Job and drew IDs and times from the system clock. Here a
 restored Sim's real engine runs on the port fakes: the model double answers
-through the worker with the same ``ScriptedRunner`` responses, the provider
+through the worker with the same ``DefaultResponder`` responses, the provider
 evidence of a finished native final is drawn from the Sim's Jobs and clock ports
 (``support.submission_receiver.native_result``), IDs and times come from the
 clock port, and the repetition limits are adopted by the public ``configure``
@@ -91,8 +91,8 @@ class RepetitionEngineTests(unittest.TestCase):
         engine._enqueue('research_preparation', reason='No usable candidate in this fixture')
         engine._save()
         # The legacy runner's answer: a preparation without candidates (and so without their extensions).
-        from runner_fixtures import ScriptedRunner
-        sim.model.responder = ScriptedRunner(preparation_candidates=[])
+        from support.default_responder import DefaultResponder
+        sim.model.responder = DefaultResponder(preparation_candidates=[])
 
         def received(s):
             return any(r.get('kind') == 'task_repetition' and r.get('lineage') == 'exhaustion_empty'
@@ -114,7 +114,7 @@ class RepetitionEngineTests(unittest.TestCase):
         early = planning.exhaustion_state(engine.instance, state, now=(due - timedelta(seconds=1)).isoformat())
         self.assertEqual(early['reasons'], ['regeneration_guard'])
         for _ in range(2):
-            planning.schedule_reconsideration(engine.instance, state, now=due.isoformat())
+            planning.schedule_reconsideration(engine.instance, state, now=due.isoformat(), clock=sim.ports.clock)
         preparations = [a for a in state['queue'] if a['role'] == 'research_preparation']
         self.assertEqual(len(preparations), 1)
 
@@ -158,7 +158,7 @@ class RepetitionEngineTests(unittest.TestCase):
         action = activities.continue_activity(engine.runtime, target['id'], at=now(sim), reason='Retry held plan')
         lineage = action['repetition_bases']['selection_failure']
         revisions.record_repetition(engine.instance, engine.runtime, lineage='selection_failure', lineage_id=lineage,
-            event_ref=target['id'], outcome='rejected', owner='ai', reason='Missing population')
+            event_ref=target['id'], outcome='rejected', owner='ai', reason='Missing population', clock=sim.ports.clock)
         hold = revisions.repetition_hold(engine.runtime, 'selection_failure', lineage)
         self.assertEqual(hold['owner'], 'user')
         self.assertTrue(revisions.action_repetition_waits(engine.instance, engine.runtime, action))
@@ -170,11 +170,11 @@ class RepetitionEngineTests(unittest.TestCase):
         self.assertFalse(revisions.action_repetition_waits(engine.instance, engine.runtime, action))
         self.assertEqual(task_contracts.repetition_lineages(engine.runtime)['selection_failure']['count'], 0)
         stored = engine.instance['decisions'][change['decision_id']]
-        _, replay, _ = governance.apply_decision(engine.instance, engine.runtime, change, source_ref=stored['source_ref'])
+        _, replay, _ = governance.apply_decision(engine.instance, engine.runtime, change, source_ref=stored['source_ref'], clock=sim.ports.clock)
         self.assertEqual(replay['history'], engine.runtime['history'])
         stale = {**change, 'decision_id': sim.clock.new_id('DC')}
         with self.assertRaisesRegex(ValueError, 'current repetition hold'):
-            governance.apply_decision(engine.instance, engine.runtime, stale, source_ref=stored['source_ref'])
+            governance.apply_decision(engine.instance, engine.runtime, stale, source_ref=stored['source_ref'], clock=sim.ports.clock)
 
     def test_operational_retry_is_idempotent_and_waits_for_user_at_the_limit(self):
         sim = limited(selection_failure_limit=1)
@@ -182,7 +182,7 @@ class RepetitionEngineTests(unittest.TestCase):
         target = seed_plan(sim)
         lineage = target['action']['repetition_bases']['selection_failure']
         revisions.record_repetition(engine.instance, engine.runtime, lineage='selection_failure',
-            lineage_id=lineage, event_ref=target['id'], outcome='rejected', owner='ai', reason='Held plan failure')
+            lineage_id=lineage, event_ref=target['id'], outcome='rejected', owner='ai', reason='Held plan failure', clock=sim.ports.clock)
         review_action = {'id': sim.clock.new_id('AC'), 'role': 'operational_review', 'target': target['id']}
         engine._action_lifecycle_gate(review_action)
         assessor = engine._register_execution(review_action, {'id': sim.clock.new_id('EX'), 'role': 'operational_review', 'status': 'running'})
@@ -203,7 +203,7 @@ class RepetitionEngineTests(unittest.TestCase):
         self.assertEqual(retry['id'], target['action']['id'])
         self.assertTrue(revisions.action_repetition_waits(engine.instance, engine.runtime, retry))
         # Another process loading the same repository: the product constructor on the Sim's ports.
-        restored = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports)
+        restored = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
         restored_retry = next(a for a in restored.runtime['queue'] if a.get('id') == retry['id'])
         self.assertTrue(revisions.action_repetition_waits(restored.instance, restored.runtime, restored_retry))
         engine._complete_operational_disposition(record)

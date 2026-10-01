@@ -16,7 +16,7 @@ import jsonschema
 from do_math import governance as gov
 from do_math.academic import apply_goal_assurance
 from do_math.canonical import exact_content_hash
-from record_fixtures import audited_governance, domain_governance
+from support.record_builders import audited_governance, domain_governance
 
 
 class GoalAssuranceTests(unittest.TestCase):

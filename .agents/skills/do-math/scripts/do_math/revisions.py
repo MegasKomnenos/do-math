@@ -5,7 +5,6 @@ from . import knowledge, planning
 from .values import parse_utc
 from .canonical import exact_content_hash
 from .session_slots import live_action_ids
-from .migration_defaults import clock_or_system
 
 
 def regeneration_time_valid(regenerate_after, observed_at) -> bool:
@@ -168,7 +167,7 @@ def action_scope(action):
         'intent_repair', 'review_cycle_id', 'grant_id', 'assessment_targets', 'observation_rule_targets') if key in action}
 
 
-def record_import_rework(instance, runtime, action, execution_id, *, clock=None):
+def record_import_rework(instance, runtime, action, execution_id, *, clock):
     """Count an actual reauthor attempt in the execution registration publication."""
     if import_rework(runtime, action):
         record_repetition(instance, runtime, lineage='import_rework',
@@ -187,9 +186,8 @@ def import_rework(runtime, action):
 
 
 def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outcome, owner, reason,
-                      decision_ref=None, regenerate_after=None, observed_at=None, version=None, clock=None):
+                      decision_ref=None, regenerate_after=None, observed_at=None, version=None, clock):
     """Record an idempotent real receipt and its next owner in the same candidate."""
-    clock = clock_or_system(clock)
     from .task_contracts import REPEAT_LINEAGES
     if lineage not in REPEAT_LINEAGES or owner not in {'ai','user'}:
         raise ValueError('unknown repetition lineage or owner')
@@ -273,7 +271,7 @@ def proposal_lineage(instance, identifier):
         identifier=parent
 
 
-def continue_repetition(instance, runtime, change, decision, *, clock=None):
+def continue_repetition(instance, runtime, change, decision, *, clock):
     """Apply a user decision to an existing exact queued/waiting obligation."""
     lineage, key = change.get('lineage'), change.get('lineage_id')
     hold = repetition_hold(runtime, lineage, key)
@@ -348,7 +346,7 @@ def bind_repetition_bases(instance,runtime,action):
     action['repetition_bases']={lineage:exact_content_hash(common)}
 
 
-def record_execution_outcome(instance, runtime, action, output, execution_id, *, accepted, clock=None):
+def record_execution_outcome(instance, runtime, action, output, execution_id, *, accepted, clock):
     """Called on receipt, after actual candidate application or on rejection."""
     execution=runtime.get('executions',{}).get(execution_id)
     if not execution or execution.get('role') != action.get('role'):

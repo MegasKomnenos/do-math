@@ -27,9 +27,9 @@
    "disposition": "moved",
    "new_ids": [
     "sim.test_lifecycle_engine_public.ActiveLifecycleTests.test_public_call_mode_init_activate_pause_resume_and_persistence",
-    "sim.test_activation.PublicActivationTests.test_public_activation_reaches_active_through_the_worker_with_all_time_from_the_clock_port"
+    "flows.test_activation.PublicActivationTests.test_public_activation_reaches_active_through_the_worker_with_all_time_from_the_clock_port"
    ],
-   "note": "Input: the old test ran the public initialize and activate with PublicInitializationRunner, FixtureAdapter and a patch of windows_job.named_job_empty. The new test takes Sim.activated(), the copy of the activation this process built through the same public path with the real runner, worker and model double, and asserts the old outcomes on it (active, one intent import, an active trust environment, until_active run changes nothing, pause/resume, restart keeps active without persisted readiness or initial_request). The public path from an empty repository itself is sim.test_activation.PublicActivationTests.test_public_activation_reaches_active_through_the_worker_with_all_time_from_the_clock_port."
+   "note": "Input: the old test ran the public initialize and activate with PublicInitializationRunner, FixtureAdapter and a patch of windows_job.named_job_empty. The new test takes Sim.activated(), the copy of the activation this process built through the same public path with the real runner, worker and model double, and asserts the old outcomes on it (active, one intent import, an active trust environment, until_active run changes nothing, pause/resume, restart keeps active without persisted readiness or initial_request). The public path from an empty repository itself is flows.test_activation.PublicActivationTests.test_public_activation_reaches_active_through_the_worker_with_all_time_from_the_clock_port."
   },
   {
    "legacy_id": "test_lifecycle_engine.PublicLifecycleTests.test_public_external_once_credential_resume_persists_attempts",
@@ -177,7 +177,7 @@
    "new_ids": [
     "flows.test_lifecycle_engine_trust.TransitionTests.test_full_transition_preserves_old_formal_records_and_full_command"
    ],
-   "note": "Input: FakeEngine.verify and its formal_calls are the product verify_formal and verify_lean on the Job port fake, whose program runs formal._worker with the Lean double at its spawn seam. The verifier arguments (lean_command against expected_toolchain.configured_command) are recorded by a verifier passed through the engine's formal_verifier constructor argument that runs the product verify_lean (engine_lifecycle.recorded_verifier). The transition knowledge K1 and K2 is two theorems imported by control, verified by the Lean double and identity-reviewed by the model double (engine_lifecycle.lifecycle_sim); FakeEngine.knowledge wrote an identity match without a sealed review cycle, which the real storage refuses."
+   "note": "Input: FakeEngine.verify and its formal_calls are the product verify_formal and verify_lean on the Job port fake, whose program runs formal._worker with the Lean double at its spawn seam. The verifier arguments (lean_command against expected_toolchain.configured_command) are recorded by a verifier passed through the engine's formal_verifier constructor argument that runs the product verify_lean (engine_lifecycle.recorded_verifier). The transition knowledge K1 and K2 is two theorems imported by control, verified by the Lean double and identity-reviewed by the model double (engine_lifecycle.lifecycle_sim); FakeEngine.knowledge wrote an identity match without a sealed review cycle, which the real storage refuses. Contraction correction: recorded_verifier is now a context using ObservedCalls/sys.monitoring on the actual verify_lean; it never rebuilds or replaces the engine/verifier. Return observations use ReturnedValues/sys.monitoring. Where this note previously described a change inside the verifier, that state/file change now happens as the external compiler wait returns at its spawn seam; the returned product value is never changed."
   },
   {
    "legacy_id": "test_lifecycle_engine.LifecycleTests.test_trust_recheck_needs_no_grant_naming_the_trust_roles",
@@ -199,9 +199,10 @@
    "legacy_id": "test_lifecycle_engine.LifecycleTests.test_wrong_compiler_is_rejected",
    "disposition": "moved",
    "new_ids": [
-    "flows.test_lifecycle_engine_trust.TransitionTests.test_wrong_compiler_is_rejected"
+    "unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_wrong_compiler_is_rejected",
+    "flows.test_lifecycle_engine_trust.TransitionTests.test_full_transition_preserves_old_formal_records_and_full_command"
    ],
-   "note": "Input: verify_lean copies the expected toolchain into its result, so only a verifier reporting another compiler reaches this check; the verifier passed through the engine's formal_verifier argument runs verify_lean and replaces the reported toolchain, as the old formal_behavior did."
+   "note": "Layer-2 receiver input: send a verified result with a wrong compiler directly to the real _trust_check_steps continuation; assert the same rejection and fixed-input reason. verify_lean validates the approved toolchain and copies that pinned dictionary into every verified result, so its producer cannot emit this synthetic mismatch. No verifier result callback or Calls replacement is used. The existing full-transition flow still runs verify_formal, verify_lean and formal._worker through Jobs/LeanDouble and protects the old calculation-to-publication wiring."
   },
   {
    "legacy_id": "test_lifecycle_engine.LifecycleTests.test_changed_semantics_requires_independent_review",
@@ -419,7 +420,7 @@
    "new_ids": [
     "flows.test_lifecycle_engine_trust.TransitionTests.test_trust_verifier_uses_registered_command_without_deadline"
    ],
-   "note": "Input: FakeEngine.verify and its formal_calls are the product verify_formal and verify_lean on the Job port fake, whose program runs formal._worker with the Lean double at its spawn seam. The verifier arguments are recorded through the engine's formal_verifier argument (engine_lifecycle.recorded_verifier)."
+   "note": "Input: FakeEngine.verify and its formal_calls are the product verify_formal and verify_lean on the Job port fake, whose program runs formal._worker with the Lean double at its spawn seam. The verifier arguments are recorded through the engine's formal_verifier argument (engine_lifecycle.recorded_verifier). Contraction correction: recorded_verifier is now a context using ObservedCalls/sys.monitoring on the actual verify_lean; it never rebuilds or replaces the engine/verifier. Return observations use ReturnedValues/sys.monitoring. Where this note previously described a change inside the verifier, that state/file change now happens as the external compiler wait returns at its spawn seam; the returned product value is never changed."
   },
   {
    "legacy_id": "test_lifecycle_engine.LifecycleBoundaryTests.test_paused_recovery_is_exact_authorized_and_revocable",
@@ -680,7 +681,7 @@
   {
    "legacy_id": "test_call_steps_characterization.CallStepsCharacterization.test_every_step_publishes_the_recorded_state",
    "disposition": "retired",
-   "reason": "The Sim tests run every path engine._call_steps was cut into (1c), each measured with coverage on one test after the Sim template was built. Preparation (call_engine._prepare_call), the start notice (_call_started) and the stop judgment (_call_stop_requested): sim.test_call_stop_flags.PreparationStopTests.test_pause_publishes_a_stop and the other fifteen tests of sim.test_call_stop_flags, which start the call through _call_steps and judge one stop reason each. The result receipt (_receive_call) and the whole generator through the scheduler, runner, worker and model double: sim.test_lifecycle_engine_controls.PausedDispatchTests.test_scheduler_scopes_maintenance_dispatch_with_executor_double and sim.test_activation.PublicActivationTests.test_public_activation_reaches_active_through_the_worker_with_all_time_from_the_clock_port. The characterization fixed the current state digests of one scenario as its expectation (past P2 risk) and was skipped on checkouts whose prompt documents differ in line endings; its recorded trace file goes with it."
+   "reason": "The Sim tests run every path engine._call_steps was cut into (1c), each measured with coverage on one test after the Sim template was built. Preparation (call_engine._prepare_call), the start notice (_call_started) and the stop judgment (_call_stop_requested): sim.test_call_stop_flags.PreparationStopTests.test_pause_publishes_a_stop and the other fifteen tests of sim.test_call_stop_flags, which start the call through _call_steps and judge one stop reason each. The result receipt (_receive_call) and the whole generator through the scheduler, runner, worker and model double: sim.test_lifecycle_engine_controls.PausedDispatchTests.test_scheduler_scopes_maintenance_dispatch_with_executor_double and flows.test_activation.PublicActivationTests.test_public_activation_reaches_active_through_the_worker_with_all_time_from_the_clock_port. The characterization fixed the current state digests of one scenario as its expectation (past P2 risk) and was skipped on checkouts whose prompt documents differ in line endings; its recorded trace file goes with it."
   }
  ]
 }

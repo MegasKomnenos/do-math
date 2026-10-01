@@ -19,7 +19,6 @@ from .canonical import exact_content_hash
 from .review_cycle import CYCLE_STATUSES
 from .task_contracts import LIFECYCLE_STATES, TERMINAL_TASK_STATUSES
 from .trust_validation import ENVIRONMENT_STATUSES
-from .migration_defaults import clock_or_system
 
 
 CONTRACT_FIELDS = ("id", "revision", "title", "question", "scope", "expected", "description",
@@ -746,8 +745,9 @@ def task_ready(task: dict, instance: dict, runtime: dict, *, include_scheduling_
     return result
 
 
-def exhaustion_state(instance, runtime, *, now=None, evaluation_context=None):
+def exhaustion_state(instance, runtime, *, now, evaluation_context=None):
     """Exhaustion concerns unresolved research, never the queue alone."""
+    evaluation_context = {**(evaluation_context or {}), 'now': now}
     answer={'exhausted':False,'prepare':False,'reasons':[],'next_owner':None}
     if runtime.get('status') != 'active' or instance.get('goal_status') == 'mathematically_solved':
         return answer
@@ -789,7 +789,7 @@ def exhaustion_state(instance, runtime, *, now=None, evaluation_context=None):
             answer.update(reasons=['exhaustion_lineage_hold'],next_owner=hold['next_owner']);return answer
         if not receipt.get('regenerate_after'):
             answer.update(reasons=['regeneration_condition_missing'],next_owner='research_plan');return answer
-        instant=parse_utc(now) if now else clock_or_system(None).wall()
+        instant=parse_utc(now)
         if instant < parse_utc(receipt['regenerate_after']):
             answer.update(reasons=['regeneration_guard'],reobserve_at=receipt['regenerate_after']);return answer
     answer.update(prepare=True,next_owner='research_preparation');return answer
@@ -811,11 +811,10 @@ def research_wake_reasons(instance, runtime, *, now, evaluation_context=None):
     return reasons
 
 
-def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None, clock=None):
+def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None, clock):
     """Assign preserved due events and exhaustion reasons, coalescing only unstarted preparation.
 
     Due events are recorded beforehand by record_due_events, their one collection path."""
-    clock = clock_or_system(clock)
     state=exhaustion_state(instance,runtime,now=now,evaluation_context=evaluation_context)
     if runtime.get('status')!='active' or instance.get('goal_status')=='mathematically_solved': return state
     exhaustion_event=None

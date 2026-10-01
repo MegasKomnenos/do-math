@@ -15,7 +15,6 @@ from .contracts import REFS, TEXT, closed_object
 from .values import compact_json_bytes, json_copy, json_digest
 from .canonical import exact_content_hash
 from .review_policy import SCOPE_ASSESSMENT, build_review_policy, validate_scope_assessment, minimum_scope_executions
-from .migration_defaults import clock_or_system
 
 
 # The states of one review cycle.
@@ -234,7 +233,7 @@ def validate_review_binding(cycle, runtime, execution_id, action, output=None, *
     return execution
 
 
-def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_ids=(), read_artifact=None, git_dir=None, _seen=(), clock=None):
+def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_ids=(), read_artifact=None, git_dir=None, _seen=(), clock, at):
     """Reconstruct a conclusion using the same accepting state machine as live review.
 
     No caller-supplied approval bit substitutes for execution, source or authority
@@ -255,7 +254,7 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
         if previous['proposal'].get('assessment_reassessment') != cycle['proposal'].get('assessment_reassessment'):
             raise ValueError('previous review has a different judgment purpose')
         validate_sealed_review(previous, runtime, instance=instance, excluded_execution_ids=excluded_execution_ids,
-                               read_artifact=read_artifact, git_dir=git_dir, _seen=(*_seen, cid), clock=clock)
+                               read_artifact=read_artifact, git_dir=git_dir, _seen=(*_seen, cid), clock=clock, at=at)
     has_scope = any(e['action']['stage'] == 'scope' for e in cycle['results'].values())
     resource = validate_resource_disposition(cycle, runtime, read_artifact=read_artifact, instance=instance)
     if cycle['proposal'].get('assessment_reassessment') and not has_scope and resource is None:
@@ -351,7 +350,7 @@ def validate_sealed_review(cycle, runtime, *, instance=None, excluded_execution_
             raise ValueError('review is not completely sealed')
         actual_action = entry['action']
         if actual_action.get('replacement_for') is not None:
-            replay = _replay_replacement(replay, cycle, actual_action, instance, runtime, clock=clock)
+            replay = _replay_replacement(replay, cycle, actual_action, instance, runtime, clock=clock, at=at)
         validate_review_execution(cycle, runtime, entry['execution_id'], actual_action, entry['output'], instance=instance, excluded_execution_ids=excluded_execution_ids)
         if actual_action['stage'] == 'scope':
             used = cycle.get('execution_accounting', {}).get('executions_used', [])
@@ -469,7 +468,7 @@ def _replacement_sealed_input(cycle, verified_manifests):
             'verified_transcript': verified_manifests}
 
 
-def _replay_replacement(replay, cycle, action, instance, runtime, *, clock=None):
+def _replay_replacement(replay, cycle, action, instance, runtime, *, clock, at):
     if instance is None:
         raise ValueError('replacement replay requires current governance sources')
     receipts = [r for r in cycle.get('replacement_receipts', []) if r['action'] == action]
@@ -480,7 +479,7 @@ def _replay_replacement(replay, cycle, action, instance, runtime, *, clock=None)
     event = cycle['recovery_events'][index]
     if event['retryable'] or event['action'] != {k: action[k] for k in ('stage', 'slot', 'round')}:
         raise ValueError('replacement recovery coordinate changed')
-    authority = replacement_authority(instance, runtime, cycle, authorization, receipts[0]['execution_id'], clock=clock)
+    authority = replacement_authority(instance, runtime, cycle, authorization, receipts[0]['execution_id'], clock=clock, at=at)
     if not authority['allowed'] or authority['grant_sha256'] != action['grant_sha256']:
         raise ValueError('replacement authority is not current')
     archive = next((r for r in cycle.get('transcript_replacements', []) if r['recovery_event'] == index and r['slot'] == action['slot']), None)
@@ -496,10 +495,10 @@ def _replay_replacement(replay, cycle, action, instance, runtime, *, clock=None)
     return replay
 
 
-def replacement_authority(instance, runtime, cycle, replacement, execution_id=None, *, clock=None):
+def replacement_authority(instance, runtime, cycle, replacement, execution_id=None, *, clock, at):
     """One authority check for live admission/acceptance and sealed reconstruction."""
-    clock = clock_or_system(clock)
     from .governance import authorize_review_replacement
+    at = clock.now() if at is None else at
     binding = cycle.get('input_bindings', {}).get(execution_id, {})
     consumed = binding.get('delegation_authority') or cycle.get('execution_accounting', {}).get(
         'admissions', {}).get(execution_id, {}).get('delegation_authority')
@@ -525,10 +524,10 @@ def replacement_authority(instance, runtime, cycle, replacement, execution_id=No
                     raise ValueError('delegation judgment execution changed after admission')
         except (KeyError, ValueError) as error:
             return {'allowed': False, 'reason': str(error)}
-        authority = authorize_review_replacement(instance, runtime, replacement['authority_request'])
+        authority = authorize_review_replacement(instance, runtime, replacement['authority_request'], at=at)
     else:
         authority = authorize_review_replacement(instance, runtime, replacement['authority_request'],
-            delegation_id=replacement.get('delegation_id'), case=replacement.get('case'))
+            delegation_id=replacement.get('delegation_id'), case=replacement.get('case'), at=at)
     if authority.get('allowed') and authority['grant_sha256'] != replacement['grant_sha256']:
         return {'allowed': False, 'reason': 'replacement grant changed'}
     return authority
@@ -1200,10 +1199,10 @@ def record_recovery_event(cycle, action, event):
 
 
 def authorize_record_replacement(cycle, action, instance, *, runtime, grant_id=None,
-                                 delegation_id=None, case=None, at=None, clock=None):
+                                 delegation_id=None, case=None, at=None, clock):
     """Authorize an exact failed slot through the current source-bound authority API."""
-    clock = clock_or_system(clock)
     from .governance import authorize_review_replacement
+    at = clock.now() if at is None else at
     expected = {key: action.get(key) for key in ('stage', 'slot', 'round')}
     if cycle['status'] != 'working' or expected not in _phase_actions(cycle):
         return {'disposition': 'invalid_action', 'cycle': cycle, 'reason': 'not a current working slot'}

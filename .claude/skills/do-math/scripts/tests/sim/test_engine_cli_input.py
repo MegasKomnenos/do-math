@@ -22,14 +22,18 @@ from support.provider_probes import ObservedCalls
 
 def main(argv):
     """``cli.main(argv)`` in this process: ``(exit code, printed envelope)``."""
+    from support.entry import entry
+    _entry = entry()
     output = io.StringIO()
     with redirect_stdout(output):
-        code = cli.main(argv)
+        code = cli.main(argv, ports=_entry.ports, environment=_entry.environment, host_id=_entry.host_id, codex_home=_entry.codex_home)
     return code, json.loads(output.getvalue())
 
 
 class QueryInputTests(unittest.TestCase):
     def test_query_rejects_unused_filters_before_reading_in_both_interfaces(self):
+        from support.entry import entry
+        _entry = entry()
         base = ['query', '--repository', '.', '--instance', 'RI-test']
         different = "invalid command payload: {'repository': '.', 'instance': 'RI-test', 'files': True, '%s': %s} " \
                     "should not be valid under {'anyOf': [{'required': ['kind']}, {'required': ['related_to']}, " \
@@ -51,7 +55,7 @@ class QueryInputTests(unittest.TestCase):
             with self.subTest(options=options):
                 with ObservedCalls(repository=ResearchRepository.__init__, records=query_records) as calls:
                     with self.assertRaises(CliInputError) as refused:
-                        cli.execute(build_parser().parse_args(base + options))
+                        cli.execute(build_parser().parse_args(base + options), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
                     self.assertEqual(str(refused.exception), argv_reason)
                     with self.assertRaises(CliInputError) as refused:
                         _json_arguments(build_parser(), {'schema_version': 5, 'command': 'query',

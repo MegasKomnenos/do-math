@@ -19,10 +19,12 @@ import unittest
 from do_math.record_schemas import RECORDS
 from support.provider_live import running_execution
 from support.sim import Sim, warm_template
+from test_categories import test_group
 
 setUpModule = warm_template
 
 
+@test_group('resource')
 @unittest.skipUnless(os.name == 'nt', 'Windows Jobs exist only on Windows')
 class RealJobObservationTests(unittest.TestCase):
     def test_real_job_completion_is_observed_before_delayed_batch_application(self):
@@ -60,7 +62,7 @@ class RealJobObservationTests(unittest.TestCase):
         sim = Sim.activated()
         workspace = running_execution(sim, 'EX-real', 'research_work')
         tracker = ObservationTracker('EX-real', workspace, {'observation_mode': 'periodic',
-                                                            'observation_interval_seconds': 1})
+                                                            'observation_interval_seconds': 1}, time_port=sim.ports.clock)
         tracker.last_review -= 600  # a periodic review would be long due if the stream were live
 
         def delayed(batch):
@@ -71,8 +73,8 @@ class RealJobObservationTests(unittest.TestCase):
             self.assertTrue(batch.is_terminated())
             sim.engine._observe_running('EX-real', tracker, batch)
         before = set(sim.runtime.get('observation_facts', {}))
-        runner = ModelRunner()
-        runner.adapters['codex'] = LocalStream('local-fixture')
+        runner = ModelRunner(clock=sim.ports.clock, environment=sim.environment, host_id=sim.host_id, jobs=sim.ports.jobs)
+        runner.adapters['codex'] = LocalStream('local-fixture', jobs=sim.ports.jobs, clock=sim.ports.clock)
         with tempfile.TemporaryDirectory() as directory:
             result = runner.run(prompt='Local stream fixture, no model.', output_schema={'type': 'object'},
                 workspace=workspace, evidence_dir=Path(directory) / 'evidence', model='fixture', effort='low',

@@ -1,0 +1,29 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_repair_execution.InstallationRepairRoutingTests.test_scheduler_drains_existing_calls_without_dispatching_new_work_during_installation_repair",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_live_finish_repair.InstallationRepairRoutingTests.test_scheduler_drains_existing_calls_without_dispatching_new_work_during_installation_repair"
+      ],
+      "note": "Actual scheduler, stored pending repair/unended recovery and real calls implementation. ExistingCalculation creates a genuine Future and generator; first collect precedes computation, second drains it, close exactly once, dispatch zero, waiting and independent queue preserved. No operator seam was required for these two scheduler entry tests."
+    },
+    {
+      "legacy_id": "test_repair_execution.InstallationRepairRoutingTests.test_scheduler_dispatches_no_research_while_an_installation_recovery_has_not_ended",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_live_finish_repair.InstallationRepairRoutingTests.test_scheduler_dispatches_no_research_while_an_installation_recovery_has_not_ended"
+      ],
+      "note": "Actual scheduler, stored pending repair/unended recovery and real calls implementation. ExistingCalculation creates a genuine Future and generator; first collect precedes computation, second drains it, close exactly once, dispatch zero, waiting and independent queue preserved. No operator seam was required for these two scheduler entry tests."
+    },
+    {
+      "legacy_id": "test_trust_continuation.PublicationTrustIdentityTests.test_changed_identity_blocks_match_publication_but_olean_metadata_is_not_rechecked",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_review.PublicationTrustIdentityTests.test_changed_identity_blocks_match_publication_but_olean_metadata_is_not_rechecked"
+      ],
+      "note": "Real completed review cycle and actual repeated publication, real LocalHost identity checks and actual file edits. Publication occurs twice (unchanged then changed olean) and changed compiler raises the same current trust identity/approved toolchain file changed rejection; cumulative publication count remains 2. Temporary shared toolchain bytes are restored in finally."
+    }
+  ],
+  "knowledge": []
+}

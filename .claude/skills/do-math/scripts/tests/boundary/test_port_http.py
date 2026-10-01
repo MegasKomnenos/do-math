@@ -3,7 +3,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import threading
 import unittest
 
-from contracts.test_port_http import HttpContract
+from support.port_contracts.http import HttpContract
 from do_math.wiring import real_ports
 
 
@@ -28,11 +28,13 @@ def _server(table):
 
 class UrllibHttpContract(HttpContract, unittest.TestCase):
     def make(self, table):
+        from support.entry import entry
+        _entry = entry()
         server = _server(table)
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
         self.base = f'http://127.0.0.1:{server.server_address[1]}'
-        return real_ports().http
+        return real_ports(environment=_entry.environment).http
 
 
 if __name__ == '__main__':

@@ -1,0 +1,46 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_engine.QueuedPreparationTests.test_pause_received_during_input_preparation_prevents_model_start",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_engine_queue.QueuedPreparationTests.test_pause_received_during_input_preparation_prevents_model_start"
+      ]
+    },
+    {
+      "legacy_id": "test_engine.QueuedPreparationTests.test_installation_polling_is_bounded_and_forced_checks_still_detect_edits",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_document_context.InstallationEditionTests.test_installation_polling_is_bounded_and_forced_checks_still_detect_edits"
+      ]
+    },
+    {
+      "legacy_id": "test_engine.QueuedPreparationTests.test_construction_and_status_leave_installation_and_artifact_bytes_to_run_and_check",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_document_context.InstallationEditionTests.test_construction_and_status_leave_installation_and_artifact_bytes_to_run_and_check"
+      ]
+    },
+    {
+      "legacy_id": "test_engine.QueuedPreparationTests.test_installation_change_cannot_reopen_a_terminal_instance",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_planning_installation.InstallationEditionTests.test_installation_change_cannot_reopen_a_terminal_instance"
+      ]
+    },
+    {
+      "legacy_id": "test_lifecycle_engine.LifecycleBoundaryTests.test_limited_recovery_refuses_unbound_requests_and_surfaces_check_defects",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_lifecycle_engine_controls.LimitedRecoveryTests.test_limited_recovery_refuses_unbound_requests_and_surfaces_check_defects"
+      ]
+    },
+    {
+      "legacy_id": "test_lifecycle_engine.GrantAndExternalEffectTests.test_academic_control_binds_current_real_prerequisite",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_lifecycle_engine_external.AcademicPrerequisiteTests.test_academic_control_binds_current_real_prerequisite"
+      ]
+    }
+  ]
+}

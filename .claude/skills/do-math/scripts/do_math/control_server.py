@@ -11,7 +11,6 @@ import argparse
 import json
 from pathlib import Path
 import sys
-import time
 from typing import Any
 if __package__:
     from .control_protocol import (SUBMIT_TOOL, RECEIPT_TOOL, SELF_CHECK_TOOL, SUBMIT_INTENT, SUBMISSION_PREVIEW,
@@ -35,24 +34,24 @@ def mcp_server_config(binding: dict) -> dict:
     return {"command": sys.executable, "args": arguments}
 
 
-def wait_receipt(binding: dict, request_id: str, timeout_seconds: float | None) -> dict | None:
+def wait_receipt(binding: dict, request_id: str, timeout_seconds: float | None, *, clock) -> dict | None:
     if timeout_seconds is not None and (isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)) or timeout_seconds < 0):
         raise ValueError("timeout_seconds must be nonnegative or null")
-    until = None if timeout_seconds is None else time.monotonic() + timeout_seconds
+    until = None if timeout_seconds is None else clock.monotonic() + timeout_seconds
     while True:
         receipt = ControlTransport.worker_receipt(binding, request_id)
         if receipt is not None and receipt.get("state") in FINAL_RECEIPTS:
             return receipt
-        if until is not None and time.monotonic() >= until:
+        if until is not None and clock.monotonic() >= until:
             return receipt
-        time.sleep(0.05)
+        clock.sleep(0.05)
 
 
 def _mcp_result(value: Any) -> dict:
     return {"content": [{"type": "text", "text": json.dumps(value, ensure_ascii=False, sort_keys=True)}]}
 
 
-def _mcp_server(binding: dict) -> int:
+def _mcp_server(binding: dict, *, clock) -> int:
     # Tool input schemas keep the node shapes preserved provider runs accepted; the
     # exact answer shape is described in text and checked by self_check_response_errors.
     tools = [
@@ -92,16 +91,16 @@ def _mcp_server(binding: dict) -> int:
                         from do_math.submission_tool import request_control
                     kind = SUBMISSION_PREVIEW if arguments.get("preview") else SUBMIT_INTENT
                     delivery = request_control(binding["workspace"], arguments["draft_path"], kind=kind,
-                        wait_seconds=arguments.get("wait_seconds", 0), binding=binding)
+                        wait_seconds=arguments.get("wait_seconds", 0), binding=binding, clock=clock)
                     value = {"delivery": delivery}
                     result = _mcp_result(value)
                 elif name == SUBMIT_TOOL:
                     value = ControlTransport.worker_submit(binding, request_id=arguments["request_id"], kind=arguments["kind"], payload=arguments["payload"])
                     if "wait_seconds" in arguments:
-                        value["receipt"] = wait_receipt(binding, arguments["request_id"], arguments["wait_seconds"])
+                        value["receipt"] = wait_receipt(binding, arguments["request_id"], arguments["wait_seconds"], clock=clock)
                     result = _mcp_result(value)
                 elif name == RECEIPT_TOOL:
-                    result = _mcp_result(wait_receipt(binding, arguments["request_id"], arguments.get("wait_seconds", 0)))
+                    result = _mcp_result(wait_receipt(binding, arguments["request_id"], arguments.get("wait_seconds", 0), clock=clock))
                 elif name == SELF_CHECK_TOOL and binding.get("self_check"):
                     result = _mcp_result(ControlTransport.worker_self_check(binding, self_check_id=arguments["self_check_id"], response=arguments.get("response")))
                 else:
@@ -116,7 +115,14 @@ def _mcp_server(binding: dict) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv=None, *, ports=None, environment=None):
+    import os
+    if not __package__:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from do_math.wiring import real_ports
+    environment = dict(os.environ) if environment is None else environment
+    ports = real_ports(environment=environment) if ports is None else ports
+    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
     mcp = subparsers.add_parser("mcp")
@@ -127,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     return _mcp_server({**{name: getattr(args, name) for name in BINDING_FIELDS},
                         **({"workspace": args.workspace} if args.workspace else {}),
-                        **({"self_check": True} if args.self_check else {})})
+                        **({"self_check": True} if args.self_check else {})}, clock=clock)
 
 
 if __name__ == "__main__":

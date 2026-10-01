@@ -7,7 +7,6 @@ from urllib.error import URLError
 from .values import parse_utc
 from .canonical import exact_content_hash
 from .http_request import check_body, check_url
-from .migration_defaults import clock_or_system, transport_or_http
 
 # The states of one external operation; its EX execution reports the same set.
 OPERATION_STATUSES = frozenset({"prepared", "confirmed", "failed", "unknown", "cancelled"})
@@ -62,9 +61,8 @@ def validate_operation(operation: dict, grant: dict, now_iso: str, *, runtime=No
     if not request_binding_current(operation): raise ValueError("request bytes or idempotency key changed")
     if operation.get("status") != "prepared": raise ValueError("operation is not startable")
 
-def execute_operation(operation: dict, grant: dict, *, persist: Callable[[dict],Any], timeout_seconds=30, should_stop=None, transport=None,
-                      runtime=None, academic_check=None, current_grant=None, clock=None) -> dict:
-    clock = clock_or_system(clock)
+def execute_operation(operation: dict, grant: dict, *, persist: Callable[[dict],Any], timeout_seconds=30, should_stop=None, transport,
+                      runtime=None, academic_check=None, current_grant=None, clock, environment) -> dict:
     if operation.get("status")=="unknown": raise ValueError("unknown operation requires reconciliation")
     if operation.get("transmitted") or operation.get("transmission_phase") == "recorded":
         raise ValueError("recorded transmission requires recovery before another send")
@@ -90,7 +88,7 @@ def execute_operation(operation: dict, grant: dict, *, persist: Callable[[dict],
     if grant.get("credential_env"):
         names=[]
         for header,env in grant["credential_env"].items():
-            value=os.environ.get(env)  # layer: a credential is read only at send time and never stored
+            value=environment.get(env)  # layer: a credential is read only at send time and never stored
             if value is None:
                 result={**prepared,"credential_env":[env],"waiting_reason":{"kind":"credential_unavailable","secret_ref":env},"transmitted":False}; return save(result)
             credential.append((header,value)); names.append(env)
@@ -101,7 +99,7 @@ def execute_operation(operation: dict, grant: dict, *, persist: Callable[[dict],
     try:
         sending={**prepared,"transmitted":True,"transmission_phase":"recorded","attempts":[*prepared.get("attempts",[]),{"request_sha256":prepared["request_sha256"]}]}
         save(sending)
-        response=transport_or_http(transport)(sending,credential,timeout_seconds)
+        response=transport(sending,credential,timeout_seconds)
     except (TimeoutError,URLError,OSError):
         result={**sending,"status":"unknown","error":"transport outcome unknown","transmitted":True}; return save(result)
     body=response.get("body",b"")
@@ -124,7 +122,7 @@ def recover_operation(operation):
     return dict(operation)
 
 
-def prepare_retry(operation, evidence, *, source, now_iso=None):
+def prepare_retry(operation, evidence, *, source, now_iso):
     if operation.get("status") not in {"unknown", "failed"} or source not in {"user", "adapter"}:
         raise ValueError("retry needs an uncertain or absent-effect operation and authorized evidence source")
     if not retry_evidence_bound(operation, evidence):
@@ -132,7 +130,7 @@ def prepare_retry(operation, evidence, *, source, now_iso=None):
     if evidence.get("kind") == "effect_absent":
         if operation.get("status") != "failed" or operation.get("effect_absent") is not True: raise ValueError("effect absence not established")
     elif evidence.get("kind") == "verified_idempotency":
-        if not evidence.get("valid_until") or parse_utc(evidence["valid_until"]) <= (parse_utc(now_iso) if now_iso else clock_or_system(None).wall()): raise ValueError("idempotency evidence expired")
+        if not evidence.get("valid_until") or parse_utc(evidence["valid_until"]) <= parse_utc(now_iso): raise ValueError("idempotency evidence expired")
     else: raise ValueError("unsupported retry evidence")
     return {**operation,"status":"prepared","transmitted":False,"transmission_phase":"not_started",
             "retry_evidence": {**evidence, "source":source}, "previous_outcome":operation["status"]}

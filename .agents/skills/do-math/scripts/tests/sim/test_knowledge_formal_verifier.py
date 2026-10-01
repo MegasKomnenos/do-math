@@ -6,8 +6,8 @@ output and its completion status to files, and ``verify_lean`` reads and parses
 them. The compiler is a ``spawn`` double printing the fixed output the legacy
 synthetic compilers printed. Where the legacy test let ``verify_lean`` inspect
 its synthetic compiler (a real ``--version`` Job), these pass the approved
-identity instead, as the engine does: ``inspect_toolchain`` starts that Job
-without the Jobs port. The inspection path runs on the real Lean in
+identity instead, as the engine does. The in-process observation path now
+also runs through Jobs in ``sim.test_formal_foundation_jobs``. The inspection path runs on the real Lean in
 ``boundary.test_knowledge_lean_verifier``. No test here starts a Job; the tests
 that must reach none observe ``formal._job_run`` and give an empty Jobs fake.
 The pinned-project test runs the product's short ``git`` reads of the project
@@ -23,8 +23,8 @@ import unittest
 from do_math import formal
 from do_math.formal import project_source_identity, verify_lean
 from do_math.canonical import exact_content_hash
-from knowledge_fixtures import knowledge_candidate
-from research_fixtures import git_init
+from support.knowledge_builders import knowledge_candidate
+from support.fakes.git_backend import make_repository
 from support.fakes.jobs import FakeJob, FakeJobs
 from support.knowledge_verifier_jobs import OutputCompiler, approved_toolchain, formal_jobs, worker_jobs
 from support.provider_probes import ObservedCalls
@@ -57,8 +57,10 @@ class ApprovedCompilerTests(unittest.TestCase):
         self.workspace.mkdir()
 
     def verify(self, jobs, *, source='', declarations=('first', 'second')):
+        from support.entry import entry
+        _entry = entry()
         return verify_lean(source=source, declarations=list(declarations), workspace=self.workspace,
-                           lean_command=self.command, expected_toolchain=self.toolchain, jobs=jobs)
+                           lean_command=self.command, expected_toolchain=self.toolchain, jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment)
 
     def test_dependency_bodies_are_one_table_shared_by_the_declared_closures(self):
         compiler = OutputCompiler(evidence_output())
@@ -114,11 +116,13 @@ class ApprovedCompilerTests(unittest.TestCase):
         self.assertEqual(result['reason'], 'verification process failed: formal worker completion status missing')
 
     def test_changed_approved_executable_is_rejected_before_version_execution(self):
+        from support.entry import entry
+        _entry = entry()
         Path(self.toolchain['executable']).write_bytes(b'changed fixture executable')
         jobs = FakeJobs()
         with ObservedCalls(job_run=formal._job_run) as calls:
             result = verify_lean(source='theorem x : True := True.intro', declarations=['x'], workspace=self.workspace,
-                                 lean_command=self.command, expected_toolchain=self.toolchain, jobs=jobs)
+                                 lean_command=self.command, expected_toolchain=self.toolchain, jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment)
         self.assertEqual(result['status'], 'rejected', result)
         self.assertEqual(result['reason'], 'approved toolchain changed before execution')
         self.assertEqual((calls.count('job_run'), jobs.launched), (0, []))
@@ -126,12 +130,14 @@ class ApprovedCompilerTests(unittest.TestCase):
     def test_executable_change_during_run_is_left_to_the_next_identity_check(self):
         # The verifier checks the approved identity once, before compiling; a change during the
         # compile is found by the publication gate or the next formal check, not re-observed here.
+        from support.entry import entry
+        _entry = entry()
         executable = Path(self.toolchain['executable'])
         compiler = OutputCompiler('', during=lambda: executable.write_bytes(b'changed during simulated compiler run'))
         result = self.verify(worker_jobs(compiler), source='theorem x : True := True.intro', declarations=['x'])
         self.assertEqual((result['status'], result['reason']), ('failed', 'signature output missing'), result)
         self.assertEqual(len(compiler.commands), 1, 'the compile ran')
-        self.assertEqual(formal.toolchain_identity_errors(self.toolchain),
+        self.assertEqual(formal.toolchain_identity_errors(self.toolchain, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs),
                          ['approved toolchain file changed: ' + str(executable.resolve())])
 
 
@@ -144,9 +150,11 @@ class PreparationTests(unittest.TestCase):
         self.root = Path(temporary.name)
 
     def verify_without_job(self, **arguments):
+        from support.entry import entry
+        _entry = entry()
         jobs = FakeJobs()
         with ObservedCalls(job_run=formal._job_run) as calls:
-            result = verify_lean(workspace=self.root, jobs=jobs, **arguments)
+            result = verify_lean(workspace=self.root, jobs=jobs, **arguments, clock=_entry.ports.clock, environment=_entry.environment)
         self.assertEqual((calls.count('job_run'), jobs.launched), (0, []), 'no Job started')
         return result
 
@@ -175,7 +183,7 @@ class PreparationTests(unittest.TestCase):
         root = self.root
         project = root / 'project'
         project.mkdir()
-        git_init(root)
+        make_repository(root)
         manifest = project / 'lakefile.toml'
         manifest.write_bytes(b'name = "approved"\n')
         executable = root / 'lake.exe'
@@ -221,17 +229,21 @@ class WorkerJobTests(unittest.TestCase):
     def test_job_start_failure_is_not_reported_as_timeout(self):
         # The product's worker starts the missing compiler with its default spawn (subprocess.Popen),
         # which fails before any process exists and leaves its traceback on stderr.
+        from support.entry import entry
+        _entry = entry()
         jobs = formal_jobs(lambda request: formal._worker(request))
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaisesRegex(RuntimeError, 'formal worker failed: (?s:.*)FileNotFoundError'):
-                formal._job_run([str(Path(d) / 'missing-compiler.exe')], Path(d), jobs=jobs)
+                formal._job_run([str(Path(d) / 'missing-compiler.exe')], Path(d), jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment)
         self.assertEqual(len(jobs.launched), 1)
 
     def test_job_missing_completion_is_not_reported_as_timeout(self):
+        from support.entry import entry
+        _entry = entry()
         jobs = formal_jobs(lambda request: 0)  # the root exits without writing its completion status
         with tempfile.TemporaryDirectory() as d, ObservedCalls(close=FakeJob.close) as calls:
             with self.assertRaisesRegex(RuntimeError, 'completion status'):
-                formal._job_run(['fixture'], Path(d), jobs=jobs)
+                formal._job_run(['fixture'], Path(d), jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment)
         self.assertEqual(calls.count('close'), 1)
         self.assertTrue(jobs.launched[0].closed)
 

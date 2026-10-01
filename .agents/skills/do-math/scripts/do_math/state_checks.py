@@ -137,7 +137,7 @@ def inspect_state(instance: dict, runtime: dict, *, requested_areas: list[str] |
             "checked_scope": "persisted records only; no new mathematical, provider, or host verification"}
 
 
-def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, artifact_sizes=None):
+def _inspect_area(area, instance, runtime, read_artifact, read_artifacts=None, artifact_sizes=None, ):
     """Inspect the conditions of one area that loading does not already establish.
 
     The state passed the state contract when it was loaded: record schemas,

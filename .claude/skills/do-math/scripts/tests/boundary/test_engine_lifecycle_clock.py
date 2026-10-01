@@ -21,7 +21,7 @@ from support.engine_gates import initialized_sim
 class ClockResolutionTests(unittest.TestCase):
     def test_actual_host_samples_do_not_report_quantization_as_regression(self):
         sim = initialized_sim()
-        engine = ResearchEngine(sim.repository, sim.instance_id, ports=replace(sim.ports, clock=SystemClock()))
+        engine = ResearchEngine(sim.repository, sim.instance_id, ports=replace(sim.ports, clock=SystemClock()), codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
         engine.runtime['last_observed_utc'] = (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
         samples = []
         for index in range(200):

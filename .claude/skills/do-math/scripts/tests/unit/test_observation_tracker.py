@@ -8,6 +8,7 @@ Events arrive as the runner delivers them, one stream row at a time
 (``research_fixtures.observe``). The engine that applies the rows is
 ``flows.test_observation_application``.
 """
+from support.observation_clock import scripted_clock
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
@@ -24,7 +25,7 @@ from do_math.execution_profiles import BOUNDARY, seal_profile
 from do_math.observations import ObservationTracker, self_check_feedback, tracker_config
 from do_math.state_contract import default_state_contract, validate_record
 from do_math.submission import _workspace_checks
-from research_fixtures import Clock, acknowledge, observation_rule, observe, self_check_response, write_checkpoint
+from support.observation_inputs import Clock, acknowledge, observation_rule, observe, self_check_response, write_checkpoint
 from support.fakes.clock import FakeClock
 
 
@@ -43,12 +44,14 @@ class TrackerCase(unittest.TestCase):
     """A tracker ``E`` of repeating rule ``R-1`` (``attempts`` from the checkpoint, every 2), windows 5 s and 60 s, interval 300 s."""
 
     def setUp(self):
+        from support.entry import entry
+        _entry = entry()
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.ws, self.clock = Path(temporary.name), Clock()
         self.config = {"observation_rules": [observation_rule(repeat_interval=2)], "self_check_response_window_seconds": 5,
                        "tool_review_window_seconds": 60, "observation_interval_seconds": 300}
-        self.t = ObservationTracker("E", self.ws, self.config, clock=self.clock)
+        self.t = ObservationTracker("E", self.ws, self.config,  time_port=scripted_clock(self.clock))
 
     def assert_persisted_notice(self, record):
         schema = default_state_contract().family('runtime', 'observations').schema
@@ -99,8 +102,9 @@ class ReviewTests(TrackerCase):
     def test_periodic_and_explicit_reviews_have_independent_bases(self):
         # The wall clock stands exactly at the scheduled time; the monotonic clock at the periodic interval.
         wall = FakeClock(wall=datetime(2026, 9, 20, 10, 0, tzinfo=timezone.utc))
+        wall.monotonic = self.clock
         tracker = ObservationTracker("P", self.ws, {"observation_mode": "periodic", "observation_interval_seconds": 3},
-                                     clock=self.clock, time_port=wall)
+                                      time_port=wall)
         tracker.schedule_review("RECHECK", at="2026-09-20T10:00:00Z", reason="inspect recovery", basis_ref="DISP-1")
         self.clock.value = 3
         rows = observe(tracker, {"type": "tick"})
@@ -110,8 +114,10 @@ class ReviewTests(TrackerCase):
         self.assertEqual(observe(tracker, {"type": "tick"}), [])
 
     def test_deadline_only_never_opens_recursive_review(self):
+        from support.entry import entry
+        _entry = entry()
         tracker = ObservationTracker("D", self.ws, {"observation_mode": "deadline_only", "observation_interval_seconds": 1,
-            "tool_review_window_seconds": 1}, clock=self.clock)
+            "tool_review_window_seconds": 1},  time_port=scripted_clock(self.clock))
         observe(tracker, {"type": "item.started", "item": {"type": "command_execution", "id": "C"}})
         self.clock.value = 100
         self.assertEqual(observe(tracker, {"type": "tick"}), [])
@@ -159,10 +165,12 @@ class SelfCheckObligationTests(TrackerCase):
         self.assertEqual(self.t.obligations[obligation["id"]]["status"], "open")
 
     def test_normal_defect_indeterminate_followups(self):
+        from support.entry import entry
+        _entry = entry()
         self.write(counters={"attempts": 2})
         for status, expected in (("normal", "continue"), ("defect", "operational_review_due"), ("indeterminate", "operational_review_due")):
             with self.subTest(status=status):
-                tracker = ObservationTracker(status, self.ws, self.config, clock=self.clock)
+                tracker = ObservationTracker(status, self.ws, self.config,  time_port=scripted_clock(self.clock))
                 obligation = next(r for r in observe(tracker, {"type": "tick"}) if r["kind"] == "self_check_due")
                 response = self_check_response(obligation, status, [] if status == "indeterminate" else None)
                 result = tracker.record_self_check_response(response, available_evidence_refs={"EV-1"})
@@ -170,7 +178,9 @@ class SelfCheckObligationTests(TrackerCase):
                 self.assertEqual(result["followup"]["kind"], expected)
 
     def test_no_progress_limit_keeps_count_across_rule_replacement(self):
-        tracker = ObservationTracker("E", self.ws, {**self.config, "no_progress_limit": 2}, clock=self.clock)
+        from support.entry import entry
+        _entry = entry()
+        tracker = ObservationTracker("E", self.ws, {**self.config, "no_progress_limit": 2},  time_port=scripted_clock(self.clock))
         for count in (2, 4):
             self.write(counters={"attempts": count})
             obligation = next(r for r in observe(tracker, {"type": "tick"}) if r["kind"] == "self_check_due")
@@ -228,6 +238,8 @@ class RuleProposalTests(TrackerCase):
         self.assertEqual(self.t.rule_revision, 0)
 
     def test_rule_proposal_travels_in_the_response_and_a_rules_file_is_not_checked(self):
+        from support.entry import entry
+        _entry = entry()
         proposal = {"current_revision": 0, "reason": "Use a renamed rule",
                     "rules": [observation_rule(id="renamed", repeat_interval=2)]}
         obligation = self.due()
@@ -240,7 +252,7 @@ class RuleProposalTests(TrackerCase):
         for value in (proposal, proposal["rules"], {**proposal, "current_revision": -1}):
             path.write_text(json.dumps(value), encoding="utf-8")
             for captured in (None, collect_outputs(self.ws)):
-                issues, _ = _workspace_checks(context, self.ws, candidate=captured)
+                issues, _ = _workspace_checks(context, self.ws, candidate=captured, clock=_entry.ports.clock)
                 self.assertEqual(issues, [], issues)
         self.assertEqual(self.t.rule_revision, 1)
 
@@ -284,6 +296,8 @@ class CheckpointSignalTests(TrackerCase):
         self.assertEqual(self.t.checkpoint_count, 2)
 
     def test_self_check_calls_and_checkpoints_do_not_trigger_themselves(self):
+        from support.entry import entry
+        _entry = entry()
         obligation = self.due()
         self.t.obligations[obligation['id']]['status'] = 'answered'
         observe(self.t, {"type": "item.completed", "item": {"type": "mcp_tool_call", "id": "SC-CALL",
@@ -292,13 +306,15 @@ class CheckpointSignalTests(TrackerCase):
         self.assertNotIn("SC-CALL", self.t.completed_call_ids)
         counted = self.t.checkpoint_count
         self.write(counters={"attempts": 2}, current_claim="self-check lineage")
-        checkpoint = observations.read_checkpoint(self.ws)
+        checkpoint = observations.read_checkpoint(self.ws, clock=_entry.ports.clock)
         self.t.register_self_check_checkpoint(checkpoint["sha256"])
         observe(self.t, {"type": "tick"})
         self.assertEqual(self.t.checkpoint_count, counted)
 
     def test_missing_checkpoint_reminder_only_for_checkpointing_roles(self):
-        tracker = ObservationTracker("W", self.ws, {**self.config, "checkpoint_expected": True}, clock=self.clock)
+        from support.entry import entry
+        _entry = entry()
+        tracker = ObservationTracker("W", self.ws, {**self.config, "checkpoint_expected": True},  time_port=scripted_clock(self.clock))
         self.clock.value = 300
         self.assertTrue(any(r["kind"] == "checkpoint_reminder_due" for r in observe(tracker, {"type": "tick"})))
         self.assertFalse(any(r["kind"] == "checkpoint_reminder_due" for r in observe(tracker, {"type": "tick"})))
@@ -330,8 +346,10 @@ class ExecutionTrackerTests(unittest.TestCase):
         self.directory, self.clock = Path(temporary.name), Clock()
 
     def tracker(self, **extra):
+        from support.entry import entry
+        _entry = entry()
         return ObservationTracker("EX-1", self.directory, {"observation_rules": [observation_rule()],
-            "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5, **extra}, clock=self.clock)
+            "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5, **extra},  time_port=scripted_clock(self.clock))
 
     def open_obligation(self, tracker):
         write_checkpoint(self.directory, counters={"attempts": 2})
@@ -458,10 +476,12 @@ class ExecutionTrackerTests(unittest.TestCase):
         self.assertFalse(any(r["kind"] == "self_check_due" for r in rows))
 
     def test_maximum_interval_keeps_distinct_ids_for_every_due_rule(self):
+        from support.entry import entry
+        _entry = entry()
         tracker = ObservationTracker("EX-1", self.directory, {
             "observation_rules": [observation_rule(id="@maximum_interval"), observation_rule(id="@maximum_interval:1")],
             "observation_interval_seconds": 10, "tool_review_window_seconds": 60,
-            "self_check_response_window_seconds": 5}, clock=self.clock)
+            "self_check_response_window_seconds": 5},  time_port=scripted_clock(self.clock))
         self.clock.value = 10
         obligation = self.open_obligation(tracker)
         ids = [row["rule_id"] for row in obligation["due"]]
@@ -482,8 +502,10 @@ class SelfCheckControlBindingTests(unittest.TestCase):
         self.clock = Clock()
 
     def tracker(self):
+        from support.entry import entry
+        _entry = entry()
         return ObservationTracker("EX-1", self.ws, {"observation_rules": [observation_rule()],
-            "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5}, clock=self.clock)
+            "tool_review_window_seconds": 60, "self_check_response_window_seconds": 5},  time_port=scripted_clock(self.clock))
 
     def submission(self, tracker):
         write_checkpoint(self.ws, counters={"attempts": 2})
@@ -542,10 +564,12 @@ class SelfCheckControlBindingTests(unittest.TestCase):
                 self.assertTrue(any(r["kind"] == "self_check_missed" for r in observe(tracker, event)))
 
     def test_checkpoint_counter_rule_ignores_counters_from_another_source(self):
+        from support.entry import entry
+        _entry = entry()
         rule = observation_rule(basis={"source": "checkpoint", "unit": "count"})
         binding = {"operator": rule["operator"], "subject_kind": rule["subject"]["kind"], **rule["basis"]}
         tracker = ObservationTracker("EX-1", self.ws, tracker_config(profile([binding]), initial_self_check_rules=[rule]),
-                                     clock=self.clock)
+                                      time_port=scripted_clock(self.clock))
         rows = observe(tracker, {"type": "tick", "counters": {"attempts": 2}})
         self.assertFalse(any(r["kind"] == "self_check_due" for r in rows))
         (self.ws / "checkpoint.json").write_text(json.dumps({"current_claim": "c", "evidence_paths": [], "attempts": [],
@@ -576,8 +600,10 @@ class SelfCheckAcknowledgementTests(unittest.TestCase):
         self.directory, self.clock = Path(temporary.name), Clock()
 
     def delivered(self):
+        from support.entry import entry
+        _entry = entry()
         tracker = ObservationTracker('EX-one', self.directory, {'observation_rules': [observation_rule()],
-            'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5}, clock=self.clock)
+            'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5},  time_port=scripted_clock(self.clock))
         write_checkpoint(self.directory, counters={'attempts': 2})
         obligation = next(r for r in observe(tracker, {'type': 'tick'}) if r['kind'] == 'self_check_due')
         # The poll returns the exact request object the tracker issued and hashed.

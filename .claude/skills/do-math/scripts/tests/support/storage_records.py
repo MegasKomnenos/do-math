@@ -87,9 +87,11 @@ def engine_on(store, instance, runtime, *, workspace, ports, instance_id=INSTANC
     opens its control transport under the instance workspace, which a
     synthetic state names here.
     """
+    from support.entry import entry
+    _entry = entry()
     from do_math.engine import ResearchEngine
     head = store.initialize({**instance, 'workspace': str(workspace)}, runtime)
-    return ResearchEngine(store.repository, instance_id, ports=ports), head
+    return ResearchEngine(store.repository, instance_id, ports=ports, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id), head
 
 
 def apply_control(sim, action, **options):
@@ -105,16 +107,18 @@ def apply_control(sim, action, **options):
 
 def reference_fixture_instance():
     """An instance with the default profiles, a preserved source and a local research grant bound to it."""
+    from support.entry import entry
+    _entry = entry()
     from do_math.configuration import DEFAULT_CONFIG
     from do_math.execution_profiles import build_profiles
     from do_math.governance import apply_decision, preserve_source
-    from research_fixtures import current_state, governance_start
+    from support.state_builders import current_state, governance_start
     config = {**deepcopy(DEFAULT_CONFIG), 'lean_command': ['fixture-lean'], 'scholarly_enabled': False}
-    instance = current_state(governance_start({**build_profiles(config), 'governance_sources': {
+    instance = current_state(governance_start({**build_profiles(config, host=_entry.ports.host), 'governance_sources': {
         'GS-reference': preserve_source('GS-reference', 'Authorize the fixture research.', origin='user')}}))[0]
     instance, _, _ = apply_decision(instance, {}, {'kind': 'grant', 'grant': {
         'id': 'GR-reference', 'kind': 'local', 'roles': ['research_work'],
-        'reuse': 'reusable'}}, source_ref='GS-reference')
+        'reuse': 'reusable'}}, source_ref='GS-reference', clock=_entry.ports.clock)
     return instance
 
 
@@ -122,7 +126,7 @@ def task_with_reference_locators():
     """A planned stored task (``task_candidate_record``) whose inputs and basis hold source, context and tool locators."""
     from do_math.contracts import task_candidate_record
     from do_math.execution_profiles import profile_ref
-    from research_fixtures import candidate
+    from support.role_answers import candidate
     instance = reference_fixture_instance()
     profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'research_work')
     wire = candidate('Reference locator fixture')
@@ -137,7 +141,7 @@ def task_with_reference_locators():
 
 def approved_governance_instance():
     """An instance whose charter ``CH-1`` (goal "Prove P") is adopted from source ``GS-1`` by decision ``DC-1``."""
-    from research_fixtures import approved_governance, charter, current_state
+    from support.state_builders import approved_governance, charter, current_state
     record = charter('CH-1', rationale='Study P', desired_result='Proof', partial_success_criteria=[],
                      priorities=[], evidence_boundary='proof')
     instance = approved_governance({'id': INSTANCE_ID}, [record], source=('GS-1', 'Study P'), approval_id='DC-1')

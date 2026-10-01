@@ -18,9 +18,10 @@ import unittest
 import zipfile
 
 from do_math import submission, submission_tool
-from purpose_fixtures import common
+from support.purpose_answers import common
 from support.fakes.clock import FakeClock
 from support.submission_protocol import ProtocolScene, check_output, producer_workspace
+from test_categories import test_group
 
 
 class HyphenTokens(FakeClock):
@@ -30,6 +31,7 @@ class HyphenTokens(FakeClock):
         return 'f8' + '00' * (nbytes - 1)
 
 
+@test_group('resource')
 class LocalControlProtocolTests(unittest.TestCase):
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
@@ -40,8 +42,12 @@ class LocalControlProtocolTests(unittest.TestCase):
         return self.scene.mcp(self, name, arguments)
 
     def test_real_mcp_intent_and_receipt_share_preserved_git_evidence(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         scene = self.scene
-        check = submission.producer_check(scene.workspace, scene.draft)
+        check = submission.producer_check(scene.workspace, scene.draft, clock=_entry.ports.clock)
         request = {"request_id": "CT-local", "kind": "submit_intent",
                    "payload": {"draft_path": check["raw_output_path"]}}
         self.assertEqual("submitted", self.mcp("control_submit", request)["state"])
@@ -99,9 +105,13 @@ class LocalControlProtocolTests(unittest.TestCase):
         self.assertEqual(scene.head, result["delivery"]["snapshot"])
 
     def test_accepted_submission_is_unchanged_when_original_draft_changes_later(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         from do_math.canonical import canonical_json
         scene = self.scene
-        check = submission.producer_check(scene.workspace, scene.draft)
+        check = submission.producer_check(scene.workspace, scene.draft, clock=_entry.ports.clock)
         original = scene.draft.read_bytes()
         self.mcp("control_submit", {"request_id": "CT-changed", "kind": "submit_intent",
                                     "payload": {"draft_path": check["raw_output_path"]}})
@@ -126,6 +136,7 @@ class LocalControlProtocolTests(unittest.TestCase):
         self.assertIsNone(scene.head)
 
 
+@test_group('resource')
 class InstalledToolTests(unittest.TestCase):
     def test_supplied_checker_is_standalone_and_does_not_mutate_fixed_inputs(self):
         with tempfile.TemporaryDirectory() as directory:

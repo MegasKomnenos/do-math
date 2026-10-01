@@ -1,5 +1,5 @@
 {
- "note": "Time budgets (docs/do-math/시험-재편-2026-09-29/설계.md 5.2), recalibrated in stage 1d. per_test_seconds applies by tier folder; a test over it is listed in the run report and does not fail. tier_seconds is a whole run of that tier; a sub-stage does not close while T2 or T3 exceeds it. T3 is the daily incremental run; T3_full holds a T3 that measured every module (--full, no store, or a runner change; 설계 A29), set from the first full run on main (1,990 s with --jobs 3, no workers, 2026-10-01) with room for the tests regions add. Legacy tests/test_*.py modules have no budget until they are retired.",
+ "note": "Time budgets (설계5.2/A30). Per-test excess is reported separately. Whole T2/daily T3 budgets remain300/720 seconds. Full T3 measures every module with no reuse; A30 recalibrates its budget to3300 seconds from the current2927.4-second full measurement. Historical2400-budget excess and ordinary/branch failures remain failures. A new full run must independently pass tests, reach, budget and memory conditions.",
  "per_test_seconds": {
   "structure": 5.0,
   "unit": 0.2,
@@ -14,7 +14,7 @@
   "T1": 180,
   "T2": 300,
   "T3": 720,
-  "T3_full": 2400,
+  "T3_full": 3300,
   "T4": 300,
   "T5": 600
  }

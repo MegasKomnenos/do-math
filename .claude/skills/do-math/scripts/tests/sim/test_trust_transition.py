@@ -8,7 +8,7 @@ and is requeued as a continuation, and after the release it succeeds.
 """
 import unittest
 
-from research_fixtures import trust_fixture
+from support.trust_inputs import trust_fixture
 from support.sim import Sim, warm_template
 
 setUpModule = warm_template

@@ -12,8 +12,8 @@ import unittest
 
 from do_math.claude_stream import parse_stream
 from do_math.observations import ObservationTracker
-from provider_fixtures import CLAUDE_INIT, CLAUDE_RESULT, claude_stream
-from research_fixtures import observe
+from support.provider_inputs import CLAUDE_INIT, CLAUDE_RESULT, claude_stream
+from support.observation_inputs import observe
 
 
 class StreamTests(unittest.TestCase):
@@ -51,8 +51,10 @@ class StreamTests(unittest.TestCase):
 
 class ProgressTests(unittest.TestCase):
     def test_claude_tools_and_messages_feed_progress_observation(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as d:
-            tracker = ObservationTracker("one", Path(d), {"observation_mode": "periodic", "research_self_checks": False})
+            tracker = ObservationTracker("one", Path(d), {"observation_mode": "periodic", "research_self_checks": False}, time_port=_entry.ports.clock)
             facts = observe(tracker, {"type": "assistant", "message": {"content": [
                 {"type": "text", "text": "Checking the computation."},
                 {"type": "tool_use", "id": "tool-one", "name": "Bash", "input": {"command": "python proof.py"}}]}})

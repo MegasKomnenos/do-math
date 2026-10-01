@@ -11,7 +11,6 @@ from .planning import record_index
 from .canonical import canonical_json
 from .knowledge import AUTHORED_FIELDS, assess_use, capture_basis, propagate
 from . import knowledge_records
-from .migration_defaults import clock_or_system
 
 
 _TOKEN = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -110,8 +109,7 @@ def catalog_definitions(instance: dict) -> dict:
 
 
 def register_kind_definition(instance: dict, definition: dict, *, source_ref: str,
-                             actor_ref: str, clock=None) -> tuple[dict, str]:
-    clock = clock_or_system(clock)
+                             actor_ref: str, clock) -> tuple[dict, str]:
     require_text(source_ref, "source_ref"); require_text(actor_ref, "actor_ref")
     if not isinstance(definition, dict) or set(definition) != {"family", "token", "meaning", "constraints"}:
         raise ValueError("kind definition requires family, token, meaning and constraints")
@@ -172,7 +170,7 @@ def activate_kind_definition(instance, family, token, *, approval_ref, actor_ref
     return output
 
 
-def withdraw_kind_definition(instance, runtime, family, token, *, reason, actor_ref, clock=None):
+def withdraw_kind_definition(instance, runtime, family, token, *, reason, actor_ref, clock):
     require_text(reason, "reason"); require_text(actor_ref, "actor_ref")
     output, new_runtime = deepcopy(instance), deepcopy(runtime)
     definition = lookup_definition(output, family, token)
@@ -240,8 +238,7 @@ def validate_insight(instance: dict, runtime: dict, insight: dict) -> None:
 
 
 def import_candidate(instance: dict, runtime: dict, candidate: dict, *, source_ref: str,
-                     actor_ref: str, reserved_dependency_ids=(), plan_nonformal=True, clock=None) -> tuple[dict, dict, str]:
-    clock = clock_or_system(clock)
+                     actor_ref: str, reserved_dependency_ids=(), plan_nonformal=True, clock) -> tuple[dict, dict, str]:
     require_text(source_ref, "source_ref"); require_text(actor_ref, "actor_ref")
     if not isinstance(candidate, dict) or set(candidate) - _KNOWLEDGE_FIELDS:
         raise ValueError("candidate has unsupported fields")
@@ -382,8 +379,7 @@ def validate_relation(instance: dict, relation: dict) -> dict:
 
 
 def import_relation(instance: dict, relation: dict, *, source_ref: str,
-                    actor_ref: str, clock=None) -> tuple[dict, str]:
-    clock = clock_or_system(clock)
+                    actor_ref: str, clock) -> tuple[dict, str]:
     require_text(source_ref, "source_ref"); require_text(actor_ref, "actor_ref")
     result = validate_relation(instance, relation)
     if not result["valid"]:

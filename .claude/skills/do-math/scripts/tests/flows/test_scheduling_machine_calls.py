@@ -14,7 +14,6 @@ unstarted. The cases start from a restored activation or the lifecycle
 template and run the owner loop (``engine.run``) with its real storage.
 """
 from contextlib import ExitStack
-import base64
 from pathlib import Path
 import json
 import unittest
@@ -22,9 +21,10 @@ import unittest
 from do_math.git_store import GitStateStoreConflict
 from support.engine_lifecycle import warm_lifecycle
 from support.fakes.calls import owner_turn
-from support.scheduling_machine import (LEAN_ROLES, HeldLean, PassProbe, artifact, formal_scene, hold_lean, identity,
-                                        maintenance_ended, new_rows, take_turns, trust_scene, use_verifier)
+from support.scheduling_machine import (LEAN_ROLES, HeldLean, PassProbe, artifact, formal_scene, hold_lean,
+                                        maintenance_ended, new_rows, take_turns, trust_scene)
 from support.sim import warm_template
+from support.knowledge_verifier_jobs import OutputCompiler
 from support.storage_records import held_ref_lock
 
 
@@ -158,8 +158,7 @@ class MachineSchedulerTests(unittest.TestCase):
         writer = ExitStack()
         self.addCleanup(writer.close)
 
-        def verify(**arguments):
-            arguments['on_started'](identity(arguments))
+        def hold():
             # Another writer takes the instance ref, so the owner's next publication fails.
             writer.enter_context(held_ref_lock(sim.engine.store))
             sim.control('request', config={'role': 'research_preparation'}, text='A request the owner publishes')
@@ -168,12 +167,11 @@ class MachineSchedulerTests(unittest.TestCase):
                     owner_turn()
                 except RuntimeError:
                     pass  # the calls port shuts down after the owner failed; the flag is set first
-                if arguments['should_stop']():
+                if any(future.stop.is_set() for future in sim.engine._calls.futures):
                     break
             writer.close()
-            return {'status': 'stopped', 'reason': 'owner stopped',
-                    'stdout': b'preserved evidence\xff', 'usage': {'cost_usd': 0.25}}
-        use_verifier(sim, verify)
+        sim.lean.spawn = OutputCompiler('preserved compiler evidence', during=hold, exit_code=1)
+        take_turns(sim)
         before, cycles = set(sim.runtime['executions']), set(sim.runtime.get('review_cycles', {}))
         with self.assertRaisesRegex(GitStateStoreConflict, 'compare-and-swap'):
             sim.engine.run(max_steps=1)
@@ -184,8 +182,9 @@ class MachineSchedulerTests(unittest.TestCase):
         self.assertEqual(formal['capacity']['local_termination'], 'confirmed')
         self.assertEqual(set(runtime.get('review_cycles', {})), cycles, 'no identity review started')
         preserved = json.loads(sim.engine.store.read(formal['result_ref']))
-        self.assertEqual(base64.b64decode(preserved['stdout']['base64']), b'preserved evidence\xff')
-        self.assertEqual(preserved['usage']['cost_usd'], {'reported_decimal': '0.25'})
+        self.assertEqual(preserved['stdout'], 'preserved compiler evidence')
+        self.assertEqual(preserved['status'], 'stopped')
+        self.assertIn('local_job_usage', preserved)
         self.assertEqual(runtime['waiting_actions'][formal['action']['id']]['kind'], 'execution_failure')
         self.assertFalse(any(a.get('id') == formal['action']['id'] for a in runtime['queue']))
         self.assertTrue(any(a['role'] == 'operational_review' and a.get('target') == formal['id'] for a in runtime['queue']))
@@ -198,11 +197,10 @@ class MachineSchedulerTests(unittest.TestCase):
         writer = ExitStack()
         self.addCleanup(writer.close)
 
-        def verify(**arguments):
-            # Another writer takes the instance ref as the result returns: its publication fails.
-            writer.enter_context(held_ref_lock(sim.engine.store))
-            return {'status': 'failed', 'reason': 'retained compiler evidence'}
-        use_verifier(sim, verify)
+        # Another writer takes the ref while the actual compiler finishes.
+        sim.lean.spawn = OutputCompiler('retained compiler evidence', exit_code=1,
+            during=lambda: writer.enter_context(held_ref_lock(sim.engine.store)))
+        take_turns(sim)
         before = set(sim.runtime['executions'])
         with self.assertRaisesRegex(GitStateStoreConflict, 'compare-and-swap'):
             sim.engine.run(max_steps=1)

@@ -12,7 +12,7 @@ import unittest
 from do_math.core_engine import _query_record
 from do_math.planning import RECORD_FAMILIES
 from do_math.repository import RepositoryCursorError
-from research_fixtures import current_state
+from support.state_builders import current_state
 from support.storage_records import record_store
 
 PREFIX = "runtime/artifacts/query-fixture/"

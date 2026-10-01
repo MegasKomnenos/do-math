@@ -10,7 +10,6 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 import math
-from .migration_defaults import clock_or_system
 
 # Admission wait kinds recorded in a queued request's ``dispatch_wait``.
 PROVIDER_WAIT = 'provider_limit'
@@ -54,8 +53,9 @@ class SessionSlots:
     database is authoritative for this path.
     """
 
-    def __init__(self, runtime: dict, instance: dict, *, observer=False, clock=None, jobs=None):
-        self.clock = clock_or_system(clock)
+    def __init__(self, runtime: dict, instance: dict, *, observer=False, clock, jobs, host_id):
+        self.clock = clock
+        self.host_id = host_id
         self.jobs = jobs
         self.runtime, self.instance, self.observer = runtime, instance, observer
         self.admission_wait = None
@@ -101,7 +101,7 @@ class SessionSlots:
                         and profile.get('host_resources') is None)
         if profile.get("host_capacity_refs", []) != ([approved_host] if approved_host and not uncapped_lean else []):
             raise ValueError("execution profile must bind the instance's current adopted host constraint")
-        job_resource_limits(profile)  # Reject a profile bound to another host before any mutation.
+        job_resource_limits(profile, host_id=self.host_id)  # Reject a profile bound to another host before any mutation.
         ai = profile.get("ai", {})
         model = ai.get("model")
         self.admission_wait = self.provider_wait(profile, current_time=current)

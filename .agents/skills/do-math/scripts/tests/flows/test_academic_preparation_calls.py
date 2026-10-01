@@ -23,12 +23,13 @@ from do_math import submission
 from do_math.activities import wait_for
 from do_math.canonical import canonical_json
 from do_math.planning import contract_hash
-from research_fixtures import candidate, contract_review, prepared_rule_conditions, seal_response
-from runner_fixtures import common, rating
+from support.role_answers import candidate, contract_review, seal_response
+from support.observation_inputs import prepared_rule_conditions
+from support.default_responder import common, rating
 from support.academic_scenes import (ACADEMIC_TASKS, assessment_sim, no_repair_sim, rejected_sim, rule_prepared,
                                      solved_sim, warm_assessment)
 from support.engine_purpose import PurposeResponder
-from purpose_fixtures import SOLVED_REQUIREMENT_CRITERIA
+from support.purpose_answers import SOLVED_REQUIREMENT_CRITERIA
 
 setUpModule = warm_assessment
 
@@ -168,7 +169,7 @@ class RulePreparationCallTests(unittest.TestCase):
         engine.runtime.setdefault('waiting_actions', {})[failed_id] = {'action': failed_action, 'kind': 'observation_rules',
                                                                        'reason': 'missing rules'}
         engine._save()
-        # The legacy PurposeRunner's answer: a rating for every assessment target, rules for every rule target.
+        # The legacy PurposeAnswers's answer: a rating for every assessment target, rules for every rule target.
         responder = sim.model.responder = PurposeResponder()
         sim.step()
         self.assertEqual([call['role'] for call in responder.calls], ['research_preparation'])

@@ -508,9 +508,10 @@
       "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_owner_exception_stops_worker_preserves_result_and_reconciles_capacity",
       "disposition": "moved",
       "new_ids": [
-        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_owner_exception_stops_worker_preserves_result_and_reconciles_capacity"
+        "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_owner_exception_stops_worker_preserves_result_and_reconciles_capacity",
+        "unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_interrupted_receiver_preserves_bytes_decimal_and_routes_failure"
       ],
-      "note": "Input: the owner failure is a real publication conflict (another writer holds the instance ref's lock while the owner applies a queued control) instead of a replaced _controls raising RuntimeError('injected owner failure'); the raised GitStateStoreConflict is fixed by its message. The stored result and settlement are read from the real store instead of FakeEngine.saves and an autospec load. The engine's formal verifier is replaced here (a constructor argument, support.scheduling_machine.use_verifier), publishing a synthetic Job identity, because the preserved evidence under test (raw stdout bytes kept as base64, a float usage kept as reported_decimal) cannot come from the product verifier, whose stdout is text and which reports no usage."
+      "note": "The flow runs the actual verify_formal/verify_lean/formal._worker. A Lean spawn double holds the compiler while another writer locks the ref; the owner publication raises the same compare-and-swap conflict, its real stop flag stops the Job, and real text output, local_job_usage, capacity release, waiting action, operational review and activity settlement are asserted. The old bytes stdout and float cost_usd are preserved separately by passing those values directly into the layer-2 _record_interrupted_calls receiver and saving its artifacts through the real repository. verify_lean decodes stdout to str and reports local_job_usage, never a usage.cost_usd; these synthetic inputs cannot be emitted by this producer. The unit protects base64/reported_decimal and the same settlement/routing assertions; it is not a layer-3 wiring claim."
     },
     {
       "legacy_id": "test_machine_parallel.MachineSchedulerTests.test_publication_failure_keeps_local_result_and_durable_unsettled_record",
@@ -518,7 +519,7 @@
       "new_ids": [
         "flows.test_scheduling_machine_calls.MachineSchedulerTests.test_publication_failure_keeps_local_result_and_durable_unsettled_record"
       ],
-      "note": "Input: the failing publication is a real ref-lock conflict from the moment the calculation returns (every later publication fails, as every artifact publication did in the legacy test) instead of an OSError from a wrapped _save; the raised GitStateStoreConflict is fixed by its message, and the durable record is read from the real store. The engine's formal verifier is replaced here, as in the legacy test, by one that returns a failed result at once; the case concerns the owner's publication after any returned result."
+      "note": "The actual Lean worker uses a spawn double that exits 1 with retained compiler stdout and acquires another writer ref lock during compilation. The actual verifier result reaches the owner, whose publication raises GitStateStoreConflict; local returned-result.json preserves the evidence and the durable execution remains unsettled. No verifier replacement or result mutation remains; the old failed-result/publication-failure property is preserved with a producible result."
     }
   ]
 }

@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from do_math import governance as gov
 from do_math.external import execute_operation, prepare_operation, reconcile_operation
-from research_fixtures import governance_start
+from support.state_builders import governance_start
 from support.fakes.clock import FakeClock
 
 
@@ -27,6 +27,8 @@ def _operation():
 class ExternalOperationTests(unittest.TestCase):
     def test_unknown_with_sent_marker_cannot_silently_retransmit(self):
         """A recorded send marker (status still ``prepared``) refuses another send before any transport."""
+        from support.entry import entry
+        _entry = entry()
         op = prepare_operation({"method": "POST", "url": "https://example.test/p"}, "G", "S")
         op.update(transmitted=True, transmission_phase="recorded")
         grant = {"id": "G", "status": "active", "allowed_origins": ["https://example.test"], "allowed_methods": ["POST"],
@@ -34,7 +36,7 @@ class ExternalOperationTests(unittest.TestCase):
         calls = []
         with self.assertRaisesRegex(ValueError, "^recorded transmission requires recovery before another send$"):
             execute_operation(op, grant, persist=lambda _: True, clock=FakeClock(),
-                              transport=lambda *_: calls.append(1) or {"http_status": 200, "body": b"ok"})
+                              transport=lambda *_: calls.append(1) or {"http_status": 200, "body": b"ok"}, environment=dict(os.environ))
         self.assertEqual(calls, [])
 
     def test_reconciliation_cannot_assert_success_from_unbound_text(self):
@@ -44,23 +46,29 @@ class ExternalOperationTests(unittest.TestCase):
             reconcile_operation(op, "a receipt", "confirmed", source="user", succeeded=True)
 
     def test_non_2xx_is_failed_only_when_effect_absence_is_evidenced(self):
+        from support.entry import entry
+        _entry = entry()
         clock = FakeClock()
         result = execute_operation(_operation(), _grant(), persist=lambda _: True, clock=clock,
-                                   transport=lambda *_: {"http_status": 409, "body": b"rejected", "effect_absent": True})
+                                   transport=lambda *_: {"http_status": 409, "body": b"rejected", "effect_absent": True}, environment=dict(os.environ))
         self.assertEqual(result["status"], "failed")
         self.assertIs(result["succeeded"], False)
         self.assertTrue(result["effect_absent"])
         # Without the evidence the same response leaves the outcome unknown.
         unproven = execute_operation(_operation(), _grant(), persist=lambda _: True, clock=clock,
-                                     transport=lambda *_: {"http_status": 409, "body": b"rejected"})
+                                     transport=lambda *_: {"http_status": 409, "body": b"rejected"}, environment=dict(os.environ))
         self.assertEqual((unproven["status"], unproven["succeeded"], unproven["error"]),
                          ("unknown", None, "non-success response does not establish effect absence"))
 
     def test_missing_credential_preserves_prepared_operation_and_wait_reason(self):
+        from support.entry import entry
+        _entry = entry()
+        from support.entry import entry
+        _entry = entry()
         with patch.dict(os.environ):
             os.environ.pop("DO_MATH_TEST_MISSING_SECRET", None)
             result = execute_operation(_operation(), _grant(credential_env={"Authorization": "DO_MATH_TEST_MISSING_SECRET"}),
-                                       persist=lambda _: True, clock=FakeClock())
+                                       persist=lambda _: True, clock=FakeClock(), environment=dict(os.environ), transport=_entry.ports.http.request)
         self.assertEqual(result["status"], "prepared")
         self.assertFalse(result["transmitted"])
         self.assertEqual(result["waiting_reason"]["kind"], "credential_unavailable")
@@ -89,6 +97,8 @@ class ExternalOperationTests(unittest.TestCase):
 
 class ExternalScopeConsumerTests(unittest.TestCase):
     def test_external_scope_metadata_is_checked_in_actual_send_and_once_ledger(self):
+        from support.entry import entry
+        _entry = entry()
         grant = {'id': 'G', 'kind': 'http', 'status': 'active', 'reuse': 'once',
                  'included_targets': ['T'], 'purposes': ['publish'], 'subjects': ['external_operation'],
                  'execution_kinds': ['machine'],
@@ -101,15 +111,15 @@ class ExternalScopeConsumerTests(unittest.TestCase):
             calls.append(args)
             return {'http_status': 200, 'body': b'ok'}
         clock = FakeClock()
-        result = execute_operation(op, grant, persist=lambda row: True, transport=transport, runtime={}, clock=clock)
+        result = execute_operation(op, grant, persist=lambda row: True, transport=transport, runtime={}, clock=clock, environment=dict(os.environ))
         self.assertEqual(result['status'], 'confirmed')
         bad = deepcopy(op)
         bad['purpose'] = 'unapproved'
         with self.assertRaisesRegex(ValueError, '^purpose outside grant$'):
-            execute_operation(bad, grant, persist=lambda row: True, transport=transport, runtime={}, clock=clock)
+            execute_operation(bad, grant, persist=lambda row: True, transport=transport, runtime={}, clock=clock, environment=dict(os.environ))
         with self.assertRaisesRegex(ValueError, '^one-case grant already reserved or consumed$'):
             execute_operation(op, grant, persist=lambda row: True, transport=transport, clock=clock,
-                              runtime={'external_operations': {'USED': {**result, 'id': 'USED'}}})
+                              runtime={'external_operations': {'USED': {**result, 'id': 'USED'}}}, environment=dict(os.environ))
         self.assertEqual(len(calls), 1)
 
 

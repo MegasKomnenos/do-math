@@ -18,6 +18,7 @@ import tempfile
 import unittest
 
 from do_math.lean_evidence import LEAN_VERSION, READY_MARKER, mathlib_project, portable_bin
+from test_categories import test_group
 
 
 SKILL = Path(__file__).resolve().parents[3]
@@ -26,6 +27,7 @@ NO_WINDOW = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
 WHERE = Path(os.environ.get('SystemRoot', r'C:\Windows')) / 'System32' / 'where.exe'
 
 
+@test_group('resource')
 class StandaloneTests(unittest.TestCase):
     def test_copied_skill_checks_itself_without_repository_documents(self):
         with tempfile.TemporaryDirectory() as directory:

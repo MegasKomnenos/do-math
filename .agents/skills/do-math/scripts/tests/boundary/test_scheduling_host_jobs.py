@@ -27,8 +27,9 @@ from do_math.repository import ResearchRepository
 from do_math.session_slots import SessionSlots
 from do_math.system_clock import SystemClock
 from do_math.windows_job import WindowsJob, WindowsJobs, process_identity
-from provider_fixtures import host_capacity_fixture
-from research_fixtures import current_state, git_init
+from support.provider_inputs import host_capacity_fixture
+from support.state_builders import current_state
+from support.fakes.git_backend import make_repository
 from support.provider_probes import ObservedCalls
 from support.scheduling_hosts import dispatched
 from test_categories import test_group as category
@@ -48,12 +49,17 @@ def emptied(job, timeout=10):
 
 
 def real_slots(runtime, instance):
-    return SessionSlots(runtime, instance, clock=SystemClock(), jobs=WindowsJobs())
+    from support.entry import entry
+    _entry = entry()
+    return SessionSlots(runtime, instance, clock=SystemClock(), jobs=WindowsJobs(), host_id=_entry.host_id)
 
 
+@category('resource')
 @unittest.skipUnless(os.name == "nt", "Windows kernel required")
 class HostJobTests(unittest.TestCase):
     def test_resource_setting_failure_is_distinct_capability_and_starts_nothing(self):
+        from support.entry import entry
+        _entry = entry()
         _, selected, constraint = host_capacity_fixture()
         p = profiles.with_host_resources(selected["research_work"], constraint, {"jobs": 1, **REFUSED})
         jobs, clock = WindowsJobs(), SystemClock()
@@ -63,7 +69,7 @@ class HostJobTests(unittest.TestCase):
             workspace.mkdir()
             prompt = profiles.prepare_prompt("temporary failure probe", p)
             with ObservedCalls(create=WindowsJob._create_suspended_root) as observed:
-                result = ModelRunner(codex_path=sys.executable, jobs=jobs, clock=clock).run(
+                result = ModelRunner(codex_path=sys.executable, jobs=jobs, clock=clock, environment=_entry.environment, host_id=_entry.host_id).run(
                     prompt=prompt, input_seal=profiles.prompt_seal(prompt), output_schema={}, workspace=workspace,
                     evidence_dir=root / "evidence", model=p["ai"]["model"], effort=p["ai"]["effort"],
                     timeout_seconds=15, execution_id="EX-setting-failure", profile=p,
@@ -77,6 +83,8 @@ class HostJobTests(unittest.TestCase):
             self.assertNotIn("atomic_local_job", result["capability_evidence"]["capabilities"])
 
     def test_both_real_adapters_receive_limits_before_user_code_or_model_call(self):
+        from support.entry import entry
+        _entry = entry()
         _, selected, _ = host_capacity_fixture()
         jobs, clock = WindowsJobs(), SystemClock()
         for provider in ("codex", "claude"):
@@ -90,20 +98,22 @@ class HostJobTests(unittest.TestCase):
                 workspace.mkdir()
                 prompt = profiles.prepare_prompt("temporary binding probe", p)
                 started = []
-                result = ModelRunner(**{provider + "_path": sys.executable}, jobs=jobs, clock=clock).run(
+                result = ModelRunner(**{provider + "_path": sys.executable}, jobs=jobs, clock=clock, environment=_entry.environment, host_id=_entry.host_id).run(
                     prompt=prompt, input_seal=profiles.prompt_seal(prompt), output_schema={}, workspace=workspace,
                     evidence_dir=root / "evidence", model=p["ai"]["model"], effort=p["ai"]["effort"],
                     timeout_seconds=15, execution_id="EX-" + provider, profile=p, should_stop=lambda: True,
                     on_started=started.append, launch_ticket=dispatched('EX-' + provider, p, jobs=jobs, clock=clock))
                 self.assertEqual(result["status"], "stopped")
-                self.assertEqual(started[0]["host_resources"]["limits"], profiles.job_resource_limits(p))
+                self.assertEqual(started[0]["host_resources"]["limits"], profiles.job_resource_limits(p, host_id=_entry.host_id))
                 request = json.loads((root / "evidence" / "request.json").read_text(encoding="utf-8"))
-                self.assertEqual(request["resource_limits"], profiles.job_resource_limits(p))
+                self.assertEqual(request["resource_limits"], profiles.job_resource_limits(p, host_id=_entry.host_id))
                 self.assertEqual(request["profile_ref"], profiles.profile_ref(p))
                 self.assertTrue(result["execution"]["collect"]["termination_barrier"]["confirmed"])
                 self.assertIsNone(result["execution"]["collect"]["worker_status"])
 
     def test_real_creation_failure_and_normal_abnormal_termination_return_once(self):
+        from support.entry import entry
+        _entry = entry()
         for outcome in ("creation_failure", "normal", "nonzero", "terminated", "setting_failure"):
             instance, selected, _ = host_capacity_fixture()
             runtime = {"executions": {}, "reservations": {}}
@@ -116,7 +126,7 @@ class HostJobTests(unittest.TestCase):
                 code = f"from pathlib import Path; import sys,time; Path({str(marker)!r}).write_text('started'); "
                 code += "time.sleep(30)" if outcome == "terminated" else "sys.exit(7)" if outcome == "nonzero" else "pass"
                 argv = [str(Path(directory) / "absent.exe")] if outcome == "creation_failure" else [sys.executable, "-c", code]
-                kwargs = {"resource_limits": profiles.job_resource_limits(p), "name": e['launch_ticket']['job_name']}
+                kwargs = {"resource_limits": profiles.job_resource_limits(p, host_id=_entry.host_id), "name": e['launch_ticket']['job_name']}
                 if outcome == "setting_failure":
                     with self.assertRaisesRegex(OSError, "SetInformationJobObject"):
                         WindowsJob(argv, **{**kwargs, "resource_limits": REFUSED})
@@ -210,18 +220,23 @@ class HostJobTests(unittest.TestCase):
         self.assertEqual(observed.count("create"), 0)
 
 
+@category('resource')
 @unittest.skipUnless(os.name == "nt", "Windows kernel required")
 class HostRepositoryJobTests(unittest.TestCase):
     def test_positive_host_records_round_trip_with_a_real_windows_job(self):
         """The real Git repository and a real limited Job: user code waits for the published identity; settlement is once."""
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         instance, selected, _ = host_capacity_fixture()
         with tempfile.TemporaryDirectory() as directory:
-            git_init(directory)
+            make_repository(directory)
             iid = "RI-00000000000000000000000000"
             instance.update(id=iid, workspace=directory, config={})
             instance, runtime = current_state(instance, {"status": "ready", "executions": {}, "reservations": {},
                                                          "provider_waits": {}})
-            repo = ResearchRepository(Path(directory), iid)
+            repo = ResearchRepository(Path(directory), iid, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
             head = repo.initialize(instance, runtime)
             p = selected["formal_check"]
             open_activity(runtime, activity_id="AT-host", activity_kind="formal_check", owner_ref="engine",
@@ -240,7 +255,7 @@ class HostRepositoryJobTests(unittest.TestCase):
             self.assertEqual(len(loaded["executions"][e["id"]]["capacity"]["reservation_ids"]), 3)
             marker = Path(directory) / "user-started"
             code = f"from pathlib import Path; Path({str(marker)!r}).write_text('ok')"
-            with WindowsJob([sys.executable, "-c", code], resource_limits=profiles.job_resource_limits(p),
+            with WindowsJob([sys.executable, "-c", code], resource_limits=profiles.job_resource_limits(p, host_id=_entry.host_id),
                             name=e['launch_ticket']['job_name']) as job:
                 with repo.writer_lock():
                     slots.started(e["id"], {**process_identity(job), "job_name": job.name,

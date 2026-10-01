@@ -27,7 +27,7 @@ On a Sim (3층):
   ``test_review_research``. The first initial slot ``initial-0`` asks the
   fixed question ``domain`` (``batch``: also ``export``; ``repeat``: an
   unanswerable one, every time), investigators answer from the fixed sources,
-  every other call answers as ``PurposeRunner``. Its input checks stay (preserved
+  every other call answers as ``PurposeAnswers``. Its input checks stay (preserved
   rule K-46): each returned or supplied source must still have its fixed hash,
   and an investigation must not inherit a task execution contract; a failed
   check is kept in ``failures``, so ``support.engine_purpose.drive`` fails the
@@ -56,7 +56,7 @@ from pathlib import Path
 from do_math.canonical import canonical_json
 from do_math.execution_profiles import profile_ref
 from do_math.review_policy import build_review_policy
-from purpose_fixtures import EXPLANATION, PurposeRunner, common
+from support.purpose_answers import EXPLANATION, PurposeAnswers, common
 from support.engine_purpose import PURPOSE_CONFIG, PurposeResponder
 from support.sim import Sim, built
 
@@ -73,7 +73,7 @@ def research_sim(**config):
     settings = {**PURPOSE_CONFIG, **config}
     policy = research_policy(settings.get('review_rounds', 2), settings.get('review_research_limit', 3))
 
-    def build(root, shared):
+    def build(root, shared, *, settings, policy):
         sim = Sim(root, shared=shared, config=settings)
         sim.activate(review_policy=policy)
         sim.model.responder = PurposeResponder()
@@ -91,11 +91,11 @@ def research_sim(**config):
         if unfinished:
             raise AssertionError('A template must not end with unfinished executions: ' + repr(unfinished))
         return sim
-    return built('review-research-' + canonical_json(settings).decode('ascii'), build)
+    return built('review-research', build, settings=settings, policy=policy)
 
 
-class InvestigationRunner(PurposeRunner):
-    """``PurposeRunner`` whose first initial reviewer asks fixed questions and whose investigators answer them."""
+class InvestigationRunner(PurposeAnswers):
+    """``PurposeAnswers`` whose first initial reviewer asks fixed questions and whose investigators answer them."""
 
     def __init__(self, *, repeat=False, batch=False):
         super().__init__('direct')

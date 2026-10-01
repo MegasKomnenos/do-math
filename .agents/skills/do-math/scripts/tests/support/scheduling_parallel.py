@@ -27,28 +27,25 @@ from support.sim import Sim, built
 RATING = {'difficulty': 'high', 'importance': 'medium', 'reason': 'Independent novel fixture approaches'}
 
 
-def _ready(count, config):
-    def build(root, shared):
-        from research_fixtures import candidate
-        from runner_fixtures import ScriptedRunner
-        from support.model import ModelDouble
-        sim = Sim.activated(root, shared=shared, config=config)
-        sim.model = ModelDouble(sim.clock, ScriptedRunner(preparation_candidates=[candidate(str(i)) for i in range(count)],
-                                                          model_rating=RATING))
+def _ready(root, shared, *, count, config):
+    from support.role_answers import candidate
+    from support.default_responder import DefaultResponder
+    from support.model import ModelDouble
+    sim = Sim.activated(root, shared=shared, config=config)
+    sim.model = ModelDouble(sim.clock, DefaultResponder(preparation_candidates=[candidate(str(i)) for i in range(count)],
+                                                      model_rating=RATING))
 
-        def ready(s):
-            tasks = s.runtime['tasks']
-            queued = sorted((a['role'], a.get('target')) for a in s.runtime['queue'])
-            return (len(tasks) == count and queued == sorted(('research_work', tid) for tid in tasks)
-                    and s.runtime['pending_events'] == [])
-        sim.run_until(ready, max_steps=4 * count + 8)
-        return sim
-    return build
+    def ready(s):
+        tasks = s.runtime['tasks']
+        queued = sorted((a['role'], a.get('target')) for a in s.runtime['queue'])
+        return (len(tasks) == count and queued == sorted(('research_work', tid) for tid in tasks)
+                and s.runtime['pending_events'] == [])
+    sim.run_until(ready, max_steps=4 * count + 8)
+    return sim
 
 
 def ready_work_sim(count, **config):
-    name = 'scheduling-ready-work-' + str(count) + '-' + repr(sorted(config.items()))
-    return built(name, _ready(count, config))
+    return built('scheduling-ready-work', _ready, count=count, config=config)
 
 
 def round_robin():

@@ -49,20 +49,23 @@ from do_math import knowledge_records as kr
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.engine import ResearchEngine
 from do_math.execution_profiles import build_profiles, profile_ref
-from research_fixtures import current_state, start_scoped_review
+from support.state_builders import current_state
+from support.review_inputs import start_scoped_review
 from support import branch_gate
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
-from support.sim import _remove
+from support.sim import _remove, assert_template_quiescent
 from support.storage_records import INSTANCE_ID, engine_on, fake_ports, record_store
 from support.storage_role_inputs import review_candidate_state
 
 
 def initialized_families():
     """``(instance, runtime)`` families the product's initialization gives every instance empty (``initialize_state``)."""
+    from support.entry import entry
+    _entry = entry()
     from do_math.initialization import initialize_state
     instance, runtime = initialize_state(instance_id='RI-fixture', goal='fixture', workspace='work',
-                                         config=deepcopy(DEFAULT_CONFIG), source_input='fixture input', clock=FakeClock())
+                                         config=deepcopy(DEFAULT_CONFIG), source_input='fixture input', clock=FakeClock(), host=_entry.ports.host)
     return tuple({key: value for key, value in state.items() if isinstance(value, (dict, list)) and not value}
                  for state in (instance, runtime))
 
@@ -80,6 +83,8 @@ class _Template:
     """
 
     def __init__(self, rounds):
+        from support.entry import entry
+        _entry = entry()
         self.base = Path(tempfile.mkdtemp(prefix='do-math-review-')).resolve()
         atexit.register(_remove, self.base)
         self.live, self.pristine, shared = (self.base / name for name in ('live', 'pristine', 'shared'))
@@ -92,23 +97,26 @@ class _Template:
             instance['config'] = {**deepcopy(DEFAULT_CONFIG), **instance['config']}
             empty_instance, empty_runtime = initialized_families()
             instance = {**empty_instance, **instance, 'object_format': 'sha1'}
-            instance['capacity_constraints'] = build_profiles(DEFAULT_CONFIG)['capacity_constraints']
+            instance['capacity_constraints'] = build_profiles(DEFAULT_CONFIG, host=_entry.ports.host)['capacity_constraints']
             instance, runtime = current_state(instance, {**empty_runtime, **runtime})
             clock, backend = FakeClock(), InProcessGit()
             store = record_store(self.live / 'repository', backend=backend, clock=clock)
-            engine_on(store, instance, runtime, workspace=self.live / 'work', ports=fake_ports(clock, backend))
+            engine, _ = engine_on(store, instance, runtime, workspace=self.live / 'work', ports=fake_ports(clock, backend))
+            assert_template_quiescent(engine)
         self.objects, self.clock = backend.objects, clock.state()
         shutil.copytree(self.live, self.pristine)
         self.used = False
 
     def restore(self):
+        from support.entry import entry
+        _entry = entry()
         branch_gate.used_state(self.key)
         if self.used:
             _remove(self.live)
             shutil.copytree(self.pristine, self.live)
         self.used = True
         clock, backend = FakeClock(*self.clock), InProcessGit({key: dict(value) for key, value in self.objects.items()})
-        return ResearchEngine(self.live / 'repository', INSTANCE_ID, ports=fake_ports(clock, backend))
+        return ResearchEngine(self.live / 'repository', INSTANCE_ID, ports=fake_ports(clock, backend), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
 
 
 _TEMPLATES = {}
@@ -160,13 +168,15 @@ class ReviewScene:
 
     def revise(self, previous_id='K1', new_id='K2'):
         """Create the successor candidate ``new_id`` of ``previous_id`` (one revision later, a longer explanation)."""
+        from support.entry import entry
+        _entry = entry()
         engine = self.engine
         proposal = kr.proposal_view(engine.instance, previous_id)
         candidate = {key: deepcopy(value) for key, value in proposal.items()
                      if key not in {'formal', 'status', 'review_cycle_id', 'review_history', 'formal_result_id', 'exposition_id'}}
         candidate.update(id=new_id, supersedes=previous_id, revision=proposal['revision'] + 1,
                          explanation='Expanded proof by reflexivity', formal_result_ref=proposal['formal_result_id'])
-        engine.instance, _ = kr.create_candidate(engine.instance, candidate, source_ref='test-revision', actor_ref='author')
+        engine.instance, _ = kr.create_candidate(engine.instance, candidate, source_ref='test-revision', actor_ref='author', clock=self.engine.ports.clock)
         return new_id
 
     def execute(self, changes=None, *, record_first=False):

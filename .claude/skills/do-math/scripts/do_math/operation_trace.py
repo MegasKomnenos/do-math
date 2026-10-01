@@ -225,7 +225,7 @@ def workspace_operation(name):
     return decorate
 
 
-def child_environment():
+def child_environment(environment):
     """Only a trace correlation crosses the process boundary, never authority."""
     sink = _sink.get()
-    return {**os.environ, **({'DO_MATH_PARENT_OPERATION_ID':sink.id} if sink else {})}
+    return {**environment, **({'DO_MATH_PARENT_OPERATION_ID':sink.id} if sink else {})}

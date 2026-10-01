@@ -15,7 +15,7 @@ from do_math.execution_profiles import build_profiles
 from do_math.model_policy import selection
 from do_math.session_slots import SessionSlots
 from do_math.state_contract import default_state_contract, validate_record
-from provider_fixtures import PROFILE_CONFIG
+from support.provider_inputs import PROFILE_CONFIG
 from support.fakes.clock import FakeClock
 from support.provider_runs import ProviderJobs
 
@@ -34,10 +34,14 @@ class AdmissionTests(unittest.TestCase):
         self.jobs, self.clock = ProviderJobs(), FakeClock()
 
     def slots(self, runtime, instance, **options):
-        return SessionSlots(runtime, instance, jobs=self.jobs, clock=self.clock, **options)
+        from support.entry import entry
+        _entry = entry()
+        return SessionSlots(runtime, instance, jobs=self.jobs, clock=self.clock, **options, host_id=_entry.host_id)
 
     def test_admission_probe_preserves_history_and_provider_gate_across_capacity_editions(self):
-        instance = {**build_profiles(PROFILE_CONFIG), 'config': deepcopy(PROFILE_CONFIG)}
+        from support.entry import entry
+        _entry = entry()
+        instance = {**build_profiles(PROFILE_CONFIG, host=_entry.ports.host), 'config': deepcopy(PROFILE_CONFIG)}
         profile = work_profile(instance)
         runtime = {'executions': {}, 'reservations': {}, 'provider_waits': {}}
         slots = self.slots(runtime, instance)
@@ -49,7 +53,7 @@ class AdmissionTests(unittest.TestCase):
         limits = deepcopy(PROFILE_CONFIG['session_limits'])
         limits['work'][model] = 1
         instance['config']['session_limits'] = limits
-        execution_profiles.apply_editions(instance, build_profiles(instance['config']))
+        execution_profiles.apply_editions(instance, build_profiles(instance['config'], host=_entry.ports.host))
         provider = profile['ai']['provider']
         runtime['provider_waits']['PW-' + provider] = {
             'id': 'PW-' + provider, 'provider': provider, 'generation': 1,
@@ -75,7 +79,9 @@ class AdmissionTests(unittest.TestCase):
         self.assertEqual(runtime, before)
 
     def test_git_admission_all_or_nothing_and_unknown_release(self):
-        instance = build_profiles(PROFILE_CONFIG)
+        from support.entry import entry
+        _entry = entry()
+        instance = build_profiles(PROFILE_CONFIG, host=_entry.ports.host)
         runtime = {'executions': {}, 'reservations': {}, 'provider_waits': {}}
         profile = work_profile(instance, model=PROFILE_CONFIG['tier_models']['low'])
         slots = self.slots(runtime, instance)
@@ -114,7 +120,9 @@ class AdmissionTests(unittest.TestCase):
         self.assertEqual(slots.snapshot()[profile['ai']['model']]['used'], 3)
 
     def test_admission_accepts_registered_queued_execution_exactly_once(self):
-        instance = build_profiles(PROFILE_CONFIG)
+        from support.entry import entry
+        _entry = entry()
+        instance = build_profiles(PROFILE_CONFIG, host=_entry.ports.host)
         profile = work_profile(instance)
         execution = {**queued('EX-registered'), 'execution_profile_ref': execution_profiles.profile_ref(profile),
                      'owner_activity_id': 'AY-one'}
@@ -132,10 +140,12 @@ class AdmissionTests(unittest.TestCase):
 
 class ProviderGateTests(unittest.TestCase):
     def test_provider_wait_is_canonical_and_serializes_retry_probe(self):
-        instance = build_profiles(PROFILE_CONFIG)
+        from support.entry import entry
+        _entry = entry()
+        instance = build_profiles(PROFILE_CONFIG, host=_entry.ports.host)
         runtime = {'executions': {}, 'reservations': {}, 'provider_waits': {}}
         profile = work_profile(instance)
-        slots = SessionSlots(runtime, instance, jobs=ProviderJobs(), clock=FakeClock())
+        slots = SessionSlots(runtime, instance, jobs=ProviderJobs(), clock=FakeClock(), host_id=_entry.host_id)
 
         def admit(eid, t):
             return slots.acquire(eid, profile=profile, execution=queued(eid), current_time=t)
@@ -158,13 +168,15 @@ class ProviderGateTests(unittest.TestCase):
         self.assertTrue(admit('EX-after', 22))
 
     def test_zero_capacity_and_provider_probe_are_distinct_and_read_only(self):
+        from support.entry import entry
+        _entry = entry()
         config = deepcopy(DEFAULT_CONFIG)
         for model in config['session_limits']['work']:
             config['session_limits']['work'][model] = 0
-        instance = {**build_profiles(config), 'config': config}
+        instance = {**build_profiles(config, host=_entry.ports.host), 'config': config}
         runtime = {'executions': {}, 'reservations': {}, 'provider_waits': {}}
         profile = work_profile(instance)
-        slots = SessionSlots(runtime, instance, jobs=ProviderJobs(), clock=FakeClock())
+        slots = SessionSlots(runtime, instance, jobs=ProviderJobs(), clock=FakeClock(), host_id=_entry.host_id)
         wait = slots.admission_check(profile)['wait']
         self.assertEqual((wait['kind'], wait['next_owner']), ('capacity', 'user'))
         self.assertNotIn('retry_at', wait)
@@ -179,14 +191,16 @@ class ProviderGateTests(unittest.TestCase):
 
 class MixedProviderTests(unittest.TestCase):
     def test_mixed_models_use_existing_selection_and_per_model_work_slots(self):
+        from support.entry import entry
+        _entry = entry()
         config = {**DEFAULT_CONFIG, 'tier_models': {'high': 'claude:opus', 'medium': 'gpt-5.6-sol', 'low': 'claude:haiku'},
                   'session_limits': {'work': {'claude:opus': 1, 'gpt-5.6-sol': 1, 'claude:haiku': 1}}}
-        validate_config(config)
+        validate_config(config, host_id=_entry.host_id)
         self.assertEqual(selection(config, {'role': 'research_plan'}, {}, {})['model'], 'claude:opus')
         self.assertEqual(selection(config, {'role': 'task_contract_review'}, {}, {})['model'], 'gpt-5.6-sol')
-        state = {**build_profiles(config), 'config': config}
+        state = {**build_profiles(config, host=_entry.ports.host), 'config': config}
         runtime = {'executions': {}, 'reservations': {}}
-        slots = SessionSlots(runtime=runtime, instance=state, jobs=ProviderJobs(), clock=FakeClock())
+        slots = SessionSlots(runtime=runtime, instance=state, jobs=ProviderJobs(), clock=FakeClock(), host_id=_entry.host_id)
 
         def acquire(eid, role, model):
             profile = next(p for p in state['execution_profiles'].values()

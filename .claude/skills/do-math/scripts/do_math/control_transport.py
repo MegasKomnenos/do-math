@@ -108,11 +108,8 @@ def _token(clock, nbytes: int) -> str:
 class ControlTransport:
     """A pumpable local transport; it neither starts a daemon nor owns state."""
 
-    def __init__(self, root: Path | str | None = None, *, clock=None):
+    def __init__(self, root: Path | str | None = None, *, clock):
         """``clock`` is the clock port; its random source draws the transport and capability tokens."""
-        if clock is None:
-            from .migration_defaults import clock_or_system
-            clock = clock_or_system(clock)
         self.clock = clock
         self.root = None if root is None else Path(root).resolve()
         self._capabilities: dict[str, dict] = {}

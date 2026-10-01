@@ -18,10 +18,12 @@ from __future__ import annotations
 
 from do_math import delegations
 from do_math import governance as gov
-from record_fixtures import domain_governance
+from support.record_builders import domain_governance
 
 
 def replacement_case():
+    from support.entry import entry
+    _entry = entry()
     i = domain_governance()
     rt = {'tasks': {}, 'executions': {}, 'queue': [], 'status': 'ready',
           'review_cycles': {'RC': {'id': 'RC', 'knowledge_id': 'K', 'revision': 1}},
@@ -33,12 +35,12 @@ def replacement_case():
               'continuity_break_cause': 'permanent_loss'}
     i, rt, _ = gov.apply_decision(i, rt, {'kind': 'grant', 'decision_id': 'GRANT-DECISION',
         'grant': {'id': 'G', 'kind': 'local', 'roles': ['identity_review'], 'reuse': 'reusable',
-                  'included_targets': ['K'], 'purposes': ['record_replacement']}}, source_ref='S')
+                  'included_targets': ['K'], 'purposes': ['record_replacement']}}, source_ref='S', clock=_entry.ports.clock)
     i['decisions']['ORIGINAL'] = {'id': 'ORIGINAL', 'actor': 'user', 'kind': 'review_replacement', 'source_ref': 'S'}
     i, rt, _ = gov.apply_decision(i, rt, {'kind': 'delegation', 'decision_id': 'DD', 'delegation': {
         'id': 'DG', 'status': 'active', 'decision_kind': 'review_replacement', 'original_decision_id': 'ORIGINAL',
         'included_targets': ['K'], 'excluded_targets': [], 'external_effects': [], 'resource_limits': {},
-        'expires_at': '2099-01-01T00:00:00Z'}}, source_ref='S')
+        'expires_at': '2099-01-01T00:00:00Z'}}, source_ref='S', clock=_entry.ports.clock)
     effect = {key: action[key] for key in ('review_cycle_id', 'stage', 'slot', 'round', 'replacement_for',
                                            'continuity_break_cause')}
     case = {'id': 'CASE', 'decision_kind': 'review_replacement', 'target_id': 'K',
@@ -47,8 +49,10 @@ def replacement_case():
 
 
 def checked_replacement_case():
+    from support.entry import entry
+    _entry = entry()
     i, rt, action, case = replacement_case()
-    app = delegations.prepare_application(i, rt, 'DG', case)
+    app = delegations.prepare_application(i, rt, 'DG', case, now_iso=_entry.ports.clock.now())
     for eid, stage in [('INTERPRET', 'interpret'), ('CHECK', 'check')]:
         rt['executions'][eid] = {'id': eid, 'role': 'intent_interpretation', 'delegation_input_sha256': app['input_sha256']}
         delegations.record_judgment(rt, app['id'], {'input_sha256': app['input_sha256'], 'decision': 'within_scope',

@@ -25,15 +25,17 @@ from do_math.execution_profiles import (WINDOW_KEYS, boundary_prompt, build_prof
                                         prepare_prompt, profile_ref, prompt_seal, seal_profile)
 from do_math.windows_job import WindowsJobUnsupportedError
 from do_math.worker_request import validate_execution_binding
-from provider_fixtures import CLAUDE_INIT, CLAUDE_RESULT, PROFILE_CONFIG, claude_stream
-from record_fixtures import surface_state
+from support.provider_inputs import CLAUDE_INIT, CLAUDE_RESULT, PROFILE_CONFIG, claude_stream
+from support.record_builders import surface_state
 from support.fakes.clock import FakeClock
 from support.provider_probes import ObservedCalls
 from support.provider_runs import ProviderJobs, ScriptedCLI, claude_result, dispatched, model_runner
 
 
 def role_profile(config, role):
-    return next(p for p in build_profiles(config)['execution_profiles'].values() if p['role'] == role)
+    from support.entry import entry
+    _entry = entry()
+    return next(p for p in build_profiles(config, host=_entry.ports.host)['execution_profiles'].values() if p['role'] == role)
 
 
 class PinnedCase(unittest.TestCase):
@@ -71,7 +73,9 @@ class ModelLockTests(PinnedCase):
 
 class RequestPinTests(PinnedCase):
     def test_work_has_no_deadline_and_operations_keep_their_call_window(self):
-        profiles = build_profiles(PROFILE_CONFIG)['execution_profiles']
+        from support.entry import entry
+        _entry = entry()
+        profiles = build_profiles(PROFILE_CONFIG, host=_entry.ports.host)['execution_profiles']
         for role, timeout in (('research_work', None), ('operational_review', 600)):
             profile = next(p for p in profiles.values() if p['role'] == role)
             self.assertEqual(set(profile['window']), set(WINDOW_KEYS))
@@ -123,6 +127,8 @@ class RequestPinTests(PinnedCase):
         self.assertFalse((self.root / 'missing').exists())
 
     def test_surface_seal_and_runner_deliver_identical_complete_input(self):
+        from support.entry import entry
+        _entry = entry()
         schema = schema_for('research_preparation')
         state, runtime = surface_state()
         p = next(p for p in state['execution_profiles'].values() if p['role'] == 'research_preparation')
@@ -131,7 +137,7 @@ class RequestPinTests(PinnedCase):
         fitted = prepare_role_input({'action': {}, 'resources': {}, 'knowledge_catalog': [], 'blocked_actions': []},
                                     instance=state, runtime=runtime, role='research_preparation', profile=p,
                                     snapshot='a' * 40, workspace=workspace, activity_id='AC-1', output_schema=schema,
-                                    artifact_prefix='runtime/artifacts/EX-seal')
+                                    artifact_prefix='runtime/artifacts/EX-seal', clock=_entry.ports.clock)
         self.assertIsNone(fitted['overflow'])
         prompt = fitted['prompt']
         self.assertEqual(prompt.count(boundary_prompt(p)), 1)

@@ -14,7 +14,7 @@ import unittest
 
 from do_math.planning import contract_hash
 from do_math.task_scope import validate_withdrawal_scope
-from record_fixtures import task_contract, withdraw_prepared, withdrawable_task
+from support.record_builders import task_contract, withdraw_prepared, withdrawable_task
 
 
 class TaskScopeTests(unittest.TestCase):
@@ -93,12 +93,14 @@ class TaskScopeTests(unittest.TestCase):
 
     def test_submission_rejects_nonwithdraw_and_duplicate_requests(self):
         """The sealed extension schema and the submission check own disposition shape and distinct targets."""
+        from support.entry import entry
+        _entry = entry()
         from do_math.canonical import canonical_json
         from do_math.contracts import schema_for
         from do_math.knowledge import content_hash
         from do_math.submission import payload_issues
-        from research_fixtures import seal_response
-        from runner_fixtures import common
+        from support.role_answers import seal_response
+        from support.default_responder import common
         # A disposition revises an existing task, so the fixed input supplies that task
         # with its content hash, as the engine's task views do.
         task = {**task_contract(), 'id': 'TK-AI', 'status': 'planned', 'producer_execution': 'EX-prep',
@@ -113,7 +115,7 @@ class TaskScopeTests(unittest.TestCase):
                 (workspace / 'activity-extensions.json').write_bytes(canonical_json(extensions))
                 output = common('research_preparation')
                 seal_response(output, context, workspace)
-                return payload_issues(output, schema_for('research_preparation'), context, extensions, workspace)
+                return payload_issues(output, schema_for('research_preparation'), context, extensions, workspace, clock=_entry.ports.clock)
 
         revise = issues([{'task_id': 'TK-AI', 'disposition': 'revise', 'reason': 'x'}])
         self.assertTrue(any(row['path'] == 'activity-extensions.json/task_dispositions/0/disposition' for row in revise))
@@ -141,6 +143,8 @@ class TaskScopeTests(unittest.TestCase):
 class SourceCorrectionTest(unittest.TestCase):
     def test_same_source_bytes_can_revise_a_misread_claim_and_suspend_dependents(self):
         """A corrected reading changes knowledge, not the immutable source bytes."""
+        from support.entry import entry
+        _entry = entry()
         from types import SimpleNamespace
         from do_math import knowledge, knowledge_io, knowledge_records as kr
         engine = SimpleNamespace(instance={}, runtime={'queue': [], 'history': []})
@@ -160,14 +164,14 @@ class SourceCorrectionTest(unittest.TestCase):
             candidate = {key: row[key] for key in ('statement', 'explanation', 'summary', 'lean_code', 'declaration_names', 'dependencies')}
             candidate.update(kind='observation', title=name, dependencies=[ids.get(k, k) for k in row['dependencies']])
             engine.instance, engine.runtime, ids[name] = knowledge_io.import_candidate(
-                engine.instance, engine.runtime, candidate, source_ref='SO-paper', actor_ref='user')
+                engine.instance, engine.runtime, candidate, source_ref='SO-paper', actor_ref='user', clock=_entry.ports.clock)
         changes = {'statement': 'The paper prints n/m.',
                    'explanation': 'The original PDF is unchanged; prior transcription reversed it.'}
         roots = knowledge.revision_roots(engine.instance, ids['KN-reading'])
         impact = knowledge.plan_impact(engine.instance, engine.runtime, roots, [])
         engine.instance, engine.runtime = knowledge.revise_knowledge(
             engine.instance, engine.runtime, ids['KN-reading'], changes, reason='PDF layout audit reads n/m.',
-            actor_ref='EX-correction', declared_impact=impact['computed_impact'])
+            actor_ref='EX-correction', declared_impact=impact['computed_impact'], clock=_entry.ports.clock)
 
         self.assertEqual(engine.instance['sources'][0]['sha256'], 'a' * 64)
         old = engine.instance['knowledge'][ids['KN-reading']]

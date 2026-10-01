@@ -29,7 +29,7 @@ GRANT = {'kind': 'grant', 'grant': {'id': 'HTTP', 'kind': 'http', 'allowed_origi
 
 
 def charter(identifier='CH-1', supersedes=(), goal='New goal'):
-    from record_fixtures import surface_state
+    from support.record_builders import surface_state
     instance, _ = surface_state()
     record = instance['governance']['CH-1']
     record = {k: record[k] for k in ('id', 'kind', 'revision', 'supersedes', 'content')}
@@ -67,13 +67,17 @@ class AdvancedCliTests(CreatedCliTest):
         self.assertEqual(result['reason'], 'supersession must name an active same-kind record')
 
     def test_knowledge_invalidation_and_trust_registration(self):
-        store = ResearchRepository(self.repo, self.instance_id)
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
+        store = ResearchRepository(self.repo, self.instance_id, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         head, instance, runtime = store.load()
         base = {'kind': 'conjecture', 'title': 'K', 'statement': 's', 'explanation': 'e', 'summary': 's',
                 'lean_code': '', 'declaration_names': [], 'dependencies': []}
-        instance, kid = create_candidate(instance, {**base, 'id': 'KN-1'}, source_ref='input-source', actor_ref='EX-author')
+        instance, kid = create_candidate(instance, {**base, 'id': 'KN-1'}, source_ref='input-source', actor_ref='EX-author', clock=_entry.ports.clock)
         instance, child = create_candidate(instance, {**base, 'id': 'KN-2', 'dependencies': [kid]},
-                                           source_ref='input-source', actor_ref='EX-author')
+                                           source_ref='input-source', actor_ref='EX-author', clock=_entry.ports.clock)
         store.save_with_state(head, instance, runtime)
         plan = plan_impact(instance, runtime, [kid], [])
         confirmation = {'plan_digest': plan['digest'], 'decision': 'approve', 'review_ref': 'review',
@@ -127,12 +131,20 @@ class AdvancedCliTests(CreatedCliTest):
 class RunForwardingTests(CreatedCliTest):
     def test_run_watch_is_forwarded_without_running_a_model(self):
         """The watching owner waits on its clock after an idle pass; a pause sent while it waits ends the run."""
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         args = build_parser().parse_args(['run', '--repository', str(self.repo), '--instance', self.instance_id, '--watch'])
-        pause = lambda: control(self.repo, self.instance_id, 'pause', text='stop watching', ports=real_ports())
+        pause = lambda: control(self.repo, self.instance_id, 'pause', text='stop watching', ports=real_ports(environment=_entry.environment), host_id=_entry.host_id)
         with control_at_first_sleep(pause, OWNER_POLL_SECONDS) as arrival, \
                 ObservedCalls(run=ResearchEngine.run, model=ModelRunner.run) as calls, \
                 ReturnedValues(run=ResearchEngine.run) as returned:
-            value, code = cli.execute(args)
+            value, code = cli.execute(args, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
         self.assertEqual(code, 0)
         (arguments,) = calls.captured('run')
         self.assertEqual({key: arguments[key] for key in ('max_steps', 'watch', 'until_active')},

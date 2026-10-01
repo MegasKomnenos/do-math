@@ -18,22 +18,28 @@ import uuid
 
 from do_math.engine import ResearchEngine, initialize
 from do_math.wiring import real_ports
-from research_fixtures import git_init
+from support.fakes.git_backend import make_repository
 from support.scheduling_slots import LIMITS, reserve, slot_sim, slots
+from test_categories import test_group
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 
 
+@test_group('resource')
 class WriterLockTests(unittest.TestCase):
     def test_two_processes_cannot_both_own_the_git_writer(self):
-        ports = real_ports()
+        from support.entry import entry
+        _entry = entry()
+        from support.entry import entry
+        _entry = entry()
+        ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            git_init(root / 'repository')
+            make_repository(root / 'repository')
             created = initialize(root / 'repository', goal='Reservation boundary fixture', workspace=root / 'work',
                                  config={'operator_enabled': True, 'scholarly_enabled': False,
-                                         'session_limits': deepcopy(LIMITS)}, ports=ports)
-            engine = ResearchEngine(root / 'repository', created['instance_id'], ports=ports)
+                                         'session_limits': deepcopy(LIMITS)}, ports=ports, codex_home=_entry.codex_home, host_id=_entry.host_id)
+            engine = ResearchEngine(root / 'repository', created['instance_id'], ports=ports, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
             program = '\n'.join([
                 'import sys', 'from pathlib import Path',
                 'sys.path.insert(0, sys.argv[1])',
@@ -49,11 +55,12 @@ class WriterLockTests(unittest.TestCase):
             self.assertNotIn('acquired', child.stdout)
 
 
+@test_group('resource')
 class NamedJobTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'nt', 'requires a Windows Job')
     def test_slot_waits_for_actual_named_job_termination(self):
         sim = slot_sim()
-        jobs = real_ports().jobs
+        jobs = real_ports(environment=sim.environment).jobs
         engine = sim.engine
         with engine.store.writer_lock():
             self.assertTrue(reserve(sim, 'EX-job', jobs=jobs)[0])

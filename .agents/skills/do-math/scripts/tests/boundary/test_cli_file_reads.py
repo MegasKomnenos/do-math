@@ -13,29 +13,33 @@ import unittest
 
 from do_math.cli import build_parser, execute
 from do_math.repository import ResearchRepository
-from research_fixtures import current_state
+from support.state_builders import current_state
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import make_repository
 
 
 class CliFileReadTests(unittest.TestCase):
     def test_file_query_and_read_include_resolved_snapshot_provenance(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as directory:
             root = make_repository(Path(directory))
             identifier = FakeClock().new_id('RI')
-            store = ResearchRepository(root, identifier)
+            store = ResearchRepository(root, identifier, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
             head = store.initialize(*current_state(
                 {'id': identifier, 'sources': [], 'knowledge': {}, 'trust_environments': {}},
                 {'tasks': {}, 'executions': {}, 'queue': [], 'status': 'ready', 'question_links': []}))
             parser = build_parser()
             query, code = execute(parser.parse_args(['query', '--repository', str(root), '--instance', identifier,
-                                                     '--files', '--prefix', 'research/', '--limit', '1']))
+                                                     '--files', '--prefix', 'research/', '--limit', '1']), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
             self.assertEqual(code, 0)
             self.assertEqual(query['provenance']['snapshot'], head)
             self.assertEqual(query['provenance']['filters']['prefix'], 'research/')
             path = store.list_files('research/', head)[0]
             read, code = execute(parser.parse_args(['read', '--repository', str(root), '--instance', identifier,
-                                                    '--path', path]))
+                                                    '--path', path]), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
             self.assertEqual(code, 0)
             self.assertEqual(read['snapshot'], head)
             self.assertEqual(len(read['sha256']), 64)

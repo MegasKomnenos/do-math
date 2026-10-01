@@ -6,7 +6,6 @@ from .values import is_sha256
 from .lean_evidence import FORMAL_EVIDENCE_FIELDS, forbidden_axioms, lean_source_sha256
 from .planning import record_index
 from .canonical import exact_content_hash
-from .migration_defaults import clock_or_system
 
 FAMILIES = ("knowledge", "formal_results", "expositions", "identity_assessments", "assessment_uses")
 # planning.RECORD_FAMILIES keys of the research-space records that all_records indexes.
@@ -55,9 +54,8 @@ def exposition_items(candidate):
     return items
 
 
-def create_candidate(output, candidate, *, source_ref, actor_ref, clock=None):
+def create_candidate(output, candidate, *, source_ref, actor_ref, clock):
     """Write one checked candidate into the caller's own copy; import_candidate owns the checks."""
-    clock = clock_or_system(clock)
     for family in FAMILIES:
         output.setdefault(family, {})
     kid = candidate.get("id") or clock.new_id("KN")
@@ -265,13 +263,12 @@ def record_formal_result(instance, knowledge_id, verification, trust_environment
     return output
 
 
-def record_identity_assessment(instance, knowledge_id, assessment, policy_ref, *, runtime, clock=None):
+def record_identity_assessment(instance, knowledge_id, assessment, policy_ref, *, runtime, clock):
     return seal_identity_assessment(deepcopy(instance), knowledge_id, assessment, policy_ref, runtime=runtime, clock=clock)
 
 
-def seal_identity_assessment(output, knowledge_id, assessment, policy_ref, *, runtime, clock=None):
+def seal_identity_assessment(output, knowledge_id, assessment, policy_ref, *, runtime, clock):
     """Seal into caller-owned state in place; the caller discards it if this raises."""
-    clock = clock_or_system(clock)
     if not isinstance(policy_ref, str) or not policy_ref.strip():
         raise ValueError("identity assessment requires a fixed policy reference")
     for family in FAMILIES:

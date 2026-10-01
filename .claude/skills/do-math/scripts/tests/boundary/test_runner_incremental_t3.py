@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from test_categories import test_group
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 TESTS = ['unit.test_ids', 'unit.test_storage_json_digests']
@@ -20,6 +21,7 @@ def t3(store, output, *extra):
     return json.loads((output / 'report.json').read_text(encoding='utf-8'))
 
 
+@test_group('resource')
 class IncrementalT3Tests(unittest.TestCase):
     def test_a_second_run_reuses_the_unchanged_modules_with_the_same_gate_and_a_full_run_measures_again(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))

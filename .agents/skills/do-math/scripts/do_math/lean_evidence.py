@@ -246,6 +246,15 @@ def check_completion_status(data) -> None:
     if (not isinstance(data, dict) or data.get('state') not in {'exited', 'worker_error'}
             or (data['state'] == 'exited' and type(data.get('exit')) is not int)):
         raise ValueError('invalid completion status')
+    if 'os_error' in data:
+        error = data['os_error']
+        fields = {'errno', 'strerror', 'filename', 'winerror', 'filename2', 'message'}
+        if (data['state'] != 'worker_error' or not isinstance(error, dict) or set(error) != fields
+                or any(error[name] is not None and type(error[name]) is not int for name in ('errno', 'winerror'))
+                or not isinstance(error['message'], str)
+                or any(error[name] is not None and not isinstance(error[name], str)
+                       for name in ('strerror', 'filename', 'filename2'))):
+            raise ValueError('invalid completion OS error')
 
 
 def is_lake_project_command(command) -> bool:

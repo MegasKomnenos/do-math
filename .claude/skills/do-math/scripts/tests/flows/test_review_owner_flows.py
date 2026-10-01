@@ -113,6 +113,7 @@ class InputOverflowTests(unittest.TestCase):
                      'explanation': fragment * (sim.instance['config']['max_input_bytes'] // len(fragment) + 1),
                      'lean_code': 'theorem overflow : 1 = 1 := rfl', 'declaration_names': ['overflow'], 'dependencies': []}
         applied(sim, 'knowledge', config={'operation': 'import', 'candidate': candidate})
+        sim.lean.allow(candidate['lean_code'], ['overflow'], signatures={'overflow': 'overflow : 1 = 1'})
         kid = theorem_id(sim, 'Overflow fixture')
         sim.run_until(lambda s: s.instance['knowledge'][kid].get('review_cycle_id'), max_steps=3)
         cid = sim.instance['knowledge'][kid]['review_cycle_id']
@@ -139,7 +140,7 @@ class InputOverflowTests(unittest.TestCase):
         profile = engine._execution_profile(plan)
         fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
             role='research_plan', profile=profile, snapshot=engine.head, workspace=workspace,
-            activity_id='AY-plan-input', artifact_prefix='runtime/artifacts/BA-plan-input')
+            activity_id='AY-plan-input', artifact_prefix='runtime/artifacts/BA-plan-input', clock=sim.ports.clock)
         followup = fitted['validation_context']['review_followups'][0]
         self.assertEqual(followup['id'], cid)
         restored = json.loads((workspace / followup['source_ref']['path']).read_bytes())

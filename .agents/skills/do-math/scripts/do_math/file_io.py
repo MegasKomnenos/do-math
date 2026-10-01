@@ -175,9 +175,11 @@ def file_fingerprint(path):
 RACY_NS=2_000_000_000
 
 
-def fingerprint_settled(fingerprint):
+def fingerprint_settled(fingerprint, *, now_ns=None, racy_ns=None):
     """True when a fingerprint may justify skipping a content read."""
-    return time.time_ns()-max(fingerprint[1],fingerprint[2])>RACY_NS  # layer: file times are OS wall-clock times, so the racy check reads the OS clock
+    if now_ns is None:
+        now_ns = time.time_ns()  # layer: file metadata defaults to the OS wall clock
+    return now_ns-max(fingerprint[1],fingerprint[2])>(RACY_NS if racy_ns is None else racy_ns)
 
 
 

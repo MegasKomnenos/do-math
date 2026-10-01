@@ -30,8 +30,8 @@ import json
 import unittest
 
 from do_math.planning import seal_contract_review, task_ready
-from research_fixtures import candidate, contract_review
-from runner_fixtures import ScriptedRunner, common
+from support.role_answers import candidate, contract_review
+from support.default_responder import DefaultResponder, common
 from support.engine_lifecycle import applied, clear_work, only, queue_work, task
 from support.knowledge_currentness import await_applied, currentness_model
 from support.model import Answer
@@ -74,7 +74,8 @@ class SourceCurrentnessTests(unittest.TestCase):
         unfinished_instance['goal_status'] = 'unsolved'
         downstream['reviews'] = [seal_contract_review(downstream, contract_review({'task': downstream}),
             unfinished_instance, engine.runtime, execution_id='EX-downstream-review')]
-        self.assertEqual(task_ready(downstream, unfinished_instance, engine.runtime)['state'], 'ready')
+        self.assertEqual(task_ready(downstream, unfinished_instance, engine.runtime,
+                                   evaluation_context=engine._evaluation_context())['state'], 'ready')
         engine._save()
         source.write_text('new', encoding='utf-8')
         applied(sim, 'source', config={'path': str(source)})
@@ -233,7 +234,7 @@ class OperationalBasisReplacementTests(unittest.TestCase):
         self.assertNotIn('refresh', followups[0])
 
 
-class InsightWork(ScriptedRunner):
+class InsightWork(DefaultResponder):
     """The default responder, except that research work records one insight citing the source ``basis.txt``."""
 
     def respond(self, role, ctx, workspace):

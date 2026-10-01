@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from test_categories import test_group
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 TESTS = ['unit.test_ids', 'unit.test_storage_json_digests']
@@ -43,6 +44,7 @@ def executed(output, module):
     return set(next(value['executed_lines'] for path, value in files.items() if path.endswith(module)))
 
 
+@test_group('resource')
 class ParallelT3Tests(unittest.TestCase):
     def test_parallel_measurement_matches_the_one_process_gate_and_credits(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))

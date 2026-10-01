@@ -21,8 +21,8 @@ from do_math import contracts, integration, submission
 from do_math.canonical import canonical_json
 from do_math.git_store import GitStateStore
 from do_math.governance import preserve_source
-from record_fixtures import research_work_context, two_observation_output
-from research_fixtures import candidate, review_items
+from support.record_builders import research_work_context, two_observation_output
+from support.role_answers import candidate, review_items
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import make_fake, make_repository
 from support.provider_probes import ObservedCalls
@@ -57,8 +57,10 @@ class CheckHistoryTests(unittest.TestCase):
                                               "authority_refs": []}]}
 
     def check(self, value):
+        from support.entry import entry
+        _entry = entry()
         self.draft.write_text(json.dumps(value), encoding="utf-8")
-        return submission.producer_check(self.workspace, self.draft)
+        return submission.producer_check(self.workspace, self.draft, clock=_entry.ports.clock)
 
     def test_wire_candidate_id_revision_and_profiles_match_stored_contract(self):
         wire = candidate()
@@ -95,19 +97,23 @@ class CheckHistoryTests(unittest.TestCase):
         self.assertEqual(first["schema_ref"], evidence[0]["schema_ref"])
 
     def test_central_submission_does_not_require_optional_producer_history(self):
+        from support.entry import entry
+        _entry = entry()
         first = self.check({k: v for k, v in self.good.items() if k != 'report'})
         self.check(self.good)
         (self.workspace / 'checks' / (first['id'] + '.json')).unlink()
         sealed = submission.seal_submission(self.workspace, '.scratch/draft.json', execution_id='EX-1',
-            context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024)
+            context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024, clock=_entry.ports.clock)
         self.assertTrue(sealed['passed'], sealed['check']['issues'])
         self.assertEqual(sealed['check']['mode'], 'receiver')
         self.assertFalse(any(path.startswith('files/checks/') for path in sealed['artifacts']))
 
     def test_receiver_parse_failure_is_resolved_by_a_later_valid_receiver_check(self):
+        from support.entry import entry
+        _entry = entry()
         def seal():
             return submission.seal_submission(self.workspace, '.scratch/draft.json', execution_id='EX-1',
-                context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024)['check']
+                context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024, clock=_entry.ports.clock)['check']
         self.draft.write_text('{', encoding='utf-8')
         failed = seal()
         self.draft.write_text(json.dumps(self.good), encoding='utf-8')
@@ -119,18 +125,22 @@ class CheckHistoryTests(unittest.TestCase):
         self.assertEqual([], submission.summarize_checks([failed, passed], history_window=2)['unresolved'])
 
     def test_changed_failure_message_is_not_a_successful_repair(self):
+        from support.entry import entry
+        _entry = entry()
         first = submission.check_submission({**self.good, "report": 1}, self.schema, self.context, {}, self.workspace,
-            mode="producer", execution_id="EX-1", tool_sha256="same")
+            mode="producer", execution_id="EX-1", tool_sha256="same", clock=_entry.ports.clock)
         second = submission.check_submission({**self.good, "report": False}, self.schema, self.context, {},
-            self.workspace, mode="producer", execution_id="EX-1", tool_sha256="same", previous=first)
+            self.workspace, mode="producer", execution_id="EX-1", tool_sha256="same", previous=first, clock=_entry.ports.clock)
         self.assertEqual([], second["repairs"])
 
     def test_different_target_does_not_resolve_a_failure(self):
+        from support.entry import entry
+        _entry = entry()
         first = submission.check_submission({k: v for k, v in self.good.items() if k != "report"}, self.schema,
-            self.context, {}, self.workspace, mode="producer", execution_id="EX-1", tool_sha256="same")
+            self.context, {}, self.workspace, mode="producer", execution_id="EX-1", tool_sha256="same", clock=_entry.ports.clock)
         other = {**self.context, "action": {**self.context["action"], "target": "TK-other"}}
         after = submission.check_submission(self.good, self.schema, other, {}, self.workspace,
-            mode="producer", execution_id="EX-1", tool_sha256="same", previous=first)
+            mode="producer", execution_id="EX-1", tool_sha256="same", previous=first, clock=_entry.ports.clock)
         self.assertEqual([], after["repairs"])
 
     def test_snapshot_summary_rejects_nonobject_central_check(self):
@@ -144,6 +154,8 @@ class CheckHistoryTests(unittest.TestCase):
                 read_artifact=lambda path, snapshot: raw, history_window=1)
 
     def test_snapshot_summary_reads_real_git_central_checks_and_counts_attempts(self):
+        from support.entry import entry
+        _entry = entry()
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         store = GitStateStore(make_repository(Path(directory.name)), 'RI-01ARZ3NDEKTSV4RRFFQ69G5FAV',
@@ -152,7 +164,7 @@ class CheckHistoryTests(unittest.TestCase):
         for number, output in enumerate(({k: v for k, v in self.good.items() if k != 'report'}, self.good), 1):
             self.draft.write_bytes(canonical_json(output))
             sealed = submission.seal_submission(self.workspace, '.scratch/draft.json', execution_id='EX-1',
-                context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024)
+                context=self.context, schema=self.schema, max_artifact_bytes=1024 * 1024, clock=_entry.ports.clock)
             prefix = f'runtime/artifacts/BA-{number}/submission/'
             artifacts = {prefix + name: raw for name, raw in sealed['artifacts'].items()}
             head = store.publish(head, {'research/fixture.json': b'{}', **artifacts}).head
@@ -193,6 +205,8 @@ class CheckHistoryTests(unittest.TestCase):
 
 class SubmissionBoundaryTests(unittest.TestCase):
     def test_knowledge_change_cannot_self_confirm_its_impact(self):
+        from support.entry import entry
+        _entry = entry()
         output = two_observation_output()
         output["knowledge"] = []
         output["integration_bundles"] = [{"integration_id": "IN-change", "members": [
@@ -208,12 +222,14 @@ class SubmissionBoundaryTests(unittest.TestCase):
             jsonschema.validate(extensions, submission.extension_schema({"role": "research_work"}))
         with tempfile.TemporaryDirectory() as directory:
             issues = submission.payload_issues(output, contracts.schema_for("research_work"), ctx, extensions,
-                                               Path(directory))
+                                               Path(directory), clock=_entry.ports.clock)
         self.assertTrue(any(row["rule_id"] == "schema.additionalProperties"
                             and row["path"].startswith("activity-extensions.json/knowledge_changes/0")
                             for row in issues), issues)
 
     def test_central_capture_uses_exact_current_draft_after_optional_local_check(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             ctx = {**research_work_context(), 'execution_id': 'EX-1'}
@@ -221,16 +237,18 @@ class SubmissionBoundaryTests(unittest.TestCase):
             install(workspace, ctx, schema)
             draft = workspace / 'draft.json'
             draft.write_bytes(canonical_json(two_observation_output()))
-            producer = submission.producer_check(workspace, draft)
+            producer = submission.producer_check(workspace, draft, clock=_entry.ports.clock)
             changed = draft.read_bytes() + b' \r\n'
             draft.write_bytes(changed)
             sealed = submission.seal_submission(workspace, 'draft.json', execution_id='EX-1', context=ctx,
-                schema=schema, max_artifact_bytes=1024 * 1024)
+                schema=schema, max_artifact_bytes=1024 * 1024, clock=_entry.ports.clock)
             self.assertTrue(sealed['passed'], sealed['check']['issues'])
             self.assertEqual(sealed['artifacts']['output.json'], changed)
             self.assertNotEqual(sealed['intent']['output_sha256'], producer['output_sha256'])
 
     def test_central_check_uses_issued_schema_despite_local_tool_mutation(self):
+        from support.entry import entry
+        _entry = entry()
         for relative in ('input/submission/schema.json', 'input/tools/submission-support.zip'):
             with self.subTest(path=relative), tempfile.TemporaryDirectory() as directory:
                 workspace = Path(directory)
@@ -240,11 +258,13 @@ class SubmissionBoundaryTests(unittest.TestCase):
                 (workspace / 'draft.json').write_bytes(canonical_json(two_observation_output()))
                 (workspace / relative).write_bytes(b'broken optional local tool input')
                 sealed = submission.seal_submission(workspace, 'draft.json', execution_id='EX-1',
-                    context=ctx, schema=schema, max_artifact_bytes=1024 * 1024)
+                    context=ctx, schema=schema, max_artifact_bytes=1024 * 1024, clock=_entry.ports.clock)
                 self.assertTrue(sealed['passed'], sealed['check']['issues'])
                 self.assertEqual(sealed['check']['schema_ref'], contracts.schema_reference(schema))
 
     def test_central_rejection_preserves_malformed_draft_and_available_sidecar(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             ctx = {**research_work_context(), 'execution_id': 'EX-1'}
@@ -256,13 +276,15 @@ class SubmissionBoundaryTests(unittest.TestCase):
             (workspace / 'checks').mkdir(exist_ok=True)
             (workspace / 'checks/broken.json').write_bytes(b'{broken optional local diagnostic')
             sealed = submission.seal_submission(workspace, 'draft.json', execution_id='EX-1',
-                context=ctx, schema=schema, max_artifact_bytes=1024 * 1024)
+                context=ctx, schema=schema, max_artifact_bytes=1024 * 1024, clock=_entry.ports.clock)
             self.assertFalse(sealed['passed'])
             self.assertEqual(sealed['artifacts']['output.json'], raw)
             self.assertEqual(sealed['artifacts']['extensions.json'], sidecar)
             self.assertEqual(sealed['check']['issues'][0]['rule_id'], 'submission.parse')
 
     def test_producer_check_binds_exact_schema_and_raw_output_on_parse_failure(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             ctx = research_work_context()
@@ -271,7 +293,7 @@ class SubmissionBoundaryTests(unittest.TestCase):
             install(workspace, ctx, schema)
             draft = workspace / "broken.json"
             draft.write_bytes(b'{broken')
-            result = submission.producer_check(workspace, draft)
+            result = submission.producer_check(workspace, draft, clock=_entry.ports.clock)
             self.assertFalse(result["passed"])
             self.assertEqual(contracts.schema_reference(schema), result["schema_ref"])
             self.assertEqual(hashlib.sha256(b'{broken').hexdigest(), result["output_sha256"])
@@ -279,6 +301,8 @@ class SubmissionBoundaryTests(unittest.TestCase):
             self.assertEqual(b'{broken', draft.read_bytes())
 
     def test_central_preview_does_not_disclose_private_candidate_or_exception(self):
+        from support.entry import entry
+        _entry = entry()
         private = {"private_reviews": {"secret-review": {"decision": "secret-judgment"}}}
         with tempfile.TemporaryDirectory() as directory:
             def reject(*args):
@@ -286,7 +310,7 @@ class SubmissionBoundaryTests(unittest.TestCase):
             result = submission.preview_submission(two_observation_output(), contracts.schema_for("research_work"),
                 research_work_context(), {}, Path(directory), execution_id="EX-1", tool_sha256="same",
                 instance=private, runtime={}, apply_bundle=reject,
-                validate_current=lambda *a: None, validate_candidate=lambda *a: None)
+                validate_current=lambda *a: None, validate_candidate=lambda *a: None, clock=_entry.ports.clock)
             self.assertNotIn("secret-", json.dumps(result))
             self.assertNotIn("instance", result)
             self.assertNotIn("runtime", result)
@@ -294,6 +318,8 @@ class SubmissionBoundaryTests(unittest.TestCase):
             self.assertFalse(result["passed"])
 
     def test_ineligible_sealed_preview_has_the_same_response_skeleton_without_application(self):
+        from support.entry import entry
+        _entry = entry()
         check = {"id": "MC-sealed", "schema_ref": "schema-ref", "input_hashes": {"raw_output": "h"},
                  "capture_eligible": False, "issues": [{"rule_id": "submission.parse", "message": "broken"}]}
 
@@ -301,7 +327,7 @@ class SubmissionBoundaryTests(unittest.TestCase):
             raise AssertionError("an ineligible capture is never applied")
         result = submission.preview_submission(None, contracts.schema_for("research_work"), research_work_context(),
             None, Path("."), execution_id="EX-1", tool_sha256="same", instance={}, runtime={}, check=check,
-            apply_bundle=apply, validate_current=apply, validate_candidate=apply)
+            apply_bundle=apply, validate_current=apply, validate_candidate=apply, clock=_entry.ports.clock)
         self.assertEqual(result, {"contract_id": submission.PREVIEW_CONTRACT_ID, "check_id": "MC-sealed",
             "schema_ref": "schema-ref", "input_hashes": {"raw_output": "h"}, "authoritative": False,
             "passed": False, "issues": check["issues"], "bundles": [],
@@ -309,6 +335,8 @@ class SubmissionBoundaryTests(unittest.TestCase):
                             "future_application_currentness"]})
 
     def test_intent_source_coverage_is_checked_before_independent_review(self):
+        from support.entry import entry
+        _entry = entry()
         action = {"role": "intent_interpretation", "stage": "interpret"}
         text = "첫째 둘째"
         ctx = {**research_work_context(), "action": action, "user_request": {"id": "UC-1", "text": text},
@@ -319,12 +347,14 @@ class SubmissionBoundaryTests(unittest.TestCase):
             integration_bundles=[dict(integration_id="IN-1", members=["output"], impact_set=[], authority_refs=[])])
         with tempfile.TemporaryDirectory() as directory:
             schema = contracts.action_schema(action)
-            issues = submission.payload_issues(output, schema, ctx, {}, Path(directory))
+            issues = submission.payload_issues(output, schema, ctx, {}, Path(directory), clock=_entry.ports.clock)
             self.assertTrue(any(row["rule_id"] == "intent.import_units" for row in issues), issues)
             output["import_units"][0]["source_range"]["end"] = len(text)
-            self.assertEqual([], submission.payload_issues(output, schema, ctx, {}, Path(directory)))
+            self.assertEqual([], submission.payload_issues(output, schema, ctx, {}, Path(directory), clock=_entry.ports.clock))
 
     def test_contract_review_evidence_must_be_supplied(self):
+        from support.entry import entry
+        _entry = entry()
         output = dict(summary="review", used_sources=[], questions=[],
                       **review_items(["MISSING"], next_owner="research"),
                       integration_bundles=[dict(integration_id="IN-1", members=["output"], impact_set=[],
@@ -332,19 +362,21 @@ class SubmissionBoundaryTests(unittest.TestCase):
         ctx = {**research_work_context(), "action": {"role": "task_contract_review"}}
         with tempfile.TemporaryDirectory() as directory:
             issues = submission.payload_issues(output, contracts.schema_for("task_contract_review"), ctx, {},
-                                               Path(directory))
+                                               Path(directory), clock=_entry.ports.clock)
             self.assertTrue(any(row["rule_id"] == "submission.explicit_reference" for row in issues))
 
     def test_machine_check_compares_checkpoint_failures_in_both_modes(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             ctx = research_work_context()
             install(workspace, ctx, contracts.schema_for("research_work"))
             (workspace / "checkpoint.json").write_text('{}', encoding="utf-8")
             args = (two_observation_output(), contracts.schema_for("research_work"), ctx, {}, workspace)
-            producer = submission.check_submission(*args, mode="producer", execution_id="EX-1", tool_sha256="same")
+            producer = submission.check_submission(*args, mode="producer", execution_id="EX-1", tool_sha256="same", clock=_entry.ports.clock)
             receiver = submission.check_submission(*args, mode="receiver", execution_id="EX-1", tool_sha256="same",
-                                                   previous=producer)
+                                                   previous=producer, clock=_entry.ports.clock)
             self.assertFalse(producer["passed"])
             self.assertTrue(any(row["path"] == "checkpoint.json" for row in producer["issues"]))
             self.assertEqual("matched", receiver["comparison"]["status"])
@@ -359,6 +391,8 @@ class SubmissionBoundaryTests(unittest.TestCase):
         self.assertEqual(failure["issue_id"], result["unresolved"][0]["issue_id"])
 
     def test_comparison_uses_fixed_context_not_unreferenced_local_input_files(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             (workspace / "input").mkdir()
@@ -366,14 +400,14 @@ class SubmissionBoundaryTests(unittest.TestCase):
             path.write_text("before", encoding="utf-8")
             args = (two_observation_output(), contracts.schema_for("research_work"), research_work_context(), {},
                     workspace)
-            before = submission.check_submission(*args, mode="producer", execution_id="EX-1", tool_sha256="same")
+            before = submission.check_submission(*args, mode="producer", execution_id="EX-1", tool_sha256="same", clock=_entry.ports.clock)
             path.write_text("after", encoding="utf-8")
             after = submission.check_submission(*args, mode="receiver", execution_id="EX-1", tool_sha256="same",
-                                                previous=before)
+                                                previous=before, clock=_entry.ports.clock)
             self.assertEqual("matched", after["comparison"]["status"])
             changed_context = {**args[2], "snapshot": "new-authoritative-input"}
             changed = submission.check_submission(args[0], args[1], changed_context, {}, workspace,
-                mode="receiver", execution_id="EX-1", tool_sha256="same", previous=before)
+                mode="receiver", execution_id="EX-1", tool_sha256="same", previous=before, clock=_entry.ports.clock)
             self.assertEqual("input_changed", changed["comparison"]["status"])
 
     def test_same_response_can_propose_a_kind_definition(self):
@@ -381,22 +415,26 @@ class SubmissionBoundaryTests(unittest.TestCase):
         self.assertIn("kind_definitions", props)
 
     def test_valid_schema_bundle_is_semantically_checked_even_with_invalid_sibling(self):
+        from support.entry import entry
+        _entry = entry()
         output = two_observation_output()
         output["knowledge"][0]["statement"] = ""
         del output["knowledge"][1]["statement"]
         with tempfile.TemporaryDirectory() as directory:
             issues = submission.payload_issues(output, contracts.schema_for("research_work"), research_work_context(),
-                                               {}, Path(directory))
+                                               {}, Path(directory), clock=_entry.ports.clock)
         self.assertEqual({"IN-A", "IN-B"}, {row.get("integration_id") for row in issues})
 
     def test_malformed_metadata_returns_its_bundle_without_losing_independent_output(self):
+        from support.entry import entry
+        _entry = entry()
         for value in (None, [], 1, 'invalid', {'title': []}):
             with self.subTest(value=value), tempfile.TemporaryDirectory() as directory:
                 output = two_observation_output()
                 output['integration_bundles'][0]['members'].append('activity-extensions.json/knowledge_metadata/0')
                 extensions = {'knowledge_metadata': [value]}
                 issues = submission.payload_issues(output, contracts.schema_for('research_work'),
-                    research_work_context(), extensions, Path(directory))
+                    research_work_context(), extensions, Path(directory), clock=_entry.ports.clock)
                 self.assertTrue(issues)
                 self.assertEqual({row['integration_id'] for row in issues}, {'IN-A'})
                 self.assertTrue(all(row['rule_id'] == 'schema.type' for row in issues), issues)
@@ -409,26 +447,30 @@ class SubmissionBoundaryTests(unittest.TestCase):
         self.assertIn("revision_requests", schema["properties"])
 
     def test_valid_bundles_pass_same_preview_checker(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             issues = submission.payload_issues(two_observation_output(), contracts.schema_for("research_work"),
-                                               research_work_context(), {}, Path(directory))
+                                               research_work_context(), {}, Path(directory), clock=_entry.ports.clock)
         self.assertEqual([], issues)
 
     def test_machine_checks_compare_exact_inputs_and_preserve_skipped_checks(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             args = (two_observation_output(), contracts.schema_for("research_work"), research_work_context(), {},
                     Path(directory))
-            producer = submission.check_submission(*args, mode="producer", execution_id="EX-1", tool_sha256="same")
+            producer = submission.check_submission(*args, mode="producer", execution_id="EX-1", tool_sha256="same", clock=_entry.ports.clock)
             receiver = submission.check_submission(*args, mode="receiver", execution_id="EX-1", tool_sha256="same",
-                                                   previous=producer)
+                                                   previous=producer, clock=_entry.ports.clock)
             self.assertEqual("matched", receiver["comparison"]["status"])
             forged = deepcopy(producer)
             forged["issues"] = [{"rule_id": "x", "path": "output", "issue_id": "x", "message": "x"}]
             receiver = submission.check_submission(*args, mode="receiver", execution_id="EX-1", tool_sha256="same",
-                                                   previous=forged)
+                                                   previous=forged, clock=_entry.ports.clock)
             self.assertEqual("tool_defect", receiver["comparison"]["status"])
             malformed = submission.check_submission({}, contracts.schema_for("research_work"), research_work_context(),
-                {}, Path(directory), mode="producer", execution_id="EX-1", tool_sha256="same")
+                {}, Path(directory), mode="producer", execution_id="EX-1", tool_sha256="same", clock=_entry.ports.clock)
             self.assertIn("payload_semantics", malformed["not_checked"])
             self.assertTrue(all("issue_id" in row and "rule_id" in row for row in malformed["issues"]))
 
@@ -463,52 +505,62 @@ class SubmissionShapeTests(unittest.TestCase):
         return output, contracts.schema_for('maintenance'), context
 
     def test_unsplit_explicit_and_generated_bundles_check_shapes_once(self):
+        from support.entry import entry
+        _entry = entry()
         for explicit in (True, False):
             output, schema, context = self.fixture(explicit=explicit)
             original = deepcopy(output)
             with self.subTest(explicit=explicit):
                 with ObservedCalls(schema=submission._schema_issues) as checks:
-                    self.assertEqual(submission.payload_issues(output, schema, context, {}, Path('.')), [])
+                    self.assertEqual(submission.payload_issues(output, schema, context, {}, Path('.'), clock=_entry.ports.clock), [])
                 self.assertEqual(checks.count('schema'), 2)  # Response and extensions, once each.
                 self.assertIn('integration_bundles', checks.captured('schema')[0]['value'])
                 self.assertEqual(output, original)
 
     def test_inner_entry_still_rejects_unchecked_malformed_input(self):
+        from support.entry import entry
+        _entry = entry()
         output, schema, context = self.fixture()
         output.pop('report')
-        inner = submission._payload_issues(output, schema, context, {}, Path('.'))
-        outer = submission.payload_issues(output, schema, context, {}, Path('.'))
+        inner = submission._payload_issues(output, schema, context, {}, Path('.'), clock=_entry.ports.clock)
+        outer = submission.payload_issues(output, schema, context, {}, Path('.'), clock=_entry.ports.clock)
         self.assertTrue(inner)
         self.assertEqual(outer, inner)
         self.assertTrue(all(row['rule_id'].startswith('schema.') for row in inner))
 
     def test_early_bundle_rejection_keeps_schema_errors_first(self):
+        from support.entry import entry
+        _entry = entry()
         output, schema, context = self.fixture()
         output.pop('report')
         output['integration_bundles'][0]['members'] = ['unknown']
         expected = (submission._schema_issues(output, schema, 'output') +
             submission._schema_issues({}, submission.extension_schema(context['action']), 'activity-extensions.json') +
             integration.inspect_bundles(output, {}, context))
-        self.assertEqual(submission.payload_issues(output, schema, context, {}, Path('.')), expected)
+        self.assertEqual(submission.payload_issues(output, schema, context, {}, Path('.'), clock=_entry.ports.clock), expected)
         self.assertTrue(expected[0]['rule_id'].startswith('schema.'))
 
     def test_split_keeps_local_errors_and_checks_valid_siblings(self):
+        from support.entry import entry
+        _entry = entry()
         output = two_observation_output()
         output['knowledge'][0]['statement'] = ''  # Semantic defect in A.
         del output['knowledge'][1]['statement']  # Schema defect in B.
         with ObservedCalls(schema=submission._schema_issues) as checks:
             issues = submission.payload_issues(output, contracts.schema_for('research_work'), research_work_context(),
-                                               {}, Path('.'))
+                                               {}, Path('.'), clock=_entry.ports.clock)
         self.assertEqual({row['integration_id'] for row in issues}, {'IN-A', 'IN-B'})
         self.assertEqual(checks.count('schema'), 6)  # Original and both distinct slices.
 
     def test_split_original_validation_is_not_replaced_by_generated_bundle(self):
+        from support.entry import entry
+        _entry = entry()
         output = two_observation_output()
         output.pop('integration_bundles')
         schema = contracts.schema_for('research_work')
         schema['required'].append('integration_bundles')
         supplied = {**research_work_context(), 'execution_id': 'EX-fixed'}
-        issues = submission.payload_issues(output, schema, supplied, {}, Path('.'))
+        issues = submission.payload_issues(output, schema, supplied, {}, Path('.'), clock=_entry.ports.clock)
         self.assertTrue(any(row['rule_id'] == 'schema.required' and
                             row['path'] == 'output/integration_bundles' for row in issues))
         self.assertNotIn('integration_bundles', output)

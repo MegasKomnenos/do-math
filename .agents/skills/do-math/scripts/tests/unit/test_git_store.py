@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import tempfile
 import unittest
 
-from contracts.test_port_git_backend import make_repository
+from support.fakes.git_backend import make_repository
 from do_math.git_store import GitStateStore
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import make_fake

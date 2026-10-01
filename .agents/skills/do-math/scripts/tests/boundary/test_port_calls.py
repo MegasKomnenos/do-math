@@ -1,13 +1,15 @@
 """Thread side of the calls port contract."""
 import unittest
 
-from contracts.test_port_calls import CallsContract
+from support.port_contracts.calls import CallsContract
 from do_math.wiring import real_ports
 
 
 class ThreadCallsContract(CallsContract, unittest.TestCase):
     def make(self):
-        return real_ports().calls
+        from support.entry import entry
+        _entry = entry()
+        return real_ports(environment=_entry.environment).calls
 
 
 if __name__ == '__main__':

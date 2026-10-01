@@ -84,7 +84,7 @@ class PreparationReceiverTests(unittest.TestCase):
         from do_math.contracts import TASK_CANDIDATE
         from do_math.execution_profiles import profile_ref
         from jsonschema import Draft202012Validator
-        from research_fixtures import candidate, review_items
+        from support.role_answers import candidate, review_items
         from support.engine_lifecycle import research_grant
         engine = self.engine
         wire = candidate()
@@ -107,12 +107,12 @@ class PreparationReceiverTests(unittest.TestCase):
         self.sim.restart()
         task = self.sim.runtime['tasks'][task['id']]
         self.assertTrue(planning.contract_review_current(task['reviews'][-1], task, self.sim.instance, self.sim.runtime)['valid'])
-        self.assertEqual(planning.task_ready(task, self.sim.instance, self.sim.runtime)['state'], 'ready')
+        self.assertEqual(planning.task_ready(task, self.sim.instance, self.sim.runtime, evaluation_context=self.sim.engine._evaluation_context())['state'], 'ready')
 
     def test_engine_preserves_primary_dependency_when_extension_only_sets_condition(self):
         from copy import deepcopy
-        from research_fixtures import candidate
-        from runner_fixtures import common
+        from support.role_answers import candidate
+        from support.default_responder import common
         engine = self.engine
         prior = task(engine, 'TK-prior')
         engine._save()

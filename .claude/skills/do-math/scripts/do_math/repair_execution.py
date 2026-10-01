@@ -252,7 +252,7 @@ def matching_diagnosis(runtime: dict, failure: dict):
     return diagnosis
 
 
-def unconfirmed_termination(runtime: dict, *, jobs=None):
+def unconfirmed_termination(runtime: dict, *, jobs):
     """The first unended execution whose local termination is not confirmed, or None.
 
     ``jobs`` is the Jobs port; without it the migration default asks the real

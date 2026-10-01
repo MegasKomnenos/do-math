@@ -42,7 +42,7 @@ Steps and records:
   judgments stale on any charter revision (KD-1200); a test of what follows a
   requirement change on a current solution uses this.
 - ``academic_responder(effect_request=None)`` answers as the legacy
-  ``AcademicRunner``; ``drive_to`` drives a template build (preserved rule K-33).
+  ``AcademicAnswers``; ``drive_to`` drives a template build (preserved rule K-33).
 - ``ended(engine, identifier, role, **fields)``: a returned execution registered
   as the engine registers one, with ``fields`` (such as a target or the solution
   basis it read) on its action and record.
@@ -52,7 +52,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 
-from research_fixtures import charter_change
+from support.state_builders import charter_change
 from support.engine_lifecycle import applied, clear_work, solve_goal, theorems
 from support.sim import Sim, built
 
@@ -141,7 +141,8 @@ def warm_consumer():
 
 def _build_assessment(root, shared):
     from do_math.academic import current_requirements
-    from research_fixtures import candidate, prepared_rule_conditions
+    from support.role_answers import candidate
+    from support.observation_inputs import prepared_rule_conditions
     from support.engine_purpose import PURPOSE_CONFIG
     sim = Sim(root, shared=shared, config=PURPOSE_CONFIG)
     sim.activate()
@@ -201,8 +202,8 @@ class RejectingResponder:
         self.decision, self.calls = decision, []
 
     def respond(self, role, context, workspace):
-        from research_fixtures import contract_review
-        from runner_fixtures import common
+        from support.role_answers import contract_review
+        from support.default_responder import common
         self.calls.append(role)
         if role != 'task_contract_review':
             raise AssertionError('the rejecting reviewer was asked for ' + role)
@@ -219,10 +220,12 @@ def rejected_sim(decision='revision_required'):
     ``RejectingResponder`` and the workspace submission. Returns
     ``(sim, task_id, original)``: ``original`` is the task before the review.
     """
-    from runner_fixtures import rating
+    from support.default_responder import rating
     name = 'academic-rejected-' + decision
 
-    def build(root, shared):
+    def build(root, shared, *, decision):
+        name = 'academic-rejected-' + decision
+        from support.default_responder import rating
         sim = _build_assessment(root, shared)
         engine = sim.engine
         tid = ACADEMIC_TASKS[0]
@@ -239,22 +242,22 @@ def rejected_sim(decision='revision_required'):
             raise AssertionError('the rejecting review did not run once: ' + repr(sim.model.responder.calls))
         unfinished(sim.engine)
         return sim
-    sim = built(name, build)
+    sim = built('academic-rejected', build, decision=decision)
     return sim, ACADEMIC_TASKS[0], deepcopy(_REJECTED[name])
 
 
 def academic_responder(scenario='direct', *, effect_request=None):
-    """A ``support.engine_purpose.PurposeResponder`` answering as the legacy ``purpose_fixtures.AcademicRunner``.
+    """A ``support.engine_purpose.PurposeResponder`` answering as the legacy ``support.purpose_answers.AcademicAnswers``.
 
     A planner asked about an external rejection resolves it with the usable
     knowledge as evidence; academic research work returns a reader-facing report
     and, given ``effect_request``, asks for the task's first required external
-    effect. Everything else, and every input check, is ``PurposeRunner``'s.
+    effect. Everything else, and every input check, is ``PurposeAnswers``'s.
     """
-    from purpose_fixtures import AcademicRunner
+    from support.purpose_answers import AcademicAnswers
     from support.engine_purpose import PurposeResponder
     responder = PurposeResponder(scenario)
-    responder.runner = AcademicRunner(scenario, effect_request=effect_request)
+    responder.runner = AcademicAnswers(scenario, effect_request=effect_request)
     return responder
 
 
@@ -285,10 +288,12 @@ def solved_sim(criteria):
     through the real path and the runtime stays open. The model double of a
     copy answers by the default responder until a test sets its own.
     """
-    from purpose_fixtures import requirement
+    from support.purpose_answers import requirement
     from support.engine_purpose import PURPOSE_CONFIG
 
-    def build(root, shared):
+    def build(root, shared, *, criteria):
+        from support.purpose_answers import requirement
+        from support.engine_purpose import PURPOSE_CONFIG
         sim = Sim(root, shared=shared, config=PURPOSE_CONFIG)
         sim.activate()
         sim.model.responder = academic_responder()
@@ -298,7 +303,7 @@ def solved_sim(criteria):
         drive_to(sim, lambda s: s.instance['goal_status'] == 'mathematically_solved')
         unfinished(sim.engine)
         return sim
-    return built('academic-solved-' + ('none' if criteria is None else '|'.join(criteria)), build)
+    return built('academic-solved', build, criteria=criteria)
 
 
 def no_repair_sim():
@@ -306,6 +311,7 @@ def no_repair_sim():
     from support.engine_purpose import PURPOSE_CONFIG
 
     def build(root, shared):
+        from support.engine_purpose import PURPOSE_CONFIG
         sim = Sim(root, shared=shared, config={**PURPOSE_CONFIG, 'max_output_repairs': 0})
         sim.activate()
         return sim
@@ -317,6 +323,7 @@ def explicit_sim():
     from support.engine_purpose import PURPOSE_CONFIG
 
     def build(root, shared):
+        from support.engine_purpose import PURPOSE_CONFIG
         sim = Sim(root, shared=shared, config=PURPOSE_CONFIG)
         sim.activate(external_policy='explicit_grants')
         return sim

@@ -19,7 +19,7 @@ import unittest
 from do_math.canonical import canonical_json
 from do_math.events import EventPublisher, check_sequence
 from do_math.git_store import GitStateStoreConflict
-from research_fixtures import current_state, installed_contract, with_validator
+from support.state_builders import current_state, installed_contract, with_validator
 from support.fakes.clock import FakeClock
 from support.storage_records import INSTANCE_ID, OTHER_INSTANCE_ID, RecordingGit, held_ref_lock, record_store
 
@@ -91,6 +91,8 @@ class FamilyRecordStorageTests(StoreCase):
 
     def test_unknown_family_and_malformed_map_do_not_become_singletons(self):
         # The malformed map's record also lacks required fields, which are checked first.
+        from support.entry import entry
+        _entry = entry()
         for state, reason in (({'unregistered_records': {}}, '^unregistered family: research/unregistered_records$'),
                               ({'knowledge': {'KN-1': {'id': 'KN-2'}}},
                                "^research/knowledge/KN-1/: 'lifecycle' is a required property$")):
@@ -100,7 +102,7 @@ class FamilyRecordStorageTests(StoreCase):
         from do_math.knowledge_io import ensure_ontology
         from do_math.knowledge_records import create_candidate
         instance, kid = create_candidate(ensure_ontology(current_state()[0]), {
-            'kind': 'observation', 'statement': 'prior', 'dependencies': []}, source_ref='input', actor_ref='user')
+            'kind': 'observation', 'statement': 'prior', 'dependencies': []}, source_ref='input', actor_ref='user', clock=_entry.ports.clock)
         instance['knowledge']['KN-other'] = instance['knowledge'].pop(kid)
         with self.assertRaisesRegex(ValueError, '^knowledge map key and id differ$'):
             self.repository.initialize(instance, current_state()[1])
@@ -343,19 +345,23 @@ class ContractEditionTests(StoreCase):
             self.repository.load(bad)
 
     def test_complete_lifecycle_candidate_uses_installed_current_state_gate(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.initialization import initialize_state
         instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal='P', workspace=self.repository_path, config={},
-                                             source_input='P')
+                                             source_input='P', clock=_entry.ports.clock, host=_entry.ports.host)
         self.repository.validate_candidate(instance, runtime)
         runtime['status'] = 'invented_status'
         with self.assertRaisesRegex(ValueError, 'runtime/status'):
             self.repository.validate_candidate(instance, runtime)
 
     def test_original_input_bytes_are_the_exact_working_text(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.initialization import initialize_state, original_input_bytes
         source = 'e\u0301 original input'
         instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal='P', workspace=self.repository_path, config={},
-                                             source_input=source)
+                                             source_input=source, clock=_entry.ports.clock, host=_entry.ports.host)
         original = instance['lifecycle']['immutable_input']
         self.assertEqual(original_input_bytes(original), source.encode('utf-8'))
         self.assertEqual(original, {'text': source, 'sha256': hashlib.sha256(source.encode('utf-8')).hexdigest(),
@@ -365,9 +371,11 @@ class ContractEditionTests(StoreCase):
             self.repository.validate_candidate(instance, runtime)
 
     def test_initial_input_and_loaded_pending_event_references_are_checked(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.initialization import initialize_state
         instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal='P', workspace=self.repository_path, config={},
-                                             source_input='P')
+                                             source_input='P', clock=_entry.ports.clock, host=_entry.ports.host)
         runtime['inputs'] = []
         with self.assertRaisesRegex(ValueError, 'unknown record'):
             self.repository.validate_candidate(instance, runtime)

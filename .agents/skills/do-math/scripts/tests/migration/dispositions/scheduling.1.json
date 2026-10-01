@@ -600,7 +600,7 @@
    "new_ids": [
     "flows.test_scheduling_parallel_engine.CallDeadlineTests.test_elapsed_time_does_not_block_the_next_execution_and_work_calls_have_no_timeout"
    ],
-   "note": "Input: the synthetic active state (make_active) is a restored public activation whose queued activation work and pending events are cleared (engine_lifecycle.clear_work), as the legacy start had none. The legacy runner wrapped ScriptedRunner and the patched clock_ports advanced a monotonic offset; here the engine is built with a runner that wraps the product ModelRunner (the worker and the model double answer) and advances the Sim clock 10000 s after each call, recording the call arguments as the legacy runner did."
+   "note": "Input: the synthetic active state (make_active) is a restored public activation whose queued activation work and pending events are cleared (engine_lifecycle.clear_work), as the legacy start had none. The legacy runner wrapped ScriptedRunner and the patched clock_ports advanced a monotonic offset; here the engine is built with a runner that wraps the product ModelRunner (the worker and the model double answer) and advances the Sim clock 10000 s after each call, recording the call arguments as the legacy runner did. Contraction correction: actual ModelRunner arguments are observed with ObservedCalls; elapsed time is advanced as ModelDouble.communicate completes at the external spawn seam. ModelRunner, worker request validation and output collection all execute. The two calls, work/no-timeout and operational bounded-timeout assertions remain."
   },
   {
    "legacy_id": "test_session_scheduler.SchedulingResponsibilityTests.test_terminal_stale_assessment_gets_one_followup_without_reopening",

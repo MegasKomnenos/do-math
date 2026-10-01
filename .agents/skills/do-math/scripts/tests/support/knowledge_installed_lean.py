@@ -30,8 +30,8 @@ import subprocess
 import tempfile
 
 from do_math.formal import verify_lean
-from knowledge_fixtures import knowledge_candidate
-from provider_fixtures import actual_command
+from support.knowledge_builders import knowledge_candidate
+from support.provider_inputs import actual_command
 from support.engine_lifecycle import applied, run_machine, transition
 from support.knowledge_roundtrip import installed_request
 
@@ -39,10 +39,14 @@ _OBSERVED = []
 
 
 def installed_toolchain():
+    from support.entry import entry
+    _entry = entry()
+    from do_math.wiring import real_ports
+    _entry.ports = real_ports(environment=_entry.environment)
     if not _OBSERVED:
         with tempfile.TemporaryDirectory() as directory:
             result = verify_lean(source=knowledge_candidate()['lean_code'], declarations=['truth'],
-                                 workspace=Path(directory), lean_command=actual_command())
+                                 workspace=Path(directory), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         if result['status'] != 'verified':
             raise AssertionError('the installed Lean did not verify the candidate: ' + repr(result))
         _OBSERVED.append(result['toolchain'])

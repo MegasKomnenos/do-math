@@ -29,6 +29,10 @@ def setUpModule():
 
 class DesignWalkthroughs(unittest.TestCase):
     def test_w12_query_import_metadata_and_next_snapshot_preserve_epistemic_distinctions(self):
+        from support.entry import entry
+        from do_math.wiring import real_ports
+        _entry = entry()
+        _entry.ports = real_ports(environment=_entry.environment)
         sim = theorem_sim()
         e = sim.engine
         kid = next(k for k, row in e.instance['knowledge'].items() if row['title'] == 'k1')
@@ -57,17 +61,17 @@ class DesignWalkthroughs(unittest.TestCase):
         e.instance, relation_id = knowledge_io.import_relation(e.instance, {
             'kind': 'supports', 'source': imported['id'], 'target': kid,
             'confirmed_scope': 'Search history informs reuse; no formal implication',
-            'evidence_refs': [imported['id']]}, source_ref='fixture:search-history', actor_ref='EX-relation')
+            'evidence_refs': [imported['id']]}, source_ref='fixture:search-history', actor_ref='EX-relation', clock=sim.ports.clock)
         e._save()
         head = e.head
         export_objects(sim)
-        found = query_records(sim.repository, sim.instance_id, kind='knowledge', snapshot=head)
+        found = query_records(sim.repository, sim.instance_id, kind='knowledge', snapshot=head, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual(found['snapshot'], head)
         self.assertEqual({r['record']['id'] for r in found['items']}, {kid, imported['id']})
-        record = read_record(sim.repository, sim.instance_id, imported['id'], snapshot=head)
+        record = read_record(sim.repository, sim.instance_id, imported['id'], snapshot=head, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual(record['record']['uncertainty_assessment'], {'claim': 'Not a proof', 'scope': 'finite search only'})
-        outward = query_records(sim.repository, sim.instance_id, related_to=imported['id'], direction='outgoing', snapshot=head)
-        inward = query_records(sim.repository, sim.instance_id, related_to=imported['id'], direction='incoming', snapshot=head)
+        outward = query_records(sim.repository, sim.instance_id, related_to=imported['id'], direction='outgoing', snapshot=head, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
+        inward = query_records(sim.repository, sim.instance_id, related_to=imported['id'], direction='incoming', snapshot=head, backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         self.assertEqual({r['record']['id'] for r in outward['items']}, {kid, relation_id})
         self.assertEqual(inward['items'], [])
         self.assertTrue(outward['query_basis']['complete'])

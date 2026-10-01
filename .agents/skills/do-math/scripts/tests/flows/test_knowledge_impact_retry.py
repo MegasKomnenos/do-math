@@ -102,9 +102,6 @@ def damage_stored_output(sim, execution):
 def new_owner_process(sim):
     """A new owner process on the same repository: a restart, without this process's knowledge of artifact bytes."""
     sim.restart()
-    git_dir = str(sim.engine.store.git_dir)
-    for key in [key for key in repository._ARTIFACT_FACTS if key[0] == git_dir]:
-        del repository._ARTIFACT_FACTS[key]
 
 
 class UnreadableBeforeReviewTests(unittest.TestCase):

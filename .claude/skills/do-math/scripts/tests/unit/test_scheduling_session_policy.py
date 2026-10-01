@@ -10,17 +10,19 @@ from do_math.session_slots import SessionSlots
 
 class SessionPolicyTests(unittest.TestCase):
     def test_old_profile_cannot_bypass_a_new_zero_capacity_limit(self):
+        from support.entry import entry
+        _entry = entry()
         config = deepcopy(DEFAULT_CONFIG)
-        instance = {'config': config, **build_profiles(config)}
+        instance = {'config': config, **build_profiles(config, host=_entry.ports.host)}
         runtime = {'executions': {}, 'reservations': {}, 'provider_waits': {}}
         old = next(profile for profile in instance['execution_profiles'].values()
                    if profile['role'] == 'research_work' and profile['ai'].get('tier') == 'high')
-        slots = SessionSlots(runtime, instance)
+        slots = SessionSlots(runtime, instance, clock=_entry.ports.clock, host_id=_entry.host_id, jobs=_entry.ports.jobs)
 
         lower = deepcopy(config['session_limits'])
         lower['work'][MODELS['high']] = 0
         config['session_limits'] = lower
-        apply_editions(instance, build_profiles(config))
+        apply_editions(instance, build_profiles(config, host=_entry.ports.host))
         execution = {'id': 'EX-old-profile', 'role': 'research_work', 'status': 'queued'}
         self.assertFalse(slots.acquire(execution['id'], profile=old, execution=execution))
         self.assertEqual(slots.admission_wait['kind'], 'capacity')
@@ -30,7 +32,7 @@ class SessionPolicyTests(unittest.TestCase):
         raised = deepcopy(lower)
         raised['work'][MODELS['high']] = 1
         config['session_limits'] = raised
-        apply_editions(instance, build_profiles(config))
+        apply_editions(instance, build_profiles(config, host=_entry.ports.host))
         self.assertTrue(slots.acquire(execution['id'], profile=old, execution=execution))
         current = next(instance['execution_profiles'][ref['id']] for ref in instance['role_profile_refs']['research_work']
                        if instance['execution_profiles'][ref['id']]['ai'].get('tier') == 'high')
@@ -55,12 +57,14 @@ class SessionPolicyTests(unittest.TestCase):
 
     def test_bad_capacity_and_missing_tier_model_are_rejected(self):
         # The configuration schema owns the capacity range; the policy owns cross-field rules.
+        from support.entry import entry
+        _entry = entry()
         for value in (-1, True, None, 1.5):
             with self.subTest(value=value):
                 config = deepcopy(DEFAULT_CONFIG)
                 config['session_limits']['work'][MODELS['high']] = value
                 with self.assertRaisesRegex(ValueError, 'config/session_limits/work'):
-                    validate_config(config)
+                    validate_config(config, host_id=_entry.host_id)
         config = deepcopy(DEFAULT_CONFIG)
         config['session_limits']['work'][' '] = 1
         with self.assertRaisesRegex(ValueError, 'session_limits.work must map model names to nonnegative integers'):

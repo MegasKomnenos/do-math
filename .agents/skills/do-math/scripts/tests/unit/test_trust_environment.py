@@ -20,7 +20,7 @@ from do_math.canonical import exact_content_hash
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.initialization import observation_window_warnings
 from do_math.trust_validation import check_environment, environment_errors, register_request_errors
-from research_fixtures import trust_environment, trust_fixture, validation_fixture
+from support.trust_inputs import trust_environment, trust_fixture, validation_fixture
 from support.fakes.host import FakeHost
 
 CHANGED = 'approved toolchain file changed: '
@@ -67,7 +67,9 @@ class RecordCase(unittest.TestCase):
         self.record_path.write_text(json.dumps(record), encoding='utf-8')
 
     def check(self, binding=None, **options):
-        return check_environment(self.environment, self.binding if binding is None else binding, host=self.host, **options)
+        from support.entry import entry
+        _entry = entry()
+        return check_environment(self.environment, self.binding if binding is None else binding, host=self.host, **options, clock=_entry.ports.clock)
 
 
 class ToolchainRecordTests(RecordCase):
@@ -146,6 +148,8 @@ class ToolchainRecordTests(RecordCase):
                 restore()
 
     def test_rebind_requires_the_current_baseline_and_the_same_identity(self):
+        from support.entry import entry
+        _entry = entry()
         info = os.stat(self.olean)
         os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 10**9))
         # A second baseline, made by the record producers as setup_lean --rerecord makes it.
@@ -153,7 +157,7 @@ class ToolchainRecordTests(RecordCase):
         fingerprint = records.observe_fingerprint(record['identity'])
         content = records.content_hashes(record['identity'], fingerprint['files'])
         record['baselines'].append(records.new_baseline(fingerprint, content,
-                                                        validation_fixture(record['identity'], self.root / 'smoke.lean')))
+                                                        validation_fixture(record['identity'], self.root / 'smoke.lean'), clock=_entry.ports.clock))
         records.write_record(self.record_path, record)
         current = records.binding(record)
         os.utime(self.olean, ns=(info.st_atime_ns, info.st_mtime_ns + 2 * 10**9))
@@ -264,6 +268,8 @@ class EnvironmentCheckTests(RecordCase):
                          {'environment_id': None, 'record_state': None})
 
     def test_formal_verification_runs_only_after_the_environment_is_admitted(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.trust_validation import verify_formal
         calls = []
 
@@ -271,12 +277,12 @@ class EnvironmentCheckTests(RecordCase):
             calls.append(arguments)
             return {'status': 'verified'}
         result = verify_formal(environment=self.environment, binding=self.binding, verifier=verifier, host=self.host,
-                               source='theorem')
+                               source='theorem', clock=_entry.ports.clock)
         self.assertEqual(calls, [{'source': 'theorem'}])
         self.assertEqual(result['status'], 'verified')
         self.assertEqual(result['environment_check']['status'], 'verified')
         self.olean.write_bytes(b'changed module')
-        refused = verify_formal(environment=self.environment, binding=self.binding, verifier=verifier, host=self.host)
+        refused = verify_formal(environment=self.environment, binding=self.binding, verifier=verifier, host=self.host, clock=_entry.ports.clock)
         self.assertEqual(len(calls), 1)
         self.assertEqual({key: refused[key] for key in ('status', 'error_kind', 'launch_not_created')},
                          {'status': 'failed', 'error_kind': 'trust_environment', 'launch_not_created': True})
@@ -326,8 +332,10 @@ class ObservationWindowWarningTests(unittest.TestCase):
         self.environment, self.binding = trust_environment(request, status='registered')
 
     def state(self, **windows):
+        from support.entry import entry
+        _entry = entry()
         from do_math.execution_profiles import build_profiles
-        built = build_profiles({**deepcopy(DEFAULT_CONFIG), **windows})
+        built = build_profiles({**deepcopy(DEFAULT_CONFIG), **windows}, host=_entry.ports.host)
         instance = {**built, 'config': {}, 'trust_environments': {self.environment['id']: self.environment},
                     'lifecycle': {'state': 'initializing', 'adoption': {}}}
         runtime = {'status': 'initializing', 'history': [], 'trust_bindings': {self.environment['id']: self.binding}}
@@ -372,8 +380,10 @@ class ObservationWindowWarningTests(unittest.TestCase):
 
 class ActivationProfileTests(unittest.TestCase):
     def test_lean_roles_pin_only_the_command_and_activation_has_no_machine_settings(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import execution_profiles as profiles
-        built = profiles.build_profiles({**DEFAULT_CONFIG, 'lean_command': ['synthetic-lean']})
+        built = profiles.build_profiles({**DEFAULT_CONFIG, 'lean_command': ['synthetic-lean']}, host=_entry.ports.host)
         by_role = {p['role']: p for p in built['execution_profiles'].values() if p['actor_kind'] == 'machine'}
         self.assertNotIn('machine', by_role['trust_activate'])
         for role in ('formal_check', 'trust_check'):

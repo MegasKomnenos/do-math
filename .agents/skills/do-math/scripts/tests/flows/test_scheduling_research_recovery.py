@@ -16,9 +16,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from purpose_fixtures import common
-from research_fixtures import candidate, disposition
-from runner_fixtures import ScriptedRunner
+from support.purpose_answers import common
+from support.role_answers import candidate, disposition
+from support.default_responder import DefaultResponder
 from support.engine_lifecycle import applied
 from support.scheduling_model import explicit, native_final, scenario_model
 from support.scheduling_recovery import empty_plan, failed_execution, failed_plan_sim, reviewed_sim
@@ -31,8 +31,8 @@ def setUpModule():
     failed_plan_sim()
 
 
-class RevisionResponder(ScriptedRunner):
-    """The default responder, resolving a preparation's declared revision targets as ``PurposeRunner`` did."""
+class RevisionResponder(DefaultResponder):
+    """The default responder, resolving a preparation's declared revision targets as ``PurposeAnswers`` did."""
 
     def respond(self, role, ctx, workspace):
         out = super().respond(role, ctx, workspace)

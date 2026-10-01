@@ -15,7 +15,7 @@ import unittest
 
 from do_math import planning, questions, revisions
 from do_math.knowledge_io import import_candidate, import_relation
-from record_fixtures import approve_task, approved_task
+from support.record_builders import approve_task, approved_task
 from support.sim import Sim, warm_template
 
 setUpModule = warm_template
@@ -34,11 +34,11 @@ def stored_relation():
         instance, runtime, kid = import_candidate(instance, runtime,
             {'kind': kind, 'title': title, 'statement': summary, 'summary': summary,
              'explanation': 'Explicit query fixture: ' + summary, 'lean_code': '',
-             'declaration_names': [], 'dependencies': []}, source_ref=source, actor_ref=source)
+             'declaration_names': [], 'dependencies': []}, source_ref=source, actor_ref=source, clock=sim.ports.clock)
         kids.append(kid)
     instance, relation_id = import_relation(instance,
         {'kind': 'supports', 'source': kids[0], 'target': kids[1], 'evidence': 'alpha'},
-        source_ref=source, actor_ref=source)
+        source_ref=source, actor_ref=source, clock=sim.ports.clock)
     published = store.save_with_state(head, instance, runtime)[0]
     _, stored, _ = store.load(published)
     return stored, kids, relation_id
@@ -46,6 +46,8 @@ def stored_relation():
 
 class RelationReadTests(unittest.TestCase):
     def test_indirect_endpoints_obey_both_revision_directions_and_question_gates(self):
+        from support.entry import entry
+        _entry = entry()
         stored, kids, relation_id = stored_relation()
         self.assertEqual({kid: stored['knowledge'][kid]['title'] for kid in kids}, dict(zip(kids, ('One', 'Two'))))
         task, instance, runtime = approved_task()
@@ -53,7 +55,7 @@ class RelationReadTests(unittest.TestCase):
             instance[family] = deepcopy(stored[family])
         task['inputs'].append(relation_id)
         approve_task(task, instance, runtime)
-        self.assertEqual(planning.task_ready(task, instance, runtime)['state'], 'ready')
+        self.assertEqual(planning.task_ready(task, instance, runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'ready')
         reader = {'id': 'AC-reader', 'role': 'research_work', 'target': task['id']}
         for endpoint in kids:
             with self.subTest(endpoint=endpoint):
@@ -67,10 +69,10 @@ class RelationReadTests(unittest.TestCase):
                 runtime['queue'] = []
                 runtime['question_links'] = []
                 question = questions.link(runtime, execution_id='EX-question', field='answer',
-                    owner='user', targets=[endpoint], blocks=True)
+                    owner='user', targets=[endpoint], blocks=True, clock=_entry.ports.clock)
                 self.assertEqual(questions.user_waits(reader, instance, runtime)[0]['question_id'], question['id'])
         runtime['question_links'] = []
-        questions.link(runtime, execution_id='EX-other', field='answer', owner='user', targets=['KN-unrelated'], blocks=True)
+        questions.link(runtime, execution_id='EX-other', field='answer', owner='user', targets=['KN-unrelated'], blocks=True, clock=_entry.ports.clock)
         self.assertEqual(questions.user_waits(reader, instance, runtime), [])
 
 

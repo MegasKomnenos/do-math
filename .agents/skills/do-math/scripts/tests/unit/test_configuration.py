@@ -20,12 +20,14 @@ class ConfigurationDefaultTests(unittest.TestCase):
 
 class ConfigurationRuleTests(unittest.TestCase):
     def test_model_selection_and_capacity_share_the_current_tier_configuration(self):
+        from support.entry import entry
+        _entry = entry()
         config = deepcopy(DEFAULT_CONFIG)
         config['tier_models'] = {tier: 'fixture-model' for tier in ('low', 'medium', 'high')}
         config['session_limits'] = {'work': {'fixture-model': 2}}
         config['scholarly_enabled'] = False
-        self.assertIsNone(validate_config(config))
-        profiles = build_profiles(config)
+        self.assertIsNone(validate_config(config, host_id=_entry.host_id))
+        profiles = build_profiles(config, host=_entry.ports.host)
         constraint, = profiles['capacity_constraints'].values()
         self.assertEqual((constraint['kind'], constraint['model'], constraint['work_slots']),
                          ('concurrency', 'fixture-model', 2))
@@ -38,9 +40,11 @@ class ConfigurationRuleTests(unittest.TestCase):
         retired['session_limits'] = {'work': {'fixture-model': 2}, 'operations': {'fixture-model': 1}}
         with self.assertRaisesRegex(ValueError, r"config/session_limits: Additional properties are not allowed "
                                                 r"\('operations' was unexpected\)"):
-            validate_config(retired)
+            validate_config(retired, host_id=_entry.host_id)
 
     def test_each_rule_names_the_field_it_refuses(self):
+        from support.entry import entry
+        _entry = entry()
         cases = [
             ({'invented_setting': 1}, 'outside the stored configuration section: invented_setting'),
             ({'allowed_axioms': ['propext']}, 'outside the stored configuration section: allowed_axioms'),
@@ -51,17 +55,19 @@ class ConfigurationRuleTests(unittest.TestCase):
         ]
         for change, message in cases:
             with self.subTest(change=change), self.assertRaisesRegex(ValueError, re.escape(message)):
-                validate_config(change)
+                validate_config(change, host_id=_entry.host_id)
         self.assertIsNone(validate_config({'provider_retry_initial_seconds': 300, 'provider_retry_max_seconds': 300,
-                                           'lean_command': ['lean', 'file.lean']}))
+                                           'lean_command': ['lean', 'file.lean']}, host_id=_entry.host_id))
 
     def test_a_scholarly_server_is_an_absolute_command_without_a_data_directory(self):
+        from support.entry import entry
+        _entry = entry()
         absolute = str(SKILL / 'server.exe')
-        self.assertIsNone(validate_config({'scholarly_server': {'command': absolute, 'args': []}}))
+        self.assertIsNone(validate_config({'scholarly_server': {'command': absolute, 'args': []}}, host_id=_entry.host_id))
         with self.assertRaisesRegex(ValueError, 'scholarly args must not override the execution data directory'):
-            validate_config({'scholarly_server': {'command': absolute, 'args': ['--data-dir=elsewhere']}})
+            validate_config({'scholarly_server': {'command': absolute, 'args': ['--data-dir=elsewhere']}}, host_id=_entry.host_id)
         with self.assertRaisesRegex(ValueError, 'relative scholarly command needs a configuration-file base'):
-            validate_config({'scholarly_server': {'command': './server.exe', 'args': []}})
+            validate_config({'scholarly_server': {'command': './server.exe', 'args': []}}, host_id=_entry.host_id)
 
     def test_host_resources_name_this_host_and_every_capped_role(self):
         constraint = host_constraint(host_id='fixture-host',

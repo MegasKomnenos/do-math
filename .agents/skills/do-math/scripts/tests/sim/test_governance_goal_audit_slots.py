@@ -26,7 +26,7 @@ from do_math import context_store
 from do_math.activities import assign_execution, open_activity
 from do_math.engine import ResearchEngine
 from support.engine_lifecycle import ObservedCalls, code_of
-from support.governance_goal_seal import EXECUTION, INPUT_BUNDLE, RESULT_REF, committed_goal_audit, ended_owner_ticket
+from support.governance_goal_seal import EXECUTION, INPUT_BUNDLE, RESULT_REF, committed_goal_audit
 from support.governance_sim import adopt_audit, goal_auditor
 from support.sim import Sim, warm_template
 
@@ -174,7 +174,13 @@ class SealRecoveryTests(unittest.TestCase):
     def test_recovery_confirms_termination_before_using_original_seal_without_recollection(self):
         sim = Sim.activated()
         action, _ = committed_goal_audit(sim)
-        sim.restart()  # the owner process that ran the goal auditor disappeared
+        local_owner = sim.jobs.owner_identity()
+        # A different owner's persisted launch has no observed termination yet.
+        execution = sim.runtime['executions'][EXECUTION]
+        execution['launch_ticket']['owner'] = {**local_owner, 'pid': local_owner['pid'] + 10000}
+        sim.engine._save()
+        sim.restart()
+        self.assertIs(sim.jobs.owner_ended(local_owner), True)
         engine = sim.engine
         self.assertEqual(engine.runtime.get('waiting_actions', {}), {})
         # The port cannot tell whether the previous owner ended, so no local termination is established.
@@ -184,7 +190,8 @@ class SealRecoveryTests(unittest.TestCase):
         execution = engine.runtime['executions'][EXECUTION]
         self.assertEqual(execution['status'], 'stopping')
         self.assertEqual(engine.runtime.get('waiting_actions', {}), {})
-        execution['launch_ticket'] = ended_owner_ticket(sim, execution)
+        # External process inspection now confirms the same launch owner ended.
+        sim.jobs.known_ended.append(dict(previous))
         self.assertEqual((sim.jobs.owner_ended(execution['launch_ticket']['owner']),
                           sim.jobs.named_job_empty(execution['launch_ticket']['job_name'])), (True, True))
         self.assertEqual(self.recover(engine), {'collect': [], 'preserve': []})

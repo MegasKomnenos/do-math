@@ -32,7 +32,6 @@ from .contracts import REFS, TEXT, closed_object
 from .questions import QUESTION_OWNERS
 from .task_contracts import CONTEXT_INPUT_REFS, TERMINAL_TASK_STATUSES
 from . import integration
-from .migration_defaults import clock_or_system
 
 
 class SealedSubmissionError(ValueError):
@@ -438,7 +437,7 @@ def _explicit_reference_fields(value, path="output"):
             yield from _explicit_reference_fields(child, path + "/" + str(index))
 
 
-def _intent_import_issues(output, context):
+def _intent_import_issues(output, context, *, clock):
     """Run the receiver's import-unit check and governance record check on the fixed input.
 
     Coverage, identity, question and payload coordinates use governance.validate_import_units
@@ -453,7 +452,7 @@ def _intent_import_issues(output, context):
     issues = []
     try:
         validate_import_units(instance, runtime, context.get("original_source"), output,
-                              owner_kinds={row["owner_kind"] for row in context.get("import_consumers", [])})
+                              owner_kinds={row["owner_kind"] for row in context.get("import_consumers", [])}, clock=clock)
     except (ValueError, TypeError, KeyError) as error:
         issues.append(_issue("output/import_units", str(error), "intent.import_units"))
     for index, unit in enumerate(output["import_units"]):
@@ -640,7 +639,7 @@ def fixed_research_reference_path(reference, source_refs):
 
 
 def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict, workspace: Path,
-                    *, owns_response=True, candidate_files: dict[str, bytes] | None = None) -> list[dict]:
+                    *, owns_response=True, candidate_files: dict[str, bytes] | None = None, clock) -> list[dict]:
     """Check producer-visible conditions; application-time state stays separate."""
     issues = _schema_issues(output, schema, "output")
     action = context["action"]
@@ -717,7 +716,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
             check(f"activity-extensions.json/academic_resolutions/{index}/evidence_refs/{number}",
                   lambda reference=reference: supplied(reference), "submission.explicit_reference")
     if action["role"] == "intent_interpretation" and action.get("stage", "interpret") == "interpret":
-        issues.extend(_intent_import_issues(output, context))
+        issues.extend(_intent_import_issues(output, context, clock=clock))
 
     known = supplied_reference_ids(context) | record_index_ids(context)
     blocked = {row["action_id"]: row for row in context.get("blocked_actions", [])}
@@ -818,7 +817,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
     kind_instance = {"kind_definitions": {row["family"] + ":" + row["token"]: deepcopy(row)
                      for rows in definitions.values() for row in rows if "family" in row}}
     for index, definition in enumerate(extensions.get("kind_definitions", [])):
-        def check_kind(definition=definition, *, clock=None):
+        def check_kind(definition=definition):
             nonlocal kind_instance
             kind_instance, _ = knowledge_io.register_kind_definition(kind_instance, definition,
                 source_ref="submission-preview", actor_ref="producer", clock=clock)
@@ -1007,7 +1006,7 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
 
 
 def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, workspace: Path,
-                   *, candidate_files: dict[str, bytes] | None = None) -> list[dict]:
+                   *, candidate_files: dict[str, bytes] | None = None, clock) -> list[dict]:
     """Shared producer/receiver entry point, including bundle and retry coverage."""
     original_output = output
 
@@ -1036,7 +1035,7 @@ def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, 
             if "repair_responses" in output:
                 sliced["repair_responses"] = output["repair_responses"]
             rows = _payload_issues(sliced, schema, context, bundle["extensions"], workspace,
-                                   owns_response=bundle["owns_response"], candidate_files=candidate_files)
+                                   owns_response=bundle["owns_response"], candidate_files=candidate_files, clock=clock)
             # Slicing retains values but changes array indices. Restore exact
             # coordinates in the producer's sealed output before assigning IDs.
             families = {}
@@ -1060,7 +1059,7 @@ def payload_issues(output: dict, schema: dict, context: dict, extensions: dict, 
                 issues.append(row)
     else:
         issues.extend(_payload_issues(output, schema, context, extensions, workspace,
-                                      candidate_files=candidate_files))
+                                      candidate_files=candidate_files, clock=clock))
     schema_failed = any(row.get("rule_id", "").startswith("schema.") for row in issues)
     if schema_failed:
         return issues
@@ -1098,7 +1097,7 @@ def _captured_checkpoint(files: dict[str, bytes]) -> dict:
         return {"status": "invalid", "error": f"{type(error).__name__}: {error}"}
 
 
-def _workspace_checks(context, workspace, candidate=None, *, clock=None):
+def _workspace_checks(context, workspace, candidate=None, *, clock):
     issues = []
     limits = context.get("submission_contract", {}).get("limits", {})
     files = (candidate if candidate is not None else
@@ -1189,12 +1188,12 @@ def _failed_check(mode, context, raw, error, phase, execution_id):
 
 
 def check_submission(output, schema, context, extensions, workspace, *, mode,
-                     execution_id, tool_sha256, previous=None, candidate=None, clock=None):
+                     execution_id, tool_sha256, previous=None, candidate=None, clock):
     """Record deterministic payload checks; producer records never grant authority."""
     if mode not in {"producer", "receiver", "preview"}:
         raise ValueError("unknown submission check mode")
     candidate_files = candidate["files"] if candidate is not None else None
-    issues = payload_issues(output, schema, context, extensions, workspace, candidate_files=candidate_files)
+    issues = payload_issues(output, schema, context, extensions, workspace, candidate_files=candidate_files, clock=clock)
     workspace_issues, files = _workspace_checks(context, workspace, candidate, clock=clock)
     issues.extend(workspace_issues)
     hashes = _check_hashes(output, schema, context, extensions)
@@ -1233,7 +1232,7 @@ def check_submission(output, schema, context, extensions, workspace, *, mode,
 
 def preview_submission(output, schema, context, extensions, workspace, *, execution_id,
                        tool_sha256, instance, runtime, apply_bundle, validate_current,
-                       validate_candidate, previous=None, check=None, clock=None):
+                       validate_candidate, previous=None, check=None, clock):
     """Central-only candidate preview with a closed, producer-visible response.
 
     ENGINE supplies its actual pure candidate callbacks. No publisher is supplied
@@ -1437,12 +1436,11 @@ def _support_archive(package: Path, sources: tuple[tuple[str, str], ...]) -> byt
     return archive.getvalue()
 
 
-def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_bytes: int | None, *, clock=None) -> dict:
+def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_bytes: int | None, *, clock) -> dict:
     """Copy one installed code edition, never the central research state.
 
     The read tool reads that state only at the input snapshot and within the record map.
     """
-    clock = clock_or_system(clock)
     context["reference_catalog"] = reference_catalog(context, workspace)
     package = Path(__file__).resolve().parent
     # The installed edition is identified by fingerprint-cached digests; code
@@ -1496,7 +1494,7 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
     return contract
 
 
-def producer_check(workspace, draft, *, clock=None):
+def producer_check(workspace, draft, *, clock):
     """Serialize local checks; immutable predecessors, not timestamps, own order."""
     workspace = Path(workspace).resolve()
     directory = safe_path(workspace, "checks")
@@ -1524,7 +1522,7 @@ def producer_check(workspace, draft, *, clock=None):
         lock.unlink()
 
 
-def _producer_check(workspace, draft, history, *, clock=None):
+def _producer_check(workspace, draft, history, *, clock):
     """Read exact local bytes and seal a check, including malformed drafts."""
     workspace = Path(workspace).resolve()
     raw = None
@@ -1575,7 +1573,7 @@ def _producer_check(workspace, draft, history, *, clock=None):
     return result
 
 
-def seal_submission(workspace, draft=None, *, execution_id, context, schema, max_artifact_bytes, raw_output=None, captured_outputs=None, clock=None):
+def seal_submission(workspace, draft=None, *, execution_id, context, schema, max_artifact_bytes, raw_output=None, captured_outputs=None, clock):
     """Capture one research candidate, validate those bytes, and return detached CAS artifacts."""
     workspace = Path(workspace).resolve()
     result = {"passed": False, "capture_eligible": False, "check": None, "intent": None, "manifest": [], "artifacts": {}}

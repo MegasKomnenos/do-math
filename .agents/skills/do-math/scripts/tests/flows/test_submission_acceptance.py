@@ -20,8 +20,9 @@ import tempfile
 import unittest
 
 from do_math.knowledge import plan_impact, revision_roots
-from research_fixtures import assessment, candidate, contract_review, disposition, supply_observation_rules
-from runner_fixtures import common, contract_checks
+from support.role_answers import assessment, candidate, contract_review, disposition
+from support.observation_inputs import supply_observation_rules
+from support.default_responder import common, contract_checks
 from support.engine_lifecycle import applied
 from support.model import amend
 from support.scheduling_parallel import ready_work_sim, round_robin

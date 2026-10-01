@@ -12,7 +12,8 @@ import unittest
 from do_math import planning, revisions
 from do_math.input_basis import capture_decision_basis, decision_basis_changes
 from do_math.knowledge_records import create_candidate
-from research_fixtures import approved_governance, candidate, charter_record, contract_review
+from support.state_builders import approved_governance, charter_record
+from support.role_answers import candidate, contract_review
 
 
 class BasisCase(unittest.TestCase):
@@ -48,10 +49,12 @@ class BasisTests(BasisCase):
                          {"contract_sha256", "results_sha256"})
 
     def test_split_knowledge_bookkeeping_is_stable_but_authored_reference_change_is_detected(self):
+        from support.entry import entry
+        _entry = entry()
         self.instance, kid = create_candidate(self.instance, {
             "id": "K", "kind": "observation", "title": "P", "statement": "P", "explanation": "P",
             "summary": "P", "lean_code": "", "declaration_names": [], "dependencies": []},
-            source_ref="explicit-fixture", actor_ref="fixture-producer")
+            source_ref="explicit-fixture", actor_ref="fixture-producer", clock=_entry.ports.clock)
         record = self.instance['knowledge'][kid]
         basis = capture_decision_basis(self.instance, self.runtime, [kid])
         record.update(review_cycle_id="RC-new", history=[{"reason": "administrative review scheduling"}])

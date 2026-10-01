@@ -14,8 +14,7 @@ from copy import deepcopy
 import unittest
 
 from do_math import planning, task_contracts
-from record_fixtures import apply_assessment, approve_task, approved_task, specialist_assessment, task_disposition, \
-    transfer_assessment
+from support.record_builders import apply_assessment, approve_task, approved_task, specialist_assessment, task_disposition, transfer_assessment
 
 CURRENT_DECISION = '^scope disposition requires a current source-bound user decision$'
 NO_JUDGMENT = '^fulfilled obligation needs its designated judge or a current specialist judgment for this task$'
@@ -130,6 +129,8 @@ class AssessmentApplicationTests(unittest.TestCase):
                 planning.validate_plan_submission(plan, r['tasks'], ready)
 
     def test_incomplete_open_work_is_available_for_a_later_continuation_plan(self):
+        from support.entry import entry
+        _entry = entry()
         i, r, a = transfer_assessment()
         t = r['tasks']['TK-1']
         t['waiting'] = {'kind': 'assessment', 'next_owner': 'research_plan'}
@@ -137,7 +138,7 @@ class AssessmentApplicationTests(unittest.TestCase):
         a.update(decision='incomplete', item_dispositions=[{'obligation_id': 'OB-1', 'kind': 'open', 'evidence_refs': []},
                                                           {'obligation_id': 'OB-2', 'kind': 'open', 'evidence_refs': []}])
         i, r = apply_assessment(i, r, a)
-        self.assertEqual(planning.task_ready(r['tasks']['TK-1'], i, r)['state'], 'ready')
+        self.assertEqual(planning.task_ready(r['tasks']['TK-1'], i, r, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'ready')
         self.assertTrue(any(q['role'] == 'research_plan' for q in r['queue']))
 
     def test_nonselection_revisit_is_an_actual_machine_event(self):

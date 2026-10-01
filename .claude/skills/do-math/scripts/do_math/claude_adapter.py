@@ -42,7 +42,7 @@ class ClaudePrintAdapter(LocalCLIAdapter):
 ADAPTERS = {adapter.provider: adapter for adapter in (CodexExecAdapter, ClaudePrintAdapter)}
 
 
-def provider_adapter(provider: str, cli_path: str | None = None, *, jobs=None, clock=None) -> LocalCLIAdapter:
+def provider_adapter(provider: str, cli_path: str | None = None, *, jobs, clock) -> LocalCLIAdapter:
     """The adapter of a provider; its CLI defaults to the executable named like the provider."""
     if provider not in ADAPTERS:
         raise ValueError("unsupported profile provider")

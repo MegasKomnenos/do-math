@@ -18,15 +18,18 @@ import unittest
 from do_math.git_store import GitStateStoreLockError
 from do_math.session_slots import SessionSlots
 from do_math.wiring import real_ports
-from provider_fixtures import PROVIDER_LIMIT_FAILURE, admit, finish, report
-from research_fixtures import git_init
+from support.provider_inputs import PROVIDER_LIMIT_FAILURE, admit, finish, report
+from support.fakes.git_backend import make_repository
 from support.provider_state import gate_store, transact
 from support.storage_records import record_store
+from test_categories import test_group
 
 
 def compete(root, ready, release, output, name):
     """A child process: wait for the start, admit ``name`` as the probe at time 500, and settle it after release."""
-    ports = real_ports()
+    from support.entry import entry
+    _entry = entry()
+    ports = real_ports(environment=_entry.environment)
     repository = record_store(Path(root) / 'repository', backend=ports.git_backend, clock=ports.clock)
     acquired = False
     try:
@@ -55,11 +58,16 @@ def compete(root, ready, release, output, name):
                      clock=ports.clock, jobs=ports.jobs)
 
 
+@test_group('resource')
 class ProbeRaceTests(unittest.TestCase):
     def test_two_real_processes_admit_one_probe(self):
+        from support.entry import entry
+        _entry = entry()
+        from support.entry import entry
+        _entry = entry()
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        git_init(root / 'repository')
-        ports = real_ports()
+        make_repository(root / 'repository')
+        ports = real_ports(environment=_entry.environment)
         repository = gate_store(root, clock=ports.clock, backend=ports.git_backend)
 
         def reject(slots, instance, runtime):
@@ -80,7 +88,7 @@ class ProbeRaceTests(unittest.TestCase):
             self.assertEqual(sum(success for _, success, _ in outcomes), 1, outcomes)
             _, instance, runtime = repository.load()
             gate = SessionSlots(runtime, instance, observer=True, clock=ports.clock,
-                                jobs=ports.jobs).provider_snapshot(current_time=500)["providers"]["claude"]
+                                jobs=ports.jobs, host_id=_entry.host_id).provider_snapshot(current_time=500)["providers"]["claude"]
             winner = next(name for name, success, _ in outcomes if success)
             self.assertEqual((gate["state"], gate["probe_owner"]), ("checking", winner))
         finally:

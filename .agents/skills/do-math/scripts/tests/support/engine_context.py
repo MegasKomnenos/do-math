@@ -77,8 +77,10 @@ def prepare(action, direct=None, *, instance=None, runtime=None, extra=None, roo
     Returns the packaged context, or with ``root`` the whole prepared input in that workspace.
     ``install`` also installs the submission and read tools, as the engine does.
     """
+    from support.entry import entry
+    _entry = entry()
     if instance is None:
-        from record_fixtures import surface_state
+        from support.record_builders import surface_state
         instance, runtime = surface_state()
     profile = next(p for p in instance['execution_profiles'].values() if p['role'] == action['role'])
     context = {key: [] for key in SCOPED_KEYS}
@@ -87,7 +89,7 @@ def prepare(action, direct=None, *, instance=None, runtime=None, extra=None, roo
     def run(workspace):
         return prepare_role_input(context, instance=instance, runtime=runtime, role=action['role'],
             profile=profile, snapshot=snapshot, workspace=workspace, activity_id='AC-1',
-            install_submission_tools=install, max_artifact_bytes=100000 if install else None)
+            install_submission_tools=install, max_artifact_bytes=100000 if install else None, clock=_entry.ports.clock)
     if root is not None:
         return run(root)
     with tempfile.TemporaryDirectory() as directory:
@@ -96,7 +98,7 @@ def prepare(action, direct=None, *, instance=None, runtime=None, extra=None, roo
 
 def context_state(instance=None, runtime=None):
     """``(instance, runtime)``: the legacy ``context_engine`` state, as plain records."""
-    from record_fixtures import surface_state
+    from support.record_builders import surface_state
     base, running = surface_state()
     base.update(relations=[], goal_status='unresolved', lifecycle={'state': 'active'})
     running.update(inputs=[], questions=[])
@@ -154,7 +156,7 @@ def package(engine, root, role='research_plan', target=None):
     profile = next(p for p in engine.instance['execution_profiles'].values() if p['role'] == role)
     result = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime, role=role,
         profile=profile, snapshot=engine.head, workspace=root, activity_id='AC-1',
-        install_submission_tools=True, artifact_prefix='runtime/artifacts/BA-plan')
+        install_submission_tools=True, artifact_prefix='runtime/artifacts/BA-plan', clock=engine.ports.clock)
     fixed = submission.load_json((root / 'input/submission/context.json').read_bytes())
     return result, fixed
 
@@ -183,7 +185,7 @@ def record_contexts(sim, responder=None):
     The context is what the worker's model read from its actual prompt
     (``runner_fixtures.context_from``); ``prompts`` holds ``(role, context,
     prompt)`` with the raw prompt text the provider CLI received on its input.
-    ``responder`` replaces the default responder (``runner_fixtures.ScriptedRunner()``),
+    ``responder`` replaces the default responder (``support.default_responder.DefaultResponder()``),
     for example a formal one.
     """
     from copy import deepcopy
@@ -249,8 +251,8 @@ class GitBatches:
 
 def central_check_knowledge():
     """``(instance, runtime, kid, stored verification)``: one K record whose check stored raw output and evidence."""
-    from knowledge_fixtures import verified_knowledge
-    from record_fixtures import surface_state
+    from support.knowledge_builders import verified_knowledge
+    from support.record_builders import surface_state
     instance, runtime = surface_state()
     evidence, _, kid, _ = verified_knowledge(check=CENTRAL_CHECK)
     instance.update(evidence)

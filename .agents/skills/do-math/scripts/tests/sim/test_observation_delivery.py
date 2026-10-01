@@ -13,7 +13,7 @@ import unittest
 
 from do_math.model_runner import ModelRunner
 from do_math.parallel import ModelCalls
-from provider_fixtures import Adapter
+from support.provider_runs import ProviderJobs, ScriptedCLI, model_runner
 from support.fakes.clock import FakeClock
 
 
@@ -51,28 +51,27 @@ class CollectionOrderTests(unittest.TestCase):
 
 class StreamChunkTests(unittest.TestCase):
     def test_one_native_chunk_is_one_owner_transaction(self):
+        from support.entry import entry
+        _entry = entry()
         events = [{'type': 'item.completed', 'item': {'id': str(i), 'type': 'agent_message', 'text': str(i)}}
                   for i in range(20)]
 
-        class Burst(Adapter):
-            """The provider writes all twenty rows at once, between the runner's first and second poll."""
-            polls = 0
-
-            def wait_for_termination(self, *args):
-                self.polls += 1
-                if self.polls == 1:
-                    Path(self.request['stdout_path']).write_text(
-                        ''.join(json.dumps(e) + '\n' for e in events), encoding='utf-8')
-                return self.polls >= 2
+        from support.model import codex_stream_bytes
+        framing = [json.loads(row) for row in codex_stream_bytes('{}').splitlines()]
+        # Preserve the twenty observations, with the real collector's required
+        # provider start/completion and exact final-message framing in one write.
+        events = framing[:2] + events + framing[2:]
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            runner = ModelRunner(clock=FakeClock())
-            runner.adapters['codex'] = Burst({'result': 'output_collected', 'final': {'raw': b'{}'}, 'jsonl': {}})
+            cli = ScriptedCLI(stdout=b''.join(json.dumps(e).encode() + b'\n' for e in events))
+            clock = FakeClock()
+            jobs = ProviderJobs(cli, clock=clock, polls=2)
+            runner = model_runner(root, jobs, clock)
             delivered = []
-            result = runner.run(prompt='fixture', output_schema={}, workspace=root,
+            result = runner.run(prompt='fixture', output_schema={}, workspace=root / 'work',
                 evidence_dir=root / 'evidence', model='fixture', effort='low',
                 timeout_seconds=None, on_observation=delivered.append)
-            self.assertEqual(result['status'], 'completed')
+            self.assertEqual(result['status'], 'completed', result)
             self.assertEqual(len(delivered), 1, 'One buffered stream chunk must not require 20 state transactions')
             self.assertEqual(delivered[0].events, events)
 

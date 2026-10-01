@@ -16,8 +16,9 @@ from do_math.contracts import action_schema
 from do_math.model_policy import assessment_basis
 from do_math.planning import action_read_ids, revision_waits
 from do_math.submission import payload_issues
-from research_fixtures import candidate, prepared_rule_conditions, seal_response
-from runner_fixtures import common, rating
+from support.role_answers import candidate, seal_response
+from support.observation_inputs import prepared_rule_conditions
+from support.default_responder import common, rating
 
 COVERAGE = ('submission.activity-extensions.json.task_conditions', 'activity-extensions.json/task_conditions',
             'observation rule coverage must dispose every assigned target exactly once')
@@ -39,10 +40,12 @@ class RuleSubmissionTests(unittest.TestCase):
                         'knowledge_catalog': [], 'kind_definitions': {}, 'sources': []}
 
     def issues(self, extensions, candidates=None):
+        from support.entry import entry
+        _entry = entry()
         output = {**common('research_preparation'), 'candidates': candidates or []}
         (self.workspace / 'activity-extensions.json').write_bytes(canonical_json(extensions))
         seal_response(output, self.context, self.workspace)
-        return payload_issues(output, action_schema(self.action), self.context, extensions, self.workspace)
+        return payload_issues(output, action_schema(self.action), self.context, extensions, self.workspace, clock=_entry.ports.clock)
 
     def test_rules_only_and_combined_preparation_cover_exact_assignments(self):
         extensions = {'task_conditions': prepared_rule_conditions(['TK-one'])}

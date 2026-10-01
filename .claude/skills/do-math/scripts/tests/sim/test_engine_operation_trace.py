@@ -50,6 +50,8 @@ class OperationTraceTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'nt', 'Windows refuses to replace a directory with a file; the failure is its own')
     def test_telemetry_failure_identifies_operation_without_leaking_exception_text(self):
+        from support.entry import entry
+        _entry = entry()
         directory = self.directory()
         sink = OperationTrace(directory)
         sink.live.mkdir()  # the snapshot's name is a directory: the live replace fails with access denied
@@ -64,7 +66,7 @@ class OperationTraceTests(unittest.TestCase):
                                                    r'errno=13, winerror=5\); execution authority is unchanged$'):
             sink.emit({'event': 'started', 'span_id': 'span', 'phase': 'unit'})
         sink.close()
-        (observed,) = progress(directory)['telemetry_errors']
+        (observed,) = progress(directory, clock=_entry.ports.clock)['telemetry_errors']
         self.assertEqual({key: value for key, value in observed.items() if key not in ('first_at', 'last_at')},
                          {'operation_id': sink.id, 'operation': 'replace_live', 'exception_type': 'PermissionError',
                           'errno': 13, 'winerror': 5, 'count': 1, 'relative_path': 'live/' + sink.id + '.json'})
@@ -77,17 +79,19 @@ class OperationTraceTests(unittest.TestCase):
                          ['span'], 'the trace row was appended although the live replace failed')
 
     def test_launcher_trace_correlation_is_separate_from_child_authority(self):
+        from support.entry import entry
+        _entry = entry()
         directory = self.directory()
 
         @workspace_operation('launcher')
         def launcher(workspace):
-            return child_environment()['DO_MATH_PARENT_OPERATION_ID']
+            return child_environment({})['DO_MATH_PARENT_OPERATION_ID']
         parent = launcher(directory)
         # A child process starts with the launcher's environment; its sink reads the correlation at creation.
         with patch.dict('os.environ', {'DO_MATH_PARENT_OPERATION_ID': parent}):
             with tracing(directory), phase('child'):
                 pass
-        child = next(row for row in phase_rows(directory) if row['phase'] == 'child')
+        child = next(row for row in phase_rows(directory, clock=_entry.ports.clock) if row['phase'] == 'child')
         self.assertEqual(child['parent_operation_id'], parent)
 
     def test_live_snapshot_is_throttled_but_never_more_than_one_interval_behind(self):
@@ -120,6 +124,8 @@ class OperationTraceTests(unittest.TestCase):
         self.assertEqual(len(sink.path.read_text(encoding='utf-8').splitlines()), 3)
 
     def test_phase_timings_preserve_overlap_and_incomplete_work(self):
+        from support.entry import entry
+        _entry = entry()
         directory = self.directory()
         with tracing(directory) as sink:
             with phase('parent'):
@@ -127,18 +133,18 @@ class OperationTraceTests(unittest.TestCase):
                     counters.update(completed_files=2, read_bytes=20)
                 # The snapshot may lag by LIVE_INTERVAL: its pending timer writes the state after the child ended.
                 settle_timer(sink)
-                live = progress(directory)['rows']
+                live = progress(directory, clock=_entry.ports.clock)['rows']
                 self.assertEqual([row['phase'] for row in live[0]['active_spans']], ['parent'])
-        rows = phase_rows(directory)
+        rows = phase_rows(directory, clock=_entry.ports.clock)
         self.assertEqual(len(rows), 2)
         child = next(r for r in rows if r['phase'] == 'child')
         parent = next(r for r in rows if r['phase'] == 'parent')
         self.assertEqual(child['parent_span_id'], parent['span_id'])
         self.assertEqual(child['trace_write_errors'], 0)
         self.assertGreaterEqual(parent['elapsed_ns'], child['elapsed_ns'])
-        self.assertEqual(progress(directory)['rows'], [])
+        self.assertEqual(progress(directory, clock=_entry.ports.clock)['rows'], [])
         (Path(directory) / 'interrupted.jsonl').write_bytes(b'{"event": "started"}\n\xff')
-        self.assertEqual(len(phase_rows(directory)), 2)
+        self.assertEqual(len(phase_rows(directory, clock=_entry.ports.clock)), 2)
 
 
 if __name__ == '__main__':

@@ -29,7 +29,9 @@ from support.fakes.jobs import FakeJobs
 
 
 def host_slots(runtime, instance, *, jobs=None):
-    return SessionSlots(runtime, instance, clock=FakeClock(), jobs=jobs if jobs is not None else FakeJobs())
+    from support.entry import entry
+    _entry = entry()
+    return SessionSlots(runtime, instance, clock=FakeClock(), jobs=jobs if jobs is not None else FakeJobs(), host_id=_entry.host_id)
 
 
 def admit(slots, eid, profile):
@@ -48,9 +50,11 @@ def dispatched(execution_id, profile, *, jobs, clock):
 
 
 def host_configuration():
+    from support.entry import entry
+    _entry = entry()
     from do_math.configuration import DEFAULT_CONFIG
     settings = {**deepcopy(DEFAULT_CONFIG), 'scholarly_enabled': False}
-    roles = execution_profiles.build_profiles(settings)['role_profile_refs']
+    roles = execution_profiles.build_profiles(settings, host=_entry.ports.host)['role_profile_refs']
     host = execution_profiles.host_constraint(host_id=platform.node(),
         limits={'jobs': 4, 'memory_bytes': 536870912, 'cpu_rate_basis_points': 8000},
         control_reserve={'jobs': 1, 'memory_bytes': 134217728, 'cpu_rate_basis_points': 2000},

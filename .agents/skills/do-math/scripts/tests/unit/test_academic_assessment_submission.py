@@ -19,8 +19,9 @@ from do_math.canonical import canonical_json, exact_content_hash
 from do_math.contracts import schema_for
 from do_math.planning import contract_hash
 from do_math.submission import payload_issues
-from research_fixtures import candidate, seal_response, supply_observation_rules
-from runner_fixtures import common, contract_checks, rating
+from support.role_answers import candidate, seal_response
+from support.observation_inputs import supply_observation_rules
+from support.default_responder import common, contract_checks, rating
 
 MODEL = ('submission.activity-extensions.json.model_assessments', 'activity-extensions.json/model_assessments')
 
@@ -45,6 +46,8 @@ class AssessmentSubmissionTests(unittest.TestCase):
 
     def issues(self, extensions):
         """(rule, path, message) of each issue; candidates get their observation rules so rules never mask assessments."""
+        from support.entry import entry
+        _entry = entry()
         extensions = deepcopy(extensions)
         if 'assessment_targets' not in self.context['action']:
             supply_observation_rules(self.output['candidates'], extensions)
@@ -54,7 +57,7 @@ class AssessmentSubmissionTests(unittest.TestCase):
             task.setdefault('content_sha256', exact_content_hash(task))
         seal_response(output, self.context, self.workspace)
         return [(issue['rule_id'], issue['path'], issue['message'])
-                for issue in payload_issues(output, schema_for("research_preparation"), self.context, extensions, self.workspace)]
+                for issue in payload_issues(output, schema_for("research_preparation"), self.context, extensions, self.workspace, clock=_entry.ports.clock)]
 
     def test_missing_candidate_assessments_are_rejected_with_missing_titles(self):
         self.assertEqual(self.issues({"model_assessments": [rating(task_title="one")]}), [

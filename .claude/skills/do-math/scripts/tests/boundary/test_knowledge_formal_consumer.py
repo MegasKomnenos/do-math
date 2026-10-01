@@ -34,11 +34,13 @@ from do_math.engine import query_records
 from do_math.knowledge import assess_use
 from do_math.local_host import LocalHost
 from do_math.trust_validation import EnvironmentUnavailable, require_active_environment
-from knowledge_fixtures import knowledge_candidate
-from provider_fixtures import actual_command
+from support.knowledge_builders import knowledge_candidate
+from support.provider_inputs import actual_command
 from support.engine_lifecycle import applied, clear_work, only, recorded_verifier
 from support.knowledge_installed_lean import adopt_installed, installed_toolchain
 from support.provider_probes import ObservedCalls
+from support.knowledge_formal_engine import ReturnedValues
+from do_math.trust_validation import verify_formal
 from support.review_sim import export_objects
 from support.sim import Sim
 from test_categories import test_group as category
@@ -68,6 +70,23 @@ def stored_result(sim, execution):
     return json.loads(sim.engine.store.read(execution['result_ref'], sim.engine.head))
 
 
+def after_compile(sim, change):
+    """Change external state when the actual compiler exits, at its spawn seam."""
+    spawn = sim.lean.spawn
+
+    def start(command, **options):
+        process = spawn(command, **options)
+        wait = process.wait
+
+        def completed(timeout=None):
+            code = wait(timeout)
+            change()
+            return code
+        process.wait = completed
+        return process
+    sim.lean.spawn = start
+
+
 @category('lean')
 class FormalConsumerLeanTests(unittest.TestCase):
     @classmethod
@@ -83,8 +102,8 @@ class FormalConsumerLeanTests(unittest.TestCase):
 
     def test_actual_approved_command_seals_result_and_ends_execution(self):
         sim, environment = self.start()
-        results = []
-        calls = recorded_verifier(sim, change=lambda result: results.append(result) or result)
+        results = self.enterContext(ReturnedValues(verify_formal)).values
+        calls = self.enterContext(recorded_verifier())
         kid = imported(sim, knowledge_candidate())
         engine = sim.engine
         with ObservedCalls(capture={'review': lambda arguments: arguments['knowledge_id'],
@@ -116,8 +135,8 @@ class FormalConsumerLeanTests(unittest.TestCase):
         source = 'theorem \u212a (\u2126 : True) : True := \u2126\r\ntheorem K : True := True.intro\n-- e\u0301\n'
         names = ['\u212a', 'K']
         sim, _ = self.start()
-        results = []
-        calls = recorded_verifier(sim, change=lambda result: results.append(result) or result)
+        results = self.enterContext(ReturnedValues(verify_formal)).values
+        calls = self.enterContext(recorded_verifier())
         kid = imported(sim, knowledge_candidate(lean_code=source, declaration_names=names))
         sim.step()
         self.assertEqual([arguments['source'].encode() for arguments in calls], [source.encode()])
@@ -136,15 +155,13 @@ class FormalConsumerLeanTests(unittest.TestCase):
             shutil.copytree(Path(formal.__file__).parent, copied, ignore=shutil.ignore_patterns('__pycache__'))
             checker = (copied / 'formal.py').resolve()
             sim, environment = self.start({**deepcopy(self.baseline), 'verifier_path': str(checker)})
-            results = []
+            results = self.enterContext(ReturnedValues(verify_formal)).values
 
-            def change(result):
+            def change():
                 recorded = Path(sim.engine.instance['trust_environments'][environment]['toolchain']['verifier_path'])
                 self.assertTrue(recorded.resolve().is_relative_to(Path(directory).resolve()))
-                results.append(result)
                 checker.write_text('changed after actual compilation', encoding='utf-8')
-                return result
-            recorded_verifier(sim, change=change)
+            after_compile(sim, change)
             kid = imported(sim, knowledge_candidate())
             sim.step()
             # Nothing is re-observed after compiling; the formal result itself is accepted.
@@ -152,19 +169,17 @@ class FormalConsumerLeanTests(unittest.TestCase):
                              ('verified', 'verified'))
             self.assertEqual(sim.instance['formal_results'][sim.instance['knowledge'][kid]['formal_result_id']]['publication_state'], 'accepted')
             with self.assertRaises(EnvironmentUnavailable) as caught:
-                require_active_environment(sim.instance, sim.runtime, current_identity=True, host=LocalHost())
+                require_active_environment(sim.instance, sim.runtime, current_identity=True, host=LocalHost(clock=sim.ports.clock, environment=sim.environment, jobs=sim.ports.jobs))
             self.assertIn('approved toolchain file changed: ' + str(checker), str(caught.exception))
             self.assertEqual(sim.instance['active_trust_environment'], environment)
 
     def test_current_environment_change_after_actual_compile_prevents_publication(self):
         sim, environment = self.start()
-        results = []
+        results = self.enterContext(ReturnedValues(verify_formal)).values
 
-        def change(result):
-            results.append(result)
+        def change():
             sim.engine.instance['trust_environments'][environment]['source_ref'] = 'different-current-approval'
-            return result
-        recorded_verifier(sim, change=change)
+        after_compile(sim, change)
         kid = imported(sim, knowledge_candidate())
         sim.step()
         self.assertEqual(results[0]['status'], 'verified')
@@ -184,6 +199,10 @@ class InstalledCompilerTests(unittest.TestCase):
         cls.baseline = installed_toolchain()
 
     def test_actual_compile_reuses_pinned_version_observation_without_reprobing(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         approved = deepcopy(self.baseline)
         # Version text is a pinned observation; executable identities, rather
         # than a second process's display string, bind the approved compiler.
@@ -191,7 +210,7 @@ class InstalledCompilerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, \
                 ObservedCalls(capture={'job': lambda arguments: list(arguments['command'])}, job=formal._job_run) as observed:
             result = formal.verify_lean(source=knowledge_candidate()['lean_code'], declarations=['truth'],
-                workspace=Path(d), lean_command=actual_command(), expected_toolchain=approved)
+                workspace=Path(d), lean_command=actual_command(), expected_toolchain=approved, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         self.assertEqual(result['status'], 'verified', result)
         self.assertEqual(result['toolchain'], approved)
         self.assertEqual(len(observed.calls['job']), 1)
@@ -199,11 +218,15 @@ class InstalledCompilerTests(unittest.TestCase):
         self.assertIn('True.intro', result['dependency_closure']['truth'])
 
     def test_actual_executable_identity_different_from_approved_input_is_rejected(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         approved = deepcopy(self.baseline)
         approved['sha256'] = '0' * 64
         with tempfile.TemporaryDirectory() as d:
             result = formal.verify_lean(source=knowledge_candidate()['lean_code'], declarations=['truth'],
-                workspace=Path(d), lean_command=actual_command(), expected_toolchain=approved)
+                workspace=Path(d), lean_command=actual_command(), expected_toolchain=approved, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         self.assertEqual(result['status'], 'rejected')
         self.assertEqual(result['reason'], 'approved toolchain changed before execution')
         self.assertIsNone(result['command'])
@@ -212,6 +235,10 @@ class InstalledCompilerTests(unittest.TestCase):
 class ImportedRecordQueryTests(unittest.TestCase):
     def test_imported_record_query_has_snapshot_evidence(self):
         """The query half of the legacy import test: the imported record's row names the published head and bytes."""
+        from support.entry import entry
+        from do_math.wiring import real_ports
+        _entry = entry()
+        _entry.ports = real_ports(environment=_entry.environment)
         sim = Sim.activated()
         data = knowledge_candidate()
         data.update(lean_code='theorem \u212a : True := True.intro\r\ntheorem K : True := True.intro\n-- e\u0301\n',
@@ -221,7 +248,7 @@ class ImportedRecordQueryTests(unittest.TestCase):
         kid = next(kid for kid, row in sim.instance['knowledge'].items() if row['title'] == data['title'])
         head = sim.engine.head
         export_objects(sim)
-        page = query_records(sim.repository, sim.instance_id, kind='knowledge')
+        page = query_records(sim.repository, sim.instance_id, kind='knowledge', backend=_entry.ports.git_backend, clock=_entry.ports.clock)
         row = next(r for r in page['items'] if r['record']['id'] == kid)
         self.assertEqual(row['snapshot'], head)
         stored = sim.engine.store.read_record(kid, head)

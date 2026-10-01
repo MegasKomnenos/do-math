@@ -1,13 +1,17 @@
 """Real side of the Jobs port contract: Windows Jobs."""
 import unittest
+from test_categories import test_group
 
-from contracts.test_port_jobs import JobsContract
+from support.port_contracts.jobs import JobsContract
 from do_math.wiring import real_ports
 
 
+@test_group('resource')
 class WindowsJobsContract(JobsContract, unittest.TestCase):
     def make(self):
-        return real_ports().jobs
+        from support.entry import entry
+        _entry = entry()
+        return real_ports(environment=_entry.environment).jobs
 
 
 if __name__ == '__main__':

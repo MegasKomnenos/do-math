@@ -75,7 +75,7 @@ def history(*, bound=False):
     """``bound`` puts the control binding into the issued and installed context, as the engine does for a
     worker, so the installed tool itself can send the draft (the legacy scene sent it for the worker)."""
     from do_math.planning import governance_revisions
-    from research_fixtures import seal_response
+    from support.role_answers import seal_response
     sim = Sim.activated()
     engine = sim.engine
     action = {'id': 'AC-history', 'role': 'maintenance'}
@@ -109,9 +109,9 @@ def history(*, bound=False):
 def research():
     from do_math import knowledge_io, planning
     from do_math.input_basis import capture_decision_basis
-    from engine_fixtures import approve_contract
-    from record_fixtures import two_observation_output
-    from research_fixtures import candidate
+    from support.record_builders import approve_contract
+    from support.record_builders import two_observation_output
+    from support.role_answers import candidate
     sim = Sim.activated()
     engine = sim.engine
     action = {'id': 'AC-partial', 'role': 'research_work'}

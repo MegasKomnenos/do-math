@@ -18,7 +18,6 @@ from .academic import requirement_record
 from .execution_profiles import PLANNING_ROLES, WORK_ROLES as _SLOT_WORK_ROLES
 from .external import recover_operation
 from .task_contracts import TERMINAL_TASK_STATUSES
-from .migration_defaults import clock_or_system
 
 # Roles that carry out or judge task work: the slot-reserving work roles and
 # the machine formal check. A governance change stops their unended executions.
@@ -297,8 +296,7 @@ def validate_goal_additional_audits(instance, judgments, *, runtime=None):
             if actual["decision"] != "satisfied": raise ValueError("additional audit does not establish goal satisfaction")
 
 
-def _apply_domain_decision(instance, runtime, change, source_ref, actor, at, *, clock=None):
-    clock = clock_or_system(clock)
+def _apply_domain_decision(instance, runtime, change, source_ref, actor, at, *, clock):
     if actor != "user": raise ValueError("preserved user decision required")
     validate_source(instance.get("governance_sources", {}).get(source_ref))
     result, state = deepcopy(instance), deepcopy(runtime)
@@ -317,7 +315,7 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at, *, 
                      == {k: v for k, v in record.get("content", {}).items() if k != "academic_requirements"}
                      and previous_charter.get("document") == record.get("document"))
     event = {"id": decision_id, "kind": change["kind"], "actor": "user", "change": deepcopy(change), "source_ref": source_ref,
-             "source_sha256": result["governance_sources"][source_ref]["sha256"], "created_at": timestamp(at, clock=clock).isoformat(), "affected": []}
+             "source_sha256": result["governance_sources"][source_ref]["sha256"], "created_at": timestamp(clock.now() if at is None else at).isoformat(), "affected": []}
     result["decisions"][decision_id] = event
     _install_record(result, record, decision_id, source_ref)
     validate_governance_state(result)
@@ -344,9 +342,9 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at, *, 
     return result, state, event
 
 
-def timestamp(value: str | None = None, *, clock=None) -> datetime:
-    """A stored zoned time as UTC; None means the clock's current time."""
-    return clock_or_system(clock).wall() if value is None else parse_utc(value)
+def timestamp(value: str) -> datetime:
+    """A stored zoned time as UTC."""
+    return parse_utc(value)
 
 
 def grant_case_id(action, runtime):
@@ -373,7 +371,7 @@ def grant_case_id(action, runtime):
     return ("action", identifier)
 
 
-def grant_scope_reason(grant, action, runtime, *, at=None):
+def grant_scope_reason(grant, action, runtime, *, at):
     """Check explicit authority; execution/operation ledgers own consumption."""
     return _grant_scope_reason(grant, action, runtime, now=timestamp(at))
 
@@ -423,7 +421,7 @@ def _grant_scope_reason(grant, action, runtime, *, now):
     return None
 
 
-def authorize(instance: dict, action: dict, at: str | None = None, *, runtime: dict | None = None) -> dict:
+def authorize(instance: dict, action: dict, at: str | None, *, runtime: dict | None = None) -> dict:
     now = timestamp(at)
     role, target = action["role"], action.get("target")
     accepted = []
@@ -465,7 +463,7 @@ def validate_grant_source(instance, grant):
     if approved != grant: raise ValueError("grant differs from the actual approved scope")
 
 
-def authorize_review_replacement(instance, runtime, action, *, delegation_id=None, case=None, at=None):
+def authorize_review_replacement(instance, runtime, action, *, delegation_id=None, case=None, at):
     """Check authority only; REVIEWS owns the failed slot and continuity transition."""
     try:
         if action.get("role") != "identity_review" or action.get("purpose") != "record_replacement":
@@ -490,8 +488,7 @@ def authorize_review_replacement(instance, runtime, action, *, delegation_id=Non
         return {"allowed": False, "grant_id": action.get("grant_id"), "reason": str(error)}
 
 
-def _queue(runtime: dict, role: str, reason: str, clock=None, **fields: Any) -> None:
-    clock = clock_or_system(clock)
+def _queue(runtime: dict, role: str, reason: str, clock, **fields: Any) -> None:
     action = {"id": clock.new_id("AC"), "role": role, "reason": reason, **fields}
     action.setdefault("lineage_id", action["id"])
     runtime.setdefault("queue", []).append(action)
@@ -514,9 +511,8 @@ def _dispose_grant_consumers(runtime, gid, event, reason):
 
 
 def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: str,
-                   actor: str = "user", at: str | None = None, clock=None) -> tuple[dict, dict, dict]:
+                   actor: str = "user", at: str | None = None, clock) -> tuple[dict, dict, dict]:
     """Apply one explicit decision atomically to copies of the two roots."""
-    clock = clock_or_system(clock)
     from .control_contracts import validate_decision_shape
     validate_decision_shape(change)
     if actor != "user" or not source_ref:
@@ -525,7 +521,7 @@ def apply_decision(instance: dict, runtime: dict, change: dict, *, source_ref: s
         return _apply_domain_decision(instance, runtime, change, source_ref, actor, at, clock=clock)
     instance, runtime = deepcopy(instance), deepcopy(runtime)
     validate_source(instance.get("governance_sources", {}).get(source_ref, {}))
-    when = timestamp(at, clock=clock).isoformat()
+    when = timestamp(clock.now() if at is None else at).isoformat()
     kind = change.get("kind")
     decision_id = change.get("decision_id") or clock.new_id("DC")
     if decision_id in instance["decisions"]:
@@ -737,9 +733,9 @@ def register_import_owner(handlers, kind, *, apply, validate, basis, contract=No
     return handlers
 
 
-def import_consumer_catalog(handlers=None):
+def import_consumer_catalog(handlers=None, *, clock):
     """Publish the actual registered kinds and their producer-facing contracts."""
-    owners = _owner_handlers(handlers)
+    owners = _owner_handlers(handlers, clock=clock)
     builtins = DECISION_OWNER_KINDS | {'configuration', 'research_record', 'evidence'}
     kinds = DECISION_OWNER_KINDS | set(owners)
     rows = []
@@ -753,14 +749,14 @@ def import_consumer_catalog(handlers=None):
     return rows
 
 
-def _knowledge_import(instance, runtime, unit, approval, *, clock=None):
+def _knowledge_import(instance, runtime, unit, approval, *, clock):
     from .knowledge_io import import_candidate
     result, state, _ = import_candidate(instance, runtime, unit["payload"]["record"],
         source_ref=approval["source_ref"], actor_ref=approval.get("execution_id", approval["source_ref"]), clock=clock)
     return result, state
 
 
-def _validate_knowledge_import(instance, runtime, unit, *, clock=None):
+def _validate_knowledge_import(instance, runtime, unit, *, clock):
     from .knowledge_io import import_candidate
     if not unit["payload"]: return
     candidate = unit["payload"].get("record")
@@ -783,7 +779,7 @@ def _knowledge_import_basis(instance, runtime, unit):
             "source_basis": capture_sources(instance, candidate.get("source_refs", []))}
 
 
-def import_owner_handlers(*, clock=None):
+def import_owner_handlers(*, clock):
     """Built-in research candidates/evidence; extension tokens are not a closed list.
 
     These owners use the ordinary knowledge candidate contract. Evidence here
@@ -798,7 +794,7 @@ def import_owner_handlers(*, clock=None):
     return handlers
 
 
-def register_configuration_owner(handlers, *, apply):
+def register_configuration_owner(handlers, *, apply, host_id):
     """Reuse ENGINE's actual config validation and its live-ledger apply callback.
 
     The callback must consume the approved patch through the same configure
@@ -810,7 +806,7 @@ def register_configuration_owner(handlers, *, apply):
         patch = unit["payload"].get("config")
         if unit["owner_ref"] != instance["id"] or not isinstance(patch, dict):
             raise ValueError("configuration import must bind this instance and an explicit config patch")
-        validate_config({**instance.get("config", {}), **patch})
+        validate_config({**instance.get("config", {}), **patch}, host_id=host_id)
     def basis(instance, runtime, unit):
         return deepcopy(instance.get("config", {}))
     return register_import_owner(handlers, "configuration", apply=apply, validate=validate, basis=basis)
@@ -821,8 +817,8 @@ def _unbound(adapter):
     return {key: getattr(value, "func", value) for key, value in adapter.items()} if isinstance(adapter, dict) else adapter
 
 
-def _owner_handlers(handlers):
-    result = import_owner_handlers()
+def _owner_handlers(handlers, *, clock):
+    result = import_owner_handlers(clock=clock)
     for kind, adapter in (handlers or {}).items():
         if kind in result and _unbound(adapter) == _unbound(result[kind]):
             result[kind] = adapter  # the same owner, bound to the caller's clock
@@ -837,7 +833,7 @@ def _owner_basis(instance, runtime, output, handlers):
             for unit in output["import_units"] if unit["owner_kind"] in handlers}
 
 
-def validate_import_units(instance, runtime, source, output, *, owner_handlers=None, owner_kinds=None):
+def validate_import_units(instance, runtime, source, output, *, owner_handlers=None, owner_kinds=None, clock):
     """Check exact character coverage and ownership; semantic preservation is checked separately.
 
     The interpreting producer runs this same check on its fixed input
@@ -847,7 +843,7 @@ def validate_import_units(instance, runtime, source, output, *, owner_handlers=N
     validate_source(source)
     units = output.get("import_units")
     if not isinstance(units, list) or not units: raise ValueError("import units required")
-    owner_handlers = {} if owner_kinds is not None else _owner_handlers(owner_handlers)
+    owner_handlers = {} if owner_kinds is not None else _owner_handlers(owner_handlers, clock=clock)
     known_owners = DECISION_OWNER_KINDS | set(owner_handlers if owner_kinds is None else owner_kinds)
     decisions = instance.get("decisions", {})
     details = output.get("question_details", [])
@@ -935,13 +931,12 @@ def import_input_source(instance, runtime, input_id):
     return preserve_source(identifier, text, origin=request.get('origin', 'user'))
 
 
-def prepare_import(instance, runtime, source, output, *, execution_id, input_ref, previous_id=None, owner_handlers=None, clock=None):
+def prepare_import(instance, runtime, source, output, *, execution_id, input_ref, previous_id=None, owner_handlers=None, clock):
     """Seal an interpretation of the public input ``input_ref``, whose exact source is ``source``."""
-    clock = clock_or_system(clock)
     require_text(execution_id, "author execution")
     if import_input_source(instance, runtime, input_ref) != source:
         raise ValueError('source differs from the exact public input')
-    validate_import_units(instance, runtime, source, output, owner_handlers=owner_handlers)
+    validate_import_units(instance, runtime, source, output, owner_handlers=owner_handlers, clock=clock)
     previous = runtime.get("intent_imports", {}).get(previous_id) if previous_id else None
     if previous_id:
         if not previous or previous.get("superseded_by") or previous.get("status") not in INTERPRETATION_DECISIONS:
@@ -960,14 +955,14 @@ def prepare_import(instance, runtime, source, output, *, execution_id, input_ref
         if set(repair["changed_unit_ids"]) != changed: raise ValueError("repair coordinates do not match actual changed units")
         premise_changed = (previous.get("application", {}).get("post_basis_sha256", previous["basis_sha256"]) != _import_basis(instance, runtime, previous["output"])
             or previous.get("application", {}).get("post_owner_basis", previous.get("owner_basis", {})) !=
-               _owner_basis(instance, runtime, previous["output"], _owner_handlers(owner_handlers)))
+               _owner_basis(instance, runtime, previous["output"], _owner_handlers(owner_handlers, clock=clock)))
         if not changed and not premise_changed: raise ValueError("unchanged import resumes application; it does not need a new check")
     known = instance.get("governance_sources", {}).get(source["id"])
     if known and known != source: raise ValueError("source identity reused with different bytes")
     identifier = clock.new_id("IM")
     bundle = {"id": identifier, "source": deepcopy(source), "output": deepcopy(output), "execution_id": execution_id,
               "basis_sha256": _import_basis(instance, runtime, output),
-              "owner_basis": _owner_basis(instance, runtime, output, _owner_handlers(owner_handlers)),
+              "owner_basis": _owner_basis(instance, runtime, output, _owner_handlers(owner_handlers, clock=clock)),
               "previous_id": previous_id, "previous_findings": deepcopy(previous.get("check", {}).get("findings", [])) if previous else [],
               "status": "checking"}
     bundle['input_ref'] = input_ref
@@ -977,7 +972,7 @@ def prepare_import(instance, runtime, source, output, *, execution_id, input_ref
     return deepcopy(bundle)
 
 
-def current_import(instance, runtime, import_id, *, owner_handlers=None):
+def current_import(instance, runtime, import_id, *, owner_handlers=None, clock):
     bundle = runtime.get("intent_imports", {}).get(import_id)
     if not bundle or bundle.get("superseded_by"): raise ValueError("import is absent or superseded")
     validate_source(bundle["source"])
@@ -992,7 +987,7 @@ def current_import(instance, runtime, import_id, *, owner_handlers=None):
     expected_basis = bundle.get("application", {}).get("post_basis_sha256", bundle["basis_sha256"])
     if expected_basis != _import_basis(instance, runtime, bundle["output"]): raise ValueError("import authority or affected targets changed")
     expected_owners = bundle.get("application", {}).get("post_owner_basis", bundle.get("owner_basis", {}))
-    handlers = _owner_handlers(owner_handlers)
+    handlers = _owner_handlers(owner_handlers, clock=clock)
     if any(u["owner_kind"] not in DECISION_OWNER_KINDS | set(handlers)
            for u in bundle["output"]["import_units"]): raise ValueError("import domain owner is no longer registered")
     if expected_owners != _owner_basis(instance, runtime, bundle["output"], handlers):
@@ -1000,8 +995,8 @@ def current_import(instance, runtime, import_id, *, owner_handlers=None):
     return bundle
 
 
-def check_import(instance, runtime, import_id, output, *, execution_id, owner_handlers=None):
-    bundle = current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
+def check_import(instance, runtime, import_id, output, *, execution_id, owner_handlers=None, clock):
+    bundle = current_import(instance, runtime, import_id, owner_handlers=owner_handlers, clock=clock)
     if bundle.get("check"): raise ValueError("check is sealed; reauthor instead")
     require_text(execution_id, "checker execution")
     validate_independent_execution(runtime,execution_id,[bundle["execution_id"]])
@@ -1062,9 +1057,9 @@ def validate_independent_execution(runtime, execution_id, author_ids):
             if execution.get(field) and execution[field] == author.get(field): raise ValueError("checker shares author conversation")
 
 
-def import_approval_draft(instance, runtime, import_id, *, owner_handlers=None):
+def import_approval_draft(instance, runtime, import_id, *, owner_handlers=None, clock):
     """Derive exact approval coordinates without approving or applying a change."""
-    bundle = current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
+    bundle = current_import(instance, runtime, import_id, owner_handlers=owner_handlers, clock=clock)
     check = bundle.get('check', {})
     if (bundle.get('status') != 'approved' or check.get('decision') != 'approved'
             or check.get('scope_complete') is not True
@@ -1077,12 +1072,12 @@ def import_approval_draft(instance, runtime, import_id, *, owner_handlers=None):
             'unit_hashes':{u['unit_id']:exact_content_hash(u['payload']) for u in bundle['output']['import_units'] if u['payload']}}
 
 
-def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers=None, clock=None):
+def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers=None, clock):
     from .control_contracts import validate_import_approvals
     approvals = {} if approvals is None else approvals
     validate_import_approvals(approvals)
-    owner_handlers = _owner_handlers(owner_handlers)
-    bundle = current_import(instance, runtime, import_id, owner_handlers=owner_handlers)
+    owner_handlers = _owner_handlers(owner_handlers, clock=clock)
+    bundle = current_import(instance, runtime, import_id, owner_handlers=owner_handlers, clock=clock)
     if bundle.get("application", {}).get("status") == "applied": return deepcopy(instance), deepcopy(runtime), deepcopy(bundle["application"])
     if bundle["status"] != "approved": raise ValueError("independent complete approval required")
     check = bundle["check"]
@@ -1091,7 +1086,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
     if runtime.get("executions", {}).get(check["execution_id"], {}).get("intent_import_sha256") != bundle["sha256"]:
         raise ValueError("checker input evidence no longer resolves")
     result, state = deepcopy(instance), deepcopy(runtime)
-    validate_import_units(result, state, bundle["source"], bundle["output"], owner_handlers=owner_handlers)
+    validate_import_units(result, state, bundle["source"], bundle["output"], owner_handlers=owner_handlers, clock=clock)
     result["governance_sources"][bundle["source"]["id"]] = deepcopy(bundle["source"])
     from .questions import link
     for q in bundle["output"].get("question_details", []):
@@ -1127,7 +1122,7 @@ def apply_import(instance, runtime, import_id, *, approvals=None, owner_handlers
     return result, state, outcome
 
 
-def apply_import_control(instance, runtime, request, *, owner_handlers=None, clock=None):
+def apply_import_control(instance, runtime, request, *, owner_handlers=None, clock):
     """Apply-only resume from the public user's exact sealed-import approval.
 
     ENGINE routes decision/config.kind=import_approval here, preserving request

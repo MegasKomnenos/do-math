@@ -1,0 +1,25 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_context_store.StableReadTests.test_metadata_change_during_one_read_is_not_one_version",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_context_catalog.StableReadTests.test_metadata_change_during_one_read_is_not_one_version"
+      ]
+    },
+    {
+      "legacy_id": "test_context_store.ContextStoreTests.test_changed_during_read_is_not_success",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_context_catalog.StableReadTests.test_changed_during_read_is_not_success"
+      ]
+    },
+    {
+      "legacy_id": "test_git_store.SnapshotMetadataTests.test_wrong_or_incomplete_metadata_never_returns_a_snapshot",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_git_process_storage.BatchParsingTests.test_wrong_or_incomplete_metadata_never_returns_a_snapshot"
+      ]
+    }
+  ]
+}

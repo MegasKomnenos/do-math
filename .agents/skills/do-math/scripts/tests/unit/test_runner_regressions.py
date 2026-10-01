@@ -7,10 +7,11 @@ import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import run_tests
-from test_categories import isolation_for, test_group as category, unregistered_modules, SHARDS
+from test_categories import isolation_for, test_group as category
 
 
 class RunnerTests(unittest.TestCase):
@@ -57,13 +58,121 @@ class RunnerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, '^unknown test label: unit$'):
             category('unit')
 
-    def test_every_test_module_is_in_exactly_one_shard_and_absent_modules_are_reported(self):
-        self.assertEqual(unregistered_modules(Path(run_tests.TESTS)), ([], []))
-        with tempfile.TemporaryDirectory() as directory:
-            (Path(directory) / 'test_new_module.py').write_text('', encoding='utf-8')
-            missing, stale = unregistered_modules(directory)
-        self.assertEqual(missing, ['test_new_module'])
-        self.assertEqual(stale, sorted(module for modules in SHARDS.values() for module in modules))
+    def test_every_disk_module_is_discovered_with_its_qualified_folder_name(self):
+        """Real population check, not a comparison with a second registration list (K-02/K-68)."""
+        expected = {'.'.join(path.relative_to(run_tests.TESTS).with_suffix('').parts)
+                    for path in run_tests.TESTS.rglob('test_*.py')}
+        discovered = run_tests.discover()
+        self.assertEqual({run_tests.module_of(test) for test in discovered}, expected)
+        self.assertEqual(len({test.id() for test in discovered}), len(discovered))
+        self.assertTrue(all(run_tests.folder_of(test) in run_tests.FOLDERS for test in discovered))
+
+    def _tree(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        for folder in run_tests.FOLDERS:
+            (root / folder).mkdir()
+            (root / folder / '__init__.py').write_text('', encoding='utf-8')
+        self.enterContext(mock.patch.object(run_tests, 'TESTS', root))
+        self.enterContext(mock.patch.object(sys, 'path', sys.path.copy()))
+        self.enterContext(mock.patch.dict(sys.modules))
+        for name in list(sys.modules):
+            if name.split('.')[0] in run_tests.FOLDERS:
+                del sys.modules[name]
+        return root
+
+    def _module(self, root, name):
+        path = root / name
+        path.write_text('import unittest\nclass Case(unittest.TestCase):\n'
+                        '    def test_value(self): self.assertEqual(2 + 2, 4)\n', encoding='utf-8')
+        return path
+
+    def _listing(self, arguments):
+        with redirect_stdout(io.StringIO()) as out, redirect_stderr(io.StringIO()) as err:
+            code = run_tests.main(['--list', *arguments])
+        return code, out.getvalue(), err.getvalue()
+
+    def test_folder_selection_keeps_same_named_modules_distinct_and_has_no_short_alias(self):
+        root = self._tree()
+        for folder in ('unit', 'sim', 'boundary'):
+            self._module(root, folder + '/test_same.py')
+        code, out, err = self._listing(['unit', 'sim.test_same.Case.test_value'])
+        self.assertEqual((code, err), (0, ''))
+        self.assertEqual(out.splitlines(), ['sim\tsim.test_same.Case.test_value',
+                                           'unit\tunit.test_same.Case.test_value'])
+        code, out, err = self._listing(['test_same'])
+        self.assertEqual((code, out), (2, ''))
+        self.assertIn('No test matches: test_same', err)
+        code, out, err = self._listing([])
+        self.assertEqual((code, err), (0, ''))
+        self.assertNotIn('boundary', out)
+        self.assertEqual(len(out.splitlines()), 2)
+        code, out, err = self._listing(['--tier', 'T4'])
+        self.assertEqual((code, out, err), (0, 'boundary\tboundary.test_same.Case.test_value\n', ''))
+
+    def test_missing_folder_package_or_nested_package_refuses_even_a_valid_selection(self):
+        root = self._tree()
+        self._module(root, 'unit/test_present.py')
+        marker = root / 'sim' / '__init__.py'
+        marker.unlink()
+        code, out, err = self._listing(['unit'])
+        self.assertEqual((code, out), (2, ''))
+        self.assertIn('Missing test folder/package: sim', err)
+        (root / 'sim').rmdir()
+        code, out, err = self._listing(['unit'])
+        self.assertEqual((code, out), (2, ''))
+        self.assertIn('Missing test folder/package: sim', err)
+        marker.parent.mkdir()
+        marker.write_text('', encoding='utf-8')
+        (root / 'unit' / 'nested').mkdir()
+        self._module(root, 'unit/nested/test_lost.py')
+        code, out, err = self._listing(['unit.test_present'])
+        self.assertEqual((code, out), (2, ''))
+        self.assertIn('Missing test package: unit/nested', err)
+
+    def test_folderless_or_unclassified_test_file_refuses_the_selection(self):
+        root = self._tree()
+        self._module(root, 'unit/test_present.py')
+        for relative in ('test_stray.py', 'other/test_stray.py'):
+            with self.subTest(path=relative):
+                (root / relative).parent.mkdir(exist_ok=True)
+                path = self._module(root, relative)
+                code, out, err = self._listing(['unit'])
+                self.assertEqual((code, out), (2, ''))
+                self.assertIn('Test outside tier folders: ' + relative, err)
+                path.unlink()
+
+    def test_a_module_omitted_by_discovery_cannot_silently_shrink_the_population(self):
+        root = self._tree()
+        self._module(root, 'unit/test_present.py')
+        path = self._module(root, 'sim/test_omitted.py')
+        with path.open('a', encoding='utf-8') as stream:
+            stream.write('def load_tests(loader, tests, pattern): return unittest.TestSuite()\n')
+        code, out, err = self._listing(['unit'])
+        self.assertEqual((code, out), (2, ''))
+        self.assertIn('Test population mismatch. Missing: sim.test_omitted', err)
+
+    def test_duplicate_ids_and_import_failures_refuse_selection(self):
+        root = self._tree()
+        path = self._module(root, 'unit/test_duplicate.py')
+        with path.open('a', encoding='utf-8') as stream:
+            stream.write('Alias = Case\n')
+        code, out, err = self._listing(['unit'])
+        self.assertEqual((code, out), (2, ''))
+        self.assertIn('Duplicate test IDs: unit.test_duplicate.Case.test_value', err)
+        self._module(root, 'sim/test_broken.py').write_text('raise ImportError("broken specimen")', encoding='utf-8')
+        code, out, err = self._listing(['unit'])
+        self.assertEqual((code, out), (2, ''))
+        self.assertIn('broken specimen', err)
+
+    def test_removed_shard_option_and_empty_selection_are_rejected(self):
+        with redirect_stderr(io.StringIO()) as err, self.assertRaisesRegex(SystemExit, '^2$'):
+            run_tests.main(['--shard', 'unit'])
+        self.assertIn('unrecognized arguments: --shard', err.getvalue())
+        root = self._tree()
+        self._module(root, 'unit/test_present.py')
+        code, out, err = self._listing(['unit', '--match', '*no_such_test'])
+        self.assertEqual((code, out), (2, ''))
+        self.assertIn('No tests selected; no pass was established.', err)
 
     def test_positional_ids_select_a_module_class_or_method_without_prefix_collisions(self):
         """About 0.8 s: two real discoveries test selection without substituting the runner."""

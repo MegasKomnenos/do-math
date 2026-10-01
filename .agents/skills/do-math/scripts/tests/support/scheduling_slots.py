@@ -34,7 +34,7 @@ def slot_sim():
 
 def slots(sim, *, observer=False, jobs=None):
     return SessionSlots(sim.engine.runtime, sim.engine.instance, observer=observer, clock=sim.clock,
-                        jobs=jobs or sim.jobs)
+                        jobs=jobs or sim.jobs, host_id=sim.host_id)
 
 
 def reserve(sim, eid, *, operational=False, jobs=None):

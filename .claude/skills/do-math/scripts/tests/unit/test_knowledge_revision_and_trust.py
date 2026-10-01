@@ -17,27 +17,32 @@ from do_math.knowledge import assess_research_use
 from do_math.knowledge_records import create_candidate, reader_view
 from do_math.record_schemas import RECORDS
 from do_math.system_clock import new_id
-from knowledge_fixtures import (add_knowledge, formal_evidence, impact_declaration, knowledge_graph,
-                                revise_knowledge, seal_knowledge, verified_knowledge)
+from support.knowledge_builders import add_knowledge, formal_evidence, impact_declaration, knowledge_graph, revise_knowledge, seal_knowledge, verified_knowledge
 from support.provider_probes import ObservedCalls
 
 
 def withdraw(state, runtime, kid):
+    from support.entry import entry
+    _entry = entry()
     return k.invalidate_knowledge(state, runtime, kid, reason='false', actor_ref='reviewer',
-                                  declared_impact=impact_declaration(state, runtime, [kid]))
+                                  declared_impact=impact_declaration(state, runtime, [kid]), clock=_entry.ports.clock)
 
 
 def transition(state):
+    from support.entry import entry
+    _entry = entry()
     state, env = deepcopy(state), 'TE-new'
     state.setdefault('trust_environments', {})[env] = {'id': env, 'toolchain': {'version': 'fixture-new'},
                                                         'allowed_axioms': [], 'status': 'registered'}
-    return state, env, k.begin_transition(state, env)
+    return state, env, k.begin_transition(state, env, clock=_entry.ports.clock)
 
 
 def finish_transition(state, env, tr):
+    from support.entry import entry
+    _entry = entry()
     for target in tr['targets']:
         tr = k.record_transition_result(state, tr, {'id': target['id'], **formal_evidence(state, target['id'], env)})
-    return k.activate_transition(state, tr)
+    return k.activate_transition(state, tr, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
 
 class RevisionTests(unittest.TestCase):
@@ -160,7 +165,7 @@ class WithdrawalTests(unittest.TestCase):
             changed, _ = withdraw(ins, run, ids['a'])
         # One producer declaration and one plan inside invalidate_knowledge.
         self.assertEqual(plans.count('plan_impact'), 2)
-        self.assertEqual((plans.count('plan_impact', caller='knowledge_fixtures'),
+        self.assertEqual((plans.count('plan_impact', caller='support.knowledge_builders'),
                           plans.count('plan_impact', caller='do_math.knowledge')), (1, 1))
         self.assertEqual(changed['knowledge'][ids['a']]['lifecycle'], 'withdrawn')
 
@@ -184,10 +189,12 @@ class ImpactTests(unittest.TestCase):
         self.assertIn('KN-MISSING', k.plan_impact(ins, run, [ids['b']], [])['unresolved_refs'])
 
     def test_system_propagation_applies_computed_impact_and_names_unresolved_refs(self):
+        from support.entry import entry
+        _entry = entry()
         ins, run, ids = knowledge_graph()
         ins['knowledge'][ids['c']]['used_sources'] = [ids['a']]
         ins['knowledge'][ids['c']]['dependencies'].append('KN-MISSING')
-        k.propagate(ins, run, [ids['a']], 'trust environment invalidated')
+        k.propagate(ins, run, [ids['a']], 'trust environment invalidated', clock=_entry.ports.clock)
         event = run['history'][-1]
         self.assertEqual(event['kind'], 'knowledge_reassessment_required')
         self.assertIn(ids['c'], event['affected_ids'])
@@ -201,9 +208,11 @@ class ImpactTests(unittest.TestCase):
         self.assertNotIn('input/knowledge/KN-X.json', plan['unresolved_refs'])
 
     def test_observed_propagation_plans_twice_and_applies_to_the_callers_copy(self):
+        from support.entry import entry
+        _entry = entry()
         ins, run, _ = knowledge_graph()
         with ObservedCalls(plan_impact=k.plan_impact) as plans:
-            _, changed_run = k.invalidate_environment(ins, run, 'TE-old', 'environment defect')
+            _, changed_run = k.invalidate_environment(ins, run, 'TE-old', 'environment defect', clock=_entry.ports.clock)
         # Preview and plan inside propagate; no third recomputation on apply.
         self.assertEqual(plans.count('plan_impact'), 2)
         self.assertEqual(plans.count('plan_impact', caller='do_math.knowledge'), 2)
@@ -213,6 +222,8 @@ class ImpactTests(unittest.TestCase):
 
 class SourceCurrentnessTests(unittest.TestCase):
     def test_source_currentness_and_reassessment_preserve_judgment(self):
+        from support.entry import entry
+        _entry = entry()
         ins, run, ids = knowledge_graph()
         ins['sources'] = [{'name': 'paper', 'path': 'sources/paper', 'sha256': 'old'}]
         ins, run, kid, aid = add_knowledge(ins, run, source_refs=['paper'])
@@ -221,22 +232,24 @@ class SourceCurrentnessTests(unittest.TestCase):
         ins['sources'][0]['sha256'] = 'new'
         self.assertFalse(k.assess_use(ins['knowledge'][kid], ins)['valid'])
         changed, _ = k.suspend_for_source_change(ins, run, kid, source_name='paper', reason='source changed',
-                                                 actor_ref='user')
+                                                 actor_ref='user', clock=_entry.ports.clock)
         self.assertEqual(changed['identity_assessments'][aid], saved)
         ins['sources'][0]['sha256'] = changed['sources'][0]['sha256'] = 'old'
         self.assertTrue(k.assess_use(ins['knowledge'][kid], ins)['valid'])
         self.assertFalse(k.assess_use(changed['knowledge'][kid], changed)['valid'])
 
     def test_research_reuse_keeps_dependency_and_source_currentness(self):
+        from support.entry import entry
+        _entry = entry()
         instance = {'sources': [{'id': 'S', 'name': 'data', 'sha256': 'a' * 64, 'path': 'data'}],
                     'kind_definitions': {'KD': {'id': 'KD', 'status': 'active'}}}
         instance, parent = create_candidate(instance, {'id': 'KN-parent', 'kind_definition_id': 'KD',
                                                        'statement': 'Finite observation',
                                                        'source_basis': [{'name': 'data', 'sha256': 'a' * 64}]},
-                                            source_ref='S', actor_ref='AUTHOR')
+                                            source_ref='S', actor_ref='AUTHOR', clock=_entry.ports.clock)
         instance, child = create_candidate(instance, {'id': 'KN-child', 'kind_definition_id': 'KD',
                                                       'statement': 'Uses that observation', 'dependencies': [parent]},
-                                           source_ref='S', actor_ref='AUTHOR')
+                                           source_ref='S', actor_ref='AUTHOR', clock=_entry.ports.clock)
         self.assertTrue(assess_research_use(instance['knowledge'][child], instance)['valid'])
         instance['sources'][0]['sha256'] = 'b' * 64
         self.assertFalse(assess_research_use(instance['knowledge'][child], instance)['valid'])
@@ -251,14 +264,18 @@ class SourceCurrentnessTests(unittest.TestCase):
 
 class TrustTransitionTests(unittest.TestCase):
     def test_partial_failure_keeps_old_environment(self):
+        from support.entry import entry
+        _entry = entry()
         ins, _, ids = knowledge_graph()
         ins, env, tr = transition(ins)
         tr = k.record_transition_result(ins, tr, {'id': ids['a'], 'status': 'failed'})
         with self.assertRaisesRegex(ValueError, 'all transition targets must be verified'):
-            k.activate_transition(ins, tr)
+            k.activate_transition(ins, tr, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual(ins['active_trust_environment'], 'TE-old')
 
     def test_one_failure_in_complete_multi_target_batch_preserves_every_original_record(self):
+        from support.entry import entry
+        _entry = entry()
         ins, _, _ = knowledge_graph()
         ins, env, tr = transition(ins)
         for target in tr['targets']:
@@ -267,15 +284,17 @@ class TrustTransitionTests(unittest.TestCase):
         tr = k.record_transition_result(ins, tr, {'id': failed, 'status': 'failed'})
         before = deepcopy(ins)
         with self.assertRaisesRegex(ValueError, 'all transition targets'):
-            k.activate_transition(ins, tr)
+            k.activate_transition(ins, tr, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual(ins, before)
 
     def test_unknown_environment_rejected(self):
+        from support.entry import entry
+        _entry = entry()
         ins, run, _ = knowledge_graph()
         with self.assertRaisesRegex(ValueError, 'unknown or invalid transition environment'):
-            k.begin_transition(ins, 'TE-missing')
+            k.begin_transition(ins, 'TE-missing', clock=_entry.ports.clock)
         with self.assertRaisesRegex(ValueError, 'unknown trust environment: TE-missing'):
-            k.invalidate_environment(ins, run, 'TE-missing', 'bad')
+            k.invalidate_environment(ins, run, 'TE-missing', 'bad', clock=_entry.ports.clock)
 
     def test_complete_transition_preserves_old_evidence_and_changes_links(self):
         ins, _, ids = knowledge_graph()
@@ -292,8 +311,10 @@ class TrustTransitionTests(unittest.TestCase):
             self.assertNotEqual(changed['knowledge'][kid]['formal_result_id'], ins['knowledge'][kid]['formal_result_id'])
 
     def test_invalidated_environment_recovery_rechecks_all_accepted_results(self):
+        from support.entry import entry
+        _entry = entry()
         ins, run, ids = knowledge_graph()
-        stopped, _ = k.invalidate_environment(ins, run, 'TE-old', 'kernel defect')
+        stopped, _ = k.invalidate_environment(ins, run, 'TE-old', 'kernel defect', clock=_entry.ports.clock)
         jsonschema.validate(stopped['trust_environments']['TE-old'], RECORDS['trust_environments'])
         self.assertEqual(stopped['trust_environments']['TE-old']['invalidated_reason'], 'kernel defect')
         self.assertIsNone(stopped['active_trust_environment'])
@@ -306,10 +327,12 @@ class TrustTransitionTests(unittest.TestCase):
             self.assertTrue(k.assess_use(recovered['knowledge'][kid], recovered)['valid'])
 
     def test_recovery_does_not_promote_unchecked_or_withdrawn(self):
+        from support.entry import entry
+        _entry = entry()
         ins, run, ids = knowledge_graph()
         ins, run, pending, _ = add_knowledge(ins, run, verified=False)
         ins, run = withdraw(ins, run, ids['c'])
-        ins, run = k.invalidate_environment(ins, run, 'TE-old', 'bad')
+        ins, run = k.invalidate_environment(ins, run, 'TE-old', 'bad', clock=_entry.ports.clock)
         ins, env, tr = transition(ins)
         self.assertNotIn(pending, {t['id'] for t in tr['targets']})
         self.assertNotIn(ids['c'], {t['id'] for t in tr['targets']})
@@ -318,8 +341,10 @@ class TrustTransitionTests(unittest.TestCase):
         self.assertEqual(changed['knowledge'][ids['c']]['lifecycle'], 'withdrawn')
 
     def test_recovery_preserves_later_semantic_suspension(self):
+        from support.entry import entry
+        _entry = entry()
         ins, run, ids = knowledge_graph()
-        ins, run = k.invalidate_environment(ins, run, 'TE-old', 'environment defect')
+        ins, run = k.invalidate_environment(ins, run, 'TE-old', 'environment defect', clock=_entry.ports.clock)
         ins = kr.set_assessment_use(ins, ids['aa'], 'suspended', 'meaning challenged', 'reviewer')
         ins, env, tr = transition(ins)
         changed = finish_transition(ins, env, tr)
@@ -327,13 +352,15 @@ class TrustTransitionTests(unittest.TestCase):
         self.assertTrue(k.assess_use(changed['knowledge'][ids['c']], changed)['valid'])
 
     def test_environment_recovery_cannot_clear_a_later_source_reassessment(self):
+        from support.entry import entry
+        _entry = entry()
         ins, run, _ = knowledge_graph()
         ins['sources'] = [{'name': 'paper', 'path': 'sources/paper', 'sha256': 'old'}]
         ins, run, kid, aid = add_knowledge(ins, run, source_refs=['paper'])
-        ins, run = k.invalidate_environment(ins, run, 'TE-old', 'environment defect')
+        ins, run = k.invalidate_environment(ins, run, 'TE-old', 'environment defect', clock=_entry.ports.clock)
         ins['sources'][0]['sha256'] = 'new'
         ins, run = k.suspend_for_source_change(ins, run, kid, source_name='paper',
-                                               reason='source requires independent reassessment', actor_ref='user')
+                                               reason='source requires independent reassessment', actor_ref='user', clock=_entry.ports.clock)
         # Restoring bytes resolves currentness, not the separate review obligation.
         ins['sources'][0]['sha256'] = 'old'
         ins, env, tr = transition(ins)
@@ -341,9 +368,11 @@ class TrustTransitionTests(unittest.TestCase):
         self.assertFalse(k.assess_use(changed['knowledge'][kid], changed)['valid'])
 
     def test_recovery_preserves_dependency_on_withdrawn_knowledge(self):
+        from support.entry import entry
+        _entry = entry()
         ins, run, ids = knowledge_graph()
         ins, run = withdraw(ins, run, ids['a'])
-        ins, run = k.invalidate_environment(ins, run, 'TE-old', 'environment defect')
+        ins, run = k.invalidate_environment(ins, run, 'TE-old', 'environment defect', clock=_entry.ports.clock)
         ins, env, tr = transition(ins)
         changed = finish_transition(ins, env, tr)
         self.assertFalse(k.assess_use(changed['knowledge'][ids['b']], changed)['valid'])

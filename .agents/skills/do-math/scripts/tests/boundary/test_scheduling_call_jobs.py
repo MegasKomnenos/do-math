@@ -23,6 +23,10 @@ class CallJobTests(unittest.TestCase):
     @test_group('resource')
     @unittest.skipUnless(os.name == 'nt', 'Windows Job required')
     def test_failed_start_publication_never_resumes_the_real_job(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as root:
             marker = Path(root) / 'must-not-run'
 
@@ -31,7 +35,7 @@ class CallJobTests(unittest.TestCase):
                 raise OSError('simulated publication failure')
             with self.assertRaisesRegex(OSError, 'publication'):
                 _job_run([sys.executable, '-c', f'from pathlib import Path; Path({str(marker)!r}).touch()'],
-                         Path(root), on_started=reject, jobs=WindowsJobs())
+                         Path(root), on_started=reject, jobs=WindowsJobs(), clock=_entry.ports.clock, environment=_entry.environment)
             self.assertFalse(marker.exists())
 
     @test_group('resource')

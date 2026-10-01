@@ -1,20 +1,24 @@
 """Real side of the Git backend port contract: the git process."""
 import unittest
 
-from contracts.test_port_git_backend import GitBackendContract
+from support.port_contracts.git_backend import GitBackendContract
 from do_math.wiring import real_ports
 
 
 class GitProcessBackendContract(GitBackendContract, unittest.TestCase):
     def make(self):
-        return real_ports().git_backend
+        from support.entry import entry
+        _entry = entry()
+        return real_ports(environment=_entry.environment).git_backend
 
 
 class GitProcessSha256BackendContract(GitBackendContract, unittest.TestCase):
     object_format = 'sha256'
 
     def make(self):
-        return real_ports().git_backend
+        from support.entry import entry
+        _entry = entry()
+        return real_ports(environment=_entry.environment).git_backend
 
 
 if __name__ == '__main__':

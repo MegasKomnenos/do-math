@@ -12,7 +12,7 @@ action (or context) fields, and ``reply(answer)`` queues one answer for it;
 queued answers are used in order and a rule's last answer stays. ``raw(value)``
 replaces the output; further builders join as tests need them. A call no rule
 matches gets the default responder's smallest valid answer
-(``runner_fixtures.ScriptedRunner.respond``). The double never validates an
+(``support.default_responder.DefaultResponder.respond``). The double never validates an
 answer against the output schema: the engine's receiving checks do.
 """
 from __future__ import annotations
@@ -78,9 +78,9 @@ class Rule:
 
 class ModelDouble:
     def __init__(self, clock, responder=None):
-        from runner_fixtures import ScriptedRunner
+        from support.default_responder import DefaultResponder
         self.clock, self.rules, self.calls = clock, [], []
-        self.responder = responder or ScriptedRunner()
+        self.responder = responder or DefaultResponder()
 
     def on(self, role, **conditions):
         rule = Rule(role, conditions)
@@ -92,7 +92,7 @@ class ModelDouble:
         return FakeCLI(self, list(command), stdout, stderr, Path(cwd))
 
     def output(self, role, ctx, workspace):
-        from research_fixtures import bind_candidates, seal_response
+        from support.role_answers import bind_candidates, seal_response
         rule = next((rule for rule in self.rules if rule.answers and rule.matches(role, ctx)), None)
         answer = rule.next() if rule else default()
         out = answer.make(self.responder.respond(role, ctx, workspace), ctx)
@@ -112,7 +112,7 @@ class FakeCLI:
         self.returncode = None
 
     def communicate(self, input=None, timeout=None):
-        from runner_fixtures import context_from
+        from support.default_responder import context_from
         prompt = input.decode("utf-8")
         role = prompt.split(MARKER, 1)[1].split(".", 1)[0]
         ctx = context_from(prompt, self.workspace)
@@ -136,7 +136,7 @@ class FakeCLI:
                                    clock=self.model.clock)
         binding = json.loads((self.workspace / "input" / "submission" / "context.json").read_bytes())["control_binding"]
         for _ in range(100):
-            receipt = wait_receipt(binding, delivery["request_id"], 0)
+            receipt = wait_receipt(binding, delivery["request_id"], 0, clock=self.model.clock)
             if receipt and receipt.get("state") in FINAL_RECEIPTS:
                 return json.dumps({"submission": delivery["request_id"], "receipt": receipt["state"]})
             owner_turn()

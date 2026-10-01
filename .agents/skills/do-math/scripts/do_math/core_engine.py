@@ -71,11 +71,8 @@ def _artifact_format_valid(reference, raw):
     return False
 
 
-_SKILL_ROOT = Path(__file__).resolve().parents[2]
-
-
-# The edition this process last hashed: (documents, listing, manifest).
-_HASHED_INSTALLATION = None
+# Last settled edition per resolved installation root: (documents, listing, manifest).
+_HASHED_INSTALLATION = {}
 
 
 def _installation_listing(root, documents):
@@ -122,18 +119,18 @@ def _evaluation_context_for(store, snapshot, *, lean_available, clock):
 
 def initialize_instance(repository: Path, *, goal: str, workspace: Path, config: dict | None, title: str,
                         instance_id: str | None, sources: list[Path] | None, source_input: str | None,
-                        clock, cwd, trace, host, git_backend=None) -> dict:
+                        clock, cwd, trace, host, git_backend, codex_home, host_id) -> dict:
     """``initialize`` after its entry-point choices; ``cwd`` and ``trace`` are called where the state is made.
 
-    ``host`` is the host port and ``git_backend`` the Git backend port (None: the git process).
+    ``host`` and ``git_backend`` are the ports selected by the entry point.
     """
     if not goal.strip():
         raise ValueError("a nonempty mathematical goal is required")
     settings = deepcopy(DEFAULT_CONFIG)
     settings.update(config or {})
-    validate_config(settings)
+    validate_config(settings, host_id=host_id)
     if settings["scholarly_enabled"]:
-        settings["scholarly_server"] = resolve_scholarly_server(settings["scholarly_server"], start=cwd())
+        settings["scholarly_server"] = resolve_scholarly_server(settings["scholarly_server"], start=cwd(), codex_home=codex_home)
     source_inputs = [(source.name, source.read_bytes()) for source in (sources or [])]
     instance_id = instance_id or clock.new_id("RI")
     workspace = workspace.resolve()
@@ -141,7 +138,7 @@ def initialize_instance(repository: Path, *, goal: str, workspace: Path, config:
     with trace(workspace / 'operations'), phase('initialize'):
         instance, runtime = initialization.initialize_state(instance_id=instance_id, goal=goal,
             workspace=workspace, config=settings, source_input=goal if source_input is None else source_input,
-            title=title, created_at=clock.now(), clock=clock)
+            title=title, created_at=clock.now(), clock=clock, host=host)
         settings = bind_host_configuration(instance, settings, origin='user')
         instance['config'] = settings
         profiles = execution_profiles.build_profiles(settings, host=host)
@@ -228,7 +225,7 @@ def _last_opposite_control(inbox: Path, runtime: dict, action: str) -> str | Non
 
 def submit_control(repository: Path, instance_id: str, action: str, *, text: str, config: dict | None, origin: str,
                    request_id: str | None, idempotency_key: str | None, clock, lean_available,
-                   git_backend=None) -> dict:
+                   git_backend, host_id) -> dict:
     """``control`` after its entry-point choices; ``lean_available`` observes the host only when a request needs it."""
     config = {} if config is None else config
     validate_control_payload(action, text, config)
@@ -238,7 +235,7 @@ def submit_control(repository: Path, instance_id: str, action: str, *, text: str
         raise ValueError("operator controls are limited to " + ", ".join(sorted(OPERATOR_ACTIONS)))
     if request_id is not None:
         validate_request_id(request_id)
-    store = ResearchRepository(repository, instance_id, backend=git_backend)
+    store = ResearchRepository(repository, instance_id, backend=git_backend, clock=clock)
     head, instance, runtime = store.load()
     if request_id is not None and idempotency_key is not None:
         raise ValueError("request_id and idempotency_key are mutually exclusive")
@@ -272,7 +269,7 @@ def submit_control(repository: Path, instance_id: str, action: str, *, text: str
     if action == "configure":
         current_config = instance["config"]
         candidate = {**current_config, **(config or {})}
-        validate_config(candidate)
+        validate_config(candidate, host_id=host_id)
         if origin == "operator" and user_decision_changed(current_config, candidate):
             raise ValueError("changing resource capacity or model allocation requires a user decision")
     if action == "input" and not text.strip():
@@ -356,7 +353,7 @@ def _query_record(row):
 
 def query_records(repository: Path, instance_id: str, *, snapshot: str | None = None,
                   kind: str | None = None, text: str = "", limit: int = 50,
-                  cursor: str | None = None, related_to: str | None = None, direction: str = "both") -> dict:
+                  cursor: str | None = None, related_to: str | None = None, direction: str = "both", backend, clock) -> dict:
     if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 1000:
         raise ValueError("limit must be between 1 and 1000")
     if direction not in {"incoming", "outgoing", "both"}:
@@ -371,7 +368,7 @@ def query_records(repository: Path, instance_id: str, *, snapshot: str | None = 
             snapshot, last = decoded["snapshot"], decoded["last"]
         except (KeyError, UnicodeError, json.JSONDecodeError, binascii.Error) as error:
             raise ValueError("invalid cursor") from error
-    store = ResearchRepository(repository, instance_id)
+    store = ResearchRepository(repository, instance_id, backend=backend, clock=clock)
     head, instance, runtime, rows = store.load_records(snapshot)
     descriptors = {row["id"]: row for row in rows if row["id"]}
     records = sorted((_query_record(row) for row in descriptors.values()), key=lambda row: row["id"])
@@ -404,8 +401,8 @@ def query_records(repository: Path, instance_id: str, *, snapshot: str | None = 
             "next_cursor": next_cursor}
 
 
-def read_record(repository: Path, instance_id: str, record_id: str, *, snapshot: str | None = None) -> dict:
-    store = ResearchRepository(repository, instance_id)
+def read_record(repository: Path, instance_id: str, record_id: str, *, snapshot: str | None = None, backend, clock) -> dict:
+    store = ResearchRepository(repository, instance_id, backend=backend, clock=clock)
     row = store.read_record(record_id, snapshot)
     return {"record": _query_record(row), **_record_evidence(row)}
 
@@ -430,8 +427,7 @@ class CoreEngineMixin:
         view = self._governance()
         return {key: view.get(key, 1) for key in ("goal_revision", "policy_revision")}
 
-    @staticmethod
-    def _installation_manifest() -> dict:
+    def _installation_manifest(self) -> dict:
         """Hash the installed code and role documents; unchanged files reuse their digests.
 
         While the directory listings of the last hashed edition are unchanged,
@@ -441,10 +437,11 @@ class CoreEngineMixin:
         fingerprint too recent to be settled is not reused. Callers only
         compare or copy the result.
         """
-        global _HASHED_INSTALLATION
-        root = _SKILL_ROOT
-        if _HASHED_INSTALLATION is not None:
-            documents, listing, manifest = _HASHED_INSTALLATION
+        root = self.installation_root
+        key = os.path.normcase(str(root.resolve()))
+        cached = _HASHED_INSTALLATION.get(key)
+        if cached is not None:
+            documents, listing, manifest = cached
             try:
                 if _installation_listing(root, documents) == listing:
                     return manifest
@@ -457,7 +454,7 @@ class CoreEngineMixin:
         files = {path.relative_to(root).as_posix(): cached_sha256(path) for path in paths}
         manifest = {"files": files, "sha256": exact_content_hash(files)}
         if all(fingerprint_settled(fingerprint) for fingerprint in listing.values()):
-            _HASHED_INSTALLATION = (tuple(documents), listing, manifest)
+            _HASHED_INSTALLATION[key] = (tuple(documents), listing, manifest)
         return manifest
 
     def _execution_profile(self, action):
@@ -1308,7 +1305,7 @@ class CoreEngineMixin:
             if (case.get("decision_kind") != "review_replacement" or case.get("target_id") != action["target"]
                     or any(effect.get(key) != action.get(key) for key in ("review_cycle_id", "stage", "round", "slot"))):
                 raise ValueError("delegated recovery case differs from the actual review slot")
-            application = delegations.prepare_application(self.instance, self.runtime, spec["delegation_id"], case)
+            application = delegations.prepare_application(self.instance, self.runtime, spec["delegation_id"], case, now_iso=self.ports.clock.now())
             # The original request is the recovery routing authority. The two
             # judgments receive the same case and neither receives the other verdict.
             for stage in ("delegation_interpret", "delegation_check"):
@@ -3341,7 +3338,7 @@ class CoreEngineMixin:
         if not changes:
             operational_dispositions.require_basis_refs(disposition, current_refs)
         if disposition['kind'] == 'repair':
-            repair_execution.validate_installation_target(disposition, target, Path(__file__).resolve().parents[2])
+            repair_execution.validate_installation_target(disposition, target, self.installation_root)
         if disposition['kind'] == 'continue' and disposition['next_review']:
             governance.timestamp(disposition['next_review']['at'])
         if changes:
@@ -3583,7 +3580,7 @@ class CoreEngineMixin:
         errors = []
         try:
             if "governance_trust" in areas:
-                validate_config(instance["config"])
+                validate_config(instance["config"], host_id=self.host_id)
         except (ValueError, KeyError, TypeError, OSError, GitStateStoreError) as error:
             errors.append(str(error))
         summary = self._submission_check_summary(head, runtime) if "repair_iteration" in areas else None

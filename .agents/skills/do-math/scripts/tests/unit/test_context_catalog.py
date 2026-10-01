@@ -20,7 +20,46 @@ from support.storage_files import audit_events, unlistable
 from support.storage_role_inputs import catalog_opens
 
 
+class ChangingMetadata:
+    """Observe the real descriptor; only the OS-reported mtime differs (1 then 2 ns)."""
+    def __init__(self, *, size=None):
+        self.descriptors = []
+        self.size = size
+
+    def __call__(self, fd):
+        from types import SimpleNamespace
+        real = os.fstat(fd)
+        self.descriptors.append(fd)
+        return SimpleNamespace(st_size=real.st_size if self.size is None else self.size,
+                               st_mtime_ns=len(self.descriptors), st_ctime_ns=real.st_ctime_ns,
+                               st_birthtime_ns=getattr(real, 'st_birthtime_ns', real.st_ctime_ns))
+
+
 class StableReadTests(unittest.TestCase):
+    def test_metadata_change_during_one_read_is_not_one_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'x'
+            path.write_bytes(b'bytes')
+            self.assertEqual(store.read_stable(path), b'bytes')
+            fstat = ChangingMetadata()
+            with self.assertRaisesRegex(store._ChangedDuringRead, 'file changed while being read'):
+                store.read_stable(path, fstat=fstat)
+            self.assertEqual(len(fstat.descriptors), 2)
+            self.assertEqual(fstat.descriptors[0], fstat.descriptors[1])
+
+    def test_changed_during_read_is_not_success(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'x').write_bytes(b'x')
+            fstat = ChangingMetadata()
+            got = store.collect_outputs(root, required_paths=['x'], fstat=fstat)
+            self.assertFalse(got['complete'])
+            self.assertEqual(got['omitted'][0]['reason'], 'changed_during_read')
+            self.assertTrue(got['omitted'][0]['required'])
+            self.assertEqual(got['files'], {})
+            self.assertEqual(len(fstat.descriptors), 2)
+            self.assertEqual(fstat.descriptors[0], fstat.descriptors[1])
+
     def test_one_boundary_proves_its_root_once_for_many_reads(self):
         """A root proof (``PhysicalBoundary.check``) loads kernel32 through ctypes; collecting three files loads it as often as one proof does."""
         with tempfile.TemporaryDirectory() as d:

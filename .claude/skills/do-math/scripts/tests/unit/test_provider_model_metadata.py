@@ -24,9 +24,10 @@ from do_math.configuration import DEFAULT_CONFIG
 from do_math.contracts import task_candidate_record
 from do_math.execution_profiles import build_profiles, profile_ref
 from do_math.model_policy import LIMITS, assessment_basis
-from record_fixtures import approved_task
-from research_fixtures import candidate, disposition, prepared_rule_conditions
-from runner_fixtures import rating
+from support.record_builders import approved_task
+from support.role_answers import candidate, disposition
+from support.observation_inputs import prepared_rule_conditions
+from support.default_responder import rating
 from support.provider_state import engine_over
 
 PLAN = {'role': 'research_plan'}
@@ -104,8 +105,10 @@ class ModelMetadataBoundaryTests(EngineCase):
             task_id='TK-other', trust_environment_id='TE-author'))
 
     def test_task_work_allowlist_does_not_block_the_independent_contract_reviewer(self):
+        from support.entry import entry
+        _entry = entry()
         config = deepcopy(DEFAULT_CONFIG)
-        instance = build_profiles(config)
+        instance = build_profiles(config, host=_entry.ports.host)
         profiles = instance['execution_profiles']
         work = next(p for p in profiles.values() if p['role'] == 'research_work'
                     and p['ai']['tier'] == 'low')
@@ -126,9 +129,11 @@ class ModelMetadataBoundaryTests(EngineCase):
                 tasks, {}, instance=instance)
 
     def test_assessment_is_preserved_without_changing_the_candidate_wire_shape(self):
+        from support.entry import entry
+        _entry = entry()
         engine = self.engine()
         item = candidate('bounded observation')
-        profile = next(p for p in build_profiles(DEFAULT_CONFIG)['execution_profiles'].values()
+        profile = next(p for p in build_profiles(DEFAULT_CONFIG, host=_entry.ports.host)['execution_profiles'].values()
                        if p['role'] == 'research_work')
         item['profile_refs'] = [profile_ref(profile)]
         output = {'candidates': [item]}

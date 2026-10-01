@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 
 from .values import parse_utc
 from .canonical import exact_content_hash
-from .migration_defaults import clock_or_system
 
 
 def case_basis_reference_ids(case):
@@ -28,7 +27,7 @@ def case_basis_reference_ids(case):
     return identifiers
 
 
-def validate_delegation(delegation, *, now_iso=None):
+def validate_delegation(delegation, *, now_iso):
     if not isinstance(delegation, dict): raise ValueError("delegation record required")
     for key in ("id", "decision_kind", "original_decision_id", "source_ref", "decision_id"):
         if not isinstance(delegation.get(key), str) or not delegation[key].strip(): raise ValueError("missing delegation " + key)
@@ -44,11 +43,11 @@ def validate_delegation(delegation, *, now_iso=None):
     if not isinstance(delegation.get("resource_limits", {}), dict): raise ValueError("resource limits must be mapped")
     if any(type(v) is not int or v < 0 for v in delegation.get("resource_limits", {}).values()):
         raise ValueError("invalid delegation resource limit")
-    if delegation.get("expires_at") and parse_utc(delegation["expires_at"]) <= (parse_utc(now_iso) if now_iso is not None else clock_or_system(None).wall()): raise ValueError("delegation expired")
+    if delegation.get("expires_at") and parse_utc(delegation["expires_at"]) <= parse_utc(now_iso): raise ValueError("delegation expired")
     return deepcopy(delegation)
 
 
-def _basis(instance, runtime, delegation_id, case, now_iso=None):
+def _basis(instance, runtime, delegation_id, case, now_iso):
     delegation = validate_delegation(instance.get("delegations", {}).get(delegation_id), now_iso=now_iso)
     original = instance.get("decisions", {}).get(delegation["original_decision_id"], {})
     approval = instance.get("decisions", {}).get(delegation["decision_id"], {})
@@ -87,7 +86,7 @@ def _basis(instance, runtime, delegation_id, case, now_iso=None):
             "target": deepcopy(target_record), "references": {ref: deepcopy(records[ref][1]) for ref in refs}}
 
 
-def prepare_application(instance, runtime, delegation_id, case, *, now_iso=None):
+def prepare_application(instance, runtime, delegation_id, case, *, now_iso):
     basis = _basis(instance, runtime, delegation_id, case, now_iso)
     input_sha = exact_content_hash(basis)
     identifier = "DA-" + input_sha[:24]
@@ -133,7 +132,7 @@ def record_judgment(runtime, application_id, output, *, execution_id, stage):
     return deepcopy(record)
 
 
-def _checked(instance, runtime, application_id, now_iso=None):
+def _checked(instance, runtime, application_id, now_iso):
     record = runtime.get("delegation_applications", {}).get(application_id)
     if record is None: raise ValueError("application not found")
     basis = _basis(instance, runtime, record["delegation_id"], record["basis"]["case"], now_iso)
@@ -153,7 +152,7 @@ def _checked(instance, runtime, application_id, now_iso=None):
     return record
 
 
-def authorize_delegated_case(instance, delegation_id, case, *, runtime=None, now_iso=None):
+def authorize_delegated_case(instance, delegation_id, case, *, runtime=None, now_iso):
     try:
         record = _checked(instance, runtime or {}, case.get("application_id"), now_iso)
         if record["delegation_id"] != delegation_id: raise ValueError("wrong delegation")
@@ -164,7 +163,7 @@ def authorize_delegated_case(instance, delegation_id, case, *, runtime=None, now
         return {"allowed": False, "delegation_id": delegation_id, "reason": str(error)}
 
 
-def apply_application(instance, runtime, application_id, *, apply_effect, now_iso=None):
+def apply_application(instance, runtime, application_id, *, apply_effect, now_iso):
     record = _checked(instance, runtime, application_id, now_iso)
     if record.get("application"): return deepcopy(instance), deepcopy(runtime), deepcopy(record["application"])
     result, state = apply_effect(deepcopy(instance), deepcopy(runtime), deepcopy(record["basis"]["case"]["effect"]))

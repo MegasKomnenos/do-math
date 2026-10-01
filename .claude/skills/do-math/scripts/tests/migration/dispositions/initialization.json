@@ -383,9 +383,10 @@
    "disposition": "moved",
    "new_ids": [
     "sim.test_repair_routing.EngineStartGuardTests.test_pending_installation_repair_prevents_a_redundant_engine_start",
-    "unit.test_repair_execution.EngineStartTests.test_a_pending_installation_repair_holds_the_engine_start"
+    "unit.test_repair_execution.EngineStartTests.test_a_pending_installation_repair_holds_the_engine_start",
+    "sim.test_operator_finish_recovery.RecoveryTests.test_probe_routes_published_diagnosis_and_hold_blocks_recovery"
    ],
-   "note": "Input: the old test patched scheduled_operator.read_status to cut the wiring from the engine status to the start guard. That wiring cannot run on the Sim until scheduled_operator.read_status takes Ports (the seam raised as item 3 of the pilot report). sim.test_repair_routing.EngineStartGuardTests passes the status through the status= argument and checks the judgment only; it is not a wiring test."
+   "note": "Resolved by operator-seams: previous status-only judgment tests remain; added actual read_status on ResearchEngine/Repository with supplied Ports reaching start_guard. Actual published diagnosis, pause/HOLD, model-policy refusal and activation-produced due timer are observed with sys.monitoring. No product definition is replaced. This explicitly closes the former missing wiring note (initialization pilot54 / seam 3)."
   },
   {
    "legacy_id": "test_repair_execution.InstallationRepairRoutingTests.test_installation_repair_continues_latest_rejected_bundles_without_resetting_count",

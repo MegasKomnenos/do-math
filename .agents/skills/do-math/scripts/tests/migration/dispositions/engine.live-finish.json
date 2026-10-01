@@ -1,0 +1,77 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_checkpoint_persistence.CheckpointPersistenceTests.test_ended_review_receives_the_original_checkpoint_evidence",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_purpose.CheckpointPersistenceTests.test_ended_review_receives_the_original_checkpoint_evidence"
+      ],
+      "note": "Live Jobs worker writes checkpoint and original evidence, yields until the real owner captures it, overwrites proof.txt, then external CLI fails. Hash/evidence metadata and original checkpoint bytes versus final changed output bytes all retained."
+    },
+    {
+      "legacy_id": "test_purpose_engine.PurposeEngineTests.test_live_continue_preserves_checkpoint_and_reserves_no_work_slot",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_purpose.PurposeEngineTests.test_live_continue_preserves_checkpoint_and_reserves_no_work_slot"
+      ],
+      "note": "Real ModelRunner, worker, CLI stream, tool submission and live Jobs. PurposeResponder retains PurposeRunner.answer input checks and activity extensions; answer runs before live observation as in the original. The live-only CLI yields via job_turn while awaiting receipts after reproduced owner-inspect/worker-owner_turn deadlock. Existing harness defaults unchanged. Checkpoints, no work-slot review, exhausted work count 2/review count 1, retry lineage/artifacts/no theorem, user pause/history/cancelled retained."
+    },
+    {
+      "legacy_id": "test_purpose_engine.PurposeEngineTests.test_operating_review_runs_even_when_the_worker_used_the_last_work_call",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_purpose.PurposeEngineTests.test_operating_review_runs_even_when_the_worker_used_the_last_work_call"
+      ],
+      "note": "Real ModelRunner, worker, CLI stream, tool submission and live Jobs. PurposeResponder retains PurposeRunner.answer input checks and activity extensions; answer runs before live observation as in the original. The live-only CLI yields via job_turn while awaiting receipts after reproduced owner-inspect/worker-owner_turn deadlock. Existing harness defaults unchanged. Checkpoints, no work-slot review, exhausted work count 2/review count 1, retry lineage/artifacts/no theorem, user pause/history/cancelled retained."
+    },
+    {
+      "legacy_id": "test_purpose_engine.PurposeEngineTests.test_live_retry_stops_the_attempt_and_keeps_partial_artifacts_without_publishing_a_theorem",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_purpose.PurposeEngineTests.test_live_retry_stops_the_attempt_and_keeps_partial_artifacts_without_publishing_a_theorem"
+      ],
+      "note": "Real ModelRunner, worker, CLI stream, tool submission and live Jobs. PurposeResponder retains PurposeRunner.answer input checks and activity extensions; answer runs before live observation as in the original. The live-only CLI yields via job_turn while awaiting receipts after reproduced owner-inspect/worker-owner_turn deadlock. Existing harness defaults unchanged. Checkpoints, no work-slot review, exhausted work count 2/review count 1, retry lineage/artifacts/no theorem, user pause/history/cancelled retained. F1 correction: the CLI hook finally records the execution ID, stop-request existence, observation time and stopping status before Job completion; each outer test requires exactly one matching observation with the request present, in addition to all existing outcome assertions."
+    },
+    {
+      "legacy_id": "test_purpose_engine.PurposeEngineTests.test_external_user_pause_is_processed_during_running_work",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_purpose.PurposeEngineTests.test_external_user_pause_is_processed_during_running_work"
+      ],
+      "note": "Real ModelRunner, worker, CLI stream, tool submission and live Jobs. PurposeResponder retains PurposeRunner.answer input checks and activity extensions; answer runs before live observation as in the original. The live-only CLI yields via job_turn while awaiting receipts after reproduced owner-inspect/worker-owner_turn deadlock. Existing harness defaults unchanged. Checkpoints, no work-slot review, exhausted work count 2/review count 1, retry lineage/artifacts/no theorem, user pause/history/cancelled retained. F1 correction: the CLI hook finally records the execution ID, stop-request existence, observation time and stopping status before Job completion; each outer test requires exactly one matching observation with the request present, in addition to all existing outcome assertions."
+    },
+    {
+      "legacy_id": "test_role_input.InputConnections.test_fixed_question_is_packaged_and_answer_returns_to_its_seat",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_inputs.InputConnections.test_fixed_question_is_packaged_and_answer_returns_to_its_seat"
+      ],
+      "note": "Actual engine context, prepare_role_input, producer_check, archived input bundle and stored input snapshot. Artifact-valid condition and separate later task/grant retained; authority revoked after delivery. Specialist three cases use a current independently reviewed theorem and returned work distinct from its producer, preserving original task_id-only attribution; changing task_id must not remain attributable through producer_execution. Deferred question uses real investigation/seat resumption with hash/input checks and private peer marker preserved. The original SO-1 source bytes, task inputs/basis_refs, exact axioms question and formal.axioms/lean_code source refs are retained. Later scoped grant is produced by an actual grant decision, not copied from another approved scope."
+    },
+    {
+      "legacy_id": "test_role_input.RoleInputBoundaryTests.test_artifact_candidate_survives_packaging_and_population_stays_fixed",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_inputs.RoleInputBoundaryTests.test_artifact_candidate_survives_packaging_and_population_stays_fixed"
+      ],
+      "note": "Actual engine context, prepare_role_input, producer_check, archived input bundle and stored input snapshot. Artifact-valid condition and separate later task/grant retained; authority revoked after delivery. Specialist three cases use a current independently reviewed theorem and returned work distinct from its producer, preserving original task_id-only attribution; changing task_id must not remain attributable through producer_execution. Deferred question uses real investigation/seat resumption with hash/input checks and private peer marker preserved. The original SO-1 source bytes, task inputs/basis_refs, exact axioms question and formal.axioms/lean_code source refs are retained. Later scoped grant is produced by an actual grant decision, not copied from another approved scope."
+    },
+    {
+      "legacy_id": "test_role_input.RoleInputBoundaryTests.test_selected_candidate_still_requires_current_authority",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_inputs.RoleInputBoundaryTests.test_selected_candidate_still_requires_current_authority"
+      ],
+      "note": "Actual engine context, prepare_role_input, producer_check, archived input bundle and stored input snapshot. Artifact-valid condition and separate later task/grant retained; authority revoked after delivery. Specialist three cases use a current independently reviewed theorem and returned work distinct from its producer, preserving original task_id-only attribution; changing task_id must not remain attributable through producer_execution. Deferred question uses real investigation/seat resumption with hash/input checks and private peer marker preserved. The original SO-1 source bytes, task inputs/basis_refs, exact axioms question and formal.axioms/lean_code source refs are retained. Later scoped grant is produced by an actual grant decision, not copied from another approved scope."
+    },
+    {
+      "legacy_id": "test_role_input.RoleInputBoundaryTests.test_delivered_identity_receipt_can_complete_only_its_current_task",
+      "disposition": "moved",
+      "new_ids": [
+        "flows.test_live_finish_inputs.RoleInputBoundaryTests.test_delivered_identity_receipt_can_complete_only_its_current_task"
+      ],
+      "note": "Actual engine context, prepare_role_input, producer_check, archived input bundle and stored input snapshot. Artifact-valid condition and separate later task/grant retained; authority revoked after delivery. Specialist three cases use a current independently reviewed theorem and returned work distinct from its producer, preserving original task_id-only attribution; changing task_id must not remain attributable through producer_execution. Deferred question uses real investigation/seat resumption with hash/input checks and private peer marker preserved. The original SO-1 source bytes, task inputs/basis_refs, exact axioms question and formal.axioms/lean_code source refs are retained. Later scoped grant is produced by an actual grant decision, not copied from another approved scope."
+    }
+  ],
+  "knowledge": []
+}

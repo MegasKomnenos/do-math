@@ -32,7 +32,8 @@
     "do_math/retention.py",
     "do_math/state_checks.py",
     "do_math/state_contract.py",
-    "do_math/values.py"
+    "do_math/values.py",
+    "do_math/storage_finish_git_output.py"
    ]
   },
   "submission": {
@@ -315,7 +316,6 @@
    "product_modules": [
     "do_math/__init__.py",
     "do_math/layers.py",
-    "do_math/migration_defaults.py",
     "do_math/ports/__init__.py",
     "do_math/ports/calls.py",
     "do_math/ports/clock.py",

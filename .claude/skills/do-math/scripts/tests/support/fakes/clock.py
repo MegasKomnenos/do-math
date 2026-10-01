@@ -7,6 +7,7 @@ fake wall clock, entropy from a counter; random seeds are a hash of the same cou
 """
 from datetime import datetime, timedelta, timezone
 import hashlib
+import math
 
 from do_math.ids import ENTROPY_BYTES, ulid
 
@@ -14,12 +15,16 @@ EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 class FakeClock:
-    def __init__(self, wall=datetime(2026, 1, 1, tzinfo=timezone.utc), monotonic=1000.0, counter=0):
+    def __init__(self, wall=datetime(2026, 1, 1, tzinfo=timezone.utc), monotonic=1000.0, counter=0,
+                 wall_resolution=0.0, monotonic_resolution=0.0):
         self._wall, self._monotonic, self._counter = wall, float(monotonic), counter
+        self._resolutions = float(wall_resolution), float(monotonic_resolution)
+        if any(not math.isfinite(value) or value < 0 for value in self._resolutions):
+            raise ValueError('clock resolutions must be finite and nonnegative')
 
     def state(self):
-        """``(wall, monotonic, counter)``; ``FakeClock(*state)`` continues from here."""
-        return self._wall, self._monotonic, self._counter
+        """Time, entropy counter and both resolutions; ``FakeClock(*state)`` restores all five."""
+        return self._wall, self._monotonic, self._counter, *self._resolutions
 
     def now(self) -> str:
         return self.wall().isoformat()
@@ -33,6 +38,10 @@ class FakeClock:
     def monotonic(self) -> float:
         return self._monotonic
 
+    def resolutions(self) -> tuple[float, float]:
+        """Zero is an exact virtual clock, independent of host clock ticks."""
+        return self._resolutions
+
     def sleep(self, seconds: float) -> None:
         self.advance(seconds)
 
@@ -45,6 +54,8 @@ class FakeClock:
         return hashlib.shake_256(b'random_hex' + self._counter.to_bytes(8, 'big')).hexdigest(nbytes)
 
     def advance(self, seconds):
+        if seconds < 0:
+            raise ValueError("normal clock advance must be nonnegative; use set_wall for wall-clock regression")
         self._wall += timedelta(seconds=seconds)
         self._monotonic += seconds
 

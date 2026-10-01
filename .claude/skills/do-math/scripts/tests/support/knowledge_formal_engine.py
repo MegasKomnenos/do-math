@@ -11,6 +11,7 @@ method, verifier or repository is replaced.
 from contextlib import contextmanager
 from copy import deepcopy
 import sys
+from support.monitoring_slots import reserve_tool
 
 from do_math import knowledge_records
 from support.engine_lifecycle import applied, clear_work
@@ -32,6 +33,10 @@ def warm_scenes():
 
 def scene(*, source='theorem k1 : 1 = 1 := rfl', declarations=('k1',), python_command=False):
     sim = python_sim() if python_command else Sim.activated()
+    for text, names, signatures in ((
+            'theorem k1 : 1 = 1 := rfl', ['k1'], {'k1': 'k1 : 1 = 1'}),
+            (SOURCE, ['t'], {'t': 't : True'})):
+        sim.lean.allow(text, names, signatures=signatures)
     clear_work(sim)
     engine = sim.engine
     engine.instance, _ = knowledge_records.create_candidate(engine.instance, {
@@ -39,7 +44,7 @@ def scene(*, source='theorem k1 : 1 = 1 := rfl', declarations=('k1',), python_co
         'summary': 'Reflexivity', 'explanation': 'Synthetic formal test input',
         'lean_code': source, 'declaration_names': list(declarations), 'dependencies': []},
         source_ref=engine.instance['lifecycle']['input_id'],
-        actor_ref=next(iter(engine.runtime['executions'])))
+        actor_ref=next(iter(engine.runtime['executions'])), clock=sim.ports.clock)
     engine._enqueue('formal_check', 'K1')
     engine._save()
     return sim, next(a for a in sim.runtime['queue'] if a['role'] == 'formal_check')
@@ -115,8 +120,7 @@ class ReturnedValues:
 
     def __enter__(self):
         monitoring = sys.monitoring
-        self.tool = next(tool for tool in (3, 4, 0, 2) if monitoring.get_tool(tool) is None)
-        monitoring.use_tool_id(self.tool, 'knowledge verifier returns')
+        self.tool = reserve_tool('knowledge verifier returns')
 
         def returned(code, offset, value):
             self.values.append(deepcopy(value))

@@ -15,7 +15,6 @@ from .execution_profiles import task_research
 from .values import json_copy
 from .input_basis import CurrentnessChanged
 from .canonical import exact_content_hash
-from .migration_defaults import clock_or_system
 
 
 REFERENCE_KEYS = {"dependencies", "inputs", "reuse", "source", "target", "evidence_refs",
@@ -211,9 +210,8 @@ def _reviewed_impact_request(instance, runtime, bundle, *, producer_execution_id
 
 def apply_reviewed_knowledge_changes(instance, runtime, bundle, *, actor_ref, producer_execution_id,
                                      input_snapshot, review_execution_id=None, snapshot=None, read_artifact=None,
-                                     receiving_execution_id=None, git_dir=None, clock=None):
+                                     receiving_execution_id=None, git_dir=None, clock):
     """Apply the reviewed S0 plans once, then create every replacement candidate."""
-    clock = clock_or_system(clock)
     from . import knowledge, knowledge_records
     request, confirmations = _reviewed_impact_request(instance, runtime, bundle,
         producer_execution_id=producer_execution_id, input_snapshot=input_snapshot,

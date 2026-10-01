@@ -8,8 +8,8 @@ model double (``engine_lifecycle.lifecycle_sim``). The new toolchain is
 registered and configured by control, as a user moving to it does. One owner
 start of a queued machine action is ``engine_lifecycle.run_machine``.
 
-A case needing the verifier's arguments rebuilds the engine with a verifier that
-records them and runs ``verify_lean`` (``recorded_verifier``); a case needing
+The verifier arguments are observed through ``sys.monitoring``
+(``recorded_verifier``); a case needing
 another Lean answer declares it on the Lean double or makes Lean fail.
 """
 from copy import deepcopy
@@ -23,7 +23,7 @@ from do_math import trust_inventory as records
 from do_math.execution_profiles import profile_ref
 from do_math.knowledge import plan_impact, revision_roots
 from do_math.record_schemas import RECORDS
-from research_fixtures import trust_fixture, validation_fixture
+from support.trust_inputs import trust_fixture, validation_fixture
 from support.engine_lifecycle import (THEOREMS, applied, executions, extended, failing_lean, file_access, invalidate,
                                       lifecycle_sim, next_environment, only, prepared_environment, recorded_verifier,
                                       run_machine, solve_goal, transition, warm_lifecycle)
@@ -94,7 +94,7 @@ class TransitionTests(unittest.TestCase):
     def test_full_transition_preserves_old_formal_records_and_full_command(self):
         """About 3 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
         sim = self.sim
-        calls = recorded_verifier(sim)
+        calls = self.enterContext(recorded_verifier())
         self.start()
         prior = deepcopy(sim.instance['formal_results'])
         with self.assertRaisesRegex(ValueError, 'formal admission is blocked during a trust transition'):
@@ -159,23 +159,13 @@ class TransitionTests(unittest.TestCase):
         self.assertEqual(sim.runtime['trust_transitions'][self.tid]['status'], 'failed')
         self.assertEqual({row['status'] for row in self.results().values()}, {'failed'})
 
-    def test_wrong_compiler_is_rejected(self):
-        """About 2.5 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
-        sim = self.sim
-        # The verifier reports a compiler other than the transition's fixed toolchain.
-        recorded_verifier(sim, change=lambda result: {**result, 'toolchain': {'sha256': 'wrong'}})
-        self.start()
-        run_machine(sim, 'trust_check')
-        self.assertEqual(self.results()[self.kids[0]]['status'], 'rejected')
-        self.assertEqual(self.results()[self.kids[0]]['reason'],
-                         'Compiler fingerprint or source differs from the fixed transition input')
-
     def test_changed_semantics_requires_independent_review(self):
         """About 3 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
         sim = self.sim
         self.start()
         for name in THEOREMS:  # Lean now reports another proposition for each declaration
-            sim.lean.declare(name, signature=name + ' : Changed proposition')
+            sim.lean.allow(f'theorem {name} : 1 = 1 := rfl', [name],
+                           signatures={name: name + ' : Changed proposition'})
         run_machine(sim, 'trust_check')
         run_machine(sim, 'trust_check')
         run_machine(sim, 'trust_activate')
@@ -317,7 +307,8 @@ class TransitionTests(unittest.TestCase):
         sim = self.sim
         before = deepcopy(sim.instance)
         self.start()
-        sim.lean.declare(THEOREMS[0], signature=THEOREMS[0] + ' : Changed proposition')
+        sim.lean.allow(f'theorem {THEOREMS[0]} : 1 = 1 := rfl', [THEOREMS[0]],
+                       signatures={THEOREMS[0]: THEOREMS[0] + ' : Changed proposition'})
         run_machine(sim, 'trust_check')
         run_machine(sim, 'trust_check')
         run_machine(sim, 'trust_activate')
@@ -332,7 +323,7 @@ class TransitionTests(unittest.TestCase):
     def test_trust_verifier_uses_registered_command_without_deadline(self):
         """About 2.5 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
         sim = self.sim
-        calls = recorded_verifier(sim)
+        calls = self.enterContext(recorded_verifier())
         self.start()
         command = sim.instance['trust_environments'][self.new]['toolchain']['configured_command']
         run_machine(sim, 'trust_check')

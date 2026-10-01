@@ -16,7 +16,7 @@ from do_math.claude_adapter import ClaudePrintAdapter
 from do_math.claude_stream import parse_stream, provider_limit
 from do_math.payloads import json_safe
 from do_math.record_schemas import RECORDS
-from provider_fixtures import claude_stream as stream
+from support.provider_inputs import claude_stream as stream
 
 INIT = {"type": "system", "subtype": "init", "session_id": "one"}
 RESULT = {"type": "result", "subtype": "success", "is_error": False, "session_id": "one",
@@ -40,7 +40,7 @@ def noop():
 
 class UsageStorageTests(unittest.TestCase):
     def test_native_usage_metadata_fits_the_execution_storage_contract(self):
-        from record_fixtures import surface_state
+        from support.record_builders import surface_state
         parsed = parse_stream(stream(INIT, RESULT))
         self.assertTrue(parsed['turn_completed'])
         _, runtime = surface_state()
@@ -65,6 +65,8 @@ class UsageStorageTests(unittest.TestCase):
 
 class SegmentTests(unittest.TestCase):
     def test_three_segments_choose_correction_and_separate_usage_scopes(self):
+        from support.entry import entry
+        _entry = entry()
         corrected = notification(structured_output={"summary": "computation failed; not rerun"},
                                  modelUsage={"claude-opus-5": {"outputTokens": 14}}, total_cost_usd=.2)
         parsed = parse_stream(stream(INIT, RESULT, INIT, noop(), INIT,
@@ -78,7 +80,7 @@ class SegmentTests(unittest.TestCase):
         self.assertEqual(parsed["usage_total"], {"input_tokens": 6, "output_tokens": 14})
         self.assertEqual(parsed["model_usage_reported"], corrected["modelUsage"])
         self.assertEqual(parsed["total_cost_usd"], .2)
-        adapter = ClaudePrintAdapter("unused")
+        adapter = ClaudePrintAdapter("unused", jobs=_entry.ports.jobs, clock=_entry.ports.clock)
         self.assertEqual(adapter.validate_final(parsed, json.dumps(corrected["structured_output"]).encode()), [])
         self.assertTrue(adapter.validate_final(parsed, json.dumps(RESULT["structured_output"]).encode()))
 

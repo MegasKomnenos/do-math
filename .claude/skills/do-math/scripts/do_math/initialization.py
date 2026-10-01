@@ -6,7 +6,6 @@ from copy import deepcopy
 from .execution_profiles import INITIAL_ROLES, match_profile_ref
 from .governance import grant_time_reason, source_record, timestamp
 from .canonical import exact_content_hash
-from .migration_defaults import clock_or_system
 
 
 def original_input_bytes(record):
@@ -19,7 +18,7 @@ def original_input_bytes(record):
     return text.encode('utf-8')
 
 
-def capability_requirements(instance, reference, *, current_identity=None, at=None, host=None):
+def capability_requirements(instance, reference, *, current_identity=None, at, host):
     """Use exact profile/host/implementation evidence, never profile booleans.
 
     Without ``current_identity`` the host port observes the profile's CLI.
@@ -54,7 +53,7 @@ def capability_requirements(instance, reference, *, current_identity=None, at=No
         return {"satisfied": False, "missing": missing, "profile_ref": reference, "reason": str(exc)}
 
 
-def _capability_batch_requirements(instance, references, *, at=None, host=None):
+def _capability_batch_requirements(instance, references, *, at, host):
     """Observe each provider once for this check through the host port; validate every exact profile."""
     identities = {}
     for reference in references:
@@ -66,7 +65,7 @@ def _capability_batch_requirements(instance, references, *, at=None, host=None):
                 if key not in identities:
                     identities[key] = host.cli_identity(profile)
                 identity = identities[key]
-            yield capability_requirements(instance, reference, current_identity=identity, at=at)
+            yield capability_requirements(instance, reference, current_identity=identity, at=at, host=host)
         except (ValueError, KeyError, TypeError, OSError) as exc:
             yield {"satisfied": False, "profile_ref": reference, "reason": str(exc)}
 
@@ -98,7 +97,7 @@ def governance_working_view(instance):
     return {**instance, **governance_view(instance)}
 
 
-def initial_intent_evidence(instance, runtime, *, owner_handlers=None):
+def initial_intent_evidence(instance, runtime, *, owner_handlers=None, clock):
     """Resolve the sealed, independently checked and actually applied original."""
     from .governance import current_import, validate_independent_execution
     lifecycle = instance['lifecycle']
@@ -108,7 +107,7 @@ def initial_intent_evidence(instance, runtime, *, owner_handlers=None):
     for row in reversed(list(runtime.get('intent_imports', {}).values())):
         if row.get('input_ref') != lifecycle.get('input_id') or row.get('superseded_by'):
             continue
-        bundle = current_import(instance, runtime, row['id'], owner_handlers=owner_handlers)
+        bundle = current_import(instance, runtime, row['id'], owner_handlers=owner_handlers, clock=clock)
         check, application = bundle.get('check', {}), bundle.get('application', {})
         expected_units = {u['unit_id'] for u in bundle['output']['import_units'] if u['payload']}
         if (bundle['source']['sha256'] != original_sha256 or bundle['source']['text'] != original['text']
@@ -184,7 +183,7 @@ def observation_window_warnings(instance, runtime):
     return warnings
 
 
-def activation_requirements(instance, runtime, *, at=None, owner_handlers=None, host=None):
+def activation_requirements(instance, runtime, *, at, owner_handlers=None, host, clock):
     """Evaluate current evidence; none of these checks creates authority."""
     lifecycle = instance.get("lifecycle", {})
     adoption = lifecycle.get("adoption", {})
@@ -210,7 +209,7 @@ def activation_requirements(instance, runtime, *, at=None, owner_handlers=None, 
     if "external_policy" not in adoption:
         missing.append("external_policy")
     try:
-        if lifecycle.get('intent_check') != initial_intent_evidence(instance, runtime, owner_handlers=owner_handlers):
+        if lifecycle.get('intent_check') != initial_intent_evidence(instance, runtime, owner_handlers=owner_handlers, clock=clock):
             raise ValueError('initial intent receipt differs from applied import')
     except (ValueError, KeyError, TypeError):
         missing.append("independent_intent")
@@ -276,11 +275,10 @@ def grant_current(instance, gid, at, *, initial):
 
 
 def initialize_state(*, instance_id, goal, workspace, config, source_input,
-                     title="", created_at=None, clock=None):
-    clock = clock_or_system(clock)
+                     title="", created_at=None, clock, host):
     if not isinstance(source_input, str) or not source_input.strip():
         raise ValueError("initialization requires the original nonempty input")
-    when = timestamp(created_at, clock=clock).isoformat()
+    when = timestamp(clock.now() if created_at is None else created_at).isoformat()
     original = source_record(source_input)
     input_id = clock.new_id('UI')
     instance = {"id": instance_id, "title": title or goal[:80],
@@ -302,5 +300,5 @@ def initialize_state(*, instance_id, goal, workspace, config, source_input,
         "updated_at": when, "last_observed_utc": when, "recovery_checked": False,
         "review_cycles": {}, "external_operations": {}, "trust_transitions": {}, "conversations": {},
         "checkpoints": {}, "observations": {}, "extended_controls": {}}
-    instance["lifecycle"]["activation"]["missing"] = activation_requirements(instance, runtime, at=when)["missing"]
+    instance["lifecycle"]["activation"]["missing"] = activation_requirements(instance, runtime, at=when, clock=clock, host=host)["missing"]
     return instance, runtime

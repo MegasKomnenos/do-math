@@ -17,8 +17,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from record_fixtures import contract_check, preparation_context, preparation_issues
-from research_fixtures import candidate
+from support.record_builders import contract_check, preparation_context, preparation_issues
+from support.role_answers import candidate
 
 UNDER_REVISION = ("sibling contract is under revision: state a boundary that its next revision cannot move, "
                   "or wait for it through task_conditions dependencies: TK-window")

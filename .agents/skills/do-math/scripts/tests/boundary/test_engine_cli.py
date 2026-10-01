@@ -22,6 +22,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -32,10 +33,11 @@ from do_math.core_engine import query_records
 from do_math.engine import ResearchEngine, control
 from do_math.reporting import OBSERVED_FIELDS
 from do_math.repository import ResearchRepository
-from research_fixtures import restore_template
+from support.cli_images import initialized_cli
 from support.engine_cli import CliInstanceTest, body, cli_instance
 from support.engine_context import damage
 from support.provider_probes import ObservedCalls
+from test_categories import test_group
 
 ENTRYPOINT = Path(__file__).resolve().parents[2] / 'do_math.py'
 CLOSED_LIFECYCLE = 'closed/completed instance cannot apply lifecycle controls'
@@ -231,24 +233,6 @@ class CliTests(CliInstanceTest):
         live = self.cli('status', *self.instance_args(), '--json')
         self.assertEqual(set(body(live)), set(stored))
 
-    def test_help_and_input_error_exit_codes_are_structured(self):
-        # Exit codes as the shell sees them: this test keeps the child process.
-        def process(*arguments):
-            return subprocess.run([sys.executable, str(ENTRYPOINT), *arguments], stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE, text=True, cwd=self.root)
-        help_result = process('--help')
-        self.assertEqual(help_result.returncode, 0)
-        self.assertIn('init', help_result.stdout)
-        self.assertIn('request', help_result.stdout)
-        invalid = process('init', '--repository', str(self.repository), '--workspace', str(self.workspace))
-        self.assertEqual(invalid.returncode, 2)
-        error = body(invalid)
-        self.assertEqual((error['kind'], error['message']),
-                         ('input_error', 'one of the arguments --goal --goal-file is required'))
-        # The discovery contract publishes the exit code the shell actually saw.
-        described = cli.describe_commands(cli.build_parser())
-        self.assertEqual(described['error_exit_codes']['input_error'], invalid.returncode)
-        self.assertEqual(described['request_fields'], list(described['request_schema']['properties']))
 
     def test_explicit_request_identity_replays_once_and_rejects_changed_payload(self):
         first = self.cli('input', *self.instance_args(), '--text', 'One request', '--request-id', 'UC-repeat')
@@ -355,6 +339,10 @@ class CliConsumerTests(CliInstanceTest):
     """What the CLI hands the engine and the repository, and how it reports what they answer."""
 
     def test_query_defaults_and_explicit_filters_reach_consumers_in_both_interfaces(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         parser = build_parser()
         base = ['query', *self.instance_args()]
         payload = {'repository': str(self.repository), 'instance': self.instance}
@@ -365,11 +353,11 @@ class CliConsumerTests(CliInstanceTest):
                 return _json_arguments(parser, {'schema_version': 5, 'command': 'query', 'payload': {**payload, **fields}})
             with self.subTest(interface=interface):
                 with ObservedCalls(files=ResearchRepository.query, records=query_records) as calls:
-                    cli.execute(arguments(['--files'], {'files': True}))
-                    cli.execute(arguments(['--files', '--prefix', 'runtime/'], {'files': True, 'prefix': 'runtime/'}))
-                    cli.execute(arguments([], {}))
+                    cli.execute(arguments(['--files'], {'files': True}), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
+                    cli.execute(arguments(['--files', '--prefix', 'runtime/'], {'files': True, 'prefix': 'runtime/'}), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
+                    cli.execute(arguments([], {}), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
                     cli.execute(arguments(['--kind', 'knowledge', '--related-to', 'KN-one', '--direction', 'incoming'],
-                                          {'kind': 'knowledge', 'related_to': 'KN-one', 'direction': 'incoming'}))
+                                          {'kind': 'knowledge', 'related_to': 'KN-one', 'direction': 'incoming'}), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
                 self.assertEqual([call['prefix'] for call in calls.captured('files', caller='do_math.cli')],
                                  ['research/', 'runtime/'])
                 self.assertEqual([(call['kind'], call['related_to'], call['direction'])
@@ -466,7 +454,7 @@ class CliTemplateTests(CliInstanceTest):
         self.control('pause', text='Change only this copy')
         self.engine().process_controls()
         self.assertNotEqual(self.store().load()[0], head)
-        self.assertEqual(restore_template(cli_instance), (self.root, self.initial))
+        self.assertEqual(initialized_cli('existing'), (self.root, self.initial))
         self.assertEqual(self.store().load(), (head, instance, runtime))
         self.assertEqual(list((self.workspace / 'control' / self.instance).glob('*.json')), [])
 
@@ -497,15 +485,48 @@ class CliFailureTests(CliInstanceTest):
                          + ' could not be processed: ' + re.escape(REFUSED_PUBLICATION))
 
     def test_accepted_control_processing_failure_is_not_a_user_input_error(self):
+        from support.entry import entry
+        _entry = entry()
+        from support.entry import entry
+        _entry = entry()
         args = Namespace(repository=self.repository, instance=self.instance)
         with self.assertRaises(RuntimeError) as failed:
-            cli._control(args, 'configure')
+            from do_math.wiring import real_ports
+            cli._control(args, 'configure', ports=real_ports(environment=_entry.environment), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
         # Admission produced the request before its processing failed.
         self.assertTrue((self.inbox / (args._resolved_request_id + '.json')).is_file())
         self.assertRegex(str(failed.exception), '^accepted request ' + re.escape(args._resolved_request_id)
                          + ' could not be processed: ' + re.escape(REFUSED_PUBLICATION)
                          + '.*artifact length differs')
         self.assertIsInstance(failed.exception.__cause__, ValueError)
+
+
+
+
+class CliExitTests(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.repository, self.workspace = self.root / "repository", self.root / "work"
+
+    @test_group('resource')
+    def test_help_and_input_error_exit_codes_are_structured(self):
+        # Exit codes as the shell sees them: this test keeps the child process.
+        def process(*arguments):
+            return subprocess.run([sys.executable, str(ENTRYPOINT), *arguments], stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, text=True, cwd=self.root)
+        help_result = process('--help')
+        self.assertEqual(help_result.returncode, 0)
+        self.assertIn('init', help_result.stdout)
+        self.assertIn('request', help_result.stdout)
+        invalid = process('init', '--repository', str(self.repository), '--workspace', str(self.workspace))
+        self.assertEqual(invalid.returncode, 2)
+        error = body(invalid)
+        self.assertEqual((error['kind'], error['message']),
+                         ('input_error', 'one of the arguments --goal --goal-file is required'))
+        # The discovery contract publishes the exit code the shell actually saw.
+        described = cli.describe_commands(cli.build_parser())
+        self.assertEqual(described['error_exit_codes']['input_error'], invalid.returncode)
+        self.assertEqual(described['request_fields'], list(described['request_schema']['properties']))
 
 
 if __name__ == '__main__':

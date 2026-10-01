@@ -24,8 +24,8 @@ from do_math.execution_lifecycle import create_execution, transition_execution
 from do_math.git_store import GitStateStore, GitStateStoreConflict
 from do_math.repository import ResearchRepository
 from do_math.windows_job import process_identity
-from provider_fixtures import PROFILE_CONFIG, host_capacity_fixture
-from research_fixtures import current_state
+from support.provider_inputs import PROFILE_CONFIG, host_capacity_fixture
+from support.state_builders import current_state
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit, make_repository
 from support.fakes.jobs import FakeJobs
@@ -85,9 +85,11 @@ class HostReservations(unittest.TestCase):
                 self.assertEqual(runtime, before)
 
     def test_no_approval_stays_unmeasured_machine_has_no_ai_budget(self):
-        instance = profiles.build_profiles(PROFILE_CONFIG)
+        from support.entry import entry
+        _entry = entry()
+        instance = profiles.build_profiles(PROFILE_CONFIG, host=_entry.ports.host)
         p = next(p for p in instance["execution_profiles"].values() if p["role"] == "formal_check")
-        self.assertIsNone(profiles.job_resource_limits(p))
+        self.assertIsNone(profiles.job_resource_limits(p, host_id=_entry.host_id))
         self.assertEqual(p["host_capacity_status"], "unmeasured_not_enforced")
         runtime = {"executions": {}, "reservations": {}}
         self.assertTrue(admit(host_slots(runtime, instance), "EX-machine", p)[0])
@@ -179,12 +181,14 @@ class HostReservations(unittest.TestCase):
         self.assertEqual(runtime, {"executions": {}, "reservations": {}})
 
     def test_explicit_authoring_covers_every_capped_role(self):
+        from support.entry import entry
+        _entry = entry()
         _, _, constraint = host_capacity_fixture()
-        bare = profiles.build_profiles(PROFILE_CONFIG)
+        bare = profiles.build_profiles(PROFILE_CONFIG, host=_entry.ports.host)
         demands = {p["role"]: {"jobs": 1, "memory_bytes": 128 * 1024**2, "cpu_rate_basis_points": 1000}
                    for p in bare["execution_profiles"].values() if p["role"] in profiles.HOST_ROLES}
         config = {**PROFILE_CONFIG, "host_resources": {"constraint": constraint, "demands_by_role": demands}}
-        instance = profiles.build_profiles(config)
+        instance = profiles.build_profiles(config, host=_entry.ports.host)
         self.assertEqual(instance["host_capacity_ref"], constraint["id"])
         self.assertTrue(all(p["host_capacity_refs"] == ([] if p['role'] in {'formal_check', 'trust_check', 'trust_activate'}
                                                         else [constraint["id"]])
@@ -202,11 +206,13 @@ class HostReservations(unittest.TestCase):
         bad = deepcopy(config)
         del bad["host_resources"]["demands_by_role"]["research_work"]
         with self.assertRaisesRegex(ValueError, "every capped role"):
-            profiles.build_profiles(bad)
+            profiles.build_profiles(bad, host=_entry.ports.host)
 
     def test_legacy_host_capped_lean_profile_requires_replacement(self):
+        from support.entry import entry
+        _entry = entry()
         _, _, constraint = host_capacity_fixture()
-        authored = profiles.build_profiles({**PROFILE_CONFIG, "lean_command": [sys.executable]})
+        authored = profiles.build_profiles({**PROFILE_CONFIG, "lean_command": [sys.executable]}, host=_entry.ports.host)
         p = next(p for p in authored["execution_profiles"].values() if p["role"] == "formal_check")
         p = profiles.with_host_resources(p, constraint, {"jobs": 1, "memory_bytes": 128 * 1024**2,
                                                          "cpu_rate_basis_points": 2000})
@@ -229,6 +235,8 @@ class HostRepositoryContract(unittest.TestCase):
 
         About 0.2 s, at the 0.2 s unit budget: five publications of a full state through the storage contract are the case.
         """
+        from support.entry import entry
+        _entry = entry()
         instance, selected, _ = host_capacity_fixture()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -255,7 +263,7 @@ class HostRepositoryContract(unittest.TestCase):
             self.assertEqual(loaded["executions"][e["id"]]["status"], "starting")
             self.assertEqual(len(loaded["executions"][e["id"]]["capacity"]["reservation_ids"]), 3)
             marker = root / "user-started"
-            with jobs.launch(['user-code', str(marker)], resource_limits=profiles.job_resource_limits(p),
+            with jobs.launch(['user-code', str(marker)], resource_limits=profiles.job_resource_limits(p, host_id=_entry.host_id),
                              name=e['launch_ticket']['job_name']) as job:
                 with repo.writer_lock():
                     slots.started(e["id"], {**process_identity(job), "job_name": job.name,
@@ -281,11 +289,13 @@ class HostRepositoryContract(unittest.TestCase):
 
 class AdmissionClockTests(unittest.TestCase):
     def test_admission_transition_preserves_native_utc_precision(self):
+        from support.entry import entry
+        _entry = entry()
         from datetime import datetime, timezone
         from types import SimpleNamespace
         from do_math.configuration import DEFAULT_CONFIG
         instant = datetime(2026, 9, 23, 0, 0, 0, 997259, tzinfo=timezone.utc)
-        instance = profiles.build_profiles(DEFAULT_CONFIG)
+        instance = profiles.build_profiles(DEFAULT_CONFIG, host=_entry.ports.host)
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'formal_check')
         runtime = {'executions': {}, 'reservations': {}}
         execution = create_execution(execution_id='EX-precision', owner_activity_id='AY-precision', actor_kind='machine',
@@ -297,26 +307,28 @@ class AdmissionClockTests(unittest.TestCase):
         clock = SimpleNamespace(wall=lambda: instant, wall_ns=lambda: int((instant.timestamp() - .000001) * 10**9),
                                 random_hex=lambda nbytes: '0f' * nbytes)
         from do_math.session_slots import SessionSlots
-        slots = SessionSlots(runtime, instance, clock=clock, jobs=FakeJobs())
+        slots = SessionSlots(runtime, instance, clock=clock, jobs=FakeJobs(), host_id=_entry.host_id)
         self.assertTrue(slots.acquire(execution['id'], profile=profile, execution=execution))
         self.assertEqual(execution['transitions'][-1]['at'], instant.isoformat())
 
 
 class HostConfigurationTests(unittest.TestCase):
     def test_host_demands_accept_only_capped_roles(self):
+        from support.entry import entry
+        _entry = entry()
         config = host_configuration()
-        validate_config(config)
-        built = profiles.build_profiles(config)['execution_profiles']
+        validate_config(config, host_id=_entry.host_id)
+        built = profiles.build_profiles(config, host=_entry.ports.host)['execution_profiles']
         self.assertTrue(all('host_resources' not in p for p in built.values()
                             if p['role'] in {'formal_check', 'trust_check', 'trust_activate'}))
         invalid = deepcopy(config)
         invalid['host_resources']['demands_by_role']['formal_check'] = {'jobs': 1, 'memory_bytes': 100,
                                                                        'cpu_rate_basis_points': 100}
         with self.assertRaisesRegex(ValueError, 'capped roles only'):
-            validate_config(invalid)
+            validate_config(invalid, host_id=_entry.host_id)
         config['host_resources']['demands_by_role'].pop('research_work')
         with self.assertRaisesRegex(ValueError, 'capped role'):
-            validate_config(config)
+            validate_config(config, host_id=_entry.host_id)
 
 
 if __name__ == "__main__":

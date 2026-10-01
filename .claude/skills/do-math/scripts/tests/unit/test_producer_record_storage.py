@@ -9,6 +9,7 @@ that are engine mixins (layer 2) run on the real ``ResearchEngine`` on the port
 fakes over the stored state (``engine_on``), and the engine's own save
 publishes their result through the storage contract.
 """
+from support.observation_clock import scripted_clock
 from copy import deepcopy
 import hashlib
 from pathlib import Path
@@ -21,9 +22,9 @@ from jsonschema import Draft202012Validator, ValidationError
 from do_math import contracts, knowledge_io
 from do_math.canonical import exact_content_hash
 from do_math.record_schemas.schemas import RECORDS
-from record_fixtures import execution_state
-from research_fixtures import current_state
-from review_fixtures import reviewed_candidate
+from support.record_builders import execution_state
+from support.state_builders import current_state
+from support.review_inputs import reviewed_candidate
 from support.fakes.clock import FakeClock
 from support.storage_records import (INSTANCE_ID, RecordingGit, approved_governance_instance, engine_on, fake_ports,
                                      record_store, reference_fixture_instance, task_with_reference_locators)
@@ -108,11 +109,13 @@ class TaskRecordTests(ProducerCase):
                     self.repository.validate_candidate(instance, changed, head)
 
     def test_task_dependencies_resolve_tasks_or_existing_knowledge(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.knowledge_io import ensure_ontology
         from do_math.knowledge_records import create_candidate
         instance = ensure_ontology(current_state()[0])
         instance, kid = create_candidate(instance, {'kind': 'observation', 'statement': 'prior result',
-                                                    'dependencies': []}, source_ref='input', actor_ref='user')
+                                                    'dependencies': []}, source_ref='input', actor_ref='user', clock=_entry.ports.clock)
         task = {'id': 'TK-1', 'revision': 1, 'question': 'Check this result', 'status': 'planned',
                 'scope': {'included': ['result'], 'excluded': []},
                 'expected': {'outputs': ['assessment'], 'research_change': 'Check result'},
@@ -127,7 +130,7 @@ class TaskRecordTests(ProducerCase):
             self.repository.validate_candidate(instance, runtime)
 
     def test_actual_plan_disposition_and_repetition_request_round_trip(self):
-        from research_fixtures import candidate, disposition
+        from support.role_answers import candidate, disposition
         instance, runtime = execution_state('research_plan')
         task = {**candidate(), 'id': 'TK-1', 'revision': 1, 'status': 'planned'}
         task.pop('revises_task_id')
@@ -158,7 +161,7 @@ class TaskRecordTests(ProducerCase):
 
 class QueueRecordTests(ProducerCase):
     def test_scoped_review_research_request_survives_action_storage(self):
-        from review_fixtures import deferred_research_cycle
+        from support.review_inputs import deferred_research_cycle
         cycle, _ = deferred_research_cycle()
         request_id = next(iter(cycle['research']))
         action = {'id': 'AC-investigation', 'role': 'supplemental_research',
@@ -204,8 +207,8 @@ class QueueRecordTests(ProducerCase):
             self.repository.validate_candidate(instance, loaded)
 
     def test_actual_impact_request_has_closed_nested_plan_schema(self):
-        from review_fixtures import ImpactReviewHarness
-        owner = ImpactReviewHarness()
+        from support.knowledge_impact import ImpactCase
+        owner = ImpactCase()
         owner.setUp()
         action = {'id': 'AC-review', 'role': 'maintenance', 'stage': 'impact_review',
                   'input_basis': {'impact_review': owner.request()}}
@@ -268,6 +271,8 @@ class QueueRecordTests(ProducerCase):
 class ExecutionRecordTests(ProducerCase):
     def test_actual_host_profile_reservation_round_trip_and_authority_refs(self):
         """About 0.2-0.45 s, over the 0.2 s unit budget: host-resource profile sealing, a slot reservation and four storage-contract validations on the in-process Git fake."""
+        from support.entry import entry
+        _entry = entry()
         import platform
         from do_math import execution_profiles as profiles, governance
         from do_math.activities import assign_execution
@@ -293,7 +298,7 @@ class ExecutionRecordTests(ProducerCase):
                                      created_at='2026-09-20T00:00:00Z')
         execution['role'] = profile['role']
         assign_execution(runtime, 'AT-1', execution)
-        self.assertTrue(SessionSlots(runtime, instance).acquire('EX-host', profile=profile, execution=execution,
+        self.assertTrue(SessionSlots(runtime, instance, clock=_entry.ports.clock, host_id=_entry.host_id, jobs=_entry.ports.jobs).acquire('EX-host', profile=profile, execution=execution,
                                                                 current_time=100))
         head = self.repository.initialize(instance, runtime)
         _, saved, loaded = self.repository.load(head)
@@ -317,6 +322,8 @@ class ExecutionRecordTests(ProducerCase):
 
     def test_adopted_host_authoring_retains_shared_constraint_pointer(self):
         """About 0.2-0.3 s, over the 0.2 s unit budget: the adopted profile editions are built and the state passes the storage contract three times."""
+        from support.entry import entry
+        _entry = entry()
         import platform
         from do_math import execution_profiles as profiles, governance
         instance, runtime = execution_state()
@@ -328,7 +335,7 @@ class ExecutionRecordTests(ProducerCase):
             authority_refs=[source['id']])
         instance['config']['host_resources'] = {'constraint': constraint, 'demands_by_role': {
             role: {'jobs': 1, 'memory_bytes': 1024, 'cpu_rate_basis_points': 1000} for role in profiles.HOST_ROLES}}
-        adopted = profiles.build_profiles(instance['config'])
+        adopted = profiles.build_profiles(instance['config'], host=_entry.ports.host)
         for family in ('execution_profiles', 'capacity_constraints'):
             instance[family].update(adopted[family])
         instance['role_profile_refs'] = adopted['role_profile_refs']
@@ -343,11 +350,13 @@ class ExecutionRecordTests(ProducerCase):
 
     def test_configure_preserves_selected_profile_edition_not_all_historical_editions(self):
         """About 0.25-0.3 s, over the 0.2 s unit budget: two profile editions are built and the state passes the storage contract four times."""
+        from support.entry import entry
+        _entry = entry()
         from do_math.execution_profiles import build_profiles
         instance, runtime = execution_state()
         old_ref = runtime['executions']['EX-1']['execution_profile_ref']
         instance['config']['call_timeout_seconds'] += 1
-        editions = build_profiles(instance['config'])
+        editions = build_profiles(instance['config'], host=_entry.ports.host)
         instance['execution_profiles'].update(editions['execution_profiles'])
         instance['capacity_constraints'].update(editions['capacity_constraints'])
         instance['role_profile_refs'] = editions['role_profile_refs']
@@ -363,12 +372,14 @@ class ExecutionRecordTests(ProducerCase):
             self.repository.validate_candidate(bad, runtime)
 
     def test_actual_execution_window_preserves_integer_measurement_and_owner(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.execution_lifecycle import transition_execution
         from do_math.execution_window import publish
         instance, runtime = execution_state()
         work = self.repository_path / 'window'
         work.mkdir()
-        window = publish(work, 'EX-1', 12.75, instance['config'], clock=lambda: 12.0)
+        window = publish(work, 'EX-1', 12.75, instance['config'], clock=lambda: 12.0, wall_clock=_entry.ports.clock.wall())
         runtime['executions']['EX-1']['execution_window'] = window
         # Same values written by ENGINE's should_stop callback; the lifecycle
         # owner still controls the independent execution status/stop-phase axes.
@@ -385,13 +396,15 @@ class ExecutionRecordTests(ProducerCase):
             self.repository.validate_candidate(saved, loaded)
 
     def test_checkpoint_observation_evidence_uses_actual_same_cas_bytes(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.observations import preserve_checkpoint
         instance, runtime = execution_state()
         head = self.repository.initialize(instance, runtime)
         raw = b'{"type":"public_message","message":"observed"}\n'
         reference = 'runtime/artifacts/BA-observation/provider-evidence/events.jsonl'
         checkpoint, _ = preserve_checkpoint(self.repository_path / 'missing-checkpoint',
-                                            artifact_prefix='runtime/artifacts/BA-observation/checkpoint', max_bytes=4096)
+                                            artifact_prefix='runtime/artifacts/BA-observation/checkpoint', max_bytes=4096, clock=_entry.ports.clock)
         checkpoint.update(observation_sources=[{'artifact_ref': reference, 'path': 'events.jsonl',
                                                 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}],
                           observation_evidence_complete=True, observation_evidence_omitted=[])
@@ -421,7 +434,7 @@ class ExecutionRecordTests(ProducerCase):
     def test_actual_submission_authority_revocation_round_trip(self):
         """About 0.35-0.5 s, over the 0.2 s unit budget: a maintenance submission sealed on disk, two publications and three validations through the storage contract."""
         from do_math.execution_lifecycle import record_submission_intent, transition_execution
-        from research_fixtures import sealed_maintenance_submission
+        from support.execution_inputs import sealed_maintenance_submission
         instance, runtime = execution_state('maintenance')
         head = self.repository.initialize(instance, runtime)
         with tempfile.TemporaryDirectory() as workspace:
@@ -465,10 +478,12 @@ class ExecutionRecordTests(ProducerCase):
             self.repository.validate_candidate(instance, runtime)
 
     def test_actual_profiles_activities_and_observation_producers(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.observations import ObservationTracker
         instance, runtime = execution_state()
         tracker = ObservationTracker('EX-1', self.repository_path, {'observation_mode': 'deadline_only'},
-                                     clock=lambda: 1.25)
+                                      time_port=scripted_clock(lambda: 1.25))
         fact = tracker.fact('observation_fact', {'type': 'provider_report', 'cost': 0.125}, 1.5)
         runtime['observation_facts'] = {fact['id']: fact}
         head = self.repository.initialize(instance, runtime)
@@ -489,13 +504,15 @@ class ExecutionRecordTests(ProducerCase):
             self.repository.validate_candidate(saved, broken, head)
 
     def test_actual_external_uncertainty_reconciliation_and_retry_round_trip(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import external, governance as gov
         instance = approved_governance_instance()
         source_id = next(iter(instance['governance_sources']))
         instance, runtime, _ = gov.apply_decision(instance, current_state(runtime={'queue': [], 'history': []})[1],
             {'kind': 'grant', 'grant': {'id': 'GR-http', 'kind': 'http', 'reuse': 'reusable',
              'allowed_origins': ['https://example.test'], 'allowed_methods': ['POST'], 'allowed_path_prefixes': ['/']}},
-            source_ref=source_id)
+            source_ref=source_id, clock=_entry.ports.clock)
         operation = external.prepare_operation({'method': 'POST', 'url': 'https://example.test/action'}, 'GR-http',
                                                source_id)
         # Domain requests acquire durable IDs at the lifecycle application
@@ -513,7 +530,7 @@ class ExecutionRecordTests(ProducerCase):
             self.assertEqual(self.repository.load(head)[2]['external_operations'][row['id']], row)
         unknown = external.execute_operation(operation, instance['grants']['GR-http'], persist=persist,
                                              transport=lambda *_: {'http_status': 503, 'body': b'uncertain'},
-                                             runtime=runtime)
+                                             runtime=runtime, clock=_entry.ports.clock, environment=_entry.environment)
         self.assertEqual(unknown['status'], 'unknown')
         proof = {'operation_id': operation['id'], 'request_sha256': operation['request_sha256'],
                  'idempotency_key': operation['idempotency_key'], 'evidence_ref': 'synthetic-remote-receipt',
@@ -522,7 +539,7 @@ class ExecutionRecordTests(ProducerCase):
         persist(absent)
         retry = external.prepare_retry(absent, {'kind': 'effect_absent', 'request_sha256': operation['request_sha256'],
                                                 'idempotency_key': operation['idempotency_key'],
-                                                'evidence_ref': proof['evidence_ref']}, source='user')
+                                                'evidence_ref': proof['evidence_ref']}, source='user', now_iso=_entry.ports.clock.now())
         persist(retry)
         self.assertEqual(self.repository.load(head)[2]['external_operations'][operation['id']]['previous_outcome'],
                          'failed')
@@ -568,10 +585,12 @@ class GovernanceRecordTests(ProducerCase):
     def test_grant_question_kind_survives_storage(self):
         # The engine marks the user question of an external request that names no grant
         # (engine._apply_extensions); the status question view reads that mark.
+        from support.entry import entry
+        _entry = entry()
         from do_math import questions
         instance, runtime = execution_state('research_work')
         question = questions.link(runtime, execution_id='EX-1', field='extensions/external_requests/0/purpose',
-                                  owner='user', targets=['EX-1'], reason='External action requires a user grant')
+                                  owner='user', targets=['EX-1'], reason='External action requires a user grant', clock=_entry.ports.clock)
         question['question_kind'] = 'grant'
         head = self.repository.initialize(instance, runtime)
         self.assertEqual(self.repository.load(head)[2]['question_links'][0]['question_kind'], 'grant')
@@ -579,20 +598,22 @@ class GovernanceRecordTests(ProducerCase):
 
 class KnowledgeRecordTests(ProducerCase):
     def test_relation_claim_endpoint_basis_survives_storage_and_remains_typed(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import knowledge
-        from knowledge_fixtures import knowledge_candidate
+        from support.knowledge_builders import knowledge_candidate
         instance, runtime = current_state()
         endpoints = []
         for title in ('source', 'target'):
             instance, runtime, kid = knowledge_io.import_candidate(instance, runtime,
                 knowledge_candidate(title=title, lean_code='', declaration_names=[]),
-                source_ref='fixture:input', actor_ref='fixture:user')
+                source_ref='fixture:input', actor_ref='fixture:user', clock=_entry.ports.clock)
             endpoints.append(kid)
         claim = {'kind': 'formally_implies', 'source': endpoints[0], 'target': endpoints[1],
                  'confirmed_scope': 'True implies True'}
         instance, runtime, kid = knowledge_io.import_candidate(instance, runtime,
             knowledge_candidate(title='relation proof', relation_claim=claim),
-            source_ref='fixture:input', actor_ref='fixture:user')
+            source_ref='fixture:input', actor_ref='fixture:user', clock=_entry.ports.clock)
         expected = deepcopy(instance['knowledge'][kid]['relation_endpoint_basis'])
         head = self.repository.initialize(instance, runtime)
         _, saved, running = self.repository.load(head)
@@ -607,15 +628,17 @@ class KnowledgeRecordTests(ProducerCase):
                     self.repository.validate_candidate(changed, running, head)
 
     def test_relation_schema_and_domain_kind_evidence_are_both_enforced(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import knowledge_records as kr
         instance = knowledge_io.ensure_ontology(current_state()[0])
         for text in ('one', 'two'):
             instance, _ = kr.create_candidate(instance, {'kind': 'observation', 'statement': text, 'dependencies': []},
-                                              source_ref='input', actor_ref='user')
+                                              source_ref='input', actor_ref='user', clock=_entry.ports.clock)
         ids = list(instance['knowledge'])
         instance, relation_id = knowledge_io.import_relation(instance, {'kind': 'supports', 'source': ids[0],
                                                                         'target': ids[1], 'evidence': 'input'},
-                                                             source_ref='source', actor_ref='author')
+                                                             source_ref='source', actor_ref='author', clock=_entry.ports.clock)
         head = self.repository.initialize(instance, current_state()[1])
         _, saved, runtime = self.repository.load(head)
         self.assertEqual(self.repository.read_record(relation_id, head)['family'], 'relations')
@@ -624,14 +647,16 @@ class KnowledgeRecordTests(ProducerCase):
             self.repository.validate_candidate(saved, runtime, head)
 
     def test_installed_initialization_and_knowledge_producers_round_trip(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.initialization import initialize_state
         from do_math.knowledge_io import ensure_ontology
         from do_math.knowledge_records import create_candidate
         instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal='question', workspace=self.repository_path,
-                                             config={}, source_input='question')
+                                             config={}, source_input='question', clock=_entry.ports.clock, host=_entry.ports.host)
         instance = ensure_ontology(instance)
         instance, kid = create_candidate(instance, {'kind': 'observation', 'statement': 'a bounded observation',
-                                                    'dependencies': []}, source_ref='user-input', actor_ref='user')
+                                                    'dependencies': []}, source_ref='user-input', actor_ref='user', clock=_entry.ports.clock)
         head = self.repository.initialize(instance, runtime)
         _, loaded, _ = self.repository.load(head)
         self.assertEqual(loaded['knowledge'][kid], instance['knowledge'][kid])
@@ -642,6 +667,8 @@ class KnowledgeRecordTests(ProducerCase):
             self.repository.save_with_state(head, bad, runtime)
 
     def test_actual_uncertainty_text_and_object_preserve_wire_meaning(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import submission
         wire = submission.extension_schema({'role': 'research_work'})
         for value in ('Not a proof', {'claim': 'Not a proof', 'scope': 'finite search only'}):
@@ -651,7 +678,7 @@ class KnowledgeRecordTests(ProducerCase):
                     {'kind': 'observation', 'title': 'Bounded', 'statement': 'Finite search',
                      'explanation': 'Bounded search only', 'summary': 'No proof', 'lean_code': '',
                      'declaration_names': [], 'dependencies': [], 'uncertainty_assessment': value},
-                    source_ref='input', actor_ref='user')
+                    source_ref='input', actor_ref='user', clock=_entry.ports.clock)
                 checked = self.repository.validate_candidate(instance, runtime)
                 self.assertEqual(checked['instance']['knowledge'][kid]['uncertainty_assessment'], value)
 
@@ -669,18 +696,21 @@ class KnowledgeRecordTests(ProducerCase):
 
     def test_staged_review_producer_keeps_transient_candidate_and_real_transition(self):
         """About 0.3-0.35 s, over the 0.2 s unit budget: two synthetic trust toolchains are hashed and the real engine loads, saves and is validated on the in-process Git fake."""
-        from engine_fixtures import FakeEngine
-        from knowledge_fixtures import formal_evidence
+        from support.entry import entry
+        _entry = entry()
+        from support.trust_inputs import trust_fixture, trust_environment
+        from support.knowledge_builders import formal_evidence
         from do_math import knowledge as k
         from do_math.review_policy import build_review_policy
         instance, runtime, kid, _ = reviewed_candidate(self.repository_path, verified=True)
         # The legacy engine double registers a second synthetic trust environment; only its records are used.
-        environment_owner = FakeEngine(self.repository_path)
-        eid = environment_owner.environment('synthetic-staged')
-        instance['trust_environments'][eid] = deepcopy(environment_owner.instance['trust_environments'][eid])
-        runtime['trust_bindings'][eid] = deepcopy(environment_owner.runtime['trust_bindings'][eid])
+        eid = 'TE-synthetic-staged'
+        environment, binding = trust_environment(trust_fixture(self.repository_path, ['synthetic-staged']),
+                                                  environment_id=eid, status='registered')
+        instance['trust_environments'][eid] = environment
+        runtime['trust_bindings'][eid] = binding
         instance['review_policy'] = build_review_policy(reviewer_count=1, max_rounds=1)
-        transition = k.begin_transition(instance, eid)
+        transition = k.begin_transition(instance, eid, clock=_entry.ports.clock)
         transition = k.record_transition_result(instance, transition, {'id': kid, **formal_evidence(instance, kid, eid)})
         runtime['trust_transitions'][transition['id']] = transition
         runtime.setdefault('queue', [])
@@ -698,8 +728,10 @@ class KnowledgeRecordTests(ProducerCase):
 
     def test_verified_identity_and_environment_continuity_round_trip(self):
         """About 0.35-0.4 s, over the 0.2 s unit budget: two synthetic trust toolchains are hashed and the state passes the storage contract four times."""
-        from engine_fixtures import FakeEngine
-        from knowledge_fixtures import formal_evidence
+        from support.entry import entry
+        _entry = entry()
+        from support.trust_inputs import trust_fixture, trust_environment
+        from support.knowledge_builders import formal_evidence
         from do_math import knowledge as k
         instance, runtime, kid, aid = reviewed_candidate(self.repository_path, verified=True)
         head = self.repository.initialize(instance, runtime)
@@ -707,13 +739,14 @@ class KnowledgeRecordTests(ProducerCase):
         use = k.assess_use(instance['knowledge'][kid], instance)
         self.assertTrue(use['valid'], use)
         # The legacy engine double registers the next synthetic trust environment; only its records are used.
-        owner = FakeEngine(self.repository_path)
-        eid = owner.environment('synthetic-next')
-        instance['trust_environments'][eid] = deepcopy(owner.instance['trust_environments'][eid])
-        runtime['trust_bindings'][eid] = deepcopy(owner.runtime['trust_bindings'][eid])
-        transition = k.begin_transition(instance, eid)
+        eid = 'TE-synthetic-next'
+        environment, binding = trust_environment(trust_fixture(self.repository_path, ['synthetic-next']),
+                                                  environment_id=eid, status='registered')
+        instance['trust_environments'][eid] = environment
+        runtime['trust_bindings'][eid] = binding
+        transition = k.begin_transition(instance, eid, clock=_entry.ports.clock)
         transition = k.record_transition_result(instance, transition, {'id': kid, **formal_evidence(instance, kid, eid)})
-        instance = k.activate_transition(instance, transition)
+        instance = k.activate_transition(instance, transition, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         transition['status'] = 'active'
         runtime['trust_transitions'][transition['id']] = transition
         next_head = self.repository.save_with_state(head, instance, runtime)[0]
@@ -771,9 +804,11 @@ class RecordSchemaTests(unittest.TestCase):
 
 class ProducerStorageContractTests(unittest.TestCase):
     def test_accepted_uncertainty_metadata_matches_registered_storage_shape(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import submission
         from do_math.state_contract import default_state_contract
-        from record_fixtures import research_work_context, two_observation_output
+        from support.record_builders import research_work_context, two_observation_output
         wire = submission.extension_schema({'role': 'research_work'})
         registered = default_state_contract().family('research', 'knowledge').schema
         output = two_observation_output()
@@ -786,7 +821,7 @@ class ProducerStorageContractTests(unittest.TestCase):
                 errors = list(Draft202012Validator(wire).iter_errors(extension))
                 self.assertEqual(not errors, valid)
                 issues = submission.payload_issues(output, contracts.schema_for('research_work'),
-                                                   research_work_context(), extension, workspace)
+                                                   research_work_context(), extension, workspace, clock=_entry.ports.clock)
                 self.assertEqual(not issues, valid, issues)
                 proposed = {**output['knowledge'][0], 'uncertainty_assessment': value}
                 if not valid:
@@ -794,10 +829,10 @@ class ProducerStorageContractTests(unittest.TestCase):
                                         row['path'].endswith('/uncertainty_assessment') for row in issues), issues)
                     with self.assertRaisesRegex(ValueError, 'uncertainty_assessment'):
                         knowledge_io.import_candidate({}, {}, proposed,
-                                                      source_ref='fixture:submission', actor_ref='fixture:author')
+                                                      source_ref='fixture:submission', actor_ref='fixture:author', clock=_entry.ports.clock)
                     continue
                 state, _, kid = knowledge_io.import_candidate({}, {}, proposed,
-                                                              source_ref='fixture:submission', actor_ref='fixture:author')
+                                                              source_ref='fixture:submission', actor_ref='fixture:author', clock=_entry.ports.clock)
                 Draft202012Validator(registered).validate(state['knowledge'][kid])
                 self.assertEqual(state['knowledge'][kid]['uncertainty_assessment'], value)
 

@@ -19,7 +19,9 @@ from do_math import governance as gov
 from do_math import planning, task_contracts
 from do_math.planning import contract_hash
 from do_math.task_scope import apply_task_assessments
-from research_fixtures import charter_change, disposition, prepared_rule_conditions, review_items
+from support.state_builders import charter_change
+from support.role_answers import disposition, review_items
+from support.observation_inputs import prepared_rule_conditions
 from support.academic_scenes import MANUSCRIPT, consumer_sim, ended, user_source, warm_consumer
 from support.engine_context import issue
 from support.engine_lifecycle import research_grant
@@ -61,6 +63,8 @@ class AcademicConsumerTests(unittest.TestCase):
         ended(engine, 'EX-plan', 'research_plan', input_solution_basis=deepcopy(engine._solution_basis()))
 
     def assessed(self, *, kind='fulfilled', decision='completed'):
+        from support.entry import entry
+        _entry = entry()
         engine, task = self.reviewed()
         tid = task['id']
         self.returned_work(engine, task)
@@ -68,7 +72,7 @@ class AcademicConsumerTests(unittest.TestCase):
                       'item_dispositions': [{'obligation_id': o['id'], 'kind': kind, 'evidence_refs': ['EX-work']}
                                             for o in task['completion_obligations']], 'unresolved': []}
         engine.instance, engine.runtime = apply_task_assessments(engine.instance, engine.runtime, [assessment],
-            execution_id='EX-plan', input_tasks=deepcopy(engine.runtime['tasks']))
+            execution_id='EX-plan', input_tasks=deepcopy(engine.runtime['tasks']), clock=_entry.ports.clock)
         return engine, engine.runtime['tasks'][tid], assessment
 
     def test_actual_constructor_review_and_ready_population_use_the_task_contract(self):
@@ -79,8 +83,8 @@ class AcademicConsumerTests(unittest.TestCase):
         self.assertEqual(task['authority_refs'], [research_grant(engine)])
         self.assertTrue({row['id'] for row in engine._solution_basis()['records']}.issubset(task['inputs']))
         self.assertNotIn('completion_criteria', task)
-        self.assertEqual(planning.task_ready(task, engine.instance, engine.runtime)['state'], 'ready')
-        self.assertEqual(planning.ready_task_ids(engine.runtime, engine.instance), [task['id']])
+        self.assertEqual(planning.task_ready(task, engine.instance, engine.runtime, evaluation_context=engine._evaluation_context())['state'], 'ready')
+        self.assertEqual(planning.ready_task_ids(engine.runtime, engine.instance, evaluation_context=engine._evaluation_context()), [task['id']])
         engine._ensure_academic_followup()
         self.assertEqual(list(engine.runtime['tasks']), [task['id']])
 
@@ -144,6 +148,8 @@ class AcademicConsumerTests(unittest.TestCase):
         self.assertNotIn('academic_assessments', engine.runtime)
 
     def test_scope_waiver_records_authority_without_applying_a_second_task_lifecycle(self):
+        from support.entry import entry
+        _entry = entry()
         engine, task = self.generated()
         tid = task['id']
         task['results'] = [{'execution_id': 'EX-work', 'report': 'Cannot satisfy the requirement'}]
@@ -163,7 +169,7 @@ class AcademicConsumerTests(unittest.TestCase):
                                              'evidence_refs': ['EX-work']} for row in task['completion_obligations']],
                       'unresolved': []}
         engine.instance, engine.runtime = apply_task_assessments(engine.instance, engine.runtime, [assessment],
-            execution_id='EX-plan', input_tasks=deepcopy(engine.runtime['tasks']))
+            execution_id='EX-plan', input_tasks=deepcopy(engine.runtime['tasks']), clock=_entry.ports.clock)
         engine._record_academic_assessment(engine.runtime['tasks'][tid], assessment, 'EX-plan')
         self.assertNotEqual(engine._academic_status()['status'], 'completed')
         self.assertEqual([row['decision'] for row in engine.runtime['academic_assessments']], ['not_satisfied'])

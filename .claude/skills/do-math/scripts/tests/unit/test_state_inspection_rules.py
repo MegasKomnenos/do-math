@@ -25,8 +25,8 @@ from do_math.engine import ResearchEngine
 from do_math.git_store import GitStateStoreError
 from do_math.state_checks import inspect_state
 from do_math.state_contract import default_state_contract
-from record_fixtures import surface_state
-from research_fixtures import current_state
+from support.record_builders import surface_state
+from support.state_builders import current_state
 from support.fakes.clock import FakeClock
 from support.storage_git import ObservedGit, rewrite_commit
 from support.storage_records import INSTANCE_ID, fake_ports, record_store
@@ -85,7 +85,7 @@ class StateCheckTests(unittest.TestCase):
         self.assertTrue(any(text in row['message'] for row in errors), errors)
 
     def test_valid_rule_payload_is_not_an_error_list(self):
-        from research_fixtures import supply_observation_rules
+        from support.observation_inputs import supply_observation_rules
         instance, runtime = surface_state()
         extensions = {}
         supply_observation_rules([{'title': 'fixture'}], extensions)
@@ -129,11 +129,13 @@ class StateCheckTests(unittest.TestCase):
         self.assertRejectedAtLoad(instance, runtime, 'execution profile content differs from its immutable identity')
 
     def test_separated_knowledge_and_source_mutations(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime = surface_state()
         candidate = {'kind': 'theorem', 'title': 'P', 'statement': 'P', 'explanation': 'Argument',
                      'summary': 'P follows', 'lean_code': 'theorem p : True := True.intro',
                      'declaration_names': ['p'], 'dependencies': []}
-        instance, kid = knowledge_records.create_candidate(instance, candidate, source_ref='SRC', actor_ref='EX-1')
+        instance, kid = knowledge_records.create_candidate(instance, candidate, source_ref='SRC', actor_ref='EX-1', clock=_entry.ports.clock)
         self.assertEqual(self.area(instance, runtime, 'mathematical_effect')['status'], 'healthy')
         # Knowledge references and source descriptors are load-time conditions.
         dangling = deepcopy(instance)
@@ -153,23 +155,25 @@ class StateCheckTests(unittest.TestCase):
     def test_formal_results_left_under_a_superseded_environment_are_not_findings(self):
         # A trust transition gives each target a new formal result and leaves the
         # old one, still accepted and active, under the superseded environment.
+        from support.entry import entry
+        _entry = entry()
         from do_math import knowledge
-        from knowledge_fixtures import verified_knowledge
+        from support.knowledge_builders import verified_knowledge
         instance, runtime, kid, _ = verified_knowledge()
         old = instance['knowledge'][kid]['formal_result_id']
         instance['trust_environments']['TE-next'] = {'id': 'TE-next', 'status': 'registered',
                                                      'toolchain': {'version': 'next'}, 'allowed_axioms': []}
         result = {**deepcopy(instance['formal_results'][old]['verification']), 'id': kid,
                   'toolchain': {'version': 'next'}}
-        transition = knowledge.begin_transition(instance, 'TE-next')
+        transition = knowledge.begin_transition(instance, 'TE-next', clock=_entry.ports.clock)
         instance = knowledge.activate_transition(instance,
-            knowledge.record_transition_result(instance, transition, result))
+            knowledge.record_transition_result(instance, transition, result), at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual(instance['trust_environments']['TE-test']['status'], 'superseded')
         self.assertEqual(instance['formal_results'][old]['formal_use'], 'active')
         self.assertEqual(self.area(instance, runtime, 'mathematical_effect')['status'], 'healthy')
 
     def test_completion_requires_all_obligations_and_authoritative_waiver(self):
-        from record_fixtures import task_contract
+        from support.record_builders import task_contract
         from do_math.execution_profiles import profile_ref
         instance, runtime = surface_state()
         value = task_contract()
@@ -210,6 +214,8 @@ class StateCheckTests(unittest.TestCase):
         self.assertError(instance, runtime, 'queued investigation is not linked', 'preparation_selection')
 
     def test_external_error_http_remains_unknown_and_reconciliation_is_distinct(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.record_schemas import RECORDS, REFERENCES
         instance, runtime = surface_state()
         operation = external.prepare_operation({'method': 'POST', 'url': 'https://example.test/', 'body': ''},
@@ -223,7 +229,7 @@ class StateCheckTests(unittest.TestCase):
         grant = {'id': 'GR', 'status': 'active', 'allowed_origins': ['https://example.test'],
                  'allowed_methods': ['POST'], 'allowed_path_prefixes': ['/'], 'credential_env': {}}
         operation = external.execute_operation(operation, grant,
-            transport=lambda *_: {'http_status': 500, 'body': b'uncertain'}, persist=lambda row: row)
+            transport=lambda *_: {'http_status': 500, 'body': b'uncertain'}, persist=lambda row: row, clock=_entry.ports.clock, environment=_entry.environment)
         runtime['external_operations'] = {'OP': operation}
         self.assertEqual(operation['status'], 'unknown')
         self.assertEqual(self.area(instance, runtime, 'tasks_activities_executions')['status'], 'healthy')
@@ -239,9 +245,11 @@ class StateCheckTests(unittest.TestCase):
 
     def test_capability_evidence_id_must_match_its_content_at_load(self):
         # Readers use the stored ID without rehashing; a changed row is rejected here instead.
+        from support.entry import entry
+        _entry = entry()
         from do_math.configuration import DEFAULT_CONFIG
         from do_math.execution_profiles import build_profiles, capability_evidence
-        profiles = build_profiles({**deepcopy(DEFAULT_CONFIG), 'scholarly_enabled': False})
+        profiles = build_profiles({**deepcopy(DEFAULT_CONFIG), 'scholarly_enabled': False}, host=_entry.ports.host)
         profile = next(iter(profiles['execution_profiles'].values()))
         row = capability_evidence(profile, {'identity': {'host': 'fixture'}, 'verified': True,
             'supported': {'jsonl': True}}, observed_at='2026-01-01T00:00:00+00:00')
@@ -378,6 +386,8 @@ class EngineEntryInspectionTests(unittest.TestCase):
         About 0.5 s, over the 0.2 s unit budget: the real engine loads and
         validates the stored state, and three more commits are loaded again.
         """
+        from support.entry import entry
+        _entry = entry()
         output_path = 'runtime/artifacts/BA-output/result.bin'
         input_path = 'runtime/artifacts/BA-input/input.txt'
         with tempfile.TemporaryDirectory() as directory:
@@ -392,7 +402,7 @@ class EngineEntryInspectionTests(unittest.TestCase):
                 output_files=[{**artifact(output_path, files[output_path]), 'path': 'result.bin'}],
                 input_bundle='BA-input', input_manifest=archived_role_input('BA-input', first, files))
             head = repository.save_with_state(first, instance, runtime, artifacts=files)[0]
-            engine = ResearchEngine(repository.repository, INSTANCE_ID, ports=fake_ports(clock, backend))
+            engine = ResearchEngine(repository.repository, INSTANCE_ID, ports=fake_ports(clock, backend), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
             self.assertEqual(engine.head, head)
             manifest_paths = sorted(path for path in files if path.startswith('runtime/artifacts/BA-input/'))
 

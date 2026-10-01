@@ -14,8 +14,8 @@ import hashlib
 import unittest
 
 from do_math import formal, knowledge, knowledge_records as kr
-from provider_fixtures import actual_command
-from research_fixtures import current_state
+from support.provider_inputs import actual_command
+from support.state_builders import current_state
 from support.knowledge_roundtrip import KnowledgeRoundtripHarness, installed_trust_state
 from test_categories import test_group as category
 
@@ -31,9 +31,13 @@ class InstalledLeanStorageTests(KnowledgeRoundtripHarness):
 
     def assert_exact_lean_result_survives(self, persist):
         """The installed Lean's result for exact Unicode source survives revision and transition; ``persist`` stores between steps."""
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         source = 'theorem \u212a (\u2126 : True) : True := \u2126\r\ntheorem K : True := True.intro\n-- e\u0301\n'
         names = ['\u212a', 'K']
-        observed = formal.verify_lean(source=source, declarations=names, workspace=self.root, lean_command=actual_command())
+        observed = formal.verify_lean(source=source, declarations=names, workspace=self.root, lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         self.assertEqual(observed['status'], 'verified', observed.get('reason'))
         instance, runtime, self.kid = installed_trust_state(self.root, observed['toolchain'])
         # The legacy fixture's engine state also named its workspace and a configured command
@@ -50,7 +54,7 @@ class InstalledLeanStorageTests(KnowledgeRoundtripHarness):
         proposal = kr.proposal_view(self.state, self.kid)
         self.assertEqual(proposal['lean_code'].encode(), source.encode())
         observed = formal.verify_lean(source=proposal['lean_code'], declarations=proposal['declaration_names'],
-            workspace=self.root, lean_command=actual_command(), expected_toolchain=observed['toolchain'])
+            workspace=self.root, lean_command=actual_command(), expected_toolchain=observed['toolchain'], clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         self.assertEqual(observed['status'], 'verified', observed.get('reason'))
         self.state = kr.record_formal_result(self.state, self.kid, observed, 'TE-old', runtime=self.runtime)
         expected = copy.deepcopy(self.state['formal_results'][fid])
@@ -62,7 +66,7 @@ class InstalledLeanStorageTests(KnowledgeRoundtripHarness):
         scope = knowledge.plan_impact(self.state, self.runtime, roots, [])['computed_impact']
         old = self.kid
         self.state, self.runtime = knowledge.revise_knowledge(self.state, self.runtime, old, changes,
-            reason='Explanation only', actor_ref='synthetic:author', declared_impact=scope)
+            reason='Explanation only', actor_ref='synthetic:author', declared_impact=scope, clock=_entry.ports.clock)
         self.kid = next(k for k, row in self.state['knowledge'].items() if row.get('supersedes') == old)
         persist()
         self.assertEqual(self.state['knowledge'][self.kid]['formal_result_id'], fid)
@@ -71,13 +75,13 @@ class InstalledLeanStorageTests(KnowledgeRoundtripHarness):
         self.state['trust_environments']['TE-next'] = {**copy.deepcopy(self.state['trust_environments']['TE-old']),
             'id': 'TE-next', 'status': 'registered', 'source_ref': 'synthetic:next-adoption'}
         self.runtime['trust_bindings']['TE-next'] = copy.deepcopy(self.runtime['trust_bindings']['TE-old'])
-        transition = knowledge.begin_transition(self.state, 'TE-next')
+        transition = knowledge.begin_transition(self.state, 'TE-next', clock=_entry.ports.clock)
         transition = knowledge.record_transition_result(self.state, transition, {'id': self.kid, **observed})
         self.runtime['trust_transitions'] = {transition['id']: transition}
         persist()
         stored_transition = self.runtime['trust_transitions'][transition['id']]
         self.assertEqual(stored_transition['results'][self.kid]['declaration_evidence'], observed['declaration_evidence'])
-        self.state = knowledge.activate_transition(self.state, stored_transition)
+        self.state = knowledge.activate_transition(self.state, stored_transition, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         stored_transition['status'] = 'active'
         persist()
         new_formal = self.state['formal_results'][self.state['knowledge'][self.kid]['formal_result_id']]

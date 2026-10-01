@@ -149,13 +149,15 @@ class SubmissionReturnTests(unittest.TestCase):
 
 class EngineStartGuardTests(unittest.TestCase):
     def test_pending_installation_repair_prevents_a_redundant_engine_start(self):
+        from support.entry import entry
+        _entry = entry()
         status = {'status': 'ready', 'installation_repair': {'id': 'OD-pending'}}
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory) / 'work'
-            result = operator.engine_start_guard(Path(directory) / 'repo', 'RI-test', workspace, status=status)
+            result = operator.engine_start_guard(Path(directory) / 'repo', 'RI-test', workspace, status=status, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
             self.assertEqual(result, {'outcome': 'installation_repair_waiting', 'before': status})
-            operator.hold(workspace, reason='user hold')
-            self.assertEqual(operator.engine_start_guard(Path(directory) / 'repo', 'RI-test', workspace, status=status),
+            operator.hold(workspace, reason='user hold', clock=_entry.ports.clock)
+            self.assertEqual(operator.engine_start_guard(Path(directory) / 'repo', 'RI-test', workspace, status=status, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports),
                              {'outcome': 'held'})
 
 

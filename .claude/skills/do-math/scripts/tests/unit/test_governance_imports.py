@@ -16,8 +16,8 @@ import jsonschema
 from do_math import governance as gov, questions, submission
 from do_math.canonical import exact_content_hash
 from do_math.governance import interpretation_schema
-from record_fixtures import checked_import, domain_governance, governance_import
-from research_fixtures import charter
+from support.record_builders import checked_import, domain_governance, governance_import
+from support.state_builders import charter
 
 CHECKED = {"decision": "approved", "scope_complete": True, "unit_ids": ["U"], "question_ids": ["Q"], "findings": []}
 
@@ -28,105 +28,121 @@ def approved_check(bundle, **changes):
 
 class ImportSealTests(unittest.TestCase):
     def test_import_holes_and_self_check_are_rejected_and_questions_still_checked(self):
+        from support.entry import entry
+        _entry = entry()
         i, rt, s, output = governance_import()
         bad = deepcopy(output); bad["import_units"][0]["source_range"]["end"] = 7
         with self.assertRaisesRegex(ValueError, "^incomplete source coverage$"):
-            gov.prepare_import(i, rt, s, bad, execution_id="E1", input_ref="IN")
-        bundle = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN")
+            gov.prepare_import(i, rt, s, bad, execution_id="E1", input_ref="IN", clock=_entry.ports.clock)
+        bundle = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN", clock=_entry.ports.clock)
         rt["executions"]["E2"] = {"role": "intent_interpretation", "intent_import_sha256": bundle["sha256"]}
         check = approved_check(bundle)
         with self.assertRaisesRegex(ValueError, "^independent checker execution required$"):
-            gov.check_import(i, rt, bundle["id"], check, execution_id="E1")
-        gov.check_import(i, rt, bundle["id"], check, execution_id="E2")
-        updated, updated_rt, outcome = gov.apply_import(i, rt, bundle["id"])
+            gov.check_import(i, rt, bundle["id"], check, execution_id="E1", clock=_entry.ports.clock)
+        gov.check_import(i, rt, bundle["id"], check, execution_id="E2", clock=_entry.ports.clock)
+        updated, updated_rt, outcome = gov.apply_import(i, rt, bundle["id"], clock=_entry.ports.clock)
         self.assertEqual(outcome["status"], "applied")
         self.assertEqual(questions.user_waits({"role": "research_preparation"}, updated, updated_rt), [])
 
     def test_import_reauthor_requires_current_failed_parent_and_repair_coordinates(self):
+        from support.entry import entry
+        _entry = entry()
         i, rt, s, out = governance_import()
-        b = gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN")
+        b = gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN", clock=_entry.ports.clock)
         rt["executions"]["E2"] = {"role": "intent_interpretation", "intent_import_sha256": b["sha256"]}
         gov.check_import(i, rt, b["id"], approved_check(b, decision="revision_required",
-                                                         findings=["Question incomplete"]), execution_id="E2")
+                                                         findings=["Question incomplete"]), execution_id="E2", clock=_entry.ports.clock)
         with self.assertRaisesRegex(ValueError, "^rework requires parent findings and exact changed coordinates$"):
-            gov.prepare_import(i, rt, s, out, execution_id="E3", input_ref="IN", previous_id=b["id"])
+            gov.prepare_import(i, rt, s, out, execution_id="E3", input_ref="IN", previous_id=b["id"], clock=_entry.ports.clock)
         # Before any rework the failed check alone keeps the parent from applying.
         with self.assertRaisesRegex(ValueError, "^independent complete approval required$"):
-            gov.apply_import(i, rt, b["id"])
+            gov.apply_import(i, rt, b["id"], clock=_entry.ports.clock)
         out["repair"] = {"previous_sha256": b["sha256"], "changed_unit_ids": ["U"], "actions": ["Add scope option"]}
         out["question_details"][0]["options"].append({"text": "Change scope", "effect": "Ask for a replacement charter"})
-        newer = gov.prepare_import(i, rt, s, out, execution_id="E3", input_ref="IN", previous_id=b["id"])
+        newer = gov.prepare_import(i, rt, s, out, execution_id="E3", input_ref="IN", previous_id=b["id"], clock=_entry.ports.clock)
         self.assertEqual(newer["previous_id"], b["id"])
         with self.assertRaisesRegex(ValueError, "^import is absent or superseded$"):
-            gov.apply_import(i, rt, b["id"])
+            gov.apply_import(i, rt, b["id"], clock=_entry.ports.clock)
 
     def test_import_currentness_binds_actual_structured_task_contract(self):
+        from support.entry import entry
+        _entry = entry()
         i, rt, source, output = governance_import()
         rt['tasks']['T'] = {'id': 'T', 'revision': 1, 'status': 'planned', 'question': 'Original task'}
         output['used_sources'] = ['T']
-        bundle = gov.prepare_import(i, rt, source, output, execution_id='AUTHOR', input_ref="IN")
+        bundle = gov.prepare_import(i, rt, source, output, execution_id='AUTHOR', input_ref="IN", clock=_entry.ports.clock)
         rt['executions']['CHECK'] = {'role': 'intent_interpretation', 'intent_import_sha256': bundle['sha256']}
         rt['tasks']['T']['question'] = 'A different task under the same nominal revision'
         with self.assertRaisesRegex(ValueError, "^import authority or affected targets changed$"):
-            gov.check_import(i, rt, bundle['id'], approved_check(bundle), execution_id='CHECK')
+            gov.check_import(i, rt, bundle['id'], approved_check(bundle), execution_id='CHECK', clock=_entry.ports.clock)
 
     def test_unapproved_or_stale_import_cannot_change_charter(self):
+        from support.entry import entry
+        _entry = entry()
         i, rt, s, output = governance_import()
         replacement = charter("CH2", "Prove Q"); replacement["supersedes"] = ["CH1"]
         output.update(questions=[], question_details=[])
         unit = output["import_units"][0]
         unit.update(owner_ref="CH2", question_refs=[], payload={"kind": "charter", "record": replacement})
-        b = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN")
+        b = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN", clock=_entry.ports.clock)
         rt["executions"]["E2"] = {"role": "intent_interpretation", "intent_import_sha256": b["sha256"]}
-        gov.check_import(i, rt, b["id"], approved_check(b, question_ids=[]), execution_id="E2")
+        gov.check_import(i, rt, b["id"], approved_check(b, question_ids=[]), execution_id="E2", clock=_entry.ports.clock)
         with self.assertRaisesRegex(ValueError, "^semantic check is not user approval of the exact change$"):
-            gov.apply_import(i, rt, b["id"])
+            gov.apply_import(i, rt, b["id"], clock=_entry.ports.clock)
         approvals = {"U": {"actor": "user", "source_ref": s["id"], "source_sha256": s["sha256"],
                            "change_sha256": exact_content_hash(unit["payload"])}}
-        changed, state, event = gov.apply_import(i, rt, b["id"], approvals=approvals)
+        changed, state, event = gov.apply_import(i, rt, b["id"], approvals=approvals, clock=_entry.ports.clock)
         self.assertEqual(gov.governance_view(changed)["goal"], "Prove Q")
         self.assertEqual(event["status"], "applied")
-        _, repeated_state, repeated_event = gov.apply_import(changed, state, b["id"], approvals=approvals)
+        _, repeated_state, repeated_event = gov.apply_import(changed, state, b["id"], approvals=approvals, clock=_entry.ports.clock)
         self.assertEqual(repeated_event, event)
         self.assertEqual(repeated_state, state)
         stale = deepcopy(i); stale["decisions"]["D"]["source_sha256"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "^import authority or affected targets changed$"):
-            gov.apply_import(stale, rt, b["id"], approvals=approvals)
+            gov.apply_import(stale, rt, b["id"], approvals=approvals, clock=_entry.ports.clock)
 
     def test_import_check_must_resolve_a_real_execution_and_bound_input(self):
+        from support.entry import entry
+        _entry = entry()
         i, rt, s, output = governance_import()
-        bundle = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN")
+        bundle = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN", clock=_entry.ports.clock)
         with self.assertRaisesRegex(ValueError, "^independent checker execution required$"):
-            gov.check_import(i, rt, bundle["id"], approved_check(bundle), execution_id="FAKE")
+            gov.check_import(i, rt, bundle["id"], approved_check(bundle), execution_id="FAKE", clock=_entry.ports.clock)
         # A real execution that did not receive this sealed import is not its checker either.
         rt["executions"]["E9"] = {"role": "intent_interpretation"}
         with self.assertRaisesRegex(ValueError, "^checker execution must bind exact preserved import input$"):
-            gov.check_import(i, rt, bundle["id"], approved_check(bundle), execution_id="E9")
+            gov.check_import(i, rt, bundle["id"], approved_check(bundle), execution_id="E9", clock=_entry.ports.clock)
 
     def test_import_reapplication_is_idempotent(self):
+        from support.entry import entry
+        _entry = entry()
         i, rt, s, output = governance_import()
-        b = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN")
+        b = gov.prepare_import(i, rt, s, output, execution_id="E1", input_ref="IN", clock=_entry.ports.clock)
         rt["executions"]["E2"] = {"role": "intent_interpretation", "intent_import_sha256": b["sha256"]}
-        gov.check_import(i, rt, b["id"], approved_check(b), execution_id="E2")
-        i, rt, first = gov.apply_import(i, rt, b["id"])
-        _, second, result = gov.apply_import(i, rt, b["id"])
+        gov.check_import(i, rt, b["id"], approved_check(b), execution_id="E2", clock=_entry.ports.clock)
+        i, rt, first = gov.apply_import(i, rt, b["id"], clock=_entry.ports.clock)
+        _, second, result = gov.apply_import(i, rt, b["id"], clock=_entry.ports.clock)
         self.assertEqual(first, result)
         self.assertEqual(len(rt["question_links"]), len(second["question_links"]))
 
     def test_import_repair_cannot_claim_unchanged_units_were_changed(self):
-        i, rt, s, out = governance_import(); b = gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN")
+        from support.entry import entry
+        _entry = entry()
+        i, rt, s, out = governance_import(); b = gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN", clock=_entry.ports.clock)
         rt["executions"]["E2"] = {"role": "intent_interpretation", "intent_import_sha256": b["sha256"]}
         gov.check_import(i, rt, b["id"], approved_check(b, decision="revision_required",
-                                                         findings=["Correct interpretation"]), execution_id="E2")
+                                                         findings=["Correct interpretation"]), execution_id="E2", clock=_entry.ports.clock)
         out["repair"] = {"previous_sha256": b["sha256"], "changed_unit_ids": ["U"], "actions": ["Claim repaired"]}
         with self.assertRaisesRegex(ValueError, "^repair coordinates do not match actual changed units$"):
-            gov.prepare_import(i, rt, s, out, execution_id="E3", input_ref="IN", previous_id=b["id"])
+            gov.prepare_import(i, rt, s, out, execution_id="E3", input_ref="IN", previous_id=b["id"], clock=_entry.ports.clock)
 
     def test_resumed_author_session_is_not_an_independent_import_check(self):
-        i, rt, s, out = governance_import(); b = gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN")
+        from support.entry import entry
+        _entry = entry()
+        i, rt, s, out = governance_import(); b = gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN", clock=_entry.ports.clock)
         rt["executions"]["E2"] = {"role": "intent_interpretation", "intent_import_sha256": b["sha256"], "continuation_of": "E1"}
         with self.assertRaisesRegex(ValueError, "^checker resumes an author lineage$"):
-            gov.check_import(i, rt, b["id"], approved_check(b), execution_id="E2")
+            gov.check_import(i, rt, b["id"], approved_check(b), execution_id="E2", clock=_entry.ports.clock)
 
     def test_intent_schema_covers_the_actual_check_and_repair_contract(self):
         i, rt, s, out = governance_import()
@@ -140,30 +156,36 @@ class ImportSealTests(unittest.TestCase):
         self.assertEqual((list(caught.exception.absolute_path), caught.exception.validator), (["decision"], "enum"))
 
     def test_question_coordinates_must_reciprocate_unit_question_references(self):
+        from support.entry import entry
+        _entry = entry()
         i, rt, s, out = governance_import()
         other = deepcopy(out["import_units"][0]); other.update(unit_id="V", source_range={"start": 4, "end": 8}, question_refs=[])
         out["import_units"][0]["source_range"]["end"] = 4; out["import_units"].append(other)
         out["question_details"][0]["source_unit_ids"] = ["V"]
         with self.assertRaisesRegex(ValueError, "^question coordinates contradict unit ownership$"):
-            gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN")
+            gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN", clock=_entry.ports.clock)
 
     def test_advisory_question_does_not_leave_import_waiting_for_a_decision(self):
-        i, rt, s, out = governance_import(); b = gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN")
+        from support.entry import entry
+        _entry = entry()
+        i, rt, s, out = governance_import(); b = gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN", clock=_entry.ports.clock)
         rt["executions"]["E2"] = {"role": "intent_interpretation", "intent_import_sha256": b["sha256"]}
-        gov.check_import(i, rt, b["id"], approved_check(b), execution_id="E2")
-        _, state, result = gov.apply_import(i, rt, b["id"])
+        gov.check_import(i, rt, b["id"], approved_check(b), execution_id="E2", clock=_entry.ports.clock)
+        _, state, result = gov.apply_import(i, rt, b["id"], clock=_entry.ports.clock)
         self.assertEqual(result["status"], "applied")
         self.assertEqual(state["question_links"][0]["status"], "open")
         i, rt, s, out = governance_import(); out["question_details"][0]["blocks"] = True
-        b = gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN")
+        b = gov.prepare_import(i, rt, s, out, execution_id="E1", input_ref="IN", clock=_entry.ports.clock)
         rt["executions"]["E2"] = {"role": "intent_interpretation", "intent_import_sha256": b["sha256"]}
-        gov.check_import(i, rt, b["id"], approved_check(b), execution_id="E2")
-        _, state, result = gov.apply_import(i, rt, b["id"])
+        gov.check_import(i, rt, b["id"], approved_check(b), execution_id="E2", clock=_entry.ports.clock)
+        _, state, result = gov.apply_import(i, rt, b["id"], clock=_entry.ports.clock)
         self.assertEqual(result["status"], "awaiting_decision")
         waits = questions.user_waits({"role": "research_preparation"}, i, state)
         self.assertEqual([row["question_id"] for row in waits], [state["question_links"][0]["id"]])
 
     def test_import_unit_target_matches_each_governance_consumer(self):
+        from support.entry import entry
+        _entry = entry()
         source = gov.preserve_source('GS-target', 'Use the named target.', origin='user')
         cases = [
             ('grant', 'GR-one', {'kind': 'grant', 'grant': {'id': 'GR-one'}}),
@@ -178,15 +200,15 @@ class ImportSealTests(unittest.TestCase):
                     'import_units': [{'unit_id': 'U', 'source_range': {'start': 0, 'end': len(source['text'])},
                         'interpretation': 'Use the named target.', 'owner_kind': kind, 'owner_ref': target,
                         'payload': deepcopy(payload), 'decision_refs': [], 'question_refs': []}]}
-                self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output))
+                self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))
                 output['import_units'][0]['owner_ref'] = 'different-target'
                 with self.assertRaisesRegex(ValueError, '^payload target differs from owner coordinate$'):
-                    gov.validate_import_units({'id': 'RI-test'}, {}, source, output)
+                    gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock)
                 output['import_units'][0]['payload'] = {}
-                self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output))
+                self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))
         # A question answer's owner is any question it resolves, not only the first.
         output['import_units'][0].update(owner_ref='QU-two', payload=deepcopy(cases[-1][2]))
-        self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output))
+        self.assertIsNone(gov.validate_import_units({'id': 'RI-test'}, {}, source, output, clock=_entry.ports.clock))
 
     def test_import_basis_tracks_replaced_grant_but_not_unrelated_grants(self):
         instance = {'id': 'RI-test', 'governance': {}, 'grants': {
@@ -216,61 +238,71 @@ class ImportSealTests(unittest.TestCase):
 
 class ImportApprovalTests(unittest.TestCase):
     def test_later_exact_approval_resumes_apply_without_rechecking(self):
+        from support.entry import entry
+        _entry = entry()
         i, rt, bundle, request = checked_import()
         before = deepcopy(rt['intent_imports'][bundle['id']]['check'])
-        i, rt, result = gov.apply_import_control(i, rt, request)
+        i, rt, result = gov.apply_import_control(i, rt, request, clock=_entry.ports.clock)
         self.assertEqual(gov.governance_view(i)['goal'], 'Prove Q')
         self.assertEqual(result['status'], 'applied')
         self.assertEqual(rt['intent_imports'][bundle['id']]['check'], before)
         self.assertNotIn('CHECK', rt['waiting_actions'])
-        repeated_i, repeated_rt, repeated = gov.apply_import_control(i, rt, request)
+        repeated_i, repeated_rt, repeated = gov.apply_import_control(i, rt, request, clock=_entry.ports.clock)
         self.assertEqual((repeated_i, repeated_rt, repeated), (i, rt, result))
 
     def test_later_approval_rejects_changed_seal_and_changed_premise(self):
+        from support.entry import entry
+        _entry = entry()
         i, rt, bundle, request = checked_import()
         wrong = deepcopy(request); wrong['config']['check_sha256'] = 'wrong'
         with self.assertRaisesRegex(ValueError, '^approval does not name the exact sealed interpretation and check$'):
-            gov.apply_import_control(i, rt, wrong)
+            gov.apply_import_control(i, rt, wrong, clock=_entry.ports.clock)
         i['decisions']['D']['source_sha256'] = '0' * 64
         with self.assertRaisesRegex(ValueError, '^import authority or affected targets changed$'):
-            gov.apply_import_control(i, rt, request)
+            gov.apply_import_control(i, rt, request, clock=_entry.ports.clock)
         self.assertNotIn('LATER', i['governance_sources'])
 
     def test_import_application_receipt_binds_approval_and_rejects_tampering(self):
+        from support.entry import entry
+        _entry = entry()
         i, rt, bundle, request = checked_import()
-        i, rt, receipt = gov.apply_import_control(i, rt, request)
+        i, rt, receipt = gov.apply_import_control(i, rt, request, clock=_entry.ports.clock)
         self.assertEqual(receipt['approvals']['U']['source_ref'], 'LATER')
         self.assertEqual(receipt['check_sha256'], bundle['check']['sha256'])
         rt['intent_imports'][bundle['id']]['application']['applied_units'] = []
         with self.assertRaisesRegex(ValueError, '^sealed import application receipt changed$'):
-            gov.apply_import_control(i, rt, request)
+            gov.apply_import_control(i, rt, request, clock=_entry.ports.clock)
 
     def test_changed_premise_reopens_checked_import_without_fabricated_text_change(self):
+        from support.entry import entry
+        _entry = entry()
         i, rt, bundle, request = checked_import()
         output = deepcopy(bundle['output'])
         output['repair'] = {'previous_sha256': bundle['sha256'], 'changed_unit_ids': [],
                             'actions': ['Re-evaluate the changed governing premise']}
         with self.assertRaisesRegex(ValueError, '^unchanged import resumes application; it does not need a new check$'):
-            gov.prepare_import(i, rt, bundle['source'], output, execution_id='NEW', input_ref="IN", previous_id=bundle['id'])
+            gov.prepare_import(i, rt, bundle['source'], output, execution_id='NEW', input_ref="IN", previous_id=bundle['id'], clock=_entry.ports.clock)
         i['decisions']['D']['source_sha256'] = '0' * 64
-        reopened = gov.prepare_import(i, rt, bundle['source'], output, execution_id='NEW', input_ref="IN", previous_id=bundle['id'])
+        reopened = gov.prepare_import(i, rt, bundle['source'], output, execution_id='NEW', input_ref="IN", previous_id=bundle['id'], clock=_entry.ports.clock)
         self.assertEqual(reopened['status'], 'checking')
         self.assertNotEqual(reopened['basis_sha256'], bundle['basis_sha256'])
         self.assertEqual(rt['intent_imports'][bundle['id']]['check'], bundle['check'])
         self.assertNotIn('check', reopened)
 
     def test_exact_draft_reaches_existing_consumer_without_mutating_source_state(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime, bundle, request = checked_import()
         before = deepcopy((instance, runtime))
-        draft = gov.import_approval_draft(instance, runtime, bundle['id'])
+        draft = gov.import_approval_draft(instance, runtime, bundle['id'], clock=_entry.ports.clock)
         self.assertEqual(draft, request['config'])
         self.assertEqual((instance, runtime), before)
-        updated, state, receipt = gov.apply_import_control(instance, runtime, {**request, 'config': draft})
+        updated, state, receipt = gov.apply_import_control(instance, runtime, {**request, 'config': draft}, clock=_entry.ports.clock)
         self.assertEqual(receipt['status'], 'applied')
         broken = deepcopy(runtime)
         broken['intent_imports'][bundle['id']]['check']['scope_complete'] = False
         with self.assertRaisesRegex(ValueError, '^approval draft requires a complete independently checked import$'):
-            gov.import_approval_draft(instance, broken, bundle['id'])
+            gov.import_approval_draft(instance, broken, bundle['id'], clock=_entry.ports.clock)
 
 
 
@@ -306,56 +338,64 @@ class RegisteredOwnerTests(unittest.TestCase):
     """Governance changes applied through the owner registered for each record kind."""
 
     def test_configuration_adapter_uses_actual_config_validator(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.configuration import DEFAULT_CONFIG
-        handlers = gov.import_owner_handlers()
+        handlers = gov.import_owner_handlers(clock=_entry.ports.clock)
         installed = []
 
         def install(i, rt, unit, approval):
             installed.append(unit['unit_id'])
             i['config'] = {**i.get('config', {}), **unit['payload']['config']}; return i, rt
-        gov.register_configuration_owner(handlers, apply=install)
+        gov.register_configuration_owner(handlers, apply=install, host_id=_entry.host_id)
         i, rt, source, output = governance_import()
         i['config'] = deepcopy(DEFAULT_CONFIG)
         output.update(questions=[], question_details=[])
         output['import_units'][0].update(owner_kind='configuration', owner_ref='I', question_refs=[],
             payload={'kind': 'configuration', 'config': {'call_timeout_seconds': 0}})
         with self.assertRaisesRegex(ValueError, '^config/call_timeout_seconds: 0 is less than the minimum of 1$'):
-            gov.prepare_import(i, rt, source, output, execution_id='E1', input_ref="IN", owner_handlers=handlers)
+            gov.prepare_import(i, rt, source, output, execution_id='E1', input_ref="IN", owner_handlers=handlers, clock=_entry.ports.clock)
         self.assertEqual(installed, [])
 
     def test_registered_owner_applies_existing_knowledge_consumer(self):
+        from support.entry import entry
+        _entry = entry()
         from support.fakes.clock import FakeClock
         candidate = {'id': FakeClock().new_id('KN'), 'kind': 'observation', 'title': 'Observation', 'statement': 'P observed',
                      'explanation': 'Limited observation', 'summary': 'Not a proof', 'lean_code': ''}
         for owner in ('research_record', 'evidence'):
             with self.subTest(owner=owner):
                 i, rt, bundle, request = checked_import(kind=owner, payload={'kind': owner, 'record': candidate})
-                i, rt, receipt = gov.apply_import_control(i, rt, request)
+                i, rt, receipt = gov.apply_import_control(i, rt, request, clock=_entry.ports.clock)
                 self.assertIn(candidate['id'], i['knowledge'])
                 self.assertTrue(any(a['role'] == 'research_plan' for a in rt['queue']))
                 self.assertEqual(receipt['applied_units'], ['U'])
                 self.assertIsNone(i['knowledge'][candidate['id']]['formal_result_id'])
 
     def test_registered_configuration_reuses_owner_callback_and_currentness(self):
+        from support.entry import entry
+        _entry = entry()
         def install(i, rt, unit, approval):
             i['config'] = deepcopy(unit['payload']['config']); return i, rt
-        handlers = gov.import_owner_handlers()
+        handlers = gov.import_owner_handlers(clock=_entry.ports.clock)
         gov.register_import_owner(handlers, 'configuration', apply=install,
             validate=lambda i, rt, unit: None, basis=lambda i, rt, unit: i.get('config'))
         i, rt, bundle, request = checked_import(kind='configuration', handlers=handlers,
             payload={'kind': 'configuration', 'config': {'model': 'approved'}})
-        changed, _, _ = gov.apply_import_control(i, rt, request, owner_handlers=handlers)
+        changed, _, _ = gov.apply_import_control(i, rt, request, owner_handlers=handlers, clock=_entry.ports.clock)
         self.assertEqual(changed['config']['model'], 'approved')
         i['config'] = {'model': 'changed during review'}
         with self.assertRaisesRegex(ValueError, '^import domain premises changed$'):
-            gov.apply_import_control(i, rt, request, owner_handlers=handlers)
+            gov.apply_import_control(i, rt, request, owner_handlers=handlers, clock=_entry.ports.clock)
 
 
 class IntentImportTests(unittest.TestCase):
     """The user's intent imported into governance: its input, owners, questions and grants."""
 
     def test_initial_configuration_keeps_its_owner_through_completion(self):
-        from record_fixtures import applied_initial_intent
+        from support.entry import entry
+        _entry = entry()
+        from support.record_builders import applied_initial_intent
         from do_math.initialization import initial_intent_evidence
         from do_math.configuration import DEFAULT_CONFIG
         instance, runtime, _ = applied_initial_intent('Use this exact configuration')
@@ -366,7 +406,7 @@ class IntentImportTests(unittest.TestCase):
             changed = deepcopy(i)
             changed['config'].update(unit['payload']['config'])
             return changed, deepcopy(r)
-        handlers = gov.register_configuration_owner(gov.import_owner_handlers(), apply=configure)
+        handlers = gov.register_configuration_owner(gov.import_owner_handlers(clock=_entry.ports.clock), apply=configure, host_id=_entry.host_id)
         payload = {'kind': 'configuration', 'config': {'effort': 'high'}}
         output = {'questions': [], 'question_details': [],
             'import_units': [{'unit_id': 'U', 'source_range': {'start': 0, 'end': len(source['text'])},
@@ -374,23 +414,25 @@ class IntentImportTests(unittest.TestCase):
                 'owner_ref': instance['id'], 'payload': payload, 'decision_refs': [], 'question_refs': []}]}
         runtime['executions']['EX-config-author'] = {'id': 'EX-config-author', 'role': 'intent_interpretation'}
         bundle = gov.prepare_import(instance, runtime, source, output, execution_id='EX-config-author',
-            input_ref=instance['lifecycle']['input_id'], owner_handlers=handlers)
+            input_ref=instance['lifecycle']['input_id'], owner_handlers=handlers, clock=_entry.ports.clock)
         runtime['executions']['EX-config-check'] = {'id': 'EX-config-check', 'role': 'intent_interpretation',
             'intent_import_sha256': bundle['sha256']}
         bundle = gov.check_import(instance, runtime, bundle['id'], {'bundle_sha256': bundle['sha256'],
             'decision': 'approved', 'scope_complete': True, 'unit_ids': ['U'], 'question_ids': [], 'findings': []},
-            execution_id='EX-config-check', owner_handlers=handlers)
+            execution_id='EX-config-check', owner_handlers=handlers, clock=_entry.ports.clock)
         instance, runtime, _ = gov.apply_import_control(instance, runtime, {'id': 'APPROVAL-config',
             'action': 'decision', 'origin': 'user', 'text': 'Approve this exact effort', 'config': {
                 'kind': 'import_approval', 'import_id': bundle['id'], 'bundle_sha256': bundle['sha256'],
                 'check_sha256': bundle['check']['sha256'], 'unit_hashes': {'U': exact_content_hash(payload)}}},
-            owner_handlers=handlers)
+            owner_handlers=handlers, clock=_entry.ports.clock)
         self.assertEqual(instance['config']['effort'], 'high')
-        receipt = initial_intent_evidence(instance, runtime, owner_handlers=handlers)
+        receipt = initial_intent_evidence(instance, runtime, owner_handlers=handlers, clock=_entry.ports.clock)
         self.assertEqual(receipt['interpretation_execution_id'], 'EX-config-author')
 
     def test_initial_advisory_question_does_not_become_a_blocking_gate(self):
-        from record_fixtures import applied_initial_intent
+        from support.entry import entry
+        _entry = entry()
+        from support.record_builders import applied_initial_intent
         from do_math.initialization import initial_intent_evidence
         instance, runtime, original_id = applied_initial_intent('Prove the stated goal')
         original = runtime['intent_imports'][original_id]
@@ -402,28 +444,32 @@ class IntentImportTests(unittest.TestCase):
         output['import_units'][0]['question_refs'] = ['Q-advice']
         runtime['executions']['EX-advice'] = {'role': 'intent_interpretation'}
         bundle = gov.prepare_import(instance, runtime, original['source'], output, execution_id='EX-advice',
-            input_ref=instance['lifecycle']['input_id'])
+            input_ref=instance['lifecycle']['input_id'], clock=_entry.ports.clock)
         runtime['executions']['EX-advice-check'] = {'role': 'intent_interpretation', 'intent_import_sha256': bundle['sha256']}
         gov.check_import(instance, runtime, bundle['id'], {'decision': 'approved', 'scope_complete': True,
             'bundle_sha256': bundle['sha256'], 'unit_ids': [uid], 'question_ids': ['Q-advice'], 'findings': []},
-            execution_id='EX-advice-check')
-        instance, runtime, receipt = gov.apply_import(instance, runtime, bundle['id'])
+            execution_id='EX-advice-check', clock=_entry.ports.clock)
+        instance, runtime, receipt = gov.apply_import(instance, runtime, bundle['id'], clock=_entry.ports.clock)
         self.assertEqual(receipt['status'], 'applied')
-        self.assertEqual(initial_intent_evidence(instance, runtime)['interpretation_execution_id'], 'EX-advice')
+        self.assertEqual(initial_intent_evidence(instance, runtime, clock=_entry.ports.clock)['interpretation_execution_id'], 'EX-advice')
         self.assertEqual(runtime['question_links'][-1]['status'], 'open')
 
     def test_unrelated_progress_preserves_checked_import_but_relevant_changes_do_not(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime, bundle, request = checked_import()
         runtime['tasks']['TK-other'] = {'id': 'TK-other', 'revision': 2, 'status': 'active', 'question': 'Unrelated'}
         instance['decisions']['DC-other'] = {'id': 'DC-other', 'change': {'note': 'Unrelated'}}
-        changed, _, receipt = gov.apply_import_control(instance, runtime, request)
+        changed, _, receipt = gov.apply_import_control(instance, runtime, request, clock=_entry.ports.clock)
         self.assertEqual(receipt['status'], 'applied')
         self.assertEqual(gov.governance_view(changed)['goal'], 'Prove Q')
         instance['decisions']['D']['source_sha256'] = '0' * 64
         with self.assertRaisesRegex(ValueError, '^import authority or affected targets changed$'):
-            gov.apply_import_control(instance, runtime, request)
+            gov.apply_import_control(instance, runtime, request, clock=_entry.ports.clock)
 
     def test_question_references_are_stable_ids_at_both_boundaries(self):
+        from support.entry import entry
+        _entry = entry()
         instance = domain_governance()
         source = gov.preserve_source('SOURCE', 'Which domain?', origin='user')
         output = {'questions': ['Which domain?'],
@@ -433,25 +479,27 @@ class IntentImportTests(unittest.TestCase):
             'import_units': [{'unit_id': 'U', 'source_range': {'start': 0, 'end': len(source['text'])},
                 'interpretation': 'The domain needs a user decision', 'owner_kind': 'charter',
                 'owner_ref': 'CH1', 'payload': {}, 'decision_refs': [], 'question_refs': ['Q-domain']}]}
-        self.assertIsNone(gov.validate_import_units(instance, {}, source, output))
+        self.assertIsNone(gov.validate_import_units(instance, {}, source, output, clock=_entry.ports.clock))
         # The producer runs the same check over its fixed input.
         context = {'user_request': {'text': source['text']}, 'original_source': source, 'instance_id': instance['id']}
-        self.assertEqual(submission._intent_import_issues(output, context), [])
+        self.assertEqual(submission._intent_import_issues(output, context, clock=_entry.ports.clock), [])
         output['import_units'][0]['question_refs'] = ['output/questions/0']
         self.assertEqual([{key: row[key] for key in ('rule_id', 'path', 'message')}
-                          for row in submission._intent_import_issues(output, context)],
+                          for row in submission._intent_import_issues(output, context, clock=_entry.ports.clock)],
                          [{'rule_id': 'intent.import_units', 'path': 'output/import_units',
                            'message': 'unit question does not resolve'}])
 
     def test_interpretation_binds_referenced_source_alias(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime, source, output = governance_import()
         instance['sources'] = [{'id': 'SO-table', 'name': 'table.txt', 'path': 'sources/table.txt', 'sha256': 'a' * 64}]
         output['used_sources'] = ['source:table.txt']
-        bundle = gov.prepare_import(instance, runtime, source, output, execution_id='AUTHOR', input_ref='IN')
-        self.assertEqual(gov.current_import(instance, runtime, bundle['id'])['id'], bundle['id'])
+        bundle = gov.prepare_import(instance, runtime, source, output, execution_id='AUTHOR', input_ref='IN', clock=_entry.ports.clock)
+        self.assertEqual(gov.current_import(instance, runtime, bundle['id'], clock=_entry.ports.clock)['id'], bundle['id'])
         instance['sources'][0]['sha256'] = 'b' * 64
         with self.assertRaisesRegex(ValueError, '^import authority or affected targets changed$'):
-            gov.current_import(instance, runtime, bundle['id'])
+            gov.current_import(instance, runtime, bundle['id'], clock=_entry.ports.clock)
 
 
 

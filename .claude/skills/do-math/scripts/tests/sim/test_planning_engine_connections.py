@@ -65,28 +65,40 @@ class WorkProfileAdmissionTests(unittest.TestCase):
         engine = self.engine
         t = unapproved(engine, 'T1', {'difficulty': 'low', 'importance': 'high', 'reason': 'goal-critical'}, 'low')
         approve(engine, t)
-        result = planning.task_ready(t, governance_working_view(engine.instance), engine.runtime)
+        result = planning.task_ready(t, governance_working_view(engine.instance), engine.runtime, evaluation_context=engine._evaluation_context())
         self.assertEqual(result['state'], 'not_ready')
         self.assertIn('work profile requirement', result['errors'][0])
         t['profile_refs'] = [execution_profiles.profile_ref(work_profile(engine.instance, 'high'))]
         approve(engine, t)
-        self.assertEqual(planning.task_ready(t, governance_working_view(engine.instance), engine.runtime)['state'], 'ready')
+        self.assertEqual(planning.task_ready(t, governance_working_view(engine.instance), engine.runtime, evaluation_context=engine._evaluation_context())['state'], 'ready')
         self.assertEqual(model_policy.work_profile_selection(engine.instance['config'], t,
             engine.instance)['profile_ref'], t['profile_refs'][0])
 
 
 class PlanningConnections(unittest.TestCase):
+    def test_snapshot_report_supplies_clock_to_task_authority(self):
+        from do_math.reporting import snapshot_report
+        sim = owner_sim()
+        engine = sim.engine
+        before = deepcopy((engine.instance, engine.runtime))
+        report = snapshot_report(sim.repository, sim.instance_id, snapshot=engine.head,
+                                 backend=engine.ports.git_backend, clock=engine.ports.clock)
+        row = next(row for row in report['tasks'] if row['id'] == 'TK-1')
+        self.assertEqual(row['readiness']['state'], 'ready')
+        self.assertIsNone(report['research_observed_at'])
+        self.assertEqual((engine.instance, engine.runtime), before)
+
     def test_plan_assessment_reaches_assignment_without_changing_contract(self):
         from do_math.execution_lifecycle import create_execution, transition_execution
         from do_math.session_slots import SessionSlots
-        from record_fixtures import task_disposition
+        from support.record_builders import task_disposition
         sim = owner_sim()
         engine = sim.engine
         config = engine.instance['config']
         config['session_limits'] = deepcopy(model_policy.LIMITS)
         config['session_limits']['work'][config['tier_models']['high']] = 0
         config['role_tiers']['research_work'] = 'low'
-        engine.instance.update(execution_profiles.build_profiles(config))
+        engine.instance.update(execution_profiles.build_profiles(config, host=sim.ports.host))
         t = engine.runtime['tasks']['TK-1']
         t['profile_refs'] = deepcopy(engine.instance['role_profile_refs']['research_work'])
         t['model_assessment'] = {'difficulty': 'low', 'importance': 'low', 'reason': 'Initial bounded work'}
@@ -96,7 +108,7 @@ class PlanningConnections(unittest.TestCase):
         _ended_execution(engine, 'EX-plan', 'research_plan')
         engine.runtime['executions']['EX-plan']['model_decisions'] = {t['id']: high}
         engine._apply_task_plan({'dispositions': [task_disposition(t['id'])], 'task_assessments': []},
-            'EX-plan', deepcopy(engine.runtime['tasks']), [t['id']])
+            'EX-plan', deepcopy(engine.runtime['tasks']), [t['id']], evaluation_context=engine._evaluation_context())
         action = next(a for a in engine.runtime['queue'] if a['role'] == 'research_work')
         selected = engine._select_model(action)
         self.assertEqual(selected['tier'], 'high')
@@ -110,7 +122,7 @@ class PlanningConnections(unittest.TestCase):
         execution = create_execution(execution_id='EX-no-slot', owner_activity_id='AY-work', actor_kind='ai',
             input_manifest={}, profile_ref=selected['profile_ref'], created_at='2026-09-23T00:00:00+00:00')
         transition_execution(execution, 'starting', at='2026-09-23T00:00:00+00:00')
-        slots = SessionSlots(engine.runtime, engine.instance)
+        slots = SessionSlots(engine.runtime, engine.instance, clock=sim.ports.clock, host_id=sim.host_id, jobs=sim.ports.jobs)
         self.assertFalse(slots.acquire('EX-no-slot', profile=profile, execution=execution))
         self.assertEqual(engine._select_model(action)['tier'], 'high')
 
@@ -227,8 +239,10 @@ class EvaluationConnections(unittest.TestCase):
               'exhaustion_empty_limit': 3, 'proposal_version_limit': 3, 'contract_revision_limit': 3}
 
     def test_declared_observation_and_repetition_values_can_be_adopted(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.configuration import validate_config
-        validate_config(dict(self.VALUES))
+        validate_config(dict(self.VALUES), host_id=_entry.host_id)
         # The legacy test only validated the values; the adoption its name states is the public configure control.
         sim = Sim.activated()
         applied(sim, 'configure', config=dict(self.VALUES))
@@ -261,7 +275,7 @@ class EvaluationConnections(unittest.TestCase):
 class DuplicateRevisionConnections(unittest.TestCase):
     def test_same_task_replacements_are_rejected_before_any_receiver_mutation(self):
         from do_math import revisions
-        from research_fixtures import candidate
+        from support.role_answers import candidate
         sim = owner_sim()
         engine = sim.engine
         t = engine.runtime['tasks']['TK-1']

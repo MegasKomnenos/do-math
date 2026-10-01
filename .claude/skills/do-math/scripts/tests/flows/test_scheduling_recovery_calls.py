@@ -14,8 +14,8 @@ import tempfile
 import unittest
 
 from do_math.model_runner import ModelRunner
-from purpose_fixtures import candidate, common, requirement
-from research_fixtures import charter_change
+from support.purpose_answers import candidate, common, requirement
+from support.state_builders import charter_change
 from support.engine_lifecycle import THEOREMS, applied, lifecycle_sim, solve_goal
 from support.model import amend
 from support.provider_probes import ObservedCalls

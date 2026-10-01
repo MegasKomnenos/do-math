@@ -20,8 +20,8 @@ from do_math.configuration import DEFAULT_CONFIG
 from do_math.contracts import task_candidate_record
 from do_math.initialization import initialize_state
 from do_math.model_runner import ModelRunner
-from provider_fixtures import host_capacity_fixture
-from research_fixtures import candidate
+from support.provider_inputs import host_capacity_fixture
+from support.role_answers import candidate
 from support.fakes.clock import FakeClock
 from support.fakes.jobs import FakeJobs
 from support.provider_probes import ObservedCalls
@@ -34,13 +34,15 @@ LEAN_ROLES = {'formal_check', 'trust_check', 'trust_activate'}
 
 class HostConfigurationTests(unittest.TestCase):
     def test_unstarted_role_defaults_refresh_while_task_profiles_require_preparation(self):
+        from support.entry import entry
+        _entry = entry()
         engine = Sim.activated().engine
         with tempfile.TemporaryDirectory() as directory:
             config = {**deepcopy(DEFAULT_CONFIG), 'scholarly_enabled': False}
             instance, runtime = initialize_state(instance_id='RI-host-change', goal='Test profiles',
                                                  workspace=Path(directory), config=config,
-                                                 source_input='Test profiles', created_at='2026-09-23T00:00:00Z')
-            instance.update(execution_profiles.build_profiles(config))
+                                                 source_input='Test profiles', created_at='2026-09-23T00:00:00Z', clock=_entry.ports.clock, host=_entry.ports.host)
+            instance.update(execution_profiles.build_profiles(config, host=_entry.ports.host))
             old = deepcopy(instance['role_profile_refs']['maintenance'][0])
             wire = candidate()
             wire['profile_refs'] = [deepcopy(instance['role_profile_refs']['research_work'][0])]
@@ -106,6 +108,8 @@ class HostConfigurationTests(unittest.TestCase):
 
 class HostRunnerTests(unittest.TestCase):
     def test_host_bound_runner_requires_start_publication_callback(self):
+        from support.entry import entry
+        _entry = entry()
         _, selected, _ = host_capacity_fixture()
         p = selected["research_work"]
         prompt = execution_profiles.prepare_prompt("test", p)
@@ -115,7 +119,7 @@ class HostRunnerTests(unittest.TestCase):
             workspace = root / "work"
             workspace.mkdir()
             with self.assertRaisesRegex(ValueError, "host-bound runner requires on_started publication before resume"):
-                ModelRunner(codex_path=sys.executable, jobs=jobs, clock=clock).run(
+                ModelRunner(codex_path=sys.executable, jobs=jobs, clock=clock, environment=_entry.environment, host_id=_entry.host_id).run(
                     prompt=prompt, input_seal=execution_profiles.prompt_seal(prompt), output_schema={},
                     workspace=workspace, evidence_dir=root / "evidence", model=p["ai"]["model"],
                     effort=p["ai"]["effort"], timeout_seconds=15, execution_id="EX-no-callback", profile=p,

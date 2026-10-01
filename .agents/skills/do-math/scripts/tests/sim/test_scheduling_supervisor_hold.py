@@ -16,12 +16,14 @@ from support.provider_probes import ObservedCalls
 
 class HoldTests(unittest.TestCase):
     def test_recovery_cannot_ignore_hold(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            scheduled_operator.hold(root, reason="test")
+            scheduled_operator.hold(root, reason="test", clock=_entry.ports.clock)
             with ObservedCalls(run=ModelRunner.run, repository=ResearchRepository.__init__) as observed:
                 result = scheduled_operator.recovery(root, "unused", root,
-                                                     failure={"kind": "engine_unavailable", "error": "fixture"})
+                                                     failure={"kind": "engine_unavailable", "error": "fixture"}, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
             self.assertEqual(result, {"outcome": "held"})
             self.assertEqual(observed.count("run"), 0)
             self.assertEqual(observed.count("repository"), 0, "a held recovery opens no repository")

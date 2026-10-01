@@ -157,8 +157,10 @@ class ProviderJobs(FakeJobs):
 
 
 def model_runner(root, jobs, clock):
+    from support.entry import entry
+    _entry = entry()
     return ModelRunner(codex_path=str(Path(root) / "codex.exe"), claude_path=str(Path(root) / "claude.exe"),
-                       jobs=jobs, clock=clock)
+                       jobs=jobs, clock=clock, environment=_entry.environment, host_id=_entry.host_id)
 
 
 def dispatched(execution_id, profile, jobs, clock):

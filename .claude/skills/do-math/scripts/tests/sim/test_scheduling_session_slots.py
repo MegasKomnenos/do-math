@@ -84,12 +84,14 @@ class SlotTests(unittest.TestCase):
         self.assertFalse(list(self.workspace.rglob('*.sqlite*')))
 
     def test_saved_reservations_survive_reopen_until_explicit_release(self):
+        from support.entry import entry
+        _entry = entry()
         with self.engine.store.writer_lock():
             self.assertTrue(self.reserve('EX-held')[0])
             self.engine._save()
         saved = deepcopy(self.engine.runtime['reservations'])
         # The legacy test reopened the engine in the same owner process (sim.restart models a new process).
-        self.sim.engine = ResearchEngine(self.sim.repository, self.sim.instance_id, ports=self.sim.ports)
+        self.sim.engine = ResearchEngine(self.sim.repository, self.sim.instance_id, ports=self.sim.ports, codex_home=self.sim.codex_home, environment=self.sim.environment, host_id=self.sim.host_id)
         self.assertEqual(self.engine.runtime['reservations'], saved)
         self.assertEqual(self.slots(observer=True).snapshot()[MODELS['high']]['used'], 1)
         with self.engine.store.writer_lock():
@@ -98,6 +100,8 @@ class SlotTests(unittest.TestCase):
         self.assertEqual(self.slots(observer=True).snapshot()[MODELS['high']]['used'], 0)
 
     def test_distinct_instances_have_distinct_reservation_ledgers(self):
+        from support.entry import entry
+        _entry = entry()
         with self.engine.store.writer_lock():
             self.assertTrue(self.reserve('EX-first-instance')[0])
             self.engine._save()
@@ -105,10 +109,10 @@ class SlotTests(unittest.TestCase):
         created = initialize(self.sim.repository, goal='Separate reservation ledger', workspace=self.sim.root / 'other-work',
                              config={'session_limits': deepcopy(config['session_limits']), 'operator_enabled': False,
                                      'scholarly_enabled': False, 'lean_command': list(config['lean_command'])},
-                             ports=self.sim.ports)
-        other = ResearchEngine(self.sim.repository, created['instance_id'], ports=self.sim.ports)
+                             ports=self.sim.ports, codex_home=self.sim.codex_home, host_id=self.sim.host_id)
+        other = ResearchEngine(self.sim.repository, created['instance_id'], ports=self.sim.ports, codex_home=self.sim.codex_home, environment=self.sim.environment, host_id=self.sim.host_id)
         self.assertNotEqual(other.instance['id'], self.engine.instance['id'])
-        observer = SessionSlots(other.runtime, other.instance, observer=True, clock=self.sim.clock, jobs=self.sim.jobs)
+        observer = SessionSlots(other.runtime, other.instance, observer=True, clock=self.sim.clock, jobs=self.sim.jobs, host_id=_entry.host_id)
         self.assertEqual(observer.snapshot()[MODELS['high']]['used'], 0)
         self.assertEqual(self.slots(observer=True).snapshot()[MODELS['high']]['used'], 1)
         self.assertEqual(other.store.load()[2]['reservations'], {})
@@ -125,9 +129,11 @@ class SlotTests(unittest.TestCase):
         self.assertEqual(self.engine.runtime, before)
 
     def test_recovery_requires_actual_failure_evidence(self):
+        from support.entry import entry
+        _entry = entry()
         head = self.engine.head
         with self.assertRaisesRegex(ValueError, 'recovery requires preserved engine failure evidence'):
-            scheduled_operator.recovery(self.sim.repository, self.engine.instance['id'], self.workspace, failure={})
+            scheduled_operator.recovery(self.sim.repository, self.engine.instance['id'], self.workspace, failure={}, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
         self.assertEqual(self.engine.store.load()[0], head)
 
 

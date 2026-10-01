@@ -15,8 +15,8 @@ import jsonschema
 
 from do_math import contracts, governance, review_cycle, submission
 from do_math.contracts import ROLES, prompt_documents, reading_map, render_prompt, schema_for
-from record_fixtures import two_observation_output
-from research_fixtures import review_items
+from support.record_builders import two_observation_output
+from support.role_answers import review_items
 
 SKILL = Path(__file__).resolve().parents[3]
 

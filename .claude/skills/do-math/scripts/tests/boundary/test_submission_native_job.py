@@ -18,12 +18,17 @@ from do_math.windows_job import WindowsJob, process_identity
 from support.sim import warm_template
 from support.submission_receiver import native_result
 from support.submission_scenes import native_scene
+from test_categories import test_group
 
 setUpModule = warm_template
 
 
 def job_native_result(case, scene, execution, raw):
     """Real Windows Job and adapter collector; only CLI response generation is scripted."""
+    from support.entry import entry
+    _entry = entry()
+    from do_math.wiring import real_ports
+    _entry.ports = real_ports(environment=_entry.environment)
     result = native_result(scene.sim, execution, scene.context, raw, scene.workspace)
     collected = result['execution']['collect']
     evidence = scene.workspace.parent / 'native-evidence'
@@ -41,7 +46,7 @@ def job_native_result(case, scene, execution, raw):
                           evidence / 'stdout.jsonl', evidence / 'stderr.txt', evidence / 'final.txt',
                           evidence / 'status.json', job, None, collected['source_request']['raw'],
                           collected['source_prompt']['raw'])
-    adapter = CodexExecAdapter('fixture-cli')
+    adapter = CodexExecAdapter('fixture-cli', jobs=_entry.ports.jobs, clock=_entry.ports.clock)
     try:
         early = adapter.collect(native)
         case.assertFalse(early['artifacts_read'])
@@ -62,6 +67,7 @@ def job_native_result(case, scene, execution, raw):
     return result
 
 
+@test_group('resource')
 class NativeFinalJobTests(unittest.TestCase):
     def test_native_capture_git_reload_summary_and_early_seal_precedence(self):
         scene = native_scene()

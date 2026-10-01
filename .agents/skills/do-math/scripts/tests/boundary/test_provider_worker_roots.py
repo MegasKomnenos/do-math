@@ -11,8 +11,10 @@ import sys
 import unittest
 
 from do_math import claude_worker, codex_worker
+from test_categories import test_group
 
 
+@test_group('resource')
 class WorkerRootTests(unittest.TestCase):
     def run_root(self, module):
         return subprocess.run([sys.executable, str(Path(module.__file__))], capture_output=True, timeout=10,

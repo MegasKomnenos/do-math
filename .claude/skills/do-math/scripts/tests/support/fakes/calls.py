@@ -117,10 +117,13 @@ class DeterministicCalls(ModelCalls):
 class DeterministicCallsPort:
     def __init__(self, clock=None, choose=None):
         self.clock, self.choose = clock, choose
+        self.created = []
 
     def new(self, *, on_returned=None, on_observation_error=None):
-        return DeterministicCalls(clock=self.clock, choose=self.choose, on_returned=on_returned,
-                                  on_observation_error=on_observation_error)
+        calls = DeterministicCalls(clock=self.clock, choose=self.choose, on_returned=on_returned,
+                                   on_observation_error=on_observation_error)
+        self.created.append(calls)
+        return calls
 
 
 def make_fake(clock=None):

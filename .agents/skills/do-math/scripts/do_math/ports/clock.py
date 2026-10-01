@@ -16,6 +16,9 @@ class Clock(Protocol):
     def monotonic(self) -> float:
         """Seconds on a clock that never goes backwards."""
 
+    def resolutions(self) -> tuple[float, float]:
+        """Current (wall_seconds, monotonic_seconds), finite and nonnegative; zero means exact."""
+
     def sleep(self, seconds: float) -> None:
         """Wait ``seconds`` on the monotonic clock."""
 

@@ -2,7 +2,7 @@
 
 The legacy tests configured ``max_input_bytes`` through the CLI on the synthetic
 active state, wrote the new profiles' capability evidence by hand, and drove
-``ScriptedRunner``. Here every step is a public control on the restored public
+``DefaultResponder``. Here every step is a public control on the restored public
 activation (the CLI's ``configure`` and ``request --retry-action`` send exactly
 these controls; ``boundary/test_engine_cli.py`` runs the command surface), the
 new profile editions get their capability evidence from the public ``probe``
@@ -25,6 +25,7 @@ model double.
 """
 from contextlib import contextmanager
 import sys
+from support.monitoring_slots import reserve_tool
 
 from support.engine_lifecycle import applied, clear_work
 from support.sim import Sim, built
@@ -84,8 +85,7 @@ def gate_closes_before_admission(sim, provider):
     from do_math.provider_engine import ProviderEngineMixin
     code, state = ProviderEngineMixin._provider_admit.__code__, {'retry_at': None}
     monitoring = sys.monitoring
-    tool = next(tool for tool in (3, 4, 0, 2) if monitoring.get_tool(tool) is None)
-    monitoring.use_tool_id(tool, 'do-math provider gate at admission')
+    tool = reserve_tool('do-math provider gate at admission')
 
     def started(started_code, offset):
         if state['retry_at'] is None:

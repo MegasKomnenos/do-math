@@ -17,7 +17,7 @@ from do_math import file_io
 from do_math.claude_adapter import ClaudePrintAdapter
 from do_math.codex_adapter import CodexExecAdapter
 from do_math.control_transport import ControlTransport
-from provider_fixtures import CLAUDE_INIT, CLAUDE_RESULT, claude_stream
+from support.provider_inputs import CLAUDE_INIT, CLAUDE_RESULT, claude_stream
 from support.fakes.clock import FakeClock
 from support.provider_probes import ObservedCalls, settle
 from support.provider_runs import ProviderJobs, ScriptedCLI, model_runner
@@ -144,9 +144,11 @@ class SnapshotTests(CollectorCase):
 class IdentityTests(CollectorCase):
     def test_capability_identity_has_host_worker_and_cli_hashes(self):
         """About 2.5 s as a process's first identity, over the 2 s Sim budget: the host query and every source hash are the subject."""
+        from support.entry import entry
+        _entry = entry()
         path = self.root / 'cli.exe'
         path.write_bytes(b'first')
-        adapter = CodexExecAdapter(str(path))
+        adapter = CodexExecAdapter(str(path), jobs=_entry.ports.jobs, clock=_entry.ports.clock)
         first = adapter.capability_identity()
         self.assertIn('windows_job', first['module_sha256'])
         path.write_bytes(b'second')
@@ -155,22 +157,24 @@ class IdentityTests(CollectorCase):
         self.assertEqual(first['module_sha256'], second['module_sha256'])
         self.assertIn('host', first)
         # Every module a worker runs in its Job, or its collector uses, identifies the implementation.
-        self.assertEqual(set(CodexExecAdapter('codex').capability_identity()['module_sha256']),
+        self.assertEqual(set(CodexExecAdapter('codex', jobs=_entry.ports.jobs, clock=_entry.ports.clock).capability_identity()['module_sha256']),
                          {'cli_worker', 'codex_worker', 'control_transport', 'control_protocol', 'file_io', 'values',
                           'windows_job', 'scholarly', 'codex_adapter', 'codex_stream', 'provider_final',
                           'control_server', 'worker_request', 'cli_execution'})
-        self.assertEqual(set(ClaudePrintAdapter('claude').capability_identity()['module_sha256']),
+        self.assertEqual(set(ClaudePrintAdapter('claude', jobs=_entry.ports.jobs, clock=_entry.ports.clock).capability_identity()['module_sha256']),
                          {'claude_worker', 'cli_worker', 'codex_worker', 'control_transport', 'control_protocol',
                           'file_io', 'values', 'windows_job', 'scholarly', 'codex_adapter', 'codex_stream',
                           'provider_final', 'control_server', 'worker_request', 'cli_execution', 'claude_adapter',
                           'claude_stream'})
 
     def test_unchanged_cli_and_sources_are_not_rehashed_for_each_identity(self):
+        from support.entry import entry
+        _entry = entry()
         path = self.root / 'cli.exe'
         path.write_bytes(b'first')
         # A fresh file's fingerprint is trusted only once its times lie outside the racy window.
         settle(path)
-        adapter = CodexExecAdapter(str(path))
+        adapter = CodexExecAdapter(str(path), jobs=_entry.ports.jobs, clock=_entry.ports.clock)
         with ObservedCalls(hash=file_io.sha256_file) as first_calls:
             first = adapter.capability_identity()
         self.assertEqual(first['cli_sha256'], sha256(b'first'))
@@ -188,7 +192,9 @@ class IdentityTests(CollectorCase):
 
 class ClaudeFinalTests(unittest.TestCase):
     def test_final_is_selected_from_the_stream_and_preserved_bytes_must_match_it(self):
-        adapter = ClaudePrintAdapter("unused")
+        from support.entry import entry
+        _entry = entry()
+        adapter = ClaudePrintAdapter("unused", jobs=_entry.ports.jobs, clock=_entry.ports.clock)
         self.assertTrue(adapter.final_from_stream)
         parsed = adapter.parse_response(claude_stream(CLAUDE_INIT, CLAUDE_RESULT), {"output_schema_path": "schema.json"})
         final = adapter.final_bytes(parsed)

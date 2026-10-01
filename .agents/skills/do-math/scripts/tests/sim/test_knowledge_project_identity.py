@@ -15,8 +15,8 @@ import unittest
 from do_math import execution_profiles
 from do_math.context_store import prepare_role_input
 from do_math.formal import project_source_identity
-from record_fixtures import surface_state
-from research_fixtures import git_init
+from support.record_builders import surface_state
+from support.fakes.git_backend import make_repository
 from support.provider_probes import ObservedCalls
 
 
@@ -70,16 +70,18 @@ class ProjectSourceIdentityTests(unittest.TestCase):
 
 class FormalInputManifestTests(unittest.TestCase):
     def test_project_identity_bounds_role_input_and_detects_file_changes(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime = surface_state()
         instance['config']['max_input_bytes'] = 500000
-        instance.update(execution_profiles.build_profiles(instance['config']))
+        instance.update(execution_profiles.build_profiles(instance['config'], host=_entry.ports.host))
         profile = next(p for p in instance['execution_profiles'].values()
                        if p['role'] == 'intent_interpretation')
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory)
             project = base / 'project'
             project.mkdir()
-            git_init(project)
+            make_repository(project)
             (project / 'lakefile.toml').write_text('name = "test"\n', encoding='utf-8')
             for index in range(40):
                 (project / f'Module{index}.lean').write_text(f'-- source {index}\n', encoding='utf-8')
@@ -111,7 +113,7 @@ class FormalInputManifestTests(unittest.TestCase):
             fitted = prepare_role_input(context, instance=instance, runtime=runtime,
                                         role='intent_interpretation', profile=profile, snapshot='a' * 40,
                                         workspace=workspace, activity_id='AC-1', install_submission_tools=True,
-                                        artifact_prefix='runtime/artifacts/BA-input')
+                                        artifact_prefix='runtime/artifacts/BA-input', clock=_entry.ports.clock)
             self.assertIsNone(fitted['overflow'], 'Machine-only inventory should not prevent intent interpretation')
             self.assertLess(fitted['actual_bytes'], profile['input']['max_input_bytes'])
             machine_context = json.loads((workspace / 'input/submission/context.json').read_bytes())

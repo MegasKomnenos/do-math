@@ -21,7 +21,7 @@ from do_math import claude_worker, codex_worker, execution_profiles
 from do_math.claude_adapter import ClaudePrintAdapter
 from do_math.claude_stream import parse_stream
 from do_math.control_transport import ControlTransport
-from provider_fixtures import PROFILE_CONFIG
+from support.provider_inputs import PROFILE_CONFIG
 from support.fakes.clock import FakeClock
 from support.fakes.jobs import FakeJobs
 from support.provider_runs import ProviderJobs, ScriptedCLI, dispatched, model_runner
@@ -32,6 +32,8 @@ SCHEMA = {'type': 'object', 'properties': {'ids': {'type': 'array', 'items': {'t
 
 class ProviderFinalContractTests(unittest.TestCase):
     def test_bound_draft_schema_stays_local_and_unbound_final_keeps_its_schema(self):
+        from support.entry import entry
+        _entry = entry()
         for provider, worker, model, flag in (
                 ('codex', codex_worker, 'gpt-6-astra', '--output-schema'),
                 ('claude', claude_worker, 'claude-opus-5', '--json-schema')):
@@ -43,7 +45,7 @@ class ProviderFinalContractTests(unittest.TestCase):
                     config = deepcopy(PROFILE_CONFIG)
                     config.update(tier_models={tier: model for tier in ('high', 'medium', 'low')},
                                   session_limits={'work': {model: 3}})
-                    profile = next(p for p in execution_profiles.build_profiles(config)['execution_profiles'].values()
+                    profile = next(p for p in execution_profiles.build_profiles(config, host=_entry.ports.host)['execution_profiles'].values()
                                    if p['role'] == 'research_work')
                     self.assertEqual(profile['ai']['provider'], provider)
                     prompt = execution_profiles.prepare_prompt('Use the provided draft schema.', profile)

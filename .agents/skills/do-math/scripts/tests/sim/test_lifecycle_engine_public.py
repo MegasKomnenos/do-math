@@ -41,7 +41,7 @@ class InitializingLifecycleTests(unittest.TestCase):
         engine.instance['title'] = 'Ordinary state update'
         engine._save()
         self.assertEqual(engine.runtime['last_observed_utc'], observed.isoformat())
-        restarted = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports)
+        restarted = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
         sim.clock.set_wall(observed - timedelta(microseconds=1))
         self.assertEqual(restarted._clock_guard()['reason'], 'persisted_utc_regression')
         # A later rejected sample does not revoke the prior trusted sample.

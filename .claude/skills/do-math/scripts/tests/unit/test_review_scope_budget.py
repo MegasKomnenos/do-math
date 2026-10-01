@@ -13,7 +13,7 @@ import tempfile
 import unittest
 
 from do_math import execution_lifecycle, review_cycle, review_policy
-from research_fixtures import scope_assessment, start_scoped_review
+from support.review_inputs import scope_assessment, start_scoped_review
 from support.review_scene import ReviewScene, warm
 
 
@@ -49,6 +49,8 @@ class ResourceDispositionTests(unittest.TestCase):
         return ReviewScene(temporary.name + '/' + name)
 
     def test_exhaustion_drains_only_owned_attempts_before_publishing_followup(self):
+        from support.entry import entry
+        _entry = entry()
         scene = self.scene('exhaustion')
         engine = scene.engine
         policy = engine.instance['review_policy']
@@ -80,9 +82,11 @@ class ResourceDispositionTests(unittest.TestCase):
         self.assertEqual(engine.runtime['activities'][cycle['owner_activity_id']]['status'], 'finished')
         self.assertEqual(unrelated['status'], 'running')
         self.assertEqual(sum(a['role'] == 'research_plan' for a in engine.runtime['queue']), 1)
-        self.assertEqual(review_cycle.validate_sealed_review(cycle, engine.runtime)['decision'], 'unresolved')
+        self.assertEqual(review_cycle.validate_sealed_review(cycle, engine.runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)['decision'], 'unresolved')
 
     def test_unaffordable_scope_returns_to_plan_without_fabricating_a_judgment(self):
+        from support.entry import entry
+        _entry = entry()
         for disposition in ('unresolved', 'defer'):
             with self.subTest(disposition=disposition):
                 scene = self.scene(disposition)
@@ -105,7 +109,7 @@ class ResourceDispositionTests(unittest.TestCase):
                 engine._settle_review_resource_dispositions()
                 self.assertEqual(len([a for a in engine.runtime['queue'] if a['role'] == 'research_plan']), 1)
                 if disposition == 'unresolved':
-                    self.assertEqual(review_cycle.validate_sealed_review(cycle, engine.runtime)['decision'], 'unresolved')
+                    self.assertEqual(review_cycle.validate_sealed_review(cycle, engine.runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)['decision'], 'unresolved')
 
 
 if __name__ == '__main__':

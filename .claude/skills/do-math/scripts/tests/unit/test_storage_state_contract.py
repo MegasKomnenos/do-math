@@ -14,7 +14,7 @@ import unittest
 import jsonschema
 
 from do_math.state_contract import StateContract, default_state_contract
-from research_fixtures import current_state, installed_contract, with_validator
+from support.state_builders import current_state, installed_contract, with_validator
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.provider_probes import ObservedCalls
@@ -105,12 +105,14 @@ class StateContractValidationTests(unittest.TestCase):
     def test_invalid_execution_and_activity_are_rejected_by_the_state_contract(self):
         # Inspection receives loaded states only; loading validates execution
         # states and activity ownership, so the contract is where they are rejected.
+        from support.entry import entry
+        _entry = entry()
         from do_math import activities, execution_profiles, knowledge_io, model_policy
         profiles = execution_profiles.build_profiles({
             "session_limits": model_policy.LIMITS, "tier_models": model_policy.MODELS,
             "observation_mode": "event_driven", "max_input_bytes": 500000,
             "effort": "medium", "operator_effort": "high", "operator_timeout_seconds": 600,
-            "scholarly_enabled": True, "scholarly_server": None, "claude_only_assigned_model": False})
+            "scholarly_enabled": True, "scholarly_server": None, "claude_only_assigned_model": False}, host=_entry.ports.host)
         instance, runtime = current_state({"object_format": "sha1", "knowledge": {}, "expositions": {},
             **{k: v for k, v in profiles.items() if k != "role_profile_refs"}}, {"executions": {}})
         instance = knowledge_io.ensure_ontology(instance)

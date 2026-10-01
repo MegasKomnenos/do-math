@@ -1,7 +1,7 @@
 """Postsolution academic requirements driven by the owner through model calls on the real engine, moved from
 ``test_academic_engine``.
 
-The model double answers as the legacy ``purpose_fixtures.AcademicRunner``
+The model double answers as the legacy ``support.purpose_answers.AcademicAnswers``
 (``support.academic_scenes.academic_responder``): the purpose scenario's
 answers, a planner's resolution of an external rejection, and academic research
 work that may ask for a required external effect. The worker submits every
@@ -19,8 +19,9 @@ from urllib.parse import urlsplit
 
 from do_math import academic
 from do_math.task_scope import apply_task_assessments
-from purpose_fixtures import SOLVED_REQUIREMENT_CRITERIA, requirement
-from research_fixtures import assessment, charter_change
+from support.purpose_answers import SOLVED_REQUIREMENT_CRITERIA, requirement
+from support.role_answers import assessment
+from support.state_builders import charter_change
 from support.academic_scenes import academic_responder, ended, explicit_sim, solve_with, solved_sim, theorem_sim
 from support.engine_lifecycle import applied, http_fails
 from support.engine_purpose import drive
@@ -167,7 +168,7 @@ class AcademicRequirementFlowTests(unittest.TestCase):
                     ended(engine, 'EX-planner-fixture', 'research_plan',
                           input_solution_basis=deepcopy(task['solution_basis']))
                     engine.instance, engine.runtime = apply_task_assessments(engine.instance, engine.runtime, [completed],
-                        execution_id='EX-planner-fixture', input_tasks=deepcopy(engine.runtime['tasks']))
+                        execution_id='EX-planner-fixture', input_tasks=deepcopy(engine.runtime['tasks']), clock=sim.ports.clock)
                     with self.assertRaisesRegex(ValueError,
                                                 '^satisfied academic assessment lacks confirmed successful required external effects$'):
                         engine._record_academic_assessment(engine.runtime['tasks'][task['id']], completed, 'EX-planner-fixture')

@@ -13,8 +13,8 @@ import unittest
 from do_math import governance as gov
 from do_math.canonical import exact_content_hash
 from do_math.governance import apply_decision, authorize
-from record_fixtures import domain_governance
-from research_fixtures import charter, governance_start
+from support.record_builders import domain_governance
+from support.state_builders import charter, governance_start
 
 SKILL = Path(__file__).resolve().parents[3]
 
@@ -35,42 +35,48 @@ class DomainGovernanceTests(unittest.TestCase):
             gov.initialize_governance(governance_start({"id": "I"}), preserved, i["decisions"]["D"], [charter()])
 
     def test_policy_coexists_and_only_explicit_supersession_retires_old_rule(self):
+        from support.entry import entry
+        _entry = entry()
         i = domain_governance(); runtime = {"tasks": {}, "executions": {}, "queue": [], "status": "ready"}
         for identifier, replaces in (("P1", []), ("P2", []), ("P3", ["P1"])):
             record = {"id": identifier, "kind": "policy", "revision": 1, "supersedes": replaces,
                       "content": {"rule_id": identifier, "scope": ["P"], "text": identifier,
                                   "reason_refs": ["D"], "audit_refs": []}}
             change = {"kind": "policy", "record": record, "decision_id": "D" + identifier}
-            i, runtime, _ = gov.apply_decision(i, runtime, change, source_ref="S")
+            i, runtime, _ = gov.apply_decision(i, runtime, change, source_ref="S", clock=_entry.ports.clock)
         self.assertEqual({r["id"] for r in gov.governance_view(i)["policy_records"]}, {"P2", "P3"})
         self.assertEqual(i["governance"]["P1"]["status"], "superseded")
         with self.assertRaisesRegex(ValueError, "^governance decision requires a structured governance record$"):
-            gov.apply_decision(i, runtime, {"kind": "policy", "text": "replace all"}, source_ref="S")
+            gov.apply_decision(i, runtime, {"kind": "policy", "text": "replace all"}, source_ref="S", clock=_entry.ports.clock)
 
     def test_context_and_audit_require_owned_meaning_and_exact_verdict_mapping(self):
+        from support.entry import entry
+        _entry = entry()
         i = domain_governance(); rt = {"tasks": {}, "executions": {}, "queue": [], "status": "ready"}
         context = {"id": "CX", "kind": "research_context", "revision": 1, "supersedes": [],
                    "content": {"terms": [{"term": "P", "definition": "the target", "boundary": "this problem",
                                           "avoid_synonyms": [], "record_refs": []}]}}
-        i, rt, _ = gov.apply_decision(i, rt, {"kind": "research_context", "record": context}, source_ref="S")
+        i, rt, _ = gov.apply_decision(i, rt, {"kind": "research_context", "record": context}, source_ref="S", clock=_entry.ports.clock)
         audit = {"id": "AU", "kind": "additional_audit", "revision": 1, "supersedes": [],
                  "content": {"scope": ["P"], "required_inputs": ["CH1"], "assessor": "goal_audit",
                              "verdict_mapping": {"pass": "satisfied", "fail": "not_satisfied", "unknown": "unresolved"}}}
-        i, rt, _ = gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S")
+        i, rt, _ = gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S", clock=_entry.ports.clock)
         self.assertEqual(gov.governance_view(i)["additional_audits"][0]["id"], "AU")
         audit["id"] = "AU2"; audit["content"]["verdict_mapping"]["pass"] = "unsupported_assurance"
         with self.assertRaisesRegex(ValueError, r"^change/record/content/verdict_mapping/pass: invalid enum"):
-            gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S")
+            gov.apply_decision(i, rt, {"kind": "additional_audit", "record": audit}, source_ref="S", clock=_entry.ports.clock)
 
     def test_explicit_once_grant_and_exclusions_use_existing_execution_ledger(self):
+        from support.entry import entry
+        _entry = entry()
         i = {"grants": {"G": {"id": "G", "kind": "local", "status": "active",
              "roles": ["research_work"], "task_ids": [], "excluded_targets": ["B"], "reuse": "once",
              "source_ref": "S", "subjects": ["research_work"]}}}
         rt = {"executions": {"E": {"id": "E", "grant_id": "G", "action": {"id": "A1"}}}}
-        consumed = gov.authorize(i, {"id": "A2", "role": "research_work", "target": "A"}, runtime=rt)
+        consumed = gov.authorize(i, {"id": "A2", "role": "research_work", "target": "A"}, runtime=rt, at=_entry.ports.clock.now())
         self.assertFalse(consumed["allowed"])
         self.assertEqual(consumed["rejected"], [{"grant_id": "G", "reason": "one-case grant already reserved or consumed"}])
-        excluded = gov.authorize(i, {"id": "A1", "role": "research_work", "target": "B"}, runtime={})
+        excluded = gov.authorize(i, {"id": "A1", "role": "research_work", "target": "B"}, runtime={}, at=_entry.ports.clock.now())
         self.assertFalse(excluded["allowed"])
         self.assertEqual(excluded["rejected"], [{"grant_id": "G", "reason": "target excluded"}])
 
@@ -113,11 +119,13 @@ class DomainGovernanceTests(unittest.TestCase):
             gov.validate_governance_state(i)
 
     def test_additional_audit_consumes_exact_required_inputs_and_mapping(self):
+        from support.entry import entry
+        _entry = entry()
         i = domain_governance(); rt = {"tasks": {}, "executions": {}, "queue": []}
         r = {"id": "AU", "kind": "additional_audit", "revision": 1, "supersedes": [],
              "content": {"scope": ["P"], "required_inputs": ["CH1"], "assessor": "goal_audit",
                          "verdict_mapping": {"pass": "satisfied", "fail": "not_satisfied", "unknown": "unresolved"}}}
-        i, _, _ = gov.apply_decision(i, rt, {"kind": "additional_audit", "record": r}, source_ref="S")
+        i, _, _ = gov.apply_decision(i, rt, {"kind": "additional_audit", "record": r}, source_ref="S", clock=_entry.ports.clock)
         with self.assertRaisesRegex(ValueError, "^audit inputs differ from the approved required set$"):
             gov.evaluate_additional_audit(i, "AU", "pass", assessor="goal_audit", input_hashes={})
         verdict = gov.evaluate_additional_audit(i, "AU", "pass", assessor="goal_audit",
@@ -126,20 +134,24 @@ class DomainGovernanceTests(unittest.TestCase):
         self.assertEqual(i["goal_status"], "unsolved")
 
     def test_grant_replacement_revokes_the_replaced_grant_and_stops_its_consumers(self):
+        from support.entry import entry
+        _entry = entry()
         i = domain_governance(); rt = {"tasks": {}, "executions": {}, "queue": []}
         spec = {"id": "G", "kind": "local", "roles": ["research_work"], "reuse": "reusable", "expires_at": "2099-01-01T00:00:00Z"}
-        i, rt, _ = gov.apply_decision(i, rt, {"kind": "grant", "grant": spec}, source_ref="S")
+        i, rt, _ = gov.apply_decision(i, rt, {"kind": "grant", "grant": spec}, source_ref="S", clock=_entry.ports.clock)
         rt["executions"]["E"] = {"id": "E", "status": "running", "grant_id": "G"}
         replacement = {**spec, "id": "G2", "expires_at": "2099-01-02T00:00:00Z"}
-        i, rt, event = gov.apply_decision(i, rt, {"kind": "grant", "grant": replacement, "replaces": ["G"]}, source_ref="S")
+        i, rt, event = gov.apply_decision(i, rt, {"kind": "grant", "grant": replacement, "replaces": ["G"]}, source_ref="S", clock=_entry.ports.clock)
         self.assertEqual(i["grants"]["G"]["status"], "revoked")
         self.assertEqual(i["grants"]["G"]["revoked_by"], event["id"])
         self.assertEqual(rt["executions"]["E"]["stop_requested"], "grant_revoked")
 
     def test_local_execution_kind_is_not_ignored(self):
+        from support.entry import entry
+        _entry = entry()
         i = {"grants": {"G": {"id": "G", "kind": "local", "status": "active", "roles": ["research_work"],
                               "reuse": "reusable", "execution_kinds": ["machine"]}}}
-        decision = gov.authorize(i, {"role": "research_work", "actor_kind": "ai"}, runtime={})
+        decision = gov.authorize(i, {"role": "research_work", "actor_kind": "ai"}, runtime={}, at=_entry.ports.clock.now())
         self.assertFalse(decision["allowed"])
         self.assertEqual(decision["rejected"], [{"grant_id": "G", "reason": "execution kind outside grant"}])
 
@@ -157,29 +169,33 @@ class DomainGovernanceTests(unittest.TestCase):
         self.assertIsNone(gov.validate_governance_state(i))
 
     def test_overlapping_grants_are_not_selected_by_identifier_order(self):
+        from support.entry import entry
+        _entry = entry()
         instance = governance_start({'id': 'I', 'governance_sources': {'user': gov.preserve_source(
             'user', 'Authorize two reusable work grants.', origin='user')}})
         runtime = {'tasks': {}, 'executions': {}, 'queue': []}
         for identifier in ('A', 'B'):
             instance, runtime, _ = apply_decision(instance, runtime, {'kind': 'grant', 'grant': {
                 'id': identifier, 'kind': 'local', 'reuse': 'reusable', 'roles': ['research_work']}},
-                source_ref='user')
-        decision = authorize(instance, {'id': 'AC', 'role': 'research_work', 'actor_kind': 'ai'}, runtime=runtime)
+                source_ref='user', clock=_entry.ports.clock)
+        decision = authorize(instance, {'id': 'AC', 'role': 'research_work', 'actor_kind': 'ai'}, runtime=runtime, at=_entry.ports.clock.now())
         self.assertFalse(decision["allowed"])
         self.assertEqual(decision["reason"], "ambiguous current grants")
 
     def test_once_http_operation_and_its_execution_share_logical_case(self):
+        from support.entry import entry
+        _entry = entry()
         grant = {'id': 'G', 'status': 'active', 'reuse': 'once'}
         operation = {'id': 'OP', 'grant_id': 'G', 'request_sha256': 'request'}
         action = {'id': 'AC-OP', 'role': 'external_action', 'target': 'OP', 'grant_id': 'G'}
         rt = {'external_operations': {'OP': operation}, 'executions': {
             'EX': {'id': 'EX', 'role': 'external_action', 'grant_id': 'G', 'action': action}}}
-        self.assertIsNone(gov.grant_scope_reason(grant, action, rt))
-        self.assertIsNone(gov.grant_scope_reason(grant, {'id': 'OP', 'role': 'external_operation'}, rt))
-        self.assertEqual(gov.grant_scope_reason(grant, {'id': 'OTHER', 'case_id': 'OP'}, rt),
+        self.assertIsNone(gov.grant_scope_reason(grant, action, rt, at=_entry.ports.clock.now()))
+        self.assertIsNone(gov.grant_scope_reason(grant, {'id': 'OP', 'role': 'external_operation'}, rt, at=_entry.ports.clock.now()))
+        self.assertEqual(gov.grant_scope_reason(grant, {'id': 'OTHER', 'case_id': 'OP'}, rt, at=_entry.ports.clock.now()),
                          'one-case grant already reserved or consumed')
         rt['external_operations']['SECOND'] = {'id': 'SECOND', 'grant_id': 'G'}
-        self.assertEqual(gov.grant_scope_reason(grant, action, rt), 'one-case grant already reserved or consumed')
+        self.assertEqual(gov.grant_scope_reason(grant, action, rt, at=_entry.ports.clock.now()), 'one-case grant already reserved or consumed')
 
 
 class DocumentedGrantTests(unittest.TestCase):

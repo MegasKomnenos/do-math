@@ -13,7 +13,7 @@ import unittest
 
 from do_math import trust_inventory as records
 from do_math.canonical import exact_content_hash
-from research_fixtures import trust_fixture, validation_fixture
+from support.trust_inputs import trust_fixture, validation_fixture
 
 
 class RecordFixture(unittest.TestCase):

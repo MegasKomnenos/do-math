@@ -11,8 +11,8 @@ import json
 import tempfile
 import unittest
 
-from purpose_fixtures import common
-from research_fixtures import candidate, disposition
+from support.purpose_answers import common
+from support.role_answers import candidate, disposition
 from support.submission_protocol import check_output, producer_workspace
 
 

@@ -14,7 +14,8 @@ import unittest
 from do_math import canonical, knowledge, knowledge_records as kr
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.execution_profiles import build_profiles
-from research_fixtures import current_state, trust_environment, trust_fixture
+from support.state_builders import current_state
+from support.trust_inputs import trust_environment, trust_fixture
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.provider_probes import ObservedCalls
@@ -37,10 +38,12 @@ class StagedReviewCase(unittest.TestCase):
 
     def staged_transition(self):
         """A transition to the registered environment ``TE-next`` whose result re-verifies ``K1`` with another proof term."""
+        from support.entry import entry
+        _entry = entry()
         engine = self.engine
         engine.instance['trust_environments']['TE-next'] = {'id': 'TE-next', 'status': 'registered',
             'toolchain': {'sha256': 'new-toolchain', 'version': 'next'}, 'allowed_axioms': []}
-        transition = knowledge.begin_transition(engine.instance, 'TE-next')
+        transition = knowledge.begin_transition(engine.instance, 'TE-next', clock=_entry.ports.clock)
         fid = engine.instance['knowledge']['K1']['formal_result_id']
         result = deepcopy(engine.instance['formal_results'][fid]['verification'])
         result.update(id='K1', toolchain=engine.instance['trust_environments']['TE-next']['toolchain'])
@@ -77,6 +80,8 @@ class StagedReviewTests(StagedReviewCase):
             engine._completed_staged_identity_review(transition_id, 'K1', cid)
 
     def test_completed_staged_review_is_consumed_by_transition_activation(self):
+        from support.entry import entry
+        _entry = entry()
         engine = self.engine
         transition_id = self.staged_transition()
         before = deepcopy(engine.instance)
@@ -84,7 +89,7 @@ class StagedReviewTests(StagedReviewCase):
         candidate = deepcopy(engine.runtime['trust_transitions'][transition_id])
         candidate['results']['K1']['identity_review'] = receipt
 
-        activated = knowledge.activate_transition(engine.instance, candidate, runtime=engine.runtime)
+        activated = knowledge.activate_transition(engine.instance, candidate, runtime=engine.runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
         self.assertEqual(activated['active_trust_environment'], candidate['to_environment'])
         current = activated['knowledge']['K1']
@@ -104,6 +109,8 @@ class StagedReviewTests(StagedReviewCase):
         self.assertEqual(engine.instance, before)
 
     def test_staged_activation_rejects_tampered_receipt_and_stale_policy(self):
+        from support.entry import entry
+        _entry = entry()
         engine = self.engine
         transition_id = self.staged_transition()
         _, receipt = self.review_staged(transition_id)
@@ -112,7 +119,7 @@ class StagedReviewTests(StagedReviewCase):
         forged['results']['K1']['identity_review'] = {**receipt, 'proposal_digest': '0' * 64}
         before = deepcopy(engine.instance)
         with self.assertRaisesRegex(ValueError, 'staged identity review receipt is stale, altered, or not a complete match'):
-            knowledge.activate_transition(engine.instance, forged, runtime=engine.runtime)
+            knowledge.activate_transition(engine.instance, forged, runtime=engine.runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual(engine.instance, before)
 
         for field, value in (('transition_id', 'TR-another'), ('knowledge_id', 'K-another')):
@@ -120,7 +127,7 @@ class StagedReviewTests(StagedReviewCase):
             wrong_owner['results']['K1']['identity_review'] = {**receipt, field: value}
             with self.subTest(field=field), self.assertRaisesRegex(
                     ValueError, 'staged identity review receipt is stale, altered, or not a complete match'):
-                knowledge.activate_transition(engine.instance, wrong_owner, runtime=engine.runtime)
+                knowledge.activate_transition(engine.instance, wrong_owner, runtime=engine.runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
             self.assertEqual(engine.instance, before)
 
         stale_instance = deepcopy(engine.instance)
@@ -129,7 +136,7 @@ class StagedReviewTests(StagedReviewCase):
         candidate = deepcopy(engine.runtime['trust_transitions'][transition_id])
         candidate['results']['K1']['identity_review'] = receipt
         with self.assertRaisesRegex(ValueError, 'staged identity review publication premises changed'):
-            knowledge.activate_transition(stale_instance, candidate, runtime=engine.runtime)
+            knowledge.activate_transition(stale_instance, candidate, runtime=engine.runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual(stale_instance, stale_before)
 
 
@@ -144,6 +151,8 @@ class StagedRoundTripTests(StagedReviewCase):
                       if isinstance(value['value'], dict) and TRANSITION_KEYS <= set(value['value'])]
 
     def assert_staged_activation_round_trip(self, *, followup_transition):
+        from support.entry import entry
+        _entry = entry()
         engine, scene = self.engine, self.scene
         root = scene.root
         old_fixture = trust_fixture(root, ['old-lean'])
@@ -158,7 +167,7 @@ class StagedRoundTripTests(StagedReviewCase):
                                                            source_ref='fixture:next-trust-environment')
         engine.instance['trust_environments']['TE-next'] = next_environment
         engine.runtime['trust_bindings'] = {'TE-review': old_binding, 'TE-next': next_binding}
-        transition = knowledge.begin_transition(engine.instance, 'TE-next')
+        transition = knowledge.begin_transition(engine.instance, 'TE-next', clock=_entry.ports.clock)
         result = deepcopy(formal['verification'])
         result.update(id='K1', toolchain=deepcopy(next_fixture['toolchain']),
                       allowed_axioms=deepcopy(next_fixture['allowed_axioms']))
@@ -170,7 +179,7 @@ class StagedRoundTripTests(StagedReviewCase):
         cid, receipt = self.review_staged(transition_id)
         candidate = deepcopy(engine.runtime['trust_transitions'][transition_id])
         candidate['results']['K1']['identity_review'] = receipt
-        activated = knowledge.activate_transition(engine.instance, candidate, runtime=engine.runtime)
+        activated = knowledge.activate_transition(engine.instance, candidate, runtime=engine.runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
         repository_path = root / 'round-trip-repository'
         backend = InProcessGit()
@@ -205,7 +214,7 @@ class StagedRoundTripTests(StagedReviewCase):
             for binding in cycle.get('input_bindings', {}).values():
                 binding['input_sha256'] = 'a' * 64
         persisted_before, persisted_after = deepcopy(before), deepcopy(activated)
-        capacity_constraints = build_profiles(DEFAULT_CONFIG)['capacity_constraints']
+        capacity_constraints = build_profiles(DEFAULT_CONFIG, host=_entry.ports.host)['capacity_constraints']
         for state in (persisted_before, persisted_after):
             state['capacity_constraints'] = deepcopy(capacity_constraints)
             state.pop('role_profile_refs', None)
@@ -243,14 +252,14 @@ class StagedRoundTripTests(StagedReviewCase):
                                                              source_ref='fixture:final-trust-environment')
         persisted_after['trust_environments']['TE-final'] = final_environment
         persisted_runtime_after['trust_bindings']['TE-final'] = final_binding
-        continuity = knowledge.begin_transition(persisted_after, 'TE-final')
+        continuity = knowledge.begin_transition(persisted_after, 'TE-final', clock=_entry.ports.clock)
         continuity_result = deepcopy(first_transition_records['formal']['verification'])
         continuity_result.update(id='K1', toolchain=deepcopy(final_fixture['toolchain']),
                                  allowed_axioms=deepcopy(final_fixture['allowed_axioms']))
         continuity = knowledge.record_transition_result(persisted_after, continuity, continuity_result)
         persisted_runtime_after['trust_transitions'][continuity['id']] = continuity
         twice_activated = knowledge.activate_transition(
-            persisted_after, continuity, runtime=persisted_runtime_after)
+            persisted_after, continuity, runtime=persisted_runtime_after, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         persisted_runtime_after['trust_transitions'][continuity['id']]['status'] = 'active'
 
         self.assertEqual(twice_activated['formal_results'][current['formal_result_id']],

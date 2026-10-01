@@ -21,8 +21,8 @@ from do_math import integration, knowledge, knowledge_io, submission
 from do_math.canonical import canonical_json
 from do_math.engine import ResearchEngine
 from do_math.repository import ResearchRepository
-from knowledge_fixtures import knowledge_candidate
-from research_fixtures import seal_response
+from support.knowledge_builders import knowledge_candidate
+from support.role_answers import seal_response
 from support.engine_context import damage
 from support.provider_probes import ObservedCalls
 from support.sim import Sim, warm_template
@@ -72,6 +72,8 @@ class CentralSubmissionHistoryTests(unittest.TestCase):
         self.assertEqual(engine.store.read(execution["submission_intent"]["output_ref"], engine.head), raw)
 
     def test_rejected_corrected_replayed_and_snapshot_bound_central_checks(self):
+        from support.entry import entry
+        _entry = entry()
         scene = self.scene
         # The public activation already sealed its own central checks; count the seals this test adds to them.
         base = scene.engine._submission_check_summary(scene.engine.head, scene.engine.runtime)
@@ -131,7 +133,7 @@ class CentralSubmissionHistoryTests(unittest.TestCase):
         shutil.copytree(scene.sim.repository, copy)
         objects = scene.sim.ports.git_backend.objects
         objects[str((copy / '.git').absolute())] = dict(objects[str((scene.sim.repository / '.git').absolute())])
-        unmatched = ResearchEngine(copy, scene.sim.instance_id, ports=scene.sim.ports)
+        unmatched = ResearchEngine(copy, scene.sim.instance_id, ports=scene.sim.ports, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
         tampered = damage(unmatched.store, draft['path'], b'tampered')
         self.assertEqual(unmatched._submission_check_summary(tampered, engine.runtime)['status'], 'incomplete')
         # The same change on the matched repository is not compared again, as the comment above says.

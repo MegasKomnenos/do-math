@@ -28,7 +28,7 @@ class RelationEvidenceTests(unittest.TestCase):
             self.assertEqual(set(submission.reported_references(output, extensions)), expected)
 
     def test_relation_judgment_edges_keep_formal_and_assessment_use_current(self):
-        from record_fixtures import specialist_assessment
+        from support.record_builders import specialist_assessment
         for field in ('formal_result_refs', 'assessment_refs', 'evidence_refs'):
             with self.subTest(field=field):
                 instance, runtime, _, kid, aid = specialist_assessment()
@@ -47,7 +47,7 @@ class RelationEvidenceTests(unittest.TestCase):
                 self.assertNotEqual(before, task_scope.assessment_basis(task, assessment, instance, runtime))
 
     def test_relation_endpoints_still_bind_submitted_content_not_later_review_bookkeeping(self):
-        from record_fixtures import completed_with_knowledge
+        from support.record_builders import completed_with_knowledge
         instance, runtime = completed_with_knowledge()
         task = runtime['tasks']['TK-1']
         instance['relations'] = [{'id': 'RL-content', 'kind': 'supports', 'source': 'KN-proof', 'target': 'KN-proof'}]

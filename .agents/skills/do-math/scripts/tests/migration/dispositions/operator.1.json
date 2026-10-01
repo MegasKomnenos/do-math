@@ -54,9 +54,12 @@
    "disposition": "moved",
    "new_ids": [
     "unit.test_operator_rules.WakeReasonTests.test_due_research_reconsideration_is_a_wake_reason_without_mutating_state",
-    "sim.test_operator_supervisor.StartGuardTests.test_guard_reports_each_refusal_under_the_status_it_judged"
+    "sim.test_operator_supervisor.StartGuardTests.test_guard_reports_each_refusal_under_the_status_it_judged",
+    "sim.test_operator_finish_supervision.SupervisionTests.test_read_status_reaches_guard_and_wake_obeys_pause_and_hold",
+    "sim.test_operator_finish_supervision.SupervisionTests.test_due_research_status_reaches_guard_and_requests_only_once",
+    "sim.test_operator_finish_recovery.RecoveryTests.test_model_policy_pause_holds_future_calls_but_not_the_repair_attempt"
    ],
-   "note": "The legacy test patched scheduled_operator.read_status to hand engine_start_guard its status; the new test passes the same status as the guard's status argument for the startable, model-policy and pause cases (the HOLD case still passes none and observes that read_status is not called). The wiring from read_status to the guard is not run: read_status builds ResearchEngine(repository, instance) with the real ports and takes no Ports, so it cannot run on a Sim without that product seam (reported with this batch)."
+   "note": "Resolved by operator-seams: previous status-only judgment tests remain; added actual read_status on ResearchEngine/Repository with supplied Ports reaching start_guard. Actual published diagnosis, pause/HOLD, model-policy refusal and activation-produced due timer are observed with sys.monitoring. No product definition is replaced. This explicitly closes the former missing wiring note (initialization pilot54 / seam 3)."
   },
   {
    "legacy_id": "test_operator.WakeTests.test_regeneration_and_task_timers_are_read_only_and_not_duplicated",

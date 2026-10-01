@@ -17,21 +17,29 @@ from do_math.engine import ResearchEngine, initialize
 from do_math.execution_lifecycle import create_execution, transition_execution
 from do_math.model_runner import ModelRunner
 from do_math.wiring import real_ports
-from research_fixtures import git_init
+from support.fakes.git_backend import make_repository
 from support.provider_probes import ObservedCalls
 
 
 class SupervisorRecoveryTests(unittest.TestCase):
     def test_recovery_waits_for_unended_execution_without_confirmed_termination(self):
-        ports = real_ports()
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
+        ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             repository, workspace = root / 'repository', root / 'work'
-            git_init(repository)
+            make_repository(repository)
             instance_id = initialize(repository, goal='Recovery wait fixture', workspace=workspace,
                                      config={'operator_enabled': True, 'scholarly_enabled': False},
-                                     ports=ports)['instance_id']
-            engine = ResearchEngine(repository, instance_id, ports=ports)
+                                     ports=ports, codex_home=_entry.codex_home, host_id=_entry.host_id)['instance_id']
+            engine = ResearchEngine(repository, instance_id, ports=ports, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
             at = ports.clock.now()
             with engine.store.writer_lock():
                 activity = open_activity(engine.runtime, activity_id='AY-live', activity_kind='maintenance',
@@ -50,7 +58,7 @@ class SupervisorRecoveryTests(unittest.TestCase):
             self.assertNotIn('launch_ticket', stored['executions']['EX-live'])
             with ObservedCalls(run=ModelRunner.run) as observed:
                 result = scheduled_operator.recovery(repository, instance_id, workspace,
-                                                     failure={'kind': 'engine_unavailable', 'error': 'fixture'})
+                                                     failure={'kind': 'engine_unavailable', 'error': 'fixture'}, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
             self.assertEqual((result['outcome'], result['execution_id']), ('recovery_waiting', 'EX-live'))
             self.assertEqual(result['reason'], 'existing execution termination is unconfirmed')
             self.assertEqual(observed.count('run'), 0)

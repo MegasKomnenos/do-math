@@ -151,6 +151,32 @@ class QueuedPreparationTests(unittest.TestCase):
     def test_regular_empty_plan_can_still_dispatch(self):
         self.assertTrue(self.engine._dispatchable({"role": "research_plan", "reason": "assess failed approach"}))
 
+    def test_pause_received_during_input_preparation_prevents_model_start(self):
+        from support.provider_probes import ObservedCalls
+        from support.storage_finish_installation import at_return
+        e = self.engine
+        before_executions = set(e.runtime['executions'])
+        before_runs = set((self.workspace / 'runs').iterdir())
+        with ObservedCalls(upkeep=e._upkeep, model=self.sim.model.spawn, launch=self.sim.jobs.launch) as calls:
+            with at_return(e._context, lambda: self.sim.control('pause', text='stop during materialization')) as contexts:
+                generator = e._call_steps(e.runtime['queue'][0])
+                with self.assertRaises(StopIteration) as stopped:
+                    next(generator)
+                self.assertIsInstance(stopped.exception.value, bool)
+        self.assertEqual(len(contexts), 1)
+        self.assertIsInstance(contexts[0], dict)
+        self.assertEqual(calls.count('upkeep'), 0)
+        self.assertEqual(calls.count('model'), 0)
+        self.assertEqual(calls.count('launch'), 0)
+        self.assertEqual(e.runtime['status'], 'paused')
+        added = set(e.runtime['executions']) - before_executions
+        self.assertEqual(len(added), 1)
+        execution = e.runtime['executions'][added.pop()]
+        self.assertEqual((execution['status'], execution['outcome']), ('ended', 'cancelled'))
+        self.assertIsNone(execution.get('started_at'))
+        self.assertNotIn('capacity', execution)
+        self.assertEqual(set((self.workspace / 'runs').iterdir()), before_runs)
+
     def test_pause_before_model_resume_has_no_checkpoint_grace(self):
         e = self.engine
         steps = e._call_steps(e.runtime['queue'][0])
@@ -220,6 +246,8 @@ class QueuedPreparationTests(unittest.TestCase):
                 self.assertTrue(self.engine._dispatchable(action))
 
     def test_plan_receives_public_running_preparation_without_private_output(self):
+        from support.entry import entry
+        _entry = entry()
         e = self.engine
         e.runtime["executions"]["E"] = {"id": "E", "role": "research_preparation",
             "status": "running", "input_snapshot": e.head, "goal_revision": 1, "policy_revision": 1,
@@ -231,7 +259,7 @@ class QueuedPreparationTests(unittest.TestCase):
             profile = next(p for p in e.instance["execution_profiles"].values() if p["role"] == "research_plan")
             # Unfinished preparations reach the plan as ongoing_work rows built from state.
             fitted = prepare_role_input(context, instance=e.instance, runtime=e.runtime, role="research_plan",
-                profile=profile, snapshot=e.head, workspace=root / "plan", activity_id="AC-plan")
+                profile=profile, snapshot=e.head, workspace=root / "plan", activity_id="AC-plan", clock=_entry.ports.clock)
         activities = [row for row in fitted["context"]["ongoing_work"] if row.get("execution_id") == "E"]
         self.assertEqual(len(activities), 1)
         self.assertEqual((activities[0]["goal_revision"], activities[0]["policy_revision"]), (1, 1))
@@ -240,7 +268,7 @@ class QueuedPreparationTests(unittest.TestCase):
         self.assertNotIn("private draft", str(activities))
 
     def test_task_result_materialization_batches_reads_without_losing_files(self):
-        from research_fixtures import candidate
+        from support.role_answers import candidate
         e = self.engine
         files = {f'runtime/artifacts/results/{i}.bin': bytes(range(256)) + bytes([i]) for i in range(12)}
         entries = [{'artifact_ref': path, 'path': Path(path).name,
@@ -274,10 +302,12 @@ class QueuedPreparationTests(unittest.TestCase):
         self.assertEqual(e.store.read("runtime/artifacts/idle-test/evidence.bin", e.head), b"\x00\xff")
 
     def test_reopened_idle_engine_does_not_publish_again(self):
+        from support.entry import entry
+        _entry = entry()
         e = self.engine
         e._save()
         head = e.head
-        reopened = ResearchEngine(e.store.repository, e.instance['id'], ports=self.sim.ports)
+        reopened = ResearchEngine(e.store.repository, e.instance['id'], ports=self.sim.ports, codex_home=self.sim.codex_home, environment=self.sim.environment, host_id=self.sim.host_id)
         reopened._save()
         self.assertEqual(reopened.head, head)
 

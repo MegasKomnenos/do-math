@@ -10,7 +10,6 @@ from copy import deepcopy
 from datetime import timedelta
 import hashlib
 import math
-import time
 
 from .governance import apply_decision, timestamp
 from .planning import (instance_ended, task_ready, contract_hash, record_due_events, contract_review_current, review_basis_key,
@@ -52,8 +51,7 @@ def preserve_rejected_candidate(store, snapshot, *, raw, reason, clock):
 
 class LifecycleEngineMixin:
     def _lifecycle_now(self):
-        clock = self.lifecycle_clock
-        return timestamp(clock()) if clock else self.ports.clock.wall()
+        return self.ports.clock.wall()
 
 
     def _lifecycle_event(self, kind, *, target=None, source_ref=None, schedule=True, **details):
@@ -70,9 +68,9 @@ class LifecycleEngineMixin:
 
     def _clock_guard(self):
         """A retained regression blocks authority until a verified re-observation."""
-        before = self.lifecycle_monotonic()
+        before = self.ports.clock.monotonic()
         now = self._lifecycle_now()
-        after = self.lifecycle_monotonic()
+        after = self.ports.clock.monotonic()
         persisted = self.runtime.get('last_observed_utc')
         if not persisted:
             return {'usable': False, 'reason': 'missing_utc_high_water'}
@@ -81,9 +79,9 @@ class LifecycleEngineMixin:
         # on either side (covers truncation or rounding), plus representation error.
         # UTC intervals round outwards to datetime's microsecond precision; the
         # monotonic interval also includes the float's ULP at this uptime.
-        wall_radius = timedelta(microseconds=math.ceil(
-            time.get_clock_info('time').resolution * 1_000_000) + 1)
-        mono_radius = time.get_clock_info('monotonic').resolution + max(math.ulp(before), math.ulp(after))
+        wall_resolution, monotonic_resolution = self.ports.clock.resolutions()
+        wall_radius = timedelta(microseconds=math.ceil(wall_resolution * 1_000_000) + 1)
+        mono_radius = monotonic_resolution + max(math.ulp(before), math.ulp(after))
         anchor = self._clock_anchor
         reason = 'persisted_utc_regression' if now < previous else None
         expected = None
@@ -184,7 +182,7 @@ class LifecycleEngineMixin:
         self.runtime['recovery_checked'] = not any(quiescence(self.runtime).values())
         requirements = activation_requirements(self.instance, self.runtime, at=self._lifecycle_now().isoformat(),
                                                host=self.ports.host,
-            owner_handlers=self.governance_owner_handlers())
+            owner_handlers=self.governance_owner_handlers(), clock=self.ports.clock)
         lifecycle.setdefault('activation', {})['missing'] = requirements['missing']
         lifecycle['activation']['observation_errors'] = requirements['observation_errors']
         if not requirements['satisfied']:

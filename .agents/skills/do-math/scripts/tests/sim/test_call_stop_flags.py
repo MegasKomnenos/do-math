@@ -20,7 +20,7 @@ import unittest
 from do_math.execution_lifecycle import record_submission_intent
 from do_math.knowledge import plan_impact, revision_roots
 from do_math.windows_job import process_identity
-from research_fixtures import charter_change, policy_change
+from support.state_builders import charter_change, policy_change
 from do_math.engine import ResearchEngine
 from support.engine_lifecycle import ObservedCalls, applied, clear_work, code_of, queue_work, task
 from support.fakes.calls import owner_turn

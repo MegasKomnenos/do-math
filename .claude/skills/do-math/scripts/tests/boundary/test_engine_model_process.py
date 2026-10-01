@@ -19,6 +19,7 @@ import unittest
 
 from do_math.codex_adapter import CodexExecAdapter
 from do_math.windows_job import WindowsJob, WindowsJobs
+from test_categories import test_group
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 
@@ -27,6 +28,7 @@ def job_name():
     return 'Local\\DoMath-test-' + os.urandom(8).hex()
 
 
+@test_group('resource')
 class ModelProcessJobTests(unittest.TestCase):
     def test_a_running_model_process_is_ended_within_ten_seconds_and_leaves_no_process(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -66,12 +68,16 @@ class ModelProcessJobTests(unittest.TestCase):
         self.assertIs(WindowsJobs().owner_ended(WindowsJobs().owner_identity()), False)
 
     def test_the_collector_barrier_sees_an_ended_job_empty(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as directory:
             job = WindowsJob([sys.executable, '-c', 'pass'], cwd=directory, name=job_name())
             try:
                 job.resume()
                 # Root signal alone can precede the Job's active-count update; the collector's barrier waits for both.
-                self.assertTrue(CodexExecAdapter('fixture-cli').wait_for_termination(SimpleNamespace(job=job), 10))
+                self.assertTrue(CodexExecAdapter('fixture-cli', jobs=_entry.ports.jobs, clock=_entry.ports.clock).wait_for_termination(SimpleNamespace(job=job), 10))
                 self.assertEqual(job.inspect().active_processes, 0)
             finally:
                 job.close()

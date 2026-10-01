@@ -16,7 +16,7 @@ import unittest
 
 from do_math import trust_inventory as records
 from do_math.engine import ResearchEngine
-from research_fixtures import validation_fixture
+from support.trust_inputs import validation_fixture
 from support.engine_lifecycle import applied
 from support.fakes.host import FakeHost
 from support.provider_probes import ObservedCalls
@@ -32,7 +32,7 @@ def interpreted(kind, instance_id):
 
     ``import_application_authority``: the unit proposes a charter change, so the
     checked import waits for the user's exact approval (as the legacy
-    ``PurposeRunner`` answers a new goal). ``import_user_decision``: the unit asks
+    ``PurposeAnswers`` answers a new goal). ``import_user_decision``: the unit asks
     one blocking question, so the applied import waits for the user's answer.
     The independent check keeps the default approving answer.
     """
@@ -114,6 +114,7 @@ class SubmissionPublicationWaitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             host = FakeHost()
             sim = Sim.activated(Path(directory), host=host)
+            sim.lean.allow('theorem k : 1 = 1 := rfl', ['k'], signatures={'k': 'k : 1 = 1'})
             engine = sim.engine
             environment = engine.instance['trust_environments'][engine.instance['active_trust_environment']]
             applied(sim, 'knowledge', config={'operation': 'import', 'candidate': {

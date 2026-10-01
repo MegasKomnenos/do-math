@@ -6,16 +6,20 @@ import tempfile
 import unittest
 
 from do_math import formal, lean_evidence
-from provider_fixtures import actual_command
+from support.provider_inputs import actual_command
 from test_categories import test_group as category
 
 def _dependency_rows(source, declarations):
     """The dependency body rows of the central check file, which the verifier reduces to hashes."""
+    from support.entry import entry
+    _entry = entry()
+    from do_math.wiring import real_ports
+    _entry.ports = real_ports(environment=_entry.environment)
     with tempfile.TemporaryDirectory() as directory:
         workspace = Path(directory)
         check = workspace / 'check.lean'
         check.write_bytes(formal._check_file(source.encode(), declarations, extract_evidence=True))
-        code, stdout, stderr, _ = formal._job_run([*actual_command(), str(check)], workspace)
+        code, stdout, stderr, _ = formal._job_run([*actual_command(), str(check)], workspace, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
     if code != 0:
         raise AssertionError(stdout + stderr)
     return [json.loads(line.removeprefix('__DO_MATH_DEPENDENCY__'))
@@ -25,6 +29,10 @@ def _dependency_rows(source, declarations):
 class FormalRuntimeTests(unittest.TestCase):
     @category('lean')
     def test_shared_expression_evidence_does_not_expand_shared_subterms(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         source = ('import Lean\n' + lean_evidence.DEPENDENCY_EXTRACTOR + '\n'
                   'open Lean\nrun_elab do\n'
                   '  let mut value := mkRawNatLit 0\n'
@@ -38,7 +46,7 @@ class FormalRuntimeTests(unittest.TestCase):
             workspace = Path(directory)
             source_path = workspace / 'sharing.lean'
             source_path.write_text(source, encoding='utf-8')
-            result = formal._job_run([*actual_command(), str(source_path)], workspace)
+            result = formal._job_run([*actual_command(), str(source_path)], workspace, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         self.assertEqual(result[0], 0, result[1] + result[2])
         evidence, binders = map(json.loads, result[1].splitlines())
         self.assertEqual(evidence['format'], 'lean-expr-dag/1')
@@ -74,18 +82,26 @@ class FormalRuntimeTests(unittest.TestCase):
 
     @category('resource')
     def test_output_larger_than_the_discarded_cap_is_preserved(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         count = 33 * 1024 * 1024
         with tempfile.TemporaryDirectory() as directory:
             result = formal._job_run([sys.executable, '-c',
-                f"import sys; sys.stdout.write('x'*{count})"], Path(directory))
+                f"import sys; sys.stdout.write('x'*{count})"], Path(directory), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         self.assertEqual(result[0], 0)
         self.assertEqual(len(result[1]), count)
 
     @category('resource')
     def test_formal_job_completes_without_deadline(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as directory:
             result = formal._job_run([sys.executable, '-c',
-                "import time; time.sleep(.25); print('completed')"], Path(directory))
+                "import time; time.sleep(.25); print('completed')"], Path(directory), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
         self.assertEqual(result[0], 0)
         self.assertEqual(result[1].strip(), 'completed')
 

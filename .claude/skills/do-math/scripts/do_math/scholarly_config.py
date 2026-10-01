@@ -1,7 +1,7 @@
 """Resolve the scholarly-MCP server from the nearest Codex configuration file (layer 2).
 
 The shape rules are in ``scholarly``. ``codex_home`` is the entry point's
-CODEX_HOME (or ``~/.codex``); a missing value falls back to the environment.
+CODEX_HOME (or ``~/.codex``); the entry point supplies this value.
 """
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ from pathlib import Path
 import tomllib
 from typing import Any
 
-from .migration_defaults import codex_home_or_default
 from .scholarly import _pathlike, _validate, validate_scholarly_server
 
 
@@ -45,7 +44,7 @@ def _from_config(path: Path) -> dict[str, Any] | None:
     return validate_scholarly_server(server)
 
 
-def resolve_scholarly_server(explicit: dict[str, Any] | None, *, start: Path, codex_home: Path | None = None) -> dict[str, Any] | None:
+def resolve_scholarly_server(explicit: dict[str, Any] | None, *, start: Path, codex_home: Path) -> dict[str, Any] | None:
     """Resolve an explicit server or the nearest project/CODEX_HOME scholarly entry.
 
     This deliberately reads and returns only the ``mcp_servers.scholarly``
@@ -63,7 +62,7 @@ def resolve_scholarly_server(explicit: dict[str, Any] | None, *, start: Path, co
             resolved = _from_config(candidate)
             if resolved is not None:
                 return resolved
-    code_home = codex_home_or_default(codex_home)
+    code_home = codex_home
     candidate = code_home / "config.toml"
     if candidate.resolve(strict=False) not in checked and candidate.is_file():
         return _from_config(candidate)

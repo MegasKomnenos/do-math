@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from test_categories import test_group
 
 
 SKILL = Path(__file__).resolve().parents[3]
@@ -24,6 +25,7 @@ def copy_skill(destination):
     return destination
 
 
+@test_group('resource')
 class BootstrapTests(unittest.TestCase):
     def test_supervisor_starts_when_engine_cannot_be_imported(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -73,6 +75,7 @@ class BootstrapTests(unittest.TestCase):
             self.assertNotIn('RuntimeError: unverified code executed', rejected.stderr)
 
 
+@test_group('resource')
 class BrokenEngineProbeTests(unittest.TestCase):
     def test_real_probe_persists_failure_when_engine_has_syntax_error(self):
         with tempfile.TemporaryDirectory() as directory:

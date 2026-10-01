@@ -87,4 +87,4 @@ def unmatched(sim, name='repository-unmatched'):
     shutil.copytree(sim.repository, copy)
     objects = sim.ports.git_backend.objects
     objects[str((copy / '.git').absolute())] = dict(objects[str((sim.repository / '.git').absolute())])
-    return ResearchEngine(copy, sim.instance_id, ports=sim.ports)
+    return ResearchEngine(copy, sim.instance_id, ports=sim.ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)

@@ -15,9 +15,10 @@ these tests with the boundary tests (``test_role_input_snapshot_reach`` for
 the same reason). Moved from ``test_review_research`` (``ReviewResearchEngineTests``).
 """
 import unittest
+from test_categories import test_group
 
-from purpose_fixtures import common
-from research_fixtures import role_reach
+from support.purpose_answers import common
+from support.cli_inputs import role_reach
 from support.engine_purpose import drive
 from support.review_research import InvestigationResponder, record_prompts, research_sim
 from support.review_sim import export_objects
@@ -40,6 +41,7 @@ def reach_of(sim, prompts, workspace, secret):
     return role_reach(prompts[-1], workspace, secret)
 
 
+@test_group('resource')
 class ResearchReachTests(unittest.TestCase):
     def test_initial_peer_question_is_not_exposed_before_phase_seal(self):
         """About 20 s: owner passes that each run a model call, and the read tool in a child process on real Git."""

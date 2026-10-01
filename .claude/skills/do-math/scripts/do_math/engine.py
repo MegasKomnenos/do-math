@@ -40,46 +40,38 @@ from .core_engine import (CoreEngineMixin, _query_record, _record_evidence, init
 def initialize(repository: Path, *, goal: str, workspace: Path, config: dict | None = None,
                title: str = "",
                instance_id: str | None = None, sources: list[Path] | None = None,
-               source_input: str | None = None, clock=None, ports=None) -> dict:
+               source_input: str | None = None, ports, codex_home, host_id) -> dict:
     """Create a research instance: the public entry point chooses the ports, the working directory and tracing.
 
-    ``clock`` replaces the bundle's clock (legacy callers pass only a clock).
     """
-    if ports is None:
-        from .wiring import real_ports  # layer: 1b migration default until entry points pass Ports
-        ports = real_ports()
     return initialize_instance(repository, goal=goal, workspace=workspace, config=config, title=title,
                                instance_id=instance_id, sources=sources, source_input=source_input,
-                               clock=clock or ports.clock, cwd=Path.cwd, trace=tracing, host=ports.host,
-                               git_backend=ports.git_backend)
+                               clock=ports.clock, cwd=Path.cwd, trace=tracing, host=ports.host,
+                               git_backend=ports.git_backend, codex_home=codex_home, host_id=host_id)
 
 
 def control(repository: Path, instance_id: str, action: str, *, text: str = "", config: dict | None = None,
             origin: str = "user", request_id: str | None = None, idempotency_key: str | None = None,
-            clock=None, ports=None) -> dict:
+            ports, host_id) -> dict:
     """Queue user commands; only the owning engine publishes authority changes.
 
-    ``clock`` replaces the bundle's clock (legacy callers pass only a clock).
     """
-    if ports is None:
-        from .wiring import real_ports  # layer: 1b migration default until entry points pass Ports
-        ports = real_ports()
     return submit_control(repository, instance_id, action, text=text, config=config, origin=origin,
-                          request_id=request_id, idempotency_key=idempotency_key, clock=clock or ports.clock,
+                          request_id=request_id, idempotency_key=idempotency_key, clock=ports.clock,
                           lean_available=lambda: ports.host.discover_lean() is not None,
-                          git_backend=ports.git_backend)
+                          git_backend=ports.git_backend, host_id=host_id)
 
 
 class ResearchEngine(CallEngineMixin, CoreEngineMixin, QuestionEngineMixin, RevisionEngineMixin, DecisionEngineMixin, ProviderEngineMixin, DispatchEngineMixin, SchedulerMixin, PlanningEngineMixin, ReviewEngineMixin, LifecycleEngineMixin, InitializationEngineMixin, KnowledgeEngineMixin, ExternalEngineMixin, FormalEngineMixin, AcademicEngineMixin, GovernanceEngineMixin, RepairExecutionMixin):
-    def __init__(self, repository: Path, instance_id: str, *, runner: Any = None, formal_verifier: Any = None,
-                 ports=None):
-        if ports is None:
-            from .wiring import real_ports  # layer: 1b migration default until entry points pass Ports
-            ports = real_ports()
+    def __init__(self, repository: Path, instance_id: str, *, ports, installation_root: Path | None = None, codex_home, environment, host_id):
         self.ports = ports
+        self.host_id, self.environment, self.codex_home = host_id, environment, codex_home
+        # This selects installation files, not a different edition of loaded Python code.
+        self.installation_root = (Path(installation_root) if installation_root is not None
+                                  else Path(__file__).resolve().parents[2]).resolve()
         self.store = ResearchRepository(repository, instance_id, backend=ports.git_backend, clock=ports.clock)
-        self.runner = runner or ModelRunner(jobs=ports.jobs, clock=ports.clock)
-        self.formal_verifier = formal_verifier or partial(verify_lean, jobs=ports.jobs)
+        self.runner = ModelRunner(jobs=ports.jobs, clock=ports.clock, environment=environment, host_id=host_id)
+        self.formal_verifier = partial(verify_lean, jobs=ports.jobs, clock=ports.clock, environment=environment)
         self.head, self.instance, self.runtime = self.store.load()
         self._init_process_state(
             transport=ControlTransport(Path(self.instance["workspace"]) / "execution-control" / instance_id,
@@ -89,11 +81,9 @@ class ResearchEngine(CallEngineMixin, CoreEngineMixin, QuestionEngineMixin, Revi
         """Process-local owner state that no repository holds.
 
         Every engine starts here, including test engines built without a store.
-        An engine given no Ports bundle uses the real ports (stage 1b migration).
         """
-        if getattr(self, 'ports', None) is None:
-            from .wiring import real_ports  # layer: 1b migration default until entry points pass Ports
-            self.ports = real_ports()
+        if not hasattr(self, 'installation_root'):
+            self.installation_root = Path(__file__).resolve().parents[2]
         self._task_readiness = {}
         self._live_execution_ids = set()
         self._executor_running = False
@@ -106,9 +96,6 @@ class ResearchEngine(CallEngineMixin, CoreEngineMixin, QuestionEngineMixin, Revi
         self._stop_deadlines, self._stop_clock = {}, None
         self._clock_anchor = None
         self._clock_failure = None  # a retained clock regression (LifecycleEngineMixin._clock_guard)
-        # Lifecycle clocks: None reads the wall clock; tests substitute both.
-        self.lifecycle_clock = None
-        self.lifecycle_monotonic = self.ports.clock.monotonic
         self._feedback_delivered = set()  # control receipts whose worker feedback this process delivered
         self._retrying_publication = False
         self._next_lean_discovery, self._lean_found = 0.0, False
@@ -119,7 +106,7 @@ class ResearchEngine(CallEngineMixin, CoreEngineMixin, QuestionEngineMixin, Revi
     @cached_property
     def _documents(self):
         """Role documents, read once by the first command that renders a prompt."""
-        return all_prompt_documents()
+        return all_prompt_documents(skill_root=self.installation_root)
 
     @cached_property
     def _installation(self):

@@ -24,9 +24,8 @@ another format or coverage version, or when ``--full`` asks for it, or when:
 (c) the module- or class-level code of any non-test ``.py`` under ``scripts/``
     the store knows changed or is gone (``code_digests`` top: imports,
     definitions and their signatures, defaults and decorators, class bodies),
-    or a runner file changed (``RUNNER``; ``test_categories.py`` without its
-    ``SHARDS`` list, which names legacy modules only and changes with every
-    migration batch), or an input read at import by non-test code changed.
+    or a runner file changed (``RUNNER``, including all of
+    ``test_categories.py``), or an input read at import by non-test code changed.
 
 "Product" in A29 is read broadly here: ``tests/support`` and fixture modules are
 recorded like product code, so their function bodies follow (b) and their
@@ -53,8 +52,7 @@ DATA, RECORDS = 'coverage.data', 'records.json'
 FIXTURE, SHARED, SHARED_USE = 'fixture:', 'shared:', '<shared>'  # branch_gate's labels
 COVERAGE_SCHEMA = 7  # coverage 7.x data file schema; another one is never filtered
 # Scripts-relative files whose change measures everything again: the runner and the measurement.
-CATEGORIES = 'test_categories.py'
-RUNNER = ('run_tests.py', CATEGORIES, 'tests/support/branch_gate.py', 'tests/support/t3_store.py')
+RUNNER = ('run_tests.py', 'test_categories.py', 'tests/support/branch_gate.py', 'tests/support/t3_store.py')
 
 
 def _digest(value):
@@ -137,24 +135,9 @@ def code_digests(text):
     return {'top': top, 'functions': functions}
 
 
-def categories_mark(text):
-    """``test_categories.py`` as T3 depends on it: the code without its ``SHARDS`` list, or None when absent.
-
-    ``SHARDS`` names legacy ``tests/test_*.py`` modules only, which T3 never runs.
-    """
-    if text is None:
-        return None
-    tree = ast.parse(text)
-    tree.body = [statement for statement in tree.body if not (
-        isinstance(statement, ast.Assign) and [getattr(target, 'id', None) for target in statement.targets] == ['SHARDS'])]
-    return _digest(ast.dump(tree))
-
-
 def runner_marks(current, paths):
-    """Each runner file's mark: its git blob, or ``categories_mark`` for ``test_categories.py``."""
-    blobs = current.blobs(paths)
-    return {path: categories_mark(current.source(path)) if Path(path).name == CATEGORIES else blobs[path]
-            for path in paths}
+    """Each runner file's git blob; every change invalidates the stored measurement."""
+    return current.blobs(paths)
 
 
 class Plan:

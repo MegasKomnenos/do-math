@@ -21,6 +21,7 @@ import inspect
 import os
 from pathlib import Path
 import sys
+from support.monitoring_slots import reserve_tool
 
 from do_math.file_io import RACY_NS
 
@@ -39,8 +40,7 @@ class ObservedCalls:
     def __enter__(self):
         monitoring = sys.monitoring
         # A tool slot no debugger, coverage tool or profiler holds.
-        self.tool = next(tool for tool in (3, 4, 0, 2) if monitoring.get_tool(tool) is None)
-        monitoring.use_tool_id(self.tool, 'do-math observed calls')
+        self.tool = reserve_tool('do-math observed calls')
 
         def started(code, offset):
             frame = sys._getframe(1)  # the frame of the call that just started

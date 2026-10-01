@@ -18,9 +18,11 @@ def _camel(name):
 
 class PortCompletenessTests(unittest.TestCase):
     def test_every_port_has_protocol_real_fake_and_both_contract_sides(self):
+        from support.entry import entry
+        _entry = entry()
         fields = [field.name for field in dataclasses.fields(Ports)]
         self.assertGreater(len(fields), 0)
-        real = real_ports()
+        real = real_ports(environment=_entry.environment)
         for name in fields:
             with self.subTest(port=name):
                 protocol = getattr(importlib.import_module(f'do_math.ports.{name}'), _camel(name))

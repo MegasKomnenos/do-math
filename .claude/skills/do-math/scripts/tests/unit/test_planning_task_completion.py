@@ -11,12 +11,12 @@ from copy import deepcopy
 
 from do_math import planning, task_scope
 from do_math.canonical import exact_content_hash
-from record_fixtures import apply_assessment, completed_with_knowledge, specialist_assessment
+from support.record_builders import apply_assessment, completed_with_knowledge, specialist_assessment
 
 
 class PartialWithdrawalTests(unittest.TestCase):
     def test_current_unperformed_withdrawal_preserves_results_and_residual_scope(self):
-        from record_fixtures import withdraw_prepared, withdrawable_task
+        from support.record_builders import withdraw_prepared, withdrawable_task
         _, runtime, snapshot = withdrawable_task()
         _, changed = withdraw_prepared(runtime, snapshot)
         task = changed['tasks']['TK-AI']
@@ -31,7 +31,7 @@ class PartialWithdrawalTests(unittest.TestCase):
                     task_scope.validate_withdrawal_record(broken)
 
     def fixture(self):
-        from record_fixtures import withdrawable_task
+        from support.record_builders import withdrawable_task
         instance, runtime, _ = withdrawable_task()
         task = runtime['tasks']['TK-AI']
         task.update(status='waiting', results=[{'execution_id': 'EX-work', 'outcome': 'partial'}])
@@ -46,10 +46,12 @@ class PartialWithdrawalTests(unittest.TestCase):
         return instance, runtime, {task['id']: deepcopy(task)}
 
     def test_assessed_partial_work_closes_without_becoming_complete(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime, snapshot = self.fixture()
         _, changed = task_scope.apply_task_dispositions(instance, runtime,
             [{'task_id': 'TK-AI', 'disposition': 'withdraw', 'reason': 'This optional approach is no longer useful'}],
-            execution_id='EX-next-plan', input_tasks=snapshot)
+            execution_id='EX-next-plan', input_tasks=snapshot, clock=_entry.ports.clock)
         task = changed['tasks']['TK-AI']
         self.assertEqual(task['status'], 'closed')
         self.assertEqual(task['results'], snapshot['TK-AI']['results'])
@@ -63,6 +65,8 @@ class PartialWithdrawalTests(unittest.TestCase):
 
     def test_unassessed_new_results_and_protected_scope_are_not_withdrawable(self):
         # Each change is rejected by its own withdrawal rule, not by the stored-record schema.
+        from support.entry import entry
+        _entry = entry()
         reasons = {'new_result': 'current item dispositions', 'stale_assessment': 'current item dispositions',
                    'user_required': 'protected obligations', 'transferred_obligations': 'protected obligations'}
         for change, reason in reasons.items():
@@ -78,7 +82,7 @@ class PartialWithdrawalTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, reason):
                     task_scope.apply_task_dispositions(instance, runtime,
                         [{'task_id': 'TK-AI', 'disposition': 'withdraw', 'reason': 'not authorized'}],
-                        execution_id='EX-next', input_tasks=snapshot)
+                        execution_id='EX-next', input_tasks=snapshot, clock=_entry.ports.clock)
 
 
 class CompletionBasisTests(unittest.TestCase):
@@ -146,12 +150,14 @@ class TransferReferenceTests(unittest.TestCase):
     def test_transfer_recipient_is_bound_to_the_fixed_input_population(self):
         # A plan's fixed input holds every current task (context_store.prepare_role_input), a
         # recipient outside its ready population included; the recipient is bound to that input.
-        from record_fixtures import transfer_assessment
+        from support.entry import entry
+        _entry = entry()
+        from support.record_builders import transfer_assessment
         from do_math.task_scope import apply_task_assessments
         instance, runtime, assessment = transfer_assessment()
         original = deepcopy(runtime['tasks'])
         _, changed = apply_task_assessments(instance, runtime, [assessment], execution_id='EX-plan',
-            input_tasks=original)
+            input_tasks=original, clock=_entry.ports.clock)
         self.assertEqual(changed['tasks']['TK-2']['completion_obligations'][-1]['id'], 'OB-inherited')
         for name, mutate, reason in (
                 ('revised', lambda r: r['tasks']['TK-2'].update(revision=2),
@@ -165,10 +171,10 @@ class TransferReferenceTests(unittest.TestCase):
                 mutate(candidate)
                 with self.assertRaisesRegex(ValueError, reason):
                     apply_task_assessments(instance, candidate, [assessment], execution_id='EX-plan',
-                        input_tasks=original)
+                        input_tasks=original, clock=_entry.ports.clock)
         with self.assertRaisesRegex(ValueError, '^transfer recipient must be bound to the current input$'):
             apply_task_assessments(instance, runtime, [assessment], execution_id='EX-plan',
-                input_tasks={'TK-1': original['TK-1']})
+                input_tasks={'TK-1': original['TK-1']}, clock=_entry.ports.clock)
 
 
 if __name__ == '__main__':

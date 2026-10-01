@@ -95,20 +95,18 @@ def waits(sim, kind):
     return {key: row for key, row in sim.runtime.get('waiting_actions', {}).items() if row.get('kind') == kind}
 
 
-def _checked(kind):
-    def build(root, shared):
-        sim = Sim.activated(root, shared=shared)
-        change = charter_change() if kind == 'charter' else configuration_change(CONFIGURATION)
-        sim.model.on('intent_interpretation').reply(interpreted(change))
-        text = INPUT if kind == 'charter' else 'Set call timeout to 901 seconds'
-        sim.control('input', text=text, request_id='input-Q')
-        sim.run_until(lambda s: waits(s, 'import_application_authority'), max_steps=12)
-        return sim
-    return build
+def _checked(root, shared, *, kind="charter"):
+    sim = Sim.activated(root, shared=shared)
+    change = charter_change() if kind == 'charter' else configuration_change(CONFIGURATION)
+    sim.model.on('intent_interpretation').reply(interpreted(change))
+    text = INPUT if kind == 'charter' else 'Set call timeout to 901 seconds'
+    sim.control('input', text=text, request_id='input-Q')
+    sim.run_until(lambda s: waits(s, 'import_application_authority'), max_steps=12)
+    return sim
 
 
 def checked_sim(kind='charter'):
-    return built('governance-checked-' + kind, _checked(kind))
+    return built('governance-checked', _checked, kind=kind)
 
 
 def checked_bundle(sim):

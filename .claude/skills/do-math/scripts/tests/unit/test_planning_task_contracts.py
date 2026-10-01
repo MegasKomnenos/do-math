@@ -17,9 +17,8 @@ from jsonschema import Draft202012Validator
 
 from do_math import contracts, planning, submission, task_contracts
 from do_math.execution_profiles import profile_ref
-from record_fixtures import (apply_assessment, approve_task, approved_task, task_contract, task_disposition,
-                             transfer_assessment)
-from research_fixtures import candidate
+from support.record_builders import apply_assessment, approve_task, approved_task, task_contract, task_disposition, transfer_assessment
+from support.role_answers import candidate
 
 
 class TaskContractReviewTests(unittest.TestCase):
@@ -39,6 +38,8 @@ class TaskContractReviewTests(unittest.TestCase):
             task_contracts.validate_task_contract(wire)
 
     def test_raw_governance_review_is_current_in_raw_and_projected_consumers(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.governance import governance_view
         value, instance, runtime = approved_task()
         approve_task(value, instance, runtime)
@@ -48,7 +49,7 @@ class TaskContractReviewTests(unittest.TestCase):
         self.assertEqual(review['policy_revision'], expected['policy_revision'])
         for view in (instance, {**instance, **expected}):
             self.assertTrue(planning.contract_review_current(review, value, view, runtime)['valid'])
-            self.assertEqual(planning.task_ready(value, view, runtime)['state'], 'ready')
+            self.assertEqual(planning.task_ready(value, view, runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'ready')
         self.assertNotIn('goal_revision', instance)
 
     def test_transfer_cannot_complete_original_obligations(self):
@@ -62,6 +63,8 @@ class TaskContractReviewTests(unittest.TestCase):
             planning.validate_plan_submission({'dispositions': [], 'task_assessments': [assessment]}, runtime['tasks'], [])
 
     def test_review_ignores_flat_projection_and_rejects_real_governance_changes(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import governance
         value, instance, runtime = approved_task()
         review = deepcopy(value['reviews'][-1])
@@ -71,24 +74,28 @@ class TaskContractReviewTests(unittest.TestCase):
         policy = {'id': 'POL-new', 'kind': 'policy', 'revision': 1, 'supersedes': [],
                   'content': {'rule_id': 'rule-new', 'scope': ['P'], 'text': 'Require an explicit domain',
                               'reason_refs': ['D'], 'audit_refs': []}}
-        updated, runtime, _ = governance.apply_decision(instance, runtime, {'kind': 'policy', 'record': policy}, source_ref='S')
+        updated, runtime, _ = governance.apply_decision(instance, runtime, {'kind': 'policy', 'record': policy}, source_ref='S', clock=_entry.ports.clock)
         self.assertFalse(planning.contract_review_current(review, value, updated, runtime)['valid'])
         self.assertNotEqual(planning.review_basis_key(value, updated, runtime), before)
 
     def test_actual_charter_replacement_invalidates_review_without_top_level_fields(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import governance
-        from research_fixtures import charter
+        from support.state_builders import charter
         value, instance, runtime = approved_task()
         review = deepcopy(value['reviews'][-1])
         replacement = charter('CH2', 'Prove the stronger Q')
         replacement.update(revision=2, supersedes=['CH1'])
         updated, runtime, _ = governance.apply_decision(instance, runtime, {'kind': 'charter', 'record': replacement},
-                                                        source_ref='S')
+                                                        source_ref='S', clock=_entry.ports.clock)
         self.assertNotIn('goal_revision', updated)
         self.assertFalse(planning.contract_review_current(review, value, updated, runtime)['valid'])
-        self.assertEqual(planning.task_ready(value, updated, runtime)['state'], 'not_ready')
+        self.assertEqual(planning.task_ready(value, updated, runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'not_ready')
 
     def test_closed_transfer_never_satisfies_a_completion_dependency(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime, assessment = transfer_assessment()
         instance, runtime = apply_assessment(instance, runtime, assessment)
         source = runtime['tasks']['TK-1']
@@ -97,7 +104,7 @@ class TaskContractReviewTests(unittest.TestCase):
         runtime['tasks'][consumer['id']] = consumer
         instance['grants']['GR-1']['task_ids'].append(consumer['id'])
         approve_task(consumer, instance, runtime)
-        state = planning.task_ready(consumer, instance, runtime)
+        state = planning.task_ready(consumer, instance, runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})
         self.assertEqual(state['state'], 'not_ready')
         self.assertIn('blocked dependencies', state['errors'][0])
 
@@ -114,6 +121,8 @@ class TaskContractReviewTests(unittest.TestCase):
         self.assertFalse(assessment_current(runtime['tasks']['TK-1'], instance, runtime))
 
     def test_profile_ref_shape_and_exact_resolution_are_both_required(self):
+        from support.entry import entry
+        _entry = entry()
         value, instance, runtime = approved_task()
         for replacement, reason in (
                 (value['profile_refs'][0]['id'], "^task/profile_refs/0: '[^']+' is not of type 'object'$"),
@@ -133,10 +142,12 @@ class TaskContractReviewTests(unittest.TestCase):
             stale['profile_refs'][0][field] = invalid
             runtime['tasks'][stale['id']] = stale
             approve_task(stale, instance, runtime)
-            result = planning.task_ready(stale, instance, runtime)
+            result = planning.task_ready(stale, instance, runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})
             self.assertEqual((result['state'], result['errors']), ('not_ready', ['no current approved execution profile']))
 
     def test_repetition_basis_changes_with_actual_policy_not_flat_projection(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import governance, revisions
         _, instance, runtime = approved_task()
         action = {'role': 'research_preparation'}
@@ -144,7 +155,7 @@ class TaskContractReviewTests(unittest.TestCase):
         policy = {'id': 'POL-new', 'kind': 'policy', 'revision': 1, 'supersedes': [],
                   'content': {'rule_id': 'new', 'scope': ['P'], 'text': 'A new requirement', 'reason_refs': ['D'],
                               'audit_refs': []}}
-        changed, runtime, _ = governance.apply_decision(instance, runtime, {'kind': 'policy', 'record': policy}, source_ref='S')
+        changed, runtime, _ = governance.apply_decision(instance, runtime, {'kind': 'policy', 'record': policy}, source_ref='S', clock=_entry.ports.clock)
         next_action = {'role': 'research_preparation'}
         revisions.bind_repetition_bases(changed, runtime, next_action)
         self.assertNotEqual(action['repetition_bases'], next_action['repetition_bases'])
@@ -225,9 +236,11 @@ class TaskContractsTest(unittest.TestCase):
             }]})
 
     def test_readiness_is_derived_not_a_saved_task_state(self):
+        from support.entry import entry
+        _entry = entry()
         value, instance, runtime = approved_task()
         before = deepcopy(runtime)
-        result = planning.task_ready(value, instance, runtime)
+        result = planning.task_ready(value, instance, runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})
         self.assertEqual(result['state'], 'ready')
         self.assertEqual(runtime, before)
 
@@ -241,9 +254,11 @@ class TaskContractsTest(unittest.TestCase):
         self.assertTrue(all(row['count'] == 1 for row in lineages.values()))
 
     def test_planning_routes_tasks_to_derived_readiness_and_item_plan_checks(self):
+        from support.entry import entry
+        _entry = entry()
         value, instance, runtime = approved_task()
-        self.assertEqual(planning.task_ready(value, instance, runtime)['state'], 'ready')
-        self.assertEqual(planning.ready_task_ids(runtime, instance), ['TK-1'])
+        self.assertEqual(planning.task_ready(value, instance, runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'ready')
+        self.assertEqual(planning.ready_task_ids(runtime, instance, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id}), ['TK-1'])
         plan = {'dispositions': [task_disposition('TK-1', 'not_selected')], 'task_assessments': []}
         planning.validate_plan_submission(plan, {'TK-1': value}, ['TK-1'])
         invalid = {'dispositions': [task_disposition('TK-absent'), task_disposition('TK-absent')], 'task_assessments': []}
@@ -298,12 +313,38 @@ class TaskContractsTest(unittest.TestCase):
 
 
 class TaskReadinessTests(unittest.TestCase):
+    def test_explicit_query_time_controls_grant_window_and_exhaustion(self):
+        t, i, r = approved_task()
+        start, end = '2041-03-02T12:00:00Z', '2041-03-02T12:01:00Z'
+        i['grants']['GR-1'].update(valid_from=start, expires_at=end)
+        approve_task(t, i, r)
+        context = {'now': end, 'lean_available': False}
+        before = deepcopy((t, i, r, context))
+        for at, state in (('2041-03-02T11:59:59Z', 'not_ready'),
+                          (start, 'ready'), (end, 'not_ready')):
+            with self.subTest(at=at):
+                self.assertEqual(planning.task_ready(t, i, r, evaluation_context={'now': at})['state'], state)
+                exhausted = planning.exhaustion_state(i, r, now=at, evaluation_context=context)
+                self.assertEqual('ready_contracts' in exhausted['reasons'], state == 'ready')
+        self.assertEqual((t, i, r, context), before)
+
+    def test_authority_evaluation_requires_explicit_time(self):
+        t, i, r = approved_task()
+        for context in (None, {}, {'now': None}, {'now': ''}):
+            with self.subTest(context=context), self.assertRaisesRegex(
+                    ValueError, '^time must be a nonempty ISO timestamp string$'):
+                planning.task_ready(t, i, r, evaluation_context=context)
+
     def test_review_cannot_be_replaced_by_an_unsubstantiated_summary(self):
+        from support.entry import entry
+        _entry = entry()
         value, i, r = approved_task()
         value['reviews'][0]['item_reviews'] = []
-        self.assertNotEqual(planning.task_ready(value, i, r)['state'], 'ready')
+        self.assertNotEqual(planning.task_ready(value, i, r, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'ready')
 
     def test_each_actual_premise_change_blocks_an_otherwise_ready_task(self):
+        from support.entry import entry
+        _entry = entry()
         mutations = [lambda t, i, r: t['reviews'][0].update(inputs_current=False),
                      lambda t, i, r: i['sources'].clear(),
                      lambda t, i, r: i['sources'][0].update(sha256='b' * 64),
@@ -317,59 +358,71 @@ class TaskReadinessTests(unittest.TestCase):
         for mutate in mutations:
             with self.subTest(mutate=mutate):
                 t, i, r = approved_task()
-                self.assertEqual(planning.task_ready(t, i, r)['state'], 'ready')
+                self.assertEqual(planning.task_ready(t, i, r, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'ready')
                 mutate(t, i, r)
-                self.assertEqual(planning.task_ready(t, i, r)['state'], 'not_ready')
+                self.assertEqual(planning.task_ready(t, i, r, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'not_ready')
 
     def test_missing_input_cannot_be_approved_into_existence(self):
+        from support.entry import entry
+        _entry = entry()
         t, i, r = approved_task()
         t['inputs'].append('SO-absent')
         approve_task(t, i, r)
-        self.assertIn('missing inputs', planning.task_ready(t, i, r)['errors'][0])
+        self.assertIn('missing inputs', planning.task_ready(t, i, r, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['errors'][0])
 
     def test_profile_edition_and_fixed_trust_must_still_apply(self):
+        from support.entry import entry
+        _entry = entry()
         t, i, r = approved_task()
         t.update(work_class='formal', trust_environment_id='TE-1')
         i.update(active_trust_environment='TE-1', trust_environments={'TE-1': {'id': 'TE-1', 'status': 'active'}})
         approve_task(t, i, r)
         action = {'id': 'AC-work', 'role': 'research_work', 'target': t['id'],
                   'profile_ref': profile_ref(next(iter(i['execution_profiles'].values())))}
-        self.assertEqual(planning.task_ready(t, i, r, action=action)['state'], 'ready')
+        self.assertEqual(planning.task_ready(t, i, r, action=action, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'ready')
         action['profile_ref']['revision'] += 1
-        self.assertEqual(planning.task_ready(t, i, r, action=action)['state'], 'not_ready')
+        self.assertEqual(planning.task_ready(t, i, r, action=action, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'not_ready')
         i['active_trust_environment'] = 'TE-2'
-        self.assertEqual(planning.task_ready(t, i, r)['state'], 'not_ready')
+        self.assertEqual(planning.task_ready(t, i, r, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'not_ready')
 
     def test_split_knowledge_evidence_is_part_of_review_currentness(self):
+        from support.entry import entry
+        _entry = entry()
         t, i, r = approved_task()
         i['knowledge'] = {'KN-1': {'id': 'KN-1', 'exposition_id': 'XP-1', 'formal_result_id': 'FR-1'}}
         i['expositions'] = {'XP-1': {'id': 'XP-1', 'items': ['old']}}
         i['formal_results'] = {'FR-1': {'id': 'FR-1', 'verification': {'status': 'verified'}}}
         t['inputs'].append('KN-1')
         approve_task(t, i, r)
-        self.assertEqual(planning.task_ready(t, i, r)['state'], 'ready')
+        self.assertEqual(planning.task_ready(t, i, r, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'ready')
         i['expositions']['XP-1']['items'] = ['changed']
-        self.assertEqual(planning.task_ready(t, i, r)['state'], 'not_ready')
+        self.assertEqual(planning.task_ready(t, i, r, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'not_ready')
 
     def test_external_wait_and_formal_work_are_not_research_exhaustion(self):
+        from support.entry import entry
+        _entry = entry()
         t, i, r = approved_task()
         t['waiting'] = {'kind': 'external_event', 'next_owner': 'external_action'}
         t['status'] = 'waiting'
-        self.assertFalse(planning.exhaustion_state(i, r)['exhausted'])
+        self.assertFalse(planning.exhaustion_state(i, r, now=_entry.ports.clock.now())['exhausted'])
         r['tasks'] = {}
         r['queue'] = [{'id': 'AC-formal', 'role': 'formal_check', 'target': 'FR-1'}]
-        self.assertFalse(planning.exhaustion_state(i, r)['exhausted'])
+        self.assertFalse(planning.exhaustion_state(i, r, now=_entry.ports.clock.now())['exhausted'])
 
     def test_empty_queue_is_not_exhaustion_when_work_is_running(self):
+        from support.entry import entry
+        _entry = entry()
         runtime = {'status': 'active', 'tasks': {}, 'queue': [], 'executions': {
             'EX-live': {'id': 'EX-live', 'role': 'research_work', 'status': 'running', 'action': {'target': 'TK'}}}}
-        self.assertFalse(planning.exhaustion_state({'goal_status': 'unresolved'}, runtime)['exhausted'])
+        self.assertFalse(planning.exhaustion_state({'goal_status': 'unresolved'}, runtime, now=_entry.ports.clock.now())['exhausted'])
 
     def test_stale_approval_and_absent_input(self):
+        from support.entry import entry
+        _entry = entry()
         value = task_contract()
         value['inputs'] = ['missing-input']
         value['reviews'] = [{'revision': 1, 'decision': 'approved', 'inputs_current': False}]
-        result = planning.task_ready(value, {}, {'tasks': {value['id']: value}})
+        result = planning.task_ready(value, {}, {'tasks': {value['id']: value}}, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})
         self.assertNotEqual(result['state'], 'ready')
 
     def test_missing_returned_work_cannot_be_silently_omitted(self):

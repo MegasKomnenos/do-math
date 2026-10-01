@@ -30,15 +30,23 @@ PROCESS_STARTS = {
     ('do_math/cli.py', '_require_git'): 'git version and repository checks before a command',
     ('do_math/codex_adapter.py', 'run'): 'the CLI surface probe (--version, --help)',
     ('do_math/formal.py', '_git'): 'git reads of the Lake project identity',
-    ('do_math/git_process.py', '_run'): 'the Git backend port',
-    ('do_math/scheduled_operator.py', 'run_engine'): 'the scheduled engine child, piped and awaited',
-    ('do_math/scheduled_operator.py', 'recovery'): 'the installation probe run during a repair',
     ('setup_lean.py', 'run'): 'the Lean setup tool',
 }
 INJECTED_STARTS = {
+    ('do_math/git_process.py', '_run', '_run_process'): 'the Git backend external subprocess boundary',
     ('do_math/cli_worker.py', 'run_cli', 'spawn'): 'the provider CLI inside the worker Job',
     ('do_math/formal.py', '_worker', 'spawn'): 'Lean inside the Lean worker Job',
     ('do_math/powershell_scheduler.py', 'run', 'runner'): 'the task scheduler script',
+}
+# These callers moved process execution behind the shared Job/worker boundary.
+# Keep the caller population as well as the worker's actual spawn in the inventory.
+JOB_RUN_STARTS = {
+    ('do_math/formal.py', '_project_identity'),
+    ('do_math/formal.py', 'inspect_toolchain'),
+    ('do_math/formal.py', 'verify_lean'),
+    ('do_math/scheduled_operator.py', 'run_engine'),
+    ('do_math/scheduled_operator.py', 'recovery'),
+    ('setup_lean.py', 'verify_environment'),
 }
 INTERPRETER_USES = {
     ('do_math/file_io.py', 'console_python'): 'the rule itself',
@@ -70,8 +78,8 @@ def _process_start_sites():
             yield relative, function, 'subprocess', node
         elif isinstance(node.func, ast.Name) and node.func.id in {'spawn', 'runner'}:
             yield relative, function, node.func.id, node
-        elif _is(node.func, 'self', {'runner'}):
-            yield relative, function, 'runner', node
+        elif _is(node.func, 'self', {'runner', '_run_process'}):
+            yield relative, function, node.func.attr, node
 
 
 def _sites():
@@ -116,6 +124,14 @@ class BoundaryInvariantTests(unittest.TestCase):
                 self.assertIn('creationflags', {keyword.arg for keyword in node.keywords})
         self.assertEqual(starts, set(PROCESS_STARTS), 'direct process starts differ from the declared ones')
         self.assertEqual(injected, set(INJECTED_STARTS), 'injected process starts differ from the declared ones')
+        job_starts = set()
+        for relative, function, node in _sites():
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == '_job_run':
+                job_starts.add((relative, function))
+                with self.subTest(job_start=(relative, function, node.lineno)):
+                    self.assertTrue({'jobs', 'clock', 'environment'} <= {kw.arg for kw in node.keywords})
+        self.assertEqual(job_starts, JOB_RUN_STARTS, 'shared Job callers differ from the declared ones')
+
 
     @known_defect('KD-0003')
     def test_the_setup_tool_opens_no_console_window(self):

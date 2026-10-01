@@ -25,7 +25,7 @@ from do_math.git_store import GitStateStore, GitStateStoreConflict, GitStateStor
 from do_math.repository import RepositoryCursorError
 from do_math.state_checks import inspect_state
 from do_math.state_contract import StateContract
-from research_fixtures import current_state, installed_contract, with_validator
+from support.state_builders import current_state, installed_contract, with_validator
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.provider_probes import ObservedCalls
@@ -214,6 +214,8 @@ class ValidatedReadReuseTests(unittest.TestCase):
     """Same-fact rechecks stay out of reads: own heads, shared heads, matched bytes."""
 
     def setUp(self):
+        from support.entry import entry
+        _entry = entry()
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
@@ -222,7 +224,7 @@ class ValidatedReadReuseTests(unittest.TestCase):
         # The large original input is stored as a sealed payload blob.
         instance, runtime = initialization.initialize_state(
             instance_id=INSTANCE_ID, goal='G', workspace=self.root / 'work', config={}, source_input='x' * 70000,
-            clock=self.clock)
+            clock=self.clock, host=_entry.ports.host)
         self.head = self.repository.initialize(instance, runtime)
 
     def store(self, **options):
@@ -466,6 +468,8 @@ class StorageValueTests(unittest.TestCase):
 class SealedArtifactReadTests(unittest.TestCase):
     def test_a_sealed_row_is_hashed_once_and_matched_rows_are_not_reread(self):
         """The real engine on the port fakes over a repository holding the sealed artifact."""
+        from support.entry import entry
+        _entry = entry()
         from do_math.repository import ResearchRepository
         from do_math.engine import ResearchEngine
         raw = b'sealed bytes'
@@ -481,7 +485,7 @@ class SealedArtifactReadTests(unittest.TestCase):
             _, instance, runtime = store.load(head)
             store.save_with_state(head, instance, runtime, artifacts={path: raw})
             # A new process's engine: this repository's rows are not yet matched.
-            engine = ResearchEngine(store.repository, INSTANCE_ID, ports=ports)
+            engine = ResearchEngine(store.repository, INSTANCE_ID, ports=ports, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
             self.assertEqual(engine.store.git_dir, store.git_dir)
             # One observation over all four calls: the two that hash are the probes' positive control.
             with BuiltinCalls(hashlib.sha256) as sha256, \

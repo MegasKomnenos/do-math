@@ -22,14 +22,9 @@ Two more things are needed here:
 """
 import inspect
 import sys
+from support.monitoring_slots import reserve_tool
 
 
-def _free_tool(name):
-    monitoring = sys.monitoring
-    # A tool slot no debugger, coverage tool, profiler or other probe holds.
-    tool = next(tool for tool in (3, 4, 0, 2) if monitoring.get_tool(tool) is None)
-    monitoring.use_tool_id(tool, name)
-    return tool
 
 
 class BuiltinCalls:
@@ -39,7 +34,7 @@ class BuiltinCalls:
 
     def __enter__(self):
         monitoring = sys.monitoring
-        self.tool = _free_tool('do-math builtin calls')
+        self.tool = reserve_tool('do-math builtin calls')
 
         def called(code, offset, callable_, first):
             if callable_ is self.function:
@@ -65,7 +60,7 @@ class Returns:
 
     def __enter__(self):
         monitoring = sys.monitoring
-        self.tool = _free_tool('do-math returns')
+        self.tool = reserve_tool('do-math returns')
 
         def returned(code, offset, value):
             if code is self.code:

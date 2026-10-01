@@ -13,8 +13,8 @@ from do_math.engine import ResearchEngine
 from do_math.execution_profiles import WORK_ROLES
 from do_math.model_policy import LIMITS, MODELS
 from do_math.model_runner import ModelRunner
-from research_fixtures import candidate
-from runner_fixtures import ScriptedRunner, common
+from support.role_answers import candidate
+from support.default_responder import DefaultResponder, common
 from support.engine_lifecycle import applied, clear_work
 from support.provider_probes import ObservedCalls
 from support.scheduling_initial import GRANT
@@ -127,7 +127,7 @@ class ModelCapacityTests(unittest.TestCase):
         pending = deepcopy(engine.runtime['queue'])
         engine.runtime['queue'] = []
         engine._enqueue('task_contract_review', task['id'])
-        scenario_model(sim, ScriptedRunner())
+        scenario_model(sim, DefaultResponder())
         engine._save()
         sim.step()
         # The changed contract lost its selection; a real plan selects it again under
@@ -154,7 +154,7 @@ class AssessmentFlowTests(unittest.TestCase):
     def test_model_assessments_flow_from_preparation_through_review_and_planning_to_execution(self):
         """About 8 s: preparation, contract review, plan and research work through the worker."""
         sim = Sim.activated()
-        scenario_model(sim, ScriptedRunner(model_rating=LOW))
+        scenario_model(sim, DefaultResponder(model_rating=LOW))
         # Every assertion reads the first work execution and the submissions up to it.
         self.drive(sim, lambda s: any(e['status'] == 'ended' for e in executions(s, 'research_work')))
         tasks = list(sim.runtime['tasks'].values())
@@ -173,7 +173,7 @@ class AssessmentFlowTests(unittest.TestCase):
         """About 7 s: receipt, plan application and dispatch each decide the unrated selection."""
         sim = Sim.activated()
         # The plan rates no selected task, so the receiver accepts it and dispatch reads the task record.
-        scenario_model(sim, ScriptedRunner(model_rating=LOW, plan_assessments=False))
+        scenario_model(sim, DefaultResponder(model_rating=LOW, plan_assessments=False))
         self.drive(sim, lambda s: bool(executions(s, 'research_work')))
         plans = executions(sim, 'research_plan')
         self.assertTrue(plans)
@@ -219,7 +219,7 @@ class PlanOpeningTests(unittest.TestCase):
         self.assertEqual(sim.runtime['queue'], [])
         self.assertFalse(sim.runtime.get('pending_events'))
         if ready_candidate:
-            scenario_model(sim, ScriptedRunner(preparation_candidates=[candidate('deferred')]))
+            scenario_model(sim, DefaultResponder(preparation_candidates=[candidate('deferred')]))
             sim.engine._enqueue('research_preparation', reason='Prepare a task that will await a decision')
             sim.engine._save()
             sim.engine.run(max_steps=2)
@@ -228,7 +228,7 @@ class PlanOpeningTests(unittest.TestCase):
         # and its approval remain actual receiver-created records.
         sim.engine.runtime['queue'] = []
         sim.engine._enqueue('research_preparation', reason='Explicit regression preparation')
-        scenario_model(sim, ScriptedRunner(preparation_candidates=candidates))
+        scenario_model(sim, DefaultResponder(preparation_candidates=candidates))
         sim.engine._save()
         sim.engine.run(max_steps=1)
         return sim
@@ -256,7 +256,7 @@ class PlanOpeningTests(unittest.TestCase):
         """About 3 s: one preparation call."""
         sim = Sim.activated()
         clear_work(sim)
-        scenario_model(sim, ScriptedRunner(preparation_candidates=[candidate('window')]))
+        scenario_model(sim, DefaultResponder(preparation_candidates=[candidate('window')]))
         sim.engine._enqueue('research_preparation', reason='Prepare the contract under review')
         sim.engine._save()
         sim.step()
@@ -279,7 +279,7 @@ class TaskAdmissionTests(unittest.TestCase):
         refs = [ref for rows in sim.instance['role_profile_refs'].values() for ref in rows
                 if sim.instance['execution_profiles'][ref['id']]['actor_kind'] == 'ai']
         applied(sim, 'decision', config={'change': {'kind': 'initialization', 'operation': 'probe', 'profile_refs': refs}})
-        scenario_model(sim, ScriptedRunner())
+        scenario_model(sim, DefaultResponder())
         sim.engine._enqueue('research_preparation', reason='Exercise task admission after the approved initial fixture')
         sim.engine._save()
         before = set(sim.runtime['executions'])
@@ -310,21 +310,26 @@ class CallDeadlineTests(unittest.TestCase):
         clear_work(sim)
         sim.engine._enqueue('research_preparation', reason='Prepare a contract for the deadline regression')
         sim.engine._save()
-        scenario_model(sim, ScriptedRunner(preparation_candidates=[candidate('deadline regression')]))
-        calls = []
+        scenario_model(sim, DefaultResponder(preparation_candidates=[candidate('deadline regression')]))
+        from support.provider_probes import ObservedCalls
+        # Elapsed time belongs to the external provider process. Its real worker,
+        # collector and ModelRunner still run; the work role has no call deadline.
+        spawn = sim.model.spawn
 
-        class Runner:
-            """The engine's runner: the product ModelRunner, after whose every call ten thousand seconds pass."""
-            def __init__(self):
-                self.runner = ModelRunner(jobs=sim.ports.jobs, clock=sim.clock)
+        def start(command, **options):
+            process = spawn(command, **options)
+            communicate = process.communicate
 
-            def run(self, **arguments):
-                calls.append(arguments)
-                result = self.runner.run(**arguments)
+            def completed(*args, **kwargs):
+                result = communicate(*args, **kwargs)
                 sim.advance(10000)
                 return result
-        sim.engine = ResearchEngine(sim.repository, sim.instance_id, runner=Runner(), ports=sim.ports)
-        sim.engine.run(max_steps=2)
+            process.communicate = completed
+            return process
+        sim.model.spawn = start
+        with ObservedCalls(run=ModelRunner.run) as observed:
+            sim.engine.run(max_steps=2)
+        calls = observed.captured('run')
         self.assertEqual(len(calls), 2)
         self.assertEqual({call['profile']['role'] in WORK_ROLES for call in calls}, {True, False})
         for call in calls:

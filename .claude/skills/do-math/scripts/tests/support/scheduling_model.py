@@ -60,7 +60,7 @@ def native_final(value):
 
 class ScenarioCLI(FakeCLI):
     def communicate(self, input=None, timeout=None):
-        from runner_fixtures import context_from
+        from support.default_responder import context_from
         from support.model import MARKER
         prompt = input.decode('utf-8')
         role = prompt.split(MARKER, 1)[1].split('.', 1)[0]
@@ -91,7 +91,7 @@ class ScenarioCLI(FakeCLI):
                                    clock=self.model.clock)
         binding = json.loads((self.workspace / 'input' / 'submission' / 'context.json').read_bytes())['control_binding']
         for _ in range(100):
-            receipt = wait_receipt(binding, delivery['request_id'], 0)
+            receipt = wait_receipt(binding, delivery['request_id'], 0, clock=self.model.clock)
             if receipt and receipt.get('state') in FINAL_RECEIPTS:
                 self.model.receipts.append(receipt)
                 if isinstance(out, Produced) and receipt['state'] != 'accepted':
@@ -116,7 +116,7 @@ class ScenarioModel(ModelDouble):
         return ScenarioCLI(self, list(command), stdout, stderr, Path(cwd))
 
     def output(self, role, ctx, workspace):
-        from research_fixtures import bind_candidates, seal_response
+        from support.role_answers import bind_candidates, seal_response
         rule = next((rule for rule in self.rules if rule.answers and rule.matches(role, ctx)), None)
         answer = rule.next() if rule else default()
         if not isinstance(answer, Explicit):

@@ -1,0 +1,12 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_standalone.StandaloneTests.test_shallow_installation_without_lean_reports_unavailable",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_standalone_foundation_installation.StandaloneFoundationTests.test_foundation_shallow_installation_without_lean_reports_unavailable"
+      ],
+      "note": "Actual copied package directly under drive root has fewer than six ancestors. Shared worker starts isolated Python with empty PATH; formal.toolchain_root/discover_lean and LocalHost.discover_lean all return None. No source __file__ patch or new user configuration."
+    }
+  ]
+}

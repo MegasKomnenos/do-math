@@ -16,8 +16,8 @@ import unittest
 
 from do_math.context_store import (build_role_manifest, defer_input_overflow, fit_context, prepare_role_input,
                                    validate_role_manifest)
-from record_fixtures import surface_state
-from research_fixtures import current_state
+from support.record_builders import surface_state
+from support.state_builders import current_state
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.storage_files import audit_events
@@ -49,8 +49,10 @@ def role_profile(instance, role):
 class RoleInputTests(unittest.TestCase):
     def test_checker_sees_canonical_catalog_beyond_direct_comparison(self):
         """About 0.25 s, over the 0.2 s unit budget: the role input with its submission tools is prepared and sealed for two roles."""
-        from record_fixtures import contract_check, task_contract, task_disposition
-        from research_fixtures import assessment, candidate
+        from support.entry import entry
+        _entry = entry()
+        from support.record_builders import contract_check, task_contract, task_disposition
+        from support.role_answers import assessment, candidate
         from do_math.submission import contract_check_errors
         from do_math.planning import validate_plan_submission
         instance, runtime = surface_state()
@@ -73,7 +75,7 @@ class RoleInputTests(unittest.TestCase):
                     'tasks': readers, 'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': ['TK-ready'],
                     'blocked_actions': []},
                     instance=instance, runtime=runtime, role=role, profile=profile,
-                    snapshot='a' * 40, workspace=root, activity_id='AC-1', install_submission_tools=True)
+                    snapshot='a' * 40, workspace=root, activity_id='AC-1', install_submission_tools=True, clock=_entry.ports.clock)
                 context = json.loads((root / 'input/submission/context.json').read_bytes())
                 tasks = {t['id']: t for t in context['tasks']}
                 self.assertEqual(tasks, runtime['tasks'])
@@ -95,6 +97,8 @@ class RoleInputTests(unittest.TestCase):
                         validate_plan_submission(invalid, tasks, ['TK-ready'])
 
     def test_plan_receives_returned_work_separately_from_ready_selection_population(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime = surface_state()
         runtime['tasks'] = {'TK-returned': {'id': 'TK-returned', 'status': 'waiting',
             'question': 'Assess the actual result',
@@ -106,7 +110,7 @@ class RoleInputTests(unittest.TestCase):
                 'tasks': deepcopy(list(runtime['tasks'].values())),
                 'resources': {}, 'knowledge_catalog': [], 'ready_task_ids': []}, instance=instance, runtime=runtime,
                 role='research_plan', profile=profile,
-                snapshot='a' * 40, workspace=root, activity_id='AC-1', install_submission_tools=True)
+                snapshot='a' * 40, workspace=root, activity_id='AC-1', install_submission_tools=True, clock=_entry.ports.clock)
             direct = fitted['context']
             self.assertEqual(direct['ready_task_ids'], [])
             self.assertEqual(direct['returned_task_ids'], ['TK-returned'])
@@ -119,10 +123,12 @@ class RoleInputTests(unittest.TestCase):
             self.assertEqual(validation['tasks'][0]['results'], runtime['tasks']['TK-returned']['results'])
 
     def test_impact_review_evidence_is_required_direct_input(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.execution_profiles import build_profiles
         instance, runtime = surface_state()
         instance['config']['max_input_bytes'] = 16000
-        instance.update(build_profiles(instance['config']))
+        instance.update(build_profiles(instance['config'], host=_entry.ports.host))
         profile = role_profile(instance, 'maintenance')
         action = {'id': 'AC-impact', 'role': 'maintenance', 'stage': 'impact_review',
                   'input_basis': {'impact_review': {'producer_execution_id': 'EX-producer', 'plans': {}}}}
@@ -132,16 +138,18 @@ class RoleInputTests(unittest.TestCase):
             root = Path(directory)
             fitted = prepare_role_input({'action': action, 'impact_review_input': evidence}, instance=instance,
                 runtime=runtime, role='maintenance', profile=profile, snapshot='a' * 40, workspace=root / 'oversize',
-                activity_id='AC-impact')
+                activity_id='AC-impact', clock=_entry.ports.clock)
             self.assertIn('impact_review_input', fitted['manifest']['required_direct_keys'])
             self.assertEqual(fitted['context']['impact_review_input'], evidence)
             self.assertIsNotNone(fitted['overflow'])
             self.assertIn('impact_review_input', fitted['overflow']['required_direct_keys'])
             with self.assertRaisesRegex(ValueError, 'impact_review_input'):
                 prepare_role_input({'action': action}, instance=instance, runtime=runtime, role='maintenance',
-                    profile=profile, snapshot='a' * 40, workspace=root / 'missing', activity_id='AC-impact')
+                    profile=profile, snapshot='a' * 40, workspace=root / 'missing', activity_id='AC-impact', clock=_entry.ports.clock)
 
     def test_compaction_preserves_producer_validation_inputs(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import submission
         instance, runtime = surface_state()
         runtime['tasks'] = {'TK-1': {'id': 'TK-1', 'status': 'planned', 'question': 'P',
@@ -155,7 +163,7 @@ class RoleInputTests(unittest.TestCase):
                 'resources': {}, 'knowledge_catalog': [], 'blocked_actions': []}, instance=instance, runtime=runtime,
                 role='research_preparation', profile=profile,
                 snapshot='a' * 40, workspace=root, activity_id='AC-1', install_submission_tools=True,
-                max_artifact_bytes=100000)
+                max_artifact_bytes=100000, clock=_entry.ports.clock)
             preview = json.loads((root / 'input/submission/context.json').read_bytes())
             self.assertIn('EX-preserved', submission.supplied_reference_ids(preview))
             self.assertIn('EX-review', submission.supplied_reference_ids(preview))
@@ -170,6 +178,8 @@ class RoleInputTests(unittest.TestCase):
         and the engine reloads them. About 0.25 s, over the 0.2 s unit budget:
         the real engine loads and validates the stored state twice.
         """
+        from support.entry import entry
+        _entry = entry()
         from do_math import activities, execution_lifecycle
         from do_math.execution_profiles import profile_ref
         from do_math.observations import preserve_checkpoint
@@ -208,7 +218,7 @@ class RoleInputTests(unittest.TestCase):
                     outcome='cancelled', reason='interrupted', disposition='resume')
             runtime['checkpoints'] = {identifier: preserve_checkpoint(
                 root / ('checkpoint-' + identifier), artifact_prefix='runtime/artifacts/' + identifier + '/checkpoint',
-                max_bytes=4096)[0] for identifier in ('EX-a', 'EX-b')}
+                max_bytes=4096, clock=_entry.ports.clock)[0] for identifier in ('EX-a', 'EX-b')}
             with repository.writer_lock():
                 head = repository.save_with_state(head, engine.instance, runtime, artifacts=artifacts)[0]
             engine._reload()
@@ -229,6 +239,8 @@ class RoleInputTests(unittest.TestCase):
 
     def test_candidate_population_is_compact_profile_bound_and_reproducible(self):
         """About 0.3 s, over the 0.2 s unit budget: the role input with three 100 kB tasks is prepared and sealed twice (first and replay)."""
+        from support.entry import entry
+        _entry = entry()
         from do_math.context_store import read_source
         from do_math.execution_profiles import boundary_prompt
         instance, runtime = surface_state()
@@ -241,7 +253,7 @@ class RoleInputTests(unittest.TestCase):
                    'blocked_actions': [], 'pending_revisions': [], 'knowledge_catalog': []}
         with tempfile.TemporaryDirectory() as directory:
             fitted = prepare_role_input(context, instance=instance, runtime=runtime, role='research_preparation',
-                profile=profile, snapshot='a' * 40, workspace=Path(directory) / 'first', activity_id='AC-prep')
+                profile=profile, snapshot='a' * 40, workspace=Path(directory) / 'first', activity_id='AC-prep', clock=_entry.ports.clock)
             actual = fitted['context']
             self.assertTrue(fitted['prompt'].endswith(boundary_prompt(profile)))
             self.assertNotIn('config', actual)
@@ -256,7 +268,7 @@ class RoleInputTests(unittest.TestCase):
             self.assertEqual(order['ids'], [row['id'] for row in actual['tasks']])
             replay = prepare_role_input(context, instance=instance, runtime=runtime, role='research_preparation',
                 profile=profile, snapshot='a' * 40, workspace=Path(directory) / 'replay', activity_id='AC-prep',
-                candidate_order=order)
+                candidate_order=order, clock=_entry.ports.clock)
             self.assertEqual(replay['manifest']['candidate_order'], order)
             self.assertEqual(replay['prompt'], fitted['prompt'])
 
@@ -339,6 +351,8 @@ class RoleInputTests(unittest.TestCase):
         reusing it, so a second catalog of this context (the manifest's own)
         would open the written files for reading.
         """
+        from support.entry import entry
+        _entry = entry()
         from do_math import contracts
         from do_math.context_store import verify_manifest_artifacts
         instance, runtime = surface_state()
@@ -351,7 +365,7 @@ class RoleInputTests(unittest.TestCase):
             with audit_events('open') as opened:
                 result = prepare_role_input(context, instance=instance, runtime=runtime, role='research_work',
                     profile=profile, snapshot='a' * 40, workspace=Path(d), activity_id='AC-1',
-                    artifact_prefix='runtime/artifacts/EX-1')
+                    artifact_prefix='runtime/artifacts/EX-1', clock=_entry.ports.clock)
             opens = catalog_opens(opened, d)
             names = [name for name, _ in opens]
             self.assertIn('resume_checkpoint.json', names)
@@ -378,14 +392,16 @@ class RoleInputTests(unittest.TestCase):
         stored task must resolve. About 0.6 s, over the 0.2 s unit budget: the
         real engine loads and validates the stored state twice.
         """
-        from record_fixtures import task_contract
+        from support.entry import entry
+        _entry = entry()
+        from support.record_builders import task_contract
         from do_math import governance, knowledge_records
         from do_math.execution_profiles import profile_ref
         instance, runtime = full_surface_state()
         instance.setdefault('governance_sources', {})['GS-task'] = governance.preserve_source(
             'GS-task', 'Authorize the fixture research.', origin='user')
         instance, runtime, _ = governance.apply_decision(instance, runtime, {'kind': 'grant', 'grant': {
-            'id': 'GR-1', 'kind': 'local', 'roles': ['research_work'], 'reuse': 'reusable'}}, source_ref='GS-task')
+            'id': 'GR-1', 'kind': 'local', 'roles': ['research_work'], 'reuse': 'reusable'}}, source_ref='GS-task', clock=_entry.ports.clock)
         value = task_contract()
         value.update(profile_refs=[profile_ref(role_profile(instance, 'research_work'))], basis_refs=['context:goal'])
         runtime['tasks'][value['id']] = value
@@ -394,7 +410,7 @@ class RoleInputTests(unittest.TestCase):
         runtime['tasks']['TK-2'] = waiting
         instance, kid = knowledge_records.create_candidate(instance, {'title': 'Candidate', 'kind': 'conjecture',
             'statement': 'P', 'explanation': 'Unproved', 'summary': 'Do not call this verified',
-            'lean_code': '', 'declaration_names': [], 'dependencies': []}, source_ref='SRC', actor_ref='EX-1')
+            'lean_code': '', 'declaration_names': [], 'dependencies': []}, source_ref='SRC', actor_ref='EX-1', clock=_entry.ports.clock)
         profile = role_profile(instance, 'research_preparation')
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -402,7 +418,7 @@ class RoleInputTests(unittest.TestCase):
             context = engine._context({'role': 'research_preparation'}, root / 'first')
             result = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
                 role='research_preparation', profile=profile, snapshot=head, workspace=root / 'first',
-                activity_id='AC-1')
+                activity_id='AC-1', clock=_entry.ports.clock)
             self.assertEqual([r['id'] for r in result['context']['tasks']], [value['id']])
             self.assertEqual(result['context']['knowledge_catalog'][0]['id'], kid)
             self.assertFalse(result['context']['knowledge_catalog'][0]['usable_as_k'])
@@ -415,7 +431,7 @@ class RoleInputTests(unittest.TestCase):
             context = engine._context({'role': 'research_preparation'}, root / 'revised')
             revised = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
                 role='research_preparation', profile=profile, snapshot=head, workspace=root / 'revised',
-                activity_id='AC-1')
+                activity_id='AC-1', clock=_entry.ports.clock)
         self.assertEqual({row['id'] for row in revised['context']['tasks']}, {value['id'], 'TK-2'})
         self.assertEqual([row['id'] for row in revised['context']['tasks']], revised['manifest']['candidate_order']['ids'])
 
@@ -427,7 +443,9 @@ class RoleInputTests(unittest.TestCase):
         tests propagation, not Lean. About 0.7 s, over the 0.2 s unit budget:
         the real engine loads and validates the stored state twice.
         """
-        from review_fixtures import reviewed_candidate
+        from support.entry import entry
+        _entry = entry()
+        from support.review_inputs import reviewed_candidate
         from do_math.knowledge_records import set_assessment_use
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -443,7 +461,7 @@ class RoleInputTests(unittest.TestCase):
                 context = engine._context({'role': 'research_preparation'}, root / name)
                 return prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
                     role='research_preparation', profile=profile, snapshot=engine.head, workspace=root / name,
-                    activity_id='AC-1')
+                    activity_id='AC-1', clock=_entry.ports.clock)
             row = prepare('first')['context']['knowledge_catalog'][0]
             self.assertEqual(row['id'], kid)
             self.assertTrue(row['usable_as_k'])
@@ -457,6 +475,8 @@ class RoleInputTests(unittest.TestCase):
             self.assertEqual(row['verified_summaries'], [])
 
     def test_review_input_matches_real_seat_view_and_rejects_peer_injection(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.review_cycle import start_review, next_actions, context_for
         instance, runtime = surface_state()
         cycle = start_review({'revision': 1, 'statement': 'P'}, reviewers=2)
@@ -468,12 +488,12 @@ class RoleInputTests(unittest.TestCase):
         profile = role_profile(instance, 'identity_review')
         with tempfile.TemporaryDirectory() as d:
             result = prepare_role_input(context, instance=instance, runtime=runtime, role='identity_review',
-                profile=profile, snapshot='a' * 40, workspace=Path(d), activity_id='AC-1')
+                profile=profile, snapshot='a' * 40, workspace=Path(d), activity_id='AC-1', clock=_entry.ports.clock)
             self.assertEqual(result['manifest']['private_scope']['slot'], action['slot'])
         context['role_review']['peer_private'] = {'unsealed': 'do not expose'}
         with tempfile.TemporaryDirectory() as d, self.assertRaisesRegex(ValueError, 'seat-scoped'):
             prepare_role_input(context, instance=instance, runtime=runtime, role='identity_review',
-                profile=profile, snapshot='a' * 40, workspace=Path(d), activity_id='AC-1')
+                profile=profile, snapshot='a' * 40, workspace=Path(d), activity_id='AC-1', clock=_entry.ports.clock)
 
     def test_engine_review_context_reaches_role_input_with_bound_identity_and_policy(self):
         """The real engine's review context binds the identity basis and policy into the role input; a forged one is refused.
@@ -484,7 +504,10 @@ class RoleInputTests(unittest.TestCase):
         budget: a synthetic trust toolchain is hashed and the real engine loads
         the stored state.
         """
-        from research_fixtures import governance_start, start_scoped_review
+        from support.entry import entry
+        _entry = entry()
+        from support.state_builders import governance_start
+        from support.review_inputs import start_scoped_review
         from support.storage_role_inputs import review_candidate_state
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
@@ -507,7 +530,7 @@ class RoleInputTests(unittest.TestCase):
             def prepare():
                 return prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
                     role='identity_review', profile=profile, snapshot=engine.head,
-                    workspace=workspace, activity_id='AC-1')
+                    workspace=workspace, activity_id='AC-1', clock=_entry.ports.clock)
             result = prepare()
             self.assertEqual(result['context']['role_review']['identity_basis'], review['identity_basis'])
             self.assertEqual(result['context']['role_review']['policy_ref'], review['policy_ref'])
@@ -519,6 +542,8 @@ class RoleInputTests(unittest.TestCase):
                         prepare()
 
     def test_submission_context_is_installed_before_single_input_seal(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime = surface_state()
         profile = role_profile(instance, 'research_work')
         context = {'instance_id': instance['id'], 'action': {'id': 'A-work', 'role': 'research_work'},
@@ -528,13 +553,15 @@ class RoleInputTests(unittest.TestCase):
             result = prepare_role_input(context, instance=instance, runtime=runtime, role='research_work',
                 profile=profile, snapshot='a' * 40, workspace=root, activity_id='AC-1',
                 install_submission_tools=True, max_artifact_bytes=100000,
-                artifact_prefix='runtime/artifacts/EX-1')
+                artifact_prefix='runtime/artifacts/EX-1', clock=_entry.ports.clock)
             preview = json.loads((root / 'input/submission/context.json').read_bytes())
             self.assertEqual(preview['formal_verifier'], result['context']['formal_verifier'])
             self.assertEqual(preview['governance'], result['context']['governance'])
             self.assertIn('submission_contract', result['manifest']['required_direct_keys'])
 
     def test_role_overflow_keeps_original_sizes_and_waits_on_activity(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import execution_profiles, execution_lifecycle
         instance, runtime = surface_state()
         profile = role_profile(instance, 'research_work')
@@ -544,7 +571,7 @@ class RoleInputTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             result = prepare_role_input({'action': {}, 'task': {'id': 'TK', 'evidence': 'x' * 3000}},
                 instance=instance, runtime=runtime, role='research_work', profile=profile,
-                snapshot='a' * 40, workspace=Path(d), activity_id='AC-1')
+                snapshot='a' * 40, workspace=Path(d), activity_id='AC-1', clock=_entry.ports.clock)
         overflow = result['overflow']
         self.assertGreater(overflow['original_bytes'], 3000)
         self.assertIn('resolution_question', overflow)
@@ -559,6 +586,8 @@ class RoleInputTests(unittest.TestCase):
     def test_role_overflow_records_the_context_budget_it_compared(self):
         # Mandatory context below the whole limit still overflows the budget left after
         # the fixed documents, schema and framing; the record states that budget.
+        from support.entry import entry
+        _entry = entry()
         from do_math import contracts, execution_profiles
         instance, runtime = surface_state()
         profile = role_profile(instance, 'research_work')
@@ -570,13 +599,15 @@ class RoleInputTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             overflow = prepare_role_input({'action': {}, 'task': {'id': 'TK', 'evidence': 'x' * 3000}},
                 instance=instance, runtime=runtime, role='research_work', profile=profile,
-                snapshot='a' * 40, workspace=Path(d), activity_id='AC-1')['overflow']
+                snapshot='a' * 40, workspace=Path(d), activity_id='AC-1', clock=_entry.ports.clock)['overflow']
         self.assertEqual(overflow['reason'], 'mandatory_context_exceeds_limit')
         self.assertEqual((overflow['limit_bytes'], overflow['context_budget_bytes']), (limit, limit - fixed(profile)))
         self.assertLess(overflow['context_budget_bytes'], overflow['mandatory_bytes'])
         self.assertLess(overflow['mandatory_bytes'], overflow['limit_bytes'])
 
     def test_assessment_only_input_contains_waiting_contract_and_review_history(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime = surface_state()
         task = {'id': 'TK-rejected', 'status': 'waiting', 'question': 'Compare the two methods',
             'reviews': [{'execution_id': 'EX-review', 'decision': 'revision_required'}],
@@ -590,7 +621,7 @@ class RoleInputTests(unittest.TestCase):
                 'tasks': [deepcopy(task)], 'knowledge_catalog': [], 'blocked_actions': []},
                 instance=instance, runtime=runtime, role='research_preparation', profile=profile,
                 snapshot='a' * 40, workspace=root, activity_id='ACT', install_submission_tools=True,
-                max_artifact_bytes=100000)
+                max_artifact_bytes=100000, clock=_entry.ports.clock)
             supplied = fitted['context']['tasks']
             self.assertEqual([t['id'] for t in supplied], [task['id']])
             original = json.loads((root / supplied[0]['source_ref']['path']).read_bytes())

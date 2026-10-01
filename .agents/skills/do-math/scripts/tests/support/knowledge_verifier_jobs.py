@@ -13,9 +13,8 @@ synthetic compilers (Python scripts) did; it records every command it was given.
 ``approved_toolchain(root)`` is a synthetic Lean command and its approved
 identity: the trust fixture's toolchain (``research_fixtures.trust_fixture``),
 whose checker is the running ``formal.py``, so ``toolchain_identity_errors``
-accepts it until one of its recorded files changes. ``inspect_toolchain``
-cannot make this identity in process: it starts its ``--version`` Job without
-the Jobs port.
+accepts it until one of its recorded files changes. ``inspect_toolchain`` can
+also observe an identity in process by passing the same Jobs and clock ports.
 """
 from __future__ import annotations
 
@@ -74,7 +73,7 @@ class _Run:
 
 def approved_toolchain(root):
     """``(command, toolchain)``: the synthetic Lean executable under ``root/'trust'`` and its approved identity."""
-    from research_fixtures import trust_fixture
+    from support.trust_inputs import trust_fixture
     lean = Path(root).resolve() / 'trust' / 'toolchain' / 'bin' / 'lean.exe'
     request = trust_fixture(root, [str(lean)], directory=Path(root) / 'trust')
     return [str(lean)], request['toolchain']

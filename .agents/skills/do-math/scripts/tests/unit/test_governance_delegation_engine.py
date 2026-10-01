@@ -15,7 +15,7 @@ import unittest
 
 from do_math import delegations as d
 from do_math import governance as gov
-from review_fixtures import grant_replacement
+from support.review_inputs import grant_replacement
 from support.review_scene import ReviewScene, warm
 
 
@@ -25,6 +25,8 @@ def setUpModule():
 
 class DelegatedRecoveryEngineTests(unittest.TestCase):
     def test_actual_engine_delegation_control_to_independent_judgments_effect_and_receipt(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as root:
             scene = ReviewScene(root)
             engine = scene.engine
@@ -38,7 +40,7 @@ class DelegatedRecoveryEngineTests(unittest.TestCase):
                 {'kind': 'delegation', 'decision_id': 'DD', 'delegation': {'id': 'DG', 'status': 'active',
                  'decision_kind': 'review_replacement', 'original_decision_id': 'ORIGINAL',
                  'included_targets': ['K1'], 'excluded_targets': [], 'external_effects': [],
-                 'resource_limits': {}, 'expires_at': None}}, source_ref='SOURCE-review')
+                 'resource_limits': {}, 'expires_at': None}}, source_ref='SOURCE-review', clock=_entry.ports.clock)
             effect = {**{key: action[key] for key in ('review_cycle_id', 'stage', 'slot', 'round')},
                       'replacement_for': 0, 'continuity_break_cause': 'permanent_loss'}
             case = {'id': 'CASE', 'decision_kind': 'review_replacement', 'target_id': 'K1',

@@ -106,7 +106,7 @@ class DispatchEngineMixin:
             parent["after_stop"] = {"decision": "wait", "reason": reason}
 
     def _session_resources(self):
-        return SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs).snapshot()
+        return SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs, host_id=self.host_id).snapshot()
 
     def _select_model(self, action):
         if action.get("model_selection"):
@@ -189,7 +189,7 @@ class DispatchEngineMixin:
 
     def _admissible(self, action, profile):
         """Check admission without reserving; a refusal records its wait on the request."""
-        admission = SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs).admission_check(profile)
+        admission = SessionSlots(self.runtime, self.instance, observer=True, clock=self.ports.clock, jobs=self.ports.jobs, host_id=self.host_id).admission_check(profile)
         if not admission['allowed']:
             action['dispatch_wait'] = admission['wait']
         return admission['allowed']

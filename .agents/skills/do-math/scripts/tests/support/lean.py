@@ -9,11 +9,10 @@ dependency rows (``__DO_MATH_DEPENDENCY__`` per constant,
 ``__DO_MATH_DEPENDENCIES__`` per declaration). The recorded output in the corpus
 fixes the line formats (``contracts/test_doubles_follow_corpus.py``).
 
-``declare(name, signature=..., axioms=..., dependencies=...)`` states what Lean
-reports for a declaration. An undeclared declaration defined in the source by
-``theorem``, ``lemma``, ``def`` or ``abbrev`` gets the signature written there, no
-axioms and no dependencies. A declaration neither declared nor defined fails as
-Lean fails on an unknown identifier (exit code 1).
+``allow(source, declarations, signatures=..., axioms=..., dependencies=...)``
+registers exact compiler inputs and synthetic output facts. Only the two fixed
+response producers are registered by default. No source is parsed as a proof.
+The product still checks signatures, forbidden axioms, evidence and trust.
 """
 from __future__ import annotations
 
@@ -21,38 +20,42 @@ import json
 from pathlib import Path
 import re
 
+from do_math.lean_evidence import LEAN_VERSION
+
 MARKER = re.compile(r'^#eval "__DO_MATH_SIGNATURE_BEGIN_(.+)__"$')
 
 
 class LeanDouble:
     def __init__(self):
-        self.declared, self.checks = {}, []
+        from support.default_responder import FORMAL_SOURCE
+        from support.purpose_answers import SOURCE
+        self.inputs, self.checks = {}, []
+        self.version = f"Lean (version {LEAN_VERSION}, test double)"
+        self.commands = []
+        self.allow(FORMAL_SOURCE, ['t'], signatures={'t': 't : True'})
+        self.allow(SOURCE, ['add_zero_fixture'],
+                   signatures={'add_zero_fixture': 'add_zero_fixture (n : Nat) : n + 0 = n'})
 
-    def declare(self, name, *, signature=None, axioms=(), dependencies=None):
-        """``dependencies`` maps each constant of the closure to its evidence ``{"type", "value"}``."""
-        self.declared[name] = {'signature': signature, 'axioms': list(axioms), 'dependencies': dict(dependencies or {})}
+    def allow(self, source, declarations, *, signatures, axioms=None, dependencies=None):
+        """Explicit synthetic facts for exactly this source and ordered declaration list.
+
+        The product check-file producer supplies the framing; this is input-table
+        lookup, not a second Lean parser or proof/trust validator. Both preview
+        and evidence extraction are allowed for the same registered input.
+        """
+        from copy import deepcopy
+        from do_math.lean_evidence import check_file
+        if set(signatures) != set(declarations):
+            raise ValueError('explicit signatures must cover exactly the registered declarations')
+        facts = {name: {'signature': signatures[name], 'axioms': list((axioms or {}).get(name, [])),
+                        'dependencies': deepcopy((dependencies or {}).get(name, {}))} for name in declarations}
+        for extract in (False, True):
+            self.inputs[check_file(source.encode('utf-8'), list(declarations), extract_evidence=extract)] = facts
         return self
 
     def spawn(self, command, *, cwd=None, stdout=None, stderr=None, shell=False, creationflags=0):
+        self.commands.append(list(command))
         return FakeLean(self, list(command), stdout, stderr)
-
-    def facts(self, name, source):
-        if name in self.declared:
-            facts = dict(self.declared[name])
-            if facts['signature'] is None:
-                facts['signature'] = _source_signature(name, source)
-            return facts
-        signature = _source_signature(name, source)
-        return None if signature is None else {'signature': signature, 'axioms': [], 'dependencies': {}}
-
-
-def _source_signature(name, source):
-    """``name`` and its binders and type as the source writes them before ``:=``, or None."""
-    match = re.search(r'(?:theorem|lemma|def|abbrev)\s+' + re.escape(name) + r'(\s[^:=]*)?\s*:\s*(.+?)\s*:=', source, re.S)
-    if match is None:
-        return None
-    binders = (match.group(1) or '').strip()
-    return ' '.join(part for part in (name, binders, ':', ' '.join(match.group(2).split())) if part)
 
 
 class FakeLean:
@@ -69,16 +72,20 @@ class FakeLean:
         return False
 
     def wait(self, timeout=None):
-        text = Path(self.command[-1]).read_text(encoding='utf-8')
+        if self.command[-1] == '--version':
+            self.stdout.write((self.lean.version + '\n').encode('utf-8'))
+            self.returncode = 0
+            return 0
+        raw = Path(self.command[-1]).read_bytes()
+        text = raw.decode('utf-8')
         lines = text.splitlines()
         declarations = [match.group(1) for match in map(MARKER.match, lines) if match]
-        source = text.split('\n#eval "__DO_MATH_SIGNATURE_BEGIN_', 1)[0]
         extract = any(line.startswith('#do_math_dependencies ') for line in lines)
-        self.lean.checks.append({'declarations': declarations, 'extract': extract})
-        facts = {name: self.lean.facts(name, source) for name in declarations}
-        unknown = [name for name, row in facts.items() if row is None]
-        if unknown:
-            self.stderr.write(''.join(f"proposal.lean: error: unknown identifier '{name}'\n" for name in unknown).encode())
+        facts = self.lean.inputs.get(raw)
+        self.lean.checks.append({'declarations': declarations, 'extract': extract,
+                                 'registered': facts is not None, 'synthetic': True})
+        if facts is None:
+            self.stderr.write(b'proposal.lean: error: unregistered synthetic Lean source/declarations\n')
             self.returncode = 1
             return 1
         out = []

@@ -22,9 +22,9 @@ from do_math.canonical import canonical_json, exact_content_hash
 from do_math.context_store import collect_outputs
 from do_math.control_transport import ControlTransport
 from do_math.git_store import GitStateStore
-from knowledge_fixtures import knowledge_candidate
-from record_fixtures import research_work_context, two_observation_output
-from research_fixtures import seal_response
+from support.knowledge_builders import knowledge_candidate
+from support.record_builders import research_work_context, two_observation_output
+from support.role_answers import seal_response
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import make_fake, make_repository
 from support.provider_probes import ObservedCalls

@@ -17,7 +17,7 @@ import unittest
 from do_math import reporting
 from do_math.git_store import GitStateStore
 from do_math.repository import ResearchRepository
-from record_fixtures import approved_task, stored_surface_state
+from support.record_builders import approve_task, approved_task, stored_surface_state
 from support.provider_probes import ObservedCalls
 from support.storage_git import rewrite_commit
 from support.storage_records import INSTANCE_ID, record_store
@@ -78,14 +78,29 @@ class ReportingTests(unittest.TestCase):
         self.assertEqual(reporting.dispatch_waits(runtime), [])
 
     def test_task_rows_of_an_ended_instance_carry_no_readiness(self):
+        from support.entry import entry
+        _entry = entry()
         task, instance, runtime = approved_task()
         task['status'] = 'active'
-        self.assertEqual(reporting.task_status(instance, runtime)[0]['readiness']['state'], 'ready')
+        self.assertEqual(reporting.task_status(instance, runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})[0]['readiness']['state'], 'ready')
         for ended in ('closed', 'completed'):
             with self.subTest(status=ended):
                 row, = reporting.task_status(instance, {**runtime, 'status': ended})
                 self.assertIsNone(row['readiness'])
                 self.assertEqual(row['waits'], [])
+
+    def test_task_rows_forward_query_time_to_authority(self):
+        task, instance, runtime = approved_task()
+        start, end = '2043-05-06T10:00:00Z', '2043-05-06T11:00:00Z'
+        instance['grants']['GR-1'].update(valid_from=start, expires_at=end)
+        approve_task(task, instance, runtime)
+        for at, state in (('2043-05-06T09:59:59Z', 'not_ready'),
+                          (start, 'ready'), (end, 'not_ready')):
+            with self.subTest(at=at):
+                row, = reporting.task_status(instance, runtime, evaluation_context={'now': at})
+                self.assertEqual(row['readiness']['state'], state)
+        with self.assertRaisesRegex(ValueError, '^time must be a nonempty ISO timestamp string$'):
+            reporting.task_status(instance, runtime)
 
 
 if __name__ == '__main__':

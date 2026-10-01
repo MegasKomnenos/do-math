@@ -1,5 +1,6 @@
 """The T3 branch-reach gate and the selection index, judged on synthetic coverage data (설계 5.3, 5.5)."""
 import re
+from pathlib import Path
 import unittest
 
 from support.branch_gate import (FORMAT, REASONED_EXCLUSION, FunctionRecorder, build_index, fixture_label,
@@ -140,8 +141,8 @@ class _NoCoverage:
 
 def _recording(prefix):
     """A measurement whose function recorder watches ``prefix`` on a spare tool id, coverage left off."""
-    from support.branch_gate import Measurement, repository_root
-    measurement = Measurement(repository_root())
+    from support.branch_gate import Measurement
+    measurement = Measurement(Path(__file__).resolve().parents[6])
     measurement.coverage = _NoCoverage()
     measurement.calls = FunctionRecorder(prefix, tool=4)
     return measurement
@@ -174,7 +175,7 @@ class ProcessCacheTests(unittest.TestCase):
         from pathlib import Path
         from unittest import mock
         from support import branch_gate
-        root = branch_gate.repository_root()
+        root = Path(__file__).resolve().parents[6]
         source = branch_gate.TESTS / 'support' / 'shared_state_probe.py'  # a support path; the file need not exist
         namespace = {}
         exec(compile('def build():\n    return activate()\n\n\ndef activate():\n    return 1\n', str(source), 'exec'),

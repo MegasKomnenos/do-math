@@ -9,7 +9,6 @@ failed or mismatching result, 2 an execution error. Every mode prints one JSON o
 installation progress and Lake output go to stderr.
 """
 import argparse
-from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -17,16 +16,13 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
-import time
 import urllib.request
-import uuid
 import zipfile
 
 from do_math.lean_evidence import LEAN_VERSION, READY_MARKER, mathlib_project, portable_bin
 from do_math.formal import discover_lean, toolchain_root, inspect_toolchain
 from do_math import trust_inventory as records
 from do_math.file_io import RACY_NS, fingerprint_settled
-from do_math.system_clock import now
 
 LEAN_ZIP = f"https://github.com/leanprover/lean4/releases/download/v{LEAN_VERSION}/lean-{LEAN_VERSION}-windows.zip"
 # Mathlib tags follow Lean releases; the tag equal to the toolchain is the one whose cached .olean files load.
@@ -44,18 +40,20 @@ class Refused(Exception):
         self.result = result
 
 
-def observe_identity(command):
-    with tempfile.TemporaryDirectory() as directory:
-        identity = inspect_toolchain(command, Path(directory))
+def observe_identity(command, *, jobs, clock, identity=None, environment):
+    """Inspect the command, or validate an identity already observed by the caller."""
+    if identity is None:
+        with tempfile.TemporaryDirectory() as directory:
+            identity = inspect_toolchain(command, Path(directory), jobs=jobs, clock=clock, environment=environment)
     errors = records.identity_errors(identity)
     if errors:
         raise ValueError('; '.join(errors))
     return identity
 
 
-def verify_environment(command, evidence_root, identity):
+def verify_environment(command, evidence_root, identity, *, jobs, clock, environment):
     """Compile the representative examples through the exact command; nothing is adopted."""
-    directory = evidence_root.resolve() / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid.uuid4().hex)
+    directory = evidence_root.resolve() / (clock.wall().strftime('%Y%m%dT%H%M%SZ') + '-' + clock.random_hex(16))
     records.check_evidence_outside_roots(directory, identity)
     directory.mkdir(parents=True)
     source = directory / 'smoke.lean'
@@ -64,29 +62,29 @@ def verify_environment(command, evidence_root, identity):
     validation = {'status': 'failed', 'scope': scope, 'source': str(source), 'source_text': source_text,
                   'source_sha256': hashlib.sha256(source_text.encode('utf-8')).hexdigest(),
                   'command': [*command, str(source)], 'exit_code': None, 'stdout': '', 'stderr': '',
-                  'started_at': now()}
+                  'started_at': clock.now()}
     try:
         from do_math.formal import _job_run
         from do_math.operation_trace import tracing, phase
         with tracing(directory / 'operations'), phase('environment_smoke_compile') as metrics:
             code, stdout, stderr, stopped = _job_run([*command, str(source)], directory,
-                on_started=lambda process: metrics.update(process=process))
+                on_started=lambda process: metrics.update(process=process), jobs=jobs, clock=clock, environment=environment)
         validation.update(exit_code=code, stdout=stdout, stderr=stderr, status=records.validation_status(code, stopped))
     except Exception as error:
         validation['error'] = f'{type(error).__name__}: {error}'
-    validation['finished_at'] = now()
+    validation['finished_at'] = clock.now()
     (directory / 'validation.json').write_text(json.dumps(validation, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     return validation
 
 
-def _baseline(command, evidence_root, identity, fingerprint, content):
-    validation = verify_environment(command, evidence_root, identity)
+def _baseline(command, evidence_root, identity, fingerprint, content, *, jobs, clock, environment):
+    validation = verify_environment(command, evidence_root, identity, jobs=jobs, clock=clock, environment=environment)
     refusal = records.baseline_refusal(validation)
     if refusal is None:
         refusal = records.fingerprint_moved_refusal(records.observe_fingerprint(identity), fingerprint)
     if refusal is not None:
         raise Refused(refusal)
-    return records.new_baseline(fingerprint, content, validation)
+    return records.new_baseline(fingerprint, content, validation, clock=clock)
 
 
 def _summary(path, record, **fields):
@@ -95,7 +93,7 @@ def _summary(path, record, **fields):
             **fields}
 
 
-def _settled_fingerprint(identity, attempts=3):
+def _settled_fingerprint(identity, attempts=3, *, clock, racy_ns=RACY_NS):
     """Observe the judgment files once every fingerprint is older than the racy window.
 
     A baseline is compared by metadata later, so it must not record a time that a
@@ -103,18 +101,18 @@ def _settled_fingerprint(identity, attempts=3):
     """
     for _ in range(attempts):
         observed = records.observe_fingerprint(identity)
-        if all(fingerprint_settled((size, int(modified), int(born)))
+        if all(fingerprint_settled((size, int(modified), int(born)), now_ns=clock.wall_ns(), racy_ns=racy_ns)
                for size, modified, born in observed['files'].values()):
             return observed
-        time.sleep(RACY_NS / 1e9)
+        clock.sleep(racy_ns / 1e9)
     raise RuntimeError('judgment files are still changing; record the installation once it is idle')
 
 
-def record_installation(command, records_dir, evidence_root):
+def record_installation(command, records_dir, evidence_root, *, jobs, clock, identity=None, racy_ns=RACY_NS, environment):
     """Create the record of an installed identity or confirm an unchanged one; never append a baseline."""
-    identity = observe_identity(command)
+    identity = observe_identity(command, jobs=jobs, clock=clock, identity=identity, environment=environment)
     with records.writer_lock(records_dir):
-        fingerprint = _settled_fingerprint(identity)
+        fingerprint = _settled_fingerprint(identity, clock=clock, racy_ns=racy_ns)
         reusable = records.reusable_record(records.records_for(records_dir, identity), fingerprint)
         if reusable is not None:
             return _summary(*reusable, status='recorded', created=False)
@@ -122,7 +120,7 @@ def record_installation(command, records_dir, evidence_root):
         path = records.record_path(records_dir, records.record_id(identity, content['sha256']))
         if path.exists():
             raise Refused(records.rerecord_required(path))
-        record = records.new_record(identity, _baseline(command, evidence_root, identity, fingerprint, content))
+        record = records.new_record(identity, _baseline(command, evidence_root, identity, fingerprint, content, jobs=jobs, clock=clock, environment=environment))
         records.write_record(path, record)
         return _summary(path, record, status='recorded', created=True)
 
@@ -135,31 +133,32 @@ def resolve_record(records_dir, record_id, identity):
     return records.only_record(records.records_for(records_dir, identity()))
 
 
-def rerecord(command, records_dir, evidence_root, record_id):
+def rerecord(command, records_dir, evidence_root, record_id, *, jobs, clock, identity=None, racy_ns=RACY_NS, environment):
     """Append a baseline after metadata-only changes. Users and operators only (D5)."""
-    identity = observe_identity(command)
+    identity = observe_identity(command, jobs=jobs, clock=clock, identity=identity, environment=environment)
     with records.writer_lock(records_dir):
         path, record = resolve_record(records_dir, record_id, lambda: identity)
         refusal = records.identity_refusal(record, identity, path)
         if refusal is not None:
             raise Refused(refusal)
-        fingerprint = _settled_fingerprint(identity)
+        fingerprint = _settled_fingerprint(identity, clock=clock, racy_ns=racy_ns)
         content = records.content_hashes(identity, fingerprint['files'])
         refusal = records.contents_refusal(record, content, path)
         if refusal is not None:
             raise Refused(refusal)
-        record['baselines'].append(_baseline(command, evidence_root, identity, fingerprint, content))
+        record['baselines'].append(_baseline(command, evidence_root, identity, fingerprint, content, jobs=jobs, clock=clock, environment=environment))
         records.write_record(path, record)
         return _summary(path, record, status='recorded')
 
 
-def check_contents(records_dir, record_id, command):
+def check_contents(records_dir, record_id, command, *, jobs, clock, identity=None, environment):
     """Hash every judgment file and append the comparison with the current baseline."""
     with records.writer_lock(records_dir):
-        path, record = resolve_record(records_dir, record_id, lambda: observe_identity(command))
+        path, record = resolve_record(records_dir, record_id,
+            lambda: observe_identity(command, jobs=jobs, clock=clock, identity=identity, environment=environment))
         fingerprint = records.observe_fingerprint(record['identity'])
         content = records.content_hashes(record['identity'], fingerprint['files'])
-        check = records.content_check(record, content, checked_at=now())
+        check = records.content_check(record, content, checked_at=clock.now())
         record['checks'].append(check)
         records.write_record(path, record)
         return _summary(path, record, status=check['result'], check=check)
@@ -205,7 +204,12 @@ def install(root):
     return [lake, "--dir", str(project), "env", str(bin_dir / "lean.exe")]
 
 
-def main():
+def main(argv=None, *, ports=None, environment=None):
+    import os
+    from do_math.wiring import real_ports
+    environment = dict(os.environ) if environment is None else environment
+    ports = real_ports(environment=environment) if ports is None else ports
+    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--inspect-only', action='store_true', help='observe an installed command without installing or recording it')
@@ -220,7 +224,7 @@ def main():
     parser.add_argument('--records-dir', type=Path, help='toolchain record directory; default: <toolchain root>/records')
     parser.add_argument('--evidence-dir', type=Path, help='parent directory for representative compile evidence')
     parser.add_argument('--trust-file', type=Path, help='write a new registration request for the resulting record baseline')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     installing = not (args.inspect_only or args.verify_only or args.rerecord or args.check_contents)
     if args.command_file and installing:
         parser.error('--command-file requires --inspect-only, --verify-only, --rerecord or --check-contents')
@@ -245,18 +249,18 @@ def main():
         if args.inspect_only:
             with tempfile.TemporaryDirectory() as directory:
                 print(json.dumps({'status': 'observed', 'lean_command': command,
-                                  'toolchain': inspect_toolchain(command, Path(directory))}))
+                                  'toolchain': inspect_toolchain(command, Path(directory), jobs=ports.jobs, clock=ports.clock, environment=environment)}))
             return
         if root is None and (args.records_dir is None or args.evidence_dir is None and not args.check_contents):
             raise ValueError('this installation has no toolchain root; supply --records-dir and --evidence-dir')
         records_dir = args.records_dir or root / 'records'
         evidence_root = args.evidence_dir or (root / 'validation' if root else None)
         if args.check_contents:
-            result = check_contents(records_dir, args.record, command)
+            result = check_contents(records_dir, args.record, command, jobs=ports.jobs, clock=ports.clock, environment=environment)
         elif args.rerecord:
-            result = rerecord(command, records_dir, evidence_root, args.record)
+            result = rerecord(command, records_dir, evidence_root, args.record, jobs=ports.jobs, clock=ports.clock, environment=environment)
         else:
-            result = record_installation(command, records_dir, evidence_root)
+            result = record_installation(command, records_dir, evidence_root, jobs=ports.jobs, clock=ports.clock, environment=environment)
         result['lean_command'] = command
         if args.trust_file:
             result['trust_request'] = write_trust_request(result, args.trust_file)

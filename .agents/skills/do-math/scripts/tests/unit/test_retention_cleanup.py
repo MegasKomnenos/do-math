@@ -17,7 +17,7 @@ import uuid
 from unittest.mock import Mock
 
 from do_math.retention import _run_path, cleanup, cleanup_candidates, retention_inputs
-from research_fixtures import current_state
+from support.state_builders import current_state
 from support.storage_files import age, audit_events, junction, remove_link, unlistable
 from support.storage_records import record_store
 

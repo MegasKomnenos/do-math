@@ -103,7 +103,7 @@ def _build_reassessment(root, shared):
                                'authority_ref': decision, 'target_task_id': 'TK-2', 'target_obligation_id': 'OB-inherited'}],
         'unresolved': [{'obligation_id': 'OB-proof', 'missing_inputs': [MISSING_SOURCE], 'next_owner': 'research_work'}]}
     engine.instance, engine.runtime = apply_task_assessments(engine.instance, engine.runtime, [assessment],
-        execution_id='EX-plan', input_tasks=deepcopy(engine.runtime['tasks']))
+        execution_id='EX-plan', input_tasks=deepcopy(engine.runtime['tasks']), clock=sim.ports.clock)
     engine._enqueue('research_preparation', reason='Other preparation work remains')
     engine._save()
     return sim

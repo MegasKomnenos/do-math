@@ -24,7 +24,8 @@ class FormalCheckTests(unittest.TestCase):
                 lean_command=environment['toolchain']['configured_command'], allowed_axioms=[],
                 expected_toolchain=environment['toolchain'])
             self.assertEqual((result['status'], result['declaration_signatures']), ('verified', {'t': 't : True'}))
-            self.assertEqual(sim.lean.checks, [{'declarations': ['t'], 'extract': True}])
+            self.assertEqual(sim.lean.checks, [{'declarations': ['t'], 'extract': True,
+                                            'registered': True, 'synthetic': True}])
             lean_jobs = [job for job in sim.jobs.launched if job.argv[1:3] == ['-B', '-c']]
             self.assertEqual(len(lean_jobs), 1, 'the check ran in one Lean worker Job')
 

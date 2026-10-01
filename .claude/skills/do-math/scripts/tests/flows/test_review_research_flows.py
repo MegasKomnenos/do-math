@@ -23,7 +23,7 @@ from do_math.canonical import canonical_json
 from do_math.contracts import prompt_documents
 from do_math.execution_profiles import resolve_profile
 from do_math.review_cycle import next_actions
-from purpose_fixtures import EXPLANATION
+from support.purpose_answers import EXPLANATION
 from support.engine_lifecycle import applied
 from support.engine_overflow import apply_limit
 from support.engine_purpose import drive

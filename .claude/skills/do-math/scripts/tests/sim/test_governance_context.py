@@ -50,7 +50,7 @@ class InterpretationContextTests(unittest.TestCase):
         # 입력-소비자.md task_scope uses the supplied task edition and hash; the application
         # compares that hash with planning.contract_hash (governance.apply_decision).
         from do_math.planning import contract_hash
-        from record_fixtures import task_contract
+        from support.record_builders import task_contract
         sim = Sim.activated()
         identifier = received_input(sim, 'Waive the first obligation.')
         task = task_contract()
@@ -76,12 +76,12 @@ class InterpretationContextTests(unittest.TestCase):
                 'unit_id': 'U', 'source_range': {'start': 0, 'end': len(text)}, 'interpretation': 'Exact codepoint assertion',
                 'owner_kind': 'charter', 'owner_ref': 'CH1', 'payload': {}, 'decision_refs': [], 'question_refs': []}]}
             bundle = gov.prepare_import(engine.instance, engine.runtime, source, output, execution_id='AUTHOR',
-                                        input_ref=identifier)
+                                        input_ref=identifier, clock=sim.ports.clock)
             self.assertEqual(bundle['source']['text'], text)
             output['import_units'][0]['source_range']['end'] = len(working.decode())
             with self.assertRaisesRegex(ValueError, '^incomplete source coverage$'):
                 gov.prepare_import(engine.instance, engine.runtime, source, output, execution_id='AUTHOR',
-                                   input_ref=identifier)
+                                   input_ref=identifier, clock=sim.ports.clock)
 
 
 class RestartedContextTests(unittest.TestCase):

@@ -8,10 +8,9 @@ import json
 from pathlib import Path
 
 from .file_io import read_bytes_shared
-from .migration_defaults import clock_or_system
 
 
-def progress(directory, *, clock=None):
+def progress(directory, *, clock):
     rows = []
     for path in sorted((Path(directory) / 'live').glob('*.json'))[:16]:
         try:
@@ -22,13 +21,13 @@ def progress(directory, *, clock=None):
     for path in sorted((Path(directory)/'errors').glob('*.json'))[-16:]:
         try:failures.append(json.loads(read_bytes_shared(path).decode('utf-8')))
         except (OSError,ValueError):failures.append({'operation_id':path.stem,'status':'unreadable_error_record'})
-    return {'source':'local_operation_sidecars','observed_at':clock_or_system(clock).now(),
+    return {'source':'local_operation_sidecars','observed_at':clock.now(),
             'rows':rows,'telemetry_errors':failures,
             'scope':'progress only; not process liveness or authoritative completion'}
 
 
-def trace_rows(directory, *, clock=None):
-    observed_at = clock_or_system(clock).now()
+def trace_rows(directory, *, clock):
+    observed_at = clock.now()
     rows = []
     for path in sorted(Path(directory).glob('*.jsonl')):
         try:
@@ -50,7 +49,7 @@ def trace_rows(directory, *, clock=None):
     return rows
 
 
-def phase_rows(directory, *, clock=None):
+def phase_rows(directory, *, clock):
     spans = {}
     for event in trace_rows(directory, clock=clock):
         if not all(isinstance(event.get(k), str) for k in ('span_id','operation_id','phase','event','observed_at')):

@@ -79,13 +79,12 @@ class LocalCLIAdapter:
     # Seconds each ``describe`` command may run.
     describe_timeout = 10.0
 
-    def __init__(self, cli_path: str, *, jobs=None, clock=None) -> None:
+    def __init__(self, cli_path: str, *, jobs, clock) -> None:
         self.cli_path = cli_path
-        # The Jobs port; None starts the module's WindowsJob (stage 1b migration).
+        # The Jobs port owns worker creation.
         self.jobs = jobs
-        # The clock port for stop receipts and the termination wait (default: the system clock).
-        from .system_clock import SystemClock
-        self.clock = clock or SystemClock()
+        # The clock port for stop receipts and the termination wait.
+        self.clock = clock
 
     def worker_options(self, evidence_dir: Path) -> dict[str, Any]:
         """The provider's worker request fields for one call that writes under ``evidence_dir``."""
@@ -140,7 +139,7 @@ class LocalCLIAdapter:
         snapshot_request = stage / "request.json"; snapshot_request.write_bytes(snapshot_raw)
         worker = Path(self.worker_module.__file__)
         worker_argv = (sys.executable, str(worker), str(snapshot_request))
-        job = (self.jobs.launch if self.jobs is not None else WindowsJob)(
+        job = self.jobs.launch(
             worker_argv, cwd=cwd, env=self.worker_module.sanitized_environment(env),
                          name=job_name or "Local\\DoMath-" + uuid.uuid4().hex, resource_limits=request.get("resource_limits"))
         return CLIExecution(hashlib.sha256(snapshot_raw).hexdigest(), hashlib.sha256(prompt_raw).hexdigest(), worker_argv,

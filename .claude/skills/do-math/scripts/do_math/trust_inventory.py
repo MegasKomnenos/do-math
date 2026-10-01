@@ -21,7 +21,6 @@ from .canonical import exact_content_hash
 from .file_io import fingerprint_json, os_lock, sha256_file, stat_fingerprint
 from .values import SHA256_SCHEMA as _HASH, parse_utc
 from .trust_validation import RECORD_ID_PATTERN
-from .migration_defaults import clock_or_system
 
 SMOKE = 'import Mathlib\nexample (n : Nat) : n + 0 = n := by rfl\nexample : (2 : ℝ) + 2 = 4 := by norm_num\n'
 CORE_SMOKE = 'example (n : Nat) : n + 0 = n := by rfl\nexample : True := True.intro\n'
@@ -143,8 +142,7 @@ def representative_check_seconds(validation):
     return math.ceil(elapsed.total_seconds())
 
 
-def new_baseline(fingerprint, content, validation, *, clock=None):
-    clock = clock_or_system(clock)
+def new_baseline(fingerprint, content, validation, *, clock):
     return {'recorded_at': clock.now(), 'fingerprint': fingerprint, 'content': content,
             'validation': validation, 'validation_sha256': validation_sha256(validation)}
 

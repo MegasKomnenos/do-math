@@ -37,6 +37,7 @@ from __future__ import annotations
 import atexit
 from datetime import datetime, timezone
 import json
+import inspect
 import os
 from pathlib import Path
 import re
@@ -74,10 +75,13 @@ class Sim:
         self.repository = make_repository(self.root / 'repository')
         self.instance_id = initialize(self.repository, goal=goal, workspace=self.root / 'work',
                                       config={**CONFIG, 'lean_command': [str(self.trust_lean)], **(config or {})},
-                                      sources=sources, ports=self.ports)['instance_id']
-        self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports)
+                                      sources=sources, ports=self.ports, codex_home=self.codex_home, host_id=self.host_id)['instance_id']
+        self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports, codex_home=self.codex_home, environment=self.environment, host_id=self.host_id)
 
     def _wire(self, clock, host, objects=None):
+        from support.entry import entry
+        values = entry()
+        self.host_id, self.environment, self.codex_home = values.host_id, values.environment, values.codex_home
         self.started = datetime.now(timezone.utc).replace(microsecond=0)  # real time, to recognize leaks
         self.clock = clock
         self.model = ModelDouble(self.clock)
@@ -110,7 +114,7 @@ class Sim:
         sim._wire(FakeClock(*state['clock']), None, _copy_objects(state['git_objects']))
         sim.jobs._next_pid, sim.jobs.owner = state['next_pid'], dict(state['owner'])
         sim.repository, sim.instance_id = sim.root / 'repository', instance_id
-        sim.engine = ResearchEngine(sim.repository, instance_id, ports=sim.ports)
+        sim.engine = ResearchEngine(sim.repository, instance_id, ports=sim.ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
         return sim
 
     def _programs(self):
@@ -142,7 +146,7 @@ class Sim:
         return self.engine.runtime
 
     def control(self, action, **options):
-        return control(self.repository, self.instance_id, action, ports=self.ports, **options)
+        return control(self.repository, self.instance_id, action, ports=self.ports, **options, host_id=self.host_id)
 
     def step(self):
         self.engine.run(max_steps=1)
@@ -172,8 +176,17 @@ class Sim:
 
     def restart(self):
         """A new owner process on the same repository: nothing of the old process state survives."""
-        self.jobs.owner = {**self.jobs.owner, 'pid': self.jobs.owner['pid'] + 4}
-        self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports)
+        from support.process_state import reset_owner_process
+        from dataclasses import replace
+        self.jobs.restart_owner()
+        for calls in self.ports.calls.created:
+            calls.close()
+            for future in list(calls.futures):
+                future.cancel()
+            calls.futures.clear()
+        self.ports = replace(self.ports, calls=fake_calls(self.clock))
+        reset_owner_process()
+        self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports, codex_home=self.codex_home, environment=self.environment, host_id=self.host_id)
 
     def activate(self, *, initial_roles=('intent_interpretation',), external_policy='disabled', review_policy=None):
         """The public activation: approvals, grants, probe and trust by control, then owner passes until active.
@@ -188,41 +201,54 @@ class Sim:
         decision adopts instead of the configured default (the product validates it).
         """
         from datetime import timedelta
-        from do_math.canonical import exact_content_hash
-        from do_math.model_policy import selection
-        from research_fixtures import ROLES, charter_record, trust_fixture
-        text = 'Synthetic Sim input; not actual host verification or user approval'
-        windows = {key: value for key, value in {'tool_review_window_seconds': 60,
-                                                 'self_check_response_window_seconds': 5}.items()
-                   if key not in self.instance['config']}
-        if windows:
-            self._apply('configure', config=windows)
-        expiry = (self.clock.wall() + timedelta(days=1)).isoformat()
-        config_sha256 = exact_content_hash(self.instance['config'])
-        initial_ref = selection(self.instance['config'], {'role': 'intent_interpretation'}, {},
-                                self.instance['knowledge'], instance=self.instance)['profile_ref']
-        charter = charter_record(self.instance['lifecycle']['immutable_input']['text'])
-        controls = [
-            ('decision', {'change': {'kind': 'initialization', 'operation': 'governance', 'records': [charter]}}),
-            ('decision', {'change': {'kind': 'grant', 'grant': {'id': 'GR-initial-sim', 'kind': 'local',
-                'roles': list(initial_roles), 'reuse': 'reusable', 'expires_at': expiry}}}),
-            ('decision', {'change': {'kind': 'grant', 'grant': {'id': 'GR-research-sim', 'kind': 'local',
-                'roles': list(ROLES) + ['formal_check'], 'reuse': 'reusable', 'expires_at': expiry}}}),
-            ('decision', {'change': {'kind': 'initialization', 'operation': 'probe', 'config_sha256': config_sha256}}),
-            ('trust', trust_fixture(self.shared, self.instance['config']['lean_command'], directory=self.shared / 'trust'))]
-        for action, config in controls:
-            self.control(action, text=text, config=config)
-        self.engine.process_controls()
-        self._check_applied()
-        environment = next(iter(self.instance['trust_environments']))
-        self._apply('trust', config={'operation': 'transition', 'env_id': environment})
-        self._apply('decision', config={'change': {'kind': 'initialization', 'config_sha256': config_sha256,
-            'adopt_current_governance': True, 'conversation_loss_policy': 'continue_authorized',
-            'external_policy': external_policy,
-            **({'review_policy': review_policy} if review_policy is not None else {'adopt_default_review_policy': True}),
-            'initial_profile_ref': initial_ref,
-            'initial_grant_ids': ['GR-initial-sim'], 'research_grant_ids': ['GR-research-sim']}})
-        self.engine.run(until_active=True)
+        from do_math import formal
+        from support.provider_probes import ObservedCalls
+        with ObservedCalls(verifier=formal.verify_lean, worker=formal._worker) as calls:
+            formal_before = len(self.jobs.launched)
+            lean_before = len(self.lean.checks)
+            from do_math.canonical import exact_content_hash
+            from do_math.model_policy import selection
+            from do_math.contracts import ROLES
+            from support.state_builders import charter_record
+            from support.trust_inputs import trust_fixture
+            text = 'Synthetic Sim input; not actual host verification or user approval'
+            windows = {key: value for key, value in {'tool_review_window_seconds': 60,
+                                                     'self_check_response_window_seconds': 5}.items()
+                       if key not in self.instance['config']}
+            if windows:
+                self._apply('configure', config=windows)
+            expiry = (self.clock.wall() + timedelta(days=1)).isoformat()
+            config_sha256 = exact_content_hash(self.instance['config'])
+            initial_ref = selection(self.instance['config'], {'role': 'intent_interpretation'}, {},
+                                    self.instance['knowledge'], instance=self.instance)['profile_ref']
+            charter = charter_record(self.instance['lifecycle']['immutable_input']['text'])
+            controls = [
+                ('decision', {'change': {'kind': 'initialization', 'operation': 'governance', 'records': [charter]}}),
+                ('decision', {'change': {'kind': 'grant', 'grant': {'id': 'GR-initial-sim', 'kind': 'local',
+                    'roles': list(initial_roles), 'reuse': 'reusable', 'expires_at': expiry}}}),
+                ('decision', {'change': {'kind': 'grant', 'grant': {'id': 'GR-research-sim', 'kind': 'local',
+                    'roles': list(ROLES) + ['formal_check'], 'reuse': 'reusable', 'expires_at': expiry}}}),
+                ('decision', {'change': {'kind': 'initialization', 'operation': 'probe', 'config_sha256': config_sha256}}),
+                ('trust', trust_fixture(self.shared, self.instance['config']['lean_command'], directory=self.shared / 'trust'))]
+            for action, config in controls:
+                self.control(action, text=text, config=config)
+            self.engine.process_controls()
+            self._check_applied()
+            environment = next(iter(self.instance['trust_environments']))
+            self._apply('trust', config={'operation': 'transition', 'env_id': environment})
+            self._apply('decision', config={'change': {'kind': 'initialization', 'config_sha256': config_sha256,
+                'adopt_current_governance': True, 'conversation_loss_policy': 'continue_authorized',
+                'external_policy': external_policy,
+                **({'review_policy': review_policy} if review_policy is not None else {'adopt_default_review_policy': True}),
+                'initial_profile_ref': initial_ref,
+                'initial_grant_ids': ['GR-initial-sim'], 'research_grant_ids': ['GR-research-sim']}})
+            self.engine.run(until_active=True)
+        if calls.count('verifier') or calls.count('worker'):
+            raise AssertionError('public activation must not call the formal verifier or worker')
+        formal_jobs = [job for job in self.jobs.launched[formal_before:]
+                       if job.argv[1:3] == ['-B', '-c'] and 'do_math.formal import _worker' in job.argv[3]]
+        if formal_jobs or len(self.lean.checks) != lean_before:
+            raise AssertionError('public activation must not call the formal worker or Lean')
         if self.instance['lifecycle']['state'] != 'active':
             raise AssertionError('public activation did not reach active: ' + json.dumps(self.waiting(), default=str))
 
@@ -282,6 +308,7 @@ class _Template:
         self.key = key
         with branch_gate.shared_state(key):
             sim = build(self.live, self.shared) if build is not None else Sim.activated(self.live, shared=self.shared)
+            assert_template_quiescent(sim)
             self.instance_id, self.state = sim.instance_id, sim.process_state()
         shutil.copytree(self.live, self.pristine)
         self.used = False
@@ -316,17 +343,63 @@ def _template():
 _BUILT = {}
 
 
-def built(name, build):
-    """A restored copy of this process's template ``name``, which ``build(root, shared)`` makes once.
+def template_inputs(build, parameters):
+    """Bind every builder input, apply Python defaults, and normalize JSON representations.
 
-    For a start state the public path reaches only through slow steps (another
-    activation option, model calls): the build runs once per process and every
-    test restores its copy, as ``Sim.activated()`` does for the default activation.
-    A failed build is not retried.
+    Builders take (root, shared, *, inputs...). Captured parameters are forbidden:
+    all variable inputs must participate in the key and be delivered to the builder.
     """
-    if name not in _BUILT:
-        _BUILT[name] = 'failed'
-        _BUILT[name] = _Template(build, key='sim:built:' + name)
-    elif _BUILT[name] == 'failed':
-        raise AssertionError(f'the Sim template {name!r} failed to build earlier in this process')
-    return _BUILT[name].restore()
+    if getattr(build, '__closure__', None):
+        raise ValueError('template builders must not capture inputs; declare keyword parameters')
+    signature = inspect.signature(build)
+    bound = signature.bind(None, None, **parameters)
+    bound.apply_defaults()
+    names = list(signature.parameters)
+    values = {key: value for key, value in bound.arguments.items() if key not in names[:2]}
+    if any(p.kind in (p.VAR_KEYWORD, p.VAR_POSITIONAL) for p in signature.parameters.values()):
+        raise ValueError('template builders require named JSON inputs')
+    def json_keys(value):
+        if isinstance(value, dict):
+            if any(not isinstance(key, str) for key in value):
+                raise TypeError('template JSON object keys must be strings')
+            for item in value.values():
+                json_keys(item)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                json_keys(item)
+    json_keys(values)
+    encoded = json.dumps(values, sort_keys=True, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
+    return encoded, json.loads(encoded)
+
+
+def assert_template_quiescent(sim):
+    """An initialized or parked state is copyable only after all execution resources settle.
+
+    Queue entries, unresolved questions and parked actions may remain. Executions
+    must all be ended, reservations returned, Jobs closed and Calls fully collected.
+    The product owns the execution/reservation definition (session_slots.quiescence).
+    """
+    from do_math.session_slots import quiescence
+    pending = quiescence(sim.runtime)
+    pending['jobs'] = [job.pid for job in sim.ports.jobs.launched if not job.closed or not job.done]
+    pending['calls'] = [index for index, calls in enumerate(sim.ports.calls.created)
+                        if calls.turns or calls.futures]
+    if any(pending.values()):
+        raise AssertionError('template has unsettled execution resources: ' + repr(pending))
+
+
+def built(name, build, **parameters):
+    """Restore a template keyed by builder identity and all normalized JSON inputs.
+
+    Defaults omitted and explicitly supplied share a copy; different inputs never
+    share one. A failed build remains failed for that exact key in this process.
+    """
+    encoded, inputs = template_inputs(build, parameters)
+    key = (name, build.__module__, build.__qualname__, encoded)
+    if key not in _BUILT:
+        _BUILT[key] = 'failed'
+        _BUILT[key] = _Template(lambda root, shared: build(root, shared, **inputs),
+                               key='sim:built:' + json.dumps(key, ensure_ascii=False))
+    elif _BUILT[key] == 'failed':
+        raise AssertionError(f'the Sim template {key!r} failed to build earlier in this process')
+    return _BUILT[key].restore()

@@ -19,10 +19,10 @@ from do_math import contracts, execution_lifecycle, execution_profiles, integrat
     planning, submission
 from do_math.canonical import canonical_json
 from do_math.context_store import prepare_role_input
-from knowledge_fixtures import verified_knowledge
-from record_fixtures import approve_task, approved_task, surface_state
-from runner_fixtures import common
-from research_fixtures import seal_response
+from support.knowledge_builders import verified_knowledge
+from support.record_builders import approve_task, approved_task, surface_state
+from support.default_responder import common
+from support.role_answers import seal_response
 from support.engine_context import JUDGED, central_check_knowledge, context_engine, issue, package
 from support.sim import Sim, warm_template
 
@@ -66,11 +66,13 @@ class OperationalInputTests(unittest.TestCase):
         return engine, action, checkpoint, raw
 
     def packaged(self, engine, action, root):
+        from support.entry import entry
+        _entry = entry()
         profile = next(p for p in engine.instance['execution_profiles'].values() if p['role'] == 'operational_review')
         context = engine._context(action, root, execution_id='EX-review')
         return context, prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
             role='operational_review', profile=profile, snapshot=engine.head, workspace=root,
-            activity_id='AY-review', install_submission_tools=True)
+            activity_id='AY-review', install_submission_tools=True, clock=_entry.ports.clock)
 
     def test_live_review_receives_the_already_sealed_target_checkpoint(self):
         engine, action, checkpoint, raw = self.fixture()
@@ -113,6 +115,8 @@ class OperationalInputTests(unittest.TestCase):
             self.assertEqual((root / files[0]['local_path']).read_bytes(), proof)
 
     def test_packaged_operational_submission_checks_the_advertised_basis(self):
+        from support.entry import entry
+        _entry = entry()
         engine, action, _, _ = self.fixture()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -122,12 +126,14 @@ class OperationalInputTests(unittest.TestCase):
                 'disposition': {'kind': 'continue', 'basis_refs': ['EX-work'], 'next_owner': 'engine',
                                 'reason': 'The preserved checkpoint is available.', 'next_review': None}}
             schema = contracts.schema_for('operational_review')
-            self.assertEqual(submission.payload_issues(output, schema, fixed, {}, root), [])
+            self.assertEqual(submission.payload_issues(output, schema, fixed, {}, root, clock=_entry.ports.clock), [])
             output['disposition']['basis_refs'].append('input/catalog/observation.json')
-            issues = submission.payload_issues(output, schema, fixed, {}, root)
+            issues = submission.payload_issues(output, schema, fixed, {}, root, clock=_entry.ports.clock)
             self.assertTrue(any('invalid_basis_refs' in row['message'] for row in issues), issues)
 
     def test_every_advertised_basis_ref_passes_the_submission_check(self):
+        from support.entry import entry
+        _entry = entry()
         engine, action, _, _ = self.fixture()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -138,11 +144,13 @@ class OperationalInputTests(unittest.TestCase):
             output = {'summary': 'Review', 'used_sources': list(advertised), 'questions': [],
                 'disposition': {'kind': 'continue', 'basis_refs': list(advertised), 'next_owner': 'engine',
                                 'reason': 'The observation opened a review of a progressing run.', 'next_review': None}}
-            self.assertEqual(submission.payload_issues(output, contracts.schema_for('operational_review'), fixed, {}, root), [])
+            self.assertEqual(submission.payload_issues(output, contracts.schema_for('operational_review'), fixed, {}, root, clock=_entry.ports.clock), [])
             catalog = {row['value'] for row in fitted['context']['reference_catalog']}
             self.assertLessEqual(set(advertised), catalog, 'The producer-visible catalog projects the same checker')
 
     def test_next_review_of_the_same_target_can_resolve_an_exhausted_review(self):
+        from support.entry import entry
+        _entry = entry()
         engine, action, _, _ = self.fixture()
         exhausted = {'id': 'AC-earlier-review', 'role': 'operational_review', 'target': 'EX-work', 'live': True}
         engine.runtime['waiting_actions'] = {exhausted['id']: {'action': exhausted, 'kind': 'output_validation',
@@ -158,7 +166,7 @@ class OperationalInputTests(unittest.TestCase):
             extensions = {'action_resolutions': [{'action_id': exhausted['id'], 'evidence_execution_id': 'current',
                 'reason': 'This accepted review settles the same observed target.'}]}
             self.assertEqual(submission.payload_issues(output, contracts.schema_for('operational_review'),
-                                                       fitted['validation_context'], extensions, root), [])
+                                                       fitted['validation_context'], extensions, root, clock=_entry.ports.clock), [])
 
     def test_changed_checkpoint_file_bytes_are_rejected_before_review(self):
         engine, action, _, _ = self.fixture(stored=b'changed bytes')
@@ -247,10 +255,12 @@ class PackagedInputTests(unittest.TestCase):
                     verify_manifest_artifacts(manifest, artifacts.__getitem__, **reader)
 
     def test_catalog_keeps_aliases_identity_and_only_effective_summaries(self):
+        from support.entry import entry
+        _entry = entry()
         evidence, _, kid, aid = verified_knowledge()
         # Two effective assessments for the same item must not repeat its text.
         evidence, _ = knowledge_records.record_identity_assessment(evidence, kid,
-            {'decision': 'match', 'basis': knowledge_records.identity_basis(evidence, kid)}, 'policy:2', runtime={})
+            {'decision': 'match', 'basis': knowledge_records.identity_basis(evidence, kid)}, 'policy:2', runtime={}, clock=_entry.ports.clock)
         engine = context_engine(evidence)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -278,6 +288,8 @@ class PackagedInputTests(unittest.TestCase):
             self.assertEqual(changed['path'], row['path'])
 
     def test_relation_uses_sealed_domain_records_at_local_and_central_check(self):
+        from support.entry import entry
+        _entry = entry()
         state, _, kid, aid = verified_knowledge()
         fid = state['knowledge'][kid]['formal_result_id']
         claim = {'kind': 'formally_implies', 'source': kid, 'target': kid, 'confirmed_scope': 'reflexive'}
@@ -293,22 +305,22 @@ class PackagedInputTests(unittest.TestCase):
             seal_response(output, fixed, root)
             draft = root / 'draft.json'
             draft.write_bytes(canonical_json(output))
-            check = submission.producer_check(root, draft)
+            check = submission.producer_check(root, draft, clock=_entry.ports.clock)
             self.assertTrue(check['passed'], check['issues'])
             sealed = submission.seal_submission(root, 'draft.json', execution_id='EX-plan',
-                context=fixed, schema=contracts.schema_for('research_work'), max_artifact_bytes=2000000)
+                context=fixed, schema=contracts.schema_for('research_work'), max_artifact_bytes=2000000, clock=_entry.ports.clock)
             self.assertTrue(sealed['passed'], sealed['check']['issues'])
             artifacts = engine._input_artifacts('BA-plan', contracts.schema_for('research_work'), fitted, root)
             self.assertIn('runtime/artifacts/BA-plan/input/submission/relation-state.json', artifacts)
             stopped = knowledge_records.set_assessment_use(engine.instance, aid, 'withdrawn', 'recheck', 'reviewer')
             with self.assertRaisesRegex(ValueError, 'invalid relation'):
-                knowledge_io.import_relation(stopped, relation, source_ref='submission', actor_ref='EX-plan')
+                knowledge_io.import_relation(stopped, relation, source_ref='submission', actor_ref='EX-plan', clock=_entry.ports.clock)
             for key, wrong in [('target', 'KN-absent'), ('confirmed_scope', 'different')]:
                 bad = deepcopy(extensions)
                 bad['relations'][0][key] = wrong
-                self.assertTrue(submission.payload_issues(output, contracts.schema_for('research_work'), fixed, bad, root))
+                self.assertTrue(submission.payload_issues(output, contracts.schema_for('research_work'), fixed, bad, root, clock=_entry.ports.clock))
             (root / fixed['relation_validation_source']['path']).write_bytes(b'{}')
-            issues = submission.payload_issues(output, contracts.schema_for('research_work'), fixed, extensions, root)
+            issues = submission.payload_issues(output, contracts.schema_for('research_work'), fixed, extensions, root, clock=_entry.ports.clock)
             self.assertTrue(any('input is missing or corrupt' in row['message'] for row in issues), issues)
 
 
@@ -323,13 +335,15 @@ class InputManifestConnections(unittest.TestCase):
         return engine
 
     def test_delivered_previous_hashes_pass_the_actual_live_impact_gate(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import knowledge
-        from research_fixtures import candidate
+        from support.role_answers import candidate
         engine = self.maintenance_engine()
         engine.instance, engine.runtime, kid = knowledge_io.import_candidate(engine.instance, engine.runtime,
             {"kind": "observation", "title": "Record", "statement": "A bounded observation", "summary": "Observed",
                 "explanation": "Exact e\u0301 source", "lean_code": "", "declaration_names": [], "dependencies": []},
-            source_ref="EX-author", actor_ref="EX-author")
+            source_ref="EX-author", actor_ref="EX-author", clock=_entry.ports.clock)
         task = contracts.task_candidate_record(candidate("bounded work"), task_id="TA-one")
         task.update(status="candidate", results=[])
         engine.runtime["tasks"][task["id"]] = task
@@ -347,6 +361,8 @@ class InputManifestConnections(unittest.TestCase):
         self.assertIn("bundle", request["plans"])
 
     def test_input_artifacts_preserve_the_exact_role_manifest_and_catalog(self):
+        from support.entry import entry
+        _entry = entry()
         engine = self.maintenance_engine()
         profile = next(row for row in engine.instance["execution_profiles"].values() if row["role"] == "maintenance")
         schema = contracts.schema_for("maintenance")
@@ -357,7 +373,7 @@ class InputManifestConnections(unittest.TestCase):
             fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
                 role="maintenance", profile=profile, snapshot="a" * 40, workspace=root,
                 activity_id="AC-1", output_schema=schema, documents=engine._documents["maintenance"],
-                artifact_prefix="runtime/artifacts/BA-input")
+                artifact_prefix="runtime/artifacts/BA-input", clock=_entry.ports.clock)
             artifacts = engine._input_artifacts("BA-input", schema, fitted, root)
             self.assertEqual(json.loads(artifacts["runtime/artifacts/BA-input/manifest.json"]), fitted["manifest"])
             self.assertEqual(artifacts["runtime/artifacts/BA-input/input.txt"], fitted["prompt"].encode("utf-8"))
@@ -391,6 +407,8 @@ class PreparedInputTests(unittest.TestCase):
 
     def test_runner_takes_its_tools_only_from_the_pinned_profile(self):
         """The real runner and Codex adapter start the worker; the Jobs fake's worker program records its request."""
+        from support.entry import entry
+        _entry = entry()
         from do_math.launch import ticket
         from do_math.model_runner import ModelRunner
         from do_math.configuration import DEFAULT_CONFIG
@@ -403,11 +421,11 @@ class PreparedInputTests(unittest.TestCase):
             return 1
         jobs = FakeJobs([(lambda argv: Path(argv[1]).name == 'codex_worker.py', worker)])
         clock = FakeClock()
-        profile = next(p for p in execution_profiles.build_profiles(DEFAULT_CONFIG)["execution_profiles"].values()
+        profile = next(p for p in execution_profiles.build_profiles(DEFAULT_CONFIG, host=_entry.ports.host)["execution_profiles"].values()
                        if p["role"] == "research_work")
         tools = execution_profiles.runner_tools(profile)
         prompt = execution_profiles.prepare_prompt("fixture", profile)
-        runner = ModelRunner(jobs=jobs, clock=clock)
+        runner = ModelRunner(jobs=jobs, clock=clock, environment=_entry.environment, host_id=_entry.host_id)
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             launch = {**ticket("EX-tools", profile, jobs=jobs, clock=clock), 'phase': 'dispatched'}
@@ -427,6 +445,8 @@ class PreparedInputTests(unittest.TestCase):
 
 class ArchivedControlInputTests(unittest.TestCase):
     def test_large_control_is_archived_before_reference_catalog_construction(self):
+        from support.entry import entry
+        _entry = entry()
         import base64
         engine = Sim.activated().engine
         request = {'id': 'UC-large', 'action': 'source', 'origin': 'user', 'config': {
@@ -438,7 +458,7 @@ class ArchivedControlInputTests(unittest.TestCase):
             root = Path(directory)
             result = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime, role='maintenance',
                 profile=profile, snapshot=engine.head, workspace=root / 'input-case', activity_id='AY-test',
-                install_submission_tools=True, max_artifact_bytes=1000000)
+                install_submission_tools=True, max_artifact_bytes=1000000, clock=_entry.ports.clock)
             validation = result['validation_context']
             ref = validation['recent_history'][0]['request_source_ref']
             self.assertEqual(json.loads((root / 'input-case' / ref['path']).read_bytes()), request)
@@ -495,7 +515,7 @@ class RoleScopeContextTests(unittest.TestCase):
 
     def test_task_readiness_reaches_its_readers_in_their_scope(self):
         # 후보-준비.md 61 checks which tasks wait for external input; 연구-수행.md 17 reads its own task's basis.
-        from record_fixtures import task_contract
+        from support.record_builders import task_contract
         instance, runtime = surface_state()
         runtime['tasks'] = {identifier: {**task_contract(), 'id': identifier} for identifier in ('TK-1', 'TK-2')}
         engine = context_engine(instance, runtime)
@@ -525,10 +545,10 @@ class ReviewSeatInputTests(unittest.TestCase):
         """About 11 s, over the 2 s Sim budget: formal work runs to its first queued identity review seat."""
         # 계약/동일성-검토.md 47 and GLOSSARY 「검토 자리」: no author or peer execution context.
         from do_math import governance
-        from runner_fixtures import ScriptedRunner
+        from support.default_responder import DefaultResponder
         from support.engine_context import is_map_entry, prepare
         sim = Sim.activated()
-        sim.model.responder = ScriptedRunner(formal=True)
+        sim.model.responder = DefaultResponder(formal=True)
         engine = sim.engine
 
         def seat():
@@ -568,13 +588,15 @@ class FollowupDocumentTests(unittest.TestCase):
         self.engine = self.sim.engine
 
     def proposal(self, title, **kwargs):
-        from purpose_fixtures import candidate
+        from support.purpose_answers import candidate
         value = candidate(title, **kwargs)
         # The adopted research work editions (the registry also keeps the editions activation replaced).
         value['profile_refs'] = deepcopy(self.engine.instance['role_profile_refs']['research_work'])
         return value
 
     def test_planning_roles_receive_the_complete_current_settings(self):
+        from support.entry import entry
+        _entry = entry()
         self.sim.control('configure', config={'observation_interval_seconds': 417, 'review_research_limit': 4})
         self.engine.process_controls()
         engine = self.engine
@@ -587,12 +609,12 @@ class FollowupDocumentTests(unittest.TestCase):
             self.assertNotIn("config", context)
             profile = next(p for p in engine.instance["execution_profiles"].values() if p["role"] == role)
             fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime, role=role,
-                profile=profile, snapshot=engine.head, workspace=workspace, activity_id="AC-" + role)
+                profile=profile, snapshot=engine.head, workspace=workspace, activity_id="AC-" + role, clock=_entry.ports.clock)
             source = fitted["context"]["configuration_source"]
             self.assertEqual(json.loads((workspace / source["path"]).read_bytes()), engine.instance["config"])
 
     def test_prepared_observation_rule_reaches_contract_review(self):
-        from purpose_fixtures import common as purpose_common
+        from support.purpose_answers import common as purpose_common
         engine = self.engine
         # The preparations' issued inputs fix which task inputs they could name; these name none.
         issued = {"available_input_refs": [], "supplied_record_ids": []}
@@ -628,7 +650,7 @@ class FollowupDocumentTests(unittest.TestCase):
                          "rules from an earlier contract must not override the new reviewed initial rules")
 
     def test_old_rejected_preparation_remains_readable_after_recent_history_moves(self):
-        from purpose_fixtures import candidate, common as purpose_common
+        from support.purpose_answers import candidate, common as purpose_common
         from do_math.execution_lifecycle import transition_execution
         engine = self.engine
         output = {**purpose_common("Investigated the earlier approach"), "candidates": [candidate("Earlier proposal")]}

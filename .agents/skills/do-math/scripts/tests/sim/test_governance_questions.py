@@ -17,7 +17,7 @@ from do_math import integration, questions
 from do_math.canonical import canonical_json
 from do_math.repository import ResearchRepository
 from do_math.submission import extension_schema
-from runner_fixtures import common as role_output
+from support.default_responder import common as role_output
 from support.engine_context import context_engine, publish
 from support.engine_lifecycle import ObservedCalls, code_of
 from support.governance_sim import returned
@@ -121,6 +121,8 @@ class RecordedQuestionTests(unittest.TestCase):
                           validator.iter_errors({'question_routes': [route]})], [([ 'question_routes', 0, 'blocks'], 'type')])
 
     def test_question_mixin_publishes_advice_without_global_wait_and_resolves_atomically(self):
+        from support.entry import entry
+        _entry = entry()
         evidence = "runtime/artifacts/BA-answer/answer.md"
         h = engine_with({"id": "I"}, {"executions": {"E": {"id": "E", "role": "research_plan", "artifact_bundle": "B",
             "extensions": {"question_routes": [{"question_index": 0, "owner": "user", "target_ids": ["I"],
@@ -128,7 +130,7 @@ class RecordedQuestionTests(unittest.TestCase):
             files={evidence: b"evidence"})
         h._record_output_questions({"role": "research_plan"}, {"questions": ["Optional priority?"]}, "E")
         self.assertEqual(questions.user_waits({"role": "research_plan"}, h.instance, h.runtime), [])
-        one = questions.link(h.runtime, execution_id="A", field="questions/0", owner="research", targets=["I"])
+        one = questions.link(h.runtime, execution_id="A", field="questions/0", owner="research", targets=["I"], clock=_entry.ports.clock)
         h.runtime["executions"]["E"]["extensions"] = {"question_resolutions": [
             {"question_id": one["id"], "disposition": "resolved", "evidence_refs": [evidence], "reason": "answered"},
             {"question_id": "missing", "disposition": "resolved", "evidence_refs": [evidence], "reason": "bad"}]}

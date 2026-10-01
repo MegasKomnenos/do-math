@@ -15,13 +15,15 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from test_categories import test_group
 
 from do_math import contracts, submission
 from do_math.canonical import canonical_json
 from do_math.git_store import GitStateStore
 from do_math.state_contract import STATE_CONTRACT_ID
-from record_fixtures import surface_state
-from research_fixtures import git_init, role_reach
+from support.record_builders import surface_state
+from support.fakes.git_backend import make_repository
+from support.cli_inputs import role_reach
 from support.engine_context import prepare
 
 INSTANCE = 'RI-01ARZ3NDEKTSV4RRFFQ69G5FAV'
@@ -31,14 +33,19 @@ def envelope(family, record):
     return canonical_json({'contract_id': STATE_CONTRACT_ID, 'family': family, 'record': record})
 
 
+@test_group('resource')
 class SnapshotReachTests(unittest.TestCase):
     def snapshot(self, root, files):
         """``(record store binding, snapshot)`` of a new Git repository holding ``files``."""
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         repository = root / 'repository'
         repository.mkdir()
-        git_init(repository)
+        make_repository(repository)
         store = {'repository': str(repository), 'instance_id': INSTANCE}
-        return store, GitStateStore(repository, INSTANCE).publish(None, files).head
+        return store, GitStateStore(repository, INSTANCE, backend=_entry.ports.git_backend, clock=_entry.ports.clock).publish(None, files).head
 
     def test_goal_auditor_cannot_reach_another_auditors_judgment(self):
         """About 5 s: a real Git snapshot and the read tool as a child process are what it checks."""
@@ -166,24 +173,33 @@ class SnapshotReachTests(unittest.TestCase):
                     self.assertIn('EX-seat', fitted['validation_context']['record_index']['runtime/executions'])
 
 
+@test_group('resource')
 class SnapshotReadToolTests(unittest.TestCase):
     """The installed read tool reads the fixed input snapshot within the record map and logs each read."""
 
     def setUp(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.repository = self.root / 'repo'
         self.repository.mkdir()
-        git_init(self.repository)
+        make_repository(self.repository)
         self.decision = {'id': 'DC-1', 'kind': 'approval', 'actor': 'user'}
         self.result = b'{"report": "earlier run"}'
-        self.snapshot = GitStateStore(self.repository, INSTANCE).publish(None, {
+        self.snapshot = GitStateStore(self.repository, INSTANCE, backend=_entry.ports.git_backend, clock=_entry.ports.clock).publish(None, {
             'research/decisions/DC-1.json': envelope('decisions', self.decision),
             'runtime/executions/EX-1.json': envelope('executions', {'id': 'EX-1', 'role': 'research_work'}),
             'runtime/artifacts/BA-1/result.json': self.result}).head
 
     def install(self, ledger):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         workspace = self.root / ledger
         workspace.mkdir()
         index = {'research/decisions': ['DC-1'], **({'runtime/executions': ['EX-1']} if ledger == 'readable' else {})}
@@ -193,7 +209,7 @@ class SnapshotReadToolTests(unittest.TestCase):
                    'record_map': {'snapshot': self.snapshot, 'ledger': ledger,
                                   'families': {family: len(ids) for family, ids in index.items()}},
                    'record_store': {'repository': str(self.repository), 'instance_id': INSTANCE}}
-        submission.install_tools(workspace, context, contracts.schema_for('maintenance'), None)
+        submission.install_tools(workspace, context, contracts.schema_for('maintenance'), None, clock=_entry.ports.clock)
         return workspace
 
     def read(self, workspace, *arguments):

@@ -62,11 +62,13 @@ class OneJob:
 class TerminationDeadlineTests(unittest.TestCase):
     def test_job_termination_confirmation_has_a_fixed_deadline(self):
         """About 2 s: the product's termination deadline passes in real time."""
+        from support.entry import entry
+        _entry = entry()
         jobs = OneJob()
         started = time.monotonic()
         with tempfile.TemporaryDirectory() as d:
             with self.assertRaisesRegex(RuntimeError, 'formal Job termination could not be confirmed'):
-                formal._job_run(['fixture'], Path(d), should_stop=lambda: True, jobs=jobs)
+                formal._job_run(['fixture'], Path(d), should_stop=lambda: True, jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment)
         self.assertLess(time.monotonic() - started, LINGER_SECONDS, 'the deadline, not the Job leaving, ended the wait')
         self.assertEqual((jobs.job.terminate_calls, jobs.job.close_calls), (1, 1))
 

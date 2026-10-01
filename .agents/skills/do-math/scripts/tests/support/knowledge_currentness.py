@@ -31,7 +31,7 @@ from support.scheduling_model import ScenarioCLI, ScenarioModel
 
 class InterruptedCLI(ScenarioCLI):
     def communicate(self, input=None, timeout=None):
-        from runner_fixtures import context_from
+        from support.default_responder import context_from
         from support.model import MARKER
         prompt = input.decode('utf-8')
         role = prompt.split(MARKER, 1)[1].split('.', 1)[0]

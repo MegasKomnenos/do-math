@@ -14,7 +14,7 @@ import unittest
 
 from do_math import activities, delegations, governance
 from do_math.review_cycle import record_turn, validate_sealed_review
-from review_fixtures import grant_replacement
+from support.review_inputs import grant_replacement
 from support.review_scene import ReviewScene, warm
 
 
@@ -34,6 +34,8 @@ class ReviewSceneCase(unittest.TestCase):
 
     def delegate(self, cid, action):
         """The user's review replacement decision ``ORIGINAL`` delegated as ``DG``, and a case for ``action``'s slot."""
+        from support.entry import entry
+        _entry = entry()
         engine = self.engine
         engine.instance['decisions']['ORIGINAL'] = {'id': 'ORIGINAL', 'actor': 'user',
             'kind': 'review_replacement', 'source_ref': 'SOURCE-review'}
@@ -41,7 +43,7 @@ class ReviewSceneCase(unittest.TestCase):
             {'kind': 'delegation', 'decision_id': 'DD', 'delegation': {'id': 'DG', 'status': 'active',
              'decision_kind': 'review_replacement', 'original_decision_id': 'ORIGINAL',
              'included_targets': ['K1'], 'excluded_targets': [], 'external_effects': [],
-             'resource_limits': {}, 'expires_at': None}}, source_ref='SOURCE-review')
+             'resource_limits': {}, 'expires_at': None}}, source_ref='SOURCE-review', clock=_entry.ports.clock)
         effect = {'review_cycle_id': cid, 'stage': action['stage'], 'slot': action['slot'],
                   'round': action['round'], 'replacement_for': 0, 'continuity_break_cause': 'permanent_loss'}
         return {'id': 'CASE', 'decision_kind': 'review_replacement', 'target_id': 'K1',
@@ -147,6 +149,8 @@ class UserGrantReplacementTests(ReviewSceneCase):
 
 class DelegatedReplacementTests(ReviewSceneCase):
     def test_checked_delegation_replacement_survives_its_own_recorded_input(self):
+        from support.entry import entry
+        _entry = entry()
         engine, scene = self.engine, self.scene
         grant_replacement(engine)
         cid = scene.start('K1')
@@ -154,7 +158,7 @@ class DelegatedReplacementTests(ReviewSceneCase):
         engine._record_review_recovery(action, ValueError('permanent_loss'), retryable=False)
         case = self.delegate(cid, action)
         case['basis_refs'] = [cid]
-        application = delegations.prepare_application(engine.instance, engine.runtime, 'DG', case)
+        application = delegations.prepare_application(engine.instance, engine.runtime, 'DG', case, now_iso=engine.ports.clock.now())
         for eid, stage in [('INTERPRET', 'interpret'), ('CHECK', 'check')]:
             engine.runtime['executions'][eid] = {'id': eid, 'role': 'intent_interpretation', 'status': 'ended',
                                                 'delegation_input_sha256': application['input_sha256']}
@@ -171,7 +175,7 @@ class DelegatedReplacementTests(ReviewSceneCase):
         scene.execute()
         self.assertTrue(scene.usable())
         self.assertEqual(validate_sealed_review(engine.runtime['review_cycles'][cid], engine.runtime,
-            instance=engine.instance)['decision'], 'match')
+            instance=engine.instance, at=engine.ports.clock.now(), clock=engine.ports.clock)['decision'], 'match')
 
     def test_actual_blind_judgments_apply_the_approved_review_recovery(self):
         engine, scene = self.engine, self.scene

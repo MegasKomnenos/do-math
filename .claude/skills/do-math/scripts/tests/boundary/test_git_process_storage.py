@@ -24,7 +24,7 @@ from unittest.mock import patch
 
 from do_math.git_store import GitStateStore, GitStateStoreConflict, GitStateStoreError, StateSnapshot
 from do_math.wiring import real_ports
-from research_fixtures import git_init
+from support.fakes.git_backend import make_repository
 from support.storage_files import audit_events
 
 INSTANCE_ID = "RI-00000000000000000000000000"
@@ -51,7 +51,9 @@ def loose_objects(repository: Path) -> set[Path]:
 
 def real_store(repository: Path) -> GitStateStore:
     """The store with the product's real Git backend and clock, as the entry points assemble them."""
-    ports = real_ports()
+    from support.entry import entry
+    _entry = entry()
+    ports = real_ports(environment=_entry.environment)
     return GitStateStore(repository, INSTANCE_ID, backend=ports.git_backend, clock=ports.clock)
 
 
@@ -89,7 +91,7 @@ class GitProcessStoreTests(unittest.TestCase):
         self.temporary = Path(temporary.name)
         self.repository = self.temporary / "repository"
         self.repository.mkdir()
-        git_init(self.repository)
+        make_repository(self.repository)
         self.store = real_store(self.repository)
 
     def initial_changes(self) -> dict[str, bytes]:
@@ -271,7 +273,7 @@ class SnapshotMetadataProcessTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             repository = Path(temporary) / 'repository'
             repository.mkdir()
-            git_init(repository)
+            make_repository(repository)
             store = real_store(repository)
             with audit_events('subprocess.Popen') as events:
                 self.assertEqual(store.read_snapshot(), StateSnapshot(None))
@@ -347,7 +349,7 @@ class InProcessObjectsMatchGitPlumbingTests(unittest.TestCase):
             repository = Path(temporary) / "repository"
             repository.mkdir()
             if object_format == "sha1":
-                git_init(repository)
+                make_repository(repository)
             else:
                 git(repository, "init", "-q", f"--object-format={object_format}")
             index = {"GIT_INDEX_FILE": str(Path(temporary) / "oracle-index")}
@@ -398,3 +400,95 @@ class InProcessObjectsMatchGitPlumbingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BatchParsingTests(unittest.TestCase):
+    def test_wrong_or_incomplete_metadata_never_returns_a_snapshot(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
+        from do_math.git_process import GitProcess
+        from support.fakes.git_backend import make_repository
+        from support.provider_probes import ObservedCalls
+        from do_math.storage_finish_git_output import parse_object_info
+        head, tree, ref = 'a' * 40, 'b' * 40, REF
+        missing = [ref + suffix + ' missing' for suffix in ('', ':research', ':runtime')]
+        cases = [([head + ' blob 5', ref + ':research missing', ref + ':runtime missing'], 'commit'),
+                 (missing, 'unreadable'),
+                 ([head + ' commit extra', tree + ' tree 70', tree + ' tree 70'], 'invalid batch object check row'),
+                 ([head + ' commit 180', ref + ':research missing', tree + ' tree 70'], 'research'),
+                 ([head + ' commit 180', tree + ' blob 5', tree + ' tree 70'], 'tree'),
+                 ([head + ' commit 180', tree + ' tree 70'], 'response count differs'),
+                 ([head + ' commit 180', tree + ' tree 70', tree + ' tree 70', tree + ' tree 70'], 'response count differs')]
+        with tempfile.TemporaryDirectory() as directory:
+            repo = make_repository(directory)
+            valid = [head + ' commit 180', tree + ' tree 70', 'c' * 40 + ' tree 70']
+            process_cases = [(rows, 0, b'', message) for rows, message in cases]
+            process_cases += [(valid, 1, b'', 'git cat-file.*failed'),
+                              ([], 1, b'failure', 'git cat-file.*failed')]
+            for rows, returncode, stderr, message in process_cases:
+                with self.subTest(rows=rows, returncode=returncode, stderr=stderr):
+                    calls = []
+                    def run(argv, **kwargs):
+                        calls.append((argv, kwargs))
+                        if '--show-object-format' in argv:
+                            raw = f'{repo / ".git"}\nsha1\n.git/objects\n'.encode()
+                        elif 'cat-file' in argv:
+                            self.assertEqual(kwargs['input'], ''.join(ref + suffix + '\n' for suffix in ('', ':research', ':runtime')).encode())
+                            return subprocess.CompletedProcess(argv, returncode, ('\n'.join(rows) + '\n').encode(), stderr)
+                        else:
+                            self.assertEqual(argv[-4:], ['rev-parse', '--verify', '--quiet', ref])
+                            raw = (head + '\n').encode()
+                        return subprocess.CompletedProcess(argv, 0, raw, b'')
+                    backend = GitProcess(run=run, environment=_entry.environment)
+                    store = GitStateStore(repo, INSTANCE_ID, backend=backend, clock=_entry.ports.clock)
+                    with ObservedCalls(parse=parse_object_info) as observed:
+                        with self.assertRaisesRegex(GitStateStoreError, message):
+                            store.read_snapshot()
+                    self.assertEqual(observed.count('parse'), 0 if returncode else 1)
+                    self.assertEqual(len(calls), 3 if rows == missing else 2)
+                    self.assertIn('--show-object-format', calls[0][0])
+                    self.assertIn('cat-file', calls[1][0])
+
+    def test_real_git_and_store_use_both_pure_batch_parsers(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
+        from do_math.git_process import GitProcess
+        from do_math.storage_finish_git_output import parse_object_info, parse_read_objects
+        from support.fakes.git_backend import make_repository
+        from support.provider_probes import ObservedCalls
+        with tempfile.TemporaryDirectory() as directory:
+            repo = make_repository(directory)
+            backend = GitProcess(environment=_entry.environment)
+            store = GitStateStore(repo, INSTANCE_ID, backend=backend, clock=_entry.ports.clock)
+            snapshot = store.publish(None, {'research/state.json': b'{}', 'runtime/state.json': b'{}'})
+            with ObservedCalls(info=parse_object_info, read=parse_read_objects) as calls:
+                self.assertEqual(store.read_snapshot().head, snapshot.head)
+                self.assertEqual(store.read_bytes(snapshot.head, 'research/state.json'), b'{}')
+            self.assertEqual(calls.count('info'), 1)
+            self.assertEqual(calls.count('read'), 1)
+            self.assertEqual(calls.captured('info')[0]['specs'], [REF, REF + ':research', REF + ':runtime'])
+
+    def test_empty_requests_make_no_external_call(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.git_process import GitProcess
+        calls = []
+        def run(*args, **kwargs):
+            calls.append((args, kwargs))
+            raise AssertionError('empty request ran Git')
+        backend = GitProcess(run=run, environment=_entry.environment)
+        self.assertEqual(backend.object_info(Path('.'), []), [])
+        self.assertEqual(backend.read_objects(Path('.'), []), [])
+        self.assertEqual(calls, [])

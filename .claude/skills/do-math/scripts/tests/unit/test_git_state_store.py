@@ -288,3 +288,29 @@ class SnapshotMetadataTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class BatchOutputTests(unittest.TestCase):
+    def test_object_info_keeps_missing_order_and_both_oid_widths(self):
+        from do_math.storage_finish_git_output import parse_object_info
+        for width in (40, 64):
+            with self.subTest(width=width):
+                oid = 'a' * width
+                self.assertEqual(parse_object_info(['one', 'missing', 'two'],
+                                 f'{oid} blob 2\nmissing missing\n{oid} tree 0\n'.encode()),
+                                 [(oid, 'blob', 2), None, (oid, 'tree', 0)])
+        self.assertEqual(parse_object_info([], b''), [])
+
+    def test_binary_payload_and_every_read_frame_refusal(self):
+        from do_math.storage_finish_git_output import parse_read_objects
+        from do_math.ports.git_backend import GitBackendError
+        raw = b'oid blob 4\n\x00\xff\nX\nabsent missing\noid blob 0\n\n'
+        self.assertEqual(parse_read_objects(['one', 'absent', 'empty'], raw),
+                         [('blob', b'\x00\xff\nX'), None, ('blob', b'')])
+        self.assertEqual(parse_read_objects([], b''), [])
+        for data, reason in [(b'', 'no object header'), (b'oid blob extra\n', 'no object header'),
+                             (b'oid blob 3\nab', 'truncated batch object'),
+                             (b'oid blob 2\nabX', 'truncated batch object'),
+                             (b'oid blob 0\n\nextra', 'unexpected trailing batch output')]:
+            with self.subTest(raw=data), self.assertRaisesRegex(GitBackendError, reason):
+                parse_read_objects(['one'], data)

@@ -17,7 +17,7 @@ from do_math.control_transport import ControlTransport
 from do_math.execution_lifecycle import (create_execution, end_preparation, end_recovered, record_submission_intent,
                                          recover_execution, transition_execution)
 from do_math.provider_wait import gate_open, retry_time
-from research_fixtures import sealed_maintenance_submission
+from support.execution_inputs import sealed_maintenance_submission
 from support.fakes.clock import FakeClock
 
 TIME = "2026-09-20T00:00:00+00:00"

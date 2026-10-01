@@ -1,14 +1,8 @@
 """The scholarly-MCP server pair for isolated Codex executions: its closed shape (``scholarly``, layer 1)
 and its resolution from the nearest Codex configuration file (``scholarly_config``, layer 2); moved from ``test_scholarly``.
 
-The configuration files are real files in temporary folders. CODEX_HOME and,
-when it is unset, the home folder come from the process environment
-(``migration_defaults.codex_home_or_default``); these tests set that
-environment instead of replacing ``Path.home``: on Windows ``Path.home()`` is
-``USERPROFILE``. The configuration-file search climbs every ancestor of the
-start folder, so the tests assume no ancestor of the temporary folder holds a
-``.codex/config.toml`` with a scholarly entry (on the development machine the
-user profile's file has no ``mcp_servers`` table).
+The configuration files are real files in temporary folders. The entry point
+passes the selected Codex home as a value; resolution performs no environment reads.
 """
 import os
 from pathlib import Path
@@ -24,8 +18,10 @@ HOME_ENTRY = '[mcp_servers.scholarly]\ncommand = "python"\nargs = ["C:/home-serv
 
 class ScholarlyServerShapeTests(unittest.TestCase):
     def test_explicit_server_is_closed_when_paths_are_already_absolute(self):
+        from support.entry import entry
+        _entry = entry()
         value = {"command": "C:/tools/python.exe", "args": ["C:/service/server.py", "--credential-root", "credentials"]}
-        resolved = resolve_scholarly_server(value, start=Path.cwd())
+        resolved = resolve_scholarly_server(value, start=Path.cwd(), codex_home=_entry.codex_home)
         # Only the first argument is a server file; the later relative literal stays as given.
         self.assertEqual(resolved, value)
         self.assertIsNot(resolved, value)
@@ -58,6 +54,8 @@ class ScholarlyConfigurationTests(unittest.TestCase):
         return Path(root.name), Path(home.name)
 
     def test_project_config_beats_code_home_and_extracts_only_scholarly(self):
+        from support.entry import entry
+        _entry = entry()
         root, home = self.folders()
         (root / ".codex").mkdir()
         (root / ".codex" / "python.exe").write_bytes(b"")
@@ -68,18 +66,18 @@ class ScholarlyConfigurationTests(unittest.TestCase):
             'tool_timeout_sec = 1800\n', encoding="utf-8")
         (home / "config.toml").write_text(
             '[mcp_servers.scholarly]\ncommand = "home-python"\nargs = ["home-server.py"]\n', encoding="utf-8")
-        with patch.dict(os.environ, {"CODEX_HOME": str(home)}):
-            resolved = resolve_scholarly_server(None, start=root)
+        resolved = resolve_scholarly_server(None, start=root, codex_home=home)
         # Exactly the pair: the other server and the client time limits are not inherited;
         # the relative command and server file become the files beside the configuration.
         self.assertEqual(resolved, {"command": str((root / ".codex" / "python.exe").resolve()),
                                     "args": [str((root / ".codex" / "server.py").resolve())]})
 
     def test_code_home_is_used_when_project_has_no_scholarly_entry(self):
+        from support.entry import entry
+        _entry = entry()
         root, home = self.folders()
         (home / "config.toml").write_text(HOME_ENTRY, encoding="utf-8")
-        with patch.dict(os.environ, {"CODEX_HOME": str(home)}):
-            resolved = resolve_scholarly_server(None, start=root)
+        resolved = resolve_scholarly_server(None, start=root, codex_home=home)
         # "python" has no separator or suffix, so it is not a path and stays literal.
         self.assertEqual(resolved, {"command": "python", "args": ["C:/home-server.py"]})
         # The entry point's CODEX_HOME, passed as an argument, is read the same way.
@@ -87,13 +85,12 @@ class ScholarlyConfigurationTests(unittest.TestCase):
                          {"command": "python", "args": ["C:/home-server.py"]})
 
     def test_default_home_config_is_used_when_code_home_is_unset(self):
+        from support.entry import entry
+        _entry = entry()
         root, home = self.folders()
         (home / ".codex").mkdir()
         (home / ".codex" / "config.toml").write_text(HOME_ENTRY, encoding="utf-8")
-        with patch.dict(os.environ, {"USERPROFILE": str(home)}):
-            os.environ.pop("CODEX_HOME", None)  # patch.dict restores the whole environment afterwards
-            self.assertEqual(Path.home(), home)
-            resolved = resolve_scholarly_server(None, start=root)
+        resolved = resolve_scholarly_server(None, start=root, codex_home=home / ".codex")
         self.assertEqual(resolved, {"command": "python", "args": ["C:/home-server.py"]})
 
 

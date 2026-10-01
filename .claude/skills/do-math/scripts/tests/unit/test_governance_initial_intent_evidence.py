@@ -11,7 +11,7 @@ import unittest
 
 from do_math import governance as gov
 from do_math.initialization import initial_intent_evidence
-from record_fixtures import applied_initial_intent
+from support.record_builders import applied_initial_intent
 
 # A combining accent and the Kelvin sign: text that Unicode normalization would change.
 UNSTABLE = 'e\N{COMBINING ACUTE ACCENT} and \N{KELVIN SIGN} are exact source text'
@@ -19,41 +19,49 @@ UNSTABLE = 'e\N{COMBINING ACUTE ACCENT} and \N{KELVIN SIGN} are exact source tex
 
 class InitialIntentConnectionTests(unittest.TestCase):
     def test_applied_import_uses_original_input_reference_and_exact_bytes(self):
+        from support.entry import entry
+        _entry = entry()
         for text in ['A mathematical goal', UNSTABLE]:
             with self.subTest(text=text):
                 instance, runtime, _ = applied_initial_intent(text)
-                self.assertEqual(initial_intent_evidence(instance, runtime), {
+                self.assertEqual(initial_intent_evidence(instance, runtime, clock=_entry.ports.clock), {
                     'input_sha256': hashlib.sha256(text.encode()).hexdigest(),
                     'interpretation_execution_id': 'EX-author', 'check_execution_id': 'EX-check'})
 
     def test_changed_input_or_unapplied_result_cannot_complete_initialization(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime, bid = applied_initial_intent('A mathematical goal')
         runtime['intent_imports'][bid].pop('application')
         with self.assertRaisesRegex(ValueError, '^initial input requires a sealed, fully checked applied import$'):
-            initial_intent_evidence(instance, runtime)
+            initial_intent_evidence(instance, runtime, clock=_entry.ports.clock)
         instance, runtime, bid = applied_initial_intent('A mathematical goal')
         runtime['intent_imports'][bid]['input_ref'] = 'UI-other'
         with self.assertRaisesRegex(ValueError, '^initial input has no applied independent import$'):
-            initial_intent_evidence(instance, runtime)
+            initial_intent_evidence(instance, runtime, clock=_entry.ports.clock)
 
     def test_initial_grants_wait_for_activation_to_open_research(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime, _ = applied_initial_intent('A mathematical goal')
         instance, runtime, _ = gov.apply_decision(instance, runtime, {'kind': 'grant', 'grant': {
-            'id': 'GR-work', 'kind': 'local', 'roles': ['research_work'], 'reuse': 'reusable'}}, source_ref='GS-adoption')
+            'id': 'GR-work', 'kind': 'local', 'roles': ['research_work'], 'reuse': 'reusable'}}, source_ref='GS-adoption', clock=_entry.ports.clock)
         self.assertEqual(runtime['queue'], [])
         self.assertEqual(instance['grants']['GR-work']['status'], 'active')
 
     def test_grant_change_is_plan_basis_and_not_the_plan_execution_authority(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime, _ = applied_initial_intent('A mathematical goal')
         instance['lifecycle']['state'] = 'active'
         instance, runtime, _ = gov.apply_decision(instance, runtime, {'kind': 'grant', 'grant': {
-            'id': 'GR-plan', 'kind': 'local', 'roles': ['research_plan'], 'reuse': 'reusable'}}, source_ref='GS-adoption')
+            'id': 'GR-plan', 'kind': 'local', 'roles': ['research_plan'], 'reuse': 'reusable'}}, source_ref='GS-adoption', clock=_entry.ports.clock)
         runtime['queue'] = []
         instance, runtime, event = gov.apply_decision(instance, runtime, {'kind': 'grant', 'grant': {
-            'id': 'GR-work', 'kind': 'local', 'roles': ['research_work'], 'reuse': 'reusable'}}, source_ref='GS-adoption')
+            'id': 'GR-work', 'kind': 'local', 'roles': ['research_work'], 'reuse': 'reusable'}}, source_ref='GS-adoption', clock=_entry.ports.clock)
         self.assertEqual(len(runtime['queue']), 1)
         action = runtime['queue'][0]
-        authorization = gov.authorize(instance, action, runtime=runtime)
+        authorization = gov.authorize(instance, action, runtime=runtime, at=_entry.ports.clock.now())
         self.assertTrue(authorization['allowed'], authorization)
         self.assertEqual(authorization['grant_id'], 'GR-plan')
         self.assertEqual(action['decision_id'], event['id'])

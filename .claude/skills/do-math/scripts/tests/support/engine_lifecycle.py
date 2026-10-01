@@ -36,8 +36,8 @@ Start states and records:
   command is its own Lean and configures that command by control, as a user
   moving to another toolchain does; ``transition`` requests the move.
 - ``failing_lean(sim)`` makes every later Lean check exit with an error;
-  ``recorded_verifier(sim)`` rebuilds the engine with a formal verifier that
-  records its arguments and runs the product's own ``verify_lean``.
+  ``recorded_verifier()`` observes the actual ``verify_lean`` arguments through
+  ``sys.monitoring`` without replacing any product call.
 - ``http_grant`` decides an HTTP grant and returns its prepare config;
   ``http_fails`` makes the HTTP port fake record each request and then raise.
 """
@@ -50,6 +50,7 @@ import inspect
 import os
 from pathlib import Path
 import sys
+from support.monitoring_slots import reserve_tool
 
 from do_math.engine import ResearchEngine
 from do_math.governance import OPERATING_ROLES, TASK_WORK_ROLES
@@ -109,8 +110,8 @@ def task(engine, task_id='TK-one', *, approved=True, condition=None, inputs=None
     model assessment and observation rules the product requires before a
     contract review (``FakeEngine`` returned no missing assessment).
     """
-    from engine_fixtures import evidence_task
-    from research_fixtures import prepared_rule_conditions
+    from support.record_builders import evidence_task
+    from support.observation_inputs import prepared_rule_conditions
     _ended_execution(engine, 'EX-preparation', 'research_preparation')
     row = evidence_task(task_id)
     row.update(inputs=list(inputs or []), authority_refs=[research_grant(engine)],
@@ -128,7 +129,7 @@ def task(engine, task_id='TK-one', *, approved=True, condition=None, inputs=None
 def approve(engine, row, decision='approved'):
     """Seal one contract review of ``row`` with ``decision`` by the returned reviewer ``EX-review-<task>``."""
     from do_math import planning
-    from research_fixtures import review_items
+    from support.role_answers import review_items
     reviewer = 'EX-review-' + row['id']
     _ended_execution(engine, reviewer, 'task_contract_review')
     row['reviews'] = [planning.seal_contract_review(row, review_items([row['id']], decision=decision), engine.instance,
@@ -158,6 +159,7 @@ def theorems(sim, *names):
     engine = sim.engine
     clear_work(sim)
     for name in names:
+        sim.lean.allow(f'theorem {name} : 1 = 1 := rfl', [name], signatures={name: name + ' : 1 = 1'})
         applied(sim, 'knowledge', config={'operation': 'import', 'candidate': {
             'kind': 'theorem', 'title': name, 'statement': 'One equals one (' + name + ')', 'summary': 'Reflexivity',
             'explanation': 'By reflexivity.', 'lean_code': f'theorem {name} : 1 = 1 := rfl',
@@ -215,7 +217,7 @@ def next_environment(sim, name, *, configure=True, base=None):
     trust record fingerprints the files' creation times, which a copy changes.
     A test that changes toolchain files registers its own under ``sim.root``.
     """
-    from research_fixtures import trust_fixture
+    from support.trust_inputs import trust_fixture
     directory = (base or sim.root) / name / 'trust'
     request = trust_fixture(directory.parent, [str(lean_of(directory))], directory=directory)
     applied(sim, 'trust', config=request)
@@ -285,22 +287,22 @@ def failing_lean(sim, message='fixture: the compiler failed'):
         Failing(list(command), stderr)
 
 
-def recorded_verifier(sim, change=None):
-    """Rebuild the engine (a process restart) with a verifier that records each call and runs ``verify_lean``.
-
-    ``change(result)`` may rewrite what the verifier returns. Returns the list of
-    recorded argument maps (without the stop and start callbacks).
-    """
+@contextmanager
+def recorded_verifier():
+    """Observe actual verify_lean arguments without replacing the calculator or its return."""
     from do_math.formal import verify_lean
+    from support.provider_probes import ObservedCalls
     calls = []
 
-    def verifier(**arguments):
-        calls.append({key: deepcopy(value) for key, value in arguments.items()
-                      if key not in ('should_stop', 'on_started', 'clock')})
-        result = verify_lean(jobs=sim.ports.jobs, **arguments)
-        return change(result) if change else result
-    sim.engine = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports, formal_verifier=verifier)
-    return calls
+    def capture(arguments):
+        value = {key: deepcopy(value) for key, value in arguments.items()
+                 if key not in ('should_stop', 'on_started', 'clock', 'jobs', 'environment')}
+        calls.append(value)
+        return value
+
+    with ObservedCalls(capture={'verify': capture}, verify=verify_lean):
+        yield calls
+
 
 
 _WATCHES = []
@@ -362,8 +364,7 @@ class ObservedCalls:
 
     def __enter__(self):
         monitoring = sys.monitoring
-        self.tool = next(tool for tool in (3, 4, 0, 2) if monitoring.get_tool(tool) is None)
-        monitoring.use_tool_id(self.tool, 'do-math engine observed calls')
+        self.tool = reserve_tool('do-math engine observed calls')
 
         def started(code, offset):
             self.calls[self.names[code]].append(dict(sys._getframe(1).f_locals))
@@ -452,7 +453,10 @@ def lifecycle_sim():
     configured command, so the formal and trust profiles already name it; a test
     starts a transition to it. The queue and pending events are empty.
     """
-    return built('engine-lifecycle', _build_lifecycle)
+    sim = built('engine-lifecycle', _build_lifecycle)
+    for name in THEOREMS:
+        sim.lean.allow(f'theorem {name} : 1 = 1 := rfl', [name], signatures={name: name + ' : 1 = 1'})
+    return sim
 
 
 def prepared_environment(sim):

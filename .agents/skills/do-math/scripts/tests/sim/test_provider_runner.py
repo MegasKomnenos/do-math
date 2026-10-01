@@ -12,11 +12,13 @@ import tempfile
 import unittest
 
 from do_math.configuration import DEFAULT_CONFIG, validate_config
-from do_math.execution_profiles import build_profiles, runner_tools
+from do_math.execution_profiles import build_profiles, runner_tools, prepare_prompt, prompt_seal, profile_ref, job_resource_limits
 from do_math.windows_job import WindowsJobUnsupportedError
 from do_math import claude_worker
 from support.fakes.clock import FakeClock
 from support.provider_runs import ProviderJobs, ScriptedCLI, codex_stream, model_runner
+from support.provider_runs import dispatched
+from support.provider_inputs import host_capacity_fixture
 
 
 class RunnerCase(unittest.TestCase):
@@ -34,6 +36,45 @@ class RunnerCase(unittest.TestCase):
 
 
 class ResultTests(RunnerCase):
+    def test_pinned_start_is_published_once_and_bound_to_the_completed_worker_job(self):
+        from support.entry import entry
+        _entry = entry()
+        _, selected, _ = host_capacity_fixture()
+        profile = selected['research_work']
+        clock, started = FakeClock(), []
+        jobs = ProviderJobs(ScriptedCLI(final=b'{"x":1}'), clock=clock)
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        (root / 'ws').mkdir()
+        prompt = prepare_prompt('test', profile)
+        result = model_runner(root, jobs, clock).run(prompt=prompt, input_seal=prompt_seal(prompt),
+            output_schema={'type': 'object', 'required': ['x']}, workspace=root / 'ws', evidence_dir=root / 'e',
+            model=profile['ai']['model'], effort=profile['ai']['effort'], timeout_seconds=None,
+            execution_id='EX-start-once', profile=profile,
+            launch_ticket=dispatched('EX-start-once', profile, jobs, clock), on_started=started.append)
+        self.assertEqual(result['status'], 'completed', result)
+        start, = started
+        job, = jobs.launched
+        self.assertEqual(start['pid'], job.pid)
+        self.assertEqual(start['creation_filetime'], str(job.creation_filetime))
+        self.assertEqual(start['job_name'], job.name)
+        self.assertEqual(start['host_resources']['limits'], job_resource_limits(profile, host_id=_entry.host_id))
+        request = json.loads(Path(job.argv[2]).read_bytes())
+        self.assertEqual(request['execution_id'], 'EX-start-once')
+        self.assertEqual(request['profile_ref'], profile_ref(profile))
+        self.assertTrue(job.done and job.closed)
+        self.assertEqual(job.inspect().active_processes, 0)
+        self.assertEqual(result['execution_id'], 'EX-start-once')
+        self.assertEqual(result['profile_ref'], profile_ref(profile))
+
+    def test_refused_launch_never_reports_a_started_process(self):
+        started = []
+        jobs = ProviderJobs(refuse=WindowsJobUnsupportedError('synthetic unsupported host'))
+        result, _, _ = self.call(jobs=jobs, schema={}, on_started=started.append)
+        self.assertEqual(started, [])
+        self.assertEqual(jobs.launched, [])
+        self.assertTrue(result['launch_not_created'])
+        self.assertIn('synthetic unsupported host', result['error'])
+
     def test_completed_only_after_schema(self):
         # The collector's parsed stream lists one usage row per report (codex_stream.parse_jsonl).
         result, _, _ = self.call(ScriptedCLI(stdout=codex_stream(b'{"x":1}', usage={'input_tokens': 1}),
@@ -208,13 +249,15 @@ class ProviderRoutingTests(RunnerCase):
         return requests, jobs
 
     def test_model_lock_is_opt_in_and_reaches_only_claude(self):
+        from support.entry import entry
+        _entry = entry()
         pinned = {**DEFAULT_CONFIG, 'claude_only_assigned_model': True, 'scholarly_enabled': False}
-        profile = next(p for p in build_profiles(pinned)['execution_profiles'].values() if p['role'] == 'maintenance')
+        profile = next(p for p in build_profiles(pinned, host=_entry.ports.host)['execution_profiles'].values() if p['role'] == 'maintenance')
         # The runner reads the lock from this pinned edition, not from the current configuration.
         self.assertTrue(runner_tools(profile)['claude_only_assigned_model'])
         self.assertFalse(DEFAULT_CONFIG['claude_only_assigned_model'])
         with self.assertRaisesRegex(ValueError, "claude_only_assigned_model: 'true' is not of type 'boolean'"):
-            validate_config({'claude_only_assigned_model': 'true'})
+            validate_config({'claude_only_assigned_model': 'true'}, host_id=_entry.host_id)
         requests, jobs = self.routed_requests([('claude-opus-5', True), ('gpt-5.6-sol', True)])
         self.assertEqual([(provider, request['model'], request.get('claude_only_assigned_model'))
                           for provider, request in requests],

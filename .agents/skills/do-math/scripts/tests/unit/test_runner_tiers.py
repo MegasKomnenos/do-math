@@ -1,4 +1,4 @@
-"""The runner places new-system tests in tiers by folder and selects them with --tier."""
+"""The runner places tests in tiers by folder and selects them with --tier."""
 import contextlib
 import io
 import json
@@ -22,15 +22,15 @@ def _case(module):
 
 
 class TierTests(unittest.TestCase):
-    def test_folder_package_decides_the_tier_group_and_legacy_modules_have_none(self):
+    def test_folder_package_decides_the_tier_group(self):
         self.assertEqual(run_tests.folder_of(_case('structure.test_layers')), 'structure')
         self.assertEqual(run_tests.folder_of(_case('unit.test_runner_tiers')), 'unit')
-        self.assertIsNone(run_tests.folder_of(_case('test_git_store')))
+        self.assertIsNone(run_tests.folder_of(_case('outside.test_invalid')))
 
-    def test_tier_selects_only_its_folders_and_never_legacy_modules(self):
+    def test_tier_selects_only_its_folders(self):
         tests = [_case('structure.test_a'), _case('unit.test_b'), _case('sim.test_c'),
                  _case('contracts.test_d'), _case('boundary.test_e'), _case('smoke.test_f'),
-                 _case('flows.test_g'), _case('test_git_store')]
+                 _case('flows.test_g'), _case('outside.test_invalid')]
         chosen = lambda tier: sorted(run_tests.folder_of(t) for t in run_tests.select_tiers(tests, [tier]))
         self.assertEqual(chosen('T1'), ['contracts', 'structure', 'unit'])
         self.assertEqual(chosen('T2'), ['contracts', 'sim', 'structure', 'unit'])
@@ -47,6 +47,23 @@ class TierTests(unittest.TestCase):
 
 
 class ReportTests(unittest.TestCase):
+    def test_changed_source_rejects_pass_and_does_not_publish_timing_cache(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        test = _case('unit.test_source_probe')
+        with mock.patch.object(run_tests, 'discover', return_value=[test]), \
+                mock.patch.object(run_tests, '_edition', side_effect=[{'source.py': 'before'}, {'source.py': 'after'}]), \
+                mock.patch.object(run_tests, 'TIMINGS', root / 'times.json'), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            code = run_tests.main([test.id(), '--output', str(root / 'out')])
+        report = json.loads((root / 'out' / 'report.json').read_text(encoding='utf-8'))
+        self.assertEqual(code, 1)
+        self.assertFalse(report['successful'])
+        self.assertEqual(report['source_sha256'], {'source.py': 'before'})
+        self.assertEqual(report['changed_during_run'], ['source.py'])
+        self.assertEqual(report['counts'], {'passed': 1})
+        self.assertEqual(set(report['module_total_seconds']), {'unit.test_source_probe'})
+        self.assertFalse((root / 'times.json').exists())
+
     def test_report_states_the_number_of_open_known_defects(self):
         """About 0.3 s, over the 0.2 s unit budget: it runs the runner's whole main, discovery included."""
         import json, tempfile
@@ -54,10 +71,19 @@ class ReportTests(unittest.TestCase):
         import io
         with tempfile.TemporaryDirectory() as directory:
             with redirect_stdout(io.StringIO()):
-                code = run_tests.main(['unit.test_runner_tiers.TierTests.test_folder_package_decides_the_tier_group_and_legacy_modules_have_none',
+                code = run_tests.main(['unit.test_runner_tiers.TierTests.test_folder_package_decides_the_tier_group',
                                        '--output', directory + '/out'])
             report = json.loads(open(directory + '/out/report.json', encoding='utf-8').read())
         self.assertEqual(code, 0)
+        self.assertEqual(set(report) & {'shards', 'shard_seconds'}, set())
+        self.assertTrue(all('shard' not in group for group in report['reports']))
+        self.assertEqual(report['folders'], ['unit'])
+        self.assertEqual(set(report['group_seconds']), {'unit'})
+        self.assertEqual([group['group'] for group in report['reports']], ['unit'])
+        self.assertEqual(report['counts'], {'passed': 1})
+        self.assertEqual(report['module_total_seconds'], report['reports'][0]['module_total_seconds'])
+        self.assertEqual(set(report['module_total_seconds']), {'unit.test_runner_tiers'})
+        self.assertEqual(report['changed_during_run'], [])
         self.assertIn('open_known_defects', report)
         self.assertIsInstance(report['open_known_defects'], int)
 
@@ -68,11 +94,10 @@ class BudgetTests(unittest.TestCase):
 
     BUDGETS = {'per_test_seconds': {'unit': 0.2, 'sim': 2.0}, 'tier_seconds': {'T1': 180, 'T2': 300}}
 
-    def test_only_new_system_tests_over_their_folder_budget_are_listed(self):
+    def test_only_tests_over_their_folder_budget_are_listed(self):
         rows = [{'id': 'unit.test_a.T.test_fast', 'seconds': 0.1, 'outcome': 'passed'},
                 {'id': 'unit.test_a.T.test_slow', 'seconds': 0.5, 'outcome': 'passed'},
                 {'id': 'sim.test_b.T.test_slow', 'seconds': 7.0, 'outcome': 'failed'},
-                {'id': 'test_legacy.T.test_slow', 'seconds': 90.0, 'outcome': 'passed'},
                 {'id': 'sim.test_b.T.setUpClass', 'seconds': 9.0, 'outcome': 'passed', 'fixture': True}]
         report = run_tests.budget_report(rows, ['T2'], 400.0, self.BUDGETS)
         self.assertEqual([(row['id'], row['budget_seconds']) for row in report['over_budget']],
@@ -109,23 +134,72 @@ class ParallelGroupTests(unittest.TestCase):
                          {'unit.test_x': 3.5, 'sim.test_y': 2 * run_tests.UNKNOWN_TEST_SECONDS})
 
 
+class ModuleCostTests(unittest.TestCase):
+    def test_unmeasured_module_preparation_cost_reaches_cache_and_lpt(self):
+        # Body-only costs would put a+c together (102 seconds) and b alone (8).
+        # Actual fixture-inclusive costs put a alone (95), b+c together (15).
+        clock = types.SimpleNamespace(value=0)
+        def advance(seconds):
+            clock.value += seconds
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.enterContext(mock.patch.object(run_tests, 'TIMINGS', root / 'times.json'))
+        self.enterContext(mock.patch.object(run_tests, 'time', types.SimpleNamespace(monotonic=lambda: clock.value)))
+        self.enterContext(mock.patch.dict(sys.modules))
+        tests = []
+        for name, prep, body in [('a', 90, 5), ('b', 0, 8), ('c', 0, 7)]:
+            module = types.ModuleType('unit.test_cost_' + name)
+            module.setUpModule = lambda prep=prep: advance(prep)
+            sys.modules[module.__name__] = module
+            case = type('Case', (unittest.TestCase,), {
+                '__module__': module.__name__, 'test_x': lambda self, body=body: advance(body)})
+            tests.append(case('test_x'))
+        with contextlib.redirect_stderr(io.StringIO()):
+            report = run_tests._run_suite(tests, root / 'run')
+        row_costs = {row['id'].rsplit('.', 2)[0]: row['seconds'] for row in report['rows']}
+        self.assertEqual(sum(row_costs.values()), 20)
+        self.assertEqual(run_tests.lpt_groups(row_costs, 2),
+                         [['unit.test_cost_b'], ['unit.test_cost_c', 'unit.test_cost_a']])
+        totals = report['module_total_seconds']
+        self.assertEqual(totals, {'unit.test_cost_a': 95, 'unit.test_cost_b': 8, 'unit.test_cost_c': 7})
+        self.assertEqual(sum(totals.values()) - sum(row_costs.values()), 90)
+        run_tests._record_timings(totals, measured=False)
+        costs = run_tests.module_seconds(dict.fromkeys(totals, 1), run_tests.recorded_seconds(False))
+        self.assertEqual(costs, totals)
+        from support import mutation
+        raw_cache = json.loads((root / 'times.json').read_text(encoding='utf-8'))
+        self.assertEqual(mutation.expected_seconds({'tests': [], 'folders': ['unit']}, raw_cache), 110)
+        self.assertEqual([test.id() for test in mutation.cheapest_first(tests, raw_cache)],
+                         [tests[2].id(), tests[1].id(), tests[0].id()])
+        self.assertEqual(run_tests.lpt_groups(costs, 2),
+                         [['unit.test_cost_a'], ['unit.test_cost_b', 'unit.test_cost_c']])
+
+
 class TimingRecordTests(unittest.TestCase):
     """Measured T3 times (2-3x, unevenly by module) stay out of the T2 balance record (결함 D11)."""
 
-    def test_a_measured_run_keeps_its_times_apart_and_balances_by_them_with_t2_as_fallback(self):
-        rows = [{'id': 'sim.test_a.T.test_x', 'seconds': 9.0, 'outcome': 'passed'}]
+    def test_measured_and_unmeasured_module_totals_have_separate_cost_populations(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        t2, t3 = root / 't2.json', root / 't3.json'
-        t2.write_text('{"sim.test_a": 3.0, "unit.test_b": 1.0}', encoding='utf-8')
-        self.enterContext(mock.patch.object(run_tests, 'TIMINGS', t2))
-        self.enterContext(mock.patch.object(run_tests, 'TIMINGS_T3', t3))
-        run_tests._record_timings(rows, measured=True)
-        self.assertEqual(json.loads(t2.read_text(encoding='utf-8')), {'sim.test_a': 3.0, 'unit.test_b': 1.0})
-        self.assertEqual(json.loads(t3.read_text(encoding='utf-8')), {'sim.test_a': 9.0})
-        self.assertEqual(run_tests.recorded_seconds(measured=True), {'sim.test_a': 9.0, 'unit.test_b': 1.0})
-        self.assertEqual(run_tests.recorded_seconds(measured=False), {'sim.test_a': 3.0, 'unit.test_b': 1.0})
-        run_tests._record_timings(rows, measured=False)
-        self.assertEqual(json.loads(t2.read_text(encoding='utf-8')), {'sim.test_a': 9.0, 'unit.test_b': 1.0})
+        self.enterContext(mock.patch.object(run_tests, 'TIMINGS', root / 't2.json'))
+        self.enterContext(mock.patch.object(run_tests, 'TIMINGS_T3', root / 't3.json'))
+        run_tests._record_timings({'sim.test_a': 3.0, 'unit.test_b': 1.0}, measured=False)
+        run_tests._record_timings({'sim.test_a': 9.0}, measured=True)
+        self.assertEqual(run_tests.recorded_seconds(True), {'sim.test_a': 9.0})
+        self.assertEqual(run_tests.recorded_seconds(False), {'sim.test_a': 3.0, 'unit.test_b': 1.0})
+        self.assertEqual(run_tests.module_seconds({'unit.test_b': 2}, run_tests.recorded_seconds(True)),
+                         {'unit.test_b': 2 * run_tests.UNKNOWN_TEST_SECONDS})
+        run_tests._record_timings({'sim.test_a': 4.0}, measured=False)
+        self.assertEqual(run_tests.recorded_seconds(False), {'sim.test_a': 4.0, 'unit.test_b': 1.0})
+        self.assertEqual(json.loads((root / 't2.json').read_text(encoding='utf-8')),
+                         {'_cost_basis': 'module_total_seconds', 'sim.test_a': 4.0, 'unit.test_b': 1.0})
+
+    def test_body_only_cache_is_invalidated_without_inventing_module_totals(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        path = root / 'times.json'
+        path.write_text('{"sim.test_old": 123}', encoding='utf-8')
+        self.enterContext(mock.patch.object(run_tests, 'TIMINGS', path))
+        self.assertEqual(run_tests.recorded_seconds(False), {})
+        run_tests._record_timings({'unit.test_new': 5.0})
+        self.assertEqual(run_tests.recorded_seconds(False), {'unit.test_new': 5.0})
 
 
 class StoredModuleTests(unittest.TestCase):
@@ -151,10 +225,119 @@ class _NoCoverage:
 
 
 class ModuleFixtureTests(unittest.TestCase):
+    def test_both_modes_preserve_order_fixture_counts_and_complete_module_costs(self):
+        from support.branch_gate import FunctionRecorder, Measurement
+        for measured in (False, True):
+            with self.subTest(measured=measured), mock.patch.dict(sys.modules):
+                events, tests = [], []
+                clock = types.SimpleNamespace(value=0)
+                def event(label, cost):
+                    events.append(label)
+                    clock.value += cost
+                expected = []
+                classes = {}
+                for name in ('unit.test_cost_a', 'unit.test_cost_b'):
+                    module = types.ModuleType(name)
+                    module.setUpModule = lambda name=name: event(name + ':module setup', 2)
+                    module.tearDownModule = lambda name=name: event(name + ':module teardown', 11)
+                    sys.modules[name] = module
+                    expected.append(name + ':module setup')
+                    for label in ('A', 'B'):
+                        prefix = name + ':' + label
+                        case = type(label, (unittest.TestCase,), {
+                            '__module__': name,
+                            'setUpClass': classmethod(lambda cls, p=prefix: event(p + ':setup', 3)),
+                            'tearDownClass': classmethod(lambda cls, p=prefix: event(p + ':teardown', 7)),
+                            'test_x': lambda self, p=prefix: event(p + ':x', 5),
+                            'test_y': lambda self, p=prefix: event(p + ':y', 5)})
+                        classes[name, label] = case
+                        tests.extend([case('test_x'), case('test_y')])
+                        expected.extend(prefix + ':' + phase for phase in ('setup', 'x', 'y', 'teardown'))
+                    expected.append(name + ':module teardown')
+                # Noncontiguous recurrence preserves order and repeats fixtures, as unittest does.
+                tests.append(classes['unit.test_cost_a', 'A']('test_x'))
+                expected.extend(['unit.test_cost_a:module setup', 'unit.test_cost_a:A:setup',
+                                 'unit.test_cost_a:A:x', 'unit.test_cost_a:A:teardown',
+                                 'unit.test_cost_a:module teardown'])
+                measurement = None
+                if measured:
+                    measurement = Measurement(Path(__file__).resolve().parents[6])
+                    measurement.coverage = _NoCoverage()
+                    measurement.calls = FunctionRecorder(str(Path(tempfile.gettempdir()) / 'no-such-prefix'), tool=4)
+                    measurement.calls.start()
+                    measurement.begin([test.id() for test in tests])
+                try:
+                    with tempfile.TemporaryDirectory() as root, contextlib.redirect_stderr(io.StringIO()), \
+                            mock.patch.object(run_tests, 'time', types.SimpleNamespace(monotonic=lambda: clock.value)):
+                        report = run_tests._run_suite(tests, Path(root), checkpoint=True, measurement=measurement)
+                        self.assertEqual(report['module_total_seconds'], {'unit.test_cost_a': 81, 'unit.test_cost_b': 53})
+                        self.assertEqual(report['tests_run'], 9)
+                        self.assertTrue(report['successful'])
+                        progress = [json.loads(path.read_text(encoding='utf-8')) for path in sorted(Path(root).glob('progress-*.json'))]
+                        self.assertEqual([r['phase'] for r in progress], ['test', 'fixture_or_shutdown'] * 9)
+                        self.assertEqual([r['sequence'] for r in progress], list(range(1, 19)))
+                finally:
+                    if measured:
+                        measurement.calls.stop()
+                self.assertEqual(events, expected)
+
+    def test_fixture_errors_and_skips_keep_their_outcomes_and_observed_cost(self):
+        for scope in ('setUpModule', 'setUpClass', 'tearDownClass', 'tearDownModule'):
+            for skipped in (False, True):
+                with self.subTest(scope=scope, skipped=skipped), mock.patch.dict(sys.modules):
+                    clock = types.SimpleNamespace(value=0)
+                    module = types.ModuleType('unit.test_cost_failure')
+                    def fail(*args):
+                        clock.value += 13
+                        raise unittest.SkipTest('fixture skip') if skipped else RuntimeError('fixture error')
+                    case = type('Case', (unittest.TestCase,), {'__module__': module.__name__, 'test_x': lambda self: None})
+                    if 'Class' in scope:
+                        setattr(case, scope, classmethod(fail))
+                    else:
+                        setattr(module, scope, fail)
+                    sys.modules[module.__name__] = module
+                    with tempfile.TemporaryDirectory() as root, contextlib.redirect_stderr(io.StringIO()), \
+                            mock.patch.object(run_tests, 'time', types.SimpleNamespace(monotonic=lambda: clock.value)):
+                        report = run_tests._run_suite([case('test_x')], Path(root))
+                        fixtures = [r for r in report['rows'] if r.get('fixture')]
+                        rows = [r for r in report['rows'] if not r.get('fixture')]
+                        self.assertEqual([r['outcome'] for r in fixtures], ['skipped' if skipped else 'error'])
+                        self.assertEqual([r['outcome'] for r in rows],
+                                         ['skipped' if skipped else 'not_run'] if scope.startswith('setUp') else ['passed'])
+                        self.assertEqual(report['module_total_seconds'], {module.__name__: 13})
+                        self.assertEqual(report['tests_run'], 0 if scope.startswith('setUp') else 1)
+                        if not skipped:
+                            evidence = list((Path(root) / 'failures').glob('*.json'))
+                            self.assertEqual(len(evidence), 1)
+                            self.assertEqual(json.loads(evidence[0].read_text(encoding='utf-8'))['test']['outcome'], 'error')
+
+    def test_stopped_or_interrupted_modules_are_not_filled_from_rows(self):
+        for interrupted in (False, True):
+            with self.subTest(interrupted=interrupted), tempfile.TemporaryDirectory() as root:
+                clock = types.SimpleNamespace(value=0)
+                def body(case):
+                    clock.value += 17
+                    if interrupted:
+                        raise KeyboardInterrupt()
+                    case._outcome.result.stop()
+                first = type('First', (unittest.TestCase,), {'__module__': 'unit.test_started', 'test_x': body})
+                later = type('Later', (unittest.TestCase,), {'__module__': 'unit.test_absent', 'test_x': lambda case: case.fail()})
+                with contextlib.redirect_stderr(io.StringIO()), \
+                        mock.patch.object(run_tests, 'time', types.SimpleNamespace(monotonic=lambda: clock.value)):
+                    if interrupted:
+                        with self.assertRaisesRegex(KeyboardInterrupt, '^$'):
+                            run_tests._run_suite([first('test_x'), later('test_x')], Path(root), checkpoint=True)
+                        report = json.loads((Path(root) / 'result.json').read_text(encoding='utf-8'))
+                        self.assertEqual(report['module_total_seconds'], {})
+                    else:
+                        report = run_tests._run_suite([first('test_x'), later('test_x')], Path(root), checkpoint=True)
+                        self.assertEqual(report['module_total_seconds'], {'unit.test_started': 17})
+                        self.assertEqual([r['outcome'] for r in report['rows']], ['passed', 'not_run'])
+
     def test_a_measured_run_sets_up_and_tears_down_each_module_under_its_own_fixture_label(self):
         """A29: a module's fixtures belong to that module alone, so its reused measurement keeps them."""
         import types
-        from support.branch_gate import FunctionRecorder, Measurement, repository_root
+        from support.branch_gate import FunctionRecorder, Measurement
         seen = []
         self.enterContext(mock.patch.dict(sys.modules))
         tests = []
@@ -165,7 +348,7 @@ class ModuleFixtureTests(unittest.TestCase):
             sys.modules[name] = module
             case = type('Case', (unittest.TestCase,), {'test_x': lambda self: None, '__module__': name})
             tests.append(case('test_x'))
-        measurement = Measurement(repository_root())
+        measurement = Measurement(Path(__file__).resolve().parents[6])
         measurement.coverage = _NoCoverage()
         measurement.calls = FunctionRecorder(str(Path(tempfile.gettempdir()) / 'no-such-prefix'), tool=4)
         measurement.calls.start()
@@ -208,7 +391,7 @@ class MutationIndexTests(unittest.TestCase):
         self.enterContext(mock.patch.object(mutation, 'run', run))
         directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
         args = mock.Mock(tests=['unit.test_ids'], match=[], mutation_base='HEAD', timeout=5.0)
-        result = run_tests._finish_t3(_FinishedMeasurement(branch_gate.repository_root()), directory, [], args, False)
+        result = run_tests._finish_t3(_FinishedMeasurement(Path(__file__).resolve().parents[6]), directory, [], args, False)
         self.assertIsNone(result['selection_index'])
         self.assertIs(seen['index'], index)
 

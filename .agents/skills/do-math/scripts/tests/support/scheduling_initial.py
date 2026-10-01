@@ -34,7 +34,9 @@ def _adopt(sim):
     """The controls of ``Sim.activate`` with an initial grant for both initialization roles, and no owner run."""
     from do_math.canonical import exact_content_hash
     from do_math.model_policy import selection
-    from research_fixtures import ROLES, charter_record, trust_fixture
+    from do_math.contracts import ROLES
+    from support.state_builders import charter_record
+    from support.trust_inputs import trust_fixture
     engine = sim.engine
     windows = {key: value for key, value in {'tool_review_window_seconds': 60,
                                              'self_check_response_window_seconds': 5}.items()
@@ -75,7 +77,7 @@ def adopted_sim():
 
 def initial_failure(sim, kind='execution_failure', stage='interpret'):
     from do_math import activities, execution_lifecycle, execution_profiles
-    from research_fixtures import dispatched_launch
+    from support.execution_inputs import dispatched_launch
     engine = sim.engine
     runtime = engine.runtime
     queued = next(row for row in runtime['queue'] if row['role'] == 'intent_interpretation')
@@ -86,7 +88,7 @@ def initial_failure(sim, kind='execution_failure', stage='interpret'):
                              owner_ref='engine', input_refs=[action['target']], opened_at=at)
     failed = execution_lifecycle.create_execution(execution_id='EX-bad', owner_activity_id='AY-original',
         actor_kind='ai', input_manifest={}, profile_ref=execution_profiles.profile_ref(profile), created_at=at)
-    failed['launch_ticket'] = {**dispatched_launch(failed['id'], profile), 'phase': 'finished'}
+    failed['launch_ticket'] = {**dispatched_launch(failed['id'], profile, jobs=sim.jobs, clock=sim.clock), 'phase': 'finished'}
     failed.update(role=action['role'], action=deepcopy(action), capacity={'local_termination': 'confirmed'})
     activities.assign_execution(runtime, 'AY-original', failed)
     for status in ('starting', 'stopping'):

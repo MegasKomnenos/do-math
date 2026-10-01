@@ -24,19 +24,21 @@ from do_math import contracts, submission
 from do_math.canonical import canonical_json
 from do_math.execution_lifecycle import transition_execution
 from do_math.git_store import GitStateStore
-from research_fixtures import current_state
+from support.state_builders import current_state
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit, make_repository
 from support.storage_records import INSTANCE_ID, engine_on, fake_ports, record_store
 
 
 def seal_review(execution, output, fixed, workspace):
+    from support.entry import entry
+    _entry = entry()
     workspace = Path(workspace)
     schema = contracts.action_schema(fixed['action'])
-    submission.install_tools(workspace, fixed, schema, None)
+    submission.install_tools(workspace, fixed, schema, None, clock=_entry.ports.clock)
     (workspace / 'draft.json').write_bytes(canonical_json(output))
     sealed = submission.seal_submission(workspace, 'draft.json', execution_id=execution['id'],
-        context=fixed, schema=schema, max_artifact_bytes=1024 * 1024)
+        context=fixed, schema=schema, max_artifact_bytes=1024 * 1024, clock=_entry.ports.clock)
     if not sealed['passed']:
         raise AssertionError('the impact review fixture did not seal: ' + repr(sealed['check']['issues']))
     host = _capture_engine(workspace.parent / (workspace.name + '-capture'))
@@ -64,3 +66,51 @@ def _capture_engine(root):
 def fixture_store(root):
     make_repository(root)
     return GitStateStore(root, INSTANCE_ID, backend=InProcessGit(), clock=FakeClock())
+
+
+from copy import deepcopy
+import unittest
+from do_math import knowledge_io
+
+
+class ImpactCase(unittest.TestCase):
+    def setUp(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math import integration
+        from do_math.knowledge import content_hash
+        from support.record_builders import observation_knowledge, research_work_context, two_observation_output
+        self.clock = _entry.ports.clock
+        self.api = integration
+        self.instance = knowledge_io.ensure_ontology({"knowledge": {}, "expositions": {}})
+        self.runtime = {"executions": {
+            "EX-producer": {"id": "EX-producer", "role": "research_work", "status": "running", "input_snapshot": "fixed-input"}}, "queue": []}
+        self.ids = []
+        for title in ("A", "B", "C"):
+            self.instance, self.runtime, kid = knowledge_io.import_candidate(self.instance, self.runtime,
+                observation_knowledge(title), source_ref="EX-producer", actor_ref="EX-producer", clock=_entry.ports.clock)
+            self.ids.append(kid)
+        self.output = two_observation_output()
+        self.output["knowledge"] = []
+        self.output["integration_bundles"] = [{"integration_id": "IN-held", "members": ["output",
+            "activity-extensions.json/knowledge_changes/0", "activity-extensions.json/knowledge_changes/1"],
+            "impact_set": [self.ids[1]], "authority_refs": [],
+            "previous_hashes": {kid: content_hash(self.instance["knowledge"][kid]) for kid in (self.ids[0], self.ids[2])}}]
+        self.extensions = {"knowledge_changes": [{"id": kid, "changes": {"summary": "Revised " + str(n)},
+            "reason": "Correct explanation", "impact_set": [self.ids[1]]} for n, kid in enumerate((self.ids[0], self.ids[2]))]}
+        self.bundle = next(self.api.split_bundles(self.output, self.extensions, research_work_context()))
+
+    def request(self):
+        return self.api.bundle_impact_request(self.instance, self.runtime, self.bundle,
+            producer_execution_id="EX-producer", input_snapshot=self.runtime["executions"]["EX-producer"]["input_snapshot"])
+
+    def review_output(self, request):
+        return {"summary": "Independent impact assessment", "questions": [], "used_sources": [],
+            "report": "Compared each declared scope with its computed dependencies and supplied premises.", "remaining_work": [],
+            "impact_review": {key: deepcopy(request[key]) for key in
+                ("integration_id", "payload_sha256", "producer_execution_id", "input_snapshot")} | {
+                "plan_decisions": [{"scope": scope, "plan_digest": plan["digest"], "decision": "approve",
+                    "affected_ids": sorted(set(plan["computed_impact"]) | set(plan["declared_impact"])),
+                    "reason": "The declared additional scope must also be reassessed."} for scope, plan in request["plans"].items()]},
+            "integration_bundles": [{"integration_id": "IN-review", "members": ["output"],
+                                     "impact_set": [], "authority_refs": []}]}

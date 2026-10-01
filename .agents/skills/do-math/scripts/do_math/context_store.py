@@ -16,7 +16,6 @@ from .state_contract import ARTIFACT_ROOT
 from .file_io import PhysicalBoundary
 from .ids import oid_shape
 from .execution_profiles import INITIAL_ROLES, PLANNING_ROLES
-from .migration_defaults import clock_or_system
 
 
 class _ChangedDuringRead(OSError):
@@ -65,7 +64,7 @@ def _physical_root(root: Path) -> Path:
     return root
 
 
-def read_stable(path: Path, *, boundary: PhysicalBoundary | None = None) -> bytes:
+def read_stable(path: Path, *, boundary: PhysicalBoundary | None = None, fstat=os.fstat) -> bytes:
     # The boundary proves its root once (a caller reading many files passes
     # one). Reading compares the same descriptor's metadata before and after,
     # so a file written while it is read is not taken as one version.
@@ -73,9 +72,9 @@ def read_stable(path: Path, *, boundary: PhysicalBoundary | None = None) -> byte
     try:
         boundary = boundary or PhysicalBoundary(path.parent)
         with boundary.open(path, "rb") as stream:
-            before = stat_fingerprint(os.fstat(stream.fileno()))
+            before = stat_fingerprint(fstat(stream.fileno()))
             data = stream.read()
-            after = stat_fingerprint(os.fstat(stream.fileno()))
+            after = stat_fingerprint(fstat(stream.fileno()))
     except ValueError as error:
         raise _PhysicalBoundaryError(f"physical boundary rejected read: {error}") from error
     if before != after or len(data) != after[0]:
@@ -117,7 +116,8 @@ def is_excluded(relative: PurePosixPath) -> bool:
 
 
 def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
-                    max_bytes: int = 268435456, captured_files: dict[str, bytes] | None = None) -> dict:
+                    max_bytes: int = 268435456, captured_files: dict[str, bytes] | None = None,
+                    fstat=os.fstat) -> dict:
     if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes < 0:
         raise ValueError("max_bytes must be a nonnegative integer")
     if not isinstance(required_paths, list):
@@ -187,7 +187,7 @@ def collect_outputs(workspace: Path, *, required_paths: list[str] = [],
                 omitted.append({"path": name, "reason": reason, "required": name in required})
                 continue
             try:
-                data = read_stable(path, boundary=boundary)
+                data = read_stable(path, boundary=boundary, fstat=fstat)
             except _PhysicalBoundaryError as error:
                 omitted.append({"path": name, "reason": "physical_boundary", "error": str(error),
                                 "error_type": type(error).__name__, "required": name in required})
@@ -590,7 +590,7 @@ def role_direct_keys(role, context):
 @measured('role_input_preparation')
 def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
                        workspace, activity_id, output_schema=None, documents=None, artifact_prefix=None,
-                       install_submission_tools=False, max_artifact_bytes=None, candidate_order=None, clock=None):
+                       install_submission_tools=False, max_artifact_bytes=None, candidate_order=None, clock):
     """Build and measure the actual role prompt from the current domain records.
 
     The caller must supply only the review seat's authorized private inputs.
@@ -776,7 +776,7 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
             'capacity_constraints': deepcopy(instance.get('capacity_constraints', {})),
             'task_profile_constraints': {row['id']: deepcopy(row.get('profile_refs', [])) for row in compared}}
         population = value['ready_task_ids'] if role == 'research_plan' else [row['id'] for row in compared]
-        order = _candidate_order(population, snapshot, role, action.get('id'), candidate_order, clock=clock)
+        order = _candidate_order(population, snapshot, role, action.get('id'), candidate_order, seed=candidate_order.get('seed') if isinstance(candidate_order, dict) else clock.random_hex(32))
         indexed = {row['id']: row for row in compared}
         task_order = [*order['ids'], *[identifier for identifier in sorted(indexed) if identifier not in order['ids']]]
         value['tasks'] = [indexed[identifier] for identifier in task_order]
@@ -935,10 +935,9 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
     return fitted
 
 
-def _candidate_order(ids, snapshot, role, action_id, replay=None, *, clock=None):
+def _candidate_order(ids, snapshot, role, action_id, replay=None, *, seed):
     algorithm = 'sha256-seed-id-v1'
     basis = {'snapshot': snapshot, 'role': role, 'action_id': action_id}
-    seed = replay.get('seed') if isinstance(replay, dict) else clock_or_system(clock).random_hex(32)
     if not is_sha256(seed):
         raise ValueError('candidate order requires a 256-bit seed')
     ordered = sorted(ids, key=lambda identifier: (hashlib.sha256(bytes.fromhex(seed) + b'\0' + identifier.encode()).hexdigest(), identifier))
@@ -983,7 +982,7 @@ def validate_role_manifest(manifest):
     if manifest['role'] in PLANNING_ROLES:
         if not isinstance(order, dict) or len(order.get('ids', [])) != len(set(order.get('ids', []))):
             raise ValueError('candidate input requires a sealed population order')
-        _candidate_order(order['ids'], snapshot, manifest['role'], order.get('basis', {}).get('action_id'), order)
+        _candidate_order(order['ids'], snapshot, manifest['role'], order.get('basis', {}).get('action_id'), order, seed=order.get('seed'))
     return True
 
 

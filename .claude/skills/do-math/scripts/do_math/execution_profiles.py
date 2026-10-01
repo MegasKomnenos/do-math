@@ -13,7 +13,6 @@ from .values import validate_profile_ref
 from .model_policy import ROLE_TIERS, TIERS
 from .canonical import exact_content_hash
 from .provider_wait import provider_for
-from .migration_defaults import host_or_local  # layer: 1c migration default; the value becomes a required argument in 1f
 
 # Only work roles reserve a model slot; operational AI roles run on their pinned
 # model without a reservation, and machine roles use host limits alone.
@@ -175,12 +174,12 @@ def with_host_resources(profile: dict, constraint: dict, demands: dict) -> dict:
     return seal_profile(body)
 
 
-def job_resource_limits(profile: dict, *, host_id=None) -> dict | None:
+def job_resource_limits(profile: dict, *, host_id) -> dict | None:
     """Exact per-execution Job settings, never the shared approval ceiling."""
     host = profile.get("host_resources")
     if host is None:
         return None
-    if host["host_id"] != host_or_local(host_id):
+    if host["host_id"] != host_id:
         raise ValueError("profile host differs from this local host")
     return {key: host["demands"][key] for key in ("memory_bytes", "cpu_rate_basis_points")}
 
@@ -203,11 +202,11 @@ def validate_host_resources(host) -> None:
         raise ValueError('host demands must name capped roles only')
 
 
-def build_profiles(config: dict, *, host=None) -> dict:
+def build_profiles(config: dict, *, host) -> dict:
     """Freeze the profile editions of every role from adopted values.
 
     ``host`` (the host port) discovers the Lean command when the configuration names
-    none; without it such a configuration freezes no Lean command.
+    none; an absent discovery result freezes no Lean command.
 
     No new capacity, permission or measured limit is invented.
     """
@@ -332,7 +331,7 @@ def runtime_config(profile: dict) -> dict:
 
 
 def _lean_contract(config: dict, host) -> dict:
-    command = config.get("lean_command") or (host.discover_lean() if host is not None else None)
+    command = config.get("lean_command") or host.discover_lean()
     return {"lean_command": deepcopy(command)}
 
 

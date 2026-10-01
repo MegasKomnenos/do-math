@@ -25,9 +25,10 @@ on a restored Sim's real engine and published under the storage contract:
 The legacy first recovery found no launch ticket at all; the storage contract
 rejects a started execution without one (``record_schemas.validate_semantics``,
 ``launch.validate``: "exact launch ticket required"), so no published state
-holds that input. After a restart the Jobs port cannot tell whether the previous
-owner process ended (``owner_ended`` is ``None``), which leaves the local
-termination unconfirmed in the same way.
+holds that input. The negative recovery scene explicitly persists a different
+owner identity whose termination the external Jobs world has not observed.
+Restart ends the local owner; it leaves that other owner unknown until the
+scene supplies its termination observation.
 """
 from __future__ import annotations
 
@@ -75,7 +76,7 @@ def committed_goal_audit(sim, *, required=2, slot=0):
                  f'runtime/artifacts/{INPUT_BUNDLE}/input/submission/context.json': canonical_json(fixed),
                  f'runtime/artifacts/{INPUT_BUNDLE}/schema.json': canonical_json(schema)}
     check = submission.check_submission(output, schema, fixed, {}, Path(engine.instance['workspace']),
-                                        mode='receiver', execution_id=EXECUTION, tool_sha256='a' * 64)
+                                        mode='receiver', execution_id=EXECUTION, tool_sha256='a' * 64, clock=sim.ports.clock)
     if not check['passed']:
         raise AssertionError('the sealed goal audit output fails the receiver check: ' + repr(check['issues']))
     execution['submission_intent'] = {'schema_ref': contracts.schema_reference(schema)}

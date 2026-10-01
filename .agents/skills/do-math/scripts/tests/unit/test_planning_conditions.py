@@ -22,7 +22,7 @@ import uuid
 
 from do_math import planning, task_scope
 from do_math.state_contract import ARTIFACT_ROOT
-from record_fixtures import approve_task, approved_task
+from support.record_builders import approve_task, approved_task
 from support.provider_probes import ObservedCalls
 
 READINESS_DOCUMENT = Path(__file__).resolve().parents[3] / 'references' / '과제-착수조건.md'
@@ -74,6 +74,8 @@ class PlanningTests(unittest.TestCase):
         self.assertIn('absencequery', result['basis'][0])
 
     def test_instance_conditions_and_bases_read_one_projection_of_either_instance_form(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.initialization import governance_working_view
         editions = planning.governance_revisions(self.instance)
         self.task['occurrence_condition'] = {'op': 'record_field_equals', 'space': 'research', 'family': 'instance',
@@ -81,9 +83,9 @@ class PlanningTests(unittest.TestCase):
                                              'value': editions['goal_revision']}
         approve_task(self.task, self.instance, self.runtime)
         view = governance_working_view(self.instance)
-        self.assertEqual(planning.task_ready(self.task, self.instance, self.runtime)['state'], 'ready')
-        self.assertEqual(planning.task_ready(self.task, view, self.runtime),
-                         planning.task_ready(self.task, self.instance, self.runtime))
+        self.assertEqual(planning.task_ready(self.task, self.instance, self.runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'ready')
+        self.assertEqual(planning.task_ready(self.task, view, self.runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id}),
+                         planning.task_ready(self.task, self.instance, self.runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id}))
         basis = planning.capture_task_basis(self.task, self.instance, self.runtime)
         self.assertEqual(planning.capture_task_basis(self.task, view, self.runtime), basis)
         # The instance record is its projection, not the whole research state.
@@ -103,12 +105,14 @@ class PlanningTests(unittest.TestCase):
                 planning.validate_condition({'op': 'artifact_valid', 'artifact_ref': {**ref, 'path': path}})
 
     def test_task_ready_rechecks_reviews_inputs_and_conditions(self):
-        self.assertEqual(planning.task_ready(self.task, self.instance, self.runtime)['state'], 'ready')
+        from support.entry import entry
+        _entry = entry()
+        self.assertEqual(planning.task_ready(self.task, self.instance, self.runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'ready')
         self.task['reviews'][0]['revision'] = 2
-        self.assertEqual(planning.task_ready(self.task, self.instance, self.runtime)['state'], 'not_ready')
+        self.assertEqual(planning.task_ready(self.task, self.instance, self.runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'not_ready')
         self.task['occurrence_condition'] = self.condition('record_lifecycle_is', value='withdrawn')
         approve_task(self.task, self.instance, self.runtime)
-        self.assertEqual(planning.task_ready(self.task, self.instance, self.runtime)['state'], 'not_ready')
+        self.assertEqual(planning.task_ready(self.task, self.instance, self.runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'not_ready')
 
     def test_contract_hash_only_changes_for_contract_fields(self):
         baseline = planning.contract_hash(self.task)
@@ -126,6 +130,8 @@ class PlanningTests(unittest.TestCase):
         self.assertTrue(planning.revision_required(task))
 
     def test_periodic_exploration_is_not_consumed_by_preparation_only(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.model_policy import preparation_only
         for field in ('assessment_targets', 'observation_rule_targets'):
             with self.subTest(field=field):
@@ -138,7 +144,7 @@ class PlanningTests(unittest.TestCase):
                                next_research_reconsider_at='2026-09-24T00:00:00Z')
                 original = deepcopy(supplement)
                 planning.record_due_events(self.instance, runtime, '2026-09-25T00:00:00Z')
-                planning.schedule_reconsideration(self.instance, runtime, now='2026-09-25T00:00:00Z')
+                planning.schedule_reconsideration(self.instance, runtime, now='2026-09-25T00:00:00Z', clock=_entry.ports.clock)
                 self.assertEqual(supplement, original)
                 general = [a for a in runtime['queue']
                            if a['role'] == 'research_preparation' and not preparation_only(a)]
@@ -149,7 +155,7 @@ class PlanningTests(unittest.TestCase):
                 # Assignment lives in the request's event_refs; published events carry no mark.
                 self.assertFalse(any('assigned_to' in event for event in runtime['events']))
                 planning.record_due_events(self.instance, runtime, '2026-09-25T00:00:01Z')
-                planning.schedule_reconsideration(self.instance, runtime, now='2026-09-25T00:00:01Z')
+                planning.schedule_reconsideration(self.instance, runtime, now='2026-09-25T00:00:01Z', clock=_entry.ports.clock)
                 self.assertEqual(len(runtime['queue']), 2)
 
     def test_due_events_are_unique_and_paused_preserves_pending(self):
@@ -164,11 +170,13 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(planning.record_due_events(self.instance, self.runtime, '2026-01-02T00:00:00Z'), [])
 
     def test_one_input_request_is_one_event_across_observations_and_scheduling(self):
+        from support.entry import entry
+        _entry = entry()
         self.task.update(newinput='RQ-source')
         first = planning.record_due_events(self.instance, self.runtime, '2026-01-02T00:00:00Z')
         self.assertEqual([(e['kind'], e['request_id']) for e in first], [('task_new_input', 'RQ-source')])
         self.assertEqual(planning.record_due_events(self.instance, self.runtime, '2026-01-02T00:00:05Z'), [])
-        planning.schedule_reconsideration(self.instance, self.runtime, now='2026-01-02T00:00:05Z')
+        planning.schedule_reconsideration(self.instance, self.runtime, now='2026-01-02T00:00:05Z', clock=_entry.ports.clock)
         inputs = [e for e in self.runtime['events'] if e['kind'] == 'task_new_input']
         self.assertEqual([e['id'] for e in inputs], [first[0]['id']])
         self.assertEqual(self.runtime['pending_events'].count(first[0]['id']), 1)
@@ -189,7 +197,9 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(planning.evaluate_condition(condition, self.instance, self.runtime)['state'], 'not_ready')
 
     def test_relation_condition_rechecks_its_proof_after_import(self):
-        from knowledge_fixtures import verified_knowledge
+        from support.entry import entry
+        _entry = entry()
+        from support.knowledge_builders import verified_knowledge
         from do_math import knowledge_records as kr
         i, r, kid, aid = verified_knowledge()
         fid = i['knowledge'][kid]['formal_result_id']
@@ -197,7 +207,7 @@ class PlanningTests(unittest.TestCase):
         claim = {'kind': 'formally_implies', 'source': kid, 'target': kid, 'confirmed_scope': 'True implies True'}
         i['expositions'][xid]['relation_claim'] = claim
         i, aid = kr.record_identity_assessment(i, kid, {'decision': 'match', 'basis': kr.identity_basis(i, kid),
-                                                        'cycle_id': 'RC-relation'}, 'policy:1', runtime=r)
+                                                        'cycle_id': 'RC-relation'}, 'policy:1', runtime=r, clock=_entry.ports.clock)
         relation = {'id': 'RL-1', 'kind': 'formally_implies', 'source': kid, 'target': kid,
                     'confirmed_scope': 'True implies True', 'evidence': 'reflexivity',
                     'formal_result_refs': [fid], 'assessment_refs': [aid]}
@@ -263,9 +273,9 @@ class ArtifactConditionTests(unittest.TestCase):
 
 class ReadinessCopyTests(unittest.TestCase):
     def test_historical_judgment_cannot_override_changed_governance_or_sources(self):
-        from knowledge_fixtures import verified_knowledge
+        from support.knowledge_builders import verified_knowledge
         from do_math.knowledge_records import usable_links
-        from record_fixtures import domain_governance
+        from support.record_builders import domain_governance
         # The judged knowledge is a verified theorem with a current identity link, so the
         # judgment's dependency is usable by the product's own rule (the legacy test patched it).
         instance = domain_governance()
@@ -290,6 +300,8 @@ class ReadinessCopyTests(unittest.TestCase):
         self.assertIsNone(judge())
 
     def test_borrowed_inputs_and_copied_results_match_prior_evaluation(self):
+        from support.entry import entry
+        _entry = entry()
         task, instance, runtime = approved_task()
         for scenario in ('ready', 'waiting', 'missing', 'invalid'):
             with self.subTest(scenario=scenario):
@@ -302,8 +314,8 @@ class ReadinessCopyTests(unittest.TestCase):
                 elif scenario == 'invalid':
                     value['occurrence_condition'] = {'op': 'unknown'}
                 before = deepcopy((value, state, working))
-                old = planning.task_ready(deepcopy(value), deepcopy(state), deepcopy(working))
-                result = deepcopy(planning.task_ready(value, state, working))
+                old = planning.task_ready(deepcopy(value), deepcopy(state), deepcopy(working), evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})
+                result = deepcopy(planning.task_ready(value, state, working, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id}))
                 self.assertEqual(result, old)
                 self.assertEqual((value, state, working), before)
                 if scenario == 'waiting':
@@ -314,7 +326,7 @@ class ReadinessCopyTests(unittest.TestCase):
 
 class ReadinessConditionTests(unittest.TestCase):
     def test_required_certification_condition_tracks_current_identity_effect(self):
-        from knowledge_fixtures import verified_knowledge
+        from support.knowledge_builders import verified_knowledge
         instance, runtime, kid, _ = verified_knowledge()
         condition = {'op': 'record_field_equals', 'space': 'research', 'family': 'knowledge',
                      'record_id': kid, 'pointer': '/usable_as_k', 'value': True}
@@ -367,6 +379,8 @@ class ReadinessConditionTests(unittest.TestCase):
         self.assertEqual(pointers, {family: set(fields) for family, fields in planning.EXPOSED_FIELDS.items()})
 
     def test_nonformal_research_reuse_is_ready_but_not_certified(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.knowledge import assess_use
         from do_math.knowledge_records import create_candidate
         task, instance, runtime = approved_task()
@@ -376,16 +390,16 @@ class ReadinessConditionTests(unittest.TestCase):
                                                     'statement': 'Computed n=1 through 20',
                                                     'explanation': 'Bounded exact computation',
                                                     'summary': 'Finite evidence', 'dependencies': []},
-                                         source_ref='SO-1', actor_ref='EX-compute')
+                                         source_ref='SO-1', actor_ref='EX-compute', clock=_entry.ports.clock)
         task['reuse'] = [kid]
         approve_task(task, instance, runtime)
         self.assertFalse(assess_use(instance['knowledge'][kid], instance)['valid'])
-        self.assertEqual(planning.task_ready(task, instance, runtime)['state'], 'ready')
+        self.assertEqual(planning.task_ready(task, instance, runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'ready')
         for field, value in [('lifecycle', 'withdrawn'), ('use_suspended', True), ('kind_use_suspended', True)]:
             changed = deepcopy(instance)
             changed['knowledge'][kid][field] = value
             approve_task(task, changed, runtime)
-            self.assertEqual(planning.task_ready(task, changed, runtime)['state'], 'not_ready', field)
+            self.assertEqual(planning.task_ready(task, changed, runtime, evaluation_context={'now': _entry.ports.clock.now(), 'host_id': _entry.host_id})['state'], 'not_ready', field)
 
 
 if __name__ == '__main__':

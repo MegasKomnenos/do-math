@@ -116,7 +116,8 @@ class AuditRecoveryTests(unittest.TestCase):
         import tempfile
         from do_math import contracts, execution_lifecycle, integration, submission
         from do_math.canonical import canonical_json
-        from research_fixtures import charter, dispatched_launch
+        from support.state_builders import charter
+        from support.execution_inputs import dispatched_launch
         from support.engine_lifecycle import applied
         with tempfile.TemporaryDirectory() as directory:
             sim = Sim(directory)
@@ -155,7 +156,7 @@ class AuditRecoveryTests(unittest.TestCase):
             execution_lifecycle.transition_execution(ex, 'ended', at=engine.instance['created_at'],
                 outcome='start_failed', reason='crash fixture before finalization')
             profile = engine.instance['execution_profiles'][ex['execution_profile_ref']['id']]
-            ex['launch_ticket'] = {**dispatched_launch(ex['id'], profile), 'phase': 'finished'}
+            ex['launch_ticket'] = {**dispatched_launch(ex['id'], profile, jobs=sim.jobs, clock=sim.clock), 'phase': 'finished'}
             ex['capacity'] = {'local_termination': 'confirmed', 'reservation_ids': [], 'provider': None, 'process': None}
             ex['input_bundle'] = 'BA-audit-input'
             ex['input_snapshot'] = engine.head
@@ -164,7 +165,7 @@ class AuditRecoveryTests(unittest.TestCase):
                 'runtime/artifacts/BA-audit-input/input/submission/context.json': canonical_json(fixed),
                 'runtime/artifacts/BA-audit-input/schema.json': canonical_json(schema)}
             check = submission.check_submission(output, schema, fixed, {}, Path(engine.instance['workspace']),
-                mode='receiver', execution_id='AUDITOR', tool_sha256='a' * 64)
+                mode='receiver', execution_id='AUDITOR', tool_sha256='a' * 64, clock=sim.ports.clock)
             self.assertTrue(check['passed'], check['issues'])
             ex['submission_intent'] = {'schema_ref': contracts.schema_reference(schema)}
             refs = []

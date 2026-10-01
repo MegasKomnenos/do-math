@@ -70,7 +70,7 @@ class PreparationFailureTests(unittest.TestCase):
         wait = sim.runtime['waiting_actions'][action['id']]
         self.assertEqual(wait['kind'], 'review_input_restoration')
         self.assertEqual(wait['next_owner'], 'review_recovery')
-        reloaded = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports)
+        reloaded = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
         self.assertEqual(reloaded.runtime['waiting_actions'][action['id']], wait)
         with tempfile.TemporaryDirectory() as directory:
             outcome = sim.engine._retry_review_restoration(wait['action'], Path(directory) / 'restored', at=sim.clock.now())

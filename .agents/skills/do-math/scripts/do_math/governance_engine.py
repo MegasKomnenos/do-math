@@ -48,7 +48,7 @@ class GovernanceEngineMixin:
         if request.get('origin', 'user') not in {'user', 'operator'}: raise ValueError('unknown configuration authority')
         current = instance['config']
         candidate = {**current, **patch}
-        validate_config(candidate)
+        validate_config(candidate, host_id=self.host_id)
         result, state = deepcopy(instance), deepcopy(runtime)
         candidate = bind_host_configuration(result, candidate, origin=request.get('origin', 'user'))
         if request.get('origin', 'user') == 'operator' and user_decision_changed(current, candidate):
@@ -58,7 +58,7 @@ class GovernanceEngineMixin:
                 or self._live_execution_ids or any(quiescence(runtime).values())):
             raise ValueError('host resource changes require a stopped executor with no live execution or held reservation')
         if candidate['scholarly_enabled']:
-            candidate['scholarly_server'] = resolve_scholarly_server(candidate['scholarly_server'], start=Path.cwd())
+            candidate['scholarly_server'] = resolve_scholarly_server(candidate['scholarly_server'], start=Path.cwd(), codex_home=self.codex_home)
         editions = execution_profiles.build_profiles(candidate, host=self.ports.host)
         result['config'] = candidate
         execution_profiles.apply_editions(result, editions)
@@ -112,7 +112,7 @@ class GovernanceEngineMixin:
         def configure(instance, runtime, unit, approval):
             return self._configure_candidate(instance, runtime, {'action': 'configure',
                 'origin': approval['actor'], 'config': unit['payload']['config']})
-        governance.register_configuration_owner(handlers, apply=configure)
+        governance.register_configuration_owner(handlers, apply=configure, host_id=self.host_id)
         return handlers
 
     def _governance_input_source(self, input_id):
@@ -131,7 +131,7 @@ class GovernanceEngineMixin:
             from .planning import contract_hash
             for task in context.get('tasks', []):
                 task['contract_sha256'] = contract_hash(task)
-            context['import_consumers'] = governance.import_consumer_catalog(self.governance_owner_handlers())
+            context['import_consumers'] = governance.import_consumer_catalog(self.governance_owner_handlers(), clock=self.ports.clock)
             context['governance_records'] = deepcopy(list(self.instance.get('governance', {}).values()))
             context['delegations'] = deepcopy(list(self.instance.get('delegations', {}).values()))
             context['source_coordinate_unit'] = 'unicode_codepoint'
@@ -246,7 +246,7 @@ class GovernanceEngineMixin:
             self._queue_intent_rework(existing, 'original source changed before independent check')
             raise ValueError('original source changed before independent check')
         bundle = governance.check_import(self.instance, self.runtime, action['import_id'], output,
-                                         execution_id=execution_id, owner_handlers=handlers)
+                                         execution_id=execution_id, owner_handlers=handlers, clock=self.ports.clock)
         if bundle['status'] != 'approved':
             self._queue_intent_rework(bundle, '; '.join(bundle['check']['findings']) or 'independent check is unresolved')
             return bundle

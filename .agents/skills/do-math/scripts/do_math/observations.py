@@ -19,7 +19,6 @@ from .canonical import validate_storage_value
 from .state_contract import default_state_contract, validate_record
 from .execution_profiles import OBSERVATION_MODES
 from .file_io import read_bytes_shared, write_bytes_atomic, file_fingerprint, fingerprint_settled
-from .migration_defaults import clock_or_system
 
 CHECKPOINT_MAX_BYTES = 4 * 1024 * 1024
 # The one operator table: each operator's subject kind, unit, and the one
@@ -407,8 +406,7 @@ def checkpoint_value(raw: bytes) -> dict:
     return value
 
 
-def read_checkpoint(workspace: Path, *, clock=None) -> dict:
-    clock = clock_or_system(clock)
+def read_checkpoint(workspace: Path, *, clock) -> dict:
     path = workspace / "checkpoint.json"
     if not path.exists():
         return {"status": "missing"}
@@ -457,11 +455,11 @@ def capture_checkpoint_files(workspace, checkpoint, *, max_bytes):
 class ObservationTracker:
     """One execution's v5 observation state; persistence remains ENGINE-owned."""
 
-    def __init__(self, execution_id: str, workspace: Path, config: dict, *, clock=None, time_port=None):
-        """``time_port`` is the clock port (wall time for records); ``clock`` a monotonic reading, by default the port's."""
+    def __init__(self, execution_id: str, workspace: Path, config: dict, *, time_port):
+        """``time_port`` supplies wall time for records and monotonic time for observation rules."""
         config = deepcopy(config)
-        self.time_port = clock_or_system(time_port)
-        clock = clock or self.time_port.monotonic
+        self.time_port = time_port
+        clock = self.time_port.monotonic
         self.execution_id, self.workspace, self.config, self.clock = execution_id, workspace, config, clock
         self.started = self.last_review = clock()
         self.mode = config.get("observation_mode", "event_driven")
@@ -1144,7 +1142,7 @@ def request_checkpoint(workspace: Path, reason: str, *, immediate: bool, deadlin
     return request
 
 
-def preserve_checkpoint(workspace: Path, *, artifact_prefix: str, max_bytes: int, previous=None, clock=None):
+def preserve_checkpoint(workspace: Path, *, artifact_prefix: str, max_bytes: int, previous=None, clock):
     """Capture final checkpoint bytes independently of submitted output selection.
 
     A checkpoint already observed owns its evidence version. A later read of

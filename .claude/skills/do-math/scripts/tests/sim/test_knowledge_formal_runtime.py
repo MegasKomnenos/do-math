@@ -6,13 +6,15 @@ import tempfile
 import unittest
 
 from do_math import formal
-from research_fixtures import trust_fixture
+from support.trust_inputs import trust_fixture
 from support.knowledge_verifier_jobs import OutputCompiler, worker_jobs
 from support.provider_probes import ObservedCalls
 
 
 class FormalRuntimeTests(unittest.TestCase):
     def test_formal_verification_does_not_apply_memory_or_cpu_caps(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             toolchain = trust_fixture(workspace, [sys.executable])['toolchain']
@@ -25,7 +27,7 @@ class FormalRuntimeTests(unittest.TestCase):
             jobs = worker_jobs(compiler)
             with ObservedCalls(run=formal._job_run, launch=jobs.launch) as observed:
                 result = formal.verify_lean(source='', declarations=['good'], workspace=workspace,
-                    lean_command=[sys.executable], expected_toolchain=toolchain, jobs=jobs)
+                    lean_command=[sys.executable], expected_toolchain=toolchain, jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment)
         self.assertEqual(result['status'], 'failed')
         self.assertEqual(result['reason'], 'lean rejected')
         self.assertEqual(observed.count('run'), 1)

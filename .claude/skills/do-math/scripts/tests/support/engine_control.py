@@ -94,7 +94,7 @@ class Call:
         """The model's answer to this call's prompt as the worker's draft, delivered by the workspace tool."""
         from do_math.canonical import canonical_json
         from do_math.submission_tool import request_control
-        from runner_fixtures import context_from
+        from support.default_responder import context_from
         context = context_from(self.arguments['prompt'], self.workspace)
         (self.workspace / 'output.json').write_bytes(canonical_json(
             self.sim.model.output('research_work', context, self.workspace)))

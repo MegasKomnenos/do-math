@@ -16,11 +16,16 @@ import unittest
 
 from do_math import cli
 from do_math.engine import ResearchEngine, control
-from research_fixtures import charter, new_instance
+from support.state_builders import charter
+from support.cli_inputs import new_instance
 
 
 class CliDecisionFileTests(unittest.TestCase):
     def test_decision_file_crlf_text_is_the_preserved_decision_source(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             iid = new_instance(root, goal='User approves P', workspace=root / 'work', config={'scholarly_enabled': False})
@@ -35,11 +40,11 @@ class CliDecisionFileTests(unittest.TestCase):
             self.assertEqual(code, 0, response.getvalue())
             result = json.loads(response.getvalue())['result']
             self.assertEqual(result['effect'], 'applied')
-            restarted = ResearchEngine(root, iid)
+            restarted = ResearchEngine(root, iid, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id, ports=_entry.ports)
             self.assertEqual([row['text'] for row in restarted.instance['governance_sources'].values()
                               if row['text'] == text], [text])
             self.assertEqual(restarted.instance['governance']['CH1']['content'], charter()['content'])
-            replay = control(root, iid, 'decision', text=text, config={'change': spec}, request_id='adopt-charter')
+            replay = control(root, iid, 'decision', text=text, config={'change': spec}, request_id='adopt-charter', host_id=_entry.host_id, ports=_entry.ports)
             self.assertEqual(replay['snapshot'], result['snapshot'])
 
 

@@ -11,7 +11,6 @@ import re
 
 from .file_io import file_fingerprint, fingerprint_json
 from .values import SHA256_SCHEMA as _HASH, is_sha256
-from .migration_defaults import clock_or_system
 from .lean_evidence import AXIOMS
 
 _AXIOM_SET = frozenset(AXIOMS)
@@ -115,7 +114,7 @@ def environment_changed(instance, detail):
     return wait_detail(instance) != {key: detail.get(key) for key in ('environment_id', 'record_state')}
 
 
-def check_environment(environment, binding, *, identity=True, clock=None, host=None):
+def check_environment(environment, binding, *, identity=True, clock, host):
     """Live admission: record contract, identity and the olean fingerprint.
 
     ``host`` (the host port) observes the toolchain identity where the check needs it.
@@ -124,7 +123,6 @@ def check_environment(environment, binding, *, identity=True, clock=None, host=N
     baseline, the bound baseline is older and the identity still matches. The
     caller then rebinds; this function never writes a baseline.
     """
-    clock = clock_or_system(clock)
     from .trust_inventory import read_record, usable_errors, observe_fingerprint, binding as baseline_binding, changed_files
     from .canonical import exact_content_hash
     reference = environment['toolchain_record']
@@ -171,7 +169,7 @@ def check_environment(environment, binding, *, identity=True, clock=None, host=N
                        'setup_lean.py --rerecord (user or operator) or a new record and transition is required']}
 
 
-def verify_formal(*, environment, binding, verifier, clock=None, host=None, **arguments):
+def verify_formal(*, environment, binding, verifier, clock, host, **arguments):
     """Check the record and fingerprint before compiling; nothing is re-observed afterwards."""
     check = check_environment(environment, binding, identity=False, clock=clock, host=host)
     if check['status'] != 'verified':
@@ -182,7 +180,7 @@ def verify_formal(*, environment, binding, verifier, clock=None, host=None, **ar
     return result
 
 
-def require_active_environment(instance, runtime, *, current_identity=False, host=None):
+def require_active_environment(instance, runtime, *, current_identity=False, host):
     """Formal-use admission: an active, structurally valid environment and, at
     publication gates, the current local identity of its executables, checker and project."""
     if any(row.get('status') in {'checking', 'ready'} for row in runtime.get('trust_transitions', {}).values()):

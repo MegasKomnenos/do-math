@@ -20,7 +20,7 @@ import unittest
 from do_math.engine import ResearchEngine
 from do_math.provider_wait import epoch_seconds
 from do_math.session_slots import SessionSlots
-from provider_fixtures import PROVIDER_LIMIT_FAILURE, PROVIDER_MODEL, admit, finish, instant, report
+from support.provider_inputs import PROVIDER_LIMIT_FAILURE, PROVIDER_MODEL, admit, finish, instant, report
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.fakes.jobs import FakeJobs
@@ -44,7 +44,9 @@ class ProviderTests(unittest.TestCase):
         return transact(repository or self.repository, operation, clock=self.clock, jobs=self.jobs)
 
     def observer(self, instance, runtime):
-        return SessionSlots(runtime, instance, observer=True, clock=self.clock, jobs=self.jobs)
+        from support.entry import entry
+        _entry = entry()
+        return SessionSlots(runtime, instance, observer=True, clock=self.clock, jobs=self.jobs, host_id=_entry.host_id)
 
     def reject(self, identifier="EX-original", current=100):
         def operation(slots, instance, runtime):
@@ -55,6 +57,8 @@ class ProviderTests(unittest.TestCase):
         return self.change(operation)
 
     def test_provider_limited_request_waits_in_queue_through_real_git_storage(self):
+        from support.entry import entry
+        _entry = entry()
         def rejected(slots, instance, runtime):
             self.assertTrue(admit(slots, instance, runtime, "EX-original", current=100))
             gate = report(slots, instance, "EX-original", 100, PROVIDER_LIMIT_FAILURE)
@@ -62,7 +66,7 @@ class ProviderTests(unittest.TestCase):
             return gate
         gate = self.change(rejected)
         engine = ResearchEngine(self.repository.repository, INSTANCE_ID,
-                                ports=fake_ports(self.clock, self.backend, self.jobs))
+                                ports=fake_ports(self.clock, self.backend, self.jobs), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
         head, instance, runtime = engine.head, engine.instance, engine.runtime
         reference = instance["role_profile_refs"]["research_work"][-1]
         action = {"id": "AC-original", "role": "research_work", "target": "TK-fixture",

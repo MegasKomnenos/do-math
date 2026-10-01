@@ -33,7 +33,7 @@ class ObservationConfigurationRetryTests(unittest.TestCase):
         """About 2 s, at the Sim budget: a template restore and the profile selection of every retried action."""
         sim = Sim.activated()
         engine = sim.engine
-        old = build_profiles(DEFAULT_CONFIG)  # the product defaults leave the observation windows unset
+        old = build_profiles(DEFAULT_CONFIG, host=sim.ports.host)  # the product defaults leave the observation windows unset
         engine.instance['execution_profiles'].update(old['execution_profiles'])
         task = _task('TK-old', old['role_profile_refs']['research_work'])
         engine.runtime['tasks'][task['id']] = task

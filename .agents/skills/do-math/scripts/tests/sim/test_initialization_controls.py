@@ -55,6 +55,8 @@ class ProbeBatchTests(unittest.TestCase):
         self.engine._initialization_control({'operation': 'probe', **change}, 'source')
 
     def test_activation_batch_reuses_only_the_current_provider_observation(self):
+        from support.entry import entry
+        _entry = entry()
         references = [profile_ref(p) for p in self.profiles]
         identity = {'host': 'fixture'}
         self.host.identity = identity
@@ -63,7 +65,7 @@ class ProbeBatchTests(unittest.TestCase):
         self.probe(profile_refs=references)
         self.assertEqual(self.host.identity_calls, 0, 'a probe describes the CLI and asks for no identity')
         at = self.sim.clock.now()
-        expected = [capability_requirements(self.engine.instance, ref, current_identity=identity, at=at)
+        expected = [capability_requirements(self.engine.instance, ref, current_identity=identity, at=at, host=_entry.ports.host)
                     for ref in references]
         actual = list(_capability_batch_requirements(self.engine.instance, references, at=at, host=self.host))
         self.assertEqual(actual, expected)
@@ -187,25 +189,29 @@ class ActivationEvidenceTests(unittest.TestCase):
         self.engine = self.sim.engine
 
     def requirements(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.initialization import activation_requirements
         return activation_requirements(self.engine.instance, self.engine.runtime, at=self.sim.clock.now(),
-                                       owner_handlers=self.engine.governance_owner_handlers(), host=self.sim.ports.host)
+                                       owner_handlers=self.engine.governance_owner_handlers(), host=self.sim.ports.host, clock=_entry.ports.clock)
 
     def test_the_applied_independent_import_is_the_initial_intent_evidence(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.initialization import initial_intent_evidence
         instance, runtime = self.engine.instance, self.engine.runtime
         handlers = self.engine.governance_owner_handlers()
-        evidence = initial_intent_evidence(instance, runtime, owner_handlers=handlers)
+        evidence = initial_intent_evidence(instance, runtime, owner_handlers=handlers, clock=_entry.ports.clock)
         self.assertEqual(evidence, instance['lifecycle']['intent_check'])
         self.assertEqual(self.requirements()['missing'], [])
         # A superseded or other input's import is passed over.
         runtime['intent_imports']['II-later'] = {'input_ref': instance['lifecycle']['input_id'], 'superseded_by': 'II-x'}
         runtime['intent_imports']['II-other'] = {'input_ref': 'UI-other'}
-        self.assertEqual(initial_intent_evidence(instance, runtime, owner_handlers=handlers), evidence)
+        self.assertEqual(initial_intent_evidence(instance, runtime, owner_handlers=handlers, clock=_entry.ports.clock), evidence)
         checker = runtime['executions'][evidence['check_execution_id']]
         checker['intent_import_sha256'] = '0' * 64
         with self.assertRaisesRegex(ValueError, 'initial interpretation execution evidence does not resolve'):
-            initial_intent_evidence(instance, runtime, owner_handlers=handlers)
+            initial_intent_evidence(instance, runtime, owner_handlers=handlers, clock=_entry.ports.clock)
         self.assertIn('independent_intent', self.requirements()['missing'])
 
     def test_a_changed_intent_receipt_or_unadopted_review_policy_is_missing(self):

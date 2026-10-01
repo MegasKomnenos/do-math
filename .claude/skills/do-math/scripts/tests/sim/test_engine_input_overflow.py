@@ -20,8 +20,8 @@ import jsonschema
 from do_math import contracts, integration, submission
 from do_math.canonical import canonical_json
 from support.engine_context import package
-from research_fixtures import seal_response
-from runner_fixtures import common
+from support.role_answers import seal_response
+from support.default_responder import common
 from support.engine_overflow import held_work
 from support.sim import Sim, warm_template
 
@@ -41,7 +41,11 @@ class OverflowConnections(unittest.TestCase):
         self.reference = held_work(self.sim)
 
     def test_overflow_choices_are_supplied_without_changing_ready_population(self):
-        fitted, fixed = package(self.engine, directory(self))
+        from do_math.context_store import prepare_role_input
+        from support.provider_probes import ObservedCalls
+        with ObservedCalls(package=prepare_role_input) as observed:
+            fitted, fixed = package(self.engine, directory(self))
+        self.assertIs(observed.captured('package')[0]['clock'], self.engine.ports.clock)
         self.assertEqual(fixed['ready_task_ids'], [])
         item = fitted['context']['input_overflow_requests'][0]
         self.assertEqual(item['action_id'], 'AC-held')
@@ -85,6 +89,8 @@ class OverflowConnections(unittest.TestCase):
                 self.assertIn('AC-held', engine.runtime['waiting_actions'])
 
     def test_shared_submission_check_rejects_duplicate_and_unoffered_choices(self):
+        from support.entry import entry
+        _entry = entry()
         engine = self.engine
         root = directory(self)
         _, fixed = package(engine, root)
@@ -100,7 +106,7 @@ class OverflowConnections(unittest.TestCase):
                 (root / 'activity-extensions.json').write_bytes(canonical_json(extensions))
                 output = common('research_plan')
                 seal_response(output, fixed, root)
-                issues = submission.payload_issues(output, contracts.schema_for('research_plan'), fixed, extensions, root)
+                issues = submission.payload_issues(output, contracts.schema_for('research_plan'), fixed, extensions, root, clock=_entry.ports.clock)
                 self.assertEqual([issue['message'] for issue in issues], expected, (mode, issues))
 
     def test_same_integration_receipt_prevents_duplicate_retry(self):

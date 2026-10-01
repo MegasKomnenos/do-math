@@ -1,6 +1,5 @@
 """A maintenance fence drains execution without becoming a user pause."""
 from copy import deepcopy
-from .migration_defaults import clock_or_system
 
 
 def apply_control(runtime, request):
@@ -28,8 +27,7 @@ def apply_control(runtime, request):
     return True
 
 
-def settle(runtime, *, clock=None):
-    clock = clock_or_system(clock)
+def settle(runtime, *, clock):
     fence = runtime.get('maintenance_fence')
     if not fence:
         return False

@@ -1,0 +1,300 @@
+{
+  "legacy": [],
+  "knowledge": [
+    {
+      "id": "K-01",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:133 :: test_modules; C:/math/.agents/skills/do-math/scripts/run_tests.py:151 :: discover; C:/math/.agents/skills/do-math/scripts/run_tests.py:457 :: main; C:/math/.agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py:112 :: RunnerTests.test_missing_folder_package_or_nested_package_refuses_even_a_valid_selection; C:/math/.agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py:144 :: RunnerTests.test_a_module_omitted_by_discovery_cannot_silently_shrink_the_population; C:/math/.agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py:132 :: RunnerTests.test_folderless_or_unclassified_test_file_refuses_the_selection"
+    },
+    {
+      "id": "K-03",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:151 :: discover; C:/math/.agents/skills/do-math/scripts/run_tests.py:457 :: main; C:/math/.agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py:154 :: RunnerTests.test_duplicate_ids_and_import_failures_refuse_selection"
+    },
+    {
+      "id": "K-04",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:457 :: main; C:/math/.agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py:193 :: RunnerTests.test_an_id_that_matches_no_test_refuses_the_whole_selection"
+    },
+    {
+      "id": "K-05",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:457 :: main; C:/math/.agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py:167 :: RunnerTests.test_removed_shard_option_and_empty_selection_are_rejected"
+    },
+    {
+      "id": "K-06",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:457 :: main; C:/math/.agents/skills/do-math/scripts/run_tests.py:737 :: closing_eligible; C:/math/.agents/skills/do-math/scripts/run_tests.py:742 :: _finish_t3; C:/math/.agents/skills/do-math/scripts/tests/boundary/test_runner_incremental_t3.py:24 :: IncrementalT3Tests.test_a_second_run_reuses_the_unchanged_modules_with_the_same_gate_and_a_full_run_measures_again"
+    },
+    {
+      "id": "K-07",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:220 :: TimedResult._outcome; C:/math/.agents/skills/do-math/scripts/run_tests.py:316 :: _run_suite; C:/math/.agents/skills/do-math/scripts/run_tests.py:380 :: _isolated"
+    },
+    {
+      "id": "K-08",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:220 :: TimedResult._outcome; C:/math/.agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py:18 :: RunnerTests.test_failure_is_readable_while_the_next_test_runs_before_group_completion"
+    },
+    {
+      "id": "K-09",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:452 :: _edition; C:/math/.agents/skills/do-math/scripts/run_tests.py:457 :: main"
+    },
+    {
+      "id": "K-10",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:203 :: TimedResult._progress; C:/math/.agents/skills/do-math/scripts/run_tests.py:355 :: wait_for_worker; C:/math/.agents/skills/do-math/scripts/run_tests.py:380 :: _isolated; C:/math/.agents/skills/do-math/scripts/run_tests.py:457 :: main; C:/math/.agents/skills/do-math/scripts/tests/boundary/test_runner_native_exit.py:19 :: NativeExitTests.test_native_worker_failure_cannot_be_hidden_by_a_successful_json_report"
+    },
+    {
+      "id": "K-11",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:355 :: wait_for_worker; C:/math/.agents/skills/do-math/scripts/tests/unit/test_knowledge_formal_engine.py:16 :: FormalBindingConnections.test_failed_result_uses_the_fixed_command_fingerprint_and_axioms"
+    },
+    {
+      "id": "K-12",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:265 :: TimedResult.addSubTest; C:/math/.agents/skills/do-math/scripts/run_tests.py:246 :: TimedResult.addSkip; C:/math/.agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py:201 :: RunnerTests.test_failing_subtest_remains_a_failure_in_the_machine_report; C:/math/.agents/skills/do-math/scripts/tests/unit/test_runner_regressions.py:235 :: RunnerTests.test_skipped_subtest_is_not_reported_as_a_running_or_passed_parent"
+    },
+    {
+      "id": "K-15",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:280 :: _Template; C:/math/.agents/skills/do-math/scripts/tests/support/review_scene.py:71 :: _Template; C:/math/.agents/skills/do-math/scripts/tests/sim/test_template.py:25 :: TemplateTests.test_a_restore_is_active_with_the_clock_continuing_and_forgets_the_previous_restore"
+    },
+    {
+      "id": "K-16",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:280 :: _Template; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:133 :: Sim.trust_lean; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:181 :: Sim.activate; C:/math/.agents/skills/do-math/scripts/tests/support/review_scene.py:71 :: _Template"
+    },
+    {
+      "id": "K-17",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:336 :: template_inputs; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:381 :: built; C:/math/.agents/skills/do-math/scripts/tests/support/engine_purpose.py:106 :: purpose_sim; C:/math/.agents/skills/do-math/scripts/tests/sim/test_template.py:44 :: TemplateTests.test_builder_receives_configuration_and_defaults_share_the_same_absolute_path"
+    },
+    {
+      "id": "K-18",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:381 :: built; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:323 :: _template; C:/math/.agents/skills/do-math/scripts/tests/support/review_scene.py:124 :: _template; C:/math/.agents/skills/do-math/scripts/tests/sim/test_template.py:58 :: TemplateTests.test_failed_build_is_not_retried_for_the_same_normalized_inputs"
+    },
+    {
+      "id": "K-19",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:323 :: _template; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:381 :: built; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:280 :: _Template; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:181 :: Sim.activate; C:/math/.agents/skills/do-math/scripts/tests/support/review_scene.py:124 :: _template"
+    },
+    {
+      "id": "K-20",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:107 :: Sim.restored; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:174 :: Sim.restart; C:/math/.agents/skills/do-math/scripts/tests/support/process_state.py:26 :: reset_owner_process; C:/math/.agents/skills/do-math/scripts/tests/sim/test_process_restart_state.py:17 :: RestartStateTests.test_restart_discards_old_artifact_bytes_and_reads_the_durable_resource; C:/math/.agents/skills/do-math/scripts/tests/sim/test_process_restart_state.py:34 :: RestartStateTests.test_restart_discards_unrelated_file_hash_and_default_contract_caches"
+    },
+    {
+      "id": "K-21",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:289 :: _Template.__init__; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:365 :: assert_template_quiescent; C:/math/.agents/skills/do-math/scripts/tests/sim/test_template.py:66 :: TemplateTests.test_parked_actions_are_copyable_only_after_execution_and_ports_settle; C:/math/.agents/skills/do-math/scripts/tests/sim/test_template.py:91 :: TemplateTests.test_an_uncollected_call_cannot_be_copied"
+    },
+    {
+      "id": "K-23",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/flows/test_engine_flow.py:54 :: EngineTests.test_public_initialization_reaches_active_with_distinct_interpretation; C:/math/.agents/skills/do-math/scripts/tests/flows/test_engine_flow.py:213 :: PublicGitFlow.test_public_activation_work_receipt_assessment_and_next_plan; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:91 :: Sim.activated"
+    },
+    {
+      "id": "K-24",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:117 :: Sim._programs; C:/math/.agents/skills/do-math/scripts/tests/support/cli_inputs.py:55 :: run_cli; C:/math/.agents/skills/do-math/scripts/tests/support/cli_inputs.py:24 :: role_reach; C:/math/.agents/skills/do-math/scripts/tests/support/storage_records.py:64 :: held_ref_lock"
+    },
+    {
+      "id": "K-25",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/engine_purpose.py:117 :: drive; C:/math/.agents/skills/do-math/scripts/tests/support/purpose_answers.py:52 :: PurposeAnswers.answer; C:/math/.agents/skills/do-math/scripts/tests/support/review_research.py:71 :: research_sim"
+    },
+    {
+      "id": "K-27",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/model.py:127 :: FakeCLI._submit; C:/math/.agents/skills/do-math/scripts/tests/support/engine_flow.py:73 :: record_submissions; C:/math/.agents/skills/do-math/scripts/tests/support/engine_flow.py:107 :: worker_bindings; C:/math/.agents/skills/do-math/scripts/tests/flows/test_engine_flow.py:213 :: PublicGitFlow.test_public_activation_work_receipt_assessment_and_next_plan"
+    },
+    {
+      "id": "K-29",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/role_answers.py:12 :: read_fixture_context; C:/math/.agents/skills/do-math/scripts/tests/support/default_responder.py:9 :: context_from; C:/math/.agents/skills/do-math/scripts/tests/unit/test_engine_purpose_responder.py:37 :: PurposeAnswerContractTests.test_fixture_reads_returned_report_from_the_actual_supplied_task_source"
+    },
+    {
+      "id": "K-30",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/role_answers.py:147 :: seal_response; C:/math/.agents/skills/do-math/scripts/tests/support/model.py:94 :: ModelDouble.output"
+    },
+    {
+      "id": "K-31",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/role_answers.py:69 :: contract_review; C:/math/.agents/skills/do-math/scripts/tests/support/role_answers.py:117 :: assessment; C:/math/.agents/skills/do-math/scripts/tests/support/role_answers.py:102 :: planning_model_assessments; C:/math/.agents/skills/do-math/scripts/tests/support/role_answers.py:127 :: intent_response; C:/math/.agents/skills/do-math/scripts/tests/support/role_answers.py:76 :: scope_response; C:/math/.agents/skills/do-math/scripts/tests/support/default_responder.py:47 :: DefaultResponder.respond; C:/math/.agents/skills/do-math/scripts/tests/unit/test_engine_purpose_responder.py:77 :: PurposeAnswerContractTests.test_plan_fixture_does_not_invent_a_missing_selected_task_assessment"
+    },
+    {
+      "id": "K-32",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/engine_purpose.py:55 :: PurposeResponder.respond; C:/math/.agents/skills/do-math/scripts/tests/support/purpose_answers.py:52 :: PurposeAnswers.answer; C:/math/.agents/skills/do-math/scripts/tests/support/engine_purpose.py:117 :: drive"
+    },
+    {
+      "id": "K-33",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/engine_purpose.py:117 :: drive; C:/math/.agents/skills/do-math/scripts/tests/support/review_research.py:71 :: research_sim"
+    },
+    {
+      "id": "K-34",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:181 :: Sim.activate; C:/math/.agents/skills/do-math/scripts/tests/support/provider_probes.py:32 :: ObservedCalls; C:/math/.agents/skills/do-math/scripts/tests/flows/test_engine_flow.py:54 :: EngineTests.test_public_initialization_reaches_active_with_distinct_interpretation"
+    },
+    {
+      "id": "K-35",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:181 :: Sim.activate; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:250 :: Sim._check_applied; C:/math/.agents/skills/do-math/scripts/tests/support/engine_lifecycle.py:63 :: applied; C:/math/.agents/skills/do-math/scripts/tests/support/storage_records.py:95 :: apply_control"
+    },
+    {
+      "id": "K-36",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/storage_records.py:83 :: engine_on; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:70 :: Sim.__init__; C:/math/.agents/skills/do-math/scripts/do_math/repository.py:319 :: ResearchRepository.validate_candidate; C:/math/.agents/skills/do-math/scripts/do_math/repository.py:370 :: ResearchRepository.save_with_state; C:/math/.agents/skills/do-math/scripts/tests/unit/test_producer_record_storage.py:387 :: ExecutionRecordTests.test_checkpoint_observation_evidence_uses_actual_same_cas_bytes; C:/math/.agents/skills/do-math/scripts/tests/unit/test_knowledge_formal_engine.py:34 :: FormalBindingConnections.test_exact_compiler_keys_and_source_survive_result_artifacts"
+    },
+    {
+      "id": "K-37",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/do_math/core_engine.py:709 :: CoreEngineMixin._save; C:/math/.agents/skills/do-math/scripts/tests/unit/test_knowledge_formal_engine.py:52 :: FormalBindingConnections.test_publication_signature_distinguishes_exact_unicode_payload; C:/math/.agents/skills/do-math/scripts/tests/unit/test_storage_repository.py:323 :: SaveWithStateTests.test_unchanged_state_is_noop_and_returns_normalized_reload_views; C:/math/.agents/skills/do-math/scripts/tests/unit/test_storage_repository.py:331 :: SaveWithStateTests.test_changed_state_writes_the_same_canonical_files_and_returns_reload_views"
+    },
+    {
+      "id": "K-38",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/lean.py:39 :: LeanDouble.allow; C:/math/.agents/skills/do-math/scripts/tests/support/lean.py:74 :: FakeLean.wait; C:/math/.agents/skills/do-math/scripts/tests/contracts/test_doubles_follow_corpus.py:73 :: LeanDoubleOutputTests.test_a_changed_body_or_declaration_set_has_no_implicit_success; C:/math/.agents/skills/do-math/scripts/tests/contracts/test_doubles_follow_corpus.py:86 :: LeanDoubleOutputTests.test_explicit_facts_still_pass_through_signature_and_forbidden_axiom_checks"
+    },
+    {
+      "id": "K-39",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/fakes/host.py:35 :: FakeHost.cli_describe; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:181 :: Sim.activate; C:/math/.agents/skills/do-math/scripts/tests/support/state_builders.py:82 :: charter_record; C:/math/.agents/skills/do-math/scripts/tests/support/lean.py:74 :: FakeLean.wait"
+    },
+    {
+      "id": "K-41",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/trust_inputs.py:26 :: trust_fixture; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:181 :: Sim.activate"
+    },
+    {
+      "id": "K-42",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/unit/test_knowledge_formal_engine.py:16 :: FormalBindingConnections.test_failed_result_uses_the_fixed_command_fingerprint_and_axioms; C:/math/.agents/skills/do-math/scripts/tests/support/knowledge_installed_lean.py:64 :: adopt_installed"
+    },
+    {
+      "id": "K-45",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/do_math/core_engine.py:709 :: CoreEngineMixin._save; C:/math/.agents/skills/do-math/scripts/tests/flows/test_scheduling_parallel_engine.py:52 :: ParallelWorkTests.test_three_calls_overlap_and_apply_serially_to_distinct_workspaces; C:/math/.agents/skills/do-math/scripts/tests/support/port_contracts/calls.py:47 :: CallsContract.test_on_started_runs_on_the_owner_thread_and_answers_the_call; C:/math/.agents/skills/do-math/scripts/tests/support/port_contracts/calls.py:61 :: CallsContract.test_observations_apply_in_order_on_the_owner_before_collection"
+    },
+    {
+      "id": "K-46",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/scheduling_parallel.py:67 :: Overlap.__call__; C:/math/.agents/skills/do-math/scripts/tests/flows/test_scheduling_parallel_engine.py:52 :: ParallelWorkTests.test_three_calls_overlap_and_apply_serially_to_distinct_workspaces; C:/math/.agents/skills/do-math/scripts/tests/support/review_research.py:106 :: InvestigationRunner.answer; C:/math/.agents/skills/do-math/scripts/tests/support/academic_scenes.py:204 :: RejectingResponder.respond; C:/math/.agents/skills/do-math/scripts/tests/support/provider_claude_model.py:51 :: ClaudeCLI.communicate; C:/math/.agents/skills/do-math/scripts/tests/flows/test_provider_quota_recovery.py:29 :: QuotaRecoveryTests.test_quota_preserves_original_action_without_diagnostic_calls_then_restores_files"
+    },
+    {
+      "id": "K-48",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/cli_inputs.py:24 :: role_reach; C:/math/.agents/skills/do-math/scripts/tests/boundary/test_review_research_reach.py:38 :: reach_of; C:/math/.agents/skills/do-math/scripts/tests/boundary/test_review_research_reach.py:46 :: ResearchReachTests.test_initial_peer_question_is_not_exposed_before_phase_seal; C:/math/.agents/skills/do-math/scripts/tests/boundary/test_review_research_reach.py:66 :: ResearchReachTests.test_investigator_does_not_receive_unsealed_peer_summary"
+    },
+    {
+      "id": "K-49",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/model.py:94 :: ModelDouble.output; C:/math/.agents/skills/do-math/scripts/tests/support/model.py:127 :: FakeCLI._submit; C:/math/.agents/skills/do-math/scripts/do_math/core_engine.py:1240 :: CoreEngineMixin._issued_input; C:/math/.agents/skills/do-math/scripts/do_math/submission.py:1191 :: check_submission; C:/math/.agents/skills/do-math/scripts/tests/flows/test_engine_flow.py:142 :: EngineTests.test_plan_rejects_missing_candidate_and_criterion"
+    },
+    {
+      "id": "K-51",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/role_answers.py:61 :: review_items; C:/math/.agents/skills/do-math/scripts/tests/support/observation_inputs.py:16 :: observation_rule; C:/math/.agents/skills/do-math/scripts/tests/flows/test_scheduling_parallel_engine.py:52 :: ParallelWorkTests.test_three_calls_overlap_and_apply_serially_to_distinct_workspaces"
+    },
+    {
+      "id": "K-52",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/review_scene.py:174 :: ReviewScene.execute; C:/math/.agents/skills/do-math/scripts/tests/support/review_inputs.py:115 :: reviewed_candidate; C:/math/.agents/skills/do-math/scripts/tests/support/knowledge_roundtrip.py:68 :: KnowledgeRoundtripHarness.cycle; C:/math/.agents/skills/do-math/scripts/tests/support/knowledge_impact.py:33 :: seal_review; C:/math/.agents/skills/do-math/scripts/tests/support/review_research.py:191 :: defer_review_for_research"
+    },
+    {
+      "id": "K-54",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:452 :: _edition; C:/math/.agents/skills/do-math/scripts/run_tests.py:457 :: main"
+    },
+    {
+      "id": "K-61",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/provider_inputs.py:114 :: actual_command"
+    },
+    {
+      "id": "K-62",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:457 :: main; C:/math/.agents/skills/do-math/scripts/run_tests.py:151 :: discover"
+    },
+    {
+      "id": "K-64",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/smell_rules.py:72 :: _test_issues; C:/math/.agents/skills/do-math/scripts/tests/structure/test_test_smells.py:19 :: SmellTests.test_new_system_tests_have_no_smell"
+    },
+    {
+      "id": "K-65",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/smell_rules.py:72 :: _test_issues; C:/math/.agents/skills/do-math/scripts/tests/support/fakes/clock.py:56 :: FakeClock.advance; C:/math/.agents/skills/do-math/scripts/tests/support/engine_purpose.py:117 :: drive; C:/math/.agents/skills/do-math/scripts/run_tests.py:355 :: wait_for_worker"
+    },
+    {
+      "id": "K-67",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/role_answers.py:61 :: review_items; C:/math/.agents/skills/do-math/scripts/tests/support/observation_inputs.py:16 :: observation_rule; C:/math/.agents/skills/do-math/scripts/tests/unit/test_storage_repository.py:341 :: SaveWithStateTests.test_regular_save_still_rejects_invalid_input"
+    },
+    {
+      "id": "K-69",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/port_contracts/jobs.py:28 :: JobsContract; C:/math/.agents/skills/do-math/scripts/tests/support/port_contracts/calls.py:25 :: CallsContract; C:/math/.agents/skills/do-math/scripts/tests/support/fakes/git_backend.py:165 :: make_repository; C:/math/.agents/skills/do-math/scripts/tests/boundary/test_port_jobs.py:11 :: WindowsJobsContract.make; C:/math/.agents/skills/do-math/scripts/tests/contracts/test_port_jobs.py:16 :: FakeJobsContract.make"
+    },
+    {
+      "id": "K-70",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/known_defects.py:22 :: known_defect; C:/math/.agents/skills/do-math/scripts/tests/support/mutation.py:269 :: run"
+    },
+    {
+      "id": "K-71",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/smell_rules.py:72 :: _test_issues; C:/math/.agents/skills/do-math/scripts/tests/unit/test_storage_repository.py:354 :: SaveWithStateTests.test_save_rereads_only_new_artifact_evidence; C:/math/.agents/skills/do-math/scripts/tests/flows/test_engine_flow.py:142 :: EngineTests.test_plan_rejects_missing_candidate_and_criterion"
+    },
+    {
+      "id": "K-72",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/fakes/clock.py:56 :: FakeClock.advance; C:/math/.agents/skills/do-math/scripts/tests/support/fakes/clock.py:62 :: FakeClock.set_wall; C:/math/.agents/skills/do-math/scripts/tests/support/fakes/jobs.py:169 :: FakeJobs.launch; C:/math/.agents/skills/do-math/scripts/tests/support/lean.py:74 :: FakeLean.wait; C:/math/.agents/skills/do-math/scripts/tests/contracts/test_port_jobs.py:20 :: LiveFakeJobTests"
+    },
+    {
+      "id": "K-73",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/mutation.py:133 :: changed_functions; C:/math/.agents/skills/do-math/scripts/tests/support/mutation.py:144 :: mutate; C:/math/.agents/skills/do-math/scripts/tests/support/mutation.py:269 :: run; C:/math/.agents/skills/do-math/scripts/run_tests.py:742 :: _finish_t3"
+    },
+    {
+      "id": "K-74",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/model.py:94 :: ModelDouble.output; C:/math/.agents/skills/do-math/scripts/tests/support/lean.py:39 :: LeanDouble.allow; C:/math/.agents/skills/do-math/scripts/tests/support/port_contracts/jobs.py:28 :: JobsContract"
+    },
+    {
+      "id": "K-75",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/review_scene.py:174 :: ReviewScene.execute; C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:117 :: Sim._programs; C:/math/.agents/skills/do-math/scripts/tests/support/engine_purpose.py:117 :: drive"
+    },
+    {
+      "id": "K-76",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/support/sim.py:81 :: Sim._wire; C:/math/.agents/skills/do-math/scripts/tests/support/knowledge_installed_lean.py:58 :: InstalledLean.spawn; C:/math/.agents/skills/do-math/scripts/tests/support/cli_inputs.py:24 :: role_reach"
+    },
+    {
+      "id": "K-77",
+      "disposition": "kept",
+      "where": "C:/math/.agents/skills/do-math/scripts/run_tests.py:457 :: main; C:/math/.agents/skills/do-math/scripts/run_tests.py:452 :: _edition; C:/math/.agents/skills/do-math/scripts/run_tests.py:220 :: TimedResult._outcome"
+    },
+    {
+      "id": "K-78",
+      "disposition": "moved",
+      "where": "C:/math/.agents/skills/do-math/scripts/tests/structure/test_storage_fields.py:74 :: StorageFieldTests.test_every_lifecycle_event_call_passes_only_declared_event_fields; C:/math/.agents/skills/do-math/scripts/tests/structure/test_storage_fields.py:85 :: StorageFieldTests.test_every_field_of_a_closed_family_is_named_by_the_product; C:/math/.agents/skills/do-math/scripts/tests/contracts/test_pairs.py:15 :: ContractPairTests.test_every_producer_branch_is_received_and_every_named_field_is_produced; C:/math/.agents/skills/do-math/scripts/tests/support/storage_records.py:83 :: engine_on; C:/math/.agents/skills/do-math/scripts/do_math/repository.py:370 :: ResearchRepository.save_with_state; C:/math/.agents/skills/do-math/scripts/tests/support/branch_gate.py:469 :: gate"
+    },
+    {
+      "id": "K-28",
+      "disposition": "moved",
+      "where": "tests/sim/test_provider_runner.py:ResultTests.test_pinned_start_is_published_once_and_bound_to_the_completed_worker_job (start/job exact-single unpack, identity/EX/profile binding, done/closed/active=0); ResultTests.test_refused_launch_never_reports_a_started_process; tests/sim/test_scheduling_host_configuration.py:HostRunnerTests (mandatory host start callback before launch); tests/sim/test_provider_collection.py:CodexCollectionTests.test_timeout_with_descendant_still_in_job_cannot_collect_stale_files; tests/support/port_contracts/jobs.py (resume-once/confirmed termination); tests/boundary/test_scheduling_host_jobs.py (actual creation failure/normal/abnormal termination, reservation return/settlement once). Old local_job_runner nested-fixture wrapper retired with its consumers; its old zero-start allowance is distinguished from the exactly-once prose. Fake resource counters protect declared shape, actual accounting is checked by the real boundary side."
+    },
+    {
+      "id": "K-66",
+      "disposition": "moved",
+      "where": "test_categories.py:isolation_for; run_tests.py:_isolated/main (owned Windows Job, per-phase deadline and kill-on-timeout); tests/boundary resource/lean labels (38 missing process targets plus 4 corrected classes); tests/unit/test_branch_gate.py and test_runner_tiers.py use explicit repository path for pure measurement setup; tests/boundary/test_mutation_baseline.py preserves the actual Git/blob baseline integration; boundary.test_engine_cli.CliExitTests isolates real CLI exit/stdout without an initialized Git fixture; support.entry assembles fake Ports for domain tests while real boundary callers explicitly assemble real_ports. Existing actual Lean labels and protocol tests are preserved."
+    }
+  ]
+}

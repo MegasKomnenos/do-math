@@ -1,15 +1,15 @@
 """The purpose scenario on a Sim: a scripted research run that proves one natural-number identity.
 
 - ``PurposeResponder(scenario='direct')`` answers the Sim model double's calls
-  (``ModelDouble.responder``) as the legacy ``purpose_fixtures.PurposeRunner``
-  answered its runner calls: the same answers (``PurposeRunner.answer``) and
+  (``ModelDouble.responder``) as the legacy ``support.purpose_answers.PurposeAnswers``
+  answered its runner calls: the same answers (``PurposeAnswers.answer``) and
   the same activity extensions its ``run`` wrote beside them (preparation:
   model assessments, contract checks, observation rules and revision
   resolutions; plan: model assessments). The model double then binds and seals
   the answer and the worker submits it with the workspace tool. It keeps every
   call's ``(role, action, context)`` in ``calls`` and the runner's
   ``work_order``. Its input checks stay: an action carrying a repair, and every
-  check ``PurposeRunner.answer`` makes of its input, fail the call; the failure
+  check ``PurposeAnswers.answer`` makes of its input, fail the call; the failure
   is kept in ``failures`` so ``drive`` fails the test at once instead of the
   flow absorbing it (preserved rule K-32).
 - ``purpose_sim(**config)``: a restored copy of the public activation with the
@@ -44,8 +44,8 @@ def _extensions(workspace):
 
 class PurposeResponder:
     def __init__(self, scenario='direct'):
-        from purpose_fixtures import PurposeRunner
-        self.runner = PurposeRunner(scenario)
+        from support.purpose_answers import PurposeAnswers
+        self.runner = PurposeAnswers(scenario)
         self.calls, self.failures = [], []
 
     @property
@@ -67,9 +67,10 @@ class PurposeResponder:
         return output
 
     def _write_extensions(self, role, action, context, workspace, output):
-        """The activity extensions ``PurposeRunner.run`` wrote beside its answer, in its order."""
-        from research_fixtures import planning_model_assessments, prepared_rule_conditions, supply_observation_rules
-        from runner_fixtures import contract_checks
+        """The activity extensions ``PurposeAnswers.run`` wrote beside its answer, in its order."""
+        from support.role_answers import planning_model_assessments
+        from support.observation_inputs import prepared_rule_conditions, supply_observation_rules
+        from support.default_responder import contract_checks
         if role == 'research_preparation' and action.get('revision_targets'):
             path, extensions = _extensions(workspace)
             revised = {candidate.get('revises_task_id') for candidate in output.get('candidates', [])}
@@ -106,11 +107,11 @@ def purpose_sim(**config):
     """A restored public activation with the purpose configuration; the model double answers as ``PurposeResponder``."""
     settings = {**PURPOSE_CONFIG, **config}
 
-    def build(root, shared):
+    def build(root, shared, *, settings):
         sim = Sim(root, shared=shared, config=settings)
         sim.activate()
         return sim
-    return built('engine-purpose-' + canonical_json(settings).decode('ascii'), build)
+    return built('engine-purpose', build, settings=settings)
 
 
 def drive(test, sim, predicate=None, limit=45):

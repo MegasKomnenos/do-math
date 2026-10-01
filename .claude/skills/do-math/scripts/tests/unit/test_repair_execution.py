@@ -8,7 +8,7 @@ import unittest
 from do_math import repair_execution
 from do_math.repair_execution import installation_failure, pending_installation_repair, resume_installation_repair
 from do_math.supervision import collect_repair_verification, start_guard
-from record_fixtures import installation_repair_state
+from support.record_builders import installation_repair_state
 
 REFUSED = 'installation repair requires a preserved accepted diagnosis of an ended failure'
 

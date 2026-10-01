@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 from do_math import contracts, submission, submission_tool
 from do_math.control_transport import ControlTransport
-from record_fixtures import research_work_context
+from support.record_builders import research_work_context
 from support.fakes.clock import FakeClock
 from support.provider_probes import ObservedCalls
 
@@ -52,6 +52,8 @@ class RequestControlTests(unittest.TestCase):
 class ToolMainTests(unittest.TestCase):
     def test_preview_records_are_written_even_when_schema_is_invalid(self):
         """The name says preview records; the legacy test and this one run the check mode without ``--preview``."""
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
             submission.install_tools(workspace, research_work_context(), contracts.schema_for("research_work"), None,
@@ -60,7 +62,7 @@ class ToolMainTests(unittest.TestCase):
             draft.write_text('{}', encoding="utf-8")
             # The launcher runs main in the workspace; the working directory is the process's, not a product name.
             with patch.object(Path, "cwd", return_value=workspace), contextlib.redirect_stdout(io.StringIO()):
-                self.assertEqual(1, submission_tool.main(["--output", str(draft)]))
+                self.assertEqual(1, submission_tool.main(["--output", str(draft)], ports=_entry.ports, environment=_entry.environment))
             records = list((workspace / "checks").glob("*.json"))
             self.assertEqual(1, len(records))
             check = json.loads(records[0].read_bytes())

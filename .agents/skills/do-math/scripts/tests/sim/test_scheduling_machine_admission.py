@@ -83,7 +83,7 @@ class MachineSchedulingTests(unittest.TestCase):
         for profile in (big, small):
             instance['execution_profiles'][profile['id']] = profile
             instance['role_profile_refs'][profile['role']].append(profiles.profile_ref(profile))
-        slots = SessionSlots(runtime, instance, clock=sim.clock, jobs=sim.jobs)
+        slots = SessionSlots(runtime, instance, clock=sim.clock, jobs=sim.jobs, host_id=sim.host_id)
         held = adopted_profile(instance, 'research_work')
         self.assertTrue(slots.acquire('EX-held', profile=held,
                                       execution={'id': 'EX-held', 'role': 'research_work', 'status': 'queued'}))

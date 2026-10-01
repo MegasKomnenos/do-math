@@ -20,6 +20,7 @@ import unittest
 from do_math.launch import termination_confirmed, ticket
 from do_math.system_clock import SystemClock
 from do_math.windows_job import WindowsJob, WindowsJobs, owner_ended, owner_identity
+from test_categories import test_group
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 PROFILE = {'sha256': 'a' * 64, 'actor_kind': 'ai', 'role': 'research_work'}  # a native Job launch
@@ -57,6 +58,7 @@ def reached(predicate, timeout):
     return predicate()
 
 
+@test_group('resource')
 @unittest.skipUnless(os.name == 'nt', 'Windows launch contract')
 class LaunchRecoveryTests(unittest.TestCase):
     def setUp(self):

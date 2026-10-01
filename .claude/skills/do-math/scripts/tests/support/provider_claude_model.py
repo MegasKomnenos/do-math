@@ -49,7 +49,7 @@ class ClaudeModelDouble(ModelDouble):
 
 class ClaudeCLI(FakeCLI):
     def communicate(self, input=None, timeout=None):
-        from runner_fixtures import context_from
+        from support.default_responder import context_from
         prompt = input.decode("utf-8")
         role = prompt.split(MARKER, 1)[1].split(".", 1)[0]
         self.model.contexts.append(context_from(prompt, self.workspace))

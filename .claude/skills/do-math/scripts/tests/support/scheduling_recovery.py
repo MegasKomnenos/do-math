@@ -3,7 +3,7 @@
 Each is a template built once per process through the public activation (the
 first two of an instance configured with ``max_output_repairs`` 0, ``NO_REPAIR``)
 and restored per test (``support.sim.built``). The legacy builds started from the synthetic
-active state and drove it with ``PurposeRunner`` or a local invalid runner; here
+active state and drove it with ``PurposeAnswers`` or a local invalid runner; here
 the owner runs on the Sim and the model double answers.
 
 - ``reviewed_sim()``: the legacy ``reviewed_task``. The default responder's
@@ -26,7 +26,7 @@ NO_REPAIR = {'max_output_repairs': 0}
 
 
 def empty_plan(**changes):
-    from purpose_fixtures import common
+    from support.purpose_answers import common
     return {**common('Compare the current task population.'), 'dispositions': [], 'preparation_requests': [],
             'goal_audit': False, 'task_assessments': [], **changes}
 
@@ -43,7 +43,7 @@ def _reviewed(root, shared):
 
 
 def _failed_plan(root, shared):
-    from research_fixtures import disposition
+    from support.role_answers import disposition
     sim = Sim.activated(root, shared=shared, config=NO_REPAIR)
     scenario_model(sim).on('research_plan').reply(explicit(empty_plan(dispositions=[disposition('TK-completed')])))
     sim.engine.runtime['queue'] = [{'id': 'AC-failed', 'role': 'research_plan'}]

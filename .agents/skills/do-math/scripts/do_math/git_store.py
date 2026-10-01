@@ -76,7 +76,7 @@ class GitStateStore:
     tampering, outside the accidental-change threat model.
     """
 
-    def __init__(self, repository: str | os.PathLike[str], instance_id: str, *, backend=None, clock=None) -> None:
+    def __init__(self, repository: str | os.PathLike[str], instance_id: str, *, backend, clock) -> None:
         if not isinstance(instance_id, str) or not is_new_id("RI", instance_id):
             raise ValueError("instance_id must be the registry RI-prefixed canonical ULID")
         self.repository = Path(repository).absolute()
@@ -85,12 +85,6 @@ class GitStateStore:
             raise ValueError("repository must be an existing Git work tree or bare repository")
         self.instance_id = instance_id
         self.ref = f"refs/heads/do-math/{instance_id}"
-        if backend is None:
-            from .git_process import GitProcess  # layer: 1b migration default until entry points pass Ports
-            backend = GitProcess()
-        if clock is None:
-            from .system_clock import SystemClock  # layer: 1c migration default until entry points pass Ports
-            clock = SystemClock()
         self._backend, self._clock = backend, clock
         # Until Git reports its directory, the work tree stands in for it when
         # a failure re-proves the boundaries.

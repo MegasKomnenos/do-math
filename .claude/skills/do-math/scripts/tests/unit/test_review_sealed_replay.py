@@ -9,7 +9,7 @@ import unittest
 
 from do_math.review_cycle import (accept_research_result, accept_result, defer_for_research, next_actions,
                                   record_recovery_event, start_review, validate_sealed_review)
-from review_fixtures import deferred_research_cycle, grant_replacement, research_answer, review_stage_output, scoped_start
+from support.review_inputs import deferred_research_cycle, grant_replacement, research_answer, review_stage_output, scoped_start
 from support.review_scene import ReviewScene, warm
 
 
@@ -19,6 +19,8 @@ def setUpModule():
 
 class SealedReplayTests(unittest.TestCase):
     def test_budget_closed_investigation_is_verified_unresolved_not_an_unfinished_vote(self):
+        from support.entry import entry
+        _entry = entry()
         scoped = scoped_start({'revision': 1}, reviewers=2)
         cycle = start_review({'revision': 1}, reviewers=2, policy=scoped['review_policy'], scope_assessment=scoped['scope_assessment'])
         cycle['id'] = 'RC-cap'
@@ -32,17 +34,19 @@ class SealedReplayTests(unittest.TestCase):
         from do_math.configuration import DEFAULT_CONFIG
         from do_math.execution_profiles import build_profiles, profile_ref
         config = {**copy.deepcopy(DEFAULT_CONFIG), 'review_research_limit': 0}
-        instance = {'config': config, **build_profiles(config)}
+        instance = {'config': config, **build_profiles(config, host=_entry.ports.host)}
         profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'identity_review')
         runtime['executions']['requester'].update(actor_kind='ai', execution_profile_ref=profile_ref(profile))
-        result = validate_sealed_review(cycle, runtime, instance=instance)
+        result = validate_sealed_review(cycle, runtime, instance=instance, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual((result['status'], result['decision']), ('unresolved', 'unresolved'))
         instance['config']['review_research_limit'] = 3
         with self.assertRaisesRegex(ValueError, 'review closure limit no longer matches its governing configuration'):
-            validate_sealed_review(cycle, runtime, instance=instance)
+            validate_sealed_review(cycle, runtime, instance=instance, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
     def test_authorized_replacement_keeps_full_authority_and_sealed_input(self):
         """A replaced slot's review on the real engine replays with its sealed input hash."""
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as directory:
             scene = ReviewScene(directory)
             engine = scene.engine
@@ -59,12 +63,14 @@ class SealedReplayTests(unittest.TestCase):
                 scene.execute()
             cycle = engine.runtime['review_cycles'][cid]
             self.assertIn('sealed_input_sha256', cycle['replacement_receipts'][0]['authorization'])
-            self.assertEqual(validate_sealed_review(cycle, engine.runtime, instance=engine.instance)['decision'], 'match')
+            self.assertEqual(validate_sealed_review(cycle, engine.runtime, instance=engine.instance, at=engine.ports.clock.now(), clock=engine.ports.clock)['decision'], 'match')
             cycle['replacement_receipts'][0]['authorization']['sealed_input_sha256'] = 'changed'
             with self.assertRaisesRegex(ValueError, 'replacement sealed input changed'):
-                validate_sealed_review(cycle, engine.runtime, instance=engine.instance)
+                validate_sealed_review(cycle, engine.runtime, instance=engine.instance, at=engine.ports.clock.now(), clock=engine.ports.clock)
 
     def test_previous_review_must_resolve_to_its_actual_preserved_cycle(self):
+        from support.entry import entry
+        _entry = entry()
         runtime = {'executions': {}, 'review_cycles': {}}
         previous = None
         for revision in (1, 2):
@@ -82,16 +88,18 @@ class SealedReplayTests(unittest.TestCase):
                 cycle = accept_result(cycle, action, output, eid)
             runtime['review_cycles'][cid] = cycle
             previous = cycle
-        self.assertEqual(validate_sealed_review(cycle, runtime)['decision'], 'match')
+        self.assertEqual(validate_sealed_review(cycle, runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)['decision'], 'match')
         forged = copy.deepcopy(cycle)
         next(iter(forged['results'].values()))['stage'] = 'judge'
         with self.assertRaisesRegex(ValueError, 'review conclusion differs from sealed evidence'):
-            validate_sealed_review(forged, runtime)
+            validate_sealed_review(forged, runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         del runtime['review_cycles']['cycle-1']
         with self.assertRaisesRegex(ValueError, 'previous review does not resolve to one preserved cycle'):
-            validate_sealed_review(cycle, runtime)
+            validate_sealed_review(cycle, runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
     def test_fixed_private_research_is_replayed_before_requesters_final_vote(self):
+        from support.entry import entry
+        _entry = entry()
         cycle, action = deferred_research_cycle()
         cycle['id'] = 'RC-research'
         provisional = cycle['turns'][action['slot']][0]['content']['provisional_result']
@@ -111,10 +119,10 @@ class SealedReplayTests(unittest.TestCase):
             runtime['executions'][eid] = {'id': eid, 'role': 'identity_review', 'status': 'ended', 'outcome': 'output_accepted',
                 'output': output, 'action': {**pending, 'review_cycle_id': cycle['id']}}
             cycle = accept_result(cycle, pending, output, eid)
-        self.assertEqual(validate_sealed_review(cycle, runtime)['decision'], 'match')
+        self.assertEqual(validate_sealed_review(cycle, runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)['decision'], 'match')
         runtime['executions']['investigator']['output']['request_digest'] = 'forged'
         with self.assertRaisesRegex(ValueError, 'review result is not bound to its actual accepted execution'):
-            validate_sealed_review(cycle, runtime)
+            validate_sealed_review(cycle, runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
 
 if __name__ == '__main__':

@@ -19,7 +19,7 @@ from do_math.input_basis import capture_review_input_basis, review_input_basis_c
 from do_math.review_cycle import (accept_result, authorize_record_replacement, context_for,
                                   next_actions, record_recovery_event, start_review)
 from do_math.review_policy import build_review_policy, minimum_scope_executions, validate_scope_assessment
-from review_fixtures import grant_replacement
+from support.review_inputs import grant_replacement
 from support.review_scene import ReviewScene, warm
 
 
@@ -146,6 +146,8 @@ class ReviewScopeTests(unittest.TestCase):
             validate_scope_assessment(invalid, policy())
 
     def test_permanent_restoration_loss_blocks_its_slot_until_a_current_grant_authorizes_a_replacement(self):
+        from support.entry import entry
+        _entry = entry()
         cycle = start_review({"revision": "r1"}, reviewers=2, policy=policy(), scope_assessment=assessment())
         action = next_actions(cycle)[0]
         retryable = record_recovery_event(cycle, action, {
@@ -162,13 +164,13 @@ class ReviewScopeTests(unittest.TestCase):
         self.assertEqual([pending["slot"] for pending in next_actions(permanent)], ["initial-semantic"])
         permanent.update(id='RC-test', knowledge_id='K1')
         runtime = {'executions': {}, 'review_cycles': {'RC-test': permanent}}
-        denied = authorize_record_replacement(permanent, action, {"grants": {}}, runtime=runtime)
+        denied = authorize_record_replacement(permanent, action, {"grants": {}}, runtime=runtime, clock=_entry.ports.clock)
         self.assertEqual(denied["disposition"], "authorization_denied")
         # The grant is the one the product's governance applies to an instance holding K1.
         with tempfile.TemporaryDirectory() as root:
             engine = ReviewScene(root).engine
             grant_replacement(engine)
-        approved = authorize_record_replacement(permanent, action, engine.instance, runtime=runtime, grant_id="GR-review")
+        approved = authorize_record_replacement(permanent, action, engine.instance, runtime=runtime, grant_id="GR-review", clock=_entry.ports.clock)
         self.assertEqual(approved["disposition"], "replacement_ready")
         replacement = approved["action"]
         self.assertTrue(replacement["continuity_broken"])

@@ -31,6 +31,7 @@ def reached(predicate, timeout=10):
     return predicate()
 
 
+@category('resource')
 @unittest.skipUnless(os.name == 'nt', 'requires Windows Job host')
 class IsolatedHostTests(unittest.TestCase):
     def until(self, predicate, timeout=10):

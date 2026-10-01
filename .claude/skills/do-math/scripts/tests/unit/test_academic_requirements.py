@@ -14,7 +14,7 @@ from do_math.academic import (academic_status, assess, current_requirements, eff
                               requirement_record, solution_basis)
 from do_math.external import prepare_operation
 from do_math.knowledge import capture_basis
-from record_fixtures import domain_governance
+from support.record_builders import domain_governance
 
 
 class Tests(unittest.TestCase):
@@ -121,7 +121,11 @@ class AcademicGovernanceTests(unittest.TestCase):
         grant = {"id": "G", "academic_only": True}
         operation = prepare_operation({"method": "POST", "url": "https://example.test/p"}, "G", "S")
         self.assertFalse(academic.external_prerequisite(i, rt, basis, operation, grant))
+        with self.assertRaisesRegex(ValueError, 'no current solution for this request'):
+            academic.bind_external_prerequisite(i, rt, None, operation)
         operation = academic.bind_external_prerequisite(i, rt, basis, operation)
+        self.assertEqual(operation['academic_basis'], {'solution_basis': basis,
+                         'requirements_sha256': academic.current_requirements(i)['sha256']})
         self.assertTrue(academic.external_prerequisite(i, rt, basis, operation, grant))
         self.assertFalse(academic.external_prerequisite(i, rt, solution_basis("CH2", [{"id": "K"}]), operation, grant))
 

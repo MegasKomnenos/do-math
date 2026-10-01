@@ -1,6 +1,6 @@
 """Purpose-level flows of the real engine with explicitly scripted semantics, on a Sim.
 
-The model double answers every role as the legacy ``purpose_fixtures.PurposeRunner``
+The model double answers every role as the legacy ``support.purpose_answers.PurposeAnswers``
 did (``support.engine_purpose.PurposeResponder``); the worker submits each answer
 with the workspace tool, the Lean double answers the formal checks the product's
 ``verify_lean`` runs, and every other external resource is a port fake. Each
@@ -17,8 +17,8 @@ from copy import deepcopy
 import unittest
 
 from do_math.knowledge_records import usable_links
-from purpose_fixtures import NEW_GOAL
-from research_fixtures import charter_change, policy_change
+from support.purpose_answers import NEW_GOAL
+from support.state_builders import charter_change, policy_change
 from support.engine_lifecycle import applied
 from support.engine_purpose import PurposeResponder, drive, purpose_sim
 

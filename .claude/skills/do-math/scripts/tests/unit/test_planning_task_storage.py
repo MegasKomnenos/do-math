@@ -18,8 +18,9 @@ from do_math import governance, planning, task_contracts, task_scope
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.execution_profiles import build_profiles, profile_ref, resolve_profile, select_profile
 from do_math.input_basis import CurrentnessChanged
-from record_fixtures import domain_governance
-from research_fixtures import candidate, current_state, review_items
+from support.record_builders import domain_governance
+from support.role_answers import candidate, review_items
+from support.state_builders import current_state
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.storage_records import engine_on, fake_ports, record_store
@@ -29,6 +30,8 @@ class TaskContractStorageTests(unittest.TestCase):
     """The installed storage contract over the Git port; synthetic user decisions and AI judgments."""
 
     def setUp(self):
+        from support.entry import entry
+        _entry = entry()
         temporary = tempfile.TemporaryDirectory(prefix='tasks-audit1-')
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
@@ -36,7 +39,7 @@ class TaskContractStorageTests(unittest.TestCase):
         self.store = record_store(self.root / 'repository', backend=self.backend, clock=self.clock)
         # Stored states pass the current lifecycle gate; these tasks belong to an active instance.
         self.instance, self.runtime = current_state(
-            {**domain_governance(), 'config': deepcopy(DEFAULT_CONFIG), **build_profiles(DEFAULT_CONFIG)},
+            {**domain_governance(), 'config': deepcopy(DEFAULT_CONFIG), **build_profiles(DEFAULT_CONFIG, host=_entry.ports.host)},
             {'status': 'ready', 'tasks': {}, 'executions': {}, 'queue': [], 'history': []})
         self.instance['lifecycle']['state'] = 'active'
 
@@ -71,8 +74,10 @@ class TaskContractStorageTests(unittest.TestCase):
         return task, wire
 
     def grant(self):
+        from support.entry import entry
+        _entry = entry()
         self.instance, self.runtime, _ = governance.apply_decision(self.instance, self.runtime, {'kind': 'grant', 'grant': {
-            'id': 'GR-audit', 'kind': 'local', 'roles': ['research_work'], 'reuse': 'reusable'}}, source_ref='S')
+            'id': 'GR-audit', 'kind': 'local', 'roles': ['research_work'], 'reuse': 'reusable'}}, source_ref='S', clock=_entry.ports.clock)
 
     def review(self, identifier):
         eid = 'EX-review-' + identifier
@@ -83,6 +88,8 @@ class TaskContractStorageTests(unittest.TestCase):
 
     def test_candidate_review_profile_selection_and_governance_survive_git_reload(self):
         """About 0.15-0.3 s, over the 0.2 s unit budget in a full run: two publications and a refused one through the storage contract, and an engine load."""
+        from support.entry import entry
+        _entry = entry()
         self.grant()
         task, wire = self.candidate('TK-stored')
         self.review(task['id'])
@@ -100,7 +107,7 @@ class TaskContractStorageTests(unittest.TestCase):
         action = {'id': 'AC-dispatch', 'role': 'research_work', 'target': saved['id'], 'profile_ref': profile_ref(selected)}
         self.assertEqual(select_profile(instance['execution_profiles'], action, selected['ai'], saved['profile_refs'])['id'],
                          selected['id'])
-        self.assertEqual(planning.task_ready(saved, instance, runtime, action=action, include_scheduling_waits=False)['state'],
+        self.assertEqual(planning.task_ready(saved, instance, runtime, action=action, include_scheduling_waits=False, evaluation_context=receiver._evaluation_context())['state'],
                          'ready')
         bad = deepcopy(runtime)
         bad['tasks'][saved['id']]['profile_refs'][0]['revision'] += 1
@@ -113,22 +120,24 @@ class TaskContractStorageTests(unittest.TestCase):
                    **planning.governance_revisions(instance)}
         review_action = {'role': 'task_contract_review', 'target': saved['id']}
         output = {'item_reviews': deepcopy(saved['reviews'][0]['item_reviews'])}
-        receiver._validate_decision_acceptance(review_action, output, receipt, {})
+        receiver._validate_decision_acceptance(review_action, output, receipt, {}, evaluation_context=receiver._evaluation_context())
         policy = {'id': 'POL-persisted', 'kind': 'policy', 'revision': 1, 'supersedes': [],
                   'content': {'rule_id': 'persisted', 'scope': ['P'], 'text': 'Require an explicit domain',
                               'reason_refs': ['D'], 'audit_refs': []}}
         receiver.instance, receiver.runtime, _ = governance.apply_decision(instance, runtime, {'kind': 'policy', 'record': policy},
-                                                                           source_ref='S')
+                                                                           source_ref='S', clock=_entry.ports.clock)
         changed_head = self.store.save_with_state(head, receiver.instance, receiver.runtime)[0]
         _, receiver.instance, receiver.runtime = self.store.load(changed_head)
         with self.assertRaises(CurrentnessChanged) as changed:
-            receiver._validate_decision_acceptance(review_action, output, receipt, {})
+            receiver._validate_decision_acceptance(review_action, output, receipt, {}, evaluation_context=receiver._evaluation_context())
         self.assertIn('goal_or_policy_revision', [row['field'] for row in changed.exception.changes])
         self.assertFalse(planning.contract_review_current(saved['reviews'][0], saved, receiver.instance,
                                                           receiver.runtime)['valid'])
 
     def test_transfer_closes_without_completion_and_recipient_obligation_survives_reload(self):
         """About 0.15-0.3 s, over the 0.2 s unit budget in a full run: two publications and a refused one through the storage contract."""
+        from support.entry import entry
+        _entry = entry()
         self.grant()
         source, _ = self.candidate('TK-source')
         target, _ = self.candidate('TK-target')
@@ -138,7 +147,7 @@ class TaskContractStorageTests(unittest.TestCase):
             'kind': 'task_scope', 'task_id': source['id'], 'revision': source['revision'],
             'contract_sha256': planning.contract_hash(source), 'disposition': 'transfer',
             'reason': 'move the exact remaining obligation',
-            'obligation_ids': [source['completion_obligations'][0]['id']], 'target_task_id': target['id']}, source_ref='S')
+            'obligation_ids': [source['completion_obligations'][0]['id']], 'target_task_id': target['id']}, source_ref='S', clock=_entry.ports.clock)
         head = self.store.initialize(self.instance, self.runtime)
         _, instance, runtime = self.store.load(head)
         assessment = {'task_id': source['id'], 'decision': 'closed', 'reason': 'authorized transfer, not fulfillment',
@@ -147,7 +156,7 @@ class TaskContractStorageTests(unittest.TestCase):
                                              'target_obligation_id': 'OB-inherited', 'evidence_refs': []}],
                       'unresolved': []}
         instance, runtime = task_scope.apply_task_assessments(instance, runtime, [assessment], execution_id='EX-plan',
-                                                              input_tasks=deepcopy(runtime['tasks']))
+                                                              input_tasks=deepcopy(runtime['tasks']), clock=_entry.ports.clock)
         saved_head = self.store.save_with_state(head, instance, runtime)[0]
         _, instance, runtime = self.store.load(saved_head)
         original, recipient = runtime['tasks'][source['id']], runtime['tasks'][target['id']]

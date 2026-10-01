@@ -6,24 +6,20 @@ execution/reservation families while holding the repository writer lock.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
 from typing import Any
-import uuid
 from copy import deepcopy
 
-from .system_clock import now
 from .repository import ResearchRepository
 from .model_runner import ModelRunner
 from .model_policy import selection
 from .provider_wait import epoch_seconds
 from .operation_trace import workspace_operation, child_environment
-from .migration_defaults import clock_or_system
-from .powershell_scheduler import PowerShellScheduler, Runner
 from .supervision import (OPERATOR_SCHEMA, SUPERVISION_BLOCKS, blocked_check_outcome, collect_repair_verification,
                           engine_failure_recovery, engine_run_outcome, hold_pause_reason, repair_report_schema,
                           start_guard, supervision_block,
@@ -32,8 +28,6 @@ from .supervision import (OPERATOR_SCHEMA, SUPERVISION_BLOCKS, blocked_check_out
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 SKILL_ROOT = SCRIPTS.parent
-# Frozen bootstrap overrides this after importing the verified supervisor.
-LIVE_INSTALLATION_ROOT = SKILL_ROOT
 
 
 
@@ -71,8 +65,7 @@ def schedule(
     operator_timeout_seconds: int | None = None,
     wake_at: str | None = None,
     wake_key: str | None = None,
-    runner: Runner = subprocess.run,
-    scheduler=None,
+    scheduler,
 ) -> dict[str, Any]:
     """Call the narrow PowerShell scheduler adapter and decode its JSON result.
 
@@ -93,11 +86,11 @@ def schedule(
         if epoch_seconds(wake_at) is None or not wake_key:
             raise ValueError("wake requires a timezone-aware retry time and generation key")
         arguments.update(WakeAt=wake_at, WakeKey=wake_key)
-    return (scheduler or PowerShellScheduler(runner)).run(action, arguments)
+    return scheduler.run(action, arguments)
 
-def cancel_wake(repository: Path, instance: str, workspace: Path) -> dict[str, Any]:
+def cancel_wake(repository: Path, instance: str, workspace: Path, *, scheduler) -> dict[str, Any]:
     """Remove the one-shot wake task and its local registration marker."""
-    result = schedule("cancel-wake", repository=repository, instance=instance, workspace=workspace)
+    result = schedule("cancel-wake", repository=repository, instance=instance, workspace=workspace, scheduler=scheduler)
     (_operator_dir(workspace) / "wake-registration.json").unlink(missing_ok=True)
     return result
 
@@ -106,46 +99,46 @@ def _held(workspace: Path) -> bool:
     return (_operator_dir(workspace) / "HOLD.json").exists()
 
 
-def resolve_workspace(repository: Path, instance: str) -> Path:
-    _, state, _ = ResearchRepository(repository, instance).load()
+def resolve_workspace(repository: Path, instance: str, *, ports) -> Path:
+    _, state, _ = ResearchRepository(repository, instance, backend=ports.git_backend, clock=ports.clock).load()
     workspace = state.get("workspace")
     if not isinstance(workspace, str) or not workspace:
         raise ValueError("instance does not have a workspace")
     return Path(workspace).resolve()
 
 
-def read_status(repository: Path, instance: str) -> dict[str, Any]:
+def read_status(repository: Path, instance: str, *, ports, codex_home, environment, host_id) -> dict[str, Any]:
     from .engine import ResearchEngine
-    return ResearchEngine(repository, instance).status()
+    return ResearchEngine(repository, instance, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id).status()
 
 
 def _operator_dir(workspace: Path) -> Path:
     return workspace / "operator"
 
 
-def hold(workspace: Path, *, reason: str) -> dict[str, Any]:
+def hold(workspace: Path, *, reason: str, clock) -> dict[str, Any]:
     """Set a local hold marker; intentionally does not send pause or resume."""
-    value = {"id": uuid.uuid4().hex, "reason": reason, "started_at": now()}
+    value = {"id": clock.random_hex(16), "reason": reason, "started_at": clock.now()}
     _json(_operator_dir(workspace) / "HOLD.json", value)
     return value
 
 
-def release(workspace: Path) -> dict[str, Any]:
+def release(workspace: Path, *, clock) -> dict[str, Any]:
     """Release only this operator marker; research remains paused until resumed."""
     path = _operator_dir(workspace) / "HOLD.json"
     held = _load_json(path)
     if held is None:
         return {"released": None}
     path.unlink()
-    result = {"released": held, "released_at": now()}
+    result = {"released": held, "released_at": clock.now()}
     _json(_operator_dir(workspace) / "release.json", result)
     return result
 
 
 @workspace_operation('engine_launch')
-def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, Any]:
+def run_engine(repository: Path, instance: str, workspace: Path, *, ports, installation_root: Path = SKILL_ROOT, environment, codex_home, host_id) -> dict[str, Any]:
     try:
-        guard = engine_start_guard(repository, instance, workspace)
+        guard = engine_start_guard(repository, instance, workspace, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
     except Exception as error:
         record = {"outcome": "engine_failed", "kind": "engine_unavailable",
                   "error_type": type(error).__name__, "error": str(error)}
@@ -154,25 +147,26 @@ def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, An
     if guard["outcome"] != "startable":
         return guard
     status = guard["before"]
-    run_directory = _operator_dir(workspace) / "engine" / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8])
+    run_directory = _operator_dir(workspace) / "engine" / (ports.clock.wall().strftime("%Y%m%dT%H%M%SZ") + "-" + ports.clock.random_hex(4))
     run_directory.mkdir(parents=True)
     _json(run_directory / "before.json", status)
-    command = [sys.executable, str(Path(LIVE_INSTALLATION_ROOT) / "scripts/do_math.py"),
+    command = [sys.executable, str(Path(installation_root) / "scripts/do_math.py"),
                "run", "--repository", str(repository), "--instance", instance, "--watch"]
     record = {"outcome": "running", "before": status, "command": command, "run_directory": str(run_directory)}
     _json(run_directory / "result.json", record)
     try:
-        completed = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", check=False,
-            env=child_environment(), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        (run_directory / "stdout.json").write_text(completed.stdout, encoding="utf-8")
-        (run_directory / "stderr.txt").write_text(completed.stderr, encoding="utf-8")
-        record.update(outcome=engine_run_outcome(completed.returncode, completed.stdout),
-                      exit_code=completed.returncode)
-        record["after"] = read_status(repository, instance)
+        from .formal import _job_run
+        code, stdout, stderr, _ = _job_run(command, Path.cwd(), jobs=ports.jobs,
+                                         clock=ports.clock, env=child_environment(environment),
+                                         evidence_dir=run_directory, decode_errors="strict", environment=environment, preserve_os_error=True)
+        (run_directory / "stdout.json").write_text(stdout, encoding="utf-8")
+        (run_directory / "stderr.txt").write_text(stderr, encoding="utf-8")
+        record.update(outcome=engine_run_outcome(code, stdout), exit_code=code)
+        record["after"] = read_status(repository, instance, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
         if supervision_block({**record['after'], 'held': _held(workspace)}) == 'installation_repair':
             try:
                 record['supervisor_request']=schedule('start-operator',repository=repository,
-                    instance=instance,workspace=workspace)
+                    instance=instance,workspace=workspace,scheduler=ports.scheduler)
             except (RuntimeError,OSError) as error:
                 record['supervisor_request']={'status':'failed','error':str(error),
                     'next_owner':'scheduled_operator','fallback':'periodic supervision'}
@@ -185,7 +179,7 @@ def run_engine(repository: Path, instance: str, workspace: Path) -> dict[str, An
 
 
 
-def engine_start_guard(repository: Path, instance: str, workspace: Path, *, status=None) -> dict[str, Any]:
+def engine_start_guard(repository: Path, instance: str, workspace: Path, *, status=None, ports, codex_home, environment, host_id) -> dict[str, Any]:
     """Read the conditions that must hold before either task starts an engine.
 
     An explicit engine start does not depend on automatic supervision being enabled.
@@ -193,14 +187,14 @@ def engine_start_guard(repository: Path, instance: str, workspace: Path, *, stat
     if _held(workspace):
         return {"outcome": "held"}
     if status is None:
-        status = read_status(repository, instance)
+        status = read_status(repository, instance, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
     return start_guard(status)
 
 
 
 
 def reconcile_wake(repository: Path, instance: str, workspace: Path, *, facts: dict, providers: dict,
-                   scheduler=None, clock=None) -> dict:
+                   scheduler, clock) -> dict:
     """Repair a missing/stale one-shot reservation before invoking any model.
 
     ``facts`` are the caller's supervision facts and ``providers`` its provider
@@ -212,11 +206,11 @@ def reconcile_wake(repository: Path, instance: str, workspace: Path, *, facts: d
     need = wake_need(facts, providers, held=_held(workspace))
     if "wanted" not in need:
         if previous:
-            cancel_wake(repository, instance, workspace)
+            cancel_wake(repository, instance, workspace, scheduler=scheduler)
         return need
     wanted = need["wanted"]
     observed = schedule("status", repository=repository, instance=instance, workspace=workspace, scheduler=scheduler)
-    if wake_is_current(previous, wanted, observed, now=clock_or_system(clock).wall().timestamp()):
+    if wake_is_current(previous, wanted, observed, now=clock.wall().timestamp()):
         return {"status": "scheduled", **wanted, "observed": observed}
     schedule("schedule-wake", repository=repository, instance=instance, workspace=workspace, scheduler=scheduler,
              wake_at=wanted["retry_at"], wake_key=wanted["key"])
@@ -224,16 +218,16 @@ def reconcile_wake(repository: Path, instance: str, workspace: Path, *, facts: d
     return {"status": "scheduled", **wanted, "observed": observed}
 
 
-def wake(repository: Path, instance: str, workspace: Path) -> dict:
+def wake(repository: Path, instance: str, workspace: Path, *, ports, codex_home, environment, host_id) -> dict:
     """No model ping: wake only the engine entry point with its usual guards."""
-    guard = engine_start_guard(repository, instance, workspace)
+    guard = engine_start_guard(repository, instance, workspace, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
     if guard["outcome"] != "startable":
         return guard
-    scheduled = schedule("start-engine", repository=repository, instance=instance, workspace=workspace)
+    scheduled = schedule("start-engine", repository=repository, instance=instance, workspace=workspace, scheduler=ports.scheduler)
     return {"outcome": "engine_requested", "schedule": scheduled, "before": guard["before"]}
 
 
-def check(repository: Path, instance: str, workspace: Path, *, probe: bool = False) -> dict[str, Any]:
+def check(repository: Path, instance: str, workspace: Path, *, ports, probe: bool = False, installation_root: Path = SKILL_ROOT, codex_home, environment, host_id) -> dict[str, Any]:
     """Model-free supervision; preserved engine failure or accepted defect diagnosis opens recovery.
 
     Every judgment reads the one status snapshot; recovery rereads under its lock.
@@ -241,15 +235,15 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
     if _held(workspace):
         return {"outcome": "held"}
     try:
-        status = read_status(repository, instance)
+        status = read_status(repository, instance, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
     except Exception as error:
         failure = {"outcome": "recovery_required", "kind": "engine_unavailable",
                    "error_type": type(error).__name__, "error": str(error),
-                   "observed_at": now()}
+                   "observed_at": ports.clock.now()}
         _json(_operator_dir(workspace) / "engine-failure.json", failure)
         if probe:
             return failure
-        return recovery(repository, instance, workspace, failure=failure)
+        return recovery(repository, instance, workspace, failure=failure, ports=ports, installation_root=installation_root, environment=environment, host_id=host_id, codex_home=codex_home)
     block = supervision_block(status)
     blocked = blocked_check_outcome(block, status)
     if blocked is not None:
@@ -257,32 +251,32 @@ def check(repository: Path, instance: str, workspace: Path, *, probe: bool = Fal
     if block == 'installation_repair':
         if probe:
             from .repair_execution import installation_failure
-            _, _, runtime = ResearchRepository(repository, instance).load(status["snapshot"])
+            _, _, runtime = ResearchRepository(repository, instance, backend=ports.git_backend, clock=ports.clock).load(status["snapshot"])
             return {'outcome': 'installation_repair_pending', 'model_called': False,
                     'failure': installation_failure(runtime, status['installation_repair'])}
-        return recovery(repository, instance, workspace)
+        return recovery(repository, instance, workspace, ports=ports, installation_root=installation_root, environment=environment, host_id=host_id, codex_home=codex_home)
     if probe:
         return {"outcome": "observed", "status": status, "model_called": False,
-                "engine_start": engine_start_guard(repository, instance, workspace, status=status)}
+                "engine_start": engine_start_guard(repository, instance, workspace, status=status, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)}
     failure = engine_failure_recovery(_load_json(_operator_dir(workspace) / "latest-engine.json"),
                                       evidence_path=_operator_dir(workspace) / "latest-engine.json")
     if failure is not None:
-        return recovery(repository, instance, workspace, failure=failure)
+        return recovery(repository, instance, workspace, failure=failure, ports=ports, installation_root=installation_root, environment=environment, host_id=host_id, codex_home=codex_home)
     wake_status = reconcile_wake(repository, instance, workspace, facts=status,
-                                 providers=status["provider_waits"]["providers"])
+                                 providers=status["provider_waits"]["providers"], scheduler=ports.scheduler, clock=ports.clock)
     observed = wake_status.pop("observed", None)
-    guard = engine_start_guard(repository, instance, workspace, status=status)
+    guard = engine_start_guard(repository, instance, workspace, status=status, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
     if guard["outcome"] != "startable":
         return {**guard, "provider_wake": wake_status, "model_called": False}
     if observed is None:
-        observed = schedule("status", repository=repository, instance=instance, workspace=workspace)
+        observed = schedule("status", repository=repository, instance=instance, workspace=workspace, scheduler=ports.scheduler)
     if (observed.get("engine") or {}).get("state") == "Running":
         return {"outcome": "engine_running", "model_called": False}
-    started = schedule("start-engine", repository=repository, instance=instance, workspace=workspace)
+    started = schedule("start-engine", repository=repository, instance=instance, workspace=workspace, scheduler=ports.scheduler)
     return {"outcome": "engine_requested", "schedule": started, "provider_wake": wake_status, "model_called": False}
 
 
-def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict | None = None) -> dict:
+def recovery(repository: Path, instance: str, workspace: Path, *, ports, failure: dict | None = None, installation_root: Path = SKILL_ROOT, environment, host_id, codex_home) -> dict:
     """Failure-only installation repair under the engine's writer lock.
 
     Without ``failure``, repair the pending installation diagnosis read under
@@ -295,7 +289,6 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
     from .session_slots import SessionSlots
     from .file_io import os_lock
     from contextlib import ExitStack
-    from .system_clock import new_id
     from .git_store import GitStateStoreLockError
     from .launch import mark_dispatched, mark_returned
     from .provider_engine import record_model_policy_violation
@@ -307,7 +300,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
     check_recovery_failure(failure)
     if _held(workspace):
         return {"outcome": "held"}
-    repo = ResearchRepository(repository, instance)
+    repo = ResearchRepository(repository, instance, backend=ports.git_backend, clock=ports.clock)
     try:
         with repo.writer_lock():
             head, state, runtime = repo.load()
@@ -321,7 +314,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
             if failure is None:
                 return {"outcome": "recovery_waiting", "reason": "no installation repair is pending"}
             diagnosis = matching_diagnosis(runtime, failure)
-            unconfirmed = unconfirmed_termination(runtime)
+            unconfirmed = unconfirmed_termination(runtime, jobs=ports.jobs)
             if unconfirmed is not None:
                 return {"outcome": "recovery_waiting", "reason": "existing execution termination is unconfirmed",
                         "execution_id": unconfirmed}
@@ -331,7 +324,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
             except OSError:
                 return {"outcome": "recovery_waiting", "reason": "installation maintenance is already active"}
             try:
-                installation_sha256 = installed_skill_sha256(LIVE_INSTALLATION_ROOT)
+                installation_sha256 = installed_skill_sha256(installation_root)
                 failure_sha256 = failure_identity(failure, diagnosis)
                 if already_attempted(runtime, failure_sha256, installation_sha256):
                     return {'outcome': 'recovery_waiting', 'reason': 'same failure and installation already attempted'}
@@ -339,12 +332,11 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                 chosen = selection(config, {"role": "recovery"}, {}, {}, instance=state)
                 profile = state["execution_profiles"][chosen["profile_ref"]["id"]]
                 from .initialization import capability_requirements
-                from .local_host import LocalHost
-                host = LocalHost()
+                host = ports.host
                 reference = profile_ref(profile)
-                checked_at = now()
+                checked_at = ports.clock.now()
                 capability = capability_requirements(state, reference,
-                    current_identity=host.cli_identity(profile), at=checked_at)
+                    current_identity=host.cli_identity(profile), at=checked_at, host=ports.host)
                 if not capability["satisfied"]:
                     description = host.cli_describe(profile)  # CLI version/help only; never a model call.
                     description.setdefault("identity", host.cli_identity(profile))
@@ -352,19 +344,19 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     state.setdefault("capability_evidence", {})[evidence["id"]] = evidence
                     head = repo.save_with_state(head, state, runtime)[0]
                     capability = capability_requirements(state, reference,
-                        current_identity=host.cli_identity(profile), at=now())
+                        current_identity=host.cli_identity(profile), at=ports.clock.now(), host=ports.host)
                 if not capability["satisfied"]:
                     return {"outcome": "recovery_waiting", "reason": "profile_capability_unavailable",
                             "capability": capability}
-                eid = new_id("EX")
+                eid = ports.clock.new_id("EX")
                 # The activity of one failure is keyed like its attempts, so a later
                 # observation of the same failure continues the same activity.
                 owner = {"kind": "installation_recovery", "failure_sha256": failure_sha256}
                 activity = next((a for a in runtime.get("activities", {}).values()
                                  if a.get("owner_ref") == owner and a.get("status") != "finished"), None)
-                at = now()
+                at = ports.clock.now()
                 if activity is None:
-                    activity = activities.open_activity(runtime, activity_id=new_id("AY"), activity_kind="recovery",
+                    activity = activities.open_activity(runtime, activity_id=ports.clock.new_id("AY"), activity_kind="recovery",
                         owner_ref=owner, input_refs=[failure], opened_at=at)
                 elif activity["status"] == "waiting":
                     activities.resume_activity(runtime, activity["id"], condition=activity["waiting"]["condition"], at=at)
@@ -381,7 +373,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     failure_inputs.append({'artifact_ref': artifact_ref, 'local_path': str(local),
                         'sha256': hashlib.sha256(raw).hexdigest()})
                 prompt = prepare_prompt(repair_prompt(failure, failure_inputs, diagnosed=bool(diagnosis),
-                    installation=LIVE_INSTALLATION_ROOT, repository=repository, instance=instance,
+                    installation=installation_root, repository=repository, instance=instance,
                     execution_id=eid, reference=reference), profile)
                 sealed_input = prompt_seal(prompt)
                 if sealed_input["bytes"] > profile["input"]["max_input_bytes"]:
@@ -394,7 +386,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     profile_ref=reference, created_at=at,
                     context_origin=activity["assigned_execution_ids"][-1:])
                 execution["role"] = "recovery"
-                slots = SessionSlots(runtime, state)
+                slots = SessionSlots(runtime, state, clock=ports.clock, jobs=ports.jobs, host_id=host_id)
                 if not slots.acquire(eid, profile=profile, execution=execution):
                     return {"outcome": "recovery_waiting", "reason": slots.admission_reason,
                             "wait": deepcopy(slots.admission_wait)}
@@ -403,11 +395,11 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                 head = repo.save_with_state(head, state, runtime)[0]
                 def on_started(identity):
                     nonlocal head
-                    slots.started(eid, identity, at=now())
+                    slots.started(eid, identity, at=ports.clock.now())
                     head = repo.save_with_state(head, state, runtime)[0]
                 result = None
                 try:
-                    result = ModelRunner().run(prompt=prompt, output_schema=repair_report_schema(diagnosed=diagnosis is not None),
+                    result = ModelRunner(jobs=ports.jobs, clock=ports.clock, environment=environment, host_id=host_id).run(prompt=prompt, output_schema=repair_report_schema(diagnosed=diagnosis is not None),
                         workspace=execution_workspace, evidence_dir=run_directory / "evidence",
                         model=chosen["model"], effort=profile["ai"]["effort"],
                         timeout_seconds=profile["window"]["call_timeout_seconds"],
@@ -437,13 +429,15 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                         _json(run_directory / 'regression-evidence.json', {'files': regression})
                     if outcome == "repaired":
                         execution["submission_receipt"] = recovery_report_receipt(
-                            eid, evidence_ref=str(run_directory / "evidence"), observed_at=now())
-                        verified = subprocess.run([sys.executable, str(Path(LIVE_INSTALLATION_ROOT) / "scripts/probe_cli.py"), "--skill-only"],
-                            capture_output=True, text=True, encoding="utf-8", check=False,
-                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-                        _json(run_directory / "verification.json", {"exit_code": verified.returncode,
-                              "stdout": verified.stdout, "stderr": verified.stderr})
-                        if verified.returncode != 0:
+                            eid, evidence_ref=str(run_directory / "evidence"), observed_at=ports.clock.now())
+                        from .formal import _job_run
+                        code, stdout, stderr, _ = _job_run(
+                            [sys.executable, str(Path(installation_root) / "scripts/probe_cli.py"), "--skill-only"],
+                            Path.cwd(), jobs=ports.jobs, clock=ports.clock, env=environment,
+                            evidence_dir=run_directory, decode_errors="strict", environment=environment, preserve_os_error=True)
+                        _json(run_directory / "verification.json", {"exit_code": code,
+                              "stdout": stdout, "stderr": stderr})
+                        if code != 0:
                             outcome = "recovery_verification_failed"
                     if recovery_held((_operator_dir(workspace) / 'HOLD.json').exists(), state, runtime):
                         outcome = 'recovery_held'
@@ -455,7 +449,7 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
                     # save() may rebuild dictionary objects; always update the loaded view.
                     execution = runtime["executions"][eid]
                     mark_returned(execution['launch_ticket'], result)
-                    ended_at = now()
+                    ended_at = ports.clock.now()
                     released = execution_lifecycle.release_or_hold(execution, slots, at=ended_at)
                     if not released:
                         outcome = "recovery_termination_unknown"
@@ -474,12 +468,20 @@ def recovery(repository: Path, instance: str, workspace: Path, *, failure: dict 
         # Restart only after both locks have been released; never wait holding capacity.
         _json(_operator_dir(workspace) / "latest-engine.json", {
             "outcome": "recovery_verified", "recovery_report": str(Path(report["run_directory"]) / "result.json")})
-        report["restart"] = wake(repository, instance, workspace)
+        report["restart"] = wake(repository, instance, workspace, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
     return report
 
 
-def main(argv=None):
+def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=None, installation_root: Path = SKILL_ROOT):
     """Stable scheduling surface without importing engine through the CLI."""
+    import os
+    import platform
+    from .wiring import real_ports
+    environment = dict(os.environ) if environment is None else environment
+    host_id = platform.node() if host_id is None else host_id
+    codex_home = (Path(environment["CODEX_HOME"]) if environment.get("CODEX_HOME") else Path.home() / ".codex") if codex_home is None else codex_home
+    ports = real_ports(environment=environment) if ports is None else ports
+    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
     import argparse
     parser = argparse.ArgumentParser(description="Model-free do-math supervisor and failure-only recovery")
     parser.add_argument("action", choices=("check", "run-engine", "wake"))
@@ -489,10 +491,10 @@ def main(argv=None):
     parser.add_argument("--probe", action="store_true")
     args = parser.parse_args(argv)
     if args.action == "check":
-        result = check(args.repository, args.instance, args.workspace, probe=args.probe)
+        result = check(args.repository, args.instance, args.workspace, probe=args.probe, ports=ports, installation_root=installation_root, codex_home=codex_home, environment=environment, host_id=host_id)
     elif args.action == "wake":
-        result = wake(args.repository, args.instance, args.workspace)
+        result = wake(args.repository, args.instance, args.workspace, ports=ports, codex_home=codex_home, environment=environment, host_id=host_id)
     else:
-        result = run_engine(args.repository, args.instance, args.workspace)
+        result = run_engine(args.repository, args.instance, args.workspace, ports=ports, installation_root=installation_root, environment=environment, codex_home=codex_home, host_id=host_id)
     print(json.dumps(result, ensure_ascii=False))
     return 0

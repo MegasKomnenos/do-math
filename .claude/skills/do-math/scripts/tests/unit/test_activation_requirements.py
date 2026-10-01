@@ -17,12 +17,14 @@ from support.fakes.host import FakeHost
 
 class ObservationAdmissionTests(unittest.TestCase):
     def test_default_bootstrap_reports_exact_missing_settings_before_activation(self):
+        from support.entry import entry
+        _entry = entry()
         with tempfile.TemporaryDirectory() as root:
             instance, runtime = initialize_state(instance_id='RI-default', goal='A goal', workspace=root,
                                                  config=deepcopy(DEFAULT_CONFIG), source_input='Original request',
-                                                 clock=FakeClock())
-            instance.update(build_profiles(instance['config']))
-            result = activation_requirements(instance, runtime, host=FakeHost())
+                                                 clock=FakeClock(), host=_entry.ports.host)
+            instance.update(build_profiles(instance['config'], host=_entry.ports.host))
+            result = activation_requirements(instance, runtime, host=FakeHost(), at=_entry.ports.clock.now(), clock=_entry.ports.clock)
             self.assertFalse(result['satisfied'])
             # The current role profiles are the adopted editions; no separate profile list is required.
             self.assertNotIn('profiles', result['missing'])
@@ -35,8 +37,10 @@ class ObservationAdmissionTests(unittest.TestCase):
             self.assertEqual(instance['lifecycle']['immutable_input']['text'], 'Original request')
 
     def test_configured_settings_do_not_require_task_rules_until_execution(self):
+        from support.entry import entry
+        _entry = entry()
         configured = build_profiles({**DEFAULT_CONFIG, 'tool_review_window_seconds': 60,
-                                     'self_check_response_window_seconds': 5})
+                                     'self_check_response_window_seconds': 5}, host=_entry.ports.host)
         self.assertTrue(configured['execution_profiles'])
         for profile in configured['execution_profiles'].values():
             with self.subTest(role=profile['role'], profile=profile['id']):
@@ -48,7 +52,9 @@ class ObservationAdmissionTests(unittest.TestCase):
                     self.assertIsInstance(tracker_config(profile), dict)
 
     def test_nonpositive_boolean_and_fractional_millisecond_values_are_rejected(self):
-        profile = next(p for p in build_profiles(DEFAULT_CONFIG)['execution_profiles'].values()
+        from support.entry import entry
+        _entry = entry()
+        profile = next(p for p in build_profiles(DEFAULT_CONFIG, host=_entry.ports.host)['execution_profiles'].values()
                        if p['role'] == 'research_work')
         for value in (None, 0, -1, True, '0.0001', 'NaN'):
             with self.subTest(value=value):
@@ -62,9 +68,11 @@ AT = '2026-06-01T00:00:00+00:00'
 
 def _instance():
     """A new instance with the product's default profiles and one AI profile's reference."""
+    from support.entry import entry
+    _entry = entry()
     instance, runtime = initialize_state(instance_id='RI-default', goal='A goal', workspace='work',
-                                         config=deepcopy(DEFAULT_CONFIG), source_input='Original request', clock=FakeClock())
-    instance.update(build_profiles(instance['config']))
+                                         config=deepcopy(DEFAULT_CONFIG), source_input='Original request', clock=FakeClock(), host=_entry.ports.host)
+    instance.update(build_profiles(instance['config'], host=_entry.ports.host))
     profile = next(p for p in instance['execution_profiles'].values() if p['actor_kind'] == 'ai')
     return instance, runtime, profile
 
@@ -80,16 +88,20 @@ class OriginalInputTests(unittest.TestCase):
             original_input_bytes({**source_record('Original request'), 'bytes': 1})
 
     def test_initialization_requires_a_nonempty_original(self):
+        from support.entry import entry
+        _entry = entry()
         for text in ('', '   ', None):
             with self.subTest(text=text), self.assertRaisesRegex(ValueError, 'initialization requires the original nonempty input'):
-                initialize_state(instance_id='RI-x', goal='g', workspace='w', config={}, source_input=text, clock=FakeClock())
+                initialize_state(instance_id='RI-x', goal='g', workspace='w', config={}, source_input=text, clock=FakeClock(), host=_entry.ports.host)
 
     def test_an_empty_original_is_missing_at_activation(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.governance import source_record
         instance, runtime, _ = _instance()
-        self.assertNotIn('immutable_input', activation_requirements(instance, runtime, host=FakeHost())['missing'])
+        self.assertNotIn('immutable_input', activation_requirements(instance, runtime, host=FakeHost(), at=_entry.ports.clock.now(), clock=_entry.ports.clock)['missing'])
         instance['lifecycle']['immutable_input'] = source_record('')
-        self.assertIn('immutable_input', activation_requirements(instance, runtime, host=FakeHost())['missing'])
+        self.assertIn('immutable_input', activation_requirements(instance, runtime, host=FakeHost(), at=_entry.ports.clock.now(), clock=_entry.ports.clock)['missing'])
 
 
 class CapabilityRequirementTests(unittest.TestCase):
@@ -127,11 +139,13 @@ class CapabilityRequirementTests(unittest.TestCase):
                          {'satisfied': False, 'missing': [], 'profile_ref': stale, 'reason': 'profile reference is absent or stale'})
 
     def test_a_machine_profile_needs_no_cli_evidence(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.execution_profiles import profile_ref
         from do_math.initialization import capability_requirements
         instance, _, _ = _instance()
         machine = next(p for p in instance['execution_profiles'].values() if p['actor_kind'] == 'machine')
-        result = capability_requirements(instance, profile_ref(machine), at=AT)
+        result = capability_requirements(instance, profile_ref(machine), at=AT, host=_entry.ports.host)
         self.assertEqual(result, {'satisfied': not machine.get('required_capabilities'),
                                   'missing': sorted(set(machine.get('required_capabilities', []))),
                                   'profile_ref': profile_ref(machine), 'evidence_refs': []})
@@ -139,16 +153,18 @@ class CapabilityRequirementTests(unittest.TestCase):
 
 class ProfileReferenceTests(unittest.TestCase):
     def test_a_stale_role_profile_reference_is_missing_profiles_and_a_repeated_one_is_checked_once(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.execution_profiles import profile_ref
         instance, runtime, profile = _instance()
         reference = profile_ref(profile)
         instance['role_profile_refs'] = {profile['role']: [reference, reference]}
-        once = activation_requirements(instance, runtime, host=FakeHost())
+        once = activation_requirements(instance, runtime, host=FakeHost(), at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertNotIn('profiles', once['missing'])
         self.assertEqual(len({(e['profile_id'], e['field']) for e in once['observation_errors']}),
                          len(once['observation_errors']))
         instance['role_profile_refs'][profile['role']].append({**reference, 'sha256': '0' * 64})
-        self.assertIn('profiles', activation_requirements(instance, runtime, host=FakeHost())['missing'])
+        self.assertIn('profiles', activation_requirements(instance, runtime, host=FakeHost(), at=_entry.ports.clock.now(), clock=_entry.ports.clock)['missing'])
 
 
 class GrantTests(unittest.TestCase):

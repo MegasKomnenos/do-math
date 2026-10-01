@@ -33,7 +33,7 @@ from do_math.canonical import exact_content_hash
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.execution_profiles import profile_ref
 from do_math.review_cycle import accept_result, next_actions, start_review, validate_sealed_review
-from review_fixtures import grant_replacement, review_stage_output, scoped_start
+from support.review_inputs import grant_replacement, review_stage_output, scoped_start
 from support.knowledge_roundtrip import KnowledgeRoundtripHarness
 from support.review_scene import ReviewScene, warm
 
@@ -148,6 +148,8 @@ class AssessmentReassessmentTests(ReassessmentCase):
 
     def test_reassessment_organizer_answer_and_judges_replay_the_same_sealed_object(self):
         """About 1.8 s, over the 0.2 s unit budget: the review scene publishes every review step through the storage contract (two dispute rounds, six judge attempts)."""
+        from support.entry import entry
+        _entry = entry()
         result = self.engine._start_assessment_reassessment(**self.request(self.defect()))
         self.scene.execute()  # scope
         self.scene.execute({'decision': 'mismatch', 'findings': [
@@ -160,7 +162,7 @@ class AssessmentReassessmentTests(ReassessmentCase):
         self.assertIn('answer', stages)
         self.assertEqual(stages.count('judge'), 6)
         cycle = self.engine.runtime['review_cycles'][result['review_cycle_id']]
-        self.assertEqual(validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance)['decision'], 'match')
+        self.assertEqual(validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance, at=_entry.ports.clock.now(), clock=_entry.ports.clock)['decision'], 'match')
         self.assertEqual(self.use()['status'], 'active')
 
     def test_unresolved_remains_suspended_and_finite_activity_retains_next_owner(self):
@@ -191,6 +193,8 @@ class AssessmentReassessmentTests(ReassessmentCase):
 
     def test_changed_current_input_and_forged_result_target_are_rejected(self):
         """About 0.3 s, over the 0.2 s unit budget: the review scene publishes every review step through the storage contract."""
+        from support.entry import entry
+        _entry = entry()
         result = self.engine._start_assessment_reassessment(**self.request(self.defect()))
         premises = copy.deepcopy(self.engine.instance['review_policy'])
         self.engine.instance['review_policy']['activity_execution_limit'] += 1
@@ -206,7 +210,7 @@ class AssessmentReassessmentTests(ReassessmentCase):
         entry = next(iter(cycle['results'].values()))
         entry['output']['proposal_digest'] = 'another-target'
         with self.assertRaisesRegex(ValueError, 'actual accepted execution|another proposal'):
-            validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance)
+            validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
     def test_ordinary_report_does_not_suspend(self):
         result = self.engine._start_assessment_reassessment(**self.request({'kind': 'report', 'text': 'It seems wrong'}))
@@ -254,6 +258,8 @@ class AssessmentReassessmentTests(ReassessmentCase):
 
     def test_actual_scope_to_sealed_reaffirmation_restores_same_assessment(self):
         """About 0.35 s, over the 0.2 s unit budget: the review scene publishes every review step through the storage contract."""
+        from support.entry import entry
+        _entry = entry()
         result = self.engine._start_assessment_reassessment(**self.request(self.defect()))
         cid = result['review_cycle_id']
         self.assertEqual(self.use()['status'], 'suspended')
@@ -262,7 +268,7 @@ class AssessmentReassessmentTests(ReassessmentCase):
         while any(a['role'] == 'identity_review' for a in self.engine.runtime['queue']):
             self.scene.execute()
         cycle = self.engine.runtime['review_cycles'][cid]
-        self.assertEqual(validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance)['decision'], 'match')
+        self.assertEqual(validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance, at=_entry.ports.clock.now(), clock=_entry.ports.clock)['decision'], 'match')
         self.assertEqual(self.use()['status'], 'active')
         self.assertEqual(len(self.engine.instance['identity_assessments']), 1)
         self.assertEqual(self.engine.instance['identity_assessments'][self.assessment['id']], self.assessment)
@@ -271,7 +277,7 @@ class AssessmentReassessmentTests(ReassessmentCase):
         profile_id = self.engine.runtime['executions'][execution_id]['execution_profile_ref']['id']
         del self.engine.instance['execution_profiles'][profile_id]
         with self.assertRaisesRegex(ValueError, 'profile'):
-            validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance)
+            validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
     def test_stale_original_and_unconfirmed_defect_do_not_suspend(self):
         with self.assertRaisesRegex(ValueError, 'exact original'):
@@ -285,10 +291,12 @@ class AssessmentReassessmentTests(ReassessmentCase):
 
     def test_incomplete_and_original_author_continuation_are_rejected(self):
         """About 0.3 s, over the 0.2 s unit budget: the review scene publishes every review step through the storage contract."""
+        from support.entry import entry
+        _entry = entry()
         result = self.engine._start_assessment_reassessment(**self.request(self.defect()))
         cycle = self.engine.runtime['review_cycles'][result['review_cycle_id']]
         with self.assertRaisesRegex(ValueError, 'complete|sealed'):
-            validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance)
+            validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         execution = {'id': 'forbidden-continuation', 'actor_kind': 'ai', 'owner_activity_id': result['owner_activity_id'],
                      'status': 'queued', 'continuation_of': self.assessment['execution_ids'][0]}
         with self.assertRaisesRegex(ValueError, 'author|independent'):
@@ -299,7 +307,7 @@ class AssessmentReassessmentTests(ReassessmentCase):
         eid = next(iter(cycle['results'].values()))['execution_id']
         self.engine.runtime['executions'][eid]['continuation_of'] = self.assessment['execution_ids'][0]
         with self.assertRaisesRegex(ValueError, 'author|independent'):
-            validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance)
+            validate_sealed_review(cycle, self.engine.runtime, instance=self.engine.instance, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
 
 class DomainReassessmentTests(KnowledgeRoundtripHarness):
@@ -307,14 +315,16 @@ class DomainReassessmentTests(KnowledgeRoundtripHarness):
 
     def test_qualified_reassessment_restores_negative_and_preserves_sealed_judgment(self):
         """About 0.4 s, over the 0.2 s unit budget: every round trip publishes and reloads the split state through the storage contract."""
+        from support.entry import entry
+        _entry = entry()
         aid = self.assessment('mismatch')
         original = copy.deepcopy(self.state['identity_assessments'][aid])
         self.state, self.runtime = knowledge.suspend_assessment_use(self.state, self.runtime, aid,
-            reason='Independently identified semantic objection', actor_ref='authorized:review', reason_refs=[original['review_cycle_id']])
+            reason='Independently identified semantic objection', actor_ref='authorized:review', reason_refs=[original['review_cycle_id']], clock=_entry.ports.clock)
         cycle = self.cycle('match', knowledge.assessment_reassessment_proposal(self.state, aid, runtime=self.runtime))
         self.roundtrip()
         self.state, self.runtime = knowledge.apply_assessment_reassessment(self.state, self.runtime, aid,
-            cycle['id'], reason='Original negative judgment reaffirmed', actor_ref='authorized:review')
+            cycle['id'], reason='Original negative judgment reaffirmed', actor_ref='authorized:review', at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.roundtrip()
         use = next(u for u in self.state['assessment_uses'].values() if u['assessment_id'] == aid)
         self.assertEqual(use['status'], 'active')
@@ -322,17 +332,21 @@ class DomainReassessmentTests(KnowledgeRoundtripHarness):
         self.assertEqual(self.state['identity_assessments'][aid], original)
         self.assertEqual(kr.usable_links(self.state, self.kid), [])
         again = knowledge.apply_assessment_reassessment(self.state, self.runtime, aid, cycle['id'],
-            reason='Retry', actor_ref='authorized:review')
+            reason='Retry', actor_ref='authorized:review', at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual(again, (self.state, self.runtime))
 
     def test_ordinary_review_cannot_restore_or_withdraw_original_assessment(self):
+        from support.entry import entry
+        _entry = entry()
         aid = self.assessment()
         cycle = self.cycle('mismatch')
         with self.assertRaisesRegex(ValueError, 'reassessment'):
             knowledge.apply_assessment_reassessment(self.state, self.runtime, aid, cycle['id'],
-                reason='New ordinary mismatch', actor_ref='authorized:review')
+                reason='New ordinary mismatch', actor_ref='authorized:review', at=_entry.ports.clock.now(), clock=_entry.ports.clock)
 
     def test_reassessment_withdrawal_propagates_locally_and_keeps_formal_result(self):
+        from support.entry import entry
+        _entry = entry()
         aid = self.assessment()
         fid = self.state['knowledge'][self.kid]['formal_result_id']
         formal = copy.deepcopy(self.state['formal_results'][fid])
@@ -343,7 +357,7 @@ class DomainReassessmentTests(KnowledgeRoundtripHarness):
              'used_sources': [], 'current': True}]
         cycle = self.cycle('mismatch', knowledge.assessment_reassessment_proposal(self.state, aid, runtime=self.runtime))
         self.state, self.runtime = knowledge.apply_assessment_reassessment(self.state, self.runtime, aid,
-            cycle['id'], reason='Original positive judgment was erroneous', actor_ref='authorized:review')
+            cycle['id'], reason='Original positive judgment was erroneous', actor_ref='authorized:review', at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual(next(u for u in self.state['assessment_uses'].values() if u['assessment_id'] == aid)['status'], 'withdrawn')
         self.assertFalse(self.state['goal_judgments'][0]['current'])
         self.assertTrue(self.state['goal_judgments'][1]['current'])
@@ -353,22 +367,24 @@ class DomainReassessmentTests(KnowledgeRoundtripHarness):
         self.assertEqual(current, {'GJ-dependent': False, 'GJ-other': True})
 
     def test_reassessment_rejects_stale_premises_and_original_author(self):
+        from support.entry import entry
+        _entry = entry()
         aid = self.assessment()
         cycle = self.cycle('match', knowledge.assessment_reassessment_proposal(self.state, aid, runtime=self.runtime))
         eid = next(iter(cycle['results'].values()))['execution_id']
         original = self.state['identity_assessments'][aid]['execution_ids'][0]
         self.runtime['executions'][eid]['continuation_of'] = original
         with self.assertRaisesRegex(ValueError, 'checker resumes an author lineage'):
-            knowledge.apply_assessment_reassessment(self.state, self.runtime, aid, cycle['id'], reason='Reaffirm', actor_ref='review')
+            knowledge.apply_assessment_reassessment(self.state, self.runtime, aid, cycle['id'], reason='Reaffirm', actor_ref='review', at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.runtime['executions'][eid].pop('continuation_of')
         self.runtime['executions'][eid]['context_origin'] = [original]
         with self.assertRaisesRegex(ValueError, 'author context'):
-            knowledge.apply_assessment_reassessment(self.state, self.runtime, aid, cycle['id'], reason='Reaffirm', actor_ref='review')
+            knowledge.apply_assessment_reassessment(self.state, self.runtime, aid, cycle['id'], reason='Reaffirm', actor_ref='review', at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.runtime['executions'][eid]['context_origin'] = []
         self.state['active_trust_environment'] = 'TE-other'
         original_assessment = copy.deepcopy(self.state['identity_assessments'][aid])
         self.state, self.runtime = knowledge.apply_assessment_reassessment(self.state, self.runtime, aid,
-            cycle['id'], reason='Reaffirm original judgment with noncurrent premises', actor_ref='review')
+            cycle['id'], reason='Reaffirm original judgment with noncurrent premises', actor_ref='review', at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         use = next(u for u in self.state['assessment_uses'].values() if u['assessment_id'] == aid)
         self.assertEqual(use['status'], 'suspended')
         self.assertEqual(use['history'][-1]['reassessment_ref'], cycle['id'])
@@ -376,10 +392,12 @@ class DomainReassessmentTests(KnowledgeRoundtripHarness):
 
     def test_inconclusive_reassessment_keeps_suspension_and_has_no_automatic_repeat(self):
         """About 0.25 s, over the 0.2 s unit budget: every round trip publishes and reloads the split state through the storage contract."""
+        from support.entry import entry
+        _entry = entry()
         aid = self.assessment('unresolved')
         cycle = self.cycle('unresolved', knowledge.assessment_reassessment_proposal(self.state, aid, runtime=self.runtime))
         self.state, self.runtime = knowledge.apply_assessment_reassessment(self.state, self.runtime, aid,
-            cycle['id'], reason='Original uncertainty cannot yet be reassessed', actor_ref='review')
+            cycle['id'], reason='Original uncertainty cannot yet be reassessed', actor_ref='review', at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         use = next(u for u in self.state['assessment_uses'].values() if u['assessment_id'] == aid)
         self.assertEqual(use['status'], 'suspended')
         self.assertFalse(any(a.get('review_cycle_id') == cycle['id'] for a in self.runtime['queue']))
@@ -389,27 +407,31 @@ class DomainReassessmentTests(KnowledgeRoundtripHarness):
         self.assertEqual(use['status'], 'suspended')
 
     def test_independent_alternative_link_prevents_unrelated_fallout(self):
+        from support.entry import entry
+        _entry = entry()
         aid = self.assessment()
         alternative = self.assessment()
         self.state['goal_judgments'] = [{'id': 'GJ-dependent', 'used_sources': [self.kid], 'current': True}]
         self.state, self.runtime = knowledge.suspend_assessment_use(self.state, self.runtime, aid,
-            reason='Checked objection to first judgment only', actor_ref='review', reason_refs=['checked:objection'])
+            reason='Checked objection to first judgment only', actor_ref='review', reason_refs=['checked:objection'], clock=_entry.ports.clock)
         self.assertTrue(self.state['goal_judgments'][0]['current'])
         self.assertEqual([l['assessment_id'] for l in kr.usable_links(self.state, self.kid)], [alternative])
 
     def test_reassessment_rejects_forged_conclusion_and_accepts_final_running_execution(self):
+        from support.entry import entry
+        _entry = entry()
         aid = self.assessment()
         cycle = self.cycle('match', knowledge.assessment_reassessment_proposal(self.state, aid, runtime=self.runtime))
         cycle['decision'] = 'mismatch'
         with self.assertRaisesRegex(ValueError, 'sealed evidence'):
-            knowledge.apply_assessment_reassessment(self.state, self.runtime, aid, cycle['id'], reason='Forged', actor_ref='review')
+            knowledge.apply_assessment_reassessment(self.state, self.runtime, aid, cycle['id'], reason='Forged', actor_ref='review', at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         cycle['decision'] = 'match'
         eid = cycle['results'][cycle['sealed'][-1]]['execution_id']
         execution = self.runtime['executions'][eid]
         execution.update(status='running', outcome=None)
         execution.pop('output')
         self.state, self.runtime = knowledge.apply_assessment_reassessment(self.state, self.runtime, aid,
-            cycle['id'], reason='Sealed final response in central transaction', actor_ref='review')
+            cycle['id'], reason='Sealed final response in central transaction', actor_ref='review', at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertTrue(knowledge.assess_use(self.state['identity_assessments'][aid], self.state)['valid'])
 
 

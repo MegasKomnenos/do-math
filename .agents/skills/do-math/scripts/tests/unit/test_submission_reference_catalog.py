@@ -59,6 +59,8 @@ class CatalogTests(unittest.TestCase):
             self.assertEqual([r["value"] for r in reference_catalog(context, Path(directory))], ["allowed"])
 
     def test_workspace_root_reference_returns_a_submission_issue(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math import contracts, submission
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -70,14 +72,14 @@ class CatalogTests(unittest.TestCase):
             for reference in ('.', './', 'workspace:.', 'workspace:./'):
                 with self.subTest(reference=reference):
                     issues = submission.payload_issues(
-                        {**output, 'used_sources': [reference]}, schema, context, {}, root)
+                        {**output, 'used_sources': [reference]}, schema, context, {}, root, clock=_entry.ports.clock)
                     self.assertEqual(len(issues), 1, issues)
                     self.assertEqual(issues[0]['path'], 'output/used_sources/0')
                     self.assertIn('unsafe relative path', issues[0]['message'])
             (root / 'evidence.txt').write_bytes(b'preserved evidence')
             self.assertEqual(submission.payload_issues(
                 {**output, 'used_sources': ['workspace:evidence.txt']},
-                schema, context, {}, root), [])
+                schema, context, {}, root, clock=_entry.ports.clock), [])
 
 
 if __name__ == "__main__":

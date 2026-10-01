@@ -12,7 +12,7 @@ from pathlib import Path
 import unittest
 
 from do_math import governance
-from purpose_fixtures import common
+from support.purpose_answers import common
 from support.engine_lifecycle import applied
 from support.sim import Sim, warm_template
 from support.submission_calls import applied_now, configured_sim, submission_model, submitted
@@ -45,7 +45,7 @@ class ProducerCallTests(unittest.TestCase):
             execution = next(value for value in sim.engine.runtime["executions"].values() if value["status"] == "running")
             applied_now(sim, "decision", config={"change": {"kind": "revoke", "grant_id": execution["grant_id"]}})
             unbound = {key: value for key, value in execution["action"].items() if key != "grant_id"}
-            alternative.append(governance.authorize(sim.engine.instance, unbound)["allowed"])
+            alternative.append(governance.authorize(sim.engine.instance, unbound, at=sim.ports.clock.now())["allowed"])
         model.before("maintenance", revoke)
         late = {**common("Completed before revocation."), "report": "Preserve the completed portion.", "remaining_work": []}
         model.on("maintenance").reply(submitted(late))

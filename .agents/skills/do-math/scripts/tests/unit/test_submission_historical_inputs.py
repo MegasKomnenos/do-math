@@ -13,7 +13,7 @@ from do_math.context_store import fit_context
 from do_math.knowledge import assess_use, revise_knowledge
 from do_math.knowledge_records import create_candidate
 from do_math.planning import contract_hash
-from research_fixtures import candidate
+from support.role_answers import candidate
 
 
 def note(title="Computation", **changes):
@@ -62,15 +62,17 @@ class HistoricalInputTests(unittest.TestCase):
             self.assertEqual(json.loads((workspace / ref["path"]).read_bytes()), action)
 
     def test_preserved_history_does_not_recreate_current_knowledge_dependencies(self):
+        from support.entry import entry
+        _entry = entry()
         for key in ("history", "use_history", "review_history", "revision_history", "assessment_history",
                     "governance_history", "previous_initial_reviews"):
             with self.subTest(key=key):
-                instance, _ = create_candidate({}, {**note(), "id": "KN-A"}, source_ref="source", actor_ref="producer")
+                instance, _ = create_candidate({}, {**note(), "id": "KN-A"}, source_ref="source", actor_ref="producer", clock=_entry.ports.clock)
                 instance, _ = create_candidate(instance, {**note("Independent"), "id": "KN-B", key: [{"dependencies": ["KN-A"]}]},
-                                               source_ref="source", actor_ref="producer")
+                                               source_ref="source", actor_ref="producer", clock=_entry.ports.clock)
                 before = assess_use(instance["knowledge"]["KN-B"], instance)
                 changed, _ = revise_knowledge(instance, {}, "KN-A", {"statement": "corrected"}, reason="correction",
-                                              actor_ref="user")
+                                              actor_ref="user", clock=_entry.ports.clock)
                 self.assertFalse(changed["knowledge"]["KN-B"].get("use_suspended", False))
                 self.assertEqual(before, assess_use(changed["knowledge"]["KN-B"], changed))
 

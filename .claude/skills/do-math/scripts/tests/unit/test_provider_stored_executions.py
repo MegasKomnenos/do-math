@@ -21,7 +21,8 @@ from do_math.engine import ResearchEngine
 from do_math.execution_lifecycle import create_execution, record_submission_intent, transition_execution
 from do_math.execution_profiles import build_profiles, profile_ref
 from do_math.session_slots import SessionSlots
-from research_fixtures import current_state, sealed_maintenance_submission
+from support.state_builders import current_state
+from support.execution_inputs import sealed_maintenance_submission
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.provider_runs import ProviderJobs, fake_ports
@@ -32,8 +33,10 @@ TIME = "2026-09-20T00:00:00+00:00"
 
 def stored_audit_state(workspace):
     """``(instance, runtime, action)``: a maintenance activity ``AY-audit`` with its queued execution ``EX-audit``."""
+    from support.entry import entry
+    _entry = entry()
     # Every stored state passes the current lifecycle gate.
-    instance, runtime = current_state({"config": deepcopy(DEFAULT_CONFIG), **build_profiles(DEFAULT_CONFIG),
+    instance, runtime = current_state({"config": deepcopy(DEFAULT_CONFIG), **build_profiles(DEFAULT_CONFIG, host=_entry.ports.host),
                                        "workspace": str(workspace)},
                                       {"executions": {}, "queue": [], "reservations": {}})
     profile = next(p for p in instance["execution_profiles"].values() if p["role"] == "maintenance")
@@ -76,13 +79,15 @@ class StoredExecutionTests(unittest.TestCase):
         self.assertEqual(self.runtime["recoveries"]["RY-audit"]["finished_at"], TIME)
 
     def test_confirmed_local_termination_releases_only_its_reservation(self):
+        from support.entry import entry
+        _entry = entry()
         jobs = ProviderJobs(clock=self.clock)
         # Only work roles reserve a model slot; bind this execution to one so a
         # reservation exists whose return the recovery must confirm.
         profile = next(p for p in self.instance["execution_profiles"].values()
                        if p["role"] == "research_work" and p["actor_kind"] == "ai")
         self.execution.update(role="research_work", execution_profile_ref=profile_ref(profile))
-        slots = SessionSlots(self.runtime, self.instance, jobs=jobs, clock=self.clock)
+        slots = SessionSlots(self.runtime, self.instance, jobs=jobs, clock=self.clock, host_id=_entry.host_id)
         transition_execution(self.execution, "starting", at=TIME)
         self.assertTrue(slots.acquire("EX-audit", profile=profile, execution=self.execution))
         self.assertTrue(self.execution["capacity"]["reservation_ids"])
@@ -93,7 +98,7 @@ class StoredExecutionTests(unittest.TestCase):
         job = jobs.launch([sys.executable, "codex_worker.py", "request.json"], name=name)
 
         def engine():
-            return ResearchEngine(self.repo.repository, INSTANCE_ID, ports=fake_ports(self.clock, self.backend, jobs))
+            return ResearchEngine(self.repo.repository, INSTANCE_ID, ports=fake_ports(self.clock, self.backend, jobs), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
         owner = engine()
         self.assertFalse(owner._settle_recovered_execution("EX-audit", at=TIME))
         self.assertEqual(owner.runtime["executions"]["EX-audit"]["status"], "running")

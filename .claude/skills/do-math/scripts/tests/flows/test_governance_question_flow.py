@@ -12,7 +12,7 @@ import tempfile
 import unittest
 
 from do_math.canonical import canonical_json
-from runner_fixtures import ScriptedRunner, common as role_output
+from support.default_responder import DefaultResponder, common as role_output
 from support.model import ModelDouble
 from support.sim import Sim, warm_template
 
@@ -21,7 +21,7 @@ setUpModule = warm_template
 QUESTIONS = ['Choose option one or two?', 'Research the remaining lemma.']
 
 
-class RoutingResponder(ScriptedRunner):
+class RoutingResponder(DefaultResponder):
     """The default responder, but research work waits on ``QUESTIONS`` and routes the first to the user."""
 
     def respond(self, role, ctx, workspace):

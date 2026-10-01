@@ -1,0 +1,21 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_provider_recovery.RecoveryTests.test_wake_keeps_hold_and_user_pause_and_only_requests_engine",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_operator_finish_supervision.SupervisionTests.test_read_status_reaches_guard_and_wake_obeys_pause_and_hold"
+      ],
+      "note": "실제 configure로 operator_enabled=False를 저장한 명시 wake 입력을 복원했다. 원 schedule의 전체 인자와 scheduler의 전체 start-engine 인자/1회를 검사하고 user pause/HOLD 뒤 전체 호출 목록 불변 및 Jobs 0을 검사한다. 자동 check disabled 분기로 대체하지 않는다. 같은 False 설정의 자동 check는 disabled를 반환하는 별도 계약이며 명시 wake/run_engine의 paused와 구분한다."
+    },
+    {
+      "legacy_id": "test_provider_recovery.ProviderConnections.test_saved_wait_drives_wake_and_schedule_failure_is_recoverable",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_operator_finish_provider.ProviderWakeTests.test_saved_wait_repairs_schedule_once_and_publication_precedes_effect"
+      ],
+      "note": "Real Claude native admission rejection -> runner -> recovery slots publishes gate. Real engine creates/requeues action with provider_limit. Scheduler callback rereads published gate and queue. One schedule-wake with exact retry_at/generation; actual Git ref lock replaces _save OSError and blocks all scheduler calls. HOLD blocks check and reconcile sends one cancel-wake through supplied port."
+    }
+  ],
+  "knowledge": []
+}

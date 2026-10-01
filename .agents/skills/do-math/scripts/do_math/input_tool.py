@@ -14,23 +14,27 @@ from pathlib import Path
 from .context_store import (READ_LOG, _READ_LOCK, read_content, read_refusal, read_stable, record_summaries,
                             relative_path, safe_path)
 from .file_io import os_lock
-from .system_clock import SystemClock
 
 
-def _append_reads(workspace, rows):
+def _append_reads(workspace, rows, *, clock):
     log = safe_path(workspace, READ_LOG)
     log.parent.mkdir(parents=True, exist_ok=True)
     with os_lock(safe_path(workspace, _READ_LOCK), blocking=True), log.open('ab') as stream:
         for row in rows:
-            stream.write(json.dumps({'at': SystemClock().now(), **row}, ensure_ascii=False, sort_keys=True).encode('utf-8') + b'\n')
+            stream.write(json.dumps({'at': clock.now(), **row}, ensure_ascii=False, sort_keys=True).encode('utf-8') + b'\n')
 
 
-def read_main(argv=None):
+def read_main(argv=None, *, ports=None, environment=None):
     """Read this execution's input snapshot within its record map (input/tools/read_input.py).
 
     Records come back decoded, other files as text or base64, or written to --output. Every
     read, refusal and error is appended to checks/reads.jsonl.
     """
+    import os
+    from .wiring import real_ports
+    environment = dict(os.environ) if environment is None else environment
+    ports = real_ports(environment=environment) if ports is None else ports
+    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
     import argparse
     import sys
     from .values import strict_json_loads
@@ -56,7 +60,7 @@ def read_main(argv=None):
         if not store:
             from .git_store import GitStateStore
             binding = context['record_store']
-            store.append(GitStateStore(Path(binding['repository']), binding['instance_id']))
+            store.append(GitStateStore(Path(binding['repository']), binding['instance_id'], backend=backend, clock=clock))
         return store[0]
 
     def read(path):
@@ -103,6 +107,6 @@ def read_main(argv=None):
         logged = [{key: row[key] for key in ('request', 'path', 'snapshot', 'status', 'sha256', 'bytes', 'reason')
                    if key in row} for row in rows]
     if logged:
-        _append_reads(workspace, logged)
+        _append_reads(workspace, logged, clock=ports.clock)
     sys.stdout.buffer.write(json.dumps(result, ensure_ascii=False).encode('utf-8') + b'\n')
     return 0 if result['status'] == 'ok' else 1

@@ -24,9 +24,6 @@ checks both reach it through ``trust_validation.verify_formal``.
   pass run on it, then queues ``control(sim)`` and answers at once. The
   calculation reads its flag clear and returns the late success; the owner
   publishes the control before it collects that result and judges its currentness.
-- ``use_verifier(sim, verifier)`` and ``identity(arguments)``: rebuild the engine
-  with another formal verifier, for the owner-failure cases whose verifier
-  returns evidence the product verifier cannot produce.
 - ``PassProbe(engine_code)``: counts owner passes (``_controls`` starts) and
   records the flag of one call when each ``_save`` starts and returns
   (``sys.monitoring``), so a test sees which publication set the flag.
@@ -37,6 +34,7 @@ from __future__ import annotations
 
 import json
 import sys
+from support.monitoring_slots import reserve_tool
 
 from do_math.engine import ResearchEngine
 from support.engine_lifecycle import applied, clear_work, lifecycle_sim, prepared_environment, transition
@@ -57,6 +55,7 @@ def theorem(name):
 
 
 def imported(sim, name):
+    sim.lean.allow(f'theorem {name} : 1 = 1 := rfl', [name], signatures={name: name + ' : 1 = 1'})
     before = set(sim.instance['knowledge'])
     applied(sim, 'knowledge', config={'operation': 'import', 'candidate': theorem(name)})
     kid, = set(sim.instance['knowledge']) - before
@@ -92,16 +91,6 @@ def trust_scene():
 
 def take_turns(sim):
     sim.ports.calls.choose = round_robin()
-
-
-def use_verifier(sim, verifier):
-    sim.engine = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports, formal_verifier=verifier)
-    take_turns(sim)
-
-
-def identity(arguments):
-    """A synthetic Job identity a replaced verifier publishes before its root would resume."""
-    return {'job_name': arguments['launch_ticket']['job_name'], 'pid': 17, 'creation_filetime': '12345'}
 
 
 def maintenance_ended(sim, before):
@@ -180,8 +169,7 @@ class PassProbe:
 
     def __enter__(self):
         monitoring = sys.monitoring
-        self.tool = next(tool for tool in (3, 4, 0, 2) if monitoring.get_tool(tool) is None)
-        monitoring.use_tool_id(self.tool, 'do-math pass probe')
+        self.tool = reserve_tool('do-math pass probe')
         self.controls = ResearchEngine._controls.__code__
         self.save = ResearchEngine._save.__code__
 

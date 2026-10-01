@@ -7,6 +7,7 @@ profile seals the signal kinds (``rule_bindings``) and the observation windows
 a tracker admits. The repository test runs the real ``ResearchRepository`` on
 the in-process Git fake.
 """
+from support.observation_clock import scripted_clock
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -19,8 +20,8 @@ from do_math.execution_profiles import BOUNDARY, build_profiles, profile_ref, se
 from do_math.observations import (ObservationTracker, evaluate_rules, observation_rule_contract, tracker_config,
                                   validate_rules)
 from do_math.operational_dispositions import validate_disposition, worker_feedback
-from provider_fixtures import PROFILE_CONFIG
-from research_fixtures import observation_rule, observe
+from support.provider_inputs import PROFILE_CONFIG
+from support.observation_inputs import observation_rule, observe
 from support.fakes.clock import FakeClock
 
 SKILL = Path(__file__).resolve().parents[3]
@@ -105,8 +106,10 @@ class RuleTests(unittest.TestCase):
 
 class ProfileContractTests(unittest.TestCase):
     def research_profile(self):
+        from support.entry import entry
+        _entry = entry()
         profiles = build_profiles({**deepcopy(PROFILE_CONFIG), "tool_review_window_seconds": 60,
-            "self_check_response_window_seconds": 5})["execution_profiles"].values()
+            "self_check_response_window_seconds": 5}, host=_entry.ports.host)["execution_profiles"].values()
         return next(profile for profile in profiles if profile["role"] == "research_work")
 
     def setUp(self):
@@ -131,15 +134,19 @@ class ProfileContractTests(unittest.TestCase):
         self.assertEqual(frozen["observation_profile_ref"]["revision"], 1)
 
     def test_checkpoint_counter_name_is_bound_by_the_execution_not_the_profile(self):
+        from support.entry import entry
+        _entry = entry()
         config = tracker_config(self.research_profile(), initial_self_check_rules=[counter_rule()])
         write_counter_checkpoint(self.directory)
-        emitted = observe(ObservationTracker("EX-local", self.directory, config), {"type": "tick"})
+        emitted = observe(ObservationTracker("EX-local", self.directory, config, time_port=_entry.ports.clock), {"type": "tick"})
         self.assertTrue(any(row["kind"] == "self_check_due" for row in emitted))
 
     def test_new_execution_gets_its_observation_interval_before_missing_signal_review(self):
+        from support.entry import entry
+        _entry = entry()
         config = tracker_config(self.research_profile(), initial_self_check_rules=[counter_rule()])
         elapsed = [0.0]
-        tracker = ObservationTracker("EX-local", self.directory, config, clock=lambda: elapsed[0])
+        tracker = ObservationTracker("EX-local", self.directory, config,  time_port=scripted_clock(lambda: elapsed[0]))
         for value in (0, config["observation_interval_seconds"] - .1):
             elapsed[0] = value
             emitted = observe(tracker, {"type": "tick"})
@@ -153,6 +160,8 @@ class ProfileContractTests(unittest.TestCase):
         self.assertNotIn("attempts", tracker.counters)
 
     def test_shared_contract_rejects_forged_source_and_other_execution_subject(self):
+        from support.entry import entry
+        _entry = entry()
         profile = self.research_profile()
         with self.assertRaisesRegex(ValueError, "basis"):
             tracker_config(profile, initial_self_check_rules=[counter_rule(source="invented")])
@@ -162,20 +171,22 @@ class ProfileContractTests(unittest.TestCase):
             "required_evidence": ["checkpoint.json"]}
         config = tracker_config(profile, initial_self_check_rules=[other_execution])
         with self.assertRaisesRegex(ValueError, "different execution"):
-            ObservationTracker("EX-local", self.directory, config)
+            ObservationTracker("EX-local", self.directory, config, time_port=_entry.ports.clock)
         # A later rule replacement meets the same contract and keeps the admitted rules.
         admitted = counter_rule()
-        tracker = ObservationTracker("EX-local", self.directory, tracker_config(profile, initial_self_check_rules=[admitted]))
+        tracker = ObservationTracker("EX-local", self.directory, tracker_config(profile, initial_self_check_rules=[admitted]), time_port=_entry.ports.clock)
         self.assertEqual(tracker.rules, [admitted])
         replaced = tracker._replace_rules({"current_revision": 0, "reason": "change", "rules": [other_execution]})
         self.assertEqual(replaced["kind"], "observation_rules_rejected")
         self.assertEqual(tracker.rules, [admitted])
 
     def test_git_reload_preserves_the_sealed_shared_contract_before_tracker_admission(self):
+        from support.entry import entry
+        _entry = entry()
         from do_math.configuration import DEFAULT_CONFIG
         from do_math.repository import ResearchRepository
-        from record_fixtures import domain_governance
-        from research_fixtures import current_state
+        from support.record_builders import domain_governance
+        from support.state_builders import current_state
         from support.fakes.git_backend import make_fake, make_repository
         clock = FakeClock()
         store = ResearchRepository(make_repository(self.directory / "repository"), "RI-01ARZ3NDEKTSV4RRFFQ69G5FAV",
@@ -183,7 +194,7 @@ class ProfileContractTests(unittest.TestCase):
         saved_config = {**deepcopy(DEFAULT_CONFIG), "tool_review_window_seconds": 60,
                         "self_check_response_window_seconds": 5}
         instance, runtime = current_state(
-            {**domain_governance(), "config": saved_config, **build_profiles(saved_config)},
+            {**domain_governance(), "config": saved_config, **build_profiles(saved_config, host=_entry.ports.host)},
             {"status": "ready", "tasks": {}, "executions": {}, "queue": [], "history": []})
         head = store.initialize(instance, runtime)
         _, restored, _ = store.load(head)
@@ -195,7 +206,7 @@ class ProfileContractTests(unittest.TestCase):
         workspace.mkdir()
         write_counter_checkpoint(workspace)
         self.assertTrue(any(row["kind"] == "self_check_due"
-                            for row in observe(ObservationTracker("EX-local", workspace, config),
+                            for row in observe(ObservationTracker("EX-local", workspace, config, time_port=_entry.ports.clock),
                                                {"type": "tick"})))
 
 

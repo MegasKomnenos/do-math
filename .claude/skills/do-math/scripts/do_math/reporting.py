@@ -159,7 +159,8 @@ def status_report(store, head, instance, runtime, *, observation=None, requested
     field it omits is None. ``store`` reads the snapshot's artifacts.
     ``evaluation_context`` is the engine's current evaluation context, so task
     readiness sees this host's facts (a discovered Lean, the clock) exactly as
-    dispatch does. A snapshot projection omits it.
+    dispatch does. A snapshot projection supplies its query time without live
+    host capability observations.
     """
     from .academic import academic_status, stored_evidence
     from .academic import current_solution_basis
@@ -235,17 +236,17 @@ def status_report(store, head, instance, runtime, *, observation=None, requested
 
 
 def snapshot_report(repository: Path, instance_id: str, *, snapshot: str | None = None,
-                    host_observation: dict | None = None, requested_areas=None) -> dict:
+                    host_observation: dict | None = None, requested_areas=None, backend, clock) -> dict:
     """The status projection of one persisted snapshot (``status_report``).
 
     Host observations are deliberately caller-supplied and separately dated:
     a live slot count cannot truthfully be represented as historical snapshot
     state. Without ``host_observation`` the OBSERVED_FIELDS are None.
     """
-    store = ResearchRepository(repository, instance_id)
+    store = ResearchRepository(repository, instance_id, backend=backend, clock=clock)
     head, instance, runtime = store.load(snapshot)
     return status_report(store, head, instance, runtime, observation=host_observation,
-                         requested_areas=requested_areas)
+                         requested_areas=requested_areas, evaluation_context={'now': clock.now()})
 
 
 def render_human_report(report: dict) -> str:
@@ -293,8 +294,8 @@ def render_dispatch_waits(report):
             for row in report.get('dispatch_waits', []) if row.get('target') not in task_ids]
 
 
-def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name="Asia/Seoul", include_operations=False):
-    store = ResearchRepository(repository, instance_id)
+def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name="Asia/Seoul", include_operations=False, backend, clock):
+    store = ResearchRepository(repository, instance_id, backend=backend, clock=clock)
     head, instance, runtime = store.load(snapshot)
     zone = _zone(timezone_name)
     rows = []
@@ -321,7 +322,7 @@ def timeline(repository: Path, instance_id: str, *, snapshot=None, timezone_name
             "evidence_source": {"kind": "research_snapshot", "snapshot": head}})
     if include_operations:
         from .trace_report import phase_rows
-        for row in phase_rows(Path(instance['workspace']) / 'operations'):
+        for row in phase_rows(Path(instance['workspace']) / 'operations', clock=clock):
             row['snapshot'] = None
             row['created_at_local'] = _display(row['created_at_utc'], zone)
             row['ended_at_local'] = _display(row['ended_at_utc'], zone)

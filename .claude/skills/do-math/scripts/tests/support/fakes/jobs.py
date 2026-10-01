@@ -133,7 +133,7 @@ class FakeJob:
         return usage
 
     def close(self):
-        if self._running():
+        if not self.done:
             self.terminate()
         self.closed = True
 
@@ -151,11 +151,24 @@ class FakeJobs:
         self.live = live
         self._next_pid = 40000  # per fake, so equal scenarios see equal process identities
         self.owner = {'pid': 4242, 'creation_filetime': '133000000000000000', 'host': 'fake-host', 'session': 1}
+        self.known_ended = []
+
+    def restart_owner(self):
+        """Lose this owner's handles (kill-on-close), retaining the external Job world."""
+        previous = self.owner_identity()
+        for job in self.launched:
+            if job.owner == previous:
+                job.close()
+        self.known_ended.append(previous)
+        self.owner = {**previous, 'pid': previous['pid'] + 4,
+                      'creation_filetime': str(int(previous['creation_filetime']) + 4)}
 
     def owner_identity(self):
         return dict(self.owner)
 
     def owner_ended(self, identity):
+        if identity in self.known_ended:
+            return True
         if identity.get('host') != self.owner['host'] or identity.get('session') != self.owner['session']:
             return None
         if identity.get('pid') == self.owner['pid']:
@@ -172,6 +185,7 @@ class FakeJobs:
             raise LookupError("no fake program for argv: " + repr(list(argv)[:3]))
         self._next_pid += 4
         job = FakeJob(program, argv, cwd, env, name, resource_limits, self._next_pid, live=self.live)
+        job.owner = self.owner_identity()
         self.launched.append(job)
         return job
 

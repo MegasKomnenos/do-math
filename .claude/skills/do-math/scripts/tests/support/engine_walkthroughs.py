@@ -53,17 +53,19 @@ def evidence_sim(**charter):
 
 def truth_candidate(statement='True', source='theorem truth : True := True.intro', **changes):
     """``knowledge_candidate`` stating ``statement`` in every exposition field, proved by ``source``."""
-    from knowledge_fixtures import knowledge_candidate
+    from support.knowledge_builders import knowledge_candidate
     return knowledge_candidate(title=statement, statement=statement, explanation=statement, summary=statement,
                                lean_code=source, **changes)
 
 
 def accept_knowledge(engine, proposed=None):
     """Only Lean and identity verdicts are fixtures; the import, binding and use gates run."""
-    from knowledge_fixtures import formal_result
+    from support.entry import entry
+    _entry = entry()
+    from support.knowledge_builders import formal_result
     proposed = proposed or truth_candidate()
     engine.instance, engine.runtime, kid = knowledge_io.import_candidate(engine.instance, engine.runtime, proposed,
-        source_ref='fixture:source', actor_ref='EX-producer')
+        source_ref='fixture:source', actor_ref='EX-producer', clock=engine.ports.clock)
     environment = engine.instance['active_trust_environment']
     trust = engine.instance['trust_environments'][environment]
     response = formal_result(proposed['lean_code'], ['truth'], trust['toolchain'],
@@ -72,7 +74,7 @@ def accept_knowledge(engine, proposed=None):
                              allowed_axioms=deepcopy(trust['allowed_axioms']))
     engine.instance = kr.record_formal_result(engine.instance, kid, response, environment, runtime=engine.runtime)
     engine.instance, aid = kr.record_identity_assessment(engine.instance, kid, {'decision': 'match',
-        'basis': kr.identity_basis(engine.instance, kid)}, 'policy:fixture', runtime=engine.runtime)
+        'basis': kr.identity_basis(engine.instance, kid)}, 'policy:fixture', runtime=engine.runtime, clock=engine.ports.clock)
     return kid, aid
 
 
@@ -101,6 +103,6 @@ def apply_plan(engine, plan, execution_id='EX-plan', *, snapshot=None):
     execution = engine.runtime['executions'][execution_id]
     execution.update(input_snapshot=snapshot, extensions={})
     issue(engine, execution, {'snapshot': snapshot, 'tasks': deepcopy(list(engine.runtime['tasks'].values())),
-                              'ready_task_ids': planning.ready_task_ids(engine.runtime, engine.instance)},
+                              'ready_task_ids': planning.ready_task_ids(engine.runtime, engine.instance, evaluation_context=engine._evaluation_context())},
           'BA-' + execution_id)
     engine._apply({'id': 'AC-' + execution_id, 'role': 'research_plan'}, plan, execution_id)

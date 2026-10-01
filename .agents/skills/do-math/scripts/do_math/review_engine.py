@@ -99,7 +99,7 @@ class ReviewEngineMixin:
                 return None  # Merely naming an IA in an output does not establish that it was read.
             from .knowledge import assessment_reassessment_proposal
             authors = set(assessment_reassessment_proposal(self.instance, assessment['id'], runtime=self.runtime)['producer_execution_ids']) | set(original.get('producer_execution_ids', []))
-            validate_sealed_review(source, self.runtime, instance=self.instance, excluded_execution_ids=authors, clock=self.ports.clock)
+            validate_sealed_review(source, self.runtime, instance=self.instance, excluded_execution_ids=authors, clock=self.ports.clock, at=self.ports.clock.now())
             entry = source['results'].get(evidence.get('result_key'))
             if entry is None or evidence['result_key'] not in source['sealed']:
                 return None
@@ -163,10 +163,10 @@ class ReviewEngineMixin:
         from .knowledge import apply_assessment_reassessment
         self._review_cycle(action)
         validate_sealed_review(cycle, self.runtime, instance=self.instance, read_artifact=self.store.read,
-                               git_dir=self.store.git_dir, clock=self.ports.clock)
+                               git_dir=self.store.git_dir, clock=self.ports.clock, at=self.ports.clock.now())
         aid = cycle['proposal']['assessment_reassessment']['assessment_id']
         self.instance, self.runtime = apply_assessment_reassessment(self.instance, self.runtime, aid, cycle['id'],
-            reason='Sealed independent reassessment of the original judgment: ' + cycle['decision'], actor_ref=execution_id, clock=self.ports.clock)
+            reason='Sealed independent reassessment of the original judgment: ' + cycle['decision'], actor_ref=execution_id, clock=self.ports.clock, at=self.ports.clock.now())
         use = next(u for u in self.instance['assessment_uses'].values() if u['assessment_id'] == aid)
         conditions = ['new qualified defect evidence', 'changed judgment target or premises', 'explicit source-bound review authority']
         result = {'assessment_id': aid, 'review_cycle_id': cycle['id'], 'status': use['status'],
@@ -580,7 +580,7 @@ class ReviewEngineMixin:
         replacement = cycle.get('replacement_actions', {}).get(key)
         if replacement is None or replacement['action'] != _action(action):
             return {'allowed': False, 'reason': 'replacement does not match the authorized slot'}
-        return replacement_authority(self.instance, self.runtime, cycle, replacement, execution_id, clock=self.ports.clock)
+        return replacement_authority(self.instance, self.runtime, cycle, replacement, execution_id, clock=self.ports.clock, at=self.ports.clock.now())
 
     def _build_review_context(self, action, workspace: Path, cycle, *, sources=None):
         """cycle is the current cycle _prepare_review_context has just checked."""
@@ -676,6 +676,7 @@ class ReviewEngineMixin:
 
     def _authorize_review_replacement(self, action, *, grant_id=None, delegation_id=None, case=None, at=None):
         """Apply the current GOVERNANCE authorization result without creating a run."""
+        at = self.ports.clock.now() if at is None else at
         cycle = self._review_cycle(action)
         outcome = authorize_record_replacement(cycle, _action(action), self.instance, runtime=self.runtime,
                                                grant_id=grant_id, delegation_id=delegation_id, case=case, at=at, clock=self.ports.clock)

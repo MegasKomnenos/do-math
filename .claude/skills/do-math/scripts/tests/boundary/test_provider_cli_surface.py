@@ -10,6 +10,7 @@ import tempfile
 import unittest
 
 from do_math.codex_adapter import CodexExecAdapter
+from test_categories import test_group
 
 WORKER_FLAGS = [b"--json", b"--output-last-message", b"--model", b"--sandbox", b"--ephemeral",
                 b"--ignore-user-config", b"--ignore-rules", b"--skip-git-repo-check", b"--output-schema",
@@ -22,9 +23,14 @@ SCRIPT = (b'@echo off\r\n'
           b'type "%~dp0help.txt"\r\n')
 
 
+@test_group('resource')
 @unittest.skipUnless(os.name == 'nt', 'the fixture CLI is a Windows batch file')
 class DescribeTests(unittest.TestCase):
     def test_surface_requires_the_flags_used_by_the_worker(self):
+        from support.entry import entry
+        _entry = entry()
+        from do_math.wiring import real_ports
+        _entry.ports = real_ports(environment=_entry.environment)
         for missing in (None, b"--strict-config", b"--color", b"--cd"):
             with self.subTest(missing=missing), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
@@ -32,7 +38,7 @@ class DescribeTests(unittest.TestCase):
                 (root / 'exec-help.txt').write_bytes(b' '.join(flag for flag in WORKER_FLAGS if flag != missing))
                 cli = root / 'codex.cmd'
                 cli.write_bytes(SCRIPT)
-                description = CodexExecAdapter(str(cli)).describe()
+                description = CodexExecAdapter(str(cli), jobs=_entry.ports.jobs, clock=_entry.ports.clock).describe()
                 self.assertEqual(description["verified"], missing is None)
                 self.assertEqual(description["version_bytes"].strip(), b"fixture-version")
                 self.assertEqual(description["identity"]["cli_path"], str(cli.resolve()))

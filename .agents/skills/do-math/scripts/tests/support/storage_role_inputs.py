@@ -31,10 +31,13 @@ def review_candidate_state(root, rounds=2):
     (``research_fixtures.start_scoped_review``). The synthetic trust toolchain
     is written under ``root``.
     """
+    from support.entry import entry
+    _entry = entry()
     from do_math import knowledge_io, knowledge_records as kr
     from do_math.configuration import DEFAULT_CONFIG
     from do_math.execution_profiles import build_profiles
-    from research_fixtures import governance_start, trust_environment, trust_fixture
+    from support.state_builders import governance_start
+    from support.trust_inputs import trust_environment, trust_fixture
     source = 'theorem sample : 1 = 1 := rfl'
     policy = {'id': 'fixture-review-policy-v5', 'required_perspectives': [],
               'minimum_initial_slots': 2, 'judge_slots': ['judge-0', 'judge-1', 'judge-2'],
@@ -48,7 +51,7 @@ def review_candidate_state(root, rounds=2):
                                             'review_research_limit': DEFAULT_CONFIG['review_research_limit']}})
     runtime = {'queue': [], 'executions': {}, 'questions': []}
     instance = knowledge_io.ensure_ontology(instance)
-    profiles = build_profiles(DEFAULT_CONFIG)
+    profiles = build_profiles(DEFAULT_CONFIG, host=_entry.ports.host)
     instance.update(execution_profiles=profiles['execution_profiles'], role_profile_refs=profiles['role_profile_refs'])
     instance['review_policy'] = deepcopy(policy)
     trusted = trust_fixture(Path(root), ['fixture-review-lean'])
@@ -60,7 +63,7 @@ def review_candidate_state(root, rounds=2):
         'id': 'K1', 'statement': 'One equals one', 'explanation': 'Reflexivity', 'summary': 'A sample theorem',
         'lean_code': source, 'declaration_names': ['sample'], 'dependencies': [], 'producer_execution': 'author',
         'revision': 1, 'kind': 'theorem', 'kind_definition_id': definition['id']},
-        source_ref='test-fixture', actor_ref='author')
+        source_ref='test-fixture', actor_ref='author', clock=_entry.ports.clock)
     proof = {'status': 'verified', 'source_sha256': hashlib.sha256(source.encode()).hexdigest(),
              'declarations': ['sample'], 'axioms': {'sample': []}, 'toolchain': deepcopy(trusted['toolchain']),
              'execution_id': 'formal-1', 'artifact_ref': 'artifacts/formal-1.json',

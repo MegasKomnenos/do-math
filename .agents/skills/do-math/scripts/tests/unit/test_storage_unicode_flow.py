@@ -13,7 +13,7 @@ import unittest
 
 from do_math.canonical import canonical_json
 from do_math.context_store import build_role_manifest, read_source, write_source_catalog
-from research_fixtures import current_state, installed_contract
+from support.state_builders import current_state, installed_contract
 from support.storage_records import record_store
 
 DECOMPOSED = "e\N{COMBINING ACUTE ACCENT}"

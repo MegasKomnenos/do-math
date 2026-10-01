@@ -12,7 +12,7 @@ import unittest
 
 from do_math import governance, knowledge, knowledge_records as kr
 from do_math.canonical import exact_content_hash
-from research_fixtures import charter
+from support.state_builders import charter
 from support.review_scene import ReviewScene, warm
 
 

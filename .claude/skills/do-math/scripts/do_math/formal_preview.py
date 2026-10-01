@@ -15,7 +15,12 @@ PREVIEW_FIELDS = ('status', 'reason', 'source_sha256', 'declarations', 'declarat
                   'toolchain', 'identity_errors', 'stdout', 'stderr', 'authoritative', 'input_snapshot', 'assurance')
 
 
-def main(argv=None):
+def main(argv=None, *, ports=None, environment=None):
+    import os
+    from .wiring import real_ports
+    environment = dict(os.environ) if environment is None else environment
+    ports = real_ports(environment=environment) if ports is None else ports
+    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', required=True)
     parser.add_argument('--declaration', action='append', required=True)
@@ -39,7 +44,7 @@ def main(argv=None):
                     allowed_axioms=tuple(settings['allowed_axioms']),
                     should_stop=stopped,
                     expected_toolchain=settings.get('expected_toolchain'),
-                    extract_evidence=False)
+                    extract_evidence=False, clock=clock, jobs=jobs, environment=environment)
         result.update(authoritative=False, input_snapshot=context.get('snapshot'),
             assurance='Same supplied verifier code and configured command for the kernel check, signatures and axioms; '
                       'dependency evidence is not extracted. Central verification of the submitted source is still required. '

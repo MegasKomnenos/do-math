@@ -1,8 +1,8 @@
 """The public command line on a real Git repository (``cli.main``, layer 3), for the engine region's CLI tests.
 
 ``cli.main`` and ``cli.execute`` open the repository and the engine with the
-product's default ports and take no Ports (1f seam ledger 6), so a command that
-reads or writes an instance runs the real Git process. Tests that need one live
+ports explicitly assembled at the boundary, so a command that reads or
+writes an instance runs the real Git process. Tests that need one live
 with the boundary tests, as ``boundary/test_cli_file_reads.py`` does.
 
 - ``cli_instance(root, shared)``: a ``research_fixtures.restore_template`` build
@@ -27,7 +27,9 @@ import unittest
 from do_math.engine import ResearchEngine, control
 from do_math.repository import ResearchRepository
 from do_math.wiring import real_ports
-from research_fixtures import git_init, restore_template, run_cli
+from support.fakes.git_backend import make_repository
+from support.cli_inputs import run_cli
+from support.cli_images import initialized_cli
 
 
 def body(completed):
@@ -45,9 +47,9 @@ def body(completed):
     return envelope.get('result', envelope.get('error'))
 
 
-def cli_instance(root, shared):
+def cli_instance(root):
     """``restore_template`` build: one instance the CLI's ``init`` created; returns its result."""
-    repository = git_init(root / 'repository')
+    repository = make_repository(root / 'repository')
     configuration = root / 'operator-disabled.json'
     configuration.write_text(json.dumps({'operator_enabled': False}), encoding='utf-8')
     initialized = run_cli('init', '--repository', str(repository), '--workspace', str(root / 'workspace'),
@@ -60,7 +62,7 @@ def cli_instance(root, shared):
 
 class CliInstanceTest(unittest.TestCase):
     def setUp(self):
-        self.root, self.initial = restore_template(cli_instance)
+        self.root, self.initial = initialized_cli('existing')
         self.repository = self.root / 'repository'
         self.workspace = self.root / 'workspace'
         self.operator_disabled = self.root / 'operator-disabled.json'
@@ -73,11 +75,17 @@ class CliInstanceTest(unittest.TestCase):
         return ('--repository', str(self.repository), '--instance', self.instance)
 
     def store(self, instance=None):
-        ports = real_ports()
+        from support.entry import entry
+        _entry = entry()
+        ports = real_ports(environment=_entry.environment)
         return ResearchRepository(self.repository, instance or self.instance, backend=ports.git_backend, clock=ports.clock)
 
     def control(self, action, **options):
-        return control(self.repository, self.instance, action, ports=real_ports(), **options)
+        from support.entry import entry
+        _entry = entry()
+        return control(self.repository, self.instance, action, ports=real_ports(environment=_entry.environment), **options, host_id=_entry.host_id)
 
     def engine(self):
-        return ResearchEngine(self.repository, self.instance, ports=real_ports())
+        from support.entry import entry
+        _entry = entry()
+        return ResearchEngine(self.repository, self.instance, ports=real_ports(environment=_entry.environment), codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)

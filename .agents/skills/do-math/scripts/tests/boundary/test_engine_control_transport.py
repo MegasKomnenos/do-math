@@ -22,6 +22,7 @@ from do_math.control_server import mcp_server_config
 from do_math.control_transport import ControlTransport
 from do_math.worker_request import validate_control_binding
 from support.fakes.clock import FakeClock
+from test_categories import test_group
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 
@@ -60,6 +61,7 @@ class McpServer:
         self.child.stderr.close()
 
 
+@test_group('resource')
 class ChildProcessTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()

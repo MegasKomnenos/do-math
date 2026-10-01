@@ -165,9 +165,8 @@ def main(argv=None):
     sys.dont_write_bytecode = True
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from do_math import scheduled_operator
-    if manifest:
-        scheduled_operator.LIVE_INSTALLATION_ROOT = Path(manifest["installation_root"])
-    return scheduled_operator.main(args)
+    installation_root = Path(manifest["installation_root"]) if manifest else snapshot_root
+    return scheduled_operator.main(args, installation_root=installation_root)
 
 
 if __name__ == "__main__":

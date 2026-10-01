@@ -189,15 +189,15 @@ class SendTests(unittest.TestCase):
         http.table['/effect'] = (201, b'ok', None)
         config = self.prepare(credentials=True)
         ticking_clock(sim)  # no frozen time: every sample the attempts record differs, as on the host clock
-        with patch.dict(os.environ):
-            os.environ.pop(CREDENTIAL, None)
+        with patch.dict(self.e.environment):
+            self.e.environment.pop(CREDENTIAL, None)
             run_machine(sim, 'external_action')
         self.assertEqual(http.requests, [])
         before = deepcopy(operation(sim))
         first = deepcopy(sim.runtime['executions'][before['execution_id']])
         self.assertEqual(first['status'], 'ended')
         extended(self.e, 'external', config)
-        with patch.dict(os.environ, {CREDENTIAL: 'synthetic-local-token'}):
+        with patch.dict(self.e.environment, {CREDENTIAL: 'synthetic-local-token'}):
             run_machine(sim, 'external_action')
         self.assertEqual(len(http.requests), 1)
         self.assertEqual(http.requests[0][1], [('X-Test', 'synthetic-local-token')])
@@ -238,8 +238,8 @@ class PublicCredentialResumeTests(unittest.TestCase):
                   'request': {'method': 'POST', 'url': ORIGIN + '/effect', 'body': 'synthetic local request'}}
         applied(sim, 'external', config=config)
         ticking_clock(sim)  # a flowing clock, as the host's: the recorded times can be out of order
-        with patch.dict(os.environ):
-            os.environ.pop(CREDENTIAL, None)
+        with patch.dict(sim.environment):
+            sim.environment.pop(CREDENTIAL, None)
             run_machine(sim, 'external_action')
         before = deepcopy(operation(sim, 'OP-public'))
         first = deepcopy(sim.runtime['executions'][before['execution_id']])
@@ -247,7 +247,7 @@ class PublicCredentialResumeTests(unittest.TestCase):
         self.assertEqual(http.requests, [])
         sim.restart()
         applied(sim, 'external', config=config, request_id='UC-public-external-credential-resume')
-        with patch.dict(os.environ, {CREDENTIAL: 'synthetic-local-token'}):
+        with patch.dict(sim.environment, {CREDENTIAL: 'synthetic-local-token'}):
             run_machine(sim, 'external_action')
         sim.restart()
         op = operation(sim, 'OP-public')
@@ -306,3 +306,100 @@ class RecordTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class AcademicPrerequisiteTests(unittest.TestCase):
+    """Layer-2 preparation and send recheck, including the separate public completed-state gate."""
+    def test_academic_control_binds_current_real_prerequisite(self):
+        from do_math.academic import current_requirements
+        from do_math.execution_profiles import match_profile_ref, profile_ref
+        from do_math.knowledge import plan_impact
+        from support.engine_lifecycle import solve_goal, THEOREMS
+        from support.provider_probes import ObservedCalls
+        sim = lifecycle_sim()
+        e = sim.engine
+        config = http_grant(e, scope={'requires_academic': True})
+        with self.assertRaisesRegex(ValueError, 'no current solution for this request'):
+            e._external_control(config, 'UC-before-solution')
+        kid = next(k for k, row in e.instance['knowledge'].items() if row['title'] == THEOREMS[0])
+        solve_goal(e, kid)
+        basis = e._solution_basis()
+        self.assertIsNotNone(basis)
+        self.assertEqual(e.runtime['status'], 'completed')
+        e._save()
+        # The layer-2 consumer can bind valid producer state; this does not claim
+        # the closed-instance public control dispatcher permits the request.
+        e._external_control(config, 'UC-after-solution')
+        e._save()
+        op = e.runtime['external_operations'][config['id']]
+        self.assertEqual(op['academic_basis'], {'solution_basis': basis,
+                         'requirements_sha256': current_requirements(e.instance)['sha256']})
+        self.assertNotIn('academic_binding', op)
+        action = deepcopy(next(row for row in e.runtime['queue']
+                               if row['role'] == 'external_action' and row['target'] == config['id']))
+        profile = e._execution_profile(action)
+        self.assertEqual(action['profile_ref'], profile_ref(profile))
+        self.assertIn(action['profile_ref'], e.instance['role_profile_refs']['external_action'])
+        self.assertEqual(match_profile_ref(e.instance['execution_profiles'], action['profile_ref']), profile)
+        self.assertEqual((action['actor_kind'], op['actor_kind']), ('machine', 'machine'))
+        self.assertEqual(action['grant_id'], config['grant_id'])
+        grant = e.instance['grants'][config['grant_id']]
+        e._validate_external(op, grant)  # the unchanged request and grant pass before evidence withdrawal
+        impact = plan_impact(e.instance, e.runtime, [kid], [])
+        e._knowledge_control({'operation': 'invalidate', 'id': kid, 'reason': 'Evidence was withdrawn',
+                              'declared_impact': impact['computed_impact']}, 'UC-evidence-withdrawal')
+        e._invalidate_goal_currentness()
+        self.assertEqual(e.instance['goal_status'], 'unsolved')
+        self.assertIsNone(e._solution_basis())
+        e._save()
+        before = len(sim.ports.http.requests)
+        self.assertEqual(e.runtime['external_operations'][config['id']], op)
+        self.assertEqual(e.instance['grants'][config['grant_id']], grant)
+        expected_operation, expected_grant = deepcopy(op), deepcopy(grant)
+        with ObservedCalls(send=sim.ports.http.request, check=e._validate_external,
+                           prerequisite=e._external_prerequisite,
+                           capture={'prerequisite': lambda args: deepcopy({key: args[key]
+                                    for key in ('operation', 'grant')})}) as calls:
+            e._run_external_action(action)
+        self.assertEqual(calls.count('send'), 0)
+        self.assertEqual(calls.count('check'), 1)
+        self.assertEqual(calls.count('prerequisite'), 1)
+        observed = calls.captured('prerequisite')[0]
+        # The execution ID is allocated on entry, before the prerequisite check.
+        expected_operation['execution_id'] = e.runtime['external_operations'][config['id']]['execution_id']
+        self.assertEqual(observed, {'operation': expected_operation, 'grant': expected_grant})
+        self.assertEqual(len(sim.ports.http.requests), before)
+        rejected = e.runtime['external_operations'][config['id']]
+        reason = 'current academic prerequisite is not established'
+        self.assertEqual(rejected['status'], 'cancelled')
+        self.assertIs(rejected['transmitted'], False)
+        self.assertEqual(rejected['error'], reason)
+        events = [row for row in e.runtime['events']
+                  if row['kind'] == 'external_operation_not_authorized' and row['target'] == config['id']]
+        self.assertEqual([row['reason'] for row in events], [reason])
+        e._save()
+        stored = e.store.load()[2]
+        self.assertEqual(stored['external_operations'][config['id']], rejected)
+        # Storage assigns event_seq; preserve the event identity and exact
+        # rejection reason across that real publication.
+        self.assertEqual([(row['id'], row['reason']) for row in stored['events']
+                          if row['kind'] == 'external_operation_not_authorized' and row['target'] == config['id']],
+                         [(events[0]['id'], reason)])
+
+    def test_completed_solution_blocks_generic_academic_request_at_public_control(self):
+        from support.engine_lifecycle import solve_goal, THEOREMS
+        sim = lifecycle_sim()
+        config = http_grant(sim.engine, scope={'requires_academic': True})
+        kid = next(k for k, row in sim.instance['knowledge'].items() if row['title'] == THEOREMS[0])
+        solve_goal(sim.engine, kid)
+        self.assertIsNotNone(sim.engine._solution_basis())
+        self.assertEqual(sim.engine._academic_status()['status'], 'not_applicable')
+        self.assertEqual(sim.runtime['status'], 'completed')
+        sim.engine._save()
+        request = sim.control('external', config=config)
+        sim.engine.process_controls()
+        result = sim.engine.control_result(request['request_id'])
+        self.assertEqual(result['effect'], 'rejected')
+        self.assertIn('closed/completed', result['reason'])
+        self.assertNotIn(config['id'], sim.runtime['external_operations'])
+        self.assertEqual(sim.ports.http.requests, [])

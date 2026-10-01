@@ -1,0 +1,74 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_environment_validation.ToolchainRecordTests.test_fingerprint_does_not_see_content_changed_with_all_metadata_preserved",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_environment_foundation_validation.ToolchainFoundationRecordTests.test_foundation_fingerprint_does_not_see_content_changed_with_all_metadata_preserved"
+      ],
+      "note": "Original seven cases, synthetic-lean command and every assertion retained. Explicit observed identity replaces observe_identity patch; real worker on Jobs compiles/refuses, actual temp files and port clock replace validation/sleep/RACY_NS patches. Additional foundation wiring case observes identity and records/rerecords through actual setup/formal functions."
+    },
+    {
+      "legacy_id": "test_environment_validation.ToolchainRecordTests.test_content_check_passes_records_history_and_never_blocks_readers",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_environment_foundation_validation.ToolchainFoundationRecordTests.test_foundation_content_check_passes_records_history_and_never_blocks_readers"
+      ],
+      "note": "Original seven cases, synthetic-lean command and every assertion retained. Explicit observed identity replaces observe_identity patch; real worker on Jobs compiles/refuses, actual temp files and port clock replace validation/sleep/RACY_NS patches. Additional foundation wiring case observes identity and records/rerecords through actual setup/formal functions."
+    },
+    {
+      "legacy_id": "test_environment_validation.ToolchainRecordTests.test_rerecord_after_metadata_only_change_rebinds_each_instance_once",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_environment_foundation_validation.ToolchainFoundationRecordTests.test_foundation_rerecord_after_metadata_only_change_rebinds_each_instance_once"
+      ],
+      "note": "Original seven cases, synthetic-lean command and every assertion retained. Explicit observed identity replaces observe_identity patch; real worker on Jobs compiles/refuses, actual temp files and port clock replace validation/sleep/RACY_NS patches. Additional foundation wiring case observes identity and records/rerecords through actual setup/formal functions."
+    },
+    {
+      "legacy_id": "test_environment_validation.ToolchainRecordTests.test_rerecord_refuses_changed_content_identity_or_failed_compile",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_environment_foundation_validation.ToolchainFoundationRecordTests.test_foundation_rerecord_refuses_changed_content_identity_or_failed_compile"
+      ],
+      "note": "Original seven cases, synthetic-lean command and every assertion retained. Explicit observed identity replaces observe_identity patch; real worker on Jobs compiles/refuses, actual temp files and port clock replace validation/sleep/RACY_NS patches. Additional foundation wiring case observes identity and records/rerecords through actual setup/formal functions."
+    },
+    {
+      "legacy_id": "test_environment_validation.ToolchainRecordTests.test_install_records_once_and_never_appends_a_baseline",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_environment_foundation_validation.ToolchainFoundationRecordTests.test_foundation_install_records_once_and_never_appends_a_baseline"
+      ],
+      "note": "Original seven cases, synthetic-lean command and every assertion retained. Explicit observed identity replaces observe_identity patch; real worker on Jobs compiles/refuses, actual temp files and port clock replace validation/sleep/RACY_NS patches. Additional foundation wiring case observes identity and records/rerecords through actual setup/formal functions."
+    },
+    {
+      "legacy_id": "test_environment_validation.ToolchainRecordTests.test_baseline_waits_for_settled_fingerprints_and_refuses_a_changing_install",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_environment_foundation_validation.ToolchainFoundationRecordTests.test_foundation_baseline_waits_for_settled_fingerprints_and_refuses_a_changing_install"
+      ],
+      "note": "Original seven cases, synthetic-lean command and every assertion retained. Explicit observed identity replaces observe_identity patch; real worker on Jobs compiles/refuses, actual temp files and port clock replace validation/sleep/RACY_NS patches. Additional foundation wiring case observes identity and records/rerecords through actual setup/formal functions."
+    },
+    {
+      "legacy_id": "test_environment_validation.ToolchainRecordTests.test_recorded_summary_reports_the_representative_compile_duration",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_environment_foundation_validation.ToolchainFoundationRecordTests.test_foundation_recorded_summary_reports_the_representative_compile_duration"
+      ],
+      "note": "Original seven cases, synthetic-lean command and every assertion retained. Explicit observed identity replaces observe_identity patch; real worker on Jobs compiles/refuses, actual temp files and port clock replace validation/sleep/RACY_NS patches. Additional foundation wiring case observes identity and records/rerecords through actual setup/formal functions."
+    },
+    {
+      "legacy_id": "test_installation_discovery.ToolDiscoveryTests.test_periodic_installation_check_rehashes_no_unchanged_file",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_document_context.InstallationEditionTests.test_periodic_installation_check_rehashes_no_unchanged_file"
+      ]
+    },
+    {
+      "legacy_id": "test_installation_discovery.ToolDiscoveryTests.test_unchanged_installation_listing_reuses_the_hashed_edition",
+      "disposition": "moved",
+      "new_ids": [
+        "sim.test_planning_document_context.InstallationEditionTests.test_unchanged_installation_listing_reuses_the_hashed_edition"
+      ]
+    }
+  ]
+}

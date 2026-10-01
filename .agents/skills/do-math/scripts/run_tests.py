@@ -1,15 +1,13 @@
 """Sequential group-by-group unittest runner with owned, bounded Lean/resource workers.
 
-Legacy tests (``tests/test_*.py``) run in shards; new-system tests live in the
-tier folders under ``tests/`` and are chosen with ``--tier T0``..``T5``
-(docs/do-math/시험-재편-2026-09-29/설계.md 5). Tests are selected by ID or
-module (positional), by shard, by tier, or, when none is given, every legacy
-shard plus the in-process tiers; boundary and smoke tests run only when asked.
-Every selected test runs; there is no result cache. Shards and the isolation
-labels live in ``test_categories.py`` beside this runner; a legacy test module
-missing from ``SHARDS`` stops the run. The report states the number of open
-entries in ``tests/known_defects.json``. When and what to run is in
-``tests/시험-지침.md``.
+Tests live in tier folders under ``tests/`` and are selected by folder, module,
+class or method (positional), or by ``--tier T0``..``T5`` (설계 5).
+With no selection, the in-process folders run; boundary and smoke need an
+explicit selection. Every selected test runs; there is no result cache.
+``test_categories.py`` defines only isolation labels. Discovery rejects tests
+outside tier packages, missing packages and modules omitted by discovery.
+The report states the open entries in ``tests/known_defects.json``.
+When and what to run is in ``tests/시험-지침.md``.
 
 T0 adds to the structure checks the tests that ran the changed lines, by the
 selection index and its safety rules (``tests/support/selection.py``). T3 runs
@@ -52,13 +50,11 @@ import time
 import unittest
 import uuid
 
-from test_categories import SHARDS, isolation_for, shard_for, unregistered_modules
+from test_categories import isolation_for
 
 SCRIPTS = Path(__file__).resolve().parent
 TESTS = SCRIPTS / 'tests'
-# New-system tests live in these packages under tests/; the folder is the tier
-# group (docs/do-math/시험-재편-2026-09-29/설계.md 5.4). Legacy tests/test_*.py
-# modules keep their SHARDS until they are retired.
+# The folder determines the tier (설계 5.4); no module registration.
 FOLDERS = ('structure', 'unit', 'sim', 'flows', 'contracts', 'boundary', 'smoke')
 TIERS = {
     'T0': ('structure',),
@@ -69,13 +65,13 @@ TIERS = {
     'T4': ('boundary',),
     'T5': ('smoke',),
 }
-# Folders that run when no --tier/--shard/test ID narrows the selection. Boundary
+# Folders that run when no --tier/folder/test ID narrows the selection. Boundary
 # and smoke tests need real tools or model calls, so they run only when asked.
 DEFAULT_FOLDERS = TIERS['T3']
 
 
 def folder_of(test):
-    """The tier folder a test module lives in, or None for a legacy tests/test_*.py module."""
+    """The tier folder a test module lives in, or None for an invalid module."""
     head = type(test).__module__.split('.')[0]
     return head if head in FOLDERS else None
 
@@ -85,7 +81,7 @@ def select_tiers(tests, tiers):
     return [test for test in tests if folder_of(test) in folders]
 
 
-# A new-system module the timing record does not know yet is estimated at this per test.
+# A module the timing record does not know yet is estimated at this per test.
 UNKNOWN_TEST_SECONDS = 0.5
 TIMINGS = TESTS / '.timings.json'
 # A measured T3 runs 2-3x slower, unevenly by module; its times balance only measured runs (결함 D11).
@@ -114,7 +110,7 @@ def module_of(test):
 def budget_report(rows, tiers, seconds, budgets):
     """Tests over their folder's budget and the named tiers' run time against their budget (설계 5.2).
 
-    ``rows`` are report rows; legacy modules and fixture rows have no budget.
+    ``rows`` are report rows; fixture rows have no budget.
     Several tiers in one run are held to the largest of their budgets.
     """
     per_test = budgets['per_test_seconds']
@@ -134,13 +130,38 @@ def budget_tiers(tiers, store):
     return ['T3_full' if name == 'T3' and full else name for name in tiers]
 
 
-def group_of(test):
-    return folder_of(test) or shard_for(test)
+def test_modules(tests_dir):
+    """Inventory every test file before discovery, including files unittest would silently skip."""
+    root = Path(tests_dir)
+    missing = [folder for folder in FOLDERS if not (root / folder / '__init__.py').is_file()]
+    if missing:
+        raise ValueError('Missing test folder/package: ' + ', '.join(missing))
+    modules = set()
+    for path in sorted(root.rglob('test_*.py')):
+        relative = path.relative_to(root)
+        if len(relative.parts) < 2 or relative.parts[0] not in FOLDERS:
+            raise ValueError('Test outside tier folders: ' + relative.as_posix())
+        for package in relative.parents:
+            if package != Path('.') and not (root / package / '__init__.py').is_file():
+                raise ValueError('Missing test package: ' + package.as_posix())
+        modules.add('.'.join(relative.with_suffix('').parts))
+    return modules
 
 
 def discover(loader=None):
     loader = loader or unittest.TestLoader()
-    return list(flatten(loader.discover(str(TESTS), pattern='test_*.py', top_level_dir=str(TESTS))))
+    expected = test_modules(TESTS)
+    tests = list(flatten(loader.discover(str(TESTS), pattern='test_*.py', top_level_dir=str(TESTS))))
+    if loader.errors:
+        return tests  # the caller reports the original import errors
+    present = {module_of(test) for test in tests}
+    if expected != present:
+        raise ValueError('Test population mismatch. Missing: ' + ', '.join(sorted(expected - present))
+                         + '; unexpected: ' + ', '.join(sorted(present - expected)))
+    duplicates = sorted(identifier for identifier, count in Counter(test.id() for test in tests).items() if count > 1)
+    if duplicates:
+        raise ValueError('Duplicate test IDs: ' + ', '.join(duplicates))
+    return tests
 
 
 # do_math is imported on first use, not at module import: T3 starts coverage before any product import.
@@ -178,6 +199,7 @@ class TimedResult(unittest.TextTestResult):
         super().__init__(*args, **kwargs)
         self.directory, self.checkpoint, self.measurement = directory, checkpoint, measurement
         self.rows, self.starts, self.sequence = {}, {}, 0
+        self.module_total_seconds = {}
 
     def _progress(self, identifier, phase):
         if self.checkpoint:
@@ -256,13 +278,14 @@ class TimedResult(unittest.TextTestResult):
 
     def preserve(self, *, complete):
         report = {'complete': complete, 'successful': complete and self.wasSuccessful(),
-                  'tests_run': self.testsRun, 'rows': list(self.rows.values())}
+                  'tests_run': self.testsRun, 'rows': list(self.rows.values()),
+                  'module_total_seconds': dict(self.module_total_seconds)}
         _write_json(self.directory / 'result.json', report)
         return report
 
 
 class _ModuleSuites(unittest.TestSuite):
-    """A measured run: each test module runs as its own top-level suite (A29).
+    """Each test module runs as its own top-level suite, measured or not (A29).
 
     A module's setUpModule, setUpClass and their tear-downs then run inside its
     own suite, under its fixture label, so a T3 store can drop or keep one
@@ -286,15 +309,21 @@ class _ModuleSuites(unittest.TestSuite):
         for module, group in self.groups:
             if result.shouldStop:
                 break
-            self.measurement.module_started(module)
+            if self.measurement is not None:
+                self.measurement.module_started(module)
+            started = time.monotonic()
             unittest.TestSuite(group).run(result)
+            elapsed = time.monotonic() - started
             result._previousTestClass = None
+            result.module_total_seconds[module] = result.module_total_seconds.get(module, 0.0) + elapsed
+            if result.checkpoint:
+                result.preserve(complete=False)
         return result
 
 
 def _run_suite(tests, directory, *, checkpoint=False, measurement=None):
     directory.mkdir(parents=True, exist_ok=True)
-    suite = _ModuleSuites(tests, measurement) if measurement is not None else unittest.TestSuite(tests)
+    suite = _ModuleSuites(tests, measurement)
     result = unittest.TextTestRunner(verbosity=2, resultclass=lambda *a, **k: TimedResult(
         *a, directory=directory, checkpoint=checkpoint, measurement=measurement, **k)).run(suite)
     report = result.preserve(complete=True)
@@ -373,11 +402,11 @@ def _isolated(tests, directory, timeout, *, measure=False):
             job.resume()
             timeout_record = wait_for_worker(job, directory / 'progress.json', timeout)
             returncode = _exit_code(job)
-        report = _read_json(directory / 'result.json') or {'complete': False, 'successful': False, 'rows': []}
+        report = _read_json(directory / 'result.json') or {'complete': False, 'successful': False, 'rows': [], 'module_total_seconds': {}}
         report['returncode'] = returncode
         report['successful'] = report['successful'] and returncode == 0
     except Exception as error:
-        report = _read_json(directory / 'result.json') or {'rows': []}
+        report = _read_json(directory / 'result.json') or {'rows': [], 'module_total_seconds': {}}
         report.update(complete=False, successful=False, worker_error=f'{type(error).__name__}: {error}')
         timeout_record = None
     report.update(worker_seconds=time.monotonic() - started, directory=str(directory), requested=identifiers)
@@ -435,16 +464,15 @@ def _edition():
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('tests', nargs='*', help='test IDs or modules; default: every shard')
-    parser.add_argument('--shard', action='append', choices=tuple(SHARDS), help='legacy shard; repeat to combine')
-    parser.add_argument('--tier', action='append', choices=tuple(TIERS), help='new-system tier T0-T5; repeat to combine')
+    parser.add_argument('tests', nargs='*', help='folder, module, class or method IDs; default: in-process folders')
+    parser.add_argument('--tier', action='append', choices=tuple(TIERS), help='tier T0-T5; repeat to combine')
     parser.add_argument('--match', action='append', default=[], help='test-ID glob; repeat for alternatives')
     parser.add_argument('--list', action='store_true', help='discover and list without running tests')
     parser.add_argument('--timeout', type=float, default=300, help='seconds per isolated test/fixture phase (default: 300)')
     parser.add_argument('--output', type=Path, help='new or empty results directory; default: a unique temporary directory')
     parser.add_argument('--mutation-base', help='with --tier T3: extreme-mutate the functions changed since this commit')
     parser.add_argument('--jobs', type=int, default=1,
-                        help='run new-system in-process tests in this many worker processes, modules balanced by '
+                        help='run in-process tests in this many worker processes, modules balanced by '
                              'their last recorded time (default: 1); with T3 each worker measures and the runner '
                              'combines their data')
     parser.add_argument('--full', action='store_true',
@@ -465,11 +493,6 @@ def main(argv=None):
         parser.error('--full and --t3-store run with --tier T3')
     if args.jobs < 1:
         parser.error('--jobs is a positive count')
-    missing, stale = unregistered_modules(TESTS)
-    if missing or stale:
-        print('scripts/test_categories.py SHARDS is out of date. Unregistered: ' + (', '.join(missing) or '-')
-              + '. Listed but absent: ' + (', '.join(stale) or '-'), file=sys.stderr)
-        return 2
     before = _edition()
     started_run = time.monotonic()
     measurement = None
@@ -491,14 +514,17 @@ def main(argv=None):
         return code
 
     loader = unittest.TestLoader()
-    discovered = discover(loader)
+    try:
+        discovered = discover(loader)
+    except (ValueError, ImportError) as error:
+        print(str(error), file=sys.stderr)
+        return bail(2)
     if loader.errors:
         print('\n'.join(loader.errors), file=sys.stderr)
         return bail(2)
     selection = None
-    if args.tier or args.shard:
-        pool = select_tiers(discovered, tiers) + [
-            test for test in discovered if folder_of(test) is None and args.shard and shard_for(test) in args.shard]
+    if args.tier:
+        pool = select_tiers(discovered, tiers)
         if 'T0' in tiers:
             from do_math.layers import LAYERS
             from support.branch_gate import repository_root
@@ -509,7 +535,7 @@ def main(argv=None):
     elif args.tests:
         pool = discovered
     else:
-        pool = [test for test in discovered if folder_of(test) is None or folder_of(test) in DEFAULT_FOLDERS]
+        pool = [test for test in discovered if folder_of(test) in DEFAULT_FOLDERS]
     selected = [test for test in pool
                 if (not args.tests or any(test.id() == name or test.id().startswith(name + '.') for name in args.tests))
                 and (not args.match or any(fnmatch.fnmatchcase(test.id(), pattern) for pattern in args.match))]
@@ -524,8 +550,9 @@ def main(argv=None):
         return bail(2)
     if args.list:
         for test in selected:
-            print(group_of(test) + '\t' + test.id())
+            print(folder_of(test) + '\t' + test.id())
         return bail(0)
+    selected_folders = sorted({folder_of(test) for test in selected})
     store = None
     if measurement is not None:
         # Incremental T3 (설계 A29): the modules the store's measurement still holds for are not run again.
@@ -533,7 +560,7 @@ def main(argv=None):
         plan = store['plan']
         print(f"T3 store ({plan.mode}: {plan.reason}): measuring {len(plan.measure)} modules, "
               f"reusing {len(plan.reuse)}", flush=True)
-        selected = [test for test in selected if not (folder_of(test) and module_of(test) in plan.reuse)]
+        selected = [test for test in selected if module_of(test) not in plan.reuse]
     directory = args.output.resolve() if args.output else Path(tempfile.mkdtemp(prefix='do-math-tests-'))
     if directory.exists() and any(directory.iterdir()):
         bail(None)
@@ -545,59 +572,65 @@ def main(argv=None):
     print(f'Open known defects: {open_defects}', flush=True)
     if selection is not None:
         print(selection_summary(selection), flush=True)
-    reports, shard_seconds = [], {}
+    reports, group_seconds = [], {}
     if measurement is not None and not measurement.started:
         # Parallel T3: the workers measure; this measurement only combines their data.
         from support.branch_gate import Measurement, repository_root
         measurement = Measurement(repository_root(), data_file=directory / 'coverage.data')
     if measurement is not None and measurement.started:
-        measurement.begin([test.id() for shard in (*SHARDS, *FOLDERS) for test in selected
-                           if group_of(test) == shard and isolation_for(test) is None])
+        measurement.begin([test.id() for group in FOLDERS for test in selected
+                           if folder_of(test) == group and isolation_for(test) is None])
     parallel = args.jobs > 1
     if parallel:
-        workers = _run_parallel([test for test in selected if folder_of(test) and isolation_for(test) is None],
-                                directory, args.jobs, args.timeout, shard_seconds, measure=measurement is not None)
+        workers = _run_parallel([test for test in selected if isolation_for(test) is None],
+                                directory, args.jobs, args.timeout, group_seconds, measure=measurement is not None)
         reports += workers
         if measurement is not None:
             measurement.missing_workers = [str(path) for path in
                                            measurement.merge([report['directory'] for report in workers])]
-    for shard in (*SHARDS, *FOLDERS):
-        tests = [test for test in selected if group_of(test) == shard]
+    for group in FOLDERS:
+        tests = [test for test in selected if folder_of(test) == group]
         if not tests:
             continue
         started = time.monotonic()
-        print(f'[{shard}] {len(tests)} tests', flush=True)
-        in_process = [test for test in tests if isolation_for(test) is None and not (parallel and shard in FOLDERS)]
+        print(f'[{group}] {len(tests)} tests', flush=True)
+        in_process = [test for test in tests if isolation_for(test) is None and not parallel]
         if in_process:
-            reports.append({'shard': shard, **_run_suite(
-                in_process, directory / shard, measurement=measurement if measurement and measurement.started else None)})
+            reports.append({'group': group, **_run_suite(
+                in_process, directory / group, measurement=measurement if measurement and measurement.started else None)})
         classes = defaultdict(list)
         for test in tests:
             if isolation_for(test) is not None:
                 classes[type(test)].append(test)
         for index, members in enumerate(classes.values()):
             print('  isolated: ' + members[0].id().rsplit('.', 1)[0], flush=True)
-            report = _isolated(members, directory / f'{shard}-isolated-{index:03}', args.timeout)
+            report = _isolated(members, directory / f'{group}-isolated-{index:03}', args.timeout)
             print('  ' + str(dict(Counter(row['outcome'] for row in report['rows'] if not row.get('fixture')))), flush=True)
-            reports.append({'shard': shard, **report})
-        shard_seconds[shard] = round(time.monotonic() - started, 1)
-        _write_json(directory / 'report.json', {'complete': False, 'shard_seconds': shard_seconds, 'reports': reports})
+            reports.append({'group': group, **report})
+        group_seconds[group] = round(time.monotonic() - started, 1)
+        _write_json(directory / 'report.json', {'complete': False, 'group_seconds': group_seconds, 'reports': reports})
     after = _edition()
     changed = sorted(path for path in before.keys() | after.keys() if before.get(path) != after.get(path))
     rows = [row for report in reports for row in report['rows']]
-    _record_timings(rows, measured=measurement is not None)
+    module_totals = defaultdict(float)
+    for report in reports:
+        for module, seconds in report['module_total_seconds'].items():
+            module_totals[module] += seconds
+    if not changed:
+        _record_timings(module_totals, measured=measurement is not None)
     complete = all(report['complete'] for report in reports)
     t3 = _finish_t3(measurement, directory, selected, args, complete and not changed, store, rows) if measurement else {}
     # T3's whole run, analysis and mutation included, is held to the T3 budget (설계 5.1, 5.2).
-    total = round(time.monotonic() - started_run if measurement else sum(shard_seconds.values()), 1)
+    total = round(time.monotonic() - started_run if measurement else sum(group_seconds.values()), 1)
     budget = budget_report(rows, budget_tiers(args.tier or [], store), total, json.loads((TESTS / 'budgets.json').read_text(encoding='utf-8')))
     result = {'open_known_defects': open_defects, 'budget': budget, **t3,
         't0_selection': selection.report() if selection is not None else None,
         'complete': all(report['complete'] for report in reports),
         'successful': not changed and all(report['successful'] for report in reports),
         'selected': [test.id() for test in selected], 'discovered': len(discovered),
-        'shards': sorted(args.shard or []), 'tiers': sorted(args.tier or []), 'tests': args.tests,
-        'shard_seconds': shard_seconds, 'total_seconds': total,
+        'folders': selected_folders, 'tiers': sorted(args.tier or []), 'tests': args.tests,
+        'group_seconds': group_seconds, 'total_seconds': total,
+        'module_total_seconds': dict(module_totals),
         'counts': dict(Counter(row['outcome'] for row in rows if not row.get('fixture'))),
         'fixture_counts': dict(Counter(row['outcome'] for row in rows if row.get('fixture'))),
         'source_sha256': before, 'changed_during_run': changed, 'reports': reports,
@@ -612,7 +645,7 @@ def main(argv=None):
              + (' (over)' if tier['over'] else '') if tier else ''), flush=True)
     for row in budget['over_budget']:
         print(f"  {row['seconds']:9.3f}s > {row['budget_seconds']}s {row['id']}")
-    print(json.dumps({name: result[name] for name in ('complete', 'successful', 'counts', 'shard_seconds', 'total_seconds')},
+    print(json.dumps({name: result[name] for name in ('complete', 'successful', 'counts', 'group_seconds', 'total_seconds')},
                      ensure_ascii=False))
     for row in result['slowest']:
         print(f"{row['seconds']:9.3f}s {row['outcome']:18} {row['id']}")
@@ -622,8 +655,8 @@ def main(argv=None):
     return 0 if result['successful'] and t3.get('passed', True) else 1
 
 
-def _run_parallel(tests, directory, jobs, timeout, shard_seconds, *, measure=False):
-    """New-system in-process tests in ``jobs`` worker processes, whole modules per worker (설계 5.4).
+def _run_parallel(tests, directory, jobs, timeout, group_seconds, *, measure=False):
+    """In-process tests in ``jobs`` worker processes, whole modules per worker (설계 5.4).
 
     A module stays in one process because its ``setUpModule`` and the Sim
     template belong to that process. Groups are balanced by the modules' last
@@ -644,32 +677,39 @@ def _run_parallel(tests, directory, jobs, timeout, shard_seconds, *, measure=Fal
         futures = [pool.submit(_isolated, [test for module in group for test in by_module[module]],
                                directory / f'parallel-{index}', timeout, measure=measure)
                    for index, group in enumerate(groups)]
-        reports = [{'shard': f'parallel-{index}', **future.result()} for index, future in enumerate(futures)]
+        reports = [{'group': f'parallel-{index}', **future.result()} for index, future in enumerate(futures)]
     for report in reports:
-        print(f"  {report['shard']}: " + str(dict(Counter(row['outcome'] for row in report['rows'] if not row.get('fixture'))))
+        print(f"  {report['group']}: " + str(dict(Counter(row['outcome'] for row in report['rows'] if not row.get('fixture'))))
               + f" in {round(report['worker_seconds'], 1)}s", flush=True)
-    shard_seconds['parallel'] = round(time.monotonic() - started, 1)
+    group_seconds['parallel'] = round(time.monotonic() - started, 1)
     return reports
 
 
 def recorded_seconds(measured):
-    """Module seconds for a parallel balance: the T2 record, overridden by the T3 record when measuring."""
-    recorded = _read_json(TIMINGS) or {}
-    return {**recorded, **(_read_json(TIMINGS_T3) or {})} if measured else recorded
+    """Read only this mode's fixture-inclusive module costs; invalidate other cost bases.
 
-
-def _record_timings(rows, measured=False):
-    """Keep each new-system module's seconds for the next parallel run's balance; a partial run updates its modules.
-
-    A measured run keeps them in its own record, so T2's balance never sees measured times.
+    The flat module map remains consumable by mutation's module lookups. The
+    non-module marker prevents old body-only sums from becoming module totals.
+    T3 never substitutes an unmeasured T2 cost for a missing measured cost.
     """
-    seconds = defaultdict(float)
-    for row in rows:
-        if not row.get('fixture') and row['id'].split('.', 1)[0] in FOLDERS:
-            seconds[row['id'].rsplit('.', 2)[0]] += row['seconds']
+    recorded = _read_json(TIMINGS_T3 if measured else TIMINGS) or {}
+    if recorded.pop('_cost_basis', None) != 'module_total_seconds':
+        return {}
+    return recorded
+
+
+def _record_timings(module_total_seconds, measured=False):
+    """Keep observed, completed module-suite costs, including setup and teardown.
+
+    Partial selections update only their observed modules; absent or interrupted
+    suites are never filled from test rows. Repeated module suites are summed by
+    the caller. T2 and measured T3 retain separate cost populations.
+    """
+    seconds = {module: value for module, value in module_total_seconds.items()
+               if module.split('.', 1)[0] in FOLDERS}
     if seconds:
         path = TIMINGS_T3 if measured else TIMINGS
-        _write_json(path, {**(_read_json(path) or {}), **{m: round(v, 3) for m, v in seconds.items()}})
+        _write_json(path, {'_cost_basis': 'module_total_seconds', **recorded_seconds(measured), **seconds})
 
 
 def selection_summary(selection):

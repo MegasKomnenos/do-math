@@ -13,13 +13,12 @@ from pathlib import Path
 
 from . import submission
 from .submission import producer_check
-from .system_clock import SystemClock
 
 
-def request_control(workspace, draft, *, kind, wait_seconds, binding=None, clock=None):
+def request_control(workspace, draft, *, kind, wait_seconds, binding=None, clock):
     """Send one draft locator; central capture owns validation and immutable receipt bytes.
 
-    ``clock`` makes the request ID (default: this process's system clock).
+    ``clock`` is the entry point's clock and makes the request ID.
     """
     from .control_server import wait_receipt
     from .control_transport import ControlTransport
@@ -28,14 +27,19 @@ def request_control(workspace, draft, *, kind, wait_seconds, binding=None, clock
                                                           binding=binding)
     # A locator is mutable; a corrected draft at the same path is a new call.
     # Query the returned request_id to resume waiting on the existing call.
-    request_id = ("preview-" if kind == SUBMISSION_PREVIEW else "submit-") + (clock or SystemClock()).new_id("RQ")
+    request_id = ("preview-" if kind == SUBMISSION_PREVIEW else "submit-") + clock.new_id("RQ")
     delivery = ControlTransport.worker_submit(binding, request_id=request_id, kind=kind, payload=payload)
     if delivery["state"] == "closed":
         return delivery
-    return wait_receipt(binding, request_id, wait_seconds) or delivery
+    return wait_receipt(binding, request_id, wait_seconds, clock=clock) or delivery
 
 
-def main(argv=None):
+def main(argv=None, *, ports=None, environment=None):
+    import os
+    from .wiring import real_ports
+    environment = dict(os.environ) if environment is None else environment
+    ports = real_ports(environment=environment) if ports is None else ports
+    clock, jobs, backend = ports.clock, ports.jobs, ports.git_backend
     parser = argparse.ArgumentParser(description=submission.__doc__)
     parser.add_argument("--output", type=Path)
     mode = parser.add_mutually_exclusive_group()
@@ -48,7 +52,7 @@ def main(argv=None):
     if args.new_knowledge_id:
         if args.output is not None or args.wait_seconds is not None:
             parser.error("--new-knowledge-id does not take output or wait arguments")
-        print(json.dumps({"replacement_id": SystemClock().new_id("KN")}))
+        print(json.dumps({"replacement_id": ports.clock.new_id("KN")}))
         return 0
     if args.output is None:
         parser.error("--output is required for checking, preview and submission")
@@ -58,15 +62,15 @@ def main(argv=None):
     workspace = Path.cwd().resolve()
     if args.submit:
         try:
-            delivery = request_control(workspace, args.output, kind=SUBMIT_INTENT, wait_seconds=args.wait_seconds)
+            delivery = request_control(workspace, args.output, kind=SUBMIT_INTENT, wait_seconds=args.wait_seconds, clock=clock)
         except (ValueError, TypeError, KeyError, OSError) as error:
             delivery = {"state": "rejected", "reason": str(error)}
         print(json.dumps({"delivery": delivery}, ensure_ascii=False))
         return 0 if delivery.get("state") == "accepted" else 1
-    result = producer_check(workspace, args.output)
+    result = producer_check(workspace, args.output, clock=clock)
     if args.preview:
         try:
-            delivery = request_control(workspace, args.output, kind=SUBMISSION_PREVIEW, wait_seconds=args.wait_seconds)
+            delivery = request_control(workspace, args.output, kind=SUBMISSION_PREVIEW, wait_seconds=args.wait_seconds, clock=clock)
         except (ValueError, TypeError, KeyError, OSError) as error:
             delivery = {"state": "rejected", "reason": str(error)}
         print(json.dumps({"check": result, "delivery": delivery}, ensure_ascii=False))

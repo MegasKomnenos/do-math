@@ -1,17 +1,20 @@
 """Currentness rules that need no engine: live counter rules (``observations``) and changed operational premises
 (``operational_dispositions``), layers 1 and 2.
 """
+from support.observation_clock import scripted_clock
 from pathlib import Path
 import tempfile
 import unittest
 
 from do_math.observations import ObservationTracker, validate_rules
 from do_math.operational_dispositions import basis_premise_changes
-from research_fixtures import observe, write_checkpoint
+from support.observation_inputs import observe, write_checkpoint
 
 
 class LiveRuleTests(unittest.TestCase):
     def test_live_rules_repeat_exact_thresholds_and_preserve_last_valid_update(self):
+        from support.entry import entry
+        _entry = entry()
         folder = Path(self.enterContext(tempfile.TemporaryDirectory())) / 'observed'
         folder.mkdir()
         clock = [0]
@@ -19,7 +22,7 @@ class LiveRuleTests(unittest.TestCase):
                   'basis': {'source': 'checkpoint', 'unit': 'count'}, 'threshold': 2,
                   'repeat_interval': 2, 'required_evidence': ['EV-iteration']}]
         tracker = ObservationTracker('EX', folder, {
-            'observation_rules': rules, 'self_check_response_window_seconds': 60}, clock=lambda: clock[0])
+            'observation_rules': rules, 'self_check_response_window_seconds': 60},  time_port=scripted_clock(lambda: clock[0]))
         write_checkpoint(folder, counters={'attempts': 2})
         first = next(row for row in observe(tracker, {'type': 'tick'}) if row['kind'] == 'self_check_due')
         self.assertEqual(first['due'][0]['boundary'], 2)

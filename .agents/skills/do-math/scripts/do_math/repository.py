@@ -199,7 +199,7 @@ class ResearchRepository:
     """Read and publish the record-family files of the installed state contract through one Git CAS."""
 
     def __init__(self, repository: Path, instance_id: str, *, contract: StateContract | None = None,
-                 backend=None, clock=None) -> None:
+                 backend, clock) -> None:
         self._store = GitStateStore(repository, instance_id, backend=backend, clock=clock)
         self.contract = contract or default_state_contract()
 

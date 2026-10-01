@@ -17,10 +17,12 @@ import unittest
 from do_math.canonical import canonical_json
 from support.engine_gates import initialized_sim
 from support.engine_shapes import BAD_PAYLOADS, inbox
+from test_categories import test_group
 
 ENTRYPOINT = Path(__file__).resolve().parents[2] / 'do_math.py'
 
 
+@test_group('resource')
 class CliControlShapeTests(unittest.TestCase):
     def test_cli_nested_decision_errors_are_input_errors_without_pending_requests(self):
         sim = initialized_sim()

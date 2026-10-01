@@ -36,8 +36,8 @@ class RepetitionLineageTests(unittest.TestCase):
         self.assertEqual(engine.runtime['executions'][check_execution]['action']['stage'], 'check')
         revisions.bind_repetition_bases(engine.instance, engine.runtime, rework)
         engine.runtime['executions']['EX-rework'] = {'role': rework['role'], 'action': deepcopy(rework)}
-        revisions.record_import_rework(engine.instance, engine.runtime, rework, 'EX-rework')
-        revisions.record_import_rework(engine.instance, engine.runtime, rework, 'EX-rework')
+        revisions.record_import_rework(engine.instance, engine.runtime, rework, 'EX-rework', clock=sim.ports.clock)
+        revisions.record_import_rework(engine.instance, engine.runtime, rework, 'EX-rework', clock=sim.ports.clock)
         counts = task_contracts.repetition_lineages(engine.runtime)
         self.assertEqual(counts['import_rework']['count'], 1)
         retry = {**deepcopy(rework), 'id': 'AC-next', 'previous_import_id': 'IM-next'}
@@ -50,7 +50,7 @@ class RepetitionLineageTests(unittest.TestCase):
         later = deepcopy(rework)
         revisions.record_repetition(engine.instance, engine.runtime, lineage='import_rework',
             lineage_id=rework['repetition_bases']['import_rework'], event_ref='EX-rework-2',
-            outcome='reauthored', owner='ai', reason='Second registered reauthor')
+            outcome='reauthored', owner='ai', reason='Second registered reauthor', clock=sim.ports.clock)
         self.assertTrue(revisions.action_repetition_waits(engine.instance, engine.runtime, later))
         self.assertFalse(revisions.action_repetition_waits(engine.instance, engine.runtime, check))
         other = {**later, 'target': 'UC-unrelated'}

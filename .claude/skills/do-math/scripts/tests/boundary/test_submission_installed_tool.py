@@ -17,8 +17,9 @@ import zipfile
 
 from do_math import contracts, submission
 from do_math.canonical import canonical_json
-from record_fixtures import research_work_context, two_observation_output
+from support.record_builders import research_work_context, two_observation_output
 from support.fakes.clock import FakeClock
+from test_categories import test_group
 
 
 def install(workspace, context, schema):
@@ -31,6 +32,7 @@ def run_tool(workspace, *arguments, command=None):
                           cwd=workspace, capture_output=True, text=True, encoding="utf-8", timeout=60)
 
 
+@test_group('resource')
 class InstalledCheckerTests(unittest.TestCase):
     def test_installed_checker_uses_latest_schema_bytes_and_prior_check(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -86,6 +88,7 @@ class InstalledCheckerTests(unittest.TestCase):
             self.assertIn("schema", json.loads(records[0].read_bytes())["not_checked"])
 
 
+@test_group('resource')
 class LivePreviewConnections(unittest.TestCase):
     def test_installed_preview_uses_receiver_domain_callback_without_publication(self):
         """About 6 s: this process's Sim template build, then the child interpreter's start and its one preview request.
@@ -139,3 +142,25 @@ class LivePreviewConnections(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@test_group('resource')
+class PreparationCacheTests(unittest.TestCase):
+    def copied_process(self, mode):
+        from support.storage_finish_installation import copy_installation
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            copy_installation(root / 'installation')
+            worker = Path(__file__).resolve().parents[1] / 'support/storage_finish_preparation.py'
+            result = subprocess.run([sys.executable, '-I', '-B', str(worker), str(root), mode],
+                                    capture_output=True, text=True, encoding='utf-8', timeout=60)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            return json.loads(result.stdout)
+
+    def test_same_code_reuses_compression_but_each_workspace_keeps_its_own_context(self):
+        self.assertEqual(self.copied_process('contexts'),
+                         {'zip_calls': 1, 'compression_count': 1, 'contexts': ['first', 'second']})
+
+    def test_unchanged_code_is_not_reread_and_an_edit_ships_new_bytes(self):
+        self.assertEqual(self.copied_process('edits'),
+                         {'hash_rereads': 0, 'zip_calls': 0, 'code_opens': 0, 'edited_bytes': 'edition = 2\n'})

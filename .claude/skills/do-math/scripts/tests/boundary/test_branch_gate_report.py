@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from test_categories import test_group
 
 TESTS = Path(__file__).resolve().parents[1]
 
@@ -28,6 +29,7 @@ print(sorted(name for name in report['files'] if 'removed_probe' in name))
 '''
 
 
+@test_group('resource')
 class MissingSourceTests(unittest.TestCase):
     def test_a_measured_file_without_source_is_left_out_of_the_report_instead_of_failing_it(self):
         directory = self.enterContext(tempfile.TemporaryDirectory())

@@ -27,8 +27,8 @@ from pathlib import Path
 from do_math.configuration import DEFAULT_CONFIG
 from do_math.execution_profiles import build_profiles
 from do_math.session_slots import SessionSlots
-from provider_fixtures import PROVIDER_MODEL
-from research_fixtures import current_state
+from support.provider_inputs import PROVIDER_MODEL
+from support.state_builders import current_state
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.provider_runs import ProviderJobs, fake_ports
@@ -48,11 +48,13 @@ def engine_over(root, instance=None, runtime=None, *, config=None):
     ``_collect_submitted_result``), replacing the old stateless ``bare_engine``.
     A test whose method reads more starts from ``Sim`` instead.
     """
+    from support.entry import entry
+    _entry = entry()
     root = Path(root)
     clock, backend = FakeClock(), InProcessGit()
     config = deepcopy(DEFAULT_CONFIG) if config is None else config
     store = record_store(root / 'repository', backend=backend, clock=clock)
-    state = current_state({'id': INSTANCE_ID, 'config': config, **build_profiles(config), **(instance or {})},
+    state = current_state({'id': INSTANCE_ID, 'config': config, **build_profiles(config, host=_entry.ports.host), **(instance or {})},
                           {'status': 'ready', 'executions': {}, 'reservations': {}, 'provider_waits': {},
                            'queue': [], **(runtime or {})})
     engine, _ = engine_on(store, *state, workspace=root / 'work',
@@ -62,11 +64,13 @@ def engine_over(root, instance=None, runtime=None, *, config=None):
 
 def gate_store(root, *, clock, backend):
     """A store under ``root`` holding one ready instance whose tiers all use ``PROVIDER_MODEL``."""
+    from support.entry import entry
+    _entry = entry()
     config = {**deepcopy(DEFAULT_CONFIG), 'scholarly_enabled': False,
               'tier_models': {tier: PROVIDER_MODEL for tier in ('low', 'medium', 'high')},
               'session_limits': {'work': {PROVIDER_MODEL: 3}}}
     instance, runtime = current_state(
-        {'id': INSTANCE_ID, 'workspace': str(Path(root) / 'work'), 'config': config, **build_profiles(config)},
+        {'id': INSTANCE_ID, 'workspace': str(Path(root) / 'work'), 'config': config, **build_profiles(config, host=_entry.ports.host)},
         {'status': 'ready', 'executions': {}, 'activities': {}, 'reservations': {}, 'provider_waits': {}})
     store = record_store(Path(root) / 'repository', backend=backend, clock=clock)
     store.initialize(instance, runtime)
@@ -75,9 +79,11 @@ def gate_store(root, *, clock, backend):
 
 def transact(store, operation, *, clock, jobs):
     """Load under the writer lock, apply ``operation(slots, instance, runtime)`` and publish; returns its result."""
+    from support.entry import entry
+    _entry = entry()
     with store.writer_lock():
         head, instance, runtime = store.load()
-        slots = SessionSlots(runtime, instance, clock=clock, jobs=jobs)
+        slots = SessionSlots(runtime, instance, clock=clock, jobs=jobs, host_id=_entry.host_id)
         result = operation(slots, instance, runtime)
         store.save_with_state(head, instance, runtime)
         return result

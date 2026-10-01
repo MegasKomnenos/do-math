@@ -15,8 +15,8 @@ from do_math.configuration import DEFAULT_CONFIG
 from do_math.execution_profiles import TIERS, build_profiles
 from do_math.scheduler import SchedulerMixin
 from do_math.session_slots import SessionSlots
-from provider_fixtures import PROVIDER_LIMIT_FAILURE, admit
-from research_fixtures import current_state
+from support.provider_inputs import PROVIDER_LIMIT_FAILURE, admit
+from support.state_builders import current_state
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.provider_probes import ObservedCalls
@@ -29,11 +29,13 @@ TIME = "2026-09-20T00:00:00+00:00"
 class EngineCase(unittest.TestCase):
     def engine(self, config, runtime=None):
         """The real engine over an initialized state with ``config`` and its profiles, and its Jobs fake."""
+        from support.entry import entry
+        _entry = entry()
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         clock, backend = FakeClock(), InProcessGit()
         jobs = ProviderJobs(clock=clock)
         store = record_store(root / 'repository', backend=backend, clock=clock)
-        instance, state = current_state({'id': INSTANCE_ID, 'config': config, **build_profiles(config)},
+        instance, state = current_state({'id': INSTANCE_ID, 'config': config, **build_profiles(config, host=_entry.ports.host)},
                                         {'executions': {}, 'reservations': {}, 'provider_waits': {}, 'queue': [],
                                          'status': 'ready', **(runtime or {})})
         engine, _ = engine_on(store, instance, state, workspace=root / 'work', ports=fake_ports(clock, backend, jobs))

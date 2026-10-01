@@ -14,12 +14,14 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from test_categories import test_group
 
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 PYTHONW = Path(sys.executable).with_name('pythonw.exe')
 
 
+@test_group('resource')
 @unittest.skipUnless(os.name == 'nt' and PYTHONW.is_file(), 'Windows pythonw required')
 class SchedulePythonwTests(unittest.TestCase):
     def run_adapter(self, root, adapter):
@@ -70,6 +72,7 @@ function Register-ScheduledTask { Add-Content -LiteralPath $Registrations -Value
             self.assertFalse(registrations.exists())
 
 
+@test_group('resource')
 @unittest.skipUnless(os.name == 'nt', 'Windows Task Scheduler required')
 class ScheduleLifetimeTests(unittest.TestCase):
     def test_exported_engine_is_unlimited_and_operator_remains_bounded(self):

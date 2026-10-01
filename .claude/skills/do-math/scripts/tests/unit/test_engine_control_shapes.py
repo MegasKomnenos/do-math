@@ -19,8 +19,8 @@ from do_math.governance import authorize
 from do_math.knowledge_engine import KnowledgeEngineMixin
 from do_math.trust_validation import environment_errors
 from do_math.values import parse_utc
-from record_fixtures import checked_import
-from research_fixtures import trust_environment, trust_fixture
+from support.record_builders import checked_import
+from support.trust_inputs import trust_environment, trust_fixture
 
 NOT_TIME = '^time must be a nonempty ISO timestamp string$'
 
@@ -38,6 +38,8 @@ class DomainShapeTests(unittest.TestCase):
                     validate_control_payload('decision', '', {'change': {'kind': 'initialization', key: ['yes']}})
 
     def test_input_carries_no_approval_and_domain_approvals_are_validated(self):
+        from support.entry import entry
+        _entry = entry()
         instance, runtime, bundle, _ = checked_import()
         with self.assertRaisesRegex(ValueError, exactly('config: invalid additionalProperties (expected False)')):
             validate_control_payload('input', 'text', {'import_approvals': {}})
@@ -46,7 +48,7 @@ class DomainShapeTests(unittest.TestCase):
                               (True, 'import_approvals/U: invalid type (expected object)'),
                               ({'actor': 'user', 'source_ref': []}, 'import_approvals/U/source_ref: invalid type (expected string)')):
             with self.subTest(value=value), self.assertRaisesRegex(ValueError, exactly(reason)):
-                governance.apply_import(instance, runtime, bundle['id'], approvals={'U': value})
+                governance.apply_import(instance, runtime, bundle['id'], approvals={'U': value}, clock=_entry.ports.clock)
 
     def test_shape_check_preserves_partial_configuration_and_nullable_candidate_fields(self):
         self.assertIsNone(validate_control_payload('configure', '', {'tier_models': {

@@ -34,9 +34,9 @@ from copy import deepcopy
 import unittest
 
 from do_math.governance import governance_view
-from purpose_fixtures import requirement
-from research_fixtures import charter_change
-from state_fixtures import complete_academic_task
+from support.purpose_answers import requirement
+from support.state_builders import charter_change
+from support.academic_inputs import complete_academic_task
 from support.academic_scenes import decide_requirements, solve_with, theorem_sim
 from support.engine_lifecycle import applied
 from support.known_defects import known_defect
@@ -190,9 +190,13 @@ class AcademicRequirementChangeTests(unittest.TestCase):
         assert_removal_preserves_unresolved_external_rejection(self, by_public_control)
 
     def test_completed_instance_rejects_requirement_changes(self):
+        from do_math.task_scope import apply_task_assessments
+        from support.provider_probes import ObservedCalls
         sim = solved(self)
         engine = sim.engine
-        complete_academic_task(engine, academic_tasks(engine)[0], engine._solution_basis())
+        with ObservedCalls(assessment=apply_task_assessments) as observed:
+            complete_academic_task(engine, academic_tasks(engine)[0], engine._solution_basis())
+        self.assertIs(observed.captured('assessment')[0]['clock'], engine.ports.clock)
         self.assertEqual(engine.runtime['status'], 'completed')
         before = deepcopy(engine.runtime['tasks'])
         request = sim.control('decision', text='Change the approved academic requirements', config={
