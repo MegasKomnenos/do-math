@@ -1,16 +1,13 @@
-"""Lean completes without execution budgets; cancellation and evidence remain observable."""
+"""Actual Lean evidence and Windows Job completion, moved from test_formal_runtime."""
 import json
 from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from test_categories import test_group as category
 from do_math import formal, lean_evidence
 from provider_fixtures import actual_command
-
+from test_categories import test_group as category
 
 def _dependency_rows(source, declarations):
     """The dependency body rows of the central check file, which the verifier reduces to hashes."""
@@ -22,7 +19,7 @@ def _dependency_rows(source, declarations):
     if code != 0:
         raise AssertionError(stdout + stderr)
     return [json.loads(line.removeprefix('__DO_MATH_DEPENDENCY__'))
-            for line in stdout.splitlines() if line.startswith('__DO_MATH_DEPENDENCY__')]
+        for line in stdout.splitlines() if line.startswith('__DO_MATH_DEPENDENCY__')]
 
 
 class FormalRuntimeTests(unittest.TestCase):
@@ -75,29 +72,6 @@ class FormalRuntimeTests(unittest.TestCase):
             self.assertNotIn('\n', row['evidence']['type'], row['name'])
             self.assertNotIn('\n', row['evidence']['value'] or '', row['name'])
 
-    def test_uncapped_lean_admission_with_an_adopted_host_budget(self):
-        from do_math import execution_profiles as profiles
-        from do_math.session_slots import SessionSlots
-        from provider_fixtures import host_capacity_fixture
-        from provider_fixtures import PROFILE_CONFIG
-        _, _, constraint = host_capacity_fixture()
-        bare = profiles.build_profiles(PROFILE_CONFIG)
-        demands = {p['role']: {'jobs': 1, 'memory_bytes': 128*1024**2, 'cpu_rate_basis_points': 1000}
-                   for p in bare['execution_profiles'].values() if p['role'] in profiles.HOST_ROLES}
-        instance = profiles.build_profiles({**PROFILE_CONFIG, 'lean_command': [sys.executable],
-            'host_resources': {'constraint': constraint, 'demands_by_role': demands}})
-        profile = next(p for p in instance['execution_profiles'].values() if p['role'] == 'formal_check')
-        self.assertIsNone(profiles.job_resource_limits(profile))
-        invocation = profiles.machine_invocation(profile,
-            trust_environment={'toolchain': {'configured_command': [sys.executable]}})
-        self.assertNotIn("timeout_seconds", invocation)
-        self.assertNotIn('resource_limits', invocation)
-        runtime = {'executions': {}, 'reservations': {}}
-        execution = {'id': 'EX-unlimited', 'role': 'formal_check', 'status': 'queued'}
-        self.assertTrue(SessionSlots(runtime, instance).acquire(execution['id'],
-            profile=profile, execution=execution))
-        self.assertEqual(runtime['reservations'], {})
-
     @category('resource')
     def test_output_larger_than_the_discarded_cap_is_preserved(self):
         count = 33 * 1024 * 1024
@@ -107,6 +81,7 @@ class FormalRuntimeTests(unittest.TestCase):
         self.assertEqual(result[0], 0)
         self.assertEqual(len(result[1]), count)
 
+    @category('resource')
     def test_formal_job_completes_without_deadline(self):
         with tempfile.TemporaryDirectory() as directory:
             result = formal._job_run([sys.executable, '-c',
@@ -114,21 +89,9 @@ class FormalRuntimeTests(unittest.TestCase):
         self.assertEqual(result[0], 0)
         self.assertEqual(result[1].strip(), 'completed')
 
-    def test_formal_verification_does_not_apply_memory_or_cpu_caps(self):
-        with tempfile.TemporaryDirectory() as directory, \
-                patch.object(formal, 'inspect_toolchain', return_value={}), \
-                patch.object(formal, '_job_run', return_value=(1, '', 'fixture', False)) as run:
-            formal.verify_lean(source='', declarations=['good'], workspace=Path(directory),
-                lean_command=[sys.executable], )
-        self.assertIsNone(run.call_args.kwargs.get('resource_limits'))
-
     @category('lean')
     def test_common_dependency_bodies_are_emitted_once(self):
         rows = _dependency_rows('theorem first : True := True.intro\ntheorem second : True := True.intro',
                                 ['first', 'second'])
         self.assertEqual({row['name'] for row in rows}, {'True', 'True.intro'})
         self.assertEqual(len(rows), 2)
-
-
-if __name__ == '__main__':
-    unittest.main()

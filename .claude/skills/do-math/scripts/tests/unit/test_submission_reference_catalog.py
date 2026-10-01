@@ -1,11 +1,9 @@
 """Reference hints are projections of visibility, never additional authority."""
 from pathlib import Path
-import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from support.provider_probes import ObservedCalls
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from do_math.submission import reference_catalog, reported_references, validate_reference
 
 
@@ -19,14 +17,14 @@ class CatalogTests(unittest.TestCase):
                        "reference_catalog": [{"path": "invented"}],
                        "proposal": {"valid": {}},
                        "other": [{"ref": "proposal:missing"}]}
-            with patch.object(submission, 'supplied_locators', wraps=submission.supplied_locators) as locators:
+            with ObservedCalls(locators=submission.supplied_locators) as observed:
                 values = {row['value'] for row in reference_catalog(context, root)}
-                self.assertEqual(locators.call_count, 1)
+                self.assertEqual(observed.count('locators'), 1)
             self.assertTrue(set(paths).issubset(values))
             self.assertNotIn('invented', values)
             self.assertNotIn('proposal:missing', values)
             context['manifest']['files'].pop()
-            with self.assertRaises(ValueError):
+            with self.assertRaisesRegex(ValueError, "reference must identify supplied input, a record of the input snapshot or a preserved workspace file"):
                 validate_reference(paths[-1], context, root)
 
     def test_current_aliases_and_historical_bytes_remain_distinct(self):
@@ -50,7 +48,7 @@ class CatalogTests(unittest.TestCase):
                 "S", "runtime/artifacts/old/result.json"]}, {}, context)
             self.assertEqual(refs, ["K", "paper", "runtime/artifacts/old/result.json"])
             context["reference_catalog"] = [{"value": "unprovided", "path": "unprovided"}]
-            with self.assertRaises(ValueError):
+            with self.assertRaisesRegex(ValueError, "reference must identify supplied input, a record of the input snapshot or a preserved workspace file"):
                 validate_reference("unprovided", context, root)
 
     def test_fixed_question_catalog_only_exposes_its_source_set(self):

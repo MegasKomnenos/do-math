@@ -1,4 +1,4 @@
-"""The producer's standalone compiler command gives feedback, never authority."""
+"""Installed preview commands execute the shipped archive across the interpreter and Lean boundary."""
 from pathlib import Path
 import hashlib
 import json
@@ -7,7 +7,6 @@ import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from provider_fixtures import actual_command
 from test_categories import test_group as category
 from do_math.submission import install_tools
@@ -28,24 +27,6 @@ class LeanPreviewTests(unittest.TestCase):
             result = subprocess.run([*preview['command'], '--source', 'draft.lean', '--declaration', 'good'],
                 cwd=workspace, capture_output=True, text=True, encoding='utf-8', timeout=30)
             self.assertEqual('stopped', json.loads(result.stdout)['status'])
-
-    def test_worker_commands_use_the_console_interpreter_when_the_engine_runs_windowless(self):
-        """A scheduled engine runs under pythonw.exe, whose output a worker shell cannot read."""
-        from unittest.mock import patch
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            interpreters = root / 'Python'
-            interpreters.mkdir()
-            for name in ('python.exe', 'pythonw.exe'):
-                (interpreters / name).write_bytes(b'')
-            workspace = root / 'workspace'
-            workspace.mkdir()
-            context = {"action": {"role": "research_work"}, "snapshot": "fixed",
-                "formal_verifier": {"command": ["definitely-missing-lean"], "allowed_axioms": []}}
-            with patch.object(sys, 'executable', str(interpreters / 'pythonw.exe')):
-                contract = install_tools(workspace, context, schema_for('research_work'), 1000000)
-            self.assertEqual(contract['command'][0], str(interpreters / 'python.exe'))
-            self.assertEqual(context['formal_verifier']['preview']['command'][0], str(interpreters / 'python.exe'))
 
     def test_preview_attaches_no_dependency_extraction_and_prints_only_worker_fields(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -121,6 +102,7 @@ class LeanPreviewTests(unittest.TestCase):
 
     @category('lean')
     def test_actual_standalone_preview_checks_code_axioms_and_stop(self):
+        """25-106 s: six real Lean inputs and the installed CLI must cross the process boundary."""
         command = actual_command()
         self.assertIsNotNone(command, 'this integration test requires the real compiler')
         with tempfile.TemporaryDirectory() as directory:
@@ -135,7 +117,7 @@ class LeanPreviewTests(unittest.TestCase):
                                      ('theorem good : False := by sorry', 'rejected', 'good'),
                                      ('theorem good : False := by trivial', 'failed', 'good'),
                                      ("theorem good' : True := by trivial", 'verified', "good'"),
-                                     ('theorem \u212a (\u2126 : True) : True := \u2126\r\n-- e\u0301\n', 'verified', '\u212a')]:
+                                     ('theorem \N{KELVIN SIGN} (\N{OHM SIGN} : True) : True := \N{OHM SIGN}\r\n-- e\N{COMBINING ACUTE ACCENT}\n', 'verified', '\N{KELVIN SIGN}')]:
                 (workspace / 'draft.lean').write_bytes(source.encode('utf-8'))
                 result = subprocess.run([*preview['command'], '--source', 'draft.lean', '--declaration', name],
                     cwd=workspace, capture_output=True, text=True, encoding='utf-8',
@@ -159,7 +141,3 @@ class LeanPreviewTests(unittest.TestCase):
                 cwd=workspace, capture_output=True, text=True, encoding='utf-8',
                 creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0), timeout=30)
             self.assertEqual(json.loads(result.stdout)['status'], 'stopped')
-
-
-if __name__ == '__main__':
-    unittest.main()

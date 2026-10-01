@@ -10,7 +10,7 @@ from unittest.mock import patch
 import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from do_math import submission, preflight
+from do_math import submission
 
 
 class PreparationCacheTests(unittest.TestCase):
@@ -58,12 +58,6 @@ class PreparationCacheTests(unittest.TestCase):
             with zipfile.ZipFile(io.BytesIO(second)) as archive:
                 self.assertEqual(archive.read('do_math/checker.py'), b'edition = 2\n')
 
-    def test_valid_schema_cache_does_not_hide_a_changed_invalid_schema(self):
-        from jsonschema.exceptions import SchemaError
-        preflight._check_schema_pair('{"type":"object"}')
-        preflight._check_schema_pair('{"type":"object"}')
-        with self.assertRaises(SchemaError):
-            preflight._check_schema_pair('{"type":"not-a-json-schema-type"}')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,81 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_reference_catalog.CatalogTests.test_large_manifest_is_indexed_once_without_authorizing_the_projection",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_submission_reference_catalog.CatalogTests.test_large_manifest_is_indexed_once_without_authorizing_the_projection"
+      ]
+    },
+    {
+      "legacy_id": "test_reference_catalog.CatalogTests.test_current_aliases_and_historical_bytes_remain_distinct",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_submission_reference_catalog.CatalogTests.test_current_aliases_and_historical_bytes_remain_distinct"
+      ]
+    },
+    {
+      "legacy_id": "test_reference_catalog.CatalogTests.test_fixed_question_catalog_only_exposes_its_source_set",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_submission_reference_catalog.CatalogTests.test_fixed_question_catalog_only_exposes_its_source_set"
+      ]
+    },
+    {
+      "legacy_id": "test_reference_catalog.CatalogTests.test_workspace_root_reference_returns_a_submission_issue",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_submission_reference_catalog.CatalogTests.test_workspace_root_reference_returns_a_submission_issue"
+      ]
+    },
+    {
+      "legacy_id": "test_lean_preview.LeanPreviewTests.test_control_stop_is_consumed_before_any_compiler_start",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_submission_lean_preview.LeanPreviewTests.test_control_stop_is_consumed_before_any_compiler_start"
+      ]
+    },
+    {
+      "legacy_id": "test_lean_preview.LeanPreviewTests.test_worker_commands_use_the_console_interpreter_when_the_engine_runs_windowless",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_submission_preview_commands.LeanPreviewTests.test_worker_commands_use_the_console_interpreter_when_the_engine_runs_windowless"
+      ]
+    },
+    {
+      "legacy_id": "test_lean_preview.LeanPreviewTests.test_preview_attaches_no_dependency_extraction_and_prints_only_worker_fields",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_submission_lean_preview.LeanPreviewTests.test_preview_attaches_no_dependency_extraction_and_prints_only_worker_fields"
+      ]
+    },
+    {
+      "legacy_id": "test_lean_preview.LeanPreviewTests.test_preview_tool_and_compiler_worker_skip_unneeded_modules",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_submission_lean_preview.LeanPreviewTests.test_preview_tool_and_compiler_worker_skip_unneeded_modules"
+      ]
+    },
+    {
+      "legacy_id": "test_lean_preview.LeanPreviewTests.test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_submission_lean_preview.LeanPreviewTests.test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker"
+      ]
+    },
+    {
+      "legacy_id": "test_lean_preview.LeanPreviewTests.test_actual_standalone_preview_checks_code_axioms_and_stop",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_submission_lean_preview.LeanPreviewTests.test_actual_standalone_preview_checks_code_axioms_and_stop"
+      ]
+    },
+    {
+      "legacy_id": "test_preparation_cache.PreparationCacheTests.test_valid_schema_cache_does_not_hide_a_changed_invalid_schema",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_submission_preparation_cache.PreparationCacheTests.test_valid_schema_cache_does_not_hide_a_changed_invalid_schema"
+      ]
+    }
+  ]
+}

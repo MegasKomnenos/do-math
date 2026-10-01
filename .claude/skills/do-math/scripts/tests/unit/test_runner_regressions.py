@@ -1,4 +1,4 @@
-"""Runner regressions use synthetic tests/clocks, never a compiler or provider."""
+"""Runner reporting, selection and deadlines use synthetic tests and injected clocks."""
 from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
@@ -7,11 +7,10 @@ import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import run_tests
-from test_categories import isolation_for, test_group as category, unregistered_modules
+from test_categories import isolation_for, test_group as category, unregistered_modules, SHARDS
 
 
 class RunnerTests(unittest.TestCase):
@@ -43,19 +42,19 @@ class RunnerTests(unittest.TestCase):
     def test_isolation_label_is_inherited_and_a_method_label_overrides_its_class(self):
         @category('lean')
         class Base(unittest.TestCase):
-            def test_compiler(self): pass
+            def test_compiler(self): self.fail('label specimen must not run')
             @category('resource')
-            def test_job(self): pass
+            def test_job(self): self.fail('label specimen must not run')
         class Child(Base): pass
         class Plain(unittest.TestCase):
-            def test_rule(self): pass
+            def test_rule(self): self.fail('label specimen must not run')
             @category('resource')
-            def test_process(self): pass
+            def test_process(self): self.fail('label specimen must not run')
         self.assertEqual(isolation_for(Child('test_compiler')), 'lean')
         self.assertEqual(isolation_for(Child('test_job')), 'resource')
         self.assertIsNone(isolation_for(Plain('test_rule')))
         self.assertEqual(isolation_for(Plain('test_process')), 'resource')
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, '^unknown test label: unit$'):
             category('unit')
 
     def test_every_test_module_is_in_exactly_one_shard_and_absent_modules_are_reported(self):
@@ -64,15 +63,16 @@ class RunnerTests(unittest.TestCase):
             (Path(directory) / 'test_new_module.py').write_text('', encoding='utf-8')
             missing, stale = unregistered_modules(directory)
         self.assertEqual(missing, ['test_new_module'])
-        self.assertIn('test_test_runner', stale)
+        self.assertEqual(stale, sorted(module for modules in SHARDS.values() for module in modules))
 
     def test_positional_ids_select_a_module_class_or_method_without_prefix_collisions(self):
+        """About 0.8 s: two real discoveries test selection without substituting the runner."""
         with redirect_stdout(io.StringIO()) as out, redirect_stderr(io.StringIO()):
-            self.assertEqual(run_tests.main(['--list', 'test_test_runner.RunnerTests']), 0)
+            self.assertEqual(run_tests.main(['--list', 'unit.test_runner_regressions.RunnerTests']), 0)
         rows = out.getvalue().splitlines()
         self.assertTrue(rows)
-        self.assertTrue(all(row.split('\t')[1].startswith('test_test_runner.RunnerTests.') for row in rows))
-        self.assertTrue(all(row.split('\t')[0] == 'foundation' for row in rows))
+        self.assertTrue(all(row.split('\t')[1].startswith('unit.test_runner_regressions.RunnerTests.') for row in rows))
+        self.assertTrue(all(row.split('\t')[0] == 'unit' for row in rows))
         with redirect_stdout(io.StringIO()) as out, redirect_stderr(io.StringIO()):
             run_tests.main(['--list', 'boundary.test_engine_cli'])
         # boundary.test_engine_cli_advanced and ..._control_shapes share the name as a prefix. The
@@ -82,9 +82,10 @@ class RunnerTests(unittest.TestCase):
         self.assertTrue(all(row.split('\t')[1].rsplit('.', 2)[0] == 'boundary.test_engine_cli' for row in rows))
 
     def test_an_id_that_matches_no_test_refuses_the_whole_selection(self):
+        """About 0.4 s: real discovery must refuse the valid and unknown ID together."""
         # A mistyped ID beside valid ones must not drop out and leave the rest to read as a pass.
         with redirect_stdout(io.StringIO()) as out, redirect_stderr(io.StringIO()) as err:
-            self.assertEqual(run_tests.main(['--list', 'test_test_runner', 'test_no_such_module']), 2)
+            self.assertEqual(run_tests.main(['--list', 'unit.test_runner_regressions', 'test_no_such_module']), 2)
         self.assertEqual(out.getvalue(), '')
         self.assertIn('test_no_such_module', err.getvalue())
 
@@ -169,25 +170,6 @@ class RunnerTests(unittest.TestCase):
             self.assertIsNone(run_tests.wait_for_worker(Job(), path, .6,
                 clock=lambda: clock.value, pause=pause))
 
-    def test_native_worker_failure_cannot_be_hidden_by_a_successful_json_report(self):
-        class Case(unittest.TestCase):
-            def test_one(self): pass
-        test = Case('test_one')
-        with tempfile.TemporaryDirectory() as directory:
-            destination = Path(directory) / 'worker'
-            class Job:
-                def __init__(self, *args, **kwargs): pass
-                def __enter__(self): return self
-                def __exit__(self, *args): pass
-                def resume(self):
-                    run_tests._write_json(destination / 'result.json', {'complete': True, 'successful': True,
-                        'rows': [{'id': test.id(), 'outcome': 'passed', 'seconds': .1, 'details': []}]})
-            with patch('do_math.windows_job.WindowsJob', Job), \
-                    patch.object(run_tests, 'wait_for_worker', return_value=None), \
-                    patch.object(run_tests, '_exit_code', return_value=7):
-                report = run_tests._isolated([test], destination, 1)
-            self.assertFalse(report['successful'])
-            self.assertEqual(report['returncode'], 7)
 
 
 if __name__ == '__main__':

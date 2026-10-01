@@ -1,0 +1,83 @@
+{
+  "legacy": [
+    {
+      "legacy_id": "test_test_runner.RunnerTests.test_failure_is_readable_while_the_next_test_runs_before_group_completion",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_runner_regressions.RunnerTests.test_failure_is_readable_while_the_next_test_runs_before_group_completion"
+      ]
+    },
+    {
+      "legacy_id": "test_test_runner.RunnerTests.test_isolation_label_is_inherited_and_a_method_label_overrides_its_class",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_runner_regressions.RunnerTests.test_isolation_label_is_inherited_and_a_method_label_overrides_its_class"
+      ]
+    },
+    {
+      "legacy_id": "test_test_runner.RunnerTests.test_every_test_module_is_in_exactly_one_shard_and_absent_modules_are_reported",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_runner_regressions.RunnerTests.test_every_test_module_is_in_exactly_one_shard_and_absent_modules_are_reported"
+      ],
+      "note": "등록에서 지운 test_test_runner라는 특정 이름 대신 현행 SHARDS의 전체 모듈 목록과 stale을 정확 비교한다. 등록된 모듈의 부재 판정을 더 좁게 고정한다."
+    },
+    {
+      "legacy_id": "test_test_runner.RunnerTests.test_positional_ids_select_a_module_class_or_method_without_prefix_collisions",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_runner_regressions.RunnerTests.test_positional_ids_select_a_module_class_or_method_without_prefix_collisions"
+      ],
+      "note": "선택 대상이 새 unit 모듈로 옮겨져 ID와 층 표시 foundation을 unit으로 바꿨다. 같은 클래스 선택·모듈 접두사 비충돌 단언을 유지한다."
+    },
+    {
+      "legacy_id": "test_test_runner.RunnerTests.test_an_id_that_matches_no_test_refuses_the_whole_selection",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_runner_regressions.RunnerTests.test_an_id_that_matches_no_test_refuses_the_whole_selection"
+      ]
+    },
+    {
+      "legacy_id": "test_test_runner.RunnerTests.test_failing_subtest_remains_a_failure_in_the_machine_report",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_runner_regressions.RunnerTests.test_failing_subtest_remains_a_failure_in_the_machine_report"
+      ]
+    },
+    {
+      "legacy_id": "test_test_runner.RunnerTests.test_timeout_terminates_the_owned_tree_and_identifies_the_running_test",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_runner_regressions.RunnerTests.test_timeout_terminates_the_owned_tree_and_identifies_the_running_test"
+      ]
+    },
+    {
+      "legacy_id": "test_test_runner.RunnerTests.test_skipped_subtest_is_not_reported_as_a_running_or_passed_parent",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_runner_regressions.RunnerTests.test_skipped_subtest_is_not_reported_as_a_running_or_passed_parent"
+      ]
+    },
+    {
+      "legacy_id": "test_test_runner.RunnerTests.test_class_setup_skip_accounts_for_each_selected_test",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_runner_regressions.RunnerTests.test_class_setup_skip_accounts_for_each_selected_test"
+      ]
+    },
+    {
+      "legacy_id": "test_test_runner.RunnerTests.test_next_test_gets_its_own_deadline_without_restarting_class_fixtures",
+      "disposition": "moved",
+      "new_ids": [
+        "unit.test_runner_regressions.RunnerTests.test_next_test_gets_its_own_deadline_without_restarting_class_fixtures"
+      ]
+    },
+    {
+      "legacy_id": "test_test_runner.RunnerTests.test_native_worker_failure_cannot_be_hidden_by_a_successful_json_report",
+      "disposition": "moved",
+      "new_ids": [
+        "boundary.test_runner_native_exit.NativeExitTests.test_native_worker_failure_cannot_be_hidden_by_a_successful_json_report"
+      ]
+    }
+  ]
+}
