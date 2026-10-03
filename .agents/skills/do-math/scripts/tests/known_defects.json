@@ -206,6 +206,15 @@
       "found_by": "4576a517 기반 정상 등록부·실제 소비자 목록 생산자로 거부 원자성을 검사한다. resume-governance-result.json에 동일 파일 해시의 unmarked 실패와 marked 예상 실패 보고를 연결한다. 제품은 미수리.",
       "missed_kind": "기존 등록 시험은 정상 소비자 등록과 중복·권한 소유자 거부만 보며, 후행 계약 검증 거부의 등록부 불변성을 확인하지 않는다. 거부 입력이 활성 등록을 남기지 않는 원자성 계약을 기대한다. Moved existing regression from unit.test_governance_owner_registration_atomicity.GovernanceOwnerRegistrationAtomicityTests.test_rejected_contract_does_not_install_owner to the existing imports owner module; no duplicate case. Main3o7lv1a5 red confirms registration leaked after contract refusal; tdl9gqlx30 passes after install-last repair and caller contract detachment.",
       "status": "closed"
+    },
+    {
+      "id": "KD-0401",
+      "summary": "실제 revoke_delegation 생산자가 추가한 revoked_at·revoked_by를 닫힌 delegation 저장 스키마가 거부하여 정상 철회 상태를 게시할 수 없다.",
+      "category": 1,
+      "reproduction": "sim.test_governance_delegation_storage.DelegationStorageTests.test_revoke_delegation_preserves_original_and_publishes_one_event",
+      "found_by": "4576a517 소유297 첫 unmarked 실행 do-math-tests-415zj4ac: 실제 apply_decision 뒤 ResearchRepository 저장 검증에서 추가 필드 거부. 정상 위임 생산 상태는 같은 저장 검증을 통과했다. 제품은 미수리.",
+      "missed_kind": "권한 철회 생산자의 출력과 실제 닫힌 저장 스키마를 연결한 정상 왕복 시험이 없었다. A34 repair: exact revoke/deferral producer fields are declared in closed schemas; revoked_by binds decisions and deferral target/execution references resolve. All three original reproductions were unexpected successes in do-math-tests-oa03g_a7; markers removed together. Final gates remain pending. Existing regression moved from sim.test_governance_authority_effects.GovernanceAuthorityEffectTests.test_revoke_delegation_preserves_original_and_publishes_one_event into delegation storage round-trip module. Main ub9c8x66 actual producer/store red rejects revoked_at/revoked_by. Closed schema declares actual producer fields and REFERENCES binds revoked_by to decisions; exact original/receipt/event and unknown/wrong-family refusal retained.",
+      "status": "closed"
     }
   ]
 }

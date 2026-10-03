@@ -44,7 +44,7 @@ REFERENCES = {
     "external_operations": refs(("grant_id", "grants"), ("execution_id", "executions"), ("continuation_of", "executions"),
                                 lists=(("producer_executions", "executions"),)),
     "grants": refs(("source_ref", "governance_sources"), ("decision_id", "decisions"), ("replaced_by", "grants")),
-    "delegations": refs(("original_decision_id", "decisions"), ("decision_id", "decisions")),
+    "delegations": refs(("original_decision_id", "decisions"), ("decision_id", "decisions"), ("revoked_by", "decisions")),
     "observation_facts": refs(("execution_id", "executions")),
     "self_check_obligations": refs(("execution_id", "executions")),
     "self_check_responses": refs(("execution_id", "executions")),

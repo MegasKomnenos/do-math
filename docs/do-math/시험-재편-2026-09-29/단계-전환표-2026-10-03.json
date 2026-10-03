@@ -8019,7 +8019,7 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 23,
+      "main_ledger_count": 24,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
@@ -8040,7 +8040,6 @@
         "KD-1001",
         "KD-0302",
         "KD-0303",
-        "KD-0401",
         "KD-0902",
         "KD-0903",
         "KD-0500",
@@ -8057,7 +8056,7 @@
         "KD-1908",
         "KD-1909"
       ],
-      "meaning": "33개는main미기록후보항목이며같은수의제품미구현이나전체완료율이아니다. 구현/재현/의존을실제원문으로대조한다.",
+      "meaning": "32개는main미기록후보항목이며제품미구현수/전체완료율이아니다. 실제구현/재현/의존을대조한다.",
       "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
@@ -8336,7 +8335,7 @@
     "owner_registration_integration": {
       "id": "B24",
       "scope": "KD-0400: 잘못된 소비자 계약을 거부할 때 등록부·광고목록의 원자성 보존",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-3o7lv1a5\\report.json",
         "sha256": "dc83443defefa2140308744a9e0c47905868ae08817cd0667f13eb8b081b0c91",
@@ -8414,6 +8413,116 @@
       "contract": "실제import_owner_handlers와evidence소비자 함수로등록. contract 검증·복사를마친뒤handlers[kind]에한번설치. empty/list/text/bool 거부는등록부/광고목록불변; 정상등록계약은호출자수정과분리. 기존역할/중복/권한소유자·현재성제약유지.",
       "test_move": "기존단독회귀를현재unit.test_governance_imports.RegisteredOwnerTests에이동. 후보추가applied-import 시험은보존하고기존동일회귀모듈은삭제,현재reproduction ID갱신. 역사원ID는missed_kind에유지.",
       "limits": "모든Import경로의전건완료나최종관문이아니다. main23/candidate56,미기록33개의제품구현/의존여부는계속대조.",
+      "whole_requirement_closed": false,
+      "commit": "5d1d5cc1"
+    },
+    "delegation_revoke_integration": {
+      "id": "B25",
+      "scope": "KD-0401: 실제 위임 철회 필드와 결정 참조를 닫힌 저장 계약에 선언",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ub9c8x66\\report.json",
+        "sha256": "f23c46e143010a366a17f8511adc4ed75ef7df6080d2cfeed8c1608d28f1005d",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "error": 1
+        },
+        "total_seconds": 6.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_governance_delegation_storage.DelegationStorageTests.test_revoke_delegation_preserves_original_and_publishes_one_event",
+              "seconds": 6.406000000075437,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-450y7x01\\report.json",
+        "sha256": "68b04ae4b5b3272fcaa731f06e7dbf990430f63d34175c45d17d5906adec8d93",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 12
+        },
+        "total_seconds": 6.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_governance_delegation_storage.DelegationStorageTests.test_revoke_delegation_preserves_original_and_publishes_one_event",
+              "seconds": 5.827999999979511,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-qwii8_ni\\report.json",
+        "sha256": "2ff238f8b5126546aea7cd331646587d8c428a2efe48b9513bd2eab68046db69",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 4
+        },
+        "total_seconds": 5.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-mtdn_ma5\\report.json",
+        "sha256": "8cae9e30429cd8121a40173bf7bdd69261fffac2591c4b35bf36c8938a38f04f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 11.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_governance_delegation_storage.DelegationStorageTests.test_revoke_delegation_preserves_original_and_publishes_one_event",
+              "seconds": 8.484000000054948,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/record_schemas/schemas.py",
+          "sha256": "ebcf4ba38843ee4e849311a93c99cc1326903c871635b9e2659d1b07bd399bf2"
+        },
+        {
+          "path": "do_math/record_schemas/__init__.py",
+          "sha256": "40647c07881e0b9c0dd7253926ebbe0e68e542b29e76879f3179be4402588108"
+        },
+        {
+          "path": "tests/sim/test_governance_delegation_storage.py",
+          "sha256": "ea4dc34ed4a2cd809d2b5b7701fdb9e2206973cc1076d05caf8438425ba0067d"
+        },
+        {
+          "path": "tests/support/governance_cases.py",
+          "sha256": "b3e79445016435e45cf24f3e7d4ec36656e180e3d3b7d947cdf5de866299cb31"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "a09cfd031f43ee7dca88d736d1cabad3817db08ad8d8f188dd46a580c6c49ce7"
+        }
+      ],
+      "contract": "원승인과실제독립판정이있는위임을정상apply_decision으로철회. revoked_at TEXT/revoked_by ID를선언하고REFERENCES에서decisions에결합. 원상보존·단일사건·저장왕복·없는결정/다른가족거부를유지. 실제생산필드외unknown은닫힌형식으로계속거부.",
+      "fixture_scope": "후보governance_cases의체크된위임빌더2개만main에통합. 다른정책/질문/소유시험빌더는가져오지않음. 원래철회회귀를기존delegation_storage모듈로이동,후보old authority_effects메서드삭제로중복제거.",
+      "limits": "main관련12/구조4와후보2는부분증거. 새시작템플릿을만드는Sim1개예산초과를양쪽보고에남김. 모든권한/저장모집단의최종완료가아님.",
       "whole_requirement_closed": false
     }
   }

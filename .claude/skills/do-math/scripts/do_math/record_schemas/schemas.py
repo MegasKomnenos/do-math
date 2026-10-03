@@ -446,7 +446,7 @@ RECORDS["decisions"] = {**record({"kind": TEXT, "change": EVIDENCE, "source_ref"
 RECORDS["delegations"] = record({"status": enum("active", "revoked", "withdrawn"), "decision_kind": TEXT,
     "original_decision_id": ID, "included_targets": REFS, "excluded_targets": REFS, "external_effects": array(TEXT),
     "expires_at": nullable(TEXT), "source_ref": TEXT, "decision_id": ID, "created_at": TEXT,
-    "resource_limits": mapping(NAT)},
+    "resource_limits": mapping(NAT), "revoked_at": TEXT, "revoked_by": ID},
     ("status", "decision_kind", "original_decision_id", "included_targets", "excluded_targets", "external_effects", "expires_at"))
 RECORDS["question_links"] = record({"origin_execution_id": nullable(ID), "origin_field": TEXT,
     "owner": enum(*sorted(_QUESTION_OWNERS)),

@@ -8,6 +8,7 @@ the Sim engine's ``ResearchRepository`` over the Git port's fake; every save
 passes the storage contract.
 """
 from pathlib import Path
+from copy import deepcopy
 import tempfile
 import unittest
 
@@ -17,6 +18,36 @@ from support.sim import Sim
 
 
 class DelegationStorageTests(unittest.TestCase):
+    def test_revoke_delegation_preserves_original_and_publishes_one_event(self):
+        from support.governance_cases import delegated_sim
+        sim = delegated_sim()
+        before = deepcopy((sim.instance, sim.runtime))
+        change = {'kind': 'revoke_delegation', 'delegation_id': 'DG-close', 'decision_id': 'DC-close-revoke'}
+        result, state, event = governance.apply_decision(sim.instance, sim.runtime, change,
+            source_ref='GS-close-delegation', clock=sim.clock)
+        self.assertEqual((sim.instance, sim.runtime), before)
+        self.assertEqual(result['delegations']['DG-close'], {**before[0]['delegations']['DG-close'],
+            'status': 'revoked', 'revoked_by': 'DC-close-revoke', 'revoked_at': sim.clock.now()})
+        self.assertEqual(event['delegation_id'], 'DG-close')
+        self.assertEqual(state['history'], before[1]['history'] + [
+            {'kind': 'governance_decision', 'decision_id': 'DC-close-revoke', 'source_ref': 'GS-close-delegation'}])
+        sim.engine.instance, sim.engine.runtime = result, state
+        sim.engine._save()
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[1]['delegations']['DG-close'], result['delegations']['DG-close'])
+        published = deepcopy(sim.engine.store.load())
+        head, instance, runtime = published
+        for reference, reason in (
+                ('DC-missing', '^delegations references unknown record: DC-missing$'),
+                ('GS-close-delegation', '^delegations reference has wrong family: GS-close-delegation$')):
+            with self.subTest(reference=reference):
+                damaged = deepcopy(instance)
+                damaged['delegations']['DG-close']['revoked_by'] = reference
+                before_damaged = deepcopy(damaged)
+                with self.assertRaisesRegex(ValueError, reason):
+                    sim.engine.store.save_with_state(head, damaged, deepcopy(runtime))
+                self.assertEqual(damaged, before_damaged)
+                self.assertEqual(sim.engine.store.load(), published)
+
     def test_structured_reference_survives_git_and_stales_when_its_record_changes(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
