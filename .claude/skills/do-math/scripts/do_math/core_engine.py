@@ -5,6 +5,8 @@ the outside only through ports, the store and the file system. ``engine`` keeps 
 public entry points, the assembly of default implementations and the run loop (layer 3).
 """
 from __future__ import annotations
+from .wait_rules import update_waiting_action, waiting_action
+from .wait_rules import FAILED_ACTION_WAITS, IMPACT_PENDING_WAITS
 from copy import deepcopy
 import base64
 import binascii
@@ -40,6 +42,7 @@ from . import revisions
 from . import submission, integration
 from . import activities, execution_lifecycle, execution_profiles, initialization, launch
 from .session_slots import held_reservations, live_action_ids, local_termination_confirmed
+from .wait_rules import REVIEW_WAITS, REVIEW_ADMISSION_WAITS, REVIEW_RESTORATION_WAITS, review_wait_kind
 from . import task_contracts, operational_dispositions, retention, repair_execution
 from .control_protocol import SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SUBMISSION_PREVIEW, SUBMIT_INTENT, self_check_response_errors
 from .file_io import cached_sha256, fingerprint_settled, os_lock, stat_fingerprint, write_bytes_atomic
@@ -536,17 +539,20 @@ class CoreEngineMixin:
         else:
             for field in ("model", "effort", "model_selection"):
                 execution.pop(field, None)
-        held = activity.get("waiting", {}).get("reason") in {"review_input_restoration", "review_recovery"}
+        held = activity.get("waiting", {}).get("reason") in REVIEW_ADMISSION_WAITS
         admission = ({"disposition": "review_input_restoration"} if held else self._admit_review_execution(action, execution))
         if admission["disposition"] not in {"admitted", "already_admitted", "not_applicable"}:
             if admission['disposition'] in {'review_budget_exhausted', 'review_scope_unaffordable',
                                              'review_followup_reserved', 'review_resource_pending'}:
                 self._request_review_resource_disposition(action, admission['disposition'], admission)
                 return None
-            self.runtime.setdefault("waiting_actions", {})[action["id"]] = {"action": deepcopy(action),
-                "kind": admission["disposition"], "detail": admission, "next_owner": "review_policy"}
-            activities.wait_for(self.runtime, activity["id"], reason=admission["disposition"],
-                condition=admission, next_owner="review_policy", at=self.ports.clock.now())
+            wait_kind = review_wait_kind(admission['disposition'])
+            next_owner = activity['waiting']['next_owner'] if held else 'governance'
+            self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({"action": deepcopy(action),
+                "kind": wait_kind, "detail": admission, "next_owner": next_owner,
+                "reason": activity['waiting']['reason'] if held else admission['authority']['reason']})
+            activities.wait_for(self.runtime, activity["id"], reason=wait_kind,
+                condition=admission, next_owner=next_owner, at=self.ports.clock.now())
             self._remove_action(action)
             return None
         if activity["status"] == "waiting":
@@ -611,7 +617,7 @@ class CoreEngineMixin:
             return
         if waiting:
             wait = waiting[0]
-            reason = (wait['kind'] if wait.get('kind') in {'review_input_restoration', 'review_recovery', 'review_authority'}
+            reason = (wait['kind'] if wait.get('kind') in REVIEW_WAITS
                       else wait.get('reason') or wait['kind'])
             activities.wait_for(self.runtime, aid, reason=reason,
                 condition={"action_ids": [row["action"]["id"] for row in waiting]},
@@ -948,12 +954,16 @@ class CoreEngineMixin:
                     self._save()
                 except submission.SealedSubmissionError as error:
                     live = self.runtime.setdefault("waiting_actions", {})[action["id"]]
-                    live.update(kind="submission_failure", reason=str(error), next_owner="engine")
+                    update_waiting_action(live, kind='submission_failure', reason=str(error), next_owner='engine')
+                    if self._settle_recovered_execution(execution['id'], at=self.ports.clock.now(),
+                            disposition={'kind': 'submission_failure', 'reason': str(error)}):
+                        execution.update(error_kind='submission_failure', error=str(error))
+                        self._settle_activity(execution['id'])
                     self.route_failed_action(action, execution["id"],
                         reason="Diagnose unreadable sealed submission")
                     self._save()
                 except (ValueError, OSError, GitStateStoreError) as error:
-                    self.runtime.setdefault("waiting_actions", {})[action["id"]] = {**waiting, "reason": str(error)}
+                    self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({**waiting, "reason": str(error)})
                     self._save()
         finally:
             self._retrying_publication = False
@@ -1021,11 +1031,11 @@ class CoreEngineMixin:
         return artifacts, output_files, checkpoint_ref, files["complete"]
 
     def _hold_impact_reviews(self, action, execution_id, received):
-        waiting = self.runtime.setdefault("waiting_actions", {}).setdefault(action["id"], {
+        waiting = self.runtime.setdefault("waiting_actions", {}).setdefault(action["id"], waiting_action({
             "action": deepcopy(action), "kind": "impact_review", "execution_id": execution_id,
             "review_requests": {}, "review_execution_ids": {}, "next_owner": "impact_review",
-            "reason": "The preserved bundle requires independent impact judgment"})
-        waiting.update(kind="impact_review", next_owner="impact_review")
+            "reason": "The preserved bundle requires independent impact judgment"}))
+        update_waiting_action(waiting, kind='impact_review', next_owner='impact_review')
         for row in received["bundles"]:
             if row.get("next_owner") != "impact_review":
                 continue
@@ -1033,8 +1043,7 @@ class CoreEngineMixin:
             identifier = row["integration_id"]
             if identifier in waiting["review_requests"]:
                 if waiting["review_requests"][identifier] != request:
-                    waiting.update(kind="impact_review_changed", next_owner="research_preparation",
-                                   reason="Impact premises changed while the original mutation remained held")
+                    update_waiting_action(waiting, kind='impact_review_changed', next_owner='research_preparation', reason='Impact premises changed while the original mutation remained held')
                     self._enqueue("research_preparation", reason=waiting["reason"])
                 continue
             waiting["review_requests"][identifier] = deepcopy(request)
@@ -1045,7 +1054,7 @@ class CoreEngineMixin:
     def _hold_unreadable_impact_submission(self, waiting, error, *, preparation=None):
         action = waiting["action"]
         live = self.runtime["waiting_actions"][action["id"]]
-        live.update(kind="submission_failure", next_owner="engine", reason=str(error))
+        update_waiting_action(live, kind='submission_failure', next_owner='engine', reason=str(error))
         for pending in list(self.runtime['queue']):
             request = pending.get('input_basis', {}).get('impact_review', {})
             if pending.get('stage') == 'impact_review' and request.get('producer_execution_id') == waiting['execution_id']:
@@ -1064,7 +1073,7 @@ class CoreEngineMixin:
         if self.runtime.get("status") == "paused" or self._instance_closed():
             return
         pending = [deepcopy(row) for row in self.runtime.get("waiting_actions", {}).values()
-                   if row.get("kind") == "impact_review"]
+                   if row.get("kind") in IMPACT_PENDING_WAITS]
         for waiting in pending:
             judgments, references = {}, {}
             finished = {}
@@ -1103,8 +1112,7 @@ class CoreEngineMixin:
             live = self.runtime["waiting_actions"][waiting["action"]["id"]]
             live["review_execution_ids"] = references
             if any(row["decision"] != "approve" for decisions in judgments.values() for row in decisions.values()):
-                live.update(kind="impact_review_blocked", next_owner="research_preparation",
-                            reason="Independent impact review rejected or could not resolve the held mutation")
+                update_waiting_action(live, kind='impact_review_blocked', next_owner='research_preparation', reason='Independent impact review rejected or could not resolve the held mutation')
                 execution = self.runtime["executions"][waiting["execution_id"]]
                 self._record_task_receipt(waiting["action"], producer_output, execution["id"], accepted=False)
                 self._enqueue("research_preparation", reason=live["reason"])
@@ -1320,7 +1328,7 @@ class CoreEngineMixin:
             spec = config["review_restoration"]
             action = deepcopy(spec["action"])
             waiting = next((entry for entry in self.runtime.get("waiting_actions", {}).values()
-                if entry.get("kind") in {"review_input_restoration", "review_recovery"}
+                if entry.get("kind") in REVIEW_RESTORATION_WAITS
                 and all(entry.get("action", {}).get(key) == action.get(key)
                         for key in ("id", "review_cycle_id", "stage", "round", "slot"))), None)
             if waiting is None:
@@ -1428,6 +1436,7 @@ class CoreEngineMixin:
             return False
         if self.instance["lifecycle"]["state"] != "initializing":
             self._ensure_academic_followup()
+        self._resume_import_question_waits()
         return True
 
     def _restore_goal_audit_publication(self, execution):
@@ -1441,15 +1450,15 @@ class CoreEngineMixin:
         if previous:
             self.runtime.setdefault('history', []).append({'kind': 'goal_audit_publication_recovered',
                 'execution_id': execution['id'], 'previous_wait': deepcopy(previous)})
-        waiting = {'action': deepcopy(action), 'execution_id': execution['id'],
+        waiting = waiting_action({'action': deepcopy(action), 'execution_id': execution['id'],
                    'kind': 'submission_publication', 'next_owner': 'engine',
-                   'reason': 'Finish the original committed goal audit submission'}
+                   'reason': 'Finish the original committed goal audit submission'})
         waits[action['id']] = waiting
         try:
             submission.read_sealed_submission(execution, self.head,
                 self.store.read, git_dir=self.store.git_dir)
         except submission.SealedSubmissionError as error:
-            waiting.update(kind='submission_failure', reason=str(error))
+            update_waiting_action(waiting, kind='submission_failure', reason=str(error))
             self.route_failed_action(action, execution['id'],
                 reason='Diagnose unreadable sealed goal audit submission')
         return True
@@ -1528,9 +1537,9 @@ class CoreEngineMixin:
             action = execution.get("action", {})
             self._remove_action(action)
             if action.get("id"):
-                self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
+                self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({
                     "action": deepcopy(action), "kind": "execution_failure", "execution_id": eid,
-                    "reason": "previous executor disappeared", "next_owner": "operational_review"}
+                    "reason": "previous executor disappeared", "next_owner": "operational_review"})
                 self.route_failed_action(action, eid,
                     reason="Assess this recovered execution's preserved work and remaining authority")
             disposition["next_owner"] = self.runtime.get("waiting_actions", {}).get(action.get("id"), {}).get("next_owner", "operational_review")
@@ -2283,12 +2292,12 @@ class CoreEngineMixin:
             # This remains an AI-owned repair; a counter never creates user authority.
             if any(row.get("next_owner") == "engine" for row in received["bundles"]):
                 environment = next((row['environment_wait'] for row in received['bundles'] if row.get('environment_wait')), None)
-                self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
+                self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({
                     **self.runtime.get("waiting_actions", {}).get(action["id"], {}), "action": deepcopy(action),
                     "kind": "submission_publication", "execution_id": execution_id, "next_owner": "engine",
                     **({'detail': environment} if environment else {}),
                     "reason": ("Keep the sealed result until the toolchain record or active trust environment changes"
-                               if environment else "Reload current Git state and reapply only unpublished candidate bundles")}
+                               if environment else "Reload current Git state and reapply only unpublished candidate bundles")})
             elif any(row.get("next_owner") == "impact_review" for row in received["bundles"]):
                 self._hold_impact_reviews(action, execution_id, received)
             elif execution["error_kind"] == "currentness_changed":
@@ -2491,7 +2500,7 @@ class CoreEngineMixin:
                 self._finish_native_recovery(request, native['id'])
             return deepcopy(native['action'])
         waiting = self.runtime.get("waiting_actions", {}).get(identifier)
-        if waiting and waiting.get("kind") in {"execution_failure", "submission_failure", "output_validation"}:
+        if waiting and waiting.get("kind") in FAILED_ACTION_WAITS:
             return self._retry_initial_execution_action(request, waiting)
         return self._resume_input_overflow_action(identifier, request['id'])
 

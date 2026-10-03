@@ -1,6 +1,7 @@
 """Engine integration for Lean verification: trust environments, their transitions and checks, and formal checks."""
 from __future__ import annotations
 
+from .wait_rules import waiting_action
 from functools import partial
 from copy import deepcopy
 from pathlib import Path
@@ -8,6 +9,7 @@ from .knowledge import begin_transition, record_transition_result, activate_tran
 from .execution_lifecycle import MACHINE_OUTPUT_RECEIPT
 from .canonical import canonical_json, exact_content_hash
 from .state_contract import ARTIFACT_ROOT
+from .wait_rules import FORMAL_WAIT_RULES, FORMAL_RECOVERABLE_STOPS, formal_wait
 
 def _toolchain_matches(expected, actual):
     return isinstance(actual, dict) and bool(actual.get('sha256')) and expected == actual
@@ -108,14 +110,16 @@ class FormalEngineMixin:
         """
         from .governance import authorize
         from .trust_validation import environment_changed
-        recoverable = {'instance_paused', 'authority_changed', 'trust_environment_changed', 'input_changed'}
         for identifier, waiting in list(self.runtime.get('waiting_actions', {}).items()):
             kind, detail = waiting.get('kind'), waiting.get('detail', {})
-            if kind == 'formal_environment':
+            rule = FORMAL_WAIT_RULES.get(kind)
+            if rule is None:
+                continue
+            if rule['resume'] == 'environment_changed':
                 if not environment_changed(self.instance, detail):
                     continue
-            elif kind == 'formal_authority' or (kind == 'formal_stopped'
-                                                and set(detail.get('stop_reasons', ())) <= recoverable):
+            elif rule['resume'] == 'authority_and_environment' or (rule['resume'] == 'recoverable_stop'
+                    and set(detail.get('stop_reasons', ())) <= FORMAL_RECOVERABLE_STOPS):
                 try:
                     self._formal_environment()
                 except ValueError:
@@ -355,9 +359,7 @@ class FormalEngineMixin:
             wait_for(self.runtime, activity['id'], reason=reason,
                 condition={'kind': 'formal_authority', 'knowledge_id': kid}, next_owner='trust_governance',
                 at=self.ports.clock.now())
-            self.runtime.setdefault('waiting_actions', {})[action['id']] = {
-                'action': deepcopy(action), 'kind': 'formal_authority', 'reason': reason,
-                'next_owner': 'trust_governance'}
+            self.runtime.setdefault('waiting_actions', {})[action['id']] = formal_wait(action, 'formal_authority', reason)
             self._remove_action(action)
             self._save()
             return
@@ -458,18 +460,14 @@ class FormalEngineMixin:
             else:
                 self._remove_action(action)
             if result.get('error_kind') == 'trust_environment' and not resumable:
-                self.runtime.setdefault('waiting_actions', {})[action['id']] = {
-                    'action': deepcopy(action), 'kind': 'formal_environment', 'reason': result['reason'],
-                    'execution_id': execution_id, 'next_owner': 'trust_governance',
-                    'detail': {'environment_id': environment_id,
-                               'record_state': result.get('environment_check', {}).get('record_state')}}
+                self.runtime.setdefault('waiting_actions', {})[action['id']] = formal_wait(action, 'formal_environment',
+                    result['reason'], execution_id=execution_id, detail={'environment_id': environment_id,
+                        'record_state': result.get('environment_check', {}).get('record_state')})
             elif result['status'] != 'verified' and result['status'] != 'stopped':
                 self._enqueue('research_plan', reason='Assess preserved formal verification result', formal_target=kid)
             elif result['status'] == 'stopped' and not resumable and 'instance_ended' not in stop_reasons:
-                self.runtime.setdefault('waiting_actions', {})[action['id']] = {
-                    'action': deepcopy(action), 'kind': 'formal_stopped', 'reason': result.get('reason'),
-                    'execution_id': execution_id, 'next_owner': 'trust_governance',
-                    'detail': {'stop_reasons': sorted(stop_reasons)}}
+                self.runtime.setdefault('waiting_actions', {})[action['id']] = formal_wait(action, 'formal_stopped',
+                    result.get('reason'), execution_id=execution_id, detail={'stop_reasons': sorted(stop_reasons)})
             self._settle_activity(execution_id)
         # The formal bundle holds the checked Lean source beside its judged result.
         self._save({f'{ARTIFACT_ROOT}{bundle}/proposal.lean': source.encode(), reference: canonical_json(result)})
@@ -478,10 +476,10 @@ class FormalEngineMixin:
                 self._start_identity_review(kid)
             except (ValueError, KeyError, TypeError) as error:
                 review_action = {'id': self.ports.clock.new_id('AC'), 'role': 'identity_review', 'target': kid}
-                self.runtime.setdefault('waiting_actions', {})[review_action['id']] = {
+                self.runtime.setdefault('waiting_actions', {})[review_action['id']] = waiting_action({
                     'action': review_action,
                     'kind': 'review_initialization', 'execution_id': execution_id,
-                    'reason': str(error), 'next_owner': 'review_policy'}
+                    'reason': str(error), 'next_owner': 'review_policy'})
             self._save()
 
     def _finish_trust_transition(self, transition_id, verification):

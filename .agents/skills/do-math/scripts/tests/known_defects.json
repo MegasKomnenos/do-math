@@ -278,6 +278,51 @@
       "found_by": "기반 0a4c4c03. 정상 setUp의 실제 Git 저장·읽기·물질화 뒤 artifact_ref 한 필드만 변경. unmarked report do-math-tests-9oz4x8zu에서 GitStateStoreError 재현, 같은 시험 본문 marked report do-math-tests-_45m8lol에서 expected_failure. 제품 수정 없음. main 4c49ogb_에서 실제 Git 정상 저장/읽기/복원 대조 후 누락 원천이 GitStateStoreError로 유출됨을 확인했다. q_xy_quu 관련 39개가 통과했다. 원인·정확 좌표·불변 상태·빈 출력 경로를 단언한다.",
       "missed_kind": "기존 복원 음성 시험은 인라인 해시 불일치와 파일 시스템 OSError를 다루며, 실제 Git 저장소의 누락 산출물 예외형과 좌표 복구 계약을 함께 확인하지 않는다. KD-0600의 영향 검토 제출 읽기와는 고정 조사 원천 소비자 및 재현 경로가 다르다. 원 재현 ID: boundary.test_review_source_restoration.FixedSourceRestorationDefectTests.test_missing_fixed_artifact_returns_a_coordinate_restoration_fault; 현재 실제 Git 복원 성질의 class로 정리했다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-0705",
+      "summary": "정상 모델 제출의 지연 게시를 별도 실제 수신자가 재대조하다 봉인 자료 읽기에 실패하면 submission_failure로 전환하지만 로컬 종료가 확인된 실행을 stopping에 남긴다.",
+      "category": 4,
+      "reproduction": "flows.test_failed_action_wait_contract.PublicationFailureContractTests.test_failed_publication_receipt_settles_the_confirmed_local_process_before_diagnosis",
+      "found_by": "실제 모델 제출/게시 보류 뒤 독립 Repository 수신자의 봉인 읽기에 Git 포트 OSError를1회 주입. do-math-tests-1f8g_7rx에서 local_termination_confirmed=true인데 stopping!=ended로 실패했다. main 대기 정본 통합: 3dx5q6ew의 KD-0701/0703 실제 실패를 보존한다. dxb3sopj 정본/회귀14개, 9s_myuzs 공개 권한/질문/정책3개(다른2개 준비 오류), 2uptrx2l 실패출구2개, po1urqjb 준비/영향2개, tt_nkd13 관련118개가 현재 경로를 검증한다. 원 후보의 첫 실패는 역사로 남기며 모든 항목의 새 main 수리 전 실패라고 재명명하지 않는다.",
+      "missed_kind": "기존 지연 게시 검사는 정상 재게시와 대기 종류만 확인하며 봉인 재대조 실패 뒤 로컬 실행 종결·예약 정산을 확인하지 않았다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0704",
+      "summary": "공개 question_answer가 import의 blocking question을 해결해도 소유자의 준비성 갱신/실행 준비가 _resume_import_question_waits를 호출하지 않아 원 import_user_decision 대기가 남는다.",
+      "category": 4,
+      "reproduction": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+      "found_by": "4-B/13-B import 두 종류의 실제 생산·공개 결정·소유자 실행 준비 일반 검사. do-math-tests-27rmyus1에서 import_user_decision이 공개 답변 뒤에도 남아 실패했다. 다른 import_application_authority는 같은 검사에서 통과했다. main 대기 정본 통합: 3dx5q6ew의 KD-0701/0703 실제 실패를 보존한다. dxb3sopj 정본/회귀14개, 9s_myuzs 공개 권한/질문/정책3개(다른2개 준비 오류), 2uptrx2l 실패출구2개, po1urqjb 준비/영향2개, tt_nkd13 관련118개가 현재 경로를 검증한다. 원 후보의 첫 실패는 역사로 남기며 모든 항목의 새 main 수리 전 실패라고 재명명하지 않는다.",
+      "missed_kind": "기존 답변 검사는 해소자를 직접 호출하거나 다음 import 수신에 의존하여 공개 답변 뒤 실제 소유자 한 회차의 연결 누락을 보지 못했다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0703",
+      "summary": "형식 결과 수락 후 review_initialization 대기가 생성되면 정확한 기존 승인 검토 정책을 복원해도 준비성 갱신이 검토를 다시 열지 않는다.",
+      "category": 4,
+      "reproduction": "sim.test_knowledge_import_control.FormalConsumerTests.test_review_start_failure_produces_a_storable_wait_after_formal_acceptance",
+      "found_by": "4-B 실제 중앙 형식 검사·저장 후 기존 승인 정책을 그대로 복원한 owner 준비성 갱신. do-math-tests-o33xpsa9에서 원 대기가 남아 단언 실패했다. main 대기 정본 통합: 3dx5q6ew의 KD-0701/0703 실제 실패를 보존한다. dxb3sopj 정본/회귀14개, 9s_myuzs 공개 권한/질문/정책3개(다른2개 준비 오류), 2uptrx2l 실패출구2개, po1urqjb 준비/영향2개, tt_nkd13 관련118개가 현재 경로를 검증한다. 원 후보의 첫 실패는 역사로 남기며 모든 항목의 새 main 수리 전 실패라고 재명명하지 않는다.",
+      "missed_kind": "기존 검사는 정상 저장된 대기 생성과 형식 수락만 대조하고 정책 복원 뒤 검토 개시·중복 방지를 잇지 않았다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0702",
+      "summary": "호출 준비의 일반 권한 반려가 종류와 담당자 없는 대기를 만들며 새 공개 grant를 적용해도 미시작 유지보수 행동이 재큐되지 않는다.",
+      "category": 4,
+      "reproduction": "sim.test_action_authority_waits.ActionAuthorityWaitTests.test_public_grant_releases_the_same_unstarted_maintenance_wait_once",
+      "found_by": "4-A/4-B 실제 공개 revoke/grant 출구 검사. do-math-tests-dw0qnl2a에서 원 action ID가 waiting_actions에 남아 실패했다. main 대기 정본 통합: 3dx5q6ew의 KD-0701/0703 실제 실패를 보존한다. dxb3sopj 정본/회귀14개, 9s_myuzs 공개 권한/질문/정책3개(다른2개 준비 오류), 2uptrx2l 실패출구2개, po1urqjb 준비/영향2개, tt_nkd13 관련118개가 현재 경로를 검증한다. 원 후보의 첫 실패는 역사로 남기며 모든 항목의 새 main 수리 전 실패라고 재명명하지 않는다.",
+      "missed_kind": "기존 권한 준비 검사는 반려와 무실행만 확인하며 허가 복원 뒤 같은 미시작 행동의 해소를 잇지 않았다. 원 재현 위치 sim.test_scheduling_close_preparation.PreparationBranchTests.test_public_grant_releases_the_same_unstarted_maintenance_wait_once에서 현재 같은 성질 모듈로 이동했다. 이전 메서드는 제거하여 중복을 남기지 않는다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0701",
+      "summary": "이미 승인된 미시작 검토 대체에서 원 grant를 공개 철회하고 새 grant로 재승인하면 replacement_ready를 반환하지만 대체 배정·권한 결박은 철회된 grant에 남아 실제 입력 준비가 다시 거부된다.",
+      "category": 4,
+      "reproduction": "unit.test_review_engine_replacement.UserGrantReplacementTests.test_a_new_public_grant_reauthorizes_the_unstarted_replacement_on_the_same_input",
+      "found_by": "4-B 새 권한 출구의 실제 공개 revoke/grant 재현. do-math-tests-e79szuh1에서 ready 대신 authorization_denied를 반환했다. 최초 c2pap6dx는 revoke가 큐를 정상 제거하는 사실을 놓친 fixture 오류이며 재현 증거에서 제외한다. main 대기 정본 통합: 3dx5q6ew의 KD-0701/0703 실제 실패를 보존한다. dxb3sopj 정본/회귀14개, 9s_myuzs 공개 권한/질문/정책3개(다른2개 준비 오류), 2uptrx2l 실패출구2개, po1urqjb 준비/영향2개, tt_nkd13 관련118개가 현재 경로를 검증한다. 원 후보의 첫 실패는 역사로 남기며 모든 항목의 새 main 수리 전 실패라고 재명명하지 않는다.",
+      "missed_kind": "기존 복구 시험은 승인 원문의 정확한 복원이나 최초 대체 승인만 확인했고 기존 대체를 새 공개 grant로 재승인한 뒤 실제 입력 준비까지 잇지 않았다. 원 재현 위치 unit.test_review_wait_contract.ReviewAdmissionWaitContractTests.test_a_new_public_grant_reauthorizes_the_unstarted_replacement_on_the_same_input에서 현재 같은 성질 모듈로 이동했다. 이전 메서드는 제거하여 중복을 남기지 않는다.",
+      "status": "closed"
     }
   ]
 }

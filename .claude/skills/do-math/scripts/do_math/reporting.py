@@ -10,7 +10,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from .provider_wait import epoch_seconds
 from .canonical import exact_content_hash
 from .repository import ResearchRepository
-from .session_slots import ADMISSION_WAITS, live_action_ids
+from .wait_rules import ADMISSION_WAITS
+from .session_slots import live_action_ids
 from .state_checks import inspect_state
 
 # One implementation-level scope for live and historical status. Runtime state
@@ -102,6 +103,32 @@ def task_status(instance, runtime, *, evaluation_context=None):
     return rows
 
 
+def waiting_action_rows(runtime):
+    """Project stored judgments and coordinates without recomputing a wait."""
+    rows = {}
+    coordinate_fields = ('target', 'owner_activity_id', 'profile_ref', 'grant_id', 'review_cycle_id',
+        'stage', 'slot', 'round', 'replacement_for', 'sealedInputHash', 'execution_id', 'question_id',
+        'import_id', 'constraint_id', 'constraint_kind', 'provider', 'retry_at', 'environment_id',
+        'snapshot', 'input_snapshot', 'input_bundle', 'artifact_ref', 'source_ref')
+    for identifier, entry in runtime.get('waiting_actions', {}).items():
+        action = entry['action']
+        coordinates = {'action_id': identifier}
+        detail = entry.get('detail')
+        for source in (action, entry, detail if isinstance(detail, dict) else {}):
+            for field in coordinate_fields:
+                if field in source and source[field] is not None:
+                    coordinates[field] = deepcopy(source[field])
+        rows[identifier] = {
+            'role': action.get('role'), 'target': action.get('target'),
+            'kind': entry.get('kind'), 'reason': entry.get('reason'),
+            'execution_id': entry.get('execution_id'), 'failure_kind': entry.get('failure_kind'),
+            'next_owner': deepcopy(entry.get('next_owner')),
+            **deepcopy({key: value for key, value in entry.items() if key != 'action'}),
+            'coordinates': coordinates,
+        }
+    return rows
+
+
 def operating_summary(instance, runtime):
     """One persisted-state handoff view; scheduler/process observations stay separate."""
     from .supervision import supervision_block, supervision_facts
@@ -126,8 +153,9 @@ def operating_summary(instance, runtime):
                  'missing':deepcopy(lifecycle.get('activation',{}).get('missing',[]))}
     elif runtime.get('status') in {'waiting','capacity_waiting'}:
         waits=runtime.get('waiting_actions',{})
-        blocker={'kind':runtime['status'],'next_owner':None,
-                 'owners':sorted({row.get('next_owner','engine') for row in waits.values()})}
+        owners=sorted({row['next_owner'] for row in waits.values() if row.get('next_owner')})
+        blocker={'kind':runtime['status'],'next_owner':owners[0] if len(owners)==1 else None,
+                 'owners':owners}
     else:
         blocker=None
     config=instance.get('config',{})
@@ -170,7 +198,7 @@ def status_report(store, head, instance, runtime, *, observation=None, requested
     from .question_engine import question_view, user_questions
     from .retention import pending_cleanup_failures
     from .supervision import supervision_facts
-    from .session_slots import SLOT_WAITS
+    from .wait_rules import SLOT_WAITS
     observed = dict.fromkeys(OBSERVED_FIELDS)
     unknown = set(observation or {}) - set(OBSERVED_FIELDS)
     if unknown:
@@ -214,11 +242,7 @@ def status_report(store, head, instance, runtime, *, observation=None, requested
             # user_pause, conversation_lost, model_policy_violation, maintenance_fence,
             # installation_repair and operator_enabled: the facts supervision decides on.
             **supervision_facts(instance, runtime),
-            "waiting_actions": {aid: {"role": entry["action"].get("role"),
-                "target": entry["action"].get("target"), "kind": entry.get("kind"),
-                "reason": entry.get("reason"), "execution_id": entry.get("execution_id"),
-                "failure_kind": entry.get("failure_kind")}
-                for aid, entry in runtime.get("waiting_actions", {}).items()},
+            "waiting_actions": waiting_action_rows(runtime),
             "grants": [{"id": g["id"], "kind": g.get("kind"), "status": g.get("status"), "expires_at": g.get("expires_at")}
                        for g in instance.get("grants", {}).values()],
             "pending_events": runtime.get("pending_events", []),
@@ -283,14 +307,25 @@ def render_human_report(report: dict) -> str:
         lines.append(f"provider {name}: {gate['state']} retry={display_time(gate.get('retry_at')) or 'unknown'} "
                      f"generation={gate['generation']}")
     lines.extend(render_dispatch_waits(report))
+    lines.extend(render_waiting_actions(report))
     return "\n".join(lines)
+
+
+def render_waiting_actions(report):
+    lines = []
+    for identifier, row in report.get('waiting_actions', {}).items():
+        lines.append(f"action {identifier}: {row['role']} wait={row['kind']} next={row['next_owner']} "
+                     f"reason={row['reason']}")
+        lines.append('  coordinates: ' + json.dumps(row['coordinates'], ensure_ascii=False, sort_keys=True))
+    return lines
 
 
 def render_dispatch_waits(report):
     task_ids = {task['id'] for task in report.get('tasks', [])}
     return [f"action {row['action_id']}: {row['role']} wait={row['wait']['kind']} "
             f"constraint={row['wait'].get('constraint_id') or row['wait'].get('provider') or 'none'} "
-            f"next={row['wait'].get('next_owner') or 'none'}"
+            f"next={row['wait'].get('next_owner') or 'none'} "
+            f"reason={row['wait'].get('reason') or row['wait']['kind']}"
             for row in report.get('dispatch_waits', []) if row.get('target') not in task_ids]
 
 

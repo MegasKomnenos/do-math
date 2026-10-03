@@ -1,4 +1,5 @@
 """Decision currentness, separate from exact evidence and action applicability."""
+from .wait_rules import waiting_action
 from copy import deepcopy
 
 from . import planning, submission
@@ -204,9 +205,9 @@ class DecisionEngineMixin:
                 refreshed["review_basis_key"] = planning.review_basis_key(task, self.instance, self.runtime)
             self.runtime["queue"].insert(original_position, refreshed)
         else:
-            self.runtime.setdefault("waiting_actions", {})[action["id"]] = {"action": deepcopy(action),
+            self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({"action": deepcopy(action),
                 "kind": "execution_failure", "failure_kind": "currentness_changed", "changes": deepcopy(changes),
-                "reason": "decision premises changed again after one refresh", "execution_id": execution_id}
+                "reason": "decision premises changed again after one refresh", "execution_id": execution_id})
             if action["role"] != "operational_review":
                 self._enqueue("operational_review", execution_id, reason="Resolve repeated decision premise conflicts")
             else:

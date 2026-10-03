@@ -1,6 +1,8 @@
 """Preserve failed submissions and route accepted installation repairs."""
 from __future__ import annotations
 
+from .wait_rules import waiting_action
+from .wait_rules import FAILED_ACTION_WAITS
 import hashlib
 import json
 from copy import deepcopy
@@ -128,10 +130,10 @@ class RepairExecutionMixin:
             self.runtime.get('waiting_actions', {}).pop(action['id'], None)
             self.runtime['queue'].append(retry)
             return
-        self.runtime.setdefault('waiting_actions', {})[action['id']] = {
+        self.runtime.setdefault('waiting_actions', {})[action['id']] = waiting_action({
             'action': retry, 'kind': 'output_validation', 'execution_id': execution_id,
             'reason': 'Producer repair was rejected again; diagnose the preserved contract and receiver errors',
-            'detail': {'issues': deepcopy(received['issues'])}}
+            'detail': {'issues': deepcopy(received['issues'])}})
         self.route_failed_action(action, execution_id,
             reason='Bounded submission repair exhausted; distinguish producer, input, contract and installation defects')
 
@@ -142,7 +144,7 @@ class RepairExecutionMixin:
         if execution.get('role') != 'intent_interpretation' or execution.get('status') != 'ended':
             raise ValueError('initial diagnosis must identify an ended interpretation')
         wait = self.runtime.get('waiting_actions', {}).get(execution['action']['id'])
-        if not wait or wait.get('kind') not in {'output_validation', 'execution_failure', 'submission_failure'} or wait.get('execution_id') != execution['id']:
+        if not wait or wait.get('kind') not in FAILED_ACTION_WAITS or wait.get('execution_id') != execution['id']:
             raise ValueError('initial diagnosis no longer owns this failure')
         self._validate_initial_retry(wait, diagnostic_action_id=action.get('id'))
         return execution, wait

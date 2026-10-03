@@ -8019,16 +8019,11 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 31,
+      "main_ledger_count": 36,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
-        "KD-0705",
-        "KD-0704",
-        "KD-0703",
         "KD-1300",
-        "KD-0702",
-        "KD-0701",
         "KD-0900",
         "KD-0901",
         "KD-1100",
@@ -8049,8 +8044,8 @@
         "KD-1908",
         "KD-1909"
       ],
-      "meaning": "25개는 main 미기록 후보 항목이며 제품 미구현 수나 전체 완료율이 아니다. 실제 원 구현과 재현 및 의존을 대조한다.",
-      "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
+      "meaning": "20개는 main 미기록 후보 항목이며 전체 미구현 수나 완료율이 아니다.",
+      "next": "다음 통합은 제출/설치 복구 결과 선언과 계수/재시도 실제 수신, 이어서 공급자 사건 수리와 형식 Git 의미 포트다. 대기 등록부만으로 원문4-A/4-B 전건을 닫지 않는다.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
     },
@@ -9128,7 +9123,7 @@
     "review_restoration_integration": {
       "id": "B31",
       "scope": "KD-0700: 실제 Git 고정 조사 원천 누락의 좌표 복원 진단",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-4c49ogb_\\report.json",
         "sha256": "a51006fd5ddf0aceba8e6c471354ccb99a7b32e2fe73235e10cf98b91f843784",
@@ -9211,6 +9206,414 @@
         "complete": true,
         "successful": true,
         "total_seconds": 2.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "commit": "cdc8e489"
+    },
+    "wait_contract_integration": {
+      "id": "B32",
+      "scope": "행동 대기22종/배정 대기3종의 정본 및 실제 공개 권한·정책·질문·게시 실패 출구 KD-0701~0705",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-3dx5q6ew\\report.json",
+        "sha256": "bae1d4e23b17bf1ea862f37a6ed430d50755d672315cb9e2120435570ddfc66e",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 2
+        },
+        "total_seconds": 20.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "canonical_and_focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-dxb3sopj\\report.json",
+        "sha256": "1d1fc93c891ba38d84fbc37e72ae01ce04991ea9edee75d5547d36b4f0ecc50c",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 14
+        },
+        "total_seconds": 28.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_action_wait_contract.ActionWaitRecordTests.test_kind_updates_preserve_evidence_and_invalid_updates_change_nothing",
+              "seconds": 0.2660000000614673,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "public_exit_initial": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-9s_myuzs\\report.json",
+        "sha256": "216ad1c7ecf29c9413db2fb989803f5bc39349ca3237367a8ce3b7d4fd50d9e9",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 3,
+          "not_run": 2
+        },
+        "total_seconds": 51.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_import_wait_contract.ImportWaitContractTests.test_every_import_wait_has_a_public_exact_once_exit_and_a_real_status_row",
+              "seconds": 10.594000000040978,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "failed_action_exit": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-2uptrx2l\\report.json",
+        "sha256": "2fc95bc86720433f65d8295b3db35783601648b131bd78f9cf67cf5037c0c6dc",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 30.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "family_initial": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-7kqdzb3q\\report.json",
+        "sha256": "bfb8f9e83583387b7f3a96dae3c4c96304d240810fcf317438c08cabba731319",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1,
+          "passed": 1,
+          "not_run": 1
+        },
+        "total_seconds": 20.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_formal_wait_contract.FormalWaitContractTests.test_every_declared_formal_wait_has_a_negative_condition_and_exact_release",
+              "seconds": 6.484000000054948,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "family_corrected": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-po1urqjb\\report.json",
+        "sha256": "b0eedec31765af1c890e59b9c0b1a035dd214497bc14f3872153a1749a2c23cc",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 23.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_preparation_wait_contract.PreparationWaitContractTests.test_every_declared_preparation_wait_has_a_real_input_or_profile_exit",
+              "seconds": 17.155999999959022,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-tt_nkd13\\report.json",
+        "sha256": "cf2e6f5accabc18bfa6a997293770d1effe6ed57bb4c74a17614c95a280064b5",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 118
+        },
+        "total_seconds": 13.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 6.438000000081956,
+              "budget_seconds": 5.0
+            },
+            {
+              "id": "unit.test_knowledge_formal_engine.FormalBindingConnections.test_exact_compiler_keys_and_source_survive_result_artifacts",
+              "seconds": 0.515999999945052,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_engine.FormalBindingConnections.test_failed_result_uses_the_fixed_command_fingerprint_and_axioms",
+              "seconds": 0.7970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_engine.FormalBindingConnections.test_publication_signature_distinguishes_exact_unicode_payload",
+              "seconds": 0.5,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_admission.PublicationTests.test_final_match_does_not_override_suspension_or_formal_change",
+              "seconds": 0.35999999998603016,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_activation_git_round_trip_preserves_old_and_loads_new_records",
+              "seconds": 0.43700000003445894,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_assessment_survives_a_second_transition_and_git_round_trip",
+              "seconds": 0.5470000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_stages.DisputeTests.test_complete_rejected_objection_round_trip",
+              "seconds": 0.39099999994505197,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_stages.DisputeTests.test_mismatch_and_round_limit_return_precise_followup",
+              "seconds": 0.31299999996554106,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_stages.DisputeTests.test_new_judge_finding_is_assigned_answered_and_fully_judged",
+              "seconds": 0.5,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_stages.DisputeTests.test_scope_to_answer_and_judgment_publishes_the_same_links_consumed_by_goal_audit",
+              "seconds": 0.5780000000959262,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_transcripts.ObservedTranscriptTests.test_input_delta_is_not_a_recursive_transcript_copy",
+              "seconds": 0.43700000003445894,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_reporting.ReportingTests.test_status_reports_artifact_presence_and_length_in_one_batch_without_bytes",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "소스 생성/종류 변경과 선언을 양방향 대조하고 실제 해소자 좌표를 확인한다. 모든 제품 행동 대기는 공통 생성자를 거쳐 미등록 종류를 거부하며 판정 전문을 분리한다. 새 공개 권한은 미시작 행동만 한 번 재큐하고 검토 대체의 이미 봉인된 권한은 바꾸지 않는다. 정확 채택 정책/현행 형식 증거 복원 뒤 검토를 한 번 열고 공개 답변 뒤 원 import 계보를 한 번 재작업한다. 봉인 읽기 실패는 로컬 종료가 확인된 실행·예약을 정산한 뒤 진단한다. status와 사람용 보고는 저장된 담당자·사유·원 좌표를 읽기 전용으로 투영한다.",
+      "corrections": "초기 도우미 오류를 제품 실패로 숨기지 않는다. main의 현재 native_final과 prepared_sim API를 사용하고 영향 해소 receipt는 모델 임시 목록 대신 실제 control_receipts의 해당 execution에 결합하여 검사한다. 후보의 stricter APIs는 그대로 둔다. 기존 KD0701/0702 메서드는 같은 성질의 현재 모듈로 이동하고 중복 제거한다.",
+      "limits": "현재 부분 증거를 합산해 전체 성공이라고 하지 않는다. 4-A는 활동/실행 수명/질문/반복/수리/사건/역할판정 등 더 큰 원문 모집단도 요구한다. registry 22종 및 현재 가족 검사가 그 전건을 대신하지 않는다. 기존 과제 입력초과/개정 의존·수리 반복·형식 생산자 전건과 계수 표 및 최종 동일판본 관문은 남는다. 기록된 개별 시간 초과를 유지한다.",
+      "whole_requirement_closed": false,
+      "files": [
+        {
+          "path": "do_math/call_engine.py",
+          "sha256": "f3aabfddc1200cbba2ee93192d952e21f0da20c8607fa06150b5e38860cd1feb"
+        },
+        {
+          "path": "do_math/core_engine.py",
+          "sha256": "5157e4d18da421999bf68a03a7b098c84d74089d7209109531b305c5b6d7fd9a"
+        },
+        {
+          "path": "do_math/decision_engine.py",
+          "sha256": "5d0d5b2cdcbaf92af075a59b24cf4e1aa4217274d363324795466067c2676e62"
+        },
+        {
+          "path": "do_math/dispatch_engine.py",
+          "sha256": "b4b1e45519122447f0896ddf3d348b03b109c57feddf844fc75eb8875327576b"
+        },
+        {
+          "path": "do_math/formal_engine.py",
+          "sha256": "b4bb684afb028d3f94c4db27b3c9b71573ea3fdab226173abc33279126facaf9"
+        },
+        {
+          "path": "do_math/governance_engine.py",
+          "sha256": "b0e32b634a1499744c840300173266a11352897863c6d7a2dcd0257863e89ceb"
+        },
+        {
+          "path": "do_math/layers.py",
+          "sha256": "1c1021de289053dd6284c157fa9c3fa02a6c4a8988a825f15b495c3aca052c3d"
+        },
+        {
+          "path": "do_math/lifecycle_engine.py",
+          "sha256": "4aa544096544352950406e04989d51275ffe985abf5fee0d752e92224e7c7a0c"
+        },
+        {
+          "path": "do_math/planning_engine.py",
+          "sha256": "27971d062e6103588a8232d64f4006cee4021d16e7111163c4f2523c6ce68282"
+        },
+        {
+          "path": "do_math/repair_execution.py",
+          "sha256": "0d3a7277c8ec5d8b8b52da7751629a1a20fa0b6e016a1a74800753e1997bbb59"
+        },
+        {
+          "path": "do_math/reporting.py",
+          "sha256": "af7e8eace71ab0739de9235659bfc209240848abf8c1170a7c9109accc55af3c"
+        },
+        {
+          "path": "do_math/review_cycle.py",
+          "sha256": "2e3303f0a3ee8d858720c16031d02226f57c34191508e30e5e4960928a463b56"
+        },
+        {
+          "path": "do_math/review_engine.py",
+          "sha256": "1e14d436a1fedfb2dca3bf722aa004e7c60cd6de4830ca85f5a12142733e9144"
+        },
+        {
+          "path": "do_math/revision_engine.py",
+          "sha256": "3b8a6aed417ba003f5e540adee8bf5084706b0735f45f0737af78d7a680a8bde"
+        },
+        {
+          "path": "do_math/session_slots.py",
+          "sha256": "d55c90c21cb37d028e41fb92f498855cdcd3742e85082cf02680e7184086a273"
+        },
+        {
+          "path": "do_math/supervision.py",
+          "sha256": "bb0e0561242c9d57e38dd72769c7e2531210834eaa75c6ffdbeb40ead5aef275"
+        },
+        {
+          "path": "do_math/wait_rules.py",
+          "sha256": "2f862047b70a9532843331b05240a5331d51b46173aabbd3e8630c5250aa5e64"
+        },
+        {
+          "path": "tests/flows/test_failed_action_wait_contract.py",
+          "sha256": "d297e4f7c15481dc774191c8774aae94ac083e98b0cb54aa8683a429aa71b5fc"
+        },
+        {
+          "path": "tests/flows/test_impact_wait_contract.py",
+          "sha256": "c16f34a8f93566b021e3d30d1ab1c2b0d42e48c442c413aba88a2e2492752ccf"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "29a2fb06854c35102d865bc2b5c64fb3c3d00fb089354facda64e024a8ab4359"
+        },
+        {
+          "path": "tests/sim/test_action_authority_waits.py",
+          "sha256": "3c4fb4588d1a1679689268bdb5ea781ce23f99ffcb780b489dabe0a0181ffb5b"
+        },
+        {
+          "path": "tests/sim/test_formal_wait_contract.py",
+          "sha256": "f518148097bf32221be382ebdfb1244bb73eb1abaed6b0d82e6dcf29d2b14e13"
+        },
+        {
+          "path": "tests/sim/test_import_wait_contract.py",
+          "sha256": "d990e9197c6d329e7cd57fdd991aa2a2c32506147502d8642ecf6ec75f48b777"
+        },
+        {
+          "path": "tests/sim/test_knowledge_import_control.py",
+          "sha256": "4e6cdc0885ff5bdfdd7981f04f75760dce4666f2bd1b97d466411121aa4ee9f3"
+        },
+        {
+          "path": "tests/sim/test_preparation_wait_contract.py",
+          "sha256": "9fe04d657911ca557210ed260b3a3b98c1fbcfab10729b03b7e33ba0f666aac0"
+        },
+        {
+          "path": "tests/structure/test_action_wait_contract.py",
+          "sha256": "cab5c9413ce0333c761f4831350a9f800cb30d00c5e6b8a7002877032e224b01"
+        },
+        {
+          "path": "tests/structure/test_admission_wait_contract.py",
+          "sha256": "c735bff2a2849aa82d662261a08c635b3d8577a0bae3c2a382eb77839790c057"
+        },
+        {
+          "path": "tests/structure/test_authority_wait_contract.py",
+          "sha256": "7f031c0d9ded4eb4713c9b28b580434ebec875b224c2851c8226dbfdf59d8755"
+        },
+        {
+          "path": "tests/structure/test_formal_wait_contract.py",
+          "sha256": "1a12e6c39343a5a6c227c8b23db3a5177f6c132609b3fea8953af4fa011c2e7d"
+        },
+        {
+          "path": "tests/structure/test_preparation_wait_contract.py",
+          "sha256": "286694e6c98b79e4b981e197801a8d0ff6681b1462803c7b9cc32b5509fd6d4b"
+        },
+        {
+          "path": "tests/structure/test_review_wait_contract.py",
+          "sha256": "d3b484fc0fd6283ffcab3818db2e50ea32fa525bc29063f77b640f73459cfc3d"
+        },
+        {
+          "path": "tests/support/failed_actions.py",
+          "sha256": "66826f24620fdb4dd5e02939324de81daefc25b09c8f36907e23e9d8f21e523a"
+        },
+        {
+          "path": "tests/support/governance_cases.py",
+          "sha256": "3b3462b53a63c86a676077d821d7b36a5808ce1f66d29af5b8af63d2b64e9769"
+        },
+        {
+          "path": "tests/support/planning_contract_inputs.py",
+          "sha256": "4658c1a137c28bab2df482b4f77ebce0c8ff81b3242dcb3fadb3459741233009"
+        },
+        {
+          "path": "tests/support/review_owner_inputs.py",
+          "sha256": "6624cceeb05300f4251477eeb1091492c68dae489e7dfb677c74658771748e1e"
+        },
+        {
+          "path": "tests/support/source_values.py",
+          "sha256": "d6d6d8cb86c12445c5f1f86dea8e5fb483e1a68029651eb580bbbea2045a837f"
+        },
+        {
+          "path": "tests/support/wait_reporting.py",
+          "sha256": "a9c12c96f4f91cc668472fbfb7e99c753088f54bc47aae622c8eac092f499a20"
+        },
+        {
+          "path": "tests/unit/test_action_wait_contract.py",
+          "sha256": "36ea347a6e1c9c59b0bfcc26678e2c8b68aeb42ac5884af123ce1a2f2ef5db97"
+        },
+        {
+          "path": "tests/unit/test_admission_wait_contract.py",
+          "sha256": "9de3fe18040d8affb2653500b55095794cbd6a05b72224239af095aa1b69b086"
+        },
+        {
+          "path": "tests/unit/test_review_engine_replacement.py",
+          "sha256": "41e32ba6508a3397aa0c849eff52264beac8a619d0d779dcb83907bde3eb9722"
+        },
+        {
+          "path": "tests/unit/test_review_wait_contract.py",
+          "sha256": "d4dabc6e1f16a3d18f9da476abcc0ca12e47b2f8e78d24a00bdcc682e5c5e269"
+        },
+        {
+          "path": "이음새-정본.md",
+          "sha256": "4c34948c6a0187f644d2280fc2e93c433dbba8586d691b5f4f032aa3b5670cf6"
+        }
+      ],
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-l_8o4bhp\\report.json",
+        "sha256": "59816151841c6e2c44bd0b71bd6c95e7576dfefca2bdbc850b91a43fe858eea1",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 9
+        },
+        "total_seconds": 10.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-m5cb056y\\report.json",
+        "sha256": "ddb6dc7c3227296a338311e54b159340787a6dd226378eb8157e053f9e7ca847",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 1.6,
         "changed_during_run": [],
         "budget": {
           "over_budget": [],

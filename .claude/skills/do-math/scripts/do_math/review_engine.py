@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from .wait_rules import REVIEW_WAITS
 import hashlib
 import json
 from pathlib import Path
@@ -370,6 +371,33 @@ class ReviewEngineMixin:
             changed.append(cid)
         return changed
 
+    def _retry_review_initialization(self):
+        """Open the held accepted proposal when its exact adopted policy returns."""
+        if self._instance_closed() or self.instance['lifecycle']['state'] != 'active':
+            return
+        policy = self.instance.get('review_policy')
+        adoption = self.instance['lifecycle']['adoption']
+        if policy is None or exact_content_hash(policy) != adoption['review_policy_sha256']:
+            return
+        try:
+            self._adopted_review_policy()
+        except ValueError:
+            return
+        for identifier, waiting in list(self.runtime.get('waiting_actions', {}).items()):
+            if waiting.get('kind') != 'review_initialization':
+                continue
+            knowledge_id = waiting['action']['target']
+            item = self.instance['knowledge'].get(knowledge_id)
+            formal = self.instance['formal_results'].get(item.get('formal_result_id')) if item else None
+            if (not formal or formal.get('publication_state') != 'accepted' or formal.get('formal_use') != 'active'
+                    or formal.get('verification', {}).get('execution_id') != waiting['execution_id']
+                    or formal.get('trust_environment_id') != self.instance.get('active_trust_environment')):
+                continue
+            cycle_id = self._start_identity_review(knowledge_id)
+            self.runtime['history'].append({'kind': 'review_initialization_resumed', 'action_id': identifier,
+                'cycle_id': cycle_id, 'previous': deepcopy(waiting)})
+            del self.runtime['waiting_actions'][identifier]
+
     def _start_identity_review(self, knowledge_id, previous_cycle_id=None):
         self._settle_review_resource_dispositions()
         item = self.instance['knowledge'][knowledge_id]
@@ -704,7 +732,7 @@ class ReviewEngineMixin:
         released = []
         for identifier, entry in list(waits.items()):
             held = entry.get('action', {})
-            if (entry.get('kind') in {'review_input_restoration', 'review_recovery', 'review_authority'} and
+            if (entry.get('kind') in REVIEW_WAITS and
                     all(held.get(key) == action.get(key) for key in ('review_cycle_id', 'stage', 'round', 'slot'))):
                 released.append(identifier)
                 del waits[identifier]

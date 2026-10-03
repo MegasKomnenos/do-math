@@ -541,6 +541,9 @@ class LifecycleEngineMixin:
         self._retire_closed_revision_targets()
         self._retire_sealed_goal_audit_requests()
         self._reconcile_revision_delegations()
+        self._resume_action_authority_waits()
+        self._retry_review_initialization()
+        self._resume_import_question_waits()
         live_actions = live_action_ids(self.runtime)
         for action in list(self.runtime['queue']):
             if action.get('id') in live_actions:

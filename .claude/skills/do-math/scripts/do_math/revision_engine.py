@@ -1,4 +1,5 @@
 """Revision requests retain their obligations through delegation and recovery."""
+from .wait_rules import waiting_action
 from copy import deepcopy
 
 from . import planning, revisions
@@ -237,10 +238,10 @@ class RevisionEngineMixin:
                         "execution_id": execution_id, "to_action_id": action["id"] if transferred else None, "previous": deepcopy(entry)})
                     del self.runtime["waiting_actions"][owner]
         if unresolved:
-            self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
+            self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({
                 "action": {**deepcopy(action), "revision_targets": unresolved}, "kind": "revision_dependency",
                 "delegated_targets": delegated, "execution_id": execution_id,
-                "reason": "; ".join(resolutions[identifier]["reason"] for identifier in unresolved)}
+                "reason": "; ".join(resolutions[identifier]["reason"] for identifier in unresolved)})
         elif action["id"] in self.runtime.get("waiting_actions", {}):
             previous = self.runtime["waiting_actions"][action["id"]]
             if previous.get("kind") == "revision_dependency":

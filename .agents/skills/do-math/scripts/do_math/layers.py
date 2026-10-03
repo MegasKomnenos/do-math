@@ -129,6 +129,7 @@ LAYERS = {
     'do_math/trust_inventory.py': '2',
     'do_math/trust_validation.py': '2',
     'do_math/values.py': '1',
+    'do_math/wait_rules.py': '1',
     'do_math/windows_job.py': 'adapter',
     'do_math/wiring.py': '3',
     'do_math/worker_request.py': '1',

@@ -1230,8 +1230,27 @@ def authorize_record_replacement(cycle, action, instance, *, runtime, grant_id=N
         return {'disposition': 'authorization_denied', 'cycle': cycle, 'authority': authority,
                 'reason': authority['reason'], 'recovery_event': copy.deepcopy(event)}
     if prior:
-        return {'disposition': 'replacement_ready', 'cycle': cycle,
-                'action': copy.deepcopy(prior['action']), 'authority': authority}
+        binding = {'grant_id': authority['grant_id'], 'grant_sha256': authority['grant_sha256'],
+                   'authority_request': request, 'authority': copy.deepcopy(authority),
+                   'delegation_id': delegation_id, 'case': copy.deepcopy(case)}
+        if all(prior.get(name) == value for name, value in binding.items()):
+            return {'disposition': 'replacement_ready', 'cycle': cycle,
+                    'action': copy.deepcopy(prior['action']), 'authority': authority}
+        admitted = any(execution.get('action', {}).get('id') == prior['action']['id']
+                       for execution in runtime.get('executions', {}).values())
+        if admitted:
+            reason = 'replacement authority is already sealed into an admitted attempt'
+            return {'disposition': 'authorization_denied', 'cycle': cycle,
+                    'authority': {**authority, 'allowed': False, 'reason': reason}, 'reason': reason}
+        n = copy.deepcopy(cycle)
+        replacement = n['replacement_actions'][key]
+        replacement.update(copy.deepcopy(binding))
+        replacement['action'].update(grant_id=authority['grant_id'], grant_sha256=authority['grant_sha256'])
+        n.setdefault('history', []).append({'event': 'replacement_authority_renewed', 'action': expected,
+            'recovery_event': index, 'grant_id': authority['grant_id'], 'previous_binding': copy.deepcopy(prior)})
+        return {'disposition': 'replacement_ready', 'cycle': n,
+                'action': copy.deepcopy(replacement['action']), 'authority': authority,
+                'recovery_event': copy.deepcopy(event)}
     n = copy.deepcopy(cycle)
     if not event.get('continuity_broken'):
         n.setdefault('continuity_events', []).append({'kind': 'continuity_broken', 'recovery_event': index,

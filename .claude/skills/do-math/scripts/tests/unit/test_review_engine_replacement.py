@@ -51,6 +51,51 @@ class ReviewSceneCase(unittest.TestCase):
 
 
 class UserGrantReplacementTests(ReviewSceneCase):
+    def test_a_new_public_grant_reauthorizes_the_unstarted_replacement_on_the_same_input(self):
+        grant_replacement(self.engine)
+        cid = self.scene.start('K1')
+        action = deepcopy(self.scene.pending())
+        self.engine._record_review_recovery(action, ValueError('lost exact slot input'), retryable=False)
+        first = self.engine._authorize_review_replacement(action, grant_id='GR-review')
+        self.assertEqual(first['disposition'], 'replacement_ready')
+        cycle = self.engine.runtime['review_cycles'][cid]
+        key, = cycle['replacement_actions']
+        original = deepcopy(cycle['replacement_actions'][key])
+        pinned = deepcopy(next(row for row in self.engine.runtime['queue'] if row.get('replacement_for') is not None))
+        self.engine.instance, self.engine.runtime, _ = governance.apply_decision(
+            self.engine.instance, self.engine.runtime,
+            {'kind': 'revoke', 'decision_id': 'DC-revoke-review', 'grant_id': 'GR-review'},
+            source_ref='SOURCE-review', clock=self.engine.ports.clock)
+        denied = self.engine._prepare_review_context(pinned, self.scene.root / 'revoked-authority')
+        self.assertEqual(denied['disposition'], 'authorization_denied')
+        specification = deepcopy(self.engine.instance['decisions']['DEC-review']['change']['grant'])
+        specification['id'] = 'GR-review-renewed'
+        self.engine.instance, self.engine.runtime, _ = governance.apply_decision(
+            self.engine.instance, self.engine.runtime,
+            {'kind': 'grant', 'decision_id': 'DC-new-review', 'grant': specification},
+            source_ref='SOURCE-review', clock=self.engine.ports.clock)
+        renewed = self.engine._authorize_review_replacement(action, grant_id='GR-review-renewed')
+        self.assertEqual(renewed['disposition'], 'replacement_ready')
+        replacement = deepcopy(next(row for row in self.engine.runtime['queue'] if row.get('replacement_for') is not None))
+        prepared = self.engine._prepare_review_context(replacement, self.scene.root / 'renewed-authority')
+        self.assertEqual(prepared['disposition'], 'ready')
+        current = self.engine.runtime['review_cycles'][cid]['replacement_actions'][key]
+        self.assertEqual(current['grant_id'], 'GR-review-renewed')
+        self.assertEqual(current['action']['id'], original['action']['id'])
+        self.assertEqual(current['sealed_input_sha256'], original['sealed_input_sha256'])
+        self.assertEqual(current['omitted_indices'], original['omitted_indices'])
+        self.assertEqual(self.engine.instance['grants']['GR-review']['status'], 'revoked')
+        renewal, = [event for event in self.engine.runtime['review_cycles'][cid]['history']
+                    if event.get('event') == 'replacement_authority_renewed']
+        self.assertEqual(renewal['previous_binding'], original)
+        preserved = deepcopy(current)
+        repeated = self.engine._authorize_review_replacement(action, grant_id='GR-review-renewed')
+        self.assertEqual(repeated['disposition'], 'replacement_ready')
+        self.assertEqual(self.engine.runtime['review_cycles'][cid]['replacement_actions'][key], preserved)
+        self.assertEqual(len([event for event in self.engine.runtime['review_cycles'][cid]['history']
+                             if event.get('event') == 'replacement_authority_renewed']), 1)
+
+
     def test_central_replacement_control_releases_wait_and_queues_next_execution(self):
         engine, scene = self.engine, self.scene
         grant_replacement(engine)

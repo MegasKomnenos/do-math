@@ -28,6 +28,8 @@ from support.engine_lifecycle import (applied, clear_work, next_environment, onl
                                       task, transition)
 from support.provider_probes import ObservedCalls
 from support.review_sim import THEOREM, cycle_of, opened_sim, reviewed_sim, theorem_id, warm_opened, warm_reviewed
+from do_math.review_policy import build_review_policy
+from support.wait_reporting import assert_wait_report
 from support.sim import Sim, warm_template
 
 
@@ -181,6 +183,7 @@ class FormalConsumerTests(unittest.TestCase):
                        signatures={'truth': 'truth : True'})
         kid = imported(sim, knowledge_candidate())
         only(sim, 'formal_check')
+        adopted_policy = deepcopy(sim.engine.instance['review_policy'])
         sim.engine.instance.pop('review_policy')
         sim.engine._save()
         action = next(row for row in sim.runtime['queue'] if row['role'] == 'formal_check')
@@ -199,6 +202,34 @@ class FormalConsumerTests(unittest.TestCase):
         _, instance, runtime = sim.engine.store.load()
         default_state_contract().validate(instance, runtime)
         self.assertEqual(runtime['waiting_actions'][identifier], waiting)
+        assert_wait_report(self, sim.engine, identifier)
+        before = deepcopy((sim.instance, sim.runtime))
+        for _ in range(2):
+            sim.engine._retry_review_initialization()
+            self.assertEqual((sim.instance, sim.runtime), before)
+        sim.instance['review_policy'] = build_review_policy(reviewer_count=adopted_policy['minimum_initial_slots'],
+            max_rounds=adopted_policy['round_limit'] + 1)
+        unadopted = deepcopy((sim.instance, sim.runtime))
+        sim.engine._retry_review_initialization()
+        self.assertEqual((sim.instance, sim.runtime), unadopted)
+        # Restore the exact adopted contract, preserving its existing adoption hash.
+        sim.engine.instance['review_policy'] = adopted_policy
+        sim.engine._save()
+        sim.engine._refresh_readiness()
+        self.assertNotIn(identifier, sim.runtime.get('waiting_actions', {}))
+        resumed = [row for row in sim.runtime['history'] if row.get('kind') == 'review_initialization_resumed']
+        self.assertEqual(len(resumed), 1)
+        self.assertEqual(resumed[0]['previous'], waiting)
+        cycle_id = sim.instance['knowledge'][kid]['review_cycle_id']
+        cycles = [row for row in sim.runtime['review_cycles'].values() if row['knowledge_id'] == kid]
+        self.assertEqual([row['id'] for row in cycles], [cycle_id])
+        queued = deepcopy(sim.runtime['queue'])
+        sim.engine._refresh_readiness()
+        self.assertEqual(sim.runtime['queue'], queued)
+        self.assertEqual(len([row for row in sim.runtime['executions'].values() if row['role'] == 'formal_check']), 1)
+        sim.engine._save()
+        self.assertNotIn(identifier, sim.engine.store.load()[2]['waiting_actions'])
+
 
     def test_review_starts_from_split_proposal_without_nested_authorities(self):
         sim = opened_sim()

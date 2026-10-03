@@ -11,14 +11,7 @@ from copy import deepcopy
 import json
 import math
 
-# Admission wait kinds recorded in a queued request's ``dispatch_wait``.
-PROVIDER_WAIT = 'provider_limit'
-# Slot waits: the instance is capacity_waiting when every queued request has one.
-SLOT_WAITS = frozenset({'capacity', 'host_capacity'})
-# Resource waits: a changed resource configuration may release them.
-RESOURCE_WAITS = SLOT_WAITS | {'resource_unclassified'}
-# Every admission wait, as status reports show scheduling waits.
-ADMISSION_WAITS = RESOURCE_WAITS | {PROVIDER_WAIT}
+from . import wait_rules
 
 
 def held_reservations(runtime: dict, owner_ids=None) -> list:
@@ -80,7 +73,7 @@ class SessionSlots:
         gate = self._gate(ai.get("provider"))
         if gate is None or gate_open(gate, current):
             return None
-        return {'kind': PROVIDER_WAIT, 'model': ai["model"], 'profile_ref': profile_ref(profile),
+        return {'kind': wait_rules.PROVIDER_WAIT, 'model': ai["model"], 'profile_ref': profile_ref(profile),
                 'provider': ai["provider"], 'retry_at': utc(gate['retry_at']),
                 'reason': 'provider admission is waiting for reobservation', 'next_owner': 'scheduler'}
 
@@ -92,7 +85,7 @@ class SessionSlots:
         """
         from .execution_profiles import (match_profile_ref, profile_ref, job_resource_limits,
                                          validate_host_constraint, UNCAPPED_ROLES)
-        from .budget import plan_reservations, BudgetConflict
+        from .budget import plan_reservations, BudgetConflict, BudgetInputError
         self.admission_wait = None
         profile = match_profile_ref(self.instance["execution_profiles"], profile_ref(profile))
         approved_host = self.instance.get("host_capacity_ref")
@@ -157,9 +150,10 @@ class SessionSlots:
         try:
             records = plan_reservations(held, constraints, accounting_profile, owner_id=execution_id)
         except BudgetConflict as error:
-            kind, owner = {'concurrency': ('capacity', 'scheduler'),
-                           'host': ('host_capacity', 'operations')}.get(
-                               error.constraint_kind, ('resource_unclassified', 'operations'))
+            if error.constraint_kind not in wait_rules.BUDGET_WAIT_KINDS:
+                raise BudgetInputError('unregistered admission constraint kind: ' + repr(error.constraint_kind)) from error
+            kind = wait_rules.BUDGET_WAIT_KINDS[error.constraint_kind]
+            owner = 'scheduler' if error.constraint_kind == 'concurrency' else 'operations'
             constraint = constraints.get(error.constraint_id, {})
             if error.constraint_kind == 'concurrency' and constraint.get('work_slots') == 0:
                 owner = 'user'

@@ -95,3 +95,26 @@ def delegated_revision(sim):
     engine._remove_action(parent)
     engine._save()
     return parent['id'], tid, kid
+
+
+def _build(root, shared):
+    from support.sim import Sim
+    from support.engine_lifecycle import clear_work
+    sim = Sim.activated(root, shared=shared)
+    clear_work(sim)
+    produce_task(sim)
+    clear_work(sim)
+    return sim
+
+
+def prepared_sim():
+    from support.sim import built
+    return built('planning-contract-inputs', _build)
+
+
+def warm_prepared():
+    prepared_sim()
+
+
+def only_task(sim):
+    return next(row for row in sim.runtime['tasks'].values() if row['title'] == '계획 과제')

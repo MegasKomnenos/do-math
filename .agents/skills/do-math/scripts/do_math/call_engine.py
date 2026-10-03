@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+from .wait_rules import waiting_action
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -19,6 +20,7 @@ from . import submission, execution_window
 from . import activities, execution_lifecycle, execution_profiles, launch
 from .provider_engine import record_model_policy_violation
 from .payloads import json_safe
+from .wait_rules import review_preparation_wait, observation_preparation_wait, action_authority_wait
 
 
 class InputPreparationInterrupted(Exception):
@@ -92,12 +94,11 @@ class CallEngineMixin:
             observation_config = tracker_config(profile, initial_self_check_rules=rules,
                                               no_progress_limit=config.get("no_progress_limit"))
         except ValueError as error:
-            next_owner = "research_preparation" if role == "research_work" and not settings_errors else "execution_profile"
-            kind = "observation_rules" if next_owner == "research_preparation" else "observation_configuration"
+            waiting = observation_preparation_wait(action, str(error), task_rules=role == 'research_work' and not settings_errors)
+            kind, next_owner = waiting['kind'], waiting['next_owner']
             activities.wait_for(self.runtime, activity["id"], reason=str(error),
                 condition={"kind": kind, "task_id": action.get("target")}, next_owner=next_owner, at=self.ports.clock.now())
-            self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
-                "action": deepcopy(action), "kind": kind, "reason": str(error), "next_owner": next_owner}
+            self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting
             if settings_errors:
                 self.runtime['waiting_actions'][action['id']]['observation_errors'] = settings_errors
             self._remove_action(action)
@@ -107,7 +108,11 @@ class CallEngineMixin:
             return True
         authority = governance.authorize(self.instance, action, runtime=self.runtime, at=self.ports.clock.now())
         if not authority["allowed"]:
-            self.runtime.setdefault("waiting_actions", {})[action["id"]] = {"action": action, "reason": authority["reason"]}
+            waiting = action_authority_wait(action, authority)
+            self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting
+            activities.wait_for(self.runtime, activity['id'], reason=waiting['reason'],
+                condition={'kind': waiting['kind'], 'action_id': action['id']},
+                next_owner=waiting['next_owner'], at=self.ports.clock.now())
             self._remove_action(action)
             if action.get("target") in self.runtime["tasks"]:
                 self.runtime["tasks"][action["target"]]["status"] = "waiting"
@@ -142,12 +147,7 @@ class CallEngineMixin:
         try:
             context = self._context(action, workspace, execution_id=execution_id)
         except ReviewPreparationDeferred as error:
-            recovery = error.outcome["recovery"]
-            reason = "review_authority" if error.outcome["disposition"] == "authorization_denied" else "review_input_restoration"
-            next_owner = recovery["next_owner"]
-            self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
-                "action": deepcopy(action), "kind": reason, "next_owner": next_owner,
-                "reason": "review input or authority requires resolution", "detail": deepcopy(recovery)}
+            self.runtime.setdefault("waiting_actions", {})[action["id"]] = review_preparation_wait(action, error.outcome)
             self._remove_action(action)
             self._discard_prepared_input(base, execution_id,
                 reason="review input or authority requires resolution", cancelled=False)
@@ -241,9 +241,9 @@ class CallEngineMixin:
                     "failed_at": self.ports.clock.now()})
             self.runtime.setdefault("input_overflows", []).append({"action": action, "detail": detail, "source_catalog": fitted["manifest"]})
             self._remove_action(action)
-            self.runtime.setdefault("waiting_actions", {})[action["id"]] = {"action": action,
+            self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({"action": action,
                 "kind": "input_overflow", "reason": "input_overflow", "detail": detail, "question_id": question["id"],
-                "next_owner": resolution["next_owner"]}
+                "next_owner": resolution["next_owner"]})
             defer_input_overflow(self.runtime, detail, at=self.ports.clock.now(), question_ref=question["id"])
             self.runtime["status"] = "ready" if self.runtime["queue"] else "waiting"
             if resolution["next_owner"] == "research_plan":
@@ -537,9 +537,9 @@ class CallEngineMixin:
                     disposition={"kind": "submission_failure"})
                 current.update(error=str(error), error_kind="submission_failure")
                 self._remove_action(action)
-                self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
+                self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({
                     "action": deepcopy(action), "kind": "submission_failure", "reason": str(error),
-                    "execution_id": execution_id, "next_owner": "engine"}
+                    "execution_id": execution_id, "next_owner": "engine"})
                 self.route_failed_action(action, execution_id,
                     reason="Resolve the preserved submission or publication failure")
                 if self.runtime["status"] != "paused" and not self._instance_closed():
@@ -558,10 +558,10 @@ class CallEngineMixin:
                     and self.runtime["status"] not in {"paused", "closed"}
                     and not self.runtime.get("stop_requested")):
                 self._remove_action(action)
-                self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
+                self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({
                     "action": action, "kind": "execution_failure", "reason": result.get("error"),
                     "failure_kind": result.get("error_kind", "execution_failure"),
-                    "execution_id": execution_id, "input_snapshot": execution["input_snapshot"]}
+                    "execution_id": execution_id, "input_snapshot": execution["input_snapshot"]})
                 returned = (result['status'] == 'stopped' and role == 'supplemental_research'
                             and action.get('research_request_id')
                             and self._finish_failed_investigation(action, execution_id, result.get('error')))

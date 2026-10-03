@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .session_slots import PROVIDER_WAIT
+from .wait_rules import PROVIDER_WAIT
 
 # Supervision blockers in priority order; the first present one decides.
 # ``held`` is the local HOLD file and ``disabled`` the operator setting.

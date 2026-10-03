@@ -6,11 +6,13 @@ failure. The owner loop that acts on them is ``scheduler`` (layer 3).
 """
 from __future__ import annotations
 
+from .wait_rules import waiting_action
 from copy import deepcopy
 from .execution_profiles import LEAN_ROLES, MACHINE_ROLES, PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, task_research
 from .state_contract import ARTIFACT_ROOT
 from .model_policy import selection
-from .session_slots import SLOT_WAITS, SessionSlots
+from .wait_rules import SLOT_WAITS
+from .session_slots import SessionSlots
 
 
 class DispatchEngineMixin:
@@ -71,9 +73,9 @@ class DispatchEngineMixin:
                 action = execution['action']
                 self._remove_action(action)
                 if action.get('id') and not self._instance_closed():
-                    self.runtime.setdefault('waiting_actions', {})[action['id']] = {
+                    self.runtime.setdefault('waiting_actions', {})[action['id']] = waiting_action({
                         'action': deepcopy(action), 'kind': 'execution_failure', 'execution_id': execution_id,
-                        'reason': execution['error'], 'next_owner': 'operational_review'}
+                        'reason': execution['error'], 'next_owner': 'operational_review'})
                     self.route_failed_action(action, execution_id,
                         reason='Assess the interrupted execution using its preserved result and remaining obligation')
                 self._settle_activity(execution_id)

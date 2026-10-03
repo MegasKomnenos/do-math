@@ -1,12 +1,14 @@
 """Engine integration for the preparation and planning outputs: model assessments, observation rules and the queue plan."""
 from __future__ import annotations
 
+from .wait_rules import waiting_action
 from copy import deepcopy
 from .execution_profiles import PLANNING_ROLES, RESEARCH_PRODUCER_ROLES, task_research
 from .model_policy import assessment_basis, edition_current, validate_assessments, preparation_only
 from .planning import revision_requested
 from .session_slots import live_action_ids
 from .task_contracts import TERMINAL_TASK_STATUSES
+from .wait_rules import PREPARATION_WAIT_RULES, TASK_OBSERVATION_WAITS, PREPARATION_INPUT_WAITS, preparation_deferral_kind
 
 class PlanningEngineMixin:
     def _apply_model_metadata(self, action, output, execution_id):
@@ -68,7 +70,7 @@ class PlanningEngineMixin:
 
     def _resolve_task_observation_waits(self, task_id, execution_id):
         for aid, entry in list(self.runtime.get('waiting_actions', {}).items()):
-            if (entry.get('kind') in {'observation_rules', 'observation_configuration'}
+            if (entry.get('kind') in TASK_OBSERVATION_WAITS
                     and entry.get('action', {}).get('target') == task_id
                     and entry['action']['role'] in RESEARCH_PRODUCER_ROLES):
                 self.runtime['history'].append({'kind': entry['kind'] + '_resolved', 'action_id': aid,
@@ -140,10 +142,10 @@ class PlanningEngineMixin:
                 missing_rules[tid] = assessment_basis(task)
         missing_by_field = {'assessment_targets': missing, 'observation_rule_targets': missing_rules}
         for aid, entry in list(self.runtime.get("waiting_actions", {}).items()):
-            if entry.get('kind') not in {'model_assessment_input', 'observation_rule_input'}:
+            if entry.get('kind') not in PREPARATION_INPUT_WAITS:
                 continue
             inputs_changed = (entry.get('rule_input_version') != self._rule_deferral_inputs(entry.get('observation_rule_deferrals', []))
-                if entry.get('kind') == 'observation_rule_input' and not entry['action'].get('assessment_targets')
+                if PREPARATION_WAIT_RULES[entry['kind']]['input_version'] == 'rules' and not entry['action'].get('assessment_targets')
                 else entry.get('input_version') != self._assessment_input_version())
             if (inputs_changed
                     or any(missing_by_field[field].get(tid) != basis for field in missing_by_field
@@ -212,11 +214,13 @@ class PlanningEngineMixin:
             question = 'Task preparation pending: ' + '; '.join(row['task_id'] + ': ' + row['reason'] for row in [*deferred, *deferred_rules])
             self.runtime["questions"].append(question)
             held_action = {key: value for key, value in action.items() if key not in {'assessment_targets', 'observation_rule_targets'}}
-            self.runtime.setdefault("waiting_actions", {})[action["id"]] = {
-                "action": {**held_action, **pending}, "kind": 'observation_rule_input' if deferred_rules else 'model_assessment_input',
+            wait_kind = preparation_deferral_kind(deferred_rules)
+            self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({
+                "action": {**held_action, **pending}, "kind": wait_kind,
+                'next_owner': PREPARATION_WAIT_RULES[wait_kind]['next_owner'],
                 'observation_rule_deferrals': deepcopy(deferred_rules),
                 'rule_input_version': self._rule_deferral_inputs(deferred_rules),
-                "reason": question, "question": question, "input_version": self._assessment_input_version(), "execution_id": execution_id}
+                "reason": question, "question": question, "input_version": self._assessment_input_version(), "execution_id": execution_id})
 
     def _apply_queue_plan(self, execution_id):
         # The receiver's submission check fixed every row before this application: only

@@ -1,6 +1,6 @@
 """A checked active delegation built by real governance, interpretation and storage producers."""
 from do_math import delegations, governance
-from support.governance_sim import returned
+from support.governance_sim import interpreted, returned
 from support.sim import Sim, built
 
 
@@ -36,3 +36,30 @@ def _delegated(root, shared):
 
 def delegated_sim():
     return built('governance-close-delegated', _delegated)
+
+
+def _question(root, shared):
+    sim = Sim.activated(root, shared=shared)
+    sim.model.on('intent_interpretation').reply(interpreted(question='자연수 범위인가?'))
+    sim.control('input', text='명제의 범위를 확인한다.', request_id='IN-close-question')
+    sim.run_until(lambda s: any(row.get('kind') == 'import_user_decision'
+                               for row in s.runtime.get('waiting_actions', {}).values()), max_steps=12)
+    return sim
+
+
+def question_sim():
+    return built('governance-close-question', _question)
+
+
+def question_bundle(sim):
+    wait = next(row for row in sim.runtime['waiting_actions'].values() if row.get('kind') == 'import_user_decision')
+    return sim.runtime['intent_imports'][wait['import_id']]
+
+
+def _initial_question(root, shared):
+    from support.governance_sim import initial_sim
+    return initial_sim(root, question='자연수 범위인가?', shared=shared)
+
+
+def initial_question_sim():
+    return built('governance-initial-question', _initial_question)

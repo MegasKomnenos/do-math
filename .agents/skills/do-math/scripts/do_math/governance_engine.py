@@ -3,6 +3,7 @@
 The hooks stage ordinary controls and model results on the same roots as the
 other engine mixins. They never publish a second control receipt or call save.
 """
+from .wait_rules import waiting_action
 from copy import deepcopy
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from .control_contracts import user_decision_changed
 from .canonical import canonical_json, exact_content_hash
 from .session_slots import live_action_ids
 from .task_contracts import TERMINAL_TASK_STATUSES
+from .wait_rules import AUTHORITY_WAIT_RULES
 
 
 def bind_host_configuration(instance, config, *, origin):
@@ -42,7 +44,8 @@ class GovernanceEngineMixin:
     def _configure_candidate(self, instance, runtime, request):
         """Single transition for public configure and checked configuration units."""
         from .scholarly_config import resolve_scholarly_server
-        from .session_slots import RESOURCE_WAITS, quiescence
+        from .wait_rules import RESOURCE_WAITS
+        from .session_slots import quiescence
         patch = request.get('config', {})
         if not isinstance(patch, dict): raise ValueError('configuration patch must be an object')
         if request.get('origin', 'user') not in {'user', 'operator'}: raise ValueError('unknown configuration authority')
@@ -185,6 +188,30 @@ class GovernanceEngineMixin:
             self._enqueue('research_preparation', reason='checked user information')
         self._resume_import_question_waits()
 
+    def _resume_action_authority_waits(self):
+        """Requeue an unstarted action once, retaining every pinned authority field."""
+        from .activities import resume_activity
+        at = self._lifecycle_now().isoformat()
+        for identifier, waiting in list(self.runtime.get('waiting_actions', {}).items()):
+            if waiting.get('kind') not in AUTHORITY_WAIT_RULES:
+                continue
+            action = waiting['action']
+            if any(execution.get('status') != 'ended' and execution.get('action', {}).get('id') == identifier
+                   for execution in self.runtime['executions'].values()):
+                continue
+            authority = governance.authorize(self.instance, action, runtime=self.runtime, at=at)
+            if not authority['allowed']:
+                continue
+            activity = self.runtime.get('activities', {}).get(action.get('owner_activity_id'))
+            condition = {'kind': waiting['kind'], 'action_id': identifier}
+            if activity and activity['status'] == 'waiting' and activity['waiting']['condition'] == condition:
+                resume_activity(self.runtime, activity['id'], condition=condition, at=at)
+            if not any(row.get('id') == identifier for row in self.runtime['queue']):
+                self.runtime['queue'].append(deepcopy(action))
+            self.runtime['history'].append({'kind': 'action_authority_resolved', 'action_id': identifier,
+                'authority': deepcopy(authority), 'previous': deepcopy(waiting)})
+            del self.runtime['waiting_actions'][identifier]
+
     def _resume_import_question_waits(self):
         """Only an applied answer resumes the original interpretation lineage."""
         for aid, wait in list(self.runtime.get('waiting_actions', {}).items()):
@@ -196,6 +223,9 @@ class GovernanceEngineMixin:
                 and row.get('blocks')]
             if not questions or any(row['status'] == 'open' for row in questions):
                 continue
+            self.runtime['history'].append({'kind': 'import_question_wait_resumed', 'action_id': aid,
+                'import_id': bundle['id'], 'previous': deepcopy(wait),
+                'resolution_refs': sorted({row['resolution_ref'] for row in questions if row.get('resolution_ref')})})
             del self.runtime['waiting_actions'][aid]
             if not bundle.get('superseded_by'):
                 self._queue_intent_rework(bundle, 'Apply the resolved user answers to the preserved original: ' +
@@ -252,16 +282,16 @@ class GovernanceEngineMixin:
             return bundle
         required = {u['unit_id'] for u in bundle['output']['import_units'] if u['payload']}
         if not any(q['blocks'] for q in bundle['output'].get('question_details', [])) and required:
-            self.runtime.setdefault('waiting_actions', {})[action.get('id', bundle['id'])] = {
+            self.runtime.setdefault('waiting_actions', {})[action.get('id', bundle['id'])] = waiting_action({
                 'action': deepcopy(action), 'kind': 'import_application_authority', 'import_id': bundle['id'],
-                'reason': 'checked interpretation lacks exact change approval', 'next_owner': 'user'}
+                'reason': 'checked interpretation lacks exact change approval', 'next_owner': 'user'})
             return bundle
         self.instance, self.runtime, receipt = governance.apply_import(self.instance, self.runtime, bundle['id'],
             owner_handlers=handlers, clock=self.ports.clock)
         if receipt['status'] == 'awaiting_decision':
-            self.runtime.setdefault('waiting_actions', {})[action.get('id', bundle['id'])] = {
+            self.runtime.setdefault('waiting_actions', {})[action.get('id', bundle['id'])] = waiting_action({
                 'action': deepcopy(action), 'kind': 'import_user_decision', 'import_id': bundle['id'],
-                'reason': 'Checked interpretation awaits its blocking user answers', 'next_owner': 'user'}
+                'reason': 'Checked interpretation awaits its blocking user answers', 'next_owner': 'user'})
         self._after_governance_import(bundle['id'])
         return receipt
 
