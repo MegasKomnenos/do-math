@@ -11487,7 +11487,7 @@
     },
     "repetition_population_integration": {
       "id": "B42",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "현재 반복 결과 생산 전건/모든 한도의 유지·재개와 원 sim18사례/실제 빈 준비2사례 통합",
       "changed_area": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-u_ba78bt\\report.json",
@@ -11527,6 +11527,208 @@
       },
       "contract": "실제 생산 결과와 선언 양방향 census; 모든11결과/모든lineage의 계수·한도·중복 불변·정확사용자해소·후속1개, actual empty success와실패 predecessor 구분. 제품동작변경없음.",
       "limits": "4-B/4-C의 반복 가족 부분 검증. 다른 상태 공간과 전체 T2/flows/T3·예산·극단변이 관문을 대신하지 않는다. 구조 smell5.437초 개별예산 초과 보존.",
+      "whole_requirement_closed": false,
+      "commit": "ec6a57a2"
+    },
+    "planning_population_integration": {
+      "id": "B43",
+      "state": "verified_main_commit_pending",
+      "scope": "계획 영역 후보11모듈과 정상 생산자 및 필요한 템플릿 준비 동작 통합",
+      "initial_family": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-01uxu689\\report.json",
+        "sha256": "f095c29488d0c1144663ee342c08fec2dcb1f2c89ec51e73c0f1c81260a08dc5",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 345,
+          "not_run": 59
+        },
+        "total_seconds": 139.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_document_context.InstallationEditionTests.test_installation_polling_is_bounded_and_forced_checks_still_detect_edits",
+              "seconds": 2.5,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_document_context.InstallationEditionTests.test_unchanged_installation_listing_reuses_the_hashed_edition",
+              "seconds": 4.234000000054948,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_engine_connections.KindSemanticConnections.test_proposed_kind_is_checked_by_a_separate_execution_before_activation",
+              "seconds": 2.780999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_preparation_transitions.AcademicPreparationPrefixTests.test_generated_academic_contract_is_rated_before_rejection_and_consumed_once",
+              "seconds": 15.937999999965541,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_repetition_engine.RepetitionEngineTests.test_empty_preparation_preserves_machine_time_and_opens_one_due_regeneration",
+              "seconds": 3.077999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_repetition_engine.RepetitionEngineTests.test_native_plan_failures_reach_receiver_counter_through_preserved_bytes",
+              "seconds": 2.077999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
+              "seconds": 17.57799999997951,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_waiting_work_result_does_not_force_assessment_status",
+              "seconds": 26.73499999998603,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_revision_obligations.RevisionObligationTests.test_deferred_child_records_parent_deferral_without_new_child_wait",
+              "seconds": 2.530999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_extra_child_target_does_not_change_parent_scope",
+              "seconds": 2.155999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_partial_resolution_preserves_remaining_target_and_detached_basis",
+              "seconds": 2.109000000054948,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "unit.test_planning_reading_map.ReadingMapTests.test_role_rows_add_their_references_after_the_common_documents",
+              "seconds": 0.375,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_planning_task_storage.TaskContractStorageTests.test_candidate_review_profile_selection_and_governance_survive_git_reload",
+              "seconds": 0.26500000001396984,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_planning_task_storage.TaskContractStorageTests.test_transfer_closes_without_completion_and_recipient_obligation_survives_reload",
+              "seconds": 0.31299999996554106,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "failed_fixture_recheck": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-pp5enjc9\\report.json",
+        "sha256": "fb02eaa47894f8548e73706bfdc7909021314ed1dafaff3863063c5723f0381b",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 68
+        },
+        "total_seconds": 62.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_closed_instance_detaches_ended_delegate_without_new_work",
+              "seconds": 2.031000000075437,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_different_preparer_does_not_steal_already_delegated_target",
+              "seconds": 2.01500000001397,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_optional_delegated_work_preserves_required_parent_after_unchanged",
+              "seconds": 2.594000000040978,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_scope_receivers.TransferReceiverTests.test_two_transfers_increment_recipient_once_and_preserve_both_obligations",
+              "seconds": 2.672000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 6.188000000081956,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "조건 문법·정확근거, 의무/처분·범위, 개정·관찰복구·준비·관계/위임·평가/양도/철회·전문판정의 실제 정상생산자와 단일변경 반려·불변을 검증한다. 제품동작변경없음.",
+      "diagnosis": "첫선택345passed/59not_run은 세 setUpModule의 warm_built 미정의 ImportError였다. 캐시 준비만 분리하고 원입력key/실패캐시/restore는 유지한 후 미실행59+template3+structure6 모두 통과. 후보restart 별도diff는 포함하지 않음.",
+      "source_review": {
+        "path": "C:/Users/wogud/.claude/projects/C--math/16d62671-b86c-420b-ad51-2d857f6fa9e7.jsonl",
+        "zero_based_lines": [
+          367,
+          375,
+          377,
+          483
+        ],
+        "meaning": "속도 조건과 시험품질/비용 조건, 동작보존뒤수리 선택의 실제 승인 문맥을 확인"
+      },
+      "limits": "두 보고는 helper판본이 달라 합산한 현행404전체증거가 아니다. 최초14/재검증5 개별예산 초과 보존. 다른 모집단·설계 전건·최종 전체 관문은 남음.",
+      "files": [
+        {
+          "path": "tests/unit/test_planning_condition_validation.py",
+          "sha256": "10b3762c823685c2de53121dca109a62aa0d12a1f8b3919645dd03c3c661484f"
+        },
+        {
+          "path": "tests/unit/test_planning_disposition_validation.py",
+          "sha256": "3fcce479e7a61a12d8caff4a31de697cfd5e3626dd764e64d01f4a1e1b7ccfaf"
+        },
+        {
+          "path": "tests/unit/test_planning_revision_validation.py",
+          "sha256": "80629c5f1c6197960229b945a0dd5c245a0df4dc202b02deb21846c07fd9f134"
+        },
+        {
+          "path": "tests/unit/test_planning_scope_validation.py",
+          "sha256": "b86d2cfe130ede5cb1f9f94a60e3c67c13fba344a1d6b332f55cb30c619853ab"
+        },
+        {
+          "path": "tests/sim/test_planning_observation_recovery.py",
+          "sha256": "f3f51a0b5763876cd4388c1f34bfd355265283309b86f73c0ad3e420297259c5"
+        },
+        {
+          "path": "tests/sim/test_planning_preparation_transitions.py",
+          "sha256": "2797ac3b1fae3b436e42c7cb42c9df06d46f0b92a31d0f97abf09fe4cd40b378"
+        },
+        {
+          "path": "tests/sim/test_planning_readiness_boundaries.py",
+          "sha256": "f7e2a3c9d2dbb1ac6dffb166a9b0195d95237b9bb47a491614b3602ec5a5f862"
+        },
+        {
+          "path": "tests/sim/test_planning_relation_conditions.py",
+          "sha256": "3c4667f3e123f0cee6bba9963c6e01f2e44f9e9fba6688f4a3d9c14bc73aa77e"
+        },
+        {
+          "path": "tests/sim/test_planning_revision_transitions.py",
+          "sha256": "bf18458b36299a48c4be6e48e8f68b55d409a48e92ba4e5a3ac7b17feb34d286"
+        },
+        {
+          "path": "tests/sim/test_planning_scope_receivers.py",
+          "sha256": "618835855b2f7c89b13f5ab8d1d8e6605c13908408ceef55fe53c3aeaa6df2d2"
+        },
+        {
+          "path": "tests/sim/test_planning_specialist_judgments.py",
+          "sha256": "2922550e5aaa089e5c694060436fd2b1897511919cf17f79c5c4389788885e36"
+        },
+        {
+          "path": "tests/support/planning_contract_inputs.py",
+          "sha256": "a3d10660a6a041eea320a99b122357f39d62b6317c146a0383940a5c0b909772"
+        },
+        {
+          "path": "tests/support/sim.py",
+          "sha256": "c8955bcbf8d9023245d05d56c15e9a542767b1326d6f3cb8363bf1128d9d25ee"
+        }
+      ],
       "whole_requirement_closed": false
     }
   }

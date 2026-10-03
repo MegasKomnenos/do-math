@@ -1,6 +1,7 @@
 """Real relation, approved task, input seal and delegated revision producers."""
 from copy import deepcopy
-from support.role_answers import candidate, review_items
+from do_math import contracts, planning
+from support.role_answers import candidate, disposition, review_items
 
 
 def produce_task(sim, title='계획 과제', *, revises=None, inputs=(), revision_targets=(), obligations=None):
@@ -191,3 +192,198 @@ def empty_hold_sim():
 
 def warm_empty_hold():
     empty_hold_sim()
+
+
+def contract():
+    wire = candidate('계획 계약')
+    row = contracts.task_candidate_record(wire, task_id='TK-planning')
+    row.pop('revises_task_id')
+    row.update(status='planned', results=[], reviews=[], occurrence_condition={'op': 'always'})
+    return row
+
+
+def fulfilled(task):
+    return {'task_id': task['id'], 'decision': 'completed', 'reason': '보고된 의무의 독립 판정',
+            'item_dispositions': [{'obligation_id': row['id'], 'kind': 'fulfilled',
+                                   'evidence_refs': ['EX-planning-work']}
+                                  for row in task['completion_obligations']], 'unresolved': []}
+
+
+def selected_plan(task):
+    return {'dispositions': [disposition(task['id'])], 'task_assessments': [],
+            'preparation_requests': [], 'goal_audit': False}
+
+
+def returned(sim):
+    """실제 작업 수신자가 결과를 붙인 뒤 평가 입력을 만든다."""
+    from support.engine_lifecycle import _ended_execution
+    from support.default_responder import common
+    engine = sim.engine
+    task = only_task(sim)
+    _ended_execution(engine, 'EX-planning-work', 'research_work')
+    engine._apply({'role': 'research_work', 'target': task['id']},
+                  {**common('research_work'), 'outcome': 'submitted',
+                   'report': '자연수의 덧셈 항등식을 확인했다.'}, 'EX-planning-work')
+    _ended_execution(engine, 'EX-planning-plan', 'research_plan')
+    engine._save()
+    return fulfilled(only_task(sim))
+
+
+def _build_transfer(root, shared):
+    from support.sim import Sim
+    from support.engine_lifecycle import applied, clear_work
+    sim = Sim.activated(root, shared=shared)
+    clear_work(sim)
+    produce_task(sim)
+    recipient = produce_task(sim, '받는 과제')
+    returned(sim)
+    task = only_task(sim)
+    applied(sim, 'decision', config={'change': {'kind': 'task_scope',
+        'task_id': task['id'], 'disposition': 'transfer', 'revision': task['revision'],
+        'contract_sha256': planning.contract_hash(task), 'obligation_ids': ['OB-argument'],
+        'target_task_id': recipient, 'reason': '사용자가 수신 과제로 의무를 옮긴다.'}})
+    clear_work(sim)
+    return sim
+
+
+def transfer_sim():
+    from support.sim import built
+    return built('planning-transfer-inputs', _build_transfer)
+
+
+def transfer_input(sim):
+    task = only_task(sim)
+    decision = next(row for row in sim.instance['decisions'].values()
+                    if row.get('change', {}).get('kind') == 'task_scope')
+    assessment = fulfilled(task)
+    assessment.update(decision='closed', item_dispositions=[{
+        'obligation_id': 'OB-argument', 'kind': 'transferred', 'evidence_refs': [],
+        'authority_ref': decision['id'], 'target_task_id': decision['change']['target_task_id'],
+        'target_obligation_id': 'OB-inherited'}])
+    return assessment
+
+
+def warm_transfer():
+    from support.sim import warm_built
+    warm_built('planning-transfer-inputs', _build_transfer)
+
+
+def defer_revision(sim, identifiers, *, required=False):
+    """정상 개정 처분 수신으로 revision_dependency 대기를 생산한다."""
+    from do_math import revisions
+    from support.engine_lifecycle import _ended_execution
+    from support.planning_owner import enqueue
+    engine = sim.engine
+    action = enqueue(engine, 'research_preparation', revision_targets=revisions.capture_targets(
+        engine.instance, engine.runtime, identifiers, required=required))
+    eid = sim.ports.clock.new_id('EX')
+    _ended_execution(engine, eid, 'research_preparation')
+    engine.runtime['executions'][eid]['extensions'] = {'revision_resolutions': [
+        {'record_id': identifier, 'disposition': 'deferred', 'reason': '추가 근거를 기다린다.'}
+        for identifier in identifiers]}
+    issues = revisions.submission_errors({'candidates': []}, engine.runtime['executions'][eid]['extensions'], {
+        'action': action, 'tasks': list(engine.runtime['tasks'].values()),
+        'knowledge_catalog': list(engine.instance['knowledge'].values())})
+    if issues:
+        raise AssertionError('정상 개정 보류 입력이 수신 계약을 어겼다: ' + repr(issues))
+    engine._apply_revision_followup(action, {'summary': '개정 보류'}, eid)
+    engine._remove_action(action)
+    engine._save()
+    return action['id']
+
+
+def select(sim):
+    from support.engine_lifecycle import _ended_execution
+    engine = sim.engine
+    task = only_task(sim)
+    eid = sim.ports.clock.new_id('EX')
+    _ended_execution(engine, eid, 'research_plan')
+    engine._apply_task_plan(selected_plan(task), eid, deepcopy(engine.runtime['tasks']), [task['id']],
+                           evaluation_context=engine._evaluation_context())
+    action = next(a for a in engine.runtime['queue'] if a.get('target') == task['id'] and a['role'] == 'research_work')
+    engine._save()
+    return next(a for a in engine.runtime['queue'] if a['id'] == action['id'])
+
+
+def warm_relation():
+    from support.sim import warm_built
+    warm_built('planning-relation-inputs', _build_relation)
+
+
+def _build_specialist(root, shared):
+    """소유 작업의 실제 Lean·동일성 수신 결과를 전문 판정 의무에 연결한다."""
+    from datetime import timedelta
+    from do_math.task_scope import apply_task_assessments
+    from support.sim import Sim
+    from support.model import Answer
+    from support.engine_lifecycle import _ended_execution, clear_work, theorems
+    from support.default_responder import common
+    sim = Sim.activated(root, shared=shared)
+    clear_work(sim)
+    endpoint, = theorems(sim, 'planning_specialist_endpoint')
+    obligation = candidate()['completion_obligations'][0]
+    obligation['judges'] = ['identity_review']
+    tid = produce_task(sim, obligations=[obligation])
+    clear_work(sim)
+    source = 'theorem planning_specialist : 1 = 1 := rfl'
+    sim.lean.allow(source, ['planning_specialist'], signatures={'planning_specialist': 'planning_specialist : 1 = 1'},
+        declaration_evidence={'planning_specialist': {'type': '1 = 1', 'value': None}}, axioms={'planning_specialist': []}, dependencies={'planning_specialist': {}})
+
+    def wait_for_specialist(output, context):
+        for assessment in output['task_assessments']:
+            assessment['decision'] = 'incomplete'
+            for row in assessment['item_dispositions']:
+                row['kind'] = 'open'
+        for row in output['dispositions']:
+            row.update(kind='not_selected', reason='독립 전문 판정 수신을 기다린다.', next_owner='research_plan',
+                revisit={'event_refs': [], 'at': (sim.ports.clock.wall() + timedelta(days=1)).isoformat()})
+        output['goal_audit'] = False
+        return output
+
+    sim.model.on('research_plan').reply(Answer(wait_for_specialist))
+    _ended_execution(sim.engine, 'EX-specialist-work', 'research_work')
+    claim = {'kind': 'formally_implies', 'source': endpoint, 'target': endpoint,
+             'confirmed_scope': 'One equals one'}
+    sim.runtime['executions']['EX-specialist-work']['extensions'] = {'knowledge_metadata': [{
+        'title': 'planning-specialist', 'relation_claim': claim}]}
+    sim.engine._apply({'role': 'research_work', 'target': tid}, {**common('research_work'),
+        'outcome': 'submitted', 'report': '항등식을 형식 증명하고 전문 판정을 요청한다.', 'knowledge': [{
+            'kind': 'theorem', 'title': 'planning-specialist', 'statement': 'One equals one',
+            'explanation': 'Reflexivity', 'summary': 'Reflexivity', 'lean_code': source,
+            'declaration_names': ['planning_specialist'], 'dependencies': []}]}, 'EX-specialist-work')
+    sim.engine._save()
+    kid = next(k for k, row in sim.instance['knowledge'].items() if row['title'] == 'planning-specialist')
+
+    def judged(scene):
+        cid = scene.instance['knowledge'][kid].get('review_cycle_id')
+        return bool(cid and scene.runtime['review_cycles'][cid]['status'] != 'working'
+                    and all(e['status'] == 'ended' for e in scene.runtime['executions'].values()))
+
+    sim.run_until(judged, max_steps=20)
+    cid = sim.instance['knowledge'][kid]['review_cycle_id']
+    if sim.runtime['review_cycles'][cid].get('decision') != 'match':
+        raise AssertionError('전문 판정의 실제 동일성 주기가 일치로 끝나지 않았다.')
+    aid = next(row['id'] for row in sim.instance['identity_assessments'].values()
+               if row.get('review_cycle_id') == cid and row.get('decision') == 'match')
+    clear_work(sim)
+    _ended_execution(sim.engine, 'EX-specialist-plan', 'research_plan')
+    assessment = fulfilled(only_task(sim))
+    assessment['item_dispositions'][0]['evidence_refs'] = [aid]
+    sim.engine.instance, sim.engine.runtime = apply_task_assessments(sim.instance, sim.runtime, [assessment],
+        execution_id='EX-specialist-plan', input_tasks=deepcopy(sim.runtime['tasks']), clock=sim.ports.clock)
+    from do_math.knowledge_io import import_relation
+    sim.engine.instance, _ = import_relation(sim.instance, {**claim, 'evidence': '독립 판정을 마친 자기 함의',
+        'formal_result_refs': [sim.instance['knowledge'][kid]['formal_result_id']], 'assessment_refs': [aid]},
+        source_ref='EX-specialist-work', actor_ref='EX-specialist-work', clock=sim.ports.clock)
+    sim.engine._save()
+    return sim
+
+
+def specialist_sim():
+    from support.sim import built
+    return built('planning-specialist-inputs', _build_specialist)
+
+
+def warm_specialist():
+    from support.sim import warm_built
+    warm_built('planning-specialist-inputs', _build_specialist)

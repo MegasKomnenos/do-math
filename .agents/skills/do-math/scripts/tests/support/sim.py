@@ -399,6 +399,15 @@ def built(name, build, **parameters):
     Defaults omitted and explicitly supplied share a copy; different inputs never
     share one. A failed build remains failed for that exact key in this process.
     """
+    return warm_built(name, build, **parameters).restore()
+
+
+def warm_built(name, build, **parameters):
+    """Build/cache a named template without restoring or attributing a consumer.
+
+    Module fixtures keep producer failures and cost here. ``built`` uses this
+    same normalization and sticky failure cache, then restores a fresh Sim.
+    """
     encoded, inputs = template_inputs(build, parameters)
     key = (name, build.__module__, build.__qualname__, encoded)
     if key not in _BUILT:
@@ -407,4 +416,4 @@ def built(name, build, **parameters):
                                key='sim:built:' + json.dumps(key, ensure_ascii=False))
     elif _BUILT[key] == 'failed':
         raise AssertionError(f'the Sim template {key!r} failed to build earlier in this process')
-    return _BUILT[key].restore()
+    return _BUILT[key]
