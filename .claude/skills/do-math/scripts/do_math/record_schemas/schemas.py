@@ -552,7 +552,7 @@ RECORDS["goal_judgments"] = record({"execution_id": ID, "basis": TEXT, "decision
     "additional_audits": array(_AUDIT_RESULT),
     "formal_result_refs": REFS, "assessment_refs": REFS, "dependencies": REFS,
     "record_basis": array(obj({"id": ID, "sha256": HASH, "status": TEXT}, ("id", "sha256", "status"))),
-    "basis_is_conservative": BOOL, "reason": TEXT, "goal_revision": NAT,
+    "basis_is_conservative": BOOL, "reason": TEXT, "goal_revision": NAT, "goal_basis_sha256": HASH,
     "policy_revision": HASH, "source_basis": HISTORY, "use_history": HISTORY, "current": BOOL,
     "invalidated_reason": TEXT},
     ("execution_id", "decision", "basis"))

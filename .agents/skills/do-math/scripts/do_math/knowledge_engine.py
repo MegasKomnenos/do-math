@@ -4,6 +4,7 @@ from __future__ import annotations
 from .knowledge import revise_knowledge, invalidate_knowledge, validate_basis, assess_use
 from .input_basis import sources_current
 from .initialization import governance_working_view
+from .governance import mathematical_goal_basis
 
 class KnowledgeEngineMixin:
     def _invalidate_goal_currentness(self):
@@ -15,7 +16,7 @@ class KnowledgeEngineMixin:
             invalid_dependencies = [record_id for record_id in judgment.get('dependencies', [])
                 if record_id in self.instance.get('knowledge', {}) and not assess_use(self.instance['knowledge'][record_id], self.instance)['valid']]
             if (judgment.get('record_basis') and not validate_basis(judgment['record_basis'], self.instance, self.runtime)['valid']) or (judgment.get('source_basis') and not sources_current(judgment['source_basis'], self.instance)) or (
-                    judgment.get('goal_revision', view.get('goal_revision')) != view.get('goal_revision')) or (
+                    judgment.get('goal_basis_sha256') != mathematical_goal_basis(view['charter'])) or (
                     judgment.get('policy_revision', view.get('policy_revision')) != view.get('policy_revision')) or invalid_dependencies:
                 judgment['current'] = False
                 judgment['invalidated_reason'] = ('A mathematical dependency is no longer usable: ' + ', '.join(invalid_dependencies)

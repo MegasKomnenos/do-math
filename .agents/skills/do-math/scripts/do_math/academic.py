@@ -83,10 +83,9 @@ def current_solution_basis(instance, runtime):
             support_ids.add(env)
     records = [support[ref] for ref in sorted(visited | support_ids)]
     records += [{"id": j["execution_id"], **j} for j in judgments]
-    from .governance import governance_view
+    from .governance import governance_view, mathematical_goal_basis
     charter = governance_view(instance).get("charter")
-    goal_ref = (exact_content_hash({"content": {key: value for key, value in charter["content"].items()
-                                              if key != "academic_requirements"}, "document": charter.get("document")})
+    goal_ref = (mathematical_goal_basis(charter)
                 if charter else str(instance.get("goal_revision", 1)))
     # Academic requirements have their own edition binding; changing them
     # alone cannot retroactively change the mathematical solution evidence.

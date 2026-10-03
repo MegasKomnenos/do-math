@@ -6237,7 +6237,433 @@
         }
       ],
       "memory_node": "M-0424",
-      "memory_index_exit": 0
+      "memory_index_exit": 0,
+      "commit": "4661c093"
+    },
+    "candidate_correction": {
+      "id": "B04",
+      "scope": "실제 일반 기준선에서 잡은 고정 trace좌표/영향 초안/넓은예외 처리의3실패 교정",
+      "tree": "C:/math/.claude/worktrees/goal-20261004-candidate",
+      "source_manifest": "C:/math/.skill-workspace/test-restructure-2026-09-29/finish/candidate-source-manifest-2026-10-04.json",
+      "delta_files": [
+        {
+          "path": "tests/sim/test_planning_relation_conditions.py",
+          "sha256": "7f55a36573f32755f6b79ecd6ab0393a393a72d6820439da5171c55356836fe5"
+        },
+        {
+          "path": "tests/flows/test_impact_wait_contract.py",
+          "sha256": "303050bd78f41ae46bb15bfb046d05f92bd6b0a031ad8fa74eadb538619e57c6"
+        },
+        {
+          "path": "do_math/wait_rules.py",
+          "sha256": "d608f5ad3cf8e0b5eda0c3002328ef73c2b19653485b9f6d82044587fe2d48cd"
+        }
+      ],
+      "test_contract": "같은 guard→loop호는AST에서좌표를계산하고부모대기/의무/저장재시작단언유지. 영향변경/반려는실제task_catalog원문과광고한previous_hash로기존task_dispositions 철회계약을사용. 보호/수행된의무검사는그대로두고수학기록과대기전문을보존. 진단용broad_except제거.",
+      "changed_implementation": "새엔진해소기능을추가하지않음. 선언의잘못된소비자/조건을실제task_scope.apply_task_dispositions 계약에맞춤.",
+      "focused_report": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-naq38zxu\\report.json",
+        "sha256": "d66916f71111ac1f2db95be6bd8464ee81f5bb6e6123babead9eb48432438a48",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 7
+        },
+        "total_seconds": 58.5,
+        "changed_during_run": []
+      },
+      "related_run": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-xycip39v\\report.json",
+        "sha256": "4a7c18be636ada503ea0df7388b1fe03894b283bd619a2953f067a66d0e58785",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 73
+        },
+        "total_seconds": 205.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
+              "seconds": 3.875,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_closed_instance_detaches_ended_delegate_without_new_work",
+              "seconds": 3.5160000000614673,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_different_preparer_does_not_steal_already_delegated_target",
+              "seconds": 2.577999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_live_delegate_is_not_detached_or_replanned",
+              "seconds": 3.4839999999385327,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_optional_delegated_work_preserves_required_parent_after_unchanged",
+              "seconds": 3.25,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_waiting_work_result_does_not_force_assessment_status",
+              "seconds": 31.155999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_wrong_delegation_title_is_rejected_without_changing_state",
+              "seconds": 3.077999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_closed_target_leaves_other_revision_obligations_in_wait",
+              "seconds": 4.579000000027008,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_contract_revision_cancels_unstarted_selection_and_records_owner",
+              "seconds": 2.077999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_deferred_child_records_parent_deferral_without_new_child_wait",
+              "seconds": 2.562999999965541,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_extra_child_target_does_not_change_parent_scope",
+              "seconds": 3.89000000001397,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_partial_resolution_preserves_remaining_target_and_detached_basis",
+              "seconds": 2.375,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_revision_transitions.RevisionTransitionTests.test_revised_task_refreshes_declared_basis_and_preserves_required",
+              "seconds": 3.5929999999934807,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 13.515999999945052,
+              "budget_seconds": 5.0
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_bundle_level_reviewed_effect_is_applied_once",
+              "seconds": 0.4690000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_coupled_changes_use_the_single_reviewed_s0_plan",
+              "seconds": 0.35999999998603016,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_replacement_id_schema_and_global_uniqueness_are_enforced",
+              "seconds": 0.2809999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_designated_review_has_producible_closed_schema_and_exact_scope",
+              "seconds": 0.375,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_review_resolver_uses_actual_git_bytes_and_scoped_receipt",
+              "seconds": 1.0309999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_sealed_review_allows_real_domain_git_retry_and_rejects_wrong_evidence",
+              "seconds": 0.6879999999655411,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "integration": "아직main/실행중repair판에교정복사하지않음. 관련검증종료와원기준선종료후검수해확정",
+      "whole_requirement_closed": false,
+      "state": "focused_and_related_passed_not_main_integrated"
+    },
+    "contract_expectation_correction": {
+      "id": "B05",
+      "tree": "C:\\math\\.claude\\worktrees\\goal-20261004-candidate\\.claude\\skills\\do-math",
+      "scope": "KD-1200/KD-1900의 의도적 계약 수리와 충돌하던 기존 두 기대값을 교정하고 이관 연결을 갱신",
+      "source_files": [
+        {
+          "path": "tests/flows/test_cross_required_events.py",
+          "sha256": "7ee9282ae77604ad708e05875a59b5cfaaa9994858bfdd02a5eae436506f7153"
+        },
+        {
+          "path": "tests/flows/test_scheduling_parallel_engine.py",
+          "sha256": "479ddde5ffeddcddf1b93ec6b6b24301caa4137c07dc5e0322be346cbb406b52"
+        },
+        {
+          "path": "tests/migration/dispositions/scheduling.1.json",
+          "sha256": "2b66dd563d2776eae45a10fa0ef59d11e243c4004c9d7432a64388f3b2fda7f0"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "7aa09e6fe245ad6c4635ae3242068fb281b055c08ec67bd4b29669272c7d201e"
+        },
+        {
+          "path": "do_math/core_engine.py",
+          "sha256": "7ef1ad1dd44b7552e6f93f2bfd7cd0e9caa30056b41adc87b6ffef5dcf06a372"
+        }
+      ],
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-3prto7xq\\report.json",
+        "sha256": "85694c3e1af50a340de24427efe176caf6b3ecfb24eb0bac0cafd088756dd2f8",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 5
+        },
+        "total_seconds": 77.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-pudf637k\\report.json",
+        "sha256": "07e2ce338baf2d3004c97edfc5aaa712e344c3d4cf4b2b6c2719eb9956fbd91f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 30
+        },
+        "total_seconds": 44.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_academic_requirement_changes.RequirementChangeByGovernanceRuleTests.test_removing_all_requirements_by_the_governance_rule_retires_old_tasks_and_completes_followup",
+              "seconds": 2.5320000000065193,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 11.875,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "preservation": "역사 legacy_id/실패 보고와 KD-1900의 과거 결함 고정 이름을 유지. 빈 준비의 접수·무과제·무계획·재시작과 준비된 과제의 실제 계획 개방을 각각 검사. 학술 요건은 감사 유지, 실제 수학 목표 변경은 감사 폐기.",
+      "state": "verified_candidate_not_main_integrated",
+      "whole_requirement_closed": false
+    },
+    "staged_review_repair": {
+      "id": "B06",
+      "scope": "단계 검토 공개 전제의 생산자·수신자 불일치",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-b18_r9ug\\report.json",
+        "sha256": "03ca06042840fb6d9e0854e8a7edfcbcc5f198736921d08fa59d99318cfb3585",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 41.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "cause": "review_engine는 헌장을 제외한 거버넌스를 봉인하나 knowledge의 수신 검증은 헌장까지 포함했다. 활성화 실패 history reason은 staged identity review publication premises changed.",
+      "repair": "knowledge_records.review_publication_premises 정본을 생산자와 수신자가 공유. 채택 정책·실제 동일성 기초·신뢰 환경·헌장 외 거버넌스의 검사 유지. 기존 반려 시험에 다섯 전제 각각의 변조 단언 추가.",
+      "state": "focused_and_related_passed_not_main_integrated",
+      "session_id": 73519,
+      "whole_requirement_closed": false,
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-g09mmu7r\\report.json",
+        "sha256": "308375f7caf46715ab7df0a3bc7361071e88de203d6172f0192222de37bf9944",
+        "counts": {
+          "passed": 3
+        },
+        "complete": true,
+        "successful": true,
+        "changed_during_run": [],
+        "total_seconds": 47.0,
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-f31ng9d8\\report.json",
+        "sha256": "af0f4f57f91f28ccd4fd3a7e8d7ac018e712589c155dab05575db83b3c87f06a",
+        "counts": {
+          "passed": 13
+        },
+        "complete": true,
+        "successful": true,
+        "changed_during_run": [],
+        "total_seconds": 77.4,
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_trust_transition.TrustContinuationTests.test_interrupted_activation_preserves_explicit_lineage_through_save_and_retry",
+              "seconds": 2.8280000000959262,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 9.48499999998603,
+              "budget_seconds": 5.0
+            },
+            {
+              "id": "unit.test_review_engine_staged.StagedReviewTests.test_staged_activation_rejects_tampered_receipt_and_stale_policy",
+              "seconds": 0.31299999996554106,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_activation_git_round_trip_preserves_old_and_loads_new_records",
+              "seconds": 0.6879999999655411,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_assessment_survives_a_second_transition_and_git_round_trip",
+              "seconds": 0.40600000007543713,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "known_defect": "KD-0805"
+    },
+    "wait_layer_binding": {
+      "id": "B07",
+      "scope": "wait_rules 순수 규칙의 layer1 선언과 scheduling 영역 등록 누락",
+      "report": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-gids49nx\\report.json",
+        "sha256": "7cd46957054c006ca21f2de590c3ccb661360617c87fd282c8b7909e2116d046",
+        "counts": {
+          "passed": 6
+        },
+        "complete": true,
+        "successful": true,
+        "changed_during_run": [],
+        "total_seconds": 8.3,
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "state": "verified_candidate_not_main_integrated",
+      "whole_requirement_closed": false
+    },
+    "academic_integration": {
+      "id": "B08",
+      "scope": "KD-1200 수학 목표 기초를 생산자와 모든 현재성 소비자에 공유하여 main에 독립 통합",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-htvtby_s\\report.json",
+        "sha256": "5d937333bc35e37209373fea2e54fdee2149c53cc5ba46b67670a0da72f0ea91",
+        "counts": {
+          "failed": 1
+        },
+        "complete": true,
+        "successful": false,
+        "changed_during_run": [],
+        "total_seconds": 16.2,
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "green": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-yhaq4qsd\\report.json",
+        "sha256": "38c95953759a2475150e4b2e17ffbf8baa7c07f63f1a193c3b26b9ed40a8580a",
+        "counts": {
+          "passed": 42
+        },
+        "complete": true,
+        "successful": true,
+        "changed_during_run": [],
+        "total_seconds": 87.8,
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_academic_consumers.AcademicConsumerTests.test_engine_plan_dispatch_consumes_generated_contract_and_applied_assessment",
+              "seconds": 2.3280000000959262,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.AcademicOnlyCharterControlTests.test_an_academic_only_charter_control_keeps_the_solved_goal_and_its_basis",
+              "seconds": 2.01500000001397,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.AcademicRequirementChangeTests.test_removing_all_requirements_preserves_unresolved_external_rejection",
+              "seconds": 3.547000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.AcademicRequirementChangeTests.test_removing_all_requirements_retires_old_tasks_and_completes_followup",
+              "seconds": 2.1709999999729916,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/governance.py",
+          "sha256": "9be28524fd9d164908a6ff8e71de99f3161dcba64fe529643552bbd883912a60"
+        },
+        {
+          "path": "do_math/academic.py",
+          "sha256": "9f865e81f9b15809782f9f77878a95dc47db820a7c118734b4682a75e898f9f7"
+        },
+        {
+          "path": "do_math/core_engine.py",
+          "sha256": "626119e2274def659355ac7a54656e1fb2f1827f153d9a7f6268b8b22d1f17d5"
+        },
+        {
+          "path": "do_math/governance_engine.py",
+          "sha256": "dcb18b6b98e5e76fd5664f75b491e9764a284bb9f327dd971a68c0452ced0a53"
+        },
+        {
+          "path": "do_math/knowledge_engine.py",
+          "sha256": "81b63d1852d4d9546da52149a8b44e51789a4d83f8a3fbc3f8f44220128bd616"
+        },
+        {
+          "path": "do_math/record_schemas/schemas.py",
+          "sha256": "be070e5832d6efe50ff00a81120f12bb18017998987db407c59ec39afcb20229"
+        },
+        {
+          "path": "tests/sim/test_academic_requirement_changes.py",
+          "sha256": "cdbabf19beebe2ed6a7a22a416080fb0ab56df9b23f3ace45f41ed8af2c42392"
+        },
+        {
+          "path": "tests/migration/dispositions/academic.1.json",
+          "sha256": "8aa9e9da60bd9436bddefa5773f6b88f5822076a267eae6ab297aa0519823e2e"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "34e4287dc57b768c21c45aa7d1572b3b10118c9fde8433422a705ccd34361bc1"
+        },
+        {
+          "path": "이음새-정본.md",
+          "sha256": "e95dfbaea8e2b3b58658a0f7caaf43581b87220824d14fadafd1316df846dcfc"
+        }
+      ],
+      "state": "verified_main_commit_pending",
+      "contract": "학술 요건만 바꾸면 실제 판정·해답 기초 유지 및 저장 재시작. 실제 수학 목표를 바꾸면 현재 판정 폐기와 미해결 재개. 직접 거버넌스 경로도 owner refresh 검사. 스키마와 이관 표시/원장 동시 갱신. 다른 결함 원장 보존.",
+      "whole_requirement_closed": false
     }
   }
 }

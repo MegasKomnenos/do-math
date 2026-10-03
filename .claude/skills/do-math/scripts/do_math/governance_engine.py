@@ -407,7 +407,8 @@ class GovernanceEngineMixin:
             'basis': action['basis'], 'required': action['required'], 'formal_result_refs': sorted({r['formal_result_id'] for r in links}),
             'assessment_refs': sorted({r['assessment_id'] for r in links}), 'dependencies': dependencies,
             'record_basis': knowledge.capture_basis(self.instance, self.runtime, dependencies), 'basis_is_conservative': not bool(cited),
-            'goal_revision': view['goal_revision'], 'policy_revision': view['policy_revision'], 'current': True,
+            'goal_revision': view['goal_revision'], 'goal_basis_sha256': governance.mathematical_goal_basis(view['charter']),
+            'policy_revision': view['policy_revision'], 'current': True,
             'source_basis': deepcopy(self.runtime['executions'][execution_id].get('source_basis', [])), 'additional_audits': mapped}
         judgments = [j for j in self.instance['goal_judgments'] if j['basis'] == action['basis']] + [judgment]
         if (any(type(j.get('required')) is not int or j['required'] != required

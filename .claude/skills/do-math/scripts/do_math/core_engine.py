@@ -3468,6 +3468,7 @@ class CoreEngineMixin:
             self._save()
 
     def _goal_basis_key(self) -> str:
+        from .governance import mathematical_goal_basis
         tasks = [{key: deepcopy(task.get(key)) for key in
                   ("id", "revision", "question", "scope", "completion_obligations", "expected", "results", "status")}
                  for task in self.runtime["tasks"].values()]
@@ -3475,7 +3476,7 @@ class CoreEngineMixin:
         if self._goal_audit_contract is None:
             # Installed role documents are fixed for this engine; a changed installation pauses it.
             self._goal_audit_contract = hashlib.sha256(self._render_prompt("goal_audit", {}).encode()).hexdigest()
-        return exact_content_hash({"goal": view["goal"], "goal_revision": view.get("goal_revision", 1),
+        return exact_content_hash({"goal": view["goal"], "goal_basis_sha256": mathematical_goal_basis(view['charter']),
             "policy_revision": view.get("policy_revision", 1), "knowledge": self.instance["knowledge"],
             "formal_results": self.instance.get("formal_results", {}), "expositions": self.instance.get("expositions", {}),
             "identity_assessments": self.instance.get("identity_assessments", {}),

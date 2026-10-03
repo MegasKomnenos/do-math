@@ -9,23 +9,10 @@ theorem), approves its requirements by the user's charter decision through the
 public control, and lets the configured goal auditors solve the goal on the
 theorem, whose receiver generates the academic tasks.
 
-Each requirement-change scenario runs twice:
-
-- ``AcademicRequirementChangeTests`` sends the change as the legacy tests did,
-  through the public control. These tests replace the legacy ones. They fail
-  today (KD-1200): the engine's goal-currentness check, run after every control
-  and in every owner pass's readiness refresh, marks the solved goal's judgments
-  stale on any charter revision, even one changing only the academic
-  requirements, so the goal is no longer solved and no solution basis remains.
-  Each scenario asserts right after the change that the goal is still solved,
-  so the failure is that check's and not a later consequence.
-- ``RequirementChangeByGovernanceRuleTests`` applies the same change by the
-  governance rule the public decision applies (``academic_scenes.decide_requirements``),
-  without the engine's control step. That start state (requirements changed,
-  goal still solved) is a transient the product does not reach through the
-  public path while KD-1200 is open: the next readiness refresh would un-solve
-  the goal too. These added tests keep what the academic follow-up does after
-  a requirement change on a current solution guarded until the defect is closed.
+Each requirement-change scenario runs through both the public control and the
+governance rule. Both refresh owner readiness before checking academic follow-up.
+The mathematical premise hash preserves the solved judgments across an academic-only
+charter change; the requirements still carry their own edition binding.
 
 Other controls go through the public control path (``support.engine_lifecycle.applied``,
 which fails on a rejection, preserved rule K-35).
@@ -33,13 +20,12 @@ which fails on a rejection, preserved rule K-35).
 from copy import deepcopy
 import unittest
 
-from do_math.governance import governance_view
+from do_math.governance import governance_view, mathematical_goal_basis
 from support.purpose_answers import requirement
 from support.state_builders import charter_change
 from support.academic_inputs import complete_academic_task
 from support.academic_scenes import decide_requirements, solve_with, theorem_sim
 from support.engine_lifecycle import applied
-from support.known_defects import known_defect
 
 REVISED = ['draft account', 'archival supplement']
 
@@ -92,6 +78,7 @@ def solved(test, *, completed=False):
 def change(test, sim, requirements, how):
     """Change the approved requirements ``how``; the goal stays solved (the governance rule's academic-only case)."""
     how(sim, requirements)
+    sim.engine._refresh_readiness()
     test.assertEqual(sim.engine.instance['goal_status'], 'mathematically_solved')
     publish_followup(sim.engine)
 
@@ -173,19 +160,15 @@ def assert_removal_preserves_unresolved_external_rejection(test, how):
 class AcademicRequirementChangeTests(unittest.TestCase):
     """The requirement change through the public control, as the legacy tests sent it."""
 
-    @known_defect('KD-1200')
     def test_changed_same_requirement_id_supersedes_old_contract_and_creates_new_criteria(self):
         assert_same_requirement_id_supersedes_old_contract(self, by_public_control)
 
-    @known_defect('KD-1200')
     def test_changed_requirements_preserve_completed_academic_task(self):
         assert_completed_task_is_preserved(self, by_public_control)
 
-    @known_defect('KD-1200')
     def test_removing_all_requirements_retires_old_tasks_and_completes_followup(self):
         assert_removal_retires_old_tasks_and_completes(self, by_public_control)
 
-    @known_defect('KD-1200')
     def test_removing_all_requirements_preserves_unresolved_external_rejection(self):
         assert_removal_preserves_unresolved_external_rejection(self, by_public_control)
 
@@ -213,9 +196,7 @@ class AcademicRequirementChangeTests(unittest.TestCase):
 class RequirementChangeByGovernanceRuleTests(unittest.TestCase):
     """The same scenarios with the change applied by the governance rule alone (added tests, see the module docstring).
 
-    Their start state, requirements changed while the goal stays solved, is a
-    transient the product does not reach through the public path while KD-1200
-    is open; they guard the academic follow-up until that defect is closed.
+    The direct-rule cases also refresh readiness, checking the same currentness rule as the owner.
     """
 
     def test_changed_same_requirement_id_by_the_governance_rule_supersedes_old_contract(self):
@@ -232,22 +213,49 @@ class RequirementChangeByGovernanceRuleTests(unittest.TestCase):
 
 
 class AcademicOnlyCharterControlTests(unittest.TestCase):
-    @known_defect('KD-1200')
+    def test_a_mathematical_goal_change_invalidates_the_solved_judgments(self):
+        sim = theorem_sim()
+        solve_with(sim, [requirement(['draft account'])])
+        engine = sim.engine
+        previous_basis = engine._solution_basis()
+        old_judgments = deepcopy(engine.instance['goal_judgments'])
+        applied(sim, 'decision', config={'change': charter_change(engine,
+            goal=governance_view(engine.instance)['goal'] + ' with a changed mathematical target')})
+        engine._refresh_readiness()
+        self.assertEqual(engine.instance['goal_status'], 'unsolved')
+        self.assertNotEqual(engine._solution_basis(), previous_basis)
+        self.assertEqual(len(engine.instance['goal_judgments']), len(old_judgments))
+        self.assertTrue(all(row['current'] is False for row in engine.instance['goal_judgments']))
+        sim.restart()
+        sim.engine._refresh_readiness()
+        self.assertEqual(sim.engine.instance['goal_status'], 'unsolved')
+        self.assertTrue(all(row['current'] is False for row in sim.engine.instance['goal_judgments']))
+
     def test_an_academic_only_charter_control_keeps_the_solved_goal_and_its_basis(self):
         """The user's charter decision changing only the academic requirements, through the public control, after the
         solution: the governance rule keeps the goal solved and the solution basis excludes the requirements, so the
-        follow-up replaces the requirement's task on the same basis. The engine's control step marks the judgments stale."""
+        follow-up replaces the requirement's task on the same mathematical basis."""
         sim = theorem_sim()
         solve_with(sim, [requirement(['draft account'])])
         engine = sim.engine
         basis = engine._solution_basis()
+        judgments = deepcopy(engine.instance['goal_judgments'])
+        charter = governance_view(engine.instance)['charter']
+        self.assertTrue(all(row['goal_basis_sha256'] == mathematical_goal_basis(charter) for row in judgments))
         old, = academic_tasks(engine)
         by_public_control(sim, [requirement(REVISED)])
         self.assertEqual(engine.instance['goal_status'], 'mathematically_solved')
+        self.assertGreater(governance_view(engine.instance)['charter']['revision'], charter['revision'])
+        self.assertEqual(engine.instance['goal_judgments'], judgments)
         self.assertEqual(engine._solution_basis(), basis)
         publish_followup(engine)
         current, = [task for task in academic_tasks(engine) if task['id'] != old['id']]
         self.assertEqual(current['solution_basis'], basis)
+        sim.restart()
+        sim.engine._refresh_readiness()
+        self.assertEqual(sim.engine.instance['goal_status'], 'mathematically_solved')
+        self.assertEqual(sim.engine.instance['goal_judgments'], judgments)
+        self.assertEqual(sim.engine._solution_basis(), basis)
 
 
 class AcademicTaskPersistenceTests(unittest.TestCase):

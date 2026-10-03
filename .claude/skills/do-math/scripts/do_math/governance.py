@@ -159,6 +159,13 @@ def initialize_governance(instance, source, approval, records, *, approval_sourc
     return result
 
 
+def mathematical_goal_basis(charter):
+    """The approved mathematical premises; academic requirements bind separately."""
+    return exact_content_hash({'content': {key: value for key, value in charter['content'].items()
+                                          if key != 'academic_requirements'},
+                               'document': charter.get('document')})
+
+
 def governance_view(instance):
     """Derive the current research view from approved governance records."""
     active = [deepcopy(r) for r in instance.get("governance", {}).values() if r["status"] == "active"]
@@ -311,9 +318,7 @@ def _apply_domain_decision(instance, runtime, change, source_ref, actor, at, *, 
     validate_governance_record(record)
     previous_charter = governance_view(instance)["charter"]
     academic_only = (record["kind"] == "charter"
-                     and {k: v for k, v in previous_charter["content"].items() if k != "academic_requirements"}
-                     == {k: v for k, v in record.get("content", {}).items() if k != "academic_requirements"}
-                     and previous_charter.get("document") == record.get("document"))
+                     and mathematical_goal_basis(previous_charter) == mathematical_goal_basis(record))
     event = {"id": decision_id, "kind": change["kind"], "actor": "user", "change": deepcopy(change), "source_ref": source_ref,
              "source_sha256": result["governance_sources"][source_ref]["sha256"], "created_at": timestamp(clock.now() if at is None else at).isoformat(), "affected": []}
     result["decisions"][decision_id] = event
