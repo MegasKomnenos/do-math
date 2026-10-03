@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B49 065a323a확정, B50 교정main/candidate9·구조6통과 후확정준비",
-      "active": "다음 학술10모듈/정상생산자4개 통합",
+      "last_closed": "B51 검증완료·확정준비",
+      "active": "다음 운영자4모듈과 기존 정상 생산자 통합",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -13720,7 +13720,7 @@
     },
     "scheduling_population_integration": {
       "id": "B50",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "배정/회수/반환/정산22모듈·정본 재사용·현재 초기진단 영수증/검토 생산자 연결",
       "initial_family": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-lw_wy9kd\\report.json",
@@ -14102,6 +14102,230 @@
         {
           "path": "tests/support/scheduling_initial.py",
           "sha256": "e864085f9de3809cc4956aa9674631b07d0d2c38f6c63800231571ab3519bb41"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "commit": "91e92a8b"
+    },
+    "academic_population_integration": {
+      "id": "B51",
+      "state": "verified_main_commit_pending",
+      "scope": "학술 후보10모듈/134원사례와 실제 평가·반려·외부effect 정상생산자4개 통합",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-bn2qyluc\\report.json",
+        "sha256": "2fc8c821091557d7d7f4e4a293bd65c35fd3d38a8ba5e83d0e242d0a8c1e867a",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 220
+        },
+        "total_seconds": 384.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "flows.test_academic_preparation_calls.AssessmentCallTests.test_real_academic_generation_enters_assessment_preparation_before_contract_review",
+              "seconds": 70.0,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_academic_requirement_flows.AcademicRequirementFlowTests.test_explicit_requirement_blocks_runtime_completion_until_independent_assessment",
+              "seconds": 110.89099999994505,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_academic_requirement_flows.AcademicRequirementFlowTests.test_non2xx_or_unknown_external_effect_cannot_complete_academic_requirement",
+              "seconds": 62.56299999996554,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_academic_requirement_flows.AcademicRequirementFlowTests.test_required_external_effect_uses_confirmed_loopback_receipt_before_completion",
+              "seconds": 81.57799999997951,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "sim.test_academic_assurance_validation.AcademicAssessmentValidationTests.test_applied_task_assessment_cannot_change_approved_criterion",
+              "seconds": 20.85999999998603,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_assurance_validation.AcademicAssessmentValidationTests.test_stored_assessment_requires_its_actual_task_and_execution_references",
+              "seconds": 2.312999999965541,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_consumers.AcademicConsumerTests.test_engine_plan_dispatch_consumes_generated_contract_and_applied_assessment",
+              "seconds": 2.4219999999040738,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_external_control_validation.AcademicExternalControlValidationTests.test_cancelled_before_send_retry_preserves_request_and_clears_outcome",
+              "seconds": 10.10999999998603,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_external_control_validation.AcademicExternalControlValidationTests.test_retry_requires_same_explicit_grant",
+              "seconds": 2.030999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_public_currentness.AcademicPublicCurrentnessTests.test_public_goal_and_scope_changes_invalidate_judgments_and_preserve_inputs",
+              "seconds": 3.827999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_public_currentness.AcademicPublicCurrentnessTests.test_public_retry_and_restart_preserve_request_and_separate_execution_attempts",
+              "seconds": 2.140999999945052,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.AcademicOnlyCharterControlTests.test_a_mathematical_goal_change_invalidates_the_solved_judgments",
+              "seconds": 3.3910000000614673,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.AcademicOnlyCharterControlTests.test_an_academic_only_charter_control_keeps_the_solved_goal_and_its_basis",
+              "seconds": 4.405999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.AcademicRequirementChangeTests.test_changed_requirements_preserve_completed_academic_task",
+              "seconds": 3.140999999945052,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.AcademicRequirementChangeTests.test_changed_same_requirement_id_supersedes_old_contract_and_creates_new_criteria",
+              "seconds": 3.51500000001397,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.AcademicRequirementChangeTests.test_completed_instance_rejects_requirement_changes",
+              "seconds": 2.562999999965541,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.AcademicRequirementChangeTests.test_removing_all_requirements_preserves_unresolved_external_rejection",
+              "seconds": 3.437000000034459,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.AcademicRequirementChangeTests.test_removing_all_requirements_retires_old_tasks_and_completes_followup",
+              "seconds": 2.8589999999385327,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.RequirementChangeByGovernanceRuleTests.test_changed_requirements_by_the_governance_rule_preserve_completed_academic_task",
+              "seconds": 2.6719999999040738,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.RequirementChangeByGovernanceRuleTests.test_changed_same_requirement_id_by_the_governance_rule_supersedes_old_contract",
+              "seconds": 2.14000000001397,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.RequirementChangeByGovernanceRuleTests.test_removing_all_requirements_by_the_governance_rule_preserves_unresolved_external_rejection",
+              "seconds": 3.405999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_requirement_changes.RequirementChangeByGovernanceRuleTests.test_removing_all_requirements_by_the_governance_rule_retires_old_tasks_and_completes_followup",
+              "seconds": 3.077999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_resolution_validation.AcademicResolutionValidationTests.test_record_and_mapping_factories_validate_produced_resolution_bytes",
+              "seconds": 2.1570000000065193,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_academic_resolution_validation.AcademicResolutionValidationTests.test_storage_rejects_resolution_seal_damage_without_publication",
+              "seconds": 2.35999999998603,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-c21kk0fq\\report.json",
+        "sha256": "6f1f91f0cd74ed43e587c91e8e7f9c71a757ed5b08f9dfd494096c701488d7f2",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 10.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 9.0,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "실제 과제 평가·사용자grant·외부operation·작업자/HTTP영수증/독립평가·저장 생산자를 통한 요구/판본/criterion·해결/외부effect 정확binding·현재성·부작용·부분prefix·공유의존 봉인 검증. 제품동작변경없음.",
+      "limits": "220개384.9초와24개개별예산초과·구조smell9초를구분한다. 부분보고는전체T2/flows/T3·변이/예산·T4/T5 증거가아니다.",
+      "files": [
+        {
+          "path": "tests/unit/test_academic_external_validation.py",
+          "sha256": "5e392cc41371532265f096b246e8337a0b550e8230dc019c053a2b70422ea4c0"
+        },
+        {
+          "path": "tests/unit/test_academic_model_policy_validation.py",
+          "sha256": "56170d3ca14411501e8e04c8b558f409b6dfa5ec7be99d4c6e95dffbd96ba73f"
+        },
+        {
+          "path": "tests/unit/test_academic_requirement_validation.py",
+          "sha256": "b7da8dca6277fb71c2cfbfb789c37d3fca076b1322f6b0e9efc9b9ad795b60a9"
+        },
+        {
+          "path": "tests/unit/test_academic_scholarly_validation.py",
+          "sha256": "421a49bb05db2b11151d53989146e89873861c2fe74d2f1fa3a7074a58893d01"
+        },
+        {
+          "path": "tests/sim/test_academic_assurance_validation.py",
+          "sha256": "46a60e3e065d7737e643d8e7d6ba970ac7aa6453494a3d9d3c20a8ca4103a5be"
+        },
+        {
+          "path": "tests/sim/test_academic_external_control_validation.py",
+          "sha256": "afb20941ebea856f1912ce2f85892548954542dd12ced717234725b6a710f50d"
+        },
+        {
+          "path": "tests/sim/test_academic_public_currentness.py",
+          "sha256": "e190c76fb910f1418f977aba22210a03cbc9171ca5447814a0a515b40e8de825"
+        },
+        {
+          "path": "tests/sim/test_academic_resolution_validation.py",
+          "sha256": "6b4388c7b30f80375cd3c66f3306e2538a03a5c5f6a95318d999029e44787243"
+        },
+        {
+          "path": "tests/flows/test_academic_effect_receipt_validation.py",
+          "sha256": "eb31cecb3b44d16e66e884b7a0f9c5714258f4fde0898215c854b9010b532b2b"
+        },
+        {
+          "path": "tests/flows/test_academic_solution_dependency_validation.py",
+          "sha256": "d3d96ae30bb4d9b8eb61a5de192003f02e8dfe7f8b74a72cc421099c258558e9"
+        },
+        {
+          "path": "tests/support/academic_assessment_cases.py",
+          "sha256": "d5eee736361fb04aee7bc091440c73b34c666d2f52d8e0e59b3b50856c044f8a"
+        },
+        {
+          "path": "tests/support/academic_effect_cases.py",
+          "sha256": "b4d583386f76275a5c19a99d84e1539d0e1374f81a2a0ab3dd070e415b66fbc1"
+        },
+        {
+          "path": "tests/support/academic_external_cases.py",
+          "sha256": "82b453666833c332123c5eee26d4f3bdeebc29eeece3ce9070123ceab7237d17"
+        },
+        {
+          "path": "tests/support/academic_resolution_cases.py",
+          "sha256": "7b9b5130c99955f3b9fc214ecb51c72ea0f11043e848c63a0f2bca241d132a36"
         }
       ],
       "whole_requirement_closed": false
