@@ -189,6 +189,8 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
                       decision_ref=None, regenerate_after=None, observed_at=None, version=None, clock):
     """Record an idempotent real receipt and its next owner in the same candidate."""
     from .task_contracts import REPEAT_LINEAGES
+    from .task_contracts import repetition_outcome
+    classification = repetition_outcome(outcome)
     if lineage not in REPEAT_LINEAGES or owner not in {'ai','user'}:
         raise ValueError('unknown repetition lineage or owner')
     if not all(isinstance(s,str) and s.strip() for s in (lineage_id,event_ref,outcome,reason)):
@@ -242,9 +244,7 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
         linked = link(runtime, execution_id=event_ref, field=f'{len(history) - 1}/question',
              owner='user', targets=[event_ref], reason='Configured repetition limit reached; scoped continuation required', clock=clock)
         linked['source_kind'] = 'history'
-    no_followup={'accepted','contracts_preserved','continued','premises_changed','waiting',
-                 'revised','authored','reauthored'}
-    if outcome not in no_followup:
+    if classification['diagnose']:
         if repetition_hold(runtime, lineage, lineage_id):
             return deepcopy(row)
         role = 'research_plan' if lineage=='exhaustion_empty' else 'operational_review'

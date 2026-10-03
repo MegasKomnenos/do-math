@@ -150,8 +150,8 @@
       "category": 11,
       "reproduction": "flows.test_cross_role_calls.EmptyPreparationDefectTests.test_empty_preparation_has_no_planning_target",
       "found_by": "Cross obligations on main-wip snapshot e440bf7: real Sim activation, accepted empty provider submission, model call log and actual Jobs worker request IDs; cross-initial.log reproduced the unexpected research_plan call. Setup, accepted outcomes and request/call correspondence are checked outside expectedFailure.",
-      "missed_kind": "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_preparation_without_any_pending_review_still_opens_a_plan pins the empty-plan enqueue as expected; no targetless model/Job zero-count assertion covered the subsequent owner passes.",
-      "status": "open"
+      "missed_kind": "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_preparation_without_any_pending_review_still_opens_a_plan pins the empty-plan enqueue as expected; no targetless model/Job zero-count assertion covered the subsequent owner passes. Independent main red r624ckcg reproduces preparation1/plan1 with no candidate/result/request target. Counter and diagnosis share task_contracts.REPETITION_OUTCOMES; empty records its repetition and regeneration prerequisite without planning. Positive ready-task plan cases remain required; legacy spurious-plan assertion is intentionally corrected.",
+      "status": "closed"
     },
     {
       "id": "KD-0805",

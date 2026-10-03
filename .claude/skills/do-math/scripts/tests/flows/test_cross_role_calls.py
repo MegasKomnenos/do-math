@@ -11,7 +11,6 @@ from support.default_responder import DefaultResponder
 from support.cross_contracts import assert_call_records, ContractOracle
 from support.fakes.jobs import job_turn
 from support.live_finish_model import install
-from support.known_defects import known_defect
 from support.model import Answer
 from support.sim import Sim, warm_template
 
@@ -83,7 +82,7 @@ class RoleCallTests(unittest.TestCase):
 
 class EmptyPreparationDefectTests(unittest.TestCase):
     def setUp(self):
-        """All setup and worker/receipt checks stay OUTSIDE expectedFailure."""
+        """Verify actual producer, worker and receipts before the no-plan assertion."""
         self.sim = sim = Sim.activated()
         sim.model.responder = DefaultResponder(preparation_candidates=[])
         sim.step()
@@ -104,7 +103,6 @@ class EmptyPreparationDefectTests(unittest.TestCase):
                 self.assertEqual(call['output']['task_assessments'], [])
                 self.assertEqual(call['output']['preparation_requests'], [])
 
-    @known_defect('KD-1900')
     def test_empty_preparation_has_no_planning_target(self):
         """11-A: an accepted empty preparation must not start an empty planning call."""
         self.assertEqual(self.counts, Counter(research_preparation=1),

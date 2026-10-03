@@ -19,6 +19,26 @@ TERMINAL_TASK_STATUSES = frozenset({"completed", "closed"})
 # The item disposition kinds, as the wire schema ITEM_DISPOSITION defines them.
 DISPOSITION_KINDS = frozenset(option["properties"]["kind"]["const"] for option in ITEM_DISPOSITION["anyOf"])
 REPEAT_LINEAGES = ("import_rework", "selection_failure", "exhaustion_empty", "proposal_version", "contract_revision")
+# Counter classification and diagnostic follow-up share this one declaration.
+REPETITION_OUTCOMES = {
+    'accepted': {'counter': 'reset', 'diagnose': False},
+    'contracts_preserved': {'counter': 'reset', 'diagnose': False},
+    'continued': {'counter': 'reset', 'diagnose': False},
+    'premises_changed': {'counter': 'retain', 'diagnose': False},
+    'waiting': {'counter': 'retain', 'diagnose': False},
+    'unclassified_failure': {'counter': 'retain', 'diagnose': True},
+    'rejected': {'counter': 'increment', 'diagnose': True},
+    'empty': {'counter': 'increment', 'diagnose': False},
+    'authored': {'counter': 'increment', 'diagnose': False},
+    'revised': {'counter': 'increment', 'diagnose': False},
+    'reauthored': {'counter': 'increment', 'diagnose': False},
+}
+
+
+def repetition_outcome(outcome):
+    if not isinstance(outcome, str) or outcome not in REPETITION_OUTCOMES:
+        raise ValueError('unknown repetition outcome: ' + repr(outcome))
+    return REPETITION_OUTCOMES[outcome]
 # Governance views every role receives; like tool references they name no file.
 CONTEXT_INPUT_REFS = frozenset({"context:goal", "context:policy"})
 # Configured tools a task may name as inputs.
@@ -284,11 +304,12 @@ def repetition_lineages(runtime: dict, task_id: str | None = None, *,
         counts = result[name].setdefault('by_lineage', {})
         key = row['lineage_id']
         if row['outcome']=='continued':baselines[name,key]=row.get('baseline_revision',0)
-        if row['outcome'] in {'accepted', 'contracts_preserved', 'continued'}:
+        classification = repetition_outcome(row['outcome'])
+        if classification['counter'] == 'reset':
             counts[key] = 0
         elif 'version' in row:
             counts[key] = row['version']-baselines.get((name,key),0)
-        elif row['outcome'] not in {'premises_changed', 'waiting', 'unclassified_failure'}:
+        elif classification['counter'] == 'increment':
             counts[key] = counts.get(key, 0) + 1
         result[name]["count"] = sum(counts.values())
         if include_events:

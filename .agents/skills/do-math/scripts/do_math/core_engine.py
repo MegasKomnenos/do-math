@@ -3180,8 +3180,8 @@ class CoreEngineMixin:
             # still pending, that review's approval event or returned revision brings the next decision.
             decidable = bool(planning.ready_task_ids(self.runtime, self.instance, evaluation_context=self._evaluation_context())) or any(
                 task["status"] == "waiting" and task.get("results") for task in self.runtime["tasks"].values())
-            # Empty preparation already opens its required plan when the actual
-            # receipt is recorded by revisions.record_execution_outcome.
+            # Empty preparation records its actual receipt and regeneration
+            # condition; a plan still requires something to decide.
             if output["candidates"] and (decidable or not any(a["role"] == "task_contract_review" for a in self.runtime["queue"])):
                 self._enqueue("research_plan")
             definition = self.instance.get("kind_definitions", {}).get(action.get("kind_definition_id"))

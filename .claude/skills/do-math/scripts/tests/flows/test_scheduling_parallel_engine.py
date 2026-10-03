@@ -247,10 +247,20 @@ class PlanOpeningTests(unittest.TestCase):
         self.prepare([candidate('one')], ready_candidate=True)
         self.assertEqual(len(self.plans()), 1)
 
-    def test_preparation_without_any_pending_review_still_opens_a_plan(self):
+    def test_empty_preparation_without_a_decision_target_is_accepted_without_opening_a_plan(self):
         """About 3 s: one preparation call."""
-        self.prepare([])
-        self.assertEqual(len(self.plans()), 1, self.plans())
+        sim = self.prepare([])
+        self.assertEqual(self.plans(), [])
+        self.assertEqual(sim.runtime['tasks'], {})
+        executions = [row for row in sim.runtime['executions'].values()
+                      if row.get('action', {}).get('reason') == 'Explicit regression preparation']
+        self.assertEqual(len(executions), 1)
+        self.assertEqual(executions[0]['outcome'], 'output_accepted')
+        self.assertEqual(executions[0]['submission_receipt']['state'], 'accepted')
+        self.assertEqual([row['role'] for row in sim.model.calls], ['research_preparation'])
+        sim.restart()
+        self.assertEqual(self.plans(), [])
+        self.assertEqual(sim.runtime['executions'][executions[0]['id']], executions[0])
 
     def test_a_running_review_of_the_same_contract_is_not_doubled_when_its_outside_premises_move(self):
         """About 3 s: one preparation call."""

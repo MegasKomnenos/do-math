@@ -7832,7 +7832,7 @@
     "impact_read_integration": {
       "id": "B20",
       "scope": "KD-0600: 영향 검토 입력 준비의 봉인 읽기 실패를 소비하고 실제 진단으로 연결",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-u3i8xlvm\\report.json",
         "sha256": "57ece8947f302ed9499328c67a156c166005967d05f0307a8aa7b26e9f02c121",
@@ -7915,7 +7915,155 @@
       "contract": "해당 held producer가 있는 impact_review의 SealedSubmissionError만 submission_failure로 전환. 같은 producer의 queued review들을 history에보존·퇴역하고 preparing input을기존경로로폐기. 다른 봉인 오류는여전히raise. 진단복원은정상바이트만materialize하고불량은기대/관찰해시·크기·복원오류를본문입력에명시.",
       "runtime_evidence": "실제두owner pass와operational_review 모델포트 입력관찰에서진단1회,불량output local_path부재/기대-관찰SHA불일치/같은크기,재검토큐부재확인. 정상복원/준비실패3개도유지.",
       "limits": "원래 실패와 첫 수리 뒤 진단ValueError를 보존. Shared wait registry의 일반 교체는 다른 통합 단위이며 현재 main의 저장 wait 형식은 유지. main1open; 최종 전건 관문 별도.",
+      "whole_requirement_closed": false,
+      "commit": "cb7cd6f9"
+    },
+    "empty_preparation_integration": {
+      "id": "B21",
+      "scope": "KD-1900: 빈 준비는 계수/재생성 조건을 보존하되 판단 대상 없는 계획을 열지 않음",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-r624ckcg\\report.json",
+        "sha256": "673880765bc20d813cec301196454894012e9121b4abf93149a697f19525cfcb",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 11.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused_and_counter": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-3byt43cg\\report.json",
+        "sha256": "373d7058fb748cb3c5938551cee7ab028d9ce0de41c6bec53a0885440da51f66",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 17
+        },
+        "total_seconds": 8.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "normal_and_migration": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-k5m6z_tv\\report.json",
+        "sha256": "78c9ef621799750489e1afe00e6f384c029c62fa6d9853390d4285b8fce3eb28",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 13
+        },
+        "total_seconds": 86.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_repetition_engine.RepetitionEngineTests.test_empty_preparation_preserves_machine_time_and_opens_one_due_regeneration",
+              "seconds": 2.1089999999385327,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_planning_repetition_engine.RepetitionEngineTests.test_native_plan_failures_reach_receiver_counter_through_preserved_bytes",
+              "seconds": 2.0160000000614673,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/task_contracts.py",
+          "sha256": "c87a4916d696fa05321c3d36ffc7995f74ad751fda3ae0937a5eb13a287cbebc"
+        },
+        {
+          "path": "do_math/revisions.py",
+          "sha256": "a9a23b92a1f1244c1f02e995456d180e7b624913aa726bb6fa92b885cb705882"
+        },
+        {
+          "path": "do_math/core_engine.py",
+          "sha256": "1de927177c5df742c6ea7117404fb47ecc45f898e6072713a409d204a113989d"
+        },
+        {
+          "path": "tests/flows/test_cross_role_calls.py",
+          "sha256": "66115662f3d0d0fc0f2ce692711b31316cea568bb3d03ea587b97062a9627670"
+        },
+        {
+          "path": "tests/flows/test_scheduling_parallel_engine.py",
+          "sha256": "d39297ab0bd65cbfda315561829e5871e1038adb2639e4e976b1deec87cc20dd"
+        },
+        {
+          "path": "tests/migration/dispositions/scheduling.1.json",
+          "sha256": "e1ae3bcf873c31f17b8e06a60ad0ececcf53e4d7c0daaf458069dab06bf8a2d5"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "cb5ef119320546834937da8a8ae6a6ae49d14111085ab7d0e235615709ae5205"
+        },
+        {
+          "path": "이음새-정본.md",
+          "sha256": "5b0b2a7eccabce66fded1507e1ecfe828cafb35e9cb2b0b05218125b50e45cf2"
+        }
+      ],
+      "contract": "REPETITION_OUTCOMES 11종의 계수 reset/retain/increment와 diagnose가 반복 보기·receipt기록에서동일. empty는increment하지만진단계획없음. 실제Role/Jobs호출 preparation1/plan0과accepted receipt/무과제/저장재시작 검사. ready target 계획개방·limit/continue·기술실패계수보존.",
+      "legacy_correction": "역사 legacy_id 유지. 잘못된 targetless-plan 기대값은현행 no-target 정상접수시험으로바꾸고ready-target 양성시험연결. 이전failed 기대값을과거실패자료에그대로유지.",
+      "limits": "main19closed/0open은candidate56과다르다. related13중Sim2개예산초과. 전체완료/최종관문을뜻하지않음.",
       "whole_requirement_closed": false
+    },
+    "remaining_main_integration": {
+      "main_ledger_count": 19,
+      "main_open": 0,
+      "candidate_ledger_count": 56,
+      "not_yet_recorded_ids": [
+        "KD-0705",
+        "KD-0704",
+        "KD-0703",
+        "KD-1300",
+        "KD-0702",
+        "KD-0701",
+        "KD-0300",
+        "KD-0301",
+        "KD-0900",
+        "KD-0901",
+        "KD-1100",
+        "KD-0400",
+        "KD-0700",
+        "KD-0601",
+        "KD-1000",
+        "KD-1001",
+        "KD-0302",
+        "KD-0303",
+        "KD-0401",
+        "KD-0902",
+        "KD-0903",
+        "KD-0500",
+        "KD-0501",
+        "KD-0502",
+        "KD-0804",
+        "KD-1901",
+        "KD-1902",
+        "KD-1903",
+        "KD-1904",
+        "KD-1905",
+        "KD-1906",
+        "KD-1907",
+        "KD-1908",
+        "KD-1909",
+        "KD-0009",
+        "KD-0010",
+        "KD-0011"
+      ],
+      "meaning": "37개는 main에미기록된후보항목이며37개제품미구현이나완료율로단정하지않는다. 실제기능/의존/원재현시험을비교해이미통합된내용과필요변경을구별한다.",
+      "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
+      "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
+      "complete": false
     }
   }
 }

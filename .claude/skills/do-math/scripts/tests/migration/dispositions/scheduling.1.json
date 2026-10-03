@@ -558,9 +558,10 @@
    "legacy_id": "test_session_scheduler.PlanAfterPreparationTests.test_preparation_without_any_pending_review_still_opens_a_plan",
    "disposition": "moved",
    "new_ids": [
-    "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_preparation_without_any_pending_review_still_opens_a_plan"
+    "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_empty_preparation_without_a_decision_target_is_accepted_without_opening_a_plan",
+    "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_preparation_still_opens_a_plan_when_a_ready_task_awaits_a_decision"
    ],
-   "note": "Input: the synthetic active state (make_active) is a restored public activation whose queued activation work and pending events are cleared (engine_lifecycle.clear_work), as the legacy start had none."
+   "note": "Input: the synthetic active state (make_active) is a restored public activation whose queued activation work and pending events are cleared (engine_lifecycle.clear_work), as the legacy start had none. Stage2 KD-1900 deliberately corrects the old targetless-plan defect expectation. Empty preparation is accepted with its receipt and saved restart, without a decision target or plan. The ready-task positive case still requires a plan. Historical legacy_id is retained."
   },
   {
    "legacy_id": "test_session_scheduler.DuplicateContractReviewTests.test_a_running_review_of_the_same_contract_is_not_doubled_when_its_outside_premises_move",
