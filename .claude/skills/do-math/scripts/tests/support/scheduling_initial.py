@@ -78,9 +78,14 @@ def adopted_sim():
 def initial_failure(sim, kind='execution_failure', stage='interpret'):
     from do_math import activities, execution_lifecycle, execution_profiles
     from support.execution_inputs import dispatched_launch
+    if stage == 'check':
+        sim.run_until(lambda current: any(row['role'] == 'intent_interpretation'
+            and row.get('stage', 'interpret') == 'check' for row in current.runtime['queue'])
+            and all(row['status'] == 'ended' for row in current.runtime['executions'].values()), max_steps=8)
     engine = sim.engine
     runtime = engine.runtime
-    queued = next(row for row in runtime['queue'] if row['role'] == 'intent_interpretation')
+    queued = next(row for row in runtime['queue'] if row['role'] == 'intent_interpretation'
+                  and row.get('stage', 'interpret') == stage)
     action = {**deepcopy(queued), 'stage': stage, 'owner_activity_id': 'AY-original'}
     profile = execution_profiles.resolve_profile(engine.instance['execution_profiles'], action['profile_ref'])
     at = sim.clock.now()

@@ -21,7 +21,24 @@ from support.engine_context import publish
 from support.provider_probes import ObservedCalls
 from support.scheduling_initial import GRANT, adopted_sim, initial_failure
 
-EMPTY_RETURN = {'retry_bundle_ids': [], 'bundles': [], 'issues': []}
+def rejected_submission(engine, action, execution_id):
+    """Produce a real rejection from a schema-valid outer envelope, not a semantic acceptance fixture."""
+    from do_math import submission
+    from support.governance_sim import returned
+    from support.submission_obligations import structural_envelope
+    if execution_id not in engine.runtime['executions']:
+        returned(engine, action, execution_id)
+    output, schema, context = structural_envelope(action, {})
+    Draft202012Validator(schema).validate(output)
+    context.update(execution_id=execution_id, snapshot=engine.head)
+    output['summary'] = []
+    with tempfile.TemporaryDirectory() as directory:
+        issues = submission.payload_issues(output, schema, context, {}, Path(directory), clock=engine.ports.clock)
+        assert [(i['rule_id'], i['path'], i['message']) for i in issues] == [
+            ('schema.type', 'output/summary', "[] is not of type 'string'")], issues
+        received = engine._apply_submission_bundles(action, output, {}, execution_id, context, issues)
+    assert received['status'] == 'returned' and received['issues'], received
+    return received, output
 
 
 def diagnosis_execution(sim, diagnostic, status):
@@ -65,8 +82,9 @@ class InitialDiagnosisTests(unittest.TestCase):
         queued = next(row for row in engine.runtime['queue'] if row['role'] == 'intent_interpretation')
         engine.runtime['queue'] = []
         action = {'id': 'AC-original', 'role': 'intent_interpretation', 'target': queued['target'], 'repair_attempt': 1}
+        received, output = rejected_submission(engine, action, 'EX-bad')
         with ObservedCalls(enqueue=ResearchEngine._enqueue) as observed:
-            engine.route_submission_return(action, EMPTY_RETURN, 'EX-bad', None)
+            engine.route_submission_return(action, received, 'EX-bad', output)
         (_, first), *_ = observed.calls['enqueue']
         self.assertEqual((first['role'], first['target']), ('maintenance', 'EX-bad'))
         self.assertTrue(first['extra']['initial_submission_diagnosis'])
@@ -88,7 +106,8 @@ class InitialDiagnosisTests(unittest.TestCase):
         self.assertEqual(retry['target'], action['target'])
         self.assertEqual(retry['owner_activity_id'], 'AY-original')
         self.assertEqual(retry['diagnosis_attempt'], 1)
-        engine.route_submission_return(retry, EMPTY_RETURN, 'EX-again', None)
+        received, output = rejected_submission(engine, retry, 'EX-again')
+        engine.route_submission_return(retry, received, 'EX-again', output)
         self.assertEqual(engine.runtime['queue'], [])
 
     def test_failed_diagnosed_retry_is_recorded_once_and_remains_storable(self):
@@ -200,7 +219,8 @@ class InitialFailureKindTests(unittest.TestCase):
         self.assertEqual(engine.instance['lifecycle']['immutable_input'], original)
         if kind == 'output_validation':
             self.assertEqual(retry['repair']['retry_bundle_ids'], ['IN-pending'])
-        engine.route_submission_return(retry, EMPTY_RETURN, 'EX-again', None)
+        received, output = rejected_submission(engine, retry, 'EX-again')
+        engine.route_submission_return(retry, received, 'EX-again', output)
         self.assertEqual(engine.runtime['queue'], [])
 
     def test_an_output_validation_failure_reaches_one_authorized_followup(self):

@@ -59,12 +59,16 @@ class PurposeResponder:
             if action.get('repair'):
                 raise AssertionError('A purpose fixture must not silently adapt to an engine validation failure: '
                                      + str(action['repair'].get('error') or action['repair'].get('issues')))
-            output = self.runner.answer(role, context, workspace)
+            output = self.answer(role, context, workspace)
         except AssertionError as error:
             self.failures.append(str(error))
             raise
         self._write_extensions(role, action, context, workspace, output)
         return output
+
+    def answer(self, role, context, workspace):
+        """The scenario answer, inside the shared repair/input-failure guard."""
+        return self.runner.answer(role, context, workspace)
 
     def _write_extensions(self, role, action, context, workspace, output):
         """The activity extensions ``PurposeAnswers.run`` wrote beside its answer, in its order."""
