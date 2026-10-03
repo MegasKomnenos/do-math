@@ -107,7 +107,9 @@ class ChildProcessTests(unittest.TestCase):
         def child(statement, binding):
             environment = {**os.environ, 'PYTHONPATH': str(SCRIPTS) + os.pathsep + os.environ.get('PYTHONPATH', '')}
             result = subprocess.run([sys.executable, '-c', statement, json.dumps(binding)], capture_output=True,
-                                    text=True, check=True, env=environment)
+                                    text=True, check=False, env=environment,
+                                    creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+            self.assertEqual(result.returncode, 0, result.stderr)
             return json.loads(result.stdout)
         clock = FakeClock()
         transport = ControlTransport(self.root, clock=clock)
@@ -121,7 +123,8 @@ class ChildProcessTests(unittest.TestCase):
             'state': 'accepted', 'published': True, 'snapshot': 'SN-1', 'publication_id': 'PR-1'}))
         self.assertEqual([row['state'] for row in receipts], ['accepted'])
         query = ("import json,sys; from do_math.control_server import wait_receipt; b=json.loads(sys.argv[1]); "
-                 "print(json.dumps(wait_receipt(b, 'CT-1', 0)))")
+                 "from do_math.system_clock import SystemClock; "
+                 "print(json.dumps(wait_receipt(b, 'CT-1', 0, clock=SystemClock())))")
         self.assertEqual(child(query, binding)['snapshot'], 'SN-1')
         recovered = ControlTransport(self.root, clock=clock)
         self.assertEqual(recovered.pump(lambda _: self.fail('published request must not republish'))[0]['publication_id'],

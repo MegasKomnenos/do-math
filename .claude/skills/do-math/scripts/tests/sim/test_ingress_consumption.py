@@ -9,11 +9,11 @@ pass), the pass raised nothing, and a valid pause after it is applied.
 """
 from copy import deepcopy
 import json
+import base64
 from pathlib import Path
 import unittest
 
 from support.ingress import control_actions, malformed
-from support.known_defects import known_defect
 from support.sim import Sim, warm_template
 
 setUpModule = warm_template
@@ -64,12 +64,12 @@ class ControlInboxConsumptionTests(unittest.TestCase):
             cases.append((name, json.dumps(request).encode()))
         self.assert_consumed_once_and_the_loop_continues(sim, cases)
 
-    @known_defect('KD-0004')
     def test_a_broken_envelope_is_rejected_once(self):
         sim = Sim.activated()
         envelope = _envelope(sim)
         broken = {
             'RQ-ingress-json': b'{not json',
+            'RQ-ingress-encoding': b'\xff',
             'RQ-ingress-list': b'[]',
             'RQ-ingress-other-id': json.dumps({**envelope, 'id': 'RQ-someone-else'}).encode(),
             'RQ-ingress-other-instance': json.dumps({**envelope, 'id': 'RQ-ingress-other-instance',
@@ -80,6 +80,15 @@ class ControlInboxConsumptionTests(unittest.TestCase):
                                                 if key != 'action'}).encode(),
         }
         self.assert_consumed_once_and_the_loop_continues(sim, list(broken.items()))
+        for name, raw in broken.items():
+            row, = _rejections(sim, name)
+            self.assertEqual(row['request']['origin'], 'untrusted_file')
+            self.assertEqual(base64.b64decode(row['request']['source']['base64']), raw)
+        before = deepcopy(sim.runtime)
+        sim.restart()
+        sim.engine.process_controls()
+        self.assertEqual(sim.runtime['processed_controls'], before['processed_controls'])
+        self.assertEqual(sim.runtime['history'], before['history'])
 
 
 if __name__ == '__main__':

@@ -7282,7 +7282,7 @@
     "console_integration": {
       "id": "B14",
       "scope": "KD-0003: setup 짧은 subprocess의 CREATE_NO_WINDOW 전달과 실제 자식 콘솔 핸들 검증",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-fjtl48u4\\report.json",
         "sha256": "97dff2616fe1e011773ddb3178bb8df5fde1f71816817771970a4ba3abdd48d3",
@@ -7348,6 +7348,160 @@
       ],
       "contract": "WINDOWED 우회와 expectedFailure 제거. 실제 source creationflags 값 검사. Windows Job 격리에서 실제 자식 Python의 GetConsoleWindow()==0, cwd/env 보존을 관찰. 기존 대표 compile의 명령·원문·stdout/stderr와 실패 판정도 유지.",
       "limits": "main10개/후보새경계1개 부분검사이며 전체 T4/실제 Lean 검증 폐쇄가 아니다. Python 대체 compiler와 실제 child만 호출하고 기존 Lean 설치/실험자료를 변경하지 않았다. 후보 동기화의 shell quoting SyntaxError와 missing ID 실행은 제품 실패가 아니며 이후 파일 스크립트 복사 뒤 실제 시험으로 검증했다.",
+      "whole_requirement_closed": false,
+      "commit": "0541a8ab"
+    },
+    "ingress_integration": {
+      "id": "B15",
+      "scope": "KD-0004/0005: 불량 inbox/전달의 반려를 한 번 소비하고 정상 다음 제어를 유지",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-q8kmabeb\\report.json",
+        "sha256": "2da7d530907dd922f837b5a79ed4e6500dcd4f482e37d4328a5ab7de5395e052",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "error": 2
+        },
+        "total_seconds": 4.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-582bb3vt\\report.json",
+        "sha256": "5bbb35ac047f7040e7814d7411fc3166d9d46aec713a3d5876d526421bcdb062",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 8.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_ingress_consumption.ControlInboxConsumptionTests.test_each_action_rejects_a_malformed_payload_once",
+              "seconds": 2.718999999924563,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "related_failure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-_tgb5sq0\\report.json",
+        "sha256": "30536403febe0de30fc6fff33a78a2da96cb1297678aeac0e45c41fbc99e5441",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 11,
+          "failed": 2
+        },
+        "total_seconds": 1.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-1o6ff7a6\\report.json",
+        "sha256": "9c4551595e65ec015c55002614c1cd9ce41c34dc2be9540c37bd8ecdabb530bd",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 13
+        },
+        "total_seconds": 2.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-fx987j2v\\report.json",
+        "sha256": "4d4765e290605b9d50e28fa8976bd8ba0461a6b94c5f6044f0e6644c38afd0a3",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 0.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "boundary_failure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-2u8qr5yx\\report.json",
+        "sha256": "2a1d5a5c2adb405c64516a2e457a2a3ab114da25baa6b1a3f59413a4ca6181b0",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "error": 1,
+          "passed": 2
+        },
+        "total_seconds": 1.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "boundary_corrected_case": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-phlp6eb3\\report.json",
+        "sha256": "c94b0312b0af555acd66f31d19388cd1fe23155bfd553f8e6ddbf60b9ef329dc",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 1.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/core_engine.py",
+          "sha256": "7f32d759069fa80ab5d5b8f6055ced82f1e8eb1833e903345e9c313c02330718"
+        },
+        {
+          "path": "do_math/control_transport.py",
+          "sha256": "0489bb907a3c214fbf88872ebe99650b6827a9c9cf9c72bfc59f3017e146a734"
+        },
+        {
+          "path": "tests/unit/test_ingress_rejection.py",
+          "sha256": "7a20a4ebd602965459c4bc854ebdec04a89af74ceade506d2312c6735e9d6790"
+        },
+        {
+          "path": "tests/sim/test_ingress_consumption.py",
+          "sha256": "3a4600037d7257478cead271d196eb6393511ac7b76fda289590c0a3b7aa72bb"
+        },
+        {
+          "path": "tests/unit/test_engine_control_transport.py",
+          "sha256": "3f598626dfb7cc7e191bae7688e4f59b4c57af00c5f4518f92d27d168dbc7e74"
+        },
+        {
+          "path": "tests/boundary/test_engine_control_transport.py",
+          "sha256": "66ca219c99dbbd92777452cccdc8856f542f8915c5c50c9645db2430ce3357a5"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "646a182489e5e7601148b3dbc8439897019396ad12fee2bddadc64eecae05221"
+        }
+      ],
+      "contract": "원문 UTF-8 오류 포함 불량파일의 filename 좌표를1회 소비하고 bytes_evidence 전문/재시작 이력을 보존. 수송은 최초 영수증을 보존하고 수신된ID의 다른 전달은 별도 내용해시 반려 증거로 남겨 다음 정상전달 진행. direct receive의 충돌 반려 유지. 안정 fingerprint 재순회에는 재수신/재게시 없음.",
+      "related_correction": "옛 pump 전파 예외/덮어쓴 오류문구 단언2개를 실제 per-delivery 반려 계약으로 교정. 최초 영수증·정확한 source_sha256·별도 반려파일·반복 무게시·다음 정상전달을 강화. 기존 예상실패로 숨기지 않았다.",
+      "boundary_correction": "실제 child 3개 중2passed/1error. 실패한 test helper의 wait_receipt 호출이 현재 필수 clock을 누락한 것을 원문으로 확인. SystemClock 전달, 생성 창 억제와 child stderr 진단을 함께 교정하여 해당 실제 child1개passed. 이전 실패보고를 성공으로 덮지 않는다.",
+      "limits": "관련 원장만 폐쇄해 main9open. 부분 T4/국소 검사이고 최종 전건 관문은 남는다. focused Sim1개 예산초과 보존.",
       "whole_requirement_closed": false
     }
   }

@@ -237,7 +237,9 @@ class ControlTransport:
         unsettled = []
         for path in inbox:
             try:
-                self._pump_paths([path], None)
+                receipts = self._pump_paths([path], None)
+                unsettled.extend({'source': row['source'], 'reason': row['reason']}
+                                 for row in receipts if row.get('redelivery_conflict'))
             except ValueError as error:
                 # A changed redelivery keeps the receipt it already has; the closed state records why.
                 unsettled.append({"source": "inbox/" + path.name, "reason": str(error)})
@@ -396,10 +398,16 @@ class ControlTransport:
         existing = _json(receipt_path)
         if existing is None:
             raise RuntimeError("delivery rejection disappeared after publication")
-        if (existing.get("state") == "rejected" and existing.get("stage") == "delivery_validation"
-                and existing.get("source_sha256") == receipt["source_sha256"]):
+        # A malformed item already rejected has no new effect to publish.
+        if existing.get('state') == 'rejected' and existing.get('stage') == 'delivery_validation':
             return existing
-        raise ValueError("request_id was already received with different content")
+        # Preserve the request's durable receipt, while a different delivery's
+        # rejection has its own content-addressed evidence and cannot starve
+        # the next item. Direct receive() still rejects conflicting envelopes.
+        receipt['redelivery_conflict'] = True
+        rejection_path = receipt_path.parent / 'delivery-rejections' / (request_id + '-' + receipt['source_sha256'] + '.json')
+        _create_json_once(rejection_path, receipt)
+        return _json(rejection_path)
 
     def _receipt(self, request_id: str, transport_id: str | None = None) -> dict | None:
         """The receipt of ``request_id``: the sender's own first, then any transport's.

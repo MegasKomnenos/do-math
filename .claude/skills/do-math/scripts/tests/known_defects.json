@@ -42,8 +42,8 @@
       "category": 2,
       "reproduction": "sim.test_ingress_consumption.ControlInboxConsumptionTests.test_a_broken_envelope_is_rejected_once",
       "found_by": "1e obligation 2-A (ingress rejection contract): damaged inbox files injected into the owner pass on the Sim",
-      "missed_kind": "No test put a damaged file into the inbox; the public submit check shields the inbox from malformed payloads, so tests reached only payload-level rejection",
-      "status": "open"
+      "missed_kind": "No test put a damaged file into the inbox; the public submit check shields the inbox from malformed payloads, so tests reached only payload-level rejection Independent main integration: q8kmabeb reproduces actual malformed inbox and rewritten rejected delivery failures. Owner consumes a broken filename coordinate once and stores exact bytes without authority. Transport preserves the original durable receipt, records changed deliveries to accepted IDs separately and continues the next item; direct receive still refuses conflicting content. Existing tests retain valid-control progress and add invalid UTF-8 evidence and stored restart.",
+      "status": "closed"
     },
     {
       "id": "KD-0005",
@@ -51,8 +51,8 @@
       "category": 2,
       "reproduction": "unit.test_ingress_rejection.TransportDeliveryTests.test_a_delivery_rewritten_under_a_rejected_request_id_is_rejected",
       "found_by": "1e obligation 2-A: request ID collision and redelivery (the third input class) on the control transport's inbox",
-      "missed_kind": "Transport tests delivered each request ID once; no test rewrote a delivery after its rejection",
-      "status": "open"
+      "missed_kind": "Transport tests delivered each request ID once; no test rewrote a delivery after its rejection Independent main integration: q8kmabeb reproduces actual malformed inbox and rewritten rejected delivery failures. Owner consumes a broken filename coordinate once and stores exact bytes without authority. Transport preserves the original durable receipt, records changed deliveries to accepted IDs separately and continues the next item; direct receive still refuses conflicting content. Existing tests retain valid-control progress and add invalid UTF-8 evidence and stored restart.",
+      "status": "closed"
     },
     {
       "id": "KD-0006",

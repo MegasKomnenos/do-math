@@ -10,7 +10,6 @@ weaker than its own schema.
 import unittest
 
 from support.ingress import NOT_TEXTS, control_actions, malformed
-from support.known_defects import known_defect
 
 
 class ControlPayloadRejectionTests(unittest.TestCase):
@@ -70,7 +69,6 @@ class TransportDeliveryTests(unittest.TestCase):
                                        payload={'draft_path': 'output.json'})
         self.assertEqual(self.states()['RQ-valid'], 'received')
 
-    @known_defect('KD-0005')
     def test_a_delivery_rewritten_under_a_rejected_request_id_is_rejected(self):
         self.deliver('RQ-reused', b'{not json')
         self.assertEqual(self.states()['RQ-reused'], 'rejected')

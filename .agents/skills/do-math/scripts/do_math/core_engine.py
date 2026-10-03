@@ -739,17 +739,36 @@ class CoreEngineMixin:
         return _control_result(self.store, self.head, self.runtime, request_id)
 
     def _inbox(self) -> list[dict]:
+        from .values import bytes_evidence
+        from .canonical import validate_storage_value
         path = Path(self.instance["workspace"]) / "control" / self.instance["id"]
         processed = set(self.runtime["processed_controls"])
         results = []
         for file in sorted(path.glob("*.json")):
             if file.stem in processed:
                 continue
-            request = json.loads(file.read_text(encoding="utf-8"))
-            if not isinstance(request, dict) or request.get("id") != file.stem or request.get("instance_id") != self.instance["id"]:
-                raise ValueError("control identity mismatch")
-            if any(not isinstance(request.get(key), str) for key in ('created_at', 'accepted_order')):
-                raise ValueError('control ordering envelope is invalid')
+            try:
+                raw = file.read_bytes()
+            except FileNotFoundError:
+                continue
+            try:
+                request = json.loads(raw)
+                validate_storage_value(request)
+                if not isinstance(request, dict) or request.get("id") != file.stem or request.get("instance_id") != self.instance["id"]:
+                    raise ValueError("control identity mismatch")
+                if any(not isinstance(request.get(key), str) for key in ('created_at', 'accepted_order')):
+                    raise ValueError('control ordering envelope is invalid')
+                if not isinstance(request.get('action'), str) or not request['action']:
+                    raise ValueError('control action envelope is invalid')
+            except ValueError as error:
+                # The filename is the consumption coordinate even if the wire
+                # envelope is unreadable or claims another identity. Preserve
+                # exact bytes as JSON evidence, without granting it authority.
+                self._reject_control({'id': file.stem, 'action': 'invalid_envelope',
+                    'instance_id': self.instance['id'], 'origin': 'untrusted_file',
+                    'source_file': file.name, 'source': bytes_evidence(raw)}, str(error))
+                processed.add(file.stem)
+                continue
             results.append(request)
         # ULID suffixes are random within a millisecond; they do not preserve
         # the order in which a pause, release, or newer user control arrived.

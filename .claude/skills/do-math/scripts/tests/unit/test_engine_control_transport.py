@@ -205,7 +205,7 @@ class TransportDeliveryTests(unittest.TestCase):
         self.assertEqual(ControlTransport.worker_receipt(self.binding, 'changed')['reason'], 'fixture')
         stored = json.loads((self.endpoint / 'state.json').read_text(encoding='utf-8'))
         self.assertEqual(stored, state)
-        self.assertEqual(stored['unsettled_deliveries'], [{'source': 'inbox/changed.json', 'reason': DIFFERENT_RECEIPT}])
+        self.assertEqual(stored['unsettled_deliveries'], [{'source': 'inbox/changed.json', 'reason': REUSED}])
 
     def test_final_delivery_is_not_reread_until_its_fingerprint_changes(self):
         ControlTransport.worker_submit(self.binding, request_id='cached', kind='submit_intent',
@@ -220,9 +220,24 @@ class TransportDeliveryTests(unittest.TestCase):
             # The cached final delivery is decoded no more: no transport JSON was decoded at all.
             self.assertEqual((calls.count('receive'), calls.count('decode')), (1, decoded), 'the final delivery was read again')
             path.write_bytes(path.read_bytes().replace(b'first.json', b'other.json'))
-            with self.assertRaisesRegex(ValueError, '^' + DIFFERENT_RECEIPT + '$'):
-                self.transport.pump(lambda _: self.fail('changed identity must not publish'))
+            settle(path)
+            changed = self.transport.pump(lambda _: self.fail('changed identity must not publish'))
+            self.assertEqual([(row['state'], row['reason']) for row in changed], [('rejected', REUSED)])
+            self.assertTrue(changed[0]['redelivery_conflict'])
+            import hashlib
+            self.assertEqual(changed[0]['source_sha256'], hashlib.sha256(path.read_bytes()).hexdigest())
+            evidence = list((self.endpoint/'outbox'/'delivery-rejections').glob('cached-*.json'))
+            self.assertEqual(len(evidence), 1)
+            self.assertEqual(json.loads(evidence[0].read_bytes()), changed[0])
+            self.assertEqual(ControlTransport.worker_receipt(self.binding, 'cached'), first[0])
+            self.assertEqual(self.transport.pump(lambda _: self.fail('must not republish')), changed)
             self.assertEqual(calls.count('receive'), 2)
+        ControlTransport.worker_submit(self.binding, request_id='following', kind='submit_intent',
+                                       payload={'manifest': ['normal.json']})
+        received = {row['request_id']: row for row in self.transport.pump()}
+        self.assertEqual(received['following']['state'], 'received')
+        self.assertEqual(received['cached'], changed[0])
+        self.assertEqual(ControlTransport.worker_receipt(self.binding, 'cached'), first[0])
 
 
 class TransportReceiptTests(unittest.TestCase):
