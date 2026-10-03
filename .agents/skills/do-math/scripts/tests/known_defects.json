@@ -269,6 +269,15 @@
       "found_by": "1f knowledge의 정적 후보를 별도 통합 가지에서 표시 없이 실제 재현했다. do-math-tests-5etfclq1/report.json: 정상 기록의 선언 evidence.value만 []로 바꾸었을 때 (verified,None)이 반환되어 (failed,malformed dependency evidence) 계약 단언에서 실패; complete=true, 실행 중 변경 없음. CODE-ONLY 보고의 KD-0600 번호는 기존 열린 결함과 겹쳐 미등록 상태였으며 신규 KD-0601로 바로잡았다. 최초 충돌 미해결 실행은 discovery 실패로 재현 근거에서 제외한다. main atecn4jj에서 정상 문자열/null 대조 뒤 배열/객체/boolean/integer가 verified로 통과하는 실제 실패를 확인했다. rrmvxkqd에서 관련 14개가 통과했다. 합성 출력이며 실제 Lean 녹화로 주장하지 않는다.",
       "missed_kind": "의존 본문 value 형 검사는 있으나 선언 본문에서는 type·의존·공리 필드만 검사한다. 기존 정상·음성 표본이 선언 value의 배열 치환을 다루지 않았다. 원 재현 위치는 unit.test_knowledge_close_evidence.EvidenceGuards.test_declaration_value_must_follow_the_compiler_string_or_null_contract; 현재 같은 성질의 기존 formal_evidence_rules 모듈로 이동했다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-0700",
+      "summary": "실제 Git의 고정 조사 원천 누락이 GitStateStoreError로 전파되어 원천·슬롯 좌표를 보존한 ReviewRestorationError 계약을 충족하지 못한다.",
+      "category": 9,
+      "reproduction": "boundary.test_review_source_restoration.FixedSourceRestorationTests.test_missing_fixed_artifact_returns_a_coordinate_restoration_fault",
+      "found_by": "기반 0a4c4c03. 정상 setUp의 실제 Git 저장·읽기·물질화 뒤 artifact_ref 한 필드만 변경. unmarked report do-math-tests-9oz4x8zu에서 GitStateStoreError 재현, 같은 시험 본문 marked report do-math-tests-_45m8lol에서 expected_failure. 제품 수정 없음. main 4c49ogb_에서 실제 Git 정상 저장/읽기/복원 대조 후 누락 원천이 GitStateStoreError로 유출됨을 확인했다. q_xy_quu 관련 39개가 통과했다. 원인·정확 좌표·불변 상태·빈 출력 경로를 단언한다.",
+      "missed_kind": "기존 복원 음성 시험은 인라인 해시 불일치와 파일 시스템 OSError를 다루며, 실제 Git 저장소의 누락 산출물 예외형과 좌표 복구 계약을 함께 확인하지 않는다. KD-0600의 영향 검토 제출 읽기와는 고정 조사 원천 소비자 및 재현 경로가 다르다. 원 재현 ID: boundary.test_review_source_restoration.FixedSourceRestorationDefectTests.test_missing_fixed_artifact_returns_a_coordinate_restoration_fault; 현재 실제 Git 복원 성질의 class로 정리했다.",
+      "status": "closed"
     }
   ]
 }

@@ -8019,7 +8019,7 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 30,
+      "main_ledger_count": 31,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
@@ -8032,7 +8032,6 @@
         "KD-0900",
         "KD-0901",
         "KD-1100",
-        "KD-0700",
         "KD-1000",
         "KD-1001",
         "KD-0303",
@@ -8050,7 +8049,7 @@
         "KD-1908",
         "KD-1909"
       ],
-      "meaning": "26개는 main 미기록 후보 항목이며 제품 미구현 수나 전체 완료율이 아니다. 실제 원 구현과 재현 및 의존을 대조한다.",
+      "meaning": "25개는 main 미기록 후보 항목이며 제품 미구현 수나 전체 완료율이 아니다. 실제 원 구현과 재현 및 의존을 대조한다.",
       "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
@@ -9019,7 +9018,7 @@
     "lean_value_integration": {
       "id": "B30",
       "scope": "KD-0601: Lean 선언 본문의 문자열/null 계약 검증",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-atecn4jj\\report.json",
         "sha256": "f90843be37f5b78980c2d3450da44ef4e8ad7f640bf402ee2f5beefd6f678f14",
@@ -9118,6 +9117,100 @@
         "complete": true,
         "successful": true,
         "total_seconds": 1.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "commit": "29a986e8"
+    },
+    "review_restoration_integration": {
+      "id": "B31",
+      "scope": "KD-0700: 실제 Git 고정 조사 원천 누락의 좌표 복원 진단",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-4c49ogb_\\report.json",
+        "sha256": "a51006fd5ddf0aceba8e6c471354ccb99a7b32e2fe73235e10cf98b91f843784",
+        "counts": {
+          "error": 1
+        },
+        "complete": true,
+        "successful": false,
+        "total_seconds": 2.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-q_xy_quu\\report.json",
+        "sha256": "8c48a6cbf3351099d61920f780558245a58489113e94c88bf95a0f8ade6f4247",
+        "counts": {
+          "passed": 39
+        },
+        "complete": true,
+        "successful": true,
+        "total_seconds": 4.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_review_engine_transcripts.ObservedTranscriptTests.test_input_delta_is_not_a_recursive_transcript_copy",
+              "seconds": 0.39000000001396984,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_research_slots.SceneResearchTests.test_split_scope_fixed_research_and_resumed_review_publish_exact_assessment",
+              "seconds": 0.2029999999795109,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "실제 ResearchRepository/GitProcess와 정상 원천의 저장·읽기·복원 대조. artifact_ref 한 필드만 누락 경로로 바꾸고 GitStateStoreError를 ReviewRestorationError 원인으로 연결한다. 원천/스냅샷/슬롯 좌표, 기대 SHA256, 빈 검증 범위, retryable=false, 입력/HEAD 원상과 빈 출력 디렉터리를 보존한다. 기존 OSError errno/재시도 및 해시 검사는 유지한다.",
+      "limits": "39개 관련 부분 증거이며 T4 전건 성공이나 전체 완료가 아니다. 기존 unit 2개 개별 예산 초과가 남는다.",
+      "whole_requirement_closed": false,
+      "files": [
+        {
+          "path": "do_math/review_engine.py",
+          "sha256": "4fda31e0512fd81e273e39bf5f7d3ed136a6e46c6a49217d7d1eb2135968dbdf"
+        },
+        {
+          "path": "tests/boundary/test_review_source_restoration.py",
+          "sha256": "9dc75f5f16dcb8d5681aa288b6d6d17ce4050757cb59b771d5dd538eb2624aff"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "6d0bb38838228f9febb1fd9a06ec9b8c84c94ae15768ac9c01eebcb944e83c0a"
+        }
+      ],
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-2srlihhs\\report.json",
+        "sha256": "b08d43ae89715b66920f52928920bc76ba47225eb65c8d60df9c3daee98cd381",
+        "counts": {
+          "passed": 2
+        },
+        "complete": true,
+        "successful": true,
+        "total_seconds": 4.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-qboysqe_\\report.json",
+        "sha256": "e44eb50f8953cab715b20db2fa303307a34acfd6d31ef518605201e777c3e159",
+        "counts": {
+          "passed": 1
+        },
+        "complete": true,
+        "successful": true,
+        "total_seconds": 2.2,
         "changed_during_run": [],
         "budget": {
           "over_budget": [],

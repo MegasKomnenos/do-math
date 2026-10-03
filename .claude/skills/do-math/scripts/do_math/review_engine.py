@@ -1064,6 +1064,7 @@ class ReviewEngineMixin:
         return schema
 
     def _materialize_research_sources(self, sources, workspace, *, slot=None):
+        from .git_store import GitStateStoreError
         workspace = Path(workspace).resolve()
         directory = workspace / 'input' / 'review-research'
         directory.mkdir(parents=True, exist_ok=True)
@@ -1074,12 +1075,13 @@ class ReviewEngineMixin:
                           'artifact_ref': source.get('artifact_ref'), 'snapshot': source.get('snapshot', self.head)}
             try:
                 raw = None if 'inline' in source else self.store.read(source['artifact_ref'], source.get('snapshot', self.head))
-            except OSError as error:
+            except (OSError, GitStateStoreError) as error:
                 import errno
                 raise ReviewRestorationError(str(error), cause_kind='fixed_source_io_unavailable',
-                    coordinate={**coordinate, 'errno': error.errno, 'path': error.filename},
+                    coordinate={**coordinate, 'errno': getattr(error, 'errno', None),
+                                'path': getattr(error, 'filename', None)},
                     expected_sha256=source['sha256'],
-                    retryable=error.errno in {errno.EAGAIN, errno.EINTR, errno.EBUSY, errno.ETIMEDOUT}) from error
+                    retryable=getattr(error, 'errno', None) in {errno.EAGAIN, errno.EINTR, errno.EBUSY, errno.ETIMEDOUT}) from error
             # Inline text is derived from state and compared; a sealed artifact row
             # already matched in this process (이음새-정본.md §3) is not hashed again.
             try:
