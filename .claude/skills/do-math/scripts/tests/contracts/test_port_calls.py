@@ -12,6 +12,13 @@ from support.fakes.calls import make_fake
 from support.port_contracts.calls import _generator, _drain, CallsContract
 
 class DeterministicCallsContract(CallsContract, unittest.TestCase):
+    def track_threads(self, calls):
+        turns = list(calls.turns)
+        return lambda: [turn.thread for turn in turns if turn.thread is not None]
+
+    def park_callback(self, calls):
+        self.assertEqual(calls.turns[0].give(None)[0], 'owner_call')
+
     def make(self):
         return make_fake()
 
@@ -23,6 +30,62 @@ class DeterministicCallsTests(unittest.TestCase):
         calls = make_fake().new()
         self.addCleanup(calls.close)
         return calls
+
+    def test_owner_loss_keeps_started_cleanup_outcomes_without_applying_old_work(self):
+        from support.fakes.calls import owner_turn
+
+        for boundary in ('yield', 'owner_call'):
+            for raises in (False, True):
+                with self.subTest(boundary=boundary, raises=raises):
+                    applied, results, returned, finalized, unstarted = [], [], [], [], []
+                    result, failure = object(), ValueError('started cleanup failed')
+                    calls = make_fake().new(on_returned=lambda *args: returned.append(args))
+                    self.addCleanup(calls.close)
+
+                    def run(should_stop, on_started, on_observation):
+                        on_observation('queued before owner loss')
+                        try:
+                            if boundary == 'yield':
+                                owner_turn()
+                            else:
+                                on_started('identity')
+                        except RuntimeError as error:
+                            self.assertEqual(str(error), 'executor is shutting down')
+                            self.assertTrue(should_stop())
+                            if raises:
+                                raise failure
+                            return result
+                        finally:
+                            finalized.append('finally')
+
+                    generator = _generator(results)
+                    next(generator)
+                    started = calls.start_call(generator, run, {
+                        'should_stop': lambda: False, 'on_started': applied.append,
+                        'on_observation': applied.append})
+                    turn, = calls.turns
+                    self.assertEqual(turn.give(None)[0], boundary)
+                    pending = calls.start_call(None, lambda: unstarted.append('ran'), {})
+                    pending_turn = calls.turns[-1]
+                    self.assertFalse(started.done())
+                    for _ in range(2):
+                        calls.abandon_owner()
+                        self.assertFalse(turn.thread.is_alive())
+                        self.assertIsNone(pending_turn.thread)
+                        self.assertTrue(pending.cancelled())
+                        self.assertTrue(started.stop.is_set() and pending.stop.is_set())
+                        self.assertFalse(started.cancelled())
+                        if raises:
+                            self.assertIs(started.exception(timeout=0), failure)
+                        else:
+                            self.assertIs(started.result(timeout=0), result)
+                        self.assertEqual(finalized, ['finally'])
+                        self.assertFalse(started.observations)
+                        self.assertEqual((calls.turns, calls.futures), ([], {}))
+                        calls.wait(0)
+                        calls.pump()
+                        self.assertEqual(calls.collect(), 0)
+                        self.assertEqual((applied, results, returned, unstarted), ([], [], [], []))
 
     def test_a_call_waiting_for_the_owner_continues_after_an_owner_pass_and_sees_its_work(self):
         from support.fakes.calls import owner_turn

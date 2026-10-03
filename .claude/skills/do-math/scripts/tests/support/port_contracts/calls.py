@@ -23,6 +23,101 @@ def _drain(calls, limit=400):
     raise AssertionError('calls did not finish')
 
 class CallsContract:
+    def track_threads(self, calls):
+        """Return a reader retaining this executor's thread handles across close."""
+        raise NotImplementedError
+
+    def park_callback(self, calls):
+        """Reach a pending start callback without applying its owner function."""
+        raise NotImplementedError
+
+    def assert_close_completion(self, calls, future, threads, results, returned):
+        self.assertTrue(calls.stopping)
+        self.assertTrue(future.stop.is_set())
+        self.assertTrue(future.done(), 'close discarded the calculation that completes the Future')
+        self.assertFalse(any(thread.is_alive() for thread in threads()))
+        self.assertIn(future, calls.futures, 'abort still needs the original Future and generator')
+        self.assertEqual(results, [])
+        self.assertEqual(returned, [])
+
+    def test_close_before_owner_progress_preserves_actual_result_and_exception(self):
+        for raises in (False, True):
+            with self.subTest(raises=raises):
+                entered, stopped, finalized, applied, results, returned = [], [], [], [], [], []
+                result, failure = {'status': 'stopped', 'evidence': object()}, ValueError('local cleanup failed')
+                calls = self.executor(on_returned=lambda *args: returned.append(args))
+
+                def run(should_stop, on_started):
+                    entered.append('run')
+                    try:
+                        try:
+                            on_started('identity')
+                        except RuntimeError as error:
+                            self.assertEqual(str(error), 'executor is shutting down')
+                            stopped.append(should_stop())
+                        if raises:
+                            raise failure
+                        return result
+                    finally:
+                        finalized.append('finally')
+
+                future = self.start(calls, run, {'should_stop': lambda: False,
+                    'on_started': applied.append}, results)
+                threads = self.track_threads(calls)
+                # No wait/pump: the real thread may have started; the fake has not.
+                for _ in range(2):
+                    calls.close()
+                    self.assert_close_completion(calls, future, threads, results, returned)
+                    self.assertEqual((entered, stopped, finalized, applied), (['run'], [True], ['finally'], []))
+                    if raises:
+                        self.assertIs(future.exception(timeout=0), failure)
+                    else:
+                        self.assertIs(future.result(timeout=0), result)
+
+    def test_close_rejects_pending_start_callback_and_preserves_its_exception(self):
+        calls = self.executor()
+        entered, stopped, errors, finalized, applied, results = [], [], [], [], [], []
+
+        def run(should_stop, on_started):
+            entered.append('run')
+            try:
+                on_started('identity')
+            except RuntimeError as error:
+                stopped.append(should_stop())
+                errors.append(error)
+                raise
+            finally:
+                finalized.append('finally')
+
+        future = self.start(calls, run, {'should_stop': lambda: False, 'on_started': applied.append}, results)
+        threads = self.track_threads(calls)
+        self.park_callback(calls)
+        self.assertFalse(future.done())
+        for _ in range(2):
+            calls.close()
+            self.assert_close_completion(calls, future, threads, results, [])
+            self.assertEqual((entered, stopped, finalized, applied), (['run'], [True], ['finally'], []))
+            self.assertEqual(len(errors), 1)
+            self.assertIs(future.exception(timeout=0), errors[0])
+            self.assertEqual(str(errors[0]), 'executor is shutting down')
+
+    def test_close_preserves_already_returned_uncollected_calculation(self):
+        calls = self.executor()
+        entered, results = [], []
+        result = {'status': 'completed', 'evidence': object()}
+        future = self.start(calls, lambda: entered.append('run') or result, {}, results)
+        threads = self.track_threads(calls)
+        for _ in range(500):
+            if future.done():
+                break
+            calls.wait(0.01)
+        self.assertTrue(future.done(), 'calculation did not return within owner wait bound')
+        for _ in range(2):
+            calls.close()
+            self.assert_close_completion(calls, future, threads, results, [])
+            self.assertIs(future.result(timeout=0), result)
+            self.assertEqual(entered, ['run'])
+
     def make(self):
         raise NotImplementedError
 

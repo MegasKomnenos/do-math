@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B46 e848ccfa 확정, B47 제출259와구조검사 통과 후확정준비",
-      "active": "다음 B48 실제/대역Calls 종료계약과 Sim 소유자상실을 먼저 검증하고 공급자 가족 통합",
+      "last_closed": "B47 c1936857확정, B48 actual/fake25·기존/구조23·재시작3통과 후확정준비",
+      "active": "다음 공급자11모듈과 native 입력/수치 CLI 정상생산자2개 통합",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -13288,7 +13288,7 @@
     },
     "submission_population_integration": {
       "id": "B47",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "제출 후보13모듈/81원사례와 실제 ingress·owner·광고입력3도우미 및 현재config 생산자 연결",
       "changed_area": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-jgj6vaki\\report.json",
@@ -13471,7 +13471,120 @@
         }
       ],
       "whole_requirement_closed": false,
-      "format_fix": "커밋 diff검사의EOF 공백줄을제거했다. AST동일을확인해 동작변경없는형식교정으로구분하며원실행보고는수정하지않는다."
+      "format_fix": "커밋 diff검사의EOF 공백줄을제거했다. AST동일을확인해 동작변경없는형식교정으로구분하며원실행보고는수정하지않는다.",
+      "commit": "c1936857"
+    },
+    "calls_close_integration": {
+      "id": "B48",
+      "state": "verified_main_commit_pending",
+      "scope": "실제/대역Calls 종료 계약·Future 원결과/예외·thread정리·Sim 소유자상실 구분",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-abkqqlrl\\report.json",
+        "sha256": "02ba13bdec2ee6fcba7c7d1e6b5c8ddeb30dcc06afc4892c96f22663f88a4f3f",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 1,
+          "failed": 2
+        },
+        "total_seconds": 0.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "paired_and_turns": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-9srned_3\\report.json",
+        "sha256": "bd36f5e0d3ccc925a371b29cb8369dacccf6ab826421e2087f9a32f65bdc4ec6",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 25
+        },
+        "total_seconds": 0.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related_and_structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-r7vf4mgu\\report.json",
+        "sha256": "37f57eed7073d19be4701097dc04a9c993deb0ce57a468f9c917e06e83d64b93",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 23
+        },
+        "total_seconds": 110.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 7.094000000040978,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "actual_restart": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-8xkym091\\report.json",
+        "sha256": "4a544171b97798b419c24118919e743dc92e1286fb4b6eb3b8c3995aa557d31c",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 3
+        },
+        "total_seconds": 8.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_process_restart_state.RestartStateTests.test_restart_ends_only_the_known_owner_and_rebinds_recovery_to_the_same_world",
+              "seconds": 2.780999999959022,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "대역normal close는모든stop후미시작원계산도결과/예외로완료하고owner callback을차단하며done turn에재handoff없이join한다. Future/generator보존·수집안함. Sim-only abandon_owner는시작cleanup을보존하고미시작은취소하며old owner일을적용하지않는다. 실제ModelCalls 코드변경없음.",
+      "missed_mechanism": "기존공통계약이wait/pump로이미계산을진행한뒤close하여미시작/pending callback/done turn을놓침. 같은정상계약 actual/fake에적용하여 actual통과/fake실패를확인하고일반시험을확장.",
+      "limits": "25+23+3부분증거는전체T2/flows/T3·T4/T5 관문이아니다. smell7.094초/restart2.781초 예산초과보존. close는Job종료/예약정산인증이아니며외부무응답계산새시간상한없음.",
+      "files": [
+        {
+          "path": "do_math/ports/calls.py",
+          "sha256": "576c28439d1b7f8600d68e8d0ae2eda3ede4dec5fea71bf664329136aa78dd93"
+        },
+        {
+          "path": "tests/support/fakes/calls.py",
+          "sha256": "a075a1a79e6c3da9227824f2b55bbea97460534c47ee0deaddc300866a04bdbc"
+        },
+        {
+          "path": "tests/support/sim.py",
+          "sha256": "b43dcfefff2970ecd9b92df91c4d729c8ad211895a78ef1a4c96dac34db685f7"
+        },
+        {
+          "path": "tests/support/port_contracts/calls.py",
+          "sha256": "7e6dfd4aa75a88762c24abfa16a71cdca0608ea209976beacaddbd3bf41024bb"
+        },
+        {
+          "path": "tests/contracts/test_port_calls.py",
+          "sha256": "e8155ef50eafb5d572df11fc92e8dca24fe92e9c55ad4baef73a8697f8d5f8a7"
+        },
+        {
+          "path": "tests/boundary/test_port_calls.py",
+          "sha256": "64b41feb167f2c47bdc6aab3b5fa32cb2810b4080fb34dd97ec539be10258706"
+        },
+        {
+          "path": "tests/unit/test_calls_close_turns.py",
+          "sha256": "a19e534a21086139a4ef86cbad385dce63bfd3f9d5ad2b2a7e2eba1dab8efe04"
+        }
+      ],
+      "whole_requirement_closed": false
     }
   }
 }

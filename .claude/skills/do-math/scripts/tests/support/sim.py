@@ -185,10 +185,7 @@ class Sim:
         from dataclasses import replace
         self.jobs.restart_owner()
         for calls in self.ports.calls.created:
-            calls.close()
-            for future in list(calls.futures):
-                future.cancel()
-            calls.futures.clear()
+            calls.abandon_owner()
         self.ports = replace(self.ports, calls=fake_calls(self.clock))
         reset_owner_process()
         self.engine = ResearchEngine(self.repository, self.instance_id, ports=self.ports, codex_home=self.codex_home, environment=self.environment, host_id=self.host_id)

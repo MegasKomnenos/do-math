@@ -42,8 +42,7 @@ class _Turn:
         _current.turn = self
         self.to_call.acquire()
         try:
-            if self.value is not _STOP:
-                self.run()
+            self.run()
         finally:
             self.message = ('done',)
             self.to_owner.release()
@@ -99,6 +98,7 @@ class DeterministicCalls(ModelCalls):
             if message[0] == 'yield':
                 turn.ready = True
             else:
+                turn.thread.join()
                 self.turns.remove(turn)
         elif self.clock is not None:
             self.clock.sleep(timeout)
@@ -106,12 +106,35 @@ class DeterministicCalls(ModelCalls):
 
     def close(self):
         super().close()
-        for turn in list(self.turns):
-            if turn.thread is not None:
-                while turn.give(_STOP)[0] != 'done':
-                    pass
-                turn.thread.join()
+        # Cooperative close runs even unstarted calculations to their actual outcome.
+        self._finish_turns(self.turns)
         self.turns.clear()
+
+    def abandon_owner(self):
+        """Sim-only process loss: clean up started calls without launching lost work."""
+        super().close()  # Set stops and reject queued callbacks before local cleanup.
+        self._finish_turns(turn for turn in self.turns if turn.thread is not None)
+        # ModelCalls' original closures have completed every started calculation.
+        # Only unstarted calculations remain pending; no turn/Future pairing is needed.
+        for future in self.futures:
+            future.cancel()
+        self.futures.clear()
+        self.turns.clear()
+
+    def _finish_turns(self, turns):
+        for turn in list(turns):
+            # ModelCalls.close has set stops and rejected queued callbacks.
+            # Only the original closure completes the Future with a result/exception.
+            message = turn.message
+            while message is None or message[0] != 'done':
+                if message is None:
+                    answer = None
+                elif message[0] == 'owner_call':
+                    answer = ('error', RuntimeError("executor is shutting down"))
+                else:
+                    answer = _STOP
+                message = turn.give(answer)
+            turn.thread.join()
 
 
 class DeterministicCallsPort:
