@@ -242,6 +242,24 @@
       "found_by": "99c4ef93 계획 소유 시험 실제 실행. 최초 보고 do-math-tests-l_xmvrtg 보존. 정상 생산자 입력 교정 뒤 같은 실패를 재현; finish/resume-planning-result.json에 최종 파일 동일 hash의 무표시/표시 보고를 연결한다.",
       "missed_kind": "CODE ONLY 시험은 실행하지 않았다. 실제 수신자·저장 검증 및 합쳐진 요청 전체 비교가 드러낸 결함. 제품은 수정하지 않았다. A34 repair: exact revoke/deferral producer fields are declared in closed schemas; revoked_by binds decisions and deferral target/execution references resolve. All three original reproductions were unexpected successes in do-math-tests-oa03g_a7; markers removed together. Final gates remain pending. Original work/deferred-knowledge/independent replacement path moved from sim.test_planning_relation_conditions.DelegatedRevisionTests.test_waiting_work_result_does_not_force_assessment_status to the revision owner module with exact stored restart. Main B26 already declares and resolves deferrals; v9le5jrf verifies this distinct actual receiver without another product edit. This is not a new main pre-repair failure or a substitute for preparing-child KD-0500. The distinct class builds only its required relation state; it no longer inherits an unused owner task template setup. Actual work/knowledge/parent/restart assertions remain identical.",
       "status": "closed"
+    },
+    {
+      "id": "KD-0300",
+      "summary": "정상 유지보수 출력의 research_insights.title 비문자 배열이 schema.type 대신 integration.inspect_bundles의 해시 집합 조회에서 TypeError를 낸다",
+      "category": 2,
+      "reproduction": "unit.test_submission_checks.SubmissionBoundaryTests.test_nontext_insight_identity_is_a_structured_schema_rejection",
+      "found_by": "711b 계열의 targeted 동적 재현: 정상 research_insights 제목과 ontology 생산자 정의로 payload_issues가 []임을 setUp에서 먼저 확인한다. title 하나만 목록으로 바꾸면 integration.inspect_bundles:373에서 TypeError: unhashable type: list가 난다. 최종 표시 제거: USER TEMP/do-math-tests-yahxkqr7/report.json. 시험 rawSHA256=030c65c244076e9000f8d64b29bc1131bf6ab4c9c5f2d98ab836dae5202b4702. 같은 파일 바이트의 표시 복구 보고서와 지원/제품 지문은 finish/resume-submission-result.json의 known_proofs에 기록한다. 진단은 보고서이며 expectedFailure 본문은 원래 올바른 계약만 단언한다.",
+      "missed_kind": "정상 외곽의 중첩 새 객체 식별자 형 오류를 검사하기 전에 integration의 이름 해시 처리가 먼저 실행되는 순서를 검사하지 않았다 Existing regression moved from unit.test_submission_obligation_defects.ObligationDefectTests.test_nontext_insight_identity_is_a_structured_schema_rejection to its current submission/plan contract module without duplication. Main e5rx8rgs actual red shows unhashable insight names and four missing/unexpected/duplicate diagnostic failures; yfp5cxsk passes after string-only identity collection and exact returned-population differences. Other schema/reference/publication checks remain required.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0301",
+      "summary": "returned 과제 평가 누락의 거부 사유가 누락 과제 ID와 missing/unexpected/duplicate를 지목하지 않는다",
+      "category": 3,
+      "reproduction": "unit.test_planning_task_contracts.TaskContractsTest.test_missing_returned_assessment_identifies_the_missing_task",
+      "found_by": "711b 계열의 targeted 동적 재현: 정상 transfer_assessment를 planning 수신에 통과시킨 뒤 returned 누락·과잉·중복·혼합 네 입력에서 task ID와 차집합을 지목하지 않는 동일 ValueError 문구를 확인했다. 최종 표시 제거: USER TEMP/do-math-tests-yahxkqr7/report.json. 시험 rawSHA256=030c65c244076e9000f8d64b29bc1131bf6ab4c9c5f2d98ab836dae5202b4702. 같은 파일 바이트의 표시 복구 보고서와 지원/제품 지문은 finish/resume-submission-result.json의 known_proofs에 기록한다. 진단은 보고서이며 expectedFailure 본문은 원래 올바른 계약만 단언한다.",
+      "missed_kind": "ready 모집단은 지목 진단을 검사했지만 returned 모집단은 일반 문구를 기대값으로 고정했다 Existing regression moved from unit.test_submission_obligation_defects.ObligationDefectTests.test_missing_returned_assessment_identifies_the_missing_task to its current submission/plan contract module without duplication. Main e5rx8rgs actual red shows unhashable insight names and four missing/unexpected/duplicate diagnostic failures; yfp5cxsk passes after string-only identity collection and exact returned-population differences. Other schema/reference/publication checks remain required.",
+      "status": "closed"
     }
   ]
 }

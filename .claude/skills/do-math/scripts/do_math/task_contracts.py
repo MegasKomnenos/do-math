@@ -278,8 +278,13 @@ def validate_plan_dispositions(plan: dict, tasks: dict, ready_ids: list[str]) ->
             raise ValueError('parallel references must identify distinct other tasks')
     assessments = plan['task_assessments']
     assessed = [row['task_id'] for row in assessments]
-    if len(assessed) != len(set(assessed)) or set(assessed) != set(returned_task_ids(tasks)):
-        raise ValueError('plan must assess every returned task exactly once')
+    counts = Counter(assessed)
+    returned = set(returned_task_ids(tasks))
+    if len(assessed) != len(counts) or set(counts) != returned:
+        raise ValueError('plan must assess every returned task exactly once: '
+            f'missing={sorted(returned - set(counts))}; '
+            f'unexpected={sorted(set(counts) - returned)}; '
+            f'duplicate={sorted(identifier for identifier, count in counts.items() if count > 1)}')
     if set(selected_task_ids(plan)) & set(assessed):
         raise ValueError('returned tasks require disposition before a later selection')
     for assessment in assessments:

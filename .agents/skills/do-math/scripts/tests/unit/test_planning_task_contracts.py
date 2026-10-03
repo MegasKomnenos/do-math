@@ -11,6 +11,7 @@ checked by exception type alone now pin the product's message.
 """
 from copy import deepcopy
 import hashlib
+import re
 import unittest
 
 from jsonschema import Draft202012Validator
@@ -198,6 +199,22 @@ class TransferredContractRevisionTests(unittest.TestCase):
 
 
 class TaskContractsTest(unittest.TestCase):
+    def test_missing_returned_assessment_identifies_the_missing_task(self):
+        _, runtime, assessment = transfer_assessment()
+        self.assertIsNone(planning.validate_plan_submission(
+            {'dispositions': [], 'task_assessments': [assessment]}, runtime['tasks'], []))
+        unknown = {**assessment, 'task_id': 'TK-outside'}
+        for rows, missing, unexpected, duplicate in (
+                ([], ['TK-1'], [], []),
+                ([assessment, unknown], [], ['TK-outside'], []),
+                ([assessment, assessment], [], [], ['TK-1']),
+                ([unknown, unknown], ['TK-1'], ['TK-outside'], ['TK-outside'])):
+            reason = ('plan must assess every returned task exactly once: '
+                      f'missing={missing}; unexpected={unexpected}; duplicate={duplicate}')
+            with self.subTest(missing=missing, unexpected=unexpected, duplicate=duplicate), \
+                    self.assertRaisesRegex(ValueError, '^' + re.escape(reason) + '$'):
+                planning.validate_plan_submission({'dispositions': [], 'task_assessments': rows}, runtime['tasks'], [])
+
     def test_contract_has_stable_obligations_and_completion_requires_every_disposition(self):
         value = task_contract()
         task_contracts.validate_task_contract(value)
@@ -428,7 +445,8 @@ class TaskReadinessTests(unittest.TestCase):
     def test_missing_returned_work_cannot_be_silently_omitted(self):
         value = task_contract()
         value.update(status='waiting', results=[{'id': 'EV-return'}])
-        with self.assertRaisesRegex(ValueError, '^plan must assess every returned task exactly once$'):
+        reason = f"plan must assess every returned task exactly once: missing={[value['id']]}; unexpected=[]; duplicate=[]"
+        with self.assertRaisesRegex(ValueError, '^' + re.escape(reason) + '$'):
             planning.validate_plan_submission({'dispositions': [], 'task_assessments': []}, {value['id']: value}, [])
 
     def test_open_obligation_does_not_require_evidence_of_fulfilment(self):

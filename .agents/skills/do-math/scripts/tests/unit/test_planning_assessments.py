@@ -118,7 +118,7 @@ class AssessmentApplicationTests(unittest.TestCase):
         planning.validate_plan_submission(plan, r['tasks'], [])
         for name, plan, ready, reason in [
                 ('returned task not assessed', {'dispositions': [], 'task_assessments': []}, [],
-                 '^plan must assess every returned task exactly once$'),
+                 r"^plan must assess every returned task exactly once: missing=\['TK-1'\]; unexpected=\[\]; duplicate=\[\]$"),
                 ('ready task not disposed', {'dispositions': [], 'task_assessments': [a]}, ['TK-2'],
                  r"^plan must dispose every derived-ready task exactly once: missing=\['TK-2'\]; unexpected=\[\]; duplicate=\[\]$"),
                 ('double disposition', {'dispositions': [task_disposition('TK-2')] * 2, 'task_assessments': [a]}, ['TK-2'],

@@ -204,6 +204,33 @@ class CheckHistoryTests(unittest.TestCase):
 
 
 class SubmissionBoundaryTests(unittest.TestCase):
+    def test_nontext_insight_identity_is_a_structured_schema_rejection(self):
+        from do_math import knowledge_io
+        from support.default_responder import common
+        from support.fakes.clock import FakeClock
+        output = common('maintenance')
+        schema = contracts.action_schema({'role': 'maintenance'})
+        context = {'action': {'role': 'maintenance'}, 'execution_id': 'EX-malformed', 'snapshot': 'a' * 40,
+            'kind_definitions': knowledge_io.catalog_definitions(knowledge_io.ensure_ontology({}))}
+        normal = {'research_insights': [{'kind': 'observation', 'title': '정상 제목',
+                                        'statement': '명제', 'summary': '요약'}]}
+        jsonschema.Draft202012Validator(schema).validate(output)
+        jsonschema.Draft202012Validator(submission.extension_schema(context['action'])).validate(normal)
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(submission.payload_issues(output, schema, context, normal,
+                Path(directory), clock=FakeClock()), [])
+        for title in (['잘못된 제목'], {'title': '잘못된 제목'}, True, 1, None):
+            extensions = deepcopy(normal)
+            extensions['research_insights'][0]['title'] = title
+            before = deepcopy((output, context, extensions))
+            with self.subTest(title=title), tempfile.TemporaryDirectory() as directory:
+                issues = submission.payload_issues(output, schema, context, extensions,
+                                                   Path(directory), clock=FakeClock())
+                self.assertEqual([(row['rule_id'], row['path']) for row in issues],
+                                 [('schema.type', 'activity-extensions.json/research_insights/0/title')])
+                self.assertEqual(issues[0]['message'], f"{title!r} is not of type 'string'")
+                self.assertEqual((output, context, extensions), before)
+
     def test_knowledge_change_cannot_self_confirm_its_impact(self):
         from support.entry import entry
         _entry = entry()

@@ -369,11 +369,11 @@ def inspect_bundles(output, extensions, context, *, derived=None):
         family = coordinate.split("/")[1] if "/" in coordinate else ""
         if family in {"knowledge", "research_insights", "kind_definitions"}:
             for name in (value.get("id"), value.get("title"), value.get("token")):
-                if name:
+                if isinstance(name, str) and name:
                     if name in new_records:
                         issues.append(issue("integration.new_identity", coordinate, "duplicate new identity: " + name))
                     new_records[name] = coordinate
-        if family == "knowledge_changes" and value.get("replacement_id"):
+        if family == "knowledge_changes" and isinstance(value.get("replacement_id"), str) and value['replacement_id']:
             name = value["replacement_id"]
             if name in new_records:
                 issues.append(issue("integration.new_identity", coordinate, "duplicate new identity: " + name))
@@ -387,7 +387,7 @@ def inspect_bundles(output, extensions, context, *, derived=None):
         if coordinate in already_owned:
             continue
         refs = reference_ids(value)
-        if isinstance(value, dict) and value.get("kind"):
+        if isinstance(value, dict) and isinstance(value.get("kind"), str) and value['kind']:
             refs.add(value["kind"])
         if (coordinate.startswith("activity-extensions.json/knowledge_metadata/")
                 and isinstance(value, dict) and isinstance(value.get("title"), str)):

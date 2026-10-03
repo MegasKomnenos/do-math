@@ -8019,7 +8019,7 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 27,
+      "main_ledger_count": 29,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
@@ -8029,8 +8029,6 @@
         "KD-1300",
         "KD-0702",
         "KD-0701",
-        "KD-0300",
-        "KD-0301",
         "KD-0900",
         "KD-0901",
         "KD-1100",
@@ -8053,7 +8051,7 @@
         "KD-1908",
         "KD-1909"
       ],
-      "meaning": "29개는main미기록후보항목이며제품미구현수/전체완료율이아니다. 실제원구현/재현/의존을대조한다.",
+      "meaning": "27개는main미기록후보항목이며제품미구현수/전체완료율이아니다. 실제원구현/재현/의존을대조한다.",
       "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
@@ -8732,7 +8730,7 @@
     "waiting_work_integration": {
       "id": "B28",
       "scope": "KD-0501: 기존 보류 수리의 별도 수행 waiting·독립 지식교체 수신 경로 검증",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "initial_main": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-v9le5jrf\\report.json",
         "sha256": "66017e6fd1eda5af6290b1b51a1f7686ec7c130fae65c157204e59e84dc2ee0f",
@@ -8892,6 +8890,130 @@
       "start_state_improvement": "기존소유클래스setUp을상속하여사용하지않는owner 상태를복원하던회귀를같은모듈의별도성질클래스로옮김. module 전체warm_owner를기존owner 클래스의setUpClass로옮겨선택된별도회귀가불필요한owner 템플릿을빌드하지않음. 동일단독실행39.6→29.5초; 실제본문약29초와Sim예산초과는유지.",
       "scope_fidelity": "준비자식KD-0500과다른실제수신을검사함. 현재IDs를양쪽원장에서갱신하고후보옛관계메서드삭제로중복제거. 역사가리키는원ID/원실패는보존. 새main pre-repair 실패를만들었다고주장하지않음.",
       "limits": "1개회귀/기존owner8/후보2·구조5의부분증거. 장기실제지식생산·교체를약화하거나짧게만들지않았고전체T2/예산/T3를닫지않음.",
+      "whole_requirement_closed": false,
+      "commit": "d3700755"
+    },
+    "submission_identity_integration": {
+      "id": "B29",
+      "scope": "KD-0300/0301: 잘못된 제출 식별자 형의 구조화 반려와 returned 평가 차집합 진단",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-e5rx8rgs\\report.json",
+        "sha256": "b4b5f158bcb8d06b63763e45965f3d27088fd35864542da4811be172d53341f5",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1,
+          "error": 1
+        },
+        "total_seconds": 0.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-yfp5cxsk\\report.json",
+        "sha256": "ff8dfb071d739e45c7cbc3be8fad167912f0340dbb01dfdeda65944087a2fec9",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 0.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-qictif9f\\report.json",
+        "sha256": "4f668516f4068e107030e9126b499d7d3d37c59d947a9299c3479b565fa96dab",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 100
+        },
+        "total_seconds": 2.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_submission_integration_bundles.BundlePublicationTests.test_bundle_receipt_and_records_share_real_git_publication",
+              "seconds": 0.2029999999795109,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-nxzudk5w\\report.json",
+        "sha256": "8fbc5fc19cda9b81ca35ae2d65cf78e6778a2e7dfd22ce22574a75c709e37ae6",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 3
+        },
+        "total_seconds": 3.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-tvdfm2to\\report.json",
+        "sha256": "e9ea3a0f46b3f962f060c62fd2879512d9c77502a4499526ef25a8a01b276723",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 5
+        },
+        "total_seconds": 8.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 5.593999999924563,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/integration.py",
+          "sha256": "5faea70356777024382ca67d1ec8b705f23f1192bfe6aa0fd398ce894d1b90c3"
+        },
+        {
+          "path": "do_math/task_contracts.py",
+          "sha256": "efa71c0f775e82e5061c57b53d4076f9f62bbfcfcb92dbf95bb31b576a441d68"
+        },
+        {
+          "path": "tests/unit/test_submission_checks.py",
+          "sha256": "a46f4e1baa2cf2d9570b332bf6a69a205090dd34d6b5e0cb367822dbfa89e6b9"
+        },
+        {
+          "path": "tests/unit/test_planning_task_contracts.py",
+          "sha256": "c475f1ce94000fb157c89549886031b676154f47e99c2b386e1b262e89220b60"
+        },
+        {
+          "path": "tests/unit/test_planning_assessments.py",
+          "sha256": "4ce5de31b2d679fb30927aa056cf78c21f17a59c61a278f602e4cfa878ee2b74"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "13a10183b6d49b0a50d2f6ae4662cca07c4b3ec42cd8169e0c518d8919d7a43c"
+        }
+      ],
+      "contract": "inspect_bundles가id/title/token/replacement_id/kind의비문자값을해시집합에넣지않고기존schema.type/정확좌표반려로보존. 정상유지보수출력/ontology 대조군과입력원상확인. returned 평가의Counter/집합으로missing/unexpected/duplicate를정확히지목하고기존완전한평가/선택제약은유지.",
+      "test_move": "후보원회귀2개를현재submission_checks/plan_contracts 기존모듈로이동하고옛원인별test모듈삭제. 기존일반오류문구2곳을정확missingID 단언으로교정. 원IDs와실패는missed_kind역사에유지.",
+      "limits": "관련100개와후보3/구조5는부분증거. 관련unit1개/구조냄새1개예산초과를남김. SUBMISSION_OUTCOMES 일반선언/여러입구전건은별도미통합. 최종관문별도.",
       "whole_requirement_closed": false
     }
   }
