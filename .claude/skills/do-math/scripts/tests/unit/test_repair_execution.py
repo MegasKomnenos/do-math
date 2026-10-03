@@ -193,7 +193,8 @@ class RecoveryJudgmentTests(unittest.TestCase):
         held = {'result_disposition': {'recovery': 'recovery_held'}}
         self.assertFalse(already_attempted(runtime(**held), 'f' * 64, 'i' * 64))
         self.assertTrue(already_attempted(runtime(**held, submission_receipt={'state': 'accepted'}), 'f' * 64, 'i' * 64))
-        self.assertTrue(already_attempted(runtime(result_disposition='legacy'), 'f' * 64, 'i' * 64))
+        with self.assertRaisesRegex(ValueError, '^recovery disposition must be an object$'):
+            already_attempted(runtime(result_disposition='invalid'), 'f' * 64, 'i' * 64)
 
     def test_the_repair_prompt_names_its_scope_and_carries_the_failure_record(self):
         import json
@@ -252,9 +253,11 @@ class RecoveryAttemptTests(unittest.TestCase):
                                 outcome=outcome, diagnosis=diagnosis, execution_id='EX-repair', at='2026-09-22T01:00:00Z')
 
     def test_a_repaired_diagnosis_finishes_the_recovery_and_resumes_the_failed_request(self):
+        self.execution['submission_receipt'] = repair_execution.recovery_report_receipt('EX-repair',
+            evidence_ref='runtime/artifacts/BA-repair/report.json', observed_at='2026-09-22T01:00:00Z')
         self.record_attempt('repaired', self.record)
         self.assertEqual((self.execution['status'], self.execution['outcome'], self.execution['result_disposition']),
-                         ('ended', 'execution_incomplete', {'recovery': 'repaired'}))
+                         ('ended', 'output_accepted', {'recovery': 'repaired'}))
         self.assertEqual(self.runtime['activities']['AY-recovery']['status'], 'finished')
         self.assertEqual(self.record['status'], 'applied')
         self.assertEqual(self.record['result']['installation_repair']['repaired_by'], 'EX-repair')

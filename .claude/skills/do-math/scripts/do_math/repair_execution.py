@@ -13,6 +13,38 @@ from .git_store import GitStateStoreError
 from .canonical import exact_content_hash
 
 
+# A received repair report and a confirmed local exit are separate facts.
+RECOVERY_OUTCOMES = {
+    'repaired': {'counter': 'attempt', 'terminal': True, 'finish': True, 'report': 'required'},
+    'recovery_failed': {'counter': 'attempt', 'terminal': True, 'finish': False, 'report': 'optional'},
+    'recovery_provider_limited': {'counter': 'exclude', 'terminal': True, 'finish': False, 'report': 'absent'},
+    'recovery_held': {'counter': 'report', 'terminal': True, 'finish': False, 'report': 'optional'},
+    'recovery_verification_failed': {'counter': 'attempt', 'terminal': True, 'finish': False, 'report': 'required'},
+    'recovery_termination_unknown': {'counter': 'unconfirmed', 'terminal': False, 'finish': False, 'report': 'optional'},
+}
+
+
+def recovery_outcome(outcome):
+    if not isinstance(outcome, str) or outcome not in RECOVERY_OUTCOMES:
+        raise ValueError('unknown recovery outcome: ' + repr(outcome))
+    return RECOVERY_OUTCOMES[outcome]
+
+
+def recovery_attempt_counts(execution):
+    disposition = execution.get('result_disposition')
+    if disposition is None:
+        # An unsettled attempt is protected by the local termination barrier.
+        return True
+    if not isinstance(disposition, dict):
+        raise ValueError('recovery disposition must be an object')
+    rule = recovery_outcome(disposition.get('recovery'))
+    if rule['counter'] == 'exclude':
+        return False
+    if rule['counter'] == 'report':
+        return bool(execution.get('submission_receipt'))
+    return True
+
+
 def installation_sha256(root):
     """Identity of the whole installed skill; unchanged files reuse their digests."""
     from .file_io import cached_sha256, installation_files
@@ -119,6 +151,9 @@ class RepairExecutionMixin:
 
     def route_submission_return(self, action, received, execution_id, output, *, rejected_submission=None):
         """Keep a bounded producer repair, then diagnose the preserved actual error."""
+        from .integration import SUBMISSION_OUTCOMES, submission_outcome
+        if not SUBMISSION_OUTCOMES[submission_outcome(received)]['output_repair']:
+            return
         retry = {**deepcopy(action), 'continuation_of': execution_id,
             'repair_attempt': action.get('repair_attempt', 0) + 1,
             'repair': {'execution_id': execution_id, 'previous_output': output,
@@ -292,14 +327,10 @@ def already_attempted(runtime: dict, failure_sha256: str, installation_sha256: s
     supervision blocks pace a retry.
     """
     def attempted(execution):
-        disposition = execution.get('result_disposition')
-        recovery = disposition.get('recovery') if isinstance(disposition, dict) else None
-        unjudged = (recovery == 'recovery_provider_limited'
-                    or (recovery == 'recovery_held' and not execution.get('submission_receipt')))
         return (execution.get('role') == 'recovery'
                 and execution.get('input_manifest', {}).get('repair_identity') == {
                     'failure_sha256': failure_sha256, 'installation_sha256': installation_sha256}
-                and not unjudged)
+                and recovery_attempt_counts(execution))
     return any(attempted(e) for e in runtime.get('executions', {}).values())
 
 
@@ -349,11 +380,19 @@ def record_recovery_attempt(runtime: dict, execution: dict, *, activity_id: str,
                             diagnosis, execution_id: str, at: str) -> None:
     """End a released recovery execution, settle its activity and record the attempt on its diagnosis."""
     from . import activities, execution_lifecycle
+    rule = recovery_outcome(outcome)
+    if not rule['terminal']:
+        raise ValueError('unconfirmed recovery cannot settle its execution')
+    received = bool(execution.get('submission_receipt'))
+    if rule['report'] == 'required' and not received:
+        raise ValueError('recovery outcome requires a received repair report: ' + outcome)
+    if rule['report'] == 'absent' and received:
+        raise ValueError('recovery outcome cannot carry a repair report: ' + outcome)
     execution_lifecycle.transition_execution(execution, "stopping", at=at, reason=outcome)
     execution_lifecycle.transition_execution(execution, "ended", at=at,
         outcome="output_accepted" if execution.get("submission_receipt") else "execution_incomplete",
         disposition={"recovery": outcome})
-    if outcome == "repaired":
+    if rule['finish']:
         activities.finish_activity(runtime, activity_id, result_refs=[execution_id], unresolved=[], followups=[], at=at)
     else:
         activities.wait_for(runtime, activity_id, reason=outcome,
@@ -361,7 +400,7 @@ def record_recovery_attempt(runtime: dict, execution: dict, *, activity_id: str,
             next_owner="recovery", at=at)
     if diagnosis:
         current_diagnosis = runtime['operational_dispositions'][diagnosis['id']]
-        if outcome == 'repaired':
+        if rule['finish']:
             resume_installation_repair(runtime, current_diagnosis, repaired_by=execution_id, at=at)
         else:
             current_diagnosis['status'] = 'installation_repair_waiting'

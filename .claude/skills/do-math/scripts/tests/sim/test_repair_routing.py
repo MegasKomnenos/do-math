@@ -101,26 +101,41 @@ class OperationalDispositionTests(unittest.TestCase):
 class SubmissionReturnTests(unittest.TestCase):
     """An active instance restored from the template; the returns name executions the routing only refers to."""
 
+    def returned(self):
+        from do_math import submission
+        from support.submission_receiver import history
+        scene = history()
+        self.assertEqual(submission.payload_issues(scene.output, scene.schema, scene.context,
+            {}, scene.workspace, clock=scene.engine.ports.clock), [])
+        output = deepcopy(scene.output)
+        output['summary'] = []
+        issues = submission.payload_issues(output, scene.schema, scene.context, {}, scene.workspace,
+                                          clock=scene.engine.ports.clock)
+        received = scene.engine._apply_submission_bundles(scene.action, output, {}, scene.execution_id,
+                                                         scene.context, issues)
+        self.assertEqual(received['status'], 'returned')
+        self.assertTrue(received['issues'])
+        return scene, received, output
+
     def test_repeated_submission_return_stops_producer_and_opens_one_diagnosis(self):
-        sim = Sim.activated()
-        engine = sim.engine
+        scene, received, output = self.returned()
+        engine = scene.engine
         self.assertEqual(engine.instance['config']['max_output_repairs'], 1)
         runtime = engine.runtime
         base = deepcopy(runtime['queue'])  # the template's own queue; each step is compared with the whole queue
-        action = {'id': 'AC-producer', 'role': 'research_plan'}
-        received = {'retry_bundle_ids': ['IN-failed'], 'bundles': [], 'issues': [{'rule_id': 'application'}]}
-        engine.route_submission_return(action, received, 'EX-first', {'summary': 'preserved'})
+        action = deepcopy(scene.action)
+        engine.route_submission_return(action, received, 'EX-first', output)
         retry = {**action, 'continuation_of': 'EX-first', 'repair_attempt': 1, 'repair': {
-            'execution_id': 'EX-first', 'previous_output': {'summary': 'preserved'}, 'retry_bundle_ids': ['IN-failed'],
-            'bundle_results': [], 'issues': received['issues']}}
+            'execution_id': 'EX-first', 'previous_output': output, 'retry_bundle_ids': received['retry_bundle_ids'],
+            'bundle_results': received['bundles'], 'issues': received['issues']}}
         self.assertEqual(runtime['queue'], base + [retry])
         runtime['queue'].pop()
-        engine.route_submission_return(retry, received, 'EX-second', {'summary': 'preserved'})
+        engine.route_submission_return(retry, received, 'EX-second', output)
         review = runtime['queue'][-1]
         self.assertEqual(runtime['queue'], base + [review])
         self.assertEqual((review['role'], review['target']), ('operational_review', 'EX-second'))
         self.assertIn('Bounded submission repair exhausted', review['reason'])
-        wait = runtime['waiting_actions']['AC-producer']
+        wait = runtime['waiting_actions'][action['id']]
         self.assertEqual((wait['kind'], wait['next_owner'], wait['execution_id']),
                          ('output_validation', 'operational_review', 'EX-second'))
         self.assertEqual(wait['action']['repair']['execution_id'], 'EX-second')
@@ -136,12 +151,11 @@ class SubmissionReturnTests(unittest.TestCase):
         self.assertIn('AC-zero', runtime['waiting_actions'])
 
     def test_a_rejected_submission_travels_with_the_repair(self):
-        sim = Sim.activated()
-        engine = sim.engine
-        received = {'retry_bundle_ids': [], 'bundles': [], 'issues': [{'rule_id': 'schema.required'}]}
+        scene, received, output = self.returned()
+        engine = scene.engine
         rejected = {'check_ref': 'runtime/artifacts/BA-x/submission/check.json', 'submitted_output_ref': 'O'}
         engine.route_submission_return({'id': 'AC-rejected', 'role': 'research_plan'}, received, 'EX-rejected',
-                                       {'summary': 'draft'}, rejected_submission=rejected)
+                                       output, rejected_submission=rejected)
         retry = next(a for a in engine.runtime['queue'] if a.get('id') == 'AC-rejected')
         self.assertEqual({key: retry['repair'][key] for key in ('execution_id', 'check_ref', 'submitted_output_ref', 'issues')},
                          {'execution_id': 'EX-rejected', **rejected, 'issues': received['issues']})

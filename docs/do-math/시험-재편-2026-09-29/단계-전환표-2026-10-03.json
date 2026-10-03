@@ -8045,7 +8045,7 @@
         "KD-1909"
       ],
       "meaning": "20개는 main 미기록 후보 항목이며 전체 미구현 수나 완료율이 아니다.",
-      "next": "다음 통합은 제출/설치 복구 결과 선언과 계수/재시도 실제 수신, 이어서 공급자 사건 수리와 형식 Git 의미 포트다. 대기 등록부만으로 원문4-A/4-B 전건을 닫지 않는다.",
+      "next": "다음은 실제 runner 결과의 종료 미확인 증거 보존과 첫 계산 전 pause 정산 KD1000/1001, 이어서 공급자 사건 수리와 형식 Git 의미 포트다. 결과 분류표만으로 원문4-C 전건을 닫지 않는다.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
     },
@@ -9217,7 +9217,7 @@
     "wait_contract_integration": {
       "id": "B32",
       "scope": "행동 대기22종/배정 대기3종의 정본 및 실제 공개 권한·정책·질문·게시 실패 출구 KD-0701~0705",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-3dx5q6ew\\report.json",
         "sha256": "bae1d4e23b17bf1ea862f37a6ed430d50755d672315cb9e2120435570ddfc66e",
@@ -9614,6 +9614,183 @@
           "passed": 1
         },
         "total_seconds": 1.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "commit": "e26c159d"
+    },
+    "outcome_contract_integration": {
+      "id": "B33",
+      "scope": "실제 제출5분류와 복구6결과의 계수·보고 수신·종료 정산 정본 및 수신 연결",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-3129udel\\report.json",
+        "sha256": "4030ace8c80f0db3cbf727ee9aa9d5f2779483b56371fedf1014b39209a1e0ff",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 3
+        },
+        "total_seconds": 4.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused_and_census": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-11v5dmkp\\report.json",
+        "sha256": "b0d5d07d7d285b0b34f96f7599d7dbcaa93d764ee8cafaab5c4ffab12b8c5361",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 7
+        },
+        "total_seconds": 14.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_output_repair_outcome_contract.OutputRepairOutcomeContractTests.test_every_submission_disposition_counts_only_declared_producer_repairs",
+              "seconds": 8.670999999972992,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "related_initial": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-f_0prc34\\report.json",
+        "sha256": "e4711f223ad5ef1e473d6b31f87babd9187319434ed7a05a55d912bc20483392",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 68,
+          "error": 2
+        },
+        "total_seconds": 61.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_operator_finish_recovery.RecoveryTests.test_hold_before_report_does_not_use_up_the_repair",
+              "seconds": 2.2179999999934807,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_operator_finish_recovery.RecoveryTests.test_judged_repair_counts_once_even_if_hold_holds_failed_verification",
+              "seconds": 2.0160000000614673,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_operator_finish_recovery.RecoveryTests.test_model_policy_pause_holds_future_calls_but_not_the_repair_attempt",
+              "seconds": 3.922000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_operator_finish_recovery.RecoveryTests.test_probe_routes_published_diagnosis_and_hold_blocks_recovery",
+              "seconds": 2.577999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_operator_finish_recovery.RecoveryTests.test_provider_limit_reaches_gate_unchanged_and_unjudged_repair_can_retry",
+              "seconds": 2.937999999965541,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "receiver_fixture_corrected": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-b3j6bfjv\\report.json",
+        "sha256": "bb2aa7dac3ef2300c8408eb6786023a0e4867f220ecdf417af110c01b9914615",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 4.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "contract": "실제 묶음 수신 결과를 수락/게시 대기/영향 검토/전제 변경/출력 반려로 분류한다. core 수신과 route_submission_return이 공유하여 반려만 출력 수리 횟수를 쓴다. 부분 수락의 retry_bundle_ids/개별 결과/사유는 유지한다. 복구6종은 보고 수신과 로컬 종료를 구별한다. 공급자 한도와 수신 전 HOLD는 계수하지 않고 수신 뒤 HOLD/검증 실패는 시도로 센다. 종료 미확인과 미등록 결과는 상태 변경 전 반려한다. 실제 생산 소스 전건과 선언을 대조한다.",
+      "correction": "구조 없는 구형 disposition을 수리 시도로 세던 기대값을 정확 반려로 교체. repaired fixture는 실제 recovery_report_receipt를 생성하고 output_accepted를 검사한다. broad의 반려 영수증 status 누락2건은 정상 출력 대조 후 실제 묶음 수신자가 생산한 반려/묶음/사유를 쓰도록 교정하며 원 단언을 보존한다. 전체70 성공으로 과거 보고를 덮어쓰지 않는다.",
+      "limits": "원문4-C에는 무산출 계보·출력 수리 한도·자동 복구·반복 문턱 전건이 더 남는다. 이 두 결과 가족과 기존 반복11종은 전체4-C 증거가 아니다. 관련68통과/2오류 후 교정2통과는 부분 증거이며 합산 전체 성공이 아니다. focused sim1개와 관련sim5개 예산 초과를 유지한다. KD1000/1001과 공급자 사건 및 형식 Git 포트는 별도 미통합이다.",
+      "whole_requirement_closed": false,
+      "files": [
+        {
+          "path": "do_math/integration.py",
+          "sha256": "6e00e13da03bf60f40f4192e70dfc9426eb7a3e411913f4eb8eae014cd6537f8"
+        },
+        {
+          "path": "do_math/repair_execution.py",
+          "sha256": "840a07c25dcfc493fb23d0c994d2557ee64e6884f512d0aac86d480fc01405d2"
+        },
+        {
+          "path": "do_math/core_engine.py",
+          "sha256": "399c7cfc305d0f1e2c1ae8bd02a839408f30e6891729be99018fb2a048d80052"
+        },
+        {
+          "path": "tests/unit/test_recovery_outcome_contract.py",
+          "sha256": "087ac9b87c7321ce342e9d8d887ef261a09d3cec2232edd60f441b973912c235"
+        },
+        {
+          "path": "tests/sim/test_output_repair_outcome_contract.py",
+          "sha256": "f98c0d7db479145f8ad408eaa5b6c81f48cf78cff1e69af988ce930db044f0f9"
+        },
+        {
+          "path": "tests/structure/test_repair_outcome_contracts.py",
+          "sha256": "e07a948b16bef60774b972a1704e4197079b3e9a95ccb57a37b9a66b4d244841"
+        },
+        {
+          "path": "tests/unit/test_repair_execution.py",
+          "sha256": "cf0f5562b096e3e58037c979250f3071df0da61aef9bae48acbb8f9c39ddc82b"
+        },
+        {
+          "path": "tests/sim/test_repair_routing.py",
+          "sha256": "b420ffcbcd4cc33c75330af21d599928fe63843b8387a2b59cf1a34a51165f43"
+        },
+        {
+          "path": "이음새-정본.md",
+          "sha256": "f001cf39a6003a7fdbfd6011a7af7d773c01bb39fa53ce617330e1ec3ad37c58"
+        }
+      ],
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-7a_5e0v9\\report.json",
+        "sha256": "67256c48db1a381fae483b30aec7dbc588e094ede3cb94d64acd48ddfaf94fee",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 9
+        },
+        "total_seconds": 17.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_output_repair_outcome_contract.OutputRepairOutcomeContractTests.test_every_submission_disposition_counts_only_declared_producer_repairs",
+              "seconds": 9.437999999965541,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-gaubvztb\\report.json",
+        "sha256": "067ad06b9cb403bfc39ed43f358132b7b8e2bb3fb0dc6815ba26005697feb7a9",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 5
+        },
+        "total_seconds": 7.0,
         "changed_during_run": [],
         "budget": {
           "over_budget": [],

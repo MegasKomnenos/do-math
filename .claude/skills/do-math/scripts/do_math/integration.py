@@ -46,6 +46,31 @@ def failure_kind(issues):
     return 'output_contract'
 
 
+SUBMISSION_OUTCOMES = {
+    'accepted': {'output_repair': False, 'next_owner': None},
+    'publication_wait': {'output_repair': False, 'next_owner': 'engine'},
+    'impact_review': {'output_repair': False, 'next_owner': 'impact_review'},
+    'premises_changed': {'output_repair': False, 'next_owner': 'refresh_decision'},
+    'output_rejected': {'output_repair': True, 'next_owner': 'producer'},
+}
+
+
+def submission_outcome(received):
+    """Classify the actual bundle receipt before counting a producer repair."""
+    if not isinstance(received['status'], str) or received['status'] not in {'accepted', 'partial', 'returned'}:
+        raise ValueError('unknown integration receipt status: ' + repr(received['status']))
+    if received['status'] == 'accepted':
+        return 'accepted'
+    owners = {row.get('next_owner') for row in received['bundles']}
+    if 'engine' in owners:
+        return 'publication_wait'
+    if 'impact_review' in owners:
+        return 'impact_review'
+    if failure_kind(received['issues']) == 'currentness_changed':
+        return 'premises_changed'
+    return 'output_rejected'
+
+
 class ImpactReviewRequired(ValueError):
     """A current mutation needs a designated judgment, not a rewritten declaration."""
     def __init__(self, request):

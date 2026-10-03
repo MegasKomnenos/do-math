@@ -2243,6 +2243,7 @@ class CoreEngineMixin:
                         prefix + "/output.json": canonical_json(output),
                         prefix + "/extensions.json": canonical_json(extensions)})
         received = self._apply_submission_bundles(action, output, extensions, execution_id, context, check["issues"])
+        submission_outcome = integration.submission_outcome(received)
         self._remove_action(action)
         refreshed = False
         execution = self.runtime["executions"][execution_id]
@@ -2284,13 +2285,13 @@ class CoreEngineMixin:
                     except OSError as error:
                         self.runtime["history"].append({"kind": "feedback_delivery_failed", "execution_id": execution_id, "error": str(error)})
         else:
-            if not any(row.get("next_owner") == "engine" for row in received["bundles"]):
+            if submission_outcome != 'publication_wait':
                 execution_lifecycle.transition_execution(execution, "ended", at=self.ports.clock.now(), outcome="execution_incomplete",
                     disposition={"kind": "submission_returned", "retry_bundle_ids": received["retry_bundle_ids"]})
             execution.update(error_kind=integration.failure_kind(received['issues']),
                              error="one or more integration bundles were returned")
             # This remains an AI-owned repair; a counter never creates user authority.
-            if any(row.get("next_owner") == "engine" for row in received["bundles"]):
+            if submission_outcome == 'publication_wait':
                 environment = next((row['environment_wait'] for row in received['bundles'] if row.get('environment_wait')), None)
                 self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({
                     **self.runtime.get("waiting_actions", {}).get(action["id"], {}), "action": deepcopy(action),
@@ -2298,9 +2299,9 @@ class CoreEngineMixin:
                     **({'detail': environment} if environment else {}),
                     "reason": ("Keep the sealed result until the toolchain record or active trust environment changes"
                                if environment else "Reload current Git state and reapply only unpublished candidate bundles")})
-            elif any(row.get("next_owner") == "impact_review" for row in received["bundles"]):
+            elif submission_outcome == 'impact_review':
                 self._hold_impact_reviews(action, execution_id, received)
-            elif execution["error_kind"] == "currentness_changed":
+            elif submission_outcome == 'premises_changed':
                 # Premises changed after the input was fixed: refresh with the change
                 # table instead of spending the producer's bounded output repair.
                 refreshed = True
@@ -2310,7 +2311,7 @@ class CoreEngineMixin:
                      "reason": row["message"]} for row in received["issues"]])
             else:
                 self.route_submission_return(action, received, execution_id, output)
-        publication_pending = any(row.get("next_owner") in {"engine", "impact_review"} for row in received["bundles"])
+        publication_pending = submission_outcome in {'publication_wait', 'impact_review'}
         if not publication_pending:
             if not refreshed:  # A refresh records its own outcome.
                 self._record_task_receipt(action, output or {}, execution_id, accepted=received["status"] == "accepted")
