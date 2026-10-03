@@ -10,10 +10,21 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import stat
 import sys
 import tempfile
 import time
+
+
+def executable_identity(executable, *, strict=False):
+    """One PATH/cwd/symlink normalization for recording or comparing an executable.
+
+    Strict callers additionally require the path to exist. Missing optional
+    capability probes retain a normalized path without inventing file evidence.
+    """
+    executable = str(executable)
+    return Path(shutil.which(executable) or executable).resolve(strict=strict)
 
 
 def atomic_replace(source, destination):

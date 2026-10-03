@@ -19,7 +19,6 @@ import sys
 import tempfile
 import uuid
 import platform
-import shutil
 from typing import Any, Mapping
 
 from do_math.values import compact_json_bytes, strict_json_loads
@@ -93,7 +92,7 @@ class LocalCLIAdapter:
     def capability_identity(self) -> dict:
         """Current local identity, without claiming any behavioral capability."""
         from . import file_io
-        path = Path(shutil.which(self.cli_path) or self.cli_path).resolve()
+        path = file_io.executable_identity(self.cli_path)
         # Digests are recomputed only when a file's fingerprint changes (이음새-정본.md §2).
         return {"cli_path": str(path), "cli_sha256": file_io.cached_sha256(path) if path.is_file() else None,
                 "module_sha256": {name: file_io.cached_sha256(importlib.import_module("do_math." + name).__file__)
@@ -103,8 +102,9 @@ class LocalCLIAdapter:
 
     def observation_key(self):
         """One batch may share facts only for this exact adapter/tool selection."""
+        from .file_io import executable_identity
         return (type(self).__module__, type(self).__qualname__,
-                str(Path(shutil.which(self.cli_path) or self.cli_path).resolve()),
+                str(executable_identity(self.cli_path)),
                 str(Path(self.worker_module.__file__).resolve()))
 
     @measured('capability_surface')
@@ -245,5 +245,4 @@ class CodexExecAdapter(LocalCLIAdapter):
 
     def parse_response(self, raw: bytes | None, request: dict) -> dict:
         return _parse_codex(raw, request)
-
 

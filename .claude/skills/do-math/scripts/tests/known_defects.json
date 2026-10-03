@@ -24,8 +24,8 @@
       "category": 3,
       "reproduction": "structure.test_boundary_invariants.BoundaryInvariantTests.test_executable_identity_has_one_normalization",
       "found_by": "1e obligation 9-A (boundary static invariants): the executable-path comparison invariant fails on the current code",
-      "missed_kind": "No structure check required one normalization function for executable identity; each boundary module wrote its own",
-      "status": "open"
+      "missed_kind": "No structure check required one normalization function for executable identity; each boundary module wrote its own Independent main integration: file_io.executable_identity is the shared PATH/cwd/symlink normalization for adapter identity, observation key, request receipt, formal inspection/verification and Lake identity. Main red c0zd9v1o shows the duplicate-source invariant failure and a valid PATH request rejected by checked_start_paths. Existing provider CLI contract test now also covers same-file/different-file, strict missing file, unchanged request and both adapter identities.",
+      "status": "closed"
     },
     {
       "id": "KD-0003",

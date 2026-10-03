@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .worker_request import STATUS_BINDING_KEYS
+from .file_io import executable_identity
 
 
 def surface_report(version, helps, *, identity: dict, provider: str, cli_path: str,
@@ -45,7 +46,7 @@ def checked_start_paths(request: dict, request_path: Path, *, cli_path: str, exe
     prompt_path, stdout_path, stderr_path, status_path = (Path(request[name]) for name in
         ("prompt_path", "stdout_path", "stderr_path", "status_path"))
     final_path = Path(request["final_path"]) if "final_path" in request else None
-    if Path(request[executable_key]).resolve() != Path(cli_path).resolve():
+    if executable_identity(request[executable_key]) != executable_identity(cli_path):
         raise ValueError("request CLI executable differs from adapter executable")
     outputs = [path for path in (stdout_path, stderr_path, final_path, status_path) if path is not None]
     paths = [request_path, prompt_path, *outputs]

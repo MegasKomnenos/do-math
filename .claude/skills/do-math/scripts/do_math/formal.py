@@ -11,7 +11,7 @@ from .lean_evidence import (AXIOMS, FORMAL_EVIDENCE_FIELDS, LAKE_PROJECT_FILES, 
                             project_inputs_changed, toolchain_errors)
 from .cli_execution import termination_confirmed
 from .lean_evidence import check_file as _check_file, parse_evidence as _parse_evidence
-from .file_io import cached_sha256
+from .file_io import cached_sha256, executable_identity
 from .values import is_sha256, json_digest
 from do_math.windows_job import process_identity
 
@@ -198,7 +198,7 @@ def _project_identity(command, should_stop=None, *, workspace=None, expected=Non
     prefix=lake_env_prefix(command, workspace)
     # Lake derives the search paths from its executable and the inputs identified
     # above; unchanged inputs give the same paths, so one observation per process.
-    lake=Path(shutil.which(prefix[0]) or prefix[0])
+    lake=executable_identity(prefix[0])
     key=json_digest([prefix,identity,cached_sha256(lake) if lake.is_file() else None])
     if key in _SEARCH_PATHS:
         return {**identity,'search_paths':list(_SEARCH_PATHS[key])}
@@ -219,7 +219,7 @@ def inspect_toolchain(command, workspace, *, should_stop=None, jobs, clock, envi
     command = list(command)
     check_lean_command(command)
     _check_stop(should_stop)
-    resolved = Path(shutil.which(command[0]) or command[0]).resolve(strict=True)
+    resolved = executable_identity(command[0], strict=True)
     code, stdout, stderr, stopped = _job_run([*command, '--version'], Path(workspace), should_stop=should_stop, jobs=jobs, clock=clock, environment=environment)
     if stopped: raise VerificationStopped('toolchain observation stopped')
     if code != 0:
@@ -299,7 +299,7 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
     try:
         _check_stop(should_stop)
         # Compare the same canonical executable identity that inspect_toolchain records.
-        resolved=Path(shutil.which(command[0]) or command[0]).resolve()
+        resolved=executable_identity(command[0])
         if expected_toolchain is not None:
             if approved_toolchain_differs(expected_toolchain, command, str(resolved)):
                 return {**base,'status':'rejected','reason':'approved toolchain changed before execution',

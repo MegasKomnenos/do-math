@@ -7092,7 +7092,7 @@
     "lock_integration": {
       "id": "B12",
       "scope": "KD-0001: 실제 OS 잠금 획득 뒤 빈 파일의 잠금 바이트 초기화",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-m9qz0qdv\\report.json",
         "sha256": "2cc10928067f34fa04f5dc560bee5ff80982df02306d4781d3428765da61295b",
@@ -7160,6 +7160,122 @@
       ],
       "contract": "잠금을 얻기 전 쓰기를 하지 않는다. 초기화도 해제 guard 안에서 수행한다. Windows 실제 빈 파일 선행 보유/차단 대기/1바이트 초기화/해제 후 비차단 재획득, 실제 Git writer/CAS와 운영 복구 저장·재시작 경로 유지.",
       "limits": "부분 T4 경계1개이며 전체 T4 폐쇄가 아니다. 관련33개 중 기존 Sim1개 예산 초과 보존. 실행 파일 정규화 KD-0002는 별도 미통합.",
+      "whole_requirement_closed": false,
+      "commit": "d701b82c"
+    },
+    "executable_integration": {
+      "id": "B13",
+      "scope": "KD-0002: 실행 파일 식별과 비교의 PATH/상대경로/링크 정규화 정본을 여섯 소비함수에 공유",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-c0zd9v1o\\report.json",
+        "sha256": "d1c8f826e31a163ed761d1e3be86881d8cdfd6b8deffa51c6d7612196c619b6e",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1,
+          "error": 1
+        },
+        "total_seconds": 1.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-e58o5ipg\\report.json",
+        "sha256": "808c0e2a85fb16b968892e44d5b56fc4921dfbbf7440287960efa1166c411cb2",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 19,
+          "expected_failure": 1
+        },
+        "total_seconds": 37.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_knowledge_formal_engine.FormalBindingConnections.test_exact_compiler_keys_and_source_survive_result_artifacts",
+              "seconds": 0.48400000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_engine.FormalBindingConnections.test_failed_result_uses_the_fixed_command_fingerprint_and_axioms",
+              "seconds": 0.765999999945052,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_engine.FormalBindingConnections.test_publication_signature_distinguishes_exact_unicode_payload",
+              "seconds": 0.4530000000959262,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_interrupted_receiver_preserves_bytes_decimal_and_routes_failure",
+              "seconds": 0.75,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_wrong_compiler_is_rejected",
+              "seconds": 17.656000000075437,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-2uu59ieo\\report.json",
+        "sha256": "abb8d8f0195cb74fad675d9ca4feab34e62f0b8325ade566830eba680593e787",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 8
+        },
+        "total_seconds": 0.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/file_io.py",
+          "sha256": "9f9cd7bdcb3ca17be8822c915ca90ab3689bb7d4c28fda1191c4cd2b1cd3b538"
+        },
+        {
+          "path": "do_math/codex_adapter.py",
+          "sha256": "76c86d4ea93b6c2beb7f9a289f2d98aad1c2089600617f2a08b29b6bbf1e7069"
+        },
+        {
+          "path": "do_math/cli_execution.py",
+          "sha256": "cb1c1b5d432e8ad590d3de07783d70eee1cb3088ac72461c3d9d6b6fd6345c2c"
+        },
+        {
+          "path": "do_math/formal.py",
+          "sha256": "c20edac59a26ab9eec9b303d443ab2cf221c6ff1fcdcba4c3935a2283c7639e7"
+        },
+        {
+          "path": "tests/structure/test_boundary_invariants.py",
+          "sha256": "fe6ea7fa18aef007718d401fe6d52a8fa6653fffa0793fca49fcba1b7511045c"
+        },
+        {
+          "path": "tests/unit/test_provider_cli_surface.py",
+          "sha256": "5a09f235b73cacacd85bc7268345b67e891dab117beb0b0d6d0da524dae803b6"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "e7c76803b28b01ea5a2293aff41456853857df4bae7990b0813491d5bf59aa7b"
+        },
+        {
+          "path": "이음새-정본.md",
+          "sha256": "57b994491279f7657652fb2330d1796e834b6009cfde9f0d9bfcc7adeb0a1f57"
+        }
+      ],
+      "test_contract": "실제 adapter.worker_options/model_call.worker_request_fields 생산자 입력의 PATH 이름과 절대경로를 같은 실행 파일로 접수, 다른 파일 반려, 엄격 missing FileNotFoundError, 비엄격 누락 관찰, capability/observation 키 동일성과 입력 원상 보존.",
+      "limits": "관련20개는19passed+KD-0003 expected_failure1. 예산초과5개 보존. 후보의 기존 close_collector PATH 시험을 현재 provider_cli_surface로 이동하여 중복 제거. 최종 전체/변이 관문은 별도.",
       "whole_requirement_closed": false
     }
   }

@@ -60,8 +60,8 @@ INTERPRETER_USES = {
 }
 # Declared starts that still open without the console flag, each an open known defect.
 WINDOWED = {('setup_lean.py', 'run'): 'KD-0003'}
-# The one function every executable-identity comparison should go through (의무 9-A). None exists yet: see KD-0002.
-EXECUTABLE_IDENTITY = set()
+# The one function every executable-identity comparison goes through (의무 9-A).
+EXECUTABLE_IDENTITY = {('do_math/file_io.py', 'executable_identity')}
 
 
 def _product_files():
@@ -155,7 +155,6 @@ class BoundaryInvariantTests(unittest.TestCase):
                  if isinstance(node, ast.Call) and (_is(node.func, 'os', {'replace'}) or _is(node.func, 'shutil', {'move'}))}
         self.assertEqual({relative for relative, _ in sites}, {'do_math/file_io.py'})
 
-    @known_defect('KD-0002')
     def test_executable_identity_has_one_normalization(self):
         sites = sorted(_executable_identities())
         self.assertEqual(sorted({(relative, function) for relative, function, _ in sites}), sorted(EXECUTABLE_IDENTITY),
