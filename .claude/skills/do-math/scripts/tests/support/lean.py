@@ -9,7 +9,8 @@ dependency rows (``__DO_MATH_DEPENDENCY__`` per constant,
 ``__DO_MATH_DEPENDENCIES__`` per declaration). The recorded output in the corpus
 fixes the line formats (``contracts/test_doubles_follow_corpus.py``).
 
-``allow(source, declarations, signatures=..., axioms=..., dependencies=...)``
+``allow(source, declarations, signatures=..., declaration_evidence=...,
+axioms=..., dependencies=...)``
 registers exact compiler inputs and synthetic output facts. Only the two fixed
 response producers are registered by default. No source is parsed as a proof.
 The product still checks signatures, forbidden axioms, evidence and trust.
@@ -32,25 +33,57 @@ class LeanDouble:
         self.inputs, self.checks = {}, []
         self.version = f"Lean (version {LEAN_VERSION}, test double)"
         self.commands = []
-        self.allow(FORMAL_SOURCE, ['t'], signatures={'t': 't : True'})
-        self.allow(SOURCE, ['add_zero_fixture'],
-                   signatures={'add_zero_fixture': 'add_zero_fixture (n : Nat) : n + 0 = n'})
+        defaults = json.loads(Path(__file__).with_name('lean_default_facts.json').read_bytes())
+        for name, source in [('t', FORMAL_SOURCE), ('add_zero_fixture', SOURCE)]:
+            facts = defaults[name]
+            if source != facts['source']:
+                raise ValueError('default source differs from its recorded Lean facts')
+            self.allow(source, [name], signatures=facts['signatures'],
+                       declaration_evidence=facts['declaration_evidence'],
+                       axioms=facts['axioms'], dependencies=facts['dependencies'])
 
-    def allow(self, source, declarations, *, signatures, axioms=None, dependencies=None):
+    def allow(self, source, declarations, *, signatures, declaration_evidence, axioms, dependencies):
         """Explicit synthetic facts for exactly this source and ordered declaration list.
 
         The product check-file producer supplies the framing; this is input-table
-        lookup, not a second Lean parser or proof/trust validator. Both preview
-        and evidence extraction are allowed for the same registered input.
+        lookup, not a second Lean parser or proof/trust validator. Passing both
+        evidence tables as None explicitly registers preview only (the old corpus
+        records no kernel evidence); an extraction request then fails closed.
         """
         from copy import deepcopy
         from do_math.lean_evidence import check_file
-        if set(signatures) != set(declarations):
-            raise ValueError('explicit signatures must cover exactly the registered declarations')
-        facts = {name: {'signature': signatures[name], 'axioms': list((axioms or {}).get(name, [])),
-                        'dependencies': deepcopy((dependencies or {}).get(name, {}))} for name in declarations}
+        # Signatures are display output, not a grammar for kernel evidence. In
+        # particular a binder contains colons; the caller supplies the full type
+        # and value independently. Explicit empty synthetic closures are allowed,
+        # but omission never manufactures evidence for existing callers.
+        preview_only = declaration_evidence is None and dependencies is None
+        tables = [('signatures', signatures), ('axioms', axioms)]
+        if not preview_only:
+            tables += [('declaration evidence', declaration_evidence), ('dependencies', dependencies)]
+        for label, table in tables:
+            if not isinstance(table, dict):
+                raise ValueError('explicit ' + label + ' must be a table')
+            if set(table) != set(declarations):
+                raise ValueError('explicit ' + label + ' must cover exactly the registered declarations')
+        constants = {}
+        for name in (() if preview_only else declarations):
+            for evidence in [declaration_evidence[name], *dependencies[name].values()]:
+                if (set(evidence) != {'type', 'value'} or not isinstance(evidence['type'], str)
+                        or evidence['value'] is not None and not isinstance(evidence['value'], str)):
+                    raise ValueError('explicit evidence requires type and value')
+            for constant, evidence in dependencies[name].items():
+                if constant in constants and constants[constant] != evidence:
+                    raise ValueError('conflicting dependency evidence: ' + constant)
+                constants[constant] = evidence
+        facts = {name: {'signature': signatures[name], 'axioms': list(axioms[name]),
+                        **({} if preview_only else {'evidence': deepcopy(declaration_evidence[name]),
+                        'dependencies': deepcopy(dependencies[name])})} for name in declarations}
         for extract in (False, True):
-            self.inputs[check_file(source.encode('utf-8'), list(declarations), extract_evidence=extract)] = facts
+            key = check_file(source.encode('utf-8'), list(declarations), extract_evidence=extract)
+            if extract and preview_only:
+                self.inputs.pop(key, None)
+            else:
+                self.inputs[key] = facts
         return self
 
     def spawn(self, command, *, cwd=None, stdout=None, stderr=None, shell=False, creationflags=0):
@@ -102,7 +135,7 @@ class FakeLean:
                     for constant, evidence in constants.items()]
             out += ['__DO_MATH_DEPENDENCIES__' + json.dumps(
                 {'declaration': name, 'dependencies': sorted(facts[name]['dependencies']),
-                 'evidence': {'type': facts[name]['signature'].split(' : ', 1)[-1], 'value': None},
+                 'evidence': facts[name]['evidence'],
                  'axioms': facts[name]['axioms']}) for name in declarations]
         self.stdout.write(''.join(line + '\n' for line in out).encode('utf-8'))
         self.returncode = 0

@@ -55,7 +55,8 @@ def theorem(name):
 
 
 def imported(sim, name):
-    sim.lean.allow(f'theorem {name} : 1 = 1 := rfl', [name], signatures={name: name + ' : 1 = 1'})
+    sim.lean.allow(f'theorem {name} : 1 = 1 := rfl', [name], signatures={name: name + ' : 1 = 1'},
+        declaration_evidence={name: {'type': '1 = 1', 'value': None}}, axioms={name: []}, dependencies={name: {}})
     before = set(sim.instance['knowledge'])
     applied(sim, 'knowledge', config={'operation': 'import', 'candidate': theorem(name)})
     kid, = set(sim.instance['knowledge']) - before

@@ -163,7 +163,8 @@ class TransitionTests(unittest.TestCase):
         self.start()
         for name in THEOREMS:  # Lean now reports another proposition for each declaration
             sim.lean.allow(f'theorem {name} : 1 = 1 := rfl', [name],
-                           signatures={name: name + ' : Changed proposition'})
+                           signatures={name: name + ' : Changed proposition'},
+                declaration_evidence={name: {'type': 'Changed proposition', 'value': None}}, axioms={name: []}, dependencies={name: {}})
         run_machine(sim, 'trust_check')
         run_machine(sim, 'trust_check')
         run_machine(sim, 'trust_activate')
@@ -308,7 +309,8 @@ class TransitionTests(unittest.TestCase):
         before = deepcopy(sim.instance)
         self.start()
         sim.lean.allow(f'theorem {THEOREMS[0]} : 1 = 1 := rfl', [THEOREMS[0]],
-                       signatures={THEOREMS[0]: THEOREMS[0] + ' : Changed proposition'})
+                       signatures={THEOREMS[0]: THEOREMS[0] + ' : Changed proposition'},
+            declaration_evidence={THEOREMS[0]: {'type': 'Changed proposition', 'value': None}}, axioms={THEOREMS[0]: []}, dependencies={THEOREMS[0]: {}})
         run_machine(sim, 'trust_check')
         run_machine(sim, 'trust_check')
         run_machine(sim, 'trust_activate')

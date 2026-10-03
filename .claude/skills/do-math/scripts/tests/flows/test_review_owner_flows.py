@@ -113,7 +113,8 @@ class InputOverflowTests(unittest.TestCase):
                      'explanation': fragment * (sim.instance['config']['max_input_bytes'] // len(fragment) + 1),
                      'lean_code': 'theorem overflow : 1 = 1 := rfl', 'declaration_names': ['overflow'], 'dependencies': []}
         applied(sim, 'knowledge', config={'operation': 'import', 'candidate': candidate})
-        sim.lean.allow(candidate['lean_code'], ['overflow'], signatures={'overflow': 'overflow : 1 = 1'})
+        sim.lean.allow(candidate['lean_code'], ['overflow'], signatures={'overflow': 'overflow : 1 = 1'},
+            declaration_evidence={'overflow': {'type': '1 = 1', 'value': None}}, axioms={'overflow': []}, dependencies={'overflow': {}})
         kid = theorem_id(sim, 'Overflow fixture')
         sim.run_until(lambda s: s.instance['knowledge'][kid].get('review_cycle_id'), max_steps=3)
         cid = sim.instance['knowledge'][kid]['review_cycle_id']

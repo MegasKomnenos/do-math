@@ -17,7 +17,11 @@ import hashlib
 import json
 import unittest
 
+from do_math import trust_validation
+from do_math.canonical import exact_content_hash
 from support.engine_purpose import PurposeResponder, drive, purpose_sim
+from support.knowledge_formal_engine import ReturnedValues
+from support.lean_preservation import assert_default_result
 
 
 class PurposeFlowTests(unittest.TestCase):
@@ -31,6 +35,8 @@ class PurposeFlowTests(unittest.TestCase):
         drive(self, sim)
         # The responder also refuses work on A while B is not completed (PurposeAnswers.answer).
         self.assertEqual(responder.work_order, ['B', 'A'])
+        self.assertTrue(sim.model.receipts)
+        self.assertEqual({receipt['state'] for receipt in sim.model.receipts}, {'accepted'})
         tasks = {task['title']: task for task in sim.runtime['tasks'].values()}
         self.assertEqual(tasks['A']['dependencies'], [tasks['B']['id']])
         self.assertNotIn('"task_id": "B"', json.dumps(tasks['A']['occurrence_condition']))
@@ -67,10 +73,13 @@ class SolvedPurposeTests(unittest.TestCase):
         """The public initialization and activation (the purpose template) driven to the goal."""
         sim = purpose_sim()
         responder = sim.model.responder = PurposeResponder()
-        drive(self, sim)
+        with ReturnedValues(trust_validation.verify_formal) as returned:
+            drive(self, sim)
         store = sim.engine.store
         snapshot, instance, runtime = store.load()
         self.assertEqual(instance['goal_status'], 'mathematically_solved')
+        self.assertTrue(sim.model.receipts)
+        self.assertEqual({receipt['state'] for receipt in sim.model.receipts}, {'accepted'})
         self.assertEqual(snapshot, sim.engine.head)
         self.assertTrue(all(row.get('outcome') in {'output_accepted', 'verified'} for row in runtime['executions'].values()),
                         [(row['role'], row.get('outcome')) for row in runtime['executions'].values()])
@@ -82,6 +91,15 @@ class SolvedPurposeTests(unittest.TestCase):
                 raw = store.read(prompt['artifact_ref'], snapshot)
                 self.assertEqual(hashlib.sha256(raw).hexdigest(), prompt['sha256'])
         self.assertEqual(responder.work_order, ['A'])
+        result, = returned.values
+        execution, = [row for row in runtime['executions'].values() if row['role'] == 'formal_check']
+        self.assertEqual(json.loads(store.read(execution['result_ref'], snapshot)), result)
+        formal, = [row for row in instance['formal_results'].values() if row.get('verification')]
+        self.assertEqual(formal['verification'],
+                         {**result, 'execution_id': execution['id'], 'artifact_ref': execution['result_ref']})
+        self.assertEqual(formal, sim.instance['formal_results'][formal['id']])
+        self.assertEqual(exact_content_hash(formal), exact_content_hash(sim.instance['formal_results'][formal['id']]))
+        assert_default_result(self, formal['verification'], 'add_zero_fixture')
 
 
 if __name__ == '__main__':

@@ -11,6 +11,7 @@ import tempfile
 import unittest
 
 from do_math.codex_stream import parse_jsonl
+from do_math.canonical import exact_content_hash
 from do_math.lean_evidence import check_file, parse_evidence
 from support.lean import LeanDouble
 from support.model import codex_stream_bytes
@@ -50,10 +51,13 @@ class LeanDoubleOutputTests(unittest.TestCase):
         lean = LeanDouble()
         source = (CORPUS / recorded['source_path']).read_text(encoding='utf-8')
         lean.allow(source, recorded['declarations'], signatures=verdict['declaration_signatures'],
-                   axioms=verdict['axioms'])
+                   axioms=verdict['axioms'], declaration_evidence=None, dependencies=None)
         code, stdout, _ = self.run_check(lean, source, recorded['declarations'], extract_evidence=False)
         self.assertEqual(code, 0)
         self.assertEqual(stdout, (CORPUS / recorded['path']).read_text(encoding='utf-8'))
+        code, _, stderr = self.run_check(lean, source, recorded['declarations'], extract_evidence=True)
+        self.assertEqual(code, 1)
+        self.assertIn('unregistered synthetic Lean source/declarations', stderr)
 
     def test_only_the_default_producer_source_verifies_with_evidence_by_default(self):
         source = 'theorem t : True := by trivial'
@@ -86,7 +90,8 @@ class LeanDoubleOutputTests(unittest.TestCase):
     def test_explicit_facts_still_pass_through_signature_and_forbidden_axiom_checks(self):
         source = 'axiom explicit : False'
         lean = LeanDouble().allow(source, ['explicit'], signatures={'explicit': 'explicit : False'},
-                                  axioms={'explicit': ['sorryAx']})
+                                  axioms={'explicit': ['sorryAx']}, dependencies={'explicit': {}},
+                                  declaration_evidence={'explicit': {'type': 'False', 'value': None}})
         code, stdout, _ = self.run_check(lean, source, ['explicit'], extract_evidence=True)
         self.assertEqual(code, 0)
         result = parse_evidence({'stdout': stdout}, ['explicit'], ['sorryAx'], extract_evidence=True)
@@ -94,6 +99,53 @@ class LeanDoubleOutputTests(unittest.TestCase):
         code, _, error = self.run_check(lean, source + '\n-- changed', ['explicit'], extract_evidence=True)
         self.assertEqual(code, 1)
         self.assertIn('unregistered synthetic Lean source/declarations', error)
+
+    def test_explicit_binder_type_value_and_shared_bodies_survive_the_parser(self):
+        # Deliberately synthetic facts, independently supplied: no source/binder parser.
+        source, names = '-- explicitly registered compiler output', ['first', 'second']
+        signatures = {name: name + ' (n : Nat) : n = n' for name in names}
+        evidence = {name: {'type': '(n : Nat) -> n = n', 'value': 'fun n => Eq.refl n'} for name in names}
+        dependencies = {name: {'Nat': {'type': 'Type', 'value': None},
+                               'Eq.refl': {'type': 'synthetic dependent type', 'value': None}} for name in names}
+        lean = LeanDouble().allow(source, names, signatures=signatures, declaration_evidence=evidence,
+                                  axioms={name: [] for name in names}, dependencies=dependencies)
+        evidence['first']['value'] = 'caller mutation must not change the registration'
+        code, stdout, _ = self.run_check(lean, source, names, extract_evidence=True)
+        self.assertEqual(code, 0)
+        self.assertEqual(stdout.count('__DO_MATH_DEPENDENCY__'), 2)
+        result = parse_evidence({'stdout': stdout, 'dependency_closure': {}, 'declaration_evidence': {}}, names, [])
+        self.assertEqual(result['status'], 'verified')
+        self.assertEqual(result['declaration_evidence'],
+                         {name: {'type': '(n : Nat) -> n = n', 'value': 'fun n => Eq.refl n'} for name in names})
+        self.assertEqual(result['declaration_signatures'], signatures)
+        self.assertEqual(result['signature_hash'], exact_content_hash(signatures))
+        self.assertEqual(result['dependency_closure'], {name: ['Eq.refl', 'Nat'] for name in names})
+        self.assertEqual(result['dependency_evidence'],
+                         {name: exact_content_hash(body) for name, body in dependencies['first'].items()})
+
+    def test_missing_or_conflicting_facts_are_not_silently_filled(self):
+        source, names = '-- explicit', ['one', 'two']
+        facts = dict(signatures={name: name + ' : True' for name in names},
+                     declaration_evidence={name: {'type': 'True', 'value': 'True.intro'} for name in names},
+                     axioms={name: [] for name in names}, dependencies={name: {} for name in names})
+        for field in facts:
+            missing = {key: value for key, value in facts.items() if key != field}
+            with self.subTest(field=field), self.assertRaisesRegex(
+                    TypeError, "^LeanDouble.allow\\(\\) missing 1 required keyword-only argument: '" + field + "'$" ):
+                LeanDouble().allow(source, names, **missing)
+            with self.subTest(incomplete=field), self.assertRaisesRegex(ValueError, 'cover exactly'):
+                LeanDouble().allow(source, names, **{**facts, field: {}})
+        conflicting = {'one': {'True': {'type': 'Prop', 'value': None}},
+                       'two': {'True': {'type': 'different', 'value': None}}}
+        with self.assertRaisesRegex(ValueError, 'conflicting dependency evidence: True'):
+            LeanDouble().allow(source, names, **{**facts, 'dependencies': conflicting})
+
+    def test_preview_registration_removes_previous_extraction_permission(self):
+        source = 'theorem t : True := by trivial'
+        lean = LeanDouble().allow(source, ['t'], signatures={'t': 't : True'}, axioms={'t': []},
+                                  declaration_evidence=None, dependencies=None)
+        self.assertEqual(self.run_check(lean, source, ['t'], extract_evidence=False)[0], 0)
+        self.assertEqual(self.run_check(lean, source, ['t'], extract_evidence=True)[0], 1)
 
 
 if __name__ == '__main__':

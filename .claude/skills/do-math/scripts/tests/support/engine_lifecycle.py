@@ -159,7 +159,8 @@ def theorems(sim, *names):
     engine = sim.engine
     clear_work(sim)
     for name in names:
-        sim.lean.allow(f'theorem {name} : 1 = 1 := rfl', [name], signatures={name: name + ' : 1 = 1'})
+        sim.lean.allow(f'theorem {name} : 1 = 1 := rfl', [name], signatures={name: name + ' : 1 = 1'},
+            declaration_evidence={name: {'type': '1 = 1', 'value': None}}, axioms={name: []}, dependencies={name: {}})
         applied(sim, 'knowledge', config={'operation': 'import', 'candidate': {
             'kind': 'theorem', 'title': name, 'statement': 'One equals one (' + name + ')', 'summary': 'Reflexivity',
             'explanation': 'By reflexivity.', 'lean_code': f'theorem {name} : 1 = 1 := rfl',
@@ -455,7 +456,8 @@ def lifecycle_sim():
     """
     sim = built('engine-lifecycle', _build_lifecycle)
     for name in THEOREMS:
-        sim.lean.allow(f'theorem {name} : 1 = 1 := rfl', [name], signatures={name: name + ' : 1 = 1'})
+        sim.lean.allow(f'theorem {name} : 1 = 1 := rfl', [name], signatures={name: name + ' : 1 = 1'},
+            declaration_evidence={name: {'type': '1 = 1', 'value': None}}, axioms={name: []}, dependencies={name: {}})
     return sim
 
 

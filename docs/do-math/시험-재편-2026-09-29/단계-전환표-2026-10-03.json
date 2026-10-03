@@ -8038,7 +8038,7 @@
         "KD-1909"
       ],
       "meaning": "13개는 main 미기록 후보 항목이며 전체 미구현 수나 완료율이 아니다.",
-      "next": "모델 영수증 기반은 B36으로 이관했다. 다음은 Lean의 명시 선언/의존/공리 등록과 실제 defaultfacts 보존을 모든 소비자에 옮긴 뒤 형식Git 의미 포트·설치/작업자 소비자를 통합한다. 기존다른미커밋수정은 별도 검수하며 덮어쓰지 않는다.",
+      "next": "Lean 명시 등록/실제 기본 증거 보존은 B37으로 이관했다. 다음은 형식Git 프로젝트 관찰·CLI 설치의 의미 포트와 모든 설치/작업자/대역 소비자 통합이며 남은분류/의무/최종관문을 닫는다. main43/candidate56의13 미기록은 전체미구현수/완료율이 아니다.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
     },
@@ -10111,7 +10111,7 @@
     "model_contract_integration": {
       "id": "B36",
       "scope": "정상 모델 대역의 결속/정확 영수증/호출별 기대값과 scheduling/submission/live 소비자 이관",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-7ixeemgp\\report.json",
         "sha256": "01af7d83c6372e4a76d5f43167294fe91b24f2b791d08ac3536b9cb18aa36df8",
@@ -10275,6 +10275,253 @@
               "budget_seconds": 5.0
             }
           ],
+          "tier": null
+        }
+      },
+      "commit": "9313c101"
+    },
+    "lean_registration_integration": {
+      "id": "B37",
+      "scope": "Lean 명시 등록/두 실제 기본 소스의 kernel 증거 보존과 전체 등록 소비자 이관",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-9a1w9eiy\\report.json",
+        "sha256": "669e95d5f594edde07c433b1609a9653f3657832126fc2a45c3dd22e9190a3f2",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 7.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_lean_preservation.LeanPreservationTests.test_both_default_sources_preserve_complete_evidence_after_reload",
+              "seconds": 6.98499999998603,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "actual_lean": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-a58hl4y5\\report.json",
+        "sha256": "82d43c0993d63f6fb8efa33182fc296ba9a6a3ff7fce0f68161204faabfbbc4b",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 77.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "boundary.test_lean_default_facts.LeanDefaultFactsTests.test_default_registration_matches_current_compiler_evidence",
+              "seconds": 77.03099999995902,
+              "budget_seconds": 30.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-brv4a2tq\\report.json",
+        "sha256": "749d5b460d951d77fcfd41b0801763575fe4344fb3f357db93efab4e90e2e18f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 25
+        },
+        "total_seconds": 27.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_lean_preservation.LeanPreservationTests.test_both_default_sources_preserve_complete_evidence_after_reload",
+              "seconds": 8.297000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_lean_preservation.LeanPreservationTests.test_changed_default_sources_do_not_acquire_recorded_evidence",
+              "seconds": 3.0,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-zdajo3ox\\report.json",
+        "sha256": "1d0d2b78636611ff8252190bb6700c318c3ee7a8850c39f8160f5dd95389f760",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 31
+        },
+        "total_seconds": 136.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_cross_state_machine.CrossStateMachineTests.test_short_transition_sequences",
+              "seconds": 3.4070000000065193,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_formal_wait_contract.FormalWaitContractTests.test_every_declared_formal_wait_has_a_negative_condition_and_exact_release",
+              "seconds": 7.077999999979511,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "long_machine": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-tv8z5wia\\report.json",
+        "sha256": "f274a0ccd2175a7273df4441d8e1b7aafc01c02c6d889d12fec69d5a8469555d",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 49.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "contract": "표시 서명과 별도 type/value·공리·의존 본문 표를 모두 요구하고 자료의 전건/형/공유 상수 충돌을 검사한다. 등록은 가변 자료를 분리하고 preview-only이면 증거 추출 허가를 지운다. 기본 두 소스는 source 일치와 실제 Lean4.32 DAG/본문/의존/공리 자료를 유지한다. lower verification 결과 전체가 실제 worker/기록/artifact/재시작/목표 해결을 거쳐 정확하게 보존되는지 검사한다. 모든 현재 allow 호출을 scope/positional args 대조 후 명시 인자로 이관했다.",
+      "capture": "기존 실제 취득 자료 finish/resume-lean-preservation-capture의 원 stdout/result/입력 파일과 report를 다시 읽었다. current boundary actual Lean 두 컴파일이 기본 자료와 일치했다. defaultfacts rawSHA256=0263acb7dbfdc2aacde306ba6712f9f589e0825f76730e636cd25df822713162. 새 boundary는 전체T4나최종판본관문을 대신하지 않는다.",
+      "existing_registration": "cross_machine에 이미 추가되어 있던 정상 소스 등록은 새 allow의 실제 소비자이므로 기존 등록 의도/소스 변수를 유지하여 필수 증거를 보충했다. 이번 검수된 등록 전체는 함께 확정한다. 다른cross_contracts 수정은 별도며 덮어쓰거나stage하지 않는다.",
+      "limits": "actual1개/25개/관련31개/LONG1개는 서로 다른 선택이고 전체 관문으로 합산하지 않는다. LONG6×20 그대로실행했다. 실제Lean77초의30초 초과와 focused/related sim 초과4개는 남긴다. 1f61/원문전체strength를 이 두 소스와 관련 회귀로 닫지 않는다. 형식Git 의미포트와 현재 전건T2/flows/T3분기/변이/예산/T4T5/corpus는 별도.",
+      "whole_requirement_closed": false,
+      "files": [
+        {
+          "path": "tests/flows/test_knowledge_formal_lineage.py",
+          "sha256": "6b24998e81d4c182ac0c8b5da4eca3722c52e48a87f77e5dfa04f0bbd772546d"
+        },
+        {
+          "path": "tests/flows/test_lifecycle_engine_trust.py",
+          "sha256": "50b6556940475a6fc8a2efd30a8cfa5b153fe0cff47d40fa0a4dc75ca687147d"
+        },
+        {
+          "path": "tests/flows/test_review_owner_flows.py",
+          "sha256": "6469ec0310be1c0fdb581fb0111b23cfc6d3c515a324786632593219de6db8b4"
+        },
+        {
+          "path": "tests/flows/test_submission_waits.py",
+          "sha256": "b7f8172c8b859a43b78bd1c4ebe0305ea82074e76cad93d018d5c7faad885d43"
+        },
+        {
+          "path": "tests/sim/test_formal_foundation_jobs.py",
+          "sha256": "c6e7ff556ef8a7f1e6a8a481b550de9edb0fb28ff94226bedbdda78f6f2a154a"
+        },
+        {
+          "path": "tests/sim/test_knowledge_import_control.py",
+          "sha256": "f1756d1144ac4e1cc3437a2d621d1fdd05ca31518a6b810c324ca7513370eff4"
+        },
+        {
+          "path": "tests/sim/test_machine_foundation_environment.py",
+          "sha256": "50de4c56692572463262010135b9abb620e18932ce9c30e0d71193367911bf5e"
+        },
+        {
+          "path": "tests/support/cross_machine.py",
+          "sha256": "5b3ea358b84fa3cfa35e6486951f191e785ca88709a51024af10ce4a8f66415a"
+        },
+        {
+          "path": "tests/support/engine_lifecycle.py",
+          "sha256": "14be45b4665f2d46620e9a7e1b2ccf6f6c4a0026c461afa70356a9fe8805c77d"
+        },
+        {
+          "path": "tests/support/review_sim.py",
+          "sha256": "e002296df5b6adef0f62407f0aa16573ca6391298c677b84a6133437950ae255"
+        },
+        {
+          "path": "tests/support/scheduling_machine.py",
+          "sha256": "f6b793d68fd135ce68f447e648c2efd175689b6028cd4a243a3f019c6e2c6546"
+        },
+        {
+          "path": "tests/unit/test_knowledge_formal_evidence_rules.py",
+          "sha256": "fcbd975a0e1306a006b408f5eab93506fb7f0de8a513719726c4a4ed648e5faa"
+        },
+        {
+          "path": "tests/support/lean.py",
+          "sha256": "865bbc3c12174e7ec3178ff8179f198142d921b7822c58281493a2746db37941"
+        },
+        {
+          "path": "tests/support/lean_default_facts.json",
+          "sha256": "0263acb7dbfdc2aacde306ba6712f9f589e0825f76730e636cd25df822713162"
+        },
+        {
+          "path": "tests/support/lean_preservation.py",
+          "sha256": "a704689746ef55039e2047bc1884c9ffbe4274225212d3c88280f0564bec5e0e"
+        },
+        {
+          "path": "tests/support/knowledge_formal_engine.py",
+          "sha256": "832fb950fdb5ae63d8a9e80d360677eaf59567577e7e761bbd3a5a807302796f"
+        },
+        {
+          "path": "tests/sim/test_lean_preservation.py",
+          "sha256": "5780a21c4cbc78290e42f33dad6306ddc55f61ec3e2e145b8458e988b4df017c"
+        },
+        {
+          "path": "tests/contracts/test_doubles_follow_corpus.py",
+          "sha256": "9339f6dd96df6b8a16a7f61d96524d47d4f41c4ca3f5abaa92b6dd469354465c"
+        },
+        {
+          "path": "tests/flows/test_engine_purpose_solution.py",
+          "sha256": "6c9155eecdc76084d2bff5af49b4c8f70cd5e64fa016f7859929d2d4937d95f1"
+        },
+        {
+          "path": "tests/boundary/test_lean_default_facts.py",
+          "sha256": "86e6071e19632be84f6215ea421a3ebb08e805816886ac56db7f0d2c1466383f"
+        },
+        {
+          "path": "이음새-정본.md",
+          "sha256": "0a547cedfb9a35d36a84e67faa93aab9c3c16b6da7d3dc05ecaa6d96788aaeeb"
+        }
+      ],
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-4ikiqzt6\\report.json",
+        "sha256": "bfb2c2bf040c7ddae0341e241c3f12327f810fcd6d50782b41e1eae4a95f1665",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 12
+        },
+        "total_seconds": 32.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_lean_preservation.LeanPreservationTests.test_both_default_sources_preserve_complete_evidence_after_reload",
+              "seconds": 7.797000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_lean_preservation.LeanPreservationTests.test_changed_default_sources_do_not_acquire_recorded_evidence",
+              "seconds": 3.280999999959022,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-d88xp8gu\\report.json",
+        "sha256": "00c1a1edce574cb27607fed802bcc53c9c9743b6e82325878928c4222e734a1e",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 8.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
           "tier": null
         }
       }

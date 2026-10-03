@@ -144,10 +144,13 @@ class ResearchMachine(ControlMachine):
     @precondition(lambda self: self.sim.runtime['status'] != 'closed')
     @rule()
     def import_knowledge(self):
+        source = 'theorem cross_identity : 1 = 1 := rfl'
+        self.sim.lean.allow(source, ['cross_identity'], signatures={'cross_identity': 'cross_identity : 1 = 1'},
+            declaration_evidence={'cross_identity': {'type': '1 = 1', 'value': None}}, axioms={'cross_identity': []}, dependencies={'cross_identity': {}})
         self.control('knowledge', config={'operation': 'import', 'candidate': {
             'kind': 'theorem', 'title': 'cross identity', 'statement': 'One equals one',
             'summary': 'Reflexivity', 'explanation': 'By reflexivity.',
-            'lean_code': 'theorem cross_identity : 1 = 1 := rfl',
+            'lean_code': source,
             'declaration_names': ['cross_identity'], 'dependencies': []}})
 
     @precondition(lambda self: self.sim.runtime['status'] != 'closed' and any(

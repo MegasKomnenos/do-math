@@ -33,10 +33,12 @@ def warm_scenes():
 
 def scene(*, source='theorem k1 : 1 = 1 := rfl', declarations=('k1',), python_command=False):
     sim = python_sim() if python_command else Sim.activated()
-    for text, names, signatures in ((
-            'theorem k1 : 1 = 1 := rfl', ['k1'], {'k1': 'k1 : 1 = 1'}),
-            (SOURCE, ['t'], {'t': 't : True'})):
-        sim.lean.allow(text, names, signatures=signatures)
+    for text, name, signature, type_ in ((
+            'theorem k1 : 1 = 1 := rfl', 'k1', 'k1 : 1 = 1', '1 = 1'),
+            (SOURCE, 't', 't : True', 'True')):
+        sim.lean.allow(text, [name], signatures={name: signature},
+                       declaration_evidence={name: {'type': type_, 'value': None}},
+                       axioms={name: []}, dependencies={name: {}})
     clear_work(sim)
     engine = sim.engine
     engine.instance, _ = knowledge_records.create_candidate(engine.instance, {

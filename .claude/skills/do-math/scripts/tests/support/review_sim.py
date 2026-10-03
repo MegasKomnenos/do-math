@@ -60,7 +60,8 @@ def import_theorem(sim, candidate=None):
     Work the import queued besides the review is dropped and the state published.
     Returns the knowledge ID.
     """
-    sim.lean.allow(THEOREM['lean_code'], ['k1'], signatures={'k1': 'k1 : 1 = 1'})
+    sim.lean.allow(THEOREM['lean_code'], ['k1'], signatures={'k1': 'k1 : 1 = 1'},
+        declaration_evidence={'k1': {'type': '1 = 1', 'value': None}}, axioms={'k1': []}, dependencies={'k1': {}})
     candidate = candidate or THEOREM
     clear_work(sim)
     applied(sim, 'knowledge', config={'operation': 'import', 'candidate': candidate})
@@ -103,7 +104,8 @@ def _build_produced(root, shared):
 
 def opened_sim():
     sim = built('review-opened', _build_opened)
-    sim.lean.allow(THEOREM['lean_code'], ['k1'], signatures={'k1': 'k1 : 1 = 1'})
+    sim.lean.allow(THEOREM['lean_code'], ['k1'], signatures={'k1': 'k1 : 1 = 1'},
+        declaration_evidence={'k1': {'type': '1 = 1', 'value': None}}, axioms={'k1': []}, dependencies={'k1': {}})
     return sim
 
 
@@ -231,7 +233,8 @@ def export_objects(sim):
 
 def reviewed_sim():
     sim = built('review-reviewed', _build_reviewed)
-    sim.lean.allow(THEOREM['lean_code'], ['k1'], signatures={'k1': 'k1 : 1 = 1'})
+    sim.lean.allow(THEOREM['lean_code'], ['k1'], signatures={'k1': 'k1 : 1 = 1'},
+        declaration_evidence={'k1': {'type': '1 = 1', 'value': None}}, axioms={'k1': []}, dependencies={'k1': {}})
     return sim
 
 

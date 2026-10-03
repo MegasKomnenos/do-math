@@ -110,7 +110,8 @@ class MachineFoundationEnvironmentTests(unittest.TestCase):
         with publication:
             sim, action = scene(source='theorem fixture : 1 = 1 := rfl', declarations=('fixture',))
             sim.lean.allow('theorem fixture : 1 = 1 := rfl', ['fixture'],
-                           signatures={'fixture': 'fixture : 1 = 1'})
+                           signatures={'fixture': 'fixture : 1 = 1'},
+                declaration_evidence={'fixture': {'type': '1 = 1', 'value': None}}, axioms={'fixture': []}, dependencies={'fixture': {}})
             host = sim.engine
             environment = host.instance['trust_environments'][host.instance['active_trust_environment']]
             bound = deepcopy(host.runtime['trust_bindings'][environment['id']])
@@ -158,7 +159,8 @@ class MachineFoundationEnvironmentTests(unittest.TestCase):
         with publication:
             sim, action = scene(source='theorem fixture : 1 = 1 := rfl', declarations=('fixture',))
             sim.lean.allow('theorem fixture : 1 = 1 := rfl', ['fixture'],
-                           signatures={'fixture': 'fixture : 1 = 1'})
+                           signatures={'fixture': 'fixture : 1 = 1'},
+                declaration_evidence={'fixture': {'type': '1 = 1', 'value': None}}, axioms={'fixture': []}, dependencies={'fixture': {}})
             before = len(sim.lean.checks)
             with ObservedCalls(verifier=formal.verify_lean) as observed:
                 run_formal(sim, action)

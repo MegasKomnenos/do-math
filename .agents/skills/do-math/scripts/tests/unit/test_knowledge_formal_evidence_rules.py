@@ -17,7 +17,8 @@ class LeanEvidenceRuleTests(unittest.TestCase):
     def test_declaration_value_must_follow_the_compiler_string_or_null_contract(self):
         source, name = 'theorem evidence_shape : True := True.intro', 'evidence_shape'
         lean = LeanDouble().allow(source, [name], signatures={name: name + ' : True'},
-            dependencies={name: {'True': {'type': 'Prop', 'value': None}}})
+            dependencies={name: {'True': {'type': 'Prop', 'value': None}}},
+            declaration_evidence={name: {'type': 'True', 'value': None}}, axioms={name: []})
         with tempfile.TemporaryDirectory() as directory:
             check = Path(directory) / 'proposal.lean'
             check.write_bytes(check_file(source.encode(), [name], extract_evidence=True))

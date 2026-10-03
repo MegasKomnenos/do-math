@@ -157,7 +157,8 @@ class FormalConsumerTests(unittest.TestCase):
     def test_formal_consumer_passes_runtime_and_preapproved_toolchain(self):
         sim = Sim.activated()
         sim.lean.allow('theorem truth : True := True.intro', ['truth'],
-                       signatures={'truth': 'truth : True'})
+                       signatures={'truth': 'truth : True'},
+            declaration_evidence={'truth': {'type': 'True', 'value': None}}, axioms={'truth': []}, dependencies={'truth': {}})
         calls = self.enterContext(recorded_verifier())
         kid = imported(sim, knowledge_candidate())
         only(sim, 'formal_check')
@@ -180,7 +181,8 @@ class FormalConsumerTests(unittest.TestCase):
         """The review start fails for real: the instance has no adopted review policy when the formal result is accepted."""
         sim = Sim.activated()
         sim.lean.allow('theorem truth : True := True.intro', ['truth'],
-                       signatures={'truth': 'truth : True'})
+                       signatures={'truth': 'truth : True'},
+            declaration_evidence={'truth': {'type': 'True', 'value': None}}, axioms={'truth': []}, dependencies={'truth': {}})
         kid = imported(sim, knowledge_candidate())
         only(sim, 'formal_check')
         adopted_policy = deepcopy(sim.engine.instance['review_policy'])

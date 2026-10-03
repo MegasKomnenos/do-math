@@ -58,7 +58,8 @@ class FormalFoundationJobsTests(unittest.TestCase):
         _entry = entry()
         from support.lean import LeanDouble
         lean = LeanDouble()
-        lean.allow('theorem good : True := True.intro', ['good'], signatures={'good': 'good : True'})
+        lean.allow('theorem good : True := True.intro', ['good'], signatures={'good': 'good : True'},
+            declaration_evidence={'good': {'type': 'True', 'value': None}}, axioms={'good': []}, dependencies={'good': {}})
         jobs = worker_jobs(lean.spawn)
         clock = FakeClock()
         with tempfile.TemporaryDirectory() as directory:

@@ -114,7 +114,8 @@ class SubmissionPublicationWaitTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             host = FakeHost()
             sim = Sim.activated(Path(directory), host=host)
-            sim.lean.allow('theorem k : 1 = 1 := rfl', ['k'], signatures={'k': 'k : 1 = 1'})
+            sim.lean.allow('theorem k : 1 = 1 := rfl', ['k'], signatures={'k': 'k : 1 = 1'},
+                declaration_evidence={'k': {'type': '1 = 1', 'value': None}}, axioms={'k': []}, dependencies={'k': {}})
             engine = sim.engine
             environment = engine.instance['trust_environments'][engine.instance['active_trust_environment']]
             applied(sim, 'knowledge', config={'operation': 'import', 'candidate': {
