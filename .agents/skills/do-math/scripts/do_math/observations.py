@@ -33,6 +33,9 @@ OPERATORS = {
 }
 _ONE_TIME_OPERATORS = frozenset({"tool_call_completed", "safe_boundary_recorded"})
 _RULE_FIELDS = {"id", "operator", "subject", "basis", "threshold", "repeat_interval", "required_evidence"}
+# Rule names are local text labels, not record/file identities.
+RULE_ID_SCHEMA = {'type': 'string', 'minLength': 1}
+_RULE_ID_CHECKER = Draft202012Validator(RULE_ID_SCHEMA)
 # Fields a worker may read in a feedback record ENGINE derives from state.
 # ``worker_feedback`` rejects any other field, and ``publish_worker_feedback`` applies
 # it to every such delivery. The fixed executor checkpoint reminder
@@ -272,7 +275,7 @@ def validate_rules(rules: list[dict], *, allow_empty: bool = False) -> list[dict
         expected = _RULE_FIELDS if isinstance(rule, dict) and "repeat_interval" in rule else _RULE_FIELDS - {"repeat_interval"}
         if not isinstance(rule, dict) or set(rule) != expected:
             raise ValueError("invalid observation rule fields")
-        if not isinstance(rule.get("id"), str) or not rule["id"] or rule["id"] in seen:
+        if not _RULE_ID_CHECKER.is_valid(rule.get("id")) or rule["id"] in seen:
             raise ValueError("observation rule IDs must be distinct and nonempty")
         seen.add(rule["id"])
         operator = rule.get("operator")

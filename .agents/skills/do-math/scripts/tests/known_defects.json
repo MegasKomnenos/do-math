@@ -69,8 +69,8 @@
       "category": 1,
       "reproduction": "contracts.test_pairs.KnownPairDefectTests.test_every_rule_id_the_tracker_accepts_is_storable",
       "found_by": "1e obligation 1-C (value domains): the observation rule ID pair, tracker acceptance against the stored rule_ids check; the pair survey confirmed 'progress check'",
-      "missed_kind": "Rule fixtures used IDs such as R-1; no test fed the tracker's accepted domain to the stored schema",
-      "status": "open"
+      "missed_kind": "Rule fixtures used IDs such as R-1; no test fed the tracker's accepted domain to the stored schema Independent main red ui4pakqv reproduces three accepted local rule labels rejected by storage and four stored enumerations accepting an invalid value. RULE_ID_SCHEMA is shared by observation rule acceptance and storage; planning.validate_condition reads the actual stored enumeration without a duplicate list.",
+      "status": "closed"
     },
     {
       "id": "KD-0008",
@@ -78,8 +78,8 @@
       "category": 3,
       "reproduction": "contracts.test_pairs.KnownPairDefectTests.test_the_condition_grammar_rejects_values_outside_every_stored_enumeration",
       "found_by": "1e obligation 1-A: one pair per enumerated condition pointer, the grammar's accepted values against the stored enumeration (조사 C-25 form)",
-      "missed_kind": "The C-25 fix shared the lifecycle constants with the grammar; pointers without a lifecycle constant kept no value check and no test compared them with storage",
-      "status": "open"
+      "missed_kind": "The C-25 fix shared the lifecycle constants with the grammar; pointers without a lifecycle constant kept no value check and no test compared them with storage Independent main red ui4pakqv reproduces three accepted local rule labels rejected by storage and four stored enumerations accepting an invalid value. RULE_ID_SCHEMA is shared by observation rule acceptance and storage; planning.validate_condition reads the actual stored enumeration without a duplicate list.",
+      "status": "closed"
     },
     {
       "id": "KD-0800",

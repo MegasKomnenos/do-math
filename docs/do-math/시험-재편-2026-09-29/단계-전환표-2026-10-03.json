@@ -7354,7 +7354,7 @@
     "ingress_integration": {
       "id": "B15",
       "scope": "KD-0004/0005: 불량 inbox/전달의 반려를 한 번 소비하고 정상 다음 제어를 유지",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-q8kmabeb\\report.json",
         "sha256": "2da7d530907dd922f837b5a79ed4e6500dcd4f482e37d4328a5ab7de5395e052",
@@ -7502,6 +7502,72 @@
       "related_correction": "옛 pump 전파 예외/덮어쓴 오류문구 단언2개를 실제 per-delivery 반려 계약으로 교정. 최초 영수증·정확한 source_sha256·별도 반려파일·반복 무게시·다음 정상전달을 강화. 기존 예상실패로 숨기지 않았다.",
       "boundary_correction": "실제 child 3개 중2passed/1error. 실패한 test helper의 wait_receipt 호출이 현재 필수 clock을 누락한 것을 원문으로 확인. SystemClock 전달, 생성 창 억제와 child stderr 진단을 함께 교정하여 해당 실제 child1개passed. 이전 실패보고를 성공으로 덮지 않는다.",
       "limits": "관련 원장만 폐쇄해 main9open. 부분 T4/국소 검사이고 최종 전건 관문은 남는다. focused Sim1개 예산초과 보존.",
+      "whole_requirement_closed": false,
+      "commit": "07604a32"
+    },
+    "rule_integration": {
+      "id": "B16",
+      "scope": "KD-0007/0008: 로컬 관찰 규칙 이름과 조건 문법의 저장 계약 일치",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ui4pakqv\\report.json",
+        "sha256": "897a0af2e99d0d20abd9a5a23109351127ddd1622df82245addde706b5fb3769",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 2
+        },
+        "total_seconds": 0.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-tglpoiy0\\report.json",
+        "sha256": "037e78907ca28f414d24bbad9e028977273fb5c8bec168c60b0e45212e0f33a9",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 44
+        },
+        "total_seconds": 2.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/observations.py",
+          "sha256": "d9d65621d1492b53e62ac355cce1a57d245544e61922552840893e33ba914070"
+        },
+        {
+          "path": "do_math/record_schemas/schemas.py",
+          "sha256": "78825bb9eb57e2992b956a5d859ff0c5ec2c9bc5aebc0aa5ec9e9f5b480b25d4"
+        },
+        {
+          "path": "do_math/planning.py",
+          "sha256": "8ba49e99b462521d9dd82cb1f0e140691380d93d2321f37acc2953007baab563"
+        },
+        {
+          "path": "tests/contracts/test_pairs.py",
+          "sha256": "a7dd378fe99d642550417ffc725b1232d739d3b2816e0af5e42a27fb7cb49fff"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "e77caa1450b2423b68f847d2e33dd30f5809180e3a9d9d0ae8c28b01306818f2"
+        },
+        {
+          "path": "이음새-정본.md",
+          "sha256": "66b15940319020b36bccb0be66b7a7c12770e99d1408178f9e198d71a7f8f029"
+        }
+      ],
+      "contract": "RULE_ID_SCHEMA를 규칙 생산 검증과 저장된 규칙/관찰 rule_ids에 공유. 레코드/파일 식별자 문법으로 로컬 규칙 이름을 제한하지 않는다. 조건 문법은 실제 RECORDS/RESEARCH_FIELDS의 해당 enum을 읽어 제한하고 기존 lifecycle/형/공간/포인터 검사를 유지.",
+      "red_cases": "공백/한글/콜론 규칙 이름3종과 execution/outcome,formal-result/formal_use,formal-result/publication_state,identity-assessment/decision의 잘못된 값4곳. 실제2시험에서7하위단언실패.",
+      "limits": "생산자 validate_rules와 실제 저장 계약의 rule_ids 속성 검사 쌍 증거다.3이름의 전체 관찰 소유 흐름/게시까지 검증했다고 읽지 않는다. 관련44개는 기존 규칙결속·프로필 저장왕복·조건 판정·전체현행 PAIRS를 포함. 최종 전건/동적 모집단 관문은 별도.",
       "whole_requirement_closed": false
     }
   }

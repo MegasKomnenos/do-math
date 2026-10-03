@@ -385,6 +385,12 @@ def validate_condition(condition: dict) -> None:
                 raise ValueError('usable_as_k comparison requires a boolean')
             if pointer in {'/status','/lifecycle'} and condition['value'] not in lifecycle_values().get(family,set()):
                 raise ValueError('value is not a lifecycle value of this family')
+            from .record_schemas.schemas import RECORDS, RESEARCH_FIELDS
+            space, key = RECORD_FAMILIES[family]
+            stored = (RESEARCH_FIELDS.get(pointer[1:], {}) if key is None
+                      else RECORDS[key].get('properties', {}).get(pointer[1:], {}))
+            if 'enum' in stored and condition['value'] not in stored['enum']:
+                raise ValueError('value is not an enumerated value of this stored field')
 
 
 RECORD_FAMILIES = {"knowledge": ("research", "knowledge"), "governance": ("research", "governance"),

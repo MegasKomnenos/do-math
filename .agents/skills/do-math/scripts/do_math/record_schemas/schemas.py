@@ -23,7 +23,7 @@ from ..knowledge_io import KIND_STATUSES as _KIND_STATUSES
 from ..knowledge_records import (ASSESSMENT_USE_STATUSES as _ASSESSMENT_USE_STATUSES,
                                  RECORD_LIFECYCLES as _RECORD_LIFECYCLES)
 from ..model_policy import ASSESSMENT_SCHEMA as _ASSESSMENT_SCHEMA, TIERS as _TIERS
-from ..observations import CHECKPOINT_SCHEMA as _CHECKPOINT_SCHEMA
+from ..observations import CHECKPOINT_SCHEMA as _CHECKPOINT_SCHEMA, RULE_ID_SCHEMA as _RULE_ID_SCHEMA
 from ..questions import QUESTION_OWNERS as _QUESTION_OWNERS
 from ..review_cycle import CYCLE_STATUSES as _CYCLE_STATUSES
 from ..state_contract import RECORD_ID
@@ -80,7 +80,7 @@ _RECORD_TASK = obj({"record_id": ID, "task_id": ID}, ("record_id", "task_id"))
 _HOST_AMOUNTS = obj({"jobs": NAT, "memory_bytes": NAT,
     "cpu_rate_basis_points": {"type": "integer", "minimum": 0, "maximum": 10000}},
     ("jobs", "memory_bytes", "cpu_rate_basis_points"))
-_RULE = obj({"id": TEXT, "operator": TEXT, "subject": obj({"kind": TEXT, "id": TEXT}, ("kind", "id")),
+_RULE = obj({"id": _RULE_ID_SCHEMA, "operator": TEXT, "subject": obj({"kind": TEXT, "id": TEXT}, ("kind", "id")),
     "basis": obj({"source": TEXT, "unit": TEXT}, ("source", "unit")),
     "threshold": {"type": ["integer", "string"]}, "repeat_interval": NAT,
     "required_evidence": array(TEXT, True)}, ("id", "operator", "subject", "basis", "threshold", "required_evidence"))
@@ -661,7 +661,7 @@ _SUPPLIED_SOURCE['properties']['local_path'] = TEXT
 _OBSERVATION = obj({"kind": TEXT, "execution_id": ID, "observed_at": TEXT,
     "trigger": TEXT, "call_id": TEXT, "review_id": nullable(TEXT), "reason": nullable(TEXT),
     "basis_ref": nullable(TEXT), "basis": EVIDENCE, "observation_refs": REFS,
-    "obligation_ids": REFS, "obligation_id": nullable(ID), "rule_ids": REFS,
+    "obligation_ids": REFS, "obligation_id": nullable(ID), "rule_ids": array(_RULE_ID_SCHEMA, True),
     "interval_ms": NAT, "review_window_ms": NAT, "window_ms": NAT, "at": TEXT,
     "followup": nullable(obj({"kind": TEXT, "trigger": TEXT, "next_owner": TEXT,
                               "basis_refs": REFS}, ("kind", "next_owner"))),
