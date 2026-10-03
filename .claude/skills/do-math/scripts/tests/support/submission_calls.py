@@ -11,7 +11,7 @@ worker, the collector and the transport are the product's:
 - ``submitted(value, extensions=None)``: ``value`` as the output (a callable
   ``value(context)`` makes it from the call's input); candidates are bound, the
   response is sealed unless it declares its bundles, and the model submits it
-  with the workspace tool, whatever the receipt (the legacy ``CheckedRunner``).
+  with the workspace tool and compares the explicitly expected receipt.
   ``extensions``, when given, is written to ``activity-extensions.json`` first
   (a callable makes it from the input too).
 - ``failed(error)``: the provider CLI exits with an error and writes no final
@@ -37,12 +37,13 @@ from copy import deepcopy
 import json
 from pathlib import Path
 
-from support.model import Answer, FakeCLI, MARKER, ModelDouble, default
+from support.model import Answer, FakeCLI, MARKER, ModelDouble
 
 
 class Submitted(Answer):
-    def __init__(self, value, extensions):
-        super().__init__(lambda out, ctx: deepcopy(value(ctx) if callable(value) else value))
+    def __init__(self, value, extensions, expected_receipt):
+        super().__init__(lambda out, ctx: deepcopy(value(ctx) if callable(value) else value),
+                         expected_receipt=expected_receipt)
         self.extensions = extensions
 
 
@@ -52,8 +53,8 @@ class Failed(Answer):
         self.error = error
 
 
-def submitted(value, extensions=None):
-    return Submitted(value, extensions)
+def submitted(value, extensions=None, *, expected_receipt="accepted"):
+    return Submitted(value, extensions, expected_receipt)
 
 
 def failed(error):
@@ -74,16 +75,14 @@ class SubmissionCLI(FakeCLI):
         for hook in self.model.hooks('before', role):
             hook(ctx, self.workspace)
         try:
-            out = self.model.output(role, ctx, self.workspace)
+            out, answer = self.model.output(role, ctx, self.workspace)
         except _Failure:
             self.returncode = 1
             return None, None
-        final = self._submit(out) if (self.workspace / 'input' / 'submission' / 'context.json').is_file() \
-            else json.dumps(out, ensure_ascii=False)
-        for hook in self.model.hooks('after', role):
-            hook(ctx, self.workspace)
-        self._write_stream(final)
-        self.returncode = 0
+        def after_receipt():
+            for hook in self.model.hooks('after', role):
+                hook(ctx, self.workspace)
+        self.finish(out, answer, before_exit=after_receipt)
         return None, None
 
 
@@ -107,10 +106,8 @@ class SubmissionModel(ModelDouble):
               creationflags=0):
         return SubmissionCLI(self, list(command), stdout, stderr, Path(cwd))
 
-    def output(self, role, ctx, workspace):
+    def render(self, answer, role, ctx, workspace):
         from support.role_answers import bind_candidates, seal_response
-        rule = next((rule for rule in self.rules if rule.answers and rule.matches(role, ctx)), None)
-        answer = rule.next() if rule else default()
         if isinstance(answer, Failed):
             raise _Failure(answer.error)
         if isinstance(answer, Submitted):
@@ -122,7 +119,7 @@ class SubmissionModel(ModelDouble):
             if 'integration_bundles' not in out:
                 seal_response(out, ctx, workspace)
             return out
-        return super().output(role, ctx, workspace)
+        return super().render(answer, role, ctx, workspace)
 
 
 def submission_model(sim, responder=None):

@@ -3,7 +3,7 @@ import sys
 
 from support.engine_lifecycle import clear_work
 from support.role_answers import disposition
-from support.scheduling_model import explicit, native_final, scenario_model
+from support.scheduling_model import explicit, scenario_model
 from support.scheduling_recovery import empty_plan, failed_plan_sim
 from support.sim import Sim, built
 
@@ -25,7 +25,7 @@ def _failed(root, shared, *, kind):
         model = submission_model(sim)
         output = empty_plan()
         model.after('research_plan', lambda context, workspace: withhold_publication(sim, context['execution_id']))
-    model.on('research_plan').reply(native_final(output)
+    model.on('research_plan').reply(explicit(output, mode='standalone', expected_receipt=None)
                                    if kind == 'output_validation' else explicit(output))
     sim.engine._save()
     sim.step()

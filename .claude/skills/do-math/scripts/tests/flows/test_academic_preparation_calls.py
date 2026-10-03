@@ -231,7 +231,9 @@ class AssessmentCallTests(unittest.TestCase):
 
             def respond(self, role, context, workspace):
                 return {**common(role), 'candidates': [candidate('one')]}
+        from support.model import default
         sim.model.responder = MissingResponder()
+        sim.model.on('research_preparation').reply(default(expected_receipt='rejected'))
         sim.step()
         self.assertEqual(engine.runtime['tasks'], {})
         held = engine.runtime['waiting_actions'][action_id]

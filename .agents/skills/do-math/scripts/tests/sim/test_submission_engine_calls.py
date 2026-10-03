@@ -48,7 +48,7 @@ class ProducerCallTests(unittest.TestCase):
             alternative.append(governance.authorize(sim.engine.instance, unbound, at=sim.ports.clock.now())["allowed"])
         model.before("maintenance", revoke)
         late = {**common("Completed before revocation."), "report": "Preserve the completed portion.", "remaining_work": []}
-        model.on("maintenance").reply(submitted(late))
+        model.on("maintenance").reply(submitted(late, expected_receipt='rejected'))
         sim.step()
         self.assertEqual(alternative, [True], "the alternative grant still authorizes the role")
         execution = next(e for e in sim.runtime['executions'].values() if e['action']['id'] == 'AC-revoked')

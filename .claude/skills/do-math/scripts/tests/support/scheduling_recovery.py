@@ -45,7 +45,7 @@ def _reviewed(root, shared):
 def _failed_plan(root, shared):
     from support.role_answers import disposition
     sim = Sim.activated(root, shared=shared, config=NO_REPAIR)
-    scenario_model(sim).on('research_plan').reply(explicit(empty_plan(dispositions=[disposition('TK-completed')])))
+    scenario_model(sim).on('research_plan').reply(explicit(empty_plan(dispositions=[disposition('TK-completed')]), expected_receipt='rejected', returncode=1))
     sim.engine.runtime['queue'] = [{'id': 'AC-failed', 'role': 'research_plan'}]
     sim.engine._save()
     sim.step()

@@ -5,7 +5,7 @@ Each scene runs one model call through the worker (about 2 to 4 s, over the
 ``sim/test_scheduling_research_recovery.py``. The owner runs on the Sim; the
 model double answers each call
 (``support.scheduling_model``: ``explicit`` is the legacy ``producer_result``
-runner, ``native_final`` a runner that returned its output without the
+runner, ``explicit(mode="standalone", expected_receipt=None)`` a runner that returned its output without the
 submission tool). The start states are the templates of
 ``support.scheduling_recovery`` or the default activation with
 ``max_output_repairs`` configured to 0.
@@ -20,7 +20,7 @@ from support.purpose_answers import common
 from support.role_answers import candidate, disposition
 from support.default_responder import DefaultResponder
 from support.engine_lifecycle import applied
-from support.scheduling_model import explicit, native_final, scenario_model
+from support.scheduling_model import explicit, scenario_model
 from support.scheduling_recovery import empty_plan, failed_execution, failed_plan_sim, reviewed_sim
 from support.sim import Sim, warm_template
 
@@ -91,7 +91,7 @@ class ReviewedTaskTests(unittest.TestCase):
         plan = engine.runtime['queue'][0]
         model = scenario_model(self.sim)
         model.on('research_plan').reply(explicit(empty_plan(dispositions=[
-            disposition('TK-absent'), {**disposition('TK-absent'), 'reason': 'A distinct row with the same invalid task ID'}])))
+            disposition('TK-absent'), {**disposition('TK-absent'), 'reason': 'A distinct row with the same invalid task ID'}]), expected_receipt='rejected', returncode=1))
         engine._save()
         self.sim.step()
         # The rejection the producer receives names every population error (the legacy runner's
@@ -122,7 +122,7 @@ class InvalidPlanTests(unittest.TestCase):
     def test_exhausted_output_repair_does_not_stop_unrelated_work(self):
         # An invalid final response must reach the receiver: the model answers it as its
         # final message, without the submission tool, so no producer check stops it first.
-        self.model.on('research_plan').reply(native_final(empty_plan(dispositions=[disposition('TK-absent')])))
+        self.model.on('research_plan').reply(explicit(empty_plan(dispositions=[disposition('TK-absent')]), mode='standalone', expected_receipt=None))
         self.sim.engine.runtime['queue'] = [{'id': 'AC-bad-plan', 'role': 'research_plan'},
                                             {'id': 'AC-independent', 'role': 'research_preparation'}]
         self.sim.engine._save()
@@ -135,7 +135,7 @@ class InvalidPlanTests(unittest.TestCase):
         self.assertIn(failure.get('execution_id'), self.sim.runtime['executions'])
 
     def test_output_failure_opens_diagnosis_without_replaying_rejected_plan(self):
-        self.model.on('research_plan').reply(explicit(empty_plan(dispositions=[disposition('TK-absent')])))
+        self.model.on('research_plan').reply(explicit(empty_plan(dispositions=[disposition('TK-absent')]), expected_receipt='rejected', returncode=1))
         self.sim.engine.runtime['queue'] = [{'id': 'AC-invalid', 'role': 'research_plan'}]
         self.sim.engine._save()
         self.sim.step()

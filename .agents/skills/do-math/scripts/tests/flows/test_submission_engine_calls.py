@@ -76,7 +76,7 @@ class ProducerCallTests(unittest.TestCase):
         before = set(sim.runtime["executions"])
         model = submission_model(sim)
         # An empty output, sealed and submitted like the legacy runner's through CheckedRunner.
-        model.on(sim.runtime['queue'][0]['role']).reply(submitted({}))
+        model.on(sim.runtime['queue'][0]['role']).reply(submitted({}, expected_receipt='rejected'))
         sim.step()
         execution, = new_executions(sim, before)
         self.assertEqual(execution["outcome"], "execution_incomplete")
@@ -100,7 +100,7 @@ class ProducerCallTests(unittest.TestCase):
                            "summary": "An open question.", "evidence_ids": [], **changes}
                 model = submission_model(sim)
                 model.on("research_preparation").reply(
-                    submitted(output, extensions={"research_insights": [insight]}))
+                    submitted(output, extensions={"research_insights": [insight]}, expected_receipt="rejected"))
                 drafts = []
                 # The draft the model wrote and submitted: the sealed output with its bundle declaration.
                 model.after("research_preparation",
@@ -194,7 +194,7 @@ class LiveReviewTests(unittest.TestCase):
                 model = submission_model(sim)
                 if sidecar == 'unregistered':
                     model.before('operational_review', unregistered)
-                model.on('operational_review').reply(Answer(proceed))
+                model.on('operational_review').reply(Answer(proceed, expected_receipt='rejected' if sidecar == 'unregistered' else 'accepted'))
                 sim.step()
                 reviewed = next(x for x in sim.runtime['executions'].values()
                                 if x['role'] == 'operational_review' and x['action'].get('live'))

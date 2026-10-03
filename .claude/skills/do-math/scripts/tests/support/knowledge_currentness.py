@@ -8,7 +8,7 @@ provider CLI double in process, so these are the CLI double's behaviours:
 
 - ``currentness_model(sim, responder=None)`` gives ``sim`` a ``CurrentnessModel``
   (a ``scheduling_model.ScenarioModel``, so ``on``, ``during``, ``explicit``
-  and ``native_final`` work) and returns it.
+  and ``explicit(mode="standalone", expected_receipt=None)`` work) and returns it.
 - ``interrupt(role, write)``: the next call of ``role`` runs ``write(context,
   workspace)`` and then the provider process exits with an error and no final
   message ("fixture interruption" on its error stream), as a provider
@@ -59,11 +59,11 @@ class CurrentnessModel(ScenarioModel):
         return self
 
     def output(self, role, ctx, workspace):
-        out = super().output(role, ctx, workspace)
+        out, answer = super().output(role, ctx, workspace)
         change = self.reseals.pop(role, None)
         if change is not None:
             change(out, ctx)
-        return out
+        return out, answer
 
     def spawn(self, command, *, stdin=None, stdout=None, stderr=None, cwd=None, env=None, shell=False,
               creationflags=0):

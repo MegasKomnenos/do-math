@@ -17,7 +17,6 @@ import json
 from pathlib import Path
 
 from do_math.canonical import canonical_json
-from support.fakes.calls import owner_turn
 from support.model import FakeCLI, ModelDouble
 
 
@@ -74,23 +73,10 @@ def record_submissions(sim, responder=None):
     """Give ``sim`` a model double that records each tool submission; returns it."""
 
     class RecordingCLI(FakeCLI):
-        def _submit(self, out):
-            from do_math.control_protocol import SUBMIT_INTENT
-            from do_math.control_server import wait_receipt
-            from do_math.control_transport import FINAL_RECEIPTS
-            from do_math.submission_tool import request_control
-            (self.workspace / "output.json").write_bytes(canonical_json(out))
-            delivery = request_control(self.workspace, "output.json", kind=SUBMIT_INTENT, wait_seconds=0,
-                                       clock=self.model.clock)
-            context = json.loads((self.workspace / "input" / "submission" / "context.json").read_bytes())
-            row = {"role": context["action"]["role"], "binding": context["control_binding"], "delivery": delivery["state"]}
-            for _ in range(100):
-                receipt = wait_receipt(row["binding"], delivery["request_id"], 0, clock=sim.ports.clock)
-                if receipt and receipt.get("state") in FINAL_RECEIPTS:
-                    self.model.submissions.append({**row, "receipt": receipt["state"]})
-                    return json.dumps({"submission": delivery["request_id"], "receipt": receipt["state"]})
-                owner_turn()
-            raise AssertionError("the owner did not receipt submission " + delivery["request_id"] + " in 100 passes")
+        def receipt_received(self, context, delivery, receipt):
+            super().receipt_received(context, delivery, receipt)
+            self.model.submissions.append({"role": context["action"]["role"],
+                "binding": context["control_binding"], "delivery": delivery["state"], "receipt": receipt["state"]})
 
     class RecordingModel(ModelDouble):
         def __init__(self, clock, responder=None):

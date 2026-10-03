@@ -147,7 +147,13 @@ class EngineTests(unittest.TestCase):
             sim.control('configure', config={'max_output_repairs': 0})
             sim.engine.process_controls()
             self.assertEqual(sim.instance['config']['max_output_repairs'], 0)
+            from support.model import default
             sim.model.responder = DefaultResponder(invalid_plan=invalid)
+            plan = sim.model.on('research_plan')
+            if invalid == 'criterion':
+                # The first plan selects work; its returned-task assessment is in the next call.
+                plan.reply(default())
+            plan.reply(default(expected_receipt='rejected'))
             engine = sim.engine
             for _ in range(20):
                 state = engine.run(max_steps=1)

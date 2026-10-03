@@ -11,7 +11,7 @@ import unittest
 from support.model import amend, raw
 from support.sim import Sim
 
-REJECTED = raw({'not': 'an interpretation'})
+REJECTED = raw({'not': 'an interpretation'}, expected_receipt='rejected')
 
 
 def _interpretations(sim):

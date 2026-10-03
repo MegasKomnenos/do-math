@@ -8038,7 +8038,7 @@
         "KD-1909"
       ],
       "meaning": "13개는 main 미기록 후보 항목이며 전체 미구현 수나 완료율이 아니다.",
-      "next": "다음은 정상 모델 영수증/Lean 명시 등록 기반과 형식Git의 의미 포트 및 관련 작업자·설치 소비자 통합이다. native 반려·보고 회귀만으로2-A/13-B 전체를 닫지 않는다.",
+      "next": "모델 영수증 기반은 B36으로 이관했다. 다음은 Lean의 명시 선언/의존/공리 등록과 실제 defaultfacts 보존을 모든 소비자에 옮긴 뒤 형식Git 의미 포트·설치/작업자 소비자를 통합한다. 기존다른미커밋수정은 별도 검수하며 덮어쓰지 않는다.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
     },
@@ -9913,7 +9913,7 @@
     "native_input_integration": {
       "id": "B35",
       "scope": "KD-0900~0903/1300: 공급자 native/raw 사건의 정확 반려·소비·재전달·리뷰 현재성과 실제 보고",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-nsl6z3du\\report.json",
         "sha256": "ba32bfb33dbd40c19b6b8daffc3c87ed1b964b38f039c88ff6056a3e88096ddc",
@@ -10100,6 +10100,178 @@
             {
               "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
               "seconds": 5.14000000001397,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "commit": "6328e9ed"
+    },
+    "model_contract_integration": {
+      "id": "B36",
+      "scope": "정상 모델 대역의 결속/정확 영수증/호출별 기대값과 scheduling/submission/live 소비자 이관",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-7ixeemgp\\report.json",
+        "sha256": "01af7d83c6372e4a76d5f43167294fe91b24f2b791d08ac3536b9cb18aa36df8",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "error": 1,
+          "failed": 1
+        },
+        "total_seconds": 0.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused_and_ingress": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-lnfsqrdd\\report.json",
+        "sha256": "7c68dc7fdb0d7de6622c4aadf4dd5f8fb26db781d746783aa32f3e8ad9cc7d3d",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 30
+        },
+        "total_seconds": 134.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_submission_engine_calls.ProducerCallTests.test_revoked_original_grant_preserves_late_output_despite_alternative_grant",
+              "seconds": 2.5,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-qwp953sl\\report.json",
+        "sha256": "da10477160a6bf7b8ecf4be8cae0b7f4fa3de64cb2c7297aeaa679089b05e459",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 59
+        },
+        "total_seconds": 299.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-gvgf92eq\\report.json",
+        "sha256": "d0d728123517769730d87695f8bca582b804dbb22e9cdba6d470e276788c7606",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 5
+        },
+        "total_seconds": 0.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "contract": "정상 bound 응답은 실제 control_binding과 accepted 영수증을 요구한다. 음성 시험은 기대 최종 영수증을 선언하고 provider 실패 종료는 returncode=1로 독립 지정한다. standalone/None만 비제출이며 native_final/Produced/SubmissionRejected와 결속 파일 존재에 따른 자동 fallback을 제거한다. output과 Answer는 같은 호출의 tuple로 전달한다. 공유 송신과 영수증 검사는 하나이며 live 차례와 기록 도우미는 hook을 통해 소비한다.",
+      "correction": "처음 호출부 편집은 read_bytes의 CRLF를 read_text의 LF와 비교해 선택 hunk가 적용되지 않았고 Windows write_text가 줄끝을 중복했다. 발견 시 actual 시험 전 import가 거부됐다. intake 때 clean이었던 아홉 소비자만 HEAD 원문에서 회복하여 LF로 정규화하고 선택 전건 적용 개수를 단언한 뒤 실제 시험을 수행했다. 현재 정상/음성 기준을 actual receipt에 맞춰 느슨하게 바꾸지 않고 후보의 이미 검수된 선언을 동일 경로에 이관했다.",
+      "limits": "30개와 관련59개 및 후보unit5개는 서로 다른 선택이며 합산 전체 성공이 아니다. 관련59의299.3초는 전체T2 300초 증거가 아니다. 최초집합sim1개 예산 초과를 남긴다. Lean 등록/실제defaultfacts·형식Git포트·1f61 strength 전건과 최종 동일판본 관문은 별도다.",
+      "whole_requirement_closed": false,
+      "files": [
+        {
+          "path": "tests/support/engine_control.py",
+          "sha256": "6bb0c6721cfee1c1b708df56e94482eeeaffae5d52775e55ef6e91b3e29ae1b7"
+        },
+        {
+          "path": "tests/support/engine_flow.py",
+          "sha256": "712451ec37e5f16ca7b001124074c7a1c414d4c924b31ebe335fb73b8851dd99"
+        },
+        {
+          "path": "tests/support/knowledge_currentness.py",
+          "sha256": "fc690865734a4f4179d727b0386e99a6bb23aa926cf4eaefbd372548077289f4"
+        },
+        {
+          "path": "tests/support/live_finish_model.py",
+          "sha256": "ceb1bcfa3bc0243de1a138069f290f61ae57e80467e93373e32244512ae8b8d6"
+        },
+        {
+          "path": "tests/support/model.py",
+          "sha256": "3c7ba4b9cec0a2b4e2ad6f808fe9307c2676d637105655c430e24a9ce68b35c5"
+        },
+        {
+          "path": "tests/support/scheduling_model.py",
+          "sha256": "4a112b1ec59184e0774ea4337c7176ac1e93d8dff1c3298d227fdff24e4274c6"
+        },
+        {
+          "path": "tests/support/submission_calls.py",
+          "sha256": "60a001c95778e219bf42dd11739f8adf979c4872bbd76a1060b3489449e67783"
+        },
+        {
+          "path": "tests/flows/test_academic_preparation_calls.py",
+          "sha256": "63b83a55a5721d834905b6de0b17bcf6aa3a38b905fcc0caee90247a7b04e2a4"
+        },
+        {
+          "path": "tests/flows/test_engine_flow.py",
+          "sha256": "b9cb5fc0de7ab982d9f8f034dd1c78d87d2e7630f2b68723a3714152144a54f6"
+        },
+        {
+          "path": "tests/flows/test_initial_diagnosis.py",
+          "sha256": "05157da1430260e927035525e05474181cbcb6fa88096277534338fc2c88a321"
+        },
+        {
+          "path": "tests/flows/test_scheduling_parallel_engine.py",
+          "sha256": "479ddde5ffeddcddf1b93ec6b6b24301caa4137c07dc5e0322be346cbb406b52"
+        },
+        {
+          "path": "tests/flows/test_scheduling_research_recovery.py",
+          "sha256": "d5b63fc574d2e19c0b62dc857952a1f039058923b5c63756792bf0ed08ad8a61"
+        },
+        {
+          "path": "tests/flows/test_submission_engine_calls.py",
+          "sha256": "f29bf4c19e75ef5b01fb12cecaf22fe07de7eb89fdf00d50dcfdf2d769b1e1c6"
+        },
+        {
+          "path": "tests/sim/test_submission_engine_calls.py",
+          "sha256": "26a94d19a259cab4c40206cad4f765ed1073bafdb63defac7a63ad81250939b3"
+        },
+        {
+          "path": "tests/support/failed_actions.py",
+          "sha256": "d719e598f791ee8abbef7f7e7bf3272986ce81a06e2974249f44d451edfe0f62"
+        },
+        {
+          "path": "tests/support/scheduling_recovery.py",
+          "sha256": "c30055518ba3bef88520f626868025fd5c0ad10c1082234065fa377a5dbb9b05"
+        },
+        {
+          "path": "tests/unit/test_model_submission_contract.py",
+          "sha256": "ce751d5b4630c1764b5f54e0cba0876835a927e6ff228baa833fc16444547c46"
+        },
+        {
+          "path": "이음새-정본.md",
+          "sha256": "497b70f561e19ef7b26403ee62745d3b1eac0a01ee15eb02e45cc852c7fe3c9d"
+        }
+      ],
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-lchpv8wg\\report.json",
+        "sha256": "993a19b67a01e7da60dc7cd3f125145b8ada201b0b6694e0bf52ecbaf5c8ccb6",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 5
+        },
+        "total_seconds": 8.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 5.64000000001397,
               "budget_seconds": 5.0
             }
           ],

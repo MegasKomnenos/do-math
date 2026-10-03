@@ -18,7 +18,7 @@ from support.default_responder import DefaultResponder, common
 from support.engine_lifecycle import applied, clear_work
 from support.provider_probes import ObservedCalls
 from support.scheduling_initial import GRANT
-from support.scheduling_model import native_final, scenario_model
+from support.scheduling_model import explicit, scenario_model
 from support.scheduling_parallel import Overlap, ready_work_sim, round_robin
 from support.sim import Sim, warm_template
 
@@ -202,7 +202,7 @@ class OperatingQueueTests(unittest.TestCase):
         invalid = common('research_preparation')
         invalid.pop('candidates')
         model = scenario_model(sim)
-        model.on('research_preparation').reply(native_final(invalid))
+        model.on('research_preparation').reply(explicit(invalid, mode='standalone', expected_receipt=None))
         sim.step()
         self.assertEqual([call['role'] for call in model.calls], ['research_preparation'])
         self.assertEqual([a['id'] for a in sim.runtime['queue']], ['AC-older', 'AC-preparation'])

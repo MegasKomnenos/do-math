@@ -96,8 +96,10 @@ class Call:
         from do_math.submission_tool import request_control
         from support.default_responder import context_from
         context = context_from(self.arguments['prompt'], self.workspace)
-        (self.workspace / 'output.json').write_bytes(canonical_json(
-            self.sim.model.output('research_work', context, self.workspace)))
+        output, contract = self.sim.model.output('research_work', context, self.workspace)
+        if (contract.mode, contract.expected_receipt) != ('bound', 'accepted'):
+            raise AssertionError('the observed research worker requires a normal bound draft')
+        (self.workspace / 'output.json').write_bytes(canonical_json(output))
         return request_control(self.workspace, 'output.json', kind=kind, wait_seconds=0, clock=self.sim.clock)
 
     def submit(self, kind, payload, request_id):
