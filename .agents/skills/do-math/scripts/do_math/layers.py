@@ -20,7 +20,7 @@ LAYERS = {
     'do_math/claude_adapter.py': '3',
     'do_math/claude_stream.py': '1',
     'do_math/claude_worker.py': '3',
-    'do_math/cli.py': '3',
+    'do_math/cli.py': '3',  # Git eligibility/mkdir/order here; process effects use Ports.git_backend.
     'do_math/cli_contract.py': '2',
     'do_math/cli_execution.py': '2',
     'do_math/cli_worker.py': '3',

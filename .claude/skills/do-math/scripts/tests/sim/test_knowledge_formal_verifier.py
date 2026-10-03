@@ -10,8 +10,8 @@ identity instead, as the engine does. The in-process observation path now
 also runs through Jobs in ``sim.test_formal_foundation_jobs``. The inspection path runs on the real Lean in
 ``boundary.test_knowledge_lean_verifier``. No test here starts a Job; the tests
 that must reach none observe ``formal._job_run`` and give an empty Jobs fake.
-The pinned-project test runs the product's short ``git`` reads of the project
-(``formal._git``), which no port stands for.
+The pinned-project test supplies the same Git backend port as the verifier;
+actual project Git reads are checked by the shared boundary contract.
 """
 import hashlib
 import json
@@ -60,7 +60,7 @@ class ApprovedCompilerTests(unittest.TestCase):
         from support.entry import entry
         _entry = entry()
         return verify_lean(source=source, declarations=list(declarations), workspace=self.workspace,
-                           lean_command=self.command, expected_toolchain=self.toolchain, jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment)
+                           lean_command=self.command, expected_toolchain=self.toolchain, jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment, git_backend=_entry.ports.git_backend)
 
     def test_dependency_bodies_are_one_table_shared_by_the_declared_closures(self):
         compiler = OutputCompiler(evidence_output())
@@ -122,7 +122,7 @@ class ApprovedCompilerTests(unittest.TestCase):
         jobs = FakeJobs()
         with ObservedCalls(job_run=formal._job_run) as calls:
             result = verify_lean(source='theorem x : True := True.intro', declarations=['x'], workspace=self.workspace,
-                                 lean_command=self.command, expected_toolchain=self.toolchain, jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment)
+                                 lean_command=self.command, expected_toolchain=self.toolchain, jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment, git_backend=_entry.ports.git_backend)
         self.assertEqual(result['status'], 'rejected', result)
         self.assertEqual(result['reason'], 'approved toolchain changed before execution')
         self.assertEqual((calls.count('job_run'), jobs.launched), (0, []))
@@ -137,7 +137,7 @@ class ApprovedCompilerTests(unittest.TestCase):
         result = self.verify(worker_jobs(compiler), source='theorem x : True := True.intro', declarations=['x'])
         self.assertEqual((result['status'], result['reason']), ('failed', 'signature output missing'), result)
         self.assertEqual(len(compiler.commands), 1, 'the compile ran')
-        self.assertEqual(formal.toolchain_identity_errors(self.toolchain, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs),
+        self.assertEqual(formal.toolchain_identity_errors(self.toolchain, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend),
                          ['approved toolchain file changed: ' + str(executable.resolve())])
 
 
@@ -148,13 +148,15 @@ class PreparationTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
+        from support.fakes.git_backend import InProcessGit
+        self.git_backend = InProcessGit()
 
     def verify_without_job(self, **arguments):
         from support.entry import entry
         _entry = entry()
         jobs = FakeJobs()
         with ObservedCalls(job_run=formal._job_run) as calls:
-            result = verify_lean(workspace=self.root, jobs=jobs, **arguments, clock=_entry.ports.clock, environment=_entry.environment)
+            result = verify_lean(workspace=self.root, jobs=jobs, **arguments, clock=_entry.ports.clock, environment=_entry.environment, git_backend=self.git_backend)
         self.assertEqual((calls.count('job_run'), jobs.launched), (0, []), 'no Job started')
         return result
 
@@ -195,7 +197,7 @@ class PreparationTests(unittest.TestCase):
                     'executables': {str(executable): digest(executable)},
                     'version': 'fixture', 'version_exit': 0,
                     'project': {'manifest_hashes': {'lakefile.toml': digest(manifest)},
-                                'source_identity': project_source_identity(project), 'search_paths': []}}
+                                'source_identity': project_source_identity(project, git_backend=self.git_backend), 'search_paths': []}}
         manifest.write_bytes(b'name = "changed"\n')
         # Git runs directly; any Job would be the compiler or the Lake environment.
         result = self.verify_without_job(source='theorem x : True := True.intro', declarations=['x'],

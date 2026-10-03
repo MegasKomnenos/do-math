@@ -46,7 +46,7 @@ def installed_toolchain():
     if not _OBSERVED:
         with tempfile.TemporaryDirectory() as directory:
             result = verify_lean(source=knowledge_candidate()['lean_code'], declarations=['truth'],
-                                 workspace=Path(directory), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+                                 workspace=Path(directory), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
         if result['status'] != 'verified':
             raise AssertionError('the installed Lean did not verify the candidate: ' + repr(result))
         _OBSERVED.append(result['toolchain'])

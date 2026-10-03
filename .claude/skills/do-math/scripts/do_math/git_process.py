@@ -1,5 +1,7 @@
-"""Real Git backend port: the git executable, isolated from user configuration and hooks.
+"""Real Git backend port: the git executable with each caller's original environment contract.
 
+Storage is isolated from user configuration and hooks; project reads use the
+injected environment; CLI prerequisites inherit the live process environment.
 Objects are written in process as loose objects, the form Git itself writes;
 the git executable reads them back.
 """
@@ -11,8 +13,10 @@ import subprocess
 import tempfile
 import zlib
 
-from .ports.git_backend import GitBackendError
-from .storage_finish_git_output import parse_object_info, parse_read_objects
+from .ports.git_backend import GitBackendError, ProjectSnapshot
+from .storage_finish_git_output import (parse_object_info, parse_read_objects,
+    parse_project_root, parse_project_tree, parse_project_paths)
+from .lean_evidence import check_stop
 
 
 class GitProcess:
@@ -21,6 +25,46 @@ class GitProcess:
         self.environment = environment
         self._git_dirs = {}
         self._objects = {}
+
+    def initialize_repository(self, repository: Path) -> bool:
+        # CLI historically inherited the live environment, unlike both storage
+        # and project reads. Preserve that contract, including Git init defaults.
+        result = self._run_process(['git', '-C', str(repository), 'init', '-q'],
+            check=False, capture_output=True,
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        return not result.returncode
+
+    def repository_exists(self, repository: Path) -> bool:
+        result = self._run_process(['git', '-C', str(repository), 'rev-parse', '--git-dir'],
+            check=False, capture_output=True,
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        return not result.returncode
+
+    def _project_read(self, root, *arguments, should_stop):
+        # Preserve formal's project Git invocation, including ambient Git config.
+        # State-storage _run deliberately has a different isolation contract.
+        check_stop(should_stop)
+        result = self._run_process(['git', '-C', str(root), *arguments],
+            stdin=subprocess.DEVNULL, capture_output=True, env=self.environment,
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        check_stop(should_stop)
+        return result
+
+    def project_repository_root(self, project_root: Path, *, should_stop=None) -> Path | None:
+        result = self._project_read(project_root, 'rev-parse', '--show-toplevel', should_stop=should_stop)
+        return parse_project_root(result.stdout)
+
+    def project_snapshot(self, project_root: Path, repository_root: Path | None, *, should_stop=None) -> ProjectSnapshot:
+        if repository_root is None:
+            return ProjectSnapshot(None, None, b'', frozenset())
+        relative = '.' if project_root == repository_root else project_root.relative_to(repository_root).as_posix()
+        target = 'HEAD^{tree}' if relative == '.' else f'HEAD:{relative}'
+        result = self._project_read(repository_root, 'rev-parse', '--verify', target, should_stop=should_stop)
+        tree = parse_project_tree(result.returncode, result.stdout)
+        diff = self._project_read(repository_root, 'diff', '--no-ext-diff', 'HEAD', '--', relative,
+                                  should_stop=should_stop).stdout
+        paths = self._project_read(repository_root, 'ls-files', '-z', '--', relative, should_stop=should_stop)
+        return ProjectSnapshot(repository_root, tree, diff, parse_project_paths(paths.returncode, paths.stdout))
 
     def _run(self, repository, *arguments, input=None):
         repository = Path(repository).absolute()

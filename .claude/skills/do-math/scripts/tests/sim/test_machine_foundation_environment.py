@@ -137,7 +137,7 @@ class MachineFoundationEnvironmentTests(unittest.TestCase):
             source, _ = trust_inventory.validation_program(environment['toolchain'])
             sim.lean.inputs[source.encode('utf-8')] = {}  # Exact representative baseline, without extraction.
             recorded = setup_lean.rerecord(['unused'], record_path.parent, record_path.parent / 'evidence', None,
-                identity=environment['toolchain'], jobs=sim.jobs, clock=sim.clock, environment=sim.environment)
+                identity=environment['toolchain'], jobs=sim.jobs, clock=sim.clock, environment=sim.environment, git_backend=sim.ports.git_backend)
             host._resume_formal_waits()
             successor = next(a for a in host.runtime['queue'] if a['id'] == action['id'])
             self.assertEqual(successor['continuation_of'], previous)

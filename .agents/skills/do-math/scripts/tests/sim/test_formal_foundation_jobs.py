@@ -67,7 +67,7 @@ class FormalFoundationJobsTests(unittest.TestCase):
             executable = root / 'lean.exe'
             executable.write_bytes(b'Lean external program double')
             result = formal.verify_lean(source='theorem good : True := True.intro', declarations=['good'],
-                workspace=root, lean_command=[str(executable)], jobs=jobs, clock=clock, environment=_entry.environment)
+                workspace=root, lean_command=[str(executable)], jobs=jobs, clock=clock, environment=_entry.environment, git_backend=_entry.ports.git_backend)
         self.assertEqual(result['status'], 'verified', result)
         self.assertEqual(result['toolchain']['version'], lean.version)
         self.assertEqual(lean.commands[0], [str(executable), '--version'])
@@ -99,13 +99,13 @@ class FormalFoundationJobsTests(unittest.TestCase):
             lake.write_bytes(b'Lake program')
             lean.write_bytes(b'Lean program')
             command = [str(lake), '--dir', str(project), 'env', str(lean)]
-            identity = formal.inspect_toolchain(command, root, jobs=jobs, clock=clock, environment=_entry.environment)
+            identity = formal.inspect_toolchain(command, root, jobs=jobs, clock=clock, environment=_entry.environment, git_backend=_entry.ports.git_backend)
             self.assertEqual(identity['project']['search_paths'], [str((project / '.lake/build/lib/lean').resolve())])
             self.assertEqual(len(jobs.launched), 2)
             # Changed Lake bytes invalidate the cached search-path observation and must use the supplied ports again.
             lake.write_bytes(b'Changed Lake program')
             with ObservedCalls(run=formal._job_run) as observed:
-                errors = LocalHost(jobs=jobs, clock=clock, environment=_entry.environment).toolchain_identity_errors(identity)
+                errors = LocalHost(jobs=jobs, clock=clock, environment=_entry.environment, git_backend=_entry.ports.git_backend).toolchain_identity_errors(identity)
             self.assertIn('approved toolchain file changed: ' + str(lake), errors)
             args, = observed.captured('run')
             self.assertIs(args['jobs'], jobs)

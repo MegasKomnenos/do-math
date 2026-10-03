@@ -14,15 +14,100 @@ import hashlib
 import os
 import re
 from pathlib import Path
+from dataclasses import dataclass, field
 import zlib
 
 
-from do_math.ports.git_backend import GitBackendError
+from do_math.ports.git_backend import GitBackendError, ProjectSnapshot
+from do_math.lean_evidence import check_stop
+
+
+@dataclass
+class ProjectWorktree:
+    """Explicit Git worktree facts, independent of the real source files.
+
+    Subtree keys are repository-relative POSIX paths ('.' for its root).
+    Tests declare index membership and Git diff bytes; no argv interpreter or
+    implicit Git executable computes them. Real source hashing remains formal's.
+    """
+    trees: dict = field(default_factory=dict)
+    diffs: dict = field(default_factory=dict)
+    tracked_paths: frozenset[str] = frozenset()
+    tracked_error: bool = False
+
 
 
 class InProcessGit:
-    def __init__(self, objects=None):
+    def __init__(self, objects=None, *, init_object_format='sha1'):
         self.objects = objects if objects is not None else {}
+        self.worktrees = {}
+        # An explicit simulated external Git default, not inferred from this
+        # Python host or from the object format of another repository.
+        if init_object_format not in ('sha1', 'sha256'):
+            raise ValueError('unsupported simulated Git default object format')
+        self.init_object_format = init_object_format
+
+    def initialize_repository(self, repository: Path) -> bool:
+        if not repository.is_dir():
+            return False
+        # The caller supplies an empty directory. Persist repository facts in
+        # the minimal Git layout: restarts and Sim copies already preserve it.
+        make_repository(repository, self.init_object_format)
+        return True
+
+    def repository_exists(self, repository: Path) -> bool:
+        if not repository.is_dir():
+            return False
+        for root in (repository, *repository.parents):
+            marker = root / '.git'
+            if marker.is_file():
+                raw = marker.read_text(encoding='utf-8').strip()
+                if not raw.startswith('gitdir: '):
+                    return False
+                return self._repository_layout(root / raw[len('gitdir: '):])
+            if marker.is_dir():
+                return self._repository_layout(marker)
+            if self._repository_layout(root):
+                return True
+        return False
+
+    @staticmethod
+    def _repository_layout(git_dir):
+        common = git_dir
+        if (git_dir / 'commondir').is_file():
+            common = git_dir / (git_dir / 'commondir').read_text(encoding='utf-8').strip()
+        head = git_dir / 'HEAD'
+        if not head.is_file() or not (common / 'objects').is_dir() or not (common / 'refs').is_dir():
+            return False
+        raw = head.read_bytes().strip()
+        return raw.startswith(b'ref: refs/') or re.fullmatch(rb'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', raw) is not None
+
+    def project_repository_root(self, project_root: Path, *, should_stop=None) -> Path | None:
+        check_stop(should_stop)
+        root = next((path for path in (project_root, *project_root.parents) if path in self.worktrees), None)
+        check_stop(should_stop)
+        return root
+
+    def project_snapshot(self, project_root: Path, repository_root: Path | None, *, should_stop=None) -> ProjectSnapshot:
+        if repository_root is None:
+            return ProjectSnapshot(None, None, b'', frozenset())
+        relative = '.' if project_root == repository_root else project_root.relative_to(repository_root).as_posix()
+        state = self.worktrees.get(repository_root)
+        # A memoized repository that disappeared has the same failed reads as Git.
+        check_stop(should_stop)
+        tree = state.trees.get(relative) if state is not None else None
+        check_stop(should_stop)
+        check_stop(should_stop)
+        diff = state.diffs.get(relative, b'') if state is not None else b''
+        check_stop(should_stop)
+        check_stop(should_stop)
+        failed = state is None or state.tracked_error
+        paths = frozenset(p for p in state.tracked_paths
+                          if relative == '.' or p == relative or p.startswith(relative + '/')) if state else frozenset()
+        check_stop(should_stop)
+        if failed:
+            raise RuntimeError('cannot read tracked paths for the configured project')
+        return ProjectSnapshot(repository_root, tree, diff, paths)
 
     def _git_dir(self, repository):
         repository = Path(repository)

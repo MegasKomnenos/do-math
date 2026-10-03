@@ -3,8 +3,8 @@
 Commands run in this process through ``research_fixtures.run_cli`` on a copy of
 one instance the CLI's ``init`` created (``support.engine_cli``); the help and
 the input-error exit codes are also checked as a child process sees them.
-``cli.main`` takes no Ports, so its repository and engine run on the real Git
-process, which places these tests with the boundary tests (1f seam ledger 6).
+These callers supply real Ports, so their repository and engine use the real
+Git process, which places these tests with the boundary tests (1f seam ledger 6).
 The legacy boundary tests replaced ``cli`` names (``control``, ``_control``,
 ``ResearchEngine``, ``ResearchRepository``, ``query_records``,
 ``_reconcile_operator``, ``execute``); here the product runs unchanged,

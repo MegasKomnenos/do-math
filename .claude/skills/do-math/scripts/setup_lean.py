@@ -40,11 +40,11 @@ class Refused(Exception):
         self.result = result
 
 
-def observe_identity(command, *, jobs, clock, identity=None, environment):
+def observe_identity(command, *, jobs, clock, identity=None, environment, git_backend):
     """Inspect the command, or validate an identity already observed by the caller."""
     if identity is None:
         with tempfile.TemporaryDirectory() as directory:
-            identity = inspect_toolchain(command, Path(directory), jobs=jobs, clock=clock, environment=environment)
+            identity = inspect_toolchain(command, Path(directory), jobs=jobs, clock=clock, environment=environment, git_backend=git_backend)
     errors = records.identity_errors(identity)
     if errors:
         raise ValueError('; '.join(errors))
@@ -108,9 +108,9 @@ def _settled_fingerprint(identity, attempts=3, *, clock, racy_ns=RACY_NS):
     raise RuntimeError('judgment files are still changing; record the installation once it is idle')
 
 
-def record_installation(command, records_dir, evidence_root, *, jobs, clock, identity=None, racy_ns=RACY_NS, environment):
+def record_installation(command, records_dir, evidence_root, *, jobs, clock, identity=None, racy_ns=RACY_NS, environment, git_backend):
     """Create the record of an installed identity or confirm an unchanged one; never append a baseline."""
-    identity = observe_identity(command, jobs=jobs, clock=clock, identity=identity, environment=environment)
+    identity = observe_identity(command, jobs=jobs, clock=clock, identity=identity, environment=environment, git_backend=git_backend)
     with records.writer_lock(records_dir):
         fingerprint = _settled_fingerprint(identity, clock=clock, racy_ns=racy_ns)
         reusable = records.reusable_record(records.records_for(records_dir, identity), fingerprint)
@@ -133,9 +133,9 @@ def resolve_record(records_dir, record_id, identity):
     return records.only_record(records.records_for(records_dir, identity()))
 
 
-def rerecord(command, records_dir, evidence_root, record_id, *, jobs, clock, identity=None, racy_ns=RACY_NS, environment):
+def rerecord(command, records_dir, evidence_root, record_id, *, jobs, clock, identity=None, racy_ns=RACY_NS, environment, git_backend):
     """Append a baseline after metadata-only changes. Users and operators only (D5)."""
-    identity = observe_identity(command, jobs=jobs, clock=clock, identity=identity, environment=environment)
+    identity = observe_identity(command, jobs=jobs, clock=clock, identity=identity, environment=environment, git_backend=git_backend)
     with records.writer_lock(records_dir):
         path, record = resolve_record(records_dir, record_id, lambda: identity)
         refusal = records.identity_refusal(record, identity, path)
@@ -151,11 +151,11 @@ def rerecord(command, records_dir, evidence_root, record_id, *, jobs, clock, ide
         return _summary(path, record, status='recorded')
 
 
-def check_contents(records_dir, record_id, command, *, jobs, clock, identity=None, environment):
+def check_contents(records_dir, record_id, command, *, jobs, clock, identity=None, environment, git_backend):
     """Hash every judgment file and append the comparison with the current baseline."""
     with records.writer_lock(records_dir):
         path, record = resolve_record(records_dir, record_id,
-            lambda: observe_identity(command, jobs=jobs, clock=clock, identity=identity, environment=environment))
+            lambda: observe_identity(command, jobs=jobs, clock=clock, identity=identity, environment=environment, git_backend=git_backend))
         fingerprint = records.observe_fingerprint(record['identity'])
         content = records.content_hashes(record['identity'], fingerprint['files'])
         check = records.content_check(record, content, checked_at=clock.now())
@@ -250,18 +250,18 @@ def main(argv=None, *, ports=None, environment=None):
         if args.inspect_only:
             with tempfile.TemporaryDirectory() as directory:
                 print(json.dumps({'status': 'observed', 'lean_command': command,
-                                  'toolchain': inspect_toolchain(command, Path(directory), jobs=ports.jobs, clock=ports.clock, environment=environment)}))
+                                  'toolchain': inspect_toolchain(command, Path(directory), jobs=ports.jobs, clock=ports.clock, environment=environment, git_backend=ports.git_backend)}))
             return
         if root is None and (args.records_dir is None or args.evidence_dir is None and not args.check_contents):
             raise ValueError('this installation has no toolchain root; supply --records-dir and --evidence-dir')
         records_dir = args.records_dir or root / 'records'
         evidence_root = args.evidence_dir or (root / 'validation' if root else None)
         if args.check_contents:
-            result = check_contents(records_dir, args.record, command, jobs=ports.jobs, clock=ports.clock, environment=environment)
+            result = check_contents(records_dir, args.record, command, jobs=ports.jobs, clock=ports.clock, environment=environment, git_backend=ports.git_backend)
         elif args.rerecord:
-            result = rerecord(command, records_dir, evidence_root, args.record, jobs=ports.jobs, clock=ports.clock, environment=environment)
+            result = rerecord(command, records_dir, evidence_root, args.record, jobs=ports.jobs, clock=ports.clock, environment=environment, git_backend=ports.git_backend)
         else:
-            result = record_installation(command, records_dir, evidence_root, jobs=ports.jobs, clock=ports.clock, environment=environment)
+            result = record_installation(command, records_dir, evidence_root, jobs=ports.jobs, clock=ports.clock, environment=environment, git_backend=ports.git_backend)
         result['lean_command'] = command
         if args.trust_file:
             result['trust_request'] = write_trust_request(result, args.trust_file)

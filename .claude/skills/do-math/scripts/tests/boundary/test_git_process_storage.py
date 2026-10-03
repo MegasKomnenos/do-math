@@ -492,3 +492,58 @@ class BatchParsingTests(unittest.TestCase):
         self.assertEqual(backend.object_info(Path('.'), []), [])
         self.assertEqual(backend.read_objects(Path('.'), []), [])
         self.assertEqual(calls, [])
+
+
+class ProjectGitProcessTests(unittest.TestCase):
+    def test_project_reads_keep_original_argv_environment_bytes_and_failure_meanings(self):
+        from do_math.git_process import GitProcess
+        from support.entry import entry
+        values = entry()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            project = root / 'project'
+            outputs = iter([(128, str(root).encode()), (128, b'HEAD:project'),
+                            (128, b'raw\x00\xffdiff'), (0, b'project/a\0project/b\0')])
+            calls = []
+            def run(argv, **options):
+                calls.append((argv, options))
+                code, raw = next(outputs)
+                return subprocess.CompletedProcess(argv, code, raw, b'diagnostic')
+            backend = GitProcess(environment=values.environment, run=run)
+            found = backend.project_repository_root(project)
+            facts = backend.project_snapshot(project, found)
+            self.assertEqual(found, root)
+            self.assertIsNone(facts.tree_oid)
+            self.assertEqual(facts.raw_diff, b'raw\x00\xffdiff')
+            self.assertEqual(facts.tracked_paths, frozenset({'project/a', 'project/b'}))
+            self.assertEqual([call[0] for call in calls], [
+                ['git', '-C', str(project), 'rev-parse', '--show-toplevel'],
+                ['git', '-C', str(root), 'rev-parse', '--verify', 'HEAD:project'],
+                ['git', '-C', str(root), 'diff', '--no-ext-diff', 'HEAD', '--', 'project'],
+                ['git', '-C', str(root), 'ls-files', '-z', '--', 'project']])
+            for _, options in calls:
+                self.assertIs(options['env'], values.environment)
+                self.assertEqual(options['stdin'], subprocess.DEVNULL)
+                self.assertTrue(options['capture_output'])
+                self.assertEqual(options['creationflags'], getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+
+    def test_project_spawn_error_propagates_before_after_check(self):
+        from do_math.git_process import GitProcess
+        from support.entry import entry
+        checks = []
+        failure = FileNotFoundError('git executable absent')
+        def run(argv, **options):
+            raise failure
+        def stop():
+            checks.append(None)
+            return False
+        backend = GitProcess(environment=entry().environment, run=run)
+        with self.assertRaises(FileNotFoundError) as caught:
+            backend.project_repository_root(Path.cwd(), should_stop=stop)
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(len(checks), 1)
+
+    def test_real_ports_shares_one_git_backend_with_host(self):
+        from support.entry import entry
+        ports = real_ports(environment=entry().environment)
+        self.assertIs(ports.host.git_backend, ports.git_backend)

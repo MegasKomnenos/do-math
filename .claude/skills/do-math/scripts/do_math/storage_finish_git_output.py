@@ -1,5 +1,21 @@
 """Pure decoding of Git cat-file batch responses, preserving order and exact bytes."""
 from .ports.git_backend import GitBackendError
+from pathlib import Path
+
+
+def parse_project_root(raw: bytes):
+    root = raw.decode().strip()
+    return Path(root) if root else None
+
+
+def parse_project_tree(returncode, raw: bytes):
+    return raw.decode().strip() if returncode == 0 else None
+
+
+def parse_project_paths(returncode, raw: bytes):
+    if returncode:
+        raise RuntimeError('cannot read tracked paths for the configured project')
+    return frozenset(name.decode('utf-8') for name in raw.split(b'\0') if name)
 
 
 def parse_object_info(specs, raw: bytes):

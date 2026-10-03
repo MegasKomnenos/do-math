@@ -169,7 +169,7 @@ class FormalConsumerLeanTests(unittest.TestCase):
                              ('verified', 'verified'))
             self.assertEqual(sim.instance['formal_results'][sim.instance['knowledge'][kid]['formal_result_id']]['publication_state'], 'accepted')
             with self.assertRaises(EnvironmentUnavailable) as caught:
-                require_active_environment(sim.instance, sim.runtime, current_identity=True, host=LocalHost(clock=sim.ports.clock, environment=sim.environment, jobs=sim.ports.jobs))
+                require_active_environment(sim.instance, sim.runtime, current_identity=True, host=LocalHost(clock=sim.ports.clock, environment=sim.environment, jobs=sim.ports.jobs, git_backend=sim.ports.git_backend))
             self.assertIn('approved toolchain file changed: ' + str(checker), str(caught.exception))
             self.assertEqual(sim.instance['active_trust_environment'], environment)
 
@@ -210,7 +210,7 @@ class InstalledCompilerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, \
                 ObservedCalls(capture={'job': lambda arguments: list(arguments['command'])}, job=formal._job_run) as observed:
             result = formal.verify_lean(source=knowledge_candidate()['lean_code'], declarations=['truth'],
-                workspace=Path(d), lean_command=actual_command(), expected_toolchain=approved, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+                workspace=Path(d), lean_command=actual_command(), expected_toolchain=approved, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
         self.assertEqual(result['status'], 'verified', result)
         self.assertEqual(result['toolchain'], approved)
         self.assertEqual(len(observed.calls['job']), 1)
@@ -226,7 +226,7 @@ class InstalledCompilerTests(unittest.TestCase):
         approved['sha256'] = '0' * 64
         with tempfile.TemporaryDirectory() as d:
             result = formal.verify_lean(source=knowledge_candidate()['lean_code'], declarations=['truth'],
-                workspace=Path(d), lean_command=actual_command(), expected_toolchain=approved, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+                workspace=Path(d), lean_command=actual_command(), expected_toolchain=approved, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
         self.assertEqual(result['status'], 'rejected')
         self.assertEqual(result['reason'], 'approved toolchain changed before execution')
         self.assertIsNone(result['command'])

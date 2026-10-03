@@ -2,7 +2,7 @@
 
 Commands run in this process through ``research_fixtures.run_cli`` on a copy of
 one CLI-created instance (``support.engine_cli_created``). ``cli.main`` and
-``cli.execute`` take no Ports, so the repository and the engine run on the real
+``cli.execute`` receive real Ports, so the repository and engine use the real
 Git process (1f seam ledger 6), which places these tests with the boundary tests.
 Every control is sent as a JSON file and its receipt and the published state are
 both checked. The legacy ``run --watch`` test replaced ``cli.ResearchEngine``

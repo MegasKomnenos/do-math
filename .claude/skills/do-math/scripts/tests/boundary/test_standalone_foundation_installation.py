@@ -26,8 +26,9 @@ class StandaloneFoundationTests(unittest.TestCase):
             shutil.copytree(Path(formal.__file__).parent, scripts / 'do_math',
                             ignore=shutil.ignore_patterns('__pycache__'))
             source = ("import sys,json; sys.path.insert(0,sys.argv[1]); "
-                      "from do_math import formal; from do_math.local_host import LocalHost; "
-                      "print(json.dumps([formal.toolchain_root(),formal.discover_lean(),LocalHost().discover_lean()]))")
+                      "from do_math import formal; import os; from do_math.wiring import real_ports; "
+                      "ports=real_ports(environment=dict(os.environ)); "
+                      "print(json.dumps([formal.toolchain_root(),formal.discover_lean(),ports.host.discover_lean()]))")
             ports = real_ports(environment=_entry.environment)
             result = formal._job_run([sys.executable, '-I', '-c', source, str(scripts)], root,
                 jobs=ports.jobs, clock=ports.clock, env={**os.environ, 'PATH': ''}, environment=_entry.environment)

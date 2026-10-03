@@ -33,6 +33,7 @@ record's fingerprint holds file creation times, which Windows cannot set, and
 the content hashes and Git object IDs built on it differ between runs.
 """
 from __future__ import annotations
+from copy import deepcopy
 
 import atexit
 from datetime import datetime, timezone
@@ -104,7 +105,9 @@ class Sim:
     def process_state(self):
         """What the fakes hold outside the files: the clock, the Job fake's process identities and the Git objects."""
         return {'clock': self.clock.state(), 'next_pid': self.jobs._next_pid, 'owner': dict(self.jobs.owner),
-                'git_objects': _copy_objects(self.ports.git_backend.objects)}
+                'git_objects': _copy_objects(self.ports.git_backend.objects),
+                'git_worktrees': deepcopy(self.ports.git_backend.worktrees),
+                'git_init_object_format': self.ports.git_backend.init_object_format}
 
     @classmethod
     def restored(cls, root, shared, instance_id, state):
@@ -112,6 +115,8 @@ class Sim:
         sim = cls.__new__(cls)
         sim.root, sim.shared = Path(root).resolve(), Path(shared).resolve()
         sim._wire(FakeClock(*state['clock']), None, _copy_objects(state['git_objects']))
+        sim.ports.git_backend.worktrees = deepcopy(state['git_worktrees'])
+        sim.ports.git_backend.init_object_format = state['git_init_object_format']
         sim.jobs._next_pid, sim.jobs.owner = state['next_pid'], dict(state['owner'])
         sim.repository, sim.instance_id = sim.root / 'repository', instance_id
         sim.engine = ResearchEngine(sim.repository, instance_id, ports=sim.ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)

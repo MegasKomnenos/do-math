@@ -404,7 +404,7 @@ class StorageRoundTripTests(unittest.TestCase):
             environment, binding = trust_environment(trust_fixture(Path(directory), ['synthetic-lean']),
                                                      environment_id='TE-test', source_ref='synthetic:approval')
             self.assertEqual(environment_errors(environment, binding), [])
-            self.assertEqual(check_environment(environment, binding, host=LocalHost(clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs), clock=_entry.ports.clock)['status'], 'verified')
+            self.assertEqual(check_environment(environment, binding, host=LocalHost(clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend), clock=_entry.ports.clock)['status'], 'verified')
             state, runtime, kid, _ = verified_knowledge(environment, binding=binding, identity=False)
             profiles = build_profiles(DEFAULT_CONFIG, host=_entry.ports.host)
             profile = next(p for p in profiles['execution_profiles'].values() if p['role'] == 'identity_review')

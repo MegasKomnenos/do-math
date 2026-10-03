@@ -11,6 +11,7 @@ from .local_host import LocalHost
 
 def real_ports(*, environment) -> Ports:
     clock, jobs = SystemClock(), WindowsJobs()
-    return Ports(clock=clock, git_backend=GitProcess(environment=environment), calls=ThreadCalls(), jobs=jobs,
+    git_backend = GitProcess(environment=environment)
+    return Ports(clock=clock, git_backend=git_backend, calls=ThreadCalls(), jobs=jobs,
                  scheduler=PowerShellScheduler(), http=UrllibHttp(),
-                 host=LocalHost(jobs=jobs, clock=clock, environment=environment))
+                 host=LocalHost(jobs=jobs, clock=clock, environment=environment, git_backend=git_backend))

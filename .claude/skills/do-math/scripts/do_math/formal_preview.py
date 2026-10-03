@@ -44,7 +44,7 @@ def main(argv=None, *, ports=None, environment=None):
                     allowed_axioms=tuple(settings['allowed_axioms']),
                     should_stop=stopped,
                     expected_toolchain=settings.get('expected_toolchain'),
-                    extract_evidence=False, clock=clock, jobs=jobs, environment=environment)
+                    extract_evidence=False, clock=clock, jobs=jobs, environment=environment, git_backend=ports.git_backend)
         result.update(authoritative=False, input_snapshot=context.get('snapshot'),
             assurance='Same supplied verifier code and configured command for the kernel check, signatures and axioms; '
                       'dependency evidence is not extracted. Central verification of the submitted source is still required. '

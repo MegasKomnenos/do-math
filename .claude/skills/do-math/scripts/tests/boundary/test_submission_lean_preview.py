@@ -108,7 +108,7 @@ class LeanPreviewTests(unittest.TestCase):
             install_tools(workspace, context, schema_for('research_work'), 1000000, clock=_entry.ports.clock)
             script = ('import json, sys; sys.path.insert(0, sys.argv[1]); from do_math import formal; '
                       'print(json.dumps({"file": formal.__file__, '
-                      '"errors": formal.toolchain_identity_errors(json.loads(sys.argv[2]))}))')
+                      '"errors": formal.toolchain_identity_errors(json.loads(sys.argv[2]), jobs=ports.jobs, clock=ports.clock, environment=env, git_backend=ports.git_backend)}))')
             result = subprocess.run([sys.executable, '-B', '-c', script,
                                      str(workspace / 'input/tools/submission-support.zip'), json.dumps(approved)],
                                     capture_output=True, text=True, encoding='utf-8', timeout=60)

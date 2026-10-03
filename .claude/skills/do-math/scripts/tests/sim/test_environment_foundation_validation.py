@@ -24,10 +24,11 @@ class ToolchainFoundationRecordTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.process_environment = _entry.environment
+        self.git_backend = _entry.ports.git_backend
         self.clock = FakeClock(wall=datetime(2090, 1, 1, tzinfo=timezone.utc))
         self.compiler = OutputCompiler('synthetic external compiler result')
         self.jobs = worker_jobs(self.compiler)
-        self.host = LocalHost(jobs=self.jobs, clock=self.clock, environment=_entry.environment)
+        self.host = LocalHost(jobs=self.jobs, clock=self.clock, environment=_entry.environment, git_backend=_entry.ports.git_backend)
         self.request = trust_fixture(self.root, ['synthetic-lean'])
         self.environment, self.binding = trust_environment(self.request)
         self.record_path = Path(self.request['toolchain_record']['path'])
@@ -37,7 +38,7 @@ class ToolchainFoundationRecordTests(unittest.TestCase):
         return records.read_record(self.record_path)
 
     def options(self, **changes):
-        return {'identity': self.request['toolchain'], 'jobs': self.jobs, 'clock': self.clock, 'environment': self.process_environment, **changes}
+        return {'identity': self.request['toolchain'], 'jobs': self.jobs, 'clock': self.clock, 'environment': self.process_environment, 'git_backend': self.git_backend, **changes}
 
     def rerecord(self):
         from support.entry import entry

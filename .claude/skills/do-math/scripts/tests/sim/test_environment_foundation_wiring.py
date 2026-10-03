@@ -45,7 +45,7 @@ class EnvironmentFoundationWiringTests(unittest.TestCase):
             olean.parent.mkdir(parents=True)
             olean.write_bytes(b'prelude')
             command = [str(executable)]
-            options = {'jobs': jobs, 'clock': clock, 'environment': _entry.environment}
+            options = {'jobs': jobs, 'clock': clock, 'environment': _entry.environment, 'git_backend': _entry.ports.git_backend}
             result = setup_lean.record_installation(command, root / 'records', root / 'evidence', **options)
             self.assertEqual((result['status'], result['created'], result['representative_check_seconds']),
                              ('recorded', True, 1))

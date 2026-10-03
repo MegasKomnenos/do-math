@@ -47,16 +47,14 @@ def _text_file(path: str) -> str:
         raise CliInputError(f"cannot read text file {path}: {error}") from error
 
 
-def _require_git(repository: Path, create: bool = False) -> None:
+def _require_git(repository: Path, create: bool = False, *, backend) -> None:
     if create:
         if repository.exists() and (not repository.is_dir() or any(repository.iterdir())):
             raise CliInputError("--create-repository accepts only a missing or empty directory")
         repository.mkdir(parents=True, exist_ok=True)
-        result = subprocess.run(["git", "-C", str(repository), "init", "-q"], check=False, capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        if result.returncode:
+        if not backend.initialize_repository(repository):
             raise GitStateStoreError("git init failed")
-    result = subprocess.run(["git", "-C", str(repository), "rev-parse", "--git-dir"], check=False, capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-    if result.returncode:
+    if not backend.repository_exists(repository):
         raise CliInputError("--repository must name an existing Git repository; use init --create-repository explicitly")
 
 
@@ -122,7 +120,7 @@ def execute(args: argparse.Namespace, *, ports, codex_home, environment, host_id
                          include_operations=args.include_operations, backend=ports.git_backend, clock=ports.clock)
         return (timeline_csv(value) if args.format == "csv" else value), 0
     if command == "init":
-        _require_git(args.repository, args.create_repository)
+        _require_git(args.repository, args.create_repository, backend=ports.git_backend)
         goal = args.goal if args.goal is not None else _text_file(args.goal_file)
         config = {} if args.config_file is None else _json_file(args.config_file)
         if args.effort is not None:

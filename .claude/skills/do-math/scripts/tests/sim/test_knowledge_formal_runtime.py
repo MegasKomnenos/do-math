@@ -27,7 +27,7 @@ class FormalRuntimeTests(unittest.TestCase):
             jobs = worker_jobs(compiler)
             with ObservedCalls(run=formal._job_run, launch=jobs.launch) as observed:
                 result = formal.verify_lean(source='', declarations=['good'], workspace=workspace,
-                    lean_command=[sys.executable], expected_toolchain=toolchain, jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment)
+                    lean_command=[sys.executable], expected_toolchain=toolchain, jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment, git_backend=_entry.ports.git_backend)
         self.assertEqual(result['status'], 'failed')
         self.assertEqual(result['reason'], 'lean rejected')
         self.assertEqual(observed.count('run'), 1)

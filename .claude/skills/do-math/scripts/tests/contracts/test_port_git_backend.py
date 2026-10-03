@@ -8,7 +8,7 @@ layout too.
 """
 import unittest
 
-from support.fakes.git_backend import make_fake
+from support.fakes.git_backend import make_fake, ProjectWorktree
 
 
 from support.port_contracts.git_backend import GitBackendContract
@@ -17,8 +17,20 @@ class FakeGitBackendContract(GitBackendContract, unittest.TestCase):
     def make(self):
         return make_fake()
 
+    def configure_project(self, *, head=True):
+        self.backend.worktrees[self.repo.resolve()] = ProjectWorktree(
+            trees={'.': self.root, 'research': self.research} if head else {},
+            tracked_paths=frozenset({'research/state.json', 'runtime/queue.json'}) if head else frozenset())
+        (self.repo / 'research').mkdir(exist_ok=True)
 
-class FakeSha256GitBackendContract(GitBackendContract, unittest.TestCase):
+    def declare_project_diff(self, raw):
+        self.backend.worktrees[self.repo.resolve()].diffs['research'] = raw
+
+    def remove_project(self):
+        del self.backend.worktrees[self.repo.resolve()]
+
+
+class FakeSha256GitBackendContract(FakeGitBackendContract):
     object_format = 'sha256'
 
     def make(self):

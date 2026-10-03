@@ -68,7 +68,7 @@ class PublicRecordStorageTests(unittest.TestCase):
         self.assertEqual(binding, config['binding'])
         apply_control(sim, 'trust', config={'operation': 'transition', 'env_id': eid})
         # The real host observation of the synthetic toolchain, as the legacy test made it.
-        check = check_environment(environment, binding, host=LocalHost(clock=sim.ports.clock, environment=sim.environment, jobs=sim.ports.jobs), clock=sim.ports.clock)
+        check = check_environment(environment, binding, host=LocalHost(clock=sim.ports.clock, environment=sim.environment, jobs=sim.ports.jobs, git_backend=sim.ports.git_backend), clock=sim.ports.clock)
         self.assertEqual((check['status'], check['fingerprint_sha256']), ('verified', binding['fingerprint_sha256']))
         sim.engine._finish_trust_transition(next(reversed(sim.runtime['trust_transitions'])), check)
         sim.engine._save()

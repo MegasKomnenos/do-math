@@ -37,7 +37,7 @@ class InstalledLeanStorageTests(KnowledgeRoundtripHarness):
         _entry.ports = real_ports(environment=_entry.environment)
         source = 'theorem \u212a (\u2126 : True) : True := \u2126\r\ntheorem K : True := True.intro\n-- e\u0301\n'
         names = ['\u212a', 'K']
-        observed = formal.verify_lean(source=source, declarations=names, workspace=self.root, lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+        observed = formal.verify_lean(source=source, declarations=names, workspace=self.root, lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
         self.assertEqual(observed['status'], 'verified', observed.get('reason'))
         instance, runtime, self.kid = installed_trust_state(self.root, observed['toolchain'])
         # The legacy fixture's engine state also named its workspace and a configured command
@@ -54,7 +54,7 @@ class InstalledLeanStorageTests(KnowledgeRoundtripHarness):
         proposal = kr.proposal_view(self.state, self.kid)
         self.assertEqual(proposal['lean_code'].encode(), source.encode())
         observed = formal.verify_lean(source=proposal['lean_code'], declarations=proposal['declaration_names'],
-            workspace=self.root, lean_command=actual_command(), expected_toolchain=observed['toolchain'], clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+            workspace=self.root, lean_command=actual_command(), expected_toolchain=observed['toolchain'], clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
         self.assertEqual(observed['status'], 'verified', observed.get('reason'))
         self.state = kr.record_formal_result(self.state, self.kid, observed, 'TE-old', runtime=self.runtime)
         expected = copy.deepcopy(self.state['formal_results'][fid])

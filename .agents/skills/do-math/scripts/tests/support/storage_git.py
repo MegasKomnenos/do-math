@@ -44,6 +44,14 @@ class ObservedGit(InProcessGit):
         self._observe('describe', ())
         return super().describe(repository)
 
+    def project_repository_root(self, project_root, *, should_stop=None):
+        self._observe('project_repository_root', (project_root,))
+        return super().project_repository_root(project_root, should_stop=should_stop)
+
+    def project_snapshot(self, project_root, repository_root, *, should_stop=None):
+        self._observe('project_snapshot', (project_root, repository_root))
+        return super().project_snapshot(project_root, repository_root, should_stop=should_stop)
+
     def write_object(self, repository, kind, body):
         self._observe('write_object', (kind,))
         return super().write_object(repository, kind, body)

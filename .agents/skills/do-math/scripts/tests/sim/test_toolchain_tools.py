@@ -34,14 +34,14 @@ class HostIdentityTests(unittest.TestCase):
         from support.entry import entry
         _entry = entry()
         toolchain_identity_errors = formal.toolchain_identity_errors
-        self.assertEqual(toolchain_identity_errors(self.request['toolchain'], clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment), [])
+        self.assertEqual(toolchain_identity_errors(self.request['toolchain'], clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment, git_backend=_entry.ports.git_backend), [])
         # Each recorded hash holds on its own, even when the executable is also a command file.
         wrong = {**self.request['toolchain'], 'sha256': '0' * 64}
-        self.assertEqual(toolchain_identity_errors(wrong, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment),
+        self.assertEqual(toolchain_identity_errors(wrong, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment, git_backend=_entry.ports.git_backend),
                          ['approved toolchain file changed: ' + self.request['toolchain']['executable']])
         lake = Path(self.request['toolchain']['executable']).with_name('lake.exe')
         lake.write_bytes(b'replaced by an update')
-        self.assertEqual(toolchain_identity_errors(self.request['toolchain'], clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment),
+        self.assertEqual(toolchain_identity_errors(self.request['toolchain'], clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment, git_backend=_entry.ports.git_backend),
                          ['approved toolchain file changed: ' + str(lake)])
         # The checker is its running bytes: a copy elsewhere is the same checker,
         # other recorded bytes are not.
@@ -49,10 +49,10 @@ class HostIdentityTests(unittest.TestCase):
         copy.write_bytes(Path(self.request['toolchain']['verifier_path']).read_bytes())
         moved = {**self.request['toolchain'], 'verifier_path': str(copy)}
         lake_changed = 'approved toolchain file changed: ' + str(lake)
-        self.assertEqual(toolchain_identity_errors(moved, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment), [lake_changed])
+        self.assertEqual(toolchain_identity_errors(moved, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment, git_backend=_entry.ports.git_backend), [lake_changed])
         copy.write_bytes(b'another checker')
         other = {**moved, 'verifier_sha256': hashlib.sha256(b'another checker').hexdigest()}
-        self.assertEqual(toolchain_identity_errors(other, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment), ['approved checker is not the running checker', lake_changed])
+        self.assertEqual(toolchain_identity_errors(other, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment, git_backend=_entry.ports.git_backend), ['approved checker is not the running checker', lake_changed])
         project = self.root / 'project'
         project.mkdir()
         (project / 'lean-toolchain').write_text('leanprover/lean4:v4.32.0\n', encoding='utf-8')
@@ -60,7 +60,7 @@ class HostIdentityTests(unittest.TestCase):
         command = ['lake', '--dir', str(project), 'env', 'lean']
         with tempfile.TemporaryDirectory() as workspace:
             observed = formal._project_identity(command, workspace=Path(workspace),
-                                                expected={'manifest_hashes': None, 'source_identity': None}, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+                                                expected={'manifest_hashes': None, 'source_identity': None}, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
         self.assertEqual(observed['search_paths'], [])
         lake.write_bytes(('CORE_TESTS synthetic bin/lake.exe for synthetic-lean').encode())
         for name, text in (('lean-toolchain', 'leanprover/lean4:v4.33.0\n'), ('lake-manifest.json', '{"packages": [1]}')):
@@ -68,7 +68,7 @@ class HostIdentityTests(unittest.TestCase):
                 original = (project / name).read_bytes()
                 (project / name).write_text(text, encoding='utf-8')
                 chain = {**self.request['toolchain'], 'configured_command': command, 'project': observed}
-                self.assertEqual(toolchain_identity_errors(chain, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment), ['approved project inputs changed'])
+                self.assertEqual(toolchain_identity_errors(chain, clock=_entry.ports.clock, jobs=_entry.ports.jobs, environment=_entry.environment, git_backend=_entry.ports.git_backend), ['approved project inputs changed'])
                 (project / name).write_bytes(original)
 
 

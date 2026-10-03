@@ -71,7 +71,7 @@ class ResearchEngine(CallEngineMixin, CoreEngineMixin, QuestionEngineMixin, Revi
                                   else Path(__file__).resolve().parents[2]).resolve()
         self.store = ResearchRepository(repository, instance_id, backend=ports.git_backend, clock=ports.clock)
         self.runner = ModelRunner(jobs=ports.jobs, clock=ports.clock, environment=environment, host_id=host_id)
-        self.formal_verifier = partial(verify_lean, jobs=ports.jobs, clock=ports.clock, environment=environment)
+        self.formal_verifier = partial(verify_lean, jobs=ports.jobs, clock=ports.clock, environment=environment, git_backend=ports.git_backend)
         self.head, self.instance, self.runtime = self.store.load()
         self._init_process_state(
             transport=ControlTransport(Path(self.instance["workspace"]) / "execution-control" / instance_id,

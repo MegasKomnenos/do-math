@@ -24,7 +24,7 @@ def setUpModule():
 class PublicationTrustIdentityTests(unittest.TestCase):
     def test_changed_identity_blocks_match_publication_but_olean_metadata_is_not_rechecked(self):
         sim = reviewed_sim()
-        ports = replace(sim.ports, host=LocalHost(jobs=sim.jobs, clock=sim.clock, environment=sim.environment))
+        ports = replace(sim.ports, host=LocalHost(jobs=sim.jobs, clock=sim.clock, environment=sim.environment, git_backend=sim.ports.git_backend))
         engine = ResearchEngine(sim.repository, sim.instance_id, ports=ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
         cycle = deepcopy(cycle_of(sim))
         row = next(e for e in engine.runtime['executions'].values() if e['role'] == 'identity_review')

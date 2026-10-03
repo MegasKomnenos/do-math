@@ -145,3 +145,86 @@ class GitBackendContract:
     def test_first_parent_line_lists_commits_after_parent_up_to_head_in_order(self):
         self.assertEqual(self.backend.first_parent_line(self.repo, self.first, self.third), [self.second, self.third])
         self.assertEqual(self.backend.first_parent_line(self.repo, self.third, self.third), [])
+
+    def configure_project(self, *, head=True):
+        """Declare the same index/worktree in each backend's fixture."""
+        raise NotImplementedError
+
+    def test_project_snapshot_reports_subtree_and_repository_relative_index(self):
+        self.configure_project()
+        project = self.repo / 'research'
+        root = self.backend.project_repository_root(project)
+        self.assertEqual(root, self.repo.resolve())
+        facts = self.backend.project_snapshot(project, root)
+        self.assertEqual(facts.repository_root, root)
+        self.assertEqual(facts.tree_oid, self.research)
+        self.assertEqual(facts.raw_diff, b'')
+        self.assertEqual(facts.tracked_paths, frozenset({'research/state.json'}))
+        whole = self.backend.project_snapshot(self.repo, root)
+        self.assertEqual(whole.tree_oid, self.root)
+        self.assertEqual(whole.tracked_paths, frozenset({'research/state.json', 'runtime/queue.json'}))
+
+    def test_project_without_head_or_subtree_has_none_tree(self):
+        self.configure_project(head=False)
+        facts = self.backend.project_snapshot(self.repo, self.repo.resolve())
+        self.assertIsNone(facts.tree_oid)
+        self.assertEqual(facts.raw_diff, b'')
+        self.assertEqual(facts.tracked_paths, frozenset())
+
+    def test_project_untracked_subdirectory_has_no_tree_or_index_paths(self):
+        self.configure_project()
+        project = self.repo / 'untracked'
+        project.mkdir()
+        facts = self.backend.project_snapshot(project, self.repo.resolve())
+        self.assertEqual((facts.tree_oid, facts.raw_diff, facts.tracked_paths), (None, b'', frozenset()))
+
+    def test_project_without_git_has_empty_facts_and_outside_root_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            outside = Path(directory).resolve()
+            self.assertIsNone(self.backend.project_repository_root(outside))
+            facts = self.backend.project_snapshot(outside, None)
+            self.assertEqual((facts.repository_root, facts.tree_oid, facts.raw_diff, facts.tracked_paths),
+                             (None, None, b'', frozenset()))
+            with self.assertRaises(ValueError):
+                self.backend.project_snapshot(outside, self.repo.resolve())
+
+    def test_project_stop_before_and_after_each_read(self):
+        self.configure_project()
+        for count in range(1, 7):
+            seen = []
+            def stop():
+                seen.append(None)
+                return len(seen) == count
+            with self.subTest(check=count), self.assertRaisesRegex(RuntimeError, 'stopped'):
+                self.backend.project_snapshot(self.repo, self.repo.resolve(), should_stop=stop)
+            self.assertEqual(len(seen), count)
+        for count in (1, 2):
+            seen = []
+            def stop():
+                seen.append(None)
+                return len(seen) == count
+            with self.assertRaisesRegex(RuntimeError, 'stopped'):
+                self.backend.project_repository_root(self.repo, should_stop=stop)
+            self.assertEqual(len(seen), count)
+
+    def test_project_disappeared_repository_is_tracked_path_failure(self):
+        self.configure_project()
+        root = self.backend.project_repository_root(self.repo)
+        self.remove_project()
+        with self.assertRaisesRegex(RuntimeError, '^cannot read tracked paths for the configured project$'):
+            self.backend.project_snapshot(self.repo, root)
+
+    def test_project_diff_preserves_non_utf8_bytes(self):
+        self.configure_project()
+        raw = b'\xff\n'
+        new = write_object(self.repo, 'blob', raw, self.object_format)
+        expected = (f'diff --git a/research/state.json b/research/state.json\n'
+                    f'index {self.blob[:7]}..{new[:7]} 100644\n'
+                    '--- a/research/state.json\n+++ b/research/state.json\n'
+                    '@@ -1 +1 @@\n-{"a": 1}\n').encode() + b'+\xff\n'
+        (self.repo / 'research/state.json').write_bytes(raw)
+        self.declare_project_diff(expected)
+        facts = self.backend.project_snapshot(self.repo / 'research', self.repo.resolve())
+        self.assertEqual(facts.raw_diff, expected)
+        self.assertEqual(facts.tree_oid, self.research)
+        self.assertEqual(facts.tracked_paths, frozenset({'research/state.json'}))

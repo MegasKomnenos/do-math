@@ -26,13 +26,14 @@ SCRIPTS = Path(__file__).resolve().parents[2]
 RUNNERS = {'run_tests.py', 'test_categories.py'}
 
 PROCESS_STARTS = {
-    ('do_math/cli.py', '_require_git'): 'git version and repository checks before a command',
     ('do_math/codex_adapter.py', 'run'): 'the CLI surface probe (--version, --help)',
-    ('do_math/formal.py', '_git'): 'git reads of the Lake project identity',
     ('setup_lean.py', 'run'): 'the Lean setup tool',
 }
 INJECTED_STARTS = {
+    ('do_math/git_process.py', 'initialize_repository', '_run_process'): 'CLI Git init, preserving ambient environment and exit-only result',
+    ('do_math/git_process.py', 'repository_exists', '_run_process'): 'CLI Git directory existence, preserving the accepted repository population',
     ('do_math/git_process.py', '_run', '_run_process'): 'the Git backend external subprocess boundary',
+    ('do_math/git_process.py', '_project_read', '_run_process'): 'project identity Git reads, preserving ambient configuration',
     ('do_math/cli_worker.py', 'run_cli', 'spawn'): 'the provider CLI inside the worker Job',
     ('do_math/formal.py', '_worker', 'spawn'): 'Lean inside the Lean worker Job',
     ('do_math/powershell_scheduler.py', 'run', 'runner'): 'the task scheduler script',
@@ -57,7 +58,7 @@ INTERPRETER_USES = {
     ('do_math/scheduled_operator.py', 'run_engine'): 'the scheduled engine child, piped',
     ('do_math/scheduled_operator.py', 'recovery'): 'the installation probe, piped',
 }
-# The one function every executable-identity comparison goes through (의무 9-A).
+# Every executable identity uses the same PATH/cwd/symlink rule (의무 9-A).
 EXECUTABLE_IDENTITY = {('do_math/file_io.py', 'executable_identity')}
 
 

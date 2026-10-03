@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib, json, os, re, shutil, subprocess, sys, tempfile, traceback
 from pathlib import Path
 from .lean_evidence import (AXIOMS, FORMAL_EVIDENCE_FIELDS, LAKE_PROJECT_FILES, LEAN_VERSION, READY_MARKER,
-                            VerificationStopped, _check_stop, approved_toolchain_differs, check_completion_status,
+                            VerificationStopped, check_stop, approved_toolchain_differs, check_completion_status,
                             check_lean_command, check_search_path_observation, command_verdict,
                             compare_formal_results, compiler_failure_reason, declaration_rejection, forbidden_axioms,
                             identity_rejection_reason, is_lake_project_command,
@@ -20,16 +20,6 @@ from do_math.windows_job import process_identity
 # from the module's own loader: a file path or a zip member of the same bytes is
 # the same checker. Inspection records it; approved identities are compared with it.
 _RUNNING_CHECKER_SHA256 = hashlib.sha256(__loader__.get_data(__file__)).hexdigest()
-
-
-def _git(command, should_stop=None):
-    # A short local read of the trusted project, not untrusted code: no Job or worker.
-    # A stop request is honoured before and after it.
-    _check_stop(should_stop)
-    result = subprocess.run(command, stdin=subprocess.DEVNULL, capture_output=True,
-                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-    _check_stop(should_stop)
-    return result
 
 
 def toolchain_root() -> Path | None:
@@ -51,37 +41,29 @@ def discover_lean() -> list[str] | None:
     return [str(portable)] if portable.is_file() else None
 
 # Per-process memos of facts derived from unchanged inputs (accidental-change model).
-_GIT_ROOTS = {}     # resolved project path -> git top level
+_GIT_ROOTS = {}     # (backend identity, resolved project path) -> (backend, Git root).
+# Retain each backend for this owner lifetime; the port need not be hashable or
+# use identity equality. A retained identity cannot be reused by another world.
 _SEARCH_PATHS = {}  # digest of (Lake command, project identity, Lake executable) -> search paths
 
 
-def project_source_identity(project_root: Path, *, should_stop=None) -> dict:
+def project_source_identity(project_root: Path, *, git_backend, should_stop=None) -> dict:
     """Identify the configured Lake project's tracked subtree and local inputs (not its .lake)."""
-    _check_stop(should_stop)
+    check_stop(should_stop)
     root=project_root.resolve()
-    if root not in _GIT_ROOTS:  # Where the repository starts changes only if it is moved.
-        _GIT_ROOTS[root]=_git(['git','-C',str(root),'rev-parse','--show-toplevel'],should_stop).stdout.decode().strip()
-    gitroot=_GIT_ROOTS[root]
-    tree,diff,tracked_paths=None,b'',set()
-    if gitroot:
-        gitroot=Path(gitroot); relative='.' if root==gitroot else root.relative_to(gitroot).as_posix()
-        target='HEAD^{tree}' if relative=='.' else f'HEAD:{relative}'
-        tree_result=_git(['git','-C',str(gitroot),'rev-parse','--verify',target],should_stop)
-        tree=tree_result.stdout.decode().strip() if tree_result.returncode == 0 else None
-        diff=_git(['git','-C',str(gitroot),'diff','--no-ext-diff','HEAD','--',relative],should_stop).stdout
-        tracked_result=_git(['git','-C',str(gitroot),'ls-files','-z','--',relative],should_stop)
-        if tracked_result.returncode:
-            raise RuntimeError('cannot read tracked paths for the configured project')
-        tracked_paths={name.decode('utf-8') for name in tracked_result.stdout.split(b'\0') if name}
-    else:
-        gitroot=root  # Outside Git every project input is an untracked file.
+    key = (id(git_backend), root)
+    if key not in _GIT_ROOTS:
+        _GIT_ROOTS[key] = (git_backend, git_backend.project_repository_root(root, should_stop=should_stop))
+    snapshot = git_backend.project_snapshot(root, _GIT_ROOTS[key][1], should_stop=should_stop)
+    gitroot = snapshot.repository_root if snapshot.repository_root is not None else root
+    tree, diff, tracked_paths = snapshot.tree_oid, snapshot.raw_diff, snapshot.tracked_paths
     untracked={}
     # .lake holds dependency sources and build output; lake-manifest.json already pins them.
     for directory,dirs,names in os.walk(root):
-        _check_stop(should_stop)
+        check_stop(should_stop)
         dirs[:]=[x for x in dirs if x!='.lake']
         for path in (Path(directory)/name for name in names):
-            _check_stop(should_stop)
+            check_stop(should_stop)
             if path.suffix=='.lean' or path.name in LAKE_PROJECT_FILES:
                 tracked=path.relative_to(gitroot).as_posix() in tracked_paths
                 if not tracked: untracked[path.relative_to(root).as_posix()]=cached_sha256(path)
@@ -89,7 +71,7 @@ def project_source_identity(project_root: Path, *, should_stop=None) -> dict:
     # entries. Keep the full filename/content sensitivity without copying a
     # large inventory into every role prompt and formal result.
     untracked_digest = json_digest(untracked)
-    _check_stop(should_stop)
+    check_stop(should_stop)
     return {'root':str(root),'git_tree':tree,'working_diff_hash':hashlib.sha256(diff).hexdigest(),
             'untracked_file_count':len(untracked),'untracked_sha256':untracked_digest}
 
@@ -186,13 +168,13 @@ def _job_run(command: list[str], cwd: Path, *, should_stop=None, on_started=None
     finally: job.close()
 
 
-def _project_identity(command, should_stop=None, *, workspace=None, expected=None, jobs, clock, environment):
+def _project_identity(command, should_stop=None, *, workspace=None, expected=None, jobs, clock, environment, git_backend):
     if not is_lake_project_command(command):
         return None
-    _check_stop(should_stop)
+    check_stop(should_stop)
     root = Path(lake_project_dir(command)).resolve(strict=True)
     identity={'manifest_hashes': {name: cached_sha256(root/name) for name in LAKE_PROJECT_FILES if (root/name).is_file()},
-              'source_identity': project_source_identity(root,should_stop=should_stop)}
+              'source_identity': project_source_identity(root,git_backend=git_backend,should_stop=should_stop)}
     if project_inputs_changed(identity, expected):
         return {**identity,'search_paths':[]}
     prefix=lake_env_prefix(command, workspace)
@@ -214,11 +196,11 @@ def _project_identity(command, should_stop=None, *, workspace=None, expected=Non
     return identity
 
 
-def inspect_toolchain(command, workspace, *, should_stop=None, jobs, clock, environment):
+def inspect_toolchain(command, workspace, *, should_stop=None, jobs, clock, environment, git_backend):
     """Observe exact tool identity; this does not run environment validation."""
     command = list(command)
     check_lean_command(command)
-    _check_stop(should_stop)
+    check_stop(should_stop)
     resolved = executable_identity(command[0], strict=True)
     code, stdout, stderr, stopped = _job_run([*command, '--version'], Path(workspace), should_stop=should_stop, jobs=jobs, clock=clock, environment=environment)
     if stopped: raise VerificationStopped('toolchain observation stopped')
@@ -226,7 +208,7 @@ def inspect_toolchain(command, workspace, *, should_stop=None, jobs, clock, envi
         raise RuntimeError('toolchain version observation failed: ' + stderr)
     result = {'executable': str(resolved), 'sha256': cached_sha256(resolved),
         'configured_command': command, 'version': stdout.strip(), 'version_exit': code,
-        'project': _project_identity(command,should_stop,workspace=workspace,jobs=jobs,clock=clock, environment=environment),
+        'project': _project_identity(command,should_stop,workspace=workspace,jobs=jobs,clock=clock, environment=environment, git_backend=git_backend),
         'verifier_sha256': _RUNNING_CHECKER_SHA256, 'verifier_path':str(Path(__file__).resolve()),
         'executables': {str(Path(p).resolve()): cached_sha256(Path(p)) for p in command
                         if Path(p).is_file() and Path(p).suffix.lower() in {'.exe', '.dll'}}}
@@ -236,7 +218,7 @@ def inspect_toolchain(command, workspace, *, should_stop=None, jobs, clock, envi
     return result
 
 
-def toolchain_identity_errors(toolchain, *, should_stop=None, jobs, clock, environment):
+def toolchain_identity_errors(toolchain, *, should_stop=None, jobs, clock, environment, git_backend):
     """Recompute the local facts of an approved identity: the recorded executable
     and checker bytes, the running checker and the Lake project inputs.
 
@@ -263,7 +245,7 @@ def toolchain_identity_errors(toolchain, *, should_stop=None, jobs, clock, envir
     try:
         with tempfile.TemporaryDirectory(prefix='do-math-identity-') as workspace:
             project = _project_identity(toolchain['configured_command'], should_stop,
-                                        workspace=Path(workspace), expected=toolchain['project'], jobs=jobs, clock=clock, environment=environment)
+                                        workspace=Path(workspace), expected=toolchain['project'], jobs=jobs, clock=clock, environment=environment, git_backend=git_backend)
     except VerificationStopped:
         raise
     except (OSError, RuntimeError, ValueError) as error:
@@ -277,7 +259,7 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
                 lean_command: list[str] | None = None,
                 allowed_axioms: tuple[str,...] = AXIOMS, should_stop=None,
                 expected_toolchain: dict | None = None, on_started=None, launch_ticket=None,
-                extract_evidence: bool = True, jobs, clock, environment) -> dict:
+                extract_evidence: bool = True, jobs, clock, environment, git_backend) -> dict:
     """Verify Lean to completion.
 
     The output is preserved except the dependency body rows that a verified result
@@ -297,18 +279,18 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
     verdict=command_verdict(command)
     if verdict: return {**base,"status":verdict[0],"reason":verdict[1]}
     try:
-        _check_stop(should_stop)
+        check_stop(should_stop)
         # Compare the same canonical executable identity that inspect_toolchain records.
         resolved=executable_identity(command[0])
         if expected_toolchain is not None:
             if approved_toolchain_differs(expected_toolchain, command, str(resolved)):
                 return {**base,'status':'rejected','reason':'approved toolchain changed before execution',
                         'error_kind':'trust_environment'}
-            identity_errors=toolchain_identity_errors(expected_toolchain,should_stop=should_stop,jobs=jobs,clock=clock, environment=environment)
+            identity_errors=toolchain_identity_errors(expected_toolchain,should_stop=should_stop,jobs=jobs,clock=clock, environment=environment, git_backend=git_backend)
             if identity_errors:
                 return {**base,'status':'rejected','reason':identity_rejection_reason(identity_errors),'identity_errors':identity_errors,
                         'error_kind':'trust_environment'}
-        toolchain=inspect_toolchain(command,workspace,should_stop=should_stop,jobs=jobs,clock=clock, environment=environment) if expected_toolchain is None else dict(expected_toolchain)
+        toolchain=inspect_toolchain(command,workspace,should_stop=should_stop,jobs=jobs,clock=clock, environment=environment, git_backend=git_backend) if expected_toolchain is None else dict(expected_toolchain)
     except VerificationStopped as error:
         return {**base,'status':'stopped','reason':str(error),'phase':'preparation'}
     except (OSError,RuntimeError,ValueError) as error:
@@ -322,7 +304,7 @@ def verify_lean(*, source: str, declarations: list[str], workspace: Path,
             if on_started is not None:
                 on_started(identity)
         try:
-            _check_stop(should_stop)
+            check_stop(should_stop)
             code,stdout,stderr,stopped=_job_run([*command,str(check)],Path(directory),should_stop=should_stop,
                 on_started=started,on_finished=lambda observed:local_job_usage.update(observed),
                 job_name=launch_ticket['job_name'] if launch_ticket is not None else None, jobs=jobs, clock=clock, environment=environment)

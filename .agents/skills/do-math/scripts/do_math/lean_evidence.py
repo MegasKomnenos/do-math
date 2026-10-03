@@ -21,7 +21,7 @@ class VerificationStopped(RuntimeError):
     pass
 
 
-def _check_stop(should_stop):
+def check_stop(should_stop):
     if should_stop and should_stop():
         raise VerificationStopped('verification stopped')
 
@@ -351,7 +351,7 @@ def parse_evidence(base, declarations, allowed_axioms, should_stop=None, *, extr
     kept=[]  # The output without the dependency body rows reduced to hashes.
     # Unlike splitlines(), this does not duplicate the complete output as a list of strings.
     for match in re.finditer(r'[^\n]*(?:\n|$)',base['stdout']):
-        _check_stop(should_stop)
+        check_stop(should_stop)
         line=match.group(0).rstrip('\r\n')
         if line in begin and begin[line] not in signatures:
             capture=begin[line]; fragments=[]
@@ -414,7 +414,7 @@ def parse_evidence(base, declarations, allowed_axioms, should_stop=None, *, extr
         return {**base,'status':'verified','reason':None}
     if set(extracted)!=selected: return {**base,'status':'failed','reason':'dependency output missing'}
     for declaration,row in extracted.items():
-        _check_stop(should_stop)
+        check_stop(should_stop)
         if set(row['axioms']) != set(axiom_rows[declaration]):
             return {**base,'status':'failed','reason':'axiom extraction mismatch'}
         dependencies=sorted(set(row['dependencies']))

@@ -14,14 +14,15 @@ def adapter_for(profile, *, clock, jobs):
 
 
 class LocalHost:
-    def __init__(self, *, jobs, clock, environment):
+    def __init__(self, *, jobs, clock, environment, git_backend):
         self.jobs, self.clock, self.environment = jobs, clock, environment
+        self.git_backend = git_backend
 
     def discover_lean(self):
         return formal.discover_lean()
 
     def toolchain_identity_errors(self, toolchain, *, should_stop=None):
-        return formal.toolchain_identity_errors(toolchain, should_stop=should_stop, jobs=self.jobs, clock=self.clock, environment=self.environment)
+        return formal.toolchain_identity_errors(toolchain, should_stop=should_stop, jobs=self.jobs, clock=self.clock, environment=self.environment, git_backend=self.git_backend)
 
     def cli_observation_key(self, profile):
         return adapter_for(profile, clock=self.clock, jobs=self.jobs).observation_key()

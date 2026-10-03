@@ -62,7 +62,7 @@ class MachineProfileTests(unittest.TestCase):
             self.assertEqual(ep.profile_ref(p), ep.profile_ref(formal_profile(second)))
             self.assertEqual(ep.machine_invocation(p, trust_environment=env), args)
             jobs = ProviderJobs()
-            result = formal.verify_lean(source=SOURCE, declarations=["t"], workspace=Path(directory), jobs=jobs, **args, clock=_entry.ports.clock, environment=_entry.environment)
+            result = formal.verify_lean(source=SOURCE, declarations=["t"], workspace=Path(directory), jobs=jobs, **args, clock=_entry.ports.clock, environment=_entry.environment, git_backend=_entry.ports.git_backend)
             self.assertEqual(jobs.launched, [], "changed tool was started")
             self.assertEqual((result["status"], result["reason"]), ("rejected", "approved toolchain changed before execution"))
             self.assertEqual(result["identity_errors"], ["approved toolchain file changed: " + str(tool.resolve())])
@@ -88,7 +88,7 @@ class MachineProfileTests(unittest.TestCase):
             other.write_bytes(b"edition")
             jobs = ProviderJobs()
             with patch.dict(os.environ, {"PATH": str(other.parent)}):
-                result = formal.verify_lean(source=SOURCE, declarations=["t"], workspace=root, jobs=jobs, **args, clock=_entry.ports.clock, environment=_entry.environment)
+                result = formal.verify_lean(source=SOURCE, declarations=["t"], workspace=root, jobs=jobs, **args, clock=_entry.ports.clock, environment=_entry.environment, git_backend=_entry.ports.git_backend)
             self.assertEqual(jobs.launched, [], "another resolution was started")
             self.assertEqual((result["status"], result["reason"]), ("rejected", "approved toolchain changed before execution"))
             self.assertEqual(result["error_kind"], "trust_environment")

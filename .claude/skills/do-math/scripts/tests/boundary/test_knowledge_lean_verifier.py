@@ -36,8 +36,8 @@ class InstalledLeanTests(unittest.TestCase):
                   "theorem em' (p : Prop) : p ∨ ¬p := Classical.em p\ntheorem t : True := True.intro\n")
         names = ['leaf', "em'", 't']
         with tempfile.TemporaryDirectory() as d:
-            together = verify_lean(source=source, declarations=names, workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
-            alone = {name: verify_lean(source=source, declarations=[name], workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+            together = verify_lean(source=source, declarations=names, workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
+            alone = {name: verify_lean(source=source, declarations=[name], workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
                      for name in names}
         self.assertEqual(together['status'], 'verified', together)
         self.assertEqual(set(together['axioms']["em'"]), {'Classical.choice', 'Quot.sound', 'propext'})
@@ -57,7 +57,7 @@ class InstalledLeanTests(unittest.TestCase):
         names = ['\u212a', 'K']
         source = 'theorem \u212a (\u2126 : True) : True := \u2126\r\ntheorem K : True := True.intro\n-- e\u0301\n'
         with tempfile.TemporaryDirectory() as d:
-            result = verify_lean(source=source, declarations=names, workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+            result = verify_lean(source=source, declarations=names, workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
         self.assertEqual(result['status'], 'verified', {k: result.get(k) for k in ('status', 'reason', 'stderr')})
         self.assertEqual(result['source_sha256'], hashlib.sha256(source.encode()).hexdigest())
         self.assertEqual(result['declarations'], names)
@@ -75,7 +75,7 @@ class InstalledLeanTests(unittest.TestCase):
             names = ["sumTo_succ'", "N.foo''", "α'"]
             source = ("theorem sumTo_succ' (n : Nat) : n = n := rfl\nnamespace N\ntheorem foo'' : True := by trivial\n"
                       "end N\ntheorem α' : True := by trivial")
-            result = verify_lean(source=source, declarations=names, workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+            result = verify_lean(source=source, declarations=names, workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
             self.assertEqual(result['status'], 'verified', result)
             self.assertEqual(set(result['declaration_signatures']), set(names))
             self.assertEqual(set(result['axioms']), set(names))
@@ -92,7 +92,7 @@ class InstalledLeanTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             r = verify_lean(source='theorem good (n : Nat) : n = n := rfl\n'
                                    'def unicodeGood : ∀ α : Type, α → α := fun _ x => x',
-                            declarations=['good', 'unicodeGood'], workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+                            declarations=['good', 'unicodeGood'], workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
             self.assertEqual(r['status'], 'verified')
             self.assertIn('(n : Nat)', r['declaration_signatures']['good'])
             self.assertIn('α', r['declaration_signatures']['unicodeGood'])
@@ -108,7 +108,7 @@ class InstalledLeanTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             for value in (1, 2):
                 result = verify_lean(source=f'def base : Nat := {value}\ndef mid : Nat := base\ntheorem leaf : mid = mid := rfl',
-                                     declarations=['leaf'], workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+                                     declarations=['leaf'], workspace=Path(d), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
                 self.assertEqual(result['status'], 'verified', result)
                 self.assertIn('base', result['dependency_closure']['leaf'])
                 results.append(result)
@@ -129,7 +129,7 @@ class InstalledLeanTests(unittest.TestCase):
         # Use the installed compiler through its actual local Job transport.
         with tempfile.TemporaryDirectory() as directory:
             result = verify_lean(source='def base : Nat := 1\ndef mid : Nat := base\ntheorem leaf : mid = base := rfl',
-                                 declarations=['leaf'], workspace=Path(directory), lean_command=command, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+                                 declarations=['leaf'], workspace=Path(directory), lean_command=command, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
         self.assertEqual(result['status'], 'verified', result)
         self.assertIn('dependency_closure', result)
         self.assertIn('base', result['dependency_closure']['leaf'])
@@ -150,10 +150,10 @@ class InstalledLeanTests(unittest.TestCase):
         self.assertNotEqual(command[0], str(lean.resolve()))
         with tempfile.TemporaryDirectory() as d:
             root = Path(d).resolve()
-            observed = inspect_toolchain(command, root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+            observed = inspect_toolchain(command, root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
             self.assertEqual(observed['executable'], str(lean.resolve()))
             result = verify_lean(source='theorem x : True := True.intro', declarations=['x'], workspace=root,
-                                 lean_command=command, expected_toolchain=observed, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+                                 lean_command=command, expected_toolchain=observed, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
         # Not rejected as a changed identity: the compile ran and checked the source.
         self.assertEqual((result['status'], result['reason']), ('verified', None), result)
         self.assertEqual(result['toolchain'], observed)
@@ -171,10 +171,10 @@ class ToolchainContractTests(unittest.TestCase):
             self.skipTest('portable Lean is not installed')
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            observed = inspect_toolchain(command, root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+            observed = inspect_toolchain(command, root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
             self.assertEqual(toolchain_errors(observed), [])
             result = verify_lean(source='theorem repair_probe : True := True.intro', declarations=['repair_probe'],
-                                 workspace=root, lean_command=command, expected_toolchain=observed, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+                                 workspace=root, lean_command=command, expected_toolchain=observed, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
             self.assertEqual(result['status'], 'verified', result)
             self.assertEqual(result['toolchain'], observed)
 
@@ -203,11 +203,11 @@ class LakeEnvironmentTests(unittest.TestCase):
             manifest.write_text(MANIFEST, encoding='utf-8')
             command = [str(lake), '--dir', str(project), 'env', 'lean']
             with ObservedCalls(job_run=formal._job_run) as calls:
-                first = formal._project_identity(command, workspace=root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
-                self.assertEqual(formal._project_identity(command, workspace=root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs), first)
+                first = formal._project_identity(command, workspace=root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
+                self.assertEqual(formal._project_identity(command, workspace=root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend), first)
                 self.assertEqual(calls.count('job_run'), 1, 'unchanged inputs reuse the observed search paths')
                 manifest.write_text(json.dumps(json.loads(MANIFEST)), encoding='utf-8')
-                formal._project_identity(command, workspace=root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+                formal._project_identity(command, workspace=root, clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
                 self.assertEqual(calls.count('job_run'), 2, 'a changed project input is observed again')
             self.assertIn(str(project / '.lake' / 'build' / 'lib' / 'lean'), first['search_paths'])
 
@@ -253,7 +253,7 @@ class RealJobTests(unittest.TestCase):
             fake.write_text("import sys,ctypes\nif '--version' in sys.argv: print('synthetic compiler')\n"
                             "else: ctypes.windll.kernel32.ExitProcess(0xC0000005)\n", encoding='utf8')
             result = verify_lean(source='theorem good : True := True.intro', declarations=['good'],
-                                 workspace=root, lean_command=[sys.executable, str(fake)], clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
+                                 workspace=root, lean_command=[sys.executable, str(fake)], clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
         self.assertEqual(result['status'], 'failed')
         self.assertEqual(result.get('exit_code'), 0xC0000005)
         self.assertEqual(result['reason'], 'compiler crashed')
