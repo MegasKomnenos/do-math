@@ -282,5 +282,30 @@ class TransportReceiptTests(unittest.TestCase):
         self.assertEqual([row['request_id'] for row in calls], ['request-receive'])
 
 
+class DeliveryRecoveryTests(unittest.TestCase):
+    def test_rewritten_rejection_after_restart_does_not_starve_a_later_worker_delivery(self):
+        """An immutable rejection and a later valid worker both survive receiver restart."""
+        from do_math.control_protocol import SUBMIT_INTENT
+        with tempfile.TemporaryDirectory() as directory:
+            clock = FakeClock()
+            transport = ControlTransport(directory, clock=clock)
+            binding = transport.issue('EX-redelivery', 'GR-redelivery')
+            endpoint = Path(binding['endpoint'])
+            bad = endpoint / 'inbox' / 'RQ-0-corrupt.json'
+            bad.write_bytes(b'\xff')
+            first, = transport.pump()
+            self.assertEqual((first['state'], first['stage']), ('rejected', 'delivery_validation'))
+            self.assertEqual(first['source_bytes'], 1)
+            bad.write_bytes(b'[]')  # a different intentionally malformed external envelope
+            ControlTransport.worker_submit(binding, request_id='RQ-1-worker', kind=SUBMIT_INTENT,
+                                           payload={'draft_path': 'output.json'})
+            recovered = ControlTransport(directory, clock=clock)
+            receipts = {row['request_id']: row for row in recovered.pump()}
+            self.assertEqual(receipts['RQ-0-corrupt'], first)
+            self.assertEqual(receipts['RQ-1-worker']['state'], 'received')
+            self.assertEqual(ControlTransport.worker_receipt(binding, 'RQ-0-corrupt'), first)
+            self.assertEqual(ControlTransport.worker_receipt(binding, 'RQ-1-worker'), receipts['RQ-1-worker'])
+            self.assertEqual(bad.read_bytes(), b'[]')
+
 if __name__ == '__main__':
     unittest.main()

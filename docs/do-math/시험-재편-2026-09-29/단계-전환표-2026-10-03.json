@@ -8019,7 +8019,7 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 21,
+      "main_ledger_count": 22,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
@@ -8056,10 +8056,9 @@
         "KD-1906",
         "KD-1907",
         "KD-1908",
-        "KD-1909",
-        "KD-0009"
+        "KD-1909"
       ],
-      "meaning": "35개는 main에미기록된후보항목이며같은수의제품미구현이나완료율로단정하지않는다. 실제기능/의존/원재현시험을비교한다.",
+      "meaning": "34개는main미기록후보항목이며제품미구현수/완료율이아니다. 실제구현과원재현·의존을대조한다.",
       "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
@@ -8067,7 +8066,7 @@
     "schema_isolation_integration": {
       "id": "B22",
       "scope": "KD-0010/0011: 이름 없는 스키마 조합의 가변 노드를 정본 json_copy로 분리",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-cqdz7pw8\\report.json",
         "sha256": "81320a7e5ca4c9088343811cf5b6aa9f0681a69cdc7ab8a97637edfda9546935",
@@ -8166,6 +8165,172 @@
       ],
       "contract": "control obj/fields,contracts.closed_object,stored schema array/nullable/enum/obj/mapping와review_cycle._array가values.json_copy 사용. 제자리변경은다른반환/전역/한결과내노드에전파되지않음. 공개schema이름과조합13함수를인자변형별2회호출하여모든결과를유지해공유검사. 검사기의None/보관결과재사용음성탐침도유지.",
       "limits": "조합13함수는 명시 모집단이고 자동발견전체1-E 증거가아니다. 스키마이름만좇던문서과장교정. 원구조실패2개,7/63/구조5 통과. 구조냄새1개예산초과남김. full관문별도.",
+      "whole_requirement_closed": false,
+      "commit": "01c60b5e"
+    },
+    "delivery_recovery_integration": {
+      "id": "B23",
+      "scope": "KD-0009: 기존 B15 수리의 재시작/재전달/후속 정상 packet 회귀를 main에 통합",
+      "state": "verified_main_commit_pending",
+      "original_failure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-l04w9vd_\\report.json",
+        "sha256": "5a135a491c175e16804ed714cb123ce47958edf0c3827428aabd66ee5b42d5e4",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 199,
+          "error": 2,
+          "failed": 2
+        },
+        "total_seconds": 68.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_engine_control_server_wire.PublishedReceiptWireTests.test_closed_worker_transport_keeps_the_accepted_receipt_and_refuses_new_drafts",
+              "seconds": 13.312000000034459,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_lifecycle_engine_public.LimitedRecoveryPublicTests.test_approval_checks_live_phase_action_role_profile_and_expiry",
+              "seconds": 3.155999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_role_input_context.ReviewSeatInputTests.test_identity_review_maps_what_it_does_not_inline_and_never_receives_its_private_keys",
+              "seconds": 10.76500000001397,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 8.84299999999348,
+              "budget_seconds": 5.0
+            },
+            {
+              "id": "unit.test_producer_record_storage.ExecutionRecordTests.test_actual_host_profile_reservation_round_trip_and_authority_refs",
+              "seconds": 0.2190000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.ExecutionRecordTests.test_actual_submission_authority_revocation_round_trip",
+              "seconds": 0.2809999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.ExecutionRecordTests.test_adopted_host_authoring_retains_shared_constraint_pointer",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.ExecutionRecordTests.test_configure_preserves_selected_profile_edition_not_all_historical_editions",
+              "seconds": 0.28100000007543713,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.KnowledgeRecordTests.test_actual_review_cycle_and_identity_producer_round_trip",
+              "seconds": 0.26500000001396984,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.KnowledgeRecordTests.test_staged_review_producer_keeps_transient_candidate_and_real_transition",
+              "seconds": 0.5470000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.KnowledgeRecordTests.test_verified_identity_and_environment_continuity_round_trip",
+              "seconds": 0.4529999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.QueueRecordTests.test_actual_impact_request_has_closed_nested_plan_schema",
+              "seconds": 0.2029999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.QueueRecordTests.test_cleanup_scope_preserves_exact_user_request_and_execution_references",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.QueueRecordTests.test_queue_preserves_actual_model_selection_producer",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.TaskRecordTests.test_actual_plan_disposition_and_repetition_request_round_trip",
+              "seconds": 0.2809999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_check_invariants.CheckInvariantTests.test_capture_rejects_wrong_execution_and_ambiguous_byte_sources",
+              "seconds": 0.2809999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_check_invariants.CheckInvariantTests.test_producer_chain_identity_and_sequence_are_separate_checks",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "original_row": {
+        "id": "unit.test_engine_control_transport.DeliveryRecoveryTests.test_rewritten_rejection_after_restart_does_not_starve_a_later_worker_delivery",
+        "outcome": "error",
+        "seconds": 0.03200000000651926,
+        "details": [
+          "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\codex-governance-unit-cost\\.claude\\skills\\do-math\\scripts\\do_math\\control_transport.py\", line 221, in _pump_paths\n    receipt = self.receive(_decode_json(path, raw), publish=publish)\n                           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\codex-governance-unit-cost\\.claude\\skills\\do-math\\scripts\\do_math\\control_transport.py\", line 98, in _decode_json\n    raise ValueError(f\"transport file {path} is not an object\")\nValueError: transport file C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-l04w9vd_\\parallel-1\\scratch\\tmpcaipzphd\\HSDAAnZuLI-MoodH8KwOJ1UY\\inbox\\RQ-0-corrupt.json is not an object\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\codex-governance-unit-cost\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_engine_control_transport.py\", line 392, in test_rewritten_rejection_after_restart_does_not_starve_a_later_worker_delivery\n    receipts = {row['request_id']: row for row in recovered.pump()}\n                                                  ^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\codex-governance-unit-cost\\.claude\\skills\\do-math\\scripts\\do_math\\control_transport.py\", line 200, in pump\n    return self._pump_paths(paths, publish)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\codex-governance-unit-cost\\.claude\\skills\\do-math\\scripts\\do_math\\control_transport.py\", line 223, in _pump_paths\n    receipt = self._reject_delivery_file(path, error)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\worktrees\\codex-governance-unit-cost\\.claude\\skills\\do-math\\scripts\\do_math\\control_transport.py\", line 402, in _reject_delivery_file\n    raise ValueError(\"request_id was already received with different content\")\nValueError: request_id was already received with different content\n"
+        ]
+      },
+      "product_identity": {
+        "main_before_B15": "0541a8ab",
+        "file": "do_math/control_transport.py",
+        "sha256": "72861395b1a68614b0eaaa4cef8b190d4bdf448b34591763a28b6d0662342d41",
+        "matches_original_failure_product_exactly": true
+      },
+      "current": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-qdvkmlhl\\report.json",
+        "sha256": "5936ad0bc5cd1df002790adbf8d1d15707972301cda071c50cc12b86b8497451",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 0.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "ledger": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-argyfztq\\report.json",
+        "sha256": "92be6b0b2012c97d098527df36fb3569dac0174a02454efac778cc104b254361",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 3.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "tests/unit/test_engine_control_transport.py",
+          "sha256": "d4985a93792d6f5cb76576adf4ed00c1b020f2652bff2d50713dae69b523c807"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "6b831784ebc6a4cbfcad05f3a904c1f0ea6f2f189f7b8c9ebfd5f6eb1608a845"
+        }
+      ],
+      "contract": "UTF-8 불량 전달의 최초 영수증을 보존하고다른불량바이트로재작성,실제worker_submit 정상입력추가,새ControlTransport객체로재시작하여두 영수증과다음정상수신을확인. product는B15에서이미수리돼추가변경없음.",
+      "limits": "새 main pre-repair 실행이나 원전체203개 통과를주장하지않음. 원보고의실패한제품바이트를이전main과정확히대조. 수송의받음상태이며연구결과게시증거가아님.",
       "whole_requirement_closed": false
     }
   }
