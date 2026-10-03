@@ -126,8 +126,6 @@ def os_lock(path, *, blocking):
     """
     descriptor=os.open(path,os.O_RDWR|os.O_CREAT,0o600)
     try:
-        if os.fstat(descriptor).st_size==0:
-            os.write(descriptor,b'\0')
         os.lseek(descriptor,0,os.SEEK_SET)
         if os.name=='nt':
             import msvcrt  # layer: Windows file API; the file system is not a port (설계 2.2)
@@ -136,6 +134,10 @@ def os_lock(path, *, blocking):
             import fcntl
             fcntl.flock(descriptor,fcntl.LOCK_EX if blocking else fcntl.LOCK_EX|fcntl.LOCK_NB)
         try:
+            # A holder may have locked the empty file already. Initialize its
+            # byte only after acquiring the lock, inside the release guard.
+            if os.fstat(descriptor).st_size==0:
+                os.write(descriptor,b'\0')
             yield
         finally:
             os.lseek(descriptor,0,os.SEEK_SET)

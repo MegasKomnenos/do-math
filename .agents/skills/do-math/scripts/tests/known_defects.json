@@ -15,8 +15,8 @@
       "category": 9,
       "reproduction": "boundary.test_file_io_lock.OsLockTests.test_a_blocking_lock_waits_for_a_holder_who_locked_the_empty_file_first",
       "found_by": "1a legacy run under three parallel bundles: test_research_recovery.RecoveryRoutingTests.test_concurrent_controls_receive_distinct_durable_order errored with PermissionError in os_lock; passed 3 of 3 when rerun alone",
-      "missed_kind": "No boundary test drove os_lock with two openers racing on a new lock file; the legacy concurrency test reaches the race only by timing",
-      "status": "open"
+      "missed_kind": "No boundary test drove os_lock with two openers racing on a new lock file; the legacy concurrency test reaches the race only by timing Independent main integration: empty-file byte is initialized only after acquiring the OS lock and inside its release guard. Real Windows red m9qz0qdv raises PermissionError from the pre-lock write; the original lock wait is retained, with byte preservation and later nonblocking reacquisition checks.",
+      "status": "closed"
     },
     {
       "id": "KD-0002",

@@ -6985,7 +6985,7 @@
     "engine_noop_integration": {
       "id": "B11",
       "scope": "KD-0201: 엔진 게시 생략도 정확한 JSON 타입 동등성으로 판정",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-rj4vh85n\\report.json",
         "sha256": "79db4fbdadcf610f3cf3b9f1de201c08bcd26ce314fcfd14d2f8864051e2d2b2",
@@ -7079,7 +7079,8 @@
         }
       },
       "whole_requirement_closed": false,
-      "contract": "실제 initialize_state/Engine/Repository로 1→True→1의 새로운 게시/정확한 형·바이트/옛 스냅샷 보존을 검사. 실제 변경 없음은 계속 게시 생략. 초기 x6tc_hq9 초안의 누락 history는 제품 결함 증거가 아니다."
+      "contract": "실제 initialize_state/Engine/Repository로 1→True→1의 새로운 게시/정확한 형·바이트/옛 스냅샷 보존을 검사. 실제 변경 없음은 계속 게시 생략. 초기 x6tc_hq9 초안의 누락 history는 제품 결함 증거가 아니다.",
+      "commit": "c37929b0"
     },
     "candidate_correction_archive": {
       "directory": "C:\\math\\docs\\do-math\\시험-재편-2026-09-29\\검증\\2026-10-04-일반-기준선",
@@ -7087,6 +7088,79 @@
       "files": 19,
       "sha256": "edabae469c7dbcf1e34a202ad8831c42245a0130811ef7e174cd1676622a7aae",
       "whole_candidate_verified": false
+    },
+    "lock_integration": {
+      "id": "B12",
+      "scope": "KD-0001: 실제 OS 잠금 획득 뒤 빈 파일의 잠금 바이트 초기화",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-m9qz0qdv\\report.json",
+        "sha256": "2cc10928067f34fa04f5dc560bee5ff80982df02306d4781d3428765da61295b",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "error": 1
+        },
+        "total_seconds": 0.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-blhabm61\\report.json",
+        "sha256": "9b8d181c1cf30652d63ee4fd5e9d98577272d9da9701b4e27835e81bc2d1e283",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 2.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-r1_j8850\\report.json",
+        "sha256": "1802f5bd19fe0810c9ebbcfc6f1da43d047337302c022de1c67cd8a96b896b66",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 33
+        },
+        "total_seconds": 21.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_operator_finish_recovery.RecoveryTests.test_model_policy_pause_holds_future_calls_but_not_the_repair_attempt",
+              "seconds": 3.031000000075437,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/file_io.py",
+          "sha256": "4b239b5690cb98231e41e016836431f2fd1e4260b6612a1a5619131056effd7a"
+        },
+        {
+          "path": "tests/boundary/test_file_io_lock.py",
+          "sha256": "7366ed2a4fac765c93a3738e2fb57326bbfaa9e3b7c6a1999298940ab18314c4"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "48503bfa99133f86649be0c2c86561790c5e57daafca87b70bea920b5e1d92e5"
+        }
+      ],
+      "contract": "잠금을 얻기 전 쓰기를 하지 않는다. 초기화도 해제 guard 안에서 수행한다. Windows 실제 빈 파일 선행 보유/차단 대기/1바이트 초기화/해제 후 비차단 재획득, 실제 Git writer/CAS와 운영 복구 저장·재시작 경로 유지.",
+      "limits": "부분 T4 경계1개이며 전체 T4 폐쇄가 아니다. 관련33개 중 기존 Sim1개 예산 초과 보존. 실행 파일 정규화 KD-0002는 별도 미통합.",
+      "whole_requirement_closed": false
     }
   }
 }

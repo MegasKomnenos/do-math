@@ -6,12 +6,10 @@ import threading
 import unittest
 
 from do_math.file_io import os_lock
-from support.known_defects import known_defect
 
 
 @unittest.skipUnless(os.name == 'nt', 'msvcrt byte-range locks exist only on Windows')
 class OsLockTests(unittest.TestCase):
-    @known_defect('KD-0001')
     def test_a_blocking_lock_waits_for_a_holder_who_locked_the_empty_file_first(self):
         import msvcrt
         with tempfile.TemporaryDirectory() as directory:
@@ -31,6 +29,10 @@ class OsLockTests(unittest.TestCase):
                 release.join()
                 os.close(holder)
             self.assertTrue(acquired)
+            self.assertEqual(path.read_bytes(), b'\0')
+            with os_lock(path, blocking=False):
+                reacquired = True
+            self.assertTrue(reacquired)
 
 
 if __name__ == '__main__':
