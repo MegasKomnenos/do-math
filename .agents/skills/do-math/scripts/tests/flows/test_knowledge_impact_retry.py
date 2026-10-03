@@ -18,10 +18,10 @@ presence and length inspection passes) before the review is prepared, and a
 new owner process (no process-level artifact knowledge) runs the owner pass.
 """
 import hashlib
+from copy import deepcopy
 import unittest
 
 from do_math import repository, submission
-from support.known_defects import known_defect
 from support.model import Answer
 from support.provider_probes import ObservedCalls
 from support.review_sim import held_impact, impact_review_answer, impact_sim, warm_impact
@@ -105,13 +105,17 @@ def new_owner_process(sim):
 
 
 class UnreadableBeforeReviewTests(unittest.TestCase):
-    @known_defect('KD-0600')
     def test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared(self):
-        """About 2 s on the impact template: two owner passes, no model call."""
+        """Two owner passes: retire the unreadable impact review, then run its diagnosis."""
         sim = impact_sim()
         waiting, producer, _, _ = held_impact(sim)
         damage_stored_output(sim, producer)
         new_owner_process(sim)
+        diagnostics = []
+        def capture_diagnosis(output, context):
+            diagnostics.append(deepcopy(context['recovery_materials']))
+            return output
+        sim.model.on('operational_review').reply(Answer(capture_diagnosis))
 
         def owner_pass():
             try:
@@ -130,6 +134,16 @@ class UnreadableBeforeReviewTests(unittest.TestCase):
         self.assertLessEqual(len(attempts), 1)
         owner_pass()  # the next pass proceeds and does not prepare the same review again
         self.assertEqual(review_attempts(), attempts)
+        self.assertEqual(len(diagnostics), 1)
+        unreadable = [row for row in diagnostics[0]['output_files'] if 'restoration_error' in row]
+        self.assertTrue(unreadable, diagnostics)
+        for row in unreadable:
+            self.assertNotIn('local_path', row)
+            self.assertNotEqual(row['sha256'], row['restoration_error']['observed_sha256'])
+            self.assertEqual(row['bytes'], row['restoration_error']['observed_bytes'])
+        self.assertFalse(any(row.get('stage') == 'impact_review' and
+            row.get('input_basis', {}).get('impact_review', {}).get('producer_execution_id') == producer['id']
+            for row in sim.runtime['queue']))
 
 
 if __name__ == '__main__':

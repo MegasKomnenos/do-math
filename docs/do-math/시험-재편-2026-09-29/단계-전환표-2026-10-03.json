@@ -7749,7 +7749,7 @@
     "external_registration_integration": {
       "id": "B19",
       "scope": "KD-0802: 외부 실행을 첫 원장 게시 전에 등록하여 무관한 제어의 상태 교체에도 결과 보존",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-5eeanqsk\\report.json",
         "sha256": "6b38b5c7e8bc9e5605b32375ccb9d24472b432aa618f5c46534c1f54039461f7",
@@ -7826,6 +7826,95 @@
       ],
       "contract": "등록은 settle=False로 과거 대기 이유를 새 시도의 완료로 정산하지 않는다. 실제 persist에서만 현재 상태의 실행/작업과 결과를 정산. 정상외부효과1회,권한철회/정지/결과불명/명시재시도/자격재개를유지. 회귀는accepted ended실행·finished activity·정확한저장재시작도검사.",
       "limits": "HTTP는기존포트대역의실제요청기록이며실제서비스효과검증이아니다. related19개에기존Sim2개예산초과. main2open이며전건관문별도.",
+      "whole_requirement_closed": false,
+      "commit": "1eeb7cbf"
+    },
+    "impact_read_integration": {
+      "id": "B20",
+      "scope": "KD-0600: 영향 검토 입력 준비의 봉인 읽기 실패를 소비하고 실제 진단으로 연결",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-u3i8xlvm\\report.json",
+        "sha256": "57ece8947f302ed9499328c67a156c166005967d05f0307a8aa7b26e9f02c121",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 8.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "followup_failure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-bwrandae\\report.json",
+        "sha256": "0c728f34cf176bd322d44d5dab9f136adb9904be02682e7f343020459f9f9469",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 2,
+          "error": 1
+        },
+        "total_seconds": 12.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "initial_corrected": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-xgz30yoy\\report.json",
+        "sha256": "c5ed6d2a290e81ee84e30d2236547fc6cde8ff1b9989e1dc89a75350a37f25dd",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 11.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "strengthened_and_materials": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-pp_1qre6\\report.json",
+        "sha256": "c5448bb53da63d80255679ef8516bc452859a0a1d0eac483cbff6ebad55861c2",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 4
+        },
+        "total_seconds": 49.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/call_engine.py",
+          "sha256": "49f106dcd55d5cd19c80da69530e837838153f7de28bc9354f3b8ca658855d97"
+        },
+        {
+          "path": "do_math/core_engine.py",
+          "sha256": "b69ef130682ef434550077e6b28e83c561909c8fa3574e12bff560419a84c638"
+        },
+        {
+          "path": "tests/flows/test_knowledge_impact_retry.py",
+          "sha256": "dd6bca5785a7b686f6fa48535a3914f874ef584d90e1351e57e4938f1dfa0626"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "96b983a87cc4855e2ba000bc6050ecfeb4ce2201681014e04df327fac2d520bf"
+        }
+      ],
+      "contract": "해당 held producer가 있는 impact_review의 SealedSubmissionError만 submission_failure로 전환. 같은 producer의 queued review들을 history에보존·퇴역하고 preparing input을기존경로로폐기. 다른 봉인 오류는여전히raise. 진단복원은정상바이트만materialize하고불량은기대/관찰해시·크기·복원오류를본문입력에명시.",
+      "runtime_evidence": "실제두owner pass와operational_review 모델포트 입력관찰에서진단1회,불량output local_path부재/기대-관찰SHA불일치/같은크기,재검토큐부재확인. 정상복원/준비실패3개도유지.",
+      "limits": "원래 실패와 첫 수리 뒤 진단ValueError를 보존. Shared wait registry의 일반 교체는 다른 통합 단위이며 현재 main의 저장 wait 형식은 유지. main1open; 최종 전건 관문 별도.",
       "whole_requirement_closed": false
     }
   }

@@ -1042,13 +1042,23 @@ class CoreEngineMixin:
                 input_basis={"impact_review": deepcopy(request)},
                 reason="Independently judge the exact preserved bundle and its whole/per-change impact plans")
 
-    def _hold_unreadable_impact_submission(self, waiting, error):
+    def _hold_unreadable_impact_submission(self, waiting, error, *, preparation=None):
         action = waiting["action"]
         live = self.runtime["waiting_actions"][action["id"]]
         live.update(kind="submission_failure", next_owner="engine", reason=str(error))
+        for pending in list(self.runtime['queue']):
+            request = pending.get('input_basis', {}).get('impact_review', {})
+            if pending.get('stage') == 'impact_review' and request.get('producer_execution_id') == waiting['execution_id']:
+                self.runtime['history'].append({'kind': 'impact_review_retired',
+                    'producer_execution_id': waiting['execution_id'], 'reason': str(error),
+                    'action': deepcopy(pending)})
+                self._remove_action(pending)
         self.route_failed_action(action, waiting["execution_id"],
             reason="Diagnose unreadable sealed impact submission")
-        self._save()
+        if preparation is None:
+            self._save()
+        else:
+            self._discard_prepared_input(preparation[0], preparation[1], reason=str(error), cancelled=False)
 
     def _retry_impact_reviews(self):
         if self.runtime.get("status") == "paused" or self._instance_closed():
@@ -1784,15 +1794,25 @@ class CoreEngineMixin:
 
                 def recover(artifact_ref: str, relative: str, *, expected_sha256: str | None = None,
                             expected_bytes: int | None = None) -> dict:
-                    raw = self.store.read(artifact_ref, source_snapshot)
-                    if expected_sha256 is None:
-                        digest = hashlib.sha256(raw).hexdigest()  # no record yet: identity is created here
-                    else:
-                        digest = expected_sha256
-                        self._sealed_bytes(artifact_ref, expected_sha256, raw=raw,
-                                           error="operational review artifact hash changed")
-                    if expected_bytes is not None and len(raw) != expected_bytes:
-                        raise ValueError("operational review artifact size changed")
+                    raw = None
+                    try:
+                        raw = self.store.read(artifact_ref, source_snapshot)
+                        if expected_sha256 is None:
+                            digest = hashlib.sha256(raw).hexdigest()  # no record yet: identity is created here
+                        else:
+                            digest = expected_sha256
+                            self._sealed_bytes(artifact_ref, expected_sha256, raw=raw,
+                                               error="operational review artifact hash changed")
+                        if expected_bytes is not None and len(raw) != expected_bytes:
+                            raise ValueError("operational review artifact size changed")
+                    except (ValueError, OSError, GitStateStoreError) as error:
+                        # Diagnosis names unreadable evidence; unverified bytes
+                        # are never materialized as a restored research result.
+                        return {'artifact_ref': artifact_ref, 'snapshot': source_snapshot,
+                            'sha256': expected_sha256, 'bytes': expected_bytes,
+                            'restoration_error': {'error_type': type(error).__name__, 'reason': str(error),
+                                'observed_sha256': hashlib.sha256(raw).hexdigest() if raw is not None else None,
+                                'observed_bytes': len(raw) if raw is not None else None}}
                     logical = prefix + "/" + relative
                     materialized[logical] = raw
                     return {"artifact_ref": artifact_ref, "snapshot": source_snapshot,

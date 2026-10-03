@@ -156,6 +156,16 @@ class CallEngineMixin:
             self._apply_inbox(pump=False)
             self._discard_prepared_input(base, execution_id)
             return self.runtime["status"] != "paused" and not self._instance_closed()
+        except submission.SealedSubmissionError as error:
+            producer_id = action.get('input_basis', {}).get('impact_review', {}).get('producer_execution_id')
+            waiting = next((row for row in self.runtime.get('waiting_actions', {}).values()
+                if action.get('stage') == 'impact_review' and row.get('kind') == 'impact_review'
+                and row.get('execution_id') == producer_id), None)
+            if waiting is not None:
+                self._hold_unreadable_impact_submission(waiting, error, preparation=(base, execution_id))
+                return True
+            self._discard_prepared_input(base, execution_id, reason=str(error), cancelled=False)
+            raise
         except (ValueError, KeyError, TypeError, OSError) as error:
             self._discard_prepared_input(base, execution_id, reason=str(error), cancelled=False)
             raise

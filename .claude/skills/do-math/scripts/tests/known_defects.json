@@ -123,8 +123,8 @@
       "category": 2,
       "reproduction": "flows.test_knowledge_impact_retry.UnreadableBeforeReviewTests.test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared",
       "found_by": "1f knowledge.2 (impact_review migration): a held producer's sealed output changed in the repository before its impact review was prepared, on the Sim; confirmed by the strength review's code trace",
-      "missed_kind": "No test made a held submission unreadable before its review started: the legacy retry test replaced read_sealed_submission only around the retry, and the review's own preparation read ran only on readable bytes. In the reproduction a missing object is stopped earlier by the owner's pre-write presence and length inspection (_inspect_before_write), so the uncaught GitStateStoreError branch is known from the code, not run",
-      "status": "open"
+      "missed_kind": "No test made a held submission unreadable before its review started: the legacy retry test replaced read_sealed_submission only around the retry, and the review's own preparation read ran only on readable bytes. In the reproduction a missing object is stopped earlier by the owner's pre-write presence and length inspection (_inspect_before_write), so the uncaught GitStateStoreError branch is known from the code, not run Independent main red u3i8xlvm: sealed producer output hash mismatch escapes an actual owner pass during impact review input preparation. Route only a matching held producer to submission_failure, retire its queued reviews, discard the preparing input through existing lifecycle and preserve retry diagnosis. Other sealed errors are still discarded/re-raised. No read hash or receipt check is weakened.",
+      "status": "closed"
     },
     {
       "id": "KD-1200",
