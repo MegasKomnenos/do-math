@@ -467,6 +467,42 @@
       "found_by": "통합7a951bdd+보존 교정 전체T3 Temp4on4g528 parallel-2의 unmarked 실패352.594초. 축소열은 ResearchMachine: revise_during_identity_review(0)→close→불변식. 원래 행·traceback은 finish/resume-research-long-unmarked-row.json에 보존. 생성은 expectedFailure 밖에서 실행하고 실제 요청·종결 영수증 및 다른 불변식 검사로 확인한 KD-1902 원인만 기록한다. 미지 오류는 전체 shrink로 전파. 독립 최소 재현도 유지한다. main2pr61wo_는 닫힌 초기화 재활성화의 실제 오류와 별도 helper메서드 이름 차이를 분리한다. main7pao9wwo는 정상 병합 후 close의 이유 소실을 확인하고 검토 전제는 이미 B09로 통과했다. 질문 참조도 이미 B27로 통과했다. code 종결 두 수리 뒤 최소 회귀와 강화한 oracles/명시 nonce 생성으로 gt71sfae7개 및 tuyqv3lc의 원래12알파벳+연구LONG13개가 통과했다. 다른 원인으로 축소한 helper실패/timeout은 별도 기록하며 독립9개 제품결함이라고 세지 않는다.",
       "missed_kind": "다른 생성 알파벳에서 재현된 동일 종결 소실이 원래 연구 알파벳의 개정 사건 조합에서도 발생했다. 별도 번호는 재현 시험 일대일 대응이며 독립 결함 증가를 뜻하지 않는다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1100",
+      "summary": "probe_cli.run_case가 scholarly list_sources의 실제 호출을 부분 문자열로 대조하여 list_sources_preview라는 다른 도구도 성공 증거로 센다.",
+      "category": 9,
+      "reproduction": "sim.test_operator_probe_contract.ProbeContractTests.test_other_scholarly_tool_does_not_satisfy_list_sources",
+      "found_by": "기반 31dd39bf에서 정상 Codex item.started의 tool 필드만 바꿔 실제 ModelRunner/worker/collector로 무표시 재현. do-math-tests-2nltlrty/report.json: scholarly_actual_tool 정상 계약 assertFalse에서 True is not false. 최초 CODE ONLY 후보와 실행 증거를 구분하며 원래 제품은 수정하지 않았다. main ty13d1cp에서 정확 tool 판정/위임 근거 병합은 failed, 봉인 누락은 GitStateStoreError error, 입력초과 이력은 B32 대기 분리로 이미 passed. 세 수리 및 두 저장 경로의 명시 deep copy 후 zvxjwxp4 변경 영역32개가 통과했다. 전체 관문은 미완료.",
+      "missed_kind": "정확한 도구 이름을 요구하는 프롬프트와 부분 문자열 수신 판정의 불일치. 정상 list_sources는 통과하고 list_sources_preview는 정상 거부 계약에서 실패한다. 표시 복구 후 같은 최종 제품 소스로 별도 확인하며 최초 보고를 보존한다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0303",
+      "summary": "봉인 artifact 누락 시 실제 GitStateStoreError가 SealedSubmissionError 반려 경계 밖으로 나간다",
+      "category": 2,
+      "reproduction": "unit.test_submission_sealed_evidence.SealedEvidenceTests.test_missing_artifact_names_the_exact_reference",
+      "found_by": "711b 계열의 targeted 동적 재현: 실제 seal_submission 산출과 새 Git 저장소 바이트의 정상 왕복을 setUp에서 확인한다. output/extensions/check 파일 누락 때 GitStateStoreError가 read_sealed_submission의 SealedSubmissionError 경계 밖으로 전파된다. 최종 표시 제거: USER TEMP/do-math-tests-yahxkqr7/report.json. 시험 rawSHA256=c1b936b12ccc5807dbb713df786f62739e64e789dcbfc0a3a0e08bade23d6ad7. 같은 파일 바이트의 표시 복구 보고서와 지원/제품 지문은 finish/resume-submission-result.json의 known_proofs에 기록한다. 진단은 보고서이며 expectedFailure 본문은 원래 올바른 계약만 단언한다. main ty13d1cp에서 정확 tool 판정/위임 근거 병합은 failed, 봉인 누락은 GitStateStoreError error, 입력초과 이력은 B32 대기 분리로 이미 passed. 세 수리 및 두 저장 경로의 명시 deep copy 후 zvxjwxp4 변경 영역32개가 통과했다. 전체 관문은 미완료.",
+      "missed_kind": "봉인 읽기 실패 시험이 실제 Git 저장 오류 계열로 정확한 복구 반려 경계를 확인하지 않았다",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0502",
+      "summary": "위임 종료의 계획 요청을 기존 요청에 합칠 때 revision_followup 근거를 잃는다.",
+      "category": 4,
+      "reproduction": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
+      "found_by": "99c4ef93 계획 소유 시험 실제 실행. 최초 보고 do-math-tests-l_xmvrtg 보존. 정상 생산자 입력 교정 뒤 같은 실패를 재현; finish/resume-planning-result.json에 최종 파일 동일 hash의 무표시/표시 보고를 연결한다. main ty13d1cp에서 정확 tool 판정/위임 근거 병합은 failed, 봉인 누락은 GitStateStoreError error, 입력초과 이력은 B32 대기 분리로 이미 passed. 세 수리 및 두 저장 경로의 명시 deep copy 후 zvxjwxp4 변경 영역32개가 통과했다. 전체 관문은 미완료.",
+      "missed_kind": "CODE ONLY 시험은 실행하지 않았다. 실제 수신자·저장 검증 및 합쳐진 요청 전체 비교가 드러낸 결함. 제품은 수정하지 않았다. 이전 원재현 ID: sim.test_planning_relation_conditions.DelegatedRevisionTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0804",
+      "summary": "입력 초과 뒤 공개 configure와 request --retry-action은 같은 활동을 한 번 재시도하지만 과거 input_overflows.action에서 model_selection을 제거한다. call_engine의 과거 action과 waiting action 공유 참조를 _configure_candidate가 변경하여 실패 당시 입력 선택 근거가 달라진다.",
+      "category": 7,
+      "reproduction": "flows.test_engine_input_recovery.PublicCliOverflowEvidenceTests.test_public_retry_preserves_failure_and_dispatches_one_original_action",
+      "found_by": "7420a2f4 제품에서 13-A 공개 재시도 여정. 최초 do-math-tests-agwyl9ws, 최종 표시 없는 동일 본문 do-math-tests-gtxbap26: 후속 한 번과 질문 해소를 확인한 뒤 과거 실패 전건 비교에서 고유 실패. 원파견 KD-0800~0899와 소유/현재 main 원장의 0800~0803을 대조하여 0804를 사용. main ty13d1cp에서 정확 tool 판정/위임 근거 병합은 failed, 봉인 누락은 GitStateStoreError error, 입력초과 이력은 B32 대기 분리로 이미 passed. 세 수리 및 두 저장 경로의 명시 deep copy 후 zvxjwxp4 변경 영역32개가 통과했다. 전체 관문은 미완료.",
+      "missed_kind": "기존 재시도 시험은 input_overflows의 개수와 현재 재시도 성적을 확인하고 실패 당시 action 전문의 불변성을 대조하지 않았다. CLI-실행-계약의 실패 이력 보존 계약을 직접 단언한다. 이전 원재현 ID: flows.test_engine_cli_conditional_journey.ConditionalCliJourneyTests.test_public_retry_preserves_failure_and_dispatches_one_original_action",
+      "status": "closed"
     }
   ]
 }

@@ -2942,6 +2942,9 @@ class CoreEngineMixin:
                 for key in ("obligation_ids", "observation_refs", "receipt_refs", "evidence_refs"):
                     if action.get(key):
                         queued[key] = list(dict.fromkeys([*queued.get(key, []), *action[key]]))
+                for followup in action.get('revision_followup', []):
+                    if followup not in queued.setdefault('revision_followup', []):
+                        queued['revision_followup'].append(deepcopy(followup))
                 if action.get("observation"):
                     queued["observation"] = deepcopy(action["observation"])
                 if action.get("revision_parent_ids"):

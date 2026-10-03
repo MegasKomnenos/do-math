@@ -208,7 +208,7 @@ class CallEngineMixin:
                     and detail.get('suggested_disposition') == 'unresolved_to_review_plan'):
                 overflow_ref = f"{ARTIFACT_ROOT}{self.ports.clock.new_id('BA')}/input-overflow.json"
                 self.runtime.setdefault('input_overflows', []).append({
-                    'action': deepcopy(action), 'detail': detail, 'source_catalog': fitted['manifest']})
+                    'action': deepcopy(action), 'detail': deepcopy(detail), 'source_catalog': deepcopy(fitted['manifest'])})
                 self.runtime['executions'][execution_id]['input_manifest'] = deepcopy(fitted['manifest'])
                 execution_lifecycle.end_preparation(self.runtime['executions'][execution_id], at=self.ports.clock.now(),
                     stage='packing', reason='review proposal input overflow', cancelled=True)
@@ -239,7 +239,7 @@ class CallEngineMixin:
                     "execution_id": execution_id, "profile_ref": deepcopy(action.get("profile_ref")),
                     "overflow_ref": overflow_ref, "question_disposition": question_disposition,
                     "failed_at": self.ports.clock.now()})
-            self.runtime.setdefault("input_overflows", []).append({"action": action, "detail": detail, "source_catalog": fitted["manifest"]})
+            self.runtime.setdefault("input_overflows", []).append(deepcopy({"action": action, "detail": detail, "source_catalog": fitted["manifest"]}))
             self._remove_action(action)
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({"action": action,
                 "kind": "input_overflow", "reason": "input_overflow", "detail": detail, "question_id": question["id"],

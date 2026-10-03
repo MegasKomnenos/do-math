@@ -194,3 +194,32 @@ class OverflowGitConnection(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class PublicCliOverflowEvidenceTests(unittest.TestCase):
+    def test_public_retry_preserves_failure_and_dispatches_one_original_action(self):
+        from pathlib import Path
+        import tempfile
+        from do_math.configuration import DEFAULT_CONFIG
+        from support.engine_cli_journey import Journey
+        sim = overflowed_sim()
+        action_id, waiting = held(sim)
+        with tempfile.TemporaryDirectory() as directory:
+            journey = Journey(sim, Path(directory))
+            failures = deepcopy(journey.state()[2]['input_overflows'])
+            config, _ = journey.document('config', {'max_input_bytes': DEFAULT_CONFIG['max_input_bytes']})
+            self.assertEqual(journey.call('configure', '--config-file', config)['effect'], 'applied')
+            config_hash = journey.call('status', '--json')['config_sha256']
+            journey.decision('probe', {'kind': 'initialization', 'operation': 'probe', 'config_sha256': config_hash})
+            first = journey.call('request', '--retry-action', action_id, '--request-id', 'UC-engine-retry')
+            replay = journey.call('request', '--retry-action', action_id, '--request-id', 'UC-engine-retry')
+            self.assertEqual((first['effect'], replay['effect']), ('applied', 'applied'))
+            self.assertEqual(first['request_id'], replay['request_id'])
+            journey.call('run', '--max-steps', '1')
+            _, _, runtime = journey.state()
+            self.assertNotIn(action_id, runtime['waiting_actions'])
+            self.assertEqual([r['action']['id'] for r in sim.model.calls if r['role'] == 'maintenance'], [action_id])
+            self.assertEqual(sum(r.get('kind') == 'input_overflow_retry_started' and
+                r.get('request_id') == first['request_id'] for r in runtime['history']), 1)
+            self.assertEqual(next(q for q in runtime['question_links'] if q['id'] == waiting['question_id'])['status'], 'resolved')
+            self.assertEqual(runtime['input_overflows'], failures)

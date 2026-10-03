@@ -8019,17 +8019,12 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 52,
+      "main_ledger_count": 56,
       "main_open": 0,
       "candidate_ledger_count": 56,
-      "not_yet_recorded_ids": [
-        "KD-1100",
-        "KD-0303",
-        "KD-0502",
-        "KD-0804"
-      ],
-      "meaning": "4개는main미기록후보항목이며전체미구현수/완료율이아니다.",
-      "next": "남은4항목: 실제scholarly도구이름, 봉인artifact 누락반려, 위임revision_followup 병합, 입력초과실패전문분리. 각현재원재현과제품diff를검수하여통합하고원문전건/분류/모집단/현재전체관문으로전환한다.",
+      "not_yet_recorded_ids": [],
+      "meaning": "후보 원장56개가 연결됨. 전체 미구현 수나 완료율이 아니다.",
+      "next": "원문 1e19/1f61/P2원래12/여섯부류/2단계11 및 후보와 main 선언·시험 모집단 차이를 기존 작업판에 연결하고 통합한다. 그 뒤 동일 최종 판본 전체 관문을 실행한다.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
     },
@@ -10909,7 +10904,7 @@
     "cross_closure_integration": {
       "id": "B39",
       "scope": "Cross1901~1909 원 최소 재현/모든 LONG알파벳과 종결 흡수·실제 요청/이유 보존 수리",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "initial": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-2pr61wo_\\report.json",
         "sha256": "53790ca6523515eca97c39ce1ac2babd683e0cef11aa79e7247b836a9d0de773",
@@ -11310,7 +11305,127 @@
           "over_budget": [],
           "tier": null
         }
-      }
+      },
+      "commit": "c147bece"
+    },
+    "last_four_integration": {
+      "id": "B40",
+      "state": "verified_main_commit_pending",
+      "initial": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ty13d1cp\\report.json",
+        "sha256": "461516a772906a78b47b54bafbe80bd2868bc62a55473ee457fabc3e9452ae05",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 2,
+          "passed": 1,
+          "error": 1
+        },
+        "total_seconds": 12.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
+              "seconds": 11.937999999965541,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-zvxjwxp4\\report.json",
+        "sha256": "5aee2c94fa0d3cabde8e590cef936ce10b0f18690653fdb457100f37fab53d98",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 32
+        },
+        "total_seconds": 35.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
+              "seconds": 19.938000000081956,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "unit.test_submission_sealed_evidence.SealedEvidenceTests.test_hash_receipt_and_size_are_independent_evidence",
+              "seconds": 0.9529999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_sealed_evidence.SealedEvidenceTests.test_matching_hash_does_not_authorize_malformed_json",
+              "seconds": 0.23499999998603016,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_sealed_evidence.SealedEvidenceTests.test_missing_artifact_names_the_exact_reference",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_sealed_evidence.SealedEvidenceTests.test_receipt_identity_and_missing_locators_have_distinct_rejections",
+              "seconds": 0.7820000000065193,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_sealed_evidence.SealedEvidenceTests.test_snapshot_summary_rejects_receipt_coordinates_mode_and_execution_drift",
+              "seconds": 0.4529999999795109,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "실제 도구 이름과 정확 봉인 읽기 반려 경계를 검사한다. 위임 종료의 revision_followup 전체를 기존 요청에 중복 없이 분리 병합한다. 입력 초과의 action/detail/manifest 이력은 이후 공개 재시도와 독립이다.",
+      "limits": "KD0804는 B32에서 이미 통과하므로 새 실패 수리로 세지 않는다. 원장56/0open은 원문 설계 전건, 전체 모집단, 성능 및 최종 관문의 완료가 아니다.",
+      "whole_requirement_closed": false,
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-0fbpwhun\\report.json",
+        "sha256": "29420a990dbe81bf3addbdcf6a10fbfd98541e35a13f2d3839ebc117d77a03ef",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 6.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 5.875,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-r5sec1r9\\report.json",
+        "sha256": "7645c663832d16df2533a6490eb43739d9833592aaa3426904ade1ca807660ca",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 3
+        },
+        "total_seconds": 15.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
+              "seconds": 14.296999999904074,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "scope": "정확 scholarly 도구·봉인 누락 반려·위임 근거 병합·공개 재시도 실패 이력 보존"
     }
   }
 }

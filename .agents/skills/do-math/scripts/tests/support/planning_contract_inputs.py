@@ -118,3 +118,15 @@ def warm_prepared():
 
 def only_task(sim):
     return next(row for row in sim.runtime['tasks'].values() if row['title'] == '계획 과제')
+
+
+def withdraw(sim, identifier):
+    from do_math.task_scope import apply_task_dispositions
+    from support.engine_lifecycle import _ended_execution
+    engine = sim.engine
+    eid = sim.ports.clock.new_id('EX')
+    _ended_execution(engine, eid, 'research_plan')
+    engine.instance, engine.runtime = apply_task_dispositions(engine.instance, engine.runtime,
+        [{'task_id': identifier, 'disposition': 'withdraw', 'reason': '미수행 과제를 철회한다.'}],
+        execution_id=eid, input_tasks=deepcopy(engine.runtime['tasks']), clock=sim.ports.clock)
+    engine._save()

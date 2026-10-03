@@ -77,7 +77,7 @@ def run_case(destination, case, *, ports, provider, model, effort, timeout, only
         checks["preserved_file"] = (workspace / "probe-evidence.txt").is_file() and (workspace / "probe-evidence.txt").read_text(encoding="utf-8").strip() == nonce
         checks["checkpoint"] = read_checkpoint(workspace, clock=ports.clock)["status"] == "valid"
         if scholarly:
-            checks["scholarly_actual_tool"] = any(name and "scholarly" in name and "list_sources" in name for name in native_tool_names)
+            checks["scholarly_actual_tool"] = "mcp__scholarly__list_sources" in native_tool_names
     if case == "background":
         checks["native_background_start"] = any(row["event"].get("subtype") == "task_started" for row in parsed.get("background_events", []))
         checks["actual_wait_tool"] = "TaskOutput" in native_tool_names

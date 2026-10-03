@@ -45,6 +45,7 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact, *, git
     (이음새-정본.md §3) is not hashed again.
     """
     from .repository import sealed_bytes
+    from .git_store import GitStateStoreError
     identifier = execution.get("id", "<unknown>")
     intent = execution.get("submission_intent") or {}
     receipt = execution.get("submission_receipt") or {}
@@ -61,7 +62,7 @@ def read_sealed_submission(execution: dict, snapshot: str, read_artifact, *, git
             raise SealedSubmissionError(f"execution {identifier}: missing sealed {field} at {path!r}")
         try:
             raw = read_artifact(path, snapshot)
-        except (OSError, ValueError, KeyError) as error:
+        except (OSError, ValueError, KeyError, GitStateStoreError) as error:
             raise SealedSubmissionError(f"execution {identifier}: cannot read {field} at {path}: {error}") from error
         if not isinstance(raw, bytes):
             raise SealedSubmissionError(f"execution {identifier}: {field} at {path} is not bytes")
