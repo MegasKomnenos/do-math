@@ -215,6 +215,15 @@
       "found_by": "4576a517 소유297 첫 unmarked 실행 do-math-tests-415zj4ac: 실제 apply_decision 뒤 ResearchRepository 저장 검증에서 추가 필드 거부. 정상 위임 생산 상태는 같은 저장 검증을 통과했다. 제품은 미수리.",
       "missed_kind": "권한 철회 생산자의 출력과 실제 닫힌 저장 스키마를 연결한 정상 왕복 시험이 없었다. A34 repair: exact revoke/deferral producer fields are declared in closed schemas; revoked_by binds decisions and deferral target/execution references resolve. All three original reproductions were unexpected successes in do-math-tests-oa03g_a7; markers removed together. Final gates remain pending. Existing regression moved from sim.test_governance_authority_effects.GovernanceAuthorityEffectTests.test_revoke_delegation_preserves_original_and_publishes_one_event into delegation storage round-trip module. Main ub9c8x66 actual producer/store red rejects revoked_at/revoked_by. Closed schema declares actual producer fields and REFERENCES binds revoked_by to decisions; exact original/receipt/event and unknown/wrong-family refusal retained.",
       "status": "closed"
+    },
+    {
+      "id": "KD-0500",
+      "summary": "준비 자식의 정상 개정 보류가 부모 대기에 deferrals를 만들지만 저장 스키마가 거부한다.",
+      "category": 1,
+      "reproduction": "sim.test_planning_revision_obligations.RevisionObligationTests.test_deferred_child_records_parent_deferral_without_new_child_wait",
+      "found_by": "99c4ef93 계획 소유 시험 실제 실행. 최초 보고 do-math-tests-l_xmvrtg 보존. 정상 생산자 입력 교정 뒤 같은 실패를 재현; finish/resume-planning-result.json에 최종 파일 동일 hash의 무표시/표시 보고를 연결한다.",
+      "missed_kind": "CODE ONLY 시험은 실행하지 않았다. 실제 수신자·저장 검증 및 합쳐진 요청 전체 비교가 드러낸 결함. 제품은 수정하지 않았다. A34 repair: exact revoke/deferral producer fields are declared in closed schemas; revoked_by binds decisions and deferral target/execution references resolve. All three original reproductions were unexpected successes in do-math-tests-oa03g_a7; markers removed together. Final gates remain pending. Existing regression moved from sim.test_planning_revision_transitions.RevisionTransitionTests.test_deferred_child_records_parent_deferral_without_new_child_wait to actual owner revision-obligation module. Main kctcgshb red rejects producer deferrals at closed storage; explicit deferral fields and target/execution resolution now preserve parent wait through restart. Unknown target/execution refusal keeps input and published state. Separate work/knowledge path KD-0501 remains distinct.",
+      "status": "closed"
     }
   ]
 }

@@ -8019,7 +8019,7 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 24,
+      "main_ledger_count": 25,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
@@ -8042,7 +8042,6 @@
         "KD-0303",
         "KD-0902",
         "KD-0903",
-        "KD-0500",
         "KD-0501",
         "KD-0502",
         "KD-0804",
@@ -8056,7 +8055,7 @@
         "KD-1908",
         "KD-1909"
       ],
-      "meaning": "32개는main미기록후보항목이며제품미구현수/전체완료율이아니다. 실제구현/재현/의존을대조한다.",
+      "meaning": "31개는main미기록후보항목이며제품미구현수/전체완료율이아니다. 실제구현/재현/의존을원문으로대조한다.",
       "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
@@ -8419,7 +8418,7 @@
     "delegation_revoke_integration": {
       "id": "B25",
       "scope": "KD-0401: 실제 위임 철회 필드와 결정 참조를 닫힌 저장 계약에 선언",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ub9c8x66\\report.json",
         "sha256": "f23c46e143010a366a17f8511adc4ed75ef7df6080d2cfeed8c1608d28f1005d",
@@ -8523,6 +8522,109 @@
       "contract": "원승인과실제독립판정이있는위임을정상apply_decision으로철회. revoked_at TEXT/revoked_by ID를선언하고REFERENCES에서decisions에결합. 원상보존·단일사건·저장왕복·없는결정/다른가족거부를유지. 실제생산필드외unknown은닫힌형식으로계속거부.",
       "fixture_scope": "후보governance_cases의체크된위임빌더2개만main에통합. 다른정책/질문/소유시험빌더는가져오지않음. 원래철회회귀를기존delegation_storage모듈로이동,후보old authority_effects메서드삭제로중복제거.",
       "limits": "main관련12/구조4와후보2는부분증거. 새시작템플릿을만드는Sim1개예산초과를양쪽보고에남김. 모든권한/저장모집단의최종완료가아님.",
+      "whole_requirement_closed": false,
+      "commit": "32d95a09"
+    },
+    "revision_deferral_integration": {
+      "id": "B26",
+      "scope": "KD-0500: 정상 준비 자식이 남긴 부모 개정 보류를 닫힌 저장·참조 계약에 보존",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-kctcgshb\\report.json",
+        "sha256": "d9e9b103e07a455e8b8ab0e1988c5c669388a33c1d361edbc2add7b3cc550b1d",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "error": 1
+        },
+        "total_seconds": 15.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-6j8hp83b\\report.json",
+        "sha256": "3033bbdec58f52496d3feb11f00ee90cf23300537061812d962d55be47d14aa1",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 8
+        },
+        "total_seconds": 20.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "strengthened": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-axwwoqkp\\report.json",
+        "sha256": "bc6b3078cc5882897b4c27da7e9ca8c8f65089fbe1f749e6e670093f9a80554b",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 4
+        },
+        "total_seconds": 21.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "main_ledger": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-w5mf7u9l\\report.json",
+        "sha256": "f9a7e12d41b36b70b7043c52c26c9f768003996b84a046f5a81220e4046f3b57",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 2.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-_jvwfe6u\\report.json",
+        "sha256": "6b5db9c81889e84f3765cc707170b41730a2693c5185660c8e589182f422872a",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 20.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/record_schemas/schemas.py",
+          "sha256": "5e9d86123ec03844042c32a56b6362d0cfa8fe80045d8f973719ffc92a8d13a1"
+        },
+        {
+          "path": "do_math/record_schemas/__init__.py",
+          "sha256": "dcd11cd82f7289bca2394cbf82309cb5477f5c945e2134758e834fc75340646e"
+        },
+        {
+          "path": "tests/sim/test_planning_revision_obligations.py",
+          "sha256": "3a0d16ce11d28b1822dcff33d15dd1bf42387eb9ffc94b467accf1532b6894ee"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "46c6c7c4d98f2428b4a44a12955e1d31967598e69d1878825c33d0acf3d96a13"
+        }
+      ],
+      "contract": "기존실제owner task 상태와capture_targets/_ended_execution/submission_errors/_apply_revision_followup으로required 부모 대기와자식 deferred출력을생산. deferrals는execution_id/reason 닫힌 mapping,대상은현재식별자·실행은executions 가족에해소. 부모전문/무추가자식대기/저장재시작/없는대상·실행반려와게시/입력원상보존.",
+      "scope_fidelity": "후보의prepared_sim 상태를현재mainowner_sim 정상과제로구성하여원결과단언을유지. 기존개정소유시험모듈로회귀를이동,후보옛transition 메서드삭제. 연구수행+별도지식개정의KD-0501은이검사로닫지않고별도남김.",
+      "limits": "관련8/보강4/원장1/후보2는부분증거. 기존모델회귀상태의저장가능성이지전체개정/대기모집단폐쇄가아님. 최종관문별도.",
       "whole_requirement_closed": false
     }
   }

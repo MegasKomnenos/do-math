@@ -25,6 +25,53 @@ class RevisionObligationTests(unittest.TestCase):
         self.sim = owner_sim()
         self.engine = self.sim.engine
 
+    def test_deferred_child_records_parent_deferral_without_new_child_wait(self):
+        sim, engine, identifier = self.sim, self.engine, 'TK-1'
+        parent = enqueue(engine, 'research_preparation', revision_targets=revisions.capture_targets(
+            sim.instance, sim.runtime, [identifier], required=True))
+        eid = sim.clock.new_id('EX')
+        _ended_execution(engine, eid, 'research_preparation')
+        engine.runtime['executions'][eid]['extensions'] = {'revision_resolutions': [
+            {'record_id': identifier, 'disposition': 'deferred', 'reason': '추가 근거를 기다린다.'}]}
+        issues = revisions.submission_errors({'candidates': []}, engine.runtime['executions'][eid]['extensions'], {
+            'action': parent, 'tasks': list(engine.runtime['tasks'].values()),
+            'knowledge_catalog': list(engine.instance['knowledge'].values())})
+        self.assertEqual(issues, [])
+        engine._apply_revision_followup(parent, {'summary': '개정 보류'}, eid)
+        engine._remove_action(parent)
+        engine._save()
+        parent_id = parent['id']
+        child = enqueue(engine, 'research_preparation', revision_targets=revisions.capture_targets(
+            sim.instance, sim.runtime, [identifier]))
+        _ended_execution(engine, 'EX-child', 'research_preparation')
+        sim.runtime['executions']['EX-child']['extensions'] = {'revision_resolutions': [
+            {'record_id': identifier, 'disposition': 'deferred', 'reason': '새 원천 필요'}]}
+        previous = deepcopy(sim.runtime['waiting_actions'][parent_id])
+        engine._apply_revision_followup(child, {'summary': '보류'}, 'EX-child')
+        expected = {**previous, 'deferrals': {identifier: {'execution_id': 'EX-child', 'reason': '새 원천 필요'}}}
+        self.assertEqual(sim.runtime['waiting_actions'], {parent_id: expected})
+        engine._remove_action(child)
+        engine._save()
+        published = deepcopy(engine.store.load())
+        sim.restart()
+        self.assertEqual(sim.engine.store.load(), published)
+        head, instance, runtime = published
+        damaged = deepcopy(runtime)
+        damaged['waiting_actions'][parent_id]['deferrals'][identifier]['execution_id'] = 'EX-missing'
+        before = deepcopy(damaged)
+        with self.assertRaisesRegex(ValueError, '^waiting action deferral execution does not resolve: EX-missing$'):
+            sim.engine.store.save_with_state(head, instance, damaged)
+        self.assertEqual(damaged, before)
+        self.assertEqual(sim.engine.store.load(), published)
+        damaged = deepcopy(runtime)
+        deferred = damaged['waiting_actions'][parent_id]['deferrals'].pop(identifier)
+        damaged['waiting_actions'][parent_id]['deferrals']['TK-missing'] = deferred
+        before = deepcopy(damaged)
+        with self.assertRaisesRegex(ValueError, '^waiting action deferral target does not resolve: TK-missing$'):
+            sim.engine.store.save_with_state(head, instance, damaged)
+        self.assertEqual(damaged, before)
+        self.assertEqual(sim.engine.store.load(), published)
+
     def test_closed_target_does_not_erase_other_targets_or_merged_new_request(self):
         h = self.engine
         other = deepcopy(h.runtime['tasks']['TK-1'])

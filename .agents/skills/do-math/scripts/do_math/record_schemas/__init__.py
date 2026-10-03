@@ -614,6 +614,11 @@ def validate_semantics(instance, runtime, identifiers, parent=None, *, contract)
                 raise ValueError("waiting action reference does not resolve: " + field)
         if any(identifiers.get(task_id, (None, None))[1] != "tasks" for task_id in wait.get("delegated_targets", {}).values()):
             raise ValueError("waiting action reference does not resolve: delegated_targets")
+        for identifier, deferred in wait.get("deferrals", {}).items():
+            if identifier not in identifiers:
+                raise ValueError("waiting action deferral target does not resolve: " + identifier)
+            if identifiers.get(deferred['execution_id'], (None, None))[1] != 'executions':
+                raise ValueError("waiting action deferral execution does not resolve: " + deferred['execution_id'])
         for identifier, request in wait.get("review_requests", {}).items():
             if identifier != request["integration_id"] or request["producer_execution_id"] not in runtime.get("executions", {}):
                 raise ValueError("held impact request does not bind its original bundle/execution")

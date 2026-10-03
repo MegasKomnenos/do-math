@@ -714,6 +714,7 @@ RUNTIME_FIELDS = {"status": enum("initializing", "ready", "running", "paused", "
         "observation_errors": HISTORY, "observation_rule_deferrals": HISTORY, "rule_input_version": EVIDENCE,
         "review_requests": mapping(_IMPACT_REQUEST), "review_execution_ids": mapping(ID),
         "delegated_targets": mapping(ID),
+        "deferrals": mapping(obj({"execution_id": ID, "reason": TEXT}, ("execution_id", "reason"))),
         "delegation_history": array(_RECORD_TASK),
         "input_version": obj({"goal": NAT, "policy": {"type": ["integer", "string"]},
             "sources": array(obj({"name": TEXT, "sha256": HASH}, ("name", "sha256"))), "inputs": REFS},
