@@ -178,7 +178,8 @@ def write_trust_request(result, destination):
 def run(command, cwd, env):
     # Progress goes to stderr; stdout carries only the one JSON result.
     print("+", " ".join(command), file=sys.stderr, flush=True)
-    subprocess.run(command, cwd=cwd, env=env, check=True, stdout=sys.stderr)
+    subprocess.run(command, cwd=cwd, env=env, check=True, stdout=sys.stderr,
+                   creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
 
 
 def install(root):

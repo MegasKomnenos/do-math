@@ -21,7 +21,6 @@ from pathlib import Path
 import sys
 import unittest
 
-from support.known_defects import known_defect
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 RUNNERS = {'run_tests.py', 'test_categories.py'}
@@ -58,8 +57,6 @@ INTERPRETER_USES = {
     ('do_math/scheduled_operator.py', 'run_engine'): 'the scheduled engine child, piped',
     ('do_math/scheduled_operator.py', 'recovery'): 'the installation probe, piped',
 }
-# Declared starts that still open without the console flag, each an open known defect.
-WINDOWED = {('setup_lean.py', 'run'): 'KD-0003'}
 # The one function every executable-identity comparison goes through (의무 9-A).
 EXECUTABLE_IDENTITY = {('do_math/file_io.py', 'executable_identity')}
 
@@ -118,8 +115,6 @@ class BoundaryInvariantTests(unittest.TestCase):
                 starts.add((relative, function))
             else:
                 injected.add((relative, function, kind))
-            if (relative, function) in WINDOWED:
-                continue
             with self.subTest(site=(relative, function, node.lineno)):
                 self.assertIn('creationflags', {keyword.arg for keyword in node.keywords})
         self.assertEqual(starts, set(PROCESS_STARTS), 'direct process starts differ from the declared ones')
@@ -133,11 +128,14 @@ class BoundaryInvariantTests(unittest.TestCase):
         self.assertEqual(job_starts, JOB_RUN_STARTS, 'shared Job callers differ from the declared ones')
 
 
-    @known_defect('KD-0003')
     def test_the_setup_tool_opens_no_console_window(self):
-        for relative, function, _, node in _process_start_sites():
-            if (relative, function) in WINDOWED:
-                self.assertIn('creationflags', {keyword.arg for keyword in node.keywords}, (relative, node.lineno))
+        calls = [node for relative, function, _, node in _process_start_sites()
+                 if (relative, function) == ('setup_lean.py', 'run')]
+        self.assertEqual(len(calls), 1)
+        flags = [keyword.value for keyword in calls[0].keywords if keyword.arg == 'creationflags']
+        self.assertEqual(len(flags), 1, 'setup subprocess requires its console suppression flag')
+        self.assertEqual(ast.unparse(flags[0]), "getattr(subprocess, 'CREATE_NO_WINDOW', 0)",
+                         'the flag must suppress a console on Windows, not merely be present')
 
     def test_interpreter_uses_are_declared(self):
         uses = {(relative, function) for relative, function, node in _sites() if _is(node, 'sys', {'executable'})}

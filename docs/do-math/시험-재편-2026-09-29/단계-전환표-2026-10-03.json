@@ -7166,7 +7166,7 @@
     "executable_integration": {
       "id": "B13",
       "scope": "KD-0002: 실행 파일 식별과 비교의 PATH/상대경로/링크 정규화 정본을 여섯 소비함수에 공유",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-c0zd9v1o\\report.json",
         "sha256": "d1c8f826e31a163ed761d1e3be86881d8cdfd6b8deffa51c6d7612196c619b6e",
@@ -7276,6 +7276,78 @@
       ],
       "test_contract": "실제 adapter.worker_options/model_call.worker_request_fields 생산자 입력의 PATH 이름과 절대경로를 같은 실행 파일로 접수, 다른 파일 반려, 엄격 missing FileNotFoundError, 비엄격 누락 관찰, capability/observation 키 동일성과 입력 원상 보존.",
       "limits": "관련20개는19passed+KD-0003 expected_failure1. 예산초과5개 보존. 후보의 기존 close_collector PATH 시험을 현재 provider_cli_surface로 이동하여 중복 제거. 최종 전체/변이 관문은 별도.",
+      "whole_requirement_closed": false,
+      "commit": "af3b7193"
+    },
+    "console_integration": {
+      "id": "B14",
+      "scope": "KD-0003: setup 짧은 subprocess의 CREATE_NO_WINDOW 전달과 실제 자식 콘솔 핸들 검증",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-fjtl48u4\\report.json",
+        "sha256": "97dff2616fe1e011773ddb3178bb8df5fde1f71816817771970a4ba3abdd48d3",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 1.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-afxt_xhn\\report.json",
+        "sha256": "fd0599d44edaf52f3f457b91d0cfea58967b2b87133d872b5a3801bdb183192c",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 10
+        },
+        "total_seconds": 11.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ypf5rpgp\\report.json",
+        "sha256": "26e3cb0f71da313ae171c7e524303d18bc5c381be30fc5bd782fed9ae756f9e5",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 0.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "setup_lean.py",
+          "sha256": "917af23f367d475cb4183f969b16e31d1911412815a03b433a599a3d5e217c62"
+        },
+        {
+          "path": "tests/structure/test_boundary_invariants.py",
+          "sha256": "fa28e6656ea8d4218f24cceff6ce48766326de282ae5a2c8185b5d3a52333bbd"
+        },
+        {
+          "path": "tests/boundary/test_setup_lean_compile.py",
+          "sha256": "a91aa70983d0580b3634b5fd78c0f560b911813114f1df2529311134dfbcaef0"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "d928e5a9ff96951b091daa7945a86fa8abd03f86a1ace8a5c0ac32b6513d3283"
+        }
+      ],
+      "contract": "WINDOWED 우회와 expectedFailure 제거. 실제 source creationflags 값 검사. Windows Job 격리에서 실제 자식 Python의 GetConsoleWindow()==0, cwd/env 보존을 관찰. 기존 대표 compile의 명령·원문·stdout/stderr와 실패 판정도 유지.",
+      "limits": "main10개/후보새경계1개 부분검사이며 전체 T4/실제 Lean 검증 폐쇄가 아니다. Python 대체 compiler와 실제 child만 호출하고 기존 Lean 설치/실험자료를 변경하지 않았다. 후보 동기화의 shell quoting SyntaxError와 missing ID 실행은 제품 실패가 아니며 이후 파일 스크립트 복사 뒤 실제 시험으로 검증했다.",
       "whole_requirement_closed": false
     }
   }

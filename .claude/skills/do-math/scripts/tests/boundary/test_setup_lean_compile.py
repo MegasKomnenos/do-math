@@ -8,6 +8,7 @@ the evidence the tool keeps can be compared with what the program received and d
 from pathlib import Path
 import hashlib
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -63,6 +64,28 @@ class RepresentativeCompileTests(unittest.TestCase):
         self.assertEqual(record['status'], 'failed')
         self.assertEqual((record['exit_code'], record['stderr']), (1, 'diagnostic'))
         self.assertNotIn('error', record)
+
+
+@test_group('resource')
+@unittest.skipUnless(os.name == 'nt', 'Windows console handles exist only on Windows')
+class SetupProcessTests(unittest.TestCase):
+    def test_setup_short_command_preserves_context_and_has_no_console(self):
+        from do_math.file_io import console_python
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            result_path = root/'setup-child.json'
+            script = '''import ctypes, json, os, sys
+from pathlib import Path
+kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+kernel.GetConsoleWindow.restype = ctypes.c_void_p
+result = {'console': int(kernel.GetConsoleWindow() or 0),
+          'cwd': str(Path.cwd()), 'probe': os.environ['DO_MATH_SETUP_PROBE']}
+Path(sys.argv[1]).write_text(json.dumps(result), encoding='utf-8')
+'''
+            setup_lean.run([console_python(), '-c', script, str(result_path)],
+                           cwd=root, env={**os.environ, 'DO_MATH_SETUP_PROBE': 'preserved'})
+            self.assertEqual(json.loads(result_path.read_text(encoding='utf-8')),
+                             {'console': 0, 'cwd': str(root), 'probe': 'preserved'})
 
 
 if __name__ == '__main__':
