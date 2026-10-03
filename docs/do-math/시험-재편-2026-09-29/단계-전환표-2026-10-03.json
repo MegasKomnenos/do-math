@@ -8019,7 +8019,7 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 22,
+      "main_ledger_count": 23,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
@@ -8034,7 +8034,6 @@
         "KD-0900",
         "KD-0901",
         "KD-1100",
-        "KD-0400",
         "KD-0700",
         "KD-0601",
         "KD-1000",
@@ -8058,7 +8057,7 @@
         "KD-1908",
         "KD-1909"
       ],
-      "meaning": "34개는main미기록후보항목이며제품미구현수/완료율이아니다. 실제구현과원재현·의존을대조한다.",
+      "meaning": "33개는main미기록후보항목이며같은수의제품미구현이나전체완료율이아니다. 구현/재현/의존을실제원문으로대조한다.",
       "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
@@ -8171,7 +8170,7 @@
     "delivery_recovery_integration": {
       "id": "B23",
       "scope": "KD-0009: 기존 B15 수리의 재시작/재전달/후속 정상 packet 회귀를 main에 통합",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "original_failure": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-l04w9vd_\\report.json",
         "sha256": "5a135a491c175e16804ed714cb123ce47958edf0c3827428aabd66ee5b42d5e4",
@@ -8331,6 +8330,90 @@
       ],
       "contract": "UTF-8 불량 전달의 최초 영수증을 보존하고다른불량바이트로재작성,실제worker_submit 정상입력추가,새ControlTransport객체로재시작하여두 영수증과다음정상수신을확인. product는B15에서이미수리돼추가변경없음.",
       "limits": "새 main pre-repair 실행이나 원전체203개 통과를주장하지않음. 원보고의실패한제품바이트를이전main과정확히대조. 수송의받음상태이며연구결과게시증거가아님.",
+      "whole_requirement_closed": false,
+      "commit": "f67c56c9"
+    },
+    "owner_registration_integration": {
+      "id": "B24",
+      "scope": "KD-0400: 잘못된 소비자 계약을 거부할 때 등록부·광고목록의 원자성 보존",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-3o7lv1a5\\report.json",
+        "sha256": "dc83443defefa2140308744a9e0c47905868ae08817cd0667f13eb8b081b0c91",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 0.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-tdl9gqlx\\report.json",
+        "sha256": "43a0bafe5ddd02f518e8b778f5304b59dd56a5e857235924ed1ea60830378435",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 30
+        },
+        "total_seconds": 0.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "main_ledger": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-fclryx07\\report.json",
+        "sha256": "2ddd15a0f95cb0fdaa09d7b49dda8cdb38818f2af38dbb3949d3ee79cb270f18",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 2.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-l9o_r09x\\report.json",
+        "sha256": "5fb3def33718c7b5afabfce173c73a1da5a3218a935ac7f361c980cad81ce68c",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 2.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/governance.py",
+          "sha256": "403ff0580e0921b25e4765540a586789d5656c6fd283ce3a25344840e9de3595"
+        },
+        {
+          "path": "tests/unit/test_governance_imports.py",
+          "sha256": "8304a2b0d021ebcf1e4f6fc8fac0ef12c92b85c78043d5f5b27f623e7b170558"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "d6ff9f610c7f67430df27c067e19dda8e106a59f08c6ca4f5694b27acec22db4"
+        }
+      ],
+      "contract": "실제import_owner_handlers와evidence소비자 함수로등록. contract 검증·복사를마친뒤handlers[kind]에한번설치. empty/list/text/bool 거부는등록부/광고목록불변; 정상등록계약은호출자수정과분리. 기존역할/중복/권한소유자·현재성제약유지.",
+      "test_move": "기존단독회귀를현재unit.test_governance_imports.RegisteredOwnerTests에이동. 후보추가applied-import 시험은보존하고기존동일회귀모듈은삭제,현재reproduction ID갱신. 역사원ID는missed_kind에유지.",
+      "limits": "모든Import경로의전건완료나최종관문이아니다. main23/candidate56,미기록33개의제품구현/의존여부는계속대조.",
       "whole_requirement_closed": false
     }
   }

@@ -730,11 +730,12 @@ def register_import_owner(handlers, kind, *, apply, validate, basis, contract=No
         raise ValueError("cannot replace a governance authority owner")
     if kind in handlers: raise ValueError("import owner already registered")
     if not all(callable(fn) for fn in (apply, validate, basis)): raise ValueError("owner needs apply, validate and currentness functions")
-    handlers[kind] = {"apply": apply, "validate": validate, "basis": basis}
+    owner = {"apply": apply, "validate": validate, "basis": basis}
     if contract is not None:
         if not isinstance(contract, dict) or not contract:
             raise ValueError('import owner contract must be a nonempty object')
-        handlers[kind]['contract'] = deepcopy(contract)
+        owner['contract'] = deepcopy(contract)
+    handlers[kind] = owner
     return handlers
 
 

@@ -197,6 +197,15 @@
       "found_by": "Unmarked new 2-A cross-restart probe in do-math-tests-l04w9vd_ failed at ControlTransport._reject_delivery_file with request_id was already received with different content; first rejected receipt and later actual worker_submit were produced normally.",
       "missed_kind": "Existing two-input KD-0005 repro does not establish restart/redelivery with another normal worker envelope; known capture is restricted to exact error origin and corrupt file name, outside expectedFailure. A34 repair: malformed inbox envelopes are durably rejected once by filename with exact byte evidence and no authority; rewritten malformed transport deliveries preserve the first receipt and do not starve later valid requests. All three original reproductions were unexpected successes in do-math-tests-o5s1bc33; the old known-failure catch is removed. Main B15 already integrates the same rejection-preserving transport repair. Independent existing candidate restart regression moved to the same main unit module: qdvkmlhl1 passed, actual ControlTransport reconstruction, first immutable rejection, changed malformed bytes and later actual worker_submit retained. No new product change and no claim of a fresh main pre-repair failure.",
       "status": "closed"
+    },
+    {
+      "id": "KD-0400",
+      "summary": "거부된 import owner contract가 등록부를 부분 변경한다. register_import_owner는 contract 검증 전에 handlers[kind]를 설치하므로 빈 contract의 ValueError 뒤에도 custom 소비자가 남는다.",
+      "category": 7,
+      "reproduction": "unit.test_governance_imports.RegisteredOwnerTests.test_rejected_contract_does_not_install_owner",
+      "found_by": "4576a517 기반 정상 등록부·실제 소비자 목록 생산자로 거부 원자성을 검사한다. resume-governance-result.json에 동일 파일 해시의 unmarked 실패와 marked 예상 실패 보고를 연결한다. 제품은 미수리.",
+      "missed_kind": "기존 등록 시험은 정상 소비자 등록과 중복·권한 소유자 거부만 보며, 후행 계약 검증 거부의 등록부 불변성을 확인하지 않는다. 거부 입력이 활성 등록을 남기지 않는 원자성 계약을 기대한다. Moved existing regression from unit.test_governance_owner_registration_atomicity.GovernanceOwnerRegistrationAtomicityTests.test_rejected_contract_does_not_install_owner to the existing imports owner module; no duplicate case. Main3o7lv1a5 red confirms registration leaked after contract refusal; tdl9gqlx30 passes after install-last repair and caller contract detachment.",
+      "status": "closed"
     }
   ]
 }

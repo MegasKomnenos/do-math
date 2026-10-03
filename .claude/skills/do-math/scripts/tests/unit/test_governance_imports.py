@@ -337,6 +337,26 @@ class ExecutionLineageTests(unittest.TestCase):
 class RegisteredOwnerTests(unittest.TestCase):
     """Governance changes applied through the owner registered for each record kind."""
 
+    def test_rejected_contract_does_not_install_owner(self):
+        from support.fakes.clock import FakeClock
+        clock = FakeClock()
+        handlers = gov.import_owner_handlers(clock=clock)
+        before = dict(handlers)
+        catalog = gov.import_consumer_catalog(handlers, clock=clock)
+        adapter = handlers['evidence']
+        for contract in ({}, [], 'contract', False):
+            with self.subTest(contract=contract), self.assertRaisesRegex(
+                    ValueError, '^import owner contract must be a nonempty object$'):
+                gov.register_import_owner(handlers, 'custom', **adapter, contract=contract)
+            self.assertEqual(handlers, before)
+            self.assertEqual(gov.import_consumer_catalog(handlers, clock=clock), catalog)
+        contract = {'document': 'custom.md', 'section': 'evidence'}
+        gov.register_import_owner(handlers, 'custom', **adapter, contract=contract)
+        self.assertEqual(next(row for row in gov.import_consumer_catalog(handlers, clock=clock)
+                              if row['owner_kind'] == 'custom')['payload_contract'], contract)
+        contract['section'] = 'changed by caller'
+        self.assertEqual(handlers['custom']['contract'], {'document': 'custom.md', 'section': 'evidence'})
+
     def test_configuration_adapter_uses_actual_config_validator(self):
         from support.entry import entry
         _entry = entry()
