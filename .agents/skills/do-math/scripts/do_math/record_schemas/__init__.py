@@ -48,7 +48,7 @@ REFERENCES = {
     "observation_facts": refs(("execution_id", "executions")),
     "self_check_obligations": refs(("execution_id", "executions")),
     "self_check_responses": refs(("execution_id", "executions")),
-    "operational_dispositions": refs(("execution_id", "executions")),
+    "operational_dispositions": refs(("execution_id", "executions"), ("question_id", "question_links")),
     "control_receipts": refs(("execution_id", "executions")),
     "recoveries": refs(lists=(("execution_ids", "executions"),)),
     "reservations": refs(("constraint_id", "capacity_constraints"), ("owner_id", "executions")),

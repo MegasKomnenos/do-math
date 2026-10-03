@@ -8019,7 +8019,7 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 25,
+      "main_ledger_count": 26,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
@@ -8038,7 +8038,6 @@
         "KD-0601",
         "KD-1000",
         "KD-1001",
-        "KD-0302",
         "KD-0303",
         "KD-0902",
         "KD-0903",
@@ -8055,7 +8054,7 @@
         "KD-1908",
         "KD-1909"
       ],
-      "meaning": "31개는main미기록후보항목이며제품미구현수/전체완료율이아니다. 실제구현/재현/의존을원문으로대조한다.",
+      "meaning": "30개는main미기록후보항목이며제품미구현수/전체완료율이아니다. 실제원구현/재현/의존을대조한다.",
       "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
@@ -8528,7 +8527,7 @@
     "revision_deferral_integration": {
       "id": "B26",
       "scope": "KD-0500: 정상 준비 자식이 남긴 부모 개정 보류를 닫힌 저장·참조 계약에 보존",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-kctcgshb\\report.json",
         "sha256": "d9e9b103e07a455e8b8ab0e1988c5c669388a33c1d361edbc2add7b3cc550b1d",
@@ -8625,6 +8624,109 @@
       "contract": "기존실제owner task 상태와capture_targets/_ended_execution/submission_errors/_apply_revision_followup으로required 부모 대기와자식 deferred출력을생산. deferrals는execution_id/reason 닫힌 mapping,대상은현재식별자·실행은executions 가족에해소. 부모전문/무추가자식대기/저장재시작/없는대상·실행반려와게시/입력원상보존.",
       "scope_fidelity": "후보의prepared_sim 상태를현재mainowner_sim 정상과제로구성하여원결과단언을유지. 기존개정소유시험모듈로회귀를이동,후보옛transition 메서드삭제. 연구수행+별도지식개정의KD-0501은이검사로닫지않고별도남김.",
       "limits": "관련8/보강4/원장1/후보2는부분증거. 기존모델회귀상태의저장가능성이지전체개정/대기모집단폐쇄가아님. 최종관문별도.",
+      "whole_requirement_closed": false,
+      "commit": "7be99b6f"
+    },
+    "operational_question_integration": {
+      "id": "B27",
+      "scope": "KD-0302: 정상 봉인 운영 점검의 user_decision 질문 ID와 실제 질문 가족 참조 보존",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-37zahjjp\\report.json",
+        "sha256": "dc56aefdbb6b51ff5b6d293ca7182acbfec693569cc12fe5fa0b9319a7db69d9",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 27.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-sevtkly_\\report.json",
+        "sha256": "c3731b8b6156871e0c4b47a0a0e7675ee9b1f8c58f6f18fb3e6aa417d31ab49b",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 27.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-yfyighoa\\report.json",
+        "sha256": "08540614f1482d8056f6b2541081f14af14b85e14bd952cac4c3dad711eda756",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 20
+        },
+        "total_seconds": 8.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "candidate_normal": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-_0b60gc3\\report.json",
+        "sha256": "41a1d892dd8766255de33ab34d04762aa262c37d4753bd8e36386eab2b8ada73",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 27.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "ledger": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-5s1itrev\\report.json",
+        "sha256": "724ceedc1cd6f5d5f56f50598e9804ac3b6bcbc129efce4ff9029bbb7b0711af",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 1.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/record_schemas/schemas.py",
+          "sha256": "e88f7193c4af56e574c4d4a432b5bf1c1e1f92dadfe43712864e708498e17c72"
+        },
+        {
+          "path": "do_math/record_schemas/__init__.py",
+          "sha256": "ac0b9a27302f17355ae42fddf9ba8f1f2c7c55c5a5d05679dfb1a8d6b5004bf9"
+        },
+        {
+          "path": "tests/flows/test_submission_engine_calls.py",
+          "sha256": "c77630a838f437e33bbffe57b0f040c1b857791aa8c2de77bd6392d125c229cb"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "41e8797a387c33a755fe9dd0b0e0f6da31180942a08a1f117407a4310b5ee8c3"
+        }
+      ],
+      "contract": "실제ready work/provider failure 뒤정상DefaultResponder operational_review를runner/worker/producer check/중앙봉인/통합을거쳐적용. question_id ID선언과REFERENCES question_links결합. accepted receipt/check passed/user 질문출처·origin_field·저장재시작·없는질문/다른가족반려와게시원상유지.",
+      "scope_fidelity": "후보원래OperationalIngressDefectTests의앞선모든거부확장가족/재전달순회는유지. 이정상봉인경로를그더넓은모집단검사로대체하지않고최종전건에서원케이스도필요. main의현재reproduction은정상필드/FK회귀이며원ID는missed_kind역사에남김.",
+      "limits": "정상통합의반환red만관찰했고오류세부를새로본문계측하거나특정schema 예외를발명하지않음. 실제생산자의누락필드코드와선언수리뒤수용을연결. 정상경로1/관련20/후보1/원장1은부분증거.",
       "whole_requirement_closed": false
     }
   }

@@ -510,7 +510,8 @@ RECORDS["self_check_responses"] = record({"kind": TEXT, "execution_id": ID, "obl
     ("kind", "execution_id", "obligation_id", "observed_at", "response_json", "received_offset_ms"))
 RECORDS["operational_dispositions"] = record({"execution_id": ID, "disposition": EVIDENCE,
     "created_at": TEXT, "status": TEXT, "target_execution_id": ID,
-    "obligation_ids": REFS, "applied_at": TEXT, "result": EVIDENCE, "error": TEXT}, ("execution_id", "disposition"))
+    "obligation_ids": REFS, "applied_at": TEXT, "result": EVIDENCE, "error": TEXT,
+    "question_id": ID}, ("execution_id", "disposition"))
 RECORDS["control_receipts"] = record({"request_id": ID, "execution_id": ID, "kind": TEXT, "state": TEXT,
     "payload": EVIDENCE, "received_at": TEXT, "grant_id": ID, "reason": TEXT,
     "request_sha256": HASH, "snapshot": TEXT, "publication_id": ID, "payload_sha256": HASH,

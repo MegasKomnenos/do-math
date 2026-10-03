@@ -11,6 +11,7 @@ takes its turns. Identity reviews start from ``support.review_sim.opened_sim``
 (a theorem imported by control whose review the owner opened).
 """
 import json
+from copy import deepcopy
 from pathlib import Path
 import unittest
 
@@ -37,6 +38,39 @@ def new_executions(sim, before):
 
 
 class ProducerCallTests(unittest.TestCase):
+    def test_user_decision_from_sealed_operational_review_preserves_question_reference(self):
+        from support.scheduling_parallel import ready_work_sim
+        sim = ready_work_sim(1, max_output_repairs=0)
+        sim.model.on('research_work').reply(failed('Preserved provider failure needs a user decision'))
+        sim.run_until(lambda s: any(row.get('role') == 'operational_review' and row['status'] == 'ended'
+                                   for row in s.runtime['executions'].values()), max_steps=12)
+        review = next(row for row in sim.runtime['executions'].values() if row['role'] == 'operational_review')
+        self.assertEqual(review['outcome'], 'output_accepted', review.get('error'))
+        self.assertEqual(review['submission_receipt']['state'], 'accepted')
+        check = json.loads(sim.engine.store.read(review['submission_intent']['check_ref'], sim.engine.head))
+        self.assertEqual((check['passed'], check['issues']), (True, []))
+        record = next(row for row in sim.runtime['operational_dispositions'].values()
+                      if row['execution_id'] == review['id'])
+        self.assertEqual((record['status'], record['disposition']['kind']), ('applied', 'user_decision'))
+        question = next(row for row in sim.runtime['question_links'] if row['id'] == record['question_id'])
+        self.assertEqual((question['owner'], question['origin_execution_id']), ('user', review['id']))
+        self.assertEqual(question['origin_field'], 'output/disposition/question')
+        published = deepcopy(sim.engine.store.load())
+        sim.restart()
+        self.assertEqual(sim.engine.store.load(), published)
+        head, instance, runtime = published
+        for reference, reason in (
+                ('Q-missing', '^operational_dispositions references unknown record: Q-missing$'),
+                (review['id'], '^operational_dispositions reference has wrong family: ' + review['id'] + '$')):
+            with self.subTest(reference=reference):
+                damaged = deepcopy(runtime)
+                damaged['operational_dispositions'][record['id']]['question_id'] = reference
+                original = deepcopy(damaged)
+                with self.assertRaisesRegex(ValueError, reason):
+                    sim.engine.store.save_with_state(head, instance, damaged)
+                self.assertEqual(damaged, original)
+                self.assertEqual(sim.engine.store.load(), published)
+
     def test_unsealed_invalid_runner_output_is_preserved_for_operational_review(self):
         sim = configured_sim(**NO_REPAIR)
         before = set(sim.runtime["executions"])

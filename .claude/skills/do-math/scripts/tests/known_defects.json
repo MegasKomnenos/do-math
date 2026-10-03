@@ -224,6 +224,15 @@
       "found_by": "99c4ef93 계획 소유 시험 실제 실행. 최초 보고 do-math-tests-l_xmvrtg 보존. 정상 생산자 입력 교정 뒤 같은 실패를 재현; finish/resume-planning-result.json에 최종 파일 동일 hash의 무표시/표시 보고를 연결한다.",
       "missed_kind": "CODE ONLY 시험은 실행하지 않았다. 실제 수신자·저장 검증 및 합쳐진 요청 전체 비교가 드러낸 결함. 제품은 수정하지 않았다. A34 repair: exact revoke/deferral producer fields are declared in closed schemas; revoked_by binds decisions and deferral target/execution references resolve. All three original reproductions were unexpected successes in do-math-tests-oa03g_a7; markers removed together. Final gates remain pending. Existing regression moved from sim.test_planning_revision_transitions.RevisionTransitionTests.test_deferred_child_records_parent_deferral_without_new_child_wait to actual owner revision-obligation module. Main kctcgshb red rejects producer deferrals at closed storage; explicit deferral fields and target/execution resolution now preserve parent wait through restart. Unknown target/execution refusal keeps input and published state. Separate work/knowledge path KD-0501 remains distinct.",
       "status": "closed"
+    },
+    {
+      "id": "KD-0302",
+      "summary": "정상 운영 점검 user_decision 적용이 question_id를 기록하나 operational_dispositions 저장 스키마가 이를 거부한다",
+      "category": 1,
+      "reproduction": "flows.test_submission_engine_calls.ProducerCallTests.test_user_decision_from_sealed_operational_review_preserves_question_reference",
+      "found_by": "711b 계열의 targeted 동적 재현: 정상 producer 검사와 중앙 봉인, 전 확장 가족 반려·재전달을 표시 밖 setUp에서 확인한다. user_decision 적용의 question_id가 operational_dispositions 저장 스키마에서 거부되어 output_accepted 대신 execution_incomplete가 된다. core_engine:3443 / record_schemas/schemas:511. 최종 표시 제거: USER TEMP/do-math-tests-yahxkqr7/report.json. 시험 rawSHA256=3b7ad2870d1b4a044fd37e8511b1590f1e0fc36e662cbd44b13ee9c0d65a785d. 같은 파일 바이트의 표시 복구 보고서와 지원/제품 지문은 finish/resume-submission-result.json의 known_proofs에 기록한다. 진단은 보고서이며 expectedFailure 본문은 원래 올바른 계약만 단언한다.",
+      "missed_kind": "정상 운영 점검의 사용자 질문 생성과 실제 저장 계약을 연쇄 검사하지 않았다 A34 isolated repair: the actual questions.link producer emits question_id; the closed operational_dispositions schema now declares ID and the canonical REFERENCES table binds it to question_links. Both original minimal reproductions were unexpected successes in do-math-tests-j7zq5j07. The unchanged LONG 6x20 was an unexpected success in do-math-tests-332sucmo (94.0 s), confirming the generation also repaired. Markers removed together; final whole gates remain pending. Independent main normal sealed owner path37zahjjp red returns integration bundle on question_id; do-math-tests-sevtkly_ passes after exact question_id schema and REFERENCES binding to question_links. Original broader negative-extension owner case flows.test_submission_ingress_owner.OperationalIngressDefectTests.test_valid_user_decision_is_applied_after_rejected_extensions remains in candidate; this normal-path gate does not substitute for that population. Main actual producer/check/accepted receipt, question origin and stored restart plus unknown/wrong-family rejection are checked.",
+      "status": "closed"
     }
   ]
 }
