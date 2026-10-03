@@ -8024,7 +8024,7 @@
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [],
       "meaning": "후보 원장56개가 연결됨. 전체 미구현 수나 완료율이 아니다.",
-      "next": "원문 1e19/1f61/P2원래12/여섯부류/2단계11 및 후보와 main 선언·시험 모집단 차이를 기존 작업판에 연결하고 통합한다. 그 뒤 동일 최종 판본 전체 관문을 실행한다.",
+      "next": "남은 검토·제출·실행/공급자·학술/운영자·CLI/교차 시험 가족과 정상 생산자 통합. 여섯 부류/2단계11의무 전건을 실제 원문과 소비자로 닫은 뒤 동일 최종 판본 전체 관문·시간 개선·최소 실호출을 완료한다.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
     },
@@ -11734,7 +11734,7 @@
     },
     "storage_population_integration": {
       "id": "B44",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "저장 후보13모듈/규모입력·외부관찰2도우미와 실제 손상반려·생성왕복·규모비용 통합",
       "changed_area": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ehg6ftt9\\report.json",
@@ -11920,6 +11920,1110 @@
         {
           "path": "tests/support/storage_cost_owner.py",
           "sha256": "55641d690aea9f65eb47cdbcce233d0c92df02f770d6412cc737599587f1fb00"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "commit": "478c2a47"
+    },
+    "governance_population_integration": {
+      "id": "B45",
+      "state": "verified_main_commit_pending",
+      "scope": "승인·권한·위임·근거 현재성 후보28모듈/302원사례와 필요한 정상 생산자 통합",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-kvxth__2\\report.json",
+        "sha256": "92437bb339729d629abef4ccafb58ded663e6e7bc0d7b30094506bb2ea6260c1",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 440
+        },
+        "total_seconds": 231.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_governance_approval.LaterApprovalTests.test_corrected_exact_approval_cancels_unstarted_recheck_of_same_seal",
+              "seconds": 2.922000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_approval.PublicApprovalTests.test_git_changed_premise_rejects_later_approval_and_preserves_seal",
+              "seconds": 2.5,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_approval.SealedApprovalTests.test_git_configuration_import_uses_public_transition_and_profiles",
+              "seconds": 3.452999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_approval.SealedApprovalTests.test_git_sealed_import_later_control_and_restart",
+              "seconds": 2.9530000000959262,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_composite_inputs.GovernanceCompositeInputTests.test_academic_only_charter_does_not_revise_nonacademic_task",
+              "seconds": 10.187999999965541,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_composite_inputs.GovernanceCompositeInputTests.test_assessment_requires_the_complete_original_result_set",
+              "seconds": 5.812000000034459,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_composite_inputs.GovernanceCompositeInputTests.test_plan_model_requirement_cannot_exceed_approved_profile_allowlist",
+              "seconds": 14.844000000040978,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_changed_task_question_reports_contract_drift_without_misclassifying_review_inputs",
+              "seconds": 14.5,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_effect_contracts.GovernanceEffectContractTests.test_approved_grant_defaults_roundtrip_without_aliasing_the_proposal",
+              "seconds": 12.890999999945052,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_effect_contracts.GovernanceEffectContractTests.test_audit_mapping_and_goal_binding_are_exact_and_detached",
+              "seconds": 7.390999999945052,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_effect_contracts.GovernanceEffectContractTests.test_exact_approval_draft_is_read_only_and_application_roundtrips",
+              "seconds": 12.25,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_applied_secondary_import_during_initialization_does_not_open_research",
+              "seconds": 19.28200000000652,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_audit_schema_adds_required_field_without_changing_argument",
+              "seconds": 8.062999999965541,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_completed_goal_preserves_unprocessed_user_input_question",
+              "seconds": 20.280999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_engine_transitions.GovernanceEngineTransitionTests.test_superseded_answered_import_wait_is_removed_without_rework",
+              "seconds": 17.530999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_goal_audit.GoalConsumerTests.test_actual_goal_consumer_stores_mapping_not_generic_satisfied",
+              "seconds": 2.219000000040978,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_goal_audit.GoalConsumerTests.test_goal_consumer_and_final_assurance_with_actual_verified_knowledge",
+              "seconds": 2.437999999965541,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_goal_audit_slots.SealRecoveryTests.test_recovery_confirms_termination_before_using_original_seal_without_recollection",
+              "seconds": 2.219000000040978,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_governance_host_transition_inputs.GovernanceHostTransitionInputTests.test_settled_review_scope_keeps_its_pinned_profile",
+              "seconds": 9.01500000001397,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "unit.test_governance_checker_lineage.GovernanceCheckerLineageTests.test_checker_absent",
+              "seconds": 0.6410000000614673,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_checker_lineage.GovernanceCheckerLineageTests.test_checker_cycle",
+              "seconds": 0.6879999999655411,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_checker_lineage.GovernanceCheckerLineageTests.test_checker_is_author",
+              "seconds": 0.6709999999729916,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_checker_lineage.GovernanceCheckerLineageTests.test_checker_missing_predecessor",
+              "seconds": 0.6880000000819564,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_checker_lineage.GovernanceCheckerLineageTests.test_checker_resumes_author",
+              "seconds": 0.640999999945052,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_decision_reused",
+              "seconds": 9.405999999959022,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_delegation_duplicate",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_grant_duplicate",
+              "seconds": 0.34299999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_grant_expired",
+              "seconds": 0.40700000000651926,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_grant_kind",
+              "seconds": 0.31200000003445894,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_grant_reuse",
+              "seconds": 0.39099999994505197,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_grant_roles_empty",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_grant_roles_unknown",
+              "seconds": 0.5470000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_http_origins_missing",
+              "seconds": 0.4059999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_original_decision_missing",
+              "seconds": 0.39000000001396984,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_replacement_missing",
+              "seconds": 0.35999999998603016,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_replacement_self",
+              "seconds": 0.3280000000959262,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_revoke_delegation_missing",
+              "seconds": 0.34299999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_revoke_missing",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_decision_rejection.GovernanceDecisionRejectionTests.test_unsupported_decision",
+              "seconds": 0.3910000000614673,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_approval_actor",
+              "seconds": 4.921999999904074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_approval_scope",
+              "seconds": 0.35900000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_basis_missing",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_boolean_limit",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_duplicate_excluded_targets",
+              "seconds": 0.3280000000959262,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_duplicate_external_effects",
+              "seconds": 0.39099999994505197,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_duplicate_included_targets",
+              "seconds": 0.35900000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_effect_object",
+              "seconds": 0.4529999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_empty_scope",
+              "seconds": 0.46899999992456287,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_expired",
+              "seconds": 0.35900000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_external_effect",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_forbidden_kind",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_inactive",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_judgment_input",
+              "seconds": 0.28100000007543713,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_judgment_output",
+              "seconds": 0.5309999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_judgment_seal",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_limits_object",
+              "seconds": 0.31200000003445894,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_missing_decision_id",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_missing_decision_kind",
+              "seconds": 0.4059999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_missing_id",
+              "seconds": 0.3440000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_missing_judgment",
+              "seconds": 0.2809999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_missing_original_decision_id",
+              "seconds": 0.3440000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_missing_source_ref",
+              "seconds": 0.39099999994505197,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_negative_limit",
+              "seconds": 0.3440000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_original_actor",
+              "seconds": 0.43700000003445894,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_outside_target",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_refs_duplicate",
+              "seconds": 0.375,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_refs_empty_id",
+              "seconds": 0.4219999999040738,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_refs_extra_key",
+              "seconds": 0.35900000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_refs_object",
+              "seconds": 0.515999999945052,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_repeated_stage",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_resource_boolean",
+              "seconds": 0.4690000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_resource_limit",
+              "seconds": 0.42099999997299165,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_stale_basis",
+              "seconds": 0.5940000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_delegation_rejection.GovernanceDelegationRejectionTests.test_unknown_stage",
+              "seconds": 0.5779999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_domain_boundaries.GovernanceDomainBoundaryTests.test_changed_original_requires_new_import_lineage",
+              "seconds": 2.593999999924563,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_domain_boundaries.GovernanceDomainBoundaryTests.test_configuration_currentness_uses_owner_premise",
+              "seconds": 2.719000000040978,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_domain_boundaries.GovernanceDomainBoundaryTests.test_configuration_owner_must_remain_registered",
+              "seconds": 1.437000000034459,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_domain_boundaries.GovernanceDomainBoundaryTests.test_credential_array_is_rejected_by_admission_before_domain_branch",
+              "seconds": 1.125,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_domain_boundaries.GovernanceDomainBoundaryTests.test_delegation_array_is_rejected_by_admission_before_domain_branch",
+              "seconds": 0.5630000000819564,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_domain_boundaries.GovernanceDomainBoundaryTests.test_payload_owner_must_match_unit_owner",
+              "seconds": 1.0469999999040738,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_domain_boundaries.GovernanceDomainBoundaryTests.test_payload_target_must_match_owner_coordinate",
+              "seconds": 1.1400000000139698,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_domain_boundaries.GovernanceDomainBoundaryTests.test_task_ids_object_is_rejected_by_admission_before_domain_branch",
+              "seconds": 0.7820000000065193,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_external_case_identity.GovernanceExternalCaseIdentityTests.test_ambiguous_external_case_is_rejected_and_scope_returns_same_reason",
+              "seconds": 4.437999999965541,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_external_case_identity.GovernanceExternalCaseIdentityTests.test_external_case_rejects_different_pinned_grant",
+              "seconds": 0.7650000000139698,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_external_case_identity.GovernanceExternalCaseIdentityTests.test_revoke_does_not_dispose_other_grant_operation",
+              "seconds": 0.7029999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_grant_scope_contracts.GovernanceGrantScopeTests.test_actor_kind",
+              "seconds": 0.2809999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_grant_scope_contracts.GovernanceGrantScopeTests.test_excluded_target",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_grant_scope_contracts.GovernanceGrantScopeTests.test_expired",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_grant_scope_contracts.GovernanceGrantScopeTests.test_inactive",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_grant_scope_contracts.GovernanceGrantScopeTests.test_included_target",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_grant_scope_contracts.GovernanceGrantScopeTests.test_not_effective",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_grant_scope_contracts.GovernanceGrantScopeTests.test_once_without_action_id",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_grant_scope_contracts.GovernanceGrantScopeTests.test_purpose",
+              "seconds": 0.46799999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_grant_scope_contracts.GovernanceGrantScopeTests.test_reuse",
+              "seconds": 0.31299999996554106,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_grant_scope_contracts.GovernanceGrantScopeTests.test_subject",
+              "seconds": 0.3280000000959262,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_grant_scope_contracts.GovernanceGrantScopeTests.test_task_scope",
+              "seconds": 0.46899999992456287,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_decision_reference",
+              "seconds": 20.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_details_object",
+              "seconds": 0.8440000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_incomplete_coverage",
+              "seconds": 0.9220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_payload_object",
+              "seconds": 0.9219999999040738,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_question_blocks",
+              "seconds": 1.1400000000139698,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_question_identity",
+              "seconds": 1.0790000000270084,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_question_index",
+              "seconds": 0.9679999999934807,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_question_index_bool",
+              "seconds": 0.9689999999245629,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_question_options",
+              "seconds": 1.109000000054948,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_question_reference",
+              "seconds": 1.047000000020489,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_question_source_unit",
+              "seconds": 0.9370000000344589,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_question_target",
+              "seconds": 1.2809999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_range_bool",
+              "seconds": 1.0,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_range_end",
+              "seconds": 1.3429999999934807,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_range_start",
+              "seconds": 1.077999999979511,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_unit_duplicate",
+              "seconds": 1.2190000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_unit_object",
+              "seconds": 1.4070000000065193,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_units_empty",
+              "seconds": 1.172000000020489,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_unknown_owner",
+              "seconds": 0.8120000000344589,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_unowned_question",
+              "seconds": 0.7339999999385327,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_coordinates.GovernanceImportCoordinateTests.test_unrouted_text",
+              "seconds": 0.7970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_apply_not_approved",
+              "seconds": 1.3429999999934807,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_bundle_seal",
+              "seconds": 0.75,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_check_seal",
+              "seconds": 0.8439999999245629,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_checker_evidence",
+              "seconds": 0.875,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_control_bundle",
+              "seconds": 0.9220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_control_import",
+              "seconds": 0.859000000054948,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_control_origin",
+              "seconds": 0.859000000054948,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_control_source",
+              "seconds": 0.9379999999655411,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_control_units",
+              "seconds": 1.109000000054948,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_draft_decision",
+              "seconds": 0.9379999999655411,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_draft_scope",
+              "seconds": 1.312999999965541,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_draft_seal",
+              "seconds": 0.984000000054948,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_draft_status",
+              "seconds": 0.984000000054948,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_missing_exact_approval",
+              "seconds": 0.9059999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_missing_import",
+              "seconds": 1.2189999999245629,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_original_public_input",
+              "seconds": 0.875,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_original_version",
+              "seconds": 0.9209999999729916,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_receipt_seal",
+              "seconds": 0.9690000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_import_seal_rejection.GovernanceImportSealRejectionTests.test_superseded_import",
+              "seconds": 0.9690000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_absent_superseded",
+              "seconds": 6.281000000075437,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_approval_actor",
+              "seconds": 0.39099999994505197,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_approval_missing",
+              "seconds": 0.375,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_approval_source_hash",
+              "seconds": 0.48400000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_audit_absent",
+              "seconds": 0.43799999996554106,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_audit_assessor",
+              "seconds": 0.375,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_audit_mapping_empty",
+              "seconds": 0.34299999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_audit_mapping_verdict",
+              "seconds": 0.43799999996554106,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_audit_stale_input",
+              "seconds": 0.4690000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_content_hash",
+              "seconds": 0.35999999998603016,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_content_object",
+              "seconds": 0.39000000001396984,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_context_duplicate",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_context_empty",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_context_term_object",
+              "seconds": 0.375,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_document_hash",
+              "seconds": 0.4219999999040738,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_document_object",
+              "seconds": 0.35900000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_duplicate_record",
+              "seconds": 0.5150000000139698,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_goal_assurance",
+              "seconds": 0.5,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_lifecycle",
+              "seconds": 0.48499999998603016,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_record_kind",
+              "seconds": 0.5629999999655411,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_record_revision",
+              "seconds": 0.5150000000139698,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_same_rule",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_self_supersession",
+              "seconds": 0.5160000000614673,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_record_rejection.GovernanceRecordRejectionTests.test_supersession_link",
+              "seconds": 0.6869999999180436,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_answer_cannot_affect_unrelated_target",
+              "seconds": 1.0150000000139698,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_answer_cannot_name_missing_question",
+              "seconds": 1.6089999999385327,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_answer_must_name_a_question",
+              "seconds": 1.125,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_approval_of_blocking_import_preserves_user_wait",
+              "seconds": 1.515999999945052,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_domain_owner_rejects_nonuser_actor",
+              "seconds": 13.5,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_domain_owner_rejects_record_of_another_kind",
+              "seconds": 0.625,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_empty_grant_interval_is_not_an_expired_grant",
+              "seconds": 1.5,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_empty_knowledge_payload_is_nonapplying",
+              "seconds": 1.7809999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_grant_answer_closes_exact_instance_question",
+              "seconds": 1.172000000020489,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_knowledge_import_rejects_mismatched_candidate_identity",
+              "seconds": 0.4369999999180436,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_missing_delegation_key_is_rejected_without_changing_the_roots",
+              "seconds": 0.34299999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_nonobject_delegation_is_rejected",
+              "seconds": 0.35999999998603016,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_previously_included_instance_target_must_still_resolve",
+              "seconds": 0.43700000003445894,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_remaining_inputs.GovernanceRemainingInputTests.test_required_audit_record_must_resolve_before_delivery",
+              "seconds": 0.3589999999385327,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_replacement_inputs.GovernanceReplacementInputTests.test_delegated_case_must_match_actual_replacement_effect",
+              "seconds": 0.32900000002700835,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_rework_contracts.GovernanceReworkContractTests.test_changed_parent_seal",
+              "seconds": 1.515999999945052,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_rework_contracts.GovernanceReworkContractTests.test_different_exact_source",
+              "seconds": 1.6400000000139698,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_rework_contracts.GovernanceReworkContractTests.test_missing_parent",
+              "seconds": 1.2190000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_rework_contracts.GovernanceReworkContractTests.test_missing_repair_unit",
+              "seconds": 1.5940000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_rework_contracts.GovernanceReworkContractTests.test_reused_source_identity",
+              "seconds": 1.7339999999385327,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_rework_contracts.GovernanceReworkContractTests.test_superseded_parent",
+              "seconds": 1.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_semantic_check_rejection.GovernanceSemanticCheckRejectionTests.test_check_read_hash",
+              "seconds": 1.2189999999245629,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_semantic_check_rejection.GovernanceSemanticCheckRejectionTests.test_checker_hash",
+              "seconds": 0.6410000000614673,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_semantic_check_rejection.GovernanceSemanticCheckRejectionTests.test_checker_role",
+              "seconds": 0.7029999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_semantic_check_rejection.GovernanceSemanticCheckRejectionTests.test_missing_unit_coverage",
+              "seconds": 0.625,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_semantic_check_rejection.GovernanceSemanticCheckRejectionTests.test_repair_findings",
+              "seconds": 0.6400000000139698,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_semantic_check_rejection.GovernanceSemanticCheckRejectionTests.test_scope_boolean",
+              "seconds": 0.7189999999245629,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_governance_semantic_check_rejection.GovernanceSemanticCheckRejectionTests.test_semantic_verdict",
+              "seconds": 0.6400000000139698,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-gsxqcqb4\\report.json",
+        "sha256": "2e5d073d25dd4807fd8af6be90a1c5d475fa5c55cb02ed21ce46f0a397145f2f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 9.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 8.561999999918044,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "실제 해석·승인·owner·저장 생산자의 단일변경 반려·입력/저장 불변. grant시간 경계, 봉인/source/checker계보·정확task/host/model범위·감사mapping/input hash·초기승인/질문/양도/교체 효과를 실제 수신자에서 확인. 제품동작 변경없음.",
+      "limits": "440개231초 부분검증은전체 T2/flows/T3·변이·예산 증거가 아니다.188개개별예산 초과와구조smell8.562초를보존. 실제저장 준비를쓰는unit을순수저비용시험이라고하지 않는다.",
+      "files": [
+        {
+          "path": "tests/support/governance_cases.py",
+          "sha256": "4e669aba807a7a56a23737265654c041b1eadd8ac36de44c53ab549fca81f73b"
+        },
+        {
+          "path": "tests/unit/test_governance_basis_contracts.py",
+          "sha256": "fe7f30d456dad1b5c2b9fec4186ca91f67ed9f02e169e1c17dfb129b21228eaf"
+        },
+        {
+          "path": "tests/unit/test_governance_checker_lineage.py",
+          "sha256": "b7ca90ea8aebaae7691caa24be56d23d65f731bf00bce4f411abf766f90e21ce"
+        },
+        {
+          "path": "tests/unit/test_governance_decision_rejection.py",
+          "sha256": "b737956e1c68adba60b368f798967c29bc2f4bd291aaebd838d1d56fce0de983"
+        },
+        {
+          "path": "tests/unit/test_governance_delegation_rejection.py",
+          "sha256": "3673f2f27e9e7c5748535793dd50422d5488ba815e3a36ef0666c594f145c177"
+        },
+        {
+          "path": "tests/unit/test_governance_domain_boundaries.py",
+          "sha256": "99a9ea84156e91a31a150f0424ec5e42b025e946b667f82b1af443aad202b620"
+        },
+        {
+          "path": "tests/unit/test_governance_external_case_identity.py",
+          "sha256": "1d2df26b83120775456916cd745e6d87b9a8e0fcaad9f610b5f79528f09b4e97"
+        },
+        {
+          "path": "tests/unit/test_governance_grant_scope_contracts.py",
+          "sha256": "d663fc1402224f464985d73ee498eaadf671ca56e340bc19dfc927ba523f13e7"
+        },
+        {
+          "path": "tests/unit/test_governance_import_coordinates.py",
+          "sha256": "094ee9e8880b986524baf6ca81f43338ebbb42807c24836e063af9de2390917a"
+        },
+        {
+          "path": "tests/unit/test_governance_import_seal_rejection.py",
+          "sha256": "098d846d98c342bc75ea3b2b040cb6f0218e28dcce5235220c9b02f7f4ac2632"
+        },
+        {
+          "path": "tests/unit/test_governance_question_contracts.py",
+          "sha256": "af0a492b264f8a084dce0f0ce74faa841a15f0d82a59b5c7d4928492b96f69d2"
+        },
+        {
+          "path": "tests/unit/test_governance_record_rejection.py",
+          "sha256": "72e50783673b294cc742fb0847ecfdab8f0a9ffd33868acfdbb613093c52999e"
+        },
+        {
+          "path": "tests/unit/test_governance_remaining_inputs.py",
+          "sha256": "919a3a552fff6dade23bd8b59341349895c60c17f0f8dc2762249995da191379"
+        },
+        {
+          "path": "tests/unit/test_governance_replacement_inputs.py",
+          "sha256": "54337f38460b17282e638ec24526c0927b2b91d09f5dc8e42577491b34978535"
+        },
+        {
+          "path": "tests/unit/test_governance_rework_contracts.py",
+          "sha256": "d0a7c2fc7c72baac47a32150621430ac3e5e55fbcb16ac45373b801996e5621a"
+        },
+        {
+          "path": "tests/unit/test_governance_semantic_check_rejection.py",
+          "sha256": "9b055b36ba0b57491ac2ab579c12e8fcfd0149dcc7ec30cc7d30b970b8e04e32"
+        },
+        {
+          "path": "tests/sim/test_governance_audit_rejection.py",
+          "sha256": "aa24b64a199280822c053c7fc83925e369ee152b6d1abdf8fd2fbddf25f94d3d"
+        },
+        {
+          "path": "tests/sim/test_governance_authority_effects.py",
+          "sha256": "4b981ce6970b2fe740fcdb4a5c085cd39e97b5aeda33d0c8c53fd6485d58a2cf"
+        },
+        {
+          "path": "tests/sim/test_governance_composite_inputs.py",
+          "sha256": "3d3f8b8099d525a985c2b521f606e1c22c6dee95df92da4f3dcf5d42badc6d85"
+        },
+        {
+          "path": "tests/sim/test_governance_configuration_rejection.py",
+          "sha256": "fe02d8f2d50bf339c13cef808aed7eec594947ffbedbf2cb4e0047def5157037"
+        },
+        {
+          "path": "tests/sim/test_governance_decision_currentness.py",
+          "sha256": "cc78f5489244691d38748abd0ace08157e267f2660a13fdc9c8502fcdab10db8"
+        },
+        {
+          "path": "tests/sim/test_governance_effect_contracts.py",
+          "sha256": "9dd4fbaba6263965b756823dda3a42cc9abf845953014f94b68e87f8f6190b6f"
+        },
+        {
+          "path": "tests/sim/test_governance_engine_transitions.py",
+          "sha256": "9069ab780fa822ed638ba8b11be1e16c55366b55e8160e5517538da95f2daebc"
+        },
+        {
+          "path": "tests/sim/test_governance_host_transition_inputs.py",
+          "sha256": "6e5bb27a4419ddbfb90f9970aaf4d82d87d623314694655e0d407882bcf94c00"
+        },
+        {
+          "path": "tests/sim/test_governance_initial_approval_contracts.py",
+          "sha256": "42f01ea73b24ec31dd49cb5a92c3435c33d648c96eef00813a5d584230fc7630"
+        },
+        {
+          "path": "tests/sim/test_governance_owner_contracts.py",
+          "sha256": "3896dcd181e5cb02bc6776a8bd17ae660ed971175837bf0c0abf85a8ba90cca0"
+        },
+        {
+          "path": "tests/sim/test_governance_question_sources.py",
+          "sha256": "262a03e08ae27460ab9c3b2132126276e1a83915cfb131d03bdb5e74e242e5f9"
+        },
+        {
+          "path": "tests/sim/test_governance_source_basis_contracts.py",
+          "sha256": "137c646347f50490e288b29ded2bb16380d01f451cc72b4607c2bd6b7492e477"
+        },
+        {
+          "path": "tests/sim/test_governance_task_scope_contracts.py",
+          "sha256": "69aae8cb89936ba5f2e70a33d2baa971a3e9683db4000f4f38769f72ac797566"
         }
       ],
       "whole_requirement_closed": false
