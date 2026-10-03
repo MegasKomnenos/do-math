@@ -130,3 +130,64 @@ def withdraw(sim, identifier):
         [{'task_id': identifier, 'disposition': 'withdraw', 'reason': '미수행 과제를 철회한다.'}],
         execution_id=eid, input_tasks=deepcopy(engine.runtime['tasks']), clock=sim.ports.clock)
     engine._save()
+
+
+def _build_hold(root, shared):
+    from do_math import revisions
+    from support.engine_lifecycle import applied, clear_work
+    from support.planning_owner import enqueue
+    sim = _build(root, shared)
+    applied(sim, 'configure', config={'contract_revision_limit': 1})
+    clear_work(sim)
+    task = only_task(sim)
+    enqueue(sim.engine, 'research_preparation', task['id'])
+    revisions.record_repetition(sim.instance, sim.runtime, lineage='contract_revision', lineage_id=task['id'],
+        event_ref=task['producer_execution'], outcome='authored', owner='ai', reason='첫 계약 생산',
+        version=task['revision'], clock=sim.ports.clock)
+    sim.engine._save()
+    return sim
+
+
+def held_sim():
+    from support.sim import built
+    return built('planning-repetition-held', _build_hold)
+
+
+def continuation_input(sim):
+    from do_math import revisions
+    task = only_task(sim)
+    hold = revisions.repetition_hold(sim.runtime, 'contract_revision', task['id'])
+    action = next(a for a in sim.runtime['queue'] if a['role'] == 'research_preparation')
+    return {'kind': 'repetition_continue', 'decision_id': 'DC-planning-continue',
+        'lineage': 'contract_revision', 'lineage_id': task['id'], 'hold_event_ref': hold['event_ref'],
+        'allowed_action': revisions.action_scope(action), 'baseline_revision': task['revision']}
+
+
+def warm_held():
+    held_sim()
+
+
+def _build_empty_hold(root, shared):
+    from support.sim import Sim
+    from support.default_responder import DefaultResponder
+    from support.engine_lifecycle import clear_work
+    sim = Sim(root, shared=shared, config={'exhaustion_empty_limit': 1})
+    sim.activate()
+    clear_work(sim)
+    sim.model.responder = DefaultResponder(preparation_candidates=[])
+    sim.engine._enqueue('research_preparation', reason='빈 준비의 실제 제출과 보류')
+    sim.engine._save()
+    sim.run_until(lambda s: any(r.get('kind') == 'repetition_hold' and r.get('lineage') == 'exhaustion_empty'
+                               for r in s.runtime['history'])
+                  and all(e['status'] == 'ended' for e in s.runtime['executions'].values()), max_steps=8)
+    clear_work(sim)
+    return sim
+
+
+def empty_hold_sim():
+    from support.sim import built
+    return built('planning-empty-hold-inputs', _build_empty_hold)
+
+
+def warm_empty_hold():
+    empty_hold_sim()

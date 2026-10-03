@@ -4856,7 +4856,7 @@
       {
         "id": "4-C",
         "state": "partial_verification",
-        "remaining": "B16 반복11/B33 제출5·설치복구6/B41 자기점검3의 부분 증거 연결. 다른 상태 공간과 실제 생산 분류·문턱 후 출구 전건 및 최종 관문은 남음."
+        "remaining": "B42 반복11결과 실제 생산전건·한도/재개, B33 제출5·설치복구6, B41 자기점검3의 부분증거 연결. 다른 상태 공간과 최종 전건/예산 관문은 남음."
       },
       {
         "id": "5-A",
@@ -11430,7 +11430,7 @@
     },
     "self_check_progress_integration": {
       "id": "B41",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "4-C자기점검 진행3값의 스키마/계수 공통 표와 전 조합 시험",
       "before": "도입 전 수집은 SELF_CHECK_PROGRESS 미정의 ImportError로 거부됐다. 기존 세 값의 제품 동작 오류 재현이라고 주장하지 않는다.",
       "changed_area": {
@@ -11482,6 +11482,51 @@
       },
       "contract": "progress reset/no_progress increment/contract_mismatch retain. 반려와 재전달은 불변, defect/indeterminate 우선과 검토 확인 reset을 실제 추적기로 전 진행×상태 순회한다.",
       "limits": "4-C 부분 통합. 세 진행과 반복/제출/설치복구 표가 다른 상태 공간·생산 분류 전건 및 전체 동일 판본 관문을 대신하지 않는다. unit2개와 구조 smell 개별 예산 초과 보존.",
+      "whole_requirement_closed": false,
+      "commit": "5b4250fe"
+    },
+    "repetition_population_integration": {
+      "id": "B42",
+      "state": "verified_main_commit_pending",
+      "scope": "현재 반복 결과 생산 전건/모든 한도의 유지·재개와 원 sim18사례/실제 빈 준비2사례 통합",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-u_ba78bt\\report.json",
+        "sha256": "ae81a977b8ce0d411e6beff3c23add54dd0a993dbbd015d624f1408cb86b53cc",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 25
+        },
+        "total_seconds": 16.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-x97r8n7c\\report.json",
+        "sha256": "d3b78d90ca093e4eb674b095170e680bec1c3e589a726621abcfe4a367cdcef4",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 6.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 5.437000000034459,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "실제 생산 결과와 선언 양방향 census; 모든11결과/모든lineage의 계수·한도·중복 불변·정확사용자해소·후속1개, actual empty success와실패 predecessor 구분. 제품동작변경없음.",
+      "limits": "4-B/4-C의 반복 가족 부분 검증. 다른 상태 공간과 전체 T2/flows/T3·예산·극단변이 관문을 대신하지 않는다. 구조 smell5.437초 개별예산 초과 보존.",
       "whole_requirement_closed": false
     }
   }
