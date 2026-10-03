@@ -17,10 +17,14 @@ from do_math import planning, revisions
 from support.engine_lifecycle import _ended_execution
 from support.planning_owner import enqueue, owner_sim, theorem_id, warm_owner
 
-setUpModule = warm_owner
 
 
 class RevisionObligationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        warm_owner()
+
+
     def setUp(self):
         self.sim = owner_sim()
         self.engine = self.sim.engine
@@ -212,6 +216,43 @@ class RevisionObligationTests(unittest.TestCase):
         extension['revision_resolutions'][0]['disposition'] = 'revised'
         self.assertEqual(revisions.submission_errors({'candidates': [{'title': 'revision', 'revises_task_id': 'TK-1'}]},
                                                      extension, context), [])
+
+
+class DelegatedWorkRevisionTests(unittest.TestCase):
+    def test_waiting_work_result_does_not_force_assessment_status(self):
+        """실제 별도 지식 생산·개정과 두 판정의 관계 상태를 유지하는 긴 수신 경로다."""
+        from support.planning_contract_inputs import relation_sim, delegated_revision
+        self.sim = relation_sim()
+        self.engine = self.sim.engine
+        self.parent, self.tid, self.kid = delegated_revision(self.sim)
+        from do_math import knowledge
+        from support.engine_lifecycle import _ended_execution, theorems
+        from support.planning_owner import enqueue
+        other, = theorems(self.sim, 'planning_parallel_revision')
+        action = enqueue(self.engine, 'research_work', self.tid,
+            revision_targets=revisions.capture_targets(self.sim.instance, self.sim.runtime, [self.kid, other]))
+        _ended_execution(self.engine, 'EX-waiting-work', 'research_work')
+        changes = {'summary': '독립 기록 설명을 명료하게 개정한다.'}
+        extension = {'knowledge_changes': [{'id': other, 'changes': changes, 'reason': '설명 개정'}],
+            'revision_resolutions': [
+                {'record_id': self.kid, 'disposition': 'deferred', 'reason': '추가 입력 대기'},
+                {'record_id': other, 'disposition': 'revised', 'reason': '설명 개정'}]}
+        self.assertEqual(revisions.submission_errors({'outcome': 'waiting'}, extension, {'action': action,
+            'tasks': list(self.sim.runtime['tasks'].values()),
+            'knowledge_catalog': list(self.sim.instance['knowledge'].values())}), [])
+        self.sim.runtime['executions']['EX-waiting-work']['extensions'] = extension
+        self.engine.instance, self.engine.runtime = knowledge.replace_knowledge(self.sim.instance, self.sim.runtime,
+            other, changes, reason='설명 개정', actor_ref='EX-waiting-work', clock=self.sim.ports.clock)
+        task = deepcopy(self.sim.runtime['tasks'][self.tid])
+        self.engine._apply_revision_followup(action, {'outcome': 'waiting'}, 'EX-waiting-work')
+        self.assertEqual(self.sim.runtime['tasks'][self.tid], task)
+        self.assertEqual(self.sim.runtime['waiting_actions'][self.parent]['deferrals'], {
+            self.kid: {'execution_id': 'EX-waiting-work', 'reason': '추가 입력 대기'}})
+        self.engine._remove_action(action)
+        self.engine._save()
+        published = deepcopy(self.engine.store.load())
+        self.sim.restart()
+        self.assertEqual(self.sim.engine.store.load(), published)
 
 
 if __name__ == '__main__':

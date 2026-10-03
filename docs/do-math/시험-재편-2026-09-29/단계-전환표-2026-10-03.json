@@ -8019,7 +8019,7 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 26,
+      "main_ledger_count": 27,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
@@ -8041,7 +8041,6 @@
         "KD-0303",
         "KD-0902",
         "KD-0903",
-        "KD-0501",
         "KD-0502",
         "KD-0804",
         "KD-1901",
@@ -8054,7 +8053,7 @@
         "KD-1908",
         "KD-1909"
       ],
-      "meaning": "30개는main미기록후보항목이며제품미구현수/전체완료율이아니다. 실제원구현/재현/의존을대조한다.",
+      "meaning": "29개는main미기록후보항목이며제품미구현수/전체완료율이아니다. 실제원구현/재현/의존을대조한다.",
       "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
@@ -8630,7 +8629,7 @@
     "operational_question_integration": {
       "id": "B27",
       "scope": "KD-0302: 정상 봉인 운영 점검의 user_decision 질문 ID와 실제 질문 가족 참조 보존",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-37zahjjp\\report.json",
         "sha256": "dc56aefdbb6b51ff5b6d293ca7182acbfec693569cc12fe5fa0b9319a7db69d9",
@@ -8727,6 +8726,172 @@
       "contract": "실제ready work/provider failure 뒤정상DefaultResponder operational_review를runner/worker/producer check/중앙봉인/통합을거쳐적용. question_id ID선언과REFERENCES question_links결합. accepted receipt/check passed/user 질문출처·origin_field·저장재시작·없는질문/다른가족반려와게시원상유지.",
       "scope_fidelity": "후보원래OperationalIngressDefectTests의앞선모든거부확장가족/재전달순회는유지. 이정상봉인경로를그더넓은모집단검사로대체하지않고최종전건에서원케이스도필요. main의현재reproduction은정상필드/FK회귀이며원ID는missed_kind역사에남김.",
       "limits": "정상통합의반환red만관찰했고오류세부를새로본문계측하거나특정schema 예외를발명하지않음. 실제생산자의누락필드코드와선언수리뒤수용을연결. 정상경로1/관련20/후보1/원장1은부분증거.",
+      "whole_requirement_closed": false,
+      "commit": "f37ea1e0"
+    },
+    "waiting_work_integration": {
+      "id": "B28",
+      "scope": "KD-0501: 기존 보류 수리의 별도 수행 waiting·독립 지식교체 수신 경로 검증",
+      "state": "verified_main_commit_pending",
+      "initial_main": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-v9le5jrf\\report.json",
+        "sha256": "66017e6fd1eda5af6290b1b51a1f7686ec7c130fae65c157204e59e84dc2ee0f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 41.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_revision_obligations.RevisionObligationTests.test_waiting_work_result_does_not_force_assessment_status",
+              "seconds": 29.79700000002049,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "initial_candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-9b4acvts\\report.json",
+        "sha256": "a13d57b85f60136931f4c770ed5307b70d8ef04c29b6b5505b7cad4f40efe3c6",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 43.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_revision_obligations.RevisionObligationTests.test_waiting_work_result_does_not_force_assessment_status",
+              "seconds": 29.56299999996554,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "class_cleanup": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-2843vfjo\\report.json",
+        "sha256": "b432d66c7b67e1fb30f6da20dc87b75913f9e45c5c3f716d1ddc4d220ea190ac",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 39.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_waiting_work_result_does_not_force_assessment_status",
+              "seconds": 28.859000000054948,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "required_state_only": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-a30grkhy\\report.json",
+        "sha256": "d5ba5df31f3a96319a57f6148cf11c36fb870dc45e01081229312d761ed40c84",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 29.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_waiting_work_result_does_not_force_assessment_status",
+              "seconds": 29.484000000054948,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "original_owner_class": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-fd45f9p8\\report.json",
+        "sha256": "01dd773dfeeb1123853ed48243795321865c26c0f2da8ef32ba8f4eadd100c22",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 8
+        },
+        "total_seconds": 16.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "current_candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-_e4jdn5b\\report.json",
+        "sha256": "be11b4c3c329b5081d1ae4f6c5bf9602cfa8bf4bbc1c150b8723917ab32e6414",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 32.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_waiting_work_result_does_not_force_assessment_status",
+              "seconds": 28.84299999999348,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ng5fh7_u\\report.json",
+        "sha256": "d94884f0717f560d884ea645f5db52a6f6ab2cdd6b97a631537d381569c9ef20",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 5
+        },
+        "total_seconds": 8.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 5.827999999979511,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "tests/support/planning_contract_inputs.py",
+          "sha256": "66c61c467f89a375ae4cba2111e9f8bf09ba779a79fa5b59fd869e1a5a468038"
+        },
+        {
+          "path": "tests/sim/test_planning_revision_obligations.py",
+          "sha256": "00b9537a9d1a5c4e47da57f5f2219928acaefc9470f586516192fac0e42a2127"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "58304107cec46a2d6c6bd0be65c51d621ef5d84e9246c17b6314fc82067d888c"
+        }
+      ],
+      "contract": "정상관계/과제승인/고정입력묶음/위임부모 생산자를원문그대로사용. 별도정리와독립판정을실제로생산후knowledge.replace_knowledge와research_work waiting 수신. task판정전문불변·정확한부모deferrals·저장재시작확인. B26 저장수리가이미적용돼추가product변경없음.",
+      "start_state_improvement": "기존소유클래스setUp을상속하여사용하지않는owner 상태를복원하던회귀를같은모듈의별도성질클래스로옮김. module 전체warm_owner를기존owner 클래스의setUpClass로옮겨선택된별도회귀가불필요한owner 템플릿을빌드하지않음. 동일단독실행39.6→29.5초; 실제본문약29초와Sim예산초과는유지.",
+      "scope_fidelity": "준비자식KD-0500과다른실제수신을검사함. 현재IDs를양쪽원장에서갱신하고후보옛관계메서드삭제로중복제거. 역사가리키는원ID/원실패는보존. 새main pre-repair 실패를만들었다고주장하지않음.",
+      "limits": "1개회귀/기존owner8/후보2·구조5의부분증거. 장기실제지식생산·교체를약화하거나짧게만들지않았고전체T2/예산/T3를닫지않음.",
       "whole_requirement_closed": false
     }
   }
