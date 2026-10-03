@@ -11532,7 +11532,7 @@
     },
     "planning_population_integration": {
       "id": "B43",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "계획 영역 후보11모듈과 정상 생산자 및 필요한 템플릿 준비 동작 통합",
       "initial_family": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-01uxu689\\report.json",
@@ -11727,6 +11727,199 @@
         {
           "path": "tests/support/sim.py",
           "sha256": "c8955bcbf8d9023245d05d56c15e9a542767b1326d6f3cb8363bf1128d9d25ee"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "commit": "536d14b2"
+    },
+    "storage_population_integration": {
+      "id": "B44",
+      "state": "verified_main_commit_pending",
+      "scope": "저장 후보13모듈/규모입력·외부관찰2도우미와 실제 손상반려·생성왕복·규모비용 통합",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ehg6ftt9\\report.json",
+        "sha256": "3a5f7b77a712e4e52ff9a89e40e50522810bc254fb4e1a1738c708fa9d8e76a9",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 136
+        },
+        "total_seconds": 125.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "flows.test_storage_installation_costs.InstallationCosts.test_record_register_and_transition_read_each_judgment_file_once",
+              "seconds": 93.14000000001397,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "sim.test_storage_owner_costs.OwnerCosts.test_readiness_copies_results_but_never_whole_state_at_measured_scale",
+              "seconds": 6.844000000040978,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "unit.test_knowledge_record_authorities.StorageRoundTripTests.test_storage_registration_roundtrip_uses_split_family_files",
+              "seconds": 0.2339999999385327,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_codec_properties.CodecProperties.test_every_publication_and_fresh_contract_load_preserves_exact_bytes",
+              "seconds": 13.405999999959022,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_codec_properties.CodecProperties.test_random_key_order_and_multiple_large_values_roundtrip",
+              "seconds": 0.39000000001396984,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_cost_counts.StorageCostCounts.test_export_count_scales_by_batch_and_writes_every_exact_file",
+              "seconds": 15.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_cost_counts.StorageCostCounts.test_query_counts_reads_and_hashes_without_cached_candidate_inputs",
+              "seconds": 1.437000000034459,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_payloads.PayloadPublicationTests.test_unreferenced_payload_can_be_reused_without_rewriting_the_blob",
+              "seconds": 0.21799999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_reporting.ReportingTests.test_status_reports_artifact_presence_and_length_in_one_batch_without_bytes",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_repository.ResearchRepositoryTests.test_export_reads_bounded_batches_and_preserves_binary_contents",
+              "seconds": 1.1099999999860302,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_retention_rechecks.RetentionRechecks.test_produced_archive_rejections_preserve_run_then_pinned_cleanup_removes_only_local_bytes",
+              "seconds": 0.2809999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_snapshot_rejections.SnapshotRejections.test_declared_family_membership_and_record_identity_are_checked",
+              "seconds": 1.0150000000139698,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_snapshot_rejections.SnapshotRejections.test_metadata_descriptor_and_undeclared_file_damage_preserve_original_snapshot",
+              "seconds": 0.20400000002700835,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_snapshot_rejections.SnapshotRejections.test_query_and_export_rejections_leave_snapshot_and_destination_unchanged",
+              "seconds": 0.26500000001396984,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_snapshot_rejections.SnapshotRejections.test_root_manifest_and_metadata_damage_reaches_actual_loader",
+              "seconds": 0.7349999999860302,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_state_contract.SchemaRegistrationTests.test_every_built_in_family_schema_is_a_valid_json_schema",
+              "seconds": 2.094000000040978,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_type_recurrence.TypeRecurrence.test_engine_noop_check_publishes_boolean_integer_swaps",
+              "seconds": 0.26599999994505197,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-g07b9h_5\\report.json",
+        "sha256": "e994e3b0455cc1adb1307370ffc1c5ab2a11dc331d635038c9a932505a715714",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 7.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 6.125,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "실제Repository/GitStateStore·새reader의코덱/큰값 재등장·정확형/바이트왕복과단일손상반려. 실제1,043파일export64/8MiB분할·query배치계수·idle commit0·readiness wholecopy0·56,230파일실제설치/등록/transition내용읽기1회·구조검사읽기0.",
+      "limits": "56,230은파일수이며8.55GB내용재생아님. 선택136개 기능통과와17개 개별예산초과(설치93.14초/export15.25초/코덱게시13.406초/readiness6.844초), 구조smell6.125초를구분. 전체관문증거 아님.",
+      "files": [
+        {
+          "path": "tests/unit/test_storage_codec_properties.py",
+          "sha256": "a43cf49e8fbcb4b1fd4dd7c3d2ec1fa2ff2ba0633e38b4bbf0f3ac23c3b612a3"
+        },
+        {
+          "path": "tests/unit/test_storage_context_rejections.py",
+          "sha256": "47d1ef56fb510728e15b417dfc76b703bbce8c33062e8acc37bd605cb5b997bf"
+        },
+        {
+          "path": "tests/unit/test_storage_contract_rejections.py",
+          "sha256": "dcbe5d56f3f94dc3d2da9c1a174622a863e0ecc70c7a5076d8d12ddcfd97beeb"
+        },
+        {
+          "path": "tests/unit/test_storage_cost_counts.py",
+          "sha256": "eca077344983a5a3ca97541f1fbfb7682046def2280a9f3d73f4be2e0b85b143"
+        },
+        {
+          "path": "tests/unit/test_storage_git_rejections.py",
+          "sha256": "ffe7a6d98a4b658fb78314f9a7d68f19cc6f75a2deda686b32f4d41485ca6d9c"
+        },
+        {
+          "path": "tests/unit/test_storage_inspection_branches.py",
+          "sha256": "4c9e766c965a2ffcbd1c83dac1e2c0b6f5ef017ef5b3be7779379487a51c2890"
+        },
+        {
+          "path": "tests/unit/test_storage_payload_rejections.py",
+          "sha256": "380125e32b91b5b3cf3363638a34526ad4313c228fb46ee49c5e5ad0b2581664"
+        },
+        {
+          "path": "tests/unit/test_storage_report_projections.py",
+          "sha256": "cba45037e3fc0553b24e19028f325eba8919c63ed2e912ab1f4c23d3922a9f9f"
+        },
+        {
+          "path": "tests/unit/test_storage_retention_rechecks.py",
+          "sha256": "6e6c33eac24b19e34d539e7118437850ba2ea17d9523b98dc54910116250c745"
+        },
+        {
+          "path": "tests/unit/test_storage_snapshot_rejections.py",
+          "sha256": "ee54b1635f53b63632323fd75788aad9c84a1ac013984740195a82642eb8c02f"
+        },
+        {
+          "path": "tests/unit/test_storage_value_branches.py",
+          "sha256": "9c50941eceff0330db176d68019f5ec2fefbe5ca50835689a0978eb968a1cffb"
+        },
+        {
+          "path": "tests/sim/test_storage_owner_costs.py",
+          "sha256": "08d8a83e946b870b80d2b87122b4320ecdb3e6dbac8ea5773d57f136b7c6beaf"
+        },
+        {
+          "path": "tests/flows/test_storage_installation_costs.py",
+          "sha256": "22a39122a4dc25228f293f17c910c32ff66cf870c959eaef20f6db414f892e75"
+        },
+        {
+          "path": "tests/support/storage_obligations.py",
+          "sha256": "2a45e6e284890632417d6f09d956cabf81b6a841da1595c9787041326da4990d"
+        },
+        {
+          "path": "tests/support/storage_cost_owner.py",
+          "sha256": "55641d690aea9f65eb47cdbcce233d0c92df02f770d6412cc737599587f1fb00"
         }
       ],
       "whole_requirement_closed": false
