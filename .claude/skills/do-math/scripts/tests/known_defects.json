@@ -152,6 +152,15 @@
       "found_by": "Cross obligations on main-wip snapshot e440bf7: real Sim activation, accepted empty provider submission, model call log and actual Jobs worker request IDs; cross-initial.log reproduced the unexpected research_plan call. Setup, accepted outcomes and request/call correspondence are checked outside expectedFailure.",
       "missed_kind": "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_preparation_without_any_pending_review_still_opens_a_plan pins the empty-plan enqueue as expected; no targetless model/Job zero-count assertion covered the subsequent owner passes.",
       "status": "open"
+    },
+    {
+      "id": "KD-0805",
+      "summary": "A fixed mathematical proposal staged review is rejected after a valid research charter decision; the duplicated publication-premise checks also disagree in the repair candidate.",
+      "category": 8,
+      "reproduction": "unit.test_review_engine_staged.StagedReviewTests.test_a_research_charter_change_preserves_the_fixed_staged_proposal",
+      "found_by": "Main red do-math-tests-9se3jbwj uses preserved user source and actual governance.apply_decision; activation raises staged identity review publication premises changed. Candidate baseline knvwwf8d and exact b18_r9ug also reproduce producer/receiver disagreement.",
+      "missed_kind": "Both producer and receiver now use knowledge_records.review_publication_premises. Actual adopted policy, identity, active environment and non-charter governance remain checked; five changed premise fields are rejected. Main related do-math-tests-ys5o6lj5: 12 passed, two existing unit budget overruns retained.",
+      "status": "closed"
     }
   ]
 }

@@ -6661,8 +6661,105 @@
           "sha256": "e95dfbaea8e2b3b58658a0f7caaf43581b87220824d14fadafd1316df846dcfc"
         }
       ],
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "contract": "학술 요건만 바꾸면 실제 판정·해답 기초 유지 및 저장 재시작. 실제 수학 목표를 바꾸면 현재 판정 폐기와 미해결 재개. 직접 거버넌스 경로도 owner refresh 검사. 스키마와 이관 표시/원장 동시 갱신. 다른 결함 원장 보존.",
+      "whole_requirement_closed": false,
+      "commit": "10ce0461"
+    },
+    "review_premise_integration": {
+      "id": "B09",
+      "scope": "고정 수학 명제의 검토 공개 전제를 main의 생산자와 단계 활성화 수신자에 함께 공유",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-9se3jbwj\\report.json",
+        "sha256": "47f0f38843840420c8521d0cfba8c87ccbb43ac5762db5e704e256f6453cba7c",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "error": 1
+        },
+        "total_seconds": 0.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ys5o6lj5\\report.json",
+        "sha256": "be75bd8c655025682d2126d1113dcfad09ef1e7164e092c2c0bb8314806cd078",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 12
+        },
+        "total_seconds": 85.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_activation_git_round_trip_preserves_old_and_loads_new_records",
+              "seconds": 0.35900000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_assessment_survives_a_second_transition_and_git_round_trip",
+              "seconds": 0.4529999999795109,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-zbemhh4u\\report.json",
+        "sha256": "df47467f3671c28921ab6096a005d20a46ae5e9a01699a4aed83399bc3973dc8",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 5
+        },
+        "total_seconds": 19.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 13.23499999998603,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/knowledge_records.py",
+          "sha256": "1b5fb210d72db356f1fa5b86689a2d1532d945b60587add9462d41d88278be6b"
+        },
+        {
+          "path": "do_math/knowledge.py",
+          "sha256": "87e86bb850c996535326580c7581736e2cb3ca8cc774fa63bdb2b2de7ea13418"
+        },
+        {
+          "path": "do_math/review_engine.py",
+          "sha256": "d73c956381b39198e31aff2e5ef36d47d890c11dcd3539ffbdb74e75b1366c95"
+        },
+        {
+          "path": "tests/unit/test_review_engine_staged.py",
+          "sha256": "9314e2631855c754cd406aa8686a14eb5402f3ed5c5add05ad568ca1cfa87ac8"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "b2d8ac72ba65d024af9d1ae0bfb63651c390454f509a9a7d815cbeadb2b147e5"
+        },
+        {
+          "path": "이음새-정본.md",
+          "sha256": "99df70a485b5cbda3adc66d6ce150489aca8de1107afec7455ae7493819eaef5"
+        }
+      ],
+      "semantic_evidence": "보존 사용자 원문과 실제 governance.apply_decision으로 헌장 목적을 바꿔도 고정 명제의 완료된 검토는 활성화. 실제 전제 다섯 필드의 변조와 오래된 정책은 반려. 검토 영수증·소유자 경로·독립 검토·저장 왕복 유지.",
+      "limits": "후보 B06의 정상 전체 신뢰 전환 흐름과 main의 도메인/검토 경로를 구별한다. main의 아직 미통합 신뢰 전환 수리까지 폐쇄한 것은 아니다.",
       "whole_requirement_closed": false
     }
   }

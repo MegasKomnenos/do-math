@@ -687,14 +687,7 @@ def _validated_staged_identity_review(instance, transition, knowledge_id, receip
             or staged.get("transition_basis") != basis["transition_basis"]
             or staged.get("target_environment") != basis["target_environment"]):
         raise ValueError("staged identity review basis changed")
-    environment_id = instance.get("active_trust_environment")
-    expected_premises = {
-        "identity_basis": basis["live_identity_basis"],
-        "active_trust_environment": environment_id,
-        "trust_environment": deepcopy(instance.get("trust_environments", {}).get(environment_id)),
-        "review_policy": deepcopy(instance.get("review_policy")),
-        "governance": deepcopy(instance.get("governance", {})),
-    }
+    expected_premises = kr.review_publication_premises(instance, knowledge_id)
     if cycle.get("publication_premises") != expected_premises:
         raise ValueError("staged identity review publication premises changed")
     validate_sealed_review(cycle, runtime, instance=instance, clock=clock, at=at)

@@ -309,6 +309,22 @@ def identity_basis(instance, knowledge_id):
                             instance["expositions"][record["exposition_id"]])
 
 
+def review_publication_premises(instance, knowledge_id):
+    """Bind a fixed mathematical proposal to its adopted publication authorities."""
+    from .review_policy import build_review_policy
+    policy = instance.get('review_policy')
+    if policy is None:
+        raise ValueError('adopted review policy is required before review admission')
+    environment_id = instance.get('active_trust_environment')
+    return {'identity_basis': identity_basis(instance, knowledge_id),
+            'active_trust_environment': environment_id,
+            'trust_environment': deepcopy(instance.get('trust_environments', {}).get(environment_id)),
+            'review_policy': build_review_policy(policy),
+            # The charter changes research purpose, not this fixed proposal.
+            'governance': {key: deepcopy(row) for key, row in instance.get('governance', {}).items()
+                           if row['kind'] != 'charter'}}
+
+
 def formal_overlay(instance, formal_id, **changes):
     """Read-only view with one formal result replaced; never mutate or persist it."""
     formal_results = dict(instance["formal_results"])

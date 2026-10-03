@@ -61,6 +61,32 @@ class StagedReviewCase(unittest.TestCase):
 
 
 class StagedReviewTests(StagedReviewCase):
+    def test_a_research_charter_change_preserves_the_fixed_staged_proposal(self):
+        from do_math import governance
+        from support.entry import entry
+        from support.record_builders import domain_governance
+        from support.state_builders import charter_change
+        engine = self.engine
+        engine.instance.update({key: value for key, value in domain_governance().items() if key != 'id'})
+        transition_id = self.staged_transition()
+        cid, receipt = self.review_staged(transition_id)
+        candidate = deepcopy(engine.runtime['trust_transitions'][transition_id])
+        candidate['results']['K1']['identity_review'] = receipt
+        changed = deepcopy(engine.instance)
+        source = governance.preserve_source('S-next', 'Approve a different research purpose', origin='user')
+        changed['governance_sources'][source['id']] = source
+        changed, changed_runtime, decision = governance.apply_decision(changed, engine.runtime,
+            charter_change(engine, goal='A different research purpose'), source_ref=source['id'],
+            clock=entry().ports.clock)
+        self.assertEqual(decision['kind'], 'charter')
+        before = deepcopy(changed)
+        activated = knowledge.activate_transition(changed, candidate, runtime=changed_runtime,
+            at=entry().ports.clock.now(), clock=entry().ports.clock)
+        self.assertEqual(activated['active_trust_environment'], candidate['to_environment'])
+        self.assertEqual(activated['knowledge']['K1']['review_cycle_id'], cid)
+        self.assertEqual(activated['governance'], before['governance'])
+        self.assertEqual(changed, before)
+
     def test_staged_candidate_uses_the_same_scope_cycle_without_publication(self):
         engine, scene = self.engine, self.scene
         transition_id = self.staged_transition()
@@ -138,6 +164,16 @@ class StagedReviewTests(StagedReviewCase):
         with self.assertRaisesRegex(ValueError, 'staged identity review publication premises changed'):
             knowledge.activate_transition(stale_instance, candidate, runtime=engine.runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
         self.assertEqual(stale_instance, stale_before)
+        for field in ('identity_basis', 'active_trust_environment', 'trust_environment',
+                      'review_policy', 'governance'):
+            runtime = deepcopy(engine.runtime)
+            cid = receipt['review_cycle_id']
+            runtime['review_cycles'][cid]['publication_premises'][field] = None
+            with self.subTest(premise=field), self.assertRaisesRegex(ValueError,
+                    '^staged identity review publication premises changed$'):
+                knowledge.activate_transition(engine.instance, candidate, runtime=runtime,
+                    at=_entry.ports.clock.now(), clock=_entry.ports.clock)
+            self.assertEqual(engine.instance, before)
 
 
 class StagedRoundTripTests(StagedReviewCase):

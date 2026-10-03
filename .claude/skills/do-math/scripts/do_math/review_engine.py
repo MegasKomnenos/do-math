@@ -443,12 +443,7 @@ class ReviewEngineMixin:
         return changed
 
     def _review_publication_premises(self, knowledge_id):
-        environment_id = self.instance.get('active_trust_environment')
-        return {'identity_basis': kr.identity_basis(self.instance, knowledge_id),
-                'active_trust_environment': environment_id,
-                'trust_environment': deepcopy(self.instance.get('trust_environments', {}).get(environment_id)),
-                'review_policy': self._adopted_review_policy(),
-                'governance': deepcopy(self.instance.get('governance', {}))}
+        return kr.review_publication_premises(self.instance, knowledge_id)
 
     def _queue_identity_actions(self, knowledge_id, cycle_id):
         cycle = self.runtime['review_cycles'][cycle_id]
