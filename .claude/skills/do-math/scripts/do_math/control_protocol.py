@@ -17,6 +17,12 @@ SUBMISSION_KINDS = frozenset({SUBMIT_INTENT, SUBMISSION_PREVIEW})
 # ``self_check`` (true) marks an execution that answers self checks and so gets that tool.
 BINDING_FIELDS = ("endpoint", "transport_id", "capability", "execution_id", "grant_id")
 
+SELF_CHECK_PROGRESS = {
+    'progress': {'counter': 'reset', 'trigger': None},
+    'no_progress': {'counter': 'increment', 'trigger': None},
+    'contract_mismatch': {'counter': 'retain', 'trigger': 'contract_mismatch'},
+}
+
 _TEXT = {"type": "string", "minLength": 1}
 _REFS = {"type": "array", "items": _TEXT, "uniqueItems": True}
 # The worker checks its answer before sending it; the engine checks it again on receipt.
@@ -26,7 +32,7 @@ SELF_CHECK_RESPONSE_SCHEMA = {
     "properties": {
         "obligation_id": _TEXT, "execution_id": _TEXT,
         "rule_revision": {"type": "integer", "minimum": 0},
-        "progress": {"enum": ["progress", "no_progress", "contract_mismatch"]},
+        "progress": {"enum": list(SELF_CHECK_PROGRESS)},
         "attempts": {"type": "array", "items": _TEXT, "minItems": 1}, "next_method": _TEXT,
         "rule_results": {"type": "array", "minItems": 1, "items": {
             "type": "object", "additionalProperties": False,

@@ -13,7 +13,7 @@ from jsonschema import Draft202012Validator
 
 from .context_store import is_excluded, read_stable, safe_path
 from .control_protocol import (CONTROL_SERVER, RECEIPT_TOOL, SAFETY_BOUNDARY, SELF_CHECK_RESPONSE, SELF_CHECK_TOOL,
-                               SUBMIT_TOOL, self_check_request_id, self_check_response_errors)
+                               SUBMIT_TOOL, SELF_CHECK_PROGRESS, self_check_request_id, self_check_response_errors)
 from .values import is_sha256, parse_utc, strict_json_loads
 from .canonical import validate_storage_value
 from .state_contract import default_state_contract, validate_record
@@ -927,10 +927,11 @@ class ObservationTracker:
             obligation["response_ref"] = record["id"]
             statuses = {row["status"] for row in response["rule_results"]}
             progress = response["progress"]
-            if progress == "progress": self.no_progress_count = 0
-            elif progress == "no_progress": self.no_progress_count += 1
+            progress_rule = SELF_CHECK_PROGRESS[progress]
+            if progress_rule['counter'] == 'reset': self.no_progress_count = 0
+            elif progress_rule['counter'] == 'increment': self.no_progress_count += 1
             trigger = ("self_check_defect" if "defect" in statuses else "self_check_indeterminate" if "indeterminate" in statuses
-                       else "contract_mismatch" if progress == "contract_mismatch" else
+                       else progress_rule['trigger'] if progress_rule['trigger'] is not None else
                        "repeated_no_progress" if self.no_progress_limit is not None and self.no_progress_count >= self.no_progress_limit else None)
             if trigger is None:
                 record["followup"] = {"kind": "continue", "next_owner": "engine"}

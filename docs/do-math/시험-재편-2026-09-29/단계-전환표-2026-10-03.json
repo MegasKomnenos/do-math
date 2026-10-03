@@ -4856,7 +4856,7 @@
       {
         "id": "4-C",
         "state": "partial_verification",
-        "remaining": "반복/출력수리/설치복구/자기점검의 현재 생산 분류·문턱 후 출구 전건 연결"
+        "remaining": "B16 반복11/B33 제출5·설치복구6/B41 자기점검3의 부분 증거 연결. 다른 상태 공간과 실제 생산 분류·문턱 후 출구 전건 및 최종 관문은 남음."
       },
       {
         "id": "5-A",
@@ -11310,7 +11310,7 @@
     },
     "last_four_integration": {
       "id": "B40",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "initial": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ty13d1cp\\report.json",
         "sha256": "461516a772906a78b47b54bafbe80bd2868bc62a55473ee457fabc3e9452ae05",
@@ -11425,7 +11425,64 @@
           "tier": null
         }
       },
-      "scope": "정확 scholarly 도구·봉인 누락 반려·위임 근거 병합·공개 재시도 실패 이력 보존"
+      "scope": "정확 scholarly 도구·봉인 누락 반려·위임 근거 병합·공개 재시도 실패 이력 보존",
+      "commit": "d8834662"
+    },
+    "self_check_progress_integration": {
+      "id": "B41",
+      "state": "verified_main_commit_pending",
+      "scope": "4-C자기점검 진행3값의 스키마/계수 공통 표와 전 조합 시험",
+      "before": "도입 전 수집은 SELF_CHECK_PROGRESS 미정의 ImportError로 거부됐다. 기존 세 값의 제품 동작 오류 재현이라고 주장하지 않는다.",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-6zz1n35c\\report.json",
+        "sha256": "0f33652821a8915ce3ddad35846c68d05330561dd677b6b833d6b31629197c0f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 24
+        },
+        "total_seconds": 1.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_observation_rules.ProfileContractTests.test_checkpoint_counter_name_is_bound_by_the_execution_not_the_profile",
+              "seconds": 0.2029999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_self_check_progress_contract.SelfCheckProgressContractTests.test_schema_and_counter_share_the_complete_progress_population",
+              "seconds": 0.28100000007543713,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-_szt3t2o\\report.json",
+        "sha256": "594f6e300754ccfdaa518d0fd160456e8032cfd56d726e31bf102090704b41cb",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 6.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 5.390999999945052,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "progress reset/no_progress increment/contract_mismatch retain. 반려와 재전달은 불변, defect/indeterminate 우선과 검토 확인 reset을 실제 추적기로 전 진행×상태 순회한다.",
+      "limits": "4-C 부분 통합. 세 진행과 반복/제출/설치복구 표가 다른 상태 공간·생산 분류 전건 및 전체 동일 판본 관문을 대신하지 않는다. unit2개와 구조 smell 개별 예산 초과 보존.",
+      "whole_requirement_closed": false
     }
   }
 }
