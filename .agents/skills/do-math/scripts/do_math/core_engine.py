@@ -2618,13 +2618,14 @@ class CoreEngineMixin:
         self.runtime["pending_events"] = [entry for entry in self.runtime.get("pending_events", [])
                                            if isinstance(entry, dict) or entry not in consumed]
 
-    def _review_observation_source(self, execution_id, batch, index):
+    def _review_observation_source(self, execution_id, batch, index, receipt_key):
         """The runner's own row bytes and row number; nothing is read or decoded again."""
         action = self.runtime["executions"][execution_id].get("action", {})
         if action.get("role") != "identity_review" or not action.get("review_cycle_id"):
             return None
         return {"raw": batch.rows[index], "event_index": batch.first_row + index,
-                "artifact_ref": f"{ARTIFACT_ROOT}{self.ports.clock.new_id('BA')}/provider-event.jsonl"}
+                "artifact_ref": f"{ARTIFACT_ROOT}BA-provider-{receipt_key}/provider-event.jsonl",
+                'source': batch.source(batch.offsets[index][1], start_offset=batch.offsets[index][0])}
 
     @measured('observation_application')
     def _observe_running(self, execution_id: str, tracker: ObservationTracker, batch: ObservationBatch) -> None:
@@ -2632,6 +2633,8 @@ class CoreEngineMixin:
         # changes only the runtime. The tracker copy is judged first; the runtime
         # is rolled back and published only when the tick has something to write.
         candidate = deepcopy(tracker)
+        candidate.fact_sequence = max(candidate.fact_sequence,
+            self.runtime['executions'][execution_id].get('observation_fact_sequence', 0))
         events = batch.events
         live = not batch.is_terminated()
         pending = set(candidate.pending_tools)
@@ -2642,8 +2645,14 @@ class CoreEngineMixin:
         artifacts, self_checks, feedback = {}, [], []
         remind = False
         observations, review_rows, stream = [], [], None
+        receipts = dict(self.runtime['executions'][execution_id].get('observation_receipts', {}))
         for index, event in enumerate(events):
-            coordinate = self._review_observation_source(execution_id, batch, index)
+            receipt_key = exact_content_hash({'execution_id': execution_id, 'event_index': batch.first_row + index,
+                'offsets': list(batch.offsets[index]), 'sha256': hashlib.sha256(batch.rows[index]).hexdigest()})
+            if receipt_key in receipts:
+                continue
+            receipts[receipt_key] = batch.first_row + index
+            coordinate = self._review_observation_source(execution_id, batch, index, receipt_key)
             if coordinate:
                 artifacts[coordinate["artifact_ref"]] = coordinate["raw"]
                 review_rows.append((event, coordinate))
@@ -2654,14 +2663,16 @@ class CoreEngineMixin:
             observations.extend(candidate.observe({'type': 'tick'},
                 source=batch.source(batch.end_offset, start_offset=batch.end_offset), live=live))
         previous = self.runtime['executions'][execution_id].get('observation_stream')
+        end_offset = max(batch.end_offset, previous['end_offset']) if previous else batch.end_offset
         # An idle tick applies no stream bytes. Refreshing only its clock
         # values would republish the whole state on every one-second poll.
-        if (previous is None or previous['end_offset'] != batch.end_offset
+        if (previous is None or previous['end_offset'] != end_offset
                 or previous['local_termination_confirmed'] != (not live)):
-            stream = {'end_offset': batch.end_offset, 'received_at': batch.received_at,
+            stream = {'end_offset': end_offset, 'received_at': batch.received_at,
                 'applied_at': self.ports.clock.now(), 'local_termination_confirmed': not live}
         obligations = self.runtime.get("self_check_obligations", {})
         if not (review_rows or observations or stream is not None
+                or receipts != self.runtime['executions'][execution_id].get('observation_receipts', {})
                 or any(obligations.get(key) != value for key, value in candidate.obligations.items())):
             tracker.__dict__.clear()
             tracker.__dict__.update(candidate.__dict__)
@@ -2671,8 +2682,20 @@ class CoreEngineMixin:
         original_runtime = None if self._unchanged() else deepcopy(self.runtime)
         try:
             for event, coordinate in review_rows:
-                self._record_review_observation(execution_id, event, artifact_ref=coordinate["artifact_ref"],
-                                                event_index=coordinate["event_index"])
+                try:
+                    self._record_review_observation(execution_id, event, artifact_ref=coordinate["artifact_ref"],
+                                                    event_index=coordinate["event_index"])
+                except ValueError as error:
+                    rejection = {'kind': 'observation_input_rejected', 'execution_id': execution_id,
+                        'reason': str(error), 'next_owner': 'adapter', 'observed_at': self.ports.clock.now(),
+                        'artifact_ref': coordinate['artifact_ref'], 'event_index': coordinate['event_index']}
+                    previous_source = candidate.observation_source
+                    candidate.observation_source = coordinate['source']
+                    observations.append(candidate.fact('observation_fact', rejection, batch.received_monotonic))
+                    candidate.observation_source = previous_source
+            if receipts != self.runtime['executions'][execution_id].get('observation_receipts', {}):
+                self.runtime['executions'][execution_id]['observation_receipts'] = receipts
+            self.runtime['executions'][execution_id]['observation_fact_sequence'] = candidate.fact_sequence
             if stream is not None:
                 self.runtime['executions'][execution_id]['observation_stream'] = stream
             for observed in observations:

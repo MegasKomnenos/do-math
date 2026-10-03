@@ -1,15 +1,18 @@
 """Trusted local stream batches; provider JSON cannot supply their provenance."""
 from dataclasses import dataclass
 from collections.abc import Callable
-import json
 from pathlib import Path
+from .values import strict_json_loads
 
 
 def decode_observation_row(raw: bytes) -> dict:
     """Decode one nonblank stdout row; an undecodable row is still an observed event."""
     try:
-        return json.loads(raw)
-    except (UnicodeError, json.JSONDecodeError):
+        event = strict_json_loads(raw)
+        if not isinstance(event, dict):
+            raise ValueError('provider observation must be an object')
+        return event
+    except (UnicodeError, ValueError):
         return {"type": "unparsed_observation", "bytes": len(raw.rstrip(b"\n"))}
 
 

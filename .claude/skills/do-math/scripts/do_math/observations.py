@@ -548,6 +548,8 @@ class ObservationTracker:
         destination.update(values)
 
     def _ingest_event(self, event: dict, when: float) -> None:
+        if event.get('type') == 'unparsed_observation':
+            raise ValueError('provider observation row is not a strict JSON object')
         self._observe_control_calls(event)
         event_type = event.get("type")
         if event.get("execution_id", self.execution_id) != self.execution_id:
@@ -625,7 +627,8 @@ class ObservationTracker:
             calls.append((item.get("id"), item.get("tool"), item.get("arguments")))
         if event.get("type") == "assistant":
             message = event.get("message", {})
-            for block in message.get("content", []) if isinstance(message, dict) else []:
+            content = message.get('content', []) if isinstance(message, dict) else []
+            for block in content if isinstance(content, list) else []:
                 if isinstance(block, dict) and block.get("type") == "tool_use":
                     prefix = "mcp__" + CONTROL_SERVER + "__"
                     name = block.get("name", "")

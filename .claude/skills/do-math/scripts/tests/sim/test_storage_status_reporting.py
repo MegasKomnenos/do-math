@@ -21,11 +21,38 @@ from do_math.reporting import render_human_report, status_report
 from support.sim import Sim, warm_template
 from support.storage_files import unlistable
 from support.storage_records import apply_control
+from support.engine_lifecycle import applied, clear_work
+from support.wait_reporting import assert_wait_report
 
 setUpModule = warm_template
 
 
 class StatusSnapshotTests(unittest.TestCase):
+    def test_no_task_authority_wait_reports_real_owner_and_preserved_coordinates(self):
+        sim = Sim.activated()
+        grant = sim.instance['lifecycle']['adoption']['research_grant_ids'][0]
+        applied(sim, 'decision', config={'change': {'kind': 'revoke', 'grant_id': grant}})
+        clear_work(sim)
+        sim.engine._enqueue('maintenance', reason='Report the actual authority wait')
+        action = deepcopy(sim.runtime['queue'][0])
+        sim.engine._prepare_call(action)
+        head, instance, runtime = sim.engine.store.load()
+        entry = deepcopy(runtime['waiting_actions'][action['id']])
+        report = status_report(sim.engine.store, head, instance, runtime, requested_areas=['record_storage'])
+        row = report['waiting_actions'][action['id']]
+        self.assertEqual(row['next_owner'], entry['next_owner'])
+        self.assertEqual(row['coordinates']['owner_activity_id'], entry['action']['owner_activity_id'])
+        self.assertEqual(row['coordinates']['profile_ref'], entry['action']['profile_ref'])
+        self.assertEqual(row['reason'], entry['reason'])
+        self.assertIsNone(row['target'])
+        text = render_human_report(report)
+        self.assertIn('action ' + action['id'] + ': maintenance wait=action_authority next=user', text)
+        self.assertIn(entry['reason'], text)
+        self.assertIn(entry['action']['owner_activity_id'], text)
+        self.assertEqual(sim.engine.store.load(), (head, instance, runtime))
+        assert_wait_report(self, sim.engine, action['id'])
+
+
     def test_engine_cleanup_failure_reaches_snapshot_reporting(self):
         """About 1.1 s alone, 2.3 s in a loaded T2, near the 2 s budget: a template restore, a grant control and three saves."""
         sim = Sim.activated()

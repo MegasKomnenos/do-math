@@ -8019,17 +8019,12 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 38,
+      "main_ledger_count": 43,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
-        "KD-1300",
-        "KD-0900",
-        "KD-0901",
         "KD-1100",
         "KD-0303",
-        "KD-0902",
-        "KD-0903",
         "KD-0502",
         "KD-0804",
         "KD-1901",
@@ -8042,8 +8037,8 @@
         "KD-1908",
         "KD-1909"
       ],
-      "meaning": "18개는 main 미기록 후보 항목이며 전체 미구현 수나 완료율이 아니다.",
-      "next": "다음은 공급자 사건 수신의 반려/재전달/잘못된 리뷰 대상과 구조 있는 정상 영수증 대역을 함께 통합하고 형식 Git 의미 포트로 잇는다. 부분 회귀로 전체8-A/8-B를 닫지 않는다.",
+      "meaning": "13개는 main 미기록 후보 항목이며 전체 미구현 수나 완료율이 아니다.",
+      "next": "다음은 정상 모델 영수증/Lean 명시 등록 기반과 형식Git의 의미 포트 및 관련 작업자·설치 소비자 통합이다. native 반려·보고 회귀만으로2-A/13-B 전체를 닫지 않는다.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
     },
@@ -9800,7 +9795,7 @@
     "return_settlement_integration": {
       "id": "B34",
       "scope": "KD-1000/1001: 실제 runner의 종료 미확인 반환 증거 보존과 첫 계산 전 pause 정산",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ogb8unjj\\report.json",
         "sha256": "78d75124591fc1017bdeb363ef2a60d1904ee80a0791a26887b376f04b989400",
@@ -9907,6 +9902,204 @@
             {
               "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
               "seconds": 5.530999999959022,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "commit": "504a1470"
+    },
+    "native_input_integration": {
+      "id": "B35",
+      "scope": "KD-0900~0903/1300: 공급자 native/raw 사건의 정확 반려·소비·재전달·리뷰 현재성과 실제 보고",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-nsl6z3du\\report.json",
+        "sha256": "ba32bfb33dbd40c19b6b8daffc3c87ed1b964b38f039c88ff6056a3e88096ddc",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 1,
+          "failed": 4
+        },
+        "total_seconds": 30.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused_initial": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-79xta1p6\\report.json",
+        "sha256": "d5282e5c660740457fc1a67d612163aba56fb7d931997b8475d1d5669db3d9d9",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 8
+        },
+        "total_seconds": 26.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "earlier_cursor_red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-elxvdtto\\report.json",
+        "sha256": "348ab3d6f79922cad67566cbc85900a4e1181c1d77f942084e85e3b71b49b88d",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 6.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "earlier_cursor_fixed": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-vrawhxmt\\report.json",
+        "sha256": "9c4be820c6cf2910d1d8c3f4b6ddaf8e49a849587df529126e791dce61db835f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 6.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "final_selection": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-xtaoh6co\\report.json",
+        "sha256": "7d4d08063bea2c26cb0909611064deff2f38f772bef73b95f798f036cb45d0c2",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 10
+        },
+        "total_seconds": 28.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-o8tjsae6\\report.json",
+        "sha256": "4ada0a6ac2b463c8bf113e32b491f7e8fa1912dd93d1e92d360dc946cd515410",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 99
+        },
+        "total_seconds": 25.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_provider_native_terminal.UnsubmittedTerminalTests.test_unsubmitted_provider_terminal_is_not_a_research_result",
+              "seconds": 0.23499999998603016,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_transcripts.ObservedTranscriptTests.test_input_delta_is_not_a_recursive_transcript_copy",
+              "seconds": 0.4059999999590218,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "strict_json_loads로 live decode와 collector의 비객체/중복키/비유한수 계약을 맞춘다. 공개 리뷰 message/item/content/text/role 잘못된 형은 ValueError 형식으로 반려하여 같은 batch 다음 정상행까지 처리한다. 신뢰된 execution/index/offset/raw SHA256의 수신 이력과 안정 artifact_ref 및 fact_sequence를 저장하고 같은 행 재전달과 tracker 재생성을 멱등 처리한다. 이미 소비한 앞쪽 행은 커서를 되돌리지 않는다. 종결/개정된 리뷰에는 transcript를 쓰지 않고 다른 실행은 진행한다. 정상 숫자·도구·공개/비공개 블록과 raw 바이트의 저장 계약을 유지한다.",
+      "test_move": "회차 이름의 native_defects/storage 모듈은 현재 성질 모듈로 옮겨 이전 두 모듈 제거. main은 필요한 native 입력 정의만 공유하고 후보는 기존 단일 입력 정본을 유지한다. 보고 KD1300은 B32로 이미 수리된 실제 공개 권한 대기의 원 회귀를 가져온 것이며 새 제품 반례나 새 수리라고 주장하지 않는다.",
+      "limits": "native 네 회귀와 원래 raw42조합 및 정상검산은 일부2-A 모집단이다. 다른 제어/제출/작업자 요청 입구, 모델 영수증 프로토콜 기반, 사건 정본/반복/관찰 분류 전건 및 원문 전체는 남는다. 선택 수를 합산하지 않고 관련 unit2개 예산 초과를 유지한다. 최종 동일판본T2/flows/T3변이/예산/T4T5와 형식Git포트 별도. 입력 필드 추가 축의 일반 census와 기존 구조 냄새 검사 예산 초과도 남긴다.",
+      "whole_requirement_closed": false,
+      "files": [
+        {
+          "path": "do_math/core_engine.py",
+          "sha256": "245d1f303c3ebf34a0ed93fec121853a2d322993110b927051e1b75c5ffd0d6d"
+        },
+        {
+          "path": "do_math/review_engine.py",
+          "sha256": "0c3a0026ef50d5d9e213d7ba928cb32adc91d3e003ce0dcfb204c6eec0727cc5"
+        },
+        {
+          "path": "do_math/observation_transport.py",
+          "sha256": "c128e688fbd7d608f0eb8c43ff3472f764cd230ac5bbe9d72c20c0b7d21000ef"
+        },
+        {
+          "path": "do_math/observations.py",
+          "sha256": "f06f6b886671e8b0c716420c3e7f3ce2f3a8cb3289243d1f62de544a764c434e"
+        },
+        {
+          "path": "do_math/record_schemas/schemas.py",
+          "sha256": "bea773452152086c33198eff2e21aba2a389461fa7eb48bcc88de81369de26c9"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "5e4cd2636849555d4a091c4559dcd0c6be6e4f337ca31511bf5f1232a1ae961a"
+        },
+        {
+          "path": "tests/flows/test_provider_native_inputs.py",
+          "sha256": "e4fcf4e801b473a557477ad154d5121b938982b811b3badb11a4f3f59ddfaa76"
+        },
+        {
+          "path": "tests/flows/test_provider_native_storage.py",
+          "sha256": "ec1bc77115fc89645d4a02848e08ab973750478dc0b6c64926a4c8ce37c299e6"
+        },
+        {
+          "path": "tests/flows/test_provider_native_targets.py",
+          "sha256": "dd23f8dd1b9086bcd3b7b09f833c1c0091f0622d30dc898344e3fc4bc5723986"
+        },
+        {
+          "path": "tests/flows/test_provider_raw_ingress.py",
+          "sha256": "1c72de5191e309f85e3e1c91948818194a3fbf0d4b958a58fac31bff937bad1a"
+        },
+        {
+          "path": "tests/support/provider_native_inputs.py",
+          "sha256": "31b0a22c1a8602fb7ddc9daea57419ff1c040fccf7c0767613138a8f726e53ea"
+        },
+        {
+          "path": "tests/sim/test_storage_status_reporting.py",
+          "sha256": "0ddc2cd25e4f736198d2aaf5355c6844b22fa4329b8989df8f19f53f891f31d7"
+        }
+      ],
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-qy126xl6\\report.json",
+        "sha256": "a10e033b0fed63dd6a7bc36db6ee7bf8807adf0a1ec2100ee44aef1f2df65f07",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 10
+        },
+        "total_seconds": 45.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-yfpj9bio\\report.json",
+        "sha256": "49d1537e7c8a5bd83463cd5fcd9f7b2104e8af11e765a56f8edb504e48d6167f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 9.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 5.14000000001397,
               "budget_seconds": 5.0
             }
           ],

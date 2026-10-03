@@ -320,6 +320,8 @@ RECORDS["executions"] = record({"owner_activity_id": ID, "actor_kind": enum("ai"
     "observation_stream": obj({'end_offset': NAT, 'received_at': TEXT, 'applied_at': TEXT,
                                 'local_termination_confirmed': BOOL},
                                ('end_offset', 'received_at', 'applied_at', 'local_termination_confirmed')),
+    "observation_receipts": {**mapping(NAT), "propertyNames": HASH},
+    "observation_fact_sequence": NAT,
     "execution_window": obj({"execution_id": ID, "effective_deadline_at": nullable(TEXT),
         "remaining_ms_at_start": nullable(NAT), "deadline_source": TEXT, "finish_notice_at": nullable(TEXT),
         "effective_notice_ms": NAT}, ("execution_id", "effective_deadline_at", "remaining_ms_at_start",

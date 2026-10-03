@@ -341,6 +341,51 @@
       "found_by": "첫 fbhvt22v 정상 취소 계약 실패; j_e2ms8_의 별도 결과 증거는 illegal execution transition stopping -> running. main ogb8unjj에서 실제 raw 반환 저장 ValueError와 시작 전 pause의 execution_incomplete 오정산을 각각 확인했다. 72npuvuy의 동일 두 재현과 4py9mgsh의 관련47개가 통과했다. 종료 미확인 결과는 관찰된 실제 receive 인자 전체의 json_safe 값과 정확 대조하고 예약/소유자/저장 원상을 검사한다.",
       "missed_kind": "등록·발사와 실제 계산 첫 차례 사이에 제어를 넣는 일정이 빠졌다. 원 재현 위치 flows.test_scheduling_close_settlement.ReturnSettlementTests.test_ai_before_calculation_pause_preserves_owner_and_returns_capacity에서 실제 반환 정산 성질의 현재 모듈로 이동했다. 이전 회귀는 제거하고 다른 machine/running/step-cap 원 검사는 보존한다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1300",
+      "summary": "status의 waiting_actions 투영이 실제 next_owner와 활동/프로필 등 제약 좌표를 누락하고 사람용 출력이 과제 대상 없는 대기 행동을 표시하지 않는다.",
+      "category": 13,
+      "reproduction": "sim.test_storage_status_reporting.StatusSnapshotTests.test_no_task_authority_wait_reports_real_owner_and_preserved_coordinates",
+      "found_by": "13-B 실제 공개 revoke와 호출 준비가 생산한 저장 대기. do-math-tests-guzacx8a에서 저장 entry의 next_owner를 status JSON에서 찾지 못해 KeyError가 났다. main nsl6z3du에서 native 반려/재전달/raw/종결·개정 대상 네 회귀가 실패했고 보고 회귀는 이미 B32 수리로 통과했다. 79xta1p6 원래 관련8개가 통과했다. KD0901의 앞쪽 이미 소비한 행 재전달은 추가 elxvdtto 실패 뒤 단조 커서 수리 vrawhxmt로 통과했다. 최종 선택 xtaoh6co10개와 기존 관련o8tjsae6 99개가 통과했다. 서로 다른 선택을 합산해 전체 관문 성공으로 주장하지 않는다.",
+      "missed_kind": "기존 상태 검사는 과제/배정 대기와 검사 소견을 확인했으나 waiting_actions 전건의 실제 담당자·좌표와 과제 없는 사람용 행을 대조하지 않았다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0900",
+      "summary": "정상 identity_review 외곽의 중첩 message/item/content 오형태와 누락 text가 구조화된 반려 없이 AttributeError/TypeError/KeyError/ValueError로 owner 밖에 전파되어 같은 batch의 다음 정상 행을 막는다.",
+      "category": 2,
+      "reproduction": "flows.test_provider_native_inputs.NativeInputContractTests.test_malformed_native_message_is_rejected_once_and_next_message_is_stored",
+      "found_by": "2026-10-01 기반 4576a517에서 run_tests.py 표시 없는 재현: 초기 null은 review_engine.py:832 AttributeError. 현재 네 외곽 비객체 20행과 content/text/normalized 누락 9행, 총 29행을 실제 owner/Repository로 순회. 정상 준비는 setUp에서 검증하며 본문은 반려 1회·같은 batch 후속 저장·빈 재순회 불변을 요구한다. 정확 report/hash는 finish/resume-provider-result.json. main nsl6z3du에서 native 반려/재전달/raw/종결·개정 대상 네 회귀가 실패했고 보고 회귀는 이미 B32 수리로 통과했다. 79xta1p6 원래 관련8개가 통과했다. KD0901의 앞쪽 이미 소비한 행 재전달은 추가 elxvdtto 실패 뒤 단조 커서 수리 vrawhxmt로 통과했다. 최종 선택 xtaoh6co10개와 기존 관련o8tjsae6 99개가 통과했다. 서로 다른 선택을 합산해 전체 관문 성공으로 주장하지 않는다.",
+      "missed_kind": "review_engine._record_review_observation의 public_message 분기; 지정 reason은 같은 분기의 invalid normalized public message. 비객체를 같은 형식으로 반려하고 owner가 저장·소비해야 한다. 원 재현 위치 flows.test_provider_close_native_defects.NativeRejectionDefectTests.test_null_public_message_is_rejected_once_and_next_message_is_stored에서 같은 성질의 현재 모듈로 이동하고 이전 회귀 모듈을 제거했다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0901",
+      "summary": "성공한 native batch 재전달은 새 artifact_ref 때문에 동일 message_id의 내용 충돌로 실패한다. owner는 관찰 좌표도 중복 제거하지 않아 같은 observation batch를 다시 게시하며, native ID 충돌의 양 순서는 구조화된 반려 대신 ValueError로 후속 처리를 막는다.",
+      "category": 2,
+      "reproduction": "flows.test_provider_native_inputs.NativeInputContractTests.test_successful_native_batch_redelivery_does_not_duplicate_or_fail",
+      "found_by": "2026-10-01 기반 4576a517의 표시 없는 초기 재현에서 정상 준비 뒤 transcript message ID changed content를 확인했다. 최종 재현은 정상 native 재전달, mode 정본 전건의 observation 재전달, 내용 충돌 양 순서를 검사한다. 정확 report/hash는 finish/resume-provider-result.json. main nsl6z3du에서 native 반려/재전달/raw/종결·개정 대상 네 회귀가 실패했고 보고 회귀는 이미 B32 수리로 통과했다. 79xta1p6 원래 관련8개가 통과했다. KD0901의 앞쪽 이미 소비한 행 재전달은 추가 elxvdtto 실패 뒤 단조 커서 수리 vrawhxmt로 통과했다. 최종 선택 xtaoh6co10개와 기존 관련o8tjsae6 99개가 통과했다. 서로 다른 선택을 합산해 전체 관문 성공으로 주장하지 않는다.",
+      "missed_kind": "core_engine._review_observation_source의 새 BA 생성과 review_cycle.record_turn의 메시지 전체 비교. 실패한 CAS 재시도 시험은 성공 후 재전달을 검사하지 않는다. 원 재현 위치 flows.test_provider_close_native_defects.NativeRejectionDefectTests.test_successful_native_batch_redelivery_does_not_duplicate_or_fail에서 같은 성질의 현재 모듈로 이동하고 이전 회귀 모듈을 제거했다. main elxvdtto에서 뒤 행을 소비한 후 같은 앞쪽 행을 재전달하면 stream end_offset을 되돌리는 추가 반례를 확인했다. cursor를 단조 유지한 vrawhxmt가 통과했다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0902",
+      "summary": "live decoder는 strict JSON 검사를 하지 않아 비객체·NaN이 실제 worker/runner/owner 경로에서 예외를 내고 중복 키는 반려 없이 사실로 저장된다. strict collector의 반려는 앞선 live 소비를 보호하지 못한다.",
+      "category": 2,
+      "reproduction": "flows.test_provider_raw_ingress.RawIngressTests.test_malformed_raw_rows_are_consumed_once_and_the_following_row_reaches_storage",
+      "found_by": "2026-10-01 기반 4576a517 정상 준비 후 run_tests.py unmarked 실행으로 재현. 제품 수리 없음. 최초 실패·교정 이력 및 최종 동일 소스 해시의 unmarked/expected report는 finish/resume-provider-result.json. main nsl6z3du에서 native 반려/재전달/raw/종결·개정 대상 네 회귀가 실패했고 보고 회귀는 이미 B32 수리로 통과했다. 79xta1p6 원래 관련8개가 통과했다. KD0901의 앞쪽 이미 소비한 행 재전달은 추가 elxvdtto 실패 뒤 단조 커서 수리 vrawhxmt로 통과했다. 최종 선택 xtaoh6co10개와 기존 관련o8tjsae6 99개가 통과했다. 서로 다른 선택을 합산해 전체 관문 성공으로 주장하지 않는다.",
+      "missed_kind": "collector-only 음성 시험은 live decode_observation_row(json.loads)와 tracker.fact(allow_nan=False)의 불일치를 지나지 않는다. ADAPTERS×OBSERVATION_MODES×원시 오형태 7종, 42조합을 같은 batch 후속 정상 행과 실제 저장으로 검사한다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0903",
+      "summary": "공개 검토 완료 또는 공개 지식 개정으로 이미 끝난 review에 지연 public_message가 오면 _record_review_observation이 현재성 반려 없이 과거 turns와 transcript_manifest를 변경하여 게시한다.",
+      "category": 2,
+      "reproduction": "flows.test_provider_native_targets.NativeTargetTests.test_obsolete_review_input_is_rejected_and_another_execution_still_progresses",
+      "found_by": "2026-10-01 기반 4576a517 정상 준비 후 run_tests.py unmarked 실행으로 재현. 제품 수리 없음. 최초 실패·교정 이력 및 최종 동일 소스 해시의 unmarked/expected report는 finish/resume-provider-result.json. main nsl6z3du에서 native 반려/재전달/raw/종결·개정 대상 네 회귀가 실패했고 보고 회귀는 이미 B32 수리로 통과했다. 79xta1p6 원래 관련8개가 통과했다. KD0901의 앞쪽 이미 소비한 행 재전달은 추가 elxvdtto 실패 뒤 단조 커서 수리 vrawhxmt로 통과했다. 최종 선택 xtaoh6co10개와 기존 관련o8tjsae6 99개가 통과했다. 서로 다른 선택을 합산해 전체 관문 성공으로 주장하지 않는다.",
+      "missed_kind": "_obsolete_review_reason의 종료·개정 검사는 native 입구에 연결되어 있지 않다. 실제 공개 종결·개정과 저장을 준비한 두 시나리오에서 transcript 불변·반려 1회·다른 실행 진행을 요구한다.",
+      "status": "closed"
     }
   ]
 }

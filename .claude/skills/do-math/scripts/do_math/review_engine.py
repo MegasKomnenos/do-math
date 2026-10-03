@@ -846,26 +846,39 @@ class ReviewEngineMixin:
         action = execution['action']
         if action.get('role') != 'identity_review' or not action.get('review_cycle_id'):
             return False
+        obsolete = self._obsolete_review_reason(action)
+        if obsolete:
+            raise ValueError(obsolete)
         if type(event_index) is not int or event_index < 0 or not isinstance(artifact_ref, str) or not artifact_ref:
             raise ValueError('public review event requires an ordered artifact coordinate')
         messages = []
         kind, item = event.get('type'), event.get('item', {})
         if kind == 'public_message':
             message = event.get('message', {})
-            if message.get('role') not in {'user', 'assistant', 'tool'} or 'content' not in message:
+            if (not isinstance(message, dict) or not isinstance(message.get('role'), str)
+                    or message['role'] not in {'user', 'assistant', 'tool'} or 'content' not in message):
                 raise ValueError('invalid normalized public message')
             messages.append({key: deepcopy(message[key]) for key in ('role', 'content', 'call', 'arguments') if key in message})
+        elif kind == 'item.completed' and not isinstance(item, dict):
+            raise ValueError('invalid provider item')
         elif kind == 'item.completed' and item.get('type') == 'agent_message':
+            if not isinstance(item.get('text'), str):
+                raise ValueError('agent message requires text')
             messages.append({'role': 'assistant', 'content': item['text']})
         elif kind == 'item.completed' and item.get('type') in {'command_execution', 'mcp_tool_call'}:
             keys = ('command', 'aggregated_output', 'exit_code') if item['type'] == 'command_execution' else ('server', 'tool', 'arguments', 'result', 'error')
             messages.append({'role': 'tool', 'call': item.get('id'),
                              'content': {key: deepcopy(item[key]) for key in keys if key in item}})
         elif kind in {'assistant', 'user'}:
-            for block in event.get('message', {}).get('content', []):
+            message = event.get('message')
+            if not isinstance(message, dict) or not isinstance(message.get('content', []), list):
+                raise ValueError('invalid provider public message')
+            for block in message.get('content', []):
                 if not isinstance(block, dict):
                     continue
                 if block.get('type') == 'text':
+                    if not isinstance(block.get('text'), str):
+                        raise ValueError('public text block requires text')
                     messages.append({'role': kind, 'content': block['text']})
                 elif block.get('type') == 'tool_use':
                     messages.append({'role': 'assistant', 'content': deepcopy(block)})
