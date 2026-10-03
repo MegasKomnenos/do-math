@@ -242,8 +242,7 @@
    "new_ids": [
     "flows.test_lifecycle_engine_trust.TransitionTests.test_rerecorded_baseline_is_followed_once_with_an_event"
    ],
-   "known_defect": "KD-0800",
-   "note": "Input: setup_lean.rerecord under research_fixtures.fixture_setup_lean (product patches) is its record step without the host observation and representative compile: trust_inventory.observe_fingerprint, content_hashes and new_baseline with the validation fixture, appended by write_record. The rerecorded toolchain is the test's own. On real storage the expected event cannot be published (KD-0800, from KD-0006)."
+   "note": "Input: setup_lean.rerecord under research_fixtures.fixture_setup_lean (product patches) is its record step without the host observation and representative compile: trust_inventory.observe_fingerprint, content_hashes and new_baseline with the validation fixture, appended by write_record. The rerecorded toolchain is the test's own. On real storage the expected event cannot be published (KD-0800, from KD-0006). Stage 2 KD-0800 is independently repaired on main: rebound facts are preserved under declared event basis; activation enqueues retain original source. The old defect report/cleanup description above is historical. Current tests have no repaired-defect mark and publication cleanup accepts no captured error."
   },
   {
    "legacy_id": "test_lifecycle_engine.LifecycleTests.test_clock_regression_precedes_authority",
@@ -464,8 +463,7 @@
     "sim.test_lifecycle_engine_external.RecordTests.test_machine_records_use_registered_schema_and_existing_source_provenance",
     "flows.test_lifecycle_engine_trust.TransitionTests.test_the_activation_a_finished_recheck_queues_names_its_source"
    ],
-   "note": "Input: the real loopback HTTP server and the patches of do_math.http_transport._http are the HTTP port fake (a response table by path that records every request); the send count is len(sim.ports.http.requests). The empty transition's activation (queued by the transition control) is the trust activation of the Sim's public activation; the second transition's re-checks run on the start state's theorems. Running the provenance check also over an activation a finished re-check queues found KD-0803, reproduced by the second test.",
-   "known_defect": "KD-0803"
+   "note": "Input: the real loopback HTTP server and the patches of do_math.http_transport._http are the HTTP port fake (a response table by path that records every request); the send count is len(sim.ports.http.requests). The empty transition's activation (queued by the transition control) is the trust activation of the Sim's public activation; the second transition's re-checks run on the start state's theorems. Running the provenance check also over an activation a finished re-check queues found KD-0803, reproduced by the second test. Stage 2 KD-0803 is independently repaired on main: rebound facts are preserved under declared event basis; activation enqueues retain original source. The old defect report/cleanup description above is historical. Current tests have no repaired-defect mark and publication cleanup accepts no captured error."
   },
   {
    "legacy_id": "test_lifecycle_engine.GrantAndExternalEffectTests.test_ambiguous_adopted_grants_are_not_selected_by_order",

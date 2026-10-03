@@ -119,7 +119,6 @@ class TransitionTests(unittest.TestCase):
                 self.assertEqual(row['outcome'], 'output_accepted')
                 self.assertEqual(row['submission_receipt']['kind'], 'machine_output')
 
-    @known_defect('KD-0803')
     def test_the_activation_a_finished_recheck_queues_names_its_source(self):
         """About 3 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
         sim = self.sim
@@ -248,7 +247,6 @@ class TransitionTests(unittest.TestCase):
         self.assertEqual(attempts[1]['owner_activity_id'], first['owner_activity_id'])
         self.assertEqual(attempts[1]['continuation_of'], first['id'])
 
-    @known_defect('KD-0800')
     def test_rerecorded_baseline_is_followed_once_with_an_event(self):
         """About 2.5 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
         sim = self.sim
@@ -275,7 +273,8 @@ class TransitionTests(unittest.TestCase):
         self.assertEqual(sim.runtime['trust_bindings'][self.new], rebound)
         events = [row for row in sim.runtime['events'] if row['kind'] == 'trust_environment_rebound']
         self.assertEqual(len(events), 1)
-        self.assertEqual((events[0]['previous'], events[0]['current']), (before, rebound))
+        self.assertEqual(events[0]['basis'], {'previous': before, 'current': rebound,
+            'toolchain_record': environment['toolchain_record'], 'recorded_at': record['baselines'][-1]['recorded_at']})
         # Rebinding changed only the runtime binding; activation adds its status and receipt.
         activated = sim.instance['trust_environments'][self.new]
         self.assertEqual(environment, {**{k: v for k, v in activated.items() if k != 'validation_receipt'},

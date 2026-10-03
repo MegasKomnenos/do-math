@@ -7508,7 +7508,7 @@
     "rule_integration": {
       "id": "B16",
       "scope": "KD-0007/0008: 로컬 관찰 규칙 이름과 조건 문법의 저장 계약 일치",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ui4pakqv\\report.json",
         "sha256": "897a0af2e99d0d20abd9a5a23109351127ddd1622df82245addde706b5fb3769",
@@ -7568,6 +7568,109 @@
       "contract": "RULE_ID_SCHEMA를 규칙 생산 검증과 저장된 규칙/관찰 rule_ids에 공유. 레코드/파일 식별자 문법으로 로컬 규칙 이름을 제한하지 않는다. 조건 문법은 실제 RECORDS/RESEARCH_FIELDS의 해당 enum을 읽어 제한하고 기존 lifecycle/형/공간/포인터 검사를 유지.",
       "red_cases": "공백/한글/콜론 규칙 이름3종과 execution/outcome,formal-result/formal_use,formal-result/publication_state,identity-assessment/decision의 잘못된 값4곳. 실제2시험에서7하위단언실패.",
       "limits": "생산자 validate_rules와 실제 저장 계약의 rule_ids 속성 검사 쌍 증거다.3이름의 전체 관찰 소유 흐름/게시까지 검증했다고 읽지 않는다. 관련44개는 기존 규칙결속·프로필 저장왕복·조건 판정·전체현행 PAIRS를 포함. 최종 전건/동적 모집단 관문은 별도.",
+      "whole_requirement_closed": false,
+      "commit": "3007ac9b"
+    },
+    "trust_handoff_integration": {
+      "id": "B17",
+      "scope": "KD-0006/0800/0803: 재기록 사실을 선언된 사건 basis로 보존하고 활성화 출처를 유지",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-q77iobts\\report.json",
+        "sha256": "702a363b8126833f2fa2fc83610fcf069ab365544b64da2c5c6d9435767b3db9",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 2,
+          "error": 1
+        },
+        "total_seconds": 27.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-xvd_8fuu\\report.json",
+        "sha256": "8ccda6c0673888338efd767c96120acb4fae719231936f4721f703319bf17c8f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 5
+        },
+        "total_seconds": 30.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related_before_marker_fix": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ethhx0cs\\report.json",
+        "sha256": "276bf572afa95064008ec0cc62c18253b922a5bc9dd5807230e800692ebdf995",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1,
+          "passed": 16,
+          "expected_failure": 1
+        },
+        "total_seconds": 70.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "marker_and_foundation": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-5l2b8_zp\\report.json",
+        "sha256": "95ec776209c6348fb4ad5d78d0375674eee059472351996416e4ec6af809c668",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 8
+        },
+        "total_seconds": 9.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/formal_engine.py",
+          "sha256": "32094e1e3d785df8f0b290806a5c7b8be8adde871df304f95bcf51536fa8b0dc"
+        },
+        {
+          "path": "tests/structure/test_storage_fields.py",
+          "sha256": "1fbf2f309113f7f6aa9d2ad02f2ae2858d37cf59c9cf49b7567f6b4164a37218"
+        },
+        {
+          "path": "tests/flows/test_lifecycle_engine_trust.py",
+          "sha256": "a038c748ab952b3c46f80b07ce1d77d8b31795e5c1b02f824e4dabac038991ba"
+        },
+        {
+          "path": "tests/sim/test_machine_foundation_environment.py",
+          "sha256": "3287251cc7164b9b3bdd833daf0aeff0833979e8cefde7e6f2665889787fd6c1"
+        },
+        {
+          "path": "tests/migration/dispositions/engine.1.json",
+          "sha256": "a8a20282177c20147d7c54cb9ea3f1cb57071fb7a7cad202f59b61da28e2e6ec"
+        },
+        {
+          "path": "tests/migration/dispositions/scheduling.foundation.json",
+          "sha256": "144c0f9ac6eeb4026d25988e3916703b9fe72a006e4ebebee13f514e3026c06e"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "513f8153d27f1df8934bf8f8c085af29468a8ceca256247e5e7eefbc34154a3c"
+        }
+      ],
+      "contract": "닫힌 사건의 기존 basis 아래 toolchain_record/previous/current/recorded_at 전문을 유지. 전환 재검사 완료와 재실행 경로가 원래 source_ref를 보존. 재결박은 실제바인딩일치 조건에서1회만 진행. 원 스키마/권한/검토 요구를 약화하지 않는다.",
+      "related_fidelity": "ethhx0cs 전체는failed1/passed16/expected_failure1. 실제 신뢰 흐름17개는16passed+아직 열린KD-0801 expected1. 실패1은 다른기반시험에남은closed KD-0006 표시. 제거하고 전용오류cleanup도삭제해captured error무조건raise/owner/thread/게시→정지판정→반환검사는유지. 이관연결3곳교정뒤8passed.",
+      "limits": "main4open. 부분 통과를 최종관문으로 읽지 않는다. Lean explicit evidence/Git포트전달/대기등록표 등 다른 후보 변경은 가져오지 않았다.",
       "whole_requirement_closed": false
     }
   }

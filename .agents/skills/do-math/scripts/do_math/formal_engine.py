@@ -91,8 +91,9 @@ class FormalEngineMixin:
             return
         bindings[environment_id] = deepcopy(rebind['current'])
         self._lifecycle_event('trust_environment_rebound', target=environment_id, schedule=False,
-            toolchain_record=deepcopy(check['toolchain_record']), previous=deepcopy(rebind['previous']),
-            current=deepcopy(rebind['current']), recorded_at=rebind['recorded_at'])
+            basis={'toolchain_record': deepcopy(check['toolchain_record']),
+                   'previous': deepcopy(rebind['previous']), 'current': deepcopy(rebind['current']),
+                   'recorded_at': rebind['recorded_at']})
 
     def _resume_formal_waits(self):
         """Requeue parked formal checks once the condition that parked them is gone.
@@ -213,7 +214,8 @@ class FormalEngineMixin:
         transition = self.runtime['trust_transitions'][transition_id]
         if transition['status'] not in {'checking', 'ready'}: return
         if knowledge_id in transition['results']:
-            if transition['status'] == 'ready': self._enqueue('trust_activate', transition_id=transition_id)
+            if transition['status'] == 'ready':
+                self._enqueue('trust_activate', transition_id=transition_id, source_ref=transition['source_ref'])
             return
         target = next((t for t in transition['targets'] if t['id'] == knowledge_id), None)
         if target is None: raise ValueError('trust check is not an assigned transition target')
@@ -304,7 +306,8 @@ class FormalEngineMixin:
         self._save({artifact: canonical_json(result)})
         self._lifecycle_event('trust_target_checked', target=knowledge_id, transition_id=transition_id, result=result['status'])
         if self.runtime['trust_transitions'][transition_id]['status'] == 'ready':
-            self._enqueue('trust_activate', transition_id=transition_id)
+            self._enqueue('trust_activate', transition_id=transition_id,
+                          source_ref=self.runtime['trust_transitions'][transition_id]['source_ref'])
         self._remove_action(action)
         self._refresh_readiness()
         self._save()

@@ -14,15 +14,14 @@ from do_math.repository import ResearchRepository
 from support.knowledge_formal_engine import scene, run_formal
 from support.provider_probes import ObservedCalls
 from support.sim import warm_template
-from support.known_defects import known_defect
 from support.storage_probes import Returns
 
 
 class PublicationObservation:
     """Observe real saves; never supply storage state or publication behaviour.
 
-    Check in unittest cleanup as well as on entry: expectedFailure covers the
-    test body, but must not turn a broken observation into a KD-0006 result.
+    Check owner identity and complete publication ordering in cleanup.
+    A captured failure is always raised; repaired code has no defect exception.
     """
     def __init__(self, test):
         self.test = test
@@ -55,7 +54,7 @@ class PublicationObservation:
         self.error = error
         return self.stack.__exit__(kind, error, traceback)
 
-    def assert_valid(self, *, rebind_defect=False):
+    def assert_valid(self):
         test = self.test
         # These checks run outside expectedFailure, including failures raised
         # by a monitoring callback before it could finish recording a save.
@@ -63,19 +62,7 @@ class PublicationObservation:
         for _, thread, _, _ in self.events:
             test.assertEqual(thread, self.owner, 'engine mutation escaped the owner thread')
         if self.error is not None:
-            if not rebind_defect:
-                raise self.error
-            test.assertIs(type(self.error), ValueError)
-            test.assertRegex(str(self.error), r'^runtime/events/[^:]+/: Additional properties are not allowed ')
-            test.assertIn("'current', 'previous', 'recorded_at', 'toolchain_record' were unexpected", str(self.error))
-            frames = []
-            traceback = self.error.__traceback__
-            while traceback is not None:
-                frames.append(traceback.tb_frame.f_code)
-                traceback = traceback.tb_next
-            from do_math.state_contract import validate_record
-            test.assertIn(ResearchRepository.validate_candidate.__code__, frames)
-            test.assertIs(frames[-1], validate_record.__code__)
+            raise self.error
 
         active = []
         publications = 0
@@ -109,10 +96,7 @@ class PublicationObservation:
                 # unlike such a no-op, must judge stops before returning.
                 test.assertIn(row['stage'], ('save', 'judged'), 'publication returned without judging stops')
         test.assertGreater(publications, 0, 'no successful repository publication observed')
-        if self.error is None:
-            test.assertEqual(active, [])
-        else:
-            test.assertEqual([row['stage'] for row in active], ['repository'])
+        test.assertEqual(active, [])
 
 
 def setUpModule():
@@ -120,10 +104,9 @@ def setUpModule():
 
 
 class MachineFoundationEnvironmentTests(unittest.TestCase):
-    @known_defect('KD-0006')
     def test_foundation_environment_failure_waits_for_rerecord_before_compiler_retry(self):
         publication = PublicationObservation(self)
-        self.addCleanup(publication.assert_valid, rebind_defect=True)
+        self.addCleanup(publication.assert_valid)
         with publication:
             sim, action = scene(source='theorem fixture : 1 = 1 := rfl', declarations=('fixture',))
             sim.lean.allow('theorem fixture : 1 = 1 := rfl', ['fixture'],
@@ -167,11 +150,11 @@ class MachineFoundationEnvironmentTests(unittest.TestCase):
             self.assertEqual(latest['outcome'], 'output_accepted')
             self.assertEqual(host.runtime['trust_bindings'][environment['id']], recorded['binding'])
             rebound = [row for row in host.runtime['events'] if row['kind'] == 'trust_environment_rebound']
-            self.assertEqual([(row['previous'], row['current']) for row in rebound], [(bound, recorded['binding'])])
+            self.assertEqual([(row['basis']['previous'], row['basis']['current']) for row in rebound], [(bound, recorded['binding'])])
 
     def test_foundation_default_engine_verifier_uses_jobs_and_clock_and_publishes(self):
         publication = PublicationObservation(self)
-        self.addCleanup(publication.assert_valid, rebind_defect=False)
+        self.addCleanup(publication.assert_valid)
         with publication:
             sim, action = scene(source='theorem fixture : 1 = 1 := rfl', declarations=('fixture',))
             sim.lean.allow('theorem fixture : 1 = 1 := rfl', ['fixture'],

@@ -20,14 +20,12 @@ import inspect
 from pathlib import Path
 import unittest
 
-from support.known_defects import known_defect
 
 PRODUCT = Path(__file__).resolve().parents[2] / 'do_math'
 SCHEMA_MODULES = {'record_schemas', 'state_contract.py'}
 # Event calls whose fields a static check cannot see or that are known defects.
 EVENT_CALLS = {
     ('core_engine.py', 'submission_checked'): 'passes **details; the caller builds only basis (EVIDENCE)',
-    ('formal_engine.py', 'trust_environment_rebound'): 'KD-0006',
 }
 _IGNORED_SETTING = ('accepted by the configuration schema but read or written by no product code, so setting it '
                     'changes nothing; stage 2 removes or wires it')
@@ -91,7 +89,6 @@ class StorageFieldTests(unittest.TestCase):
         self.assertEqual(sorted(unproduced - set(UNPRODUCED)), [], 'stored fields no product code names')
         self.assertEqual(sorted(set(UNPRODUCED) - unproduced), [], 'declared unproduced fields that now have a producer')
 
-    @known_defect('KD-0006')
     def test_the_trust_rebind_event_passes_only_declared_event_fields(self):
         declared = _event_fields()
         fields = next(fields for name, kind, fields, _ in _event_calls()
