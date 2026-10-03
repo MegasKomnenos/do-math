@@ -105,8 +105,8 @@
       "category": 7,
       "reproduction": "sim.test_lifecycle_engine_external.SendTests.test_an_unrelated_control_during_the_send_steps_does_not_cancel_the_effect",
       "found_by": "1f migration of test_lifecycle_engine.LifecycleTests.test_failure_before_any_send_step_is_an_untransmitted_cancellation onto the Sim: a control delivered at the first inbox read of the send steps on real storage",
-      "missed_kind": "The legacy tests ran the send steps on FakeEngine, whose _save records copies without storage validation, and made controls arrive by replacing _apply_inbox, which never published",
-      "status": "open"
+      "missed_kind": "The legacy tests ran the send steps on FakeEngine, whose _save records copies without storage validation, and made controls arrive by replacing _apply_inbox, which never published Independent main red5eeanqsk: an unrelated grant control publishes an external operation referencing an unregistered EX and changes confirmed effect to cancelled. Register the execution before send-ledger publication without settling old waits, preserving current state after control replacement. Regression includes one HTTP effect, accepted ended execution, finished owner activity and exact stored restart.",
+      "status": "closed"
     },
     {
       "id": "KD-0803",

@@ -7677,7 +7677,7 @@
     "pinned_trust_integration": {
       "id": "B18",
       "scope": "KD-0801: 출처 있는 신뢰 전환의 등록된 고정 프로필을 보존하여 잘못된 명령의 시도를 종료",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-mr1bljv5\\report.json",
         "sha256": "f097bc0947a95a950110870a05197381ee01295f0b2979552f3e96cae72955b4",
@@ -7743,6 +7743,89 @@
       ],
       "contract": "trust_check에만, 전환의 source_ref가 있는 경우 등록된 pinned action.profile_ref를 선택범위로 유지. select_profile의 등록/역할/해시 검사는 그대로. 기존 machine 준비가 환경명령과의 불일치를 검증기 이전에 반려. 검증기/Lean0회,1ended execution_incomplete,고정 참조와저장 전문확인.",
       "limits": "main3open. 정상 전환2개와 프로필 허용목록/별도역할 기존12개 및 이관4개 보존. 두 관련 실행은 부분증거이며 전체관문은 별도.",
+      "whole_requirement_closed": false,
+      "commit": "b4a26712"
+    },
+    "external_registration_integration": {
+      "id": "B19",
+      "scope": "KD-0802: 외부 실행을 첫 원장 게시 전에 등록하여 무관한 제어의 상태 교체에도 결과 보존",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-5eeanqsk\\report.json",
+        "sha256": "6b38b5c7e8bc9e5605b32375ccb9d24472b432aa618f5c46534c1f54039461f7",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 22.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-pphpndqk\\report.json",
+        "sha256": "44dacfff8b07591d4750b6e3defb28059435c3fb3a7c308909ce1576910d1981",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 24.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-s6d4j2ld\\report.json",
+        "sha256": "a4d30d25ff87fbc956b128f66f876d7cf83fc392eb36e3243d640a6c8205273b",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 19
+        },
+        "total_seconds": 40.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_lifecycle_engine_external.PublicCredentialResumeTests.test_public_external_once_credential_resume_persists_attempts",
+              "seconds": 2.202999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_lifecycle_engine_external.RecordTests.test_machine_records_use_registered_schema_and_existing_source_provenance",
+              "seconds": 3.187000000034459,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/external_engine.py",
+          "sha256": "a9d23261872ffa08f0c47fb89d7aa42ff3d6e65db8195f53f7fd76505dfd3c6d"
+        },
+        {
+          "path": "tests/sim/test_lifecycle_engine_external.py",
+          "sha256": "952a0df4b4ba79c15dabe0733ecad3f4b31dd05fbec6b17e3f02bb24bd39f1c8"
+        },
+        {
+          "path": "tests/migration/dispositions/engine.1.json",
+          "sha256": "a62560a835d40b96bec1af673b49f301a208ee23ea0290ba3100b1ff3fb00373"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "d0e7e1a5036f5f0f62c5116ee1267e0aaaae98a7427739f65c147f3d86709920"
+        }
+      ],
+      "contract": "등록은 settle=False로 과거 대기 이유를 새 시도의 완료로 정산하지 않는다. 실제 persist에서만 현재 상태의 실행/작업과 결과를 정산. 정상외부효과1회,권한철회/정지/결과불명/명시재시도/자격재개를유지. 회귀는accepted ended실행·finished activity·정확한저장재시작도검사.",
+      "limits": "HTTP는기존포트대역의실제요청기록이며실제서비스효과검증이아니다. related19개에기존Sim2개예산초과. main2open이며전건관문별도.",
       "whole_requirement_closed": false
     }
   }

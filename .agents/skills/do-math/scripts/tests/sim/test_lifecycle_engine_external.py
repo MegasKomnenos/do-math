@@ -21,7 +21,6 @@ from do_math.record_schemas import RECORD_RULES, RECORDS
 from support.engine_lifecycle import (CREDENTIAL, ORIGIN, applied, control_at_inbox_check, executions, external_sim,
                                       extended, http_fails, http_grant, lifecycle_sim, only, prepared_environment,
                                       run_machine, ticking_clock, transition, warm_external, warm_lifecycle)
-from support.known_defects import known_defect
 
 
 def setUpModule():
@@ -104,7 +103,6 @@ class SendTests(unittest.TestCase):
         self.assertEqual((stored['status'], stored['transmitted'], stored['succeeded']), ('cancelled', False, False))
         RECORD_RULES['external_operations'](stored)  # the storage rules of one operation record
 
-    @known_defect('KD-0802')
     def test_an_unrelated_control_during_the_send_steps_does_not_cancel_the_effect(self):
         self.http.table['/effect'] = (201, b'created', None)
         self.prepare()
@@ -115,6 +113,14 @@ class SendTests(unittest.TestCase):
         self.assertIn('GR-unrelated', self.sim.instance['grants'])  # the owner applied the control
         self.assertEqual(operation(self.sim)['status'], 'confirmed', operation(self.sim).get('error'))
         self.assertEqual(len(self.http.requests), 1)
+        confirmed = deepcopy(operation(self.sim))
+        execution = deepcopy(self.sim.runtime['executions'][confirmed['execution_id']])
+        self.assertEqual((execution['status'], execution['outcome']), ('ended', 'output_accepted'))
+        self.assertEqual(execution['submission_receipt']['kind'], 'machine_output')
+        self.assertEqual(self.sim.runtime['activities'][execution['owner_activity_id']]['status'], 'finished')
+        self.sim.restart()
+        self.assertEqual(operation(self.sim), confirmed)
+        self.assertEqual(self.sim.runtime['executions'][execution['id']], execution)
 
     def test_real_loopback_unknown_reconcile_and_retry_share_activity(self):
         self.http.table['/effect'] = (503, b'uncertain', None)

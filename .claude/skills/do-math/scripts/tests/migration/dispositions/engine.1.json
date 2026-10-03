@@ -346,8 +346,7 @@
     "sim.test_lifecycle_engine_external.SendTests.test_failure_before_any_send_step_is_an_untransmitted_cancellation",
     "sim.test_lifecycle_engine_external.SendTests.test_an_unrelated_control_during_the_send_steps_does_not_cancel_the_effect"
    ],
-   "note": "Input: the real loopback HTTP server and the patches of do_math.http_transport._http are the HTTP port fake (a response table by path that records every request); the send count is len(sim.ports.http.requests). The patch that made external_engine.execute_operation raise is a pause control arriving at the first inbox read of the send steps, whose failure the engine handles in the same except branch. On real storage that first read already fails its publication (KD-0802), which the second test reproduces; the moved assertions hold for either failure.",
-   "known_defect": "KD-0802"
+   "note": "Input: the real loopback HTTP server and the patches of do_math.http_transport._http are the HTTP port fake (a response table by path that records every request); the send count is len(sim.ports.http.requests). The patch that made external_engine.execute_operation raise is a pause control arriving at the first inbox read of the send steps, whose failure the engine handles in the same except branch. On real storage that first read already fails its publication (KD-0802), which the second test reproduces; the moved assertions hold for either failure. Stage2 KD-0802 repaired: execution registration precedes the first send-ledger publication, so unrelated controls preserve effect and provenance; no expectedFailure remains. Historical source retained."
   },
   {
    "legacy_id": "test_lifecycle_engine.LifecycleTests.test_session_capacity_reads_git_reservations_not_sqlite",

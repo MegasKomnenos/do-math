@@ -117,7 +117,7 @@ class ExternalEngineMixin:
         validate_operation(operation, grant, self._lifecycle_now().isoformat(), runtime=self.runtime,
                            academic_check=self._external_prerequisite)
 
-    def _external_execution_record(self, operation):
+    def _external_execution_record(self, operation, *, settle=True):
         execution_id = operation.setdefault('execution_id', self.ports.clock.new_id('EX'))
         record = self.runtime['executions'].get(execution_id)
         if record is None:
@@ -135,7 +135,7 @@ class ExternalEngineMixin:
                           source_ref=operation['source_ref'], effect_status=operation['status'],
                           http_status=operation.get('http_status'), succeeded=operation.get('succeeded'))
         self.runtime['external_operations'][operation['id']] = deepcopy(operation)
-        terminal = operation['status'] != 'prepared' or operation.get('waiting_reason')
+        terminal = settle and (operation['status'] != 'prepared' or operation.get('waiting_reason'))
         if terminal:
             accepted = operation['status'] == 'confirmed' and operation.get('succeeded') is True
             if accepted and record['status'] != 'ended':
@@ -184,6 +184,7 @@ class ExternalEngineMixin:
             self._external_execution_record(operation)
             self._lifecycle_event('external_operation_not_authorized', target=operation_id, reason=str(error))
             return
+        self._external_execution_record(operation, settle=False)
         def persist(update):
             current = self.runtime['external_operations'][operation_id]
             if current['request_sha256'] != update['request_sha256'] or current['execution_id'] != update.get('execution_id'):
