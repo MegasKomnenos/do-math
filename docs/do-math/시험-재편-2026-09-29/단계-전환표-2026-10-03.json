@@ -8019,26 +8019,17 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 43,
+      "main_ledger_count": 52,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
         "KD-1100",
         "KD-0303",
         "KD-0502",
-        "KD-0804",
-        "KD-1901",
-        "KD-1902",
-        "KD-1903",
-        "KD-1904",
-        "KD-1905",
-        "KD-1906",
-        "KD-1907",
-        "KD-1908",
-        "KD-1909"
+        "KD-0804"
       ],
-      "meaning": "13개는 main 미기록 후보 항목이며 전체 미구현 수나 완료율이 아니다.",
-      "next": "형식Git/CLI 의미포트는B38로이관했다. 다음은 남은판정/계수/반복/관찰/질문/종결 전선택과 필요한현재시험·수리회귀 통합이다. 새감사목록을늘리지않고원문1e19/1f61/2단계11/P2원래12 모집단과연결하여현재동작을검수한다.",
+      "meaning": "4개는main미기록후보항목이며전체미구현수/완료율이아니다.",
+      "next": "남은4항목: 실제scholarly도구이름, 봉인artifact 누락반려, 위임revision_followup 병합, 입력초과실패전문분리. 각현재원재현과제품diff를검수하여통합하고원문전건/분류/모집단/현재전체관문으로전환한다.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
     },
@@ -10530,7 +10521,7 @@
     "git_port_integration": {
       "id": "B38",
       "scope": "프로젝트 Git 정체성과 CLI 생성/존재 확인을 실제 의미 포트 및 모든 설치/검증/작업자 소비자에 이관",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "new_api_absent": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-mhf6uf93\\report.json",
         "sha256": "05ab06256b5eb09bfd8902d8487da41e461d9842939a8bc23fd42316f9e0cc5a",
@@ -10910,6 +10901,413 @@
               "budget_seconds": 5.0
             }
           ],
+          "tier": null
+        }
+      },
+      "commit": "8afa57c7"
+    },
+    "cross_closure_integration": {
+      "id": "B39",
+      "scope": "Cross1901~1909 원 최소 재현/모든 LONG알파벳과 종결 흡수·실제 요청/이유 보존 수리",
+      "state": "verified_main_commit_pending",
+      "initial": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-2pr61wo_\\report.json",
+        "sha256": "53790ca6523515eca97c39ce1ac2babd683e0cef11aa79e7247b836a9d0de773",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "error": 3,
+          "passed": 1
+        },
+        "total_seconds": 40.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "merged_reason_red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-7pao9wwo\\report.json",
+        "sha256": "acfde035eb11125454d97c92aa51e1792145fb0003117fd9d40dae942be99bab",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1,
+          "passed": 1
+        },
+        "total_seconds": 33.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-gt71sfae\\report.json",
+        "sha256": "5331e2f200024be2c9d308115dff601867b184426e939ce55cee7484ae58fe12",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 7
+        },
+        "total_seconds": 49.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "long_initial_timeout": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-6gkuwhlr\\report.json",
+        "sha256": "4e390cbb9e8cb77dc776de546761ff82c62bb4ea0be8d179473ca5df17d865fb",
+        "complete": false,
+        "successful": false,
+        "counts": {
+          "passed": 2,
+          "timeout": 1,
+          "not_run": 10
+        },
+        "total_seconds": 360.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "flows.test_cross_alphabets.RequiredEventMachineTests.test_checkpoint_alphabet",
+              "seconds": 300.0470000000205,
+              "budget_seconds": 60.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "long_single_diagnostic": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-nn_rtykc\\report.json",
+        "sha256": "9105828801192e1e60cd00aa1c08d9d666121be1cd9b87bd259ae0191a83e5cf",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 344.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "flows.test_cross_alphabets.RequiredEventMachineTests.test_checkpoint_alphabet",
+              "seconds": 340.5779999999795,
+              "budget_seconds": 60.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "long_second_timeout": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-7z447cfe\\report.json",
+        "sha256": "8e190f4addf5d7cb4b71e5b3b38eaa793cd1786ca62720af8b0119597fc4f2c8",
+        "complete": false,
+        "successful": false,
+        "counts": {
+          "passed": 2,
+          "timeout": 1,
+          "not_run": 10
+        },
+        "total_seconds": 355.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "flows.test_cross_alphabets.RequiredEventMachineTests.test_checkpoint_alphabet",
+              "seconds": 300.030999999959,
+              "budget_seconds": 60.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "first_failure_without_shrinking": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-dw2fh3ku\\report.json",
+        "sha256": "db1622361082b6813f238f0a658a2c527688a273b0810645c2645c72d5df5ae8",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 38.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "checkpoint_corrected": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-7n5tibq5\\report.json",
+        "sha256": "ccc6fe8dfe2ebdff80198d53c02c38e73a8f2598020f7feef3297786b02f3935",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 3
+        },
+        "total_seconds": 44.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "old_generator_cancelled": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-cj0sgxqx\\report.json",
+        "sha256": "a2f24edaf7fb7c7cac4c76ed0f2f0ece133d082b55363cd96409f062fdc56280",
+        "complete": false,
+        "successful": false,
+        "counts": {
+          "passed": 8,
+          "not_run": 5
+        },
+        "total_seconds": 349.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "flows.test_cross_alphabets.RequiredEventMachineTests.test_investigation_alphabet",
+              "seconds": 83.85999999998603,
+              "budget_seconds": 60.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "fresh_request_focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-evol7_j2\\report.json",
+        "sha256": "c423169bfa4ac476ee1dc0c1198db21c31bbd361eece78dc6e6e3e0d9c273788",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 7
+        },
+        "total_seconds": 51.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "long_final": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-tuyqv3lc\\report.json",
+        "sha256": "65a7fc3198ee1493a7e5254d89f54d76ecf038a1697e55b77ffa2f188f114116",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 13
+        },
+        "total_seconds": 647.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "flows.test_cross_operational_alphabets.OperationalAlphabetTests.test_operational_task_alphabet",
+              "seconds": 110.39099999994505,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_cross_planning_alphabets.PlanningAlphabetTests.test_assessment_alphabet",
+              "seconds": 67.96899999992456,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_cross_planning_alphabets.PlanningAlphabetTests.test_planning_alphabet",
+              "seconds": 67.48499999998603,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_cross_review_alphabets.ReviewAlphabetTests.test_investigation_alphabet",
+              "seconds": 85.46899999992456,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_cross_review_alphabets.ReviewAlphabetTests.test_review_alphabet",
+              "seconds": 180.73400000005495,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_cross_review_alphabets.ReviewAlphabetTests.test_supplemental_alphabet",
+              "seconds": 75.82799999997951,
+              "budget_seconds": 60.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "닫힌 초기화는 활성화 전에 owner 루프를 흡수하며 실행/호출을 새로 만들지 않는다. close는 큐를 버리기 전에 각 실제 행동·병합이유·출처를 action_retired로 보존하고 restart 후 중복하지 않는다. 이미 수리된 질문참조/B27·독립검토전제/B09의Cross원회귀도현재실제경로에연결한다. 독립 oracles는 당시요청·판정·소유·예약·ended/full evidence와모집단을검사한다. 생성제어는새EV idempotencykey로새요청을보내며명시key는원 영수증재전달검산에남긴다.",
+      "diagnosis": "초기 메서드/last_control 차이는 helper 배선으로 분리했다. 긴checkpoint는 원6×20 유지하되helper가빈expectedHOLD와닫힌뒤원반려재전달을틀리게분류하여300초shrinktimeout이났다. 운영단독진단과일시적generate-only첫실패취득을거쳐정확두반려/상태불변을검사하고원phases복원했다. 잘못된생성키를발견한 cj0 실행은소유Worker를확인해명시종료했으며성공으로승격하지않는다. 현재12메서드본문/LONG/event12/producer60은유지하고3실제역할모듈로분배하여기존모듈병렬기를사용했다.",
+      "limits": "13개647초와partial7개는전체T2/flows/T3증거로합산하지않는다. currentflows6개60초개별예산초과를남김. Cross9IDs는원재현일대일번호이며독립9원결함이아니다. goal전건원문1e19/1f61/P2원래12/여섯부류/2단계11와최종동일판본관문은별도다.",
+      "whole_requirement_closed": false,
+      "files": [
+        {
+          "path": "do_math/core_engine.py",
+          "sha256": "3524cae4cbb93871ba8ceaf935072af85cfe51d4ff2d530279703b48b540410d"
+        },
+        {
+          "path": "do_math/lifecycle_engine.py",
+          "sha256": "8077582bbead4a9403abb9187bb0017ae70bc4b9f977301dfa7b99ac9d001289"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "5966f7d23427114566f69ade949dfc902f29f292ac9aa84d40c641c2c9662d41"
+        },
+        {
+          "path": "tests/support/cross_contracts.py",
+          "sha256": "706b0650b1fe1ef35b483430156893c8241b68481db894b95eb3f0749b1d2719"
+        },
+        {
+          "path": "tests/support/cross_machine.py",
+          "sha256": "b14723c2e18062d68a946df36f0ef875926399c5af7373237f06205518c5879f"
+        },
+        {
+          "path": "tests/support/cross_obligations.py",
+          "sha256": "80d835be8376a92da93fef20885dd82d0e565bc19b11c955e5a6b4d9fcc4879d"
+        },
+        {
+          "path": "tests/support/cross_events.py",
+          "sha256": "8e82c9258cdf552efecb0cfab7cd4f1c62b070e2bcae2b0407ff4e77382a0ee3"
+        },
+        {
+          "path": "tests/support/cross_states.py",
+          "sha256": "cb8b15772a980c5e27b1c051f71900dae7f08961efdc747339ff6a237fb032b5"
+        },
+        {
+          "path": "tests/support/cross_research_machine.py",
+          "sha256": "5ad301312705cf457466df374860610e9fc10acbae4cedb64658ee6359c576bf"
+        },
+        {
+          "path": "tests/support/cross_live_operations.py",
+          "sha256": "0014477dd9d9cb587fe1e335d0180055751b3f09a8b32cdc0b3398364591d5c8"
+        },
+        {
+          "path": "tests/flows/test_cross_closure_contract.py",
+          "sha256": "65e7db78f1313bad3d94ad0ae6c8dba530ad3ecdce063e6adfe1292d4af6a206"
+        },
+        {
+          "path": "tests/flows/test_cross_planning_alphabets.py",
+          "sha256": "9080affe2dab4dd743a82458899c28ddeab2b3a9a87d775c12fa3af626126bf3"
+        },
+        {
+          "path": "tests/flows/test_cross_review_alphabets.py",
+          "sha256": "d7d64395f103a4a0c4bda89459957bc6bd072c6c871fc080e23328c71f4a5ba6"
+        },
+        {
+          "path": "tests/flows/test_cross_operational_alphabets.py",
+          "sha256": "96d9c793f6bd945aafd32bafa50c39bb9af903267393a8ecd8fbbfe3afd31dc9"
+        }
+      ],
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-vkzfcto9\\report.json",
+        "sha256": "1381a0cff37a4570780438b378abcbcce141f146807f788584e739453d900763",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 47.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related_existing": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-k4wmipi5\\report.json",
+        "sha256": "5ccfdef68f3768fd93f11f116b4f450901bae3de5330110cb1ac555aeef36b51",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 7
+        },
+        "total_seconds": 63.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "direct_review_corrected": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-4evmlpne\\report.json",
+        "sha256": "96e9edd23449d7e17fef05e83d6aef76476bf119f50f970c2c5b4a01c1aaa726",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 21.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "structural_initial": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-q0qb0e9t\\report.json",
+        "sha256": "490fc7395f1243ce9a271ad442ede9b948d9db465a9898791bfa4bf4903f1dd9",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 5,
+          "failed": 1
+        },
+        "total_seconds": 10.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 5.562000000034459,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structural_corrected": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-zplgilwv\\report.json",
+        "sha256": "8ffa9f447cb727a0abc1048f7cc33e3e0aee2aaaf5eadab8e31e44402200b010",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 4
+        },
+        "total_seconds": 5.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "candidate_direct_review": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-6g9005j9\\report.json",
+        "sha256": "582f88d82cec107c4320f615efce09f63735dfa1b785ad4ad542c2d3bae085b0",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 22.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "structural_final": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-pq4n8r54\\report.json",
+        "sha256": "559364622ce699036dc70744236d1b5cdeb4a4bafbb05ece6417b49bb7ab0906",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 8.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
           "tier": null
         }
       }

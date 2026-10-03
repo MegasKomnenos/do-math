@@ -386,6 +386,87 @@
       "found_by": "2026-10-01 기반 4576a517 정상 준비 후 run_tests.py unmarked 실행으로 재현. 제품 수리 없음. 최초 실패·교정 이력 및 최종 동일 소스 해시의 unmarked/expected report는 finish/resume-provider-result.json. main nsl6z3du에서 native 반려/재전달/raw/종결·개정 대상 네 회귀가 실패했고 보고 회귀는 이미 B32 수리로 통과했다. 79xta1p6 원래 관련8개가 통과했다. KD0901의 앞쪽 이미 소비한 행 재전달은 추가 elxvdtto 실패 뒤 단조 커서 수리 vrawhxmt로 통과했다. 최종 선택 xtaoh6co10개와 기존 관련o8tjsae6 99개가 통과했다. 서로 다른 선택을 합산해 전체 관문 성공으로 주장하지 않는다.",
       "missed_kind": "_obsolete_review_reason의 종료·개정 검사는 native 입구에 연결되어 있지 않다. 실제 공개 종결·개정과 저장을 준비한 두 시나리오에서 transcript 불변·반려 1회·다른 실행 진행을 요구한다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1901",
+      "summary": "Cross 운영 알파벳의 정상 user_decision이 question_id 저장 스키마 반려로 편입되지 않는다(KD-0302와 같은 원결함의 Cross 재현).",
+      "category": 1,
+      "reproduction": "flows.test_cross_closure_contract.OperationalQuestionTests.test_user_decision_is_accepted_and_preserves_the_question_authority",
+      "found_by": "기반5ece23ee 실제 worker/ModelRunner/Repository. 최초 씨앗 vzxxjmuv, 분리 정상 재현9hd3qx5n. question_id 추가 필드 반려의 수신 원문은 finish/resume-cross-evidence/cross-event-rejected-agynhm1e/evidence.json. 제품 미수리; 최종 소스 동일 해시의 무표시/표시 증거는 finish/resume-cross-result.json. main2pr61wo_는 닫힌 초기화 재활성화의 실제 오류와 별도 helper메서드 이름 차이를 분리한다. main7pao9wwo는 정상 병합 후 close의 이유 소실을 확인하고 검토 전제는 이미 B09로 통과했다. 질문 참조도 이미 B27로 통과했다. code 종결 두 수리 뒤 최소 회귀와 강화한 oracles/명시 nonce 생성으로 gt71sfae7개 및 tuyqv3lc의 원래12알파벳+연구LONG13개가 통과했다. 다른 원인으로 축소한 helper실패/timeout은 별도 기록하며 독립9개 제품결함이라고 세지 않는다.",
+      "missed_kind": "운영 역할 판정값별 실제 적용과 저장 검증을 CODE-ONLY 상태에서 실행하지 않았다. 다른 값과 분리해 실패를 가리지 않는다. A34 isolated repair: the actual questions.link producer emits question_id; the closed operational_dispositions schema now declares ID and the canonical REFERENCES table binds it to question_links. Both original minimal reproductions were unexpected successes in do-math-tests-j7zq5j07. The unchanged LONG 6x20 was an unexpected success in do-math-tests-332sucmo (94.0 s), confirming the generation also repaired. Markers removed together; final whole gates remain pending. 원 최소 회귀 flows.test_cross_required_events.OperationalQuestionTests.test_user_decision_is_accepted_and_preserves_the_question_authority를 현재 종결/권한 성질 모듈로 이동하고 이전 클래스만 제거했다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-1902",
+      "summary": "종결 close가 병합된 미실행 계획의 요청 이유를 현재 queue/history에 보존하지 않는다. 이전 Git 스냅샷의 바이트 소실을 뜻하지 않는다.",
+      "category": 7,
+      "reproduction": "flows.test_cross_closure_contract.MergedClosureTests.test_close_preserves_merged_pending_request_reasons_in_history",
+      "found_by": "LONG _iov0q5q에서 이유 소실 관측. 정상 병합 준비 후 독립 unmarked f6v435hd에서 Assess accepted research report and knowledge 소실 재현. 최초 dnm15xgz의 준비 오류(before가 비었음)는 제품 결함으로 세지 않고 별도 보존했다. 제품 미수리. 최종 동일 소스의 무표시/표시 보고와 hash는 finish/resume-cross-result.json에 기록한다. main2pr61wo_는 닫힌 초기화 재활성화의 실제 오류와 별도 helper메서드 이름 차이를 분리한다. main7pao9wwo는 정상 병합 후 close의 이유 소실을 확인하고 검토 전제는 이미 B09로 통과했다. 질문 참조도 이미 B27로 통과했다. code 종결 두 수리 뒤 최소 회귀와 강화한 oracles/명시 nonce 생성으로 gt71sfae7개 및 tuyqv3lc의 원래12알파벳+연구LONG13개가 통과했다. 다른 원인으로 축소한 helper실패/timeout은 별도 기록하며 독립9개 제품결함이라고 세지 않는다.",
+      "missed_kind": "종결 흡수만 검사하고, 미실행 병합 요청의 이유 보존을 종결과 합성하지 않았다. 원 최소 회귀 flows.test_cross_required_events.MergedClosureTests.test_close_preserves_merged_pending_request_reasons_in_history를 현재 종결/권한 성질 모듈로 이동하고 이전 클래스만 제거했다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-1903",
+      "summary": "초기화 중 공개 close 뒤 owner pass가 닫힌 인스턴스를 다시 활성화하려다 예외를 낸다.",
+      "category": 7,
+      "reproduction": "flows.test_cross_closure_contract.InitialClosureTests.test_closed_initialization_absorbs_an_owner_pass_and_restart",
+      "found_by": "LONG _iov0q5q의 최소열 close→owner_pass. 정상 초기 진단 준비 후 독립 unmarked dnm15xgz에서 core_engine._prepare_executor_pass→_activate_initialization의 closed/completed instance cannot activate 재현. 제품 미수리. 최종 동일 소스의 무표시/표시 보고와 hash는 finish/resume-cross-result.json에 기록한다. main2pr61wo_는 닫힌 초기화 재활성화의 실제 오류와 별도 helper메서드 이름 차이를 분리한다. main7pao9wwo는 정상 병합 후 close의 이유 소실을 확인하고 검토 전제는 이미 B09로 통과했다. 질문 참조도 이미 B27로 통과했다. code 종결 두 수리 뒤 최소 회귀와 강화한 oracles/명시 nonce 생성으로 gt71sfae7개 및 tuyqv3lc의 원래12알파벳+연구LONG13개가 통과했다. 다른 원인으로 축소한 helper실패/timeout은 별도 기록하며 독립9개 제품결함이라고 세지 않는다.",
+      "missed_kind": "초기화 실패 대기와 종결 이후 owner/restart의 조합이 종결 흡수 시험에서 빠졌다. 원 최소 회귀 flows.test_cross_required_events.InitialClosureTests.test_closed_initialization_absorbs_an_owner_pass_and_restart를 현재 종결/권한 성질 모듈로 이동하고 이전 클래스만 제거했다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-1904",
+      "summary": "목표 판본 변경 뒤 독립 검토 실행 등록이 전체 governance 게시 근거 불일치를 처리하지 못하고 owner 밖으로 예외를 낸다.",
+      "category": 7,
+      "reproduction": "flows.test_cross_closure_contract.ReviewPremiseTests.test_goal_editions_preserve_independent_review_dispatch",
+      "found_by": "LONG _iov0q5q investigation: change_charter→change_charter→owner_pass. 독립 unmarked dnm15xgz에서 review_engine._admit_review_execution→_review_cycle:520 재현. review 시작 상태에서도 같은 지점의 예외를 별도로 관측했다. 제품 미수리. 최종 동일 소스의 무표시/표시 보고와 hash는 finish/resume-cross-result.json에 기록한다. main2pr61wo_는 닫힌 초기화 재활성화의 실제 오류와 별도 helper메서드 이름 차이를 분리한다. main7pao9wwo는 정상 병합 후 close의 이유 소실을 확인하고 검토 전제는 이미 B09로 통과했다. 질문 참조도 이미 B27로 통과했다. code 종결 두 수리 뒤 최소 회귀와 강화한 oracles/명시 nonce 생성으로 gt71sfae7개 및 tuyqv3lc의 원래12알파벳+연구LONG13개가 통과했다. 다른 원인으로 축소한 helper실패/timeout은 별도 기록하며 독립9개 제품결함이라고 세지 않는다.",
+      "missed_kind": "독립 검토 배정의 보존만 확인하고 변경 후 실제 worker 등록까지 잇지 않았다. 원 최소 회귀 flows.test_cross_required_events.ReviewPremiseTests.test_goal_editions_preserve_independent_review_dispatch를 현재 종결/권한 성질 모듈로 이동하고 이전 클래스만 제거했다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-1905",
+      "summary": "과제 평가 LONG의 종결 후 병합 이유 소실(KD-1902와 같은 원결함)",
+      "category": 7,
+      "reproduction": "flows.test_cross_planning_alphabets.PlanningAlphabetTests.test_assessment_alphabet",
+      "found_by": "최종 무표시 전체 소유 실행 zcp1q3d0의 정상 입력 실패와 KD-1902 독립 최소 재현을 대조했다. 생성은 expectedFailure 밖 setUp에서 실행하며 확인된 원인만 기록한다. 다른 오류는 setUp에서 그대로 전파한다. 6×20/12/60 유지, 제품 미수리. 최종 동일 소스의 무표시/표시 proof는 finish/resume-cross-result.json. main2pr61wo_는 닫힌 초기화 재활성화의 실제 오류와 별도 helper메서드 이름 차이를 분리한다. main7pao9wwo는 정상 병합 후 close의 이유 소실을 확인하고 검토 전제는 이미 B09로 통과했다. 질문 참조도 이미 B27로 통과했다. code 종결 두 수리 뒤 최소 회귀와 강화한 oracles/명시 nonce 생성으로 gt71sfae7개 및 tuyqv3lc의 원래12알파벳+연구LONG13개가 통과했다. 다른 원인으로 축소한 helper실패/timeout은 별도 기록하며 독립9개 제품결함이라고 세지 않는다.",
+      "missed_kind": "CODE-ONLY 생성 시험의 실제 조합 결과를 실행하지 않았다. 별도 번호는 원장과 재현 시험의 일대일 대응을 위한 것이며 새로운 독립 원결함 수를 뜻하지 않는다. main 원 생성 메서드는 같은 본문/LONG 설정으로 실제 역할 가족 모듈로 이동했다. 역사 ID: flows.test_cross_required_events.RequiredEventMachineTests.test_assessment_alphabet",
+      "status": "closed"
+    },
+    {
+      "id": "KD-1906",
+      "summary": "초기 진단 LONG의 close 후 owner 활성화 예외(KD-1903와 같은 원결함)",
+      "category": 7,
+      "reproduction": "flows.test_cross_operational_alphabets.OperationalAlphabetTests.test_initial_diagnosis_alphabet",
+      "found_by": "최종 무표시 전체 소유 실행 zcp1q3d0의 정상 입력 실패와 KD-1903 독립 최소 재현을 대조했다. 생성은 expectedFailure 밖 setUp에서 실행하며 확인된 원인만 기록한다. 다른 오류는 setUp에서 그대로 전파한다. 6×20/12/60 유지, 제품 미수리. 최종 동일 소스의 무표시/표시 proof는 finish/resume-cross-result.json. main2pr61wo_는 닫힌 초기화 재활성화의 실제 오류와 별도 helper메서드 이름 차이를 분리한다. main7pao9wwo는 정상 병합 후 close의 이유 소실을 확인하고 검토 전제는 이미 B09로 통과했다. 질문 참조도 이미 B27로 통과했다. code 종결 두 수리 뒤 최소 회귀와 강화한 oracles/명시 nonce 생성으로 gt71sfae7개 및 tuyqv3lc의 원래12알파벳+연구LONG13개가 통과했다. 다른 원인으로 축소한 helper실패/timeout은 별도 기록하며 독립9개 제품결함이라고 세지 않는다.",
+      "missed_kind": "CODE-ONLY 생성 시험의 실제 조합 결과를 실행하지 않았다. 별도 번호는 원장과 재현 시험의 일대일 대응을 위한 것이며 새로운 독립 원결함 수를 뜻하지 않는다. main 원 생성 메서드는 같은 본문/LONG 설정으로 실제 역할 가족 모듈로 이동했다. 역사 ID: flows.test_cross_required_events.RequiredEventMachineTests.test_initial_diagnosis_alphabet",
+      "status": "closed"
+    },
+    {
+      "id": "KD-1907",
+      "summary": "운영 과제 LONG의 정상 user_decision question_id 저장 반려(KD-1901과 같은 원결함)",
+      "category": 1,
+      "reproduction": "flows.test_cross_operational_alphabets.OperationalAlphabetTests.test_operational_task_alphabet",
+      "found_by": "최종 무표시 전체 소유 실행 zcp1q3d0의 정상 입력 실패와 KD-1901 독립 최소 재현을 대조했다. 생성은 expectedFailure 밖 setUp에서 실행하며 확인된 원인만 기록한다. 다른 오류는 setUp에서 그대로 전파한다. 6×20/12/60 유지, 제품 미수리. 최종 동일 소스의 무표시/표시 proof는 finish/resume-cross-result.json. main2pr61wo_는 닫힌 초기화 재활성화의 실제 오류와 별도 helper메서드 이름 차이를 분리한다. main7pao9wwo는 정상 병합 후 close의 이유 소실을 확인하고 검토 전제는 이미 B09로 통과했다. 질문 참조도 이미 B27로 통과했다. code 종결 두 수리 뒤 최소 회귀와 강화한 oracles/명시 nonce 생성으로 gt71sfae7개 및 tuyqv3lc의 원래12알파벳+연구LONG13개가 통과했다. 다른 원인으로 축소한 helper실패/timeout은 별도 기록하며 독립9개 제품결함이라고 세지 않는다.",
+      "missed_kind": "CODE-ONLY 생성 시험의 실제 조합 결과를 실행하지 않았다. 별도 번호는 원장과 재현 시험의 일대일 대응을 위한 것이며 새로운 독립 원결함 수를 뜻하지 않는다. A34 isolated repair: the actual questions.link producer emits question_id; the closed operational_dispositions schema now declares ID and the canonical REFERENCES table binds it to question_links. Both original minimal reproductions were unexpected successes in do-math-tests-j7zq5j07. The unchanged LONG 6x20 was an unexpected success in do-math-tests-332sucmo (94.0 s), confirming the generation also repaired. Markers removed together; final whole gates remain pending. main 원 생성 메서드는 같은 본문/LONG 설정으로 실제 역할 가족 모듈로 이동했다. 역사 ID: flows.test_cross_required_events.RequiredEventMachineTests.test_operational_task_alphabet",
+      "status": "closed"
+    },
+    {
+      "id": "KD-1908",
+      "summary": "검토 LONG의 종결 후 병합 이유 소실(KD-1902와 같은 원결함)",
+      "category": 7,
+      "reproduction": "flows.test_cross_review_alphabets.ReviewAlphabetTests.test_review_alphabet",
+      "found_by": "최종 무표시 전체 소유 실행 zcp1q3d0의 정상 입력 실패와 KD-1902 독립 최소 재현을 대조했다. 생성은 expectedFailure 밖 setUp에서 실행하며 확인된 원인만 기록한다. 다른 오류는 setUp에서 그대로 전파한다. 6×20/12/60 유지, 제품 미수리. 최종 동일 소스의 무표시/표시 proof는 finish/resume-cross-result.json. main2pr61wo_는 닫힌 초기화 재활성화의 실제 오류와 별도 helper메서드 이름 차이를 분리한다. main7pao9wwo는 정상 병합 후 close의 이유 소실을 확인하고 검토 전제는 이미 B09로 통과했다. 질문 참조도 이미 B27로 통과했다. code 종결 두 수리 뒤 최소 회귀와 강화한 oracles/명시 nonce 생성으로 gt71sfae7개 및 tuyqv3lc의 원래12알파벳+연구LONG13개가 통과했다. 다른 원인으로 축소한 helper실패/timeout은 별도 기록하며 독립9개 제품결함이라고 세지 않는다.",
+      "missed_kind": "CODE-ONLY 생성 시험의 실제 조합 결과를 실행하지 않았다. 별도 번호는 원장과 재현 시험의 일대일 대응을 위한 것이며 새로운 독립 원결함 수를 뜻하지 않는다. main 원 생성 메서드는 같은 본문/LONG 설정으로 실제 역할 가족 모듈로 이동했다. 역사 ID: flows.test_cross_required_events.RequiredEventMachineTests.test_review_alphabet",
+      "status": "closed"
+    },
+    {
+      "id": "KD-1909",
+      "summary": "원래 연구 LONG에서 검토 중 지식 개정 뒤 종결이 병합 이유를 잃음(KD-1902와 같은 원결함)",
+      "category": 7,
+      "reproduction": "flows.test_cross_state_machine.CrossResearchMachineTests.test_long_transition_sequences",
+      "found_by": "통합7a951bdd+보존 교정 전체T3 Temp4on4g528 parallel-2의 unmarked 실패352.594초. 축소열은 ResearchMachine: revise_during_identity_review(0)→close→불변식. 원래 행·traceback은 finish/resume-research-long-unmarked-row.json에 보존. 생성은 expectedFailure 밖에서 실행하고 실제 요청·종결 영수증 및 다른 불변식 검사로 확인한 KD-1902 원인만 기록한다. 미지 오류는 전체 shrink로 전파. 독립 최소 재현도 유지한다. main2pr61wo_는 닫힌 초기화 재활성화의 실제 오류와 별도 helper메서드 이름 차이를 분리한다. main7pao9wwo는 정상 병합 후 close의 이유 소실을 확인하고 검토 전제는 이미 B09로 통과했다. 질문 참조도 이미 B27로 통과했다. code 종결 두 수리 뒤 최소 회귀와 강화한 oracles/명시 nonce 생성으로 gt71sfae7개 및 tuyqv3lc의 원래12알파벳+연구LONG13개가 통과했다. 다른 원인으로 축소한 helper실패/timeout은 별도 기록하며 독립9개 제품결함이라고 세지 않는다.",
+      "missed_kind": "다른 생성 알파벳에서 재현된 동일 종결 소실이 원래 연구 알파벳의 개정 사건 조합에서도 발생했다. 별도 번호는 재현 시험 일대일 대응이며 독립 결함 증가를 뜻하지 않는다.",
+      "status": "closed"
     }
   ]
 }

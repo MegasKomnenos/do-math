@@ -31,20 +31,23 @@ class ControlMachine(RuleBasedStateMachine):
         return Sim.activated()
 
     def control(self, action, **options):
+        if options.get('request_id') is None and options.get('idempotency_key') is None:
+            options['idempotency_key'] = self.sim.clock.new_id('EV')
         self.events.append((action, deepcopy(options)))
         pause_before = deepcopy(self.sim.runtime.get('user_pause'))
         request = self.sim.control(action, **options)
+        self.last_control = deepcopy(request)
         self.sim.engine.process_controls()
         result = self.sim.engine.control_result(request['request_id'])
         # Rejection is data, not an exception. Pin the one expected terminal
         # rejection rather than accepting arbitrary reasons/helper failures.
         if result.get('effect') == 'rejected':
-            if action == 'resume' and options.get('config', {}).get('expected_user_pause_reason') \
-                    and self.sim.runtime['status'] != 'closed':
+            if (action == 'resume' and 'expected_user_pause_reason' in options.get('config', {})
+                    and result['reason'] == 'the effective user pause is not the released HOLD'):
                 assert result['reason'] == 'the effective user pause is not the released HOLD', result
                 assert self.sim.runtime.get('user_pause') == pause_before, result
             else:
-                assert self.sim.runtime['status'] == 'closed', result
+                assert self.sim.runtime['status'] in {'closed', 'completed'}, result
                 assert 'closed/completed' in result['reason'], result
         return result
 
@@ -54,7 +57,10 @@ class ControlMachine(RuleBasedStateMachine):
 
     @rule()
     def resume(self):
+        from support.cross_obligations import assert_no_resume_replay
+        failed = deepcopy(self.sim.runtime.get('waiting_actions', {}))
         self.control('resume', text='Cross machine explicit user resume')
+        assert_no_resume_replay(failed, self.sim.runtime)
 
     @precondition(lambda self: self.sim.runtime['status'] != 'closed')
     @precondition(lambda self: not self.sim.runtime.get('maintenance_fence'))
@@ -88,12 +94,9 @@ class ControlMachine(RuleBasedStateMachine):
         limits = deepcopy(self.sim.instance['config']['session_limits'])
         limits['work'] = {model: slots for model in limits['work']}
         self.control('configure', config={'session_limits': limits})
-        live = {e['action']['id'] for e in self.sim.runtime['executions'].values() if e['status'] != 'ended'}
-        pending = self.sim.runtime['queue'] + [w['action'] for w in self.sim.runtime.get('waiting_actions', {}).values()]
-        for action in pending:
-            if action['id'] not in live and action.get('model_selection'):
-                fresh = {key: value for key, value in action.items() if key != 'model_selection'}
-                assert action['model_selection'] == self.sim.engine._select_model(fresh), action
+        # Reservations are checked independently by CapacityWitness. Selecting
+        # with the same product predicate here would merely confirm itself.
+        assert self.sim.instance['config']['session_limits']['work'] == limits['work']
 
     @rule(seconds=st.sampled_from([0, 1, 61, 86401]))
     def advance(self, seconds):
@@ -171,11 +174,15 @@ class ResearchMachine(ControlMachine):
     @precondition(lambda self: self.sim.runtime['status'] != 'closed')
     @rule()
     def change_charter(self):
+        from support.cross_obligations import actions, assert_independent_actions
+        independent = [a['id'] for a in actions(self.sim.runtime)
+                       if a['role'] in {'identity_review', 'trust_check', 'trust_activate', 'maintenance'}]
         current = self.sim.engine._governance()['charter']
         self.control('decision', config={'change': {'kind': 'charter', 'record': {
             'id': self.sim.clock.new_id('CH'), 'kind': 'charter', 'revision': current['revision'] + 1,
             'supersedes': [current['id']], 'content': {**deepcopy(current['content']),
                 'goal': current['content']['goal'] + ' Retain the explicit domain.'}}}})
+        assert_independent_actions(independent, self.sim.runtime)
 
     @precondition(lambda self: self.sim.runtime['status'] != 'closed'
                   and self.sim.instance['grants']['GR-research-sim']['status'] == 'active')
@@ -231,6 +238,7 @@ controls/restarts with one execution event; controls afterwards remain free.
             if context['action']['role'] != self.role:
                 return
             row = execution(sim, cli.workspace)
+            self.oracle.capacity.check(sim)
             self.observed.append({'id': row['id'], 'status': row['status'],
                 'grant': deepcopy(sim.instance['grants'][row['action']['grant_id']])})
             (cli.workspace / 'cross-evidence.txt').write_bytes(b'preserve partial work across stops')

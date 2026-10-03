@@ -1427,6 +1427,8 @@ class CoreEngineMixin:
 
         Returns whether the loop may start; a regressed clock blocks availability instead.
         """
+        if self._instance_closed():
+            return False
         if self.instance["lifecycle"]["state"] == "initializing" and not self.runtime.get("user_pause"):
             self._activate_initialization()
         self._save()

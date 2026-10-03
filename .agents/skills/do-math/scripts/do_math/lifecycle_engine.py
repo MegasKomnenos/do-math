@@ -383,6 +383,9 @@ class LifecycleEngineMixin:
             lifecycle = self.instance['lifecycle']
             lifecycle['permanently_closed'] = True
             lifecycle.setdefault('history', []).append({'kind':'closed', 'source_ref':source_ref})
+            for pending in self.runtime['queue']:
+                self.runtime['history'].append({'kind': 'action_retired', 'reason': 'instance closed',
+                    'source_ref': source_ref, 'action': deepcopy(pending)})
             self.runtime.update(status='closed', stop_requested='closed', queue=[])
             self.runtime.pop('resume_lifecycle', None)
             self._request_stop_all('closed')
