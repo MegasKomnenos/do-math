@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B47 c1936857확정, B48 actual/fake25·기존/구조23·재시작3통과 후확정준비",
-      "active": "다음 공급자11모듈과 native 입력/수치 CLI 정상생산자2개 통합",
+      "last_closed": "B48 b720217b확정, B49 공급자161·구조6통과 후확정준비",
+      "active": "다음 배정/회수/정산22모듈과 정상 생산자 통합",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -13476,7 +13476,7 @@
     },
     "calls_close_integration": {
       "id": "B48",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "실제/대역Calls 종료 계약·Future 원결과/예외·thread정리·Sim 소유자상실 구분",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-abkqqlrl\\report.json",
@@ -13582,6 +13582,137 @@
         {
           "path": "tests/unit/test_calls_close_turns.py",
           "sha256": "a19e534a21086139a4ef86cbad385dce63bfd3f9d5ad2b2a7e2eba1dab8efe04"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "commit": "b720217b"
+    },
+    "provider_population_integration": {
+      "id": "B49",
+      "state": "verified_main_commit_pending",
+      "scope": "공급자 후보11모듈과 현재 반려 표/수치 CLI 생산자2개 통합",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-laj86hxh\\report.json",
+        "sha256": "b624fdd1c5f850a962723e9f3f7f0d20a51f7ca520d5063d2860a4aedd3234bb",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 161
+        },
+        "total_seconds": 48.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_provider_collection.IdentityTests.test_capability_identity_has_host_worker_and_cli_hashes",
+              "seconds": 2.062000000034459,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "unit.test_provider_engine_admission.ResourceWaitTests.test_configure_wakes_only_changed_resource_waits_and_keeps_pinned_profile",
+              "seconds": 0.28200000000651926,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_provider_stored_executions.StoredExecutionTests.test_confirmed_local_termination_releases_only_its_reservation",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_provider_stored_executions.StoredExecutionTests.test_intent_stops_and_revokes_execution_authority_in_same_git_publication",
+              "seconds": 0.20300000009592623,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_provider_wait_gates.ProviderTests.test_restriction_blocks_work_and_operational_roles_and_survives_another_owner",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_provider_wait_gates.ProviderTests.test_unknown_limit_uses_bounded_backoff_and_known_limit_preserves_time",
+              "seconds": 0.28200000000651926,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-yspf93gz\\report.json",
+        "sha256": "762fc100be2e3035a16389cb04d84696d57785253813159f67eb499cc7caf2c5",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 7.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 6.452999999979511,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "실제worker/runner/collector/owner/Repository의binding/status/final·반려/다음정상/중복불변·provider×mode·끝난실행늦은사실/다른실행진행과raw usage의정수/float정확보존. 제품동작변경없음.",
+      "canonical_inputs": "기존provider_native_inputs의NATIVE_ROWS/중첩변형정본 재사용. 후보의중복정의와미해결/None반려문구를 현재B35/제품원문으로교정.",
+      "limits": "161개48.9초/6개개별예산초과·구조smell6.453초를구분. 숫자와scope는공급자보고보존이며원격종료/청구실증아님. 전체관문증거 아님.",
+      "files": [
+        {
+          "path": "tests/unit/test_provider_close_collector.py",
+          "sha256": "1d6e61b368db51c7e6ce5fcf5238e57acc034d3f7da4883892a0453d8ae6294d"
+        },
+        {
+          "path": "tests/unit/test_provider_close_lifecycle.py",
+          "sha256": "d26bb5821b2e1a0c6ddb1a4922cc684d8d90b6643bc3dcfb636eebe80d5a2259"
+        },
+        {
+          "path": "tests/unit/test_provider_close_observations.py",
+          "sha256": "b6208c326511658bbd43fa8573c5144823d0b3a4a9b8231c551eaa8de043cfb4"
+        },
+        {
+          "path": "tests/unit/test_provider_close_profile_guards.py",
+          "sha256": "2dd14fde69e0227e1c5aeb26cdcae7e23c697bdac491f84dda6248fe0137ab6b"
+        },
+        {
+          "path": "tests/unit/test_provider_close_requests.py",
+          "sha256": "41c94e8c159f572038480c0ca29cd682a7e2c68fecd67325943e60e0992e7ba6"
+        },
+        {
+          "path": "tests/unit/test_provider_observation_gaps.py",
+          "sha256": "70e0ae13572dc48ad6ebfe82a16d20bf5a27f0f79591c8dc73f436bf3384a917"
+        },
+        {
+          "path": "tests/sim/test_provider_close_worker_rejections.py",
+          "sha256": "b8e09846c20de228fa92d15c81366b7a518f912cf209f9c4c77121bbb235d424"
+        },
+        {
+          "path": "tests/sim/test_provider_runner_gaps.py",
+          "sha256": "d4460c0d34b14588d289d09d0bc145bd98f95a16238cc0a5c64eeb4e1c15778a"
+        },
+        {
+          "path": "tests/flows/test_provider_close_observation_owner.py",
+          "sha256": "97c6fcb3ec1f9728923f5922efefd07c59ab3cf67ed022c6197d7290124d07bb"
+        },
+        {
+          "path": "tests/flows/test_provider_numeric_usage.py",
+          "sha256": "fdb4aa4d973d9b469681ad544ad3930e26b9d0033e28592bc7caaa7e7be43e36"
+        },
+        {
+          "path": "tests/flows/test_provider_observation_ingress.py",
+          "sha256": "976887ac6b6d3589ea6b7ec9b993a2ae4fded636c6a9159057502e97a945615d"
+        },
+        {
+          "path": "tests/support/provider_close_inputs.py",
+          "sha256": "eb7dd58c2959f66bca0d1ce94a5398e57fc7cb78c6623772871b9de565ffa543"
+        },
+        {
+          "path": "tests/support/provider_numeric_model.py",
+          "sha256": "f80eba4fc27ffc31b80813df43a73b4b25b157d81bc8111e1be7a6475f3b9487"
         }
       ],
       "whole_requirement_closed": false
