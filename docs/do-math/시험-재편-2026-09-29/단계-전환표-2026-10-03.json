@@ -4635,14 +4635,69 @@
     "active_change": {
       "id": "B01",
       "scope": "현행 작업판과 검증된 변경/초안 구분의 확정",
-      "exit": "원문요구ID/남김/근거판본/종료조건이 현행화되고 제품/시험 초안을 건드리지 않는 검수된 문서커밋"
+      "exit": "원문요구ID/남김/근거판본/종료조건이 현행화되고 제품/시험 초안을 건드리지 않는 검수된 문서커밋",
+      "state": "확정",
+      "commit": "6226ae67",
+      "memory_node": "M-0423",
+      "validation": "memory_index exit0; staged6files reviewed; no product change"
     },
     "next_change": {
       "id": "B02",
       "scope": "현재 수리판의 전체 일반 시험과 비용 기준선 확정",
       "entry": "실패 영향 초안을 미검증 상태로 분리하고 현재 제품/시험 모집단을 검수",
       "exit": "실행 가능한 후보의T2+flows 원본 결과·시간·소스지문·실패 요구 연결 및비용상위 항목이 하나의 판본에서 확보됨",
-      "not_final_gate": "300초초과나원문의무미완비면 최종 완료로 표시하지 않음"
+      "not_final_gate": "300초초과나원문의무미완비면 최종 완료로 표시하지 않음",
+      "state": "실행 중",
+      "command": "python .claude/skills/do-math/scripts/run_tests.py structure unit contracts sim flows --jobs 3",
+      "session_id": 69435,
+      "parent_pid": 25860,
+      "output": "C:/Users/wogud/AppData/Local/Temp/do-math-tests-knvwwf8d/report.json",
+      "selected_parallel_tests": 3877,
+      "worker_pids": [
+        31152,
+        3944,
+        16776
+      ],
+      "immutable_tree": "C:/math/.claude/worktrees/goal-20261003-repair",
+      "note": "전체 후보에 알려진 영향 검사 실패를 포함한다; 실패를 빼서 성공을 만들지 않음",
+      "observed_failures": [
+        {
+          "worker": "parallel-0",
+          "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_optional_delegated_work_preserves_required_parent_after_unchanged",
+          "outcome": "failed",
+          "seconds": 2.594000000040978,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_planning_relation_conditions.py\", line 296, in test_optional_delegated_work_preserves_required_parent_after_unchanged\n    self.assertTrue(reached.crossed(229, 219), reached.lines)\nAssertionError: False is not true : [178, 179, 180, 183, 184, 186, 194, 195, 196, 197, 198, 200, 201, 202, 203, 197, 213, 214, 213, 215, 216, 217, 218, 219, 220, 221, 223, 226, 227, 230, 220, 233, 234, 235, 215, 240, 245]\n"
+          ]
+        },
+        {
+          "worker": "parallel-0",
+          "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+          "outcome": "failed",
+          "seconds": 15.922000000020489,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_test_smells.py\", line 24, in test_new_system_tests_have_no_smell\n    self.assertEqual(issues, [], '\\n'.join(str(issue) for issue in issues))\nAssertionError: Lists differ: [{'file': 'flows/test_impact_wait_contract[119 chars] 21}] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n{'file': 'flows/test_impact_wait_contract.py', 'test': 'test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit', 'rule': 'broad_except', 'line': 21}\n\n+ []\n- [{'file': 'flows/test_impact_wait_contract.py',\n-   'line': 21,\n-   'rule': 'broad_except',\n-   'test': 'test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit'}] : {'file': 'flows/test_impact_wait_contract.py', 'test': 'test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit', 'rule': 'broad_except', 'line': 21}\n"
+          ]
+        },
+        {
+          "worker": "parallel-2",
+          "id": "flows.test_impact_wait_contract.ImpactWaitContractTests.test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit",
+          "outcome": "failed",
+          "seconds": 20.75,
+          "details": [
+            "test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit (flows.test_impact_wait_contract.ImpactWaitContractTests.test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit) (kind='impact_review_blocked')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_impact_wait_contract.py\", line 95, in test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit\n    self.assertTrue(identifier not in sim.runtime.get('waiting_actions', {}),\nAssertionError: False is not true : {'kind': 'impact_review_blocked', 'receipts': [{'execution_id': 'EX-03E6TRPT00000000000000003W', 'kind': 'submit_intent', 'publication_id': 'CT-03E6TRPT000000000000000044', 'reason': 'candidate validation failed', 'request_id': 'submit-RQ-03E6TRPT000000000000000043', 'request_sha256': '2af0efb57790d492e723afc69c7740b9dbfc671082e35e029cb6fc1c88d48371', 'result': {'capture_eligible': False, 'check_order': ['schema', 'payload_semantics', 'integration_structure', 'repair_coverage'], 'check_subject': {'id': 'AC-impact-scope', 'review_cycle_id': None, 'revision_targets': {}, 'role': 'research_plan', 'slot': None, 'stage': None, 'target': None}, 'comparison': {'status': 'no_previous_check'}, 'contract_id': 'do-math-machine-check/5', 'execution_id': 'EX-03E6TRPT00000000000000003W', 'failure_kind': 'output_validation', 'files': [{'bytes': 1109, 'path': 'output.json', 'sha256': '038950a8d79544a3b801871117f2fc939ac6118038d023a0a51c922caa474654'}], 'id': 'MC-1b5d25cd64074ea9db0c9d44', 'input_hashes': {'context': 'ad813db86cf2d4ba9c79768e3e69546e4bce2e4a7ccdd45cf402f78519a827ba', 'extensions': 'ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356', 'output': '038950a8d79544a3b801871117f2fc939ac6118038d023a0a51c922caa474654', 'schema': 'af17d5aa76c605bdec43e01fb0b4afe0c5b6721ffdf41ce567bfa35d6fc73184'}, 'input_snapshot': 'a948c5e5cb0ed6899d554afb62107b5815487d4c', 'issues': [{'integration_id': 'IN-6be4807dfd98d94e59694ffe', 'issue_id': 'SI-5283de7686b3481ba65a6736', 'message': \"plan must assess every returned task exactly once: missing=[]; unexpected=['TK-impact']; duplicate=[]\", 'path': 'output', 'rule_id': 'submission.output'}], 'mode': 'receiver', 'not_checked': ['mathematical_meaning', 'Lean', 'application_time_currentness', 'final_authority_and_provenance', 'kind_semantic_approval'], 'passed': False, 'repairs': [], 'schema_ref': {'family': 'do-math-cli/5', 'id': 'https://do-math.invalid/schemas/cli/5/sha256/c1083a42cb980335f60477f5f123f10fe0086964b82befaa37a9cef56adc6e18', 'sha256': 'af17d5aa76c605bdec43e01fb0b4afe0c5b6721ffdf41ce567bfa35d6fc73184'}, 'tool_sha256': '118303a055d55e9e5d1c4a3f2ce9509c64620685ce1a3f29c06b8ff4009d916e'}, 'snapshot': '48c5b72decd013b8df5ca1ffffe38ecd76d4bf82', 'state': 'rejected'}], 'model_errors': [], 'errors': ['worker_not_exited; turn_completed_missing; jsonl_parse_incomplete; final_message_missing']}\n",
+            "test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit (flows.test_impact_wait_contract.ImpactWaitContractTests.test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit) (kind='impact_review_changed')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_impact_wait_contract.py\", line 95, in test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit\n    self.assertTrue(identifier not in sim.runtime.get('waiting_actions', {}),\nAssertionError: False is not true : {'kind': 'impact_review_changed', 'receipts': [{'execution_id': 'EX-03E6TRPT00000000000000003M', 'kind': 'submit_intent', 'publication_id': 'CT-03E6TRPT00000000000000003W', 'reason': 'candidate validation failed', 'request_id': 'submit-RQ-03E6TRPT00000000000000003V', 'request_sha256': '5ad4fab50de2f8c22694a9f34a0694932e88a8e0c01d9c5fbb9af65407e4ca44', 'result': {'capture_eligible': False, 'check_order': ['schema', 'payload_semantics', 'integration_structure', 'repair_coverage'], 'check_subject': {'id': 'AC-impact-scope', 'review_cycle_id': None, 'revision_targets': {}, 'role': 'research_plan', 'slot': None, 'stage': None, 'target': None}, 'comparison': {'status': 'no_previous_check'}, 'contract_id': 'do-math-machine-check/5', 'execution_id': 'EX-03E6TRPT00000000000000003M', 'failure_kind': 'output_validation', 'files': [{'bytes': 1109, 'path': 'output.json', 'sha256': 'ea40bb4d9e7d6f76f99f41e6e134a8696012fc3e0754946a37fbb507e021bd32'}], 'id': 'MC-5a112a5d64f9c88d44d410e5', 'input_hashes': {'context': '0d4cc3e86c1e266d00808c74ddb309467d9a3b8f7d46c2d397f8c27b5994855f', 'extensions': 'ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356', 'output': 'ea40bb4d9e7d6f76f99f41e6e134a8696012fc3e0754946a37fbb507e021bd32', 'schema': 'af17d5aa76c605bdec43e01fb0b4afe0c5b6721ffdf41ce567bfa35d6fc73184'}, 'input_snapshot': 'faf64841049e9f949cfcc1be522a4d4c33ecc81b', 'issues': [{'integration_id': 'IN-82d4b3b4244b217ab02302dd', 'issue_id': 'SI-e00e9efff16523941b612014', 'message': \"plan must assess every returned task exactly once: missing=[]; unexpected=['TK-impact']; duplicate=[]\", 'path': 'output', 'rule_id': 'submission.output'}], 'mode': 'receiver', 'not_checked': ['mathematical_meaning', 'Lean', 'application_time_currentness', 'final_authority_and_provenance', 'kind_semantic_approval'], 'passed': False, 'repairs': [], 'schema_ref': {'family': 'do-math-cli/5', 'id': 'https://do-math.invalid/schemas/cli/5/sha256/c1083a42cb980335f60477f5f123f10fe0086964b82befaa37a9cef56adc6e18', 'sha256': 'af17d5aa76c605bdec43e01fb0b4afe0c5b6721ffdf41ce567bfa35d6fc73184'}, 'tool_sha256': '118303a055d55e9e5d1c4a3f2ce9509c64620685ce1a3f29c06b8ff4009d916e'}, 'snapshot': '42a05672d97f33cb13cdc916e1f2e22845127f8d', 'state': 'rejected'}], 'model_errors': [], 'errors': ['worker_not_exited; turn_completed_missing; jsonl_parse_incomplete; final_message_missing']}\n",
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_impact_wait_contract.py\", line 116, in test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit\n    self.assertEqual(exercised, IMPACT_ACTION_WAITS)\nAssertionError: {'impact_review'} != frozenset({'impact_review_blocked', 'impact_review', 'impact_review_changed'})\n"
+          ]
+        }
+      ],
+      "failure_triage": {
+        "test": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_optional_delegated_work_preserves_required_parent_after_unchanged",
+        "state": "원문에서 원인 확인; 실행 종료 후 교정",
+        "cause": "실행 trace는현재elif/for호를지나는데229→219의옛고정행단언이남음. 새waiting_action import가좌표를옮김.",
+        "preserve": "required부모/optional자식/unchanged수신/전체부모대기전문/실제저장재시작단언은유지;행번호만AST에서실제guard와loop좌표로얻음",
+        "run_rule": "실행트리는계속고정. 현재실패를소급통과로바꾸거나실행재시작하지않음"
+      }
     },
     "stage1": [
       {
@@ -5956,6 +6011,233 @@
       "같은구성실패2회뒤원문검수",
       "푸시/graphify갱신/기존연구재개삭제금지",
       "작은변경마다관련검증/검수/커밋과통합후확인"
-    ]
+    ],
+    "reviewed_increment": {
+      "id": "B03",
+      "scope": "JSON bool/int 구별의 실제 저장/검사/바이트 재사용",
+      "state": "main 수리69개/원장/미러check/기억색인 검증 완료; 커밋 확정",
+      "patch": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\pending-json-identity-independent.patch",
+      "patch_sha256": "8ea5466e28feb345829a393c258ee890a8e99cef2f29f1119a55240c638041d8",
+      "files": [
+        {
+          "path": "do_math/canonical.py",
+          "main_sha256": "0030d4f5452977481f3688c6e3c3b2cf48d9ecfd359ca1bdbca2ead0a275e8dd",
+          "repair_sha256": "503939496bb980c8152637d2a7feca071a8cf883966471aace40f7730c8473e0"
+        },
+        {
+          "path": "do_math/state_contract.py",
+          "main_sha256": "cecc517ea9ed99165f33025152b7595f8f9ba37cf691d18b0a5f13798bef0855",
+          "repair_sha256": "69bc108334b90bd7cfdb50f51df04223c657dc09cc3482fc569a46a65910e2d9"
+        },
+        {
+          "path": "do_math/repository.py",
+          "main_sha256": "d38626707573bdafe54004a4fc6d5bab4993fdd471adf2f80a6bce63e2ae5659",
+          "repair_sha256": "f3ecc8d484c6c67c55ac9287a98e79785a1d73ed9f2c1f4286e49cf5368d50a7"
+        },
+        {
+          "path": "tests/unit/test_storage_type_recurrence.py",
+          "main_sha256": null,
+          "repair_sha256": "93b5cec562d7353d676286e65586d4bf843ec621140030ce1b0ab25e394874da"
+        }
+      ],
+      "dependency_check": "main의제품3파일은보존판과같음. support2파일의AST가같고ObservedGit의기존메서드AST도전부같음;개행차이와추가project조회2메서드는현재저장값검사의계약을바꾸지않음. 추가된메서드는쓰지않고복사하지않음. 다른수리136파일을같이복사할필요없음",
+      "meaning_review": "Python ==의 bool/int충돌을JSON값정본으로구별. schema검사생략과encoder바이트재사용에동일정본사용. 저장입력형검증은기존sealing이계속담당.",
+      "actual_tests": "5개:canonical바이트대조/분리;부모불변바이트재사용과변경값인코딩;실제initialize/load의정확형;Boolean schema에int교체반려/전체상태보존;1→True→1의새저장소재적재",
+      "validation_next": "전체기준선worker슬롯이반환된뒤main에서현재시험red확인→3파일수리적용→관련storage영역green→미러/check→M노드동반작은커밋",
+      "cost_limit": "값전건을두번순회하는비용은정확성수리와분리측정;기존bool/int충돌복원으로속도를맞추지않음",
+      "main_reproduction_ready": {
+        "path": "C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_type_recurrence.py",
+        "sha256": "8a198dccde9ab2c453e54a607a7e99775d05619d69aa4fdde4ec0a6a11467c73",
+        "product_changed": false,
+        "run_state": "waiting_for_real_worker_slot",
+        "negative_selection": [
+          "unit.test_storage_type_recurrence.TypeRecurrence.test_parent_boolean_cannot_hide_an_integer_from_the_schema_check",
+          "unit.test_storage_type_recurrence.TypeRecurrence.test_equal_python_scalars_do_not_reuse_different_json_bytes"
+        ],
+        "import_detail": "새 함수의import는해당순수시험안으로옮겨기존스키마/저장경로red가모듈적재오류로바뀌지않게함"
+      },
+      "mirror_precheck": {
+        "command": "python .claude/skills/writing-skills/scripts/build_skill_mirrors.py --check",
+        "exit_code": 1,
+        "mutated_mirror": false,
+        "missing": [
+          "tests/flows/test_cross_terminal_absorption.py",
+          "tests/unit/test_cross_wait_graphs.py",
+          "tests/unit/test_storage_type_recurrence.py"
+        ],
+        "existing_source_differences": [
+          "tests/support/cross_contracts.py",
+          "tests/support/cross_machine.py"
+        ],
+        "runtime_measurement_differences": [
+          "tests/.selection-index.json",
+          "tests/.t3-store/coverage.data",
+          "tests/.t3-store/records.json",
+          "tests/.timings-t3.json",
+          "tests/.timings.json"
+        ],
+        "runtime_bytes": 97443676,
+        "application_rule": "공식미러생성/사전검사필요. 이번정본3파일/재현시험사본과기존사용자교차시험변경을구별하여스테이징;다른작업을같이커밋하지않음."
+      },
+      "reports": [
+        {
+          "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-vya2yx6q\\report.json",
+          "sha256": "94a705237e3d3cc2fb52074c11815d3bb919b2b03e28e6e34106ec6ecb14f178",
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "failed": 2
+          },
+          "total_seconds": 0.2,
+          "changed_during_run": [],
+          "selected": [
+            "unit.test_storage_type_recurrence.TypeRecurrence.test_equal_python_scalars_do_not_reuse_different_json_bytes",
+            "unit.test_storage_type_recurrence.TypeRecurrence.test_parent_boolean_cannot_hide_an_integer_from_the_schema_check"
+          ],
+          "failure_rows": [
+            {
+              "id": "unit.test_storage_type_recurrence.TypeRecurrence.test_equal_python_scalars_do_not_reuse_different_json_bytes",
+              "outcome": "failed",
+              "seconds": 0.1559999999590218,
+              "details": [
+                "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_type_recurrence.py\", line 97, in test_equal_python_scalars_do_not_reuse_different_json_bytes\n    self.assertEqual(canonical_json(loaded), canonical_json(value))\nAssertionError: b'1\\n' != b'true\\n'\n"
+              ]
+            },
+            {
+              "id": "unit.test_storage_type_recurrence.TypeRecurrence.test_parent_boolean_cannot_hide_an_integer_from_the_schema_check",
+              "outcome": "failed",
+              "seconds": 0.07800000009592623,
+              "details": [
+                "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\unit\\test_storage_type_recurrence.py\", line 79, in test_parent_boolean_cannot_hide_an_integer_from_the_schema_check\n    with self.assertRaisesRegex(ValueError,\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ValueError not raised\n"
+              ]
+            }
+          ]
+        },
+        {
+          "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-dznmr7tc\\report.json",
+          "sha256": "f5fc3363f11d17ae0110a55571fdf762882e820a8e8f2a3aaf93a34159d2bf2b",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 69
+          },
+          "total_seconds": 6.8,
+          "changed_during_run": [],
+          "selected": [
+            "unit.test_storage_file_fingerprints.FingerprintTests.test_fingerprint_change_alone_triggers_rehash",
+            "unit.test_storage_file_fingerprints.FingerprintTests.test_recent_fingerprint_is_not_cached",
+            "unit.test_storage_file_fingerprints.FingerprintTests.test_verified_artifact_is_scoped_to_repository_and_hash",
+            "unit.test_storage_file_fingerprints.MetadataPublicationTests.test_missing_read_is_still_absence",
+            "unit.test_storage_json_digests.DigestCharacterizationTests.test_json_digest_refuses_non_finite_numbers",
+            "unit.test_storage_json_digests.DigestCharacterizationTests.test_json_digests_stay_fixed",
+            "unit.test_storage_json_digests.DigestCharacterizationTests.test_observation_rule_digests_stay_fixed",
+            "unit.test_storage_json_digests.DigestCharacterizationTests.test_state_value_digests_stay_fixed",
+            "unit.test_storage_json_digests.DigestCharacterizationTests.test_state_value_identity_refuses_values_outside_the_storage_domain",
+            "unit.test_storage_json_digests.DigestCharacterizationTests.test_stored_academic_and_external_identities_use_the_state_value_digest",
+            "unit.test_storage_payloads.PayloadCodecTests.test_multiple_payload_references_follow_canonical_key_order",
+            "unit.test_storage_payloads.PayloadEncodingTests.test_payloads_are_exact_shared_and_immutable",
+            "unit.test_storage_payloads.PayloadPublicationTests.test_matching_payload_and_separate_artifact_publish_exact_validated_bytes",
+            "unit.test_storage_payloads.PayloadPublicationTests.test_payload_collision_is_rejected_by_validation_and_publication_before_cas",
+            "unit.test_storage_payloads.PayloadPublicationTests.test_unreferenced_payload_can_be_reused_without_rewriting_the_blob",
+            "unit.test_storage_payloads.PayloadStorageTests.test_large_payload_storage_and_cached_parent_remain_exact",
+            "unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names",
+            "unit.test_storage_record_queries.QueryRecordTests.test_file_cursor_reuses_old_snapshot_and_malformed_cursor_is_error",
+            "unit.test_storage_reporting.ReportingTests.test_non_task_wait_projection_is_detached_and_printable",
+            "unit.test_storage_reporting.ReportingTests.test_status_reports_artifact_presence_and_length_in_one_batch_without_bytes",
+            "unit.test_storage_reporting.ReportingTests.test_task_rows_forward_query_time_to_authority",
+            "unit.test_storage_reporting.ReportingTests.test_task_rows_of_an_ended_instance_carry_no_readiness",
+            "unit.test_storage_repository.CandidateCopyTests.test_candidate_numbers_events_without_a_second_whole_state_copy",
+            "unit.test_storage_repository.CandidateCopyTests.test_late_event_failure_never_numbers_the_callers_original",
+            "unit.test_storage_repository.ResearchRepositoryTests.test_canonical_json_is_stable",
+            "unit.test_storage_repository.ResearchRepositoryTests.test_duplicate_json_keys_are_rejected_on_load",
+            "unit.test_storage_repository.ResearchRepositoryTests.test_export_reads_bounded_batches_and_preserves_binary_contents",
+            "unit.test_storage_repository.ResearchRepositoryTests.test_export_refuses_nonempty_or_reparse_destination_and_preserves_prefix",
+            "unit.test_storage_repository.ResearchRepositoryTests.test_initialize_load_save_and_exact_old_snapshot_read",
+            "unit.test_storage_repository.ResearchRepositoryTests.test_list_files_prefix_and_read_reject_implicit_missing_snapshot",
+            "unit.test_storage_repository.ResearchRepositoryTests.test_live_input_snapshots_stay_validated_beyond_the_read_bound",
+            "unit.test_storage_repository.ResearchRepositoryTests.test_new_artifact_bundle_is_saved_with_state_and_existing_bundle_is_immutable",
+            "unit.test_storage_repository.ResearchRepositoryTests.test_published_artifacts_are_not_read_again_at_later_heads_only",
+            "unit.test_storage_repository.ResearchRepositoryTests.test_query_cursor_is_bound_to_snapshot_and_query_and_has_no_empty_page",
+            "unit.test_storage_repository.ResearchRepositoryTests.test_stale_save_conflict_does_not_overwrite",
+            "unit.test_storage_repository.SaveWithStateTests.test_artifact_bytes_and_namespace_are_checked_by_the_same_save_call",
+            "unit.test_storage_repository.SaveWithStateTests.test_changed_state_writes_the_same_canonical_files_and_returns_reload_views",
+            "unit.test_storage_repository.SaveWithStateTests.test_regular_save_still_rejects_invalid_input",
+            "unit.test_storage_repository.SaveWithStateTests.test_reused_parent_bytes_still_reject_a_damaged_previous_snapshot",
+            "unit.test_storage_repository.SaveWithStateTests.test_save_reads_parent_family_bytes_once_and_preserves_reload_equivalence",
+            "unit.test_storage_repository.SaveWithStateTests.test_save_rereads_only_new_artifact_evidence",
+            "unit.test_storage_repository.SaveWithStateTests.test_stale_head_is_rejected_before_artifact_shape",
+            "unit.test_storage_repository.SaveWithStateTests.test_unchanged_state_is_noop_and_returns_normalized_reload_views",
+            "unit.test_storage_repository.SealedArtifactReadTests.test_a_sealed_row_is_hashed_once_and_matched_rows_are_not_reread",
+            "unit.test_storage_repository.StorageValueTests.test_a_float_equal_to_the_parent_integer_is_still_rejected",
+            "unit.test_storage_repository.StorageValueTests.test_inspection_builds_no_json_bytes_and_publication_checks_the_value_domain",
+            "unit.test_storage_repository.StorageValueTests.test_value_validation_and_serialization_keep_the_same_domain",
+            "unit.test_storage_repository.ValidatedReadReuseTests.test_evidence_rows_are_read_once_and_new_rows_are_still_matched",
+            "unit.test_storage_repository.ValidatedReadReuseTests.test_one_head_is_validated_once_across_repository_objects",
+            "unit.test_storage_repository.ValidatedReadReuseTests.test_own_publication_is_not_revalidated_but_an_outside_head_is",
+            "unit.test_storage_repository.ValidatedReadReuseTests.test_payload_bytes_are_hashed_once_per_repository",
+            "unit.test_storage_repository.ValidatedReadReuseTests.test_unchanged_records_skip_record_local_and_immutable_hash_checks",
+            "unit.test_storage_state_contract.ManifestMemoTests.test_manifest_is_computed_once_until_a_registration",
+            "unit.test_storage_state_contract.RegisteredValidatorTests.test_registered_validator_enforces_current_rules",
+            "unit.test_storage_state_contract.SchemaRegistrationTests.test_a_family_is_registered_once_and_keeps_its_own_schema_copy",
+            "unit.test_storage_state_contract.SchemaRegistrationTests.test_every_built_in_family_schema_is_a_valid_json_schema",
+            "unit.test_storage_state_contract.SchemaRegistrationTests.test_repositories_share_one_installed_contract_and_tests_build_their_own",
+            "unit.test_storage_state_contract.StateContractValidationTests.test_installed_receipt_family_checks_execution_ref",
+            "unit.test_storage_state_contract.StateContractValidationTests.test_invalid_execution_and_activity_are_rejected_by_the_state_contract",
+            "unit.test_storage_type_recurrence.TypeRecurrence.test_both_scalar_types_are_accepted_without_parent_reuse",
+            "unit.test_storage_type_recurrence.TypeRecurrence.test_equal_parent_reuses_body_and_changed_integer_encodes_new_body",
+            "unit.test_storage_type_recurrence.TypeRecurrence.test_equal_python_scalars_do_not_reuse_different_json_bytes",
+            "unit.test_storage_type_recurrence.TypeRecurrence.test_json_equality_matches_exact_bytes_for_nested_types_and_sealed_text",
+            "unit.test_storage_type_recurrence.TypeRecurrence.test_parent_boolean_cannot_hide_an_integer_from_the_schema_check",
+            "unit.test_storage_unicode_flow.UnicodeFlowTests.test_exact_json_keeps_nfd_and_distinct_mathematical_keys",
+            "unit.test_storage_unicode_flow.UnicodeFlowTests.test_exact_json_preserves_scalars_and_rejects_surrogates",
+            "unit.test_storage_unicode_flow.UnicodeFlowTests.test_git_save_reload_stores_the_record_as_exact_json",
+            "unit.test_storage_unicode_flow.UnicodeFlowTests.test_record_envelope_with_an_unknown_field_is_rejected_without_conversion",
+            "unit.test_storage_unicode_flow.UnicodeFlowTests.test_source_catalog_and_direct_input_hash_exact_bytes"
+          ],
+          "failure_rows": []
+        },
+        {
+          "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-tm8_bs9e\\report.json",
+          "sha256": "ec48ff1fc49aed9d5e01849926dacad802d18512ed71a8ee5fe31eaebfb840d2",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 1
+          },
+          "total_seconds": 2.8,
+          "changed_during_run": [],
+          "selected": [
+            "structure.test_known_defects.KnownDefectLedgerTests.test_ledger_and_marks_correspond"
+          ],
+          "failure_rows": []
+        }
+      ],
+      "mirror_regeneration": {
+        "session_id": 83751,
+        "state": "terminal",
+        "created": 3,
+        "updated": 12,
+        "deleted": 0,
+        "check_exit": 0,
+        "check_result": "873파일 드리프트 없음",
+        "staging": "이번정본6파일과그사본6파일만선택;기존교차시험/측정자료는별도유지"
+      },
+      "main_product_files": [
+        {
+          "path": "do_math/canonical.py",
+          "sha256": "63921bda467a67f399ab64cb7f39a217628c78aa1d55e5fea64a4d0e520d7c9f"
+        },
+        {
+          "path": "do_math/state_contract.py",
+          "sha256": "5b127b39b8c9e05e259af9b99329da6a34162b395da517fe73b0c29304a0d7bd"
+        },
+        {
+          "path": "do_math/repository.py",
+          "sha256": "54771b8a273b5b208505a7be826a35fab4ef1e05dfb56e5af1de623b5d4fd5ad"
+        }
+      ],
+      "memory_node": "M-0424",
+      "memory_index_exit": 0
+    }
   }
 }

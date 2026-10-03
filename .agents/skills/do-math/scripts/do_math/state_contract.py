@@ -9,6 +9,7 @@ from typing import Callable
 import jsonschema
 
 from .values import check_path_segment, json_digest
+from .canonical import same_json_value
 
 # The one stored contract identifier: the root manifest of each snapshot names
 # it, and loading accepts no other. Records carry no version marker of their own.
@@ -94,14 +95,10 @@ class StateContract:
         result depends on the record alone. Relations, identity uniqueness and
         semantic rules are still checked over the whole state.
 
-        Equality is Python ``==``, under which ``1 == 1.0 == True``. A float
-        cannot pass: payloads.seal_large rejects every float of a candidate
-        before this comparison. A bool swapped for an equal integer (or back)
-        in a record otherwise equal to the parent's is an accepted gap: it
-        skips that record's schema check and keeps the parent's bytes
-        (repository._encode_families). A type-strict comparison would walk
-        every node in Python, about 27 times the cost of ``==`` on a 3.6 MB
-        state, twice per save.
+        Equality is the canonical storage-value comparison: booleans and
+        integers differ even when Python compares them equal. Encoding uses
+        the same rule, so skipping a check cannot retain another JSON value's
+        bytes. Floats are rejected by candidate sealing before comparison.
         """
         rows, identifiers = [], {}
         for index, (root, state) in enumerate((("research", instance), ("runtime", runtime))):
@@ -133,7 +130,7 @@ class StateContract:
                         before = prior.get(identifier, _ABSENT) if isinstance(prior, dict) else _ABSENT
                     else:
                         before = prior
-                    if before is _ABSENT or before != record:
+                    if before is _ABSENT or not same_json_value(before, record):
                         validate_record(family.checker, record, f"{root}/{name}/{key}")
                         if family.validator:
                             family.validator(deepcopy(record))

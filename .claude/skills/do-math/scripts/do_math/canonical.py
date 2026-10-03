@@ -32,6 +32,28 @@ def exact_content_hash(value: Any) -> str:
     return hashlib.sha256(canonical_json(value)).hexdigest()
 
 
+def same_json_value(left: Any, right: Any) -> bool:
+    """Compare storage values without conflating booleans and integers.
+
+    The parent is already validated. Immutable leaf identities are preserved
+    by deepcopy, so unchanged strings and scalars need no serialization.
+    Storage validation remains the caller's responsibility.
+    """
+    if left is right:
+        return True
+    if isinstance(left, dict) and isinstance(right, dict):
+        return left.keys() == right.keys() and all(same_json_value(value, right[key])
+                                                   for key, value in left.items())
+    if isinstance(left, list) and isinstance(right, list):
+        return len(left) == len(right) and all(same_json_value(a, b) for a, b in zip(left, right))
+    if isinstance(left, str) and isinstance(right, str):
+        return left == right
+    if (isinstance(left, int) and not isinstance(left, bool)
+            and isinstance(right, int) and not isinstance(right, bool)):
+        return left == right
+    return False
+
+
 def validate_storage_value(value: Any) -> None:
     """Validate the exact storage value domain without constructing JSON bytes.
 

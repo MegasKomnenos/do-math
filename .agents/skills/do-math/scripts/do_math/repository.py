@@ -33,7 +33,7 @@ from .state_contract import ARTIFACT_ROOT
 from .git_store import GitStateStore
 from .file_io import PhysicalBoundary
 # canonical_json and its value check run on every node of every save.
-from .canonical import FrozenText, canonical_json, exact_content_hash, validate_storage_value
+from .canonical import FrozenText, canonical_json, exact_content_hash, same_json_value, validate_storage_value
 from .payloads import decode, encode, seal_large
 from .state_contract import STATE_CONTRACT_ID, StateContract, default_state_contract
 
@@ -742,7 +742,7 @@ def _encode_families(instance, runtime, contract, object_format, *, parent=None)
     file bytes: canonical encoding is deterministic, and those bytes were
     produced by an earlier encoding or checked canonical when read. Only the
     records serialized here pass the storage value check of ``canonical_json``;
-    the equality and its accepted bool/integer gap are StateContract.validate's.
+    the equality is the same JSON-value rule used by StateContract.validate.
     """
     files = {}
     installed = contract.manifest()
@@ -775,7 +775,8 @@ def _encode_families(instance, runtime, contract, object_format, *, parent=None)
                 path = _record_path(root, name, identifier)
                 envelope, blobs = encode(_envelope(name, record))
                 files.update(blobs)
-                if path in parent_files and isinstance(prior, dict) and prior.get(identifier, _ABSENT) == record:
+                if (path in parent_files and isinstance(prior, dict)
+                        and same_json_value(prior.get(identifier, _ABSENT), record)):
                     files[path] = parent_files[path]
                 else:
                     files[path] = canonical_json(envelope)

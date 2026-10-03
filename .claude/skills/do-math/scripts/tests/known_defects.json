@@ -1,6 +1,15 @@
 {
   "defects": [
     {
+      "id": "KD-0200",
+      "summary": "Python에서 같은 1과 True를 저장 레코드에서 교체하면 스키마 검사를 생략하거나 부모 JSON 바이트를 재사용하여 요청한 형과 바이트를 잃는다.",
+      "category": 1,
+      "reproduction": "unit.test_storage_type_recurrence.TypeRecurrence.test_equal_python_scalars_do_not_reuse_different_json_bytes",
+      "found_by": "보존/수리판에서 발견한 원 결함을 main의 기존 코드에서도 직접 재현했다. do-math-tests-vya2yx6q에서 b'1\\n' != b'true\\n'와 boolean 스키마의 integer 교체에 ValueError 미발생으로 두 검사가 실패했다.",
+      "missed_kind": "Python 값 동등성의 왕복만으로 boolean/integer를 구별하지 못했다. canonical.same_json_value를 부모 스키마 검사 생략과 인코더 바이트 재사용이 공유한다. 실제 새 Repository 적재의 정확한 형/바이트, 부모 검사 반려와 상태 전문 보존, 봉인 문자열/중첩 값의 정규 바이트 동등성, 변경 없는 부모 재사용을 검사한다. main 관련 저장69개가 do-math-tests-dznmr7tc에서 통과했다.",
+      "status": "closed"
+    },
+    {
       "id": "KD-0001",
       "summary": "file_io.os_lock(blocking=True) raises PermissionError at once instead of waiting when another opener has locked byte 0 of a lock file that was still empty when this caller checked its size",
       "category": 9,
