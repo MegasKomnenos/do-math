@@ -464,6 +464,12 @@ class CoreEngineMixin:
         else:
             selection = self._select_model(action)
         allowed = self.instance.get("role_profile_refs", {}).get(action["role"])
+        if action['role'] == 'trust_check' and action.get('profile_ref'):
+            transition = self.runtime['trust_transitions'].get(action.get('transition_id'), {})
+            if transition.get('source_ref'):
+                # Preserve a transition's pinned attempt. The machine checks
+                # its command against the assigned environment before Lean.
+                allowed = [action['profile_ref']]
         task = self.runtime["tasks"].get(action.get("target"))
         if task and action["role"] in execution_profiles.RESEARCH_PRODUCER_ROLES:
             allowed = task.get("profile_refs", [])

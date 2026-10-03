@@ -96,8 +96,8 @@
       "category": 4,
       "reproduction": "flows.test_lifecycle_engine_trust.TransitionTests.test_wrong_pinned_trust_command_ends_attempt_without_verifier",
       "found_by": "1f migration of test_lifecycle_engine.LifecycleBoundaryTests.test_wrong_pinned_trust_command_ends_attempt_without_verifier onto the Sim with the owner pass instead of FakeEngine's own profile selection",
-      "missed_kind": "FakeEngine replaced _execution_profile with a copy of the selection rule that accepts any pinned profile reference, so the legacy test reached the trust re-check steps the real gate never reaches",
-      "status": "open"
+      "missed_kind": "FakeEngine replaced _execution_profile with a copy of the selection rule that accepts any pinned profile reference, so the legacy test reached the trust re-check steps the real gate never reaches Independent main red mr1bljv5: the assigned old-command trust attempt creates zero executions and remains queued. Preserve the registered pinned profile only for a sourced trust transition; existing machine preparation rejects a command different from the assigned environment before any verifier/Lean call. The test now retains the exact pinned profile and stored ended execution.",
+      "status": "closed"
     },
     {
       "id": "KD-0802",

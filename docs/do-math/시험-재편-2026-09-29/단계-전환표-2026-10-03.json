@@ -7574,7 +7574,7 @@
     "trust_handoff_integration": {
       "id": "B17",
       "scope": "KD-0006/0800/0803: 재기록 사실을 선언된 사건 basis로 보존하고 활성화 출처를 유지",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-q77iobts\\report.json",
         "sha256": "702a363b8126833f2fa2fc83610fcf069ab365544b64da2c5c6d9435767b3db9",
@@ -7671,6 +7671,78 @@
       "contract": "닫힌 사건의 기존 basis 아래 toolchain_record/previous/current/recorded_at 전문을 유지. 전환 재검사 완료와 재실행 경로가 원래 source_ref를 보존. 재결박은 실제바인딩일치 조건에서1회만 진행. 원 스키마/권한/검토 요구를 약화하지 않는다.",
       "related_fidelity": "ethhx0cs 전체는failed1/passed16/expected_failure1. 실제 신뢰 흐름17개는16passed+아직 열린KD-0801 expected1. 실패1은 다른기반시험에남은closed KD-0006 표시. 제거하고 전용오류cleanup도삭제해captured error무조건raise/owner/thread/게시→정지판정→반환검사는유지. 이관연결3곳교정뒤8passed.",
       "limits": "main4open. 부분 통과를 최종관문으로 읽지 않는다. Lean explicit evidence/Git포트전달/대기등록표 등 다른 후보 변경은 가져오지 않았다.",
+      "whole_requirement_closed": false,
+      "commit": "caf53480"
+    },
+    "pinned_trust_integration": {
+      "id": "B18",
+      "scope": "KD-0801: 출처 있는 신뢰 전환의 등록된 고정 프로필을 보존하여 잘못된 명령의 시도를 종료",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-mr1bljv5\\report.json",
+        "sha256": "f097bc0947a95a950110870a05197381ee01295f0b2979552f3e96cae72955b4",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 24.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused_and_profile": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-23s1sdse\\report.json",
+        "sha256": "5ee0343cb86a7619f4ea9909dea82732c080afb5011b21645823ca6d41453ea6",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 14
+        },
+        "total_seconds": 25.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "normal_and_migration": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-1n4mfwkl\\report.json",
+        "sha256": "16f328b61c913525d83c39a4f4a969f277c7562c5b66ce470468f220e4a3c850",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 27.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/core_engine.py",
+          "sha256": "d38b466240d3b1badee8d3e3a433bd54a3b9fedbb7c58b41517e9ed835752794"
+        },
+        {
+          "path": "tests/flows/test_lifecycle_engine_trust.py",
+          "sha256": "4930964db848ab2da0bfd7fe23d33e26ebc81d5a2f7e9c6112e5fbadd4230e17"
+        },
+        {
+          "path": "tests/migration/dispositions/engine.1.json",
+          "sha256": "ac1161dfb20c5bf4cef1cd716bd5093225ae165f037a528bc7659dac315ec74d"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "cca6e922eeb068367140f87bc1cc1d717c20d4f8a5966e9ac27c528a696fc001"
+        }
+      ],
+      "contract": "trust_check에만, 전환의 source_ref가 있는 경우 등록된 pinned action.profile_ref를 선택범위로 유지. select_profile의 등록/역할/해시 검사는 그대로. 기존 machine 준비가 환경명령과의 불일치를 검증기 이전에 반려. 검증기/Lean0회,1ended execution_incomplete,고정 참조와저장 전문확인.",
+      "limits": "main3open. 정상 전환2개와 프로필 허용목록/별도역할 기존12개 및 이관4개 보존. 두 관련 실행은 부분증거이며 전체관문은 별도.",
       "whole_requirement_closed": false
     }
   }

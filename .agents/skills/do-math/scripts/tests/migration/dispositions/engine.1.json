@@ -387,8 +387,7 @@
    "new_ids": [
     "flows.test_lifecycle_engine_trust.TransitionTests.test_wrong_pinned_trust_command_ends_attempt_without_verifier"
    ],
-   "known_defect": "KD-0801",
-   "note": "Input: FakeEngine._execution_profile accepted any pinned profile reference; the new test pins the queued re-check to the edition of the old command and runs one owner pass on the product selection, which leaves it queued (KD-0801)."
+   "note": "Input: FakeEngine._execution_profile accepted any pinned profile reference; the new test pins the queued re-check to the edition of the old command and runs one owner pass on the product selection, which leaves it queued (KD-0801). Stage2 KD-0801 repaired: sourced trust transition preserves the pinned registered profile; incompatible compiler is rejected before verification and the attempt terminates. Historical failure retained."
   },
   {
    "legacy_id": "test_lifecycle_engine.LifecycleBoundaryTests.test_terminal_marker_cannot_have_live_projection",

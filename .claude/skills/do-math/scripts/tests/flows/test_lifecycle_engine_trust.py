@@ -27,7 +27,6 @@ from support.trust_inputs import trust_fixture, validation_fixture
 from support.engine_lifecycle import (THEOREMS, applied, executions, extended, failing_lean, file_access, invalidate,
                                       lifecycle_sim, next_environment, only, prepared_environment, recorded_verifier,
                                       run_machine, solve_goal, transition, warm_lifecycle)
-from support.known_defects import known_defect
 from support.sim import Sim, warm_template
 
 
@@ -281,7 +280,6 @@ class TransitionTests(unittest.TestCase):
                                        'status': 'registered'})
         self.assertEqual(activated['validation_receipt']['binding'], rebound)
 
-    @known_defect('KD-0801')
     def test_wrong_pinned_trust_command_ends_attempt_without_verifier(self):
         """About 4 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks; the pass also dispatches the research the owner queues."""
         sim = self.sim
@@ -299,6 +297,9 @@ class TransitionTests(unittest.TestCase):
         self.assertEqual(len(attempts), 1, 'the pinned attempt ends instead of waiting in the queue')
         self.assertEqual(attempts[0]['status'], 'ended')
         self.assertEqual(attempts[0]['outcome'], 'execution_incomplete')
+        self.assertEqual(attempts[0]['action']['profile_ref'], old_ref)
+        stored = sim.engine.store.load()[2]['executions'][attempts[0]['id']]
+        self.assertEqual(stored, attempts[0])
         self.assertEqual([row['id'] for row in sim.runtime['executions'].values() if row['status'] != 'ended'], [])
 
     def test_changed_transition_opens_real_review_without_live_publication(self):
