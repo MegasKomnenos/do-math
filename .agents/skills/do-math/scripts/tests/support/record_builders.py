@@ -311,7 +311,7 @@ def preparation_issues(entries, *, candidates, context, workspace, conditions=No
                       ensure_ascii=False)
 
 
-def execution_state(role="formal_check"):
+def execution_state(role="formal_check", *, config=None):
     """``(instance, runtime)`` under the lifecycle gate: default profiles and one execution ``EX-1`` of ``role`` in activity ``AT-1``."""
     from support.entry import entry
     _entry = entry()
@@ -319,7 +319,8 @@ def execution_state(role="formal_check"):
     from do_math.execution_profiles import build_profiles, profile_ref
     from do_math.activities import open_activity, assign_execution
     from do_math.execution_lifecycle import create_execution
-    instance, runtime = current_state({"config": deepcopy(DEFAULT_CONFIG), **build_profiles(DEFAULT_CONFIG, host=_entry.ports.host)},
+    settings = deepcopy(DEFAULT_CONFIG if config is None else config)
+    instance, runtime = current_state({"config": settings, **build_profiles(settings, host=_entry.ports.host)},
                                       {"executions": {}})
     profile = next(p for p in instance["execution_profiles"].values() if p["role"] == role)
     open_activity(runtime, activity_id="AT-1", activity_kind="formal_check", owner_ref="engine", input_refs=[], opened_at="2026-09-20T00:00:00Z")

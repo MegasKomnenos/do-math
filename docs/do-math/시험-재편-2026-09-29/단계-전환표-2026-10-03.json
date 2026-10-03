@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B45 0f8bb757 확정, B46 검토351/구조6 완결 통과 및 확정 준비",
-      "active": "다음 제출 가족13모듈과 실제 ingress/owner/광고 입력 생산자 이관 준비",
+      "last_closed": "B46 e848ccfa 확정, B47 제출259와구조검사 통과 후확정준비",
+      "active": "다음 B48 실제/대역Calls 종료계약과 Sim 소유자상실을 먼저 검증하고 공급자 가족 통합",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -13042,7 +13042,7 @@
     },
     "review_population_integration": {
       "id": "B46",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "검토 후보15모듈/정상증거3도우미·캐시준비 연결 및 정확 후속 모듈선택",
       "changed_area": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-vni83vq0\\report.json",
@@ -13283,7 +13283,195 @@
           "sha256": "c5665d807133ba5bae31d99aae06ddb577c15119262757012ff1a2b2741494a4"
         }
       ],
-      "whole_requirement_closed": false
+      "whole_requirement_closed": false,
+      "commit": "e848ccfa"
+    },
+    "submission_population_integration": {
+      "id": "B47",
+      "state": "verified_main_commit_pending",
+      "scope": "제출 후보13모듈/81원사례와 실제 ingress·owner·광고입력3도우미 및 현재config 생산자 연결",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-jgj6vaki\\report.json",
+        "sha256": "7025d1e8bc06a70f3c1aec59aca5437cad6125f85dab1d612b3eca7abf10bc10",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 259
+        },
+        "total_seconds": 573.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "flows.test_submission_ingress_owner.OwnerIngressTests.test_preparation_review_plan_and_work_families_reach_the_actual_owner",
+              "seconds": 130.2970000000205,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "sim.test_submission_engine_calls.ProducerCallTests.test_revoked_original_grant_preserves_late_output_despite_alternative_grant",
+              "seconds": 2.8130000000819564,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "unit.test_submission_advertised_inputs.AdvertisedInputTests.test_advertisement_cannot_authorize_an_unknown_reference",
+              "seconds": 0.875,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_advertised_inputs.AdvertisedInputTests.test_all_roles_advertise_every_source_identifier_form_and_accept_it",
+              "seconds": 1.797000000020489,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_advertised_inputs.AdvertisedInputTests.test_empty_planning_populations_still_advertise_profiles_and_exact_task_sets",
+              "seconds": 0.21799999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_check_invariants.CheckInvariantTests.test_producer_chain_identity_and_sequence_are_separate_checks",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_contracts.ContractTests.test_every_role_has_closed_schema",
+              "seconds": 0.21799999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_ingress_matrix.ExtensionIngressTests.test_every_family_rejects_nonobject_elements_at_the_element_coordinate",
+              "seconds": 1.1410000000614673,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_ingress_matrix.ExtensionIngressTests.test_every_family_rejects_wrong_array_type_without_losing_the_outer_output",
+              "seconds": 0.4839999999385327,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_ingress_matrix.ExtensionIngressTests.test_every_family_required_and_nested_enum_rejections_keep_original_coordinates",
+              "seconds": 1.172000000020489,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_integration_bundles.BundlePublicationTests.test_bundle_receipt_and_records_share_real_git_publication",
+              "seconds": 0.2029999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_sealed_evidence.SealedEvidenceTests.test_hash_receipt_and_size_are_independent_evidence",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_sealed_evidence.SealedEvidenceTests.test_receipt_identity_and_missing_locators_have_distinct_rejections",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_sealed_evidence.SealedEvidenceTests.test_snapshot_summary_rejects_receipt_coordinates_mode_and_execution_drift",
+              "seconds": 0.2029999999795109,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-j198il7p\\report.json",
+        "sha256": "fcb2d9ca8876de7d4ace8511918a378d8fcf53b442288c191d2f35c4dd26959f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 6.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 5.905999999959022,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "구조 표본과 의미상 정상생산물을구분한다. 실제Worker/ControlTransport/owner/Repository의반려1회/같은요청불변/바뀐요청ID내용반려/뒤정상수락·봉인바이트·영수증/event/domain전문을확인하며역할·국면의정확참조목록과누락입력해소/게시대기정산을검증한다. 제품동작변경없음.",
+      "selector": "main의test_submission*.py38파일에서얻은folder-qualified 모듈ID; 요청259개에다른모듈없음.",
+      "limits": "선택259의기능통과는전체T2/flows/T3·분기/전함수극단변이·예산·최소T4/T5증거가아니다. 원보고의모든개별예산초과를보존하며반려변형/역할/국면을축소하지않는다.",
+      "files": [
+        {
+          "path": "tests/unit/test_submission_advertised_inputs.py",
+          "sha256": "939059d3d3e6579b2723283017b0170949bfc388a9ece0b66e6db68949174d76"
+        },
+        {
+          "path": "tests/unit/test_submission_bundle_coordinates.py",
+          "sha256": "61e133ea7afd5c2acda2433af64fe8490a34abc6f8c165fa888af7069fe0b29c"
+        },
+        {
+          "path": "tests/unit/test_submission_check_invariants.py",
+          "sha256": "cc748c1c4874d5862bae317d8382dc0457c45da08cdad2a38f8d70b209bf68cc"
+        },
+        {
+          "path": "tests/unit/test_submission_contract_rejections.py",
+          "sha256": "3f37aac629842f700157175a437c6b6c5e0d2bbcd7d80d0ee549202854aea900"
+        },
+        {
+          "path": "tests/unit/test_submission_extension_semantics.py",
+          "sha256": "129d4e048969cbcb8996106910bdba5197ee7ff91e33c775640c4ba0a0d94cb4"
+        },
+        {
+          "path": "tests/unit/test_submission_ingress_matrix.py",
+          "sha256": "8a33febd0f2673cdd20e6b9ec7fefc7b79243ac83d4684e980d57163d819bbb4"
+        },
+        {
+          "path": "tests/unit/test_submission_native_evidence_rejections.py",
+          "sha256": "8308ea6bf5d2d1ba32dde8e4aaa21c31b175a3203f67c232ffb1eddb5d3532e1"
+        },
+        {
+          "path": "tests/sim/test_submission_workspace_commands.py",
+          "sha256": "807490e4097b3ceef0878f63a93b7429f22c36626379a139e8a32242e956d4f9"
+        },
+        {
+          "path": "tests/flows/test_submission_catalog_population.py",
+          "sha256": "539c3f984e50337835f55983bac2e251aae9126874b345452074c7c725642d66"
+        },
+        {
+          "path": "tests/flows/test_submission_ingress_owner.py",
+          "sha256": "309133cfe0a95bea08471c442254d45314dc773e54bfb67ea44999b85bd04337"
+        },
+        {
+          "path": "tests/flows/test_submission_missing_input_aliases.py",
+          "sha256": "dae721c4080af5468abfa20aa9a1d235efb46c0dc84c73571405e56cc2c0c54a"
+        },
+        {
+          "path": "tests/flows/test_submission_phase_populations.py",
+          "sha256": "e6ad3e616f8f8a1b56c7a7eb82d3a0464dfddb77e0631779146bddc92ea79d69"
+        },
+        {
+          "path": "tests/flows/test_submission_task_evidence.py",
+          "sha256": "5f19fe1beba697ccc4a158321fee950b5430a2e3495234159399b881961daff9"
+        },
+        {
+          "path": "tests/support/submission_advertised.py",
+          "sha256": "a1b413fc7d43a4840de56ba71ee242f34d1262c1bb8764a9e8ac43b9bd04553f"
+        },
+        {
+          "path": "tests/support/submission_obligations.py",
+          "sha256": "4e22e546b5a8448549d1db3d7c3f8694ff18f1af154dc4370b00fd302aa3bbef"
+        },
+        {
+          "path": "tests/support/submission_owner_obligations.py",
+          "sha256": "51898183f17c2af425f3c3dda99fb3a4351d108cc4d1139feee1959909dde6c2"
+        },
+        {
+          "path": "tests/support/record_builders.py",
+          "sha256": "575ee11d8528f558f515d0e3322222829efc66e7a77e2ce6dc1567783fb0ca08"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "format_fix": "커밋 diff검사의EOF 공백줄을제거했다. AST동일을확인해 동작변경없는형식교정으로구분하며원실행보고는수정하지않는다."
     }
   }
 }
