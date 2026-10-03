@@ -12,6 +12,7 @@ from functools import cache
 
 from jsonschema import Draft202012Validator
 from .record_schemas.schemas import PROFILE_REF, RECORDS
+from .values import json_copy
 
 # A caller-chosen control request ID; the CLI request schema and ENGINE share it.
 REQUEST_ID_PATTERN = '^[A-Za-z0-9_-]{1,128}$'
@@ -90,12 +91,12 @@ TIME = {'type': ['string', 'null']}
 
 
 def obj(properties=None):
-    return {'type': 'object', 'properties': properties or {}}
+    return json_copy({'type': 'object', 'properties': properties or {}})
 
 
 def fields(*, text='', lists='', objects=''):
-    return {**{key: TEXT for key in text.split()}, **{key: TEXTS for key in lists.split()},
-            **{key: OBJECT for key in objects.split()}}
+    return json_copy({**{key: TEXT for key in text.split()}, **{key: TEXTS for key in lists.split()},
+                      **{key: OBJECT for key in objects.split()}})
 
 
 GOVERNANCE_RECORD = obj({**fields(text='id kind', lists='supersedes'), 'revision': INTEGER,

@@ -170,6 +170,24 @@
       "found_by": "Main exact red do-math-tests-rj4vh85n uses initialize_state producer, actual ResearchEngine/Repository and independent reader; engine._save leaves head unchanged after 1→True. The earlier x6tc_hq9 draft lacked the history family and is not defect evidence.",
       "missed_kind": "KD-0200 covered schema-skip and parent byte reuse, but engine._unchanged discarded the candidate earlier. It now shares canonical.same_json_value. Exact types/bytes, historical snapshot and true unchanged no-op are checked through the real engine. Main storage cohort axf5ca3x:70 passed,5.2s,source unchanged.",
       "status": "closed"
+    },
+    {
+      "id": "KD-0010",
+      "summary": "control_contracts.obj/fields schema composition returns shared mutable TEXT nodes: modifying one result changes another independently constructed result and the module-global control schemas.",
+      "category": 1,
+      "reproduction": "structure.test_schema_builders.SchemaBuilderTests.test_control_schema_composition_does_not_share_mutable_field_nodes",
+      "found_by": "Unmarked 1-E reproduction do-math-tests-v4oi234q failed with both the second id field and module-global TEXT changed from string to integer. The test restores the returned node in finally. Product code remains unchanged; scripts/이음새-정본.md section 5 supplies the isolation requirement.",
+      "missed_kind": "The schema-builder census used public function names containing schema and omitted obj/fields composition helpers. Existing constructor/type and mutation tests observed schemas without checking returned-node isolation. Closed in the isolated A34 repair tree: unnamed/private constructors now use canonical values.json_copy; every variant repeats through the shared isolation checker. Unmarked original failures remain archived; normal repaired reproductions both passed in do-math-tests-o03mxx3c and all seven schema checks passed in do-math-tests-wl8nfrn5. Full integration gates remain pending. Independent main integration: cqdz7pw8 reproduces cross-result/global TEXT mutation and 26 unnamed composition aliases before repair. Apply values.json_copy to the actual composition helpers; existing repeated-call isolation checker plus control mutation and adversarial checker probes pass4f3yw84v. Related stored family/review/input/contracts blm20zyd remains scoped evidence, not full1-E census closure.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-0011",
+      "category": 1,
+      "status": "closed",
+      "summary": "Unnamed contracts/record/review schema constructors retain mutable schema nodes shared with module globals and other results.",
+      "reproduction": "structure.test_schema_builders.SchemaBuilderTests.test_unnamed_schema_composition_results_detach_every_mutable_node",
+      "found_by": "Unmarked do-math-tests-qwegr5ck: 4 passed, 1 expected_failure, 1 failed. The canonical isolation checker sampled every composition variant twice, retained all results and reported 26 alias observations, beginning with contracts.closed_object. No product change or global mutation. The unchanged body is checked against the report source hash before adding this marker.",
+      "missed_kind": "The public schema-name census omitted unnamed and private composition helpers. Original obligation 1-E and scripts/이음새-정본.md section 5 require schema-builder node isolation. KD-0010 retains the independent control.obj/fields mutation reproduction; fix both through the same canonical constructor rule. Closed in the isolated A34 repair tree: unnamed/private constructors now use canonical values.json_copy; every variant repeats through the shared isolation checker. Unmarked original failures remain archived; normal repaired reproductions both passed in do-math-tests-o03mxx3c and all seven schema checks passed in do-math-tests-wl8nfrn5. Full integration gates remain pending. Independent main integration: cqdz7pw8 reproduces cross-result/global TEXT mutation and 26 unnamed composition aliases before repair. Apply values.json_copy to the actual composition helpers; existing repeated-call isolation checker plus control mutation and adversarial checker probes pass4f3yw84v. Related stored family/review/input/contracts blm20zyd remains scoped evidence, not full1-E census closure."
     }
   ]
 }

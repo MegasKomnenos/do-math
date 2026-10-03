@@ -7921,7 +7921,7 @@
     "empty_preparation_integration": {
       "id": "B21",
       "scope": "KD-1900: 빈 준비는 계수/재생성 조건을 보존하되 판단 대상 없는 계획을 열지 않음",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-r624ckcg\\report.json",
         "sha256": "673880765bc20d813cec301196454894012e9121b4abf93149a697f19525cfcb",
@@ -8015,10 +8015,11 @@
       "contract": "REPETITION_OUTCOMES 11종의 계수 reset/retain/increment와 diagnose가 반복 보기·receipt기록에서동일. empty는increment하지만진단계획없음. 실제Role/Jobs호출 preparation1/plan0과accepted receipt/무과제/저장재시작 검사. ready target 계획개방·limit/continue·기술실패계수보존.",
       "legacy_correction": "역사 legacy_id 유지. 잘못된 targetless-plan 기대값은현행 no-target 정상접수시험으로바꾸고ready-target 양성시험연결. 이전failed 기대값을과거실패자료에그대로유지.",
       "limits": "main19closed/0open은candidate56과다르다. related13중Sim2개예산초과. 전체완료/최종관문을뜻하지않음.",
-      "whole_requirement_closed": false
+      "whole_requirement_closed": false,
+      "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 19,
+      "main_ledger_count": 21,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
@@ -8056,14 +8057,116 @@
         "KD-1907",
         "KD-1908",
         "KD-1909",
-        "KD-0009",
-        "KD-0010",
-        "KD-0011"
+        "KD-0009"
       ],
-      "meaning": "37개는 main에미기록된후보항목이며37개제품미구현이나완료율로단정하지않는다. 실제기능/의존/원재현시험을비교해이미통합된내용과필요변경을구별한다.",
+      "meaning": "35개는 main에미기록된후보항목이며같은수의제품미구현이나완료율로단정하지않는다. 실제기능/의존/원재현시험을비교한다.",
       "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
+    },
+    "schema_isolation_integration": {
+      "id": "B22",
+      "scope": "KD-0010/0011: 이름 없는 스키마 조합의 가변 노드를 정본 json_copy로 분리",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-cqdz7pw8\\report.json",
+        "sha256": "81320a7e5ca4c9088343811cf5b6aa9f0681a69cdc7ab8a97637edfda9546935",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 2
+        },
+        "total_seconds": 0.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-4f3yw84v\\report.json",
+        "sha256": "5ce37b657a017f40eea8c5e46e5cb3638ad51d2f593b8ba4956e1b865d6e587c",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 7
+        },
+        "total_seconds": 2.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-blm20zyd\\report.json",
+        "sha256": "130df4d4e47150bca9cbf6874df29db4cbb38ecf45285e66cce43e11dc5ad263",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 63
+        },
+        "total_seconds": 1.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-mbu_4b9h\\report.json",
+        "sha256": "4b483e000deb765d3185614f86097813e5d363d39a966ba7eebb96a1121b6060",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 5
+        },
+        "total_seconds": 10.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 6.719000000040978,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "files": [
+        {
+          "path": "do_math/control_contracts.py",
+          "sha256": "a481a097212c003ed563a036f613368101876d1d9c72f08dd1d36a451b26ebb9"
+        },
+        {
+          "path": "do_math/contracts.py",
+          "sha256": "41f386702abadaee1da23bc526b340701e49bbc5cc1e2c65fe0ffdd91eac541a"
+        },
+        {
+          "path": "do_math/record_schemas/schemas.py",
+          "sha256": "234c4f5fddf7516f4518f05b415a2ef509859c1c4a3f0af330b86cf29ff476fc"
+        },
+        {
+          "path": "do_math/review_cycle.py",
+          "sha256": "c15429a7595579863fc87ed6b4e310008a2d75a5a3457cd65099fb4df306f3c6"
+        },
+        {
+          "path": "tests/structure/test_schema_builders.py",
+          "sha256": "560ae79fe5e09918cb03c1c70fedc4c7ab08e2ffdbae52c8c931a9fbcaf7e9f2"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "dd54b70b16d19c79f44bf28898a1a353a66a79a13c888961616b230f45ab0bb8"
+        },
+        {
+          "path": "이음새-정본.md",
+          "sha256": "8cf77d9b5f9400215ea7687cf3981d3799db9faa1ff18a97b054021f0ac0e1cf"
+        }
+      ],
+      "contract": "control obj/fields,contracts.closed_object,stored schema array/nullable/enum/obj/mapping와review_cycle._array가values.json_copy 사용. 제자리변경은다른반환/전역/한결과내노드에전파되지않음. 공개schema이름과조합13함수를인자변형별2회호출하여모든결과를유지해공유검사. 검사기의None/보관결과재사용음성탐침도유지.",
+      "limits": "조합13함수는 명시 모집단이고 자동발견전체1-E 증거가아니다. 스키마이름만좇던문서과장교정. 원구조실패2개,7/63/구조5 통과. 구조냄새1개예산초과남김. full관문별도.",
+      "whole_requirement_closed": false
     }
   }
 }

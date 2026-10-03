@@ -6,7 +6,7 @@ The engine supplies IDs, hashes, references,
 and persistence bindings after receiving a validated semantic response.
 
 Every function that builds a schema, here and in the modules whose schemas a
-response carries, returns ``file_io.json_copy`` of its result: no node is shared
+response carries, returns ``values.json_copy`` of its result: no node is shared
 with a module global such as ``TEXT`` or within the result, so a caller may
 change the returned schema in place (이음새-정본.md §5).
 """
@@ -35,8 +35,8 @@ ROLES = (
 
 def closed_object(properties: dict[str, dict[str, Any]], required: list[str] | None = None) -> dict[str, Any]:
     """A closed wire object schema; every property is required unless ``required`` names them."""
-    return {"type": "object", "additionalProperties": False, "properties": properties,
-            "required": list(properties) if required is None else required}
+    return json_copy({"type": "object", "additionalProperties": False, "properties": properties,
+                      "required": list(properties) if required is None else required})
 
 
 STRING = {"type": "string"}

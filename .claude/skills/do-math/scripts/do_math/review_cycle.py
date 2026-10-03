@@ -42,7 +42,7 @@ def review_action(action):
 
 
 def _array(items):
-    return {"type": "array", "items": items}
+    return json_copy({"type": "array", "items": items})
 
 
 def stage_schema(stage):

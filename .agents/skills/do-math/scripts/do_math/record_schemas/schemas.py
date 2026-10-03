@@ -15,7 +15,7 @@ from ..execution_lifecycle import EXECUTION_STATUSES as _EXECUTION_STATUSES, OUT
 from ..execution_profiles import (OBSERVATION_KEYS as _OBSERVATION_KEYS, OBSERVATION_MODES as _OBSERVATION_MODES,
                                   PROFILE_ROLES as _PROFILE_ROLES, WINDOW_KEYS as _WINDOW_KEYS)
 from ..external import OPERATION_STATUSES as _OPERATION_STATUSES
-from ..values import SHA256_SCHEMA as HASH
+from ..values import SHA256_SCHEMA as HASH, json_copy
 from ..governance import (GOVERNANCE_STATUSES as _GOVERNANCE_STATUSES, GRANT_STATUSES as _GRANT_STATUSES,
                           interpretation_schema as _interpretation_schema)
 from ..input_basis import SOURCE_STATUSES as _SOURCE_STATUSES
@@ -41,19 +41,19 @@ EVIDENCE = {"type": "object"}
 
 
 def array(item=TEXT, unique=False):
-    return {"type": "array", "items": item, **({"uniqueItems": True} if unique else {})}
+    return json_copy({"type": "array", "items": item, **({"uniqueItems": True} if unique else {})})
 
 
 def nullable(schema):
-    return {"anyOf": [schema, {"type": "null"}]}
+    return json_copy({"anyOf": [schema, {"type": "null"}]})
 
 
 def enum(*values):
-    return {"enum": list(values)}
+    return json_copy({"enum": list(values)})
 
 
 def obj(properties, required=()):
-    return {"type": "object", "properties": properties, "required": list(required), "additionalProperties": False}
+    return json_copy({"type": "object", "properties": properties, "required": list(required), "additionalProperties": False})
 
 
 def record(properties, required=()):
@@ -61,7 +61,7 @@ def record(properties, required=()):
 
 
 def mapping(value):
-    return {"type": "object", "additionalProperties": value}
+    return json_copy({"type": "object", "additionalProperties": value})
 
 
 REFS = array(ID, True)
