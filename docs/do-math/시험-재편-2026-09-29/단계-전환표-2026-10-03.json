@@ -4647,7 +4647,7 @@
       "entry": "실패 영향 초안을 미검증 상태로 분리하고 현재 제품/시험 모집단을 검수",
       "exit": "실행 가능한 후보의T2+flows 원본 결과·시간·소스지문·실패 요구 연결 및비용상위 항목이 하나의 판본에서 확보됨",
       "not_final_gate": "300초초과나원문의무미완비면 최종 완료로 표시하지 않음",
-      "state": "실행 중",
+      "state": "종료: 실패 기준선 확정",
       "command": "python .claude/skills/do-math/scripts/run_tests.py structure unit contracts sim flows --jobs 3",
       "session_id": 69435,
       "parent_pid": 25860,
@@ -4659,7 +4659,7 @@
         16776
       ],
       "immutable_tree": "C:/math/.claude/worktrees/goal-20261003-repair",
-      "note": "전체 후보에 알려진 영향 검사 실패를 포함한다; 실패를 빼서 성공을 만들지 않음",
+      "note": "3877은 병렬 배정 수이고 최종 모집단은 격리1개를 더한3878. 정상 기준선 종료 확인; 수리판 고정 해제. 부분 교정 결과로 원 실패를 덮지 않는다.",
       "observed_failures": [
         {
           "worker": "parallel-0",
@@ -4697,7 +4697,19 @@
         "cause": "실행 trace는현재elif/for호를지나는데229→219의옛고정행단언이남음. 새waiting_action import가좌표를옮김.",
         "preserve": "required부모/optional자식/unchanged수신/전체부모대기전문/실제저장재시작단언은유지;행번호만AST에서실제guard와loop좌표로얻음",
         "run_rule": "실행트리는계속고정. 현재실패를소급통과로바꾸거나실행재시작하지않음"
-      }
+      },
+      "selected_total_tests": 3878,
+      "isolated_tests": 1,
+      "archive": "C:\\math\\docs\\do-math\\시험-재편-2026-09-29\\검증\\2026-10-04-일반-기준선\\report.json",
+      "sha256": "ebe9f03e772db76b44c0b1060570f9cd677455bfbd548e52b4c1aee4b36a783a",
+      "counts": {
+        "passed": 3869,
+        "failed": 8,
+        "skipped": 1
+      },
+      "total_seconds": 5170.8,
+      "changed_during_run": [],
+      "over_budget_count": 607
     },
     "stage1": [
       {
@@ -6669,7 +6681,7 @@
     "review_premise_integration": {
       "id": "B09",
       "scope": "고정 수학 명제의 검토 공개 전제를 main의 생산자와 단계 활성화 수신자에 함께 공유",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-9se3jbwj\\report.json",
         "sha256": "47f0f38843840420c8521d0cfba8c87ccbb43ac5762db5e704e256f6453cba7c",
@@ -6760,7 +6772,321 @@
       ],
       "semantic_evidence": "보존 사용자 원문과 실제 governance.apply_decision으로 헌장 목적을 바꿔도 고정 명제의 완료된 검토는 활성화. 실제 전제 다섯 필드의 변조와 오래된 정책은 반려. 검토 영수증·소유자 경로·독립 검토·저장 왕복 유지.",
       "limits": "후보 B06의 정상 전체 신뢰 전환 흐름과 main의 도메인/검토 경로를 구별한다. main의 아직 미통합 신뢰 전환 수리까지 폐쇄한 것은 아니다.",
+      "whole_requirement_closed": false,
+      "commit": "67ef0b4b"
+    },
+    "baseline_failures_final": [
+      {
+        "original": {
+          "id": "sim.test_planning_relation_conditions.DelegatedRevisionTests.test_optional_delegated_work_preserves_required_parent_after_unchanged",
+          "outcome": "failed",
+          "seconds": 2.594000000040978,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_planning_relation_conditions.py\", line 296, in test_optional_delegated_work_preserves_required_parent_after_unchanged\n    self.assertTrue(reached.crossed(229, 219), reached.lines)\nAssertionError: False is not true : [178, 179, 180, 183, 184, 186, 194, 195, 196, 197, 198, 200, 201, 202, 203, 197, 213, 214, 213, 215, 216, 217, 218, 219, 220, 221, 223, 226, 227, 230, 220, 233, 234, 235, 215, 240, 245]\n"
+          ]
+        },
+        "candidate_correction": "candidate_correction"
+      },
+      {
+        "original": {
+          "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+          "outcome": "failed",
+          "seconds": 15.922000000020489,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_test_smells.py\", line 24, in test_new_system_tests_have_no_smell\n    self.assertEqual(issues, [], '\\n'.join(str(issue) for issue in issues))\nAssertionError: Lists differ: [{'file': 'flows/test_impact_wait_contract[119 chars] 21}] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n{'file': 'flows/test_impact_wait_contract.py', 'test': 'test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit', 'rule': 'broad_except', 'line': 21}\n\n+ []\n- [{'file': 'flows/test_impact_wait_contract.py',\n-   'line': 21,\n-   'rule': 'broad_except',\n-   'test': 'test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit'}] : {'file': 'flows/test_impact_wait_contract.py', 'test': 'test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit', 'rule': 'broad_except', 'line': 21}\n"
+          ]
+        },
+        "candidate_correction": "candidate_correction"
+      },
+      {
+        "original": {
+          "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_requirement_change_retires_old_goal_audit_before_new_answer",
+          "outcome": "failed",
+          "seconds": 13.047000000020489,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_cross_required_events.py\", line 289, in test_requirement_change_retires_old_goal_audit_before_new_answer\n    self.assertNotEqual(old['basis'], machine.sim.engine._goal_basis_key())\nAssertionError: 'eb7de2551b5468236a503b7af6a8fdc91c850c0ceba15592d2dced92ed072a53' == 'eb7de2551b5468236a503b7af6a8fdc91c850c0ceba15592d2dced92ed072a53'\n"
+          ]
+        },
+        "candidate_correction": "contract_expectation_correction"
+      },
+      {
+        "original": {
+          "id": "structure.test_layers.LayerTests.test_declared_modules_obey_their_layer_and_no_module_is_undeclared",
+          "outcome": "failed",
+          "seconds": 2.734000000054948,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\structure\\test_layers.py\", line 14, in test_declared_modules_obey_their_layer_and_no_module_is_undeclared\n    self.assertEqual(issues, [], '\\n'.join(str(issue) for issue in issues))\nAssertionError: Lists differ: [{'module': 'do_math/wait_rules.py', 'rule': 'undeclared'}] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n{'module': 'do_math/wait_rules.py', 'rule': 'undeclared'}\n\n- [{'module': 'do_math/wait_rules.py', 'rule': 'undeclared'}]\n+ [] : {'module': 'do_math/wait_rules.py', 'rule': 'undeclared'}\n"
+          ]
+        },
+        "candidate_correction": "wait_layer_binding"
+      },
+      {
+        "original": {
+          "id": "flows.test_scheduling_close_external_phases.ExternalPhaseTests.test_pause_after_registration_before_send_returns_capacity_without_http",
+          "outcome": "failed",
+          "seconds": 2.234000000054948,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_scheduling_close_external_phases.py\", line 35, in test_pause_after_registration_before_send_returns_capacity_without_http\n    self.assertEqual(operation['error'], 'stopped before transmission')\nAssertionError: 'ValueError: external transmission stopped before authorization' != 'stopped before transmission'\n- ValueError: external transmission stopped before authorization\n+ stopped before transmission\n\n"
+          ]
+        },
+        "candidate_correction": "external_phase_expectation"
+      },
+      {
+        "original": {
+          "id": "flows.test_impact_wait_contract.ImpactWaitContractTests.test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit",
+          "outcome": "failed",
+          "seconds": 20.75,
+          "details": [
+            "test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit (flows.test_impact_wait_contract.ImpactWaitContractTests.test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit) (kind='impact_review_blocked')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_impact_wait_contract.py\", line 95, in test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit\n    self.assertTrue(identifier not in sim.runtime.get('waiting_actions', {}),\nAssertionError: False is not true : {'kind': 'impact_review_blocked', 'receipts': [{'execution_id': 'EX-03E6TRPT00000000000000003W', 'kind': 'submit_intent', 'publication_id': 'CT-03E6TRPT000000000000000044', 'reason': 'candidate validation failed', 'request_id': 'submit-RQ-03E6TRPT000000000000000043', 'request_sha256': '2af0efb57790d492e723afc69c7740b9dbfc671082e35e029cb6fc1c88d48371', 'result': {'capture_eligible': False, 'check_order': ['schema', 'payload_semantics', 'integration_structure', 'repair_coverage'], 'check_subject': {'id': 'AC-impact-scope', 'review_cycle_id': None, 'revision_targets': {}, 'role': 'research_plan', 'slot': None, 'stage': None, 'target': None}, 'comparison': {'status': 'no_previous_check'}, 'contract_id': 'do-math-machine-check/5', 'execution_id': 'EX-03E6TRPT00000000000000003W', 'failure_kind': 'output_validation', 'files': [{'bytes': 1109, 'path': 'output.json', 'sha256': '038950a8d79544a3b801871117f2fc939ac6118038d023a0a51c922caa474654'}], 'id': 'MC-1b5d25cd64074ea9db0c9d44', 'input_hashes': {'context': 'ad813db86cf2d4ba9c79768e3e69546e4bce2e4a7ccdd45cf402f78519a827ba', 'extensions': 'ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356', 'output': '038950a8d79544a3b801871117f2fc939ac6118038d023a0a51c922caa474654', 'schema': 'af17d5aa76c605bdec43e01fb0b4afe0c5b6721ffdf41ce567bfa35d6fc73184'}, 'input_snapshot': 'a948c5e5cb0ed6899d554afb62107b5815487d4c', 'issues': [{'integration_id': 'IN-6be4807dfd98d94e59694ffe', 'issue_id': 'SI-5283de7686b3481ba65a6736', 'message': \"plan must assess every returned task exactly once: missing=[]; unexpected=['TK-impact']; duplicate=[]\", 'path': 'output', 'rule_id': 'submission.output'}], 'mode': 'receiver', 'not_checked': ['mathematical_meaning', 'Lean', 'application_time_currentness', 'final_authority_and_provenance', 'kind_semantic_approval'], 'passed': False, 'repairs': [], 'schema_ref': {'family': 'do-math-cli/5', 'id': 'https://do-math.invalid/schemas/cli/5/sha256/c1083a42cb980335f60477f5f123f10fe0086964b82befaa37a9cef56adc6e18', 'sha256': 'af17d5aa76c605bdec43e01fb0b4afe0c5b6721ffdf41ce567bfa35d6fc73184'}, 'tool_sha256': '118303a055d55e9e5d1c4a3f2ce9509c64620685ce1a3f29c06b8ff4009d916e'}, 'snapshot': '48c5b72decd013b8df5ca1ffffe38ecd76d4bf82', 'state': 'rejected'}], 'model_errors': [], 'errors': ['worker_not_exited; turn_completed_missing; jsonl_parse_incomplete; final_message_missing']}\n",
+            "test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit (flows.test_impact_wait_contract.ImpactWaitContractTests.test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit) (kind='impact_review_changed')\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_impact_wait_contract.py\", line 95, in test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit\n    self.assertTrue(identifier not in sim.runtime.get('waiting_actions', {}),\nAssertionError: False is not true : {'kind': 'impact_review_changed', 'receipts': [{'execution_id': 'EX-03E6TRPT00000000000000003M', 'kind': 'submit_intent', 'publication_id': 'CT-03E6TRPT00000000000000003W', 'reason': 'candidate validation failed', 'request_id': 'submit-RQ-03E6TRPT00000000000000003V', 'request_sha256': '5ad4fab50de2f8c22694a9f34a0694932e88a8e0c01d9c5fbb9af65407e4ca44', 'result': {'capture_eligible': False, 'check_order': ['schema', 'payload_semantics', 'integration_structure', 'repair_coverage'], 'check_subject': {'id': 'AC-impact-scope', 'review_cycle_id': None, 'revision_targets': {}, 'role': 'research_plan', 'slot': None, 'stage': None, 'target': None}, 'comparison': {'status': 'no_previous_check'}, 'contract_id': 'do-math-machine-check/5', 'execution_id': 'EX-03E6TRPT00000000000000003M', 'failure_kind': 'output_validation', 'files': [{'bytes': 1109, 'path': 'output.json', 'sha256': 'ea40bb4d9e7d6f76f99f41e6e134a8696012fc3e0754946a37fbb507e021bd32'}], 'id': 'MC-5a112a5d64f9c88d44d410e5', 'input_hashes': {'context': '0d4cc3e86c1e266d00808c74ddb309467d9a3b8f7d46c2d397f8c27b5994855f', 'extensions': 'ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356', 'output': 'ea40bb4d9e7d6f76f99f41e6e134a8696012fc3e0754946a37fbb507e021bd32', 'schema': 'af17d5aa76c605bdec43e01fb0b4afe0c5b6721ffdf41ce567bfa35d6fc73184'}, 'input_snapshot': 'faf64841049e9f949cfcc1be522a4d4c33ecc81b', 'issues': [{'integration_id': 'IN-82d4b3b4244b217ab02302dd', 'issue_id': 'SI-e00e9efff16523941b612014', 'message': \"plan must assess every returned task exactly once: missing=[]; unexpected=['TK-impact']; duplicate=[]\", 'path': 'output', 'rule_id': 'submission.output'}], 'mode': 'receiver', 'not_checked': ['mathematical_meaning', 'Lean', 'application_time_currentness', 'final_authority_and_provenance', 'kind_semantic_approval'], 'passed': False, 'repairs': [], 'schema_ref': {'family': 'do-math-cli/5', 'id': 'https://do-math.invalid/schemas/cli/5/sha256/c1083a42cb980335f60477f5f123f10fe0086964b82befaa37a9cef56adc6e18', 'sha256': 'af17d5aa76c605bdec43e01fb0b4afe0c5b6721ffdf41ce567bfa35d6fc73184'}, 'tool_sha256': '118303a055d55e9e5d1c4a3f2ce9509c64620685ce1a3f29c06b8ff4009d916e'}, 'snapshot': '42a05672d97f33cb13cdc916e1f2e22845127f8d', 'state': 'rejected'}], 'model_errors': [], 'errors': ['worker_not_exited; turn_completed_missing; jsonl_parse_incomplete; final_message_missing']}\n",
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_impact_wait_contract.py\", line 116, in test_every_impact_wait_has_a_real_entry_condition_and_exact_owner_exit\n    self.assertEqual(exercised, IMPACT_ACTION_WAITS)\nAssertionError: {'impact_review'} != frozenset({'impact_review_blocked', 'impact_review', 'impact_review_changed'})\n"
+          ]
+        },
+        "candidate_correction": "candidate_correction"
+      },
+      {
+        "original": {
+          "id": "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_preparation_without_any_pending_review_still_opens_a_plan",
+          "outcome": "failed",
+          "seconds": 3.094000000040978,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_scheduling_parallel_engine.py\", line 253, in test_preparation_without_any_pending_review_still_opens_a_plan\n    self.assertEqual(len(self.plans()), 1, self.plans())\nAssertionError: 0 != 1 : []\n"
+          ]
+        },
+        "candidate_correction": "contract_expectation_correction"
+      },
+      {
+        "original": {
+          "id": "flows.test_knowledge_close_staged_transition.StagedTransitionTests.test_changed_evidence_requires_real_staged_review_before_activation",
+          "outcome": "failed",
+          "seconds": 38.686999999918044,
+          "details": [
+            "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\worktrees\\goal-20261003-repair\\.claude\\skills\\do-math\\scripts\\tests\\flows\\test_knowledge_close_staged_transition.py\", line 39, in test_changed_evidence_requires_real_staged_review_before_activation\n    self.assertEqual(sim.runtime['trust_transitions'][tid]['status'], 'active')\nAssertionError: 'failed' != 'active'\n- failed\n+ active\n\n"
+          ]
+        },
+        "candidate_correction": "staged_review_repair"
+      }
+    ],
+    "external_phase_expectation": {
+      "id": "B10",
+      "scope": "실행 등록 후 prepared 게시 권한 관문에서 일시정지가 처리되는 정확한 경계와 저장 사실",
+      "state": "verified_candidate_not_main_integrated",
+      "report": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-gps7__8u\\report.json",
+        "sha256": "cbec66e2dd50c066d6e317273bbd14d86a7b6b2ac4bb779662c7334fa1b847b0",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 10.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "semantics": "HTTP0회/실행취소/용량반환/paused/게시되지 않은 transmission_phase 필드 부재/attempts=[]/effect_absent=True/succeeded=False/저장 재시작 전문 유지. 실제 오류는 ValueError: external transmission stopped before authorization.",
+      "draft_error": "clvvjtwg의 KeyError는 prepared 초안의 not_started가 저장됐다는 잘못된 추가 단언이었다. prepare_operation과 persist의 원문으로 필드 부재를 확인하고 교정했다.",
       "whole_requirement_closed": false
+    },
+    "execution_cost_diagnosis": {
+      "scope": "다음 전체 관문 전에 비용 진단",
+      "baseline_top_modules": [
+        [
+          "flows.test_cross_required_events",
+          2552.1410000000615
+        ],
+        [
+          "flows.test_submission_ingress_owner",
+          482.4529999999795
+        ],
+        [
+          "flows.test_academic_requirement_flows",
+          263.6719999999041
+        ],
+        [
+          "flows.test_scheduling_close_matrix",
+          216.42199999990407
+        ],
+        [
+          "flows.test_engine_purpose_currentness",
+          202.07800000009593
+        ],
+        [
+          "flows.test_submission_catalog_population",
+          198.96799999999348
+        ],
+        [
+          "flows.test_review_research_flows",
+          195.40599999995902
+        ],
+        [
+          "flows.test_scheduling_parallel_engine",
+          185.96900000004098
+        ],
+        [
+          "sim.test_review_research_replay_evidence",
+          165.2029999999795
+        ],
+        [
+          "flows.test_cross_state_machine",
+          162.29699999990407
+        ],
+        [
+          "flows.test_engine_purpose_decisions",
+          148.18799999996554
+        ],
+        [
+          "flows.test_live_finish_scheduling",
+          143.75
+        ]
+      ],
+      "t2_module_seconds_sum": 2943.691000000108,
+      "limits": "동시 실행의 폴더별 모듈시간 합은 isolated T2 wall budget이 아니다. cProfile은 계측 오버헤드가 있어 성능 개선 쌍 비교를 대신하지 않는다.",
+      "profile_local": "C:/math/.skill-workspace/test-restructure-2026-09-29/finish/academic-path-20261004.prof",
+      "hypothesis": "deepcopy의 일반 dispatch/memo 순회가 저장 반복 비용의 큰 부분. 실제 저장 검증과 컨테이너 분리·별칭 의미를 유지하는 복사 최적화를 작은 변경으로 검토.",
+      "long_scope": "LONG max_examples=6,stateful_step_count=20 유지",
+      "state": "diagnosis_in_progress",
+      "rejected_experiment": "저장 컨테이너 복사 전용 함수와 Repository 교체를 main에서 한 쌍 비교. 개선 없어 자기 실험3파일만 HEAD로 복원; 제품/새 시험 추가 없음.",
+      "before": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-sdbw360l\\report.json",
+        "sha256": "2e04bd3e374eb8cb64ec2351f1f652787fe92261faf36593bf2462cec8881ca3",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 10.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "after": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-0lx5ofaz\\report.json",
+        "sha256": "4eb3d5de1c3499cdcaffb02c446a976f22c453f98e40f5c5c86d9be176c36cfc",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 10.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "conclusion": "같은 고립 실행의10.3→10.5초, 본문1.672→1.687초. 성능 개선 주장 없음. 일반 deepcopy 통계를 보고 함수를 바꾸는 것만으로 실제 비용이 줄지 않았다.",
+      "patch_local": "C:/math/.skill-workspace/test-restructure-2026-09-29/finish/rejected-storage-copy-experiment.patch"
+    },
+    "engine_noop_integration": {
+      "id": "B11",
+      "scope": "KD-0201: 엔진 게시 생략도 정확한 JSON 타입 동등성으로 판정",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-rj4vh85n\\report.json",
+        "sha256": "79db4fbdadcf610f3cf3b9f1de201c08bcd26ce314fcfd14d2f8864051e2d2b2",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1
+        },
+        "total_seconds": 0.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "storage": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-axf5ca3x\\report.json",
+        "sha256": "7587b5fa7937a72bed46dc2b3ce6d3798d4837047e8ba16bdb093e5eb6b790f2",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 70
+        },
+        "total_seconds": 5.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_storage_reporting.ReportingTests.test_status_reports_artifact_presence_and_length_in_one_batch_without_bytes",
+              "seconds": 0.2190000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_repository.ResearchRepositoryTests.test_export_reads_bounded_batches_and_preserves_binary_contents",
+              "seconds": 1.047000000020489,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_storage_state_contract.SchemaRegistrationTests.test_every_built_in_family_schema_is_a_valid_json_schema",
+              "seconds": 1.827999999979511,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-8znzpw1w\\report.json",
+        "sha256": "3f1aa345eb379448e3ce6aa597d602b755cc9cf6754b44558a13a685284c0333",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 31.3,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-sbmcmdqa\\report.json",
+        "sha256": "e569d4eb6e321825c2ba4c422a8617320feab9d57e20d3b99eb46fcd82efcc24",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 15
+        },
+        "total_seconds": 16.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_academic_requirement_changes.AcademicOnlyCharterControlTests.test_an_academic_only_charter_control_keeps_the_solved_goal_and_its_basis",
+              "seconds": 2.077999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_activation_git_round_trip_preserves_old_and_loads_new_records",
+              "seconds": 0.34299999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_assessment_survives_a_second_transition_and_git_round_trip",
+              "seconds": 0.3440000000409782,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "whole_requirement_closed": false,
+      "contract": "실제 initialize_state/Engine/Repository로 1→True→1의 새로운 게시/정확한 형·바이트/옛 스냅샷 보존을 검사. 실제 변경 없음은 계속 게시 생략. 초기 x6tc_hq9 초안의 누락 history는 제품 결함 증거가 아니다."
+    },
+    "candidate_correction_archive": {
+      "directory": "C:\\math\\docs\\do-math\\시험-재편-2026-09-29\\검증\\2026-10-04-일반-기준선",
+      "manifest": "후속-교정-지문.json",
+      "files": 19,
+      "sha256": "edabae469c7dbcf1e34a202ad8831c42245a0130811ef7e174cd1676622a7aae",
+      "whole_candidate_verified": false
     }
   }
 }

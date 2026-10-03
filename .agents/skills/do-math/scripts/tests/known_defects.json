@@ -161,6 +161,15 @@
       "found_by": "Main red do-math-tests-9se3jbwj uses preserved user source and actual governance.apply_decision; activation raises staged identity review publication premises changed. Candidate baseline knvwwf8d and exact b18_r9ug also reproduce producer/receiver disagreement.",
       "missed_kind": "Both producer and receiver now use knowledge_records.review_publication_premises. Actual adopted policy, identity, active environment and non-charter governance remain checked; five changed premise fields are rejected. Main related do-math-tests-ys5o6lj5: 12 passed, two existing unit budget overruns retained.",
       "status": "closed"
+    },
+    {
+      "id": "KD-0201",
+      "summary": "Engine no-op publication compares Python values, so 1→True and False→0 can be discarded before repository JSON-type validation and byte encoding.",
+      "category": 1,
+      "reproduction": "unit.test_storage_type_recurrence.TypeRecurrence.test_engine_noop_check_publishes_boolean_integer_swaps",
+      "found_by": "Main exact red do-math-tests-rj4vh85n uses initialize_state producer, actual ResearchEngine/Repository and independent reader; engine._save leaves head unchanged after 1→True. The earlier x6tc_hq9 draft lacked the history family and is not defect evidence.",
+      "missed_kind": "KD-0200 covered schema-skip and parent byte reuse, but engine._unchanged discarded the candidate earlier. It now shares canonical.same_json_value. Exact types/bytes, historical snapshot and true unchanged no-op are checked through the real engine. Main storage cohort axf5ca3x:70 passed,5.2s,source unchanged.",
+      "status": "closed"
     }
   ]
 }

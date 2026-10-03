@@ -26,7 +26,7 @@ from .observations import ObservationTracker, CHECKPOINT_SCHEMA, checkpoint_valu
 from .governance_engine import bind_host_configuration
 from .native_final import verified_native_final
 from .repository import ResearchRepository
-from .canonical import canonical_json, exact_content_hash
+from .canonical import canonical_json, exact_content_hash, same_json_value
 from .repository import mark_artifact_verified, sealed_bytes
 from .state_checks import inspect_state
 from .state_contract import ARTIFACT_ROOT
@@ -697,9 +697,9 @@ class CoreEngineMixin:
         published = self.store.published_state(self.head)
         if published is None:
             return False
-        return self.instance == published[0] and (
-            {k: v for k, v in self.runtime.items() if k != "updated_at"}
-            == {k: v for k, v in published[1].items() if k != "updated_at"})
+        return same_json_value(self.instance, published[0]) and same_json_value(
+            {k: v for k, v in self.runtime.items() if k != "updated_at"},
+            {k: v for k, v in published[1].items() if k != "updated_at"})
 
     def _reload(self, snapshot=None):
         """Adopt a published head's validated state, then judge live stop reasons."""

@@ -12,6 +12,39 @@ from support.storage_records import record_store
 
 
 class TypeRecurrence(unittest.TestCase):
+    def test_engine_noop_check_publishes_boolean_integer_swaps(self):
+        from do_math.configuration import DEFAULT_CONFIG
+        from do_math.initialization import initialize_state
+        from support.fakes.clock import FakeClock
+        from support.storage_records import INSTANCE_ID, engine_on, fake_ports
+        with tempfile.TemporaryDirectory() as directory:
+            backend = ObservedGit()
+            clock = FakeClock()
+            repo = record_store(Path(directory), backend=backend, clock=clock)
+            ports = fake_ports(clock, backend)
+            workspace = Path(directory)/'work'
+            state = initialize_state(instance_id=INSTANCE_ID, goal='Observe exact storage types',
+                workspace=workspace, config=DEFAULT_CONFIG, source_input='Observe exact storage types',
+                clock=clock, host=ports.host)
+            engine, _ = engine_on(repo, *state, workspace=workspace, ports=ports)
+            engine.runtime['history'].append({'typed_value': 1})
+            engine._save()
+            old_head = engine.head
+            for value in (True, 1):
+                engine.runtime['history'][-1]['typed_value'] = value
+                previous_head = engine.head
+                engine._save()
+                self.assertNotEqual(engine.head, previous_head)
+                reader = record_store(Path(directory), backend=backend, clock=clock,
+                                      contract=installed_contract())
+                loaded = reader.load(engine.head)[2]['history'][-1]['typed_value']
+                self.assertIs(type(loaded), type(value))
+                self.assertEqual(canonical_json(loaded), canonical_json(value))
+                head = engine.head
+                engine._save()
+                self.assertEqual(engine.head, head)
+            self.assertIs(type(reader.load(old_head)[2]['history'][-1]['typed_value']), int)
+
     def test_json_equality_matches_exact_bytes_for_nested_types_and_sealed_text(self):
         from do_math.canonical import same_json_value
         from do_math.payloads import seal

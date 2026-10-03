@@ -1,0 +1,567 @@
+--- a/.claude/skills/do-math/scripts/do_math/core_engine.py
++++ b/.claude/skills/do-math/scripts/do_math/core_engine.py
+@@ -28,7 +28,7 @@
+ from .governance_engine import bind_host_configuration
+ from .native_final import verified_native_final
+ from .repository import ResearchRepository
+-from .canonical import canonical_json, exact_content_hash
++from .canonical import canonical_json, exact_content_hash, same_json_value
+ from .repository import mark_artifact_verified, sealed_bytes
+ from .state_checks import inspect_state
+ from .state_contract import ARTIFACT_ROOT
+@@ -709,9 +709,9 @@
+         published = self.store.published_state(self.head)
+         if published is None:
+             return False
+-        return self.instance == published[0] and (
+-            {k: v for k, v in self.runtime.items() if k != "updated_at"}
+-            == {k: v for k, v in published[1].items() if k != "updated_at"})
++        return same_json_value(self.instance, published[0]) and same_json_value(
++            {k: v for k, v in self.runtime.items() if k != "updated_at"},
++            {k: v for k, v in published[1].items() if k != "updated_at"})
+ 
+     def _reload(self, snapshot=None):
+         """Adopt a published head's validated state, then judge live stop reasons."""
+@@ -3217,8 +3217,8 @@
+             # still pending, that review's approval event or returned revision brings the next decision.
+             decidable = bool(planning.ready_task_ids(self.runtime, self.instance, evaluation_context=self._evaluation_context())) or any(
+                 task["status"] == "waiting" and task.get("results") for task in self.runtime["tasks"].values())
+-            # Empty preparation already opens its required plan when the actual
+-            # receipt is recorded by revisions.record_execution_outcome.
++            # Empty preparation records its actual receipt and regeneration
++            # condition; a plan still requires something to decide.
+             if output["candidates"] and (decidable or not any(a["role"] == "task_contract_review" for a in self.runtime["queue"])):
+                 self._enqueue("research_plan")
+             definition = self.instance.get("kind_definitions", {}).get(action.get("kind_definition_id"))
+--- a/.claude/skills/do-math/scripts/do_math/knowledge.py
++++ b/.claude/skills/do-math/scripts/do_math/knowledge.py
+@@ -687,14 +687,7 @@
+             or staged.get("transition_basis") != basis["transition_basis"]
+             or staged.get("target_environment") != basis["target_environment"]):
+         raise ValueError("staged identity review basis changed")
+-    environment_id = instance.get("active_trust_environment")
+-    expected_premises = {
+-        "identity_basis": basis["live_identity_basis"],
+-        "active_trust_environment": environment_id,
+-        "trust_environment": deepcopy(instance.get("trust_environments", {}).get(environment_id)),
+-        "review_policy": deepcopy(instance.get("review_policy")),
+-        "governance": deepcopy(instance.get("governance", {})),
+-    }
++    expected_premises = kr.review_publication_premises(instance, knowledge_id)
+     if cycle.get("publication_premises") != expected_premises:
+         raise ValueError("staged identity review publication premises changed")
+     validate_sealed_review(cycle, runtime, instance=instance, clock=clock, at=at)
+--- a/.claude/skills/do-math/scripts/do_math/knowledge_records.py
++++ b/.claude/skills/do-math/scripts/do_math/knowledge_records.py
+@@ -309,6 +309,22 @@
+                             instance["expositions"][record["exposition_id"]])
+ 
+ 
++def review_publication_premises(instance, knowledge_id):
++    """Bind a fixed mathematical proposal to its adopted publication authorities."""
++    from .review_policy import build_review_policy
++    policy = instance.get('review_policy')
++    if policy is None:
++        raise ValueError('adopted review policy is required before review admission')
++    environment_id = instance.get('active_trust_environment')
++    return {'identity_basis': identity_basis(instance, knowledge_id),
++            'active_trust_environment': environment_id,
++            'trust_environment': deepcopy(instance.get('trust_environments', {}).get(environment_id)),
++            'review_policy': build_review_policy(policy),
++            # The charter changes research purpose, not this fixed proposal.
++            'governance': {key: deepcopy(row) for key, row in instance.get('governance', {}).items()
++                           if row['kind'] != 'charter'}}
++
++
+ def formal_overlay(instance, formal_id, **changes):
+     """Read-only view with one formal result replaced; never mutate or persist it."""
+     formal_results = dict(instance["formal_results"])
+--- a/.claude/skills/do-math/scripts/do_math/layers.py
++++ b/.claude/skills/do-math/scripts/do_math/layers.py
+@@ -129,6 +129,7 @@
+     'do_math/trust_inventory.py': '2',
+     'do_math/trust_validation.py': '2',
+     'do_math/values.py': '1',
++    'do_math/wait_rules.py': '1',
+     'do_math/windows_job.py': 'adapter',
+     'do_math/wiring.py': '3',
+     'do_math/worker_request.py': '1',
+--- a/.claude/skills/do-math/scripts/do_math/review_engine.py
++++ b/.claude/skills/do-math/scripts/do_math/review_engine.py
+@@ -471,15 +471,7 @@
+         return changed
+ 
+     def _review_publication_premises(self, knowledge_id):
+-        environment_id = self.instance.get('active_trust_environment')
+-        return {'identity_basis': kr.identity_basis(self.instance, knowledge_id),
+-                'active_trust_environment': environment_id,
+-                'trust_environment': deepcopy(self.instance.get('trust_environments', {}).get(environment_id)),
+-                'review_policy': self._adopted_review_policy(),
+-                # A charter changes the research purpose, not this fixed
+-                # mathematical proposal. Other adopted governance stays bound.
+-                'governance': {key: deepcopy(row) for key, row in self.instance.get('governance', {}).items()
+-                               if row['kind'] != 'charter'}}
++        return kr.review_publication_premises(self.instance, knowledge_id)
+ 
+     def _queue_identity_actions(self, knowledge_id, cycle_id):
+         cycle = self.runtime['review_cycles'][cycle_id]
+--- a/.claude/skills/do-math/scripts/do_math/wait_rules.py
++++ b/.claude/skills/do-math/scripts/do_math/wait_rules.py
+@@ -198,13 +198,13 @@
+     },
+     'impact_review_changed': {
+         'next_owner': 'research_preparation', 'impact_wait': True,
+-        'resolvers': ('revision_engine.RevisionEngineMixin._retire_closed_revision_targets',),
+-        'condition': 'An accepted authoritative task scope disposition retires the held target and preserves the rejected mutation.',
++        'resolvers': ('task_scope.apply_task_dispositions',),
++        'condition': 'A valid accepted withdrawal retires the unperformed AI task and preserves the held mutation evidence; protected or performed obligations retain their checks.',
+     },
+     'impact_review_blocked': {
+         'next_owner': 'research_preparation', 'impact_wait': True,
+-        'resolvers': ('revision_engine.RevisionEngineMixin._retire_closed_revision_targets',),
+-        'condition': 'An accepted authoritative task scope disposition retires the held target without applying blocked mutation bytes.',
++        'resolvers': ('task_scope.apply_task_dispositions',),
++        'condition': 'A valid accepted withdrawal retires the unperformed AI task without applying blocked mutation bytes; protected or performed obligations retain their checks.',
+     },
+     'import_application_authority': {
+         'next_owner': 'user', 'intent_import': True,
+--- a/.claude/skills/do-math/scripts/tests/flows/test_cross_required_events.py
++++ b/.claude/skills/do-math/scripts/tests/flows/test_cross_required_events.py
+@@ -277,8 +277,9 @@
+         finally:
+             machine.teardown()
+ 
+-    def test_requirement_change_retires_old_goal_audit_before_new_answer(self):
++    def test_academic_requirements_preserve_audit_and_mathematical_goal_change_retires_it(self):
+         from support.cross_research_machine import TaskOperationAlphabetMachine
++        from support.state_builders import charter_change
+         machine = TaskOperationAlphabetMachine()
+         try:
+             machine.request_audit(True)
+@@ -286,6 +287,12 @@
+             self.assertIsNotNone(old)
+             self.assertTrue(machine.ready('goal_audit'))
+             machine.change_requirements()
++            self.assertEqual(old['basis'], machine.sim.engine._goal_basis_key())
++            self.assertEqual(machine.current_action('goal_audit')['id'], old['id'])
++            self.assertTrue(machine.ready('goal_audit'))
++            self.assertEqual(machine.sim.model.responder.pending, {})
++            machine.control('decision', config={'change': charter_change(machine.sim.engine,
++                goal=machine.sim.engine._governance()['goal'] + ' with the mathematical target explicitly changed')})
+             self.assertNotEqual(old['basis'], machine.sim.engine._goal_basis_key())
+             self.assertIsNone(machine.current_action('goal_audit'))
+             self.assertFalse(machine.ready('goal_audit'))
+--- a/.claude/skills/do-math/scripts/tests/flows/test_impact_wait_contract.py
++++ b/.claude/skills/do-math/scripts/tests/flows/test_impact_wait_contract.py
+@@ -3,7 +3,7 @@
+ import json
+ import unittest
+ 
+-from do_math import integration, planning, submission
++from do_math import integration, submission
+ from do_math.context_store import read_source
+ from do_math.wait_rules import IMPACT_ACTION_WAITS
+ from support.engine_lifecycle import applied, clear_work
+@@ -48,7 +48,6 @@
+                     sim.step()
+                 self.assertEqual(sim.runtime['waiting_actions'][identifier]['kind'], kind)
+                 previous = deepcopy(sim.runtime['waiting_actions'][identifier])
+-                callback_errors = []
+                 assert_wait_report(self, engine, identifier)
+                 held = deepcopy((sim.instance, sim.runtime))
+                 for _ in range(2):
+@@ -57,43 +56,35 @@
+                 if kind == 'impact_review':
+                     sim.model.on('maintenance', stage='impact_review').reply(impact_review_answer())
+                 else:
+-                    task = sim.runtime['tasks'][target]
+-                    applied(sim, 'decision', config={'change': {'kind': 'task_scope', 'task_id': target,
+-                        'revision': task['revision'], 'contract_sha256': planning.contract_hash(task),
+-                        'disposition': 'waive', 'obligation_ids': [row['id'] for row in task['completion_obligations']],
+-                        'reason': 'The user retires these exact obligations and preserves their unaccepted impact evidence'}})
+-                    decision = next(row for row in reversed(list(sim.instance['decisions'].values()))
+-                                    if row.get('change', {}).get('kind') == 'task_scope')
+                     clear_work(sim)
+-                    engine._enqueue('research_plan', id='AC-impact-scope', scope_decision_id=decision['id'])
++                    engine._enqueue('research_plan', id='AC-impact-scope')
+                     workspace = {}
+-                    def make_closed(context):
++                    def withdraw(context):
+                         catalog = next(row for row in context['task_catalog'] if row['id'] == target)
+                         reference = catalog['source_ref']
+                         original = read_source(workspace['path'], reference, limit=max(1, reference['bytes']))
+                         if original['status'] != 'ok' or original['truncated']:
+                             raise AssertionError('the supplied task source could not be read exactly')
+                         task = json.loads(original['bytes'])
+-                        assessment = {'task_id': target, 'decision': 'closed',
+-                            'reason': 'The exact current user scope decision waives these named obligations',
+-                            'item_dispositions': [{'obligation_id': row['id'], 'kind': 'waived',
+-                                'authority_ref': decision['id'], 'evidence_refs': [producer['id']]}
+-                                for row in task['completion_obligations']], 'unresolved': []}
+-                        return empty_plan(dispositions=[disposition(tid, kind='deferred') for tid in context['ready_task_ids']],
+-                                          task_assessments=[assessment])
+-                    def closed(context):
+-                        try:
+-                            return make_closed(context)
+-                        except Exception as error:
+-                            callback_errors.append((type(error).__name__, str(error)))
+-                            raise
++                        self.assertEqual(task['results'], [])
++                        self.assertNotIn(target, context['returned_task_ids'])
++                        output = empty_plan(dispositions=[disposition(tid, kind='not_selected')
++                            for tid in context['ready_task_ids']])
++                        output['integration_bundles'] = [{'integration_id': 'IN-impact-withdrawal',
++                            'members': ['output', 'activity-extensions.json/task_dispositions/0'],
++                            'impact_set': [], 'authority_refs': [],
++                            'previous_hashes': {target: task['content_sha256']}}]
++                        return output
+                     model = submission_model(sim)
+                     model.before('research_plan', lambda context, path: workspace.update(path=path))
+-                    model.on('research_plan', id='AC-impact-scope').reply(submitted(closed))
++                    model.on('research_plan', id='AC-impact-scope').reply(submitted(withdraw, extensions={
++                        'task_dispositions': [{'task_id': target, 'disposition': 'withdraw',
++                            'reason': 'Retire this unperformed AI contract and preserve its unaccepted mutation evidence'}]}))
+                     engine._save()
++                mathematical_records = deepcopy(sim.instance['knowledge'])
+                 sim.step()
+                 self.assertTrue(identifier not in sim.runtime.get('waiting_actions', {}),
+-                                {'kind': kind, 'receipts': sim.model.receipts, 'model_errors': callback_errors,
++                                {'kind': kind, 'receipts': sim.model.receipts,
+                                  'errors': [row.get('error') for row in sim.runtime['executions'].values()
+                                             if row.get('action', {}).get('id') == 'AC-impact-scope']})
+                 current_producer = sim.runtime['executions'][producer['id']]
+@@ -102,11 +93,14 @@
+                 self.assertEqual(sum(row.get('role') == 'research_work' for row in sim.runtime['executions'].values()), 1)
+                 if kind != 'impact_review':
+                     self.assertEqual(sim.runtime['tasks'][target]['status'], 'closed')
+-                    retired = [row for row in sim.runtime['history']
+-                               if row.get('kind') == 'action_retired_after_target_disposition'
+-                               and row['action']['id'] == identifier]
+-                    self.assertEqual(len(retired), 1)
+-                    self.assertEqual(retired[0]['previous'], previous)
++                    disposition_record = sim.runtime['tasks'][target]['scope_disposition']
++                    self.assertEqual(disposition_record['kind'], 'withdraw')
++                    retired = [row for row in disposition_record['cancelled_waiting_actions']
++                               if row['id'] == identifier]
++                    self.assertEqual(retired, [{'id': identifier, 'entry': previous}])
++                    self.assertEqual(sim.instance['knowledge'], mathematical_records)
++                    self.assertEqual(len(sim.model.receipts), 1)
++                    self.assertEqual(sim.model.receipts[0]['state'], 'accepted')
+                 settled = deepcopy((sim.instance, sim.runtime))
+                 engine._retry_impact_reviews()
+                 self.assertEqual((sim.instance, sim.runtime), settled)
+--- a/.claude/skills/do-math/scripts/tests/flows/test_knowledge_close_staged_transition.py
++++ b/.claude/skills/do-math/scripts/tests/flows/test_knowledge_close_staged_transition.py
+@@ -36,7 +36,8 @@
+         self.assertEqual(sim.runtime['review_cycles'][cid]['status'], 'working')
+         self.assertNotEqual(sim.instance['active_trust_environment'], sim.runtime['trust_transitions'][tid]['to_environment'])
+         sim.run_until(lambda s: s.runtime['trust_transitions'][tid]['status'] in {'active', 'failed'}, max_steps=24)
+-        self.assertEqual(sim.runtime['trust_transitions'][tid]['status'], 'active')
++        self.assertEqual(sim.runtime['trust_transitions'][tid]['status'], 'active',
++                         sim.runtime['trust_transitions'][tid])
+         self.assertEqual(sim.runtime['review_cycles'][cid]['decision'], 'match')
+         current = sim.instance['knowledge'][kid]
+         self.assertEqual(current['previous_review_cycle_id'], old['review_cycle_id'])
+@@ -64,6 +65,14 @@
+             runtime = deepcopy(sim.runtime)
+             runtime['review_cycles'][cid][field] = value
+             with self.subTest(field=field), self.assertRaisesRegex(ValueError, '^' + reason + '$'):
++                k._validated_staged_identity_review(sim.instance, transition_record, kid,
++                    {'review_cycle_id': cid}, runtime, clock=sim.ports.clock, at=sim.ports.clock.now())
++        for field in ('identity_basis', 'active_trust_environment', 'trust_environment',
++                      'review_policy', 'governance'):
++            runtime = deepcopy(sim.runtime)
++            runtime['review_cycles'][cid]['publication_premises'][field] = None
++            with self.subTest(premise=field), self.assertRaisesRegex(ValueError,
++                    '^staged identity review publication premises changed$'):
+                 k._validated_staged_identity_review(sim.instance, transition_record, kid,
+                     {'review_cycle_id': cid}, runtime, clock=sim.ports.clock, at=sim.ports.clock.now())
+         self.assertEqual((sim.instance, sim.runtime), before)
+--- a/.claude/skills/do-math/scripts/tests/flows/test_scheduling_close_external_phases.py
++++ b/.claude/skills/do-math/scripts/tests/flows/test_scheduling_close_external_phases.py
+@@ -32,10 +32,19 @@
+         self.assertEqual(execution['capacity']['local_termination'], 'confirmed')
+         operation = stored['external_operations']['OP-audit']
+         self.assertEqual((operation['status'], operation['transmitted']), ('cancelled', False))
+-        self.assertEqual(operation['error'], 'stopped before transmission')
++        # Registration now precedes preparation publication. The pause is
++        # consumed by the publication authorization gate, before any send.
++        self.assertEqual(operation['error'], 'ValueError: external transmission stopped before authorization')
++        self.assertNotIn('transmission_phase', operation)
++        self.assertEqual(operation['attempts'], [])
++        self.assertIs(operation['effect_absent'], True)
++        self.assertIs(operation['succeeded'], False)
+         self.assertTrue(execution['owner_activity_id'])
+         self.assertEqual(sim.engine.control_result(requests[0]['request_id'])['effect'], 'applied')
+         self.assertEqual(probe.failures, [])
++        sim.restart()
++        self.assertEqual(sim.runtime['external_operations']['OP-audit'], operation)
++        self.assertEqual(sim.runtime['executions'][eid], execution)
+ 
+     def test_fence_and_close_arriving_during_http_preserve_the_confirmed_effect(self):
+         for gate in ('quiesce', 'close'):
+--- a/.claude/skills/do-math/scripts/tests/flows/test_scheduling_parallel_engine.py
++++ b/.claude/skills/do-math/scripts/tests/flows/test_scheduling_parallel_engine.py
+@@ -247,10 +247,20 @@
+         self.prepare([candidate('one')], ready_candidate=True)
+         self.assertEqual(len(self.plans()), 1)
+ 
+-    def test_preparation_without_any_pending_review_still_opens_a_plan(self):
++    def test_empty_preparation_without_a_decision_target_is_accepted_without_opening_a_plan(self):
+         """About 3 s: one preparation call."""
+-        self.prepare([])
+-        self.assertEqual(len(self.plans()), 1, self.plans())
++        sim = self.prepare([])
++        self.assertEqual(self.plans(), [])
++        self.assertEqual(sim.runtime['tasks'], {})
++        executions = [row for row in sim.runtime['executions'].values()
++                      if row.get('action', {}).get('reason') == 'Explicit regression preparation']
++        self.assertEqual(len(executions), 1)
++        self.assertEqual(executions[0]['outcome'], 'output_accepted')
++        self.assertEqual(executions[0]['submission_receipt']['state'], 'accepted')
++        self.assertEqual([row['role'] for row in sim.model.calls], ['research_preparation'])
++        sim.restart()
++        self.assertEqual(self.plans(), [])
++        self.assertEqual(sim.runtime['executions'][executions[0]['id']], executions[0])
+ 
+     def test_a_running_review_of_the_same_contract_is_not_doubled_when_its_outside_premises_move(self):
+         """About 3 s: one preparation call."""
+--- a/.claude/skills/do-math/scripts/tests/known_defects.json
++++ b/.claude/skills/do-math/scripts/tests/known_defects.json
+@@ -195,7 +195,7 @@
+       "category": 11,
+       "reproduction": "flows.test_cross_role_calls.EmptyPreparationDefectTests.test_empty_preparation_has_no_planning_target",
+       "found_by": "Cross obligations on main-wip snapshot e440bf7: real Sim activation, accepted empty provider submission, model call log and actual Jobs worker request IDs; cross-initial.log reproduced the unexpected research_plan call. Setup, accepted outcomes and request/call correspondence are checked outside expectedFailure.",
+-      "missed_kind": "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_preparation_without_any_pending_review_still_opens_a_plan pins the empty-plan enqueue as expected; no targetless model/Job zero-count assertion covered the subsequent owner passes.",
++      "missed_kind": "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_preparation_without_any_pending_review_still_opens_a_plan pins the empty-plan enqueue as expected; no targetless model/Job zero-count assertion covered the subsequent owner passes. Stage 2 replacement: flows.test_scheduling_parallel_engine.PlanOpeningTests.test_empty_preparation_without_a_decision_target_is_accepted_without_opening_a_plan checks the accepted receipt, zero tasks/plans, exact preparation call and saved restart. The ready-task positive test is retained. Candidate do-math-tests-3prto7xq passed all five selected goal/preparation tests; the failed original baseline is retained separately.",
+       "status": "closed"
+     },
+     {
+@@ -485,6 +485,24 @@
+       "reproduction": "structure.test_schema_builders.SchemaBuilderTests.test_unnamed_schema_composition_results_detach_every_mutable_node",
+       "found_by": "Unmarked do-math-tests-qwegr5ck: 4 passed, 1 expected_failure, 1 failed. The canonical isolation checker sampled every composition variant twice, retained all results and reported 26 alias observations, beginning with contracts.closed_object. No product change or global mutation. The unchanged body is checked against the report source hash before adding this marker.",
+       "missed_kind": "The public schema-name census omitted unnamed and private composition helpers. Original obligation 1-E and scripts/이음새-정본.md section 5 require schema-builder node isolation. KD-0010 retains the independent control.obj/fields mutation reproduction; fix both through the same canonical constructor rule. Closed in the isolated A34 repair tree: unnamed/private constructors now use canonical values.json_copy; every variant repeats through the shared isolation checker. Unmarked original failures remain archived; normal repaired reproductions both passed in do-math-tests-o03mxx3c and all seven schema checks passed in do-math-tests-wl8nfrn5. Full integration gates remain pending."
++    },
++    {
++      "id": "KD-0805",
++      "summary": "Staged identity review publication seals governance without the charter, but activation validates governance with the charter and rejects an unchanged completed match.",
++      "category": 8,
++      "reproduction": "flows.test_knowledge_close_staged_transition.StagedTransitionTests.test_changed_evidence_requires_real_staged_review_before_activation",
++      "found_by": "Frozen ordinary baseline do-math-tests-knvwwf8d; exact candidate red do-math-tests-b18_r9ug records activation_failed: staged identity review publication premises changed.",
++      "missed_kind": "Producer and receiver duplicated the publication premise rule. Both now use knowledge_records.review_publication_premises, retaining adopted policy, active trust environment, identity and non-charter governance. Existing rejection test checks each of five altered premise fields without live publication; focused g09mmu7r 3 passed and related f31ng9d8 13 passed. Budget overruns are retained separately.",
++      "status": "closed"
++    },
++    {
++      "id": "KD-0201",
++      "summary": "Engine no-op publication compares Python values, so 1→True and False→0 can be discarded before repository JSON-type validation and byte encoding.",
++      "category": 1,
++      "reproduction": "unit.test_storage_type_recurrence.TypeRecurrence.test_engine_noop_check_publishes_boolean_integer_swaps",
++      "found_by": "Main exact red do-math-tests-rj4vh85n uses initialize_state producer, actual ResearchEngine/Repository and independent reader; engine._save leaves head unchanged after 1→True. The earlier x6tc_hq9 draft lacked the history family and is not defect evidence.",
++      "missed_kind": "KD-0200 covered schema-skip and parent byte reuse, but engine._unchanged discarded the candidate earlier. It now shares canonical.same_json_value. Exact types/bytes, historical snapshot and true unchanged no-op are checked through the real engine. Main storage cohort axf5ca3x:70 passed,5.2s,source unchanged.",
++      "status": "closed"
+     }
+   ]
+ }
+--- a/.claude/skills/do-math/scripts/tests/migration/dispositions/scheduling.1.json
++++ b/.claude/skills/do-math/scripts/tests/migration/dispositions/scheduling.1.json
+@@ -558,9 +558,10 @@
+    "legacy_id": "test_session_scheduler.PlanAfterPreparationTests.test_preparation_without_any_pending_review_still_opens_a_plan",
+    "disposition": "moved",
+    "new_ids": [
+-    "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_preparation_without_any_pending_review_still_opens_a_plan"
+-   ],
+-   "note": "Input: the synthetic active state (make_active) is a restored public activation whose queued activation work and pending events are cleared (engine_lifecycle.clear_work), as the legacy start had none."
++    "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_empty_preparation_without_a_decision_target_is_accepted_without_opening_a_plan",
++    "flows.test_scheduling_parallel_engine.PlanOpeningTests.test_preparation_still_opens_a_plan_when_a_ready_task_awaits_a_decision"
++   ],
++   "note": "Input: the synthetic active state (make_active) is a restored public activation whose queued activation work and pending events are cleared (engine_lifecycle.clear_work), as the legacy start had none. Stage 2 KD-1900 deliberately corrects the old defect-pinning empty-plan expectation: empty preparation is accepted without a decision target or plan. The ready-task positive case still requires a plan. The historical legacy ID is retained."
+   },
+   {
+    "legacy_id": "test_session_scheduler.DuplicateContractReviewTests.test_a_running_review_of_the_same_contract_is_not_doubled_when_its_outside_premises_move",
+--- a/.claude/skills/do-math/scripts/tests/migration/regions.json
++++ b/.claude/skills/do-math/scripts/tests/migration/regions.json
+@@ -266,7 +266,8 @@
+     "do_math/parallel.py",
+     "do_math/scheduler.py",
+     "do_math/session_slots.py",
+-    "do_math/supervision.py"
++    "do_math/supervision.py",
++    "do_math/wait_rules.py"
+    ]
+   },
+   "operator": {
+--- a/.claude/skills/do-math/scripts/tests/sim/test_academic_requirement_changes.py
++++ b/.claude/skills/do-math/scripts/tests/sim/test_academic_requirement_changes.py
+@@ -214,6 +214,24 @@
+ 
+ 
+ class AcademicOnlyCharterControlTests(unittest.TestCase):
++    def test_a_mathematical_goal_change_invalidates_the_solved_judgments(self):
++        sim = theorem_sim()
++        solve_with(sim, [requirement(['draft account'])])
++        engine = sim.engine
++        previous_basis = engine._solution_basis()
++        old_judgments = deepcopy(engine.instance['goal_judgments'])
++        applied(sim, 'decision', config={'change': charter_change(engine,
++            goal=governance_view(engine.instance)['goal'] + ' with a changed mathematical target')})
++        engine._refresh_readiness()
++        self.assertEqual(engine.instance['goal_status'], 'unsolved')
++        self.assertNotEqual(engine._solution_basis(), previous_basis)
++        self.assertEqual(len(engine.instance['goal_judgments']), len(old_judgments))
++        self.assertTrue(all(row['current'] is False for row in engine.instance['goal_judgments']))
++        sim.restart()
++        sim.engine._refresh_readiness()
++        self.assertEqual(sim.engine.instance['goal_status'], 'unsolved')
++        self.assertTrue(all(row['current'] is False for row in sim.engine.instance['goal_judgments']))
++
+     def test_an_academic_only_charter_control_keeps_the_solved_goal_and_its_basis(self):
+         """The user's charter decision changing only the academic requirements, through the public control, after the
+         solution: the governance rule keeps the goal solved and the solution basis excludes the requirements, so the
+--- a/.claude/skills/do-math/scripts/tests/sim/test_planning_relation_conditions.py
++++ b/.claude/skills/do-math/scripts/tests/sim/test_planning_relation_conditions.py
+@@ -293,7 +293,21 @@
+         self.sim.runtime['executions']['EX-unchanged-work']['extensions'] = extension
+         with ExecutedLines(self.engine._apply_revision_followup) as reached:
+             self.engine._apply_revision_followup(action, output, 'EX-unchanged-work')
+-        self.assertTrue(reached.crossed(229, 219), reached.lines)
++        import ast
++        import inspect
++        import textwrap
++        source, start = inspect.getsourcelines(self.engine._apply_revision_followup)
++        function = ast.parse(textwrap.dedent(''.join(source))).body[0]
++        parents = {child: node for node in ast.walk(function) for child in ast.iter_child_nodes(node)}
++        guards = [node for node in ast.walk(function) if isinstance(node, ast.If)
++                  and ast.unparse(node.test) == "disposition == 'deferred'"]
++        self.assertEqual(len(guards), 1)
++        guard = guards[0]
++        loop = parents[guard]
++        while not isinstance(loop, ast.For):
++            loop = parents[loop]
++        self.assertEqual((ast.unparse(loop.target), ast.unparse(loop.iter)), ('identifier', 'declared'))
++        self.assertTrue(reached.crossed(start + guard.lineno - 1, start + loop.lineno - 1), reached.lines)
+         self.assertEqual(self.sim.runtime['waiting_actions'], {self.parent: parent})
+         self.engine._remove_action(action)
+         self.engine._save()
+--- a/.claude/skills/do-math/scripts/tests/unit/test_review_engine_staged.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_review_engine_staged.py
+@@ -61,6 +61,32 @@
+ 
+ 
+ class StagedReviewTests(StagedReviewCase):
++    def test_a_research_charter_change_preserves_the_fixed_staged_proposal(self):
++        from do_math import governance
++        from support.entry import entry
++        from support.record_builders import domain_governance
++        from support.state_builders import charter_change
++        engine = self.engine
++        engine.instance.update({key: value for key, value in domain_governance().items() if key != 'id'})
++        transition_id = self.staged_transition()
++        cid, receipt = self.review_staged(transition_id)
++        candidate = deepcopy(engine.runtime['trust_transitions'][transition_id])
++        candidate['results']['K1']['identity_review'] = receipt
++        changed = deepcopy(engine.instance)
++        source = governance.preserve_source('S-next', 'Approve a different research purpose', origin='user')
++        changed['governance_sources'][source['id']] = source
++        changed, changed_runtime, decision = governance.apply_decision(changed, engine.runtime,
++            charter_change(engine, goal='A different research purpose'), source_ref=source['id'],
++            clock=entry().ports.clock)
++        self.assertEqual(decision['kind'], 'charter')
++        before = deepcopy(changed)
++        activated = knowledge.activate_transition(changed, candidate, runtime=changed_runtime,
++            at=entry().ports.clock.now(), clock=entry().ports.clock)
++        self.assertEqual(activated['active_trust_environment'], candidate['to_environment'])
++        self.assertEqual(activated['knowledge']['K1']['review_cycle_id'], cid)
++        self.assertEqual(activated['governance'], before['governance'])
++        self.assertEqual(changed, before)
++
+     def test_staged_candidate_uses_the_same_scope_cycle_without_publication(self):
+         engine, scene = self.engine, self.scene
+         transition_id = self.staged_transition()
+@@ -138,6 +164,16 @@
+         with self.assertRaisesRegex(ValueError, 'staged identity review publication premises changed'):
+             knowledge.activate_transition(stale_instance, candidate, runtime=engine.runtime, at=_entry.ports.clock.now(), clock=_entry.ports.clock)
+         self.assertEqual(stale_instance, stale_before)
++        for field in ('identity_basis', 'active_trust_environment', 'trust_environment',
++                      'review_policy', 'governance'):
++            runtime = deepcopy(engine.runtime)
++            cid = receipt['review_cycle_id']
++            runtime['review_cycles'][cid]['publication_premises'][field] = None
++            with self.subTest(premise=field), self.assertRaisesRegex(ValueError,
++                    '^staged identity review publication premises changed$'):
++                knowledge.activate_transition(engine.instance, candidate, runtime=runtime,
++                    at=_entry.ports.clock.now(), clock=_entry.ports.clock)
++            self.assertEqual(engine.instance, before)
+ 
+ 
+ class StagedRoundTripTests(StagedReviewCase):
+--- a/.claude/skills/do-math/scripts/tests/unit/test_storage_type_recurrence.py
++++ b/.claude/skills/do-math/scripts/tests/unit/test_storage_type_recurrence.py
+@@ -4,7 +4,7 @@
+ import tempfile
+ import unittest
+ 
+-from do_math.canonical import canonical_json, same_json_value
++from do_math.canonical import canonical_json
+ from do_math.repository import _encode_families
+ from support.state_builders import current_state, installed_contract
+ from support.storage_git import ObservedGit
+@@ -12,7 +12,41 @@
+ 
+ 
+ class TypeRecurrence(unittest.TestCase):
++    def test_engine_noop_check_publishes_boolean_integer_swaps(self):
++        from do_math.configuration import DEFAULT_CONFIG
++        from do_math.initialization import initialize_state
++        from support.fakes.clock import FakeClock
++        from support.storage_records import INSTANCE_ID, engine_on, fake_ports
++        with tempfile.TemporaryDirectory() as directory:
++            backend = ObservedGit()
++            clock = FakeClock()
++            repo = record_store(Path(directory), backend=backend, clock=clock)
++            ports = fake_ports(clock, backend)
++            workspace = Path(directory)/'work'
++            state = initialize_state(instance_id=INSTANCE_ID, goal='Observe exact storage types',
++                workspace=workspace, config=DEFAULT_CONFIG, source_input='Observe exact storage types',
++                clock=clock, host=ports.host)
++            engine, _ = engine_on(repo, *state, workspace=workspace, ports=ports)
++            engine.runtime['history'].append({'typed_value': 1})
++            engine._save()
++            old_head = engine.head
++            for value in (True, 1):
++                engine.runtime['history'][-1]['typed_value'] = value
++                previous_head = engine.head
++                engine._save()
++                self.assertNotEqual(engine.head, previous_head)
++                reader = record_store(Path(directory), backend=backend, clock=clock,
++                                      contract=installed_contract())
++                loaded = reader.load(engine.head)[2]['history'][-1]['typed_value']
++                self.assertIs(type(loaded), type(value))
++                self.assertEqual(canonical_json(loaded), canonical_json(value))
++                head = engine.head
++                engine._save()
++                self.assertEqual(engine.head, head)
++            self.assertIs(type(reader.load(old_head)[2]['history'][-1]['typed_value']), int)
++
+     def test_json_equality_matches_exact_bytes_for_nested_types_and_sealed_text(self):
++        from do_math.canonical import same_json_value
+         from do_math.payloads import seal
+         text = seal('정확한 원문')
+         cases = [(None, None), (False, 0), (True, 1), (2, 2), (2, 3),
+--- a/.claude/skills/do-math/scripts/이음새-정본.md
++++ b/.claude/skills/do-math/scripts/이음새-정본.md
+@@ -33,6 +33,8 @@
+ - 지문이 같으면 내용도 같다고 보는 판정은 우발적 변경만 다룬다는 위협 모델에서만 성립한다. NTFS 터널링 때문에 같은 이름을 지우고 약 15초 안에 다시 만들면 생성 시각이 보존되므로, 크기와 수정 시각까지 보존한 교체는 지문으로 잡히지 않는다. 이 한계를 명시하는 시험은 `tests/test_file_io.py`의 `FingerprintTests`다.
+ 
+ ## 2. 전 바이트 해시와 JSON digest
++
++상태 값의 동등성은 `canonical.same_json_value(left, right)`가 정한다. Python에서 같은 값으로 비교되는 boolean과 integer도 서로 다른 JSON 값으로 구별한다. `StateContract.validate`의 부모 레코드 검사 생략, `repository._encode_families`의 부모 바이트 재사용, `CoreEngineMixin._unchanged`의 게시 생략이 같은 함수를 사용한다. 값 영역 검증은 기존 후보 봉인 경계에서 유지하며, 이 비교 함수가 입력 검증을 대신하지 않는다. 실제 엔진 게시와 저장/적재의 `1 → True → 1`, boolean 스키마에 integer를 넣는 반려를 함께 검사한다.
+ 
+ **정본**: `file_io.py`, 상태 저장 값은 `repository.py`
+ 
+@@ -309,5 +311,6 @@
+ | `knowledge_candidate(**changes)`, `formal_result(source, declarations, toolchain, ...)` | `tests/knowledge_fixtures.py` | 시험 도우미: 정리 후보 "Truth"와 합성 컴파일러 검증 결과의 모양. 지식 후보나 형식 증거가 필요한 시험은 이것으로 만든다 |
+ | `check_stop(should_stop)`, `VerificationStopped` | `lean_evidence.py` | Lean 준비·프로젝트 Git 읽기 전후 중단 검사와 동일 예외 |
+ | `ProjectSnapshot` | `ports/git_backend.py` | 프로젝트 Git 관찰의 불변 사실: 저장소 루트·subtree OID·원 diff 바이트·추적 경로 |
++| `review_publication_premises(instance, knowledge_id)` | `knowledge_records.py` | 고정 수학 명제의 공개 전제: 실제 동일성 기초·활성 신뢰 환경·채택 검토 정책·헌장을 제외한 거버넌스. 검토 생산자와 단계 신뢰 전환의 수신 검증이 같은 함수를 사용한다. 헌장은 연구 목적이며 이 고정 명제의 전제가 아니다. |
+ | `GitBackend.initialize_repository`, `GitBackend.repository_exists` | `ports/git_backend.py` | CLI init의 생성/존재 검사 의미 포트. `cli.execute(init)` → `_require_git(..., backend=ports.git_backend)`가 같은 Git 세계를 전달한다. missing/empty 검사와 mkdir는 CLI 유지. GitProcess는 ambient env·exit code만의 판정·OS 예외를 보존하며 describe로 대체하지 않는다. fake는 최소 Git 구조를 파일로 보존하고 Sim template은 외부 기본 object format도 복사한다. 공통 계약은 `tests/support/git_init_contract.py`, 양쪽 실행 모집단은 `contracts/test_git_init_backend.py`·`boundary/test_git_init_backend.py` |
+ | `parse_project_root`, `parse_project_tree`, `parse_project_paths` | `storage_finish_git_output.py` | 프로젝트 Git stdout의 엄격 UTF-8 해석 및 기존 명령별 실패 의미 |
