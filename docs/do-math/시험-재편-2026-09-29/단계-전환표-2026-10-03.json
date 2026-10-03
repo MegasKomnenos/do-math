@@ -11927,7 +11927,7 @@
     },
     "governance_population_integration": {
       "id": "B45",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "승인·권한·위임·근거 현재성 후보28모듈/302원사례와 필요한 정상 생산자 통합",
       "changed_area": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-kvxth__2\\report.json",
@@ -13024,6 +13024,263 @@
         {
           "path": "tests/sim/test_governance_task_scope_contracts.py",
           "sha256": "69aae8cb89936ba5f2e70a33d2baa971a3e9683db4000f4f38769f72ac797566"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "commit": "0f8bb757"
+    },
+    "current_focus": {
+      "phase": "후보 시험 모집단의 기능 가족별 main 통합",
+      "last_closed": "B45 0f8bb757 확정, B46 검토351/구조6 완결 통과 및 확정 준비",
+      "active": "다음 제출 가족13모듈과 실제 ingress/owner/광고 입력 생산자 이관 준비",
+      "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
+      "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
+      "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
+      "running_test": null,
+      "source_tree_frozen": false,
+      "goal_complete": false
+    },
+    "review_population_integration": {
+      "id": "B46",
+      "state": "verified_main_commit_pending",
+      "scope": "검토 후보15모듈/정상증거3도우미·캐시준비 연결 및 정확 후속 모듈선택",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-vni83vq0\\report.json",
+        "sha256": "6c538d96ebd498b3b32d87f21732d2a57a380f7d57dcdbf881a0b012df4a88d1",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 351
+        },
+        "total_seconds": 304.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "flows.test_cross_review_alphabets.ReviewAlphabetTests.test_review_alphabet",
+              "seconds": 201.5,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_review_task_basis_must_match_original_snapshot",
+              "seconds": 9.53200000000652,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_review_research_replay_evidence.ResearchReplayEvidenceTests.test_artifact_sources_replay_from_actual_preserved_bytes",
+              "seconds": 26.593999999924563,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_review_research_replay_evidence.ResearchReplayEvidenceTests.test_budget_only_closure_cannot_claim_resources_were_available",
+              "seconds": 26.23499999998603,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_review_research_replay_evidence.ResearchReplayEvidenceTests.test_closure_rejects_duplicate_closure_evidence",
+              "seconds": 26.01500000001397,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_review_resolver_uses_actual_git_bytes_and_scoped_receipt",
+              "seconds": 0.46799999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_admission.PublicationTests.test_final_match_does_not_override_suspension_or_formal_change",
+              "seconds": 0.26500000001396984,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_activation_git_round_trip_preserves_old_and_loads_new_records",
+              "seconds": 0.3119999999180436,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_staged.StagedRoundTripTests.test_staged_assessment_survives_a_second_transition_and_git_round_trip",
+              "seconds": 0.35999999998603016,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_stages.DisputeTests.test_complete_rejected_objection_round_trip",
+              "seconds": 0.515999999945052,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_stages.DisputeTests.test_mismatch_and_round_limit_return_precise_followup",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_stages.DisputeTests.test_new_judge_finding_is_assigned_answered_and_fully_judged",
+              "seconds": 0.4529999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_stages.DisputeTests.test_scope_to_answer_and_judgment_publishes_the_same_links_consumed_by_goal_audit",
+              "seconds": 0.4530000000959262,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_engine_transcripts.ObservedTranscriptTests.test_input_delta_is_not_a_recursive_transcript_copy",
+              "seconds": 0.40600000007543713,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_reassessment_evidence.ReassessmentEvidenceTests.test_current_reassessment_rejects_changed_exact_original_binding",
+              "seconds": 0.2190000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_reassessment_evidence.ReassessmentEvidenceTests.test_independent_objection_missing_result_or_finding_does_not_qualify",
+              "seconds": 0.34399999992456287,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_reassessment_evidence.ReassessmentEvidenceTests.test_reassessment_owner_waits_until_its_last_execution_has_ended",
+              "seconds": 0.26599999994505197,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_reassessment_evidence.ReassessmentEvidenceTests.test_reassessment_replay_requires_actual_scope_result",
+              "seconds": 0.26500000001396984,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_research_slots.SceneResearchTests.test_corrupt_fixed_research_source_is_a_local_diagnostic_on_slot_resume",
+              "seconds": 0.21899999992456287,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_review_resource_evidence.ResourceEvidenceTests.test_ended_review_reserves_no_execution_slots",
+              "seconds": 0.2029999999795109,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-vgigjr2_\\report.json",
+        "sha256": "bbc9bb1f964c3a94037c7baeb76fbb66d04ec357ad73d6c5e0a2fd18a8230b6e",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 6.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 5.672000000020489,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "실제 정상 전이·owner·조사·고정전사/자원/독립성/교체/재검토/overflow의 값과 부작용 검증. 제품동작변경없음.",
+      "selection_extra_ids": [
+        "flows.test_cross_review_alphabets.ReviewAlphabetTests.test_review_alphabet",
+        "sim.test_knowledge_import_control.FormalConsumerTests.test_review_start_failure_produces_a_storable_wait_after_formal_acceptance",
+        "sim.test_knowledge_import_control.FormalConsumerTests.test_review_starts_from_split_proposal_without_nested_authorities",
+        "sim.test_lifecycle_engine_controls.ReadinessTests.test_review_currentness_and_no_persisted_readiness",
+        "sim.test_role_input_context.OperationalInputTests.test_review_gets_the_same_canonical_basis_set_as_application",
+        "unit.test_role_input_packaging.RoleInputTests.test_review_input_matches_real_seat_view_and_rejects_peer_injection",
+        "sim.test_governance_questions.RecordedQuestionTests.test_review_questions_include_pending_research_without_a_result",
+        "unit.test_knowledge_impact_review.ImpactReviewTests.test_review_evidence_does_not_change_the_mathematical_impact_plan",
+        "unit.test_knowledge_impact_review.ImpactReviewTests.test_review_required_is_a_waiting_disposition_not_a_producer_retry",
+        "unit.test_knowledge_impact_review.ImpactReviewTests.test_review_resolver_uses_actual_git_bytes_and_scoped_receipt",
+        "unit.test_governance_basis_contracts.GovernanceBasisContractTests.test_review_capture_is_detached_and_reports_selected_profile",
+        "sim.test_planning_engine_connections.WorkProfileAdmissionTests.test_reviewed_contract_cannot_be_ready_with_an_inadequate_allowed_profile",
+        "sim.test_governance_decision_currentness.GovernanceDecisionCurrentnessTests.test_review_task_basis_must_match_original_snapshot",
+        "flows.test_live_finish_review.ReviewDialogueObservationTests.test_review_public_dialogue_keeps_raw_row_order_and_retries_after_failed_cas",
+        "sim.test_planning_readiness_boundaries.ReadinessBoundaries.test_review_summary_cannot_disagree_with_complete_item_reviews",
+        "unit.test_role_input_scoped_packaging.FormalJudgmentInputTests.test_reviewed_proposal_fixes_the_sources_it_used",
+        "unit.test_role_input_scoped_packaging.RoleInputClassTests.test_review_seat_operational_review_reads_the_evidence_its_input_supplies",
+        "unit.test_planning_task_contracts.TaskContractReviewTests.test_review_ignores_flat_projection_and_rejects_real_governance_changes",
+        "unit.test_planning_task_contracts.TaskReadinessTests.test_review_cannot_be_replaced_by_an_unsubstantiated_summary"
+      ],
+      "selector_improvement": "후속은 파일에서 얻은 folder-qualified 모듈 ID로 canonical runner를 실행. 현재 live 선택은 재시작/중단하지 않고 실제 완결 보고 보존.",
+      "limits": "351개는 모듈밖19개를포함한다.304.5초와20개 개별예산초과(Cross LONG201.5초)를남기고검토원구성원/전체T2/T3 증거로오해하지 않는다.",
+      "files": [
+        {
+          "path": "tests/unit/test_review_consumer_inputs.py",
+          "sha256": "fcce1d6e28b6b34a74e76105e5d677128b56c0909ed9fe52c3950f93a03e2686"
+        },
+        {
+          "path": "tests/unit/test_review_host_resource_contract.py",
+          "sha256": "511ad519091bac7e08e47efd23f96f91578f77909ef3988437719fe7a7b4dc77"
+        },
+        {
+          "path": "tests/unit/test_review_owner_guards.py",
+          "sha256": "5c2e256bed44c5e4c2c022bd38d348ce6637e245c3a41a3b6d227c0bcfebefaa"
+        },
+        {
+          "path": "tests/unit/test_review_policy_rejections.py",
+          "sha256": "98c48143535121631c5ab0b724cb60fa7157a86941c8a07a840c8b81d4c590b1"
+        },
+        {
+          "path": "tests/unit/test_review_reassessment_evidence.py",
+          "sha256": "6fd3025f4c09076ea2c4537e5d07d63b2d1f7beb0b23330b280da6d0a27804be"
+        },
+        {
+          "path": "tests/unit/test_review_replacement_evidence.py",
+          "sha256": "bbd19ddc649dff0d1d4864cc3ff26150806947ed2c8cce7ff477c38af5b28cf6"
+        },
+        {
+          "path": "tests/unit/test_review_research_owner_contract.py",
+          "sha256": "73589ed9cdbe7533c434e83f8e5f47c5bc5d6b750bfbbfb53099d145ccf9ff72"
+        },
+        {
+          "path": "tests/unit/test_review_resource_evidence.py",
+          "sha256": "277126aa1e7ea74ed7bd4caf3830374b4c59a1c28c2bde02de8969d8eb10277b"
+        },
+        {
+          "path": "tests/unit/test_review_transcript_contract.py",
+          "sha256": "6c1c73fa64a3e1e661d049cd0cd75db6ef1bae5e9da9bde58401c3bd53689d51"
+        },
+        {
+          "path": "tests/unit/test_review_transition_rejections.py",
+          "sha256": "47adeb1b345abbe6c4da9e96f66db95bfcebec97abe6131c051bef41a6a98d13"
+        },
+        {
+          "path": "tests/sim/test_review_duplicate_defer.py",
+          "sha256": "168b96cc9c0301a2b56458fdd7e5c556734eaf2b85ee2f7df3a367672ebe1142"
+        },
+        {
+          "path": "tests/sim/test_review_evidence_rejections.py",
+          "sha256": "118fa54e900adaf8701a52cf57fbbd74cc5d9dc2839dde61326ed5c38852855e"
+        },
+        {
+          "path": "tests/sim/test_review_research_replay_evidence.py",
+          "sha256": "b3f8cf17404d167c3b6f2841c5c59287ff0be4c8b2767aa26fa89319290bfb1c"
+        },
+        {
+          "path": "tests/flows/test_review_blind_inputs.py",
+          "sha256": "0940b1bdaafaeaf71d92208e7b3c518cf9a982f584456c2a9275641b31d3bbe2"
+        },
+        {
+          "path": "tests/flows/test_review_overflow_evidence.py",
+          "sha256": "7f34548a8be4bf7f4ec685632e16de6ea640e93a2cb326f38638eaa5366b4ecb"
+        },
+        {
+          "path": "tests/support/gap_inputs.py",
+          "sha256": "afdb644d4d718258b2fa2c5851226028b0af717284f3a1b88eb64ad5659bfd56"
+        },
+        {
+          "path": "tests/support/review_replay_inputs.py",
+          "sha256": "48203d37f6b54efb3f8666b3f4da8e3297a317a1f04a996c5c16bfabd276d427"
+        },
+        {
+          "path": "tests/support/review_transition_inputs.py",
+          "sha256": "8584edfd9d0973c9feb3966043e515a2f5539d6279d6799c890135c79c92c537"
+        },
+        {
+          "path": "tests/support/review_sim.py",
+          "sha256": "c5665d807133ba5bae31d99aae06ddb577c15119262757012ff1a2b2741494a4"
         }
       ],
       "whole_requirement_closed": false

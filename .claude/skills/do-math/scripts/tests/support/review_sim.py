@@ -39,7 +39,7 @@ from __future__ import annotations
 from do_math import knowledge_records as kr
 from support.engine_lifecycle import applied, clear_work
 from support.model import Answer, amend
-from support.sim import Sim, built
+from support.sim import Sim, built, warm_built
 
 THEOREM = {'kind': 'theorem', 'title': 'k1', 'statement': 'One equals one', 'summary': 'Reflexivity',
            'explanation': 'By reflexivity.', 'lean_code': 'theorem k1 : 1 = 1 := rfl',
@@ -239,11 +239,11 @@ def reviewed_sim():
 
 
 def warm_opened():
-    opened_sim()
+    warm_built('review-opened', _build_opened)
 
 
 def warm_reviewed():
-    reviewed_sim()
+    warm_built('review-reviewed', _build_reviewed)
 
 
 def review_executions(sim, cycle_id):
