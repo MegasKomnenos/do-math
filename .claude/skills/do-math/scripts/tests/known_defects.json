@@ -323,6 +323,24 @@
       "found_by": "4-B 새 권한 출구의 실제 공개 revoke/grant 재현. do-math-tests-e79szuh1에서 ready 대신 authorization_denied를 반환했다. 최초 c2pap6dx는 revoke가 큐를 정상 제거하는 사실을 놓친 fixture 오류이며 재현 증거에서 제외한다. main 대기 정본 통합: 3dx5q6ew의 KD-0701/0703 실제 실패를 보존한다. dxb3sopj 정본/회귀14개, 9s_myuzs 공개 권한/질문/정책3개(다른2개 준비 오류), 2uptrx2l 실패출구2개, po1urqjb 준비/영향2개, tt_nkd13 관련118개가 현재 경로를 검증한다. 원 후보의 첫 실패는 역사로 남기며 모든 항목의 새 main 수리 전 실패라고 재명명하지 않는다.",
       "missed_kind": "기존 복구 시험은 승인 원문의 정확한 복원이나 최초 대체 승인만 확인했고 기존 대체를 새 공개 grant로 재승인한 뒤 실제 입력 준비까지 잇지 않았다. 원 재현 위치 unit.test_review_wait_contract.ReviewAdmissionWaitContractTests.test_a_new_public_grant_reauthorizes_the_unstarted_replacement_on_the_same_input에서 현재 같은 성질 모듈로 이동했다. 이전 메서드는 제거하여 중복을 남기지 않는다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1000",
+      "summary": "종료 확인이 unknown인 실제 AI runner 결과의 raw bytes를 call_engine._receive_call이 canonical_json에 넘겨 결과 보존과 정상 반환이 실패한다.",
+      "category": 8,
+      "reproduction": "flows.test_scheduling_return_settlement.ReturnSettlementTests.test_real_runner_evidence_is_preserved_while_named_job_termination_is_unknown",
+      "found_by": "711 기반 실제 runner→수신→저장 targeted 첫 실행 fbhvt22v; call_engine.py:453 ValueError. 제품은 미수리. main ogb8unjj에서 실제 raw 반환 저장 ValueError와 시작 전 pause의 execution_incomplete 오정산을 각각 확인했다. 72npuvuy의 동일 두 재현과 4py9mgsh의 관련47개가 통과했다. 종료 미확인 결과는 관찰된 실제 receive 인자 전체의 json_safe 값과 정확 대조하고 예약/소유자/저장 원상을 검사한다.",
+      "missed_kind": "정상 완료 worker와 unknown named Job 종료 관찰의 조합이 없었다. 원 재현 위치 flows.test_scheduling_close_return_evidence.UnconfirmedReturnTests.test_real_runner_evidence_is_preserved_while_named_job_termination_is_unknown에서 실제 반환 정산 성질의 현재 모듈로 이동했다. 이전 회귀는 제거하고 다른 machine/running/step-cap 원 검사는 보존한다.",
+      "status": "closed"
+    },
+    {
+      "id": "KD-1001",
+      "summary": "AI 계산 첫 차례 전에 pause를 적용하면 시작 callback이 stopping 실행을 running으로 전이시켜 ValueError를 내고 취소 대신 execution_incomplete로 정산한다.",
+      "category": 8,
+      "reproduction": "flows.test_scheduling_return_settlement.ReturnSettlementTests.test_ai_before_calculation_pause_preserves_owner_and_returns_capacity",
+      "found_by": "첫 fbhvt22v 정상 취소 계약 실패; j_e2ms8_의 별도 결과 증거는 illegal execution transition stopping -> running. main ogb8unjj에서 실제 raw 반환 저장 ValueError와 시작 전 pause의 execution_incomplete 오정산을 각각 확인했다. 72npuvuy의 동일 두 재현과 4py9mgsh의 관련47개가 통과했다. 종료 미확인 결과는 관찰된 실제 receive 인자 전체의 json_safe 값과 정확 대조하고 예약/소유자/저장 원상을 검사한다.",
+      "missed_kind": "등록·발사와 실제 계산 첫 차례 사이에 제어를 넣는 일정이 빠졌다. 원 재현 위치 flows.test_scheduling_close_settlement.ReturnSettlementTests.test_ai_before_calculation_pause_preserves_owner_and_returns_capacity에서 실제 반환 정산 성질의 현재 모듈로 이동했다. 이전 회귀는 제거하고 다른 machine/running/step-cap 원 검사는 보존한다.",
+      "status": "closed"
     }
   ]
 }

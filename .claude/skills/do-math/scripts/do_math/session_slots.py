@@ -224,7 +224,8 @@ class SessionSlots:
                 return execution
             raise ValueError("execution process identity is already fixed")
         capacity["process"] = deepcopy(identity)
-        transition_execution(execution, "running", at=at)
+        if execution['status'] != 'stopping':
+            transition_execution(execution, "running", at=at)
         execution["started_at"] = at
         return execution
 

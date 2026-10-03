@@ -460,7 +460,7 @@ class CallEngineMixin:
             for key in ('error_kind', 'failure'):
                 if key in result:
                     pending[key] = deepcopy(result[key])
-            self._publish_provider_result({result_ref: canonical_json(result)})
+            self._publish_provider_result({result_ref: canonical_json(json_safe(result))})
             return True
         result = self._collect_submitted_result(self.runtime["executions"][execution_id], result, context, schema, workspace)
         result = json_safe(result)

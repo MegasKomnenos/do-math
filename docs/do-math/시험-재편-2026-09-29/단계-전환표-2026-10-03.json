@@ -8019,7 +8019,7 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 36,
+      "main_ledger_count": 38,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
@@ -8027,8 +8027,6 @@
         "KD-0900",
         "KD-0901",
         "KD-1100",
-        "KD-1000",
-        "KD-1001",
         "KD-0303",
         "KD-0902",
         "KD-0903",
@@ -8044,8 +8042,8 @@
         "KD-1908",
         "KD-1909"
       ],
-      "meaning": "20개는 main 미기록 후보 항목이며 전체 미구현 수나 완료율이 아니다.",
-      "next": "다음은 실제 runner 결과의 종료 미확인 증거 보존과 첫 계산 전 pause 정산 KD1000/1001, 이어서 공급자 사건 수리와 형식 Git 의미 포트다. 결과 분류표만으로 원문4-C 전건을 닫지 않는다.",
+      "meaning": "18개는 main 미기록 후보 항목이며 전체 미구현 수나 완료율이 아니다.",
+      "next": "다음은 공급자 사건 수신의 반려/재전달/잘못된 리뷰 대상과 구조 있는 정상 영수증 대역을 함께 통합하고 형식 Git 의미 포트로 잇는다. 부분 회귀로 전체8-A/8-B를 닫지 않는다.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
     },
@@ -9625,7 +9623,7 @@
     "outcome_contract_integration": {
       "id": "B33",
       "scope": "실제 제출5분류와 복구6결과의 계수·보고 수신·종료 정산 정본 및 수신 연결",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-3129udel\\report.json",
         "sha256": "4030ace8c80f0db3cbf727ee9aa9d5f2779483b56371fedf1014b39209a1e0ff",
@@ -9794,6 +9792,124 @@
         "changed_during_run": [],
         "budget": {
           "over_budget": [],
+          "tier": null
+        }
+      },
+      "commit": "eb49d5b5"
+    },
+    "return_settlement_integration": {
+      "id": "B34",
+      "scope": "KD-1000/1001: 실제 runner의 종료 미확인 반환 증거 보존과 첫 계산 전 pause 정산",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ogb8unjj\\report.json",
+        "sha256": "78d75124591fc1017bdeb363ef2a60d1904ee80a0791a26887b376f04b989400",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1,
+          "error": 1
+        },
+        "total_seconds": 14.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "focused": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-72npuvuy\\report.json",
+        "sha256": "db7d9cc52bb96ddf7a4ee119fc9d76de81078370a41e42a628ea0a8eb7ec4c46",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 14.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-4py9mgsh\\report.json",
+        "sha256": "e96bb3d461485a0b22304bfe81ea43a477af30642248bf421bc05055636713da",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 47
+        },
+        "total_seconds": 44.5,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "contract": "미확인 종료의 receive는 원 결과 전 필드를 기존 json_safe로 투영해 canonical_json으로 저장한다. 관찰한 실제 result 인자와 저장 JSON 전체를 대조하고 같은 소유자/Job/held 예약/저장 execution을 확인한다. 첫 계산 전 공개 pause는 실제 외부 Calls 포트가 첫 차례를 돌려주어 도착한다. 늦은 started는 일치하는 process/start 좌표를 보존하되 stopping을 running으로 되돌리지 않는다. 실제 완료 collect와 소유루프를 관찰하여 cancelled/confirmed/settled 반환을 확인한다.",
+      "test_move": "후보의 기존 두 회귀를 실제 반환 정산의 같은 성질 모듈로 이동하고 이전 회귀만 제거한다. 나머지 machine/running/step-cap 검사는 보존한다. main에는 observer의 필수 정의만 두며 후보는 기존 단일 observer/Calls 정본을 사용한다. 선언 표나 제품 internals를 대역으로 교체하지 않는다.",
+      "limits": "두 회귀와 관련47개는 부분 증거이며 전체8-A/8-B/원문1f 또는 최종 관문 완료가 아니다. AI/machine/기동/관찰/회수 전건은 원문 범위대로 남긴다. 공급자 사건 수리·형식 Git·복구 프로토콜 기반 및 동일최종판본T2/T3예산은 별도다.",
+      "whole_requirement_closed": false,
+      "files": [
+        {
+          "path": "do_math/call_engine.py",
+          "sha256": "1eec632e9bd5657224df50b7838f7f5b823cbc45a07868cb79168177d8cfd126"
+        },
+        {
+          "path": "do_math/session_slots.py",
+          "sha256": "9e383da07ab988be51ba0d972103f4f70de53c34b7df1e7eab382859fb3ecc04"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "ec8549e9d4718183d8593d4b81422ef944aaae4093e6261b71e8070afdf777fb"
+        },
+        {
+          "path": "tests/flows/test_scheduling_return_settlement.py",
+          "sha256": "3cc6312bd006bf15cd46202f6a6c00218df7c8db067d1230d174012dc7c1da13"
+        },
+        {
+          "path": "tests/support/scheduling_return_observer.py",
+          "sha256": "47e33b5df8007fc163fd5d2dfa1044759b9f0253254e487996ac39886242e0be"
+        },
+        {
+          "path": "tests/support/scheduling_return_ports.py",
+          "sha256": "e168823ef2f79a72ad2f4d4b6cd7e75a3f7a8aaf31ff357ee7ebe597bec429f6"
+        }
+      ],
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-a1stxevb\\report.json",
+        "sha256": "c3f29137fce3de7ad813742f22dca60139fa7ea4d3f9b8f1a3ff74636169860a",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 3
+        },
+        "total_seconds": 17.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-csbeb942\\report.json",
+        "sha256": "e0fe26ff2792d47655ea018da51cef7abf7b375cb9d9e6837d57529c75155d62",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 9.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 5.530999999959022,
+              "budget_seconds": 5.0
+            }
+          ],
           "tier": null
         }
       }
