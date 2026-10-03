@@ -383,6 +383,7 @@ def parse_evidence(base, declarations, allowed_axioms, should_stop=None, *, extr
                         or any(not isinstance(value,str) for value in row['dependencies'])
                         or not isinstance(row['evidence'],dict)
                         or not isinstance(row['evidence'].get('type'),str)
+                        or row['evidence'].get('value') is not None and not isinstance(row['evidence']['value'],str)
                         or not isinstance(row['axioms'],list)
                         or any(not isinstance(value,str) for value in row['axioms'])):
                     raise ValueError('invalid declaration evidence')

@@ -260,6 +260,15 @@
       "found_by": "711b 계열의 targeted 동적 재현: 정상 transfer_assessment를 planning 수신에 통과시킨 뒤 returned 누락·과잉·중복·혼합 네 입력에서 task ID와 차집합을 지목하지 않는 동일 ValueError 문구를 확인했다. 최종 표시 제거: USER TEMP/do-math-tests-yahxkqr7/report.json. 시험 rawSHA256=030c65c244076e9000f8d64b29bc1131bf6ab4c9c5f2d98ab836dae5202b4702. 같은 파일 바이트의 표시 복구 보고서와 지원/제품 지문은 finish/resume-submission-result.json의 known_proofs에 기록한다. 진단은 보고서이며 expectedFailure 본문은 원래 올바른 계약만 단언한다.",
       "missed_kind": "ready 모집단은 지목 진단을 검사했지만 returned 모집단은 일반 문구를 기대값으로 고정했다 Existing regression moved from unit.test_submission_obligation_defects.ObligationDefectTests.test_missing_returned_assessment_identifies_the_missing_task to its current submission/plan contract module without duplication. Main e5rx8rgs actual red shows unhashable insight names and four missing/unexpected/duplicate diagnostic failures; yfp5cxsk passes after string-only identity collection and exact returned-population differences. Other schema/reference/publication checks remain required.",
       "status": "closed"
+    },
+    {
+      "id": "KD-0601",
+      "summary": "Lean 선언의 evidence.value가 배열이어도 parse_evidence가 verified로 수락한다. 실제 constantEvidence 생산자와 의존 본문 판정은 문자열 또는 null 계약이지만 선언 행의 value 형 검사가 빠져 있다.",
+      "category": 1,
+      "reproduction": "unit.test_knowledge_formal_evidence_rules.LeanEvidenceRuleTests.test_declaration_value_must_follow_the_compiler_string_or_null_contract",
+      "found_by": "1f knowledge의 정적 후보를 별도 통합 가지에서 표시 없이 실제 재현했다. do-math-tests-5etfclq1/report.json: 정상 기록의 선언 evidence.value만 []로 바꾸었을 때 (verified,None)이 반환되어 (failed,malformed dependency evidence) 계약 단언에서 실패; complete=true, 실행 중 변경 없음. CODE-ONLY 보고의 KD-0600 번호는 기존 열린 결함과 겹쳐 미등록 상태였으며 신규 KD-0601로 바로잡았다. 최초 충돌 미해결 실행은 discovery 실패로 재현 근거에서 제외한다. main atecn4jj에서 정상 문자열/null 대조 뒤 배열/객체/boolean/integer가 verified로 통과하는 실제 실패를 확인했다. rrmvxkqd에서 관련 14개가 통과했다. 합성 출력이며 실제 Lean 녹화로 주장하지 않는다.",
+      "missed_kind": "의존 본문 value 형 검사는 있으나 선언 본문에서는 type·의존·공리 필드만 검사한다. 기존 정상·음성 표본이 선언 value의 배열 치환을 다루지 않았다. 원 재현 위치는 unit.test_knowledge_close_evidence.EvidenceGuards.test_declaration_value_must_follow_the_compiler_string_or_null_contract; 현재 같은 성질의 기존 formal_evidence_rules 모듈로 이동했다.",
+      "status": "closed"
     }
   ]
 }

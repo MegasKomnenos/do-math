@@ -8019,7 +8019,7 @@
       "commit": "7be103c2"
     },
     "remaining_main_integration": {
-      "main_ledger_count": 29,
+      "main_ledger_count": 30,
       "main_open": 0,
       "candidate_ledger_count": 56,
       "not_yet_recorded_ids": [
@@ -8033,7 +8033,6 @@
         "KD-0901",
         "KD-1100",
         "KD-0700",
-        "KD-0601",
         "KD-1000",
         "KD-1001",
         "KD-0303",
@@ -8051,7 +8050,7 @@
         "KD-1908",
         "KD-1909"
       ],
-      "meaning": "27개는main미기록후보항목이며제품미구현수/전체완료율이아니다. 실제원구현/재현/의존을대조한다.",
+      "meaning": "26개는 main 미기록 후보 항목이며 제품 미구현 수나 전체 완료율이 아니다. 실제 원 구현과 재현 및 의존을 대조한다.",
       "next": "저장 스키마 빌더의 mutable 분리와 누락 필드, 형식 검증 Git포트, 제출입구/관찰/질문/대기등록·복구/단말수리의검토단위와전건증거를확정·통합. 새감사문서나임의국소시험을증식하지않음.",
       "original_scope": "1e19/1f61/P2원래12/여섯부류/2단계11와현재최종T2/flows·freshT3·전함수변이·예산·T4T5/말뭉치/지침·미러/main 통합을모두유지.",
       "complete": false
@@ -8896,7 +8895,7 @@
     "submission_identity_integration": {
       "id": "B29",
       "scope": "KD-0300/0301: 잘못된 제출 식별자 형의 구조화 반려와 returned 평가 차집합 진단",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "red": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-e5rx8rgs\\report.json",
         "sha256": "b4b5f158bcb8d06b63763e45965f3d27088fd35864542da4811be172d53341f5",
@@ -9014,7 +9013,117 @@
       "contract": "inspect_bundles가id/title/token/replacement_id/kind의비문자값을해시집합에넣지않고기존schema.type/정확좌표반려로보존. 정상유지보수출력/ontology 대조군과입력원상확인. returned 평가의Counter/집합으로missing/unexpected/duplicate를정확히지목하고기존완전한평가/선택제약은유지.",
       "test_move": "후보원회귀2개를현재submission_checks/plan_contracts 기존모듈로이동하고옛원인별test모듈삭제. 기존일반오류문구2곳을정확missingID 단언으로교정. 원IDs와실패는missed_kind역사에유지.",
       "limits": "관련100개와후보3/구조5는부분증거. 관련unit1개/구조냄새1개예산초과를남김. SUBMISSION_OUTCOMES 일반선언/여러입구전건은별도미통합. 최종관문별도.",
-      "whole_requirement_closed": false
+      "whole_requirement_closed": false,
+      "commit": "675398f3"
+    },
+    "lean_value_integration": {
+      "id": "B30",
+      "scope": "KD-0601: Lean 선언 본문의 문자열/null 계약 검증",
+      "state": "verified_main_commit_pending",
+      "red": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-atecn4jj\\report.json",
+        "sha256": "f90843be37f5b78980c2d3450da44ef4e8ad7f640bf402ee2f5beefd6f678f14",
+        "counts": {
+          "failed": 1
+        },
+        "complete": true,
+        "successful": false,
+        "total_seconds": 0.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "related": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-rrmvxkqd\\report.json",
+        "sha256": "bf7b0b8e540841bc8bfdf3bff53e904410a3110f606df06443ac6c0a866e9d30",
+        "counts": {
+          "passed": 14
+        },
+        "complete": true,
+        "successful": true,
+        "total_seconds": 25.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_interrupted_receiver_preserves_bytes_decimal_and_routes_failure",
+              "seconds": 5.327999999979511,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_wrong_compiler_is_rejected",
+              "seconds": 19.515999999945052,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "constantEvidence 생산자는 exprEvidence 문자열 또는 Json.null을 내보낸다. 의존 본문과 같은 value 형 검사를 선언 행에도 적용한다. 정상 문자열/null은 정확한 declaration_evidence를 유지하고 배열/객체/boolean/integer는 malformed dependency evidence로 반려한다.",
+      "limits": "14개 부분 증거. 실제 Lean 녹화/전건 관문이 아니다. 기존 runtime 시험 2개가 0.2초 예산을 초과했다. 후보의 check_stop 이름 교체와 strict LeanDouble 기반은 별도이며 가져오지 않았다.",
+      "whole_requirement_closed": false,
+      "files": [
+        {
+          "path": "do_math/lean_evidence.py",
+          "sha256": "a967d4c80d2903e2ff79190387a3785dd36bf34b13e21f119c19b71a1d39952a"
+        },
+        {
+          "path": "tests/unit/test_knowledge_formal_evidence_rules.py",
+          "sha256": "825572c9039172aff3c912550be12e64e6b04ec933deac9b47113741889a3f3e"
+        },
+        {
+          "path": "tests/known_defects.json",
+          "sha256": "de52272feb9012561b7b8f61d23ccfb9e5c7e2b0b58724aea2e5b7311ce863fd"
+        }
+      ],
+      "candidate_initial": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-n0ywyvn5\\report.json",
+        "sha256": "ebd36a978ea7311f14ddae5535635e7ec51dee5492b19cbbbbb16ee5802e7c68",
+        "counts": {
+          "passed": 1,
+          "error": 1
+        },
+        "complete": true,
+        "successful": false,
+        "total_seconds": 2.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "candidate": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-gelhqo1u\\report.json",
+        "sha256": "18f409fddcafe0d7b9668315672784479bd3d3c4aabb16b6a0dbb8f982fa3842",
+        "counts": {
+          "passed": 1
+        },
+        "complete": true,
+        "successful": true,
+        "total_seconds": 0.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "structural": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ckvlh277\\report.json",
+        "sha256": "e53eed8eaa29489069f0d19cee95b665ad2a98c926fd4bedcd4be2a1529bde86",
+        "counts": {
+          "passed": 1
+        },
+        "complete": true,
+        "successful": true,
+        "total_seconds": 1.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      }
     }
   }
 }
