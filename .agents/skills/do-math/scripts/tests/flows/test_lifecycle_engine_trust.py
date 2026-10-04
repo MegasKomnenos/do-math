@@ -118,6 +118,13 @@ class TransitionTests(unittest.TestCase):
             sim.step()
             self.assertEqual(sum(event['id'] in c['action'].get('event_refs', []) for c in sim.model.calls), 1)
         self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
+        related = [e for e in sim.runtime['events'] if e.get('transition_id') == self.tid
+                   or e.get('target') == self.tid]
+        for item in related:
+            calls = [c for c in sim.model.calls if item['id'] in c['action'].get('event_refs', [])]
+            self.assertEqual(len(calls), 1, item)
+            owner, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == calls[0]['action']['id']]
+            self.assertEqual(owner['outcome'], 'output_accepted', owner.get('error'))
 
     def test_full_transition_preserves_old_formal_records_and_full_command(self):
         """About 3 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
@@ -273,6 +280,8 @@ class TransitionTests(unittest.TestCase):
         self.assertEqual(first['status'], 'ended')
         self.assertNotIn(self.kids[0], self.results())
         self.assertEqual(sim.instance['lifecycle']['state'], 'paused')
+        from support.cross_contracts import assert_call_records
+        self.assertEqual(assert_call_records(self, sim)['research_plan'], 0)
         sim.lean.spawn = spawn
         applied(sim, 'resume')
         only(sim, 'trust_check', 'trust_activate')
@@ -282,6 +291,9 @@ class TransitionTests(unittest.TestCase):
         self.assertEqual(len(attempts), 2)
         self.assertEqual(attempts[1]['owner_activity_id'], first['owner_activity_id'])
         self.assertEqual(attempts[1]['continuation_of'], first['id'])
+        run_machine(sim, 'trust_check')
+        run_machine(sim, 'trust_activate')
+        self.assert_transition_plan_once('trust_transition_activated')
 
     def test_rerecorded_baseline_is_followed_once_with_an_event(self):
         """About 2.5 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
@@ -316,6 +328,9 @@ class TransitionTests(unittest.TestCase):
         self.assertEqual(environment, {**{k: v for k, v in activated.items() if k != 'validation_receipt'},
                                        'status': 'registered'})
         self.assertEqual(activated['validation_receipt']['binding'], rebound)
+        self.assert_transition_plan_once('trust_transition_activated')
+        self.assertNotIn(events[0]['id'], sim.runtime['pending_events'])
+        self.assertFalse(any(events[0]['id'] in c['action'].get('event_refs', []) for c in sim.model.calls))
 
     def test_wrong_pinned_trust_command_ends_attempt_without_verifier(self):
         """About 4 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks; the pass also dispatches the research the owner queues."""
@@ -421,6 +436,35 @@ class RegistrationTests(unittest.TestCase):
         with file_access(toolchain) as touched:
             records.observe_fingerprint(request['toolchain'])
         self.assertTrue(touched)
+
+
+
+
+class TrustInvalidationPlanningTests(unittest.TestCase):
+    def test_invalidated_environment_opens_one_plan_and_control_replay_opens_none(self):
+        from support.cross_contracts import assert_call_records
+        from support.default_responder import DefaultResponder
+        from support.engine_lifecycle import clear_work
+        from support.model import amend
+        sim = Sim.activated()
+        clear_work(sim)
+        environment = sim.instance['active_trust_environment']
+        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+        sim.model.on('research_plan').reply(amend(goal_audit=False))
+        options = {'text': 'The approved environment needs review.', 'request_id': 'UC-trust-invalid',
+                   'config': {'operation': 'invalidate', 'env_id': environment, 'reason': 'The trust premise is withdrawn.'}}
+        applied(sim, 'trust', **options)
+        event, = [e for e in sim.runtime['events'] if e['kind'] == 'trust_environment_invalidated'
+                  and e.get('target') == environment]
+        sim.run_until(lambda current: any(event['id'] in c['action'].get('event_refs', [])
+                                         for c in current.model.calls), max_steps=8)
+        execution, = [e for e in sim.runtime['executions'].values() if event['id'] in e['action'].get('event_refs', [])]
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        self.assertTrue(applied(sim, 'trust', **options)['replayed'])
+        for _ in range(2):
+            sim.step()
+            assert_call_records(self, sim)
+            self.assertEqual(sum(event['id'] in c['action'].get('event_refs', []) for c in sim.model.calls), 1)
 
 
 if __name__ == '__main__':

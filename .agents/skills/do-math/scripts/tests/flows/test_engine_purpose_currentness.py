@@ -87,6 +87,14 @@ class PurposeFlowTests(unittest.TestCase):
         self.assertTrue(sim.instance['goal_judgments'][-1].get('current', True))
         from support.cross_contracts import assert_call_records
         counts = assert_call_records(self, sim)
+        terminal_events = [e for e in sim.runtime['events'] if e['kind'] == 'task_assessment_invalidated'
+                           and e.get('target') in completed_downstream]
+        self.assertTrue(terminal_events)
+        for event in terminal_events:
+            execution, = [e for e in sim.runtime['executions'].values()
+                          if event['id'] in e['action'].get('event_refs', [])]
+            self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+            self.assertEqual(sum(event['id'] in c['action'].get('event_refs', []) for c in sim.model.calls), 1)
         for request in requested:
             calls = [c for c in sim.model.calls if c['action']['id'] == request['id']]
             self.assertEqual(len(calls), 1)

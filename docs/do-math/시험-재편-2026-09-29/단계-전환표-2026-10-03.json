@@ -4928,8 +4928,8 @@
       },
       {
         "id": "11-B",
-        "state": "partial_verification",
-        "remaining": "B108 KD-1919 교정과 공개 계획/운영 점검 요청, 실행 중 도착 사건, 원인 변경/재시작의 공통 배정을 실제 호출로 확인했다. 마지막으로 B104의 lifecycle 사건 원천 전건을 기존 원천별 증거 및 공통 배정 증거에 대응하고 동적 kind와 schedule 조건을 검수해야 한다. 아직 전건 완료로 선언하지 않는다."
+        "state": "implementation_reviewed",
+        "remaining": "B90~B109의 직접 발동 및 lifecycle28곳/35원천-kind/34종 대응을 검수했다. 새 자료 전·후 입력 고정, 대상 유무, 정상 점유, 재전달/소비, paused/종결, 공개 요청과 재시작을 실제 호출 및 원천 검사로 연결했다. 최종 동일 판본의 전체 일반/T3/변이 관문은 별도로 남는다."
       },
       {
         "id": "12-A",
@@ -13089,11 +13089,11 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B107 91346df5; B108 KD-1919 교정·공통 사건/공개 요청 관련113개 통과",
-      "active": "B104 lifecycle 사건 원천 전건을 기존 원천별 검증과 B108 공통 배정 검증에 대응",
-      "exit": "동적 kind·schedule 조건·판단 대상 유무의 대응표를 검수해 11-B 완료 여부 결정",
+      "last_closed": "B108 a989dfc1; B109 KD-1920 교정·사건 대응 검수·관련128개 통과",
+      "active": "11-B 구현 검수에서 다음 원래 요구의 문서 명시 공간/필드 대응(13-C)으로 이동",
+      "exit": "기존 B84 문서 필드 검수 자료와 현재 checker/정본을 대조하여 실제 미해소 항목만 처리",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
-      "work_method": "B104의 소스 지문·원천 목록을 재사용한다. 기존 단위/수신/flow를 먼저 대응하고 실제 빈 조합만 추가한다.",
+      "work_method": "이미 확인한 발동 원천은 다시 전수 감사하지 않는다. 원래 요구별 미해소와 최종 판본 관문을 계속 유지한다.",
       "running_test": null,
       "source_tree_frozen": false,
       "goal_complete": false
@@ -18587,7 +18587,7 @@
       "scope": "직접 큐 생산자·재개·일반 사건 원천의 현재 소스 목록과 비형식 가져오기/교체의 실제 계획 대조",
       "state": "소스 모집단 분류 및 가져오기/교체 관련 검증 완료; 전건 상태 조합 대응 진행",
       "memory_node": "M-0521",
-      "source_head": "91346df5a296154230d9ba3767b2a6a2c9454d44",
+      "source_head": "a989dfc141e23ea5bf255bc297a2012a4fb2e1c7",
       "source_hashes": {
         "academic_engine.py": "3ac98306ed425ec1d832767981f761c328ce9b4b6ffbd0c0a067d91141701981",
         "activities.py": "e3224b8c9ea9d09e93a8d9ae91975c88788f310c5507ede5345089d148f15328",
@@ -18601,7 +18601,7 @@
         "knowledge.py": "87e86bb850c996535326580c7581736e2cb3ca8cc774fa63bdb2b2de7ea13418",
         "knowledge_engine.py": "81b63d1852d4d9546da52149a8b44e51789a4d83f8a3fbc3f8f44220128bd616",
         "knowledge_io.py": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
-        "lifecycle_engine.py": "12bdef41720543c9f77dd5fc3b98ff7878407bc49f67b9fdb184eb038cacfc00",
+        "lifecycle_engine.py": "647e0f75070601e7ac4d60500212aff2c570afe6bf7e21a1c2fbba821343452d",
         "planning.py": "14aa2705f7b49cdd7c47b9f06c9f0854c7cc084f4f7e4622484093d57deb0709",
         "planning_engine.py": "27971d062e6103588a8232d64f4006cee4021d16e7111163c4f2523c6ce68282",
         "provider_engine.py": "417c730909bccdc7ed5ac5bd81eded90fd1d1f6050a318cbd5f03a25bfe182d7",
@@ -18774,7 +18774,7 @@
           {
             "file": "lifecycle_engine.py",
             "function": "_refresh_readiness",
-            "line": 705,
+            "line": 715,
             "call": "self._enqueue(role, id=self.ports.clock.new_id('AC'), reason='Preserved research events require reconsideration', opened_at=now.isoformat(), event_refs=selected)"
           }
         ],
@@ -19173,28 +19173,7 @@
         ],
         "observed": "공개 비형식 가져오기와 교체 대상별 실제 계획1회 수락·원제어 source_ref와 대상 결속·추가 owner2회 중복 없음. 공개 형식 가져오기는 실제 계획0 및 형식 verified 확인."
       },
-      "remaining_new_judgment_families": [
-        {
-          "source": "lifecycle event router and explicit public request",
-          "variants": [
-            "concrete lifecycle kind × target present/absent",
-            "schedule=False",
-            "already assigned event",
-            "public role request/replay"
-          ],
-          "status": "B108 공개 직접 요청 및 공통 배정의 live/소비/재시작 경로 확인; 원천별 전건 대응 검수 남음",
-          "verified_subcases": [
-            "public research_plan/operational_review request accepted once and replayed without a new call",
-            "missing operational target rejected before judgment",
-            "real user decision arriving during a plan is assigned to a later request and consumed once",
-            "same task error basis across owner restart does not repeat; changed basis with identical error text does"
-          ],
-          "remaining": [
-            "map every concrete scheduled/suppressed lifecycle source to existing producer evidence and common dispatch evidence",
-            "expand dynamic source kind expressions and distinguish meaningful judgment availability from merely missing action.target"
-          ]
-        }
-      ],
+      "remaining_new_judgment_families": [],
       "whole_requirement_closed": false,
       "verified_additional_families": [
         {
@@ -19253,10 +19232,27 @@
           "status": "B94/B95와 B107의 도메인/실제 흐름으로 상태 조합 대응 확인",
           "evidence": "reconsideration_wait_owner_correction",
           "limits": "기한 없는 보존 영수증은 수신 도메인으로 구성한 저장 상태이며 새 빈 준비의 wire 산출이 기한 없이 수락된다는 증거가 아님. 평가 오류 사건의 새 owner 재배정은 남은 일반 lifecycle 가족에서 검수한다."
+        },
+        {
+          "source": "lifecycle event router and explicit public request",
+          "variants": [
+            "concrete lifecycle kind × target present/absent",
+            "schedule=False",
+            "already assigned event",
+            "public role request/replay"
+          ],
+          "status": "B109 동적 kind·발동/비발동 조건·원천/공통 배정 증거 대응 검수",
+          "verified_subcases": [
+            "public research_plan/operational_review request accepted once and replayed without a new call",
+            "missing operational target rejected before judgment",
+            "real user decision arriving during a plan is assigned to a later request and consumed once",
+            "same task error basis across owner restart does not repeat; changed basis with identical error text does"
+          ],
+          "evidence": "lifecycle_source_matrix_verification"
         }
       ],
       "initial_source_head": "2eb2c94f4bd67c80ddcaf4a8d37428d35b6ba337",
-      "source_tree": "base commit plus B108 lifecycle_engine.py change; source_hashes identify the actual files"
+      "source_tree": "base commit plus B109 lifecycle_engine.py source-event ownership correction"
     },
     "assessment_followup_and_impact_trigger_verification": {
       "id": "B105",
@@ -19533,6 +19529,401 @@
         }
       ],
       "whole_requirement_closed": false
+    },
+    "lifecycle_source_matrix_verification": {
+      "id": "B109",
+      "scope": "lifecycle28개 호출 위치의35개 원천-kind 조합/34종과 실제 발동·비발동 대응, 초기 자료의 빈 계획 KD-1920 교정",
+      "state": "11-B 구현·사건 대응 검수 완료; 최종 전체 판본 관문은 별도",
+      "memory_node": "M-0526",
+      "defect_id": "KD-1920",
+      "reports": {
+        "fixture-retry-route-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-사건-원천-대응/fixture-retry-route-failure.json",
+          "sha256": "c15770b41f312e63bf643f83ca2366df5174e434b03d053a8f4171f6c18ea725",
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 8.5,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "fixture-crash-phase-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-사건-원천-대응/fixture-crash-phase-failure.json",
+          "sha256": "ddea9ddd6dabab42c3bb3abe7b851d632859d1c1b7417bc9b0b80ff385af4b90",
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 6.5,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "empty-source-plan-red": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-사건-원천-대응/empty-source-plan-red.json",
+          "sha256": "073c4f407b9ad7eb520886757215ebbeddac45cf8025fa847e2c39364fa29406",
+          "counts": {
+            "passed": 2,
+            "failed": 1
+          },
+          "total_seconds": 22.8,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-사건-원천-대응/report.json",
+          "sha256": "e71c80fa42c584e6496babc248e3435767613b8d60bc2ca5f24ed5acb757e8f2",
+          "counts": {
+            "passed": 128
+          },
+          "total_seconds": 174.1,
+          "complete": true,
+          "successful": true,
+          "changed_during_run": []
+        }
+      },
+      "evidence_groups": {
+        "source": {
+          "meaning": "새 자료와 실제 준비/판단 대상의 구별",
+          "tests": [
+            "flows.test_cross_role_calls.RoleCallTests.test_changed_task_source_opens_one_plan_and_unchanged_source_opens_none",
+            "flows.test_cross_role_calls.RoleCallTests.test_source_supplied_before_empty_preparation_does_not_open_an_empty_plan",
+            "flows.test_cross_role_calls.RoleCallTests.test_source_arriving_after_preparation_input_is_fixed_goes_to_a_later_plan",
+            "flows.test_cross_role_calls.RoleCallTests.test_existing_knowledge_keeps_new_source_in_the_planning_judgment"
+          ],
+          "absence_or_suppression": "같은 바이트 재제공0; 과제/지식 없는 미시작 일반 준비는 자료 사건을 받아 후보 없음이면 계획0; 고정 입력 뒤 도착 또는 기존 판단 대상은 계획1"
+        },
+        "silent": {
+          "meaning": "대화/제출 검사의 비발동 기록",
+          "tests": [
+            "flows.test_engine_purpose_decisions.PublicJudgmentRequestTests.test_conversation_and_submission_records_do_not_automatically_open_judgments"
+          ],
+          "absence_or_suppression": "attach/heartbeat/detach/lost와 submission_checked는 pending에 넣지 않으며 실제 계획/운영 점검0"
+        },
+        "external": {
+          "meaning": "외부 준비·대조·재시도·회수 및 결과",
+          "tests": [
+            "flows.test_scheduling_close_external.ExternalEventPlanningTests.test_uncertainty_reconciliation_and_authorized_retry_preserve_each_planning_cause",
+            "flows.test_scheduling_close_external.ExternalEventPlanningTests.test_effect_result_kinds_deliver_one_plan_after_their_actual_outcome",
+            "flows.test_scheduling_close_external.ExternalEventPlanningTests.test_expired_external_authority_records_cancellation_and_one_plan_without_transport"
+          ],
+          "absence_or_suppression": "같은 작업 prepare 재전달은 새 사건 없음; unknown의 증거 없는 retry는 반려/사건 불변; paused에서는 계획0, resume 뒤 사건당 수락1; 확정 전 재전송0. failed는 HTTP 포트의 명시 effect_absent를 사용하며 일반 non-2xx를 효과 부재로 추정하지 않음"
+        },
+        "trust_registration": {
+          "meaning": "신뢰 등록/시작/활성화 사건",
+          "tests": [
+            "flows.test_knowledge_formal_lineage.FormalAttemptLineageTests.test_changed_trust_environment_replans_instead_of_resuming_the_old_formal_input"
+          ],
+          "absence_or_suppression": "새 신뢰 판본의 세 사건이 실제 수락 계획에 포함; 같은 이전 시도는 추가 pass에서 재판단하지 않음"
+        },
+        "trust": {
+          "meaning": "신뢰 검사·중지·활성화·실패",
+          "tests": [
+            "flows.test_lifecycle_engine_trust.TransitionTests.test_full_transition_preserves_old_formal_records_and_full_command",
+            "flows.test_lifecycle_engine_trust.TransitionTests.test_partial_failure_cannot_activate",
+            "flows.test_lifecycle_engine_trust.TransitionTests.test_stop_and_resume_trust_check_preserves_attempt_lineage"
+          ],
+          "absence_or_suppression": "각 전환/대상 사건이 실제 계획에1회 포함·수락; pause 동안 계획0, 재개/완료 뒤 기존 사건 비반복; 실패는 기존 환경 보존"
+        },
+        "trust_invalidation": {
+          "meaning": "신뢰 전제 철회",
+          "tests": [
+            "flows.test_lifecycle_engine_trust.TrustInvalidationPlanningTests.test_invalidated_environment_opens_one_plan_and_control_replay_opens_none"
+          ],
+          "absence_or_suppression": "실제 계획1 수락; 같은 제어 request_id 재전달은 추가0"
+        },
+        "rebind": {
+          "meaning": "의미가 같은 도구 기록의 baseline 결속",
+          "tests": [
+            "flows.test_lifecycle_engine_trust.TransitionTests.test_rerecorded_baseline_is_followed_once_with_an_event"
+          ],
+          "absence_or_suppression": "rebound 기록1, pending/실제 모델 event_refs에 넣지 않음; 별도 활성화 사건의 계획은 허용"
+        },
+        "audit": {
+          "meaning": "독립 목표 감사 묶음의 미확립 결과",
+          "tests": [
+            "flows.test_scheduling_research_recovery.GoalAuditReplanningTests.test_finished_unsatisfied_audit_group_opens_one_plan_with_its_judgments",
+            "flows.test_scheduling_research_recovery.GoalAuditReplanningTests.test_current_goal_basis_runs_the_auditor_without_replanning",
+            "flows.test_scheduling_close_remaining_exits.RemainingExitTests.test_completed_goal_returns_without_repeating_any_role"
+          ],
+          "absence_or_suppression": "미완료 감사 묶음은 계획0; 묶음의 not_established 후 judgment_ids 결속 계획1; 실제 전체 목표 완료 뒤 추가 역할0"
+        },
+        "goal_basis": {
+          "meaning": "기존 해결 근거의 상실",
+          "tests": [
+            "flows.test_knowledge_close_staged_transition.StagedTransitionTests.test_lost_mathematical_dependency_reopens_the_actual_goal"
+          ],
+          "absence_or_suppression": "해결 근거 유지0; 상실 사건의 실제 계획1 수락과 같은 사건 비반복"
+        },
+        "knowledge": {
+          "meaning": "공개 지식 변경과 터미널 평가 현재성",
+          "tests": [
+            "flows.test_engine_purpose_currentness.PurposeFlowTests.test_knowledge_currentness_loss_and_revision_recover_through_fresh_review"
+          ],
+          "absence_or_suppression": "invalidate/revise의 별도 원요청은 각각 실제1 수락; terminal 평가 사건도 실제 계획1에 포함; 같은 보존 결과로 연구를 다시 실행하지 않음"
+        },
+        "initial": {
+          "meaning": "초기 활성화의 최초 배정",
+          "tests": [
+            "flows.test_cross_role_calls.RoleCallTests.test_first_assignment_and_normal_occupancy_have_exact_role_counts",
+            "flows.test_engine_purpose_decisions.PublicGovernancePlanningTests.test_initialization_grant_does_not_open_a_research_plan"
+          ],
+          "absence_or_suppression": "승인 전 초기화 권한은 계획0; 활성화 최초 준비/검토/계획의 실제 선언 호출 수, 정상 점유는 추가0"
+        },
+        "limited": {
+          "meaning": "한정 복구 승인 기록",
+          "tests": [
+            "sim.test_lifecycle_engine_controls.LimitedRecoveryTests.test_paused_recovery_is_exact_authorized_and_revocable",
+            "sim.test_lifecycle_engine_controls.PausedDispatchTests.test_scheduler_runs_only_approved_machine_recovery_and_stays_paused"
+          ],
+          "absence_or_suppression": "limited_recovery_approved는 pending/일반 요청에 배정하지 않음; paused 상태에서는 명시 승인된 복구만 허용"
+        },
+        "decision": {
+          "meaning": "공개 결정과 배정 중 도착한 새 결정",
+          "tests": [
+            "flows.test_engine_purpose_decisions.PublicGovernancePlanningTests.test_public_decisions_deliver_one_plan_and_replays_deliver_none",
+            "flows.test_engine_purpose_decisions.PublicJudgmentRequestTests.test_new_decision_event_during_a_plan_is_assigned_to_a_later_plan"
+          ],
+          "absence_or_suppression": "결정별 계획1 수락·request replay0; 실행 중 입력은 불변이고 다음 판단이 새 사건1회 소비"
+        },
+        "readiness": {
+          "meaning": "준비 가능/상실 사건과 정상 점유",
+          "tests": [
+            "flows.test_cross_role_calls.RoleCallTests.test_changed_task_source_opens_one_plan_and_unchanged_source_opens_none",
+            "flows.test_cross_role_calls.RoleCallTests.test_first_assignment_and_normal_occupancy_have_exact_role_counts"
+          ],
+          "absence_or_suppression": "실제 자료 변경의 readiness_lost 및 새 ready 사건은 수락 계획에1회 포함; dispatch_occupied인 상실 기록은 pending/호출 원인으로 사용하지 않음"
+        },
+        "condition": {
+          "meaning": "과제 조건 평가 오류",
+          "tests": [
+            "flows.test_scheduling_research_recovery.ReconsiderationPlanningTests.test_artifact_evaluation_error_opens_a_plan_with_the_task_error_and_no_targetless_review"
+          ],
+          "absence_or_suppression": "실제 오류 입력의 계획1·무대상 점검0; 같은 원인/재시작 추가0, warm/cold 근거 변경은 각각1"
+        }
+      },
+      "lifecycle_matrix": [
+        {
+          "source": "core_engine.py:_apply_inbox",
+          "kind": "source_imported",
+          "schedule": "True",
+          "evidence_group": "source"
+        },
+        {
+          "source": "core_engine.py:_stage_submission_capture",
+          "kind": "submission_checked",
+          "schedule": "False",
+          "evidence_group": "silent"
+        },
+        {
+          "source": "external_engine.py:_external_control",
+          "kind": "external_operation_prepared",
+          "schedule": "True",
+          "evidence_group": "external"
+        },
+        {
+          "source": "external_engine.py:_external_control",
+          "kind": "external_operation_reconciled",
+          "schedule": "True",
+          "evidence_group": "external"
+        },
+        {
+          "source": "external_engine.py:_external_control",
+          "kind": "external_operation_retry_prepared",
+          "schedule": "True",
+          "evidence_group": "external"
+        },
+        {
+          "source": "external_engine.py:_run_external_action",
+          "kind": "external_operation_prepared",
+          "schedule": "True",
+          "evidence_group": "external"
+        },
+        {
+          "source": "external_engine.py:_run_external_action",
+          "kind": "external_operation_confirmed",
+          "schedule": "True",
+          "evidence_group": "external"
+        },
+        {
+          "source": "external_engine.py:_run_external_action",
+          "kind": "external_operation_failed",
+          "schedule": "True",
+          "evidence_group": "external"
+        },
+        {
+          "source": "external_engine.py:_run_external_action",
+          "kind": "external_operation_unknown",
+          "schedule": "True",
+          "evidence_group": "external"
+        },
+        {
+          "source": "external_engine.py:_run_external_action",
+          "kind": "external_operation_cancelled",
+          "schedule": "True",
+          "evidence_group": "external"
+        },
+        {
+          "source": "external_engine.py:_run_external_action",
+          "kind": "external_reconciliation_required",
+          "schedule": "True",
+          "evidence_group": "external"
+        },
+        {
+          "source": "external_engine.py:_run_external_action",
+          "kind": "external_operation_not_authorized",
+          "schedule": "True",
+          "evidence_group": "external"
+        },
+        {
+          "source": "formal_engine.py:_trust_control",
+          "kind": "trust_environment_registered",
+          "schedule": "True",
+          "evidence_group": "trust_registration"
+        },
+        {
+          "source": "formal_engine.py:_trust_control",
+          "kind": "trust_transition_started",
+          "schedule": "True",
+          "evidence_group": "trust"
+        },
+        {
+          "source": "formal_engine.py:_trust_control",
+          "kind": "trust_environment_invalidated",
+          "schedule": "True",
+          "evidence_group": "trust_invalidation"
+        },
+        {
+          "source": "formal_engine.py:_apply_trust_rebind",
+          "kind": "trust_environment_rebound",
+          "schedule": "False",
+          "evidence_group": "rebind"
+        },
+        {
+          "source": "formal_engine.py:_trust_check_steps",
+          "kind": "trust_target_checked",
+          "schedule": "True",
+          "evidence_group": "trust"
+        },
+        {
+          "source": "formal_engine.py:_trust_check_steps",
+          "kind": "trust_target_stopped",
+          "schedule": "True",
+          "evidence_group": "trust"
+        },
+        {
+          "source": "formal_engine.py:_finish_trust_transition",
+          "kind": "trust_transition_activated",
+          "schedule": "True",
+          "evidence_group": "trust"
+        },
+        {
+          "source": "formal_engine.py:_finish_trust_transition",
+          "kind": "trust_transition_failed",
+          "schedule": "True",
+          "evidence_group": "trust"
+        },
+        {
+          "source": "governance_engine.py:_record_goal_audit_followup",
+          "kind": "goal_audit_completed",
+          "schedule": "True",
+          "evidence_group": "audit"
+        },
+        {
+          "source": "knowledge_engine.py:_invalidate_goal_currentness",
+          "kind": "goal_basis_invalidated",
+          "schedule": "True",
+          "evidence_group": "goal_basis"
+        },
+        {
+          "source": "knowledge_engine.py:_knowledge_control",
+          "kind": "knowledge_invalidate",
+          "schedule": "True",
+          "evidence_group": "knowledge"
+        },
+        {
+          "source": "knowledge_engine.py:_knowledge_control",
+          "kind": "knowledge_revise",
+          "schedule": "True",
+          "evidence_group": "knowledge"
+        },
+        {
+          "source": "lifecycle_engine.py:_activate_initialization",
+          "kind": "initialization_activated",
+          "schedule": "True",
+          "evidence_group": "initial"
+        },
+        {
+          "source": "lifecycle_engine.py:_limited_recovery_control",
+          "kind": "limited_recovery_approved",
+          "schedule": "False",
+          "evidence_group": "limited"
+        },
+        {
+          "source": "lifecycle_engine.py:_apply_extended_control",
+          "kind": "user_decision_applied",
+          "schedule": "True",
+          "evidence_group": "decision"
+        },
+        {
+          "source": "lifecycle_engine.py:_conversation_control",
+          "kind": "conversation_attach",
+          "schedule": "False",
+          "evidence_group": "silent"
+        },
+        {
+          "source": "lifecycle_engine.py:_conversation_control",
+          "kind": "conversation_heartbeat",
+          "schedule": "False",
+          "evidence_group": "silent"
+        },
+        {
+          "source": "lifecycle_engine.py:_conversation_control",
+          "kind": "conversation_detach",
+          "schedule": "False",
+          "evidence_group": "silent"
+        },
+        {
+          "source": "lifecycle_engine.py:_lose_conversation",
+          "kind": "conversation_lost",
+          "schedule": "False",
+          "evidence_group": "silent"
+        },
+        {
+          "source": "lifecycle_engine.py:_refresh_readiness",
+          "kind": "task_assessment_invalidated",
+          "schedule": "True",
+          "evidence_group": "knowledge"
+        },
+        {
+          "source": "lifecycle_engine.py:_refresh_readiness",
+          "kind": "task_became_ready",
+          "schedule": "True",
+          "evidence_group": "readiness"
+        },
+        {
+          "source": "lifecycle_engine.py:_refresh_readiness",
+          "kind": "task_readiness_lost",
+          "schedule": "not evaluation.get('dispatch_occupied', False)",
+          "evidence_group": "readiness"
+        },
+        {
+          "source": "lifecycle_engine.py:_refresh_readiness",
+          "kind": "task_condition_evaluation_error",
+          "schedule": "True",
+          "evidence_group": "condition"
+        }
+      ],
+      "common_dispatch_evidence": "B108 공개 사건의 미시작 배정·실행 중 고정 입력·정확한 event_refs 소비와 B90~B108 직접 발동/관찰/시간/평가/권한/재시작 검증을 결합한다. 한 판단이 여러 원인을 처리할 수 있으므로 사건 수만큼 모델 호출을 늘리지 않는다.",
+      "non_lifecycle_evidence": "B104의23 literal enqueue·4 dynamic enqueue·24 queue 쓰기를 B90~B108 변경 기록과 verified_additional_families에 연결했다. 준비/형식/작업 배정 자체와 동일 요청 재개를 새 판단 사건으로 잘못 세지 않는다. 직접 due 사건3종과 고갈 원인 결속은 B94/B95/B107에서 실제 검증했다.",
+      "limits": [
+        "prepared는 외부 제어의 준비 사건과 자격정보 부재로 전송 전 반환된 결과 양쪽에서 발생하므로 종류34와 위치-kind 조합35를 구별한다.",
+        "failed 결과의 effect_absent는 HTTP 포트 계약의 명시 정보이며 일반 HTTP 오류 코드를 효과 부재 증거로 쓰지 않는다.",
+        "재시작 대조는 HTTP 결과/로컬 종료가 실제 저장된 뒤 Git 포트에서 중단한 정상 기록으로 구성했다. 전송 중 로컬 종료가 불명확한 상태는 임의로 종료됐다고 바꾸지 않는다.",
+        "원천의 수신/거부·비발동 증거와 공유 배정의 실제 호출 증거를 함께 읽는다. 이 부분 실행을 전체 일반/T3/변이/T4/T5 통과로 읽지 않는다."
+      ],
+      "whole_goal_closed": false
     }
   }
 }

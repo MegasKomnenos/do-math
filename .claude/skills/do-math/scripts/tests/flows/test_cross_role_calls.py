@@ -20,6 +20,78 @@ setUpModule = warm_template
 
 
 class RoleCallTests(unittest.TestCase):
+    def test_existing_knowledge_keeps_new_source_in_the_planning_judgment(self):
+        from support.engine_lifecycle import applied
+        from support.model import amend
+        sim = Sim.activated()
+        applied(sim, 'knowledge', config={'operation': 'import', 'candidate': {
+            'kind': 'observation', 'title': 'Existing context', 'statement': 'A prior observation is available.',
+            'summary': 'An existing observation', 'explanation': 'Preserve the supplied context.', 'lean_code': ''}})
+        source = sim.root / 'source-with-knowledge.txt'
+        source.write_text('Additional source for the existing knowledge.', encoding='utf-8')
+        applied(sim, 'source', config={'path': str(source)})
+        event, = [e for e in sim.runtime['events'] if e['kind'] == 'source_imported']
+        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+        sim.model.on('research_plan').reply(amend(goal_audit=False))
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        sim.run_until(lambda current: any(event['id'] in c['action'].get('event_refs', [])
+                                         for c in current.model.calls), max_steps=8)
+        execution, = [e for e in sim.runtime['executions'].values() if event['id'] in e['action'].get('event_refs', [])]
+        self.assertEqual(execution['role'], 'research_plan')
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        assert_call_records(self, sim)
+
+    def test_source_arriving_after_preparation_input_is_fixed_goes_to_a_later_plan(self):
+        from support.model import amend
+        from support.submission_calls import applied_now, submission_model
+        sim = Sim.activated()
+        model = submission_model(sim, DefaultResponder(preparation_candidates=[], plan_assessments=False))
+        model.on('research_plan').reply(amend(goal_audit=False))
+        arrived = []
+        source = sim.root / 'during-preparation.txt'
+        source.write_text('Evidence arriving after the preparation input was fixed.', encoding='utf-8')
+        def arrive(context, workspace):
+            if not arrived:
+                arrived.append(applied_now(sim, 'source', config={'path': str(source)}))
+        model.before('research_preparation', arrive)
+        sim.step()
+        event, = [e for e in sim.runtime['events'] if e['kind'] == 'source_imported']
+        preparation, = [e for e in sim.runtime['executions'].values() if e['role'] == 'research_preparation']
+        self.assertEqual(preparation['outcome'], 'output_accepted', preparation.get('error'))
+        self.assertNotIn(event['id'], preparation['action'].get('event_refs', []))
+        _, fixed, _ = sim.engine.store.view(preparation['input_snapshot'])
+        self.assertEqual(fixed['sources'], [])
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        sim.run_until(lambda current: any(event['id'] in c['action'].get('event_refs', [])
+                                         for c in current.model.calls), max_steps=8)
+        plan, = [e for e in sim.runtime['executions'].values() if event['id'] in e['action'].get('event_refs', [])]
+        self.assertEqual(plan['role'], 'research_plan')
+        self.assertEqual(plan['outcome'], 'output_accepted', plan.get('error'))
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim)['research_plan'], 1)
+
+    def test_source_supplied_before_empty_preparation_does_not_open_an_empty_plan(self):
+        sim = Sim.activated()
+        source = sim.root / 'initial-source.txt'
+        source.write_text('Input for the first preparation.', encoding='utf-8')
+        sim.control('source', config={'path': str(source)})
+        sim.engine.process_controls()
+        sim.model.responder = DefaultResponder(preparation_candidates=[])
+        sim.step()
+        preparation, = [e for e in sim.runtime['executions'].values() if e['role'] == 'research_preparation']
+        self.assertEqual(preparation['outcome'], 'output_accepted', preparation.get('error'))
+        _, supplied, _ = sim.engine.store.view(preparation['input_snapshot'])
+        self.assertEqual([row['name'] for row in supplied['sources']], ['initial-source.txt'])
+        event, = [e for e in sim.runtime['events'] if e['kind'] == 'source_imported']
+        self.assertIn(event['id'], preparation['action']['event_refs'])
+        self.assertNotIn(event['id'], sim.runtime['pending_events'])
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        for _ in range(2):
+            sim.step()
+        self.assertEqual(assert_call_records(self, sim), Counter(research_preparation=1))
+        self.assertEqual(sim.runtime['tasks'], {})
+
     def test_changed_task_source_opens_one_plan_and_unchanged_source_opens_none(self):
         sim = Sim.activated()
         source = sim.root / 'plan-input.txt'
@@ -71,6 +143,12 @@ class RoleCallTests(unittest.TestCase):
         self.assertEqual(plan['outcome'], 'output_accepted', plan.get('error'))
         self.assertNotIn(event['id'], sim.runtime['pending_events'])
         self.assertNotIn('newinput', sim.runtime['tasks'][task['id']])
+        lost, = [e for e in sim.runtime['events'] if e['kind'] == 'task_readiness_lost' and e.get('target') == task['id']]
+        self.assertIn(lost['id'], plan['action']['event_refs'])
+        ready = [e for e in sim.runtime['events'] if e['kind'] == 'task_became_ready' and e.get('target') == task['id']]
+        self.assertEqual(len(ready), 2)
+        for event in ready:
+            self.assertEqual(sum(event['id'] in c['action'].get('event_refs', []) for c in sim.model.calls), 1)
         sim.control('source', text='Repeated second input', config={'path': str(source)})
         sim.engine.process_controls()
         for _ in range(3):
@@ -142,6 +220,12 @@ class RoleCallTests(unittest.TestCase):
                          'normal occupancy must not fire preparation, planning or operational review')
         self.assertEqual(assert_call_records(self, sim), expected)
         oracle.check(sim)
+        normal_losses = [e for e in sim.runtime['events'] if e['kind'] == 'task_readiness_lost'
+                         and e.get('basis', {}).get('dispatch_occupied')]
+        self.assertTrue(normal_losses)
+        for event in normal_losses:
+            self.assertNotIn(event['id'], sim.runtime['pending_events'])
+            self.assertFalse(any(event['id'] in c['action'].get('event_refs', []) for c in sim.model.calls))
 
     def test_accepted_deferral_does_not_repeat_plan_on_extra_owner_passes(self):
         """Accepted deferral stays idle until its exact deadline, then opens one new plan."""

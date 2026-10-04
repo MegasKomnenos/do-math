@@ -593,6 +593,15 @@
       "found_by": "B108의 6tmk_c4i에서 동일 오류·동일 근거의 수락 계획 뒤 restart만으로 실제 계획이2회가 되는 것을 재현. 오류 사건에 계약/판정 근거를 보존하고 cold owner는 마지막 준비성 사건과 대조하도록 교정하여 g44_cnps에서 추가0과 변경 근거의 새 계획1 수락을 확인.",
       "missed_kind": "B107은 같은 owner의 추가 pass만 확인했다. 준비성 캐시는 과정 내부 파생 상태라 재시작하면 비며, 사건의 처리 이력과 비교하지 않으면 이미 판단한 원인을 다시 발동한다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1920",
+      "summary": "첫 준비 전에 제공한 source_imported 사건을 별도 계획에 배정하여, 그 자료를 읽은 준비가 빈 후보를 수락받아도 판단 대상 없는 계획을 추가 실행한다.",
+      "category": 11,
+      "reproduction": "flows.test_cross_role_calls.RoleCallTests.test_source_supplied_before_empty_preparation_does_not_open_an_empty_plan",
+      "found_by": "B109 사건 원천×대상 없음 대조의 w4frrm49에서 준비1·계획1을 재현. 과제/지식이 없는 상태의 미시작 일반 준비에 source 사건을 결속한 뒤 jama1ase에서 준비1·계획0과 사건 소비 확인.",
+      "missed_kind": "기존 빈 준비 검사는 별도 새 자료 사건이 없었고, 새 자료 검사는 실제 후보가 있는 경우만 확인했다. 준비 입력에 이미 포함된 사실과 준비 시작 뒤 도착한 사실의 담당을 구별하지 않았다.",
+      "status": "closed"
     }
   ]
 }

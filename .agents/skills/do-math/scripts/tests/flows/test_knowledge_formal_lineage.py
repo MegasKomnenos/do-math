@@ -77,6 +77,11 @@ class FormalAttemptLineageTests(unittest.TestCase):
         execution, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == request['id']]
         self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
         self.assertTrue({first['id'], 'K1'} <= set(execution['action']['evidence_refs']))
+        signals = [e for e in sim.runtime['events'] if e.get('target') in {environment, transition_id}
+                   and e['kind'] in {'trust_environment_registered', 'trust_transition_started', 'trust_transition_activated'}]
+        self.assertEqual({e['kind'] for e in signals},
+                         {'trust_environment_registered', 'trust_transition_started', 'trust_transition_activated'})
+        self.assertTrue({e['id'] for e in signals} <= set(execution['action']['event_refs']))
         for _ in range(2):
             sim.step()
             assert_call_records(self, sim)

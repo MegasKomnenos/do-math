@@ -688,6 +688,16 @@ class LifecycleEngineMixin:
         if not pending: return
         running_ids = live_action_ids(self.runtime)
         assigned = False
+        if not self.runtime['tasks'] and not self.instance['knowledge']:
+            preparation = next((a for a in self.runtime['queue'] if a.get('role') == 'research_preparation'
+                and a.get('id') not in running_ids and 'assessment_targets' not in a and 'observation_rule_targets' not in a), None)
+            source_events = [ref for ref in pending if events[ref]['kind'] == 'source_imported']
+            if preparation is not None and source_events:
+                # This unstarted author will read the new sources. With no
+                # task or knowledge to judge, those facts do not open a plan.
+                preparation['event_refs'] = list(dict.fromkeys([*preparation.get('event_refs', []), *source_events]))
+                pending = [ref for ref in pending if ref not in source_events]
+                assigned = True
         for role in ('research_preparation', 'research_plan'):
             selected = [event_id for event_id in pending if
                         (events[event_id]['kind'] == 'research_reconsider_due') == (role == 'research_preparation')]

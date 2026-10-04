@@ -499,6 +499,31 @@ class SelectedActionReplanningTests(unittest.TestCase):
 
 
 class GoalAuditReplanningTests(unittest.TestCase):
+    def test_finished_unsatisfied_audit_group_opens_one_plan_with_its_judgments(self):
+        from support.engine_lifecycle import _ended_execution, clear_work
+        from support.cross_contracts import assert_call_records
+        from support.model import amend
+        sim = Sim.activated()
+        clear_work(sim)
+        _ended_execution(sim.engine, 'EX-audit-request', 'research_plan')
+        basis = sim.engine._goal_basis_key()
+        sim.engine._ensure_goal_audit_requests(basis, 'EX-audit-request')
+        sim.engine._save()
+        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+        sim.model.on('research_plan').reply(amend(goal_audit=False))
+        sim.run_until(lambda current: any(c['role'] == 'research_plan' for c in current.model.calls), max_steps=8)
+        event, = [e for e in sim.runtime['events'] if e['kind'] == 'goal_audit_completed']
+        self.assertEqual(event['basis_sha256'], basis)
+        self.assertEqual(len(event['judgment_ids']), sim.instance['config']['goal_auditors'])
+        plan, = [e for e in sim.runtime['executions'].values() if event['id'] in e['action'].get('event_refs', [])]
+        self.assertEqual(plan['outcome'], 'output_accepted', plan.get('error'))
+        self.assertEqual(assert_call_records(self, sim)['research_plan'], 1)
+        for _ in range(2):
+            sim.step()
+            assert_call_records(self, sim)
+            self.assertEqual(sum(event['id'] in c['action'].get('event_refs', []) for c in sim.model.calls), 1)
+        self.assertEqual(sum(e['kind'] == 'goal_audit_completed' for e in sim.runtime['events']), 1)
+
     def test_current_goal_basis_runs_the_auditor_without_replanning(self):
         from support.engine_lifecycle import _ended_execution, clear_work
         from support.cross_contracts import assert_call_records

@@ -183,6 +183,31 @@ class PublicGovernancePlanningTests(unittest.TestCase):
 
 
 class PublicJudgmentRequestTests(unittest.TestCase):
+    def test_conversation_and_submission_records_do_not_automatically_open_judgments(self):
+        from support.cross_contracts import assert_call_records
+        from support.default_responder import DefaultResponder
+        from support.engine_lifecycle import clear_work
+        from support.sim import Sim
+        sim = Sim.activated()
+        clear_work(sim)
+        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+        applied(sim, 'conversation', config={'operation': 'attach', 'id': 'talk-events', 'generation': 1,
+            'lease_seconds': 60, 'disconnect_policy': 'continue_authorized'})
+        for operation in ('heartbeat', 'detach'):
+            applied(sim, 'conversation', config={'operation': operation, 'id': 'talk-events', 'generation': 1})
+        events = [e for e in sim.runtime['events'] if e.get('target') == 'talk-events']
+        self.assertEqual({e['kind'] for e in events},
+                         {'conversation_attach', 'conversation_heartbeat', 'conversation_detach', 'conversation_lost'})
+        self.assertTrue(all(e['id'] not in sim.runtime['pending_events'] for e in events))
+        for _ in range(2):
+            sim.step()
+            counts = assert_call_records(self, sim)
+            self.assertEqual(counts['research_plan'], 0)
+            self.assertEqual(counts['operational_review'], 0)
+        checked = [e for e in sim.runtime['events'] if e['kind'] == 'submission_checked']
+        self.assertTrue(checked)
+        self.assertTrue(all(e['id'] not in sim.runtime['pending_events'] for e in checked))
+
     def test_new_decision_event_during_a_plan_is_assigned_to_a_later_plan(self):
         from support.cross_contracts import assert_call_records
         from support.default_responder import DefaultResponder

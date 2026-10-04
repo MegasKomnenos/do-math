@@ -590,6 +590,9 @@ class LimitedRecoveryTests(unittest.TestCase):
             'profile_ref': ref, 'purpose': 'restore sealed input',
             'procedure': 'Restore the specified sealed input and verify its digest',
             'expires_at': (sim.clock.wall() + timedelta(minutes=5)).isoformat()}})
+        event, = [row for row in e.runtime['events'] if row['kind'] == 'limited_recovery_approved']
+        self.assertNotIn(event['id'], e.runtime['pending_events'])
+        self.assertFalse(any(event['id'] in a.get('event_refs', []) for a in e.runtime['queue']))
         action = next(a for a in e.runtime['queue'] if a['id'] == 'AC-repair')
         e._check_limited_recovery(action)
         e._action_lifecycle_gate(action)
