@@ -13030,11 +13030,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "검증된 검토 시작 상태 재사용 확정",
-      "last_closed": "B79 b0e0b59a 및 B80 기능/전후/귀속/소비자 검증",
-      "active": "B80 실제 반복 준비 재사용의 원보고·미러·기억·커밋 확정",
-      "exit": "실제 생산자 보존·quiescence/복원 격리·원 LONG·T3 귀속·관련150개를 같은 검수 커밋으로 확정",
-      "next": "6-A 시간 규칙×국면의 현행 선언·생산자·기존 검사 대조에서 다음 독립 변경 선택",
+      "phase": "관찰 시간 국면 선언 확정",
+      "last_closed": "B80 26ed5d50; B81 관련167개 통과",
+      "active": "관찰의 실제 세 국면과129일반 조합의 근거·미러·기억·커밋 확정",
+      "exit": "세 국면 선언을 실제 setter/observe가 공유하고 일반 행렬·기존167검사 및 정확한 근거가 검수 커밋에 포함됨",
+      "next": "6-A 나머지 운영 호출·checkpoint 유예·대화 임대·시작 전 국면의 실제 선언과 전건 검증을 연결",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -17640,6 +17640,58 @@
         "One clean LONG pair501.6→257.6s; no universal optimization claim",
         "T3 two tests pass and both real consumers receive initialization+20 inputs; whole branch gate remains false",
         "150 producer/template/flow/read-tool checks do not close original19/61/11/P2/six classes or final gates"
+      ]
+    },
+    "observation_phase_time_integration": {
+      "id": "B81",
+      "base_head": "26ed5d50",
+      "scope": "관찰기의 실제 세 국면과 live/replay 시간 평가 선언·일반 경계 행렬",
+      "state": "verified_scope_recorded_in_owning_commit",
+      "owned_files": [
+        "scripts/do_math/observations.py",
+        "scripts/tests/unit/test_observation_tracker.py",
+        "scripts/이음새-정본.md"
+      ],
+      "actual_consumers": [
+        "ObservationTracker.set_execution_status",
+        "ObservationTracker.observe"
+      ],
+      "population": {
+        "phases": [
+          "running",
+          "stopping",
+          "ended"
+        ],
+        "modes": [
+          "event_driven",
+          "periodic",
+          "deadline_only"
+        ],
+        "boundary_cases": 108,
+        "self_check_phase_cases": 12,
+        "delayed_receipt_cases": 9
+      },
+      "not_closed": [
+        "6-A 전체 시간 규칙",
+        "운영 호출/체크포인트 유예/대화 임대/엔진 시작 전 국면",
+        "전체 시간 규칙 부류와 최종 전건 관문"
+      ],
+      "whole_requirement_closed": false,
+      "memory_node": "M-0498",
+      "changed_area": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 167
+        },
+        "total_seconds": 50.8,
+        "changed_during_run": []
+      },
+      "tracked_report": "C:\\math\\docs\\do-math\\시험-재편-2026-09-29\\검증\\2026-10-04-관찰-시간-국면\\report.json",
+      "report_sha256": "da2d9c5af2a6e94b632b346bd4b42a51790ad53e8e4625fa8711bc1f2ac3e93b",
+      "notes": [
+        "Actual current clock phase gating preserved; no hard test timeout or removed run limit",
+        "The phase matrix covers observation modes/phases/live/evaluate and receipt-time boundaries, not every6-A rule"
       ]
     }
   }

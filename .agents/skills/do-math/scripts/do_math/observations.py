@@ -103,6 +103,14 @@ def _raw_json(value: Any) -> str:
 # The obligation field that holds its response deadline while a research call runs.
 _HELD = "deadline_held_offset_ms"
 
+# Only a running execution can ingest a live row and evaluate live timers.
+# Stopping/ended streams may still replay facts at their original coordinates.
+OBSERVATION_PHASE_RULES = {
+    'running': {'live': True, 'terminal': False},
+    'stopping': {'live': False, 'terminal': False},
+    'ended': {'live': False, 'terminal': True},
+}
+
 
 def _stored(family: str, record: dict) -> dict:
     """``record`` checked by the storage gate's own checker of runtime ``family`` (이음새-정본.md §6)."""
@@ -790,9 +798,9 @@ class ObservationTracker:
                 for oid in (self.obligations if identifiers is None else identifiers)}
 
     def set_execution_status(self, status: str) -> None:
-        if status not in {"running", "stopping", "ended"}:
+        if status not in OBSERVATION_PHASE_RULES:
             raise ValueError("unsupported live execution status")
-        if self.execution_status == "ended" and status != "ended":
+        if OBSERVATION_PHASE_RULES[self.execution_status]['terminal'] and status != self.execution_status:
             raise ValueError("ended execution cannot restart its observation clock")
         self.execution_status = status
 
@@ -958,10 +966,11 @@ class ObservationTracker:
             return [{"kind": "observation_clock_error", "execution_id": self.execution_id,
                      "reason": "monotonic clock regressed", "next_owner": "engine"}]
         self.last_clock = when
-        if self.execution_status != "running" and live:
+        phase = OBSERVATION_PHASE_RULES[self.execution_status]
+        if not phase['live'] and live:
             return []
         self.observation_source = source
-        self.live_observation = live and self.execution_status == 'running'
+        self.live_observation = live and phase['live']
         try: self._ingest_event(event, when)
         except ValueError as error:
             rejected = {"kind": "observation_input_rejected", "execution_id": self.execution_id,

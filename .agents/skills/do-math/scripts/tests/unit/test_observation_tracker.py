@@ -68,6 +68,106 @@ class TrackerCase(unittest.TestCase):
         return next(r for r in observe(self.t, {"type": "tick"}) if r["kind"] == "self_check_due")
 
 
+class TimingPhaseTests(unittest.TestCase):
+    def test_delayed_stream_rows_use_receipt_time_and_replay_cannot_start_live_timers(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        for phase in observations.OBSERVATION_PHASE_RULES:
+            for mode in observations.OBSERVATION_MODES:
+                with self.subTest(phase=phase, mode=mode):
+                    workspace = root / f'{phase}-{mode}'
+                    workspace.mkdir()
+                    clock = FakeClock()
+                    tracker = ObservationTracker('EX-phase', workspace, {
+                        'observation_mode': mode, 'research_self_checks': False, 'observation_rules': [],
+                        'tool_review_window_seconds': 1, 'observation_interval_seconds': 2,
+                        'self_check_response_window_seconds': 5}, time_port=clock)
+                    received_at = clock.now()
+                    received_monotonic = clock.monotonic()
+                    clock.advance(1000)
+                    tracker.set_execution_status(phase)
+                    live = phase == 'running'
+                    source = {'stream': 'stdout.jsonl', 'start_offset': 10, 'end_offset': 20,
+                              'received_at': received_at, 'received_monotonic': received_monotonic}
+                    rows = tracker.observe({'type': 'item.started', 'item': {
+                        'id': 'C', 'type': 'command_execution'}}, source=source, live=live)
+                    self.assertEqual(kinds(rows), ['observation_fact'])
+                    self.assertEqual(rows[0]['monotonic_offset_ms'], 0)
+                    self.assertEqual(rows[0]['source'], {key: value for key, value in source.items()
+                                                         if key != 'received_monotonic'} | {'received_offset_ms': 0})
+                    rows = tracker.observe({'type': 'tick'}, source={**source,
+                        'start_offset': 20, 'end_offset': 20, 'received_monotonic': received_monotonic + 1}, live=live)
+                    self.assertEqual(kinds(rows), ['tool_review_due']
+                                     if live and mode != 'deadline_only' else [])
+
+    def test_self_check_clock_opens_only_for_live_running_evaluation(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        for phase in observations.OBSERVATION_PHASE_RULES:
+            for live in (False, True):
+                for evaluate in (False, True):
+                    with self.subTest(phase=phase, live=live, evaluate=evaluate):
+                        workspace = root / f'{phase}-{live}-{evaluate}'
+                        workspace.mkdir()
+                        clock = FakeClock()
+                        tracker = ObservationTracker('EX-phase', workspace, {
+                            'observation_mode': 'event_driven', 'research_self_checks': True,
+                            'observation_rules': [observation_rule(repeat_interval=2)],
+                            'tool_review_window_seconds': 60, 'observation_interval_seconds': 300,
+                            'self_check_response_window_seconds': 5}, time_port=clock)
+                        write_checkpoint(workspace, counters={'attempts': 2})
+                        tracker.set_execution_status(phase)
+                        source = {'stream': 'stdout.jsonl', 'start_offset': 0, 'end_offset': 0,
+                                  'received_at': clock.now(), 'received_monotonic': clock.monotonic()}
+                        rows = tracker.observe({'type': 'tick'}, source=source, live=live, evaluate=evaluate)
+                        expected = phase == 'running' and live and evaluate
+                        due = [row for row in rows if row['kind'] == 'self_check_due']
+                        self.assertEqual(len(due), int(expected))
+                        self.assertEqual(bool(tracker.obligations), expected)
+                        self.assertEqual(tracker.checkpoint_count, int(expected))
+                        if expected:
+                            self.assertEqual(due[0]['deadline_offset_ms'] - due[0]['opened_offset_ms'], 5000)
+                            self.assertEqual(due[0]['status'], 'open')
+
+    def test_live_timer_boundaries_cover_every_observation_mode_and_execution_phase(self):
+        phases = observations.OBSERVATION_PHASE_RULES
+        self.assertEqual(set(phases), {'running', 'stopping', 'ended'})
+        self.assertEqual({phase for phase, rule in phases.items() if rule['live']}, {'running'})
+        self.assertEqual({phase for phase, rule in phases.items() if rule['terminal']}, {'ended'})
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        for phase in phases:
+            for mode in observations.OBSERVATION_MODES:
+                for live in (False, True):
+                    for evaluate in (False, True):
+                        for seconds in (0.999, 1.0, 2.0):
+                            with self.subTest(phase=phase, mode=mode, live=live, evaluate=evaluate, at=seconds):
+                                workspace = root / f'{phase}-{mode}-{live}-{evaluate}-{seconds}'
+                                workspace.mkdir()
+                                clock = FakeClock()
+                                tracker = ObservationTracker('EX-phase', workspace, {
+                                    'observation_mode': mode, 'research_self_checks': False, 'observation_rules': [],
+                                    'tool_review_window_seconds': 1, 'observation_interval_seconds': 2,
+                                    'self_check_response_window_seconds': 5}, time_port=clock)
+                                source = {'stream': 'stdout.jsonl', 'start_offset': 0, 'end_offset': 1,
+                                          'received_at': clock.now(), 'received_monotonic': clock.monotonic()}
+                                tracker.observe({'type': 'item.started', 'item': {
+                                    'id': 'C', 'type': 'command_execution'}}, source=source, evaluate=False)
+                                tracker.set_execution_status(phase)
+                                clock.advance(seconds)
+                                rows = tracker.observe({'type': 'tick'}, source={**source,
+                                    'start_offset': 1, 'end_offset': 1, 'received_at': clock.now(),
+                                    'received_monotonic': clock.monotonic()}, live=live, evaluate=evaluate)
+                                expected = []
+                                active = phase == 'running' and live and evaluate
+                                if active and mode != 'deadline_only' and seconds >= 1:
+                                    expected.append('tool_review_due')
+                                if active and mode == 'periodic' and seconds >= 2:
+                                    expected.append('periodic_review_due')
+                                self.assertEqual(kinds(rows), expected)
+                                for row in rows:
+                                    jsonschema.validate({row['execution_id']: observations.persistent_record(row)},
+                                                        default_state_contract().family('runtime', 'observations').schema)
+                                self.assertFalse(tracker.obligations)
+
+
 class ReviewTests(TrackerCase):
     def test_transport_ping_and_idle_do_not_create_math_failure_or_review(self):
         self.clock.value = 200
