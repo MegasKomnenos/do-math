@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B54 검증완료·확정준비",
-      "active": "다음 교차42사건/전이·11관찰자·standalone1개를 current 계약으로 통합; 기존12LONG 중복하지 않음",
+      "last_closed": "B55 검증완료·확정준비",
+      "active": "다음 실행기/공유 입력 provenance/변이 판정/T3 store와 기존 모듈 내부 추가사례 통합",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -15002,7 +15002,7 @@
     },
     "engine_population_integration": {
       "id": "B54",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "engine/CLI 후보15모듈/62원사례·녹화/규모/중첩제어/공개도구4도우미 및 현재 malformed 재전달 기대 교정",
       "changed_area": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-jyaoqc9o\\report.json",
@@ -15368,7 +15368,124 @@
           "tier": null
         }
       },
-      "format_fix": "EOF 빈 줄만 제거하고 AST 동일 확인. 원 실행 보고는 그대로이며 최종 파일 지문은 형식 교정 뒤 값."
+      "format_fix": "EOF 빈 줄만 제거하고 AST 동일 확인. 원 실행 보고는 그대로이며 최종 파일 지문은 형식 교정 뒤 값.",
+      "commit": "75bb5329"
+    },
+    "cross_population_integration": {
+      "id": "B55",
+      "state": "verified_main_commit_pending",
+      "scope": "남은교차42사건/전이·11관찰자/standalone1개와현재무조건단언;LONG12이관/폐기capture factory은퇴1개 구분",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-77ghw0r7\\report.json",
+        "sha256": "2ffa445582393c53b777696f0da0de6c8d129f5986b168023bd6dde05945e12c",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 7
+        },
+        "total_seconds": 24.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 7.672000000020489,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-77ghw0r7\\report.json",
+        "sha256": "2ffa445582393c53b777696f0da0de6c8d129f5986b168023bd6dde05945e12c",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 7
+        },
+        "total_seconds": 24.6,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 7.672000000020489,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "초기종결/운영질문/병합이유 보존을 current 성공계약으로 무조건 단언. unknown invariant는 실제 탐색에서 전파. 기존machine/oracle와12LONG 유지. 과거증거classifier는오류캡처를하지 않음.",
+      "limits": "최초54개724초·flow1개91.922초초과와후속live1+structure6개24.6초는별도판본. 병목/은퇴/이관/추가를구분하고전체관문증거로합산하지 않음. smell7.672초보존.",
+      "files": [
+        {
+          "path": "tests/flows/test_cross_required_events.py",
+          "sha256": "5c397e0c63022f5205f259077de5b54293e5078223c026d96dff0792679d62ec"
+        },
+        {
+          "path": "tests/support/cross_failure_evidence.py",
+          "sha256": "fba39d849efd7234775147f0558435abec8dcb3f8204de7ebe6f6204287b39e1"
+        },
+        {
+          "path": "tests/unit/test_cross_obligations.py",
+          "sha256": "6827797d3f525acb484f24b9b9ff0b4048930a6b44d55357124ce4fa81591066"
+        },
+        {
+          "path": "tests/support/cross_installation.py",
+          "sha256": "e383599a1968576fa552e8c52a272aa77ccda76bc8a6b12f502a0f8aa4e0f657"
+        },
+        {
+          "path": "tests/sim/test_model_submission_contract.py",
+          "sha256": "77dc5d51a25d48cd74c662c1d45334a963afeaebf154203906cfde0c03413c90"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "initial_family": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-04563zms\\report.json",
+        "sha256": "a7091c1276516c2695079654e63bbda8ae456e9a46254305bc0ef8a1b0a14243",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 54
+        },
+        "total_seconds": 724.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_review_answer_dispositions",
+              "seconds": 91.92200000002049,
+              "budget_seconds": 60.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure_initial": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-myx0_u_i\\report.json",
+        "sha256": "5adfb0863a5216fee9651c2771806617b471d1d803910797e2b64ca5254ebe5c",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "failed": 1,
+          "passed": 5
+        },
+        "total_seconds": 7.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 6.75,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "format_fix": "추출함수끝EOF빈줄만제거하고AST동일확인. 실행보고는그대로보존."
     }
   }
 }
