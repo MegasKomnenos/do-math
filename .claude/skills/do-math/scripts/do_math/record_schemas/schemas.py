@@ -148,7 +148,7 @@ _ACTION = record({"role": TEXT, "target": nullable(TEXT), "stage": TEXT, "slot":
     "input_overflow": _OVERFLOW, "overflow_activity_id": ID,
     "delegation_application_id": ID, "contract_review_execution": ID,
     "research_request_id": TEXT, "requesting_slot": TEXT,
-    "revision_cycles": array(array(ID)), "revision_parent_ids": REFS, "unbound_request": BOOL,
+    "revision_parent_ids": REFS, "unbound_request": BOOL,
     "reasons": array(TEXT), "superseded_revision_bases": HISTORY,
     "revision_followup": array(_RECORD_TASK),
     "intent_repair": obj({"import_id": ID, "previous_sha256": HASH, "check_execution_id": ID,
@@ -733,7 +733,6 @@ RUNTIME_FIELDS = {"status": enum("initializing", "ready", "running", "paused", "
     "pending_kind_checks": array(obj({"family": enum("knowledge", "relation"),
         "token": TEXT, "definition_id": ID, "source_ref": TEXT, "actor_ref": TEXT,
         "execution_id": ID}, ("family", "token"))),
-    "revision_cycles": array(array(ID)),
     "input_overflows": array(obj({"action": _ACTION, "detail": _OVERFLOW,
         "source_catalog": EVIDENCE}, ("action", "detail", "source_catalog"))),
 }

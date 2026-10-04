@@ -13089,8 +13089,8 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B99 38623bdd; B100 KD-1916 교정과 평가 발동 관련115개 통과",
-      "active": "B100 확정 후 개정 순환과 선택 무효화의 실제 계획 연결",
+      "last_closed": "B100 5b25487c; B101 선택 무효화 실제 수락과 불가능한 개정 순환 분기 제거",
+      "active": "B101 확정 후 목표 근거 무효화·학술 후속/반려의 남은 계획 발동 연결",
       "exit": "남은 직접 계획 원천의 실제 대상·근거·호출 검증",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "기존 생산자와 실제 owner/모델/작업자 결과를 사용한다. 실제 실패를 고치고 검증된 부분의 남김을 제거한다.",
@@ -18364,6 +18364,78 @@
       },
       "whole_requirement_closed": false,
       "limits": "기존 이전도 현재 권위·입력 결속·별도 미종결 수신자·실행 중 수신자 거부를 유지한다. 수신 의무/기원이 다른 경우 덮어쓰기를 허용하지 않는다."
+    },
+    "selected_action_and_revision_simplification": {
+      "id": "B101",
+      "scope": "자료 변경 후 오래된 선택 무효화의 실제 재계획 수락·중복 방지와 도달 불가능한 개정 대기 순환 분기 제거",
+      "state": "검수·관련 검증 완료",
+      "memory_node": "M-0518",
+      "reports": {
+        "fixture-hash-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-선택-무효화/fixture-hash-failure.json",
+          "sha256": "85e2e98174ff58c09b919d655d823f3be043c676a648252e306c55c08ba71bf8",
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "error": 1
+          },
+          "total_seconds": 29.1,
+          "changed_during_run": []
+        },
+        "fixture-plan-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-선택-무효화/fixture-plan-failure.json",
+          "sha256": "daf841fa50ecad8a82be9e055a7a80711606ebad82296d459cd29f787e9ab790",
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 32.5,
+          "changed_during_run": []
+        },
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-선택-무효화/report.json",
+          "sha256": "7276fde5d303ee248b1b449fa6025807045eb3075f8bd42fbe441e3471c9262e",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 91
+          },
+          "total_seconds": 96.2,
+          "changed_during_run": []
+        },
+        "role-inputs": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-선택-무효화/role-inputs.json",
+          "sha256": "39c52a73d18b872447320ef2ca61123ad98d6fb941c3284e84093ea788f26a01",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 21
+          },
+          "total_seconds": 24.3,
+          "changed_during_run": []
+        }
+      },
+      "proof": [
+        "pending_revisions는 action_write_ids가 있는 요청만 수집한다. 같은 action ID의 live 실행은 running으로 덮어쓴다.",
+        "revision_waits는 자기 ID를 제외하고, 미시작 writer가 자신보다 큰 ID의 미시작 writer를 기다리는 간선을 만들지 않는다.",
+        "따라서 미시작 요청 사이의 간선은 ID가 엄격히 작아지는 방향뿐이다. running 요청은 순환 그래프의 출발점에서 제외되어 그쪽 간선은 종점이다.",
+        "실행 중 reader를 기다리는 항목은 execution_id이며 action_id 대기 순환에 들어가지 않는다. 유효 상태에서 revision_cycles는 항상 빈 목록이다.",
+        "기존 상호 읽기/실행 중 writer/유지보수/위임 반환의 무순환 단언은 독립 graphlib 검사 assert_wait_graphs로 유지했다."
+      ],
+      "selection_case": {
+        "source": "공개 source 제어로 실제 바이트·해시·판본 변경",
+        "trigger": "_selected_action_current의 오래된 선택 제거",
+        "observations": [
+          "원천 변경 전 계획 요청 없음",
+          "오래된 research_work 호출 없음",
+          "요청 ID별 실제 모델·worker 계획1회 및 output_accepted",
+          "obsolete_selection 이력1회",
+          "추가 owner2회에서 전체 호출 수 불변"
+        ],
+        "original_sim_test_retained": true
+      },
+      "whole_requirement_closed": false
     }
   }
 }

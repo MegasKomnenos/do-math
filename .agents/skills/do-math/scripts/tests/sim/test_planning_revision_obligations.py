@@ -10,6 +10,7 @@ the public ``source`` control registered, and the knowledge record a revision
 targets is a theorem the Lean double verified. The tests call the same mixin
 methods; nothing of the engine or its store is replaced.
 """
+from support.cross_contracts import assert_wait_graphs
 from copy import deepcopy
 import unittest
 
@@ -156,7 +157,7 @@ class RevisionObligationTests(unittest.TestCase):
         self.assertEqual(planning.revision_waits(maintenance, h.instance, h.runtime), [])
         self.assertEqual([(row['state'], set(row['action']['revision_targets'])) for row in planning.pending_revisions(h.runtime)],
                          [('waiting', {kid})])
-        self.assertEqual(planning.revision_cycles(h.instance, h.runtime), [])
+        assert_wait_graphs(h.instance, h.runtime)
 
     def test_closed_delegate_keeps_obligation_for_new_preparer(self):
         h, parent, kid = self.delegated()
@@ -174,7 +175,7 @@ class RevisionObligationTests(unittest.TestCase):
         new = enqueue(h, 'research_preparation', revision_targets=revisions.capture_targets(h.instance, h.runtime, [kid]))
         self.assertIn(parent['id'], new['revision_parent_ids'])
         self.assertEqual(planning.revision_waits(new, h.instance, h.runtime), [])
-        self.assertEqual(planning.revision_cycles(h.instance, h.runtime), [])
+        assert_wait_graphs(h.instance, h.runtime)
 
     def test_plan_selection_and_predispatch_use_actual_current_input(self):
         from support.record_builders import task_disposition

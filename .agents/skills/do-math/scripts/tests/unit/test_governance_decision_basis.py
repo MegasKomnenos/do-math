@@ -8,6 +8,7 @@ revision response must resolve. Every test calls the product functions on the
 legacy dictionary state; nothing is replaced.
 """
 import unittest
+from support.cross_contracts import assert_wait_graphs
 from copy import deepcopy
 
 from do_math import planning, revisions
@@ -145,7 +146,7 @@ class RevisionWaitTests(BasisCase):
         self.assertEqual([w["action_id"] for w in planning.revision_waits(second, self.instance, self.runtime)], ["AC-1"])
         self.assertEqual(sorted(w["action_id"] for w in planning.revision_waits(both, self.instance, self.runtime)),
                          ["AC-1", "AC-2"])
-        self.assertEqual(planning.revision_cycles(self.instance, self.runtime), [])
+        assert_wait_graphs(self.instance, self.runtime)
         self.assertTrue(planning.revision_waits({"id": "A-work", "role": "research_work", "target": "A"},
                                                 self.instance, self.runtime))
         self.runtime["executions"]["E"] = {"id": "E", "status": "running", "action": second}
@@ -153,7 +154,7 @@ class RevisionWaitTests(BasisCase):
         self.assertEqual([w["action_id"] for w in waits if "action_id" in w], ["AC-2"])
         self.assertEqual([w["execution_id"] for w in waits if "execution_id" in w], ["E"])
         # The running writer waits for nothing: the two writers' mutual reads form no wait cycle.
-        self.assertEqual(planning.revision_cycles(self.instance, self.runtime), [])
+        assert_wait_graphs(self.instance, self.runtime)
 
     def test_writer_drains_a_running_plan_but_failed_writer_does_not_block_diagnosis(self):
         writer = {"id": "write", "role": "research_preparation",

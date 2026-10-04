@@ -974,7 +974,7 @@ Codex는 CLI가 쓴 최종 파일 `final.txt`를 final 바이트로 사용한다
 
 ## 전제·대기·조회 계약
 
-`action.revision_targets`는 고칠 기존 과제의 revision·계약 해시 또는 지식의 revision·본문 해시다. 예정된 개정에 의존하는 미시작 작업은 슬롯을 잡기 전에 기다린다. 개정 위임은 `waiting_actions.kind=revision_dependency`, `revision_targets`, `delegated_targets`와 수행 과제의 `revision_request_action_id`로 연결한다. 대상별 `revision_resolutions`와 후속의 실제 개정이 의무를 해소한다. 준비·계획 입력의 `pending_revisions`, `revision_cycles`는 미해소 대상과 순환을 보여 준다. 유지보수 입력도 대기열 수리를 확인할 수 있도록 두 필드와 전체 `blocked_actions`를 받는다. 선언·처분·역할 권한은 공통 실행의 확장 계약을 따른다.
+`action.revision_targets`는 고칠 기존 과제의 revision·계약 해시 또는 지식의 revision·본문 해시다. 예정된 개정에 의존하는 미시작 작업은 슬롯을 잡기 전에 기다린다. 개정 위임은 `waiting_actions.kind=revision_dependency`, `revision_targets`, `delegated_targets`와 수행 과제의 `revision_request_action_id`로 연결한다. 대상별 `revision_resolutions`와 후속의 실제 개정이 의무를 해소한다. 준비·계획 입력의 `pending_revisions`는 미해소 대상을 보여 준다. 유지보수 입력도 대기열 수리를 확인할 수 있도록 이 필드와 전체 `blocked_actions`를 받는다. 선언·처분·역할 권한은 공통 실행의 확장 계약을 따른다.
 
 `decision_basis`는 판단에 사용한 계약·기존 결과·지식 본문·원자료·사용 효력을 비교한다. 일반적인 내용 인용은 진행 표시나 검토 기록이 추가되거나 기존 결과를 바꾸지 않는 결과가 추가돼도 현재성을 유지한다. 내용과 출처가 같은 reviewing→verified 승인 상승도 현재성을 유지하지만, 철회·사용 정지·신뢰 전제 변경은 다시 확인해야 한다.
 

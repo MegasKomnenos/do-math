@@ -369,5 +369,54 @@ class AssessmentReplanningTests(unittest.TestCase):
         self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
 
 
+class SelectedActionReplanningTests(unittest.TestCase):
+    def test_source_change_invalidates_selection_and_runs_one_replan(self):
+        from support.cross_contracts import assert_call_records
+        from support.engine_lifecycle import _ended_execution
+        from support.planning_owner import owner_sim, SOURCE_NAME
+        from support.record_builders import task_disposition
+        sim = owner_sim()
+        h = sim.engine
+        _ended_execution(h, 'EX-plan', 'research_plan')
+        plan = {'dispositions': [task_disposition('TK-1')], 'task_assessments': [], 'preparation_requests': []}
+        h._apply_task_plan(plan, 'EX-plan', deepcopy(h.runtime['tasks']), ['TK-1'], evaluation_context=h._evaluation_context())
+        action, = [a for a in h.runtime['queue'] if a['role'] == 'research_work']
+        self.assertTrue(h._selected_action_current(action, evaluation_context=h._evaluation_context()))
+        self.assertFalse(any(a['role'] == 'research_plan' for a in h.runtime['queue']))
+        h._save()
+        source = sim.root / SOURCE_NAME
+        source.write_text('The required source has a new argument.', encoding='utf-8')
+        applied(sim, 'source', config={'path': str(source)})
+        self.assertFalse(h._selected_action_current(action, evaluation_context=h._evaluation_context()))
+        self.assertFalse(any(a['role'] == 'research_work' for a in h.runtime['queue']))
+        request, = [a for a in h.runtime['queue'] if a['role'] == 'research_plan']
+        self.assertIn('changed before dispatch', request['reason'])
+        model = scenario_model(sim, DefaultResponder(preparation_candidates=[], plan_assessments=False))
+        from support.model import Answer
+        def defer(out, context):
+            out['goal_audit'] = False
+            for row in out['dispositions']:
+                row.update(kind='not_selected', next_owner='research_plan',
+                    revisit={'at': '2090-01-02T00:00:00+00:00', 'event_refs': []})
+            return out
+        model.on('research_plan', id=request['id']).reply(Answer(defer))
+        h._save()
+        before = assert_call_records(self, sim)
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        sim.run_until(lambda current: any(c['action']['id'] == request['id'] for c in current.model.calls), max_steps=8)
+        after = assert_call_records(self, sim)
+        self.assertEqual(after['research_plan'] - before['research_plan'], 1)
+        self.assertEqual(after['research_work'], before['research_work'])
+        execution, = [row for row in sim.runtime['executions'].values() if row['action']['id'] == request['id']]
+        self.assertEqual(execution['outcome'], 'output_accepted',
+                         {'error': execution.get('error'), 'integration': execution.get('integration_result'), 'receipts': model.receipts})
+        self.assertEqual(sum(row.get('kind') == 'obsolete_selection' and row['action']['id'] == action['id']
+                             for row in sim.runtime['history']), 1)
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim), after)
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
+
+
 if __name__ == '__main__':
     unittest.main()

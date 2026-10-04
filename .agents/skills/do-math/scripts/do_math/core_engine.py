@@ -1891,7 +1891,6 @@ class CoreEngineMixin:
         if action["role"] == "maintenance":
             # Queue repairs are checked against the engine's own revision state.
             context["pending_revisions"] = deepcopy(planning.pending_revisions(self.runtime))
-            context["revision_cycles"] = deepcopy(self.runtime.get("revision_cycles", []))
             context["blocked_actions"] = [submission.blocked_action_row(aid, entry)
                 for aid, entry in self.runtime.get("waiting_actions", {}).items()]
             if action.get('initial_submission_diagnosis'):
@@ -1925,7 +1924,6 @@ class CoreEngineMixin:
                 context["pending_revisions"] = deepcopy(planning.pending_revisions(self.runtime))
             else:
                 context["ready_task_ids"] = planning.ready_task_ids(self.runtime, self.instance, evaluation_context=evaluation_context)
-            context["revision_cycles"] = deepcopy(self.runtime.get("revision_cycles", []))
             context["blocked_actions"] = [submission.blocked_action_row(aid, entry)
                 for aid, entry in self.runtime.get("waiting_actions", {}).items()
                 if entry.get("kind") in submission.RESOLVABLE_WAITS]

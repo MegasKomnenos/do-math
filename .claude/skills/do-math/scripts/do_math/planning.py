@@ -198,20 +198,6 @@ def revision_waits(action: dict, instance: dict, runtime: dict, *, records=None)
     return reasons
 
 
-def revision_cycles(instance: dict, runtime: dict) -> list[list[str]]:
-    from .revisions import dependency_cycles
-    rows = pending_revisions(runtime)
-    records = record_index(instance, runtime)
-    graph = {}
-    for row in rows:
-        action = row["action"]
-        # A started writer waits for nothing, so only unstarted requests can close a wait cycle.
-        if not action.get("id") or row["state"] == "running":
-            continue
-        graph[action["id"]] = {"dependencies": [wait["action_id"] for wait in revision_waits(action, instance, runtime, records=records) if wait.get("action_id")]}
-    return dependency_cycles(graph)
-
-
 def governance_revisions(instance: dict) -> dict:
     """Read the authoritative charter/policy editions, never caller projections."""
     from .governance import governance_view

@@ -55,7 +55,7 @@ SCOPED_KEYS = ('model_policy', 'resources', 'budget_unit', 'academic_requirement
                'academic_validation', 'repetition_holds', 'goal', 'policies', 'goal_revision', 'policy_revision',
                'events', 'external_operations', 'external_rejections', 'user_inputs', 'open_questions',
                'recent_history', 'relations', 'formal_verifier', 'execution_profiles', 'role_profile_refs',
-               'decisions', 'pending_revisions', 'revision_cycles', 'blocked_actions')
+               'decisions', 'pending_revisions', 'blocked_actions')
 # Derived machine files the input builds only for the scopes that inline them; elsewhere the
 # records they are derived from stay readable through the record map.
 DERIVED_KEYS = {'configuration_source', 'relation_validation_source'}

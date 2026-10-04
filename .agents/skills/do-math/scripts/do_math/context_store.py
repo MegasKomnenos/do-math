@@ -444,7 +444,6 @@ INLINE_SCOPES = {
     'decisions': ('intent_interpretation', *_PLANNING, 'task_contract_review', 'research_work', 'supplemental_research',
                   'operational_review', 'goal_audit', 'maintenance'),
     'pending_revisions': (*_PLANNING, 'maintenance:general'),
-    'revision_cycles': (*_PLANNING, 'maintenance:general'),
     'blocked_actions': (*_PLANNING, 'operational_review', 'maintenance:general'),
     'configuration_source': (*_INTENT, *_PLANNING),
     'relation_validation_source': ('research_work', 'supplemental_research:task'),

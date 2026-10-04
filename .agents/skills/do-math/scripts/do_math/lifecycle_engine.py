@@ -559,12 +559,6 @@ class LifecycleEngineMixin:
                 continue
             self._bind_revision_action(action)
             self._cancel_selected_revision_targets(action)
-        from .planning import revision_cycles
-        cycles = revision_cycles(self.instance, self.runtime)
-        if cycles != self.runtime.get('revision_cycles', []):
-            self.runtime['revision_cycles'] = cycles
-            if cycles:
-                self._enqueue('research_plan', reason='Explicit revision dependencies form a cycle; combine or redesign the recorded obligations', revision_cycles=cycles)
         now = self._lifecycle_now()
         evaluation_context = {**self._evaluation_context(), 'now': now.isoformat()}
         from .task_scope import refresh_task_assessments
