@@ -125,6 +125,7 @@ class ApprovedCompilerTests(unittest.TestCase):
                                  lean_command=self.command, expected_toolchain=self.toolchain, jobs=jobs, clock=_entry.ports.clock, environment=_entry.environment, git_backend=_entry.ports.git_backend)
         self.assertEqual(result['status'], 'rejected', result)
         self.assertEqual(result['reason'], 'approved toolchain changed before execution')
+        self.assertEqual(result['error_kind'], 'trust_environment')
         self.assertEqual((calls.count('job_run'), jobs.launched), (0, []))
 
     def test_executable_change_during_run_is_left_to_the_next_identity_check(self):
@@ -204,6 +205,7 @@ class PreparationTests(unittest.TestCase):
                                          lean_command=command, expected_toolchain=expected)
         self.assertEqual(result['status'], 'rejected')
         self.assertEqual(result['reason'], 'approved project inputs changed before execution')
+        self.assertEqual(result['error_kind'], 'trust_environment')
 
     def test_changed_approved_toolchain_rejects_before_source_execution(self):
         binary_hash = hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest()

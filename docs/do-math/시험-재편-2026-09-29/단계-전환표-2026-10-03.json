@@ -4841,7 +4841,7 @@
       {
         "id": "3-C",
         "state": "partial_implementation",
-        "remaining": "원래11쌍 중 8쌍의 명시 공간과 현재 정본/소비를 연결. C-15/C-13/A-47 및 이후 사본·각 공간 밖의 종료는 미확정"
+        "remaining": "원래11쌍을 현재 명시 공간의 정본/차분/실제 소비로 연결. B72 식별 오배정 정정. 모든 입력 모집단과 이후 의미상 사본의 최종 종료는 미확정"
       },
       {
         "id": "4-A",
@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B72 참조·관찰·경로 규칙의 관련 122개 같은 판본 검증",
-      "active": "3-C 남은 형식/게시 환경 오류·기록한 한도/예산·초과 처분/적용 분기의 정본/차분 검증",
+      "last_closed": "B73 원문 규칙 정정·관련 141개 같은 판본 검증",
+      "active": "5-A 판정 근거 필드 선언과 관리/내용/모집단/봉인시점/동시상태 민감도 검증",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -16869,7 +16869,7 @@
         "A-47"
       ],
       "verified_in_declared_scope": [
-        "B-32",
+        "extra:task-input-supply",
         "B-33",
         "B-49"
       ],
@@ -16879,12 +16879,12 @@
         "D-02",
         "C-19",
         "B-36",
-        "B-32",
         "B-33",
         "B-49"
       ],
       "remaining_original_pairs": [
         "C-15",
+        "B-32",
         "C-13",
         "A-47"
       ],
@@ -16927,6 +16927,124 @@
         {
           "path": ".claude/skills/do-math/scripts/tests/unit/test_provider_cli_surface.py",
           "sha256": "681fbdf2d879df1889b22595d90a02d86662d585ae51b2e17b25a124e4dd7f9d"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "scope_mapping_correction": {
+        "original_scope_recorded": "B-32 참조 제공/저작 분류",
+        "correct_scope": "추가 규칙 extra:task-input-supply; 원래 B-32는 prepare_role_input/fit_context 필수 입력 분류",
+        "source": "조사/결함-범주.md 3범주 검산표 및 조사/결함-B.md B-32",
+        "corrected_by": "B73 원래 필수 입력 정본/극단 예산 전건 검사"
+      }
+    },
+    "original_rule_scope_correction_integration": {
+      "id": "B73",
+      "state": "verified_main_commit_pending",
+      "scope": "원래 B-32 연결 정정과 실제 필수 분류·C-13 바이트 예산·C-15 환경 분류·A-47 정본/적용 대조",
+      "original_pairs": [
+        "B-16",
+        "C-19",
+        "B-36",
+        "C-15",
+        "C-12",
+        "B-49",
+        "B-32",
+        "D-02",
+        "B-33",
+        "C-13",
+        "A-47"
+      ],
+      "verified_in_declared_scope": [
+        "B-32",
+        "C-13",
+        "C-15",
+        "A-47"
+      ],
+      "connected_pairs": [
+        "B-16",
+        "C-19",
+        "B-36",
+        "C-15",
+        "C-12",
+        "B-49",
+        "B-32",
+        "D-02",
+        "B-33",
+        "C-13",
+        "A-47"
+      ],
+      "remaining_unconnected_original_pairs": [],
+      "changed_area": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 141
+        },
+        "total_seconds": 113.6,
+        "changed_during_run": []
+      },
+      "tracked_report": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-원문-규칙-정정/report.json",
+      "report_sha256": "425cfe9a0e776d526827162d102fae28d97092bfd8309d8c89dcf3345006f1ba",
+      "command": "python .claude/skills/do-math/scripts/run_tests.py structure unit.test_role_input_packaging unit.test_engine_input_overflow unit.test_provider_cli_surface sim.test_role_input_context sim.test_knowledge_formal_engine sim.test_knowledge_formal_verifier sim.test_engine_input_overflow flows.test_review_overflow_evidence flows.test_engine_input_recovery flows.test_review_owner_flows --jobs 3",
+      "contract": [
+        "B72 참조 허용은 추가 규칙으로 보존하고 원래 필수 분류에 B-32를 재연결",
+        "실제 필수 키 정확 집합과 큰 선택 표시 사본의 정상 축소를 별도 검증",
+        "문맥 예산은 실제 fitter 인자와 바이트 기록의 비교 기준을 일치",
+        "실제 환경 거부가 게시 및 중앙 형식 경로에서 환경 대기로 분류",
+        "초과 처분 생산/소비는 새 공유 정본을 사용하며 실제 측정과 적용을 대조"
+      ],
+      "limits": [
+        "원래11 연결은 각 보고의 명시한 공간이며 모든 입력/이후 사본 종료는 미확정",
+        "개별 초과16개와 최종 전역 T2/T3/변이/실호출/예산은 남음"
+      ],
+      "files": [
+        {
+          "path": ".claude/skills/do-math/scripts/do_math/input_recovery.py",
+          "sha256": "bfb95973758b1baf2d42851a04845a0c2bccabfadb66996250ea6c740f98194a"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/do_math/context_store.py",
+          "sha256": "506c1da1c5c8dc300abbe2de74ad884a2dfa7bb42bd8a0abcae306d9fef6edd4"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/do_math/call_engine.py",
+          "sha256": "577b8a7f7808e514f3e6153ae8088d5406397d79590ed3a5698dbe1b83099ae9"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/이음새-정본.md",
+          "sha256": "9e406f1140451a3b1a1c5e92b58b0dc5908e9913ff1cc291fa1f8bcc03c574c2"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/structure/test_rule_consistency.py",
+          "sha256": "9a321fb348693c12add33b9857b520505482c9d1ba97e995cc29ee254e361425"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+          "sha256": "dcb8cca92d827527423cf2e13a5a5033fa7e212ba4283a1774e99d57a78fce93"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/sim/test_knowledge_formal_engine.py",
+          "sha256": "78fde395e801873f5df7a8d3f8100dd41e21f1361d161ce5843ca167aaea5298"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/sim/test_knowledge_formal_verifier.py",
+          "sha256": "d15506b877abb9aca0afb8c4d65229c37d628eb7580466190dda80c79fdce617"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/unit/test_role_input_packaging.py",
+          "sha256": "796d2a5510d96a213406aa0400d3917e9738c11461708f45301d0380488bb2b7"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/unit/test_engine_input_overflow.py",
+          "sha256": "d13083b231a496e46411f25602c6270eced2e1486e8c229a7b9d92b2a27d3611"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/unit/test_provider_cli_surface.py",
+          "sha256": "4727186114f997b8c6a1f2aa45de75a2eb0574c9b18274e9354a80e6b13ef283"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/flows/test_review_overflow_evidence.py",
+          "sha256": "1fa446fc472a8a6418ecf45c9103ad84fb043f5c33a369be777f02937cfe5bf8"
         }
       ],
       "whole_requirement_closed": false

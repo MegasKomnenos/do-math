@@ -7,6 +7,13 @@ from .planning import contract_hash
 from .task_contracts import TERMINAL_TASK_STATUSES
 
 
+def input_overflow_disposition(cause, allowed_profiles):
+    """One routing value for measured proposal excess, larger profiles, or a user decision."""
+    if cause == 'current_proposal_or_required_sources':
+        return 'unresolved_to_review_plan'
+    return 'plan_allowed_profile' if allowed_profiles else 'request_user_decision'
+
+
 def overflow_requests(instance, runtime):
     rows = []
     for identifier, waiting in sorted(runtime.get('waiting_actions', {}).items()):

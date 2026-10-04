@@ -883,8 +883,8 @@ def prepare_role_input(context, *, instance, runtime, role, profile, snapshot,
                     alternatives.append(candidate['id'])
         overflow['allowed_profile_candidates'] = alternatives
         overflow['resolution_question']['next_owner'] = 'research_plan' if alternatives else 'user'
-        overflow['suggested_disposition'] = ('unresolved_to_review_plan' if overflow['cause'] == 'current_proposal_or_required_sources'
-                                             else 'plan_allowed_profile' if alternatives else 'request_user_decision')
+        from .input_recovery import input_overflow_disposition
+        overflow['suggested_disposition'] = input_overflow_disposition(overflow['cause'], alternatives)
         fitted['overflow'] = overflow
     else:
         # Packing used conservative canonical component sizes. The actual

@@ -17,6 +17,54 @@ def setUpModule():
 
 
 class FormalContinuationTests(unittest.TestCase):
+    def test_actual_identity_rejection_and_publication_gate_both_require_environment_recovery(self):
+        """3-C/C-15: a changed owned executable, with actual identity checks and no compiler start."""
+        from pathlib import Path
+        import tempfile
+        from support.sim import Sim
+        from support.fakes.host import FakeHost
+        from do_math.trust_validation import EnvironmentUnavailable, require_active_environment
+        with tempfile.TemporaryDirectory() as directory:
+            sim = Sim.activated(directory)
+            environment = deepcopy(sim.engine._formal_environment())
+            toolchain = environment['toolchain']
+            executable = Path(toolchain['executable'])
+            self.assertTrue(executable.resolve().is_relative_to(Path(directory).resolve()))
+            original = executable.read_bytes()
+            self.assertEqual(formal.toolchain_identity_errors(toolchain, jobs=sim.jobs, clock=sim.clock,
+                environment=sim.environment, git_backend=sim.ports.git_backend), [])
+            from do_math import knowledge_records
+            from support.engine_lifecycle import clear_work
+            clear_work(sim)
+            sim.engine.instance, _ = knowledge_records.create_candidate(sim.instance, {
+                'id': 'K-C15', 'kind': 'lemma', 'title': 'Identity classification source',
+                'statement': 'True', 'summary': 'Identity classification', 'explanation': 'By introduction.',
+                'lean_code': 'theorem rejected_identity : True := True.intro',
+                'declaration_names': ['rejected_identity'], 'dependencies': []},
+                source_ref=sim.instance['lifecycle']['input_id'], actor_ref=next(iter(sim.runtime['executions'])), clock=sim.clock)
+            sim.engine._enqueue('formal_check', 'K-C15')
+            sim.engine._save()
+            action = next(a for a in sim.runtime['queue'] if a['role'] == 'formal_check')
+            executable.write_bytes(original + b'changed owned executable')
+            errors = formal.toolchain_identity_errors(toolchain, jobs=sim.jobs, clock=sim.clock,
+                environment=sim.environment, git_backend=sim.ports.git_backend)
+            self.assertTrue(errors)
+            before = len(sim.jobs.launched)
+            result = formal.verify_lean(source='theorem rejected_identity : True := True.intro',
+                declarations=['rejected_identity'], workspace=sim.root,
+                lean_command=toolchain['configured_command'], expected_toolchain=toolchain,
+                jobs=sim.jobs, clock=sim.clock, environment=sim.environment, git_backend=sim.ports.git_backend)
+            self.assertEqual((result['status'], result['error_kind']), ('rejected', 'trust_environment'))
+            self.assertEqual(len(sim.jobs.launched), before)
+            host = FakeHost(toolchain_errors=errors)
+            with self.assertRaisesRegex(EnvironmentUnavailable, 'current trust identity required') as rejected:
+                require_active_environment(sim.instance, sim.runtime, current_identity=True, host=host)
+            self.assertEqual(rejected.exception.detail['environment_id'], environment['id'])
+            run_formal(sim, action)
+            self.assertEqual(sim.runtime['waiting_actions'][action['id']]['kind'], 'formal_environment')
+            self.assertFalse(any(a['role'] == 'research_plan' and a.get('formal_target') == 'K-C15'
+                                 for a in sim.runtime['queue']))
+
     def test_pause_resume_retains_one_action_and_reaches_identity_review(self):
         sim, action = scene()
         stop_with_control(sim, action, 'pause')

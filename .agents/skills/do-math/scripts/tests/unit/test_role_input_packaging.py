@@ -47,6 +47,26 @@ def role_profile(instance, role):
 
 
 class RoleInputTests(unittest.TestCase):
+    def test_optional_display_copies_are_referenced_instead_of_reclassified_as_mandatory(self):
+        """Original 3-C/B-32 counterexample, across every current role."""
+        from do_math import contracts, governance
+        from do_math.canonical import canonical_json
+        instance, _ = surface_state()
+        for role in contracts.ROLES:
+            action = {'id': 'AC-optional-copy', 'role': role}
+            fixed = {'governance': governance.governance_view(instance), 'action': action}
+            context = {**fixed, 'goal': 'g' * 800, 'policies': 'p' * 800,
+                       'implementation_documents': [{'content': 'i' * 800}]}
+            budget = len(canonical_json(fixed)) + 1000
+            with self.subTest(role=role), tempfile.TemporaryDirectory() as directory:
+                fitted = fit_context(context, max_bytes=budget, workspace=Path(directory),
+                                     mandatory_keys=['governance', 'action'], role=role)
+                self.assertIsNone(fitted['overflow'])
+                self.assertEqual(fitted['context']['governance'], fixed['governance'])
+                self.assertEqual(fitted['context']['action'], action)
+                self.assertEqual({row['key'] for row in fitted['reductions']},
+                                 {'goal', 'policies', 'implementation_documents'})
+
     def test_checker_sees_canonical_catalog_beyond_direct_comparison(self):
         """About 0.25 s, over the 0.2 s unit budget: the role input with its submission tools is prepared and sealed for two roles."""
         from support.entry import entry
@@ -592,18 +612,24 @@ class RoleInputTests(unittest.TestCase):
         instance, runtime = surface_state()
         profile = role_profile(instance, 'research_work')
         fixed = lambda p: len(execution_profiles.prepare_prompt(contracts.render_prompt('research_work', {}), p).encode('utf-8'))
-        body = {k: deepcopy(v) for k, v in profile.items() if k not in {'id', 'sha256'}}
-        body['input']['max_input_bytes'] = fixed(profile) + 1000
-        profile = execution_profiles.seal_profile(body)
-        limit = profile['input']['max_input_bytes']
-        with tempfile.TemporaryDirectory() as d:
-            overflow = prepare_role_input({'action': {}, 'task': {'id': 'TK', 'evidence': 'x' * 3000}},
-                instance=instance, runtime=runtime, role='research_work', profile=profile,
-                snapshot='a' * 40, workspace=Path(d), activity_id='AC-1', clock=_entry.ports.clock)['overflow']
-        self.assertEqual(overflow['reason'], 'mandatory_context_exceeds_limit')
-        self.assertEqual((overflow['limit_bytes'], overflow['context_budget_bytes']), (limit, limit - fixed(profile)))
-        self.assertLess(overflow['context_budget_bytes'], overflow['mandatory_bytes'])
-        self.assertLess(overflow['mandatory_bytes'], overflow['limit_bytes'])
+        from support.provider_probes import ObservedCalls
+        for budget in (1000, 2000, 4000):
+            body = {k: deepcopy(v) for k, v in profile.items() if k not in {'id', 'sha256'}}
+            body['input']['max_input_bytes'] = fixed(profile) + budget
+            selected = execution_profiles.seal_profile(body)
+            limit = selected['input']['max_input_bytes']
+            with self.subTest(context_budget=budget), tempfile.TemporaryDirectory() as d:
+                with ObservedCalls(pack=fit_context, capture={'pack': lambda args: args['max_bytes']}) as measured:
+                    overflow = prepare_role_input({'action': {}, 'task': {'id': 'TK', 'evidence': '한글' * 3000}},
+                        instance=instance, runtime=runtime, role='research_work', profile=selected,
+                        snapshot='a' * 40, workspace=Path(d), activity_id='AC-1', clock=_entry.ports.clock)['overflow']
+                self.assertEqual(overflow['reason'], 'mandatory_context_exceeds_limit')
+                self.assertEqual((overflow['limit_bytes'], overflow['context_budget_bytes']),
+                                 (limit, limit - fixed(selected)))
+                self.assertEqual(measured.captured('pack'), [overflow['context_budget_bytes']])
+                self.assertLess(overflow['context_budget_bytes'], overflow['mandatory_bytes'])
+                self.assertLess(overflow['mandatory_bytes'], overflow['limit_bytes'])
+                self.assertGreater(overflow['packed_bytes'], limit)
 
     def test_assessment_only_input_contains_waiting_contract_and_review_history(self):
         from support.entry import entry

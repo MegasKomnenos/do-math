@@ -203,9 +203,11 @@ class CallEngineMixin:
             return True
         if fitted["overflow"]:
             detail = deepcopy(fitted["overflow"])
+            from .input_recovery import input_overflow_disposition
             if (role == 'identity_review' and action.get('review_cycle_id')
                     and detail.get('cause') == 'current_proposal_or_required_sources'
-                    and detail.get('suggested_disposition') == 'unresolved_to_review_plan'):
+                    and detail.get('suggested_disposition') == input_overflow_disposition(
+                        detail['cause'], detail['allowed_profile_candidates'])):
                 overflow_ref = f"{ARTIFACT_ROOT}{self.ports.clock.new_id('BA')}/input-overflow.json"
                 self.runtime.setdefault('input_overflows', []).append({
                     'action': deepcopy(action), 'detail': deepcopy(detail), 'source_catalog': deepcopy(fitted['manifest'])})

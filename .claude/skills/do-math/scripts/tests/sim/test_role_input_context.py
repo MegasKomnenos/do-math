@@ -791,6 +791,25 @@ class RoleContractInputTests(unittest.TestCase):
                 assert_missing_judgment_inputs_rejected(self, role, fitted, root, producer_context=context)
                 from support.role_input_requirements import assert_unreadable_requirement_rejected
                 assert_unreadable_requirement_rejected(self, role, fitted, root, producer_context=context)
+                # Original 3-C/B-32 concerns mandatory classification, not
+                # admission of task reference names. Refit the actual producer
+                # catalog with no caller-supplied mandatory list and an extreme
+                # budget: role-owned direct keys must still stay direct.
+                from do_math.context_store import fit_context, role_direct_keys
+                from do_math.canonical import same_json_value
+                catalog = {row['key']: row for row in fitted['manifest']['catalog']}
+                actual_input = {key: json.loads((root / row['path']).read_bytes())
+                                for key, row in catalog.items()}
+                mandatory = role_direct_keys(role, actual_input)
+                self.assertEqual({'goal', 'policies', 'implementation_documents'} & set(mandatory), set())
+                constrained = fit_context(actual_input, max_bytes=1, workspace=root / 'mandatory-refit',
+                    mandatory_keys=[], role=role,
+                    map_keys=[key for key in actual_input if key not in mandatory])
+                self.assertEqual(constrained['overflow']['reason'], 'mandatory_context_exceeds_limit')
+                self.assertEqual(set(mandatory), set(constrained['overflow']['required_direct_keys']))
+                self.assertLessEqual(set(mandatory), set(fitted['manifest']['required_direct_keys']))
+                for key in mandatory:
+                    self.assertTrue(same_json_value(constrained['context'][key], actual_input[key]), key)
 
 
 class FollowupDocumentTests(unittest.TestCase):

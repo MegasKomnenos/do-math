@@ -53,7 +53,7 @@ class SurfaceTests(unittest.TestCase):
                     resource_limits=None, control_binding=None, scholarly_server=None,
                     claude_only_assigned_model=False)
                 before = deepcopy(seed)
-                with patch.dict(os.environ, {'PATH': str(root)}):
+                with patch.dict(os.environ, {'PATH': str(root), 'PATHEXT': '.EXE'}):
                     expected = executable.resolve(strict=True)
                     result = checked_start_paths(seed, root/'request.json',
                         cli_path=str(expected), executable_key=adapter.executable_key)
@@ -63,6 +63,8 @@ class SurfaceTests(unittest.TestCase):
                             cli_path=str(root/'different.exe'), executable_key=adapter.executable_key)
                     from do_math.file_io import executable_identity
                     self.assertEqual(executable_identity(executable.name, strict=True), expected)
+                    if os.name == 'nt':
+                        self.assertEqual(executable_identity(executable.stem.upper(), strict=True), expected)
                     self.assertEqual(executable_identity(root/'.'/executable.name), expected)
                     self.assertEqual(adapter.capability_identity()['cli_path'], str(expected))
                     self.assertEqual(adapter.observation_key()[2], str(expected))

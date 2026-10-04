@@ -28,11 +28,20 @@ class OverflowEvidenceTests(unittest.TestCase):
         sim.engine.runtime['queue'][:] = [a for a in sim.runtime['queue'] if a.get('review_cycle_id') == cid]
         sim.engine._save()
         calls = len(sim.model.calls)
-        sim.step()
+        from do_math.context_store import prepare_role_input
+        from support.storage_probes import Returns
+        with Returns(prepare_role_input) as packaged:
+            sim.step()
         cycle = sim.runtime['review_cycles'][cid]
         record = rc.validate_resource_disposition(cycle, sim.runtime, read_artifact=sim.engine.store.read)
         self.assertEqual(record['reason'], 'review_input_overflow')
         self.assertEqual(record['state'], 'ended')
+        measurement, = [value['overflow'] for value in packaged.values if value['overflow']]
+        self.assertEqual(measurement['suggested_disposition'], 'unresolved_to_review_plan')
+        self.assertEqual(record['detail']['overflow'], measurement)
+        self.assertEqual(measurement['cause'], 'current_proposal_or_required_sources')
+        self.assertEqual(len([a for a in sim.runtime['queue'] if a['role'] == 'research_plan'
+                             and cid in a.get('evidence_refs', [])]), 1)
         self.assertEqual(len(sim.model.calls), calls)
         before = deepcopy(sim.runtime)
         head = sim.engine.head
