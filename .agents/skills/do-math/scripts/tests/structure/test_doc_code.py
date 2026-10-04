@@ -5,8 +5,8 @@ this test does not substitute flag vocabulary for those requirements.
 """
 from pathlib import Path
 import unittest
-from support.doc_code import (command_issues, declared_policy_names, diagnostic_names, diagnostic_reference_issues, documented_policies, documents,
-                              field_bindings, field_schemas, function_reference_issues, parser_options, policy_issues, produced_object_schema, scoped_field_issues, tool_options, written_object_schema)
+from support.doc_code import (command_issues, consumed_object_schema, declared_policy_names, diagnostic_names, diagnostic_reference_issues, documented_policies, documents,
+                              field_bindings, field_schemas, function_reference_issues, parser_options, policy_issues, produced_object_schema, scoped_field_issues, tool_options, unowned_field_references, written_object_schema)
 
 SKILL = Path(__file__).resolve().parents[3]
 SCRIPTS = SKILL / 'scripts'
@@ -172,6 +172,41 @@ class DocumentCodeTests(unittest.TestCase):
         self.assertEqual(scoped_field_issues('`input_manifest.prompt.sha256` `prompt.artifact_ref` '
             '`init_result.instance_id` `selection_result.selection.profile_ref` `query_record.family`', schemas), [])
         self.assertEqual(scoped_field_issues('`init_result.selection`', schemas), [('scoped field', 'init_result.selection')])
+
+    def test_optional_reads_and_same_named_checks_keep_their_actual_owners(self):
+        def consumer(payload, other, field):
+            payload['written_only'] = 1
+            def nested():
+                return payload.get('nested_only')
+            return payload.get('kind'), other.get('foreign'), payload.get(field)
+        schema = consumed_object_schema(consumer, 'payload')
+        self.assertEqual(set(schema['properties']), {'kind'})
+        with self.assertRaisesRegex(ValueError, 'No fixed read fields'):
+            consumed_object_schema(consumer, 'missing')
+        schemas = field_schemas()
+        self.assertEqual(scoped_field_issues('`check.passed` <!-- do-math fields: check=submission_check -->', schemas), [])
+        self.assertEqual(scoped_field_issues('`check.sha256` <!-- do-math fields: check=import_check -->', schemas), [])
+        self.assertEqual(scoped_field_issues('`check.passed` <!-- do-math fields: check=import_check -->', schemas),
+                         [('scoped field', 'check.passed')])
+        self.assertEqual(scoped_field_issues('`check.sha256` <!-- do-math fields: check=submission_check -->', schemas),
+                         [('scoped field', 'check.sha256')])
+        self.assertEqual(scoped_field_issues('`change.value` `review_research.question` `source_ref.path` '
+            '`toolchain.project.search_paths` `environment_check.changed_files` `role_review.proposal`', schemas), [])
+        self.assertEqual(scoped_field_issues('`change.nonexistent` `source_ref.passed`', schemas),
+                         [('scoped field', 'change.nonexistent'), ('scoped field', 'source_ref.passed')])
+        self.assertEqual(scoped_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->', schemas),
+                         [('scoped field', 'payload.deadline_offset_ms')])
+
+    def test_all_simple_dotted_document_fields_have_an_owner(self):
+        schemas = field_schemas()
+        pending = [(document.relative_to(SKILL).as_posix(), token)
+                   for document in documents(SKILL)
+                   for token in unowned_field_references(document.read_text(encoding='utf-8'), schemas)]
+        self.assertEqual(pending, [])
+        self.assertEqual(unowned_field_references('`recrod.id` `new_space.value`', schemas),
+                         ['new_space.value', 'recrod.id'])
+        self.assertEqual(unowned_field_references('`record.id` <!-- do-math fields: record=governance_record -->', schemas), [])
+        self.assertEqual(unowned_field_references('`pythonw.exe` `integration.currentness` `os.scandir(...)`', schemas), [])
 
     def test_documented_policy_names_have_installed_owners(self):
         names = declared_policy_names(SCRIPTS)
