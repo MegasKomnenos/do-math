@@ -132,7 +132,7 @@ class StoredExecutionTests(unittest.TestCase):
         transition_execution(self.execution, "stopping", at=TIME, reason="user_pause")
         transition_execution(self.execution, "ended", at=TIME, outcome="cancelled")
         self.runtime["checkpoints"] = {"EX-audit": {"kind": "recovered", "reason": "test evidence"}}
-        activities.continue_activity(self.runtime, "EX-audit", at=TIME, reason="user_pause",
+        activities.continue_activity(self.runtime, "EX-audit", wait_kind='user_resume', at=TIME, reason="user_pause",
                                      condition={"kind": "user_resume"}, next_owner="user")
         self.reload()
         activity = self.runtime["activities"]["AY-audit"]

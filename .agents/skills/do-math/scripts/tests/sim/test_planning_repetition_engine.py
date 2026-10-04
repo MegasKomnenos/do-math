@@ -52,7 +52,7 @@ def seed_plan(sim):
     execution = engine._register_execution(action, {'id': sim.clock.new_id('EX'), 'role': action['role'], 'status': 'queued'})
     end_preparation(execution, at=now(sim), stage='context', reason='Fixture original failure', cancelled=False)
     engine._remove_action(action)
-    activities.wait_for(engine.runtime, execution['owner_activity_id'], reason='receipt failed',
+    activities.wait_for(engine.runtime, execution['owner_activity_id'], kind='execution_failure', reason='receipt failed',
         condition={'execution_id': execution['id']}, next_owner='operational_review', at=now(sim))
     return execution
 

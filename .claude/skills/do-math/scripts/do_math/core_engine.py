@@ -539,7 +539,7 @@ class CoreEngineMixin:
         else:
             for field in ("model", "effort", "model_selection"):
                 execution.pop(field, None)
-        held = activity.get("waiting", {}).get("reason") in REVIEW_ADMISSION_WAITS
+        held = activity.get("waiting", {}).get("kind") in REVIEW_ADMISSION_WAITS
         admission = ({"disposition": "review_input_restoration"} if held else self._admit_review_execution(action, execution))
         if admission["disposition"] not in {"admitted", "already_admitted", "not_applicable"}:
             if admission['disposition'] in {'review_budget_exhausted', 'review_scope_unaffordable',
@@ -551,8 +551,9 @@ class CoreEngineMixin:
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting_action({"action": deepcopy(action),
                 "kind": wait_kind, "detail": admission, "next_owner": next_owner,
                 "reason": activity['waiting']['reason'] if held else admission['authority']['reason']})
-            activities.wait_for(self.runtime, activity["id"], reason=wait_kind,
-                condition=admission, next_owner=next_owner, at=self.ports.clock.now())
+            if not held:
+                activities.wait_for(self.runtime, activity["id"], kind=wait_kind, reason=wait_kind,
+                    condition=admission, next_owner=next_owner, at=self.ports.clock.now())
             self._remove_action(action)
             return None
         if activity["status"] == "waiting":
@@ -562,7 +563,7 @@ class CoreEngineMixin:
             slots = self._session_slots()
             if not slots.acquire(execution["id"], profile=profile, execution=execution):
                 action["dispatch_wait"] = deepcopy(slots.admission_wait)
-                activities.wait_for(self.runtime, activity["id"], reason="machine capacity unavailable",
+                activities.wait_for(self.runtime, activity["id"], kind='machine_capacity', reason="machine capacity unavailable",
                     condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=self.ports.clock.now())
                 return None
             action.pop("dispatch_wait", None)
@@ -604,7 +605,7 @@ class CoreEngineMixin:
             and row.get("status") != "applied"]
         if repairs:
             if activity["status"] != "waiting":
-                activities.wait_for(self.runtime, aid, reason="operational repair remains pending",
+                activities.wait_for(self.runtime, aid, kind='operational_repair', reason="operational repair remains pending",
                     condition={"operational_disposition_ids": repairs}, next_owner="engine", at=self.ports.clock.now())
             return
         pending = [row for row in self.runtime["queue"] if row.get("owner_activity_id") == aid]
@@ -619,7 +620,7 @@ class CoreEngineMixin:
             wait = waiting[0]
             reason = (wait['kind'] if wait.get('kind') in REVIEW_WAITS
                       else wait.get('reason') or wait['kind'])
-            activities.wait_for(self.runtime, aid, reason=reason,
+            activities.wait_for(self.runtime, aid, kind=wait['kind'], reason=reason,
                 condition={"action_ids": [row["action"]["id"] for row in waiting]},
                 next_owner=waiting[0].get("next_owner", "engine"), at=self.ports.clock.now())
             return
@@ -2527,7 +2528,7 @@ class CoreEngineMixin:
                 if self.runtime.get("executions", {}).get(eid, {}).get("status") != "ended"]
         if live:
             raise ValueError("input_overflow retry cannot overlap a live execution")
-        if activity.get("status") != "waiting" or activity.get("waiting", {}).get("reason") != "input_overflow":
+        if activity.get("status") != "waiting" or activity.get("waiting", {}).get("kind") != "input_overflow":
             raise ValueError("input_overflow owner activity is not waiting on this failure")
         condition = activity["waiting"]["condition"]
         if identifier not in condition.get("action_ids", []):

@@ -149,7 +149,7 @@ class OwnerGuardTests(ReviewOwnerCase):
             'own': {'kind': 'review_input_restoration', 'action': action},
             'peer': {'kind': 'review_input_restoration', 'action': peer},
             'other-kind': {'kind': 'provider_wait', 'action': action}}
-        wait_for(self.engine.runtime, execution['owner_activity_id'], reason='review_input_restoration',
+        wait_for(self.engine.runtime, execution['owner_activity_id'], kind='review_input_restoration', reason='review_input_restoration',
             condition={'recovery': {'review_cycle_id': cid, 'action': rc.review_action(peer)}},
             next_owner='review_recovery', at=self.engine.ports.clock.now())
         activity = deepcopy(self.engine.runtime['activities'][execution['owner_activity_id']])

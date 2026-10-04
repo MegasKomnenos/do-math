@@ -132,7 +132,7 @@ def held_work(sim):
               'model_assessment': {'difficulty': 'low', 'importance': 'low', 'reason': 'Bounded work'}}
     activities.open_activity(engine.runtime, activity_id='AY-held', activity_kind='research_work', owner_ref='AC-held',
                              input_refs=[row['id']], opened_at=at)
-    activities.wait_for(engine.runtime, 'AY-held', reason='input_overflow', condition={'action_ids': ['AC-held']},
+    activities.wait_for(engine.runtime, 'AY-held', kind='input_overflow', reason='input_overflow', condition={'action_ids': ['AC-held']},
                         next_owner='research_plan', at=at)
     engine.runtime['waiting_actions'] = {'AC-held': {'kind': 'input_overflow', 'action': action,
         'question_id': 'QU-held', 'next_owner': 'research_plan', 'detail': {

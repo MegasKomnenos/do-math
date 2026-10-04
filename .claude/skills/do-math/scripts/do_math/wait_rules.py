@@ -1,5 +1,6 @@
 """Declared wait kinds, release conditions and resolver coordinates."""
 from copy import deepcopy
+from .values import require_text
 
 ADMISSION_WAIT_RULES = {
     'capacity': {
@@ -262,3 +263,48 @@ def update_waiting_action(record, **changes):
     candidate = waiting_action(candidate)
     record.clear()
     record.update(candidate)
+
+
+# Action-owned activity waits retain their existing release rule. Other activity
+# waits have their own cause even when their human explanation is arbitrary text.
+ACTIVITY_EXTRA_WAIT_RULES = {
+    'machine_capacity': {'resolvers': ('core_engine.CoreEngineMixin._register_execution',),
+        'condition': 'Machine admission permits the preserved action after local resources return.'},
+    'operational_repair': {'resolvers': ('core_engine.CoreEngineMixin._settle_activity', 'repair_execution.resume_installation_repair'),
+        'condition': 'The operational repair is applied and its exact obligation can continue.'},
+    'provider_admission': {'resolvers': ('provider_engine.ProviderEngineMixin._provider_admit', 'core_engine.CoreEngineMixin._register_execution'),
+        'condition': 'The preserved provider gate permits the next admitted attempt.'},
+    'environment_interrupted': {'resolvers': ('formal_engine.FormalEngineMixin._trust_activation_steps',),
+        'condition': 'The queued continuation rechecks the current transition environment.'},
+    'trust_check_stopped': {'resolvers': ('formal_engine.FormalEngineMixin._trust_check_steps',),
+        'condition': 'A public resume permits the preserved trust target continuation.'},
+    'external_reconciliation': {'resolvers': ('external_engine.ExternalEngineMixin._external_control', 'external_engine.ExternalEngineMixin._external_execution_record'),
+        'condition': 'A public external reconciliation confirms the effect and assigns its followup.'},
+    'external_followup': {'resolvers': ('external_engine.ExternalEngineMixin._external_control', 'external_engine.ExternalEngineMixin._external_execution_record'),
+        'condition': 'A public external decision resolves the failed or cancelled effect obligation.'},
+    'review_resource_deferred': {'resolvers': ('review_engine.ReviewEngineMixin._settle_review_resource_dispositions',),
+        'condition': 'The fixed proposal is superseded or ended, or a current resource decision resumes its scope.'},
+    'installation_repair_retry': {'resolvers': ('scheduled_operator.recovery',),
+        'condition': 'The current installation and failure evidence permit another authorized recovery attempt.'},
+    'user_resume': {'resolvers': ('activities.resume_activity',),
+        'condition': 'The caller supplies the exact publicly released pause condition.'},
+    'required_input': {'resolvers': ('activities.resume_activity',),
+        'condition': 'The caller supplies the exact satisfied input condition.'},
+}
+ACTIVITY_WAIT_RULES = {
+    **{kind: {'resolvers': row['resolvers'], 'condition': row['condition']}
+       for kind, row in WAITING_ACTION_RULES.items()},
+    **ACTIVITY_EXTRA_WAIT_RULES,
+}
+
+
+def activity_wait_record(kind, *, reason, condition, next_owner, at):
+    """One typed activity wait; explanation text never selects its release rule."""
+    if not isinstance(kind, str) or kind not in ACTIVITY_WAIT_RULES:
+        raise ValueError('unregistered activity wait: ' + repr(kind))
+    require_text(reason, 'reason')
+    require_text(at, 'at')
+    if condition is None or next_owner is None:
+        raise ValueError('condition and next_owner are required')
+    return {'kind': kind, 'reason': reason, 'condition': deepcopy(condition),
+            'next_owner': deepcopy(next_owner), 'at': at}

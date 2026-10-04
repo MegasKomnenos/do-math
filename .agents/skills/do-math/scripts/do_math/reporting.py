@@ -129,6 +129,15 @@ def waiting_action_rows(runtime):
     return rows
 
 
+def waiting_activity_rows(runtime):
+    """All durable activity waits, including older waits outside the recent-result list."""
+    return {identifier: deepcopy({
+        'activity_kind': activity['activity_kind'], **activity['waiting'],
+        'coordinates': {'activity_id': identifier, 'owner_ref': activity['owner_ref'],
+                        'execution_ids': activity['assigned_execution_ids']},
+    }) for identifier, activity in runtime.get('activities', {}).items() if activity['status'] == 'waiting'}
+
+
 def operating_summary(instance, runtime):
     """One persisted-state handoff view; scheduler/process observations stay separate."""
     from .supervision import supervision_block, supervision_facts
@@ -243,6 +252,7 @@ def status_report(store, head, instance, runtime, *, observation=None, requested
             # installation_repair and operator_enabled: the facts supervision decides on.
             **supervision_facts(instance, runtime),
             "waiting_actions": waiting_action_rows(runtime),
+            "waiting_activities": waiting_activity_rows(runtime),
             "grants": [{"id": g["id"], "kind": g.get("kind"), "status": g.get("status"), "expires_at": g.get("expires_at")}
                        for g in instance.get("grants", {}).values()],
             "pending_events": runtime.get("pending_events", []),
@@ -308,6 +318,7 @@ def render_human_report(report: dict) -> str:
                      f"generation={gate['generation']}")
     lines.extend(render_dispatch_waits(report))
     lines.extend(render_waiting_actions(report))
+    lines.extend(render_waiting_activities(report))
     return "\n".join(lines)
 
 
@@ -315,6 +326,15 @@ def render_waiting_actions(report):
     lines = []
     for identifier, row in report.get('waiting_actions', {}).items():
         lines.append(f"action {identifier}: {row['role']} wait={row['kind']} next={row['next_owner']} "
+                     f"reason={row['reason']}")
+        lines.append('  coordinates: ' + json.dumps(row['coordinates'], ensure_ascii=False, sort_keys=True))
+    return lines
+
+
+def render_waiting_activities(report):
+    lines = []
+    for identifier, row in report.get('waiting_activities', {}).items():
+        lines.append(f"activity {identifier}: {row['activity_kind']} wait={row['kind']} next={row['next_owner']} "
                      f"reason={row['reason']}")
         lines.append('  coordinates: ' + json.dumps(row['coordinates'], ensure_ascii=False, sort_keys=True))
     return lines

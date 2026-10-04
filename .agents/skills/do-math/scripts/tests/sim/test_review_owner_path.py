@@ -7,6 +7,7 @@ submission. Nothing in the engine is replaced; an operating-system refusal to
 create a folder is ``Path.mkdir`` raising (the file system is not a port, 설계 2.2).
 """
 import errno
+from copy import deepcopy
 from pathlib import Path
 import tempfile
 import unittest
@@ -72,6 +73,21 @@ class PreparationFailureTests(unittest.TestCase):
         self.assertEqual(wait['next_owner'], 'review_recovery')
         reloaded = ResearchEngine(sim.repository, sim.instance_id, ports=sim.ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
         self.assertEqual(reloaded.runtime['waiting_actions'][action['id']], wait)
+        from support.engine_lifecycle import ObservedCalls, code_of
+        activity = sim.runtime['activities'][attempts[0]['owner_activity_id']]
+        self.assertEqual(activity['waiting']['kind'], 'review_input_restoration')
+        activity['waiting']['reason'] = 'The original sealed review input still needs restoration'
+        admissions = deepcopy(cycle_of(sim)['execution_accounting'])
+        waiting_condition = deepcopy(activity['waiting'])
+        with ObservedCalls(admission=code_of(sim.engine._admit_review_execution)) as observed:
+            retry = sim.engine._register_execution(wait['action'],
+                {'id': 'EX-held-review-input', 'role': 'identity_review', 'status': 'running'})
+        self.assertIsNone(retry)
+        self.assertEqual(observed.calls['admission'], [], 'explanation text cannot bypass the typed held-input gate')
+        self.assertNotIn('EX-held-review-input', sim.runtime['executions'])
+        self.assertEqual(cycle_of(sim)['execution_accounting'], admissions)
+        self.assertEqual(activity['waiting']['kind'], 'review_input_restoration')
+        self.assertEqual(activity['waiting'], waiting_condition, 'a blocked registration preserves the release coordinates')
         with tempfile.TemporaryDirectory() as directory:
             outcome = sim.engine._retry_review_restoration(wait['action'], Path(directory) / 'restored', at=sim.clock.now())
         self.assertEqual(outcome['disposition'], 'review_resumed')

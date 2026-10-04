@@ -9,6 +9,7 @@ values have closed schemas and are not a catch-all metadata family.
 from copy import deepcopy as _deepcopy
 
 from ..activities import ACTIVITY_STATUSES as _ACTIVITY_STATUSES
+from ..wait_rules import ACTIVITY_WAIT_RULES as _ACTIVITY_WAIT_RULES
 from ..contracts import (PLAN_DISPOSITION as _PLAN_DISPOSITION, TEXT as _NONEMPTY_TEXT,
                          schema_for as _schema_for)
 from ..execution_lifecycle import EXECUTION_STATUSES as _EXECUTION_STATUSES, OUTCOMES as _OUTCOMES
@@ -256,9 +257,9 @@ RECORDS["activities"] = record({"activity_kind": TEXT, "owner_ref": {"type": ["s
     "status": enum(*sorted(_ACTIVITY_STATUSES)), "stage": nullable(TEXT),
     "execution_limit": nullable({"type": "integer", "minimum": 1}), "assigned_execution_ids": REFS,
     "result_refs": array({"type": ["string", "object"]}), "unresolved": array({"type": ["string", "object"]}),
-    "followups": array({"type": ["string", "object"]}), "waiting": obj({"reason": TEXT,
+    "followups": array({"type": ["string", "object"]}), "waiting": obj({"kind": enum(*sorted(_ACTIVITY_WAIT_RULES)), "reason": TEXT,
         "condition": {"type": ["string", "object"]}, "next_owner": {"type": ["string", "object"]}, "at": TEXT},
-        ("reason", "condition", "next_owner", "at")), "resumed_at": TEXT, "finished_at": TEXT},
+        ("kind", "reason", "condition", "next_owner", "at")), "resumed_at": TEXT, "finished_at": TEXT},
     ("activity_kind", "owner_ref", "opened_at", "input_refs", "status", "assigned_execution_ids", "result_refs", "unresolved", "followups"))
 # GOVERNANCE preserves the exact delivered audit and referenced record
 # snapshots. Semantic checks bind those snapshots and mapped verdicts.

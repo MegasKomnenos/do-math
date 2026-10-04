@@ -60,7 +60,7 @@ class RecoveryOutcomeContractTests(unittest.TestCase):
                     activity = runtime['activities']['AY-recovery']
                     self.assertEqual(activity['status'], 'finished' if rule['finish'] else 'waiting')
                     if not rule['finish']:
-                        self.assertEqual(activity['waiting'], {'reason': outcome,
+                        self.assertEqual(activity['waiting'], {'kind': 'installation_repair_retry', 'reason': outcome,
                             'condition': {'kind': 'installation_repair_retry', 'failure': IDENTITY},
                             'next_owner': 'recovery', 'at': AT})
 

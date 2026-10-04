@@ -357,7 +357,7 @@ class ReviewEngineMixin:
                 record['state'] = 'deferred'
                 activity['unresolved'] = [deepcopy(followup)]
                 activity['followups'] = [deepcopy(followup)]
-                wait_for(self.runtime, activity['id'], reason='review_resource_deferred',
+                wait_for(self.runtime, activity['id'], kind='review_resource_deferred', reason='review_resource_deferred',
                     condition={'cycle_id': cid, 'proposal_digest': cycle['proposal_digest']}, next_owner='research_plan', at=stamp)
             else:
                 record.update(state='ended', ended_at=stamp)

@@ -99,7 +99,7 @@ def initial_failure(sim, kind='execution_failure', stage='interpret'):
     for status in ('starting', 'stopping'):
         execution_lifecycle.transition_execution(failed, status, at=at)
     execution_lifecycle.transition_execution(failed, 'ended', at=at, outcome='execution_incomplete')
-    activities.wait_for(runtime, 'AY-original', reason=kind, condition={'action_ids': [action['id']]},
+    activities.wait_for(runtime, 'AY-original', kind=kind, reason=kind, condition={'action_ids': [action['id']]},
                         next_owner='maintenance', at=at)
     wait = {'kind': kind, 'action': action, 'execution_id': 'EX-bad', 'reason': 'synthetic failure'}
     if kind == 'output_validation':

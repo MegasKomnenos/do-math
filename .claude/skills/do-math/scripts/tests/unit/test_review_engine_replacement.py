@@ -106,7 +106,7 @@ class UserGrantReplacementTests(ReviewSceneCase):
         recovery = engine._record_review_recovery(action, ValueError('permanent_loss'), retryable=False)
         activities.open_activity(engine.runtime, activity_id='AY-held', activity_kind='identity_review',
                                  owner_ref=cid, input_refs=['K1'], opened_at='now')
-        activities.wait_for(engine.runtime, 'AY-held', reason='review_input_restoration',
+        activities.wait_for(engine.runtime, 'AY-held', kind='review_input_restoration', reason='review_input_restoration',
                             condition={'kind': 'review_recovery', 'recovery': recovery}, next_owner='governance', at='now')
         engine.runtime['waiting_actions'] = {'AC-held': {'kind': 'review_input_restoration', 'action': action, 'recovery': recovery}}
         engine.runtime['queue'] = []

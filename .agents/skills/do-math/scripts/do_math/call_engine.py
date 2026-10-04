@@ -96,7 +96,7 @@ class CallEngineMixin:
         except ValueError as error:
             waiting = observation_preparation_wait(action, str(error), task_rules=role == 'research_work' and not settings_errors)
             kind, next_owner = waiting['kind'], waiting['next_owner']
-            activities.wait_for(self.runtime, activity["id"], reason=str(error),
+            activities.wait_for(self.runtime, activity["id"], kind=kind, reason=str(error),
                 condition={"kind": kind, "task_id": action.get("target")}, next_owner=next_owner, at=self.ports.clock.now())
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting
             if settings_errors:
@@ -110,7 +110,7 @@ class CallEngineMixin:
         if not authority["allowed"]:
             waiting = action_authority_wait(action, authority)
             self.runtime.setdefault("waiting_actions", {})[action["id"]] = waiting
-            activities.wait_for(self.runtime, activity['id'], reason=waiting['reason'],
+            activities.wait_for(self.runtime, activity['id'], kind=waiting['kind'], reason=waiting['reason'],
                 condition={'kind': waiting['kind'], 'action_id': action['id']},
                 next_owner=waiting['next_owner'], at=self.ports.clock.now())
             self._remove_action(action)
@@ -336,7 +336,7 @@ class CallEngineMixin:
             for queued in self.runtime['queue']:
                 if queued.get('id') == action['id']:
                     queued['dispatch_wait'] = deepcopy(action['dispatch_wait'])
-            activities.wait_for(self.runtime, activity_id, reason="provider admission deferred",
+            activities.wait_for(self.runtime, activity_id, kind='provider_admission', reason="provider admission deferred",
                 condition=deepcopy(action["dispatch_wait"]), next_owner=action["dispatch_wait"]["next_owner"], at=self.ports.clock.now())
             self._save(self._input_artifacts(input_bundle, schema, fitted, workspace))
             return False

@@ -94,7 +94,7 @@ class ReviewAdmissionWaitContractTests(ReviewOwnerCase):
         execution_lifecycle.transition_execution(execution, 'stopping', at=self.engine.ports.clock.now())
         execution_lifecycle.transition_execution(execution, 'ended', at=self.engine.ports.clock.now(), outcome='cancelled')
         owner = execution['owner_activity_id']
-        activities.wait_for(self.engine.runtime, owner, reason='review_input_restoration',
+        activities.wait_for(self.engine.runtime, owner, kind='review_input_restoration', reason='review_input_restoration',
             condition={'review_cycle_id': cid, 'slot': action['slot']}, next_owner='review_recovery',
             at=self.engine.ports.clock.now())
         before = deepcopy(self.engine.runtime['review_cycles'][cid]['execution_accounting'])

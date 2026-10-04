@@ -1069,7 +1069,7 @@ def defer_input_overflow(runtime, overflow, *, at, question_ref):
         if condition not in activity['unresolved']:
             activity['unresolved'].append(condition)
         return {'status': 'working', 'condition': condition}
-    wait_for(runtime, identifier, reason='input_overflow', condition=condition,
+    wait_for(runtime, identifier, kind='input_overflow', reason='input_overflow', condition=condition,
              next_owner=next_owner, at=at)
     return {'status': 'waiting', 'condition': condition}
 

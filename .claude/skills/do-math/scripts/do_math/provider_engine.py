@@ -81,7 +81,7 @@ class ProviderEngineMixin:
         if wait is not None:
             restored["dispatch_wait"] = wait
             activity_id = self.runtime["executions"][execution_id]["owner_activity_id"]
-            wait_for(self.runtime, activity_id, reason="provider admission deferred",
+            wait_for(self.runtime, activity_id, kind='provider_admission', reason="provider admission deferred",
                      condition=deepcopy(wait), next_owner=wait["next_owner"],
                      at=self._lifecycle_now().isoformat())
         self.runtime["queue"].append(restored)

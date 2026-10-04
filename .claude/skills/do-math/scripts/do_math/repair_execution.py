@@ -395,7 +395,7 @@ def record_recovery_attempt(runtime: dict, execution: dict, *, activity_id: str,
     if rule['finish']:
         activities.finish_activity(runtime, activity_id, result_refs=[execution_id], unresolved=[], followups=[], at=at)
     else:
-        activities.wait_for(runtime, activity_id, reason=outcome,
+        activities.wait_for(runtime, activity_id, kind='installation_repair_retry', reason=outcome,
             condition={"kind": "installation_repair_retry", "failure": owner},
             next_owner="recovery", at=at)
     if diagnosis:

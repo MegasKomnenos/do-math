@@ -46,7 +46,7 @@ class ActivityContractTests(unittest.TestCase):
         second = self.execution("EX-2", continuation_of="EX-1")
         assign_execution(self.runtime, "AY-1", second)
         self.end_cancelled(second)
-        activity = wait_for(self.runtime, "AY-1", reason="provider unavailable",
+        activity = wait_for(self.runtime, "AY-1", kind='provider_admission', reason="provider unavailable",
                             condition={"kind": "provider_admission", "provider": "codex"},
                             next_owner={"kind": "engine"}, at=TIME)
         self.assertEqual(activity["status"], "waiting")
@@ -60,7 +60,7 @@ class ActivityContractTests(unittest.TestCase):
         first = self.execution("EX-1")
         assign_execution(self.runtime, "AY-1", first)
         with self.assertRaisesRegex(ValueError, "an activity may wait only after its assigned executions ended"):
-            wait_for(self.runtime, "AY-1", reason="input", condition={"kind": "input"},
+            wait_for(self.runtime, "AY-1", kind='required_input', reason="input", condition={"kind": "input"},
                      next_owner={"kind": "user"}, at=TIME)
         second = self.execution("EX-2", continuation_of="EX-1")
         assign_execution(self.runtime, "AY-1", second)
@@ -71,7 +71,7 @@ class ActivityContractTests(unittest.TestCase):
         first = self.execution("EX-1")
         assign_execution(self.runtime, "AY-1", first)
         self.end_cancelled(first)
-        wait_for(self.runtime, "AY-1", reason="user_pause", condition={"kind": "user_resume"},
+        wait_for(self.runtime, "AY-1", kind='user_resume', reason="user_pause", condition={"kind": "user_resume"},
                  next_owner="user", at=TIME)
         before = deepcopy(self.runtime)
         with self.assertRaisesRegex(ValueError, "resolve the recorded activity wait before assigning an execution"):

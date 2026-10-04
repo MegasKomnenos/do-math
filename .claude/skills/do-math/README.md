@@ -246,6 +246,7 @@ JSON status에서 먼저 볼 필드는 다음과 같다.
 | `pending_controls` | inbox에 접수됐지만 아직 적용되지 않은 제어 수. 현재 조회에서만 값이 있다 |
 | `user_pause` | 명시적 사용자 재개를 기다리는 정지의 요청 ID·이유·시각 |
 | `waiting_actions` | 해소되지 않은 행동의 역할·대상·실패 종류·이유·실행 ID 요지 |
+| `waiting_activities` | 최근 결과 목록 밖의 활동까지 포함한 대기 종류·이유·조건·다음 담당자·활동 및 실행 좌표 |
 | `external_operations` | 외부 HTTP operation의 원장 상태 |
 | `active_trust_environment` | 현재 CLI가 활성으로 기록한 신뢰 환경 ID |
 | `academic_validation` | 현재 해결 근거와 학술 요구에 상대적인 후속 상태 |

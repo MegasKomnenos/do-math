@@ -256,8 +256,9 @@ def installation_repair_state():
         'action':{'id':'AC-work','role':'research_plan','owner_activity_id':'AY-work'},
         'owner_activity_id':'AY-work', 'result_ref':'runtime/artifacts/failure/result.json'}
     runtime['executions']['EX-failed'] = target
-    runtime['activities']['AY-work'].update(assigned_execution_ids=['EX-failed'],status='waiting',
-        waiting={'condition':{'error':'receiver'},'reason':'receiver','next_owner':'operations','at':at})
+    runtime['activities']['AY-work']['assigned_execution_ids'] = ['EX-failed']
+    activities.wait_for(runtime, 'AY-work', kind='output_validation', reason='receiver',
+        condition={'error': 'receiver'}, next_owner='operations', at=at)
     runtime['executions']['EX-diagnosis'] = {'id':'EX-diagnosis','role':'operational_review',
         'status':'ended','outcome':'output_accepted','action':{'target':'EX-failed'}}
     record = {'id':'OD-repair','execution_id':'EX-diagnosis','target_execution_id':'EX-failed',

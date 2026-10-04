@@ -157,7 +157,7 @@ def diagnose(scene):
     target.update(error='Installed receiver rejected valid output', result_ref=source)
     execution_lifecycle.transition_execution(target, 'stopping', at=at)
     execution_lifecycle.transition_execution(target, 'ended', at=at, outcome='execution_incomplete')
-    activities.wait_for(engine.runtime, target['owner_activity_id'], reason='output_validation',
+    activities.wait_for(engine.runtime, target['owner_activity_id'], kind='output_validation', reason='output_validation',
                         condition={'action_ids': [action['id']]}, next_owner='operational_review', at=at)
     engine.runtime.setdefault('waiting_actions', {})[action['id']] = {'kind': 'output_validation', 'action': deepcopy(target['action']),
         'execution_id': target['id'], 'reason': target['error']}

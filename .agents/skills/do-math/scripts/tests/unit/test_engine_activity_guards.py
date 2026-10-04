@@ -25,6 +25,49 @@ def attempt(identifier='EX-one', owner='AY-one'):
 
 
 class ActivityGuardTests(unittest.TestCase):
+    def test_every_declared_wait_kind_preserves_condition_and_resumes_only_for_that_condition(self):
+        from do_math.wait_rules import ACTIVITY_WAIT_RULES
+        from do_math.record_schemas import RECORDS
+        from jsonschema import Draft202012Validator
+        checker = Draft202012Validator(RECORDS['activities'])
+        for kind in ACTIVITY_WAIT_RULES:
+            with self.subTest(kind=kind):
+                runtime, record, _ = opened()
+                condition = {'source': ['SO-new']}
+                activities.wait_for(runtime, record['id'], kind=kind, reason='The exact input is unavailable',
+                    condition=condition, next_owner='user', at=AT)
+                checker.validate(record)
+                self.assertEqual(record['waiting']['kind'], kind)
+                condition['source'].append('SO-other')
+                before = deepcopy(runtime)
+                with self.assertRaisesRegex(ValueError, '^the resolved condition differs from the recorded wait$'):
+                    activities.resume_activity(runtime, record['id'], condition=condition, at=LATER)
+                self.assertEqual(runtime, before)
+                activities.resume_activity(runtime, record['id'], condition={'source': ['SO-new']}, at=LATER)
+                self.assertEqual(record['status'], 'ready')
+                self.assertNotIn('waiting', record)
+
+    def test_unknown_kind_and_untyped_conditional_continuation_leave_the_state_unchanged(self):
+        runtime, record, _ = opened()
+        for kind in (None, True, [], {}, 'new-unregistered-kind'):
+            before = deepcopy(runtime)
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, '^unregistered activity wait:'):
+                activities.wait_for(runtime, record['id'], kind=kind, reason='Waiting for input',
+                    condition='SO-new', next_owner='user', at=AT)
+            self.assertEqual(runtime, before)
+        from do_math.execution_lifecycle import transition_execution
+        execution = attempt()
+        execution['action'] = {'id': 'AC-pause', 'role': 'maintenance'}
+        activities.assign_execution(runtime, record['id'], execution)
+        transition_execution(execution, 'starting', at=AT)
+        transition_execution(execution, 'stopping', at=AT)
+        transition_execution(execution, 'ended', at=AT, outcome='cancelled')
+        before = deepcopy(runtime)
+        with self.assertRaisesRegex(ValueError, '^unregistered activity wait: None$'):
+            activities.continue_activity(runtime, execution['id'], at=LATER,
+                reason='Pause until the public decision', condition={'kind': 'user_resume'}, next_owner='user')
+        self.assertEqual(runtime, before)
+
     def test_invalid_declarations_do_not_create_activities(self):
         for field, value, reason in [('owner_ref', None, 'owner_ref is required'),
                 ('input_refs', {}, 'input_refs must be a list'),
@@ -62,7 +105,7 @@ class ActivityGuardTests(unittest.TestCase):
                 elif case == 'stage':
                     stage, reason = 'review', 'execution stage differs from activity stage'
                 elif case == 'waiting':
-                    activities.wait_for(runtime, identifier, reason='근거 대기', condition='SO-two', next_owner='user', at=AT)
+                    activities.wait_for(runtime, identifier, kind='required_input', reason='근거 대기', condition='SO-two', next_owner='user', at=AT)
                     reason = 'resolve the recorded activity wait before assigning an execution'
                 elif case == 'finished':
                     activities.finish_activity(runtime, identifier, result_refs=[], unresolved=[], followups=[], at=AT)
@@ -90,7 +133,7 @@ class ActivityGuardTests(unittest.TestCase):
     def test_wait_resume_and_finished_replay_preserve_exact_facts(self):
         runtime, record, _ = opened()
         condition = {'source': ['SO-new']}
-        activities.wait_for(runtime, 'AY-one', reason='원문 대기', condition=condition, next_owner='user', at=AT)
+        activities.wait_for(runtime, 'AY-one', kind='required_input', reason='원문 대기', condition=condition, next_owner='user', at=AT)
         condition['source'].append('SO-mutated')
         self.assertEqual(record['waiting']['condition'], {'source': ['SO-new']})
         before = deepcopy(runtime)
@@ -115,7 +158,7 @@ class ActivityGuardTests(unittest.TestCase):
         activities.assign_execution(runtime, 'AY-one', execution)
         before = deepcopy(runtime)
         with self.assertRaisesRegex(ValueError, '^an activity may wait only after its assigned executions ended$'):
-            activities.wait_for(runtime, 'AY-one', reason='대기', condition='source', next_owner='user', at=LATER)
+            activities.wait_for(runtime, 'AY-one', kind='required_input', reason='대기', condition='source', next_owner='user', at=LATER)
         with self.assertRaisesRegex(ValueError, '^an activity with a live execution cannot finish$'):
             activities.finish_activity(runtime, 'AY-one', result_refs=[], unresolved=[], followups=[], at=LATER)
         with self.assertRaisesRegex(ValueError, '^only an ended execution can request continuation$'):
@@ -238,7 +281,7 @@ class ActivityTransitionBoundaryTests(unittest.TestCase):
         runtime, activity, _ = opened()
         calls = [
             ('action requires an existing unfinished activity', lambda: activities.bind_action(runtime, {'id': 'AC-unbound'}, 'AY-absent')),
-            ('unknown activity AY-absent', lambda: activities.wait_for(runtime, 'AY-absent',
+            ('unknown activity AY-absent', lambda: activities.wait_for(runtime, 'AY-absent', kind='required_input',
                 reason='wait', condition='source', next_owner='user', at=LATER)),
             ('unknown activity AY-absent', lambda: activities.resume_activity(runtime, 'AY-absent',
                 condition='source', at=LATER)),
@@ -246,9 +289,9 @@ class ActivityTransitionBoundaryTests(unittest.TestCase):
                 result_refs=[], unresolved=[], followups=[], at=LATER)),
             ('only a waiting activity can resume', lambda: activities.resume_activity(runtime, activity['id'],
                 condition='source', at=LATER)),
-            ('condition and next_owner are required', lambda: activities.wait_for(runtime, activity['id'],
+            ('condition and next_owner are required', lambda: activities.wait_for(runtime, activity['id'], kind='required_input',
                 reason='wait', condition=None, next_owner='user', at=LATER)),
-            ('condition and next_owner are required', lambda: activities.wait_for(runtime, activity['id'],
+            ('condition and next_owner are required', lambda: activities.wait_for(runtime, activity['id'], kind='required_input',
                 reason='wait', condition='source', next_owner=None, at=LATER)),
         ]
         for reason, call in calls:
@@ -261,7 +304,7 @@ class ActivityTransitionBoundaryTests(unittest.TestCase):
         activities.finish_activity(runtime, activity['id'], result_refs=[], unresolved=[], followups=[], at=LATER)
         before = deepcopy(runtime)
         with self.assertRaisesRegex(ValueError, '^a finished activity cannot wait$'):
-            activities.wait_for(runtime, activity['id'], reason='wait', condition='source', next_owner='user', at=LATER)
+            activities.wait_for(runtime, activity['id'], kind='required_input', reason='wait', condition='source', next_owner='user', at=LATER)
         self.assertEqual(runtime, before)
         self.assertEqual(activities.validate_activities(runtime), [])
 
@@ -297,7 +340,7 @@ class ActivityTransitionBoundaryTests(unittest.TestCase):
                          ['EX-successor: continuation is not an ended execution in the same activity'])
         self.assertEqual(damaged, before)
         for field, operation, expected in [
-            ('waiting', lambda r: activities.wait_for(r, 'AY-one', reason='wait',
+            ('waiting', lambda r: activities.wait_for(r, 'AY-one', kind='required_input', reason='wait',
                 condition='source', next_owner='user', at=LATER), 'AY-one: waiting state lacks its condition'),
             ('finished_at', lambda r: activities.finish_activity(r, 'AY-one',
                 result_refs=[], unresolved=[], followups=[], at=LATER), 'AY-one: finished state lacks finished_at'),

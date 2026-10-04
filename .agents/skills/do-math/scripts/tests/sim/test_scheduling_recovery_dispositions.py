@@ -147,7 +147,7 @@ class FreshInputRetryTests(unittest.TestCase):
             for status in ('starting', 'stopping'):
                 execution_lifecycle.transition_execution(target, status, at=AT)
             execution_lifecycle.transition_execution(target, 'ended', at=AT, outcome='execution_incomplete')
-            activities.wait_for(engine.runtime, 'AY-work', reason='returned', condition={'action_ids': ['AC-work']},
+            activities.wait_for(engine.runtime, 'AY-work', kind='execution_failure', reason='returned', condition={'action_ids': ['AC-work']},
                                 next_owner='operations', at=AT)
             engine.runtime['waiting_actions']['AC-work'] = {'execution_id': 'EX-work',
                 'action': {**target['action'], 'repair': {'execution_id': 'EX-work', 'retry_bundle_ids': ['IN-left'],

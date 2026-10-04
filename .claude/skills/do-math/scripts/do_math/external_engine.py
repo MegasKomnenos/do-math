@@ -155,7 +155,7 @@ class ExternalEngineMixin:
             if activity['status'] != 'finished':
                 from .activities import wait_for
                 reason = 'external_reconciliation' if operation['status'] == 'unknown' else 'external_followup'
-                wait_for(self.runtime, activity_id, reason=reason,
+                wait_for(self.runtime, activity_id, kind=reason, reason=reason,
                     condition={'operation_id': operation['id'], 'status': operation['status']},
                     next_owner='user', at=self._lifecycle_now().isoformat())
 

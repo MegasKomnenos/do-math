@@ -522,7 +522,7 @@ class InputOverflowRetryTests(unittest.TestCase):
         e._action_lifecycle_gate(action)
         activity = e._activity_for_action(action)
         condition = {'kind': 'input_overflow', 'action_ids': [action['id']]}
-        activities.wait_for(e.runtime, activity['id'], reason='input_overflow', condition=condition,
+        activities.wait_for(e.runtime, activity['id'], kind='input_overflow', reason='input_overflow', condition=condition,
                             next_owner='user', at=e._lifecycle_now().isoformat())
         question = questions.link(e.runtime, execution_id='EX-overflow', field='resolution_question/question',
                                   owner='user', targets=[action['id']], blocks=True, clock=_entry.ports.clock)

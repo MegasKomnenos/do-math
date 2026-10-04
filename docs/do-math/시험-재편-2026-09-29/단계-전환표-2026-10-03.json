@@ -4922,8 +4922,8 @@
       "meaning": "현재원장표시54closed/0open;전체요구폐쇄가아님"
     },
     "final_checks": {
-      "T2_flows": "same_final_source_success_and_T2_300s",
-      "full_T3": "fresh_full_0_uncovered_or_reviewed_legitimate_exclusions_and_3300s",
+      "T2_flows": "same_final_source_complete_success; elapsed_time_is_soft_baseline",
+      "full_T3": "fresh_full_complete_0_uncovered_or_reviewed_legitimate_exclusions; elapsed_time_is_soft_baseline",
       "mutation": "current_all_nontrivial_functions_real_runs_no_missing_results_normal_baselines",
       "T4_T5": "real_boundary_and_minimum_provider_calls_corpus",
       "delivery": "instructions_mirrors_check_reviewed_main_integration"
@@ -13030,11 +13030,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "사용자 시간 정책 정정과 관련109개 검증",
-      "active": "B78 활동 대기 변경의 미완결 통합 근거와 성능 병목을 정리하고 실제 과제 대기 표시 재현을 계속함",
-      "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
-      "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
+      "phase": "독립 변경의 확정과 다음 실제 재현",
+      "last_closed": "B78 종류 계약·복구 좌표·활동 대기 표시와 기존 학술 시험 입력 교정",
+      "active": "B78 검수·원 전건 및 교정 근거 보존·커밋 확정 후 과제 권한 대기 표시 재현",
+      "exit": "검증된 활동 대기32파일과 정확한 원보고·기억·미러가 같은 커밋에 포함됨",
+      "next": "B79 실제 권한 만료와 저장 과제 대기의 JSON/사람용 표시를 독립 변경으로 교정",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -17292,6 +17292,201 @@
         "B78 미완결 전체 실행은 성공으로 재구성하지 않음"
       ],
       "whole_requirement_closed": false
+    },
+    "activity_wait_integration": {
+      "id": "B78",
+      "state": "scope_verified_with_classified_fixture_correction",
+      "scope": "활동 대기 종류 계약·복구 좌표 보존·최근5결과 밖 대기 표시",
+      "owned_files": [
+        "README.md",
+        "scripts/do_math/activities.py",
+        "scripts/do_math/call_engine.py",
+        "scripts/do_math/context_store.py",
+        "scripts/do_math/core_engine.py",
+        "scripts/do_math/external_engine.py",
+        "scripts/do_math/formal_engine.py",
+        "scripts/do_math/provider_engine.py",
+        "scripts/do_math/record_schemas/schemas.py",
+        "scripts/do_math/repair_execution.py",
+        "scripts/do_math/reporting.py",
+        "scripts/do_math/review_engine.py",
+        "scripts/do_math/wait_rules.py",
+        "scripts/tests/flows/test_academic_preparation_calls.py",
+        "scripts/tests/sim/test_lifecycle_engine_controls.py",
+        "scripts/tests/sim/test_planning_repetition_engine.py",
+        "scripts/tests/sim/test_review_owner_path.py",
+        "scripts/tests/sim/test_scheduling_recovery_dispositions.py",
+        "scripts/tests/sim/test_storage_status_reporting.py",
+        "scripts/tests/structure/test_action_wait_contract.py",
+        "scripts/tests/support/engine_overflow.py",
+        "scripts/tests/support/operator_finish_scene.py",
+        "scripts/tests/support/record_builders.py",
+        "scripts/tests/support/scheduling_initial.py",
+        "scripts/tests/unit/test_engine_activity_guards.py",
+        "scripts/tests/unit/test_provider_execution_lifecycle.py",
+        "scripts/tests/unit/test_provider_stored_executions.py",
+        "scripts/tests/unit/test_recovery_outcome_contract.py",
+        "scripts/tests/unit/test_review_engine_replacement.py",
+        "scripts/tests/unit/test_review_owner_guards.py",
+        "scripts/tests/unit/test_review_wait_contract.py",
+        "scripts/이음새-정본.md"
+      ],
+      "base_head": "f56a2772",
+      "changed_area_selection": [
+        "structure",
+        "flows.test_academic_preparation_calls",
+        "sim.test_lifecycle_engine_controls",
+        "sim.test_planning_repetition_engine",
+        "sim.test_review_owner_path",
+        "sim.test_scheduling_recovery_dispositions",
+        "sim.test_storage_status_reporting",
+        "unit.test_engine_activity_guards",
+        "unit.test_provider_execution_lifecycle",
+        "unit.test_provider_stored_executions",
+        "unit.test_recovery_outcome_contract",
+        "unit.test_review_engine_replacement",
+        "unit.test_review_owner_guards",
+        "unit.test_review_wait_contract"
+      ],
+      "integration_command": "python .claude/skills/do-math/scripts/run_tests.py structure unit contracts sim flows --jobs 3",
+      "exit": [
+        "33종 공통 API/스키마/생산자 선언과 알려지지 않은 종류의 원자적 거부",
+        "실제 review 복구의 reason 변경에도 무착수·회계불변·condition 보존·복원 후 실행",
+        "모든 waiting activity의 JSON/사람 표시·조회 불변",
+        "고정 후보 전체 일반 실행의 완결 판정·필요 교정·검수 커밋"
+      ],
+      "not_closed": [
+        "4-A 전체 상태 공간",
+        "33종 각각의 의미별 owner 해소",
+        "4-B/4-C/13-B 전건",
+        "최종 fresh T3/전 함수 변이/T4/T5"
+      ],
+      "whole_requirement_closed": false,
+      "old_incomplete_run": "do-math-tests-cc31zngi 최상위 보고 없음; 중간 결과를 성공으로 재구성하지 않음",
+      "related_output": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ju5aelfn",
+      "selected_tests": 199,
+      "related_command": "python .claude/skills/do-math/scripts/run_tests.py structure flows.test_academic_preparation_calls sim.test_lifecycle_engine_controls sim.test_planning_repetition_engine sim.test_review_owner_path sim.test_scheduling_recovery_dispositions sim.test_storage_status_reporting unit.test_engine_activity_guards unit.test_provider_execution_lifecycle unit.test_provider_stored_executions unit.test_recovery_outcome_contract unit.test_review_engine_replacement unit.test_review_owner_guards unit.test_review_wait_contract --jobs 3",
+      "changed_area": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 199
+        },
+        "total_seconds": 143.4,
+        "changed_during_run": []
+      },
+      "tracked_related_report": "C:\\math\\docs\\do-math\\시험-재편-2026-09-29\\검증\\2026-10-04-활동-대기\\related.json",
+      "related_report_sha256": "85d0b0f06af9d250e5352f80bacdbaf4f9846184828b2891d87bb715b4ff3f0a",
+      "ordinary_output": "C:/Users/wogud/AppData/Local/Temp/do-math-b78-full-f8c59be3123740c48cb291c9489f8595",
+      "ordinary_command": "python .claude/skills/do-math/scripts/run_tests.py structure unit contracts sim flows --jobs 3 --output C:/Users/wogud/AppData/Local/Temp/do-math-b78-full-f8c59be3123740c48cb291c9489f8595",
+      "selected_parallel_tests": 3914,
+      "ordinary_result": {
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 3909,
+          "failed": 5,
+          "skipped": 1
+        },
+        "total_seconds": 3879.6,
+        "changed_during_run": []
+      },
+      "tracked_ordinary_report": "C:\\math\\docs\\do-math\\시험-재편-2026-09-29\\검증\\2026-10-04-활동-대기\\report.json",
+      "ordinary_report_sha256": "22e515a6e93883df826f97c89b527b87f91bb5155e6b3ef975e9bef7e6169ee3",
+      "integration_failures": [
+        "unit.test_academic_assessment_submission.AssessmentSubmissionTests.test_assessment_only_payload_cannot_edit_contracts_or_use_other_extensions",
+        "unit.test_academic_assessment_submission.AssessmentSubmissionTests.test_exact_coverage_is_accepted_and_duplicates_and_foreign_targets_are_rejected",
+        "unit.test_academic_assessment_submission.AssessmentSubmissionTests.test_missing_candidate_assessments_are_rejected_with_missing_titles",
+        "unit.test_academic_assessment_submission.AssessmentSubmissionTests.test_missing_family_cannot_bypass_the_completeness_check",
+        "unit.test_academic_assessment_submission.AssessmentSubmissionTests.test_revised_candidate_also_needs_a_new_assessment"
+      ],
+      "memory_node": "M-0495",
+      "owned_source_sha256": {
+        "README.md": "2ecaba1cfe1e6359ed639c67267dd2355e5b1a98df58aba5181c1da5ee56b68c",
+        "scripts/do_math/activities.py": "e3224b8c9ea9d09e93a8d9ae91975c88788f310c5507ede5345089d148f15328",
+        "scripts/do_math/call_engine.py": "259c9f35602c66dae13de8fd3481c4addb615b5c0c7a568599956aaaa8e66786",
+        "scripts/do_math/context_store.py": "32cd3cd0898f7edfd8539f3312c68359de8f52127ac57aa3c2ca51eef19d90a5",
+        "scripts/do_math/core_engine.py": "7f88366cc74f0b9e0924b775c3be7409d6ea8f5284b85b30447821035589eab5",
+        "scripts/do_math/external_engine.py": "3c182a9e07cdad33a6877de465b34ce90152004a12d5507cb4adf24fa52785e6",
+        "scripts/do_math/formal_engine.py": "f17db6897edae3d781b8b58701a01a9b0de7ad13367f8d765cd4cfa86ec4761a",
+        "scripts/do_math/provider_engine.py": "417c730909bccdc7ed5ac5bd81eded90fd1d1f6050a318cbd5f03a25bfe182d7",
+        "scripts/do_math/record_schemas/schemas.py": "da63f558ab525ff39e11bdfa51eaed304c87904992001eb4b0cb26dcc1e583f2",
+        "scripts/do_math/repair_execution.py": "bacf9045775aa763ed9402bfb961da5623dd1433f6b8cc13e7e8a59ec483d712",
+        "scripts/do_math/reporting.py": "e8f26f15f7ccc0a69a8fe7f4dfd6e919c1420ae27913a1202510654043709318",
+        "scripts/do_math/review_engine.py": "5d5ec41bca37729bd0970faf29a6cf99adb8424e8612714ef93364b889e54f43",
+        "scripts/do_math/wait_rules.py": "9e030a0cbddbc12e0093099f7b2fd771d6313d539247a4a8f3499864dcf1c423",
+        "scripts/tests/flows/test_academic_preparation_calls.py": "7661b113c6a6a25ca2b045a0a8999a3891183c69406fce5dbc8ec9140bd69aff",
+        "scripts/tests/sim/test_lifecycle_engine_controls.py": "4844d588cd86e65847d4da4c7e0392b04f47df68b33fd661e5422e573a9f478c",
+        "scripts/tests/sim/test_planning_repetition_engine.py": "01775be063b33d254ff07c894b1b015d0579e00764cb8d3877788110e377c7f3",
+        "scripts/tests/sim/test_review_owner_path.py": "f3b0466fe07d10acfddc3ee34c20a1c479e8588aa0d29ae56cc4fa351976907a",
+        "scripts/tests/sim/test_scheduling_recovery_dispositions.py": "cab70338de5f6f2514be70613ae5c8f43febaf0cf61ff46c0c22e797a5315b94",
+        "scripts/tests/sim/test_storage_status_reporting.py": "65b64707ee8e30c7621bde27e02809e0014536dac823d3703654cc13a72c68f3",
+        "scripts/tests/structure/test_action_wait_contract.py": "0b3d3a92ce50911f7764f76604ff30aefa55e5b114a5c8adca624a1cbf20f7a7",
+        "scripts/tests/support/engine_overflow.py": "da2e4e349671b5d6ba80664590fe0c2f77ee15f9a818ba1cf760f94e97f9d7c3",
+        "scripts/tests/support/operator_finish_scene.py": "9dabda6dfffd8e2dedc725c4d2a7c8fc8813f36bae7b6b233301a7fce4e4441f",
+        "scripts/tests/support/record_builders.py": "25ac75df254bbd59e9800ecbc33629d93ceacd53b944ec298c80f484d32a26e2",
+        "scripts/tests/support/scheduling_initial.py": "c59d54e0714fc2274d9bb862a71d08fd483a3b45ff13cb82e12bafad54903b41",
+        "scripts/tests/unit/test_engine_activity_guards.py": "eb944994dffddf4c8b4a1e46c998618432873148d3d2f4439c66d894aca8ac72",
+        "scripts/tests/unit/test_provider_execution_lifecycle.py": "f9d6ffd66a03398b38f537d92f6879cc8300b8675bab3a4eaaa2d9231ec0bcff",
+        "scripts/tests/unit/test_provider_stored_executions.py": "11f7ed0813a978565e43a6e9f1094db7c114ab86f2260b7ffe44b99ff73d66a3",
+        "scripts/tests/unit/test_recovery_outcome_contract.py": "96995cba86b3883ebf83e9ed89a694aff4fb6a931867a23f5de60b939f58b888",
+        "scripts/tests/unit/test_review_engine_replacement.py": "331db06311aa2b4d10d5fbdec753cdd5195df13b5a6ee0c18ecb0517f012440a",
+        "scripts/tests/unit/test_review_owner_guards.py": "4b142994663a1a004b8e60961a40e6f55e09ccaef3afdb48c0dcdc48d72e9561",
+        "scripts/tests/unit/test_review_wait_contract.py": "49f121826cb50a3335f5a5099ce05d4d3186740fa4562d677a8657b243c4327e",
+        "scripts/이음새-정본.md": "b4d8490c1a4b00351599c9a32b61ea5cbc7eb604de80790d9fa4f8ffbe935329"
+      },
+      "fixture_correction": {
+        "commit": "dc75da99",
+        "memory": "M-0494",
+        "baseline_counts": {
+          "passed": 2,
+          "failed": 5
+        },
+        "corrected_counts": {
+          "passed": 54
+        },
+        "test_method_ast_unchanged": true,
+        "product_changed": false
+      },
+      "integration_assessment": {
+        "all_five_observed_failures_reproduced_on_base": true,
+        "all_five_fixture_failures_corrected": true,
+        "ordinary_source_changed": false,
+        "original_whole_report_successful": false,
+        "fresh_same_final_whole_pending": true
+      },
+      "cost_note": {
+        "whole_seconds": 3879.6,
+        "over_budget_tests": 703,
+        "largest_modules": [
+          [
+            "flows.test_cross_required_events",
+            1291.984000000055
+          ],
+          [
+            "flows.test_cross_review_alphabets",
+            645.1879999999655
+          ],
+          [
+            "flows.test_submission_ingress_owner",
+            531.6720000000205
+          ],
+          [
+            "flows.test_cross_operational_alphabets",
+            388.85899999993853
+          ],
+          [
+            "flows.test_cross_planning_alphabets",
+            310.90600000007544
+          ]
+        ],
+        "interpretation": "Different versions and workload; no measured optimization or elapsed-only failure."
+      },
+      "limits": [
+        "관련 199통과는 33종 각각의 의미별 해소 검증이 아님",
+        "Whole original remains3909pass/5fail/1skip; fixture correction54pass does not rewrite it",
+        "Final same-version T2/flows fresh T3 and all mutation still pending"
+      ]
     }
   }
 }

@@ -28,6 +28,42 @@ setUpModule = warm_template
 
 
 class StatusSnapshotTests(unittest.TestCase):
+    def test_all_typed_activity_waits_are_visible_outside_the_five_recent_results(self):
+        import json
+        from do_math.wait_rules import ACTIVITY_WAIT_RULES
+        sim = Sim.activated()
+        clear_work(sim)
+        engine = sim.engine
+        previous = {key for key, row in sim.runtime['activities'].items() if row['status'] == 'waiting'}
+        expected = {}
+        for number, kind in enumerate(ACTIVITY_WAIT_RULES):
+            identifier = 'AY-report-wait-' + str(number)
+            activities.open_activity(sim.runtime, activity_id=identifier, activity_kind='maintenance',
+                owner_ref=sim.instance_id, input_refs=[], opened_at=sim.clock.now())
+            activities.wait_for(sim.runtime, identifier, kind=kind, reason='Preserve the exact unresolved obligation',
+                condition={'input_id': 'SO-' + str(number)}, next_owner='user', at=sim.clock.now())
+            expected[identifier] = deepcopy(sim.runtime['activities'][identifier])
+        engine._save()
+        head, instance, runtime = engine.store.load()
+        before = deepcopy((instance, runtime))
+        report = status_report(engine.store, head, instance, runtime, requested_areas=['record_storage'])
+        self.assertEqual(set(report['waiting_activities']), previous | expected.keys())
+        self.assertLess(len(report['latest_results']), len(expected))
+        lines = render_human_report(report).splitlines()
+        for identifier, activity in expected.items():
+            row = report['waiting_activities'][identifier]
+            self.assertEqual({key: row[key] for key in activity['waiting']}, activity['waiting'])
+            self.assertEqual(row['coordinates'], {'activity_id': identifier, 'owner_ref': sim.instance_id, 'execution_ids': []})
+            matches = [i for i, line in enumerate(lines) if line.startswith('activity ' + identifier + ':')]
+            self.assertEqual(len(matches), 1)
+            self.assertIn('wait=' + activity['waiting']['kind'] + ' next=user', lines[matches[0]])
+            self.assertIn(activity['waiting']['reason'], lines[matches[0]])
+            self.assertEqual(json.loads(lines[matches[0]+1].removeprefix('  coordinates: ')), row['coordinates'])
+            row['condition'].clear()
+            row['coordinates']['execution_ids'].append('not persisted')
+        self.assertEqual((instance, runtime), before)
+        self.assertEqual(engine.store.load(), (head, *before))
+
     def test_no_task_authority_wait_reports_real_owner_and_preserved_coordinates(self):
         sim = Sim.activated()
         grant = sim.instance['lifecycle']['adoption']['research_grant_ids'][0]

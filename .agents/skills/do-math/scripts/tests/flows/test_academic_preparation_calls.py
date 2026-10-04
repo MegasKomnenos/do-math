@@ -164,7 +164,7 @@ class RulePreparationCallTests(unittest.TestCase):
         failed_id = 'AC-old-rules'
         failed_action = {'id': failed_id, 'role': 'research_work', 'target': next(iter(before))}
         activity = engine._activity_for_action(failed_action)
-        wait_for(engine.runtime, activity['id'], reason='missing rules', condition={'kind': 'observation_rules'},
+        wait_for(engine.runtime, activity['id'], kind='observation_rules', reason='missing rules', condition={'kind': 'observation_rules'},
                  next_owner='research_preparation', at=engine._lifecycle_now().isoformat())
         engine.runtime.setdefault('waiting_actions', {})[failed_id] = {'action': failed_action, 'kind': 'observation_rules',
                                                                        'reason': 'missing rules'}

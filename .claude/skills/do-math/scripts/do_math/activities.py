@@ -10,6 +10,7 @@ from copy import deepcopy
 from typing import Any
 
 from .values import require_text
+from .wait_rules import ACTIVITY_WAIT_RULES, activity_wait_record
 
 
 ACTIVITY_STATUSES = frozenset({"ready", "working", "waiting", "finished"})
@@ -146,7 +147,7 @@ def successor_state(runtime: dict, execution_id: str) -> dict | None:
 
 
 def continue_activity(runtime: dict, execution_id: str, *, at: str, reason: str,
-                      condition: Any = None, next_owner: str = "engine") -> dict:
+                      condition: Any = None, next_owner: str = "engine", wait_kind: str | None = None) -> dict:
     """Preserve the exact ended attempt's obligation and request its successor.
 
     A pause condition is an activity wait, even though the pending action stays
@@ -157,6 +158,8 @@ def continue_activity(runtime: dict, execution_id: str, *, at: str, reason: str,
     require_text(at, "at")
     require_text(reason, "reason")
     require_text(next_owner, "next_owner")
+    if condition is not None:
+        activity_wait_record(wait_kind, reason=reason, condition=condition, next_owner=next_owner, at=at)
     execution = _executions(runtime)[execution_id]
     if execution["status"] != "ended":
         raise ValueError("only an ended execution can request continuation")
@@ -185,13 +188,13 @@ def continue_activity(runtime: dict, execution_id: str, *, at: str, reason: str,
     activity["followups"] = [row for row in activity["followups"]
                              if not isinstance(row, dict) or row.get("action_id") != action_id] + [followup]
     if condition is not None:
-        wait_for(runtime, activity["id"], reason=reason, condition=condition, next_owner=next_owner, at=at)
+        wait_for(runtime, activity["id"], kind=wait_kind, reason=reason, condition=condition, next_owner=next_owner, at=at)
     elif activity["status"] != "waiting":
         activity["status"] = "ready"
     return action
 
 
-def wait_for(runtime: dict, activity_id: str, *, reason: str, condition: Any,
+def wait_for(runtime: dict, activity_id: str, *, kind: str, reason: str, condition: Any,
              next_owner: Any, at: str) -> dict:
     """Record a durable wait after every currently assigned attempt ended."""
     activity = _activities(runtime).get(activity_id)
@@ -199,18 +202,14 @@ def wait_for(runtime: dict, activity_id: str, *, reason: str, condition: Any,
         raise ValueError(f"unknown activity {activity_id}")
     if activity["status"] == "finished":
         raise ValueError("a finished activity cannot wait")
-    require_text(reason, "reason")
-    require_text(at, "at")
-    if condition is None or next_owner is None:
-        raise ValueError("condition and next_owner are required")
+    waiting = activity_wait_record(kind, reason=reason, condition=condition, next_owner=next_owner, at=at)
     executions = _executions(runtime)
     live = [eid for eid in activity["assigned_execution_ids"]
             if executions.get(eid, {}).get("status") != "ended"]
     if live:
         raise ValueError("an activity may wait only after its assigned executions ended")
     activity["status"] = "waiting"
-    activity["waiting"] = {"reason": reason, "condition": deepcopy(condition),
-                           "next_owner": deepcopy(next_owner), "at": at}
+    activity["waiting"] = waiting
     return activity
 
 
@@ -276,6 +275,9 @@ def validate_activities(runtime: dict) -> list[str]:
                 assigned_by_execution[execution_id] = activity_id
         if activity.get("status") == "waiting" and not isinstance(activity.get("waiting"), dict):
             errors.append(f"{activity_id}: waiting state lacks its condition")
+        elif activity.get('status') == 'waiting' and (not isinstance(activity['waiting'].get('kind'), str)
+                or activity['waiting']['kind'] not in ACTIVITY_WAIT_RULES):
+            errors.append(f'{activity_id}: activity wait kind is unregistered')
         if activity.get("status") == "finished" and "finished_at" not in activity:
             errors.append(f"{activity_id}: finished state lacks finished_at")
     for execution_id, execution in executions.items():

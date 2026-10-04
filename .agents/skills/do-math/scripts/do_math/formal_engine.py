@@ -173,7 +173,7 @@ class FormalEngineMixin:
                 or self.instance['trust_environments'].get(transition['to_environment']) != environment):
             self._end_machine_execution(execution, outcome='execution_incomplete', disposition={'kind':'environment_interrupted'})
             from .activities import wait_for
-            wait_for(self.runtime, execution['owner_activity_id'], reason='environment_interrupted',
+            wait_for(self.runtime, execution['owner_activity_id'], kind='environment_interrupted', reason='environment_interrupted',
                      condition={'transition_id':transition_id}, next_owner='engine', at=self._lifecycle_now().isoformat())
             self._record_machine_continuation(action, execution_id)
             self._save({f'{ARTIFACT_ROOT}{execution_id}/environment.json':canonical_json(verification)})
@@ -295,7 +295,7 @@ class FormalEngineMixin:
             result.update(status='stopped', reason=result.get('reason') or 'trust verification stopped')
             self._record_machine_continuation(action, execution_id)
             from .activities import wait_for
-            wait_for(self.runtime, execution['owner_activity_id'], reason='trust_check_stopped',
+            wait_for(self.runtime, execution['owner_activity_id'], kind='trust_check_stopped', reason='trust_check_stopped',
                      condition={'transition_id': transition_id, 'target': knowledge_id, 'resume': True},
                      next_owner='user', at=self._lifecycle_now().isoformat())
             if self.runtime.get('status') != 'closed': self._pause_lifecycle('trust_check_stopped')
@@ -356,7 +356,7 @@ class FormalEngineMixin:
         if not authority['allowed'] or environment is None:
             activity = self._activity_for_action(action)
             reason = authority['reason'] if not authority['allowed'] else environment_error
-            wait_for(self.runtime, activity['id'], reason=reason,
+            wait_for(self.runtime, activity['id'], kind='formal_authority', reason=reason,
                 condition={'kind': 'formal_authority', 'knowledge_id': kid}, next_owner='trust_governance',
                 at=self.ports.clock.now())
             self.runtime.setdefault('waiting_actions', {})[action['id']] = formal_wait(action, 'formal_authority', reason)
