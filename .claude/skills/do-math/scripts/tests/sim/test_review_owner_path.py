@@ -77,6 +77,16 @@ class PreparationFailureTests(unittest.TestCase):
         self.assertEqual(outcome['disposition'], 'review_resumed')
         self.assertNotIn(action['id'], sim.runtime['waiting_actions'])
         self.assertEqual(cycle_of(sim)['knowledge_id'], kid)
+        sim.engine._save()  # the outer control owner publishes the released wait
+        from support.role_input_requirements import observe_judgment_inputs
+        with observe_judgment_inputs(self) as prepared:
+            sim.run_until(lambda s: any(row['role'] == 'identity_review'
+                and row['action'].get('review_cycle_id') == action['review_cycle_id'] for row in prepared), max_steps=6)
+        restored = [row for row in prepared if row['role'] == 'identity_review'
+                    and row['action'].get('review_cycle_id') == action['review_cycle_id']]
+        self.assertTrue(restored)
+        self.assertEqual((restored[0]['action']['stage'], restored[0]['action']['slot']),
+                         (action['stage'], action['slot']))
 
 
 class PublicReassessmentTests(unittest.TestCase):

@@ -168,7 +168,10 @@ class ParkedFailureTests(unittest.TestCase):
             **common('Preserved failed output requires an explicit recovery disposition'), 'disposition': proposal}))
         self.engine.runtime['queue'].insert(0, {'id': 'AC-diagnose', 'role': 'operational_review', 'target': self.failed['id']})
         self.engine._save()
-        self.sim.step()
+        from support.role_input_requirements import observe_judgment_inputs
+        with observe_judgment_inputs(self) as prepared:
+            self.sim.step()
+        self.assertEqual(len([row for row in prepared if row['role'] == 'operational_review']), 1)
 
 
     def test_diagnosed_plan_retry_uses_fresh_input_and_preserves_failure_and_independent_work(self):

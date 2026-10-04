@@ -140,7 +140,10 @@ class UnreadableBeforeReviewTests(unittest.TestCase):
         self.assertEqual(held['kind'], 'submission_failure')
         attempts = review_attempts()
         self.assertLessEqual(len(attempts), 1)
-        owner_pass()  # the next pass proceeds and does not prepare the same review again
+        from support.role_input_requirements import observe_judgment_inputs
+        with observe_judgment_inputs(self) as prepared:
+            owner_pass()  # the next pass proceeds and does not prepare the same review again
+        self.assertEqual(len([row for row in prepared if row['role'] == 'operational_review']), 1)
         self.assertEqual(review_attempts(), attempts)
         self.assertEqual(len(diagnostics), 1)
         source = producer['submission_intent']['output_ref']

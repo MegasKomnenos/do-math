@@ -73,10 +73,14 @@ class PurposeEngineTests(unittest.TestCase):
         self.assertIs(observation['stop_request_exists'], True, 'Stop did not request a checkpoint before CLI exit')
 
     def test_live_continue_preserves_checkpoint_and_reserves_no_work_slot(self):
+        from support.role_input_requirements import observe_judgment_inputs
         sim = observed_sim('continue')
-        drive(self, sim, lambda s: any(row['disposition']['kind'] == 'continue' and
-              row['target_execution_id'] in s.runtime.get('checkpoints', {})
-              for row in s.runtime.get('operational_dispositions', {}).values()))
+        with observe_judgment_inputs(self) as prepared:
+            drive(self, sim, lambda s: any(row['disposition']['kind'] == 'continue' and
+                  row['target_execution_id'] in s.runtime.get('checkpoints', {})
+                  for row in s.runtime.get('operational_dispositions', {}).values()))
+        self.assertEqual(len([row for row in prepared if row['role'] == 'operational_review'
+                              and row['action'].get('live')]), 1)
         live = [e for e in sim.runtime['executions'].values() if e['role'] == 'operational_review' and e['action'].get('live')]
         self.assertEqual(len(live), 1)
         parent = sim.runtime['executions'][live[0]['action']['target']]
@@ -150,6 +154,13 @@ class CheckpointPersistenceTests(unittest.TestCase):
         review = next(a for a in sim.runtime['queue'] if a['role'] == 'operational_review')
         workspace = sim.root / 'review'
         context = sim.engine._context(review, workspace)
+        from do_math.context_store import prepare_role_input
+        from support.role_input_requirements import assert_judgment_inputs
+        profile = resolve_profile(sim.instance['execution_profiles'], sim.instance['role_profile_refs']['operational_review'][0])
+        fitted = prepare_role_input(context, instance=sim.instance, runtime=sim.runtime,
+            role='operational_review', profile=profile, snapshot=sim.engine.head, workspace=workspace,
+            activity_id='AY-ended-review-input', install_submission_tools=True, clock=sim.clock)
+        assert_judgment_inputs(self, 'operational_review', fitted, workspace, producer_context=context)
         files = context['operational_evidence']['checkpoint_files']
         self.assertEqual(len(files), 1)
         self.assertEqual((workspace / files[0]['local_path']).read_bytes(), b'original evidence')

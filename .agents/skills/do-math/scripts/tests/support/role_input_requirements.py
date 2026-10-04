@@ -7,7 +7,8 @@ from contextlib import contextmanager
 import json
 
 from do_math.context_store import prepare_role_input, read_source
-from do_math.role_input_requirements import judgment_input_keys, judgment_input_paths, judgment_source_lists
+from do_math.role_input_requirements import (judgment_input_keys, judgment_input_paths,
+                                           judgment_source_lists, judgment_source_refs)
 from do_math.canonical import same_json_value
 
 
@@ -19,7 +20,10 @@ def assert_judgment_inputs(test, role, prepared, workspace, *, producer_context)
     catalog = {row['key']: {k: v for k, v in row.items() if k != 'key'}
                for row in manifest['catalog']}
     resolved_keys = {}
-    for key in judgment_input_keys(role, original['action']):
+    paths = judgment_input_paths(role, original['action'], context=original)
+    keys = tuple(dict.fromkeys((*judgment_input_keys(role, original['action']),
+                               *(path.split('.')[0].removesuffix('[]') for path in paths))))
+    for key in keys:
         with test.subTest(role=role, required_input=key):
             test.assertIn(key, original, 'actual producer omitted a contract judgment input')
             test.assertIn(key, delivered, 'packaging omitted a contract judgment input')
@@ -66,34 +70,54 @@ def assert_judgment_inputs(test, role, prepared, workspace, *, producer_context)
                 continue
             test.assertTrue(same_json_value(value, original[key]),
                             'delivered judgment input differs from its sealed producer value: ' + key)
-    for path in judgment_input_paths(role, original['action']):
+    for path in paths:
         with test.subTest(role=role, required_path=path):
-            value = resolved_keys if path.split('.')[0] in resolved_keys else delivered
-            for part in path.split('.'):
-                test.assertIsInstance(value, dict, path)
-                test.assertIn(part, value, 'contract judgment coordinate is absent: ' + path)
-                value = value[part]
-            expected = original
-            for part in path.split('.'):
-                test.assertIsInstance(expected, dict, path)
-                test.assertIn(part, expected, 'sealed source omitted required coordinate: ' + path)
-                expected = expected[part]
+            value = required_path_values(test, resolved_keys, path)
+            expected = required_path_values(test, original, path)
             test.assertTrue(same_json_value(value, expected), path)
-    for path in judgment_source_lists(role, original['action']):
-        sources = resolved_keys
-        for part in path.split('.'):
-            sources = sources[part]
+    for path in judgment_source_lists(role, original['action'], context=original):
+        sources, = required_path_values(test, resolved_keys, path)
         test.assertIsInstance(sources, list, path)
         for ref in sources:
-            with test.subTest(role=role, source_list=path, source=ref):
-                test.assertIn('local_path', ref)
-                test.assertIn('sha256', ref)
-                # The reader validates the path boundary and the entire hash.
-                # Some contracts supply a hash without a separate byte count.
-                resolved = read_source(workspace, {**ref, 'path': ref['local_path']},
-                                       limit=ref['bytes'] if ref.get('bytes') else 2 ** 63 - 1)
-                test.assertEqual(resolved['status'], 'ok')
-                test.assertFalse(resolved['truncated'])
+            assert_judgment_source(test, role, path, ref, workspace)
+    for path in judgment_source_refs(role, original['action'], context=original):
+        ref, = required_path_values(test, resolved_keys, path)
+        if ref is not None:
+            assert_judgment_source(test, role, path, ref, workspace)
+
+
+def required_path_values(test, root, path):
+    """Read required coordinates, sweeping every member at declared [] steps."""
+    values = [root]
+    for part in path.split('.'):
+        many = part.endswith('[]')
+        key = part[:-2] if many else part
+        following = []
+        for value in values:
+            test.assertIsInstance(value, dict, path)
+            test.assertIn(key, value, 'contract judgment coordinate is absent: ' + path)
+            item = value[key]
+            if many:
+                test.assertIsInstance(item, list, path)
+                following.extend(item)
+            else:
+                following.append(item)
+        values = following
+    return values
+
+
+def assert_judgment_source(test, role, path, ref, workspace):
+    with test.subTest(role=role, source_path=path, source=ref):
+        if 'restoration_error' in ref:
+            test.assertNotIn('local_path', ref, 'unverified evidence must not be materialized')
+            test.assertTrue({'error_type', 'reason', 'observed_sha256', 'observed_bytes'} <= ref['restoration_error'].keys())
+            return
+        test.assertIn('local_path', ref)
+        test.assertIn('sha256', ref)
+        resolved = read_source(workspace, {**ref, 'path': ref['local_path']},
+                               limit=ref['bytes'] if ref.get('bytes') else 2 ** 63 - 1)
+        test.assertEqual(resolved['status'], 'ok')
+        test.assertFalse(resolved['truncated'])
 
 
 @contextmanager

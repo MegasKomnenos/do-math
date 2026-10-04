@@ -82,6 +82,7 @@ def judgment_input_keys(role, action):
     remain that producer's contract, not a made-up replacement here.
     """
     keys = list(ROLE_INPUT_REQUIREMENTS[role]['keys'])
+    keys.extend(('snapshot', 'execution_profile', 'record_map', 'record_index'))
     if role == 'supplemental_research':
         keys.extend(('review_research', 'proposal') if action.get('review_cycle_id') else ('task',))
     elif role == 'intent_interpretation':
@@ -100,10 +101,10 @@ def judgment_input_keys(role, action):
             keys.append('impact_review_input')
         elif action.get('initial_submission_diagnosis'):
             keys.append('initial_submission_diagnosis')
-    return tuple(keys)
+    return tuple(dict.fromkeys(keys))
 
 
-def judgment_input_paths(role, action):
+def judgment_input_paths(role, action, *, context):
     """Required nested coordinates, in addition to whole readable key values."""
     paths = []
     if role == 'identity_review':
@@ -122,12 +123,27 @@ def judgment_input_paths(role, action):
                          ('failed_execution', 'checkpoint', 'preserved_output_files', 'materials'))
     elif role == 'intent_interpretation' and not action.get('delegation_application_id'):
         paths.append('user_request.text')
+    elif role == 'operational_review':
+        paths.extend('operational_evidence.' + key for key in
+                     ('checkpoint_status', 'checkpoint_source', 'checkpoint_files',
+                      'checkpoint_evidence_omitted', 'execution_status', 'source_snapshot'))
+        if context['operational_evidence']['checkpoint_status'] == 'preserved':
+            paths.extend('operational_evidence.checkpoint_source.' + key for key in ('local_path', 'sha256', 'bytes'))
+        if recovery_materials_required(action, context):
+            paths.extend('recovery_materials.' + key for key in
+                         ('execution_id', 'source_snapshot', 'checkpoint', 'checkpoint_source',
+                          'result_source', 'result_kind', 'final_result_status', 'output_files'))
+    elif role == 'goal_audit':
+        paths.extend('additional_audit_input[].' + key for key in ('audit', 'inputs', 'input_hashes'))
+        paths.extend('eligible_knowledge[].' + key for key in ('formal_result', 'identity_assessments'))
+        paths.extend('eligible_knowledge[].formal_result.verification.' + key for key in
+                     ('declarations', 'declaration_signatures', 'axioms', 'source_sha256'))
     if action.get('continuation_of'):
         paths.extend(('previous_execution', 'previous_output_files', 'resume_checkpoint', 'continuation_history'))
     return tuple(paths)
 
 
-def judgment_source_lists(role, action):
+def judgment_source_lists(role, action, *, context):
     """Contract-owned lists whose local source files must actually be readable."""
     if role == 'identity_review':
         return ('role_review.source_refs',)
@@ -135,4 +151,24 @@ def judgment_source_lists(role, action):
         return ('review_research.sources',)
     if role == 'maintenance' and action.get('initial_submission_diagnosis'):
         return ('initial_submission_diagnosis.materials',)
+    if role == 'operational_review':
+        return ('operational_evidence.checkpoint_files',) + (
+            ('recovery_materials.output_files',) if recovery_materials_required(action, context) else ())
     return ()
+
+
+def recovery_materials_required(action, context):
+    """Ended diagnostic inputs of executions with a preserved artifact bundle."""
+    return not action.get('live', False) and bool(context['execution_to_review'].get('artifact_bundle'))
+
+
+def judgment_source_refs(role, action, *, context):
+    """Single exact files, with explicit missing/failed evidence left distinguishable."""
+    if role != 'operational_review':
+        return ()
+    paths = []
+    if context['operational_evidence']['checkpoint_status'] == 'preserved':
+        paths.append('operational_evidence.checkpoint_source')
+    if recovery_materials_required(action, context):
+        paths.extend(('recovery_materials.result_source', 'recovery_materials.checkpoint_source'))
+    return tuple(paths)

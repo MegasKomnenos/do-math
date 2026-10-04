@@ -160,9 +160,12 @@ class ResearchFlowTests(unittest.TestCase):
         drive(self, sim, predicate=lambda s: any(kr.usable_links(s.instance, kid) for kid in s.instance['knowledge']))
         item = next(iter(sim.instance['knowledge'].values()))
         revise(sim, item['id'], ' This revision adds an explicit domain reminder.', 'New proposal revision')
-        drive(self, sim, predicate=lambda s: len(responder.resumed_contexts) >= 2
-              and any(row.get('supersedes') == item['id'] and kr.usable_links(s.instance, row['id'])
-                      for row in s.instance['knowledge'].values()))
+        from support.role_input_requirements import observe_judgment_inputs
+        with observe_judgment_inputs(self) as prepared:
+            drive(self, sim, predicate=lambda s: len(responder.resumed_contexts) >= 2
+                  and any(row.get('supersedes') == item['id'] and kr.usable_links(s.instance, row['id'])
+                          for row in s.instance['knowledge'].values()))
+        self.assertTrue(any(row['role'] == 'identity_review' for row in prepared))
         self.assertEqual(len(responder.research_answers), 1)
         self.assertEqual(len(responder.resumed_contexts), 2)
         self.assertIn('previous_revision', responder.resumed_contexts[-1]['supplemental_results'][0])

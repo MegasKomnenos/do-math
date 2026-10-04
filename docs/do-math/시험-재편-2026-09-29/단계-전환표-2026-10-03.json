@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B67 단계·복구 관련 135개와 최종 위임 사례 검증",
-      "active": "3-B의 live/종료 운영 근거·검토 개정/자리 복구·추가 목표 감사 변형을 기존 생산자에 연결",
+      "last_closed": "B68 운영·감사·복구 입력의 관련 168개 같은 판본 검증",
+      "active": "3-B 원문 계약별 모집단과 선언/소비/누락 검사의 종료 판정",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -16579,6 +16579,77 @@
         {
           "path": ".claude/skills/do-math/scripts/tests/sim/test_knowledge_import_control.py",
           "sha256": "4d532d66ce2c3a1599385518aa46c9b67a37f19de584d35ecb1b91dbf3318a8e"
+        }
+      ],
+      "whole_requirement_closed": false
+    },
+    "role_input_evidence_integration": {
+      "id": "B68",
+      "state": "verified_main_commit_pending",
+      "scope": "live/종료 운영 근거·목록형 감사 근거·검토 개정/자리 복구·제한 복구와 명시된 원문 읽기 실패의 실제 입력 대조",
+      "changed_area": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 168
+        },
+        "total_seconds": 268.7,
+        "changed_during_run": []
+      },
+      "tracked_report": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-운영-감사-입력/report.json",
+      "report_sha256": "0bc94576638c72f6fdba4771667ca7b168d65a8ebd24c330787e75e664a866cc",
+      "command": "python .claude/skills/do-math/scripts/run_tests.py structure unit.test_role_input_scoped_packaging sim.test_role_input_context sim.test_governance_goal_audit sim.test_review_owner_path sim.test_governance_delegation_storage sim.test_knowledge_import_control flows.test_engine_purpose_decisions flows.test_engine_purpose_currentness flows.test_review_blind_inputs flows.test_initial_diagnosis flows.test_review_impact_routing flows.test_operator_recovery_contract flows.test_live_finish_purpose flows.test_scheduling_recovery_calls flows.test_scheduling_research_recovery flows.test_review_research_flows flows.test_knowledge_impact_retry --jobs 3",
+      "contract": [
+        "목록의 각 원소까지 요구 좌표를 순회",
+        "보존 파일은 경로·해시·크기와 실제 바이트를 읽음",
+        "복원 실패에는 local_path를 만들지 않으며 진단을 보존",
+        "복구 재지급 전에 바깥 소유자가 실제 해소 상태를 게시"
+      ],
+      "limits": [
+        "개별 초과 12개; 전체 T2 또는 T3 시간 충족 증거 아님",
+        "3-B 전체 원문 계약 모집단의 선언/소비/누락 검사는 별도 종료 판정 필요",
+        "원래 의무·지식·P2·다른 부류·최종 전역 관문은 미완료"
+      ],
+      "files": [
+        {
+          "path": ".claude/skills/do-math/scripts/do_math/role_input_requirements.py",
+          "sha256": "0312f31523828b63c6a45a39bac57cbab6cc669fbf8b77766d6ae1e1e0457077"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/support/role_input_requirements.py",
+          "sha256": "e2debb6e81992b3a1af3a45caf72935a1b5a4ef1f6782e36eee219a6e4b175c0"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/flows/test_engine_purpose_currentness.py",
+          "sha256": "b6c8d23d80fd4e7fb3816b7a9830ebf2751ce1ea03bf16b93afafa2c7af7e5c6"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/flows/test_live_finish_purpose.py",
+          "sha256": "efe1ac1ba56b454614279428b52edc1f53b6e5d26900f7f0e92b32adf60c7094"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/flows/test_review_research_flows.py",
+          "sha256": "c076d310dedddede03b3a2b9dffb9823eafe2748e3770683f17e4d5da29317cd"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/flows/test_scheduling_recovery_calls.py",
+          "sha256": "95e2fdb98688ebfc56114a46aca9cd4445bc3924cf0217f568f734650a82fdad"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/flows/test_scheduling_research_recovery.py",
+          "sha256": "a8751d06874ceab4d30441c9246cb6794b27bcbd0c18fe1e3e9841ba0f8457aa"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/flows/test_knowledge_impact_retry.py",
+          "sha256": "ef2f62bca94a6667c0b1c19602592be8d65ca9926afdf5795fe558fe35fc49ea"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/sim/test_governance_goal_audit.py",
+          "sha256": "15746e1103a57a6ca438169385b0a9175acd7edc419530878d70c3e9d7680642"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/sim/test_review_owner_path.py",
+          "sha256": "80917ada6fd5a0b13de785df464a32133bf1794471c8d155637cfec2a6a0a754"
         }
       ],
       "whole_requirement_closed": false

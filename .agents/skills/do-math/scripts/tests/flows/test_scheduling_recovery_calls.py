@@ -88,7 +88,10 @@ class LimitedRecoveryCallTests(unittest.TestCase):
         model.during('maintenance', inside)
         model.on('maintenance').reply(amend(summary='Limited recovery inspection complete',
                                             report='Inspected only the supplied recovery state.', remaining_work=[]))
-        sim.step()
+        from support.role_input_requirements import observe_judgment_inputs
+        with observe_judgment_inputs(self) as prepared:
+            sim.step()
+        self.assertEqual(len([row for row in prepared if row['role'] == 'maintenance']), 1)
         self.assertEqual(seen, [{'status': 'paused', 'lifecycle': 'paused', 'stop_requested': False, 'action': 'AC-limited'}])
         execution, = [row for row in sim.runtime['executions'].values() if row.get('action', {}).get('id') == 'AC-limited']
         self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))

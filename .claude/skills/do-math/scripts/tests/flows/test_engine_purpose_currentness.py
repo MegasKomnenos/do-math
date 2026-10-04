@@ -22,6 +22,7 @@ from support.purpose_answers import EXPLANATION
 from support.trust_inputs import trust_fixture
 from support.engine_lifecycle import applied
 from support.engine_purpose import PurposeResponder, drive, purpose_sim
+from support.role_input_requirements import observe_judgment_inputs
 
 
 class PurposeFlowTests(unittest.TestCase):
@@ -59,7 +60,10 @@ class PurposeFlowTests(unittest.TestCase):
             'reason': 'The replacement explanation fixes the domain explicitly',
             'declared_impact': knowledge.plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact']})
         replacement_id = next(row['id'] for row in engine.instance['knowledge'].values() if row.get('supersedes') == kid)
-        drive(self, sim, limit=55)
+        with observe_judgment_inputs(self) as prepared:
+            drive(self, sim, limit=55)
+        self.assertTrue(any(row['role'] == 'identity_review' for row in prepared))
+        self.assertTrue(any(row['role'] == 'goal_audit' for row in prepared))
         item = sim.instance['knowledge'][replacement_id]
         self.assertTrue(usable_links(sim.instance, replacement_id))
         self.assertNotEqual(item['review_cycle_id'], previous_cycle)

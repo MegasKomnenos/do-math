@@ -33,7 +33,16 @@ class AuditInputTests(unittest.TestCase):
         adopt_audit(sim)
         engine = sim.engine
         action = {'role': 'goal_audit'}
-        context = engine._governance_context(action, {})
+        from do_math.context_store import prepare_role_input
+        from do_math.execution_profiles import resolve_profile
+        from support.role_input_requirements import assert_judgment_inputs
+        workspace = sim.root / 'additional-audit-input'
+        context = engine._context(action, workspace)
+        profile = resolve_profile(sim.instance['execution_profiles'], sim.instance['role_profile_refs']['goal_audit'][0])
+        fitted = prepare_role_input(context, instance=sim.instance, runtime=sim.runtime,
+            role='goal_audit', profile=profile, snapshot=engine.head, workspace=workspace,
+            activity_id='AY-additional-audit-input', install_submission_tools=True, clock=sim.clock)
+        assert_judgment_inputs(self, 'goal_audit', fitted, workspace, producer_context=context)
         self.assertEqual(context['additional_audit_input'][0]['audit']['id'], 'AU')
         schema = engine._governance_schema(action, {'type': 'object', 'properties': {}, 'required': []})
         self.assertIn('additional_audits', schema['required'])
