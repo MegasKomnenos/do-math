@@ -124,6 +124,17 @@ def assessment(task):
                               for row in task["completion_obligations"]], "unresolved": []}
 
 
+def assessment_awaiting_required_evidence(task):
+    """A fixture whose report exists but every obligation still lacks its named evidence."""
+    if not task['completion_obligations'] or any(not row['evidence_required'] for row in task['completion_obligations']):
+        raise AssertionError('Missing-evidence fixture requires named evidence for every obligation')
+    return {'task_id': task['id'], 'decision': 'incomplete',
+        'reason': 'The report is present; the required evidence is still missing.',
+        'item_dispositions': [], 'unresolved': [{'obligation_id': row['id'],
+            'missing_inputs': list(row['evidence_required']), 'next_owner': 'research_work'}
+            for row in task['completion_obligations']]}
+
+
 def intent_response(context):
     if context["action"].get("stage", "interpret") == "interpret":
         source = context["user_request"]

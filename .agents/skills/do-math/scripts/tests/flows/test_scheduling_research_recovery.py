@@ -313,6 +313,65 @@ class DelegatedRevisionPlanningTests(unittest.TestCase):
 
 
 class AssessmentReplanningTests(unittest.TestCase):
+    def test_open_assessment_creates_one_followup_after_its_own_plan_finishes(self):
+        from support.cross_contracts import assert_call_records
+        from support.model import Answer
+        from support.planning_contract_inputs import prepared_sim, returned, only_task
+        for decision in ('open', 'missing', 'completed'):
+            with self.subTest(decision=decision):
+                sim = prepared_sim()
+                returned(sim)
+                sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+                task_id = only_task(sim)['id']
+                request, = [a for a in sim.runtime['queue'] if a['role'] == 'research_plan']
+                def assess(out, context):
+                    out['goal_audit'] = False
+                    if decision != 'completed':
+                        result, = out['task_assessments']
+                        result.update(decision='incomplete', reason='The returned report needs further work.')
+                        if decision == 'open':
+                            for item in result['item_dispositions']:
+                                item.update(kind='open', evidence_refs=[])
+                        else:
+                            result['unresolved'] = [{'obligation_id': item['obligation_id'],
+                                'missing_inputs': ['additional-proof.txt'], 'next_owner': 'research_work'}
+                                for item in result['item_dispositions']]
+                            result['item_dispositions'] = []
+                    return out
+                def defer(out, context):
+                    out['goal_audit'] = False
+                    for item in out['dispositions']:
+                        item.update(kind='not_selected', next_owner='research_plan',
+                            revisit={'at': '2090-01-02T00:00:00+00:00', 'event_refs': []})
+                    return out
+                sim.model.on('research_plan').reply(Answer(assess)).reply(Answer(defer))
+                sim.step()
+                execution, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == request['id']]
+                self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+                followups = [a for a in sim.runtime['queue'] if a['role'] == 'research_plan']
+                self.assertEqual(len(followups), int(decision == 'open'), sim.runtime['queue'])
+                self.assertEqual(only_task(sim)['assessment']['execution_id'], execution['id'])
+                after = assert_call_records(self, sim)
+                if followups:
+                    followup, = followups
+                    ready_event, = [event for event in sim.runtime['events']
+                                    if event['id'] in followup.get('event_refs', [])
+                                    and event['kind'] == 'task_became_ready' and event['target'] == task_id]
+                    self.assertEqual(only_task(sim)['waiting']['basis_ref'], execution['id'])
+                    sim.run_until(lambda current: any(c['action']['id'] == followup['id'] for c in current.model.calls), max_steps=8)
+                    accepted, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == followup['id']]
+                    self.assertEqual(accepted['outcome'], 'output_accepted',
+                                     {'error': accepted.get('error'), 'issues': [r.get('result', {}).get('issues') for r in sim.model.receipts]})
+                    self.assertEqual(assert_call_records(self, sim)['research_plan'] - after['research_plan'], 1)
+                for _ in range(2):
+                    sim.step()
+                    assert_call_records(self, sim)
+                    if followups:
+                        self.assertEqual(sum(ready_event['id'] in c['action'].get('event_refs', [])
+                                             for c in sim.model.calls), 1)
+                    else:
+                        self.assertEqual(sum(c['action'].get('requested_by') == execution['id'] for c in sim.model.calls), 0)
+
     def test_readiness_refresh_requests_reassessment_while_other_work_remains(self):
         from do_math import task_contracts
         from support.planning_owner import reassessment_sim, arrive, MISSING_SOURCE

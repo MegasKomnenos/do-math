@@ -213,10 +213,8 @@ class OverflowGitConnection(unittest.TestCase):
             out['goal_audit'] = False
             for result in out['task_assessments']:
                 current = next(t for t in context['tasks'] if t['id'] == result['task_id'])
-                result.update(decision='incomplete', reason='The report is present; the required evidence is still missing.',
-                    item_dispositions=[], unresolved=[{'obligation_id': obligation['id'],
-                        'missing_inputs': obligation['evidence_required'], 'next_owner': 'research_work'}
-                        for obligation in current['completion_obligations']])
+                from support.role_answers import assessment_awaiting_required_evidence
+                result.update(assessment_awaiting_required_evidence(current))
             return out
         model.on('research_plan', id=assessment_request['id']).reply(Answer(inspect_remaining))
         sim.run_until(lambda current: any(c['action']['id'] == assessment_request['id']

@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B104에 literal _enqueue23·동적4·직접 queue 쓰기24·lifecycle 사건28의 현재 소스/지문과 재개·신규 분류를 기록했다. 비형식 가져오기·교체의 실제 계획1/형식 가져오기0을 검증했다. governance 변경·영향 전파·반복 결과·미완료 의무 후속·재고의 나머지 조건·일반 사건/공개 요청을 기존 실제 검사에 대응하고 빈 조합을 해소해야 한다. 위치 수를 의미 사건 전건으로 간주하지 않는다."
+        "remaining": "B104 소스 목록/지문을 재사용했고 B105에서 미완료 의무 후속·지식 영향 전파를 상태 조합과 실제 수락으로 연결했다. 남은 네 가족은 governance 변경, 반복 결과 진단, 재고의 나머지 조건, 일반 사건/공개 요청이다. B90~B104 증거를 유지하며 위치 수를 의미 사건 전건으로 간주하지 않는다."
       },
       {
         "id": "12-A",
@@ -13089,9 +13089,9 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B103 2eb2c94f; B104 직접 큐 원천 분류와 가져오기/교체 관련49개 통과",
-      "active": "B104의 남은 직접 판단 원천 여섯 가족을 기존 실제 검사와 대응하고 빈 조합 해소",
-      "exit": "소스 위치 목록을 의미 사건×판단 대상 유무 표로 닫고 호출0/1과 수락·중복 방지 근거 확인",
+      "last_closed": "B104 c31bf1fb; B105 미완료 의무 후속·지식 영향 전파 관련82개 통과",
+      "active": "governance 변경·반복 결과 진단·재고 잔여 조건·일반 사건/공개 요청의 대응 완료",
+      "exit": "B104의 남은 네 가족을 기존 증거와 상태 조합에 연결하고 빈 조합 해소",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "B104의 소스 지문·원천 목록을 재사용한다. 기존 단위/수신/flow를 먼저 대응하고 실제 빈 조합만 추가한다.",
       "running_test": null,
@@ -19184,15 +19184,6 @@
           "status": "기존 공개 제어 흐름과 실제 호출/수락 단언 대응 필요"
         },
         {
-          "source": "knowledge._apply_impact_effects",
-          "variants": [
-            "affected records present",
-            "no affected records",
-            "identical already queued impact"
-          ],
-          "status": "B99 전체 복구 흐름의 영향 계획 ID가 실제 관찰에 포함되는지 확인 필요"
-        },
-        {
           "source": "revisions.record_repetition",
           "variants": [
             "diagnose vs no diagnosis",
@@ -19201,16 +19192,6 @@
             "existing pending receipt merge"
           ],
           "status": "기존 결과 분류 전건 단위 검사와 수신 흐름을 실제 요청/호출에 대응 필요"
-        },
-        {
-          "source": "task_scope.apply_task_assessments",
-          "variants": [
-            "incomplete open obligations without unresolved inputs",
-            "missing input wait",
-            "terminal assessment",
-            "existing plan"
-          ],
-          "status": "현재 원천은 B102의 결과 수신 계획과 별개; 직접 생성 후속 계획 수락 근거 확인 필요"
         },
         {
           "source": "planning.schedule_reconsideration",
@@ -19235,6 +19216,105 @@
           "status": "28개 source family의 동적 kind와 사용자 요청·복구 원천을 포함한 의미 사건 표 필요"
         }
       ],
+      "whole_requirement_closed": false,
+      "verified_additional_families": [
+        {
+          "source": "knowledge._apply_impact_effects",
+          "variants": [
+            "affected records present",
+            "no affected records",
+            "identical already queued impact"
+          ],
+          "status": "B105 도메인 상태 조합과 실제 수신·후속 호출의 대응 확인",
+          "evidence": "assessment_followup_and_impact_trigger_verification"
+        },
+        {
+          "source": "task_scope.apply_task_assessments",
+          "variants": [
+            "incomplete open obligations without unresolved inputs",
+            "missing input wait",
+            "terminal assessment",
+            "existing plan"
+          ],
+          "status": "B105 도메인 상태 조합과 실제 수신·후속 호출의 대응 확인",
+          "evidence": "assessment_followup_and_impact_trigger_verification"
+        }
+      ]
+    },
+    "assessment_followup_and_impact_trigger_verification": {
+      "id": "B105",
+      "scope": "미완료 의무의 후속 판단과 검토된 지식 영향의 계획 발동, 대상 없음 및 기존 요청의 중복 방지",
+      "state": "관련 상태 조합·실제 후속 수락 검증 완료",
+      "memory_node": "M-0522",
+      "reports": {
+        "fixture-selector-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-평가후속-영향전파/fixture-selector-failure.json",
+          "sha256": "7ae69d7edf0906d759f0f4f8749658231602923166f7570773ff1baf072ed305",
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 28.2,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "fixture-plan-response-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-평가후속-영향전파/fixture-plan-response-failure.json",
+          "sha256": "9d5bde9024f059102877297fa526063a0abb4657ba1384fdf65eab7cb277a535",
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 29.2,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "fixture-impact-response-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-평가후속-영향전파/fixture-impact-response-failure.json",
+          "sha256": "8612394d2bbee68d8ad07a6049052aa9e7acd25fef4d8fb6925f3c09bdd8d9c3",
+          "counts": {
+            "failed": 1,
+            "passed": 2
+          },
+          "total_seconds": 12.6,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-평가후속-영향전파/report.json",
+          "sha256": "41441b203a28682ec031be6d550382d54eb9d3a6f1085341d47868da24355b4e",
+          "counts": {
+            "passed": 82
+          },
+          "total_seconds": 62.3,
+          "complete": true,
+          "successful": true,
+          "changed_during_run": []
+        }
+      },
+      "product_changed": false,
+      "source_inventory_hashes_revalidated": true,
+      "cases": [
+        {
+          "producer": "task_scope.apply_task_assessments",
+          "tests": [
+            "unit.test_planning_assessments.AssessmentApplicationTests.test_open_assessment_requests_followup_only_without_an_existing_plan",
+            "flows.test_scheduling_research_recovery.AssessmentReplanningTests.test_open_assessment_creates_one_followup_after_its_own_plan_finishes"
+          ],
+          "observed": "open/missing/closed × 기존 계획/준비/없음9조합; 입력 불변·기존 요청 보존·반복 비중복. 실제 계획 수신의 open/missing/completed3조합에서 후속 계획1/0/0. open은 현재 제출 계획 제거 뒤 task_became_ready 사건으로 계획을 요청하며 대상 과제·평가 execution_id·실제 수락/비반복을 확인."
+        },
+        {
+          "producer": "knowledge._apply_impact_effects",
+          "tests": [
+            "unit.test_knowledge_impact_review.ImpactBundleTests.test_impact_followup_requires_affected_records_and_coalesces_the_same_request",
+            "flows.test_review_impact_routing.ImpactReviewRoutingTests.test_exact_request_waits_for_accepted_review_without_new_producer",
+            "flows.test_review_impact_routing.ImpactReviewRoutingTests.test_unresolved_review_remains_held_and_has_one_final_rejected_receipt"
+          ],
+          "observed": "영향 집합 없음/있음0/1과 동일 요청 병합. 실제 독립 검토 승인 뒤 affected_ids 전건을 보존한 계획1회 수락 및 중복 없음. 미해결 검토로 산출이 보류되면 실제 계획0."
+        }
+      ],
+      "shared_fixture": "support.role_answers.assessment_awaiting_required_evidence를 입력초과 복구와 영향 전파 두 소비자가 공유. 보고서만으로 필수 EV-proof/EV-scope를 충족했다고 주장하지 않는다.",
       "whole_requirement_closed": false
     }
   }

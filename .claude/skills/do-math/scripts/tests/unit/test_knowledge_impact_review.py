@@ -33,6 +33,26 @@ class ImpactReviewCase(ImpactCase):
 
 
 class ImpactBundleTests(ImpactReviewCase):
+    def test_impact_followup_requires_affected_records_and_coalesces_the_same_request(self):
+        from do_math import knowledge
+        from support.entry import entry
+        first, dependent, _ = self.ids
+        for affected in (set(), {dependent}):
+            with self.subTest(affected=sorted(affected)):
+                runtime = deepcopy(self.runtime)
+                runtime['queue'] = []
+                before = deepcopy((self.instance, runtime))
+                instance, changed = knowledge._apply_impact_effects(self.instance, runtime, affected, [first],
+                    reason='Reviewed knowledge impact', impact_digest='checked-impact', clock=entry().ports.clock)
+                self.assertEqual((self.instance, runtime), before)
+                plans = [a for a in changed['queue'] if a['role'] == 'research_plan']
+                self.assertEqual(len(plans), int(bool(affected)))
+                if plans:
+                    self.assertEqual(plans[0]['affected_ids'], [dependent])
+                _, repeated = knowledge._apply_impact_effects(instance, changed, affected, [first],
+                    reason='Reviewed knowledge impact', impact_digest='checked-impact', clock=entry().ports.clock)
+                self.assertEqual(repeated['queue'], changed['queue'])
+
     def _request(self):
         return integration.bundle_impact_request(self.instance, self.runtime, self.bundle,
                                                  producer_execution_id='EX-producer', input_snapshot='fixed-input')

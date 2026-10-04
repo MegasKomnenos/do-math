@@ -41,7 +41,7 @@ def impact_reviews(sim):
 
 class ImpactReviewRoutingTests(unittest.TestCase):
     def test_exact_request_waits_for_accepted_review_without_new_producer(self):
-        """About 3 s: the impact review runs as a model call and the preserved bundle is received in one owner pass."""
+        """The review releases the preserved bundle, then its impact receives one actual planning judgment."""
         sim = impact_sim()
         waiting, producer, identifier, request = held_impact(sim)
         reviews = [row for row in sim.runtime['queue'] if row.get('stage') == 'impact_review']
@@ -73,6 +73,31 @@ class ImpactReviewRoutingTests(unittest.TestCase):
         self.assertEqual({row['supersedes'] for row in sim.instance['knowledge'].values() if row.get('supersedes')},
                          {ids['A'], ids['C']})
         self.assertNotIn(waiting['action']['id'], sim.runtime['waiting_actions'])
+        from support.cross_contracts import assert_call_records
+        from support.default_responder import DefaultResponder
+        from support.model import Answer
+        from support.role_answers import assessment_awaiting_required_evidence
+        followup, = [a for a in sim.runtime['queue'] if a.get('affected_ids')]
+        self.assertIn(ids['B'], followup['affected_ids'])
+        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+        def inspect_remaining(out, context):
+            out['goal_audit'] = False
+            for result in out['task_assessments']:
+                current = next(t for t in context['tasks'] if t['id'] == result['task_id'])
+                result.update(assessment_awaiting_required_evidence(current))
+            return out
+        sim.model.on('research_plan').reply(Answer(inspect_remaining))
+        assert_call_records(self, sim)
+        sim.run_until(lambda current: any(c['action']['id'] == followup['id'] for c in current.model.calls), max_steps=12)
+        execution, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == followup['id']]
+        self.assertEqual(execution['outcome'], 'output_accepted',
+                         {'error': execution.get('error'), 'issues': [r.get('result', {}).get('issues') for r in sim.model.receipts]})
+        self.assertEqual(execution['action']['affected_ids'], followup['affected_ids'])
+        for _ in range(2):
+            sim.step()
+            assert_call_records(self, sim)
+            self.assertEqual(sum(c['action']['id'] == followup['id'] for c in sim.model.calls), 1)
+
 
     def test_unresolved_review_remains_held_and_has_one_final_rejected_receipt(self):
         """About 3 s: the impact review runs as a model call in one owner pass."""
@@ -95,6 +120,9 @@ class ImpactReviewRoutingTests(unittest.TestCase):
         self.assertEqual(sim.runtime['waiting_actions'][waiting['action']['id']]['kind'], 'impact_review_blocked')
         self.assertEqual(len(impact_reviews(sim)), 1)
         self.assertEqual([row for row in sim.runtime['queue'] if row.get('stage') == 'impact_review'], [])
+        from support.cross_contracts import assert_call_records
+        self.assertFalse(any(a.get('affected_ids') for a in sim.runtime['queue']))
+        self.assertEqual(assert_call_records(self, sim)['research_plan'], 0)
 
 
 if __name__ == '__main__':

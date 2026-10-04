@@ -21,6 +21,34 @@ NO_JUDGMENT = '^fulfilled obligation needs its designated judge or a current spe
 
 
 class AssessmentApplicationTests(unittest.TestCase):
+    def test_open_assessment_requests_followup_only_without_an_existing_plan(self):
+        for decision in ('open', 'missing', 'closed'):
+            for pending_role in (None, 'research_plan', 'research_preparation'):
+                with self.subTest(decision=decision, pending=pending_role):
+                    instance, runtime, assessment = transfer_assessment()
+                    if decision != 'closed':
+                        assessment['decision'] = 'incomplete'
+                        assessment['item_dispositions'][0] = {
+                            'obligation_id': 'OB-1', 'kind': 'open', 'evidence_refs': []}
+                        if decision == 'missing':
+                            assessment['item_dispositions'] = assessment['item_dispositions'][1:]
+                            assessment['unresolved'] = [{'obligation_id': 'OB-1',
+                                'missing_inputs': ['more-proof.txt'], 'next_owner': 'research_work'}]
+                    pending = {'id': 'AC-existing', 'role': pending_role, 'reason': 'Preserve the existing request.'}
+                    runtime['queue'] = [pending] if pending_role else []
+                    before = deepcopy((instance, runtime, assessment))
+                    changed_instance, changed = apply_assessment(instance, runtime, assessment)
+                    self.assertEqual((instance, runtime, assessment), before)
+                    plans = [a for a in changed['queue'] if a['role'] == 'research_plan']
+                    self.assertEqual(len(plans), int(pending_role == 'research_plan' or decision == 'open'))
+                    if pending_role:
+                        self.assertEqual(next(a for a in changed['queue'] if a['id'] == pending['id']), pending)
+                    if decision == 'open' and pending_role != 'research_plan':
+                        self.assertEqual(plans[0]['requested_by'], 'EX-plan')
+                    if decision != 'closed':
+                        _, repeated = apply_assessment(changed_instance, changed, assessment)
+                        self.assertEqual([a for a in repeated['queue'] if a['role'] == 'research_plan'], plans)
+
     def test_reassessment_retains_an_existing_exact_transfer_without_revising_its_recipient(self):
         i, r, a = transfer_assessment()
         a['decision'] = 'incomplete'
