@@ -106,5 +106,89 @@ class RequestFileTests(unittest.TestCase):
                                              'message': "invalid command payload: True is not of type 'integer'"})
 
 
+class PublicInputBoundaryTests(unittest.TestCase):
+    def test_describe_publishes_the_parser_contract_and_rejects_extra_arguments(self):
+        from do_math.cli_contract import describe_commands
+        from do_math.canonical import exact_content_hash
+        for argv, command in ((['--describe'], None), (['--describe', 'source'], 'source')):
+            with self.subTest(argv=argv):
+                code, envelope = main(argv)
+                self.assertEqual(code, 0)
+                self.assertEqual(envelope['command'], 'describe')
+                self.assertEqual(envelope['request_id'], 'QR-' + exact_content_hash(argv))
+                self.assertEqual(envelope['result'], describe_commands(build_parser(), command))
+        for argv, reason in (
+            (['--describe', 'source', 'extra'], '--describe accepts at most one command name'),
+            (['--request-file'], '--request-file accepts exactly one path'),
+            (['--request-file', 'one', 'two'], '--request-file accepts exactly one path'),
+        ):
+            with self.subTest(argv=argv):
+                code, envelope = main(argv)
+                self.assertEqual(code, 2)
+                self.assertEqual(envelope['error'], {
+                    'kind': 'input_error', 'message': reason, 'next_owner': 'user', 'retryable': False})
+
+    def test_file_and_request_mode_errors_precede_repository_access(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        document = root / 'not-an-object.json'
+        document.write_text('[]', encoding='utf-8')
+        missing = root / 'missing'
+        identity = ['--repository', str(root / 'repository'), '--instance', 'RI-test']
+        cases = [
+            (['configure', *identity, '--config-file', str(document)], 'JSON configuration must be an object'),
+            (['source', *identity, '--file', str(missing)], '--file is not a file: ' + str(missing)),
+            (['request', *identity, '--assessment-reassessment-file', str(missing), '--target', 'KN-missing'],
+             '--assessment-reassessment-file cannot be combined with target or request text'),
+            (['request', *identity, '--retry-action', 'AC-missing', '--reason', 'conflicting text'],
+             '--retry-action cannot be combined with target or request text'),
+            (['profile', '--provider', 'codex', '--claude-path', str(missing)],
+             '--claude-path requires --provider claude'),
+            (['profile', '--provider', 'claude', '--codex-path', str(missing)],
+             '--codex-path requires --provider codex'),
+        ]
+        for argv, reason in cases:
+            with self.subTest(argv=argv), ObservedCalls(repository=ResearchRepository.__init__) as calls:
+                code, envelope = main(argv)
+                self.assertEqual(code, 2)
+                self.assertEqual(envelope['error']['kind'], 'input_error')
+                self.assertEqual(envelope['error']['message'], reason)
+                self.assertEqual(calls.count('repository'), 0)
+        self.assertFalse((root / 'repository').exists())
+
+    def test_missing_provider_executable_reports_unverified_surface(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        for provider in ('codex', 'claude'):
+            executable = root / (provider + '-absent.exe')
+            with self.subTest(provider=provider):
+                code, envelope = main(['profile', '--provider', provider,
+                                       '--' + provider + '-path', str(executable)])
+                self.assertEqual(code, 1)
+                self.assertEqual(envelope['exit_code'], 1)
+                self.assertEqual(envelope['result'], {
+                    'cli_path': str(executable), 'verified': False, 'error_type': 'FileNotFoundError'})
+                self.assertFalse(executable.exists())
+
+    def test_script_help_exits_successfully_and_import_does_not_dispatch(self):
+        import runpy
+        import sys
+        from unittest.mock import patch
+        from support.storage_files import audit_events
+        script = Path(cli.__file__).resolve().parents[1] / 'do_math.py'
+        output = io.StringIO()
+        with patch.object(sys, 'argv', [str(script), '--help']), redirect_stdout(output), \
+                audit_events('subprocess.Popen') as started:
+            with self.assertRaises(SystemExit) as stopped:
+                runpy.run_path(str(script), run_name='__main__')
+        self.assertEqual(stopped.exception.code, 0)
+        self.assertEqual(output.getvalue(), build_parser().format_help())
+        self.assertEqual(started, [])
+        output = io.StringIO()
+        with patch.object(sys, 'argv', [str(script), '--help']), redirect_stdout(output), \
+                audit_events('subprocess.Popen') as started:
+            namespace = runpy.run_path(str(script), run_name='do_math_entry_import')
+        self.assertIs(namespace['main'], cli.main)
+        self.assertEqual(output.getvalue(), '')
+        self.assertEqual(started, [])
+
 if __name__ == '__main__':
     unittest.main()

@@ -80,5 +80,45 @@ class ControlShapeBoundaryTests(unittest.TestCase):
         self.assertEqual(sim.engine.control_result('UC-after-lease')['effect'], 'applied')
 
 
+
+
+class ControlAdmissionTests(unittest.TestCase):
+    def test_semantic_request_rejections_leave_no_inbox_or_execution(self):
+        sim = initialized_sim()
+        before = deepcopy((sim.engine.head, sim.instance, sim.runtime))
+        cases = [
+            ('pause', {'origin': 'worker'}, 'control origin must be user or operator'),
+            ('pause', {'request_id': 'UC-two-identities', 'idempotency_key': 'also-a-key'},
+             'request_id and idempotency_key are mutually exclusive'),
+            ('input', {'text': '  '}, 'input text is required'),
+            ('input', {'text': 'answer', 'config': {'responds_to': ['Q-absent']}},
+             'responds_to must identify distinct open user questions'),
+            ('request', {'config': {'retry_action': ''}},
+             'retry_action must be the sole nonempty request mode'),
+            ('request', {'config': {'retry_action': 'AC-absent', 'role': 'maintenance'}},
+             'retry_action must be the sole nonempty request mode'),
+            ('request', {'config': {'role': 'identity_review', 'assessment_reassessment': {}}},
+             'assessment reassessment requires the exact assessment hash and defect evidence'),
+            ('request', {'config': {'role': 'not-a-role'}}, 'unsupported requested role'),
+            ('request', {'config': {'role': 'maintenance', 'cleanup_execution_ids': []}},
+             'maintenance cleanup requires distinct existing execution IDs'),
+            ('request', {'config': {'role': 'maintenance', 'cleanup_execution_ids': ['EX-absent']}},
+             'maintenance cleanup requires distinct existing execution IDs'),
+            ('request', {'config': {'role': 'supplemental_research', 'target': 'TK-absent'}},
+             'supplemental research requires a task whose current contract is ready'),
+            ('request', {'config': {'role': 'operational_review', 'target': 'EX-absent'}},
+             'operational review requires an existing execution ID'),
+        ]
+        for action, options, reason in cases:
+            with self.subTest(action=action, options=options):
+                with self.assertRaisesRegex(ValueError, exactly(reason)):
+                    sim.control(action, **options)
+                self.assertEqual(list(inbox(sim).glob('*.json')), [])
+                self.assertEqual((sim.engine.head, sim.instance, sim.runtime), before)
+        good = sim.control('pause', text='valid after semantic rejections')
+        sim.engine.process_controls()
+        self.assertEqual(sim.engine.control_result(good['request_id'])['effect'], 'applied')
+        self.assertEqual(sim.runtime['processed_controls'].count(good['request_id']), 1)
+        self.assertEqual(sim.runtime['executions'], before[2]['executions'])
 if __name__ == '__main__':
     unittest.main()

@@ -267,5 +267,102 @@ class PublicMaintenanceFenceTests(unittest.TestCase):
         self.assertEqual(sim.runtime['user_pause']['reason'], 'separate user pause')
 
 
+
+
+class TerminalRequestTests(unittest.TestCase):
+    def test_input_and_activity_requests_after_close_are_rejected_once(self):
+        from copy import deepcopy
+        import json
+        from support.engine_shapes import inbox
+        sim = Sim.activated()
+        maintenance = sim.control('request', config={'role': 'maintenance'}, text='late maintenance')
+        request_file, = [path for path in inbox(sim).glob('*.json')
+                         if json.loads(path.read_bytes()).get('id') == maintenance['request_id']]
+        raw = request_file.read_bytes()
+        delayed = sim.root / 'delayed-maintenance.json'
+        request_file.rename(delayed)
+        closed = sim.control('close', text='terminal request boundary')
+        sim.engine.process_controls()
+        self.assertEqual(sim.engine.control_result(closed['request_id'])['effect'], 'applied')
+        before = deepcopy((sim.runtime['executions'], sim.runtime['reservations']))
+        delayed.rename(request_file)
+        self.assertEqual(request_file.read_bytes(), raw)
+        requests = [
+            (sim.control('input', text='a late research input'),
+             'new research input requires an unfinished instance'),
+            (maintenance,
+             'instance ended before the activity request was applied'),
+        ]
+        sim.engine.process_controls()
+        for envelope, reason in requests:
+            receipt = sim.engine.control_result(envelope['request_id'])
+            self.assertEqual((receipt['effect'], receipt['reason']), ('rejected', reason))
+            self.assertEqual(sim.runtime['processed_controls'].count(envelope['request_id']), 1)
+        receipts = [deepcopy(sim.engine.control_result(e['request_id'])) for e, _ in requests]
+        sim.restart()
+        sim.engine.process_controls()
+        self.assertTrue(sim.instance['lifecycle']['permanently_closed'])
+        self.assertTrue(any(row['kind'] == 'closed' and row['source_ref'] == closed['request_id']
+                            for row in sim.instance['lifecycle']['history']))
+        self.assertEqual(sim.runtime['status'], 'closed')
+        self.assertEqual((sim.runtime['executions'], sim.runtime['reservations']), before)
+        self.assertEqual([sim.engine.control_result(e['request_id']) for e, _ in requests], receipts)
+        self.assertEqual(sim.runtime['queue'], [])
+        self.assertEqual(sim.model.calls, [])
+
+    def test_cleanup_request_binds_only_the_named_existing_execution(self):
+        from copy import deepcopy
+        sim = Sim.activated()
+        ended = next(row for row in sim.runtime['executions'].values() if row['status'] == 'ended')
+        clear_work(sim)
+        before = deepcopy(sim.runtime['executions'])
+        request = sim.control('request', config={
+            'role': 'maintenance', 'cleanup_execution_ids': [ended['id']]})
+        sim.engine.process_controls()
+        self.assertEqual(sim.engine.control_result(request['request_id'])['effect'], 'applied')
+        action, = [a for a in sim.runtime['queue'] if a.get('requested_by') == request['request_id']]
+        self.assertEqual(action['role'], 'maintenance')
+        self.assertEqual(action['cleanup_execution_ids'], [ended['id']])
+        self.assertEqual(sim.runtime['executions'], before)
+        stored = sim.engine.store.load(sim.engine.head)[2]
+        self.assertEqual(stored['queue'], sim.runtime['queue'])
+        self.assertEqual(stored['executions'], before)
+
+    def test_acceptance_lock_recheck_replays_the_other_public_submission(self):
+        from support.engine_control import on_audit
+        from support.engine_shapes import inbox
+        sim = Sim.activated()
+        entered, first = [], []
+        def competing_submission(arguments):
+            path = arguments[0]
+            if not entered and isinstance(path, str) and Path(path).name == '.acceptance.lock':
+                entered.append(True)
+                first.append(sim.control('pause', request_id='UC-lock-recheck', text='same request'))
+        with on_audit('open', competing_submission):
+            second = sim.control('pause', request_id='UC-lock-recheck', text='same request')
+        self.assertEqual(len(first), 1)
+        self.assertEqual(second['request_id'], first[0]['request_id'])
+        self.assertIs(second['replayed'], True)
+        self.assertEqual(second['effect'], 'pending engine processing')
+        self.assertEqual(len(list(inbox(sim).glob('UC-lock-recheck.json'))), 1)
+        sim.engine.process_controls()
+        self.assertEqual(sim.engine.control_result(second['request_id'])['effect'], 'applied')
+        self.assertEqual(sim.runtime['processed_controls'].count(second['request_id']), 1)
+
+    def test_processed_request_replays_from_published_history_after_inbox_removal(self):
+        from copy import deepcopy
+        from support.engine_shapes import inbox
+        sim = Sim.activated()
+        first = sim.control('pause', request_id='UC-history-only', text='preserve receipt')
+        sim.engine.process_controls()
+        receipt = deepcopy(sim.engine.control_result(first['request_id']))
+        (inbox(sim) / (first['request_id'] + '.json')).unlink()
+        before = deepcopy((sim.engine.head, sim.runtime))
+        replay = sim.control('pause', request_id=first['request_id'], text='preserve receipt')
+        self.assertIs(replay['replayed'], True)
+        self.assertEqual({key: replay[key] for key in receipt}, receipt)
+        self.assertFalse((inbox(sim) / (first['request_id'] + '.json')).exists())
+        self.assertEqual((sim.engine.head, sim.runtime), before)
+        self.assertEqual(sim.runtime['processed_controls'].count(first['request_id']), 1)
 if __name__ == '__main__':
     unittest.main()

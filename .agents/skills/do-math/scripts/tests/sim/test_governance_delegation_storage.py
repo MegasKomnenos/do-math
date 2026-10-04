@@ -48,6 +48,113 @@ class DelegationStorageTests(unittest.TestCase):
                 self.assertEqual(damaged, before_damaged)
                 self.assertEqual(sim.engine.store.load(), published)
 
+    def test_storage_rejects_each_damaged_application_binding_without_publication(self):
+        from copy import deepcopy
+        from do_math.canonical import exact_content_hash
+        from do_math.state_contract import default_state_contract
+        from support.governance_cases import delegated_sim
+
+        sim = delegated_sim()
+        store = sim.engine.store
+        published = deepcopy(store.load())
+        head, instance, runtime = published
+        produced, = [row for row in runtime['delegation_applications'].values()
+                     if row['delegation_id'] == 'DG-close']
+        application_id = produced['id']
+        self.assertEqual(set(produced['judgments']), {'interpret', 'check'})
+        self.assertEqual(len({j['execution_id'] for j in produced['judgments'].values()}), 2)
+        self.assertTrue(produced['basis']['references'])
+        self.assertEqual(authorize_delegated_case(instance, 'DG-close',
+            {'application_id': application_id}, runtime=runtime, now_iso=sim.clock.now()),
+            {'allowed': True, 'delegation_id': 'DG-close', 'application_id': application_id,
+             'original_decision_id': produced['basis']['original_decision']['id']})
+        family = default_state_contract().family('runtime', 'delegation_applications')
+        family.checker.validate(produced)
+        self.assertIsNone(family.validator(deepcopy(produced)))
+
+        cases = (('basis_hash', 'delegation application basis hash mismatch'),
+                 ('frozen_references', 'delegation frozen references differ from declared case basis'),
+                 ('interpret_output', 'delegation judgment provenance mismatch'),
+                 ('check_output', 'delegation judgment provenance mismatch'),
+                 ('same_execution', 'delegation judgments must use distinct executions'))
+        for damage, reason in cases:
+            with self.subTest(damage=damage):
+                broken = deepcopy(runtime)
+                row = broken['delegation_applications'][application_id]
+                if damage == 'basis_hash':
+                    row['basis']['case']['effect']['operation'] += '-changed'
+                elif damage == 'frozen_references':
+                    row['basis']['references'].pop(next(iter(row['basis']['references'])))
+                    row['input_sha256'] = exact_content_hash(row['basis'])
+                elif damage.endswith('_output'):
+                    stage = damage.removesuffix('_output')
+                    row['judgments'][stage]['output']['reason'] += ' changed after sealing'
+                else:
+                    row['judgments']['check']['execution_id'] = row['judgments']['interpret']['execution_id']
+                family.checker.validate(row)
+                before = deepcopy((instance, broken))
+                with self.assertRaises(ValueError) as leaf:
+                    family.validator(deepcopy(row))
+                self.assertIs(type(leaf.exception), ValueError)
+                self.assertEqual(str(leaf.exception), reason)
+                with self.assertRaises(ValueError) as caught:
+                    store.save_with_state(head, instance, broken)
+                self.assertIs(type(caught.exception), ValueError)
+                self.assertEqual(str(caught.exception), reason)
+                self.assertEqual((instance, broken), before)
+                self.assertEqual(store.load(), published)
+
+    def test_reference_factory_preserves_produced_scalar_and_list_bindings(self):
+        from copy import deepcopy
+        from do_math.record_schemas import refs
+        from support.governance_cases import delegated_sim
+
+        sim = delegated_sim()
+        store = sim.engine.store
+        published = deepcopy(store.load())
+        head, instance, runtime = published
+        application, = [row for row in runtime['delegation_applications'].values()
+                        if row['delegation_id'] == 'DG-close']
+        execution_id = application['judgments']['interpret']['execution_id']
+        execution = runtime['executions'][execution_id]
+        activity_id = execution['owner_activity_id']
+        activity = runtime['activities'][activity_id]
+        self.assertIn(execution_id, activity['assigned_execution_ids'])
+        scalar_refs = refs(('owner_activity_id', 'activities'), ('continuation_of', 'executions'),
+                           ('operation_id', 'external_operations'))
+        self.assertTrue(callable(scalar_refs))
+        self.assertIsNone(execution.get('continuation_of'))
+        self.assertIsNone(execution.get('operation_id'))
+        self.assertEqual(list(scalar_refs(execution)), [(activity_id, 'activities')])
+        list_refs = refs(lists=(('assigned_execution_ids', 'executions'),))
+        self.assertTrue(callable(list_refs))
+        self.assertEqual(list(list_refs(activity)),
+                         [(identifier, 'executions') for identifier in activity['assigned_execution_ids']])
+        delegation_refs = refs(('delegation_id', 'delegations'))
+        self.assertTrue(callable(delegation_refs))
+        self.assertEqual(list(delegation_refs(application)), [('DG-close', 'delegations')])
+
+        cases = (('scalar_missing', 'delegation_applications references unknown record: DG-missing-factory'),
+                 ('scalar_wrong_family', 'delegation_applications reference has wrong family: ' + execution_id),
+                 ('list_missing', 'activities references unknown record: EX-missing-factory'),
+                 ('list_wrong_family', 'activities reference has wrong family: DG-close'))
+        for damage, reason in cases:
+            with self.subTest(damage=damage):
+                broken = deepcopy(runtime)
+                if damage.startswith('scalar_'):
+                    broken['delegation_applications'][application['id']]['delegation_id'] = (
+                        'DG-missing-factory' if damage == 'scalar_missing' else execution_id)
+                else:
+                    broken['activities'][activity_id]['assigned_execution_ids'] = [
+                        'EX-missing-factory' if damage == 'list_missing' else 'DG-close']
+                before = deepcopy((instance, broken))
+                with self.assertRaises(ValueError) as caught:
+                    store.save_with_state(head, instance, broken)
+                self.assertIs(type(caught.exception), ValueError)
+                self.assertEqual(str(caught.exception), reason)
+                self.assertEqual((instance, broken), before)
+                self.assertEqual(store.load(), published)
+
     def test_structured_reference_survives_git_and_stales_when_its_record_changes(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

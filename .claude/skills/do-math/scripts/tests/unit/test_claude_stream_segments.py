@@ -133,6 +133,17 @@ class SegmentTests(unittest.TestCase):
         first = {**RESULT, "modelUsage": {"other-model": {"outputTokens": 1}}}
         parsed = parse_stream(stream(INIT, first, INIT, notification()))
         self.assertEqual(parsed["reported_models"], ["claude-opus-5", "other-model"])
+        for unreported in (None, [], 'unavailable'):
+            with self.subTest(model_usage=unreported):
+                last = notification(modelUsage=unreported, usage=unreported)
+                incomplete_usage = parse_stream(stream(INIT, first, INIT, last))
+                self.assertTrue(incomplete_usage['turn_completed'], incomplete_usage)
+                self.assertEqual(incomplete_usage['structured_output'], last['structured_output'])
+                self.assertEqual(incomplete_usage['reported_models'], ['other-model'])
+                self.assertEqual(incomplete_usage['model_usage_reported'], first['modelUsage'])
+                self.assertEqual(incomplete_usage['usage_total'], first['usage'])
+                self.assertEqual(incomplete_usage['usage_segments'], [
+                    {'segment': 0, 'line': 2, 'usage': first['usage']}])
 
     def test_native_terminal_cleanup_preserves_partial_submission_and_stop_evidence(self):
         events = [{"type": "system", "subtype": "background_tasks_changed", "tasks": []},
@@ -155,13 +166,19 @@ class ProviderLimitTests(unittest.TestCase):
         for status in ("allowed", "allowed_warning", "rejected"):
             rate = {"type": "rate_limit_event", "rate_limit_info": {"status": status,
                     "overageStatus": "rejected", "resetsAt": 1789705200, "rateLimitType": "five_hour",
-                    "unifiedWindows": {"seven_day": {"utilization": 1.0, "resetsAt": 1789729200}}}}
+                    "unifiedWindows": {"seven_day": {"utilization": 1.0, "resetsAt": 1789729200},
+                        "not_a_window": 0,
+                        "under_limit": {"status": "allowed", "utilization": 0.5, "resetsAt": 1789829200}}}}
             with self.subTest(status=status):
                 limit = provider_limit(parse_stream(stream(rate, INIT, failure)))
                 if status == "rejected":
                     # The later of the two windows (seven days, utilization 1.0) sets the retry time.
                     self.assertEqual(limit["retry_at"], "2026-09-18T11:00:00+00:00")
                     self.assertEqual(limit["evidence_line"], 1)
+                    self.assertEqual(limit['limit_windows'], [
+                        {'type': 'five_hour', 'resetsAt': 1789705200},
+                        {'type': 'seven_day', 'utilization': 1.0, 'resetsAt': 1789729200}])
+                    self.assertEqual(limit['native_info'], rate['rate_limit_info'])
                 else:
                     self.assertIsNone(limit)
         tool = {"type": "user", "message": {"content": [{"type": "tool_result", "content": "429 rejected"}]}}

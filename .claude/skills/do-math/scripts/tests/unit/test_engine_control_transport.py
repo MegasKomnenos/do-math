@@ -282,6 +282,110 @@ class TransportReceiptTests(unittest.TestCase):
         self.assertEqual([row['request_id'] for row in calls], ['request-receive'])
 
 
+
+
+class WorkerInputBoundaryTests(unittest.TestCase):
+    def test_worker_validation_rejects_new_negative_shapes_before_delivery(self):
+        from do_math.control_protocol import SELF_CHECK_RESPONSE, SUBMIT_INTENT
+        with tempfile.TemporaryDirectory() as directory:
+            transport = ControlTransport(directory, clock=FakeClock())
+            binding = transport.issue('EX-worker-input', 'GR-worker-input')
+            endpoint = Path(binding['endpoint'])
+            cases = [
+                ('RQ-nul\0', SUBMIT_INTENT, {}, 'request_id must be NUL-free'),
+                ('RQ-[glob]', SUBMIT_INTENT, {}, 'request_id must be a safe file name component'),
+                ('RQ-kind', 'not-a-control-kind', {}, 'unsupported control kind'),
+                ('RQ-payload', SUBMIT_INTENT, [], 'control payload must be an object'),
+            ]
+            for request_id, kind, payload, reason in cases:
+                with self.subTest(request_id=request_id):
+                    with self.assertRaises(ValueError) as caught:
+                        ControlTransport.worker_submit(binding, request_id=request_id, kind=kind, payload=payload)
+                    self.assertEqual(str(caught.exception), reason)
+                    self.assertEqual(list((endpoint / 'inbox').iterdir()), [])
+                    self.assertEqual(list((endpoint / 'outbox').iterdir()), [])
+            with self.assertRaisesRegex(ValueError, '^self-check response does not match its schema: '):
+                ControlTransport.worker_submit(binding, request_id='RQ-response',
+                    kind=SELF_CHECK_RESPONSE, payload={'response': {}})
+            with self.assertRaisesRegex(ValueError, '^unknown self-check request$'):
+                ControlTransport.worker_self_check(binding, self_check_id='SC-absent', response={})
+            self.assertEqual(list((endpoint / 'inbox').iterdir()), [])
+            self.assertEqual(list((endpoint / 'outbox').iterdir()), [])
+            delivered = ControlTransport.worker_submit(binding, request_id='RQ-after-errors',
+                kind=SUBMIT_INTENT, payload={'draft_path': 'output.json'})
+            self.assertEqual(delivered, {'request_id': 'RQ-after-errors', 'state': 'submitted'})
+            receipt, = transport.pump()
+            self.assertEqual((receipt['request_id'], receipt['state']), ('RQ-after-errors', 'received'))
+            self.assertNotIn('snapshot', receipt)
+            self.assertEqual(ControlTransport.worker_receipt(binding, 'RQ-after-errors'), receipt)
+
+    def test_memory_transport_cannot_offer_file_worker_operations(self):
+        from do_math.control_server import mcp_server_config
+        clock = FakeClock()
+        transport = ControlTransport(clock=clock)
+        binding = transport.issue('EX-memory-only', 'GR-memory-only')
+        for operation, reason in [
+            (transport.pump, 'a memory-only transport has no inbox to pump'),
+            (lambda: mcp_server_config(binding), 'file transport binding lacks an MCP endpoint'),
+            (lambda: ControlTransport.worker_receipt(binding, 'RQ-none'), 'transport binding has no file endpoint'),
+            (lambda: transport.receive([]), 'control request must be an object'),
+            (lambda: transport.issue('EX-bad\0', 'GR-memory-only'), 'execution_id must be NUL-free'),
+        ]:
+            with self.subTest(reason=reason):
+                with self.assertRaises(ValueError) as caught:
+                    operation()
+                self.assertEqual(str(caught.exception), reason)
+        self.assertNotIn('endpoint', binding)
+
+    def test_unknown_capability_rejection_does_not_write_to_the_other_transport(self):
+        from do_math.control_protocol import SUBMIT_INTENT
+        with tempfile.TemporaryDirectory() as directory:
+            clock = FakeClock()
+            owner = ControlTransport(Path(directory) / 'owner', clock=clock)
+            binding = owner.issue('EX-foreign', 'GR-foreign')
+            ControlTransport.worker_submit(binding, request_id='RQ-foreign', kind=SUBMIT_INTENT,
+                                           payload={'draft_path': 'output.json'})
+            path = Path(binding['endpoint']) / 'inbox' / 'RQ-foreign.json'
+            raw = path.read_bytes()
+            request = json.loads(raw)
+            for receiver in (ControlTransport(clock=clock),
+                             ControlTransport(Path(directory) / 'unrelated', clock=clock)):
+                receipt = receiver.receive(request)
+                self.assertEqual((receipt['state'], receipt['reason']),
+                                 ('rejected', 'unknown transport capability'))
+                self.assertEqual(receiver.receive(request), receipt)
+                self.assertIsNone(ControlTransport.worker_receipt(binding, 'RQ-foreign'))
+                self.assertEqual(path.read_bytes(), raw)
+            own, = owner.pump()
+            self.assertEqual(own['state'], 'received')
+            self.assertEqual(own['execution_id'], binding['execution_id'])
+            self.assertNotIn('snapshot', own)
+
+    def test_restarted_receiver_rejects_an_unissued_self_check_without_losing_its_bytes(self):
+        from do_math.control_protocol import SELF_CHECK_RESPONSE, SUBMIT_INTENT
+        with tempfile.TemporaryDirectory() as directory:
+            clock = FakeClock()
+            owner = ControlTransport(directory, clock=clock)
+            binding = owner.issue('EX-issued', 'GR-issued', self_check=True)
+            request_id = 'RQ-unissued'
+            ControlTransport.worker_submit(binding, request_id=request_id, kind=SUBMIT_INTENT,
+                                           payload={'draft_path': 'output.json'})
+            path = Path(binding['endpoint']) / 'inbox' / (request_id + '.json')
+            malformed = json.loads(path.read_bytes())
+            # Intentional external negative: bypass the worker's answer check, never fabricate an issued obligation.
+            malformed.update(kind=SELF_CHECK_RESPONSE, payload={'self_check_id': 'SC-never-issued', 'response': {}})
+            raw = json.dumps(malformed, sort_keys=True).encode('utf-8')
+            path.write_bytes(raw)
+            recovered = ControlTransport(directory, clock=clock)
+            receipt, = recovered.pump()
+            self.assertEqual((receipt['state'], receipt['reason']),
+                             ('rejected', 'self-check response has no issued request'))
+            self.assertEqual(path.read_bytes(), raw)
+            self.assertEqual(ControlTransport.worker_receipt(binding, request_id), receipt)
+            self.assertEqual(ControlTransport(directory, clock=clock).pump(), [receipt])
+            self.assertEqual(list((Path(binding['endpoint']) / 'worker-inbox').iterdir()), [])
+
+
 class DeliveryRecoveryTests(unittest.TestCase):
     def test_rewritten_rejection_after_restart_does_not_starve_a_later_worker_delivery(self):
         """An immutable rejection and a later valid worker both survive receiver restart."""
@@ -307,5 +411,61 @@ class DeliveryRecoveryTests(unittest.TestCase):
             self.assertEqual(ControlTransport.worker_receipt(binding, 'RQ-1-worker'), receipts['RQ-1-worker'])
             self.assertEqual(bad.read_bytes(), b'[]')
 
+
+class IssuedSelfCheckTransportTests(unittest.TestCase):
+    def test_issued_request_replay_conflicts_and_closed_delivery_keep_the_original_notice(self):
+        from do_math.observations import ObservationTracker
+        from support.observation_inputs import observation_rule, write_checkpoint
+        with tempfile.TemporaryDirectory() as directory:
+            clock = FakeClock()
+            workspace = Path(directory) / 'workspace'
+            workspace.mkdir()
+            tracker = ObservationTracker('EX-self-check', workspace, {
+                'observation_rules': [observation_rule(required_evidence=['workspace:checkpoint.json'])],
+                'self_check_response_window_seconds': 5, 'tool_review_window_seconds': 60},
+                time_port=clock)
+            write_checkpoint(workspace, counters={'attempts': 2})
+            # A receipt-time tick at an empty stream is the same input the live runner emits while idle.
+            emitted = tracker.observe({'type': 'tick'}, source={'stream': 'stdout.jsonl',
+                'start_offset': 0, 'end_offset': 0, 'received_at': clock.now(),
+                'received_monotonic': clock.monotonic()})
+            obligation, = [row for row in emitted if row['kind'] == 'self_check_due']
+            issued = tracker.issue_self_check(obligation['id'])
+            transport = ControlTransport(Path(directory) / 'transport', clock=clock)
+            binding = transport.issue(tracker.execution_id, 'GR-self-check', workspace=workspace, self_check=True)
+            delivered = transport.request_self_check(binding, request=issued)
+            self.assertEqual(delivered, issued)
+            endpoint = Path(binding['endpoint'])
+            notice = endpoint / 'worker-inbox' / (issued['self_check_id'] + '.json')
+            surface = workspace / '.control' / 'self-checks' / notice.name
+            originals = (notice.read_bytes(), surface.read_bytes())
+            self.assertEqual(transport.request_self_check(binding, request=issued), issued)
+            self.assertEqual((notice.read_bytes(), surface.read_bytes()), originals)
+            self.assertEqual(ControlTransport.worker_self_check(binding, self_check_id=issued['self_check_id']), issued)
+            for invalid in ([], {**issued, 'execution_id': 'EX-other'}, {**issued, 'payload': []}):
+                with self.subTest(invalid=invalid):
+                    with self.assertRaisesRegex(ValueError, "^self-check request must be this execution's exact issued request$"):
+                        transport.request_self_check(binding, request=invalid)
+                    self.assertEqual((notice.read_bytes(), surface.read_bytes()), originals)
+            changed = deepcopy(issued)
+            changed['payload']['unexpected_negative_field'] = True
+            with self.assertRaisesRegex(ValueError, '^self_check_id was reused with different content$'):
+                transport.request_self_check(binding, request=changed)
+            self.assertEqual((notice.read_bytes(), surface.read_bytes()), originals)
+            # Only this external delivery surface is corrupted; the tracker's issued request stays intact.
+            surface.write_bytes(b'{}')
+            with self.assertRaisesRegex(ValueError, '^workspace self-check notice differs from its issued request$'):
+                transport.request_self_check(binding, request=issued)
+            self.assertEqual(notice.read_bytes(), originals[0])
+            self.assertEqual(surface.read_bytes(), b'{}')
+            transport.close(binding, reason='owner ended execution')
+            with self.assertRaisesRegex(ValueError, '^a closed transport cannot request a self-check$'):
+                transport.request_self_check(binding, request=issued)
+            self.assertEqual(notice.read_bytes(), originals[0])
+            # A workspace-less transport has only its worker inbox; it is not a new authority.
+            bare = transport.issue(tracker.execution_id, 'GR-self-check', self_check=True)
+            self.assertEqual(transport.request_self_check(bare, request=issued), issued)
+            self.assertEqual(ControlTransport.worker_self_check(bare, self_check_id=issued['self_check_id']), issued)
+            self.assertEqual(list((endpoint / 'outbox').iterdir()), [])
 if __name__ == '__main__':
     unittest.main()

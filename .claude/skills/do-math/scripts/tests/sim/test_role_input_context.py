@@ -173,6 +173,161 @@ class OperationalInputTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, self.assertRaisesRegex(ValueError, 'checkpoint hash'):
             engine._context(action, Path(directory), execution_id='EX-review')
 
+class ManifestIngressTests(unittest.TestCase):
+    def test_produced_manifest_rejects_shape_damage_before_reading_artifacts(self):
+        from do_math.context_store import verify_manifest_artifacts
+        engine = Sim.activated().engine
+        with tempfile.TemporaryDirectory() as directory:
+            fitted, _ = package(engine, Path(directory))
+            manifest = fitted['manifest']
+            head = engine.store.save_with_state(engine.head, engine.instance, engine.runtime,
+                                               artifacts=fitted['artifacts'])[0]
+            self.assertEqual(verify_manifest_artifacts(
+                manifest, lambda path: engine.store.read(path, head)), [])
+            before = canonical_json(manifest)
+            for fault, reason in (
+                    ('role', 'invalid role input manifest role'),
+                    ('contract', 'input does not bind the current response contract'),
+                    ('documents', 'common documents must each occur exactly once'),
+                    ('hash', 'input component requires exact byte hash'),
+                    ('boolean_length', 'input component requires measured byte length'),
+                    ('negative_length', 'input component requires measured byte length'),
+                    ('order', 'candidate input requires a sealed population order'),
+                    ('seed', 'candidate order requires a 256-bit seed'),
+                    ('replay', 'candidate order replay differs from population or input basis')):
+                changed = deepcopy(manifest)
+                if fault == 'role':
+                    changed['role'] = 'unknown-role'
+                elif fault == 'contract':
+                    changed['output_contract']['id'] = 'invalid-contract'
+                elif fault == 'documents':
+                    changed['documents'] = [row for row in changed['documents'] if row['path'] != 'GLOSSARY.md']
+                elif fault == 'hash':
+                    changed['prompt']['sha256'] = 'not-a-hash'
+                elif fault.endswith('length'):
+                    changed['prompt']['bytes'] = True if fault == 'boolean_length' else -1
+                elif fault == 'order':
+                    changed['candidate_order']['ids'] = ['duplicate', 'duplicate']
+                elif fault == 'seed':
+                    changed['candidate_order']['seed'] = 'not-a-seed'
+                else:
+                    changed['candidate_order']['basis']['snapshot'] = '0' * len(manifest['snapshot'])
+                reads = []
+                def read(path):
+                    reads.append(path)
+                    return engine.store.read(path, head)
+                with self.subTest(fault=fault), self.assertRaises(ValueError) as rejected:
+                    verify_manifest_artifacts(changed, read)
+                self.assertIs(type(rejected.exception), ValueError)
+                self.assertEqual(str(rejected.exception), reason)
+                self.assertEqual(reads, [])
+                self.assertEqual(canonical_json(manifest), before)
+            self.assertEqual(engine.store.load()[0], head)
+            self.assertEqual(engine.store.read(manifest['prompt']['artifact_ref'], head),
+                             fitted['prompt'].encode('utf-8'))
+
+    def test_repository_lengths_distinguish_unbound_absent_and_wrong_size_components(self):
+        from do_math.context_store import verify_manifest_artifacts
+        engine = Sim.activated().engine
+        with tempfile.TemporaryDirectory() as directory:
+            fitted, _ = package(engine, Path(directory))
+            manifest = fitted['manifest']
+            head = engine.store.save_with_state(engine.head, engine.instance, engine.runtime,
+                                               artifacts=fitted['artifacts'])[0]
+            def sizes(paths):
+                return engine.store.blob_sizes(paths, head, missing='omit')
+            self.assertEqual(verify_manifest_artifacts(manifest, None, artifact_sizes=sizes), [])
+            raw = engine.store.read(manifest['prompt']['artifact_ref'], head)
+            self.assertIs(type(raw), bytes)
+            self.assertEqual(raw, fitted['prompt'].encode('utf-8'))
+            self.assertEqual(len(raw), manifest['prompt']['bytes'])
+            unbound = deepcopy(manifest)
+            del unbound['prompt']['artifact_ref']
+            self.assertEqual(verify_manifest_artifacts(unbound, None, artifact_sizes=sizes), ['prompt'])
+            for fault, reason in (
+                    ('missing', 'input artifact is missing: prompt'),
+                    ('size', 'input artifact size differs: prompt')):
+                changed = deepcopy(manifest)
+                if fault == 'missing':
+                    changed['prompt']['artifact_ref'] += '.absent'
+                else:
+                    changed['prompt']['bytes'] += 1
+                with self.subTest(fault=fault), self.assertRaises(ValueError) as rejected:
+                    verify_manifest_artifacts(changed, None, artifact_sizes=sizes)
+                self.assertIs(type(rejected.exception), ValueError)
+                self.assertEqual(str(rejected.exception), reason)
+            self.assertEqual(engine.store.read(manifest['prompt']['artifact_ref'], head), raw)
+            self.assertEqual(engine.store.load()[0], head)
+
+
+    def test_loaded_input_with_one_unbound_component_names_the_missing_prompt(self):
+        from do_math.activities import open_activity, assign_execution
+        from do_math.state_checks import inspect_state, inspection_exit_code
+        engine = Sim.activated().engine
+        with tempfile.TemporaryDirectory() as directory:
+            fitted, _ = package(engine, Path(directory))
+            running = deepcopy(engine.runtime)
+            activity_id = engine.ports.clock.new_id('AT')
+            open_activity(running, activity_id=activity_id, activity_kind='research_plan',
+                          owner_ref='engine', input_refs=[], opened_at=engine.ports.clock.now())
+            execution = execution_lifecycle.create_execution(execution_id='EX-plan',
+                owner_activity_id=activity_id, actor_kind='ai', input_manifest=fitted['manifest'],
+                profile_ref=fitted['manifest']['execution_profile_ref'], created_at=engine.ports.clock.now())
+            execution['role'] = fitted['manifest']['role']
+            assign_execution(running, activity_id, execution)
+            head = engine.store.save_with_state(engine.head, engine.instance, running,
+                                               artifacts=fitted['artifacts'])[0]
+            def inspect(snapshot):
+                _, instance, runtime = engine.store.load(snapshot)
+                before = canonical_json([instance, runtime])
+                result = inspect_state(instance, runtime, requested_areas=['start_import_input'],
+                    snapshot=snapshot, read_artifact=lambda path: engine.store.read(path, snapshot),
+                    artifact_sizes=lambda paths: engine.store.blob_sizes(paths, snapshot, missing='omit'))
+                self.assertEqual(canonical_json([instance, runtime]), before)
+                return result
+            baseline = inspect(head)
+            _, instance, runtime = engine.store.load(head)
+            del runtime['executions'][execution['id']]['input_manifest']['prompt']['artifact_ref']
+            damaged = engine.store.save_with_state(head, instance, runtime)[0]
+            result = inspect(damaged)
+            message = execution['id'] + ': actual input bytes for prompt not examined'
+            finding = {'area': 'start_import_input', 'status': 'incomplete', 'message': message,
+                       'blocked_scope': [], 'evidence': ['state'], 'next_owner': 'maintenance'}
+            self.assertEqual([row for row in result['findings'] if row['message'] == message], [finding])
+            self.assertEqual([row for row in result['findings'] if row['message'] != message],
+                             baseline['findings'])
+            self.assertIn('start_import_input', result['not_checked'])
+            self.assertEqual(inspection_exit_code(result), 1)
+            self.assertEqual(engine.store.load()[0], damaged)
+            self.assertEqual(engine.store.read(fitted['manifest']['prompt']['artifact_ref'], damaged),
+                             fitted['prompt'].encode('utf-8'))
+
+    def test_packaged_response_rejects_manifest_shape_and_unprovided_authority(self):
+        from support.default_responder import DefaultResponder
+        engine = Sim.activated().engine
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _, context = package(engine, root, 'maintenance')
+            authored = DefaultResponder().respond('maintenance', context, root)
+            output = integration.protocol_output(authored, {}, context)
+            self.assertEqual(integration.inspect_bundles(output, {}, context), [])
+            before = canonical_json([output, context])
+            for fault, expected in (
+                    ('shape', [('integration.manifest', 'output/integration_bundles/0/authority_refs',
+                                "'not-an-array' is not of type 'array'", None)]),
+                    ('authority', [('integration.authority_reference', 'output/integration_bundles',
+                                    'authority is not in the fixed visible input: GR-unprovided',
+                                    output['integration_bundles'][0]['integration_id'])])):
+                changed = deepcopy(output)
+                changed['integration_bundles'][0]['authority_refs'] = (
+                    'not-an-array' if fault == 'shape' else ['GR-unprovided'])
+                with self.subTest(fault=fault):
+                    issues = integration.inspect_bundles(changed, {}, context)
+                    self.assertEqual([(row['rule_id'], row['path'], row['message'], row['integration_id'])
+                                      for row in issues], expected)
+                    self.assertEqual(canonical_json([output, context]), before)
+
+
 
 class PackagedInputTests(unittest.TestCase):
     def test_task_result_paths_survive_packaging_without_entering_validation_hashes(self):

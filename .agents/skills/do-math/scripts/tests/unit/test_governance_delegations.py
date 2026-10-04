@@ -116,6 +116,14 @@ class DelegationJudgmentTests(unittest.TestCase):
         self.assertEqual(receipt['effect'], case['effect'])
         self.assertEqual(updated['grants'], i['grants'])
         self.assertEqual(d.apply_application(updated, state, app['id'], apply_effect=effect, now_iso=_entry.ports.clock.now())[2], receipt)
+        damaged = deepcopy(state)
+        damaged['delegation_applications'][app['id']]['application']['sha256'] = '0' * 64
+        before_damaged = deepcopy(damaged)
+        self.assertEqual(d.authorize_delegated_case(updated, 'DG', {'application_id': app['id']},
+            runtime=damaged, now_iso=_entry.ports.clock.now()),
+            {'allowed': False, 'delegation_id': 'DG', 'reason': 'delegation receipt changed'})
+        self.assertEqual(damaged, before_damaged)
+        self.assertEqual(state['delegation_applications'][app['id']]['application'], receipt)
         rt['executions']['CHECKER']['role'] = 'research_work'
         self.assertEqual(d.authorize_delegated_case(i, 'DG', {'application_id': app['id']}, runtime=rt, now_iso=_entry.ports.clock.now()),
                          {'allowed': False, 'delegation_id': 'DG', 'reason': 'judgment execution must bind blind shared input'})

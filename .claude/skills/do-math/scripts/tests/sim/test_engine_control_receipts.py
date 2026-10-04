@@ -249,5 +249,77 @@ class SelfCheckReceiptTests(unittest.TestCase):
             self.assertEqual(call.tracker.obligations[obligation['id']]['status'], 'open')
 
 
+
+
+class BoundRequestRejectionTests(unittest.TestCase):
+    def test_missing_draft_and_foreign_tool_boundary_do_not_change_the_execution(self):
+        from do_math.control_protocol import SUBMIT_INTENT, SAFETY_BOUNDARY
+        with running_work(Sim.activated()) as call:
+            for kind, payload, rid, reason in (
+                (SUBMIT_INTENT, {}, 'missing-draft',
+                 'submission requires a workspace-relative draft_path'),
+                (SAFETY_BOUNDARY, {'inflight_calls': False, 'call_ids': ['unobserved-call']},
+                 'foreign-boundary', 'safe boundary call IDs must identify observed calls of this execution'),
+            ):
+                with self.subTest(kind=kind):
+                    before = deepcopy((call.engine.head, call.execution,
+                                       call.engine.runtime.get('control_receipts', {})))
+                    call.submit(kind, payload, rid)
+                    call.receive()
+                    receipt = call.receipt(rid)
+                    self.assertEqual((receipt['state'], receipt['reason']), ('rejected', reason))
+                    self.assertEqual((call.engine.head, call.execution,
+                                      call.engine.runtime.get('control_receipts', {})), before)
+            # A malformed request cannot poison a later normal, bound submission.
+            delivery = call.draft()
+            call.receive()
+            receipt = call.receipt(delivery['request_id'])
+            self.assertEqual(receipt['state'], 'accepted')
+            stored = call.engine.store.load(call.engine.head)[2]
+            accepted = [r for r in stored['control_receipts'].values()
+                        if r['execution_id'] == call.execution_id and r['kind'] == SUBMIT_INTENT]
+            self.assertEqual(len(accepted), 1)
+            self.assertEqual(accepted[0]['request_id'], delivery['request_id'])
+
+    def test_repeated_stop_judgment_preserves_the_first_stop_time_and_checkpoint(self):
+        from support.engine_lifecycle import applied
+        sim = Sim.activated()
+        with running_work(sim) as call:
+            applied(sim, 'pause', text='stop the running bound call')
+            self.assertIs(call.arguments['should_stop'](), True)
+            row = deepcopy(call.execution)
+            head = call.engine.head
+            files = {str(p.relative_to(call.workspace)): p.read_bytes()
+                     for p in (call.workspace / '.control').rglob('*') if p.is_file()}
+            self.assertTrue(files)
+            self.assertEqual(row['status'], 'stopping')
+            self.assertIn('stop_observed_at', row)
+            sim.advance(1)
+            self.assertIs(call.arguments['should_stop'](), True)
+            self.assertEqual(call.execution, row)
+            self.assertEqual(call.engine.head, head)
+            self.assertEqual({str(p.relative_to(call.workspace)): p.read_bytes()
+                              for p in (call.workspace / '.control').rglob('*') if p.is_file()}, files)
+            self.assertEqual(call.engine.store.load(head)[2]['executions'][call.execution_id], row)
+
+    def test_self_check_response_must_name_the_obligation_in_its_delivery(self):
+        from do_math.control_protocol import SELF_CHECK_RESPONSE
+        with running_work(Sim.activated(), rules=CHECKPOINT_RULES) as call:
+            obligation = due(call)
+            response = self_check_response(obligation)
+            response['obligation_id'] = 'SC-another-obligation'
+            before = deepcopy((call.engine.head, call.engine.runtime))
+            call.submit(SELF_CHECK_RESPONSE,
+                        {'self_check_id': obligation['id'], 'response': response}, 'wrong-obligation')
+            call.receive()
+            receipt = call.receipt('wrong-obligation')
+            self.assertEqual((receipt['state'], receipt['reason']),
+                             ('rejected', 'self-check response refers to another issued obligation'))
+            self.assertEqual((call.engine.head, call.engine.runtime), before)
+            self.assertEqual(call.tracker.obligations[obligation['id']]['status'], 'open')
+            delivery = call.self_check(obligation['id'], self_check_response(obligation))
+            call.receive()
+            self.assertEqual(call.receipt(delivery['request_id'])['state'], 'accepted')
+            self.assertEqual(call.tracker.obligations[obligation['id']]['status'], 'answered')
 if __name__ == '__main__':
     unittest.main()

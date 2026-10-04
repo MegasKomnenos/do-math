@@ -237,6 +237,32 @@ class ImportSealTests(unittest.TestCase):
 
 
 class ImportApprovalTests(unittest.TestCase):
+    def test_invalid_approval_types_are_rejected_before_applied_import_replay(self):
+        from support.entry import entry
+        clock = entry().ports.clock
+        instance, runtime, bundle, request = checked_import()
+        instance, runtime, receipt = gov.apply_import_control(instance, runtime, request, clock=clock)
+        approvals = receipt['approvals']
+        self.assertTrue(approvals)
+        before = deepcopy((instance, runtime, receipt))
+        cases = [(value, 'import_approvals: invalid type (expected object)')
+                 for value in ([], 0, False, 'approval')]
+        identifier = next(iter(approvals))
+        cases.append(({identifier: None}, 'import_approvals/' + identifier + ': invalid type (expected object)'))
+        for field in approvals[identifier]:
+            damaged = deepcopy(approvals)
+            damaged[identifier][field] = 0
+            cases.append((damaged, 'import_approvals/' + identifier + '/' + field + ': invalid type (expected string)'))
+        for value, reason in cases:
+            with self.subTest(reason=reason):
+                original = deepcopy(value)
+                with self.assertRaises(ValueError) as caught:
+                    gov.apply_import(instance, runtime, bundle['id'], approvals=value, clock=clock)
+                self.assertIs(type(caught.exception), ValueError)
+                self.assertEqual(str(caught.exception), reason)
+                self.assertEqual(value, original)
+                self.assertEqual((instance, runtime, receipt), before)
+
     def test_later_exact_approval_resumes_apply_without_rechecking(self):
         from support.entry import entry
         _entry = entry()
@@ -356,6 +382,7 @@ class RegisteredOwnerTests(unittest.TestCase):
                               if row['owner_kind'] == 'custom')['payload_contract'], contract)
         contract['section'] = 'changed by caller'
         self.assertEqual(handlers['custom']['contract'], {'document': 'custom.md', 'section': 'evidence'})
+
 
     def test_configuration_adapter_uses_actual_config_validator(self):
         from support.entry import entry

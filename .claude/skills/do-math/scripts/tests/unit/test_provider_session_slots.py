@@ -102,6 +102,18 @@ class AdmissionTests(unittest.TestCase):
         repeated = deepcopy(runtime)
         self.assertIs(slots.started('EX-0', identity, at='2026-01-01T00:00:01+00:00'), started)
         self.assertEqual(runtime, repeated)
+        from do_math.execution_lifecycle import transition_execution
+        transition_execution(runtime['executions']['EX-1'], 'stopping', at='2026-01-01T00:00:01+00:00', reason='user_pause')
+        before_stop = deepcopy(runtime)
+        stop_identity = {'job_name': runtime['executions']['EX-1']['launch_ticket']['job_name'], 'pid': 2}
+        slots.started('EX-1', stop_identity, at='2026-01-01T00:00:02+00:00')
+        expected = deepcopy(before_stop)
+        expected['executions']['EX-1']['capacity']['process'] = stop_identity
+        expected['executions']['EX-1']['started_at'] = '2026-01-01T00:00:02+00:00'
+        self.assertEqual(runtime, expected)
+        self.assertEqual(runtime['executions']['EX-1']['status'], 'stopping')
+        slots.started('EX-1', stop_identity, at='2026-01-01T00:00:03+00:00')
+        self.assertEqual(runtime, expected)
         # The Jobs port cannot tell whether the ticket's named Job is empty: the slot stays counted.
         self.jobs.empty[name] = None
         self.assertFalse(slots.release('EX-0'))

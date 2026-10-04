@@ -14,7 +14,7 @@ import unittest
 from unittest.mock import patch
 
 from do_math import governance
-from do_math.control_contracts import validate_control_payload, validate_decision_shape
+from do_math.control_contracts import fields, obj, user_decision_changed, validate_control_payload, validate_decision_shape
 from do_math.governance import authorize
 from do_math.knowledge_engine import KnowledgeEngineMixin
 from do_math.trust_validation import environment_errors
@@ -30,6 +30,30 @@ def exactly(reason):
 
 
 class DomainShapeTests(unittest.TestCase):
+    def test_control_field_builders_enforce_declared_types_and_allow_unspecified_properties(self):
+        from jsonschema import Draft202012Validator
+        schema = obj(fields(text='id reason', lists='roles targets', objects='resources'))
+        validator = Draft202012Validator(schema)
+        valid = {'id': 'UC-one', 'reason': 'request', 'roles': ['maintenance'],
+                 'targets': [], 'resources': {}, 'domain_owned': True}
+        self.assertTrue(validator.is_valid(valid))
+        for key in ('id', 'reason', 'roles', 'targets', 'resources'):
+            with self.subTest(key=key):
+                self.assertFalse(validator.is_valid({**valid, key: 0}))
+        self.assertTrue(Draft202012Validator(obj()).is_valid({'domain_owned': True}))
+        self.assertFalse(Draft202012Validator(obj()).is_valid([]))
+
+    def test_user_decision_change_distinguishes_operational_settings_from_model_authority(self):
+        from do_math.configuration import DEFAULT_CONFIG
+        current = deepcopy(DEFAULT_CONFIG)
+        before = deepcopy(current)
+        self.assertIs(user_decision_changed(current, deepcopy(current)), False)
+        operational = {**current, 'plan_settle_seconds': current['plan_settle_seconds'] + 1}
+        self.assertIs(user_decision_changed(current, operational), False)
+        model_authority = {**current, 'claude_only_assigned_model': not current['claude_only_assigned_model']}
+        self.assertIs(user_decision_changed(current, model_authority), True)
+        self.assertEqual(current, before)
+
     def test_initialization_checks_the_boolean_flags_its_owner_actually_consumes(self):
         for key in ('adopt_current_governance', 'adopt_default_review_policy'):
             with self.subTest(key=key):
@@ -59,6 +83,10 @@ class DomainShapeTests(unittest.TestCase):
     def test_targetless_plan_can_be_resubmitted_as_the_exact_allowed_action(self):
         self.assertIsNone(validate_decision_shape({'kind': 'repetition_continue',
             'allowed_action': {'id': 'AC-plan', 'role': 'research_plan', 'target': None}}))
+        for damaged in ([], 0, False, 'plan'):
+            with self.subTest(damaged=damaged), self.assertRaisesRegex(ValueError,
+                    exactly('change/allowed_action: invalid type (expected object)')):
+                validate_decision_shape({'kind': 'repetition_continue', 'allowed_action': damaged})
 
     def test_trust_registration_nested_structures_return_errors_without_host_io(self):
         environment_reason = {
