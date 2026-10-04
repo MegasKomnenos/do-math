@@ -30,6 +30,25 @@ def exactly(reason):
 
 
 class DomainShapeTests(unittest.TestCase):
+    def test_central_and_owner_termination_rules_agree_for_every_declared_state(self):
+        """3-C/C-12: the real owner wrapper and canonical predicate on the finite state space."""
+        from itertools import product
+        from do_math.planning import instance_ended
+        from do_math.record_schemas.schemas import RESEARCH_FIELDS, RUNTIME_FIELDS
+        from support.sim import Sim
+        sim = Sim.activated()
+        before = deepcopy(sim.engine.store.load())
+        states = RESEARCH_FIELDS['lifecycle']['properties']['state']['enum']
+        statuses = RUNTIME_FIELDS['status']['enum']
+        for life, status, permanently_closed in product(states, statuses, (False, True)):
+            with self.subTest(lifecycle=life, status=status, permanently_closed=permanently_closed):
+                sim.instance['lifecycle'].update(state=life, permanently_closed=permanently_closed)
+                sim.runtime['status'] = status
+                expected = permanently_closed or status in ('closed', 'completed')
+                self.assertIs(instance_ended(sim.instance, sim.runtime), expected)
+                self.assertIs(sim.engine._instance_closed(), expected)
+        self.assertEqual(sim.engine.store.load(), before)
+
     def test_control_field_builders_enforce_declared_types_and_allow_unspecified_properties(self):
         from jsonschema import Draft202012Validator
         schema = obj(fields(text='id reason', lists='roles targets', objects='resources'))

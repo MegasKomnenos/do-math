@@ -23,6 +23,57 @@ from support.role_answers import candidate
 
 
 class TaskContractReviewTests(unittest.TestCase):
+    def test_readiness_and_work_profile_selection_agree_over_the_finite_requirement_space(self):
+        """3-C/B-16: both work roles, every rating/floor/allowlist/pinned-tier combination.
+
+        Domain producers seal every profile and contract review. No owner run,
+        external process or model is needed; expected eligibility is computed
+        from the contract's tier order and explicitly supplied allowlist.
+        """
+        from itertools import product
+        from do_math import model_policy
+        from do_math.execution_profiles import RESEARCH_PRODUCER_ROLES, build_profiles
+        from support.entry import entry
+        checked = 0
+        tiers = model_policy.TIERS
+        for role in sorted(RESEARCH_PRODUCER_ROLES):
+            task, instance, runtime = approved_task()
+            produced = build_profiles(instance['config'], host=entry().ports.host)
+            profiles = {p['ai']['tier']: p for p in produced['execution_profiles'].values()
+                        if p['role'] == role}
+            self.assertEqual(set(profiles), set(tiers))
+            instance['execution_profiles'] = {p['id']: p for p in profiles.values()}
+            instance['grants']['GR-1']['roles'] = [role]
+            for difficulty, importance, floor, mask in product(tiers, tiers, tiers, range(1 << len(tiers))):
+                instance['config']['role_tiers'][role] = floor
+                task['model_assessment'] = {'difficulty': difficulty, 'importance': importance,
+                                            'reason': 'Explicit finite model requirement'}
+                allowed = [tier for index, tier in enumerate(tiers) if mask & (1 << index)]
+                task['profile_refs'] = [profile_ref(profiles[tier]) for tier in allowed]
+                approve_task(task, instance, runtime)
+                required = max((difficulty, importance, floor), key=tiers.index)
+                for pinned in (None, *tiers):
+                    action = {'id': 'AC-finite-profile', 'role': role, 'target': task['id']}
+                    if pinned is not None:
+                        action['profile_ref'] = profile_ref(profiles[pinned])
+                    eligible = (required in allowed if pinned is None else
+                                pinned in allowed and tiers.index(pinned) >= tiers.index(required))
+                    with self.subTest(role=role, difficulty=difficulty, importance=importance,
+                                      floor=floor, allowed=allowed, pinned=pinned):
+                        selected = None
+                        try:
+                            selected = model_policy.work_profile_selection(instance['config'], task, instance, action=action)
+                        except ValueError:
+                            self.assertFalse(eligible, 'an eligible profile was rejected')
+                        self.assertEqual(selected is not None, eligible)
+                        if selected is not None:
+                            self.assertEqual(selected['profile_ref'], profile_ref(profiles[pinned or required]))
+                        ready = planning.task_ready(task, instance, runtime, include_scheduling_waits=False,
+                            action=action, evaluation_context={'now': entry().ports.clock.now(), 'host_id': entry().host_id})
+                        self.assertEqual(ready['state'], 'ready' if eligible else 'not_ready', ready)
+                        checked += 1
+        self.assertEqual(checked, len(RESEARCH_PRODUCER_ROLES) * len(tiers) ** 3 * 2 ** len(tiers) * (len(tiers) + 1))
+
     def test_wire_profile_reference_remains_identical_in_stored_contract(self):
         _, instance, _ = approved_task()
         wire = candidate()

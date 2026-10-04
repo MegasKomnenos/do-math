@@ -8,6 +8,37 @@ from support.planning_contract_inputs import contract, fulfilled
 
 
 class WithdrawalScopeTests(unittest.TestCase):
+    def test_withdrawal_scope_covers_every_task_state_and_protection_combination(self):
+        """3-C/D-02: exact common scope rejection for all finite protection axes."""
+        from itertools import product
+        from do_math.task_contracts import LIFECYCLE_STATES
+        checked = 0
+        for status, user_required, academic, inherited, proposed in product(
+                sorted(LIFECYCLE_STATES), (False, True), (False, True), (False, True),
+                (None, 'incomplete', 'completed', 'closed')):
+            task = contract()
+            task.update(status=status, user_required=user_required)
+            if academic:
+                task['academic_requirement_id'] = 'AR-protected'
+            if inherited:
+                task['transferred_obligations'] = [{'obligation_id': task['completion_obligations'][0]['id']}]
+            assessment = None if proposed is None else {'decision': proposed}
+            snapshot = deepcopy(task)
+            before = deepcopy((task, assessment))
+            reason = ('withdrawal requires an unfinished task' if status in ('completed', 'closed') else
+                      'withdrawal cannot follow a terminal task assessment' if proposed not in (None, 'incomplete') else
+                      'protected obligations require authoritative item dispositions' if user_required or academic or inherited else None)
+            with self.subTest(status=status, user_required=user_required, academic=academic,
+                              inherited=inherited, proposed=proposed):
+                if reason is None:
+                    self.assertIsNone(task_scope.validate_withdrawal_scope(task, snapshot, proposed_assessment=assessment))
+                else:
+                    with self.assertRaisesRegex(ValueError, '^' + re.escape(reason) + '$'):
+                        task_scope.validate_withdrawal_scope(task, snapshot, proposed_assessment=assessment)
+                self.assertEqual((task, assessment), before)
+            checked += 1
+        self.assertEqual(checked, len(LIFECYCLE_STATES) * 2 ** 3 * 4)
+
 
     def test_rejects_terminal_scope(self):
         task = contract()
