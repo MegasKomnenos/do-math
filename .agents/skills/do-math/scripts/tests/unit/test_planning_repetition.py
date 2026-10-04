@@ -160,6 +160,52 @@ class RepetitionLineageTests(unittest.TestCase):
         revisions.record_execution_outcome(instance, runtime, action, {}, 'EX-accepted', accepted=True, clock=_entry.ports.clock)
         self.assertEqual(task_contracts.repetition_lineages(runtime)['selection_failure']['count'], 0)
 
+    def test_repetition_diagnosis_merges_only_an_unstarted_compatible_review(self):
+        from support.entry import entry
+        from itertools import product
+        for variant, outcome in product(('generic', 'same_lineage', 'different_lineage', 'live_review', 'running'),
+                                        ('rejected', 'unclassified_failure')):
+            with self.subTest(variant=variant, outcome=outcome):
+                pending = {'id': 'AC-existing', 'role': 'operational_review', 'target': 'EX-failed',
+                           'reason': 'General recovery', 'receipt_refs': ['EX-prior']}
+                if variant == 'same_lineage':
+                    pending.update(target='EX-prior', repetition_lineage=['selection_failure', 'IN-1'])
+                elif variant == 'different_lineage':
+                    pending['repetition_lineage'] = ['selection_failure', 'IN-other']
+                elif variant == 'live_review':
+                    pending['live'] = True
+                runtime = {'history': [], 'queue': [pending], 'question_links': [], 'executions': {}}
+                if variant == 'running':
+                    runtime['executions']['EX-review'] = {'status': 'running', 'action': deepcopy(pending)}
+                original = deepcopy(pending)
+                revisions.record_repetition({}, runtime, lineage='selection_failure', lineage_id='IN-1',
+                    event_ref='EX-failed', outcome=outcome, owner='ai', reason='Failed planning receipt', clock=entry().ports.clock)
+                merge = variant in {'generic', 'same_lineage'}
+                self.assertEqual(len(runtime['queue']), 1 if merge else 2)
+                if merge:
+                    expected = {**original, 'repetition_lineage': ['selection_failure', 'IN-1'],
+                                'receipt_refs': ['EX-prior', 'EX-failed']}
+                    self.assertEqual(runtime['queue'][0], expected)
+                else:
+                    self.assertEqual(runtime['queue'][0], original)
+                    self.assertEqual(runtime['queue'][1]['target'], 'EX-failed')
+                    self.assertEqual(runtime['queue'][1]['receipt_refs'], ['EX-failed'])
+                published = deepcopy(runtime)
+                revisions.record_repetition({}, runtime, lineage='selection_failure', lineage_id='IN-1',
+                    event_ref='EX-failed', outcome=outcome, owner='ai', reason='Failed planning receipt', clock=entry().ports.clock)
+                self.assertEqual(runtime, published)
+
+    def test_repetition_receipt_prefers_its_existing_target_over_another_failure_in_the_same_lineage(self):
+        from support.entry import entry
+        earlier = {'id': 'AC-earlier', 'role': 'operational_review', 'target': 'EX-earlier',
+            'repetition_lineage': ['selection_failure', 'IN-1'], 'receipt_refs': ['EX-earlier']}
+        current = {'id': 'AC-current', 'role': 'operational_review', 'target': 'EX-current', 'reason': 'Current failure'}
+        runtime = {'history': [], 'queue': [deepcopy(earlier), deepcopy(current)], 'question_links': []}
+        revisions.record_repetition({}, runtime, lineage='selection_failure', lineage_id='IN-1',
+            event_ref='EX-current', outcome='rejected', owner='ai', reason='Current receipt', clock=entry().ports.clock)
+        self.assertEqual(runtime['queue'], [earlier, {**current,
+            'repetition_lineage': ['selection_failure', 'IN-1'], 'receipt_refs': ['EX-current']}])
+
     def test_repetition_receipt_produces_followup_once(self):
         from support.entry import entry
         _entry = entry()

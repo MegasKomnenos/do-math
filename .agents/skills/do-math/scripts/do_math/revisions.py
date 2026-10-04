@@ -247,13 +247,19 @@ def record_repetition(instance, runtime, *, lineage, lineage_id, event_ref, outc
     if classification['diagnose']:
         if repetition_hold(runtime, lineage, lineage_id):
             return deepcopy(row)
-        role = 'research_plan' if lineage=='exhaustion_empty' else 'operational_review'
+        role = 'operational_review'
         queue=runtime.setdefault('queue',[])
-        pending=next((a for a in queue if a.get('role')==role and a.get('repetition_lineage')==[lineage,lineage_id]),None)
+        live = live_action_ids(runtime)
+        available = [a for a in queue if a.get('role')==role and not a.get('live') and a.get('id') not in live]
+        pending = next((a for a in available if a.get('target')==event_ref
+                        and a.get('repetition_lineage') in (None, [lineage,lineage_id])), None)
+        if pending is None:
+            pending = next((a for a in available if a.get('repetition_lineage')==[lineage,lineage_id]), None)
         if pending:
+            pending.setdefault('repetition_lineage', [lineage,lineage_id])
             if event_ref not in pending.setdefault('receipt_refs',[]): pending['receipt_refs'].append(event_ref)
         else:
-            queue.append({'id':clock.new_id('AC'),'role':role,'target':event_ref if role=='operational_review' else None,
+            queue.append({'id':clock.new_id('AC'),'role':role,'target':event_ref,
                           'reason':reason,'repetition_lineage':[lineage,lineage_id],'receipt_refs':[event_ref]})
     return deepcopy(row)
 

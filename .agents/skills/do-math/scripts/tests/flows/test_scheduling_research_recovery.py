@@ -133,6 +133,27 @@ class InvalidPlanTests(unittest.TestCase):
         failure = self.sim.runtime['waiting_actions']['AC-bad-plan']
         self.assertEqual(failure.get('kind'), 'output_validation')
         self.assertIn(failure.get('execution_id'), self.sim.runtime['executions'])
+        from support.cross_contracts import assert_call_records
+        receipt, = [r for r in self.sim.runtime['history'] if r.get('kind') == 'task_repetition'
+                    and r.get('event_ref') == failure['execution_id'] and r.get('lineage') == 'selection_failure']
+        self.assertEqual(receipt['outcome'], 'rejected')
+        self.sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+        before = assert_call_records(self, self.sim)
+        self.sim.run_until(lambda sim: any(c['role'] == 'operational_review'
+            and c['action'].get('target') == failure['execution_id'] for c in sim.model.calls), max_steps=8)
+        self.assertEqual(assert_call_records(self, self.sim)['operational_review'] - before['operational_review'], 1)
+        reviews = [e for e in self.sim.runtime['executions'].values() if e['role'] == 'operational_review'
+                   and e['action'].get('target') == failure['execution_id']]
+        self.assertEqual(len(reviews), 1)
+        self.assertEqual(reviews[0]['outcome'], 'output_accepted', reviews[0].get('error'))
+        self.assertEqual(reviews[0]['action']['repetition_lineage'], ['selection_failure', receipt['lineage_id']])
+        self.assertIn(failure['execution_id'], reviews[0]['action']['receipt_refs'])
+        for _ in range(2):
+            self.sim.step()
+            assert_call_records(self, self.sim)
+            self.assertEqual(sum(c['role'] == 'operational_review' and c['action'].get('target') == failure['execution_id']
+                                 for c in self.sim.model.calls), 1)
+
 
     def test_output_failure_opens_diagnosis_without_replaying_rejected_plan(self):
         from support.cross_contracts import assert_call_records

@@ -11,7 +11,7 @@ PRODUCT = Path(__file__).resolve().parents[2] / 'do_math'
 
 class RepetitionOutcomeDeclarationTests(unittest.TestCase):
     def test_every_produced_result_has_exactly_one_declared_counting_rule(self):
-        produced, sites = set(), []
+        produced, sites, diagnostic_lineages = set(), [], set()
         for path in sorted(PRODUCT.rglob('*.py')):
             tree = ast.parse(path.read_text(encoding='utf-8'))
             for function in (node for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))):
@@ -24,9 +24,15 @@ class RepetitionOutcomeDeclarationTests(unittest.TestCase):
                         continue
                     outcome = next((field.value for field in node.keywords if field.arg == 'outcome'), None)
                     self.assertIsNotNone(outcome, (str(path), node.lineno))
-                    produced |= result_values(outcome, assignments)
+                    outcomes = result_values(outcome, assignments)
+                    produced |= outcomes
+                    if outcomes & {key for key, rule in REPETITION_OUTCOMES.items() if rule['diagnose']}:
+                        lineage = next(field.value for field in node.keywords if field.arg == 'lineage')
+                        diagnostic_lineages |= result_values(lineage, assignments)
                     sites.append((str(path.relative_to(PRODUCT)), function.name, node.lineno))
         self.assertTrue(sites)
+        self.assertEqual(diagnostic_lineages, {'selection_failure'},
+                         'Review the diagnostic role if a different lineage starts producing diagnostic outcomes')
         self.assertEqual(produced, set(REPETITION_OUTCOMES))
         for outcome, row in REPETITION_OUTCOMES.items():
             with self.subTest(outcome=outcome):

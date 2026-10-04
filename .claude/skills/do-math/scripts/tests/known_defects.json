@@ -566,6 +566,15 @@
       "found_by": "B100 기존 자료 도착 fixture를 실제 계획 수락까지 확장. ea605uoi에서 integration.application transfer cannot overwrite 오류, v22l7vgk에서 반복 재평가의 최소 재현을 확인. 기존 이전의 정확한 기원/권위/의무/생산 실행을 검사해 수신 과제를 재수정하지 않도록 교정한 뒤 ck_ymc9y에서 실제 수락 확인.",
       "missed_kind": "이전 재평가 검사는 assessment.current=False와 계획 큐 생성에서 멈췄고 실제 재수신을 실행하지 않았다. 최초 이전만 검증해 기존 이전이 있는 미완료 평가의 후속 처리를 놓쳤다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1917",
+      "summary": "잘못된 최종 계획 산출을 중앙에서 반려하면 일반 복구 점검 뒤 반복 결과 진단이 같은 실패 대상에 별도 추가되어 실제 운영 점검을 두 번 호출한다.",
+      "category": 11,
+      "reproduction": "flows.test_scheduling_research_recovery.InvalidPlanTests.test_exhausted_output_repair_does_not_stop_unrelated_work",
+      "found_by": "B106 기존 native final 반려 흐름을 실제 진단 수락과 추가 owner pass까지 확장하여 6qsbm59c에서 동일 대상 호출2회 재현. record_repetition이 이미 대기 중인 같은 대상의 일반 복구 점검도 결속하도록 교정한 뒤 s98r5w4i에서 실제 호출1/수락/반복 근거 보존 확인. 같은 계열의 다른 실패 요청이 앞선 경우 wq_2w34i에서 현재 영수증이 다른 대상에 합쳐지는 것도 재현하여 동일 대상 우선으로 교정했다.",
+      "missed_kind": "기존 검사는 실패 보존과 독립 작업 유지에서 멈췄다. 이미 보강된 다른 실패 흐름은 공급자/도구 단계 종료라 반복 영수증을 만들지 않아 중앙 반려와 반복 진단이 만나는 중복을 실행하지 않았다.",
+      "status": "closed"
     }
   ]
 }

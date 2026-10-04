@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B104 소스 목록/지문을 재사용했고 B105에서 미완료 의무 후속·지식 영향 전파를 상태 조합과 실제 수락으로 연결했다. 남은 네 가족은 governance 변경, 반복 결과 진단, 재고의 나머지 조건, 일반 사건/공개 요청이다. B90~B104 증거를 유지하며 위치 수를 의미 사건 전건으로 간주하지 않는다."
+        "remaining": "B106에서 거버넌스 결정·반복 결과 진단을 확인하고 KD-1917의 동일 실패 중복 점검을 교정했다. B104 소스 목록의 남은 두 가족은 planning.schedule_reconsideration의 잔여 조건과 일반 lifecycle 사건/공개 직접 요청이다. 현재 source_hashes는 B106의 revisions.py 변경까지 반영한다."
       },
       {
         "id": "12-A",
@@ -13089,9 +13089,9 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B104 c31bf1fb; B105 미완료 의무 후속·지식 영향 전파 관련82개 통과",
-      "active": "governance 변경·반복 결과 진단·재고 잔여 조건·일반 사건/공개 요청의 대응 완료",
-      "exit": "B104의 남은 네 가족을 기존 증거와 상태 조합에 연결하고 빈 조합 해소",
+      "last_closed": "B105 633274d5; B106 KD-1917 교정·거버넌스/반복 진단 관련97개 통과",
+      "active": "재고의 잔여 조건과 일반 lifecycle 사건·공개 직접 요청의 실제 상태 조합 대응",
+      "exit": "남은 두 발동 가족을 닫고 11-B 전건 근거 검수로 이동",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "B104의 소스 지문·원천 목록을 재사용한다. 기존 단위/수신/flow를 먼저 대응하고 실제 빈 조합만 추가한다.",
       "running_test": null,
@@ -18587,7 +18587,7 @@
       "scope": "직접 큐 생산자·재개·일반 사건 원천의 현재 소스 목록과 비형식 가져오기/교체의 실제 계획 대조",
       "state": "소스 모집단 분류 및 가져오기/교체 관련 검증 완료; 전건 상태 조합 대응 진행",
       "memory_node": "M-0521",
-      "source_head": "2eb2c94f4bd67c80ddcaf4a8d37428d35b6ba337",
+      "source_head": "633274d5f84841f75fe79b45e71ed58e3342aa27",
       "source_hashes": {
         "academic_engine.py": "3ac98306ed425ec1d832767981f761c328ce9b4b6ffbd0c0a067d91141701981",
         "activities.py": "e3224b8c9ea9d09e93a8d9ae91975c88788f310c5507ede5345089d148f15328",
@@ -18608,7 +18608,7 @@
         "repair_execution.py": "bacf9045775aa763ed9402bfb961da5623dd1433f6b8cc13e7e8a59ec483d712",
         "review_engine.py": "5d5ec41bca37729bd0970faf29a6cf99adb8424e8612714ef93364b889e54f43",
         "revision_engine.py": "3b8a6aed417ba003f5e540adee8bf5084706b0735f45f0737af78d7a680a8bde",
-        "revisions.py": "a9a23b92a1f1244c1f02e995456d180e7b624913aa726bb6fa92b885cb705882",
+        "revisions.py": "a121ed676fa33cf273fdb61dc1a0523737abd2da59582ff7916e8d534dba41ce",
         "task_scope.py": "f73eba27e250f64d244febd6380afe61eaddfc505ed1b291efd9a1befe099f9f"
       },
       "inventory": {
@@ -18913,27 +18913,6 @@
             "classification": "existing_request_resume_or_refresh"
           },
           {
-            "file": "revisions.py",
-            "function": "record_repetition",
-            "line": 256,
-            "call": "queue.append({'id': clock.new_id('AC'), 'role': role, 'target': event_ref if role == 'operational_review' else None, 'reason': reason, 'repetition_lineage': [lineage, lineage_id], 'receipt_refs': [event_ref]})",
-            "classification": "judgment_producer_or_role_choice"
-          },
-          {
-            "file": "revisions.py",
-            "function": "continue_repetition",
-            "line": 306,
-            "call": "runtime.setdefault('queue', []).append(action)",
-            "classification": "existing_request_resume_or_refresh"
-          },
-          {
-            "file": "revisions.py",
-            "function": "continue_repetition",
-            "line": 312,
-            "call": "runtime['queue'].append(deepcopy(action))",
-            "classification": "existing_request_resume_or_refresh"
-          },
-          {
             "file": "task_scope.py",
             "function": "apply_task_assessments",
             "line": 461,
@@ -18946,6 +18925,27 @@
             "line": 486,
             "call": "new_runtime['queue'].append({'id': clock.new_id('AC'), 'role': 'research_plan', 'reason': 'Select continuation for assessed remaining obligations', 'requested_by': execution_id})",
             "classification": "judgment_producer_or_role_choice"
+          },
+          {
+            "file": "revisions.py",
+            "function": "record_repetition",
+            "line": 262,
+            "call": "queue.append({'id': clock.new_id('AC'), 'role': role, 'target': event_ref, 'reason': reason, 'repetition_lineage': [lineage, lineage_id], 'receipt_refs': [event_ref]})",
+            "classification": "judgment_producer_or_role_choice"
+          },
+          {
+            "file": "revisions.py",
+            "function": "continue_repetition",
+            "line": 312,
+            "call": "runtime.setdefault('queue', []).append(action)",
+            "classification": "existing_request_resume_or_refresh"
+          },
+          {
+            "file": "revisions.py",
+            "function": "continue_repetition",
+            "line": 318,
+            "call": "runtime['queue'].append(deepcopy(action))",
+            "classification": "existing_request_resume_or_refresh"
           }
         ],
         "lifecycle_events": [
@@ -19175,25 +19175,6 @@
       },
       "remaining_new_judgment_families": [
         {
-          "source": "governance._queue callers",
-          "variants": [
-            "academic-only governance change",
-            "new execution authority",
-            "task_scope decision"
-          ],
-          "status": "기존 공개 제어 흐름과 실제 호출/수락 단언 대응 필요"
-        },
-        {
-          "source": "revisions.record_repetition",
-          "variants": [
-            "diagnose vs no diagnosis",
-            "hold vs no hold",
-            "exhaustion_empty planning vs other operational review",
-            "existing pending receipt merge"
-          ],
-          "status": "기존 결과 분류 전건 단위 검사와 수신 흐름을 실제 요청/호출에 대응 필요"
-        },
-        {
           "source": "planning.schedule_reconsideration",
           "variants": [
             "periodic/revisit/new input",
@@ -19238,8 +19219,32 @@
           ],
           "status": "B105 도메인 상태 조합과 실제 수신·후속 호출의 대응 확인",
           "evidence": "assessment_followup_and_impact_trigger_verification"
+        },
+        {
+          "source": "governance._queue callers",
+          "variants": [
+            "academic-only governance change",
+            "new execution authority",
+            "task_scope decision"
+          ],
+          "status": "B106 현재 생산자·상태 조합·실제 수락 대응 확인",
+          "evidence": "governance_and_repetition_diagnosis_verification"
+        },
+        {
+          "source": "revisions.record_repetition",
+          "variants": [
+            "diagnostic vs nondiagnostic outcomes",
+            "hold vs no hold",
+            "unstarted compatible review vs live/different lineage",
+            "same target preferred over another failure in same lineage"
+          ],
+          "status": "B106 현재 생산자·상태 조합·실제 수락 대응 확인",
+          "evidence": "governance_and_repetition_diagnosis_verification",
+          "removed_unreachable_variant": "exhaustion_empty planning diagnosis: current producers emit no diagnostic outcomes for this lineage; structural source guard fixes that population"
         }
-      ]
+      ],
+      "initial_source_head": "2eb2c94f4bd67c80ddcaf4a8d37428d35b6ba337",
+      "source_tree": "base commit plus B106 revisions.py change; source_hashes identify the actual files"
     },
     "assessment_followup_and_impact_trigger_verification": {
       "id": "B105",
@@ -19315,6 +19320,79 @@
         }
       ],
       "shared_fixture": "support.role_answers.assessment_awaiting_required_evidence를 입력초과 복구와 영향 전파 두 소비자가 공유. 보고서만으로 필수 EV-proof/EV-scope를 충족했다고 주장하지 않는다.",
+      "whole_requirement_closed": false
+    },
+    "governance_and_repetition_diagnosis_verification": {
+      "id": "B106",
+      "scope": "공개 거버넌스 결정의 계획1/재전달0과 중앙 산출 반려의 중복 운영 진단 교정",
+      "state": "KD-1917 교정·관련 검증 완료",
+      "memory_node": "M-0523",
+      "defect_id": "KD-1917",
+      "reports": {
+        "fixture-receipt-path-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-거버넌스-반복진단/fixture-receipt-path-failure.json",
+          "sha256": "61279fceefc409c77b385203f7d54c28b2b18d53047919755d79dbed1a219f57",
+          "counts": {
+            "passed": 7,
+            "error": 2
+          },
+          "total_seconds": 31.7,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "duplicate-diagnosis-red": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-거버넌스-반복진단/duplicate-diagnosis-red.json",
+          "sha256": "d12036e7830598b50d02f956aefabe7426e393eab8e879610c53255ab6c9ef59",
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 21.0,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "target-priority-red": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-거버넌스-반복진단/target-priority-red.json",
+          "sha256": "f4ffb81c64f75be097270ff6f326840a2629734c1545288b3bd9521e1ea90c55",
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 0.0,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-거버넌스-반복진단/report.json",
+          "sha256": "f3c1f33ba5c14bb050d5fde1d11aaa456618b525069ce5d56b856ac9fbc17ccb",
+          "counts": {
+            "passed": 97
+          },
+          "total_seconds": 65.9,
+          "complete": true,
+          "successful": true,
+          "changed_during_run": []
+        }
+      },
+      "governance_cases": {
+        "test": "flows.test_engine_purpose_decisions.PublicGovernancePlanningTests",
+        "variants": [
+          "academic requirement change",
+          "new execution authority",
+          "waive obligations",
+          "transfer obligations",
+          "grant during initialization"
+        ],
+        "observed": "첫 네 경우 decision_id 또는 scope_decision_id로 실제 계획1회 수락·공개 제어 재전달 후 중복0·성공 계획의 운영 진단0. 초기화 중 권한 추가의 실제 계획0."
+      },
+      "diagnosis": {
+        "reproduction": "flows.test_scheduling_research_recovery.InvalidPlanTests.test_exhausted_output_repair_does_not_stop_unrelated_work",
+        "before": "중앙 native final 검증 반려 후 같은 실패 대상의 실제 운영 점검2회",
+        "after": "반복 영수증과 일반 복구 점검을 동일 대상의 미시작 요청에 결속하고 실제 수락1회·추가 owner pass 비반복",
+        "boundaries": "동일 대상 우선; 없으면 같은 계열의 미시작 요청 사용. live 관찰·실행 중·다른 계열은 변경하지 않음. 두 진단 결과×다섯 큐 상태와 다른 실패 선행 사례 검증."
+      },
+      "producer_guard": "structure.test_repetition_outcome_contract은 현재 diagnostic outcomes를 생산하는 lineage가 selection_failure뿐임을 AST로 확인한다. 그 조건에서 도달 불가능한 exhaustion_empty의 research_plan 진단 분기를 제거했다. 빈 준비의 재생성/재고 계획은 다른 생산자이며 유지한다.",
       "whole_requirement_closed": false
     }
   }

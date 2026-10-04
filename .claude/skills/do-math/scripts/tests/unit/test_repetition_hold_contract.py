@@ -41,6 +41,8 @@ class RepetitionHoldContractTests(unittest.TestCase):
                     self.assertEqual(len(holds), 0 if number == 1 else 1)
                 hold = revisions.repetition_hold(runtime, lineage, basis)
                 self.assertEqual((hold['count'], hold['limit'], hold['next_owner']), (2, 2, 'user'))
+                self.assertFalse(any('EX-attempt-2' in a.get('receipt_refs', [])
+                                     for a in runtime['queue'] if a.get('repetition_lineage') == [lineage, basis]))
                 before = deepcopy(runtime)
                 revisions.record_repetition(instance, runtime, lineage=lineage, lineage_id=basis,
                     event_ref='EX-attempt-2', outcome=outcome, owner='ai', reason='Observed repetition result',

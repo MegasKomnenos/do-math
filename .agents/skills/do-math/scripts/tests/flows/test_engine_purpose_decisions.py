@@ -107,5 +107,80 @@ class PurposeFlowTests(unittest.TestCase):
         self.assertEqual(sim.instance['governance'][before['id']]['status'], 'superseded')
 
 
+class PublicGovernancePlanningTests(unittest.TestCase):
+    def test_public_decisions_deliver_one_plan_and_replays_deliver_none(self):
+        from do_math import planning
+        from support.academic_scenes import MANUSCRIPT
+        from support.cross_contracts import assert_call_records
+        from support.default_responder import DefaultResponder
+        from support.engine_lifecycle import clear_work
+        from support.model import Answer
+        from support.planning_contract_inputs import prepared_sim, only_task, produce_task
+        from support.sim import Sim
+        for variant in ('academic', 'grant', 'waive', 'transfer'):
+            with self.subTest(variant=variant):
+                sim = prepared_sim() if variant in ('waive', 'transfer') else Sim.activated()
+                if variant == 'academic':
+                    change = charter_change(sim.engine, academic_requirements=[MANUSCRIPT])
+                    field = 'decision_id'
+                elif variant == 'grant':
+                    change = {'kind': 'grant', 'grant': {'id': 'GR-new-maintenance', 'kind': 'local',
+                        'roles': ['maintenance'], 'reuse': 'reusable'}}
+                    field = 'decision_id'
+                else:
+                    task = only_task(sim)
+                    change = {'kind': 'task_scope', 'task_id': task['id'], 'disposition': variant,
+                        'revision': task['revision'], 'contract_sha256': planning.contract_hash(task),
+                        'obligation_ids': [task['completion_obligations'][0]['id']], 'reason': 'Approve the named scope change.'}
+                    if variant == 'transfer':
+                        change['target_task_id'] = produce_task(sim, 'scope recipient')
+                    field = 'scope_decision_id'
+                clear_work(sim)
+                sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+                def defer(out, context):
+                    out['goal_audit'] = False
+                    for row in out['dispositions']:
+                        row.update(kind='not_selected', next_owner='research_plan',
+                            revisit={'at': '2090-01-02T00:00:00+00:00', 'event_refs': []})
+                    return out
+                sim.model.on('research_plan').reply(Answer(defer))
+                request_id = 'UC-governance-plan-' + variant
+                options = {'text': 'Authorize this planning trigger.', 'config': {'change': change}, 'request_id': request_id}
+                applied(sim, 'decision', **options)
+                decision, = [key for key, value in sim.instance['decisions'].items() if value.get('source_ref') == request_id]
+                request, = [a for a in sim.runtime['queue'] if a['role'] == 'research_plan' and a.get(field) == decision]
+                before = assert_call_records(self, sim)
+                sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+                sim.run_until(lambda current: any(c['action']['id'] == request['id'] for c in current.model.calls), max_steps=8)
+                execution, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == request['id']]
+                self.assertEqual(execution['outcome'], 'output_accepted',
+                    {'error': execution.get('error'), 'issues': [r.get('result', {}).get('issues') for r in sim.model.receipts]})
+                self.assertEqual(execution['action'][field], decision)
+                self.assertEqual(assert_call_records(self, sim)['research_plan'] - before['research_plan'], 1)
+                replay = applied(sim, 'decision', **options)
+                self.assertTrue(replay['replayed'])
+                for _ in range(2):
+                    sim.step()
+                    assert_call_records(self, sim)
+                    self.assertEqual(sum(c['action'].get(field) == decision for c in sim.model.calls), 1)
+                self.assertEqual(sum(value.get('source_ref') == request_id for value in sim.instance['decisions'].values()), 1)
+                self.assertEqual(assert_call_records(self, sim)['operational_review'], before['operational_review'])
+
+    def test_initialization_grant_does_not_open_a_research_plan(self):
+        import tempfile
+        from pathlib import Path
+        from support.cross_contracts import assert_call_records
+        from support.sim import Sim
+        with tempfile.TemporaryDirectory() as directory:
+            sim = Sim(Path(directory))
+            applied(sim, 'decision', config={'change': {'kind': 'grant', 'grant': {
+                'id': 'GR-before-adoption', 'kind': 'local', 'roles': ['maintenance'], 'reuse': 'reusable'}}})
+            self.assertIn('GR-before-adoption', sim.instance['grants'])
+            self.assertFalse(any(a['role'] == 'research_plan' for a in sim.runtime['queue']))
+            for _ in range(2):
+                sim.step()
+                self.assertEqual(assert_call_records(self, sim)['research_plan'], 0)
+
+
 if __name__ == '__main__':
     unittest.main()
