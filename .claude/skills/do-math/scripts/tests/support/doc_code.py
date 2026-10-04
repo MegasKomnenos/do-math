@@ -67,7 +67,7 @@ def command_issues(text, options, flags):
                 tokens = shlex.split(example, posix=False)
             except ValueError:
                 continue  # Partial prose notation is not a command example.
-            if len(tokens) > 1 and tokens[0] in options and any(token.startswith('--') for token in tokens[1:]):
+            if len(tokens) > 1 and tokens[0] in options and any(token.strip('[]').startswith('--') for token in tokens[1:]):
                 matches = [re.match(r'\s*' + re.escape(tokens[0]), example)]
                 short_name = tokens[0]
             else:
@@ -85,6 +85,7 @@ def command_issues(text, options, flags):
                 issues.add(('unparseable command example', name))
                 continue
             for argument in arguments:
+                argument = argument.strip('[]')  # Optional arguments in command synopses.
                 if FLAG.fullmatch(argument):
                     flag = argument.split('=', 1)[0]
                     if flag not in options[name]:

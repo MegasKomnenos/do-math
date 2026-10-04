@@ -31,9 +31,20 @@ class DocumentCodeTests(unittest.TestCase):
         flags = set().union(*options.values())
         self.assertEqual(command_issues('`do_math.py status --goal-file question.txt`', options, flags),
                          [('command option', 'status', '--goal-file')])
+        self.assertEqual(command_issues('`do_math.py status [--goal-file question.txt]`', options, flags),
+                         [('command option', 'status', '--goal-file')])
+        self.assertEqual(command_issues('`status [--goal-file question.txt]`', options, flags),
+                         [('command option', 'status', '--goal-file')])
+        self.assertEqual(command_issues('`status [--json] [--snapshot OID]`', options, flags), [])
+        self.assertEqual(command_issues('`do_math.py init [--goal-file question.txt]`', options, flags), [])
         self.assertEqual(command_issues('`timeline --include-operations`', options, flags), [])
         self.assertEqual(command_issues('```powershell\npython $dmCli run `\n --watch\n```', options, flags), [])
+        self.assertEqual(command_issues('```powershell\npython $dmCli status `\n [--goal-file question.txt]\n```', options, flags),
+                         [('command option', 'status', '--goal-file')])
+        self.assertEqual(command_issues('```sh\npython do_math.py status \\\n [--goal-file question.txt]\n```', options, flags),
+                         [('command option', 'status', '--goal-file')])
         self.assertEqual(command_issues('`do_math.py run --watch` and `--goal-file` belongs to init.', options, flags), [])
+        self.assertEqual(command_issues('`do_math.py run [--watch]` and `[--goal-file question.txt]` belongs to init.', options, flags), [])
 
     def test_documented_scoped_fields_belong_to_their_actual_schema(self):
         schemas = field_schemas()
