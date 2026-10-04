@@ -1,0 +1,163 @@
+"""13-C static bindings: command flags belong to their actual parser.
+
+The document population includes operating guides, the glossary and role
+contracts. Code examples, rather than unrelated prose on the same line,
+determine command/option associations. Bare flag mentions retain the existing
+tool-vocabulary check; they are not evidence for a command-specific binding.
+"""
+import ast
+from pathlib import Path
+import re
+import shlex
+
+ENTRY = re.compile(r'(?:do_math\.py|\$dmCli)\s+([a-z][a-z-]*)\b')
+SPAN = re.compile(r'(?<!`)`([^`\n]+)`(?!`)')
+FLAG = re.compile(r'^--[a-z][a-z-]*(?:=.*)?$')
+
+
+def documents(skill):
+    skill = Path(skill)
+    return [skill / name for name in ('SKILL.md', 'README.md', 'GLOSSARY.md')] + \
+        sorted((skill / 'references').glob('*.md')) + sorted((skill / '계약').glob('*.md'))
+
+
+def parser_options(parser):
+    from do_math.cli_contract import _command_parsers
+    return {name: {flag for action in command._actions for flag in action.option_strings}
+            for name, command in _command_parsers(parser).items()}
+
+
+def tool_options(scripts):
+    flags = set()
+    for path in [*Path(scripts).joinpath('do_math').rglob('*.py'), *Path(scripts).glob('*.py')]:
+        for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
+            if isinstance(node, ast.Constant) and isinstance(node.value, str) \
+                    and re.fullmatch(r'--[a-z][a-z-]*', node.value):
+                flags.add(node.value)
+    return flags
+
+
+def code_examples(text):
+    """Keep shell continuations inside their code block; do not attach prose flags."""
+    blocks = re.findall(r'```[^\n]*\n(.*?)```', text, flags=re.S)
+    for block in blocks:
+        joined = re.sub(r'(?:`|\\)\s*\n\s*', ' ', block)
+        yield from joined.splitlines()
+    yield from SPAN.findall(text)
+
+
+def command_issues(text, options, flags):
+    issues = {('command', name) for name in ENTRY.findall(text) if name not in options}
+    issues |= {('option', name) for name in re.findall(r'`(--[a-z][a-z-]*)', text) if name not in flags}
+    for example in code_examples(text):
+        matches = list(ENTRY.finditer(example))
+        if not matches:
+            try:
+                tokens = shlex.split(example, posix=False)
+            except ValueError:
+                continue  # Partial prose notation is not a command example.
+            if len(tokens) > 1 and tokens[0] in options and any(token.startswith('--') for token in tokens[1:]):
+                matches = [re.match(r'\s*' + re.escape(tokens[0]), example)]
+                short_name = tokens[0]
+            else:
+                continue
+        else:
+            short_name = None
+        for index, match in enumerate(matches):
+            name = short_name or match.group(1)
+            if name not in options:
+                continue
+            tail = example[match.end():matches[index + 1].start() if index + 1 < len(matches) else None]
+            try:
+                arguments = shlex.split(tail, posix=False)
+            except ValueError:
+                issues.add(('unparseable command example', name))
+                continue
+            for argument in arguments:
+                if FLAG.fullmatch(argument):
+                    flag = argument.split('=', 1)[0]
+                    if flag not in options[name]:
+                        issues.add(('command option', name, flag))
+    return sorted(issues)
+
+
+def field_schemas():
+    """Explicit documented namespaces resolve to the installed contract owners."""
+    from do_math.record_schemas import config_schema
+    from do_math.record_schemas.schemas import RECORDS, RESEARCH_FIELDS
+    return {'config': config_schema(), 'action': RECORDS['queue'], 'task': RECORDS['tasks'],
+            'execution': RECORDS['executions'], 'profile': RECORDS['execution_profiles'],
+            'lifecycle': RESEARCH_FIELDS['lifecycle']}
+
+
+def property_variants(schema, name):
+    """Properties in a closed shape or one of its actual schema alternatives."""
+    variants = []
+    if not isinstance(schema, dict):
+        return variants
+    if name in schema.get('properties', {}):
+        variants.append(schema['properties'][name])
+    for keyword in ('allOf', 'anyOf', 'oneOf'):
+        for child in schema.get(keyword, []):
+            variants.extend(property_variants(child, name))
+    for keyword in ('then', 'else'):
+        if keyword in schema:
+            variants.extend(property_variants(schema[keyword], name))
+    return variants
+
+
+def scoped_field_issues(text, schemas):
+    """Dotted fields name their owning schema, not an arbitrary product string.
+
+    Unqualified names and other namespaces still require a separate census;
+    this checker does not silently certify those names.
+    """
+    issues = []
+    for span in SPAN.findall(text):
+        if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', span):
+            continue
+        root, *parts = span.split('.')
+        if root not in schemas:
+            continue
+        candidates = [schemas[root]]
+        for part in parts:
+            candidates = [child for schema in candidates for child in property_variants(schema, part)]
+            if not candidates:
+                issues.append(('scoped field', span))
+                break
+    return sorted(set(issues))
+
+
+def declared_policy_names(scripts):
+    """Named policy fields/choices come from schemas; code owners come from real modules."""
+    from do_math import contracts, control_contracts
+    from do_math.record_schemas import config_schema
+    from do_math.record_schemas.schemas import RECORDS, RESEARCH_FIELDS, RUNTIME_FIELDS
+    names = set()
+
+    def visit(value):
+        if isinstance(value, dict):
+            names.update(value.get('properties', {}))
+            names.update(item for item in value.get('enum', []) if isinstance(item, str))
+            if isinstance(value.get('const'), str):
+                names.add(value['const'])
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+
+    for schema in (RECORDS, RESEARCH_FIELDS, RUNTIME_FIELDS, config_schema(), contracts.SCHEMAS,
+                   control_contracts.PAYLOADS, control_contracts.DECISION):
+        visit(schema)
+    names.update(path.stem for path in Path(scripts).joinpath('do_math').rglob('*_policy.py'))
+    return names
+
+
+def policy_issues(text, names):
+    return sorted(('policy name', name) for name in documented_policies(text) if name not in names)
+
+
+def documented_policies(text):
+    return {name for span in SPAN.findall(text)
+            for name in re.findall(r'\b[a-z][a-z0-9_]*policy\b', span)}

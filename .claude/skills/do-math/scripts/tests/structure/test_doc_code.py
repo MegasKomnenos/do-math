@@ -1,50 +1,72 @@
-"""The operating and role documents name only commands and options the product has (의무 13-C).
+"""13-C command names and command-specific flags across the operating/role documents.
 
-The documents are ``SKILL.md`` and ``references/*.md``. A command is named as
-``do_math.py <command>``; an option as a code span starting with ``--``. The
-commands are those of the CLI's own parser (``cli_contract.build_parser``); the
-options are every ``add_argument`` flag of the product's tools and every flag
-string the product puts into a provider CLI's argv. A renamed or removed command
-or option then fails here instead of in an operator's session (조사 B-21,
-운전 인터페이스 공백).
+Fields, policies and reading-boundary obligations have separate closure work;
+this test does not substitute flag vocabulary for those requirements.
 """
-import ast
 from pathlib import Path
-import re
 import unittest
+from support.doc_code import (command_issues, declared_policy_names, documented_policies, documents,
+                              field_schemas, parser_options, policy_issues, scoped_field_issues, tool_options)
 
 SKILL = Path(__file__).resolve().parents[3]
 SCRIPTS = SKILL / 'scripts'
-COMMAND = re.compile(r'do_math\.py ([a-z][a-z-]*)')
-OPTION = re.compile(r'`(--[a-z][a-z-]*)')
-
-
-def _documents():
-    return [SKILL / 'SKILL.md', *sorted((SKILL / 'references').glob('*.md'))]
-
-
-def _vocabulary():
-    """``(commands, options)``: the CLI parser's commands, and every flag string in the product's code."""
-    from do_math.cli_contract import _command_parsers, build_parser
-    commands = set(_command_parsers(build_parser()))
-    options = set()
-    for path in [*SCRIPTS.joinpath('do_math').rglob('*.py'), *SCRIPTS.glob('*.py')]:
-        for node in ast.walk(ast.parse(path.read_text(encoding='utf-8'))):
-            if isinstance(node, ast.Constant) and isinstance(node.value, str) and re.fullmatch(r'--[a-z][a-z-]*', node.value):
-                options.add(node.value)
-    return commands, options
 
 
 class DocumentCodeTests(unittest.TestCase):
     def test_documented_commands_and_options_exist(self):
-        commands, options = _vocabulary()
-        self.assertGreater(len(commands), 0)
+        from do_math.cli_contract import build_parser
+        options = parser_options(build_parser())
+        flags = tool_options(SCRIPTS)
+        self.assertGreater(len(options), 0)
         missing = []
-        for document in _documents():
+        for document in documents(SKILL):
             text = document.read_text(encoding='utf-8')
-            missing += [(document.name, 'command', name) for name in COMMAND.findall(text) if name not in commands]
-            missing += [(document.name, 'option', name) for name in OPTION.findall(text) if name not in options]
+            missing += [(document.relative_to(SKILL).as_posix(), *issue)
+                        for issue in command_issues(text, options, flags)]
         self.assertEqual(sorted(set(missing)), [])
+
+    def test_another_commands_flag_cannot_validate_the_documented_command(self):
+        from do_math.cli_contract import build_parser
+        options = parser_options(build_parser())
+        flags = set().union(*options.values())
+        self.assertEqual(command_issues('`do_math.py status --goal-file question.txt`', options, flags),
+                         [('command option', 'status', '--goal-file')])
+        self.assertEqual(command_issues('`timeline --include-operations`', options, flags), [])
+        self.assertEqual(command_issues('```powershell\npython $dmCli run `\n --watch\n```', options, flags), [])
+        self.assertEqual(command_issues('`do_math.py run --watch` and `--goal-file` belongs to init.', options, flags), [])
+
+    def test_documented_scoped_fields_belong_to_their_actual_schema(self):
+        schemas = field_schemas()
+        issues = [(document.relative_to(SKILL).as_posix(), *issue)
+                  for document in documents(SKILL)
+                  for issue in scoped_field_issues(document.read_text(encoding='utf-8'), schemas)]
+        self.assertEqual(issues, [])
+
+    def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
+        schemas = field_schemas()
+        self.assertEqual(scoped_field_issues('`config.plan_settle_seconds` and `action.role`', schemas), [])
+        self.assertEqual(scoped_field_issues('`config.owner_activity_id`', schemas),
+                         [('scoped field', 'config.owner_activity_id')])
+        self.assertEqual(scoped_field_issues('`profile.input.max_input_bytes`', schemas), [])
+        self.assertEqual(scoped_field_issues('`action.input_basis.impact_review`', schemas), [])
+        self.assertEqual(scoped_field_issues('`action.input_basis.nonexistent_review`', schemas),
+                         [('scoped field', 'action.input_basis.nonexistent_review')])
+
+    def test_documented_policy_names_have_installed_owners(self):
+        names = declared_policy_names(SCRIPTS)
+        mentioned = set().union(*(documented_policies(document.read_text(encoding='utf-8'))
+                                  for document in documents(SKILL)))
+        self.assertTrue({'conversation_loss_policy', 'external_policy'} <= mentioned)
+        issues = [(document.relative_to(SKILL).as_posix(), *issue)
+                  for document in documents(SKILL)
+                  for issue in policy_issues(document.read_text(encoding='utf-8'), names)]
+        self.assertEqual(issues, [])
+
+    def test_an_undefined_policy_is_not_accepted_as_an_arbitrary_code_word(self):
+        names = declared_policy_names(SCRIPTS)
+        self.assertEqual(policy_issues('`conversation_loss_policy` and `external_policy`', names), [])
+        self.assertEqual(policy_issues('`undefined_recovery_policy`', names),
+                         [('policy name', 'undefined_recovery_policy')])
 
 
 if __name__ == '__main__':

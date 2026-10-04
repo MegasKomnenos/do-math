@@ -57,7 +57,7 @@ python .agents/skills/do-math/scripts/do_math.py profile
 
 `profile`은 설치된 Codex CLI의 명령 표면을 조사한다. 종료 코드 0과 `verified=true`는 그 조사 항목이 확인됐다는 뜻이다. 연구 역할의 품질, Lean 설치, 파일 격리나 원격 공급자 상태까지 보증하지 않는다.
 
-Claude를 사용할 때에는 `claude auth status`로 로그인 상태를 확인하고 `python .agents/skills/do-math/scripts/do_math.py profile --provider claude`로 필요한 명령 표면을 검사한다. CLI는 `PATH`에서 찾으며 `CLAUDE_CONFIG_DIR`로 지정한 로그인 설정 위치도 전달한다. API 키나 별도 API 공급자로 자동 전환하지 않는다. Claude의 `--bare` 모드는 구독 로그인을 사용하지 않으므로 이 실행 경로에서는 사용하지 않는다.
+Claude를 사용할 때에는 `claude auth status`로 로그인 상태를 확인하고 `python .agents/skills/do-math/scripts/do_math.py profile --provider claude`로 필요한 명령 표면을 검사한다. CLI는 `PATH`에서 찾으며 `CLAUDE_CONFIG_DIR`로 지정한 로그인 설정 위치도 전달한다. API 키나 별도 API 공급자로 자동 전환하지 않는다. 외부 Claude CLI의 `claude --bare` 모드는 구독 로그인을 사용하지 않으므로 이 실행 경로에서는 사용하지 않는다.
 
 형식 검사에는 Lean이 필요하다. `setup_lean.py`는 이 머신의 인스턴스들이 함께 쓰는 Lean 4.32.0 툴체인과, 같은 판본의 Mathlib 태그에 고정한 Lake 프로젝트를 저장소 루트의 `.skill-workspace/do-math-toolchains/`에 준비한다.
 

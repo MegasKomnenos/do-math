@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B56 검증완료·확정준비",
-      "active": "다음 기존 모듈내부 추가사례·문서명령/필드/정책·현재상태/생산자쌍·실경계 모집단 통합",
+      "last_closed": "B57 검증완료·확정준비",
+      "active": "다음 기존모듈내추가저장/제어/provider/역할입력과설치/실경계누락 통합",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -15624,6 +15624,90 @@
           "passed": 2
         },
         "total_seconds": 15.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      }
+    },
+    "document_contract_integration": {
+      "id": "B57",
+      "state": "verified_main_commit_pending",
+      "scope": "문서모집단의명령별옵션·scope field·정책소유검사와외부Claude명령/초기입력goal표기교정4파일",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-qqxzipzy\\report.json",
+        "sha256": "777723901681054171041be53b4ec9576af86ad94fac788a2ab87efc37a1c421",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 12
+        },
+        "total_seconds": 8.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 7.0,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-qqxzipzy\\report.json",
+        "sha256": "777723901681054171041be53b4ec9576af86ad94fac788a2ab87efc37a1c421",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 12
+        },
+        "total_seconds": 8.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 7.0,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "다른명령/가족의옵션/필드나미정의policy가광고된범위를통과시키지않음.현재CLI parser·schema·코드owner에서판단하고외부명령·입력행과저장설정소유범위구별. 제품동작변경없음.",
+      "limits": "첫6개4passed/2failed와후속12개8.1초통과·smell7초를구분.미등록namespace/비정규field표현의전체완비·원문전건/최종관문증거아님.다른CLI설명diff는이번두표기교정과별도.",
+      "files": [
+        {
+          "path": "README.md",
+          "sha256": "24fd33b64e1a4feddb33298bc087d8f70574f3e8a26584dbcd2fee7defdc481c"
+        },
+        {
+          "path": "references/CLI-실행-계약.md",
+          "sha256": "de34309100b6c0d043185d7f36924051ceafbbb2fac55266ab9b466f5a84eb2d"
+        },
+        {
+          "path": "scripts/tests/support/doc_code.py",
+          "sha256": "0de761edf739d3e93a5ed49713b4d93c9b4179359caec430b621eccd81d689af"
+        },
+        {
+          "path": "scripts/tests/structure/test_doc_code.py",
+          "sha256": "ed49a7d74443d0820eee17299fed03734f58b87224aca09d40f7f78f45a7d0fa"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "initial_document_failures": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-hsi023s4\\report.json",
+        "sha256": "8dab42a00b15296d40bf1c4307e910b6dda320f80f86709270fd57eb14e493c9",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 4,
+          "failed": 2
+        },
+        "total_seconds": 1.1,
         "changed_during_run": [],
         "budget": {
           "over_budget": [],
