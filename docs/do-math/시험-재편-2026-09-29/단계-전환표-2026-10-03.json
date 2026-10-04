@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B106에서 거버넌스 결정·반복 결과 진단을 확인하고 KD-1917의 동일 실패 중복 점검을 교정했다. B104 소스 목록의 남은 두 가족은 planning.schedule_reconsideration의 잔여 조건과 일반 lifecycle 사건/공개 직접 요청이다. 현재 source_hashes는 B106의 revisions.py 변경까지 반영한다."
+        "remaining": "B107의 KD-1918 교정으로 대기 담당에 따른 불필요한 계획/무대상 운영 점검을 제거하고 재고의 실제 상태 조합을 확인했다. B104 원천 목록에서 남은 가족은 일반 lifecycle 사건 배정과 공개 직접 요청이다. 평가 오류의 restart 재관찰을 포함해 의미 사건×대상 유무 전건 대응을 최종 확인해야 한다."
       },
       {
         "id": "12-A",
@@ -13089,9 +13089,9 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B105 633274d5; B106 KD-1917 교정·거버넌스/반복 진단 관련97개 통과",
-      "active": "재고의 잔여 조건과 일반 lifecycle 사건·공개 직접 요청의 실제 상태 조합 대응",
-      "exit": "남은 두 발동 가족을 닫고 11-B 전건 근거 검수로 이동",
+      "last_closed": "B106 98e9893c; B107 KD-1918 교정·재고 조건 관련111개 통과",
+      "active": "일반 lifecycle 사건 배정·공개 직접 요청의 의미 사건×대상 유무 대응 및 재시작 검수",
+      "exit": "마지막 발동 가족과 11-B 전체 증거 검수 후 다음 원래 요구로 이동",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "B104의 소스 지문·원천 목록을 재사용한다. 기존 단위/수신/flow를 먼저 대응하고 실제 빈 조합만 추가한다.",
       "running_test": null,
@@ -18587,7 +18587,7 @@
       "scope": "직접 큐 생산자·재개·일반 사건 원천의 현재 소스 목록과 비형식 가져오기/교체의 실제 계획 대조",
       "state": "소스 모집단 분류 및 가져오기/교체 관련 검증 완료; 전건 상태 조합 대응 진행",
       "memory_node": "M-0521",
-      "source_head": "633274d5f84841f75fe79b45e71ed58e3342aa27",
+      "source_head": "98e9893c53f7a72f889e92180b9d0feb40eff0a7",
       "source_hashes": {
         "academic_engine.py": "3ac98306ed425ec1d832767981f761c328ce9b4b6ffbd0c0a067d91141701981",
         "activities.py": "e3224b8c9ea9d09e93a8d9ae91975c88788f310c5507ede5345089d148f15328",
@@ -18602,7 +18602,7 @@
         "knowledge_engine.py": "81b63d1852d4d9546da52149a8b44e51789a4d83f8a3fbc3f8f44220128bd616",
         "knowledge_io.py": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
         "lifecycle_engine.py": "8cdc7ca0707dfdb9819d124c25b0bb10ea993445ef98337abae42f4ec95b9ec1",
-        "planning.py": "9aa124aedff252fdf338af34d81eec9fb2ab86f198d47ac1fe70d7a2d9dc2df8",
+        "planning.py": "14aa2705f7b49cdd7c47b9f06c9f0854c7cc084f4f7e4622484093d57deb0709",
         "planning_engine.py": "27971d062e6103588a8232d64f4006cee4021d16e7111163c4f2523c6ce68282",
         "provider_engine.py": "417c730909bccdc7ed5ac5bd81eded90fd1d1f6050a318cbd5f03a25bfe182d7",
         "repair_execution.py": "bacf9045775aa763ed9402bfb961da5623dd1433f6b8cc13e7e8a59ec483d712",
@@ -18880,9 +18880,9 @@
           {
             "file": "planning.py",
             "function": "schedule_reconsideration",
-            "line": 842,
+            "line": 845,
             "call": "runtime['queue'].append(queued)",
-            "classification": "judgment_producer_or_role_choice"
+            "classification": "preparation_or_planning_from_explicit_judgment_reasons"
           },
           {
             "file": "planning_engine.py",
@@ -19175,18 +19175,6 @@
       },
       "remaining_new_judgment_families": [
         {
-          "source": "planning.schedule_reconsideration",
-          "variants": [
-            "periodic/revisit/new input",
-            "returned work",
-            "missing regeneration condition",
-            "readiness evaluation error",
-            "external wait owner",
-            "live or already attempted judgment"
-          ],
-          "status": "B94/B95로 시간·선택 사건을 확인했으며 남은 조건 조합과 실제 대상의 유효성 검토 필요"
-        },
-        {
           "source": "lifecycle event router and explicit public request",
           "variants": [
             "concrete lifecycle kind × target present/absent",
@@ -19241,10 +19229,24 @@
           "status": "B106 현재 생산자·상태 조합·실제 수락 대응 확인",
           "evidence": "governance_and_repetition_diagnosis_verification",
           "removed_unreachable_variant": "exhaustion_empty planning diagnosis: current producers emit no diagnostic outcomes for this lineage; structural source guard fixes that population"
+        },
+        {
+          "source": "planning.schedule_reconsideration",
+          "variants": [
+            "periodic/revisit/new input",
+            "returned work",
+            "missing regeneration condition",
+            "readiness evaluation error",
+            "external wait owner",
+            "live or already attempted judgment"
+          ],
+          "status": "B94/B95와 B107의 도메인/실제 흐름으로 상태 조합 대응 확인",
+          "evidence": "reconsideration_wait_owner_correction",
+          "limits": "기한 없는 보존 영수증은 수신 도메인으로 구성한 저장 상태이며 새 빈 준비의 wire 산출이 기한 없이 수락된다는 증거가 아님. 평가 오류 사건의 새 owner 재배정은 남은 일반 lifecycle 가족에서 검수한다."
         }
       ],
       "initial_source_head": "2eb2c94f4bd67c80ddcaf4a8d37428d35b6ba337",
-      "source_tree": "base commit plus B106 revisions.py change; source_hashes identify the actual files"
+      "source_tree": "base commit plus B107 planning.py change; source_hashes identify the actual files"
     },
     "assessment_followup_and_impact_trigger_verification": {
       "id": "B105",
@@ -19393,6 +19395,82 @@
         "boundaries": "동일 대상 우선; 없으면 같은 계열의 미시작 요청 사용. live 관찰·실행 중·다른 계열은 변경하지 않음. 두 진단 결과×다섯 큐 상태와 다른 실패 선행 사례 검증."
       },
       "producer_guard": "structure.test_repetition_outcome_contract은 현재 diagnostic outcomes를 생산하는 lineage가 selection_failure뿐임을 AST로 확인한다. 그 조건에서 도달 불가능한 exhaustion_empty의 research_plan 진단 분기를 제거했다. 빈 준비의 재생성/재고 계획은 다른 생산자이며 유지한다.",
+      "whole_requirement_closed": false
+    },
+    "reconsideration_wait_owner_correction": {
+      "id": "B107",
+      "scope": "대기 next_owner와 호출 발동을 분리하고 조건 평가 오류의 대상 없는 운영 점검을 제거",
+      "state": "KD-1918 교정·재고 조건 관련 검증 완료",
+      "memory_node": "M-0524",
+      "defect_id": "KD-1918",
+      "reports": {
+        "waiting-owner-red": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-재고-대기조건/waiting-owner-red.json",
+          "sha256": "99d9c1a313a49444b3fff73bc6f158037abdce5d0161995faaff5b46dacacd06",
+          "counts": {
+            "failed": 1,
+            "error": 1
+          },
+          "total_seconds": 26.4,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "fixture-restart-counter-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-재고-대기조건/fixture-restart-counter-failure.json",
+          "sha256": "dffa8ff15ef4bbdf1eb250e483e3c902b1d1dcaef00953ebf650f3df33464efe",
+          "counts": {
+            "failed": 1,
+            "passed": 1
+          },
+          "total_seconds": 24.7,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "fixture-model-call-field-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-재고-대기조건/fixture-model-call-field-failure.json",
+          "sha256": "f20e2d3aa1e85e4365e1308fc0ad1732de339a14c137b066b28ff407d76a5c23",
+          "counts": {
+            "error": 1
+          },
+          "total_seconds": 18.6,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-재고-대기조건/report.json",
+          "sha256": "33beeed74bfa1a18fbbc7919fd126283414e4e9987eb0894de00da898c76793d",
+          "counts": {
+            "passed": 111
+          },
+          "total_seconds": 67.8,
+          "complete": true,
+          "successful": true,
+          "changed_during_run": []
+        }
+      },
+      "cases": [
+        {
+          "test": "flows.test_scheduling_research_recovery.ReconsiderationPlanningTests.test_missing_assessment_input_waits_for_arrival_instead_of_calling_its_next_owner",
+          "observed": "research_plan/operational_review/research_preparation/user 네 다음 담당 모두 자료 없음의 두 owner pass 호출0, 공개 자료 도착 뒤 실제 평가 계획1회 수락·완료"
+        },
+        {
+          "test": "flows.test_scheduling_research_recovery.ReconsiderationPlanningTests.test_artifact_evaluation_error_opens_a_plan_with_the_task_error_and_no_targetless_review",
+          "observed": "정상 저장한 깨진 JSON artifact를 조건으로 가진 승인 과제. task_condition_evaluation_error 사건으로 계획1회·오류 입력/수락, 무대상 운영 점검0, 같은 owner 추가2pass 비반복"
+        },
+        {
+          "test": "flows.test_scheduling_research_recovery.ReconsiderationPlanningTests.test_returned_work_without_a_queued_request_runs_one_assessment",
+          "observed": "요청 없는 반환 결과의 실제 계획1·평가 수락·후속 pass 평가/요청 비반복"
+        },
+        {
+          "test": "flows.test_scheduling_research_recovery.ReconsiderationPlanningTests.test_preserved_empty_receipt_without_regeneration_is_judged_once_per_basis",
+          "observed": "기한 없는 보존 empty 영수증의 계획1·수락, 같은 근거/재시작 추가0, 실제 새 source 뒤 새 exhaustion_event_ref로1회 수락. 새로운 준비 wire 산출의 기한 필수 검증을 우회한 정상 산출 수락으로 주장하지 않음"
+        }
+      ],
+      "correction": "schedule_reconsideration은 선택 사건, 반환 결과 또는 재생성 조건 누락에만 계획을 연다. 주기/재생성 준비는 유지하고, 대기 next_owner를 곧바로 역할로 쓰지 않는다. 평가 오류는 기존 lifecycle 계획 사건이 맡으며 exhaustion_state의 담당도 연구 계획으로 정정했다.",
+      "changed_expectation": "sim.test_planning_readiness_boundaries.ReadinessBoundaries.test_duplicate_record_population_is_not_reported_as_exhausted의 next_owner만 operational_review에서 research_plan으로 정정; 평가 오류/비고갈 단언 유지.",
       "whole_requirement_closed": false
     }
   }

@@ -557,5 +557,147 @@ class GoalAuditReplanningTests(unittest.TestCase):
             self.assertEqual(sum(c['action']['id'] == action['id'] for c in sim.model.calls), 0)
 
 
+class ReconsiderationPlanningTests(unittest.TestCase):
+    def test_returned_work_without_a_queued_request_runs_one_assessment(self):
+        from support.cross_contracts import assert_call_records
+        from support.engine_lifecycle import clear_work
+        from support.model import amend
+        from support.planning_contract_inputs import prepared_sim, returned, only_task
+        sim = prepared_sim()
+        returned(sim)
+        clear_work(sim)
+        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+        sim.model.on('research_plan').reply(amend(goal_audit=False))
+        before = assert_call_records(self, sim)
+        sim.step()
+        self.assertEqual(assert_call_records(self, sim)['research_plan'] - before['research_plan'], 1)
+        assessment = deepcopy(only_task(sim)['assessment'])
+        execution = sim.runtime['executions'][assessment['execution_id']]
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        self.assertEqual(only_task(sim)['status'], 'completed')
+        for _ in range(2):
+            sim.step()
+            assert_call_records(self, sim)
+            self.assertEqual(only_task(sim)['assessment'], assessment)
+            self.assertEqual(sum(c['action']['id'] == execution['action']['id'] for c in sim.model.calls), 1)
+
+    def test_preserved_empty_receipt_without_regeneration_is_judged_once_per_basis(self):
+        """The receipt domain can store a missing date; this is not acceptance of a new incomplete preparation wire output."""
+        from support.cross_contracts import assert_call_records
+        from support.engine_lifecycle import _ended_execution, clear_work
+        from support.model import amend
+        sim = Sim.activated()
+        clear_work(sim)
+        engine = sim.engine
+        _ended_execution(engine, 'EX-no-regeneration', 'research_preparation')
+        action = sim.runtime['executions']['EX-no-regeneration']['action']
+        engine._record_task_receipt(action, {'summary': 'A preserved empty receipt lacks its next observation time.'},
+                                   'EX-no-regeneration', accepted=True)
+        engine._save()
+        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+        sim.model.on('research_plan').reply(amend(goal_audit=False))
+        sim.step()
+        self.assertEqual(assert_call_records(self, sim)['research_plan'], 1)
+        execution, = [e for e in sim.runtime['executions'].values() if e['role'] == 'research_plan']
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        cause = execution['action']['exhaustion_event_ref']
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim)['research_plan'], 1)
+        sim.restart()
+        sim.step()
+        self.assertEqual(assert_call_records(self, sim)['research_plan'], 1)
+        source = sim.root / 'new-exhaustion-evidence.txt'
+        source.write_text('New evidence changes the exhausted research basis.', encoding='utf-8')
+        applied(sim, 'source', config={'path': str(source)})
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        sim.run_until(lambda current: sum(c['role'] == 'research_plan' for c in current.model.calls) == 2, max_steps=8)
+        self.assertEqual(assert_call_records(self, sim)['research_plan'], 2)
+        fresh, = [c for c in sim.model.calls if c['role'] == 'research_plan'
+                  and c['action'].get('exhaustion_event_ref') != cause]
+        self.assertNotEqual(fresh['action']['exhaustion_event_ref'], cause)
+        current, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == fresh['action']['id']]
+        self.assertEqual(current['outcome'], 'output_accepted', current.get('error'))
+
+    def test_missing_assessment_input_waits_for_arrival_instead_of_calling_its_next_owner(self):
+        from do_math import task_scope
+        from support.cross_contracts import assert_call_records
+        from support.engine_lifecycle import clear_work
+        from support.model import amend
+        from support.planning_contract_inputs import prepared_sim, returned, only_task
+        for owner in ('research_plan', 'operational_review', 'research_preparation', 'user'):
+            with self.subTest(next_owner=owner):
+                sim = prepared_sim()
+                assessment = returned(sim)
+                assessment.update(decision='incomplete', item_dispositions=[], unresolved=[{
+                    'obligation_id': row['id'], 'missing_inputs': ['reconsideration-proof.txt'], 'next_owner': owner}
+                    for row in only_task(sim)['completion_obligations']])
+                sim.engine.instance, sim.engine.runtime = task_scope.apply_task_assessments(
+                    sim.instance, sim.runtime, [assessment], execution_id='EX-planning-plan',
+                    input_tasks=deepcopy(sim.runtime['tasks']), clock=sim.clock)
+                clear_work(sim)
+                sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+                sim.model.on('research_plan').reply(amend(goal_audit=False))
+                before = assert_call_records(self, sim)
+                for _ in range(2):
+                    sim.step()
+                    self.assertEqual(assert_call_records(self, sim), before)
+                source = sim.root / 'reconsideration-proof.txt'
+                source.write_text('The previously missing evidence has arrived.', encoding='utf-8')
+                applied(sim, 'source', config={'path': str(source)})
+                sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+                sim.run_until(lambda current: any(c['role'] == 'research_plan' for c in current.model.calls), max_steps=8)
+                self.assertEqual(assert_call_records(self, sim)['research_plan'] - before['research_plan'], 1)
+                execution, = [e for e in sim.runtime['executions'].values()
+                              if e['role'] == 'research_plan' and e.get('outcome') == 'output_accepted'
+                              and e['id'] != 'EX-planning-plan']
+                self.assertEqual(only_task(sim)['assessment']['execution_id'], execution['id'])
+                self.assertEqual(only_task(sim)['status'], 'completed')
+
+    def test_artifact_evaluation_error_opens_a_plan_with_the_task_error_and_no_targetless_review(self):
+        import hashlib
+        from do_math import planning
+        from support.cross_contracts import assert_call_records
+        from support.engine_lifecycle import approve, clear_work
+        from support.model import Answer
+        from support.planning_contract_inputs import prepared_sim, only_task
+        sim = prepared_sim()
+        engine = sim.engine
+        path = 'runtime/artifacts/BA-readiness-error/evidence.json'
+        raw = b'{"proof":'
+        engine._save({path: raw})
+        reference = {'path': path, 'snapshot': engine.head, 'sha256': hashlib.sha256(raw).hexdigest()}
+        task = only_task(sim)
+        task['occurrence_condition'] = {'op': 'artifact_valid', 'artifact_ref': reference}
+        approve(engine, task)
+        clear_work(sim)
+        self.assertEqual(planning.task_ready(only_task(sim), sim.instance, sim.runtime,
+            evaluation_context=engine._evaluation_context())['state'], 'evaluation_error')
+        engine._refresh_readiness()
+        self.assertEqual([a['role'] for a in sim.runtime['queue']], ['research_plan'])
+        request = sim.runtime['queue'][0]
+        seen = []
+        def inspect_error(out, context):
+            seen.append(deepcopy(context['task_readiness'][task['id']]))
+            out['goal_audit'] = False
+            return out
+        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+        sim.model.on('research_plan').reply(Answer(inspect_error))
+        engine._save()
+        before = assert_call_records(self, sim)
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        sim.run_until(lambda current: any(c['action']['id'] == request['id'] for c in current.model.calls), max_steps=8)
+        after = assert_call_records(self, sim)
+        self.assertEqual(after['research_plan'] - before['research_plan'], 1)
+        self.assertEqual(after['operational_review'], before['operational_review'])
+        self.assertEqual(seen[0]['state'], 'evaluation_error')
+        self.assertTrue(seen[0]['errors'])
+        execution, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == request['id']]
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim), after)
+
+
 if __name__ == '__main__':
     unittest.main()

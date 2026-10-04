@@ -754,7 +754,7 @@ def exhaustion_state(instance, runtime, *, now, evaluation_context=None):
     if any(r['state']=='ready' for r in evaluations.values()):
         answer['reasons'].append('ready_contracts'); return answer
     if any(r['state']=='evaluation_error' for r in evaluations.values()):
-        answer.update(reasons=['readiness_evaluation_error'],next_owner='operational_review'); return answer
+        answer.update(reasons=['readiness_evaluation_error'],next_owner='research_plan'); return answer
     observed_waits=[w for result in evaluations.values() for w in result.get('waits',[]) if w.get('kind') in
                     {'external_event','user_decision','permission','condition'}]
     if observed_waits:
@@ -824,7 +824,10 @@ def schedule_reconsideration(instance, runtime, *, now, evaluation_context=None,
     if periodic or state['prepare']:
         role='research_preparation'
     else:
-        role='research_plan' if selection_events else state.get('next_owner') if state.get('next_owner') in {'research_plan','operational_review'} else None
+        # A waiting owner is not a ready judgment. Condition errors already
+        # have task_condition_evaluation_error events routed by the owner.
+        judgment = state['reasons'] in (['returned_work_requires_assessment'], ['regeneration_condition_missing'])
+        role='research_plan' if selection_events or judgment else None
     if not role: return state
     # A missing regeneration condition needs one decision on this exact basis.
     # Finishing that decision does not itself supply a new research premise.

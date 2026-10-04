@@ -89,7 +89,7 @@ class ReadinessBoundaries(unittest.TestCase):
         before = deepcopy((self.sim.instance, self.sim.runtime))
         result = self.exhaustion()
         self.assertEqual(result, {'exhausted': False, 'prepare': False,
-                                 'reasons': ['readiness_evaluation_error'], 'next_owner': 'operational_review'})
+                                 'reasons': ['readiness_evaluation_error'], 'next_owner': 'research_plan'})
         self.assertEqual((self.sim.instance, self.sim.runtime), before)
 
     def test_returned_results_require_assessment_before_exhaustion(self):
