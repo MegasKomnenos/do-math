@@ -51,7 +51,7 @@
       "legacy_id": "test_test_runner.RunnerTests.test_timeout_terminates_the_owned_tree_and_identifies_the_running_test",
       "disposition": "moved",
       "new_ids": [
-        "unit.test_runner_regressions.RunnerTests.test_timeout_terminates_the_owned_tree_and_identifies_the_running_test"
+        "unit.test_runner_regressions.RunnerTests.test_worker_wait_has_no_elapsed_deadline"
       ]
     },
     {
@@ -72,7 +72,7 @@
       "legacy_id": "test_test_runner.RunnerTests.test_next_test_gets_its_own_deadline_without_restarting_class_fixtures",
       "disposition": "moved",
       "new_ids": [
-        "unit.test_runner_regressions.RunnerTests.test_next_test_gets_its_own_deadline_without_restarting_class_fixtures"
+        "unit.test_runner_regressions.RunnerTests.test_worker_wait_preserves_owned_children_after_the_root_exits"
       ]
     },
     {

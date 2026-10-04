@@ -214,23 +214,16 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(report['rows'][0]['outcome'], 'failed')
         self.assertIn('failure', report['rows'][0]['details'][0])
 
-    def test_timeout_terminates_the_owned_tree_and_identifies_the_running_test(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / 'progress.json'
-            run_tests._write_json(path, {'sequence': 1, 'test_id': 'slow.compiler', 'phase': 'test'})
-            clock = SimpleNamespace(value=0)
-            def pause(seconds): clock.value += seconds
-            class Job:
-                ended = False
-                def wait(self, seconds): return self.ended
-                def terminate(self): self.ended = True
-                def inspect(self): return SimpleNamespace(root_signaled=self.ended,
-                    active_processes=0 if self.ended else 1, process_ids=() if self.ended else (123,))
-            job = Job()
-            result = run_tests.wait_for_worker(job, path, .2, clock=lambda: clock.value, pause=pause)
-            self.assertEqual(result['test_id'], 'slow.compiler')
-            self.assertTrue(result['termination_confirmed'])
-            self.assertTrue(job.ended)
+    def test_worker_wait_has_no_elapsed_deadline(self):
+        elapsed = SimpleNamespace(value=0)
+        def pause(seconds): elapsed.value += 100
+        class Job:
+            def wait(self, seconds): return elapsed.value >= 1000
+            def terminate(self): raise AssertionError('elapsed time cannot terminate a test')
+            def inspect(self): return SimpleNamespace(root_signaled=elapsed.value >= 1000,
+                active_processes=0 if elapsed.value >= 1000 else 1, process_ids=())
+        self.assertIsNone(run_tests.wait_for_worker(Job(), pause=pause))
+        self.assertEqual(elapsed.value, 1000)
 
     def test_skipped_subtest_is_not_reported_as_a_running_or_passed_parent(self):
         class Specimen(unittest.TestCase):
@@ -261,23 +254,16 @@ class RunnerTests(unittest.TestCase):
         self.assertTrue(report['successful'])
         self.assertEqual([row['outcome'] for row in tests], ['skipped', 'skipped'])
 
-    def test_next_test_gets_its_own_deadline_without_restarting_class_fixtures(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / 'progress.json'
-            run_tests._write_json(path, {'sequence': 1, 'test_id': 'first', 'phase': 'test'})
-            clock = SimpleNamespace(value=0)
-            def pause(seconds): clock.value += seconds
-            class Job:
-                updated = False
-                def wait(self, seconds):
-                    if clock.value >= .4 and not self.updated:
-                        run_tests._write_json(path, {'sequence': 2, 'test_id': 'second', 'phase': 'test'})
-                        self.updated = True
-                    return clock.value >= .8
-                def terminate(self): raise AssertionError('a progressing test group must not time out')
-                def inspect(self): return SimpleNamespace(root_signaled=True, active_processes=0, process_ids=())
-            self.assertIsNone(run_tests.wait_for_worker(Job(), path, .6,
-                clock=lambda: clock.value, pause=pause))
+    def test_worker_wait_preserves_owned_children_after_the_root_exits(self):
+        observed = SimpleNamespace(checks=0)
+        def pause(seconds): observed.checks += 1
+        class Job:
+            def wait(self, seconds): return True
+            def terminate(self): raise AssertionError('live children must not be killed by elapsed time')
+            def inspect(self): return SimpleNamespace(root_signaled=True,
+                active_processes=1 if observed.checks < 3 else 0, process_ids=())
+        self.assertIsNone(run_tests.wait_for_worker(Job(), pause=pause))
+        self.assertEqual(observed.checks, 3)
 
 
 

@@ -21,7 +21,7 @@ class LazyBaselineTests(unittest.TestCase):
                                   'functions': {'check_url': [1], 'check_body': [0, 2]}}}}
         calls = []
 
-        def child(spec, directory, timeout):
+        def child(spec, directory):
             tests = spec['tests']
             calls.append((spec['mutant'] is not None, tests))
             if spec['mutant'] is None:
@@ -29,7 +29,7 @@ class LazyBaselineTests(unittest.TestCase):
             return ({'t1'} if 't1' in tests else {'t0'} if 't0' in tests else set()), 0.1
         self.enterContext(mock.patch.object(mutation, '_child_run', child))
         directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        report = mutation.run('HEAD', index, {module: '1'}, root, directory, only=[module], every=True, timeout=60.0,
+        report = mutation.run('HEAD', index, {module: '1'}, root, directory, only=[module], every=True,
                               listing_path=directory / 'pseudo_tested.json')
         self.assertEqual({o['function']: o['status'] for o in report['outcomes']},
                          {'check_url': 'killed', 'check_body': 'survived'})

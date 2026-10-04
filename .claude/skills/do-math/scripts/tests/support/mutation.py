@@ -42,11 +42,9 @@ module's tests kept together) and stops at the first failure (``failfast``).
 There is no baseline run of every chosen test (결함 D9): a test that failed a
 mutant is run once unmutated, alone, and remembered. A mutant is ``killed`` when
 a test fails, errors or unexpectedly passes that passes unmutated, or when a
-test module fails to load, or when the child exceeds its limit (``timeout``). A
-failing test that also fails unmutated is set aside and the mutant runs again
-without it. Otherwise the mutant ``survived``. Each mutant's time limit is three
-times the recorded seconds of the modules it runs (at least 30 s, at most
-``--timeout``, ``mutant_timeout``).
+test module fails to load. A failing test that also fails unmutated is set aside
+and the mutant runs again without it. Otherwise the mutant survived. Elapsed
+time is reported, never used to terminate a child or certify a killed mutant.
 
 List: ``tests/pseudo_tested.json`` holds ``{"entries": [{module, function, rule,
 base, reason}]}``. A survivor without an entry gains one with an empty reason;
@@ -196,7 +194,7 @@ def read_list(path=PSEUDO_TESTED):
 def update_list(listing, outcomes, base):
     """Add survivors without an entry (empty reason), drop entries of killed functions; returns whether it changed."""
     before = json.dumps(listing, sort_keys=True)
-    killed = {(o['module'], o['function']) for o in outcomes if o['status'] in ('killed', 'timeout')}
+    killed = {(o['module'], o['function']) for o in outcomes if o['status'] == 'killed'}
     entries = [e for e in listing['entries'] if (e['module'], e['function']) not in killed]
     known = {(e['module'], e['function']) for e in entries}
     for o in outcomes:
@@ -215,16 +213,6 @@ def _git(root, *arguments):
     return subprocess.run(['git', *arguments], cwd=root, capture_output=True, check=False)
 
 
-def mutant_timeout(expected_seconds, ceiling):
-    """A mutant's time limit: three times the expected unmutated run, at least 30 s, at most ``ceiling``.
-
-    A mutant that hangs requires a successful normal run of the same selection,
-    so the limit only has to
-    let a mutant that survives but runs slower (a result it throws away is
-    recomputed) finish. The expectation is the recorded seconds of every module
-    the mutant's tests belong to, which bounds the run of a part of them.
-    """
-    return min(ceiling, max(30.0, 3 * expected_seconds))
 
 
 def recorded_seconds():
@@ -235,12 +223,13 @@ def recorded_seconds():
         return {}
 
 
+
+
 def expected_seconds(chosen, seconds):
     """Recorded seconds of the modules of ``chosen`` tests and of every module of its folders."""
     modules = {test.rsplit('.', 2)[0] for test in chosen['tests']}
     modules |= {module for module in seconds if module.split('.')[0] in chosen['folders']}
     return sum(seconds.get(module, UNKNOWN_TEST_SECONDS) for module in modules)
-
 
 def cheapest_first(tests, seconds):
     """``tests`` ordered by their module's recorded seconds per chosen test, cheapest first, modules kept together."""
@@ -256,8 +245,8 @@ def _is_test_id(name):
     return bool(name) and not any(character.isspace() for character in name)
 
 
-def _child_run(spec, directory, timeout):
-    """Return failing ids/text, CHILD_NO_RESULT on missing evidence, or None on timeout; and seconds."""
+def _child_run(spec, directory):
+    """Return failing ids/text or CHILD_NO_RESULT on missing evidence, and elapsed seconds."""
     directory.mkdir(parents=True, exist_ok=True)
     (directory / 'spec.json').write_text(json.dumps(spec), encoding='utf-8')
     started = time.monotonic()
@@ -266,17 +255,17 @@ def _child_run(spec, directory, timeout):
                                     str(directory / 'spec.json')], cwd=SCRIPTS, stdout=output,
                                    stderr=subprocess.STDOUT, env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'})
         try:
-            process.wait(timeout=timeout)
-        except subprocess.TimeoutExpired:
-            process.kill()
             process.wait()
-            return None, time.monotonic() - started
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
     result = json.loads((directory / 'result.json').read_text(encoding='utf-8')) \
         if (directory / 'result.json').exists() else {'failing': [CHILD_NO_RESULT]}
     return set(result['failing']), time.monotonic() - started
 
 
-def run(base, index, layers, root, directory, *, only=(), every=False, timeout=300.0, listing_path=PSEUDO_TESTED):
+def run(base, index, layers, root, directory, *, only=(), every=False, listing_path=PSEUDO_TESTED):
     """Mutate the functions changed since ``base`` and report; see the module docstring.
 
     ``every`` targets every function of the chosen modules, as if ``base`` lacked
@@ -327,40 +316,22 @@ def run(base, index, layers, root, directory, *, only=(), every=False, timeout=3
     def fails_unmutated(test):
         if test not in unmutated:
             failing, _ = _child_run({'tests': [test], 'folders': [], 'exclude': [], 'target': None, 'mutant': None},
-                                    Path(directory) / f'unmutated-{len(unmutated):04}', timeout)
-            unmutated[test] = failing is None or test in failing
+                                    Path(directory) / f'unmutated-{len(unmutated):04}')
+            unmutated[test] = test in failing
         return unmutated[test]
 
     for number, (outcome, mutant, chosen) in enumerate(plans):
+        outcome['estimated_seconds'] = expected_seconds(chosen, seconds)
         work = Path(directory) / f'mutant-{number:04}'
         work.mkdir(parents=True, exist_ok=True)
         (work / 'mutant.py').write_text(mutant, encoding='utf-8')
-        limit, excluded, took = mutant_timeout(expected_seconds(chosen, seconds), timeout), set(), 0.0
+        excluded, took = set(), 0.0
         while True:
             failing, spent = _child_run({'tests': [t for t in chosen['tests'] if t not in excluded],
                                          'folders': chosen['folders'], 'exclude': sorted(excluded),
                                          'target': str(SCRIPTS / outcome['module']), 'mutant': str(work / 'mutant.py')},
-                                        work, limit)
+                                        work)
             took += spent
-            if failing is None:
-                normal, normal_spent = _child_run({
-                    'tests': [t for t in chosen['tests'] if t not in excluded],
-                    'folders': chosen['folders'], 'exclude': sorted(excluded),
-                    'target': None, 'mutant': None}, work / 'timeout-baseline', limit)
-                took += normal_spent
-                outcome['timeout_baseline'] = {
-                    'seconds': round(normal_spent, 2),
-                    'failing': sorted(normal) if normal is not None else None}
-                if normal is None or normal:
-                    outcome.update(status='execution_error',
-                        detail='normal selection did not finish successfully within the mutant timeout')
-                    if normal:
-                        for test in normal:
-                            if _is_test_id(test):
-                                unmutated[test] = True
-                else:
-                    outcome['status'] = 'timeout'
-                break
             if CHILD_NO_RESULT in failing:
                 outcome.update(status='execution_error', detail=CHILD_NO_RESULT)
                 break
@@ -480,9 +451,6 @@ def main(argv=None):
     parser.add_argument('--only', action='append', default=[], help='scripts-relative module glob; repeat')
     parser.add_argument('--every', action='store_true',
                         help='mutate every function of the chosen modules, not only those changed since --base')
-    parser.add_argument('--timeout', type=float, default=300.0,
-                        help='ceiling in seconds of the unmutated run and of each mutant run (default: 300); '
-                             'a mutant gets three times the unmutated run, at least 30 s')
     parser.add_argument('--output', type=Path, help='work directory; default: a new temporary directory')
     parser.add_argument('--child', type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
@@ -499,7 +467,7 @@ def main(argv=None):
     if index is None:
         print(f'Selection index unusable ({reason}); every mutant runs its layer folders.', flush=True)
     directory = args.output or Path(tempfile.mkdtemp(prefix='do-math-mutation-'))
-    report = run(args.base, index, LAYERS, root, directory, only=args.only, every=args.every, timeout=args.timeout)
+    report = run(args.base, index, LAYERS, root, directory, only=args.only, every=args.every)
     (Path(directory) / 'mutation.json').write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding='utf-8')
     print(summary(report))
     for name in report['survived']:

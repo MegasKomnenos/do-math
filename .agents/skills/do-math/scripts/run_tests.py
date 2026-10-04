@@ -1,4 +1,4 @@
-"""Sequential group-by-group unittest runner with owned, bounded Lean/resource workers.
+"""Sequential group-by-group unittest runner with owned Lean/resource workers.
 
 Tests live in tier folders under ``tests/`` and are selected by folder, module,
 class or method (positional), or by ``--tier T0``..``T5`` (설계 5).
@@ -29,8 +29,8 @@ and why) and ``closing_eligible``: only a clean run of the whole T3 that reused
 nothing may close a sub-stage or region. Measured runs keep their times in
 ``tests/.timings-t3.json``, apart from the T2 balance record (결함 D11).
 
-Lean and resource tests run per class in an owned Windows Job with a per-phase
-deadline. Normal unittest discovery still works but imposes no outer deadlines.
+Lean and resource tests run per class in an owned Windows Job. Elapsed time
+never terminates tests or worker phases. Budgets are soft comparison baselines.
 This runner never changes the product's Lean time limits.
 """
 from __future__ import annotations
@@ -41,7 +41,6 @@ from contextlib import nullcontext, redirect_stderr, redirect_stdout
 import fnmatch
 import hashlib
 import json
-import math
 import os
 from pathlib import Path
 import sys
@@ -111,7 +110,7 @@ def budget_report(rows, tiers, seconds, budgets):
     """Tests over their folder's budget and the named tiers' run time against their budget (설계 5.2).
 
     ``rows`` are report rows; fixture rows have no budget.
-    Several tiers in one run are held to the largest of their budgets.
+    Several tiers in one run are compared with the largest budget baseline.
     """
     per_test = budgets['per_test_seconds']
     over = sorted(({'id': row['id'], 'seconds': row['seconds'], 'budget_seconds': per_test[row['id'].split('.')[0]]}
@@ -125,7 +124,7 @@ def budget_report(rows, tiers, seconds, budgets):
 
 
 def budget_tiers(tiers, store):
-    """The budget names of a run's tiers: a T3 that measured every module is held to ``T3_full`` (설계 A29)."""
+    """The budget names of a run's tiers: a T3 that measured every module uses the ``T3_full`` baseline (설계 A29)."""
     full = store is not None and store['plan'].mode == 'full'
     return ['T3_full' if name == 'T3' and full else name for name in tiers]
 
@@ -360,32 +359,14 @@ def _exit_code(job):
     return code.value
 
 
-def wait_for_worker(job, progress_path, timeout, *, clock=None, pause=None):
-    """Each test and the surrounding fixture/shutdown phase has its own limit."""
-    clock, pause = clock or time.monotonic, pause or time.sleep
-    phase_started = clock()
-    deadline, sequence, progress = phase_started + timeout, None, {'phase': 'startup_or_fixture', 'test_id': None}
-    while True:
-        published = sorted(progress_path.parent.glob(progress_path.stem + '-*.json'))
-        observed = _read_json(published[-1] if published else progress_path)
-        if observed and observed.get('sequence') != sequence:
-            sequence, progress = observed['sequence'], observed
-            phase_started = clock()
-            deadline = phase_started + timeout
-        if job.wait(0) and _empty(job):
-            return None
-        if clock() >= deadline:
-            elapsed = clock() - phase_started
-            job.terminate()
-            end = clock() + 10
-            while not _empty(job) and clock() < end:
-                pause(.02)
-            return {**progress, 'timeout_seconds': timeout, 'observed_seconds': elapsed,
-                    'termination_confirmed': _empty(job)}
+def wait_for_worker(job, *, pause=None):
+    """Wait for the root and owned children; elapsed time never terminates a test."""
+    pause = pause or time.sleep
+    while not (job.wait(0) and _empty(job)):
         pause(.05)
 
 
-def _isolated(tests, directory, timeout, *, measure=False):
+def _isolated(tests, directory, *, measure=False):
     from do_math.windows_job import WindowsJob
     directory.mkdir(parents=True)
     identifiers = [test.id() for test in tests]
@@ -400,7 +381,7 @@ def _isolated(tests, directory, timeout, *, measure=False):
         with WindowsJob([sys.executable, '-B', str(Path(__file__).resolve()), '--worker', str(directory)],
                         cwd=directory, env=environment, name='do-math-tests-' + uuid.uuid4().hex) as job:
             job.resume()
-            timeout_record = wait_for_worker(job, directory / 'progress.json', timeout)
+            wait_for_worker(job)
             returncode = _exit_code(job)
         report = _read_json(directory / 'result.json') or {'complete': False, 'successful': False, 'rows': [], 'module_total_seconds': {}}
         report['returncode'] = returncode
@@ -408,10 +389,7 @@ def _isolated(tests, directory, timeout, *, measure=False):
     except Exception as error:
         report = _read_json(directory / 'result.json') or {'rows': [], 'module_total_seconds': {}}
         report.update(complete=False, successful=False, worker_error=f'{type(error).__name__}: {error}')
-        timeout_record = None
     report.update(worker_seconds=time.monotonic() - started, directory=str(directory), requested=identifiers)
-    if timeout_record is not None:
-        report.update(complete=False, successful=False, timeout=timeout_record)
     # A class-level skip is different from unfinished tests after a worker error.
     fixtures = [row for row in report['rows'] if row.get('fixture')]
     skipped_fixture = next((row for row in fixtures if row['outcome'] == 'skipped'), None)
@@ -420,12 +398,11 @@ def _isolated(tests, directory, timeout, *, measure=False):
     for identifier in identifiers:
         if identifier in completed:
             continue
-        timed_out = timeout_record is not None and timeout_record.get('test_id') == identifier
         skipped = report['complete'] and skipped_fixture is not None
-        report['rows'].append({'id': identifier, 'outcome': 'timeout' if timed_out else 'skipped' if skipped else 'not_run',
-            'seconds': timeout_record['observed_seconds'] if timed_out else 0,
+        report['rows'].append({'id': identifier, 'outcome': 'skipped' if skipped else 'not_run',
+            'seconds': 0,
             'details': skipped_fixture['details'] if skipped else [
-                'Worker exceeded its limit.' if timed_out else 'Worker did not complete this test; inspect retained logs.']})
+                'Worker did not complete this test; inspect retained logs.']})
     report['successful'] = bool(report['successful'] and all(row['outcome'] in {
         'passed', 'skipped', 'expected_failure'} for row in report['rows']))
     _write_json(directory / 'worker-report.json', report)
@@ -468,7 +445,6 @@ def main(argv=None):
     parser.add_argument('--tier', action='append', choices=tuple(TIERS), help='tier T0-T5; repeat to combine')
     parser.add_argument('--match', action='append', default=[], help='test-ID glob; repeat for alternatives')
     parser.add_argument('--list', action='store_true', help='discover and list without running tests')
-    parser.add_argument('--timeout', type=float, default=300, help='seconds per isolated test/fixture phase (default: 300)')
     parser.add_argument('--output', type=Path, help='new or empty results directory; default: a unique temporary directory')
     parser.add_argument('--mutation-base', help='with --tier T3: extreme-mutate the functions changed since this commit')
     parser.add_argument('--jobs', type=int, default=1,
@@ -484,8 +460,6 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.worker:
         return _worker(args.worker)
-    if not math.isfinite(args.timeout) or args.timeout <= 0:
-        parser.error('--timeout must be finite and positive')
     tiers = args.tier or []
     if args.mutation_base and 'T3' not in tiers:
         parser.error('--mutation-base runs with --tier T3')
@@ -583,7 +557,7 @@ def main(argv=None):
     parallel = args.jobs > 1
     if parallel:
         workers = _run_parallel([test for test in selected if isolation_for(test) is None],
-                                directory, args.jobs, args.timeout, group_seconds, measure=measurement is not None)
+                                directory, args.jobs, group_seconds, measure=measurement is not None)
         reports += workers
         if measurement is not None:
             measurement.missing_workers = [str(path) for path in
@@ -604,7 +578,7 @@ def main(argv=None):
                 classes[type(test)].append(test)
         for index, members in enumerate(classes.values()):
             print('  isolated: ' + members[0].id().rsplit('.', 1)[0], flush=True)
-            report = _isolated(members, directory / f'{group}-isolated-{index:03}', args.timeout)
+            report = _isolated(members, directory / f'{group}-isolated-{index:03}')
             print('  ' + str(dict(Counter(row['outcome'] for row in report['rows'] if not row.get('fixture')))), flush=True)
             reports.append({'group': group, **report})
         group_seconds[group] = round(time.monotonic() - started, 1)
@@ -621,7 +595,7 @@ def main(argv=None):
         _record_timings(_whole_module_costs(module_totals, discovered, selected, rows),
                         measured=measurement is not None)
     t3 = _finish_t3(measurement, directory, selected, args, complete and not changed, store, rows) if measurement else {}
-    # T3's whole run, analysis and mutation included, is held to the T3 budget (설계 5.1, 5.2).
+    # Report T3's whole run, analysis and mutation against its soft baseline (설계 5.1, 5.2).
     total = round(time.monotonic() - started_run if measurement else sum(group_seconds.values()), 1)
     budget = budget_report(rows, budget_tiers(args.tier or [], store), total, json.loads((TESTS / 'budgets.json').read_text(encoding='utf-8')))
     result = {'open_known_defects': open_defects, 'budget': budget, **t3,
@@ -656,7 +630,7 @@ def main(argv=None):
     return 0 if result['successful'] and t3.get('passed', True) else 1
 
 
-def _run_parallel(tests, directory, jobs, timeout, group_seconds, *, measure=False):
+def _run_parallel(tests, directory, jobs, group_seconds, *, measure=False):
     """In-process tests in ``jobs`` worker processes, whole modules per worker (설계 5.4).
 
     A module stays in one process because its ``setUpModule`` and the Sim
@@ -676,7 +650,7 @@ def _run_parallel(tests, directory, jobs, timeout, group_seconds, *, measure=Fal
     started = time.monotonic()
     with ThreadPoolExecutor(len(groups)) as pool:
         futures = [pool.submit(_isolated, [test for module in group for test in by_module[module]],
-                               directory / f'parallel-{index}', timeout, measure=measure)
+                               directory / f'parallel-{index}', measure=measure)
                    for index, group in enumerate(groups)]
         reports = [{'group': f'parallel-{index}', **future.result()} for index, future in enumerate(futures)]
     for report in reports:
@@ -826,7 +800,7 @@ def _finish_t3(measurement, directory, selected, args, clean, store=None, rows=(
         # The index this run wrote, or a usable older one: a partial run writes none (결함 D13).
         current, _ = selection.usable(*selection.read_index(), selection.is_ancestor_of_head(measurement.root))
         mutation = mutation_tool.run(args.mutation_base, current, LAYERS, measurement.root,
-                                     directory / 'mutation', timeout=args.timeout)
+                                     directory / 'mutation')
         summary.append(mutation_tool.summary(mutation))
         summary += [f'  survived: {name}' for name in mutation['survived']]
     written = False

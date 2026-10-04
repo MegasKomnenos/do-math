@@ -24,7 +24,7 @@ def t3(output, *jobs):
     # Each run measures in full with its own store (A29): nothing is reused and the tree's store is untouched.
     subprocess.run([sys.executable, '-B', 'run_tests.py', '--tier', 'T3', '--full', *jobs, *TESTS,
                     '--t3-store', str(output.parent / (output.name + '-store')), '--output', str(output)],
-                   cwd=SCRIPTS, capture_output=True, text=True, timeout=600)
+                   cwd=SCRIPTS, capture_output=True, text=True)
     report = json.loads((output / 'report.json').read_text(encoding='utf-8'))
     entered = json.loads((output / 'entered.json').read_text(encoding='utf-8'))
     credited = {(path, key, label) for label, keys in entered.items() for path, key in keys

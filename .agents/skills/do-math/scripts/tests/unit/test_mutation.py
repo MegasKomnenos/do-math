@@ -11,7 +11,7 @@ import unittest
 from unittest import mock
 
 from support import mutation
-from support.mutation import (changed_functions, functions, mutant_timeout, mutate, rule_of, tests_for, unreasoned,
+from support.mutation import (changed_functions, functions, mutate, rule_of, tests_for, unreasoned,
                                update_list)
 
 SOURCE = '''class Store:
@@ -147,12 +147,6 @@ class ListTests(unittest.TestCase):
 
 
 
-class MutantTimeoutTests(unittest.TestCase):
-    def test_a_mutant_gets_three_times_the_unmutated_run_within_a_floor_and_the_ceiling(self):
-        self.assertEqual(mutant_timeout(40.0, 300.0), 120.0)
-        self.assertEqual(mutant_timeout(2.0, 300.0), 30.0)
-        self.assertEqual(mutant_timeout(200.0, 300.0), 300.0)
-        self.assertEqual(mutant_timeout(2.0, 10.0), 10.0)
 
 
 PROBE = '''import unittest
@@ -243,23 +237,16 @@ class MutationEvidenceTests(unittest.TestCase):
         return mutation.run('HEAD', None, {'do_math/sample.py': '1'}, root, root / 'mutants',
                             listing_path=root / 'pseudo.json')
 
-    def test_a_normal_selection_that_also_times_out_cannot_certify_a_mutation_timeout(self):
-        report = self._run_with_child(lambda *args: (None, 0.1))
+    def test_missing_result_cannot_certify_a_killed_mutant(self):
+        report = self._run_with_child(lambda *args: ({mutation.CHILD_NO_RESULT}, 0.1))
         self.assertEqual(report['counts'], {'execution_error': 1})
         self.assertFalse(mutation.passed(report))
 
-    def test_a_mutation_timeout_requires_the_same_normal_selection_to_finish(self):
-        normal = []
-        def child(spec, directory, timeout):
-            if spec['target'] is None:
-                normal.append(spec)
-                return set(), 0.1
-            return None, 0.1
+    def test_elapsed_time_alone_does_not_kill_a_mutant(self):
+        def child(spec, directory):
+            return set(), 10000.0
         report = self._run_with_child(child)
-        self.assertEqual(report['counts'], {'timeout': 1})
-        self.assertEqual(len(normal), 1)
-        from support.selection import LAYER_FOLDERS
-        self.assertEqual(normal[0]['folders'], list(LAYER_FOLDERS['1']))
+        self.assertEqual(report['counts'], {'survived': 1})
 
     def test_missing_child_result_cannot_be_a_killed_mutant(self):
         from subprocess import CompletedProcess

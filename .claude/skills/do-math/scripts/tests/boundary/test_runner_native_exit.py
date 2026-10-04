@@ -30,7 +30,7 @@ class NativeExitTests(unittest.TestCase):
         destination = root / 'worker'
         python_path = os.pathsep.join(filter(None, [str(root), os.environ.get('PYTHONPATH')]))
         with patch.dict(os.environ, {'PYTHONPATH': python_path}):
-            report = run_tests._isolated([SimpleNamespace(id=lambda: identifier)], destination, 30)
+            report = run_tests._isolated([SimpleNamespace(id=lambda: identifier)], destination)
         original = json.loads((destination / 'result.json').read_text(encoding='utf-8'))
         self.assertTrue(original['complete'])
         self.assertTrue(original['successful'])

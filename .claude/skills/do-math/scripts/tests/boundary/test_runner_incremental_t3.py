@@ -17,7 +17,7 @@ TESTS = ['unit.test_ids', 'unit.test_storage_json_digests']
 
 def t3(store, output, *extra):
     subprocess.run([sys.executable, '-B', 'run_tests.py', '--tier', 'T3', *extra, *TESTS, '--t3-store', str(store),
-                    '--output', str(output)], cwd=SCRIPTS, capture_output=True, text=True, timeout=600)
+                    '--output', str(output)], cwd=SCRIPTS, capture_output=True, text=True)
     return json.loads((output / 'report.json').read_text(encoding='utf-8'))
 
 

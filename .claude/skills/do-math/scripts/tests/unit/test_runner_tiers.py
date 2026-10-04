@@ -433,7 +433,7 @@ class MutationIndexTests(unittest.TestCase):
         self.enterContext(mock.patch.object(selection, 'read_index', lambda: (None, 'missing')))
         self.enterContext(mock.patch.object(selection, 'is_ancestor_of_head', lambda root: lambda commit: True))
         directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        args = mock.Mock(tests=['unit.test_ids'], match=[], mutation_base='HEAD', timeout=5.0)
+        args = mock.Mock(tests=['unit.test_ids'], match=[], mutation_base='HEAD')
         for status in ('execution_error', 'mutation_error', 'not_executed'):
             with self.subTest(status=status):
                 report = {'base': 'HEAD', 'every': True, 'functions': 1, 'counts': {status: 1},
@@ -459,7 +459,7 @@ class MutationIndexTests(unittest.TestCase):
         self.enterContext(mock.patch.object(selection, 'is_ancestor_of_head', lambda root: lambda commit: True))
         self.enterContext(mock.patch.object(mutation, 'run', run))
         directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        args = mock.Mock(tests=['unit.test_ids'], match=[], mutation_base='HEAD', timeout=5.0)
+        args = mock.Mock(tests=['unit.test_ids'], match=[], mutation_base='HEAD')
         result = run_tests._finish_t3(_FinishedMeasurement(Path(__file__).resolve().parents[6]), directory, [], args, False)
         self.assertIsNone(result['selection_index'])
         self.assertIs(seen['index'], index)
