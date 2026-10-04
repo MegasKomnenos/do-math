@@ -6,6 +6,8 @@ determine command/option associations. Bare flag mentions retain the existing
 tool-vocabulary check; they are not evidence for a command-specific binding.
 """
 import ast
+import inspect
+import textwrap
 from pathlib import Path
 import re
 import shlex
@@ -81,13 +83,76 @@ def command_issues(text, options, flags):
     return sorted(issues)
 
 
+def produced_object_schema(function, target=None):
+    """Read one literal object at its actual producer, without executing the producer.
+
+    A changed builder must be reviewed; unknown spreads/keys are not a field vocabulary.
+    Non-object values expose their own field name, but no invented nested fields.
+    """
+    tree = ast.parse(textwrap.dedent(inspect.getsource(inspect.unwrap(function))))
+    pending, nodes = list(tree.body[0].body), []
+    while pending:
+        node = pending.pop()
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
+            continue
+        nodes.append(node)
+        pending.extend(ast.iter_child_nodes(node))
+    if target is None:
+        values = [node.value for node in nodes if isinstance(node, ast.Return)]
+    else:
+        expected = ast.unparse(ast.parse(target, mode='eval').body)
+        values = [node.value for node in nodes if isinstance(node, ast.Assign)
+                  and any(ast.unparse(item) == expected for item in node.targets)]
+    if len(values) != 1 or not isinstance(values[0], ast.Dict):
+        raise ValueError(f'Review document field producer {function.__qualname__}: {target or "return"}')
+    def shape(node):
+        if not isinstance(node, ast.Dict):
+            return {}
+        if any(not isinstance(key, ast.Constant) or not isinstance(key.value, str) for key in node.keys):
+            raise ValueError(f'Unresolved object keys in document field producer {function.__qualname__}')
+        return {'type': 'object', 'properties': {key.value: shape(value)
+                for key, value in zip(node.keys, node.values)}, 'additionalProperties': False}
+    return shape(values[0])
+
+
 def field_schemas():
-    """Explicit documented namespaces resolve to the installed contract owners."""
+    """Bind stored records separately from the role-input objects built from them."""
+    from do_math import context_store, submission
+    from do_math.contracts import PLAN_DISPOSITION
+    from do_math.core_engine import CoreEngineMixin
     from do_math.record_schemas import config_schema
     from do_math.record_schemas.schemas import RECORDS, RESEARCH_FIELDS
-    return {'config': config_schema(), 'action': RECORDS['queue'], 'task': RECORDS['tasks'],
-            'execution': RECORDS['executions'], 'profile': RECORDS['execution_profiles'],
-            'lifecycle': RESEARCH_FIELDS['lifecycle']}
+    from do_math.state_contract import default_state_contract
+    roots = {name: {'type': 'object', 'properties': {}} for name in ('research', 'runtime')}
+    for family in default_state_contract().families():
+        value = family.schema
+        if family.shape == 'map':
+            value = {'type': 'object', 'additionalProperties': value}
+        elif family.shape == 'list':
+            value = {'type': 'array', 'items': value}
+        roots[family.root]['properties'][family.name] = value
+    schemas = {'config': config_schema(), 'action': RECORDS['queue'], 'task': RECORDS['tasks'],
+               'execution': RECORDS['executions'], 'profile': RECORDS['execution_profiles'],
+               'lifecycle': RESEARCH_FIELDS['lifecycle'],
+               'runtime': roots['runtime'], 'instance': roots['research'],
+               'formal_result': RECORDS['formal_results'], 'execution_to_review': RECORDS['executions']}
+    for name, parent, key in (
+            ('ai', 'profile', 'ai'), ('assessment', 'task', 'assessment'),
+            ('scope', 'task', 'scope'), ('expected', 'task', 'expected'),
+            ('immutable_input', 'lifecycle', 'immutable_input'),
+            ('maintenance_fence', 'runtime', 'maintenance_fence'),
+            ('session_limits', 'config', 'session_limits')):
+        schemas[name] = schemas[parent]['properties'][key]
+    schemas['revisit'] = PLAN_DISPOSITION['properties']['revisit']
+    for name in ('execution_window', 'scholarly', 'formal_verifier'):
+        schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
+    schemas['preview'] = produced_object_schema(submission.install_tools, 'context["formal_verifier"]["preview"]')
+    schemas['formal_verifier']['properties']['preview'] = schemas['preview']
+    schemas['record_map'] = produced_object_schema(context_store.record_map)
+    schemas['record_map']['properties']['read_tool'] = produced_object_schema(
+        submission.install_tools, 'context["record_map"]["read_tool"]')
+    schemas['submission_contract'] = produced_object_schema(submission.install_tools, 'contract')
+    return schemas
 
 
 def property_variants(schema, name):
