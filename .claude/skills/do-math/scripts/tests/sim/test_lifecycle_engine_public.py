@@ -235,6 +235,64 @@ class PublicControlBoundaryTests(unittest.TestCase):
         sim.restart()
         self.assertEqual(sim.engine.control_result(delayed['request_id']), receipt)
 
+    def test_conversation_lease_boundary_agrees_for_resume_heartbeat_and_loss(self):
+        for policy in ('pause', 'continue_authorized'):
+            for offset in (-0.000001, 0, 0.000001):
+                with self.subTest(policy=policy, offset=offset):
+                    sim = Sim.activated()
+                    attached = applied(sim, 'conversation', config={'operation': 'attach',
+                        'id': 'lease', 'generation': 1, 'lease_seconds': 10,
+                        'disconnect_policy': policy})
+                    row = deepcopy(sim.runtime['conversations']['lease'])
+                    self.assertEqual(row['source_ref'], attached['request_id'])
+                    status_before = sim.runtime['status']
+                    sim.advance(10 + offset)
+                    self.assertEqual(sim.engine._conversation_live(),
+                                     policy != 'pause' or offset < 0)
+                    if offset < 0:
+                        sim.engine._conversation_control({'operation': 'heartbeat',
+                            'id': 'lease', 'generation': 1}, attached['request_id'])
+                        renewed = sim.runtime['conversations']['lease']
+                        self.assertEqual(renewed['last_heartbeat_at'], sim.clock.now())
+                        self.assertEqual(renewed['lease_expires_at'],
+                                         (sim.clock.wall() + timedelta(seconds=10)).isoformat())
+                        self.assertFalse(sim.engine._check_conversations())
+                    else:
+                        with self.assertRaisesRegex(ValueError, 'expired generation'):
+                            sim.engine._conversation_control({'operation': 'heartbeat',
+                                'id': 'lease', 'generation': 1}, attached['request_id'])
+                        self.assertEqual(sim.runtime['conversations']['lease'], row)
+                        self.assertTrue(sim.engine._check_conversations())
+                        self.assertEqual(sim.runtime['conversations']['lease']['loss_reason'],
+                                         'heartbeat_lease_expired')
+                        after_loss = deepcopy((sim.instance, sim.runtime))
+                        self.assertFalse(sim.engine._check_conversations())
+                        self.assertEqual((sim.instance, sim.runtime), after_loss)
+                        self.assertEqual(sim.runtime['status'],
+                                         'paused' if policy == 'pause' else status_before)
+
+    def test_resume_requires_a_live_generation_newer_than_the_lost_generation(self):
+        sim = Sim.activated()
+        applied(sim, 'conversation', config={'operation': 'attach', 'id': 'lease',
+            'generation': 1, 'lease_seconds': 10, 'disconnect_policy': 'pause'})
+        applied(sim, 'conversation', config={'operation': 'detach', 'id': 'lease',
+            'generation': 1})
+        self.assertFalse(sim.engine._conversation_live())
+        self.assertEqual(sim.runtime['lost_conversation_generations']['lease'], 1)
+        for generation in (1, 2):
+            with self.subTest(generation=generation):
+                if generation == 1:
+                    with self.assertRaisesRegex(ValueError, 'new connection generation'):
+                        sim.engine._conversation_control({'operation': 'attach', 'id': 'lease',
+                            'generation': generation, 'lease_seconds': 10}, 'same-generation')
+                    self.assertFalse(sim.engine._conversation_live())
+                else:
+                    applied(sim, 'conversation', config={'operation': 'attach', 'id': 'lease',
+                        'generation': generation, 'lease_seconds': 10})
+                    self.assertTrue(sim.engine._conversation_live())
+                    applied(sim, 'resume')
+                    self.assertEqual(sim.instance['lifecycle']['state'], 'active')
+
     def test_semantically_invalid_conversations_preserve_the_live_connection(self):
         sim = Sim.activated()
         applied(sim, 'conversation', config={'operation': 'attach', 'id': 'live',

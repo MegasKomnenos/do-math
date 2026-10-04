@@ -28,6 +28,12 @@ def _reconsider_interval(config):
     return timedelta(seconds=config['research_reconsider_seconds'])
 
 
+def conversation_lease_live(conversation, *, at):
+    """A connected lease is live strictly before its UTC expiry, at delivery."""
+    return (conversation.get('status') == 'connected'
+            and timestamp(conversation['lease_expires_at']) > at)
+
+
 def preserve_rejected_candidate(store, snapshot, *, raw, reason, clock):
     """Keep rejected bytes on the verified head, never publish the rejected state.
 
@@ -140,7 +146,7 @@ class LifecycleEngineMixin:
             return True
         now = self._lifecycle_now()
         lost = self.runtime.get('lost_conversation_generations', {})
-        return any(row.get('status') == 'connected' and timestamp(row['lease_expires_at']) > now
+        return any(conversation_lease_live(row, at=now)
                    and row['generation'] > lost.get(row['id'], 0)
                    for row in self.runtime.get('conversations', {}).values())
 
@@ -491,7 +497,7 @@ class LifecycleEngineMixin:
             if not current or current['generation'] != generation or current['status'] != 'connected':
                 raise ValueError('signal does not identify the current connected conversation generation')
             if operation == 'heartbeat':
-                if timestamp(current['lease_expires_at']) <= now:
+                if not conversation_lease_live(current, at=now):
                     raise ValueError('expired generation must reconnect with a new generation')
                 current.update(last_heartbeat_at=now.isoformat(), lease_expires_at=lease_expiry(current['lease_seconds']), source_ref=source_ref)
             else:
@@ -514,7 +520,7 @@ class LifecycleEngineMixin:
         now = self._lifecycle_now()
         changed = False
         for conversation in self.runtime.get('conversations', {}).values():
-            if conversation.get('status') == 'connected' and timestamp(conversation['lease_expires_at']) <= now:
+            if conversation.get('status') == 'connected' and not conversation_lease_live(conversation, at=now):
                 self._lose_conversation(conversation, 'heartbeat_lease_expired')
                 changed = True
         return changed
