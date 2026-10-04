@@ -95,7 +95,7 @@ class SourceCurrentnessTests(unittest.TestCase):
         self.assertFalse(any(error.startswith(task['id'] + ':') for error in engine.check()['errors']))
 
     def test_graceful_output_on_changed_source_is_preserved_but_not_accepted(self):
-        """About 3 s: the preparation runs as a model call while the owner applies a source control."""
+        """Two changed-source calls and one diagnosis preserve output and stop further refresh."""
         sim = Sim.activated()
         applied(sim, 'configure', config={'max_output_repairs': 0})
         source = sim.root / 'basis.txt'
@@ -103,8 +103,10 @@ class SourceCurrentnessTests(unittest.TestCase):
         applied(sim, 'source', config={'path': str(source)})
         model = currentness_model(sim)
 
+        source_changes = []
         def changing(context, workspace):
-            source.write_text('new', encoding='utf-8')
+            source_changes.append(context['execution_id'])
+            source.write_text('new revision ' + str(len(source_changes)), encoding='utf-8')
             await_applied(sim, sim.control('source', text='the source changed', config={'path': str(source)}))
             (workspace / 'partial.txt').write_text('The old input was read.', encoding='utf-8')
         model.during('research_preparation', changing)
@@ -127,6 +129,29 @@ class SourceCurrentnessTests(unittest.TestCase):
         self.assertNotIn(execution['action']['id'], engine.runtime.get('waiting_actions', {}))
         entry = next(f for f in execution['output_files'] if f['path'] == 'partial.txt')
         self.assertEqual(engine.store.read(entry['artifact_ref']), b'The old input was read.')
+        # A second real premise change exhausts refresh and opens one diagnosis.
+        from support.cross_contracts import assert_call_records
+        before = assert_call_records(self, sim)
+        self.assertEqual(before['operational_review'], 0)
+        sim.step()
+        attempts = [row for row in sim.runtime['executions'].values() if row['role'] == 'research_preparation']
+        self.assertEqual(len(attempts), 2)
+        second = next(row for row in attempts if row['id'] != execution['id'])
+        self.assertEqual(second['error_kind'], 'currentness_changed')
+        self.assertEqual(second['action']['refresh']['attempt'], 1)
+        wait = sim.runtime['waiting_actions'][second['action']['id']]
+        self.assertEqual(wait['execution_id'], second['id'])
+        self.assertEqual(wait['failure_kind'], 'currentness_changed')
+        sim.run_until(lambda current: any(c['role'] == 'operational_review' for c in current.model.calls), max_steps=8)
+        after = assert_call_records(self, sim)
+        self.assertEqual(after['operational_review'], 1)
+        review, = [row for row in sim.runtime['executions'].values() if row['role'] == 'operational_review']
+        self.assertEqual(review['action']['target'], second['id'])
+        self.assertEqual(review['outcome'], 'output_accepted', review.get('error'))
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim)['operational_review'], 1)
+        self.assertEqual(len(source_changes), 2)
 
 
 class PlanCitingTaskTests(unittest.TestCase):
@@ -171,10 +196,12 @@ class PlanCitingTaskTests(unittest.TestCase):
 
 
 class OperationalBasisReplacementTests(unittest.TestCase):
-    def review_after_checkpoint_replacement(self, disposition):
+    def review_after_checkpoint_replacement(self, disposition, *, repeated=False):
         """Run an operational review of a failed attempt whose checkpoint is replaced after the review's input was fixed.
 
-        ``disposition(failed_id, cited_checkpoint_ref)`` is the reviewer's answer. The
+        ``disposition(failed_id, cited_checkpoint_ref)`` is the reviewer's answer. With
+        ``repeated=True``, the refreshed input's new checkpoint is replaced again.
+        The
         replacement names the same bytes at another stored path (the attempt's
         preserved output file ``checkpoint.json``), as the legacy test re-stored them
         under a new bundle. Returns ``(sim, failed ID, cited reference, review execution)``.
@@ -196,10 +223,14 @@ class OperationalBasisReplacementTests(unittest.TestCase):
             # The target's newest checkpoint changes after the review input was fixed.
             admitted.append(list(context['admissible_basis_refs']))
             checkpoints = sim.engine.runtime['checkpoints']
-            checkpoints[failed['id']] = {**checkpoints[failed['id']], 'artifact_ref': replacement}
+            checkpoints[failed['id']] = {**checkpoints[failed['id']],
+                'artifact_ref': cited if repeated and len(admitted) > 1 else replacement}
         model.during('operational_review', replaced)
-        model.on('operational_review').reply(explicit({**common('The failed attempt kept a reusable checkpoint'),
+        rule = model.on('operational_review').reply(explicit({**common('The failed attempt kept a reusable checkpoint'),
                                                        'disposition': disposition(failed['id'], cited)}))
+        if repeated:
+            rule.reply(explicit({**common('Reconsider the current preserved checkpoint'),
+                                'disposition': disposition(failed['id'], replacement)}))
         sim.step()
         # The fixture cites a checkpoint that its input admitted.
         self.assertEqual(len(admitted), 1)
@@ -219,6 +250,30 @@ class OperationalBasisReplacementTests(unittest.TestCase):
         self.assertEqual([a.get('refresh', {}).get('execution_id') for a in followups], [review['id']])
         self.assertNotIn('repair', followups[0], 'A changed premise does not spend an output repair')
         self.assertNotIn(review['action']['id'], sim.runtime.get('waiting_actions', {}))
+
+    def test_second_actual_operational_premise_change_stops_without_recursive_diagnosis(self):
+        from support.cross_contracts import worker_executions
+        sim, target, _, first = self.review_after_checkpoint_replacement(lambda execution, checkpoint: {
+            'kind': 'continue', 'basis_refs': [execution, checkpoint], 'next_owner': 'engine',
+            'reason': 'Review the checkpoint admitted in this input.', 'next_review': None}, repeated=True)
+        self.assertEqual(first['error_kind'], 'currentness_changed')
+        sim.step()
+        reviews = [row for row in sim.runtime['executions'].values() if row['role'] == 'operational_review']
+        self.assertEqual(len(reviews), 2)
+        second = next(row for row in reviews if row['id'] != first['id'])
+        self.assertEqual(second['action']['target'], target)
+        self.assertEqual(second['error_kind'], 'currentness_changed')
+        self.assertEqual(second['action']['refresh']['attempt'], 1)
+        wait = sim.runtime['waiting_actions'][second['action']['id']]
+        self.assertEqual((wait['execution_id'], wait['next_owner']), (second['id'], 'operations'))
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(sum(c['role'] == 'operational_review' for c in sim.model.calls), 2)
+            self.assertFalse(any(a['role'] == 'operational_review' for a in sim.runtime['queue']))
+        self.assertCountEqual([eid for eid in worker_executions(sim)
+                               if sim.runtime['executions'][eid]['role'] == 'operational_review'],
+                              [row['id'] for row in reviews])
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
 
     def test_replaced_operational_basis_with_another_application_error_stays_a_producer_repair(self):
         """About 3 s: the failed attempt and its review are two model calls."""
