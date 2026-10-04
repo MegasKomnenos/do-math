@@ -3,6 +3,7 @@ from copy import deepcopy
 import unittest
 
 from support.review_research import research_sim, InvestigationResponder
+from support.role_input_requirements import observe_judgment_inputs
 
 
 class BlindInputTests(unittest.TestCase):
@@ -17,7 +18,9 @@ class BlindInputTests(unittest.TestCase):
                 return super().respond(role, context, workspace)
         base = ObservedResponder()
         sim.model.responder = base
-        sim.run_until(lambda s: bool(seen), max_steps=12)
+        with observe_judgment_inputs(self) as prepared:
+            sim.run_until(lambda s: bool(seen), max_steps=12)
+        self.assertEqual(len([row for row in prepared if row['role'] == 'supplemental_research']), 1)
         self.assertEqual(base.failures, [])
         self.assertEqual(len(seen), 1)
         context = seen[0]

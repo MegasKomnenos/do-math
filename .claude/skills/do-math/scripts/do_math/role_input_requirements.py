@@ -125,3 +125,14 @@ def judgment_input_paths(role, action):
     if action.get('continuation_of'):
         paths.extend(('previous_execution', 'previous_output_files', 'resume_checkpoint', 'continuation_history'))
     return tuple(paths)
+
+
+def judgment_source_lists(role, action):
+    """Contract-owned lists whose local source files must actually be readable."""
+    if role == 'identity_review':
+        return ('role_review.source_refs',)
+    if role == 'supplemental_research' and action.get('review_cycle_id'):
+        return ('review_research.sources',)
+    if role == 'maintenance' and action.get('initial_submission_diagnosis'):
+        return ('initial_submission_diagnosis.materials',)
+    return ()

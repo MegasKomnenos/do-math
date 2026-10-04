@@ -3,10 +3,11 @@
 The actual engine and packager produce both arguments. This observer does not
 change a context, fill a missing field, or replace any product method.
 """
+from contextlib import contextmanager
 import json
 
-from do_math.context_store import read_source
-from do_math.role_input_requirements import judgment_input_keys, judgment_input_paths
+from do_math.context_store import prepare_role_input, read_source
+from do_math.role_input_requirements import judgment_input_keys, judgment_input_paths, judgment_source_lists
 from do_math.canonical import same_json_value
 
 
@@ -78,3 +79,77 @@ def assert_judgment_inputs(test, role, prepared, workspace, *, producer_context)
                 test.assertIn(part, expected, 'sealed source omitted required coordinate: ' + path)
                 expected = expected[part]
             test.assertTrue(same_json_value(value, expected), path)
+    for path in judgment_source_lists(role, original['action']):
+        sources = resolved_keys
+        for part in path.split('.'):
+            sources = sources[part]
+        test.assertIsInstance(sources, list, path)
+        for ref in sources:
+            with test.subTest(role=role, source_list=path, source=ref):
+                test.assertIn('local_path', ref)
+                test.assertIn('sha256', ref)
+                # The reader validates the path boundary and the entire hash.
+                # Some contracts supply a hash without a separate byte count.
+                resolved = read_source(workspace, {**ref, 'path': ref['local_path']},
+                                       limit=ref['bytes'] if ref.get('bytes') else 2 ** 63 - 1)
+                test.assertEqual(resolved['status'], 'ok')
+                test.assertFalse(resolved['truncated'])
+
+
+@contextmanager
+def observe_judgment_inputs(test):
+    """Validate actual owner preparations during an existing flow, without replay.
+
+    Checks run at the packager's return while its sources still exist. Source
+    arguments stay owned by that synchronous call; only small role/action
+    coordinates survive in the yielded observations. Product calls and return
+    values are unchanged. A subtest records a failure even if the owner later
+    classifies the preparation as failed.
+    """
+    from copy import deepcopy
+    from support.provider_probes import ObservedCalls
+    from support.storage_probes import Returns
+
+    def capture(arguments):
+        return arguments['role'], arguments['context'], arguments['workspace']
+
+    with ObservedCalls(prepared=prepare_role_input, capture={'prepared': capture}) as starts:
+        def checked(value):
+            role, source, workspace = starts.captured('prepared')[-1]
+            with test.subTest(prepared_role=role, action=source['action']):
+                assert_judgment_inputs(test, role, value, workspace, producer_context=source)
+            return {'role': role, 'action': deepcopy(source['action']),
+                    'interpretation_stage': value['validation_context'].get('interpretation_stage')}
+
+        with Returns(prepare_role_input, snapshot=checked) as completed:
+            yield completed.snapshots
+        test.assertEqual(len(starts.calls['prepared']), len(completed.snapshots),
+                         'every observed preparation must return an input that the requirement checker examined')
+
+
+def assert_recovery_judgment_input(test, scene, execution, *, source_snapshot):
+    """The separate operator recovery CLI's actual prompt and preserved sources."""
+    import hashlib
+    from pathlib import Path
+    from do_math.execution_profiles import boundary_prompt, resolve_profile
+
+    prompt = scene.cli.calls[-1]['prompt']
+    encoded = prompt[prompt.index('\n') + 1:]
+    value, end = json.JSONDecoder().raw_decode(encoded)
+    profile = resolve_profile(scene.load()[1]['execution_profiles'], execution['execution_profile_ref'])
+    test.assertEqual(encoded[end:], boundary_prompt(profile))
+    test.assertEqual(set(value), {'failure', 'failure_inputs', 'installation', 'repository',
+                                 'instance', 'execution_id', 'profile_ref'})
+    test.assertEqual(value['execution_id'], execution['id'])
+    test.assertEqual(value['profile_ref'], execution['execution_profile_ref'])
+    test.assertTrue(same_json_value(value['failure'], execution['input_manifest']['failure']))
+    test.assertEqual(value['installation'], str(scene.installation))
+    test.assertEqual(value['repository'], str(scene.sim.repository))
+    test.assertEqual(value['instance'], scene.sim.instance_id)
+    test.assertEqual([row['artifact_ref'] for row in value['failure_inputs']],
+                     execution['input_manifest']['failure'].get('evidence_refs', []))
+    for source in value['failure_inputs']:
+        raw = Path(source['local_path']).read_bytes()
+        test.assertEqual(hashlib.sha256(raw).hexdigest(), source['sha256'])
+        test.assertEqual(raw, scene.sim.engine.store.read(source['artifact_ref'], source_snapshot))
+    return value

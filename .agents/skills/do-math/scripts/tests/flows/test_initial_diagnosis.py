@@ -10,6 +10,7 @@ import unittest
 
 from support.model import amend, raw
 from support.sim import Sim
+from support.role_input_requirements import observe_judgment_inputs
 
 REJECTED = raw({'not': 'an interpretation'}, expected_receipt='rejected')
 
@@ -33,8 +34,11 @@ class DiagnosisFlow(unittest.TestCase):
 
     def activate(self, decision):
         self.sim.model.on('maintenance').reply(amend(initial_submission_diagnosis=decision))
-        with self.assertRaisesRegex(AssertionError, 'public activation did not reach active'):
-            self.sim.activate(initial_roles=('intent_interpretation', 'maintenance'))
+        with observe_judgment_inputs(self) as prepared:
+            with self.assertRaisesRegex(AssertionError, 'public activation did not reach active'):
+                self.sim.activate(initial_roles=('intent_interpretation', 'maintenance'))
+        self.assertEqual(len([row for row in prepared if row['action'].get('initial_submission_diagnosis')]), 1)
+        self.assertTrue(any(row['action'].get('continuation_of') for row in prepared))
 
 
 class InitialDiagnosisTests(DiagnosisFlow):

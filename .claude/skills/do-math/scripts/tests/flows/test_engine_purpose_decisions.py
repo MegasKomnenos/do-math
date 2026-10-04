@@ -21,6 +21,7 @@ from support.purpose_answers import NEW_GOAL
 from support.state_builders import charter_change, policy_change
 from support.engine_lifecycle import applied
 from support.engine_purpose import PurposeResponder, drive, purpose_sim
+from support.role_input_requirements import observe_judgment_inputs
 
 
 class PurposeFlowTests(unittest.TestCase):
@@ -36,7 +37,11 @@ class PurposeFlowTests(unittest.TestCase):
         sim, responder = self.start('dispute', review_rounds=3)
         # Runs to the goal: the goal audit answer checks that, after the withdrawn
         # objection, it receives only the final matching assessment.
-        drive(self, sim)
+        with observe_judgment_inputs(self) as prepared:
+            drive(self, sim)
+        from do_math.role_input_requirements import REVIEW_STAGE_INPUTS
+        self.assertEqual({row['action']['stage'] for row in prepared if row['role'] == 'identity_review'},
+                         set(REVIEW_STAGE_INPUTS))
         reviews = [call for call in responder.calls if call['role'] == 'identity_review']
         self.assertEqual([call['action']['stage'] for call in reviews],
                          ['scope', 'initial', 'initial', 'organize', 'judge', 'judge', 'judge', 'answer',
@@ -84,8 +89,11 @@ class PurposeFlowTests(unittest.TestCase):
         engine = sim.engine
         before = deepcopy(engine._governance()['charter'])
         sim.control('input', text=NEW_GOAL)
-        drive(self, sim, predicate=lambda s: any(bundle['source']['text'] == NEW_GOAL and bundle.get('check')
-                                                 for bundle in s.runtime.get('intent_imports', {}).values()))
+        with observe_judgment_inputs(self) as prepared:
+            drive(self, sim, predicate=lambda s: any(bundle['source']['text'] == NEW_GOAL and bundle.get('check')
+                                                     for bundle in s.runtime.get('intent_imports', {}).values()))
+        self.assertEqual([row['interpretation_stage'] for row in prepared if row['role'] == 'intent_interpretation'],
+                         ['interpret', 'check'])
         bundle = next(row for row in sim.runtime['intent_imports'].values() if row['source']['text'] == NEW_GOAL)
         self.assertNotEqual(bundle['execution_id'], bundle['check']['execution_id'])
         self.assertEqual(bundle['check']['decision'], 'approved')

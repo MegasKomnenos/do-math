@@ -131,6 +131,15 @@ class KnowledgeImportTests(unittest.TestCase):
         action = next(a for a in engine.runtime['queue'] if a.get('kind_definition_id'))
         identifier = action['kind_definition_id']
         profile = next(p for p in engine.instance['execution_profiles'].values() if p['role'] == 'maintenance')
+        from do_math.context_store import prepare_role_input
+        from support.role_input_requirements import assert_judgment_inputs
+        input_workspace = sim.root / 'kind-input'
+        context = engine._context(action, input_workspace)
+        fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
+            role='maintenance', profile=profile, snapshot=engine.head, workspace=input_workspace,
+            activity_id='AY-kind-input', install_submission_tools=True, clock=sim.clock)
+        assert_judgment_inputs(self, 'maintenance', fitted, input_workspace, producer_context=context)
+        self.assertEqual(context['kind_definition_to_check'], engine.instance['kind_definitions'][identifier])
         activity = activities.open_activity(engine.runtime, activity_id=sim.ports.clock.new_id('AT'), activity_kind='maintenance',
             owner_ref=identifier, input_refs=[identifier], opened_at=sim.ports.clock.now())
         eid = sim.ports.clock.new_id('EX')

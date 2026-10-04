@@ -15,6 +15,7 @@ import unittest
 from do_math import submission
 from support.provider_probes import ObservedCalls
 from support.review_sim import held_impact, impact_review_answer, impact_sim, observations, warm_impact
+from support.role_input_requirements import observe_judgment_inputs
 
 
 def setUpModule():
@@ -55,8 +56,10 @@ class ImpactReviewRoutingTests(unittest.TestCase):
             sim.engine._retry_impact_reviews()
         self.assertEqual(observed.captured('receive'), [], 'no receipt before the requested review ended')
         sim.model.on('maintenance', stage='impact_review').reply(impact_review_answer())
-        with ObservedCalls(capture={'receive': at_receipt}, receive=sim.engine._receive_submission) as observed:
-            sim.step()
+        with observe_judgment_inputs(self) as prepared:
+            with ObservedCalls(capture={'receive': at_receipt}, receive=sim.engine._receive_submission) as observed:
+                sim.step()
+        self.assertEqual(len([row for row in prepared if row['action'].get('stage') == 'impact_review']), 1)
         [review] = impact_reviews(sim)
         self.assertEqual(review['outcome'], 'output_accepted')
         # Every receipt call of the pass, in order: the review's own output, then the preserved producer bundle.

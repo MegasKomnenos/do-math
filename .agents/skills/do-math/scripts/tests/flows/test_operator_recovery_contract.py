@@ -14,6 +14,7 @@ from support.operator_finish_scene import Scene, diagnose
 from support.provider_probes import ObservedCalls
 from support.sim import warm_template
 from support.storage_probes import Returns
+from support.role_input_requirements import assert_recovery_judgment_input
 
 setUpModule = warm_template
 FAILURE = {'kind': 'engine_unavailable', 'error': 'operator 계약 시험의 기동 실패'}
@@ -57,6 +58,8 @@ class RecoveryContractTests(unittest.TestCase):
         self.assertEqual(scene.ports.scheduler.calls, [])
         self.assertEqual(len(scene.commands), 1)
         self.assertTrue(all(job.done and job.closed for job in scene.jobs.launched))
+        repair_input = assert_recovery_judgment_input(self, scene, execution, source_snapshot=before[0])
+        self.assertTrue(repair_input['failure_inputs'])
         saved = scene.load()
         self.assertEqual(scene.call(operator.recovery), {'outcome': 'recovery_waiting',
             'reason': 'same failure and installation already attempted'})
@@ -223,11 +226,14 @@ class RecoveryContractTests(unittest.TestCase):
         self.assertEqual({key for key in normal if normal[key] != scene.cli.answer[key]}, {'next_step'})
         operator._json(scene.workspace / 'operator/latest-engine.json', {
             'outcome': 'engine_failed', 'error': FAILURE['error']})
+        before = scene.load()
         with ObservedCalls(recovery=operator.recovery) as calls:
             result = scene.call(operator.check)
         self.assertEqual(result['outcome'], 'recovery_failed')
         self.assertEqual(calls.count('recovery'), 1)
         execution = scene.load()[2]['executions'][result['execution_id']]
+        repair_input = assert_recovery_judgment_input(self, scene, execution, source_snapshot=before[0])
+        self.assertEqual(repair_input['failure_inputs'], [])
         self.assertEqual(execution['error'], "output/next_step: 7 is not of type 'string'")
         self.assertEqual(execution['output'], scene.cli.answer)
         self.assertEqual(execution['status'], 'ended')
