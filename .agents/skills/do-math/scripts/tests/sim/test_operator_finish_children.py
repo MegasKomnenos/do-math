@@ -135,7 +135,7 @@ class ProbeRunnerTests(unittest.TestCase):
                               ('claude-opus-5', 'claude-opus-5')):
             with self.subTest(model=model), ObservedCalls(run=ModelRunner.run) as calls:
                 result = probe_cli.run_case(self.root / model.replace(':', '-'), 'structured', ports=self.ports,
-                    provider='claude', model=model, effort='low', timeout=1, only_assigned=False, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
+                    provider='claude', model=model, effort='low', only_assigned=False, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
             self.assertEqual(calls.captured('run')[0]['model'], routed)
             self.assertTrue(result['passed'], result)
             command = self.cli.calls[-1]['command']

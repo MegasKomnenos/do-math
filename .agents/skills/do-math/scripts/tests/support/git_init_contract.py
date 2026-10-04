@@ -5,6 +5,12 @@ import tempfile
 from support.fakes.git_backend import make_repository
 
 
+def isolated_nonrepository_parent(root):
+    """Stop Git discovery before an unrelated checkout enclosing runner scratch."""
+    (root / '.git').write_text('not a repository\n', encoding='utf-8')
+    return root
+
+
 class GitInitContract:
     def world(self, object_format):
         """Context manager yielding a backend with that external init default."""
@@ -13,7 +19,7 @@ class GitInitContract:
     def test_git_init_creates_and_reopens_with_external_default_format(self):
         for object_format in ('sha1', 'sha256'):
             with self.subTest(format=object_format), tempfile.TemporaryDirectory() as directory:
-                repository = Path(directory) / 'repository'
+                repository = isolated_nonrepository_parent(Path(directory)) / 'repository'
                 repository.mkdir()  # CLI owns this prerequisite, not the port.
                 with self.world(object_format) as backend:
                     self.assertFalse(backend.repository_exists(repository))
@@ -69,10 +75,28 @@ class GitInitContract:
 
     def test_git_init_objects_directory_alone_is_not_repository(self):
         with tempfile.TemporaryDirectory() as directory, self.world('sha1') as backend:
-            root = Path(directory)
+            root = isolated_nonrepository_parent(Path(directory)) / 'candidate'
             (root / '.git/objects').mkdir(parents=True)
             self.assertIs(backend.repository_exists(root), False)
             (root / '.git/HEAD').write_bytes(b'ref: refs/heads/main\n')
             self.assertIs(backend.repository_exists(root), False)
             (root / '.git/refs').mkdir()
             self.assertIs(backend.repository_exists(root), True)
+
+    def test_incomplete_inner_git_directory_does_not_hide_the_parent_repository(self):
+        for object_format in ('sha1', 'sha256'):
+            with tempfile.TemporaryDirectory() as directory, self.world(object_format) as backend:
+                parent = make_repository(Path(directory) / 'parent', object_format)
+                # Every proper subset of HEAD, objects and refs is incomplete.
+                for mask in range(7):
+                    with self.subTest(format=object_format, components=mask):
+                        child = parent / ('child-' + str(mask))
+                        git_dir = child / '.git'
+                        git_dir.mkdir(parents=True)
+                        if mask & 1:
+                            (git_dir / 'HEAD').write_bytes(b'ref: refs/heads/main\n')
+                        if mask & 2:
+                            (git_dir / 'objects').mkdir()
+                        if mask & 4:
+                            (git_dir / 'refs').mkdir()
+                        self.assertIs(backend.repository_exists(child), True)

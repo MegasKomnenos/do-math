@@ -8,6 +8,7 @@ import unittest
 from support.entry import entry
 from support.git_init_cli import git_init_main
 from support.git_init_faults import GitInitFaults
+from support.git_init_contract import isolated_nonrepository_parent
 
 
 class GitInitCliRejectionTests(unittest.TestCase):
@@ -22,7 +23,7 @@ class GitInitCliRejectionTests(unittest.TestCase):
 
     def assert_error(self, response, code, kind, message):
         actual, envelope = response
-        self.assertEqual(actual, code)
+        self.assertEqual(actual, code, envelope)
         self.assertEqual(envelope['error'], {'kind': kind, 'message': message,
             'next_owner': 'user' if kind == 'input_error' else 'operator', 'retryable': False})
 
@@ -49,7 +50,7 @@ class GitInitCliRejectionTests(unittest.TestCase):
     def test_git_init_no_create_missing_or_empty_never_initializes(self):
         for empty in (False, True):
             with tempfile.TemporaryDirectory() as directory:
-                root = Path(directory)
+                root = isolated_nonrepository_parent(Path(directory))
                 if empty:
                     (root / 'repository').mkdir()
                 backend = GitInitFaults()

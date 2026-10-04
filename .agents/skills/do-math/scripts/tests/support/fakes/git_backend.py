@@ -65,8 +65,8 @@ class InProcessGit:
                 if not raw.startswith('gitdir: '):
                     return False
                 return self._repository_layout(root / raw[len('gitdir: '):])
-            if marker.is_dir():
-                return self._repository_layout(marker)
+            if marker.is_dir() and self._repository_layout(marker):
+                return True
             if self._repository_layout(root):
                 return True
         return False

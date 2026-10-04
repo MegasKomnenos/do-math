@@ -521,6 +521,15 @@
       "found_by": "B86 Claude 2.1.289의 실제 init 및 ToolSearch(select:TaskOutput)는 도구 부재를 확인했다. 4r57pk4v에서 실제 runner/worker를 통한 동일 작업 완료와 최종 파일 시나리오가 old actual_wait_tool=False로 실패했다.",
       "missed_kind": "합성 탐침이 TaskOutput 사건을 임의로 넣어 실제 CLI의 도구 가용성을 가렸다. 실제 작업 ID·호출 ID·완료 상태와 selected result 앞의 순서를 요구하도록 바꾸고 녹화 원문 및 교란 반례로 검증한다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1912",
+      "summary": "InProcessGit의 repository_exists가 불완전한 내부 .git 디렉터리에서 False를 반환하여 실제 Git이 계속 찾는 상위 저장소를 놓친다.",
+      "category": 9,
+      "reproduction": "contracts.test_git_init_backend.FakeGitInitContract.test_incomplete_inner_git_directory_does_not_hide_the_parent_repository",
+      "found_by": "B87 전체 실행의 저장소 내부 scratch와 B88 실제 Git 계약 검사에서 주변 저장소 탐색 차이를 발견. 7sktoq3v에서 HEAD/objects/refs의 모든 불완전 부분집합 7종과 SHA1/SHA256 조합 14개는 실제 Git이 모두 통과하고 대역이 모두 실패했다.",
+      "missed_kind": "대역과 실제의 초기화 계약은 정상 저장소 종류를 비교했으나 불완전한 내부 .git와 유효한 상위 저장소의 결합을 다루지 않았다. 무효 gitfile의 탐색 차단은 유지하고 불완전 디렉터리만 계속 탐색한다.",
+      "status": "closed"
     }
   ]
 }

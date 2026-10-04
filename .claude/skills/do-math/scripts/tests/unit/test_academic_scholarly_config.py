@@ -53,6 +53,14 @@ class ScholarlyConfigurationTests(unittest.TestCase):
         self.addCleanup(home.cleanup)
         return Path(root.name), Path(home.name)
 
+    def no_project_start(self, temporary_root):
+        # Runner scratch may be under a real project with its own .codex file.
+        # The filesystem root has no ancestors; verify the absence this case needs.
+        start = Path(temporary_root.anchor)
+        self.assertFalse((start / '.codex/config.toml').exists(),
+                         'home fallback requires a start without a project configuration')
+        return start
+
     def test_project_config_beats_code_home_and_extracts_only_scholarly(self):
         from support.entry import entry
         _entry = entry()
@@ -66,22 +74,27 @@ class ScholarlyConfigurationTests(unittest.TestCase):
             'tool_timeout_sec = 1800\n', encoding="utf-8")
         (home / "config.toml").write_text(
             '[mcp_servers.scholarly]\ncommand = "home-python"\nargs = ["home-server.py"]\n', encoding="utf-8")
-        resolved = resolve_scholarly_server(None, start=root, codex_home=home)
         # Exactly the pair: the other server and the client time limits are not inherited;
         # the relative command and server file become the files beside the configuration.
-        self.assertEqual(resolved, {"command": str((root / ".codex" / "python.exe").resolve()),
-                                    "args": [str((root / ".codex" / "server.py").resolve())]})
+        nested = root / 'nested/project'
+        nested.mkdir(parents=True)
+        for start in (root, nested):
+            with self.subTest(start=start):
+                resolved = resolve_scholarly_server(None, start=start, codex_home=home)
+                self.assertEqual(resolved, {"command": str((root / ".codex" / "python.exe").resolve()),
+                                            "args": [str((root / ".codex" / "server.py").resolve())]})
 
     def test_code_home_is_used_when_project_has_no_scholarly_entry(self):
         from support.entry import entry
         _entry = entry()
         root, home = self.folders()
         (home / "config.toml").write_text(HOME_ENTRY, encoding="utf-8")
-        resolved = resolve_scholarly_server(None, start=root, codex_home=home)
+        start = self.no_project_start(root)
+        resolved = resolve_scholarly_server(None, start=start, codex_home=home)
         # "python" has no separator or suffix, so it is not a path and stays literal.
         self.assertEqual(resolved, {"command": "python", "args": ["C:/home-server.py"]})
         # The entry point's CODEX_HOME, passed as an argument, is read the same way.
-        self.assertEqual(resolve_scholarly_server(None, start=root, codex_home=home),
+        self.assertEqual(resolve_scholarly_server(None, start=start, codex_home=home),
                          {"command": "python", "args": ["C:/home-server.py"]})
 
     def test_default_home_config_is_used_when_code_home_is_unset(self):
@@ -90,7 +103,7 @@ class ScholarlyConfigurationTests(unittest.TestCase):
         root, home = self.folders()
         (home / ".codex").mkdir()
         (home / ".codex" / "config.toml").write_text(HOME_ENTRY, encoding="utf-8")
-        resolved = resolve_scholarly_server(None, start=root, codex_home=home / ".codex")
+        resolved = resolve_scholarly_server(None, start=self.no_project_start(root), codex_home=home / ".codex")
         self.assertEqual(resolved, {"command": "python", "args": ["C:/home-server.py"]})
 
 
