@@ -31,7 +31,7 @@
       "id": "KD-0003",
       "summary": "setup_lean.run starts Lean setup commands (elan, lake) with subprocess.run without creationflags, so a console window can open when the tool runs under a parent without a console",
       "category": 9,
-      "reproduction": "structure.test_boundary_invariants.BoundaryInvariantTests.test_the_setup_tool_opens_no_console_window",
+      "reproduction": "structure.test_boundary_invariants.BoundaryInvariantTests.test_process_starts_are_declared_and_open_no_console_window",
       "found_by": "1e obligation 9-A: the console-flag invariant walked scripts/ as well as do_math/ and found this start",
       "missed_kind": "The legacy scan (test_background_processes) walked only do_math/*.py, not the tools directly under scripts/ Independent main integration: setup_lean.run passes CREATE_NO_WINDOW while retaining cwd/env/check/stdout. Main static red fjtl48u4 confirms the missing flag. Removed the WINDOWED exception and strengthened the setup assertion to its exact flag value. A real isolated child process additionally reports its console handle and exact cwd/probe environment.",
       "status": "closed"

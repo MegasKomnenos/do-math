@@ -12,7 +12,8 @@ reviewed once instead of being found in operation:
   engine's ``pythonw.exe`` in a worker's command); a process the owner starts
   itself with piped output keeps ``sys.executable``.
 
-and every process start passes ``creationflags`` (no console window, 조사 A-16),
+Every subprocess start uses the standard ``CREATE_NO_WINDOW`` value and the
+native Job root passes that bit to ``CreateProcessW`` (조사 A-16);
 no script module shadows a standard-library module (조사 A-12), and only
 ``file_io`` replaces files.
 """
@@ -117,7 +118,10 @@ class BoundaryInvariantTests(unittest.TestCase):
             else:
                 injected.add((relative, function, kind))
             with self.subTest(site=(relative, function, node.lineno)):
-                self.assertIn('creationflags', {keyword.arg for keyword in node.keywords})
+                flags = [keyword.value for keyword in node.keywords if keyword.arg == 'creationflags']
+                self.assertEqual(len(flags), 1, 'process start requires its console suppression flag')
+                self.assertEqual(ast.unparse(flags[0]), "getattr(subprocess, 'CREATE_NO_WINDOW', 0)",
+                                 'creationflags must use the Windows suppression value, not merely exist')
         self.assertEqual(starts, set(PROCESS_STARTS), 'direct process starts differ from the declared ones')
         self.assertEqual(injected, set(INJECTED_STARTS), 'injected process starts differ from the declared ones')
         job_starts = set()
@@ -129,14 +133,31 @@ class BoundaryInvariantTests(unittest.TestCase):
         self.assertEqual(job_starts, JOB_RUN_STARTS, 'shared Job callers differ from the declared ones')
 
 
-    def test_the_setup_tool_opens_no_console_window(self):
-        calls = [node for relative, function, _, node in _process_start_sites()
-                 if (relative, function) == ('setup_lean.py', 'run')]
-        self.assertEqual(len(calls), 1)
-        flags = [keyword.value for keyword in calls[0].keywords if keyword.arg == 'creationflags']
-        self.assertEqual(len(flags), 1, 'setup subprocess requires its console suppression flag')
-        self.assertEqual(ast.unparse(flags[0]), "getattr(subprocess, 'CREATE_NO_WINDOW', 0)",
-                         'the flag must suppress a console on Windows, not merely be present')
+    def test_native_job_creation_passes_suspended_and_no_window_bits(self):
+        calls = [(relative, function, node) for relative, function, node in _sites()
+                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                 and node.func.attr in {'CreateProcessW', 'CreateProcessA'}]
+        self.assertEqual([(relative, function) for relative, function, _ in calls],
+                         [('do_math/windows_job.py', '_create_suspended_root')])
+        self.assertEqual(ast.unparse(calls[0][2].args[5]), 'flags', 'native creation must receive the checked mask')
+        tree = ast.parse((SCRIPTS / 'do_math/windows_job.py').read_text(encoding='utf-8'))
+        constants = {node.target.id: ast.literal_eval(node.value) for node in ast.walk(tree)
+                     if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)
+                     and node.target.id in {'_CREATE_NO_WINDOW', '_CREATE_SUSPENDED'}}
+        self.assertEqual(constants, {'_CREATE_NO_WINDOW': 0x08000000, '_CREATE_SUSPENDED': 0x00000004})
+        owner = next(node for node in ast.walk(tree)
+                     if isinstance(node, ast.FunctionDef) and node.name == '_create_suspended_root')
+        masks = [node.value for node in ast.walk(owner) if isinstance(node, ast.Assign)
+                 and any(isinstance(target, ast.Name) and target.id == 'flags' for target in node.targets)]
+        self.assertEqual(len(masks), 1, 'native creation has one reviewed flags assignment')
+
+        def terms(node):
+            if isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+                return terms(node.left) | terms(node.right)
+            return {ast.unparse(node)}
+
+        self.assertTrue({'_CREATE_NO_WINDOW', '_CREATE_SUSPENDED'} <= terms(masks[0]),
+                        'both bits must be ORed into the mask without being cleared')
 
     def test_interpreter_uses_are_declared(self):
         uses = {(relative, function) for relative, function, node in _sites() if _is(node, 'sys', {'executable'})}

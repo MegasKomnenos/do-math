@@ -10,10 +10,11 @@ product at once:
   the closed schema does not declare stops the instance on publication).
 - Every field of a closed stored family is named somewhere in the product
   outside the schema modules, so a receiver does not require or accept a field
-  no producer writes (조사 B-02). ``UNPRODUCED`` declares the fields no code
-  names, each with its reason; a new such field, or a declared one that gains a
-  producer, fails. The check is by name: a field whose name the code uses for
-  anything counts as produced, so it finds only names no code uses at all.
+  no producer writes (조사 B-02). Repetition limit keys are computed from the
+  canonical lineage population; their actual configuration read is checked
+  explicitly before expanding those names. This is a name-usage check, not
+  proof of a validating writer. Real limit behavior is checked for every
+  lineage by ``unit.test_repetition_hold_contract``.
 """
 import ast
 import inspect
@@ -27,11 +28,6 @@ SCHEMA_MODULES = {'record_schemas', 'state_contract.py'}
 EVENT_CALLS = {
     ('core_engine.py', 'submission_checked'): 'passes **details; the caller builds only basis (EVIDENCE)',
 }
-_IGNORED_SETTING = ('accepted by the configuration schema but read or written by no product code, so setting it '
-                    'changes nothing; stage 2 removes or wires it')
-UNPRODUCED = {('research', 'config', key): _IGNORED_SETTING for key in (
-    'contract_revision_limit', 'exhaustion_empty_limit', 'import_rework_limit', 'proposal_version_limit',
-    'selection_failure_limit')}
 
 
 def _event_calls():
@@ -81,13 +77,18 @@ class StorageFieldTests(unittest.TestCase):
         self.assertEqual(seen, set(EVENT_CALLS), 'declared event calls that no longer exist')
 
     def test_every_field_of_a_closed_family_is_named_by_the_product(self):
+        from do_math import revisions, task_contracts
         from do_math.state_contract import default_state_contract
         named = _named_in_product()
+        reader = ast.parse(inspect.getsource(revisions.record_repetition))
+        reads = [node for node in ast.walk(reader) if isinstance(node, ast.Call)
+                 and ast.unparse(node) == "instance.get('config', {}).get(lineage + '_limit')"]
+        self.assertEqual(len(reads), 1, 'review the computed configuration read if its consumer changes')
+        named.update(lineage + '_limit' for lineage in task_contracts.REPEAT_LINEAGES)
         unproduced = {(family.root, family.name, field) for family in default_state_contract().families()
                       if family.shape in ('map', 'list') or family.schema.get('additionalProperties') is False
                       for field in family.schema.get('properties', {}) if field not in named}
-        self.assertEqual(sorted(unproduced - set(UNPRODUCED)), [], 'stored fields no product code names')
-        self.assertEqual(sorted(set(UNPRODUCED) - unproduced), [], 'declared unproduced fields that now have a producer')
+        self.assertEqual(sorted(unproduced), [], 'stored fields no product code names')
 
     def test_the_trust_rebind_event_passes_only_declared_event_fields(self):
         declared = _event_fields()
