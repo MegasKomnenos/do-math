@@ -207,5 +207,65 @@ class ClaudeFinalTests(unittest.TestCase):
         self.assertIsNone(adapter.final_bytes(adapter.parse_response(claude_stream(CLAUDE_INIT), {})))
 
 
+class ProducedRequestCollectionTests(CollectorCase):
+    def produced_request(self, provider, directory):
+        from support.provider_close_inputs import request_seed
+        jobs = ProviderJobs(clock=self.clock)
+        request = request_seed(provider, directory, jobs=jobs, clock=self.clock)
+        Path(request['cwd']).mkdir(parents=True)
+        Path(request['prompt_path']).parent.mkdir(parents=True)
+        Path(request['prompt_path']).write_bytes(b'Preserve the request binding.')
+        Path(request['output_schema_path']).write_text('{"type":"object"}', encoding='utf-8')
+        path = directory / 'request.json'
+        path.write_text(json.dumps(request), encoding='utf-8')
+        adapter = (CodexExecAdapter if provider == 'codex' else ClaudePrintAdapter)(
+            request[provider + '_path'], jobs=jobs, clock=self.clock)
+        return path, request, adapter, jobs
+
+    def test_schema_path_cannot_alias_the_prompt_before_job_creation(self):
+        for provider in ('codex', 'claude'):
+            with self.subTest(provider=provider):
+                path, request, adapter, jobs = self.produced_request(provider, self.root / provider)
+                request['output_schema_path'] = request['prompt_path']
+                path.write_text(json.dumps(request), encoding='utf-8')
+                before = {p.relative_to(self.root).as_posix(): p.read_bytes()
+                          for p in self.root.rglob('*') if p.is_file()}
+                with self.assertRaisesRegex(ValueError, '^request, prompt, and output paths must be distinct$'):
+                    adapter.start(path, cwd=self.root, env={})
+                self.assertEqual(jobs.launched, [])
+                self.assertEqual({p.relative_to(self.root).as_posix(): p.read_bytes()
+                                  for p in self.root.rglob('*') if p.is_file()}, before)
+
+    def test_timeout_and_changed_worker_hashes_remain_incomplete_after_termination(self):
+        for provider in ('codex', 'claude'):
+            for fault in ('timeout', 'stdin_sha256', 'request_sha256'):
+                with self.subTest(provider=provider, fault=fault):
+                    directory = self.root / (provider + '-' + fault)
+                    path, request, adapter, jobs = self.produced_request(provider, directory)
+                    jobs.cli.timeout = fault == 'timeout'
+                    execution = adapter.start(path, cwd=directory, env={})
+                    self.addCleanup(execution.job.close)
+                    adapter.resume(execution)
+                    status = json.loads(execution.status_path.read_bytes())
+                    if fault == 'timeout':
+                        self.assertEqual(status['state'], 'timeout')
+                        self.assertTrue(status['runner_stop_required'])
+                        reason = 'max_runtime_elapsed'
+                    else:
+                        self.assertEqual(status['state'], 'exited')
+                        self.assertEqual(status['cli_exit_code'], 0)
+                        # Corrupt only one external status-file coordinate after
+                        # the real worker has produced and hashed all normal bytes.
+                        status[fault] = '0' * 64
+                        execution.status_path.write_text(json.dumps(status), encoding='utf-8')
+                        reason = ('worker_stdin_hash_mismatch' if fault == 'stdin_sha256'
+                                  else 'worker_request_hash_mismatch')
+                    collected = adapter.collect(execution)
+                    self.assertTrue(collected['termination_barrier']['confirmed'])
+                    self.assertEqual(collected['result'], 'incomplete')
+                    self.assertEqual(collected['reasons'], [reason])
+                    self.assertEqual(len(jobs.cli.calls), 1)
+                    self.assertEqual(jobs.cli.calls[0]['stdin'], Path(request['prompt_path']).read_bytes())
+
 if __name__ == '__main__':
     unittest.main()

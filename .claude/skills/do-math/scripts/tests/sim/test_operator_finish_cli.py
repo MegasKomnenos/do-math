@@ -97,3 +97,68 @@ class CliTests(unittest.TestCase):
         self.assertEqual(scene.sim.engine.control_result(pause['request_id'])['effect'], 'applied')
         self.assertEqual(scene.sim.engine.control_result(result['resume']['request_id'])['effect'], 'applied')
         self.assertFalse(scene.load()[2].get('user_pause'))
+
+
+class OperatorCommandTests(unittest.TestCase):
+    def setUp(self):
+        self.scene = Scene()
+
+    def invoke(self, mode, *arguments, ports=None):
+        from contextlib import redirect_stdout
+        from io import StringIO
+        output = StringIO()
+        sim = self.scene.sim
+        with redirect_stdout(output):
+            code = cli.main(['operator', mode, '--repository', str(sim.repository),
+                             '--instance', sim.instance_id, *map(str, arguments)],
+                            ports=ports or self.scene.ports, environment=sim.environment,
+                            host_id=sim.host_id, codex_home=sim.codex_home)
+        return code, json.loads(output.getvalue())
+
+    def test_supplied_workspace_must_match_the_instance_before_scheduler_access(self):
+        before = self.scene.load()
+        code, envelope = self.invoke('status', '--workspace', self.scene.workspace / '..' / self.scene.workspace.name)
+        self.assertEqual(code, 0)
+        self.assertIsNotNone(envelope['result']['operator'])
+        calls = list(self.scene.ports.scheduler.calls)
+        code, envelope = self.invoke('status', '--workspace', self.scene.workspace / 'different')
+        self.assertEqual(code, 2)
+        self.assertEqual(envelope['error'], {'kind': 'input_error',
+            'message': '--workspace must equal the instance workspace', 'next_owner': 'user', 'retryable': False})
+        self.assertEqual(self.scene.ports.scheduler.calls, calls)
+        self.assertEqual(self.scene.load(), before)
+
+    def test_startable_instance_requests_the_installed_engine_task(self):
+        before = self.scene.load()
+        code, envelope = self.invoke('start')
+        self.assertEqual(code, 0)
+        self.assertEqual(envelope['result']['engine']['state'], 'Running')
+        self.assertEqual([action for action, _ in self.scene.ports.scheduler.calls], ['start-engine'])
+        self.assertEqual(self.scene.load(), before)
+        self.assertEqual(self.scene.jobs.launched, [])
+        self.assertEqual(self.scene.cli.calls, [])
+
+    def test_release_without_hold_never_requests_resume(self):
+        before = self.scene.load()
+        code, envelope = self.invoke('release')
+        self.assertEqual(code, 0)
+        self.assertEqual(envelope['result'], {'released': None,
+            'resume': {'effect': 'not_requested', 'reason': 'no HOLD was released'}})
+        self.assertEqual(self.scene.load(), before)
+        self.assertEqual(self.scene.ports.scheduler.calls, [])
+
+    def test_hold_stops_wake_engine_and_supervisor_at_the_public_boundary(self):
+        code, held = self.invoke('hold', '--reason', 'No work while inspecting')
+        self.assertEqual(code, 0)
+        self.assertEqual(held['result']['pause']['effect'], 'applied')
+        before = self.scene.load()
+        calls = list(self.scene.ports.scheduler.calls)
+        for mode in ('wake', 'engine', 'check', 'probe'):
+            with self.subTest(mode=mode):
+                code, envelope = self.invoke(mode)
+                self.assertEqual(code, 0)
+                self.assertEqual(envelope['result'], {'outcome': 'held'})
+                self.assertEqual(self.scene.load(), before)
+                self.assertEqual(self.scene.ports.scheduler.calls, calls)
+                self.assertEqual(self.scene.jobs.launched, [])
+                self.assertEqual(self.scene.cli.calls, [])

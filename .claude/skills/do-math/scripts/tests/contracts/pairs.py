@@ -65,8 +65,6 @@ def _worker_request_samples(provider):
             schema = not control
             if (limits or control) and not bound:
                 continue  # the runner pins limits and a control binding only to an identified execution
-            if only and provider != 'claude':
-                continue
             branch = ','.join(name for name, on in (('schema', schema), ('identity', bound), ('limits', limits),
                               ('control', control), ('scholarly', scholarly), ('claude_only', only)) if on) or 'bare'
             rows.append((branch, worker_request_fields(
@@ -152,7 +150,7 @@ def _trust_request_fields():
 # Rule IDs the observation tracker accepts (``observations.validate_rules``) that the stored review rows
 # (``runtime.observations``) keep; ones the tracker accepts and storage rejects are KD-0007.
 STORABLE_RULE_IDS = ('R-1', 'progress_check', 'rule.2', 'attempts-3')
-UNSTORABLE_RULE_IDS = ('progress check', '규칙', 'r:1')
+TEXT_RULE_ID_SAMPLES = ('progress check', '규칙', 'r:1', ' \t')
 
 
 def accepted_rule_ids(ids):
@@ -287,3 +285,11 @@ PAIRS = [Pair('worker request (' + provider + ')', _worker_request_samples(provi
     Pair('runner result (stored artifact)', _runner_result_samples, _receive_stored_result, None),
     Pair('runner result (operator file)', _runner_result_samples, _receive_operator_record, None),
 ]
+
+# 3-A의 catalog 참조 문자열 수신자는 객체 필드가 아닌 식별자 집합을 읽는다.
+# 일반 쌍 외의 광고 완비·음성 순회는 unit.test_submission_advertised_inputs가 맡는다.
+from support.submission_advertised import pair_samples as _submission_catalog_samples
+from support.submission_advertised import receive_catalog as _submission_receive_catalog
+
+PAIRS.append(Pair('submission advertised references', _submission_catalog_samples,
+                  _submission_receive_catalog, None))

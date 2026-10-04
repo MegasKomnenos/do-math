@@ -71,6 +71,34 @@ class ProducerCallTests(unittest.TestCase):
                 self.assertEqual(damaged, original)
                 self.assertEqual(sim.engine.store.load(), published)
 
+    def test_unexpected_owner_rejection_fails_the_provider_after_preserving_the_actual_receipt(self):
+        sim = configured_sim(**NO_REPAIR)
+        model = submission_model(sim)
+        before = set(sim.runtime['executions'])
+        launched = len(sim.jobs.launched)
+        # Intentionally wrong test contract: a normal bound answer promises acceptance,
+        # but the real receiver sees the empty draft. The guard must detect that mismatch.
+        model.on(sim.runtime['queue'][0]['role']).reply(submitted({}))
+        sim.step()
+        execution, = new_executions(sim, before)
+        workers = [job for job in sim.jobs.launched[launched:] if Path(job.argv[1]).name == 'codex_worker.py']
+        worker, = workers
+        request = json.loads(Path(worker.argv[2]).read_bytes())
+        status = json.loads(Path(request['status_path']).read_bytes())
+        self.assertEqual((status['state'], status.get('error_type')), ('worker_error', 'AssertionError'))
+        self.assertIn('expected receipt accepted', status['error'])
+        self.assertIn("'state': 'rejected'", status['error'])
+        receipt, = model.receipts
+        self.assertEqual(receipt['state'], 'rejected')
+        central, = [row for row in sim.runtime['control_receipts'].values()
+                    if row.get('execution_id') == execution['id']]
+        self.assertEqual((central['request_id'], central['state']), (receipt['request_id'], 'rejected'))
+        self.assertNotEqual(execution['outcome'], 'output_accepted')
+        self.assertEqual(sim.instance['knowledge'], {})
+        preserved = deepcopy(sim.runtime['control_receipts'])
+        sim.restart()
+        self.assertEqual(sim.runtime['control_receipts'], preserved)
+
     def test_unsealed_invalid_runner_output_is_preserved_for_operational_review(self):
         sim = configured_sim(**NO_REPAIR)
         before = set(sim.runtime["executions"])
@@ -86,6 +114,21 @@ class ProducerCallTests(unittest.TestCase):
         self.assertTrue(any(a["role"] == "operational_review" and a.get("target") == execution["id"]
                             for a in sim.runtime["queue"]))
         self.assertFalse(any(a.get("repair") for a in sim.runtime["queue"]))
+        receipt, = model.receipts
+        self.assertEqual(receipt['state'], 'rejected')
+        central, = [row for row in sim.runtime['control_receipts'].values()
+                    if row.get('execution_id') == execution['id']]
+        self.assertEqual((central['request_id'], central['state']), (receipt['request_id'], 'rejected'))
+        check_ref = central['payload']['submission_check']['check_ref']
+        check_bytes = sim.engine.store.read(check_ref, sim.engine.head)
+        check = json.loads(check_bytes)
+        self.assertFalse(check['passed'])
+        self.assertTrue(check['issues'])
+        self.assertEqual(sim.instance['knowledge'], {})
+        preserved = deepcopy({key: sim.runtime[key] for key in ('executions', 'control_receipts', 'waiting_actions')})
+        sim.restart()
+        self.assertEqual({key: sim.runtime[key] for key in preserved}, preserved)
+        self.assertEqual(sim.engine.store.read(check_ref, sim.engine.head), check_bytes)
 
     def test_receiver_rejects_unknown_insight_kind_and_missing_evidence(self):
         cases = {'kind': ({"kind": "unregistered_kind"}, 'kind', 'insight kind must be active or proposed'),

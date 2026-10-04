@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from contracts.pairs import (PAIRS, UNSTORABLE_RULE_IDS, accepted_condition, accepted_rule_ids, enumerated_pointers,
+from contracts.pairs import (PAIRS, TEXT_RULE_ID_SAMPLES, accepted_condition, accepted_rule_ids, enumerated_pointers,
                              stored_rule_id_errors)
 
 
@@ -30,9 +30,34 @@ class ContractPairTests(unittest.TestCase):
                                      'fields the receiving check names that no producer branch writes')
 
 
+    def test_worker_samples_preserve_both_assigned_model_flags_for_each_legal_assignment(self):
+        from do_math.claude_adapter import ADAPTERS
+        prefix = 'worker request ('
+        pairs = {pair.name[len(prefix):-1]: pair for pair in PAIRS if pair.name.startswith(prefix)}
+        self.assertEqual(set(pairs), set(ADAPTERS))
+        for provider, pair in pairs.items():
+            with self.subTest(provider=provider), tempfile.TemporaryDirectory() as directory:
+                assignments = {}
+                for label, request in pair.samples(Path(directory)):
+                    flags = label.split(',') if label != 'bare' else []
+                    only = 'claude_only' in flags
+                    key = tuple(flag for flag in flags if flag != 'claude_only')
+                    choices = assignments.setdefault(key, {})
+                    self.assertNotIn(only, choices, (provider, label))
+                    choices[only] = request
+                self.assertTrue(assignments, 'no worker assignments were examined')
+                for assignment, choices in assignments.items():
+                    with self.subTest(assignment=assignment):
+                        self.assertEqual(set(choices), {False, True})
+                        expected = deepcopy(choices[False])
+                        if provider == 'claude':
+                            expected['claude_only_assigned_model'] = True
+                        self.assertEqual(choices[True], expected)
+
+
 class KnownPairDefectTests(unittest.TestCase):
     def test_every_rule_id_the_tracker_accepts_is_storable(self):
-        for rule_id, value in accepted_rule_ids(UNSTORABLE_RULE_IDS):
+        for rule_id, value in accepted_rule_ids(TEXT_RULE_ID_SAMPLES):
             with self.subTest(rule_id=rule_id):
                 self.assertEqual(stored_rule_id_errors(value), [])
 

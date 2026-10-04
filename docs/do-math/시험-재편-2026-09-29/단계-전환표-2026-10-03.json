@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B59 검증완료·확정준비",
-      "active": "다음 기존lifecycle/운영자/provider컬렉터/생산자쌍·cross상태 추가사례와미이관 실경계 통합",
+      "last_closed": "B60 검증완료·확정준비",
+      "active": "다음 남은기존module 차이의현재강화/명시이관/은퇴마감과실경계7파일/17사례 통합",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -16014,6 +16014,87 @@
           "tier": null
         }
       }
+    },
+    "public_detail_integration": {
+      "id": "B60",
+      "state": "verified_main_commit_pending",
+      "scope": "기존공개lifecycle/운영자CLI/실제provider컬렉터·worker배정/광고참조pair·unexpected owner receipt6파일 추가/강화사례",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-kl5rznlf\\report.json",
+        "sha256": "3f40054609524bab1ccaea9cada0617c6c5e3542c3a489252c41dba6f947ee59",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 45
+        },
+        "total_seconds": 64.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "contracts.test_pairs.ContractPairTests.test_every_producer_branch_is_received_and_every_named_field_is_produced",
+              "seconds": 1.125,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "sim.test_lifecycle_engine_public.LimitedRecoveryPublicTests.test_approval_checks_live_phase_action_role_profile_and_expiry",
+              "seconds": 3.0,
+              "budget_seconds": 2.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-he647on2\\report.json",
+        "sha256": "a43feb29af3d837b357a6966437b69631c9d71f89b082bfa3406522e46bb38f2",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 8.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 7.015999999945052,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "실제공개origin/대화/heartbeat/복구위상·workspace/scheduler·workerpath/hash/timeout 불변. provider배정전건의플래그양쪽생산과catalog수신.대역이잘못된반려를그린으로숨기지않고실제receipt/checkbytes보존. main의더강한external단언유지.",
+      "limits": "45개64.7초·contracts1.125초/sim3초초과·구조6개8.1초와smell7.016초를구분.부분보고는원문전건/최종T2/T3·변이/예산/실호출증거아님.",
+      "files": [
+        {
+          "path": "tests/sim/test_lifecycle_engine_public.py",
+          "sha256": "a9c42152a79814480b7b49e5f3c10681d7aa3d08d7bf4b539214411a28c8e2f5"
+        },
+        {
+          "path": "tests/sim/test_operator_finish_cli.py",
+          "sha256": "f8b7b210a683b75a2e3bb45e24f1a748dbd71d999597927a6f5b322e4e61f198"
+        },
+        {
+          "path": "tests/sim/test_provider_collection.py",
+          "sha256": "c5ece0223845440adfeb29bc35b70e608f7b9a4e78bb38680be0e4e8ac93f1b0"
+        },
+        {
+          "path": "tests/contracts/test_pairs.py",
+          "sha256": "3612c16076e02db9ec2e81a60509dce85ce7fc4cd5065c6e4fb685972c537894"
+        },
+        {
+          "path": "tests/contracts/pairs.py",
+          "sha256": "589d6f8be9358a1d4796177a53723dfef70c5d30d69b3260bc04fa4f946017cc"
+        },
+        {
+          "path": "tests/flows/test_submission_engine_calls.py",
+          "sha256": "6e933b831d0a4e41a05f8df0603fcb47825be602a4e2e33865f1e02b42aef94b"
+        }
+      ],
+      "whole_requirement_closed": false
     }
   }
 }
