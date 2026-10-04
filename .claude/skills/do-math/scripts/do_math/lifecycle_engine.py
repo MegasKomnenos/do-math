@@ -586,6 +586,7 @@ class LifecycleEngineMixin:
         self._retry_observation_configuration()
         missing_assessments = self._ensure_model_assessments()
         editions = governance_revisions(self.instance)
+        previous_readiness_events = None
         for task_id, task in self.runtime['tasks'].items():
             if task.get('status') not in _SCHEDULABLE:
                 self._task_readiness.pop(task_id, None)
@@ -657,8 +658,24 @@ class LifecycleEngineMixin:
                 self._lifecycle_event('task_readiness_lost', target=task_id, errors=evaluation['errors'],
                                       basis={'dispatch_occupied': evaluation.get('dispatch_occupied', False)},
                                       schedule=not evaluation.get('dispatch_occupied', False))
-            if evaluation['state'] == 'evaluation_error' and (not previous or previous.get('errors') != evaluation['errors']):
-                self._lifecycle_event('task_condition_evaluation_error', target=task_id, errors=evaluation['errors'])
+            if evaluation['state'] == 'evaluation_error':
+                error_basis = {'contract': required, 'records': evaluation['basis']}
+                if previous is None:
+                    # Readiness is recalculated after restart; only the recorded
+                    # cause of a planning event survives the owner process.
+                    if previous_readiness_events is None:
+                        previous_readiness_events = {event.get('target'): event for event in self.runtime['events']
+                            if event['kind'] in {'task_became_ready', 'task_readiness_lost', 'task_condition_evaluation_error'}}
+                    recorded = previous_readiness_events.get(task_id, {})
+                    unchanged = (recorded.get('kind') == 'task_condition_evaluation_error'
+                        and recorded.get('errors') == evaluation['errors'] and recorded.get('basis') == error_basis)
+                else:
+                    unchanged = (previous.get('state') == 'evaluation_error'
+                        and previous.get('errors') == evaluation['errors']
+                        and previous.get('contract_basis') == required and previous.get('basis') == evaluation['basis'])
+                if not unchanged:
+                    self._lifecycle_event('task_condition_evaluation_error', target=task_id,
+                                          errors=evaluation['errors'], basis=error_basis)
         record_due_events(self.instance, self.runtime, now.isoformat())
         # An ended instance returned above (_instance_closed); only a lost conversation pauses here.
         if self.runtime.get('status') == 'paused':

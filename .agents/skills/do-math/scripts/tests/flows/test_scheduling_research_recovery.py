@@ -697,6 +697,38 @@ class ReconsiderationPlanningTests(unittest.TestCase):
         for _ in range(2):
             sim.step()
             self.assertEqual(assert_call_records(self, sim), after)
+        events = deepcopy(sim.runtime['events'])
+        sim.restart()
+        sim.step()
+        self.assertEqual(assert_call_records(self, sim), after)
+        self.assertEqual(sim.runtime['events'], events)
+        from support.engine_lifecycle import _ended_execution
+        from support.role_answers import contract_review
+        for index, restart in enumerate((False, True), start=1):
+            engine = sim.engine
+            changed_path = f'runtime/artifacts/BA-readiness-error-new-{index}/evidence.json'
+            engine._save({changed_path: raw})
+            current = only_task(sim)
+            current['occurrence_condition'] = {'op': 'artifact_valid', 'artifact_ref': {
+                'path': changed_path, 'snapshot': engine.head, 'sha256': hashlib.sha256(raw).hexdigest()}}
+            reviewer = sim.clock.new_id('EX')
+            _ended_execution(engine, reviewer, 'task_contract_review')
+            engine._apply({'role': 'task_contract_review', 'target': current['id']},
+                          contract_review({'task': current}), reviewer, owns_response=False)
+            engine._save()
+            if restart:
+                sim.restart()
+            sim.run_until(lambda state: sum(c['role'] == 'research_plan' for c in state.model.calls)
+                          == after['research_plan'] + index, max_steps=8)
+            self.assertEqual(assert_call_records(self, sim)['research_plan'], after['research_plan'] + index)
+            self.assertEqual(seen[-1]['errors'], seen[0]['errors'])
+            errors = [e for e in sim.runtime['events'] if e['kind'] == 'task_condition_evaluation_error']
+            self.assertEqual(len(errors), index + 1)
+            self.assertNotEqual(errors[-2]['basis'], errors[-1]['basis'])
+            self.assertEqual(sim.runtime['events'][:len(events)], events)
+            latest, = [e for e in sim.runtime['executions'].values()
+                       if errors[-1]['id'] in e['action'].get('event_refs', [])]
+            self.assertEqual(latest['outcome'], 'output_accepted', latest.get('error'))
 
 
 if __name__ == '__main__':

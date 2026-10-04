@@ -182,5 +182,107 @@ class PublicGovernancePlanningTests(unittest.TestCase):
                 self.assertEqual(assert_call_records(self, sim)['research_plan'], 0)
 
 
+class PublicJudgmentRequestTests(unittest.TestCase):
+    def test_new_decision_event_during_a_plan_is_assigned_to_a_later_plan(self):
+        from support.cross_contracts import assert_call_records
+        from support.default_responder import DefaultResponder
+        from support.engine_lifecycle import clear_work
+        from support.model import amend
+        from support.submission_calls import applied_now, submission_model
+        from support.sim import Sim
+        sim = Sim.activated()
+        clear_work(sim)
+        def grant(identifier):
+            return {'change': {'kind': 'grant', 'grant': {'id': identifier, 'kind': 'local',
+                'roles': ['maintenance'], 'reuse': 'reusable'}}}
+        first_control = applied(sim, 'decision', config=grant('GR-event-first'))
+        first_id, = [a['id'] for a in sim.runtime['queue'] if a['role'] == 'research_plan']
+        first_event, = [e['id'] for e in sim.runtime['events']
+                       if e.get('source_ref') == first_control['request_id'] and e['kind'] == 'user_decision_applied']
+        model = submission_model(sim, DefaultResponder(preparation_candidates=[], plan_assessments=False))
+        model.on('research_plan').reply(amend(goal_audit=False))
+        arrived = []
+        fixed = []
+        def while_planning(context, workspace):
+            if context['action']['id'] == first_id:
+                fixed.append(deepcopy(context['action']))
+                arrived.append(applied_now(sim, 'decision', text='An independent permission arrived.',
+                                           config=grant('GR-event-later')))
+                self.assertEqual(context['action'], fixed[0])
+        model.before('research_plan', while_planning)
+        sim.step()
+        second_event, = [e['id'] for e in sim.runtime['events']
+                        if e.get('source_ref') == arrived[0]['request_id'] and e['kind'] == 'user_decision_applied']
+        first, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == first_id]
+        self.assertEqual(first['outcome'], 'output_accepted', first.get('error'))
+        self.assertIn(first_event, first['action']['event_refs'])
+        self.assertNotIn(second_event, first['action']['event_refs'])
+        sim.run_until(lambda current: any(second_event in c['action'].get('event_refs', [])
+                                         for c in current.model.calls), max_steps=8)
+        later, = [e for e in sim.runtime['executions'].values() if second_event in e['action'].get('event_refs', [])]
+        self.assertEqual(later['outcome'], 'output_accepted', later.get('error'))
+        self.assertNotEqual(first['action']['id'], later['action']['id'])
+        self.assertNotIn(first_event, sim.runtime['pending_events'])
+        self.assertNotIn(second_event, sim.runtime['pending_events'])
+        for _ in range(2):
+            sim.step()
+            assert_call_records(self, sim)
+            for event in (first_event, second_event):
+                self.assertEqual(sum(event in c['action'].get('event_refs', []) for c in model.calls), 1)
+
+    def test_explicit_judgment_requests_run_once_and_replay_without_another_call(self):
+        from support.cross_contracts import assert_call_records
+        from support.default_responder import DefaultResponder
+        from support.engine_lifecycle import clear_work
+        from support.model import amend
+        from support.scheduling_recovery import failed_plan_sim, failed_execution
+        from support.sim import Sim
+        for role in ('research_plan', 'operational_review'):
+            with self.subTest(role=role):
+                sim = failed_plan_sim() if role == 'operational_review' else Sim.activated()
+                clear_work(sim)
+                sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+                sim.model.on('research_plan').reply(amend(goal_audit=False))
+                config = {'role': role}
+                if role == 'operational_review':
+                    config['target'] = failed_execution(sim)['id']
+                request_id = 'UC-direct-' + role
+                options = {'text': 'Judge the preserved current facts.', 'config': config, 'request_id': request_id}
+                applied(sim, 'request', **options)
+                request, = [a for a in sim.runtime['queue'] if a.get('requested_by') == request_id]
+                before = assert_call_records(self, sim)
+                sim.run_until(lambda current: any(c['action']['id'] == request['id'] for c in current.model.calls), max_steps=8)
+                self.assertEqual(assert_call_records(self, sim)[role] - before[role], 1)
+                execution, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == request['id']]
+                self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+                self.assertEqual(execution['action'].get('target'), config.get('target'))
+                self.assertTrue(applied(sim, 'request', **options)['replayed'])
+                for _ in range(2):
+                    sim.step()
+                    assert_call_records(self, sim)
+                    self.assertEqual(sum(c['action'].get('requested_by') == request_id for c in sim.model.calls), 1)
+
+    def test_missing_operational_target_is_rejected_without_a_judgment_call(self):
+        from support.cross_contracts import assert_call_records
+        from support.default_responder import DefaultResponder
+        from support.engine_lifecycle import clear_work
+        from support.sim import Sim
+        sim = Sim.activated()
+        clear_work(sim)
+        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+        for target in (None, 'EX-not-present'):
+            with self.subTest(target=target):
+                config = {'role': 'operational_review'}
+                if target is not None:
+                    config['target'] = target
+                with self.assertRaisesRegex(ValueError, '^operational review requires an existing execution ID$'):
+                    sim.control('request', config=config)
+        for _ in range(2):
+            sim.step()
+            counts = assert_call_records(self, sim)
+            self.assertEqual(counts['operational_review'], 0)
+            self.assertEqual(counts['research_plan'], 0)
+
+
 if __name__ == '__main__':
     unittest.main()

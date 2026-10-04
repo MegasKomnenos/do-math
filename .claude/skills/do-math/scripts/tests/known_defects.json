@@ -584,6 +584,15 @@
       "found_by": "B107 정상 수신자로 만든 missing-input 평가에서 _1n1w1zv의 계획1회와 operational disposition has no execution target 예외를 재현했다. 같은 실행의 malformed JSON artifact 조건도 operational_review와 research_plan을 동시에 만들었다. 판단 가능한 재고 사유를 명시하고 평가 오류를 기존 lifecycle 계획 사건에 맡긴 뒤 kqpe7_y_에서 실제 대기0/자료 도착1 및 오류 계획1 수락을 확인했다.",
       "missed_kind": "기존 검사는 exhaustion_state의 사유와 next_owner만 확인했다. 대기 담당을 실제 호출 역할로 소비하는 직접 queue 생성과 역할의 필수 대상 계약을 연결하지 않았다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1919",
+      "summary": "준비성 평가 오류의 사건 발동이 process-local 이전 평가에만 의존해 owner 재시작 후 같은 오류를 새 사건으로 기록하고 이미 수락한 계획을 반복한다.",
+      "category": 11,
+      "reproduction": "flows.test_scheduling_research_recovery.ReconsiderationPlanningTests.test_artifact_evaluation_error_opens_a_plan_with_the_task_error_and_no_targetless_review",
+      "found_by": "B108의 6tmk_c4i에서 동일 오류·동일 근거의 수락 계획 뒤 restart만으로 실제 계획이2회가 되는 것을 재현. 오류 사건에 계약/판정 근거를 보존하고 cold owner는 마지막 준비성 사건과 대조하도록 교정하여 g44_cnps에서 추가0과 변경 근거의 새 계획1 수락을 확인.",
+      "missed_kind": "B107은 같은 owner의 추가 pass만 확인했다. 준비성 캐시는 과정 내부 파생 상태라 재시작하면 비며, 사건의 처리 이력과 비교하지 않으면 이미 판단한 원인을 다시 발동한다.",
+      "status": "closed"
     }
   ]
 }
