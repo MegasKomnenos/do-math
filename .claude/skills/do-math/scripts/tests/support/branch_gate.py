@@ -52,7 +52,7 @@ Index (``build_index``) format ``do-math-selection-index/2``::
      "tests": [test id, ...],                       # ordinals below refer to this list
      "files": {repo-relative path: {"blob": git blob id at measurement,
                                     "functions": {"<qualname>": [ordinal, ...]},  # measured .py only
-                                    "readers": [ordinal, ...]}}}                  # non-Python inputs only
+                                    "readers": [ordinal, ...]}}}                  # input openers or consumers
 
 A function is keyed by its qualified name (``Class.method``,
 ``outer.<locals>.inner``); a lambda or generator expression is credited to the
@@ -88,6 +88,25 @@ MONITOR_TOOL = 3  # sys.monitoring tool id; 0 debugger, 1 coverage, 2 profiler a
 SHARED, SHARED_USE = 'shared:', '<shared>'
 # Code objects that are not functions of their own: credited to the function that holds them.
 _ANONYMOUS = ('<lambda>', '<genexpr>', '<listcomp>', '<dictcomp>', '<setcomp>')
+
+
+def shared_labels(entered, label):
+    """Shared producer labels transitively consumed by label; tolerate repeated edges and cycles."""
+    pending = [SHARED + key for path, key in entered.get(label, ()) if path == SHARED_USE]
+    seen = set()
+    while pending:
+        producer = pending.pop()
+        if producer in seen:
+            continue
+        seen.add(producer)
+        pending.extend(SHARED + key for path, key in entered.get(producer, ()) if path == SHARED_USE)
+    return seen
+
+
+def credited_functions(entered, label):
+    """Function dependencies of a label; do not rewrite its literal entry record."""
+    return {tuple(pair) for source in {label} | shared_labels(entered, label)
+            for pair in entered.get(source, ()) if pair[0] != SHARED_USE}
 
 
 def function_key(qualname):
@@ -238,6 +257,9 @@ class Measurement:
         self.order, self.position, self.caches = [], {}, []
         self.opens = defaultdict(set)      # context -> repo paths
         self.import_opens = defaultdict(set)  # repo path -> opener module repo paths
+        self.producers = []                # shared build labels; literal open/coverage context stays unchanged
+        self.shared_inputs = defaultdict(set)  # producer label -> inputs actually opened while building
+        self.dependency_inputs = defaultdict(set)  # consumer label -> dependencies frozen by workers/store
         omit = [str(TESTS / 'test_*.py'), str(TESTS / '*' / 'test_*.py'), str(TESTS / '*_fixtures.py'),
                 str(SCRIPTS / 'run_tests.py'), str(SCRIPTS / 'test_categories.py'), str(Path(__file__).resolve())]
         self.coverage = coverage.Coverage(data_file=str(data_file) if data_file else None, branch=True, source=[str(SCRIPTS)], omit=omit,
@@ -292,6 +314,8 @@ class Measurement:
             return
         if resolved.suffix in ('.py', '.pyc') or relative.startswith('.git/') or '__pycache__' in resolved.parts:
             return
+        if self.producers:
+            self.shared_inputs[self.producers[-1]].add(relative)
         if self.context:
             self.opens[self.context].add(relative)
             return
@@ -314,13 +338,36 @@ class Measurement:
         """Stop measuring without a report (the run ended before any test ran)."""
         self._stop()
 
+    def input_dependencies(self):
+        """Inputs of observed shared producers, credited only along actual use edges.
+
+        Resolve the live process before merging: identical keys in other workers
+        or retained modules must not give this process's consumers extra inputs.
+        Literal opens stay in opens/import_opens.
+        """
+        out = defaultdict(set)
+        for label, paths in self.dependency_inputs.items():
+            out[label].update(paths)
+        if self.shared_inputs:
+            entered = self.calls.records(self.root)
+            for label in entered:
+                if not label or label.startswith(SHARED):
+                    continue
+                for producer in shared_labels(entered, label):
+                    out[label].update(self.shared_inputs.get(producer, ()))
+        return {label: sorted(paths) for label, paths in sorted(out.items()) if paths}
+
+    def opened(self):
+        """Current open record: literal opens and separately attributed input dependencies."""
+        return {'opens': {context: sorted(paths) for context, paths in self.opens.items()},
+                'import_opens': {path: sorted(openers) for path, openers in self.import_opens.items()},
+                'input_dependencies': self.input_dependencies()}
+
     def save(self, directory):
         """A worker of a parallel T3: stop measuring; keep the data file, the entered functions and the opened inputs."""
         self._stop()
         self.coverage.save()
-        opened = {'opens': {context: sorted(paths) for context, paths in self.opens.items()},
-                  'import_opens': {path: sorted(openers) for path, openers in self.import_opens.items()}}
-        (Path(directory) / OPENED).write_text(json.dumps(opened), encoding='utf-8')
+        (Path(directory) / OPENED).write_text(json.dumps(self.opened()), encoding='utf-8')
         (Path(directory) / ENTERED).write_text(json.dumps(self.calls.records(self.root)), encoding='utf-8')
 
     def merge(self, directories):
@@ -342,6 +389,8 @@ class Measurement:
                 self.opens[context].update(paths)
             for path, openers in opened['import_opens'].items():
                 self.import_opens[path].update(openers)
+            for label, paths in opened['input_dependencies'].items():
+                self.dependency_inputs[label].update(paths)
             for label, keys in json.loads((Path(directory) / ENTERED).read_text(encoding='utf-8')).items():
                 self.merged_entered[label].update(tuple(key) for key in keys)
         return missing
@@ -353,7 +402,7 @@ class Measurement:
             return {label: sorted(list(key) for key in keys) for label, keys in merged.items()}
         return self.calls.records(self.root)
 
-    def absorb(self, entered, opens):
+    def absorb(self, entered, opens, input_dependencies):
         """Join stored records (a T3 store's reused modules, A29) to this run's entered functions and opened inputs."""
         merged = defaultdict(set)
         for records in (self.entered(), entered):
@@ -362,6 +411,8 @@ class Measurement:
         self.merged_entered = merged
         for label, paths in opens.items():
             self.opens[label].update(paths)
+        for label, paths in input_dependencies.items():
+            self.dependency_inputs[label].update(paths)
 
     def finish(self, directory, before_report=None):
         """Stop measuring; keep the entered functions (``entered.json``); return the coverage JSON with repo-relative keys.
@@ -373,6 +424,7 @@ class Measurement:
         if before_report is not None:
             before_report(self)
         (Path(directory) / ENTERED).write_text(json.dumps(self.entered()), encoding='utf-8')
+        (Path(directory) / OPENED).write_text(json.dumps(self.opened()), encoding='utf-8')
         path = Path(directory) / 'coverage.json'
         # Code a test compiled under a path with no file, or a module it wrote and removed, has no source to
         # report; left in, it failed the whole report. The gate judges product files, which persist.
@@ -429,22 +481,30 @@ def shared_state(key):
 
     The build runs once per process, in whichever test or fixture asks first, so
     what it enters would be credited to that one. Recorded under ``shared:<key>``,
-    it is credited to every label that ``used_state(key)`` names. Outside a T3
-    measurement this does nothing.
+    it is credited to every label that transitively consumes it through
+    ``used_state(key)``. Inputs actually opened during the build are recorded
+    separately from their unchanged literal open context. Coverage stays in
+    its original module/fixture context. Outside T3 this does nothing.
     """
     active = _ACTIVE
     if active is None or _PAUSED:
         yield
         return
-    with active.calls.building(key):
-        yield
+    active.producers.append(SHARED + key)
+    try:
+        with active.calls.building(key):
+            yield
+    finally:
+        active.producers.pop()
 
 
 def used_state(key):
     """The running test or fixture restores the shared state ``key``; see ``shared_state``."""
     active = _ACTIVE
-    if active is not None and active.context:
-        active.calls.users[key].add(active.context)
+    if active is not None and not _PAUSED:
+        label = active.producers[-1] if active.producers else active.context
+        if label:
+            active.calls.users[key].add(label)
 
 
 def _hook(event, arguments):
@@ -514,12 +574,15 @@ def _test_module(path, scripts_prefix):
     return None
 
 
-def build_index(entered, tests, opens, import_opens, blobs, commit, created=None, scripts_prefix=None):
+def build_index(entered, tests, opens, import_opens, blobs, commit, created=None, scripts_prefix=None, *,
+                input_dependencies):
     """The selection index from the recorder's ``entered`` ({label: [[repo path, function key], ...]}).
 
     ``tests`` is the ordered list of test ids that ran; ``opens`` maps a context to
     the non-Python paths opened under it; ``import_opens`` maps such a path to the
-    modules that opened it at import; ``blobs`` maps every tracked path (all
+    modules that opened it at import; input_dependencies separately records
+    inputs of shared producers actually consumed by a label. Readers union these
+    relations without asserting that a consumer opened the file. ``blobs`` maps every tracked path (all
     scripts/ .py and every opened input) to its git blob id. Every measured .py
     under ``scripts/`` gets ``functions``, empty when no test entered one.
     """
@@ -530,27 +593,21 @@ def build_index(entered, tests, opens, import_opens, blobs, commit, created=None
         tests_by_module[test.rsplit('.', 2)[0]].add(index)
     entries = {path: {'blob': blob} for path, blob in blobs.items()}
     functions = defaultdict(lambda: defaultdict(set))
-    users = defaultdict(set)  # shared state key -> labels that restored it
-    for label, keys in entered.items():
-        users_of = [key for path, key in keys if path == SHARED_USE]
-        for key in users_of:
-            users[key].add(label)
-    for label, keys in entered.items():
-        if label.startswith(SHARED):  # a shared build: credited to every label that restored it
-            credited = set().union(*(_credited(user, tests_by_module, ordinal) for user in users[label[len(SHARED):]]))
-        else:
-            credited = _credited(label, tests_by_module, ordinal)
+    for label in entered:
+        if label.startswith(SHARED):
+            continue
+        credited = _credited(label, tests_by_module, ordinal)
         if credited:
-            for path, key in keys:
-                if path != SHARED_USE:
-                    functions[path][key] |= credited
+            for path, key in credited_functions(entered, label):
+                functions[path][key] |= credited
     for path, entry in entries.items():
         if path.endswith('.py') and path.startswith(scripts_prefix + '/') and not _test_module(path, scripts_prefix):
             entry['functions'] = {key: sorted(o) for key, o in sorted(functions.get(path, {}).items())}
     readers = defaultdict(set)
-    for context, paths in opens.items():
-        for path in paths:
-            readers[path] |= _credited(context, tests_by_module, ordinal)
+    for records in (opens, input_dependencies):
+        for context, paths in records.items():
+            for path in paths:
+                readers[path] |= _credited(context, tests_by_module, ordinal)
     for path, openers in import_opens.items():
         for opener in openers:
             module = _test_module(opener, scripts_prefix)
@@ -569,11 +626,13 @@ def write_index(measurement, report, tests, path=INDEX):
     root = measurement.root
     commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=root, capture_output=True, text=True,
                             check=True).stdout.strip()
-    inputs = {p for paths in measurement.opens.values() for p in paths} | set(measurement.import_opens)
+    dependencies = measurement.input_dependencies()
+    inputs = {p for records in (measurement.opens, dependencies) for paths in records.values() for p in paths} \
+        | set(measurement.import_opens)
     candidates = scripts_python(root) + sorted(p for p in inputs if (root / p).is_file())
     blobs = git_blobs(root, candidates)
     index = build_index(measurement.entered(), tests, measurement.opens, measurement.import_opens, blobs, commit,
-                        scripts_prefix=SCRIPTS.relative_to(root).as_posix())
+                        scripts_prefix=SCRIPTS.relative_to(root).as_posix(), input_dependencies=dependencies)
     handle, temporary = tempfile.mkstemp(dir=Path(path).parent, prefix='.selection-index-', suffix='.tmp')
     with os.fdopen(handle, 'w', encoding='utf-8') as stream:
         json.dump(index, stream, ensure_ascii=False, separators=(',', ':'))

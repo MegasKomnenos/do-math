@@ -16,7 +16,8 @@ again:
     ``branch_gate.shared_state``) counts as entered. Position is part of it
     because stored arcs are line numbers: a function that only moved cannot
     reuse them;
-(d) an input its tests or fixtures opened changed or is gone.
+(d) an input its tests or fixtures opened, or an observed shared producer
+    they consumed opened, changed or is gone.
 
 Everything is measured again (a **full** plan) when the store is missing, of
 another format or coverage version, or when ``--full`` asks for it, or when:
@@ -47,9 +48,10 @@ import shutil
 import sqlite3
 import subprocess
 
-FORMAT = 'do-math-t3-store/1'
+from support.branch_gate import FIXTURE, SHARED, credited_functions
+
+FORMAT = 'do-math-t3-store/2'
 DATA, RECORDS = 'coverage.data', 'records.json'
-FIXTURE, SHARED, SHARED_USE = 'fixture:', 'shared:', '<shared>'  # branch_gate's labels
 COVERAGE_SCHEMA = 7  # coverage 7.x data file schema; another one is never filtered
 # Scripts-relative files whose change measures everything again: the runner and the measurement.
 RUNNER = ('run_tests.py', 'test_categories.py', 'tests/support/branch_gate.py', 'tests/support/t3_store.py')
@@ -218,7 +220,7 @@ def plan(records, universe, existing, current, scripts_prefix, *, coverage_versi
             else:
                 changed = sorted(path for path, blob in snapshot['inputs'].items() if blobs[path] != blob)
                 if changed:
-                    reason = f'opened {changed[0]} changed'
+                    reason = f'input {changed[0]} changed'
         if reason:
             measure.add(module)
             why[module] = reason
@@ -237,45 +239,45 @@ def label_module(label):
     return label.rsplit('.', 2)[0]
 
 
-def module_records(tests, entered, opens, current, scripts_prefix):
+def module_records(tests, entered, opens, current, scripts_prefix, *, input_dependencies):
     """``{module: {tests, blob, functions, inputs}}``: what each measured module's measurement relied on.
 
     ``tests`` maps each module measured whole to its test ids; ``entered`` and
     ``opens`` are the run's records by label. A module relies on the functions
     its tests and its fixture phases entered, on those a shared build it
-    restored entered, and on the inputs its labels opened.
+    restored entered, and on literal inputs plus separately recorded shared
+    input dependencies. Shared function dependencies are transitive.
     """
     labels = {}
-    for label in set(entered) | set(opens):
+    for label in set(entered) | set(opens) | set(input_dependencies):
         module = label_module(label)
         if module in tests:
             labels.setdefault(module, []).append(label)
     out = {}
     paths = {test_module_path(scripts_prefix, module) for module in tests}
-    paths |= {path for module in tests for label in labels.get(module, ()) for path in opens.get(label, ())}
+    module_inputs = {module: {path for label in labels.get(module, ())
+                              for record in (opens, input_dependencies) for path in record.get(label, ())}
+                     for module in tests}
+    paths |= {path for inputs in module_inputs.values() for path in inputs}
     blobs = current.blobs(sorted(paths))
     digests = {}
     for module, ids in sorted(tests.items()):
         pairs = set()
         for label in labels.get(module, ()):
-            for path, key in entered.get(label, ()):
-                if path == SHARED_USE:
-                    pairs |= {tuple(pair) for pair in entered.get(SHARED + key, ())}
-                else:
-                    pairs.add((path, key))
+            pairs |= credited_functions(entered, label)
         functions = {}
         for path, key in sorted(pairs):
             if path not in digests:
                 digests[path] = current.digests(path)
             functions.setdefault(path, {})[key] = (digests[path] or {}).get('functions', {}).get(key)
-        inputs = {path: blobs[path] for label in labels.get(module, ()) for path in opens.get(label, ())}
+        inputs = {path: blobs[path] for path in module_inputs[module]}
         out[module] = {'tests': sorted(ids), 'blob': blobs[test_module_path(scripts_prefix, module)],
                        'inputs': dict(sorted(inputs.items())), 'functions': functions}
     return out
 
 
 def records(root, scripts, modules, entered, opens, import_opens, current, coverage_version, stored=None,
-            keep=()):
+            keep=(), *, input_dependencies):
     """The store record after a run: ``modules`` measured now, plus the stored modules in ``keep``.
 
     ``tops``, ``runner`` and ``import_inputs`` describe the tree now. Kept
@@ -308,20 +310,27 @@ def records(root, scripts, modules, entered, opens, import_opens, current, cover
         merged_entered[label] = [list(pair) for pair in pairs]
     merged_opens = {label: paths for label, paths in stored.get('opens', {}).items() if label in kept_labels}
     merged_opens.update({label: sorted(paths) for label, paths in opens.items()})
+    dependencies = {label: paths for label, paths in (stored['input_dependencies'] if stored else {}).items()
+                    if label_module(label) in kept}
+    dependencies.update({label: sorted(paths) for label, paths in input_dependencies.items()
+                         if label_module(label) in modules})
     return {'format': FORMAT, 'coverage': coverage_version, 'root': str(root),
             'created': datetime.now(timezone.utc).isoformat(timespec='seconds'),
             'tops': tops, 'runner': runner_marks(current, sorted(runner)),
             'import_inputs': {path: blobs[path] for path in imported},
             'modules': {**kept, **modules}, 'entered': merged_entered, 'opens': merged_opens,
+            'input_dependencies': dependencies,
             'import_opens': {path: sorted(openers) for path, openers in import_opens.items()}}
 
 
 def stored_entries(stored, modules):
-    """The stored entered functions and opened inputs of ``modules``' labels, and every stored shared build."""
+    """Stored entries, literal opens and input dependencies of reused labels, plus shared function records."""
     entered = {label: pairs for label, pairs in stored.get('entered', {}).items()
                if label_module(label) in modules or label.startswith(SHARED)}
     opens = {label: paths for label, paths in stored.get('opens', {}).items() if label_module(label) in modules}
-    return entered, opens
+    dependencies = {label: paths for label, paths in stored['input_dependencies'].items()
+                    if label_module(label) in modules}
+    return entered, opens, dependencies
 
 
 def module_contexts(modules):

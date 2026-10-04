@@ -1,6 +1,7 @@
 """The runner places tests in tiers by folder and selects them with --tier."""
 import contextlib
 import io
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -47,6 +48,29 @@ class TierTests(unittest.TestCase):
 
 
 class ReportTests(unittest.TestCase):
+    def test_edition_hashes_actual_python_bytes_and_ignores_docs_and_pycache(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        package = root / 'package'
+        package.mkdir()
+        source = package / 'source.py'
+        raw = b'VALUE = 1\r\n'
+        source.write_bytes(raw)
+        notes = root / 'notes.md'
+        notes.write_bytes(b'first documentation')
+        cache = package / '__pycache__'
+        cache.mkdir()
+        (cache / 'not_source.py').write_bytes(b'ignored compiled-cache directory')
+        with mock.patch.object(run_tests, 'SCRIPTS', root):
+            expected = {'package/source.py': hashlib.sha256(raw).hexdigest()}
+            self.assertEqual(run_tests._edition(), expected)
+            notes.write_bytes(b'changed documentation')
+            self.assertEqual(run_tests._edition(), expected)
+            changed = b'VALUE = 2\r\n'
+            source.write_bytes(changed)
+            self.assertEqual(run_tests._edition(), {'package/source.py': hashlib.sha256(changed).hexdigest()})
+            source.unlink()
+            self.assertEqual(run_tests._edition(), {})
+
     def test_changed_source_rejects_pass_and_does_not_publish_timing_cache(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         test = _case('unit.test_source_probe')
@@ -176,6 +200,31 @@ class ModuleCostTests(unittest.TestCase):
 
 class TimingRecordTests(unittest.TestCase):
     """Measured T3 times (2-3x, unevenly by module) stay out of the T2 balance record (결함 D11)."""
+
+    def test_a_partial_public_selection_reports_its_cost_without_replacing_the_whole_module_cost(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        clock = types.SimpleNamespace(value=0)
+        def advance(seconds):
+            clock.value += seconds
+        module = types.ModuleType('unit.test_cost_scope_probe')
+        module.setUpModule = lambda: advance(7)
+        case = type('Case', (unittest.TestCase,), {
+            '__module__': module.__name__,
+            'test_short': lambda self: advance(1), 'test_long': lambda self: advance(9)})
+        tests = [case('test_short'), case('test_long')]
+        self.enterContext(mock.patch.dict(sys.modules, {module.__name__: module}))
+        self.enterContext(mock.patch.object(run_tests, 'discover', return_value=tests))
+        self.enterContext(mock.patch.object(run_tests, 'TIMINGS', root / 'times.json'))
+        self.enterContext(mock.patch.object(run_tests, 'time', types.SimpleNamespace(monotonic=lambda: clock.value)))
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(run_tests.main([module.__name__, '--output', str(root / 'whole')]), 0)
+            whole = json.loads((root / 'times.json').read_text(encoding='utf-8'))
+            self.assertEqual(whole[module.__name__], 17)
+            self.assertEqual(run_tests.main([tests[0].id(), '--output', str(root / 'partial')]), 0)
+        partial = json.loads((root / 'partial/report.json').read_text(encoding='utf-8'))
+        self.assertEqual(partial['counts'], {'passed': 1})
+        self.assertEqual(partial['module_total_seconds'], {module.__name__: 8})
+        self.assertEqual(json.loads((root / 'times.json').read_text(encoding='utf-8')), whole)
 
     def test_measured_and_unmeasured_module_totals_have_separate_cost_populations(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
@@ -376,6 +425,26 @@ class _FinishedMeasurement:
 
 
 class MutationIndexTests(unittest.TestCase):
+    def test_branch_success_cannot_hide_missing_mutation_measurement(self):
+        from support import branch_gate, mutation, selection
+        gate = {'passed': True, 'judged_modules': 1, 'modules_with_gaps': 0,
+                'missing_branches': 0, 'missing_lines': 0, 'excluded_lines': 0, 'unmeasured_modules': []}
+        self.enterContext(mock.patch.object(branch_gate, 'gate', lambda *args: gate))
+        self.enterContext(mock.patch.object(selection, 'read_index', lambda: (None, 'missing')))
+        self.enterContext(mock.patch.object(selection, 'is_ancestor_of_head', lambda root: lambda commit: True))
+        directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        args = mock.Mock(tests=['unit.test_ids'], match=[], mutation_base='HEAD', timeout=5.0)
+        for status in ('execution_error', 'mutation_error', 'not_executed'):
+            with self.subTest(status=status):
+                report = {'base': 'HEAD', 'every': True, 'functions': 1, 'counts': {status: 1},
+                          'unreasoned_entries': 0, 'baseline_failing': [], 'seconds': 0.0, 'survived': []}
+                with mock.patch.object(mutation, 'run', lambda *args, **options: report):
+                    result = run_tests._finish_t3(_FinishedMeasurement(Path(__file__).resolve().parents[6]),
+                                                  directory, [], args, False)
+                self.assertTrue(result['branch_gate']['passed'])
+                self.assertFalse(result['passed'])
+                self.assertEqual(result['mutation']['counts'], {status: 1})
+
     def test_a_run_that_writes_no_index_still_mutates_on_the_usable_index(self):
         """A partial T3 with --mutation-base hands mutation the fresh index it finds, not none (결함 D13)."""
         from support import branch_gate, mutation, selection
@@ -385,7 +454,7 @@ class MutationIndexTests(unittest.TestCase):
         def run(base, given, layers, root, directory, **options):
             seen['index'] = given
             return {'base': base, 'every': False, 'functions': 0, 'counts': {}, 'unreasoned_entries': 0,
-                    'seconds': 0.0, 'survived': []}
+                    'seconds': 0.0, 'survived': [], 'baseline_failing': []}
         self.enterContext(mock.patch.object(selection, 'read_index', lambda: (index, '')))
         self.enterContext(mock.patch.object(selection, 'is_ancestor_of_head', lambda root: lambda commit: True))
         self.enterContext(mock.patch.object(mutation, 'run', run))

@@ -51,7 +51,7 @@ class IndexTests(unittest.TestCase):
                    fixture_label('unit.test_a.A.test_two', 'sim.test_b.B.test_three'): [['s/do_math/m.py', 'h']],
                    'sim.test_b.B.test_three': [['s/do_math/m.py', 'g']]}
         index = build_index(entered, self.TESTS, {}, {}, {'s/do_math/m.py': 'b1', 's/do_math/n.py': 'b2'}, 'c0',
-                            created='t', scripts_prefix='s')
+                            created='t', scripts_prefix='s', input_dependencies={})
         self.assertEqual(index['files']['s/do_math/m.py'], {'blob': 'b1', 'functions': {'g': [1, 2], 'h': [0, 1, 2]}})
         self.assertEqual(index['files']['s/do_math/n.py'], {'blob': 'b2', 'functions': {}})
         self.assertEqual((index['commit'], index['tests'], index['format']), ('c0', self.TESTS, FORMAT))
@@ -63,7 +63,7 @@ class IndexTests(unittest.TestCase):
                         'skill/unused.json': {'s/do_math/n.py'}}
         blobs = {'s/do_math/m.py': 'b1', 'skill/schema.json': 'b2', 'skill/table.json': 'b3',
                  'skill/corpus.json': 'b4', 'skill/unused.json': 'b5'}
-        index = build_index(entered, self.TESTS, opens, import_opens, blobs, 'c0', scripts_prefix='s')
+        index = build_index(entered, self.TESTS, opens, import_opens, blobs, 'c0', scripts_prefix='s', input_dependencies={})
         self.assertEqual(index['files']['skill/schema.json'], {'blob': 'b2', 'readers': [0]})
         self.assertEqual(index['files']['skill/table.json'], {'blob': 'b3', 'readers': [2]})
         self.assertEqual(index['files']['skill/corpus.json'], {'blob': 'b4', 'readers': [0, 1]})
@@ -96,13 +96,15 @@ class MergeTests(unittest.TestCase):
         data.set_context('unit.test_a')
         data.add_lines({str(root / 'm.py'): [1, 2]})
         data.write()
-        (saved / OPENED).write_text(json.dumps({'opens': {'unit.test_a.A.test_x': ['in.json']}, 'import_opens': {}}),
+        (saved / OPENED).write_text(json.dumps({'opens': {'unit.test_a.A.test_x': ['in.json']}, 'import_opens': {},
+                                                   'input_dependencies': {}}),
                                     encoding='utf-8')
         (saved / ENTERED).write_text(json.dumps({'unit.test_a.A.test_x': [['m.py', 'f']]}), encoding='utf-8')
         measurement = Measurement(root, data_file=root / 'coverage.data')
         self.assertEqual(measurement.merge([saved, timed_out]), [timed_out])
         self.assertEqual(dict(measurement.opens), {'unit.test_a.A.test_x': {'in.json'}})
         self.assertEqual(measurement.entered(), {'unit.test_a.A.test_x': [['m.py', 'f']]})
+        self.assertEqual(measurement.input_dependencies(), {})
         self.assertEqual(sorted(measurement.coverage.get_data().lines(str(root / 'm.py'))), [1, 2])
 
 
@@ -197,8 +199,51 @@ class ProcessCacheTests(unittest.TestCase):
             measurement.calls.stop()
         path = Path(source).relative_to(root).as_posix()
         prefix = branch_gate.SCRIPTS.relative_to(root).as_posix()
-        index = build_index(measurement.entered(), self.TESTS, {}, {}, {path: 'b1'}, 'c0', scripts_prefix=prefix)
+        index = build_index(measurement.entered(), self.TESTS, {}, {}, {path: 'b1'}, 'c0', scripts_prefix=prefix,
+                            input_dependencies=measurement.input_dependencies())
         self.assertEqual(index['files'][path]['functions'], {'activate': [0, 1], 'build': [0, 1]})
+
+
+class SharedDependencyTests(unittest.TestCase):
+    def test_function_dependencies_follow_transitive_use_edges_without_rewriting_entries(self):
+        from copy import deepcopy
+        from support.branch_gate import credited_functions, shared_labels
+        entered = {'unit.test_a.T.test_consume': [['<shared>', 'outer']],
+                   'unit.test_b.T.test_passive': [],
+                   'shared:outer': [['p.py', 'outer'], ['<shared>', 'inner'], ['<shared>', 'inner']],
+                   'shared:inner': [['p.py', 'inner'], ['<shared>', 'outer']],
+                   'shared:unused': [['p.py', 'unused']]}
+        before = deepcopy(entered)
+        self.assertEqual(shared_labels(entered, 'unit.test_a.T.test_consume'), {'shared:inner', 'shared:outer'})
+        self.assertEqual(credited_functions(entered, 'unit.test_a.T.test_consume'),
+                         {('p.py', 'outer'), ('p.py', 'inner')})
+        self.assertEqual(credited_functions(entered, 'unit.test_b.T.test_passive'), set())
+        self.assertEqual(entered, before)
+
+    def test_paused_uses_and_failed_nested_builds_leave_no_consumer_edge_or_active_producer(self):
+        from unittest import mock
+        from support import branch_gate
+        measurement = _recording(__file__)
+        branch_gate._install_hook()
+        self.enterContext(mock.patch.object(branch_gate, '_ACTIVE', measurement))
+        measurement.calls.start()
+        try:
+            measurement.begin(['unit.test_a.T.test_passive'])
+            measurement.test_started('unit.test_a.T.test_passive')
+            with mock.patch.object(branch_gate, '_PAUSED', True):
+                branch_gate.used_state('paused')
+                with branch_gate.shared_state('paused'):
+                    pass
+            with self.assertRaisesRegex(ValueError, 'failed'):
+                with branch_gate.shared_state('outer'):
+                    with branch_gate.shared_state('inner'):
+                        raise ValueError('failed')
+            self.assertEqual(measurement.producers, [])
+            self.assertEqual(dict(measurement.calls.users), {})
+            self.assertEqual(measurement.input_dependencies(), {})
+            self.assertEqual(measurement.context, 'unit.test_a.T.test_passive')
+        finally:
+            measurement.calls.stop()
 
 
 if __name__ == '__main__':

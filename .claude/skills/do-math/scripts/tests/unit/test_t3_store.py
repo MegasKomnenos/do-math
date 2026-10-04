@@ -146,7 +146,8 @@ class ModuleRecordTests(unittest.TestCase):
                    'unit.test_b.T.test_1': [[P, 'second']]}
         opens = {'unit.test_a.T.test_1': ['s/role.md'], 'unit.test_b.T.test_1': ['s/other.md']}
         tree = _Tree({'s/tests/unit/test_a.py': 'a1', 's/role.md': 'd1'}, {P: SOURCE})
-        records = module_records({'unit.test_a': ['unit.test_a.T.test_1']}, entered, opens, tree, 's')
+        records = module_records({'unit.test_a': ['unit.test_a.T.test_1']}, entered, opens, tree, 's',
+                                 input_dependencies={})
         digests = code_digests(SOURCE)['functions']
         self.assertEqual(records, {'unit.test_a': {
             'tests': ['unit.test_a.T.test_1'], 'blob': 'a1', 'inputs': {'s/role.md': 'd1'},
@@ -170,7 +171,7 @@ class RecordTests(unittest.TestCase):
         for path, text in texts.items():
             (root / path).parent.mkdir(parents=True, exist_ok=True)
             (root / path).write_text(text, encoding='utf-8')
-        record = records(root, root / 's', {}, {}, {}, {}, _Tree({}, texts), 'v')
+        record = records(root, root / 's', {}, {}, {}, {}, _Tree({}, texts), 'v', input_dependencies={})
         self.assertEqual(sorted(record['tops']),
                          ['s/do_math/core.py', 's/tests/research_fixtures.py', 's/tests/support/helper.py'])
 

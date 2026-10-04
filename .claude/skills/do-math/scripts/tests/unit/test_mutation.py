@@ -195,10 +195,100 @@ class ChildRunTests(unittest.TestCase):
     def test_the_tests_of_the_module_with_the_cheapest_recorded_tests_run_first(self):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         for name in ('mutation_probe_slow', 'mutation_probe_cheap'):
-            (root / f'{name}.py').write_text(PROBE, encoding='utf-8')
+            code = PROBE
+            if name == 'mutation_probe_slow':
+                code += "\nPath(__file__).with_suffix('.imported').write_text('imported', encoding='utf-8')\n"
+            (root / f'{name}.py').write_text(code, encoding='utf-8')
         failing = self._child(root, ['mutation_probe_slow.T.test_1_fails', 'mutation_probe_cheap.T.test_1_fails'],
                               {'mutation_probe_slow': 50.0, 'mutation_probe_cheap': 1.0})
         self.assertEqual(failing, ['mutation_probe_cheap.T.test_1_fails'])
+        self.assertFalse((root / 'mutation_probe_slow.imported').exists(),
+                         'a confirmed cheap witness must stop before loading the later module')
+
+    def test_a_surviving_cheap_module_does_not_skip_a_later_killer(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        for name in ('mutation_probe_surviving', 'mutation_probe_later'):
+            (root / f'{name}.py').write_text(PROBE, encoding='utf-8')
+        failing = self._child(root,
+            ['mutation_probe_surviving.T.test_2_runs', 'mutation_probe_later.T.test_1_fails'],
+            {'mutation_probe_surviving': 1.0, 'mutation_probe_later': 50.0})
+        self.assertEqual(failing, ['mutation_probe_later.T.test_1_fails'])
+        self.assertEqual((root / 'mutation_probe_surviving.ran').read_text(encoding='utf-8'), 'ran')
+
+    def test_module_load_exception_is_reported_as_load_failure(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        (root / 'mutation_probe_load_error.py').write_text(
+            "raise TypeError('mutation import specimen')\n", encoding='utf-8')
+        failing = self._child(root, ['mutation_probe_load_error.T.test_one'], {})
+        self.assertEqual(failing, ['<test module load failure: TypeError: mutation import specimen>'])
+        result = json.loads((root / 'result.json').read_text(encoding='utf-8'))
+        self.assertEqual(result['load_error']['type'], 'TypeError')
+        self.assertEqual(result['load_error']['message'], 'mutation import specimen')
+
+
+class MutationEvidenceTests(unittest.TestCase):
+    def _run_with_child(self, child):
+        from subprocess import CompletedProcess
+        from support import branch_gate
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        scripts = root / 'scripts'
+        module = scripts / 'do_math/sample.py'
+        module.parent.mkdir(parents=True)
+        module.write_text('def value():\n    return 2\n', encoding='utf-8')
+        self.enterContext(mock.patch.object(mutation, 'SCRIPTS', scripts))
+        self.enterContext(mock.patch.object(mutation, '_git', lambda root, *args: CompletedProcess(
+            args, 0, stdout=(b'b' * 40 if args[0] == 'rev-parse' else b'def value():\n    return 1\n'))))
+        self.enterContext(mock.patch.object(branch_gate, 'git_blobs', lambda root, paths: {p: 'blob' for p in paths}))
+        self.enterContext(mock.patch.object(mutation, '_child_run', child))
+        return mutation.run('HEAD', None, {'do_math/sample.py': '1'}, root, root / 'mutants',
+                            listing_path=root / 'pseudo.json')
+
+    def test_a_normal_selection_that_also_times_out_cannot_certify_a_mutation_timeout(self):
+        report = self._run_with_child(lambda *args: (None, 0.1))
+        self.assertEqual(report['counts'], {'execution_error': 1})
+        self.assertFalse(mutation.passed(report))
+
+    def test_a_mutation_timeout_requires_the_same_normal_selection_to_finish(self):
+        normal = []
+        def child(spec, directory, timeout):
+            if spec['target'] is None:
+                normal.append(spec)
+                return set(), 0.1
+            return None, 0.1
+        report = self._run_with_child(child)
+        self.assertEqual(report['counts'], {'timeout': 1})
+        self.assertEqual(len(normal), 1)
+        from support.selection import LAYER_FOLDERS
+        self.assertEqual(normal[0]['folders'], list(LAYER_FOLDERS['1']))
+
+    def test_missing_child_result_cannot_be_a_killed_mutant(self):
+        from subprocess import CompletedProcess
+        from support import branch_gate
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        scripts = root / 'scripts'
+        module = scripts / 'do_math/sample.py'
+        module.parent.mkdir(parents=True)
+        module.write_text('def value():\n    return 2\n', encoding='utf-8')
+        self.enterContext(mock.patch.object(mutation, 'SCRIPTS', scripts))
+        self.enterContext(mock.patch.object(mutation, '_git', lambda root, *args: CompletedProcess(
+            args, 0, stdout=(b'b' * 40 if args[0] == 'rev-parse' else b'def value():\n    return 1\n'))))
+        self.enterContext(mock.patch.object(branch_gate, 'git_blobs', lambda root, paths: {p: 'blob' for p in paths}))
+        self.enterContext(mock.patch.object(mutation, '_child_run', lambda *args: ({'<child produced no result>'}, 0.1)))
+        report = mutation.run('HEAD', None, {'do_math/sample.py': '1'}, root, root / 'mutants',
+                              listing_path=root / 'pseudo.json')
+        self.assertEqual(report['counts'], {'execution_error': 1})
+        self.assertEqual(report['outcomes'][0]['status'], 'execution_error')
+        self.assertNotIn('killed_by', report['outcomes'][0])
+        self.assertFalse(mutation.passed(report))
+
+    def test_closing_requires_measured_mutants_and_a_passing_unmutated_baseline(self):
+        good = {'counts': {'killed': 3, 'trivial': 1}, 'unreasoned_entries': 0, 'baseline_failing': []}
+        self.assertTrue(mutation.passed(good))
+        for status in ('execution_error', 'mutation_error', 'not_executed'):
+            with self.subTest(status=status):
+                self.assertFalse(mutation.passed({**good, 'counts': {**good['counts'], status: 1}}))
+        self.assertFalse(mutation.passed({**good, 'baseline_failing': ['unit.probe.Case.test_value']}))
+        self.assertFalse(mutation.passed({**good, 'unreasoned_entries': 1}))
 
 
 

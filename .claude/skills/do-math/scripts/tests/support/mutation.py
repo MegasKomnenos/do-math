@@ -26,6 +26,13 @@ missing or stale index, adds the module's layer folders
 is ``not_executed``; the branch gate reports it, and it does not enter the
 pseudo-tested list.
 
+Evidence failures are separate: a child that leaves no result is
+``execution_error``, never a kill. A test-module loading exception is retained
+in ``result.json`` as ``load_error`` and its traceback stays in ``output.txt``.
+The CLI and T3 use the same ``passed`` predicate: unreasoned survivors,
+unmutated baseline failures, execution/mutation errors or unexecuted targets
+prevent a pass even when the pseudo-tested list is empty.
+
 Execution: never in the working tree. The mutant source is written to a
 temporary file, and a child interpreter (``--child``) imports it in place of the
 module through a meta-path loader that keeps the original ``__file__``. One
@@ -54,7 +61,7 @@ from __future__ import annotations
 
 import argparse
 import ast
-from collections import Counter
+from collections import Counter, defaultdict
 import fnmatch
 import json
 import os
@@ -63,12 +70,14 @@ import subprocess
 import sys
 import tempfile
 import time
+import traceback
 
 SCRIPTS = Path(__file__).resolve().parents[2]
 TESTS = SCRIPTS / 'tests'
 PSEUDO_TESTED = TESTS / 'pseudo_tested.json'
 TIMINGS = TESTS / '.timings.json'  # the runner's unmeasured module seconds; a mutant child runs unmeasured
 UNKNOWN_TEST_SECONDS = 0.5  # a module the record does not know, per test (as run_tests)
+CHILD_NO_RESULT = '<child produced no result>'
 NOTE = ('Pseudo-tested functions (설계 6.3): the extreme mutant of each survived every test that runs the '
         'function. An entry closes a sub-stage only with a reason; a function whose None return equals '
         'its behaviour says so in the reason.')
@@ -209,7 +218,8 @@ def _git(root, *arguments):
 def mutant_timeout(expected_seconds, ceiling):
     """A mutant's time limit: three times the expected unmutated run, at least 30 s, at most ``ceiling``.
 
-    A mutant that hangs counts as killed either way, so the limit only has to
+    A mutant that hangs requires a successful normal run of the same selection,
+    so the limit only has to
     let a mutant that survives but runs slower (a result it throws away is
     recomputed) finish. The expectation is the recorded seconds of every module
     the mutant's tests belong to, which bounds the run of a part of them.
@@ -247,7 +257,7 @@ def _is_test_id(name):
 
 
 def _child_run(spec, directory, timeout):
-    """Run one child; returns (failing test ids or None on timeout, seconds)."""
+    """Return failing ids/text, CHILD_NO_RESULT on missing evidence, or None on timeout; and seconds."""
     directory.mkdir(parents=True, exist_ok=True)
     (directory / 'spec.json').write_text(json.dumps(spec), encoding='utf-8')
     started = time.monotonic()
@@ -262,7 +272,7 @@ def _child_run(spec, directory, timeout):
             process.wait()
             return None, time.monotonic() - started
     result = json.loads((directory / 'result.json').read_text(encoding='utf-8')) \
-        if (directory / 'result.json').exists() else {'failing': ['<child produced no result>']}
+        if (directory / 'result.json').exists() else {'failing': [CHILD_NO_RESULT]}
     return set(result['failing']), time.monotonic() - started
 
 
@@ -333,7 +343,26 @@ def run(base, index, layers, root, directory, *, only=(), every=False, timeout=3
                                         work, limit)
             took += spent
             if failing is None:
-                outcome['status'] = 'timeout'
+                normal, normal_spent = _child_run({
+                    'tests': [t for t in chosen['tests'] if t not in excluded],
+                    'folders': chosen['folders'], 'exclude': sorted(excluded),
+                    'target': None, 'mutant': None}, work / 'timeout-baseline', limit)
+                took += normal_spent
+                outcome['timeout_baseline'] = {
+                    'seconds': round(normal_spent, 2),
+                    'failing': sorted(normal) if normal is not None else None}
+                if normal is None or normal:
+                    outcome.update(status='execution_error',
+                        detail='normal selection did not finish successfully within the mutant timeout')
+                    if normal:
+                        for test in normal:
+                            if _is_test_id(test):
+                                unmutated[test] = True
+                else:
+                    outcome['status'] = 'timeout'
+                break
+            if CHILD_NO_RESULT in failing:
+                outcome.update(status='execution_error', detail=CHILD_NO_RESULT)
                 break
             broken = {t for t in failing if _is_test_id(t) and fails_unmutated(t)}
             killers = sorted(failing - broken)
@@ -361,6 +390,13 @@ def summary(report):
     return (f"Extreme mutation, {scope}: {report['functions']} functions; "
             + ', '.join(f'{name} {counts[name]}' for name in sorted(counts))
             + f"; unreasoned pseudo-tested entries: {report['unreasoned_entries']} ({report['seconds']}s)")
+
+
+def passed(report):
+    """A zero survivor count cannot cover failed measurement or untested functions."""
+    return (report['unreasoned_entries'] == 0 and not report['baseline_failing']
+            and not any(report['counts'].get(name, 0)
+                        for name in ('execution_error', 'mutation_error', 'not_executed')))
 
 
 def _flatten(suite):
@@ -397,20 +433,43 @@ def _child(spec_path):
 
         sys.meta_path.insert(0, MutantFinder())
     loader = unittest.TestLoader()
-    suite = unittest.TestSuite()
-    for folder in spec['folders']:
-        suite.addTests(loader.discover(str(TESTS / folder), pattern='test_*.py', top_level_dir=str(TESTS)))
-    covered = set(spec['folders'])
-    names = [name for name in spec['tests'] if name.split('.')[0] not in covered]
-    if names:
-        suite.addTests(loader.loadTestsFromNames(names))
+    seconds = recorded_seconds()
+    if spec['folders']:
+        # Unknown/stale index retains the complete folder discovery fallback.
+        covered = set(spec['folders'])
+        batches = [(spec['folders'], [name for name in spec['tests'] if name.split('.')[0] not in covered])]
+    else:
+        modules = defaultdict(list)
+        for name in spec['tests']:
+            modules[name.rsplit('.', 2)[0]].append(name)
+        ordered_modules = sorted(modules, key=lambda module: (
+            seconds.get(module, UNKNOWN_TEST_SECONDS * len(modules[module])) / len(modules[module]), module))
+        batches = [([], modules[module]) for module in ordered_modules]
     excluded = set(spec.get('exclude', ()))
-    tests = [test for test in _flatten(suite) if test.id() not in excluded]
-    ordered = unittest.TestSuite(cheapest_first(tests, recorded_seconds()))
-    result = unittest.TextTestRunner(stream=sys.stdout, verbosity=1, failfast=True).run(ordered)
-    failing = [test.id() for test, _ in result.failures + result.errors] \
-        + [test.id() for test in result.unexpectedSuccesses]
-    failing += [str(error) for error in loader.errors]
+    failing = []
+    for folders, names in batches:
+        suite = unittest.TestSuite()
+        try:
+            for folder in folders:
+                suite.addTests(loader.discover(str(TESTS / folder), pattern='test_*.py', top_level_dir=str(TESTS)))
+            if names:
+                suite.addTests(loader.loadTestsFromNames(names))
+        except Exception as error:
+            # Only module loading is classified here; execution errors retain
+            # the runner's actual failing test identity below.
+            traceback.print_exc(file=sys.stdout)
+            result = {'failing': [f'<test module load failure: {type(error).__name__}: {error}>'],
+                      'load_error': {'type': type(error).__name__, 'message': str(error)}}
+            (Path(spec_path).parent / 'result.json').write_text(json.dumps(result), encoding='utf-8')
+            return 0
+        tests = [test for test in _flatten(suite) if test.id() not in excluded]
+        ordered = unittest.TestSuite(cheapest_first(tests, seconds))
+        result = unittest.TextTestRunner(stream=sys.stdout, verbosity=1, failfast=True).run(ordered)
+        failing = [test.id() for test, _ in result.failures + result.errors] \
+            + [test.id() for test in result.unexpectedSuccesses]
+        failing += [str(error) for error in loader.errors]
+        if failing:
+            break
     (Path(spec_path).parent / 'result.json').write_text(json.dumps({'failing': failing}), encoding='utf-8')
     return 0
 
@@ -446,7 +505,7 @@ def main(argv=None):
     for name in report['survived']:
         print('  survived: ' + name)
     print('Report: ' + str(Path(directory) / 'mutation.json'))
-    return 0 if report['unreasoned_entries'] == 0 else 1
+    return 0 if passed(report) else 1
 
 
 if __name__ == '__main__':
