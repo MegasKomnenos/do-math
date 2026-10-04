@@ -23,8 +23,31 @@ from support.role_answers import candidate
 
 
 class TaskContractReviewTests(unittest.TestCase):
+    def test_preparation_allowlist_uses_both_fixed_fields_and_same_response_ids_over_the_finite_population(self):
+        from itertools import product
+        refs = ('KN-input', 'TK-input', 'source:input.txt')
+        populations = [tuple(ref for n, ref in enumerate(refs) if mask & (1 << n)) for mask in range(8)]
+        self.assertEqual(task_contracts.PREPARATION_INPUT_BASIS_FIELDS,
+                         ('available_input_refs', 'supplied_record_ids'))
+        for available, records, prepared in product(populations, repeat=3):
+            context = {'available_input_refs': list(available), 'supplied_record_ids': list(records),
+                       'history': ['KN-never-issued'], 'accepted': ['TK-never-issued']}
+            before = deepcopy(context)
+            actual = task_contracts.preparation_input_refs(context, prepared)
+            with self.subTest(available=available, records=records, prepared=prepared):
+                self.assertEqual(actual, set(available) | set(records) | set(prepared))
+                self.assertEqual(context, before)
+                self.assertEqual(task_contracts.preparation_input_refs(
+                    {**context, 'available_input_refs': list(reversed(available)) * 2}, prepared), actual)
+        for missing in task_contracts.PREPARATION_INPUT_BASIS_FIELDS:
+            context = {'available_input_refs': [], 'supplied_record_ids': []}
+            context.pop(missing)
+            with self.subTest(missing=missing), self.assertRaisesRegex(ValueError,
+                    '^preparation input basis is absent: ' + missing + '$'):
+                task_contracts.preparation_input_refs(context, [])
+
     def test_input_classification_agrees_for_every_small_reference_population(self):
-        """3-C/B-32: future named sources may be authored but never counted as arrived."""
+        """Separate input-supply rule: future sources may be authored but never counted as arrived."""
         refs = ('KN-present', 'TK-present', 'source:arrived.txt', 'source:future.txt',
                 'tool:lean', 'unknown-record')
         checked = 0

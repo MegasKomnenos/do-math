@@ -763,9 +763,8 @@ def _payload_issues(output: dict, schema: dict, context: dict, extensions: dict,
                     for reference in item['profile_refs']:
                         errors = observation_settings_errors(match_profile_ref(registry, reference))
                         require(not errors, 'candidate requires prepared observation profiles: ' + json.dumps(errors))
-                from .task_contracts import unsupplied_task_inputs
-                missing = unsupplied_task_inputs([*item["inputs"], *item["reuse"]], {
-                    *context.get("available_input_refs", []), *context.get("supplied_record_ids", []), *new_tasks},
+                from .task_contracts import preparation_input_refs, unsupplied_task_inputs
+                missing = unsupplied_task_inputs([*item["inputs"], *item["reuse"]], preparation_input_refs(context, new_tasks),
                     admit_named_sources=True)
                 require(not missing, "task inputs must name available_input_refs, supplied records or titles "
                                      "prepared in this output; unknown: " + ", ".join(missing))

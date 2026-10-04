@@ -42,6 +42,8 @@ RULES = {
     'extra:task-input-supply': ('task_contracts.py', 'unsupplied_task_inputs', {
         ('core_engine.py', '_apply'), ('planning.py', 'task_ready'),
         ('submission.py', '_payload_issues'), ('submission.py', 'candidate')}),
+    '5-A:preparation-input-basis': ('task_contracts.py', 'preparation_input_refs', {
+        ('core_engine.py', '_apply'), ('submission.py', '_payload_issues'), ('submission.py', 'candidate')}),
     'B-32': ('context_store.py', 'role_direct_keys', {
         ('context_store.py', 'prepare_role_input'), ('context_store.py', 'fit_context')}),
     'B-33:settings': ('observations.py', 'observation_settings_errors', {

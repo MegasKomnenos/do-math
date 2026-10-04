@@ -48,6 +48,15 @@ FIXED_INPUT_REFS = frozenset({"SKILL.md", "GLOSSARY.md"}) | CONTEXT_INPUT_REFS
 # The record family whose citation stands in for each specialist judge (designated_judgment).
 JUDGE_EVIDENCE_FAMILIES = {"formal_check": "formal-result", "identity_review": "identity-assessment",
                            "goal_audit": "goal-judgment"}
+PREPARATION_INPUT_BASIS_FIELDS = ('available_input_refs', 'supplied_record_ids')
+
+
+def preparation_input_refs(context, prepared_ids):
+    """Permitted task input IDs from the sealed preparation and this response only."""
+    missing = set(PREPARATION_INPUT_BASIS_FIELDS) - context.keys()
+    if missing:
+        raise ValueError('preparation input basis is absent: ' + ', '.join(sorted(missing)))
+    return set(prepared_ids).union(*(context[field] for field in PREPARATION_INPUT_BASIS_FIELDS))
 
 
 def available_input_refs(instance: dict, runtime: dict, *, lean_available: bool) -> list[str]:

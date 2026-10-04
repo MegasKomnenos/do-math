@@ -3190,7 +3190,7 @@ class CoreEngineMixin:
                 raise ValueError("explicit task dependency cycle: " + str(cycles))
             if titles:
                 fixed, _ = self._issued_input(self.runtime["executions"][execution_id], with_schema=False)
-                supplied = {*fixed.get("available_input_refs", []), *fixed.get("supplied_record_ids", []), *titles.values()}
+                supplied = task_contracts.preparation_input_refs(fixed, titles.values())
             for tid in titles.values():
                 task = self.runtime["tasks"][tid]
                 task["inputs"] = [titles.get(ref, ref) for ref in task["inputs"]]

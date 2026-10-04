@@ -4861,7 +4861,7 @@
       {
         "id": "5-A",
         "state": "partial_implementation",
-        "remaining": "검토 근거7필드와 인용 계약 projection·결과prefix 민감도/누락을 검증하고 두 오류를 수리. 완료근거/개설/신뢰목록/편입허용의 전건 선언·5축은 미확정"
+        "remaining": "B74~77 인용·완료·개설·신뢰 목록·편입의 실제 선언/소비/부분 다섯 축 연결. 판정 함수 전건과 각 축의 누락 검수 및 최종 동일 판본 관문은 미확정"
       },
       {
         "id": "6-A",
@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B76 신뢰 근거 수리와 관련113개 같은 판본 검증",
-      "active": "5-A 실제 편입 적용의 봉인 입력 허용 참조와 현재성·생산자 수리 분류",
+      "last_closed": "B77 봉인 허용 참조와 실제 편입 관련303개 같은 판본 검증",
+      "active": "4-A/4-B/13-B 나머지 대기 공간의 생성·조건 전 유지·해소 owner·후속1개·실제 표시 연결",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -17192,6 +17192,73 @@
         {
           "path": ".claude/skills/do-math/scripts/이음새-정본.md",
           "sha256": "3616be72a7f52e742e3007d6ac3272e9420fbe827d1dd16c9b5f9d5645ec174a"
+        }
+      ],
+      "whole_requirement_closed": false
+    },
+    "preparation_input_basis_integration": {
+      "id": "B77",
+      "state": "verified_main_commit_pending",
+      "scope": "봉인 준비 입력 두 필드와 동일 응답 생성 과제로 제한한 허용 참조 계산의 정본 및 실제 편입 수신 연결",
+      "changed_area": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 303
+        },
+        "total_seconds": 184.0,
+        "changed_during_run": []
+      },
+      "tracked_report": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-편입-허용-참조/report.json",
+      "report_sha256": "c227b280c08971d9267517f9f7d3861141f28767e0882a9b84d9dc8505f768ef",
+      "command": "python .claude/skills/do-math/scripts/run_tests.py structure unit.test_planning_task_contracts unit.test_observation_rule_binding unit.test_submission_advertised_inputs unit.test_submission_bundle_coordinates unit.test_submission_capture unit.test_submission_check_invariants unit.test_submission_checks unit.test_submission_cleanup_interruption unit.test_submission_contract_checks unit.test_submission_contract_rejections unit.test_submission_contracts unit.test_submission_extension_semantics unit.test_submission_historical_inputs unit.test_submission_ingress_matrix unit.test_submission_integration_bundles unit.test_submission_native_evidence_rejections unit.test_submission_native_final unit.test_submission_preparation_cache unit.test_submission_preview_commands unit.test_submission_producer_seal unit.test_submission_reference_catalog unit.test_submission_sealed_evidence sim.test_planning_engine_receivers sim.test_planning_scope_receivers flows.test_knowledge_currentness_flows --jobs 3",
+      "contract": [
+        "제출/편입 수신자가 같은 함수로 계산, 근거 부재를 빈 목록으로 보충하지 않음",
+        "512개 참조 조합과 관리/중복/순서 안정성·두 필드 누락 거부",
+        "정상 packager 봉인 뒤 생성된 과제 배제·동일 응답 형제 ID 결속·저장 후보 검증",
+        "premise만 변하면 refresh, 다른 적용 오류는 producer repair의 기존 실제 흐름"
+      ],
+      "limits": [
+        "실제 후보 적용/저장 관문 시험을 모델 응답의 새 게시 전수 증거로 주장하지 않음",
+        "5-A 판정 함수 전건/각 축의 종료와 전역 관문은 미완료",
+        "개별 예산 초과52개"
+      ],
+      "files": [
+        {
+          "path": ".claude/skills/do-math/scripts/do_math/task_contracts.py",
+          "sha256": "d4f27c98d9ea078a9b6318b64c9bb155e2b1f43f60d9adaa8a0406989ef67153"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/do_math/core_engine.py",
+          "sha256": "525aef67600941f4392fc6d38bbd46c4163fcd36f898c4378df30d84570a6d31"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/do_math/submission.py",
+          "sha256": "0ba34aafecb0534e30002469485f52b49c5f8ba44e5ff4fe285312e4b932abb8"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/unit/test_planning_task_contracts.py",
+          "sha256": "ec5d1edb47a458bc64134c1ccc6e8dc5e0c57d8b3f6a7553943c973c9f9e7dcb"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/sim/test_planning_engine_receivers.py",
+          "sha256": "66c0bb19ff6eedf6affa94b1ababfc4c94554bb1d07acd1511b27dfbbbf9cea4"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/structure/test_rule_consistency.py",
+          "sha256": "ca9fd55e3154323bdf44700679afa32fc6cbcc09909fd7f256e103fdfb269856"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/support/record_builders.py",
+          "sha256": "b5fdb0f9742b5253e0fc9b21c02dd2caf2fa18e59f1182433c2ce584ba87a2d7"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/support/submission_obligations.py",
+          "sha256": "1b48d524473b6dd9372dd21c00d970bb5bff5b756c7eb2b7dda37c0a8f00d293"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/이음새-정본.md",
+          "sha256": "654c57da52eaf4bc506e0f22016b8a8030e428d52178ff7b877167fd7eafdb04"
         }
       ],
       "whole_requirement_closed": false

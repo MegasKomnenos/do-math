@@ -281,7 +281,8 @@ def contract_check(title="one", **changes):
 def preparation_context():
     """The fixed input of a preparation that assesses models (``budget_unit`` concurrent_sessions)."""
     return {"action": {"id": "AC-this", "role": "research_preparation"}, "budget_unit": "concurrent_sessions",
-            "tasks": [], "knowledge_catalog": [], "kind_definitions": {}, "sources": []}
+            "tasks": [], "knowledge_catalog": [], "kind_definitions": {}, "sources": [],
+            "available_input_refs": [], "supplied_record_ids": []}
 
 
 def preparation_issues(entries, *, candidates, context, workspace, conditions=None):

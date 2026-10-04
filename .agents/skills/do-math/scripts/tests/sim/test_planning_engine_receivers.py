@@ -12,6 +12,7 @@ every method the receivers call runs as it is. Tasks and returned executions
 come from ``support.engine_lifecycle``.
 """
 import unittest
+from copy import deepcopy
 
 from do_math import planning
 from support.engine_context import issue
@@ -80,6 +81,55 @@ class PreparationReceiverTests(unittest.TestCase):
         issue(self.engine, execution, issued, 'BA-' + identifier)
         return execution
 
+    def test_actual_input_seal_excludes_a_later_task_and_binds_same_response_siblings(self):
+        from support.planning_contract_inputs import issue_preparation, produce_task
+        from support.role_answers import candidate
+        from support.engine_lifecycle import research_grant
+        engine = self.engine
+        earlier = produce_task(self.sim, 'Earlier input task')
+        _ended_execution(engine, 'EX-fixed-input-author', 'research_preparation')
+        execution = engine.runtime['executions']['EX-fixed-input-author']
+        execution.update(input_snapshot=engine.head, extensions={})
+        issue_preparation(self.sim, execution)
+        fixed, _ = engine._issued_input(execution, with_schema=False)
+        self.assertIn(earlier, fixed['available_input_refs'])
+        later = produce_task(self.sim, 'Later unpublished-to-author task')
+        reread, _ = engine._issued_input(engine.runtime['executions'][execution['id']], with_schema=False)
+        self.assertEqual(reread, fixed)
+        self.assertNotIn(later, fixed['available_input_refs'])
+        self.assertNotIn(later, fixed['supplied_record_ids'])
+
+        def wire(title, refs):
+            row = candidate(title, refs=refs)
+            row['reuse'] = []
+            row['profile_refs'] = deepcopy(engine.instance['role_profile_refs']['research_work'])
+            row['authority_refs'] = [research_grant(engine)]
+            return row
+
+        def apply(rows):
+            instance, runtime = deepcopy(engine.instance), deepcopy(engine.runtime)
+            bundle = {'integration_id': 'IN-fixed-input-tasks', 'output': {'candidates': rows},
+                      'extensions': {}, 'owns_response': False}
+            engine._apply_bundle_candidate(instance, runtime, bundle,
+                action={'role': 'research_preparation'}, execution_id=execution['id'], extensions={})
+            return instance, runtime
+
+        before = deepcopy((engine.instance, engine.runtime))
+        head = engine.head
+        with self.assertRaisesRegex(ValueError, 'unknown: ' + later + '$'):
+            apply([wire('Cannot cite a later task', [later])])
+        self.assertEqual((engine.instance, engine.runtime), before)
+        self.assertEqual(engine.head, head)
+        instance, runtime = apply([wire('Same response first', [earlier, 'context:goal', 'source:future.txt']),
+                                   wire('Same response second', ['Same response first'])])
+        first = next(t for t in runtime['tasks'].values() if t['title'] == 'Same response first')
+        second = next(t for t in runtime['tasks'].values() if t['title'] == 'Same response second')
+        self.assertEqual(first['inputs'], [earlier, 'context:goal', 'source:future.txt'])
+        self.assertEqual(second['inputs'], [first['id']])
+        engine.store.validate_candidate(instance, runtime, head)
+        self.assertEqual((engine.instance, engine.runtime), before)
+        self.assertEqual(engine.head, head)
+
     def test_actual_engine_candidate_and_review_receiver_round_trip(self):
         from do_math.contracts import TASK_CANDIDATE
         from do_math.execution_profiles import profile_ref
@@ -120,7 +170,8 @@ class PreparationReceiverTests(unittest.TestCase):
         # The author binds a permitted work profile it was given (research_fixtures.bind_candidates).
         proposal['profile_refs'] = deepcopy(prior['profile_refs'])
         proposal['dependencies'] = [prior['id']]
-        self.preparation('EX-prepare', {}, {'task_conditions': [{'task_title': 'Followup', 'occurrence_condition': {'op': 'always'}}]})
+        self.preparation('EX-prepare', {'available_input_refs': [], 'supplied_record_ids': []},
+                         {'task_conditions': [{'task_title': 'Followup', 'occurrence_condition': {'op': 'always'}}]})
         engine._apply({'role': 'research_preparation'}, {**common('research_preparation'), 'candidates': [proposal]},
                       'EX-prepare')
         applied = next(t for t in engine.runtime['tasks'].values() if t.get('title') == 'Followup')

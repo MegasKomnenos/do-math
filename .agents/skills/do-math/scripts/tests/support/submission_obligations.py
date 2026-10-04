@@ -100,7 +100,8 @@ def structural_envelope(action, extensions):
     output.pop('integration_bundles', None)
     output.pop('repair_responses', None)
     context = {'action': action, 'execution_id': 'EX-structural', 'snapshot': 'a' * 40,
-               'tasks': [], 'knowledge_catalog': [], 'grants': [], 'decisions': []}
+               'tasks': [], 'knowledge_catalog': [], 'grants': [], 'decisions': [],
+               'available_input_refs': [], 'supplied_record_ids': []}
     # 잘못된 가족의 배열 형은 member_values에서 거부되므로, 소유 좌표는
     # 정상 대조 배열에서 먼저 만든다. 원소형 오류는 이 외곽을 보존한다.
     members = integration.member_values(output, extensions, context)
