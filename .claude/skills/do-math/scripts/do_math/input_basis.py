@@ -3,10 +3,16 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from .canonical import exact_content_hash
+from .canonical import exact_content_hash, same_json_value
 
 # The state of a registered source; a replaced source moves into the history of its successor.
 SOURCE_STATUSES = frozenset({"active"})
+
+# The exact non-proposal premises used by review_input_basis_changes. Progress,
+# receipts and history are outside this judgment; proposal content has its own
+# digest and immutable-source validation in review_cycle.
+REVIEW_INPUT_BASIS_FIELDS = ('review_policy', 'scope_assessment', 'owner_activity_id',
+                            'activity_execution_limit', 'identity_basis', 'policy_ref', 'publication_premises')
 
 
 def aliases(source: dict) -> set[str]:
@@ -35,9 +41,7 @@ class CurrentnessChanged(ValueError):
 
 def capture_review_input_basis(cycle: dict) -> dict:
     """Freeze the non-proposal inputs that make a review result interpretable."""
-    fields = ("review_policy", "scope_assessment", "owner_activity_id", "activity_execution_limit",
-              "identity_basis", "policy_ref", "publication_premises")
-    return {"values": {field: deepcopy(cycle.get(field)) for field in fields}}
+    return {'values': {field: deepcopy(cycle.get(field)) for field in REVIEW_INPUT_BASIS_FIELDS}}
 
 
 def review_input_basis_changes(basis: dict, cycle: dict) -> list[dict]:
@@ -50,8 +54,11 @@ def review_input_basis_changes(basis: dict, cycle: dict) -> list[dict]:
     current = capture_review_input_basis(cycle)["values"]
     changes = []
     for field in current:
-        before, after = basis["values"].get(field), current.get(field)
-        if before == after:
+        if field not in basis['values']:
+            changes.append({'field': field, 'reason': 'missing_basis_field', 'next': 'refresh_review'})
+            continue
+        before, after = basis['values'][field], current[field]
+        if same_json_value(before, after):
             continue
         if field == "scope_assessment" and isinstance(before, dict) and isinstance(after, dict) and \
                 before.get("selected_profile_ref") != after.get("selected_profile_ref"):

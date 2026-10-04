@@ -8,6 +8,7 @@ revision response must resolve. Every test calls the product functions on the
 legacy dictionary state; nothing is replaced.
 """
 import unittest
+from copy import deepcopy
 
 from do_math import planning, revisions
 from do_math.input_basis import capture_decision_basis, decision_basis_changes
@@ -31,6 +32,43 @@ class BasisCase(unittest.TestCase):
 
 
 class BasisTests(BasisCase):
+    def test_every_declared_task_contract_field_is_a_sensitive_citation_premise(self):
+        """5-A: JSON projection sensitivity, before higher-level shape/admission checks."""
+        original = deepcopy(self.runtime['tasks']['A'])
+        basis = capture_decision_basis(self.instance, self.runtime, ['A'])
+        for field in planning.CONTRACT_FIELDS:
+            changed = deepcopy(original)
+            value = changed.get(field)
+            if isinstance(value, str): changed[field] = value + ' changed'
+            elif type(value) is int: changed[field] = value + 1
+            elif isinstance(value, list): changed[field] = [*value, 'changed-member']
+            elif isinstance(value, dict): changed[field] = {**value, 'changed_content': True}
+            else: changed[field] = 'new-' + field
+            self.runtime['tasks']['A'] = changed
+            with self.subTest(contract_field=field):
+                differences = decision_basis_changes(basis, self.instance, self.runtime)
+                self.assertIn('contract_sha256', {row['field'] for row in differences})
+        self.runtime['tasks']['A'] = original
+        for field, value in (('status', 'active'), ('reviews', [{'decision': 'approved'}]),
+                             ('selection', {'execution_id': 'EX-new'}), ('history', [{'kind': 'management'}]),
+                             ('review_cycle_id', 'RC-added'), ('receipt', {'state': 'accepted'})):
+            self.runtime['tasks']['A'] = {**deepcopy(original), field: value}
+            with self.subTest(management_field=field):
+                self.assertEqual(decision_basis_changes(basis, self.instance, self.runtime), [])
+        self.runtime['tasks']['A'] = original
+
+    def test_result_prefix_membership_is_stable_for_append_but_sensitive_to_replacement_and_removal(self):
+        basis = capture_decision_basis(self.instance, self.runtime, ['A'])
+        original = deepcopy(self.runtime['tasks']['A']['results'])
+        self.runtime['tasks']['A']['results'].append({'report': 'later result'})
+        self.assertEqual(decision_basis_changes(basis, self.instance, self.runtime), [])
+        for values in ([], [{'report': 'replacement'}], [{'report': 'prefix replaced'}, {'report': 'later result'}]):
+            self.runtime['tasks']['A']['results'] = values
+            with self.subTest(results=values):
+                self.assertEqual([row['field'] for row in decision_basis_changes(basis, self.instance, self.runtime)],
+                                 ['results_sha256'])
+        self.runtime['tasks']['A']['results'] = original
+
     def test_task_bookkeeping_and_appended_results_are_not_content_changes(self):
         basis = capture_decision_basis(self.instance, self.runtime, ["A"])
         task = self.runtime["tasks"]["A"]
