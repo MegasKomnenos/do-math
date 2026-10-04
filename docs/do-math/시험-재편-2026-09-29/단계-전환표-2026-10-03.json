@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B90 관찰4원천×3국면과 B91 저장 예약6국면의 실제 호출0/1·중복 방지 검증 완료. 자기점검 수신 후속·판정 충돌·실패 진단·계획 발동 원천의 대상과 실제 호출 검증은 남음."
+        "remaining": "B90 관찰4원천×3국면, B91 저장 예약6국면, B92 자기점검11조합과 실패 진단/재귀 억제의 실제 호출 검증 완료. 반복 판정 충돌 및 다른 실패 원천 연결과 계획 발동 사건×대상 전건이 남음."
       },
       {
         "id": "12-A",
@@ -13089,9 +13089,9 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B90 2460b70c; B91 저장된 재검토 예약6국면과 관련7개 통과",
-      "active": "B91 확정 후 자기점검 수신 후속과 실패 진단 발동을 기존 실제 검증에 연결",
-      "exit": "남은 운영 발동 원천의 실제0/1 호출과 대상/근거 결속 확인",
+      "last_closed": "B91 f970bedc; B92 자기점검·실패 진단 관련13개 통과",
+      "active": "B92 확정 후 반복 판정 충돌과 계획 발동의 기존 실제 경로 연결",
+      "exit": "반복 판정 충돌과 계획 발동 원천의 판단 대상·실제 호출·중복 방지 확인",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "기존 생산자와 실제 owner/모델/작업자 결과를 사용한다. 실제 실패를 고치고 검증된 부분의 남김을 제거한다.",
       "running_test": null,
@@ -18174,6 +18174,25 @@
         "중복 모델 규칙의 첫 응답 반복으로 생긴 무한 예약: 해당 실행 명시 중단, 한 규칙의 순차 응답으로 교정"
       ],
       "whole_requirement_closed": false
+    },
+    "response_diagnosis_trigger_verification": {
+      "id": "B92",
+      "scope": "자기점검 응답11조합의 실제 운영 검토 발동·재전달 및 실패 진단의1회 호출·재귀 억제",
+      "state": "검수·관련 검증 완료",
+      "memory_node": "M-0509",
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-응답-진단-발동/report.json",
+        "sha256": "7a4c7b3bd570f95974473cc3a0589dd8b710739a51a1152414adc1a195175eec",
+        "counts": {
+          "passed": 13
+        },
+        "seconds": 92.7,
+        "changed_during_run": []
+      },
+      "self_check_cases": "progress/no_progress/contract_mismatch × normal/defect/indeterminate, 반복 무진행 및 증거 반려",
+      "diagnosis_cases": "실제 반려된 계획의 진단1회와 원요청 비재생; 실제 반려된 운영 진단의 재귀 호출0회",
+      "whole_requirement_closed": false,
+      "remaining": "반복 currentness 충돌 경로와 다른 실패 원천의 동치 연결, 계획 발동 원천 전건은 별도"
     }
   }
 }

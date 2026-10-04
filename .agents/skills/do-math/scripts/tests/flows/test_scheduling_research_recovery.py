@@ -135,12 +135,44 @@ class InvalidPlanTests(unittest.TestCase):
         self.assertIn(failure.get('execution_id'), self.sim.runtime['executions'])
 
     def test_output_failure_opens_diagnosis_without_replaying_rejected_plan(self):
+        from support.cross_contracts import assert_call_records
         self.model.on('research_plan').reply(explicit(empty_plan(dispositions=[disposition('TK-absent')]), expected_receipt='rejected', returncode=1))
         self.sim.engine.runtime['queue'] = [{'id': 'AC-invalid', 'role': 'research_plan'}]
         self.sim.engine._save()
         self.sim.step()
         self.assertTrue(any(a['role'] == 'operational_review' for a in self.sim.runtime['queue']))
         self.assertFalse(queued(self.sim, 'AC-invalid'))
+        before = assert_call_records(self, self.sim)
+        failed = next(row for row in self.sim.runtime['executions'].values()
+                      if row['action']['id'] == 'AC-invalid')
+        self.sim.run_until(lambda sim: any(c['role'] == 'operational_review' for c in sim.model.calls), max_steps=8)
+        after = assert_call_records(self, self.sim)
+        self.assertEqual(after['operational_review'] - before['operational_review'], 1, self.sim.waiting())
+        self.assertEqual(sum(c['action']['id'] == 'AC-invalid' for c in self.sim.model.calls), 1)
+        review, = [row for row in self.sim.runtime['executions'].values() if row['role'] == 'operational_review']
+        self.assertEqual(review['action']['target'], failed['id'])
+        self.assertEqual(review['outcome'], 'output_accepted', review.get('error'))
+        self.sim.step()
+        self.sim.step()
+        self.assertEqual(assert_call_records(self, self.sim)['operational_review'], after['operational_review'])
+        self.assertEqual(sum(c['action']['id'] == 'AC-invalid' for c in self.sim.model.calls), 1)
+
+    def test_failed_operational_diagnosis_does_not_start_another_diagnosis(self):
+        from support.cross_contracts import assert_call_records
+        sim = failed_plan_sim()
+        scenario_model(sim).on('operational_review').reply(explicit({}, expected_receipt='rejected', returncode=1))
+        before = assert_call_records(self, sim)
+        sim.run_until(lambda current: any(c['role'] == 'operational_review' for c in current.model.calls), max_steps=8)
+        after = assert_call_records(self, sim)
+        self.assertEqual(after['operational_review'] - before['operational_review'], 1,
+                         {'queue': sim.runtime['queue'], 'waiting': sim.waiting()})
+        review, = [row for row in sim.runtime['executions'].values() if row['role'] == 'operational_review']
+        self.assertEqual(review['outcome'], 'execution_incomplete')
+        self.assertIn(review['action']['id'], sim.runtime['waiting_actions'])
+        self.assertFalse(any(a['role'] == 'operational_review' for a in sim.runtime['queue']))
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim)['operational_review'], after['operational_review'])
 
 
 class ParkedFailureTests(unittest.TestCase):

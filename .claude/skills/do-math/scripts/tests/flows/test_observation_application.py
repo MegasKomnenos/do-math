@@ -92,6 +92,75 @@ class ReminderApplicationTests(unittest.TestCase):
 
 
 class OperationalReviewTriggerTests(unittest.TestCase):
+    def test_self_check_receipts_dispatch_only_required_reviews_and_replay_never_duplicates(self):
+        from do_math.control_protocol import SELF_CHECK_PROGRESS, SELF_CHECK_RESPONSE_SCHEMA
+        from support.engine_control import running_work
+        from support.observation_inputs import self_check_response
+        from support.cross_contracts import assert_call_records
+        from support.model import Answer
+
+        progress_values = ('progress', 'no_progress', 'contract_mismatch')
+        statuses = ('normal', 'defect', 'indeterminate')
+        self.assertEqual(set(progress_values), set(SELF_CHECK_PROGRESS))
+        self.assertEqual(set(statuses), set(SELF_CHECK_RESPONSE_SCHEMA['properties']['rule_results']['items']['properties']['status']['enum']))
+        cases = [(progress, status, False, False) for progress in progress_values for status in statuses]
+        cases += [('no_progress', 'normal', True, False), ('progress', 'normal', False, True)]
+        for progress, status, repeated, bad_evidence in cases:
+            with self.subTest(progress=progress, status=status, repeated=repeated, bad_evidence=bad_evidence):
+                sim = Sim.activated()
+                sim.control('configure', text='Review after two unanswered progress attempts',
+                            config={'no_progress_limit': 2})
+                sim.engine.process_controls()
+                self.assertEqual(sim.instance['config']['no_progress_limit'], 2)
+                rules = [observation_rule(threshold=1, repeat_interval=1,
+                    required_evidence=['workspace:checkpoint.json'])]
+                with running_work(sim, rules=rules) as call:
+                    def answer_round(number, answer_progress, answer_status, invalid=False):
+                        write_checkpoint(call.workspace, counters={'attempts': number})
+                        call.observe({'type': 'tick'})
+                        obligation, = [row for row in call.tracker.obligations.values() if row['status'] == 'open']
+                        response = self_check_response(obligation, answer_status,
+                            [] if answer_status == 'indeterminate' else None)
+                        response['progress'] = answer_progress
+                        if invalid:
+                            response['rule_results'][0]['evidence_refs'] = ['EV-unavailable']
+                        delivery = call.self_check(obligation['id'], response)
+                        call.receive()
+                        receipt = call.receipt(delivery['request_id'])
+                        self.assertEqual(receipt['state'], 'rejected' if invalid else 'accepted', receipt)
+                        return obligation, response, receipt
+
+                    if repeated:
+                        answer_round(1, 'no_progress', 'normal')
+                        self.assertFalse(any(a['role'] == 'operational_review' for a in sim.runtime['queue']))
+                    obligation, response, receipt = answer_round(2 if repeated else 1, progress, status, bad_evidence)
+                    expected = int(status != 'normal' or progress == 'contract_mismatch' or repeated or bad_evidence)
+                    queued = [a for a in sim.runtime['queue'] if a['role'] == 'operational_review']
+                    self.assertEqual(len(queued), expected)
+                    if expected:
+                        self.assertEqual(queued[0]['target'], call.execution_id)
+                        self.assertEqual(queued[0]['obligation_ids'], [obligation['id']])
+                    before = assert_call_records(self, sim)
+                    sim.model.on('operational_review', target=call.execution_id).reply(Answer(lambda out, ctx: {
+                        **out, 'disposition': {'kind': 'continue', 'basis_refs': [ctx['execution_to_review']['id']],
+                            'next_owner': 'research_work', 'reason': 'Examine the received self-check.', 'next_review': None}}))
+                    with sim.engine.store.writer_lock():
+                        sim.engine._reload()
+                        sim.engine._run_parallel(max_steps=1)
+                    after = assert_call_records(self, sim)
+                    self.assertEqual(after['operational_review'] - before['operational_review'], expected)
+                    for row in sim.runtime['executions'].values():
+                        if row['role'] == 'operational_review':
+                            self.assertEqual(row['outcome'], 'output_accepted', row.get('error'))
+                    redelivery = call.self_check(obligation['id'], response)
+                    call.receive()
+                    self.assertEqual(call.receipt(redelivery['request_id']), receipt)
+                    with sim.engine.store.writer_lock():
+                        sim.engine._reload()
+                        sim.engine._run_parallel(max_steps=1)
+                    self.assertEqual(assert_call_records(self, sim), after)
+                    self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
+
     def test_stored_review_schedule_calls_once_at_its_deadline_only_while_target_runs(self):
         """A real accepted continue creates the schedule; owner passes consume it once."""
         from do_math.execution_lifecycle import transition_execution
