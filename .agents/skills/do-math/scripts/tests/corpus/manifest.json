@@ -93,6 +93,153 @@
      ]
     }
    }
+  },
+  {
+   "id": "codex-schema-rejected-0160",
+   "kind": "codex_stream",
+   "path": "codex/codex-schema-rejected-0160.jsonl",
+   "tool_version": "codex-cli 0.160.0",
+   "recorded_at": "2026-10-04",
+   "command": "probe_cli.run_case(files): real ModelRunner/WindowsJob/worker, timeout=None",
+   "role": "protocol_probe",
+   "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-e242461a17044b4787be706171cd2e3e/codex/files/evidence/stdout.jsonl",
+   "source_sha256": "eb7f8c07e33ebb4fa7ff29165bbcb219ec995a0f3f874aff477c16ef74993a2f",
+   "live_checks": {
+    "local_termination": true,
+    "structured_result": false,
+    "preserved_file": false,
+    "checkpoint": false
+   },
+   "recorded_error": "HTTP 400 invalid_json_schema: nonce lacks type; native error then turn.failed; complete failure protocol, not a successful turn",
+   "verdict": {
+    "turn_completed": false,
+    "turn_failed": true,
+    "parse_complete": true,
+    "usage_fields": [],
+    "unknown_events": []
+   }
+  },
+  {
+   "id": "codex-files-completed-0160",
+   "kind": "codex_stream",
+   "path": "codex/codex-files-completed-0160.jsonl",
+   "tool_version": "codex-cli 0.160.0",
+   "recorded_at": "2026-10-04",
+   "command": "probe_cli.run_case(files): real ModelRunner/WindowsJob/worker, timeout=None",
+   "role": "protocol_probe",
+   "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-1530bc64299343e483f95643719ca422/codex/files/evidence/stdout.jsonl",
+   "source_sha256": "c3c124d568290451d1a26a3ec23583e42bb7f268f3093ddc8a365dacd399887a",
+   "live_checks": {
+    "local_termination": true,
+    "structured_result": true,
+    "preserved_file": true,
+    "checkpoint": true
+   },
+   "final_path": "codex/codex-files-completed-0160.final.txt",
+   "verdict": {
+    "turn_completed": true,
+    "turn_failed": false,
+    "parse_complete": true,
+    "usage_fields": [
+     "cache_write_input_tokens",
+     "cached_input_tokens",
+     "input_tokens",
+     "output_tokens",
+     "reasoning_output_tokens"
+    ],
+    "unknown_events": [],
+    "final_sha256": "23b5b3ba269ff930cc57e2166cdd0c64f25fcb75b100729ad60ddaec91a2a7ca",
+    "final_is_selected_text": true
+   }
+  },
+  {
+   "id": "claude-files-completed-21289",
+   "kind": "claude_stream",
+   "path": "claude/claude-files-completed-21289.jsonl",
+   "tool_version": "2.1.289 (Claude Code)",
+   "recorded_at": "2026-10-04",
+   "command": "probe_cli.run_case(files): real ModelRunner/WindowsJob/worker, timeout=None",
+   "role": "protocol_probe",
+   "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-e242461a17044b4787be706171cd2e3e/claude/files/evidence/stdout.jsonl",
+   "source_sha256": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a",
+   "live_checks": {
+    "local_termination": true,
+    "structured_result": true,
+    "preserved_file": true,
+    "checkpoint": true
+   },
+   "verdict": {
+    "turn_completed": true,
+    "turn_failed": false,
+    "parse_complete": true,
+    "unknown_events": [],
+    "structured_output": {
+     "status": "CLI_OK",
+     "nonce": "200cbc72f51f4f80e65a304a7b6cd27c",
+     "phase": "finished"
+    },
+    "reported_models": [
+     "claude-opus-5-5"
+    ],
+    "result_segments": 1,
+    "usage_segments": 1,
+    "rate_limit_statuses": [
+     "allowed",
+     "allowed"
+    ],
+    "background_event_types": [],
+    "post_result_event_types": []
+   }
+  },
+  {
+   "id": "claude-background-completed-21289",
+   "kind": "claude_stream",
+   "path": "claude/claude-background-completed-21289.jsonl",
+   "tool_version": "2.1.289 (Claude Code)",
+   "recorded_at": "2026-10-04",
+   "command": "probe_cli.run_case(background): real ModelRunner/WindowsJob/worker, timeout=None",
+   "role": "protocol_probe",
+   "source": ".skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-fd5d6a7946be44ed921b0d2918f1aecc/claude/background/evidence/stdout.jsonl",
+   "source_sha256": "5c335ed4b290f0ee689e4c3bc18a364aeb057bc62d44be419c7e9aac22f45c74",
+   "live_checks": {
+    "local_termination": true,
+    "structured_result": true,
+    "native_background_start": true,
+    "actual_wait_tool": false,
+    "completed_file": true
+   },
+   "scope": "Actual background start, completed notification and final structured result. Probe did not invoke TaskOutput, so it is not a passing background smoke.",
+   "verdict": {
+    "turn_completed": true,
+    "turn_failed": false,
+    "parse_complete": true,
+    "unknown_events": [],
+    "structured_output": {
+     "status": "CLI_OK",
+     "nonce": "fe01178cea1927f29d46b94b86407a1e",
+     "phase": "finished"
+    },
+    "reported_models": [
+     "claude-opus-5-5"
+    ],
+    "result_segments": 1,
+    "usage_segments": 1,
+    "rate_limit_statuses": [
+     "allowed"
+    ],
+    "background_event_types": [
+     "background_tasks_changed",
+     "task_started",
+     "background_tasks_changed",
+     "task_updated",
+     "task_notification"
+    ],
+    "post_result_event_types": []
+   }
   }
- ]
+ ],
+ "supported_stream_versions": {
+  "codex": "codex-cli 0.160.0",
+  "claude": "2.1.289 (Claude Code)"
+ }
 }

@@ -57,7 +57,10 @@ def parse_jsonl(raw: bytes | None) -> dict[str, Any]:
         unknown.append({"kind": "invalid_lifecycle_order"})
     if len(terminals) != 1 or terminals and terminals[0] != len(events) - 1:
         unknown.append({"kind": "invalid_terminal_count_or_position"})
-    if any(not item.startswith("item.") for item in events[2:-1]):
+    # A real rejected Codex request emits error before turn.failed. It is a
+    # complete failed protocol, not malformed JSONL and not a successful turn.
+    if any(not item.startswith("item.") and not (item == "error" and failed and not completed)
+           for item in events[2:-1]):
         unknown.append({"kind": "invalid_event_between_turn_start_and_terminal"})
     parsed = {"parsed_bytes": len(raw), "unparsed_tail_bytes": 0, "events": events, "thread_id": thread_id,
               "turn_completed": completed, "turn_failed": failed, "usage": usage, "unknown_events": unknown,

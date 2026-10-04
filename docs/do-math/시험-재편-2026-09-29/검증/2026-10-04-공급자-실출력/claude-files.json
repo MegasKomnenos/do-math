@@ -1,0 +1,504 @@
+{
+  "case": "files",
+  "passed": true,
+  "checks": {
+    "local_termination": true,
+    "structured_result": true,
+    "preserved_file": true,
+    "checkpoint": true
+  },
+  "result": {
+    "status": "completed",
+    "output": {
+      "status": "CLI_OK",
+      "nonce": "200cbc72f51f4f80e65a304a7b6cd27c",
+      "phase": "finished"
+    },
+    "usage": {
+      "input_tokens": 4,
+      "output_tokens": 446,
+      "cache_read_input_tokens": 23808,
+      "cache_creation_input_tokens": 24279
+    },
+    "evidence_dir": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\actual-cli-b86-e242461a17044b4787be706171cd2e3e\\claude\\files\\evidence",
+    "execution": {
+      "started": {
+        "pid": 3656,
+        "creation_filetime": "134355902438534832",
+        "request_sha256": "92e59d61d9abd69124d63a49097d4898ece3f363338b8125045d253035516a12",
+        "job_name": "Local\\DoMath-2e37d8ce4ba54f4480062cf15f469f46"
+      },
+      "collect": {
+        "source_request": {
+          "present": true,
+          "bytes": 1135,
+          "sha256": "92e59d61d9abd69124d63a49097d4898ece3f363338b8125045d253035516a12",
+          "raw": {
+            "sha256": "92e59d61d9abd69124d63a49097d4898ece3f363338b8125045d253035516a12",
+            "text": "{\"claude_path\":\"C:\\\\Users\\\\wogud\\\\.local\\\\bin\\\\claude.EXE\",\"cwd\":\"C:\\\\math\\\\.skill-workspace\\\\test-restructure-2026-09-29\\\\finish\\\\actual-cli-b86-e242461a17044b4787be706171cd2e3e\\\\claude\\\\files\\\\workspace\",\"effort\":\"low\",\"max_runtime_seconds\":null,\"model\":\"opus\",\"output_schema_path\":\"C:\\\\math\\\\.skill-workspace\\\\test-restructure-2026-09-29\\\\finish\\\\actual-cli-b86-e242461a17044b4787be706171cd2e3e\\\\claude\\\\files\\\\do-math-cli-lc0fjvc5\\\\schema.json\",\"prompt_path\":\"C:\\\\math\\\\.skill-workspace\\\\test-restructure-2026-09-29\\\\finish\\\\actual-cli-b86-e242461a17044b4787be706171cd2e3e\\\\claude\\\\files\\\\do-math-cli-lc0fjvc5\\\\prompt.bin\",\"status_path\":\"C:\\\\math\\\\.skill-workspace\\\\test-restructure-2026-09-29\\\\finish\\\\actual-cli-b86-e242461a17044b4787be706171cd2e3e\\\\claude\\\\files\\\\evidence\\\\worker-status.json\",\"stderr_path\":\"C:\\\\math\\\\.skill-workspace\\\\test-restructure-2026-09-29\\\\finish\\\\actual-cli-b86-e242461a17044b4787be706171cd2e3e\\\\claude\\\\files\\\\evidence\\\\stderr.txt\",\"stdout_path\":\"C:\\\\math\\\\.skill-workspace\\\\test-restructure-2026-09-29\\\\finish\\\\actual-cli-b86-e242461a17044b4787be706171cd2e3e\\\\claude\\\\files\\\\evidence\\\\stdout.jsonl\"}",
+            "base64": "eyJjbGF1ZGVfcGF0aCI6IkM6XFxVc2Vyc1xcd29ndWRcXC5sb2NhbFxcYmluXFxjbGF1ZGUuRVhFIiwiY3dkIjoiQzpcXG1hdGhcXC5za2lsbC13b3Jrc3BhY2VcXHRlc3QtcmVzdHJ1Y3R1cmUtMjAyNi0wOS0yOVxcZmluaXNoXFxhY3R1YWwtY2xpLWI4Ni1lMjQyNDYxYTE3MDQ0YjQ3ODdiZTcwNjE3MWNkMmUzZVxcY2xhdWRlXFxmaWxlc1xcd29ya3NwYWNlIiwiZWZmb3J0IjoibG93IiwibWF4X3J1bnRpbWVfc2Vjb25kcyI6bnVsbCwibW9kZWwiOiJvcHVzIiwib3V0cHV0X3NjaGVtYV9wYXRoIjoiQzpcXG1hdGhcXC5za2lsbC13b3Jrc3BhY2VcXHRlc3QtcmVzdHJ1Y3R1cmUtMjAyNi0wOS0yOVxcZmluaXNoXFxhY3R1YWwtY2xpLWI4Ni1lMjQyNDYxYTE3MDQ0YjQ3ODdiZTcwNjE3MWNkMmUzZVxcY2xhdWRlXFxmaWxlc1xcZG8tbWF0aC1jbGktbGMwZmp2YzVcXHNjaGVtYS5qc29uIiwicHJvbXB0X3BhdGgiOiJDOlxcbWF0aFxcLnNraWxsLXdvcmtzcGFjZVxcdGVzdC1yZXN0cnVjdHVyZS0yMDI2LTA5LTI5XFxmaW5pc2hcXGFjdHVhbC1jbGktYjg2LWUyNDI0NjFhMTcwNDRiNDc4N2JlNzA2MTcxY2QyZTNlXFxjbGF1ZGVcXGZpbGVzXFxkby1tYXRoLWNsaS1sYzBmanZjNVxccHJvbXB0LmJpbiIsInN0YXR1c19wYXRoIjoiQzpcXG1hdGhcXC5za2lsbC13b3Jrc3BhY2VcXHRlc3QtcmVzdHJ1Y3R1cmUtMjAyNi0wOS0yOVxcZmluaXNoXFxhY3R1YWwtY2xpLWI4Ni1lMjQyNDYxYTE3MDQ0YjQ3ODdiZTcwNjE3MWNkMmUzZVxcY2xhdWRlXFxmaWxlc1xcZXZpZGVuY2VcXHdvcmtlci1zdGF0dXMuanNvbiIsInN0ZGVycl9wYXRoIjoiQzpcXG1hdGhcXC5za2lsbC13b3Jrc3BhY2VcXHRlc3QtcmVzdHJ1Y3R1cmUtMjAyNi0wOS0yOVxcZmluaXNoXFxhY3R1YWwtY2xpLWI4Ni1lMjQyNDYxYTE3MDQ0YjQ3ODdiZTcwNjE3MWNkMmUzZVxcY2xhdWRlXFxmaWxlc1xcZXZpZGVuY2VcXHN0ZGVyci50eHQiLCJzdGRvdXRfcGF0aCI6IkM6XFxtYXRoXFwuc2tpbGwtd29ya3NwYWNlXFx0ZXN0LXJlc3RydWN0dXJlLTIwMjYtMDktMjlcXGZpbmlzaFxcYWN0dWFsLWNsaS1iODYtZTI0MjQ2MWExNzA0NGI0Nzg3YmU3MDYxNzFjZDJlM2VcXGNsYXVkZVxcZmlsZXNcXGV2aWRlbmNlXFxzdGRvdXQuanNvbmwifQ=="
+          }
+        },
+        "source_prompt": {
+          "present": true,
+          "bytes": 707,
+          "sha256": "01be5aaf8ff15fbd322a3f39306d6d37ad1ea48ea37721cccac06d59f864edfd",
+          "raw": {
+            "sha256": "01be5aaf8ff15fbd322a3f39306d6d37ad1ea48ea37721cccac06d59f864edfd",
+            "text": "This is an isolated CLI integration probe. Work only in C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\actual-cli-b86-e242461a17044b4787be706171cd2e3e\\claude\\files\\workspace. Return the provided JSON schema with status CLI_OK and nonce 200cbc72f51f4f80e65a304a7b6cd27c. Write probe-evidence.txt containing exactly 200cbc72f51f4f80e65a304a7b6cd27c, read it back, then write checkpoint.json as {\"current_claim\": \"The local probe file exists.\", \"evidence_paths\": [\"probe-evidence.txt\"], \"attempts\": [\"Write and read the probe file.\"], \"remaining_work\": [], \"next_step\": \"Return the structured probe result.\", \"progress_state\": \"ready_to_submit\"}. Return phase finished after verifying both files. ",
+            "base64": "VGhpcyBpcyBhbiBpc29sYXRlZCBDTEkgaW50ZWdyYXRpb24gcHJvYmUuIFdvcmsgb25seSBpbiBDOlxtYXRoXC5za2lsbC13b3Jrc3BhY2VcdGVzdC1yZXN0cnVjdHVyZS0yMDI2LTA5LTI5XGZpbmlzaFxhY3R1YWwtY2xpLWI4Ni1lMjQyNDYxYTE3MDQ0YjQ3ODdiZTcwNjE3MWNkMmUzZVxjbGF1ZGVcZmlsZXNcd29ya3NwYWNlLiBSZXR1cm4gdGhlIHByb3ZpZGVkIEpTT04gc2NoZW1hIHdpdGggc3RhdHVzIENMSV9PSyBhbmQgbm9uY2UgMjAwY2JjNzJmNTFmNGY4MGU2NWEzMDRhN2I2Y2QyN2MuIFdyaXRlIHByb2JlLWV2aWRlbmNlLnR4dCBjb250YWluaW5nIGV4YWN0bHkgMjAwY2JjNzJmNTFmNGY4MGU2NWEzMDRhN2I2Y2QyN2MsIHJlYWQgaXQgYmFjaywgdGhlbiB3cml0ZSBjaGVja3BvaW50Lmpzb24gYXMgeyJjdXJyZW50X2NsYWltIjogIlRoZSBsb2NhbCBwcm9iZSBmaWxlIGV4aXN0cy4iLCAiZXZpZGVuY2VfcGF0aHMiOiBbInByb2JlLWV2aWRlbmNlLnR4dCJdLCAiYXR0ZW1wdHMiOiBbIldyaXRlIGFuZCByZWFkIHRoZSBwcm9iZSBmaWxlLiJdLCAicmVtYWluaW5nX3dvcmsiOiBbXSwgIm5leHRfc3RlcCI6ICJSZXR1cm4gdGhlIHN0cnVjdHVyZWQgcHJvYmUgcmVzdWx0LiIsICJwcm9ncmVzc19zdGF0ZSI6ICJyZWFkeV90b19zdWJtaXQifS4gUmV0dXJuIHBoYXNlIGZpbmlzaGVkIGFmdGVyIHZlcmlmeWluZyBib3RoIGZpbGVzLiA="
+          }
+        },
+        "host_resources": null,
+        "stdout": {
+          "present": true,
+          "bytes": 9359,
+          "sha256": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a",
+          "raw": {
+            "sha256": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a",
+            "text": "{\"type\":\"system\",\"subtype\":\"init\",\"cwd\":\"C:\\\\math\\\\.skill-workspace\\\\test-restructure-2026-09-29\\\\finish\\\\actual-cli-b86-e242461a17044b4787be706171cd2e3e\\\\claude\\\\files\\\\workspace\",\"session_id\":\"a3525db3-5e00-4812-8bd8-2dac580efde4\",\"tools\":[\"Bash\",\"CronCreate\",\"CronDelete\",\"CronList\",\"DesignSync\",\"Edit\",\"EnterWorktree\",\"ExitWorktree\",\"Glob\",\"Grep\",\"ListAgents\",\"Monitor\",\"NotebookEdit\",\"PowerShell\",\"PushNotification\",\"Read\",\"RemoteTrigger\",\"ReportFindings\",\"ScheduleWakeup\",\"SendMessage\",\"StructuredOutput\",\"TaskStop\",\"ToolSearch\",\"WebFetch\",\"WebSearch\",\"Workflow\",\"Write\"],\"mcp_servers\":[],\"model\":\"claude-opus-5-5\",\"permissionMode\":\"bypassPermissions\",\"slash_commands\":[],\"apiKeySource\":\"none\",\"claude_code_version\":\"2.1.289\",\"output_style\":\"default\",\"agents\":[\"claude\",\"Explore\",\"general-purpose\",\"Plan\",\"statusline-setup\"],\"skills\":[],\"plugins\":[{\"name\":\"cc-plugin-agents-md\",\"path\":\"builtin\",\"source\":\"cc-plugin-agents-md@builtin\"},{\"name\":\"cc-plugin-telemetry\",\"path\":\"builtin\",\"source\":\"cc-plugin-telemetry@builtin\"},{\"name\":\"cc-plugin-plugin-authoring\",\"path\":\"builtin\",\"source\":\"cc-plugin-plugin-authoring@builtin\"}],\"capabilities\":[\"interrupt_receipt_v1\",\"interrupt_cancel_queued_v1\",\"interrupt_send_now_v1\",\"msg_lifecycle_v1\",\"sdk_mcp_tools_list_changed\",\"sdk_mcp_manifests\",\"mcp_read_resource_v1\",\"mcp_tool_ui_meta_v1\",\"ui_surface_v1\"],\"analytics_disabled\":false,\"product_feedback_disabled\":false,\"uuid\":\"db504585-041b-49df-8c24-4eff8105e128\",\"messaging_socket_path\":\"\\\\\\\\.\\\\pipe\\\\LOCAL\\\\cc-msg-08f376c63f412285a33c552e558cc90b\",\"fast_mode_state\":\"off\",\"fast_mode_disabled_reason\":\"sdk_opt_in_required\",\"per_turn_effort_active\":true,\"view_mode\":\"default\",\"powershell_path\":\"C:\\\\Program Files\\\\PowerShell\\\\7\\\\pwsh.exe\"}\n{\"type\":\"assistant\",\"message\":{\"model\":\"claude-opus-5-5\",\"id\":\"msg_011CfhC41sUcLPKms6KbhAu8\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_017YPFtmiRVzSnteZ9PXr9pu\",\"name\":\"Bash\",\"input\":{\"command\":\"cd \\\"C:/math/.skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-e242461a17044b4787be706171cd2e3e/claude/files/workspace\\\" && printf '%s' 200cbc72f51f4f80e65a304a7b6cd27c > probe-evidence.txt && cat probe-evidence.txt && echo && printf '%s' '{\\\"current_claim\\\": \\\"The local probe file exists.\\\", \\\"evidence_paths\\\": [\\\"probe-evidence.txt\\\"], \\\"attempts\\\": [\\\"Write and read the probe file.\\\"], \\\"remaining_work\\\": [], \\\"next_step\\\": \\\"Return the structured probe result.\\\", \\\"progress_state\\\": \\\"ready_to_submit\\\"}' > checkpoint.json && cat checkpoint.json\",\"description\":\"Write and verify probe files\"},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":23808,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":23808},\"output_tokens\":21,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"parent_tool_use_id\":null,\"session_id\":\"a3525db3-5e00-4812-8bd8-2dac580efde4\",\"uuid\":\"47d7adc3-6acc-4d73-aa51-e5e608adf6f3\",\"timestamp\":\"2026-10-04T12:24:11.640Z\",\"request_id\":\"req_011CfhC41UArJxziffpNhEqv\",\"wire_tool_inputs\":{\"toolu_017YPFtmiRVzSnteZ9PXr9pu\":{\"command\":\"cd \\\"C:/math/.skill-workspace/test-restructure-2026-09-29/finish/actual-cli-b86-e242461a17044b4787be706171cd2e3e/claude/files/workspace\\\" && printf '%s' 200cbc72f51f4f80e65a304a7b6cd27c > probe-evidence.txt && cat probe-evidence.txt && echo && printf '%s' '{\\\"current_claim\\\": \\\"The local probe file exists.\\\", \\\"evidence_paths\\\": [\\\"probe-evidence.txt\\\"], \\\"attempts\\\": [\\\"Write and read the probe file.\\\"], \\\"remaining_work\\\": [], \\\"next_step\\\": \\\"Return the structured probe result.\\\", \\\"progress_state\\\": \\\"ready_to_submit\\\"}' > checkpoint.json && cat checkpoint.json\",\"description\":\"Write and verify probe files\"}}}\n{\"type\":\"rate_limit_event\",\"rate_limit_info\":{\"status\":\"allowed\",\"resetsAt\":1791119400,\"rateLimitType\":\"five_hour\",\"overageStatus\":\"rejected\",\"overageDisabledReason\":\"org_level_disabled\",\"isUsingOverage\":false,\"unifiedWindows\":{\"five_hour\":{\"utilization\":0.85,\"resetsAt\":1791119400},\"seven_day\":{\"utilization\":0.61,\"resetsAt\":1791507600}}},\"uuid\":\"9ddf7767-7fc6-4d93-8703-8a268f270c93\",\"session_id\":\"a3525db3-5e00-4812-8bd8-2dac580efde4\"}\n{\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_017YPFtmiRVzSnteZ9PXr9pu\",\"type\":\"tool_result\",\"content\":\"200cbc72f51f4f80e65a304a7b6cd27c\\n{\\\"current_claim\\\": \\\"The local probe file exists.\\\", \\\"evidence_paths\\\": [\\\"probe-evidence.txt\\\"], \\\"attempts\\\": [\\\"Write and read the probe file.\\\"], \\\"remaining_work\\\": [], \\\"next_step\\\": \\\"Return the structured probe result.\\\", \\\"progress_state\\\": \\\"ready_to_submit\\\"}\",\"is_error\":false}]},\"parent_tool_use_id\":null,\"session_id\":\"a3525db3-5e00-4812-8bd8-2dac580efde4\",\"uuid\":\"8a00e280-fa61-4b7e-9e3d-3f519621af81\",\"timestamp\":\"2026-10-04T12:24:18.075Z\",\"tool_use_result\":{\"stdout\":\"200cbc72f51f4f80e65a304a7b6cd27c\\n{\\\"current_claim\\\": \\\"The local probe file exists.\\\", \\\"evidence_paths\\\": [\\\"probe-evidence.txt\\\"], \\\"attempts\\\": [\\\"Write and read the probe file.\\\"], \\\"remaining_work\\\": [], \\\"next_step\\\": \\\"Return the structured probe result.\\\", \\\"progress_state\\\": \\\"ready_to_submit\\\"}\",\"stderr\":\"\",\"interrupted\":false,\"isImage\":false,\"noOutputExpected\":false,\"bashEditDiff\":{\"files\":[],\"moreFiles\":0,\"unavailable\":true}}}\n{\"type\":\"assistant\",\"message\":{\"model\":\"claude-opus-5-5\",\"id\":\"msg_011CfhC4q77U311q8CcRpjWi\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_01E8KVF3nASf7XRyi2KwC1Wz\",\"name\":\"StructuredOutput\",\"input\":{\"status\":\"CLI_OK\",\"nonce\":\"200cbc72f51f4f80e65a304a7b6cd27c\",\"phase\":\"finished\"},\"caller\":{\"type\":\"direct\"}}],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":471,\"cache_read_input_tokens\":23808,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":471},\"output_tokens\":24,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"},\"input_transformations\":[],\"diagnostics\":null,\"context_management\":null},\"parent_tool_use_id\":null,\"session_id\":\"a3525db3-5e00-4812-8bd8-2dac580efde4\",\"uuid\":\"e66119e8-93b9-49d5-bd9a-45a1ae108345\",\"timestamp\":\"2026-10-04T12:24:20.597Z\",\"request_id\":\"req_011CfhC4ppVLndwSoxEEkb2s\",\"wire_tool_inputs\":{\"toolu_01E8KVF3nASf7XRyi2KwC1Wz\":{\"status\":\"CLI_OK\",\"nonce\":\"200cbc72f51f4f80e65a304a7b6cd27c\",\"phase\":\"finished\"}}}\n{\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"tool_use_id\":\"toolu_01E8KVF3nASf7XRyi2KwC1Wz\",\"type\":\"tool_result\",\"content\":\"Structured output provided successfully\"}]},\"parent_tool_use_id\":null,\"session_id\":\"a3525db3-5e00-4812-8bd8-2dac580efde4\",\"uuid\":\"ea0086a8-3319-4626-afce-2360c750b5ca\",\"timestamp\":\"2026-10-04T12:24:20.604Z\",\"tool_use_result\":\"Structured output provided successfully\"}\n{\"type\":\"rate_limit_event\",\"rate_limit_info\":{\"status\":\"allowed\",\"resetsAt\":1791119400,\"rateLimitType\":\"five_hour\",\"overageStatus\":\"rejected\",\"overageDisabledReason\":\"org_level_disabled\",\"isUsingOverage\":false,\"unifiedWindows\":{\"five_hour\":{\"utilization\":0.86,\"resetsAt\":1791119400},\"seven_day\":{\"utilization\":0.61,\"resetsAt\":1791507600}}},\"uuid\":\"23010bcf-97b3-4b9d-94ef-902ec4773a91\",\"session_id\":\"a3525db3-5e00-4812-8bd8-2dac580efde4\"}\n{\"duration_api_ms\":7474,\"stop_reason\":\"tool_use\",\"session_id\":\"a3525db3-5e00-4812-8bd8-2dac580efde4\",\"total_cost_usd\":0.2079296,\"usage\":{\"input_tokens\":4,\"cache_creation_input_tokens\":24279,\"cache_read_input_tokens\":23808,\"output_tokens\":446,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":0,\"web_fetch_requests\":0},\"service_tier\":\"standard\",\"cache_creation\":{\"ephemeral_1h_input_tokens\":24279,\"ephemeral_5m_input_tokens\":0},\"inference_geo\":\"not_available\",\"iterations\":[{\"input_tokens\":2,\"output_tokens\":124,\"cache_read_input_tokens\":23808,\"cache_creation_input_tokens\":471,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":471},\"type\":\"message\"}],\"speed\":\"standard\",\"fallback_credit\":null},\"modelUsage\":{\"claude-opus-5-5\":{\"inputTokens\":4,\"outputTokens\":446,\"cacheReadInputTokens\":23808,\"cacheCreationInputTokens\":24279,\"webSearchRequests\":0,\"costUSD\":0.2079296,\"contextWindow\":1000000,\"maxOutputTokens\":128000,\"thinkingTokens\":0,\"canonicalModel\":\"claude-opus-5-5\",\"provider\":\"firstParty\",\"costBasis\":\"list\"}},\"permission_denials\":[],\"terminal_reason\":\"completed\",\"fast_mode_state\":\"off\",\"fast_mode_disabled_reason\":\"sdk_opt_in_required\",\"subagent_stats\":{\"spawned\":0,\"requested\":{\"background\":0,\"foreground\":0,\"unset\":0},\"started_in_background\":0,\"max_depth\":0,\"spawned_by_subagents\":0,\"completed\":0,\"failed\":0,\"killed\":{\"parent\":0,\"user\":0,\"system\":0},\"refused\":{\"depth_limit\":0,\"concurrency_limit\":0,\"budget\":0},\"by_type\":{}},\"is_error\":false,\"num_turns\":3,\"subtype\":\"success\",\"api_error_status\":null,\"result\":\"{\\\"status\\\":\\\"CLI_OK\\\",\\\"nonce\\\":\\\"200cbc72f51f4f80e65a304a7b6cd27c\\\",\\\"phase\\\":\\\"finished\\\"}\",\"structured_output\":{\"status\":\"CLI_OK\",\"nonce\":\"200cbc72f51f4f80e65a304a7b6cd27c\",\"phase\":\"finished\"},\"ttft_ms\":4748,\"type\":\"result\",\"duration_ms\":13738,\"uuid\":\"93f27059-6e65-42fd-829a-ab9ce8575be1\",\"ttft_stream_ms\":2674,\"time_to_request_ms\":133,\"first_content_frame_ms\":2674,\"queued_turn_count\":0,\"result_index\":0}\n",
+            "base64": "eyJ0eXBlIjoic3lzdGVtIiwic3VidHlwZSI6ImluaXQiLCJjd2QiOiJDOlxcbWF0aFxcLnNraWxsLXdvcmtzcGFjZVxcdGVzdC1yZXN0cnVjdHVyZS0yMDI2LTA5LTI5XFxmaW5pc2hcXGFjdHVhbC1jbGktYjg2LWUyNDI0NjFhMTcwNDRiNDc4N2JlNzA2MTcxY2QyZTNlXFxjbGF1ZGVcXGZpbGVzXFx3b3Jrc3BhY2UiLCJzZXNzaW9uX2lkIjoiYTM1MjVkYjMtNWUwMC00ODEyLThiZDgtMmRhYzU4MGVmZGU0IiwidG9vbHMiOlsiQmFzaCIsIkNyb25DcmVhdGUiLCJDcm9uRGVsZXRlIiwiQ3Jvbkxpc3QiLCJEZXNpZ25TeW5jIiwiRWRpdCIsIkVudGVyV29ya3RyZWUiLCJFeGl0V29ya3RyZWUiLCJHbG9iIiwiR3JlcCIsIkxpc3RBZ2VudHMiLCJNb25pdG9yIiwiTm90ZWJvb2tFZGl0IiwiUG93ZXJTaGVsbCIsIlB1c2hOb3RpZmljYXRpb24iLCJSZWFkIiwiUmVtb3RlVHJpZ2dlciIsIlJlcG9ydEZpbmRpbmdzIiwiU2NoZWR1bGVXYWtldXAiLCJTZW5kTWVzc2FnZSIsIlN0cnVjdHVyZWRPdXRwdXQiLCJUYXNrU3RvcCIsIlRvb2xTZWFyY2giLCJXZWJGZXRjaCIsIldlYlNlYXJjaCIsIldvcmtmbG93IiwiV3JpdGUiXSwibWNwX3NlcnZlcnMiOltdLCJtb2RlbCI6ImNsYXVkZS1vcHVzLTUtNSIsInBlcm1pc3Npb25Nb2RlIjoiYnlwYXNzUGVybWlzc2lvbnMiLCJzbGFzaF9jb21tYW5kcyI6W10sImFwaUtleVNvdXJjZSI6Im5vbmUiLCJjbGF1ZGVfY29kZV92ZXJzaW9uIjoiMi4xLjI4OSIsIm91dHB1dF9zdHlsZSI6ImRlZmF1bHQiLCJhZ2VudHMiOlsiY2xhdWRlIiwiRXhwbG9yZSIsImdlbmVyYWwtcHVycG9zZSIsIlBsYW4iLCJzdGF0dXNsaW5lLXNldHVwIl0sInNraWxscyI6W10sInBsdWdpbnMiOlt7Im5hbWUiOiJjYy1wbHVnaW4tYWdlbnRzLW1kIiwicGF0aCI6ImJ1aWx0aW4iLCJzb3VyY2UiOiJjYy1wbHVnaW4tYWdlbnRzLW1kQGJ1aWx0aW4ifSx7Im5hbWUiOiJjYy1wbHVnaW4tdGVsZW1ldHJ5IiwicGF0aCI6ImJ1aWx0aW4iLCJzb3VyY2UiOiJjYy1wbHVnaW4tdGVsZW1ldHJ5QGJ1aWx0aW4ifSx7Im5hbWUiOiJjYy1wbHVnaW4tcGx1Z2luLWF1dGhvcmluZyIsInBhdGgiOiJidWlsdGluIiwic291cmNlIjoiY2MtcGx1Z2luLXBsdWdpbi1hdXRob3JpbmdAYnVpbHRpbiJ9XSwiY2FwYWJpbGl0aWVzIjpbImludGVycnVwdF9yZWNlaXB0X3YxIiwiaW50ZXJydXB0X2NhbmNlbF9xdWV1ZWRfdjEiLCJpbnRlcnJ1cHRfc2VuZF9ub3dfdjEiLCJtc2dfbGlmZWN5Y2xlX3YxIiwic2RrX21jcF90b29sc19saXN0X2NoYW5nZWQiLCJzZGtfbWNwX21hbmlmZXN0cyIsIm1jcF9yZWFkX3Jlc291cmNlX3YxIiwibWNwX3Rvb2xfdWlfbWV0YV92MSIsInVpX3N1cmZhY2VfdjEiXSwiYW5hbHl0aWNzX2Rpc2FibGVkIjpmYWxzZSwicHJvZHVjdF9mZWVkYmFja19kaXNhYmxlZCI6ZmFsc2UsInV1aWQiOiJkYjUwNDU4NS0wNDFiLTQ5ZGYtOGMyNC00ZWZmODEwNWUxMjgiLCJtZXNzYWdpbmdfc29ja2V0X3BhdGgiOiJcXFxcLlxccGlwZVxcTE9DQUxcXGNjLW1zZy0wOGYzNzZjNjNmNDEyMjg1YTMzYzU1MmU1NThjYzkwYiIsImZhc3RfbW9kZV9zdGF0ZSI6Im9mZiIsImZhc3RfbW9kZV9kaXNhYmxlZF9yZWFzb24iOiJzZGtfb3B0X2luX3JlcXVpcmVkIiwicGVyX3R1cm5fZWZmb3J0X2FjdGl2ZSI6dHJ1ZSwidmlld19tb2RlIjoiZGVmYXVsdCIsInBvd2Vyc2hlbGxfcGF0aCI6IkM6XFxQcm9ncmFtIEZpbGVzXFxQb3dlclNoZWxsXFw3XFxwd3NoLmV4ZSJ9CnsidHlwZSI6ImFzc2lzdGFudCIsIm1lc3NhZ2UiOnsibW9kZWwiOiJjbGF1ZGUtb3B1cy01LTUiLCJpZCI6Im1zZ18wMTFDZmhDNDFzVWNMUEttczZLYmhBdTgiLCJ0eXBlIjoibWVzc2FnZSIsInJvbGUiOiJhc3Npc3RhbnQiLCJjb250ZW50IjpbeyJ0eXBlIjoidG9vbF91c2UiLCJpZCI6InRvb2x1XzAxN1lQRnRtaVJWelNudGVaOVBYcjlwdSIsIm5hbWUiOiJCYXNoIiwiaW5wdXQiOnsiY29tbWFuZCI6ImNkIFwiQzovbWF0aC8uc2tpbGwtd29ya3NwYWNlL3Rlc3QtcmVzdHJ1Y3R1cmUtMjAyNi0wOS0yOS9maW5pc2gvYWN0dWFsLWNsaS1iODYtZTI0MjQ2MWExNzA0NGI0Nzg3YmU3MDYxNzFjZDJlM2UvY2xhdWRlL2ZpbGVzL3dvcmtzcGFjZVwiICYmIHByaW50ZiAnJXMnIDIwMGNiYzcyZjUxZjRmODBlNjVhMzA0YTdiNmNkMjdjID4gcHJvYmUtZXZpZGVuY2UudHh0ICYmIGNhdCBwcm9iZS1ldmlkZW5jZS50eHQgJiYgZWNobyAmJiBwcmludGYgJyVzJyAne1wiY3VycmVudF9jbGFpbVwiOiBcIlRoZSBsb2NhbCBwcm9iZSBmaWxlIGV4aXN0cy5cIiwgXCJldmlkZW5jZV9wYXRoc1wiOiBbXCJwcm9iZS1ldmlkZW5jZS50eHRcIl0sIFwiYXR0ZW1wdHNcIjogW1wiV3JpdGUgYW5kIHJlYWQgdGhlIHByb2JlIGZpbGUuXCJdLCBcInJlbWFpbmluZ193b3JrXCI6IFtdLCBcIm5leHRfc3RlcFwiOiBcIlJldHVybiB0aGUgc3RydWN0dXJlZCBwcm9iZSByZXN1bHQuXCIsIFwicHJvZ3Jlc3Nfc3RhdGVcIjogXCJyZWFkeV90b19zdWJtaXRcIn0nID4gY2hlY2twb2ludC5qc29uICYmIGNhdCBjaGVja3BvaW50Lmpzb24iLCJkZXNjcmlwdGlvbiI6IldyaXRlIGFuZCB2ZXJpZnkgcHJvYmUgZmlsZXMifSwiY2FsbGVyIjp7InR5cGUiOiJkaXJlY3QifX1dLCJjb250YWluZXIiOm51bGwsInN0b3BfcmVhc29uIjpudWxsLCJzdG9wX3NlcXVlbmNlIjpudWxsLCJzdG9wX2RldGFpbHMiOm51bGwsInVzYWdlIjp7ImlucHV0X3Rva2VucyI6MiwiY2FjaGVfY3JlYXRpb25faW5wdXRfdG9rZW5zIjoyMzgwOCwiY2FjaGVfcmVhZF9pbnB1dF90b2tlbnMiOjAsImNhY2hlX2NyZWF0aW9uIjp7ImVwaGVtZXJhbF81bV9pbnB1dF90b2tlbnMiOjAsImVwaGVtZXJhbF8xaF9pbnB1dF90b2tlbnMiOjIzODA4fSwib3V0cHV0X3Rva2VucyI6MjEsInNlcnZpY2VfdGllciI6InN0YW5kYXJkIiwiaW5mZXJlbmNlX2dlbyI6Im5vdF9hdmFpbGFibGUifSwiaW5wdXRfdHJhbnNmb3JtYXRpb25zIjpbXSwiZGlhZ25vc3RpY3MiOm51bGwsImNvbnRleHRfbWFuYWdlbWVudCI6bnVsbH0sInBhcmVudF90b29sX3VzZV9pZCI6bnVsbCwic2Vzc2lvbl9pZCI6ImEzNTI1ZGIzLTVlMDAtNDgxMi04YmQ4LTJkYWM1ODBlZmRlNCIsInV1aWQiOiI0N2Q3YWRjMy02YWNjLTRkNzMtYWE1MS1lNWU2MDhhZGY2ZjMiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTA0VDEyOjI0OjExLjY0MFoiLCJyZXF1ZXN0X2lkIjoicmVxXzAxMUNmaEM0MVVBckp4emlmZnBOaEVxdiIsIndpcmVfdG9vbF9pbnB1dHMiOnsidG9vbHVfMDE3WVBGdG1pUlZ6U250ZVo5UFhyOXB1Ijp7ImNvbW1hbmQiOiJjZCBcIkM6L21hdGgvLnNraWxsLXdvcmtzcGFjZS90ZXN0LXJlc3RydWN0dXJlLTIwMjYtMDktMjkvZmluaXNoL2FjdHVhbC1jbGktYjg2LWUyNDI0NjFhMTcwNDRiNDc4N2JlNzA2MTcxY2QyZTNlL2NsYXVkZS9maWxlcy93b3Jrc3BhY2VcIiAmJiBwcmludGYgJyVzJyAyMDBjYmM3MmY1MWY0ZjgwZTY1YTMwNGE3YjZjZDI3YyA+IHByb2JlLWV2aWRlbmNlLnR4dCAmJiBjYXQgcHJvYmUtZXZpZGVuY2UudHh0ICYmIGVjaG8gJiYgcHJpbnRmICclcycgJ3tcImN1cnJlbnRfY2xhaW1cIjogXCJUaGUgbG9jYWwgcHJvYmUgZmlsZSBleGlzdHMuXCIsIFwiZXZpZGVuY2VfcGF0aHNcIjogW1wicHJvYmUtZXZpZGVuY2UudHh0XCJdLCBcImF0dGVtcHRzXCI6IFtcIldyaXRlIGFuZCByZWFkIHRoZSBwcm9iZSBmaWxlLlwiXSwgXCJyZW1haW5pbmdfd29ya1wiOiBbXSwgXCJuZXh0X3N0ZXBcIjogXCJSZXR1cm4gdGhlIHN0cnVjdHVyZWQgcHJvYmUgcmVzdWx0LlwiLCBcInByb2dyZXNzX3N0YXRlXCI6IFwicmVhZHlfdG9fc3VibWl0XCJ9JyA+IGNoZWNrcG9pbnQuanNvbiAmJiBjYXQgY2hlY2twb2ludC5qc29uIiwiZGVzY3JpcHRpb24iOiJXcml0ZSBhbmQgdmVyaWZ5IHByb2JlIGZpbGVzIn19fQp7InR5cGUiOiJyYXRlX2xpbWl0X2V2ZW50IiwicmF0ZV9saW1pdF9pbmZvIjp7InN0YXR1cyI6ImFsbG93ZWQiLCJyZXNldHNBdCI6MTc5MTExOTQwMCwicmF0ZUxpbWl0VHlwZSI6ImZpdmVfaG91ciIsIm92ZXJhZ2VTdGF0dXMiOiJyZWplY3RlZCIsIm92ZXJhZ2VEaXNhYmxlZFJlYXNvbiI6Im9yZ19sZXZlbF9kaXNhYmxlZCIsImlzVXNpbmdPdmVyYWdlIjpmYWxzZSwidW5pZmllZFdpbmRvd3MiOnsiZml2ZV9ob3VyIjp7InV0aWxpemF0aW9uIjowLjg1LCJyZXNldHNBdCI6MTc5MTExOTQwMH0sInNldmVuX2RheSI6eyJ1dGlsaXphdGlvbiI6MC42MSwicmVzZXRzQXQiOjE3OTE1MDc2MDB9fX0sInV1aWQiOiI5ZGRmNzc2Ny03ZmM2LTRkOTMtODcwMy04YTI2OGYyNzBjOTMiLCJzZXNzaW9uX2lkIjoiYTM1MjVkYjMtNWUwMC00ODEyLThiZDgtMmRhYzU4MGVmZGU0In0KeyJ0eXBlIjoidXNlciIsIm1lc3NhZ2UiOnsicm9sZSI6InVzZXIiLCJjb250ZW50IjpbeyJ0b29sX3VzZV9pZCI6InRvb2x1XzAxN1lQRnRtaVJWelNudGVaOVBYcjlwdSIsInR5cGUiOiJ0b29sX3Jlc3VsdCIsImNvbnRlbnQiOiIyMDBjYmM3MmY1MWY0ZjgwZTY1YTMwNGE3YjZjZDI3Y1xue1wiY3VycmVudF9jbGFpbVwiOiBcIlRoZSBsb2NhbCBwcm9iZSBmaWxlIGV4aXN0cy5cIiwgXCJldmlkZW5jZV9wYXRoc1wiOiBbXCJwcm9iZS1ldmlkZW5jZS50eHRcIl0sIFwiYXR0ZW1wdHNcIjogW1wiV3JpdGUgYW5kIHJlYWQgdGhlIHByb2JlIGZpbGUuXCJdLCBcInJlbWFpbmluZ193b3JrXCI6IFtdLCBcIm5leHRfc3RlcFwiOiBcIlJldHVybiB0aGUgc3RydWN0dXJlZCBwcm9iZSByZXN1bHQuXCIsIFwicHJvZ3Jlc3Nfc3RhdGVcIjogXCJyZWFkeV90b19zdWJtaXRcIn0iLCJpc19lcnJvciI6ZmFsc2V9XX0sInBhcmVudF90b29sX3VzZV9pZCI6bnVsbCwic2Vzc2lvbl9pZCI6ImEzNTI1ZGIzLTVlMDAtNDgxMi04YmQ4LTJkYWM1ODBlZmRlNCIsInV1aWQiOiI4YTAwZTI4MC1mYTYxLTRiN2UtOWUzZC0zZjUxOTYyMWFmODEiLCJ0aW1lc3RhbXAiOiIyMDI2LTEwLTA0VDEyOjI0OjE4LjA3NVoiLCJ0b29sX3VzZV9yZXN1bHQiOnsic3Rkb3V0IjoiMjAwY2JjNzJmNTFmNGY4MGU2NWEzMDRhN2I2Y2QyN2NcbntcImN1cnJlbnRfY2xhaW1cIjogXCJUaGUgbG9jYWwgcHJvYmUgZmlsZSBleGlzdHMuXCIsIFwiZXZpZGVuY2VfcGF0aHNcIjogW1wicHJvYmUtZXZpZGVuY2UudHh0XCJdLCBcImF0dGVtcHRzXCI6IFtcIldyaXRlIGFuZCByZWFkIHRoZSBwcm9iZSBmaWxlLlwiXSwgXCJyZW1haW5pbmdfd29ya1wiOiBbXSwgXCJuZXh0X3N0ZXBcIjogXCJSZXR1cm4gdGhlIHN0cnVjdHVyZWQgcHJvYmUgcmVzdWx0LlwiLCBcInByb2dyZXNzX3N0YXRlXCI6IFwicmVhZHlfdG9fc3VibWl0XCJ9Iiwic3RkZXJyIjoiIiwiaW50ZXJydXB0ZWQiOmZhbHNlLCJpc0ltYWdlIjpmYWxzZSwibm9PdXRwdXRFeHBlY3RlZCI6ZmFsc2UsImJhc2hFZGl0RGlmZiI6eyJmaWxlcyI6W10sIm1vcmVGaWxlcyI6MCwidW5hdmFpbGFibGUiOnRydWV9fX0KeyJ0eXBlIjoiYXNzaXN0YW50IiwibWVzc2FnZSI6eyJtb2RlbCI6ImNsYXVkZS1vcHVzLTUtNSIsImlkIjoibXNnXzAxMUNmaEM0cTc3VTMxMXE4Q2NScGpXaSIsInR5cGUiOiJtZXNzYWdlIiwicm9sZSI6ImFzc2lzdGFudCIsImNvbnRlbnQiOlt7InR5cGUiOiJ0b29sX3VzZSIsImlkIjoidG9vbHVfMDFFOEtWRjNuQVNmN1hSeWkyS3dDMVd6IiwibmFtZSI6IlN0cnVjdHVyZWRPdXRwdXQiLCJpbnB1dCI6eyJzdGF0dXMiOiJDTElfT0siLCJub25jZSI6IjIwMGNiYzcyZjUxZjRmODBlNjVhMzA0YTdiNmNkMjdjIiwicGhhc2UiOiJmaW5pc2hlZCJ9LCJjYWxsZXIiOnsidHlwZSI6ImRpcmVjdCJ9fV0sImNvbnRhaW5lciI6bnVsbCwic3RvcF9yZWFzb24iOm51bGwsInN0b3Bfc2VxdWVuY2UiOm51bGwsInN0b3BfZGV0YWlscyI6bnVsbCwidXNhZ2UiOnsiaW5wdXRfdG9rZW5zIjoyLCJjYWNoZV9jcmVhdGlvbl9pbnB1dF90b2tlbnMiOjQ3MSwiY2FjaGVfcmVhZF9pbnB1dF90b2tlbnMiOjIzODA4LCJjYWNoZV9jcmVhdGlvbiI6eyJlcGhlbWVyYWxfNW1faW5wdXRfdG9rZW5zIjowLCJlcGhlbWVyYWxfMWhfaW5wdXRfdG9rZW5zIjo0NzF9LCJvdXRwdXRfdG9rZW5zIjoyNCwic2VydmljZV90aWVyIjoic3RhbmRhcmQiLCJpbmZlcmVuY2VfZ2VvIjoibm90X2F2YWlsYWJsZSJ9LCJpbnB1dF90cmFuc2Zvcm1hdGlvbnMiOltdLCJkaWFnbm9zdGljcyI6bnVsbCwiY29udGV4dF9tYW5hZ2VtZW50IjpudWxsfSwicGFyZW50X3Rvb2xfdXNlX2lkIjpudWxsLCJzZXNzaW9uX2lkIjoiYTM1MjVkYjMtNWUwMC00ODEyLThiZDgtMmRhYzU4MGVmZGU0IiwidXVpZCI6ImU2NjExOWU4LTkzYjktNDlkNS1iZDlhLTQ1YTFhZTEwODM0NSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDRUMTI6MjQ6MjAuNTk3WiIsInJlcXVlc3RfaWQiOiJyZXFfMDExQ2ZoQzRwcFZMbmR3U294RUVrYjJzIiwid2lyZV90b29sX2lucHV0cyI6eyJ0b29sdV8wMUU4S1ZGM25BU2Y3WFJ5aTJLd0MxV3oiOnsic3RhdHVzIjoiQ0xJX09LIiwibm9uY2UiOiIyMDBjYmM3MmY1MWY0ZjgwZTY1YTMwNGE3YjZjZDI3YyIsInBoYXNlIjoiZmluaXNoZWQifX19CnsidHlwZSI6InVzZXIiLCJtZXNzYWdlIjp7InJvbGUiOiJ1c2VyIiwiY29udGVudCI6W3sidG9vbF91c2VfaWQiOiJ0b29sdV8wMUU4S1ZGM25BU2Y3WFJ5aTJLd0MxV3oiLCJ0eXBlIjoidG9vbF9yZXN1bHQiLCJjb250ZW50IjoiU3RydWN0dXJlZCBvdXRwdXQgcHJvdmlkZWQgc3VjY2Vzc2Z1bGx5In1dfSwicGFyZW50X3Rvb2xfdXNlX2lkIjpudWxsLCJzZXNzaW9uX2lkIjoiYTM1MjVkYjMtNWUwMC00ODEyLThiZDgtMmRhYzU4MGVmZGU0IiwidXVpZCI6ImVhMDA4NmE4LTMzMTktNDYyNi1hZmNlLTIzNjBjNzUwYjVjYSIsInRpbWVzdGFtcCI6IjIwMjYtMTAtMDRUMTI6MjQ6MjAuNjA0WiIsInRvb2xfdXNlX3Jlc3VsdCI6IlN0cnVjdHVyZWQgb3V0cHV0IHByb3ZpZGVkIHN1Y2Nlc3NmdWxseSJ9CnsidHlwZSI6InJhdGVfbGltaXRfZXZlbnQiLCJyYXRlX2xpbWl0X2luZm8iOnsic3RhdHVzIjoiYWxsb3dlZCIsInJlc2V0c0F0IjoxNzkxMTE5NDAwLCJyYXRlTGltaXRUeXBlIjoiZml2ZV9ob3VyIiwib3ZlcmFnZVN0YXR1cyI6InJlamVjdGVkIiwib3ZlcmFnZURpc2FibGVkUmVhc29uIjoib3JnX2xldmVsX2Rpc2FibGVkIiwiaXNVc2luZ092ZXJhZ2UiOmZhbHNlLCJ1bmlmaWVkV2luZG93cyI6eyJmaXZlX2hvdXIiOnsidXRpbGl6YXRpb24iOjAuODYsInJlc2V0c0F0IjoxNzkxMTE5NDAwfSwic2V2ZW5fZGF5Ijp7InV0aWxpemF0aW9uIjowLjYxLCJyZXNldHNBdCI6MTc5MTUwNzYwMH19fSwidXVpZCI6IjIzMDEwYmNmLTk3YjMtNGI5ZC05NGVmLTkwMmVjNDc3M2E5MSIsInNlc3Npb25faWQiOiJhMzUyNWRiMy01ZTAwLTQ4MTItOGJkOC0yZGFjNTgwZWZkZTQifQp7ImR1cmF0aW9uX2FwaV9tcyI6NzQ3NCwic3RvcF9yZWFzb24iOiJ0b29sX3VzZSIsInNlc3Npb25faWQiOiJhMzUyNWRiMy01ZTAwLTQ4MTItOGJkOC0yZGFjNTgwZWZkZTQiLCJ0b3RhbF9jb3N0X3VzZCI6MC4yMDc5Mjk2LCJ1c2FnZSI6eyJpbnB1dF90b2tlbnMiOjQsImNhY2hlX2NyZWF0aW9uX2lucHV0X3Rva2VucyI6MjQyNzksImNhY2hlX3JlYWRfaW5wdXRfdG9rZW5zIjoyMzgwOCwib3V0cHV0X3Rva2VucyI6NDQ2LCJvdXRwdXRfdG9rZW5zX2RldGFpbHMiOnsidGhpbmtpbmdfdG9rZW5zIjowfSwic2VydmVyX3Rvb2xfdXNlIjp7IndlYl9zZWFyY2hfcmVxdWVzdHMiOjAsIndlYl9mZXRjaF9yZXF1ZXN0cyI6MH0sInNlcnZpY2VfdGllciI6InN0YW5kYXJkIiwiY2FjaGVfY3JlYXRpb24iOnsiZXBoZW1lcmFsXzFoX2lucHV0X3Rva2VucyI6MjQyNzksImVwaGVtZXJhbF81bV9pbnB1dF90b2tlbnMiOjB9LCJpbmZlcmVuY2VfZ2VvIjoibm90X2F2YWlsYWJsZSIsIml0ZXJhdGlvbnMiOlt7ImlucHV0X3Rva2VucyI6Miwib3V0cHV0X3Rva2VucyI6MTI0LCJjYWNoZV9yZWFkX2lucHV0X3Rva2VucyI6MjM4MDgsImNhY2hlX2NyZWF0aW9uX2lucHV0X3Rva2VucyI6NDcxLCJjYWNoZV9jcmVhdGlvbiI6eyJlcGhlbWVyYWxfNW1faW5wdXRfdG9rZW5zIjowLCJlcGhlbWVyYWxfMWhfaW5wdXRfdG9rZW5zIjo0NzF9LCJ0eXBlIjoibWVzc2FnZSJ9XSwic3BlZWQiOiJzdGFuZGFyZCIsImZhbGxiYWNrX2NyZWRpdCI6bnVsbH0sIm1vZGVsVXNhZ2UiOnsiY2xhdWRlLW9wdXMtNS01Ijp7ImlucHV0VG9rZW5zIjo0LCJvdXRwdXRUb2tlbnMiOjQ0NiwiY2FjaGVSZWFkSW5wdXRUb2tlbnMiOjIzODA4LCJjYWNoZUNyZWF0aW9uSW5wdXRUb2tlbnMiOjI0Mjc5LCJ3ZWJTZWFyY2hSZXF1ZXN0cyI6MCwiY29zdFVTRCI6MC4yMDc5Mjk2LCJjb250ZXh0V2luZG93IjoxMDAwMDAwLCJtYXhPdXRwdXRUb2tlbnMiOjEyODAwMCwidGhpbmtpbmdUb2tlbnMiOjAsImNhbm9uaWNhbE1vZGVsIjoiY2xhdWRlLW9wdXMtNS01IiwicHJvdmlkZXIiOiJmaXJzdFBhcnR5IiwiY29zdEJhc2lzIjoibGlzdCJ9fSwicGVybWlzc2lvbl9kZW5pYWxzIjpbXSwidGVybWluYWxfcmVhc29uIjoiY29tcGxldGVkIiwiZmFzdF9tb2RlX3N0YXRlIjoib2ZmIiwiZmFzdF9tb2RlX2Rpc2FibGVkX3JlYXNvbiI6InNka19vcHRfaW5fcmVxdWlyZWQiLCJzdWJhZ2VudF9zdGF0cyI6eyJzcGF3bmVkIjowLCJyZXF1ZXN0ZWQiOnsiYmFja2dyb3VuZCI6MCwiZm9yZWdyb3VuZCI6MCwidW5zZXQiOjB9LCJzdGFydGVkX2luX2JhY2tncm91bmQiOjAsIm1heF9kZXB0aCI6MCwic3Bhd25lZF9ieV9zdWJhZ2VudHMiOjAsImNvbXBsZXRlZCI6MCwiZmFpbGVkIjowLCJraWxsZWQiOnsicGFyZW50IjowLCJ1c2VyIjowLCJzeXN0ZW0iOjB9LCJyZWZ1c2VkIjp7ImRlcHRoX2xpbWl0IjowLCJjb25jdXJyZW5jeV9saW1pdCI6MCwiYnVkZ2V0IjowfSwiYnlfdHlwZSI6e319LCJpc19lcnJvciI6ZmFsc2UsIm51bV90dXJucyI6Mywic3VidHlwZSI6InN1Y2Nlc3MiLCJhcGlfZXJyb3Jfc3RhdHVzIjpudWxsLCJyZXN1bHQiOiJ7XCJzdGF0dXNcIjpcIkNMSV9PS1wiLFwibm9uY2VcIjpcIjIwMGNiYzcyZjUxZjRmODBlNjVhMzA0YTdiNmNkMjdjXCIsXCJwaGFzZVwiOlwiZmluaXNoZWRcIn0iLCJzdHJ1Y3R1cmVkX291dHB1dCI6eyJzdGF0dXMiOiJDTElfT0siLCJub25jZSI6IjIwMGNiYzcyZjUxZjRmODBlNjVhMzA0YTdiNmNkMjdjIiwicGhhc2UiOiJmaW5pc2hlZCJ9LCJ0dGZ0X21zIjo0NzQ4LCJ0eXBlIjoicmVzdWx0IiwiZHVyYXRpb25fbXMiOjEzNzM4LCJ1dWlkIjoiOTNmMjcwNTktNmU2NS00MmZkLTgyOWEtYWI5Y2U4NTc1YmUxIiwidHRmdF9zdHJlYW1fbXMiOjI2NzQsInRpbWVfdG9fcmVxdWVzdF9tcyI6MTMzLCJmaXJzdF9jb250ZW50X2ZyYW1lX21zIjoyNjc0LCJxdWV1ZWRfdHVybl9jb3VudCI6MCwicmVzdWx0X2luZGV4IjowfQo="
+          }
+        },
+        "stderr": {
+          "present": true,
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "raw": {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "text": "",
+            "base64": ""
+          }
+        },
+        "final": {
+          "present": true,
+          "bytes": 86,
+          "sha256": "8c2edaf913df5a83301ab9cd29fcb747d0ec18a20e5a33ffe698893251ecce4e",
+          "raw": {
+            "sha256": "8c2edaf913df5a83301ab9cd29fcb747d0ec18a20e5a33ffe698893251ecce4e",
+            "text": "{\"status\": \"CLI_OK\", \"nonce\": \"200cbc72f51f4f80e65a304a7b6cd27c\", \"phase\": \"finished\"}",
+            "base64": "eyJzdGF0dXMiOiAiQ0xJX09LIiwgIm5vbmNlIjogIjIwMGNiYzcyZjUxZjRmODBlNjVhMzA0YTdiNmNkMjdjIiwgInBoYXNlIjogImZpbmlzaGVkIn0="
+          }
+        },
+        "worker_status": {
+          "argv_sha256": "679ad938397761874ad1f62b49b6d807e11a3e458efc19895c365cddee6149ed",
+          "cli_exit_code": 0,
+          "request_sha256": "92e59d61d9abd69124d63a49097d4898ece3f363338b8125045d253035516a12",
+          "schema_sha256": "a17eb6c3834ba4842a0a0e057d398f7017e33c61fc241bf8c946dbb45cf992f1",
+          "state": "exited",
+          "stdin_sha256": "01be5aaf8ff15fbd322a3f39306d6d37ad1ea48ea37721cccac06d59f864edfd"
+        },
+        "jsonl": {
+          "parsed_bytes": 9359,
+          "unparsed_tail_bytes": 0,
+          "events": [
+            "system",
+            "assistant",
+            "rate_limit_event",
+            "user",
+            "assistant",
+            "user",
+            "rate_limit_event",
+            "result"
+          ],
+          "thread_id": "a3525db3-5e00-4812-8bd8-2dac580efde4",
+          "turn_completed": true,
+          "turn_failed": false,
+          "usage": [
+            {
+              "input_tokens": 4,
+              "cache_creation_input_tokens": 24279,
+              "cache_read_input_tokens": 23808,
+              "output_tokens": 446,
+              "output_tokens_details": {
+                "thinking_tokens": 0
+              },
+              "server_tool_use": {
+                "web_search_requests": 0,
+                "web_fetch_requests": 0
+              },
+              "service_tier": "standard",
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 24279,
+                "ephemeral_5m_input_tokens": 0
+              },
+              "inference_geo": "not_available",
+              "iterations": [
+                {
+                  "input_tokens": 2,
+                  "output_tokens": 124,
+                  "cache_read_input_tokens": 23808,
+                  "cache_creation_input_tokens": 471,
+                  "cache_creation": {
+                    "ephemeral_5m_input_tokens": 0,
+                    "ephemeral_1h_input_tokens": 471
+                  },
+                  "type": "message"
+                }
+              ],
+              "speed": "standard",
+              "fallback_credit": null
+            }
+          ],
+          "unknown_events": [],
+          "parse_complete": true,
+          "result_segments": [
+            {
+              "segment": 0,
+              "start_line": 1,
+              "result_line": 8,
+              "result_sha256": "e61c8e0b2111ad8321b5aa0b77097ada98dc21ac3056625d574d2066e17e684e",
+              "success": true,
+              "origin": null,
+              "num_turns": 3,
+              "output_sha256": "207c1da911a9695f785372184172f4f833176e556d74cffcef7adc252b5694c9"
+            }
+          ],
+          "usage_segments": [
+            {
+              "segment": 0,
+              "line": 8,
+              "usage": {
+                "input_tokens": 4,
+                "cache_creation_input_tokens": 24279,
+                "cache_read_input_tokens": 23808,
+                "output_tokens": 446,
+                "output_tokens_details": {
+                  "thinking_tokens": 0
+                },
+                "server_tool_use": {
+                  "web_search_requests": 0,
+                  "web_fetch_requests": 0
+                },
+                "service_tier": "standard",
+                "cache_creation": {
+                  "ephemeral_1h_input_tokens": 24279,
+                  "ephemeral_5m_input_tokens": 0
+                },
+                "inference_geo": "not_available",
+                "iterations": [
+                  {
+                    "input_tokens": 2,
+                    "output_tokens": 124,
+                    "cache_read_input_tokens": 23808,
+                    "cache_creation_input_tokens": 471,
+                    "cache_creation": {
+                      "ephemeral_5m_input_tokens": 0,
+                      "ephemeral_1h_input_tokens": 471
+                    },
+                    "type": "message"
+                  }
+                ],
+                "speed": "standard",
+                "fallback_credit": null
+              }
+            }
+          ],
+          "background_events": [],
+          "post_result_events": [],
+          "rate_limits": [
+            {
+              "line": 3,
+              "info": {
+                "status": "allowed",
+                "resetsAt": 1791119400,
+                "rateLimitType": "five_hour",
+                "overageStatus": "rejected",
+                "overageDisabledReason": "org_level_disabled",
+                "isUsingOverage": false,
+                "unifiedWindows": {
+                  "five_hour": {
+                    "utilization": {
+                      "reported_decimal": "0.85"
+                    },
+                    "resetsAt": 1791119400
+                  },
+                  "seven_day": {
+                    "utilization": {
+                      "reported_decimal": "0.61"
+                    },
+                    "resetsAt": 1791507600
+                  }
+                }
+              }
+            },
+            {
+              "line": 7,
+              "info": {
+                "status": "allowed",
+                "resetsAt": 1791119400,
+                "rateLimitType": "five_hour",
+                "overageStatus": "rejected",
+                "overageDisabledReason": "org_level_disabled",
+                "isUsingOverage": false,
+                "unifiedWindows": {
+                  "five_hour": {
+                    "utilization": {
+                      "reported_decimal": "0.86"
+                    },
+                    "resetsAt": 1791119400
+                  },
+                  "seven_day": {
+                    "utilization": {
+                      "reported_decimal": "0.61"
+                    },
+                    "resetsAt": 1791507600
+                  }
+                }
+              }
+            }
+          ],
+          "model_usage_reported": {
+            "claude-opus-5-5": {
+              "inputTokens": 4,
+              "outputTokens": 446,
+              "cacheReadInputTokens": 23808,
+              "cacheCreationInputTokens": 24279,
+              "webSearchRequests": 0,
+              "costUSD": {
+                "reported_decimal": "0.2079296"
+              },
+              "contextWindow": 1000000,
+              "maxOutputTokens": 128000,
+              "thinkingTokens": 0,
+              "canonicalModel": "claude-opus-5-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "reported_models": [
+            "claude-opus-5-5"
+          ],
+          "usage_scope": {
+            "usage": "sum_of_reported_segment_counters",
+            "model_usage_reported": "last_reported_cumulative_model_usage",
+            "total_cost_usd": "last_reported_estimate_not_invoice"
+          },
+          "subtype": "success",
+          "stop_reason": "tool_use",
+          "modelUsage": {
+            "claude-opus-5-5": {
+              "inputTokens": 4,
+              "outputTokens": 446,
+              "cacheReadInputTokens": 23808,
+              "cacheCreationInputTokens": 24279,
+              "webSearchRequests": 0,
+              "costUSD": {
+                "reported_decimal": "0.2079296"
+              },
+              "contextWindow": 1000000,
+              "maxOutputTokens": 128000,
+              "thinkingTokens": 0,
+              "canonicalModel": "claude-opus-5-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "total_cost_usd": {
+            "reported_decimal": "0.2079296"
+          },
+          "permission_denials": [],
+          "usage_total": {
+            "input_tokens": 4,
+            "output_tokens": 446,
+            "cache_read_input_tokens": 23808,
+            "cache_creation_input_tokens": 24279
+          },
+          "selected_result": {
+            "segment": 0,
+            "start_line": 1,
+            "result_line": 8,
+            "result_sha256": "e61c8e0b2111ad8321b5aa0b77097ada98dc21ac3056625d574d2066e17e684e",
+            "success": true,
+            "origin": null,
+            "num_turns": 3,
+            "output_sha256": "207c1da911a9695f785372184172f4f833176e556d74cffcef7adc252b5694c9"
+          },
+          "structured_output": {
+            "status": "CLI_OK",
+            "nonce": "200cbc72f51f4f80e65a304a7b6cd27c",
+            "phase": "finished"
+          },
+          "superseded_results": []
+        },
+        "worker_argv": [
+          "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\claude_worker.py",
+          "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\actual-cli-b86-e242461a17044b4787be706171cd2e3e\\claude\\files\\do-math-cli-lc0fjvc5\\request.json"
+        ],
+        "process_identity": {
+          "pid": 3656,
+          "creation_filetime": "134355902438534832"
+        },
+        "stop_receipts": [],
+        "result": "output_collected",
+        "reasons": [],
+        "termination_barrier": {
+          "active_processes": 0,
+          "process_ids": [],
+          "root_signaled": true,
+          "confirmed": true
+        },
+        "provider_operation_ids": "unknown",
+        "remote_termination": "unknown",
+        "provider_stop_reason": "tool_use",
+        "execution_id": null,
+        "profile_ref": null,
+        "provider_observation": {
+          "execution_id": null,
+          "operation_ids": "unknown",
+          "operation_count": "unknown",
+          "remote_termination": "unknown",
+          "stop_reason": "tool_use",
+          "usage": {
+            "input_tokens": 4,
+            "output_tokens": 446,
+            "cache_read_input_tokens": 23808,
+            "cache_creation_input_tokens": 24279
+          },
+          "usage_scope": "reported_execution_counters_not_invoice",
+          "model_usage_reported": {
+            "claude-opus-5-5": {
+              "inputTokens": 4,
+              "outputTokens": 446,
+              "cacheReadInputTokens": 23808,
+              "cacheCreationInputTokens": 24279,
+              "webSearchRequests": 0,
+              "costUSD": {
+                "reported_decimal": "0.2079296"
+              },
+              "contextWindow": 1000000,
+              "maxOutputTokens": 128000,
+              "thinkingTokens": 0,
+              "canonicalModel": "claude-opus-5-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "model_usage_scope": "last_reported_cumulative_not_added_to_segment_usage",
+          "evidence_sha256": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a"
+        }
+      }
+    },
+    "error": null,
+    "assigned_model": "opus",
+    "execution_id": null,
+    "profile_ref": null,
+    "provider_observation": {
+      "execution_id": null,
+      "operation_ids": "unknown",
+      "operation_count": "unknown",
+      "remote_termination": "unknown",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input_tokens": 4,
+        "output_tokens": 446,
+        "cache_read_input_tokens": 23808,
+        "cache_creation_input_tokens": 24279
+      },
+      "usage_scope": "reported_execution_counters_not_invoice",
+      "model_usage_reported": {
+        "claude-opus-5-5": {
+          "inputTokens": 4,
+          "outputTokens": 446,
+          "cacheReadInputTokens": 23808,
+          "cacheCreationInputTokens": 24279,
+          "webSearchRequests": 0,
+          "costUSD": {
+            "reported_decimal": "0.2079296"
+          },
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-opus-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "model_usage_scope": "last_reported_cumulative_not_added_to_segment_usage",
+      "evidence_sha256": "6e2f9efd8fb2d66875674ec7cd0b47a2d3e8cdcf93472e7e3ed206d73274a52a"
+    },
+    "usage_segments": [
+      {
+        "segment": 0,
+        "line": 8,
+        "usage": {
+          "input_tokens": 4,
+          "cache_creation_input_tokens": 24279,
+          "cache_read_input_tokens": 23808,
+          "output_tokens": 446,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 24279,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 124,
+              "cache_read_input_tokens": 23808,
+              "cache_creation_input_tokens": 471,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 471
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        }
+      }
+    ],
+    "model_usage_reported": {
+      "claude-opus-5-5": {
+        "inputTokens": 4,
+        "outputTokens": 446,
+        "cacheReadInputTokens": 23808,
+        "cacheCreationInputTokens": 24279,
+        "webSearchRequests": 0,
+        "costUSD": {
+          "reported_decimal": "0.2079296"
+        },
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "usage_scope": {
+      "usage": "sum_of_reported_segment_counters",
+      "model_usage_reported": "last_reported_cumulative_model_usage",
+      "total_cost_usd": "last_reported_estimate_not_invoice"
+    },
+    "reported_models": [
+      "claude-opus-5-5"
+    ],
+    "selected_result": {
+      "segment": 0,
+      "start_line": 1,
+      "result_line": 8,
+      "result_sha256": "e61c8e0b2111ad8321b5aa0b77097ada98dc21ac3056625d574d2066e17e684e",
+      "success": true,
+      "origin": null,
+      "num_turns": 3,
+      "output_sha256": "207c1da911a9695f785372184172f4f833176e556d74cffcef7adc252b5694c9"
+    },
+    "post_result_events": [],
+    "background_events": []
+  },
+  "actual_tool_names": [
+    "Bash",
+    "StructuredOutput"
+  ]
+}

@@ -10,6 +10,20 @@ from do_math.codex_stream import parse_jsonl
 
 
 class CodexStreamTests(unittest.TestCase):
+    def test_native_error_is_a_complete_failure_only_with_its_failed_terminal(self):
+        prefix = (b'{"type":"thread.started","thread_id":"failed-request"}\n'
+                  b'{"type":"turn.started"}\n'
+                  b'{"type":"error","message":"request rejected"}\n')
+        failed = parse_jsonl(prefix + b'{"type":"turn.failed","error":{"message":"request rejected"}}\n')
+        self.assertTrue(failed['parse_complete'])
+        self.assertTrue(failed['turn_failed'])
+        self.assertFalse(failed['turn_completed'])
+        self.assertEqual(failed['unknown_events'], [])
+        self.assertNotIn('final_text', failed)
+        for suffix in (b'', b'{"type":"turn.completed"}\n'):
+            with self.subTest(suffix=suffix):
+                self.assertFalse(parse_jsonl(prefix + suffix)['parse_complete'])
+
     def test_jsonl_tail_and_missing_terminal_are_not_success(self):
         parsed = parse_jsonl(b'{"type":"thread.started","thread_id":"t"}\nnot-json')
         self.assertEqual(parsed["thread_id"], "t")

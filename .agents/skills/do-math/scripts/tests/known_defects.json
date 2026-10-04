@@ -503,6 +503,15 @@
       "found_by": "7420a2f4 제품에서 13-A 공개 재시도 여정. 최초 do-math-tests-agwyl9ws, 최종 표시 없는 동일 본문 do-math-tests-gtxbap26: 후속 한 번과 질문 해소를 확인한 뒤 과거 실패 전건 비교에서 고유 실패. 원파견 KD-0800~0899와 소유/현재 main 원장의 0800~0803을 대조하여 0804를 사용. main ty13d1cp에서 정확 tool 판정/위임 근거 병합은 failed, 봉인 누락은 GitStateStoreError error, 입력초과 이력은 B32 대기 분리로 이미 passed. 세 수리 및 두 저장 경로의 명시 deep copy 후 zvxjwxp4 변경 영역32개가 통과했다. 전체 관문은 미완료.",
       "missed_kind": "기존 재시도 시험은 input_overflows의 개수와 현재 재시도 성적을 확인하고 실패 당시 action 전문의 불변성을 대조하지 않았다. CLI-실행-계약의 실패 이력 보존 계약을 직접 단언한다. 이전 원재현 ID: flows.test_engine_cli_conditional_journey.ConditionalCliJourneyTests.test_public_retry_preserves_failure_and_dispatches_one_original_action",
       "status": "closed"
+    },
+    {
+      "id": "KD-1910",
+      "summary": "Codex 0.160.0의 실제 요청 거부 출력 error 다음 turn.failed를 잘못된 JSONL 순서로 분류한다. 오류 이벤트를 이미 알려진 종류로 읽으면서 중간 사건 검사에서는 거부했다.",
+      "category": 9,
+      "reproduction": "unit.test_corpus_replay.CorpusReplayTests.test_every_entry_parses_to_its_recorded_judgment",
+      "found_by": "B86 실제 CLI의 invalid_json_schema 응답을 그대로 녹화한 codex-schema-rejected-0160. fzcpndvs에서 실패 프로토콜은 완결이라는 독립 기대값으로 먼저 실패를 확인했고, 실패 terminal이 있는 경우만 허용한 뒤 8lb06bsq와 1iow0wmp에서 통과했다.",
+      "missed_kind": "기존 Codex 정상/잘림 말뭉치에 실제 공급자 거부 사건이 없었다. 합성 정상 응답만으로 알려진 오류 사건의 실제 순서를 확인하지 못했다.",
+      "status": "closed"
     }
   ]
 }

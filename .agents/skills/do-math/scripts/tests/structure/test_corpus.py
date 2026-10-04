@@ -1,5 +1,6 @@
 """Corpus kind completeness (설계 3.3, 4.5): every recorded entry is declared whole and the corpus stays small."""
 import json
+import hashlib
 from pathlib import Path
 import unittest
 
@@ -10,6 +11,21 @@ FILE_FIELDS = ('path', 'final_path', 'source_path')
 
 
 class CorpusCompletenessTests(unittest.TestCase):
+    def test_each_provider_has_a_versioned_real_stream(self):
+        from do_math.claude_adapter import ADAPTERS
+        manifest = json.loads((CORPUS / 'manifest.json').read_text(encoding='utf-8'))
+        versions = manifest['supported_stream_versions']
+        self.assertEqual(set(versions), set(ADAPTERS))
+        for provider, version in versions.items():
+            with self.subTest(provider=provider):
+                self.assertTrue(version.strip())
+                entries = [entry for entry in manifest['entries']
+                           if entry['kind'] == provider + '_stream' and entry['tool_version'] == version]
+                self.assertTrue(entries, 'each current provider version needs a real recording')
+                for entry in entries:
+                    self.assertEqual(hashlib.sha256((CORPUS / entry['path']).read_bytes()).hexdigest(),
+                                     entry['source_sha256'], 'recorded bytes must match their source')
+
     def test_every_entry_has_its_fields_and_files_and_no_file_is_undeclared(self):
         entries = json.loads((CORPUS / 'manifest.json').read_text(encoding='utf-8'))['entries']
         self.assertGreater(len(entries), 0)

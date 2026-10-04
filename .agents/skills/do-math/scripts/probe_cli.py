@@ -18,8 +18,10 @@ def run_case(destination, case, *, ports, provider, model, effort, timeout, only
     workspace.mkdir(parents=True)
     nonce = ports.clock.random_hex(16)
     schema = {"type": "object", "additionalProperties": False,
-              "properties": {"status": {"const": "CLI_OK"}, "nonce": {"const": nonce},
-                             "phase": {"enum": ["finished", "pending"]}}, "required": ["status", "nonce", "phase"]}
+              "properties": {"status": {"type": "string", "const": "CLI_OK"},
+                             "nonce": {"type": "string", "const": nonce},
+                             "phase": {"type": "string", "enum": ["finished", "pending"]}},
+              "required": ["status", "nonce", "phase"]}
     prompt = f'This is an isolated CLI integration probe. Work only in {workspace}. Return the provided JSON schema with status CLI_OK and nonce {nonce}. '
     if case == "structured":
         prompt += 'Use no tools. Return phase finished.'
