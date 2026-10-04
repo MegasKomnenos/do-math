@@ -20,6 +20,64 @@ setUpModule = warm_template
 
 
 class RoleCallTests(unittest.TestCase):
+    def test_changed_task_source_opens_one_plan_and_unchanged_source_opens_none(self):
+        sim = Sim.activated()
+        source = sim.root / 'plan-input.txt'
+        source.write_text('first input', encoding='utf-8')
+        sim.control('source', text='Supply the task input', config={'path': str(source)})
+        sim.engine.process_controls()
+        sim.model.responder = DefaultResponder(plan_assessments=False)
+
+        def use_source(out, context):
+            for task in out['candidates']:
+                task['inputs'].append('source:plan-input.txt')
+            return out
+
+        def defer(out, context):
+            for row in out['dispositions']:
+                row.update(kind='not_selected', next_owner='research_plan',
+                           revisit={'at': (sim.clock.wall() + timedelta(days=1)).isoformat(), 'event_refs': []})
+            return out
+
+        sim.model.on('research_preparation').reply(Answer(use_source))
+        sim.model.on('research_plan').reply(Answer(defer))
+        sim.step()
+        sim.step()
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        sim.step()
+        before = assert_call_records(self, sim)
+        self.assertEqual(before, Counter(research_preparation=1, task_contract_review=1, research_plan=1))
+        events = len(sim.runtime['events'])
+        sim.control('source', text='Read the same bytes again', config={'path': str(source)})
+        sim.engine.process_controls()
+        sim.step()
+        self.assertEqual(assert_call_records(self, sim), before)
+        self.assertEqual(len(sim.runtime['events']), events)
+
+        source.write_text('second input', encoding='utf-8')
+        request = sim.control('source', text='Replace the task input', config={'path': str(source)})
+        sim.engine.process_controls()
+        task, = sim.runtime['tasks'].values()
+        self.assertEqual(task['newinput'], request['request_id'])
+        sim.run_until(lambda current: assert_call_records(self, current)['task_contract_review'] == 2, max_steps=8)
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        sim.run_until(lambda current: assert_call_records(self, current)['research_plan'] == 2, max_steps=8)
+        after = assert_call_records(self, sim)
+        self.assertEqual(after, before + Counter(task_contract_review=1, research_plan=1))
+        event, = [e for e in sim.runtime['events'] if e['kind'] == 'task_new_input']
+        self.assertEqual((event['target'], event['request_id']), (task['id'], request['request_id']))
+        plan, = [row for row in sim.runtime['executions'].values()
+                 if row['role'] == 'research_plan' and event['id'] in row['action'].get('event_refs', [])]
+        self.assertEqual(plan['outcome'], 'output_accepted', plan.get('error'))
+        self.assertNotIn(event['id'], sim.runtime['pending_events'])
+        self.assertNotIn('newinput', sim.runtime['tasks'][task['id']])
+        sim.control('source', text='Repeated second input', config={'path': str(source)})
+        sim.engine.process_controls()
+        for _ in range(3):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim), after)
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
+
     def test_periodic_reconsideration_opens_one_preparation_and_no_targetless_plan(self):
         sim = Sim.activated(self.enterContext(tempfile.TemporaryDirectory()),
                             config={'research_reconsider_seconds': 60})

@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B90~B93 운영 발동, B94 task_revisit_due/research_reconsider_due의 실제 호출·소비·중복 방지 확인. task_new_input과 나머지 직접 계획 발동 원천의 사건×대상 전건 및 다른 실패 원천 연결이 남음."
+        "remaining": "B90~B93 운영 발동, B94 기한 사건, B95 공개 source 변경의 task_new_input 계획 소비 검증 완료. 나머지 직접 계획 발동 원천의 사건×대상 전건 및 다른 실패 원천 연결이 남음."
       },
       {
         "id": "12-A",
@@ -13089,9 +13089,9 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B93 1427e062; B94 기한 사건의 준비/계획 호출 관련58개 통과",
-      "active": "B94 확정 후 새 입력과 직접 계획 발동의 대상·호출 연결",
-      "exit": "task_new_input 및 직접 계획 발동 원천의 실제 생산·대상·호출0/1 검증",
+      "last_closed": "B94 7c0111b1; B95 새 자료 입력 관련11개 통과",
+      "active": "B95 확정 후 직접 계획 발동 원천을 기존 실제 흐름과 연결",
+      "exit": "형식·검토·지식·개정·평가·외부반려·입력초과·출력수락 계획 원천의 대상/호출 누락 보완",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "기존 생산자와 실제 owner/모델/작업자 결과를 사용한다. 실제 실패를 고치고 검증된 부분의 남김을 제거한다.",
       "running_test": null,
@@ -18231,6 +18231,23 @@
       ],
       "whole_requirement_closed": false,
       "limits": "기한과 초기화·준비·정상 점유 검증 범위. task_new_input 및 나머지 직접 계획 발동 원천은 별도 남김."
+    },
+    "new_input_trigger_verification": {
+      "id": "B95",
+      "scope": "공개 source의 바이트 불변/변경/재전달과 실제 task_new_input 생성·계획 호출·소비",
+      "state": "검수·관련 검증 완료",
+      "memory_node": "M-0512",
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-새-입력-발동/report.json",
+        "sha256": "d9d46a7ad9a077905e0d052a0815b9ab03ff03a05b2df86fdb413f6b08816f75",
+        "counts": {
+          "passed": 11
+        },
+        "seconds": 100.3,
+        "changed_during_run": []
+      },
+      "whole_requirement_closed": false,
+      "limits": "과제 입력인 source의 실제 변경 원천. 사용자 입력 해석/평가·지식/형식/검토/권한의 다른 직접 계획 발동은 별도 남김."
     }
   }
 }
