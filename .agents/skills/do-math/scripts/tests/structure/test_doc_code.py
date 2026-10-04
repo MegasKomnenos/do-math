@@ -5,8 +5,8 @@ this test does not substitute flag vocabulary for those requirements.
 """
 from pathlib import Path
 import unittest
-from support.doc_code import (command_issues, declared_policy_names, documented_policies, documents,
-                              field_schemas, parser_options, policy_issues, produced_object_schema, scoped_field_issues, tool_options)
+from support.doc_code import (command_issues, declared_policy_names, diagnostic_names, diagnostic_reference_issues, documented_policies, documents,
+                              field_schemas, function_reference_issues, parser_options, policy_issues, produced_object_schema, scoped_field_issues, tool_options)
 
 SKILL = Path(__file__).resolve().parents[3]
 SCRIPTS = SKILL / 'scripts'
@@ -83,6 +83,52 @@ class DocumentCodeTests(unittest.TestCase):
                          {'data': produced_object_schema(returned)}), [('scoped field', 'data.foreign')])
         with self.assertRaisesRegex(ValueError, 'Unresolved object keys'):
             produced_object_schema(spread)
+
+    def test_explicit_producer_composition_keeps_owners_and_rejects_stale_bindings(self):
+        def result(extra):
+            return {'own': 1, **extra}
+        def alternatives(choice):
+            if choice:
+                return {'left': 1}
+            return {'right': 1}
+        schema = produced_object_schema(result, bindings={'extra': {'properties': {'observed': {}}}})
+        self.assertEqual(scoped_field_issues('`view.own` `view.observed`', {'view': schema}), [])
+        with self.assertRaisesRegex(ValueError, 'Unused producer bindings'):
+            produced_object_schema(result, bindings={'extra': {'properties': {}}, 'obsolete': {'properties': {}}})
+        schema = produced_object_schema(alternatives, variants=True)
+        self.assertEqual(scoped_field_issues('`view.left` `view.right`', {'view': schema}), [])
+        with self.assertRaisesRegex(ValueError, 'Review document field producer'):
+            produced_object_schema(alternatives)
+        schemas = field_schemas()
+        self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
+            '`status.budget` `profile_selection.allowed_profiles` `operational_evidence.activity_continuations`', schemas), [])
+        self.assertEqual(scoped_field_issues('`status.allowed_profiles`', schemas), [('scoped field', 'status.allowed_profiles')])
+
+    def test_documented_function_references_resolve_to_callables(self):
+        issues = [(document.relative_to(SKILL).as_posix(), *issue)
+                  for document in documents(SKILL)
+                  for issue in function_reference_issues(document.read_text(encoding='utf-8'))]
+        self.assertEqual(issues, [])
+        self.assertEqual(function_reference_issues('`os.scandir(...)` `governance.mathematical_goal_basis(...)` '
+                         '`knowledge_records.judged_verification(...)`'), [])
+        self.assertEqual(function_reference_issues('`governance.missing_function(...)`'),
+                         [('function reference', 'governance.missing_function(...)')])
+        self.assertEqual(function_reference_issues('`planning.RECORD_FAMILIES(...)`'),
+                         [('function reference', 'planning.RECORD_FAMILIES(...)')])
+        self.assertEqual(scoped_field_issues('`governance.charter`', field_schemas()), [])
+        self.assertEqual(scoped_field_issues('`governance.mathematical_goal_basis`', field_schemas()),
+                         [('scoped field', 'governance.mathematical_goal_basis')])
+
+    def test_documented_diagnostic_codes_belong_to_their_actual_owner(self):
+        names = diagnostic_names(SCRIPTS)
+        issues = [(document.relative_to(SKILL).as_posix(), *issue)
+                  for document in documents(SKILL)
+                  for issue in diagnostic_reference_issues(document.read_text(encoding='utf-8'), names)]
+        self.assertEqual(issues, [])
+        self.assertEqual(diagnostic_reference_issues('`contract_check.coverage` `integration.currentness`', names), [])
+        self.assertEqual(diagnostic_reference_issues('`integration.py` `integration.preview_bundles(...)`', names), [])
+        self.assertEqual(diagnostic_reference_issues('`integration.coverage` `contract_check.currentness`', names),
+                         [('diagnostic code', 'contract_check.currentness'), ('diagnostic code', 'integration.coverage')])
 
     def test_documented_policy_names_have_installed_owners(self):
         names = declared_policy_names(SCRIPTS)
