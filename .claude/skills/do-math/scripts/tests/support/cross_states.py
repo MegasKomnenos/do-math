@@ -52,7 +52,7 @@ def _build_plan_ready(root, shared):
     return sim
 
 
-def _restore_start(name, build):
+def _restore_start(name, build, **parameters):
     """Restore a quiescent public prefix; derive the generation gates without an owner pass.
 
     The new engine's readiness cache is initially empty. Recompute it with the
@@ -63,7 +63,7 @@ def _restore_start(name, build):
     from copy import deepcopy
     from do_math.lifecycle_engine import _SCHEDULABLE
     from do_math.planning import task_ready
-    sim = built(name, build)
+    sim = built(name, build, **parameters)
     before = deepcopy((sim.instance, sim.runtime, sim.clock.state()))
     context = sim.engine._evaluation_context()
     for identifier, task in sim.runtime['tasks'].items():
@@ -114,18 +114,31 @@ def returned_plan():
     return _restore_start('cross-returned-plan', _build_returned_plan)
 
 
-def review_stage(stage='initial'):
-    from support.review_research import research_sim
+def _review_responder(stage):
     from support.engine_purpose import PurposeResponder
-    sim = research_sim()
     class ReviewEventResponder(PurposeResponder):
         def answer(self, role, context, workspace):
             if role == 'maintenance':
                 from support.default_responder import DefaultResponder
                 return DefaultResponder().respond(role, context, workspace)
             return super().answer(role, context, workspace)
-    sim.model.responder = ReviewEventResponder('dispute' if stage in {'answer', 'judge'} else 'direct')
+    return ReviewEventResponder('dispute' if stage in {'answer', 'judge'} else 'direct')
+
+
+def _build_review_stage(root, shared, *, stage):
+    from support.engine_purpose import PURPOSE_CONFIG
+    from support.review_research import build_research_sim, research_policy
+    settings = dict(PURPOSE_CONFIG)
+    policy = research_policy(settings.get('review_rounds', 2), settings.get('review_research_limit', 3))
+    sim = build_research_sim(root, shared, settings=settings, policy=policy)
+    sim.model.responder = _review_responder(stage)
     drive(sim, lambda s: queued(s, 'identity_review', stage) is not None)
+    return sim
+
+
+def review_stage(stage='initial'):
+    sim = _restore_start('cross-review-stage', _build_review_stage, stage=stage)
+    sim.model.responder = _review_responder(stage)
     return sim
 
 

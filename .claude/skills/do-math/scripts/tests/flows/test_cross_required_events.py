@@ -378,6 +378,32 @@ class RequiredEventSeedTests(unittest.TestCase):
                 self.assertEqual(restored.model.calls, [])
                 ContractOracle(restored).check(restored)
 
+    def test_review_answer_prefix_restores_exact_facts_without_repeating_owner_preparation(self):
+        from support.engine_lifecycle import ObservedCalls, code_of
+        from support.sim import Sim, assert_template_quiescent
+        first = review_stage('answer')
+        assert_template_quiescent(first)
+        self.assertIsNotNone(queued(first, 'identity_review', 'answer'))
+        before = deepcopy((first.engine.head, first.instance, first.runtime, first.clock.state()))
+        readiness = deepcopy(first.engine._task_readiness)
+        responder = first.model.responder
+        applied(first, 'configure', config={
+            'plan_settle_seconds': first.instance['config']['plan_settle_seconds'] + 1})
+        ContractOracle(first).check(first)
+        responder.failures.append('first consumer only')
+        with ObservedCalls(prepare=code_of(drive), owner=code_of(Sim.step)) as observed:
+            restored = review_stage('answer')
+        self.assertEqual(observed.calls['prepare'], [])
+        self.assertEqual(observed.calls['owner'], [])
+        self.assertEqual(restored.root, first.root)
+        self.assertEqual((restored.engine.head, restored.instance, restored.runtime, restored.clock.state()), before)
+        self.assertEqual(restored.engine._task_readiness, readiness)
+        self.assertIsNot(restored.model.responder, responder)
+        self.assertEqual(restored.model.responder.failures, [])
+        self.assertFalse(restored.ports.calls.created)
+        self.assertEqual(restored.model.calls, [])
+        assert_template_quiescent(restored)
+
     def test_work_outcomes(self):
         for value in ('submitted', 'partial', 'waiting', 'no_result'):
             with self.subTest(value=value):

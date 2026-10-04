@@ -13030,11 +13030,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "검증된 과제 대기 표시 변경 확정",
-      "last_closed": "B78 fc11770b 및 학술 입력 교정dc75da99",
-      "active": "B79 두 실제 red 교정·관련92개 통과·근거 및 커밋 확정",
-      "exit": "제품/시험/README·두 red·관련 원보고·기억·미러가 같은 검수 커밋에 포함됨",
-      "next": "현재 비용의 반복 준비 병목과 의무 남김의 의존관계를 대조하여 다음 독립 변경 선택",
+      "phase": "검증된 검토 시작 상태 재사용 확정",
+      "last_closed": "B79 b0e0b59a 및 B80 기능/전후/귀속/소비자 검증",
+      "active": "B80 실제 반복 준비 재사용의 원보고·미러·기억·커밋 확정",
+      "exit": "실제 생산자 보존·quiescence/복원 격리·원 LONG·T3 귀속·관련150개를 같은 검수 커밋으로 확정",
+      "next": "6-A 시간 규칙×국면의 현행 선언·생산자·기존 검사 대조에서 다음 독립 변경 선택",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -17537,6 +17537,109 @@
         "92개는 보고/계획 연결/CLI/실제 Git 경계의 관련 검증이며 전체 일반 관문이 아님",
         "권한 만료와 실제 저장 평가 대기 두 생산 경로의 근거; 모든 대기 공간·해소·계수의 폐쇄가 아님",
         "실제 다음 담당자를 보존하며 사용자 대기 우선과 나머지 대기열 순서를 유지함"
+      ]
+    },
+    "review_prefix_cost_integration": {
+      "id": "B80",
+      "base_head": "b0e0b59a",
+      "state": "verified_scope_recorded_in_owning_commit",
+      "scope": "단계별 실제 검토 준비 상태를 기존 built 템플릿으로 복원",
+      "owned_files": [
+        "scripts/tests/support/review_research.py",
+        "scripts/tests/support/cross_states.py",
+        "scripts/tests/flows/test_cross_required_events.py"
+      ],
+      "research_builder_body_ast_preserved": true,
+      "constraints": [
+        "quiescence 검사 우회 없음",
+        "LONG6×20과 사건·단언 유지",
+        "실제 readiness와 기존 shared_state/used_state 귀속",
+        "부하 없는 동일 선택 전후 비교"
+      ],
+      "baseline_tree": "C:/Users/wogud/AppData/Local/Temp/do-math-prefix-base-9648a9d33424423bbd34d0deae2b723f",
+      "initial_baseline_note": "기능 기준 실행; prefix 검증과 일부 겹치므로 속도 효과를 위한 최종 전후 비교로 사용하지 않음",
+      "whole_requirement_closed": false,
+      "restore_proof": {
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 110.4,
+        "changed_during_run": [],
+        "report": "C:/Users/wogud/AppData/Local/Temp/do-math-tests-p4xiznpn/report.json"
+      },
+      "functional_baseline": {
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 467.7,
+        "report": "C:/Users/wogud/AppData/Local/Temp/do-math-prefix-before-3f9fe3d8231442419e5efcb0048c5127/report.json",
+        "performance_comparison": false
+      },
+      "clean_baseline_output": "C:/Users/wogud/AppData/Local/Temp/do-math-prefix-before-clean-731dc25652e64535bafa675ad5813be8",
+      "clean_before": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 1
+        },
+        "total_seconds": 501.6,
+        "changed_during_run": []
+      },
+      "paired_ordinary": {
+        "selection": [
+          "flows.test_cross_review_alphabets.ReviewAlphabetTests.test_review_alphabet"
+        ],
+        "counts": {
+          "passed": 1
+        },
+        "before_seconds": 501.6,
+        "after_seconds": 257.6,
+        "saving_percent": 48.64,
+        "concurrent_test_workers_during_pair": 1,
+        "long_settings": "6 examples x20 events unchanged",
+        "limitation": "one representative pair; no general speed guarantee"
+      },
+      "related_output": "C:/Users/wogud/AppData/Local/Temp/do-math-prefix-related-cffbd4803ba3424eb993fa07a3b343f3",
+      "provenance_output": "C:/Users/wogud/AppData/Local/Temp/do-math-prefix-t3-04f8d5217ada49898a950f30d2da9f22",
+      "provenance_proof": {
+        "complete": true,
+        "successful_tests": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 634.8,
+        "changed_during_run": [],
+        "whole_gate_closed": false,
+        "missing_branch_arcs": 7546,
+        "missing_modules": 111,
+        "selected_modules": 1,
+        "reused_modules": 0,
+        "selection_index_written": false,
+        "actual_both_consumers_credit": "initialize_state +20 observed role-input files each"
+      },
+      "memory_node": "M-0497",
+      "changed_area": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 150
+        },
+        "total_seconds": 1468.2,
+        "changed_during_run": []
+      },
+      "tracked_report": "C:\\math\\docs\\do-math\\시험-재편-2026-09-29\\검증\\2026-10-04-검토-시작-상태-재사용\\report.json",
+      "report_sha256": "ec4826ea823a0ebdd34b0bdca886a86c466974f8a81fa56fc7480808321c17fc",
+      "owned_source_sha256": {
+        "scripts/tests/support/review_research.py": "7a064f52018a45a71359199de2a4f48bf36295600c0ab2a98b9b520ef716a38e",
+        "scripts/tests/support/cross_states.py": "db7c1aa74b4c8e6101fb7ab38a4a4ab31a082ffc3a28a69cf3f88011dd9f9eec",
+        "scripts/tests/flows/test_cross_required_events.py": "fd85c7b66b1d602eaaf1a1534fe2f7932cd2084457ebb493d8effdfdf0165efd"
+      },
+      "selected_parallel_tests": 148,
+      "selected_isolated_tests": 2,
+      "limits": [
+        "One clean LONG pair501.6→257.6s; no universal optimization claim",
+        "T3 two tests pass and both real consumers receive initialization+20 inputs; whole branch gate remains false",
+        "150 producer/template/flow/read-tool checks do not close original19/61/11/P2/six classes or final gates"
       ]
     }
   }

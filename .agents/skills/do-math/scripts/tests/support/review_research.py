@@ -68,30 +68,32 @@ def research_policy(review_rounds=2, review_research_limit=3):
     return policy
 
 
+def build_research_sim(root, shared, *, settings, policy):
+    sim = Sim(root, shared=shared, config=settings)
+    sim.activate(review_policy=policy)
+    sim.model.responder = PurposeResponder()
+    for _ in range(45):
+        sim.step()
+        if sim.model.responder.failures:
+            raise AssertionError('The purpose responder refused its input: ' + '; '.join(sim.model.responder.failures))
+        if sim.runtime['review_cycles']:
+            break
+        if sim.runtime['status'] in {'paused', 'closed', 'waiting'}:
+            raise AssertionError('The purpose flow stopped before its review: ' + repr(sim.waiting()))
+    else:
+        raise AssertionError('The purpose flow did not open its review: ' + repr(sim.waiting()))
+    unfinished = [row['id'] for row in sim.runtime['executions'].values() if row['status'] != 'ended']
+    if unfinished:
+        raise AssertionError('A template must not end with unfinished executions: ' + repr(unfinished))
+    return sim
+
+
 def research_sim(**config):
     """A restored purpose scenario whose identity review just opened; see the module docstring."""
     settings = {**PURPOSE_CONFIG, **config}
     policy = research_policy(settings.get('review_rounds', 2), settings.get('review_research_limit', 3))
 
-    def build(root, shared, *, settings, policy):
-        sim = Sim(root, shared=shared, config=settings)
-        sim.activate(review_policy=policy)
-        sim.model.responder = PurposeResponder()
-        for _ in range(45):
-            sim.step()
-            if sim.model.responder.failures:
-                raise AssertionError('The purpose responder refused its input: ' + '; '.join(sim.model.responder.failures))
-            if sim.runtime['review_cycles']:
-                break
-            if sim.runtime['status'] in {'paused', 'closed', 'waiting'}:
-                raise AssertionError('The purpose flow stopped before its review: ' + repr(sim.waiting()))
-        else:
-            raise AssertionError('The purpose flow did not open its review: ' + repr(sim.waiting()))
-        unfinished = [row['id'] for row in sim.runtime['executions'].values() if row['status'] != 'ended']
-        if unfinished:
-            raise AssertionError('A template must not end with unfinished executions: ' + repr(unfinished))
-        return sim
-    return built('review-research', build, settings=settings, policy=policy)
+    return built('review-research', build_research_sim, settings=settings, policy=policy)
 
 
 class InvestigationRunner(PurposeAnswers):

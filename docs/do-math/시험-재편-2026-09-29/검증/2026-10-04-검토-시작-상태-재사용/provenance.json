@@ -1,0 +1,30 @@
+[
+  {
+    "test": "flows.test_cross_required_events.RequiredEventSeedTests.test_review_answer_dispositions",
+    "shared_producer": "shared:sim:built:[\"cross-review-stage\", \"support.cross_states\", \"_build_review_stage\", \"{\\\"stage\\\":\\\"answer\\\"}\"]",
+    "initialization_function_credited": true,
+    "producer_function_count": 1127,
+    "input_count": 20,
+    "sample_role_inputs": [
+      ".claude/skills/do-math/GLOSSARY.md",
+      ".claude/skills/do-math/references/공통-실행.md",
+      ".claude/skills/do-math/references/과제-착수조건.md",
+      ".claude/skills/do-math/references/모델과-실행예산.md",
+      ".claude/skills/do-math/references/입력-소비자.md"
+    ]
+  },
+  {
+    "test": "flows.test_cross_required_events.RequiredEventSeedTests.test_review_answer_prefix_restores_exact_facts_without_repeating_owner_preparation",
+    "shared_producer": "shared:sim:built:[\"cross-review-stage\", \"support.cross_states\", \"_build_review_stage\", \"{\\\"stage\\\":\\\"answer\\\"}\"]",
+    "initialization_function_credited": true,
+    "producer_function_count": 1132,
+    "input_count": 20,
+    "sample_role_inputs": [
+      ".claude/skills/do-math/GLOSSARY.md",
+      ".claude/skills/do-math/references/공통-실행.md",
+      ".claude/skills/do-math/references/과제-착수조건.md",
+      ".claude/skills/do-math/references/모델과-실행예산.md",
+      ".claude/skills/do-math/references/입력-소비자.md"
+    ]
+  }
+]
