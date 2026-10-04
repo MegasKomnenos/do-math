@@ -131,13 +131,13 @@ python .agents/skills/do-math/scripts/do_math.py init `
   --effort medium
 ```
 
-성공 응답의 `result`에 `instance_id`, 첫 `snapshot`, CLI `status`가 들어 있다. 이후 명령의 `--instance`에는 `result.instance_id`를 넣고 같은 `--repository`를 사용한다. 생성 성공은 초기화 완료가 아니다. 다음 예시는 초기화 결과를 담은 응답 봉투다.
+성공 응답의 `result`에 `instance_id`, 첫 `snapshot`, CLI `status`가 들어 있다. 이후 명령의 `--instance`에는 `result.instance_id`를 넣고 같은 `--repository`를 사용한다. 생성 성공은 초기화 완료가 아니다. 다음 예시는 초기화 결과를 담은 응답 봉투다. <!-- do-math fields: result=init_result -->
 
 ```json
 {"schema_version":5,"response_contract":"do-math-cli/5","request_id":"QR-...","command":"init","exit_code":0,"result":{"instance_id":"RI-...","snapshot":"<git-oid>","status":"initializing"}}
 ```
 
-독립 운영을 등록했으면 응답의 `result.operator_schedule`에서 실제 두 작업을 확인한다. 저장은 성공했지만 예약 등록이 실패하면 생성된 인스턴스 ID·snapshot과 실패·재조정 명령을 반환한다. 같은 연구를 다시 `init`하지 말고 해당 인스턴스의 설치 문제를 해결한다.
+독립 운영을 등록했으면 응답의 `result.operator_schedule`에서 실제 두 작업을 확인한다. 저장은 성공했지만 예약 등록이 실패하면 생성된 인스턴스 ID·snapshot과 실패·재조정 명령을 반환한다. 같은 연구를 다시 `init`하지 말고 해당 인스턴스의 설치 문제를 해결한다. <!-- do-math fields: result=scheduling_result -->
 
 이 단계의 완료 근거는 보존된 인스턴스 ID·snapshot과 실제 예약 등록 결과다. 연구의 활성화는 다음 단계에서 확인한다.
 

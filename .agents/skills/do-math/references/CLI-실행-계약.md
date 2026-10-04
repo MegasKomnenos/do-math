@@ -29,7 +29,7 @@ python .agents/skills/do-math/scripts/do_math.py <command> [options]
 | `0` | 명령 처리가 정상 종료됐다. 제어 명령은 `effect`를 따로 확인한다 |
 | `1` | `check`가 결함을 찾았거나 `profile` 결과가 `verified`가 아니다 |
 | `2` | 인자·파일·JSON·필드·대상 상태가 CLI 계약에 맞지 않는다. 응답 `kind=input_error` |
-| `5` | Git 저장, OS, subprocess 같은 도구 계층이 실패했으면 응답 `kind=tool_error`다. `run`이 다른 실행기가 보유한 writer lock을 얻지 못한 경우도 여기에 속하며, 그 실행기가 끝난 뒤 다시 실행한다. 제어 명령의 lock 경합은 오류가 아니라 exit 0과 `lock="busy"`로 반환한다. 구현이 요청을 처리하지 못한 내부 계약 오류이면 `kind=contract_error`, `next_owner=maintenance`다. `init`·`configure`가 상태를 저장한 뒤 예약 등록에 실패한 경우에도 exit 5이며, 이때는 `error` 대신 `result.operator_schedule`에 `status="failed"`와 재조정 명령이 담긴다 |
+| `5` | Git 저장, OS, subprocess 같은 도구 계층이 실패했으면 응답 `kind=tool_error`다. `run`이 다른 실행기가 보유한 writer lock을 얻지 못한 경우도 여기에 속하며, 그 실행기가 끝난 뒤 다시 실행한다. 제어 명령의 lock 경합은 오류가 아니라 exit 0과 `lock="busy"`로 반환한다. 구현이 요청을 처리하지 못한 내부 계약 오류이면 `kind=contract_error`, `next_owner=maintenance`다. `init`·`configure`가 상태를 저장한 뒤 예약 등록에 실패한 경우에도 exit 5이며, 이때는 `error` 대신 `result.operator_schedule`에 `status="failed"`와 재조정 명령이 담긴다 | <!-- do-math fields: result=scheduling_result -->
 
 JSON 응답의 최상위 필드는 `schema_version`, `response_contract`, `request_id`, `command`, `exit_code`와 `result` 또는 `error`다. 성공 값은 `result`, 오류의 `kind`·`message`·후속 정보는 `error`에서 읽는다. `result`와 `error`는 함께 나타나지 않는다. 사람용 `status`와 CSV `timeline` 출력은 텍스트이며, `--request-file` 호출은 이 값도 JSON 봉투의 `result`로 반환한다.
 
@@ -279,7 +279,7 @@ init --repository PATH [--create-repository] --workspace PATH
 
 원입력은 `lifecycle.immutable_input`의 `text`, `sha256`, `bytes`에 하나의 정확한 UTF-8 표현으로 보존한다. 수학 목표와 전체 요청이 다르면 `--request-text` 또는 `--request-text-file`을 지정한다. 이 원문을 의도 해석과 독립 검사의 대상으로 삼고, 수학 목표는 `runtime.inputs`의 최초 입력 행에 있는 `config` 객체의 `goal`로 별도로 보존한다. 이는 연구 설정 레코드의 필드가 아니다. 별도 원문을 지정하지 않은 경우에는 goal 자체가 원문이다. 결정론 JSON은 문자열과 객체 키의 코드 포인트열을 바꾸지 않으며 NFC 사본이나 별도 Base64 원문을 만들지 않는다. 바이트 보존과 그 원문을 의미 해석에 실제 사용했다는 보증은 별개이므로, 문자열의 철자·코드 포인트 자체가 의미인 입력에서는 해석·피복·검사 대상이 이 `text`와 일치하는지 확인한다.
 
-공개 명령의 실행 순서, 완전한 요청 객체, 현행 프로필의 능력 관측과 채택, 능력·신뢰 근거의 출처와 현재 승인 연결의 한계는 [초기화 운전](초기화-운전.md)을 따른다. 초기화의 probe와 채택은 대상 설정을 `config_sha256`(`status`의 `result.config_sha256`)으로 지정하며, 현재 설정의 해시와 다르면 거부된다. 활성화는 채택된 통치·설정·정책, 초기화와 연구의 별도 권한, 채택된 설정의 역할별 현행 프로필과 그 현재 능력 증거, 실제 적용된 독립 의도 검사, 활성 신뢰 환경·복구 검사를 대조한다. 이미 채택된 값은 같은 근거를 재사용하며, 연구 권한이나 미확인 증거를 기본값에서 추론하지 않는다.
+공개 명령의 실행 순서, 완전한 요청 객체, 현행 프로필의 능력 관측과 채택, 능력·신뢰 근거의 출처와 현재 승인 연결의 한계는 [초기화 운전](초기화-운전.md)을 따른다. 초기화의 probe와 채택은 대상 설정을 `config_sha256`(`status`의 `result.config_sha256`)으로 지정하며, 현재 설정의 해시와 다르면 거부된다. 활성화는 채택된 통치·설정·정책, 초기화와 연구의 별도 권한, 채택된 설정의 역할별 현행 프로필과 그 현재 능력 증거, 실제 적용된 독립 의도 검사, 활성 신뢰 환경·복구 검사를 대조한다. 이미 채택된 값은 같은 근거를 재사용하며, 연구 권한이나 미확인 증거를 기본값에서 추론하지 않는다. <!-- do-math fields: result=status -->
 
 독립 운영이 활성인 설정이면 CLI는 저장 뒤 Windows 작업 두 개를 등록한다. 예약 등록이 실패해도 이미 생성된 인스턴스를 다시 만들지 않는다. 응답에 남은 ID·snapshot과 실패·재조정 명령을 사용한다. 저장과 운영체제의 예약 효과는 별도의 성공 조건이다. 재조정 명령과 작업자에게 지급하는 검사 명령(`submission_contract.command`, `formal_verifier.preview.command`)의 Python은, 실행기가 예약 작업에서 콘솔 없는 `pythonw.exe`로 돌 때에도 같은 설치의 `python.exe`다. PowerShell은 `pythonw.exe`를 기다리지 않고 그 출력도 보여 주지 않기 때문이다.
 
@@ -449,7 +449,7 @@ CLI는 파일을 한 번 읽어 payload와 그 정확한 원문을 함께 전달
 
 #### 학술 요구와 외부 거부
 
-학술 요구 변경도 위의 `charter` 결정으로 제출한다. 현행 헌장의 다른 내용은 보존하고 `record.content.academic_requirements`를 승인된 요구 배열로 교체한다. 다음은 그 필드에 넣는 배열의 예시이며, 독립된 결정 객체가 아니다.
+학술 요구 변경도 위의 `charter` 결정으로 제출한다. 현행 헌장의 다른 내용은 보존하고 `record.content.academic_requirements`를 승인된 요구 배열로 교체한다. 다음은 그 필드에 넣는 배열의 예시이며, 독립된 결정 객체가 아니다. <!-- do-math fields: record=governance_record -->
 
 ```json
 [
@@ -647,7 +647,7 @@ query [--snapshot OID] [--kind KIND] [--text TEXT] [--limit 1..1000]
       [--direction incoming|outgoing|both]
 ```
 
-구조화 record를 ID 순서로 조회한다. `kind`는 record family 또는 구체 kind와 일치한다. `--kind`와 결과 `record.family`의 가족 이름은 조건 문법의 기록 가족 이름(`planning.RECORD_FAMILIES`, [과제 착수 조건](과제-착수조건.md)의 가족 목록)이다. 그 목록에 없는 저장 가족은 저장 이름을 그대로 쓰고, 질문 행은 `question`이다. text는 정규 JSON 전체를 대소문자 구분 없이 찾는다. 관계 이웃 조회는 relation record와 반대편 endpoint를 함께 반환한다. `--direction`은 `--related-to`와 함께 사용하며 생략하면 `both`다. `--prefix`는 파일 조회 전용이므로 이 모드에서 지정하면 입력 오류다.
+구조화 record를 ID 순서로 조회한다. `kind`는 record family 또는 구체 kind와 일치한다. `--kind`와 결과 `record.family`의 가족 이름은 조건 문법의 기록 가족 이름(`planning.RECORD_FAMILIES`, [과제 착수 조건](과제-착수조건.md)의 가족 목록)이다. 그 목록에 없는 저장 가족은 저장 이름을 그대로 쓰고, 질문 행은 `question`이다. text는 정규 JSON 전체를 대소문자 구분 없이 찾는다. 관계 이웃 조회는 relation record와 반대편 endpoint를 함께 반환한다. `--direction`은 `--related-to`와 함께 사용하며 생략하면 `both`다. `--prefix`는 파일 조회 전용이므로 이 모드에서 지정하면 입력 오류다. <!-- do-math fields: record=query_record -->
 
 응답은 `snapshot`, 전체 `total`, 이번 `loaded`, `truncated`, `items`, `next_cursor`다. 각 item의 `record`는 조회용 표현이다. `sha256`과 `bytes`는 `path`가 가리키는 저장 파일의 원 바이트를 식별하며 `byte_scope`는 `persisted_file`이다. `logical_sha256`은 외부 payload를 복원한 저장 레코드의 정규 해시다. 조회용 family 표기가 붙은 `record`를 재직렬화한 해시와 구별한다. 외부 payload가 있으면 `payload_refs`와 `json_pointer_scope=decoded_record`도 제공한다. cursor는 query 인자와 snapshot에 결박되며 조건을 바꾸어 재사용할 수 없다.
 

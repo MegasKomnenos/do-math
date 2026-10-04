@@ -4,6 +4,12 @@ The document population includes operating guides, the glossary and role
 contracts. Code examples, rather than unrelated prose on the same line,
 determine command/option associations. Bare flag mentions retain the existing
 tool-vocabulary check; they are not evidence for a command-specific binding.
+
+Dotted fields use their actual schema or an explicitly selected producer. A
+prose variable with different owners, such as record or result, can declare
+its owner on the same line: <!-- do-math fields: record=governance_record -->.
+These bindings never leak to later lines or override canonical namespaces.
+Unknown namespaces are coverage gaps, not evidence of a valid field.
 """
 import ast
 import inspect
@@ -84,26 +90,54 @@ def command_issues(text, options, flags):
     return sorted(issues)
 
 
-def produced_object_schema(function, target=None, *, bindings=None, variants=False):
-    """Read one literal object at its actual producer, without executing the producer.
-
-    A changed builder must be reviewed; unknown spreads/keys are not a field vocabulary.
-    Non-object values expose their own field name, but no invented nested fields.
-    """
+def producer_nodes(function, scope=None, branch=None):
     tree = ast.parse(textwrap.dedent(inspect.getsource(inspect.unwrap(function))))
-    pending, nodes = list(tree.body[0].body), []
+    function_node = tree.body[0]
+    if scope is not None:
+        matches = [node for node in ast.walk(function_node)
+                   if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == scope]
+        if len(matches) != 1:
+            raise ValueError(f'Review nested producer scope {function.__qualname__}: {scope}')
+        function_node = matches[0]
+    pending, nodes = list(function_node.body), []
     while pending:
         node = pending.pop()
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
             continue
         nodes.append(node)
         pending.extend(ast.iter_child_nodes(node))
-    if target is None:
+    if branch is not None:
+        expected = ast.unparse(ast.parse(branch, mode='eval').body)
+        matches = [node for node in nodes if isinstance(node, ast.If) and ast.unparse(node.test) == expected]
+        if len(matches) != 1:
+            raise ValueError(f'Review producer branch {function.__qualname__}: {branch}')
+        pending, nodes = list(matches[0].body), []
+        while pending:
+            node = pending.pop()
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
+                continue
+            nodes.append(node)
+            pending.extend(ast.iter_child_nodes(node))
+    return nodes
+
+
+def produced_object_schema(function, target=None, *, bindings=None, variants=False, keyword=None, scope=None, branch=None, return_item=None):
+    """Read explicitly selected producer objects; unknown fields require review."""
+    nodes = producer_nodes(function, scope, branch)
+    if keyword is not None:
+        expected = ast.unparse(ast.parse(target, mode='eval').body)
+        values = [item.value for node in nodes if isinstance(node, ast.Call) and ast.unparse(node.func) == expected
+                  for item in node.keywords if item.arg == keyword]
+    elif target is None:
         values = [node.value for node in nodes if isinstance(node, ast.Return)]
     else:
         expected = ast.unparse(ast.parse(target, mode='eval').body)
         values = [node.value for node in nodes if isinstance(node, ast.Assign)
                   and any(ast.unparse(item) == expected for item in node.targets)]
+    if return_item is not None:
+        if any(not isinstance(value, ast.Tuple) or return_item >= len(value.elts) for value in values):
+            raise ValueError(f'Review producer result tuple {function.__qualname__}')
+        values = [value.elts[return_item] for value in values]
     if not values or (not variants and len(values) != 1) or any(not isinstance(value, ast.Dict) for value in values):
         raise ValueError(f'Review document field producer {function.__qualname__}: {target or "return"}')
     bindings, used = bindings or {}, set()
@@ -130,6 +164,27 @@ def produced_object_schema(function, target=None, *, bindings=None, variants=Fal
     if used != set(bindings):
         raise ValueError(f'Unused producer bindings in {function.__qualname__}: {sorted(set(bindings) - used)}')
     return {'anyOf': shapes} if variants else shapes[0]
+
+
+def written_object_schema(function, target, *, branch=None):
+    """Fixed subscript/keyword additions to one selected object, not other CLI branches."""
+    expected = ast.unparse(ast.parse(target, mode='eval').body)
+    properties = {}
+    for node in producer_nodes(function, branch=branch):
+        if isinstance(node, ast.Assign):
+            for destination in node.targets:
+                if isinstance(destination, ast.Subscript) and ast.unparse(destination.value) == expected:
+                    if not isinstance(destination.slice, ast.Constant) or not isinstance(destination.slice.value, str):
+                        raise ValueError(f'Unresolved written field in {function.__qualname__}: {target}')
+                    properties[destination.slice.value] = {}
+        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == 'update' \
+                and ast.unparse(node.func.value) == expected:
+            if node.args or any(item.arg is None for item in node.keywords):
+                raise ValueError(f'Unresolved object update in {function.__qualname__}: {target}')
+            properties.update({item.arg: {} for item in node.keywords})
+    if not properties:
+        raise ValueError(f'No written fields in {function.__qualname__}: {target}')
+    return {'type': 'object', 'properties': properties}
 
 
 def field_schemas():
@@ -161,6 +216,35 @@ def field_schemas():
             ('session_limits', 'config', 'session_limits')):
         schemas[name] = schemas[parent]['properties'][key]
     schemas['revisit'] = PLAN_DISPOSITION['properties']['revisit']
+    from do_math import contracts, knowledge_io, model_policy, repair_execution
+    schemas['activation'] = RESEARCH_FIELDS['lifecycle']['properties']['activation']
+    schemas['disposition'] = contracts.disposition_schema()
+    schemas['observation'] = RECORDS['execution_profiles']['properties']['observation']
+    schemas['role_tiers'] = {'properties': {key: {} for key in model_policy.ROLE_TIERS}}
+    schemas['user_request'] = RECORDS['inputs']
+    schemas['governance_record'] = RECORDS['governance']
+    schemas['governance_content'] = RECORDS['governance']['properties']['content']
+    schemas['candidate_record'] = {'properties': {key: {} for key in knowledge_io._KNOWLEDGE_FIELDS}}
+    schemas['repair'] = produced_object_schema(repair_execution.RepairExecutionMixin.route_submission_return, 'retry',
+        bindings={'deepcopy(action)': RECORDS['queue']})['properties']['repair']
+    schemas['checkpoint_source'] = produced_object_schema(CoreEngineMixin._context, 'evidence.update', keyword='checkpoint_source')
+    schemas['result_source'] = produced_object_schema(context_store.restore_continuation, "stage['result_source']")
+    schemas['rejected_response'] = produced_object_schema(context_store.restore_continuation, "history[-1]['rejected_response']")
+    schemas['recovery_source'] = produced_object_schema(CoreEngineMixin._context, scope='recover', variants=True)
+    from do_math import cli, core_engine
+    schemas['query_record'] = written_object_schema(core_engine._query_record, 'record')
+    schemas['input_manifest'] = produced_object_schema(context_store.build_role_manifest)
+    schemas['input_manifest']['properties'].update(written_object_schema(
+        context_store.prepare_role_input, 'manifest')['properties'])
+    schemas['prompt'] = produced_object_schema(context_store.prepare_role_input, 'manifest.update', keyword='prompt')
+    schemas['prompt']['properties'].update(written_object_schema(
+        context_store.prepare_role_input, "manifest['prompt']")['properties'])
+    schemas['input_manifest']['properties']['prompt'] = schemas['prompt']
+    schemas['init_result'] = produced_object_schema(core_engine.initialize_instance)
+    schemas['scheduling_result'] = written_object_schema(cli.execute, 'result', branch="command == 'init'")
+    schemas['init_result']['properties'].update(schemas['scheduling_result']['properties'])
+    schemas['selection_result'] = produced_object_schema(cli.execute, branch="command == 'select-profile'", return_item=0,
+        bindings={'selected': RECORDS['executions']['properties']['model_selection']})
     for name in ('execution_window', 'scholarly', 'formal_verifier'):
         schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
     schemas['preview'] = produced_object_schema(submission.install_tools, 'context["formal_verifier"]["preview"]')
@@ -200,25 +284,43 @@ def property_variants(schema, name):
     return variants
 
 
-def scoped_field_issues(text, schemas):
-    """Dotted fields name their owning schema, not an arbitrary product string.
+def field_bindings(line, schemas):
+    """Line-local prose variables may name owners; canonical namespaces cannot be rebound."""
+    local, issues, aliases = dict(schemas), [], set()
+    directive = re.search(r'<!-- do-math fields: (.*?) -->', line)
+    if directive:
+        for binding in directive.group(1).split(','):
+            alias, separator, owner = binding.strip().partition('=')
+            if (not separator or not re.fullmatch(r'[a-z][a-z0-9_]*', alias) or owner not in schemas
+                    or alias in schemas and alias != owner or alias in aliases):
+                issues.append(('field binding', binding.strip()))
+            else:
+                local[alias] = schemas[owner]
+                aliases.add(alias)
+        used = {span.split('.')[0] for span in SPAN.findall(line)
+                if re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', span)}
+        issues.extend(('unused field binding', alias) for alias in sorted(aliases - used))
+    return local, issues
 
-    Unqualified names and other namespaces still require a separate census;
-    this checker does not silently certify those names.
-    """
+
+def scoped_field_issues(text, schemas):
+    """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     issues = []
-    for span in SPAN.findall(text):
-        if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', span):
-            continue
-        root, *parts = span.split('.')
-        if root not in schemas:
-            continue
-        candidates = [schemas[root]]
-        for part in parts:
-            candidates = [child for schema in candidates for child in property_variants(schema, part)]
-            if not candidates:
-                issues.append(('scoped field', span))
-                break
+    for line in text.splitlines():
+        local, binding_issues = field_bindings(line, schemas)
+        issues.extend(binding_issues)
+        for span in SPAN.findall(line):
+            if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', span):
+                continue
+            root, *parts = span.split('.')
+            if root not in local:
+                continue
+            candidates = [local[root]]
+            for part in parts:
+                candidates = [child for schema in candidates for child in property_variants(schema, part)]
+                if not candidates:
+                    issues.append(('scoped field', span))
+                    break
     return sorted(set(issues))
 
 

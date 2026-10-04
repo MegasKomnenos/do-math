@@ -6,7 +6,7 @@ this test does not substitute flag vocabulary for those requirements.
 from pathlib import Path
 import unittest
 from support.doc_code import (command_issues, declared_policy_names, diagnostic_names, diagnostic_reference_issues, documented_policies, documents,
-                              field_schemas, function_reference_issues, parser_options, policy_issues, produced_object_schema, scoped_field_issues, tool_options)
+                              field_bindings, field_schemas, function_reference_issues, parser_options, policy_issues, produced_object_schema, scoped_field_issues, tool_options, written_object_schema)
 
 SKILL = Path(__file__).resolve().parents[3]
 SCRIPTS = SKILL / 'scripts'
@@ -129,6 +129,49 @@ class DocumentCodeTests(unittest.TestCase):
         self.assertEqual(diagnostic_reference_issues('`integration.py` `integration.preview_bundles(...)`', names), [])
         self.assertEqual(diagnostic_reference_issues('`integration.coverage` `contract_check.currentness`', names),
                          [('diagnostic code', 'contract_check.currentness'), ('diagnostic code', 'integration.coverage')])
+
+    def test_document_variables_have_line_local_owners_without_a_union_of_families(self):
+        schemas = field_schemas()
+        self.assertEqual(scoped_field_issues('`record.content.academic_requirements` <!-- do-math fields: record=governance_record -->', schemas), [])
+        self.assertEqual(scoped_field_issues('`record.explanation` <!-- do-math fields: record=candidate_record -->', schemas), [])
+        self.assertEqual(scoped_field_issues('`record.explanation` <!-- do-math fields: record=governance_record -->', schemas),
+                         [('scoped field', 'record.explanation')])
+        self.assertEqual(scoped_field_issues('`record.content` <!-- do-math fields: record=candidate_record -->', schemas),
+                         [('scoped field', 'record.content')])
+        self.assertEqual(scoped_field_issues('`record.id` <!-- do-math fields: record=missing_owner -->', schemas),
+                         [('field binding', 'record=missing_owner')])
+        text = '`task.content` <!-- do-math fields: task=governance_record -->'
+        self.assertEqual(scoped_field_issues(text, schemas),
+                         [('field binding', 'task=governance_record'), ('scoped field', 'task.content')])
+        first, _ = field_bindings('`record.id` <!-- do-math fields: record=governance_record -->', schemas)
+        second, _ = field_bindings('`record.id`', schemas)
+        self.assertIn('record', first)
+        self.assertNotIn('record', second)
+        self.assertEqual(scoped_field_issues('`recrod.id` <!-- do-math fields: record=governance_record -->', schemas),
+                         [('unused field binding', 'record')])
+        self.assertEqual(scoped_field_issues('`activation.observation_errors` `disposition.kind` '
+            '`observation.rule_bindings` `role_tiers.recovery` `repair.previous_output` '
+            '`checkpoint_source.local_path` `result_source.local_path` `rejected_response.local_path`', schemas), [])
+
+    def test_cli_result_branches_and_incremental_manifest_fields_remain_separate(self):
+        def producer(command):
+            result = {}
+            if command == 'first':
+                result['only_first'] = 1
+                return {'first': 1}, 0
+            if command == 'second':
+                result['only_second'] = 2
+                return {'second': 2}, 0
+        schema = written_object_schema(producer, 'result', branch="command == 'first'")
+        self.assertEqual(set(schema['properties']), {'only_first'})
+        schema = produced_object_schema(producer, branch="command == 'second'", return_item=0)
+        self.assertEqual(set(schema['properties']), {'second'})
+        with self.assertRaisesRegex(ValueError, 'Review producer branch'):
+            written_object_schema(producer, 'result', branch="command == 'missing'")
+        schemas = field_schemas()
+        self.assertEqual(scoped_field_issues('`input_manifest.prompt.sha256` `prompt.artifact_ref` '
+            '`init_result.instance_id` `selection_result.selection.profile_ref` `query_record.family`', schemas), [])
+        self.assertEqual(scoped_field_issues('`init_result.selection`', schemas), [('scoped field', 'init_result.selection')])
 
     def test_documented_policy_names_have_installed_owners(self):
         names = declared_policy_names(SCRIPTS)
