@@ -4841,7 +4841,7 @@
       {
         "id": "3-C",
         "state": "partial_implementation",
-        "remaining": "원래11쌍 중 5쌍의 명시한 공간과 정본 소비를 연결. C-15/B-49/B-32/B-33/C-13/A-47 및 이후 사본·각 공간 밖의 종료는 미확정"
+        "remaining": "원래11쌍 중 8쌍의 명시 공간과 현재 정본/소비를 연결. C-15/C-13/A-47 및 이후 사본·각 공간 밖의 종료는 미확정"
       },
       {
         "id": "4-A",
@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B71 허가·정지 규칙의 관련 100개 같은 판본 검증",
-      "active": "3-C 원래 남은 여섯 규칙 쌍과 이후 사본의 정본/차분 검증",
+      "last_closed": "B72 참조·관찰·경로 규칙의 관련 122개 같은 판본 검증",
+      "active": "3-C 남은 형식/게시 환경 오류·기록한 한도/예산·초과 처분/적용 분기의 정본/차분 검증",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -16847,6 +16847,86 @@
         {
           "path": ".claude/skills/do-math/scripts/tests/sim/test_submission_engine_calls.py",
           "sha256": "965c9d6a63e2766db9d6b744d6a702e91aa2e94df010e68e47e6d3d458979d01"
+        }
+      ],
+      "whole_requirement_closed": false
+    },
+    "input_observation_rule_integration": {
+      "id": "B72",
+      "state": "verified_main_commit_pending",
+      "scope": "원래 B-32/B-33/B-49의 참조 제공/저작 분류·현재 모든 프로필/관찰 결속·공급자 실행 경로의 정본 대조",
+      "original_pairs": [
+        "B-16",
+        "C-19",
+        "B-36",
+        "C-15",
+        "C-12",
+        "B-49",
+        "B-32",
+        "D-02",
+        "B-33",
+        "C-13",
+        "A-47"
+      ],
+      "verified_in_declared_scope": [
+        "B-32",
+        "B-33",
+        "B-49"
+      ],
+      "connected_pairs": [
+        "B-16",
+        "C-12",
+        "D-02",
+        "C-19",
+        "B-36",
+        "B-32",
+        "B-33",
+        "B-49"
+      ],
+      "remaining_original_pairs": [
+        "C-15",
+        "C-13",
+        "A-47"
+      ],
+      "changed_area": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 122
+        },
+        "total_seconds": 30.7,
+        "changed_during_run": []
+      },
+      "tracked_report": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-참조-관찰-경로-규칙/report.json",
+      "report_sha256": "3b22e2bebbbc6919f3362f6716bdf35f8da892656e0eb99e8385dcb01065a4b8",
+      "command": "python .claude/skills/do-math/scripts/run_tests.py structure unit.test_planning_task_contracts unit.test_activation_requirements unit.test_provider_cli_surface unit.test_observation_rule_binding sim.test_planning_readiness_boundaries sim.test_provider_machine_profile --jobs 3",
+      "contract": [
+        "4096개 제공/요청 집합 조합에서 미래 이름 원자료의 저작 허가와 도착 여부를 구별",
+        "실제 생산한 모든 현재 프로필을 세 모드에서 선택/설정/결속/역결속 확인",
+        "현재 공급자 어댑터 전건의 요청/능력/관찰 경로는 같은 정체성을 사용",
+        "현재 직접 소비와 단일 정의를 같은 일반 검사에서 순회"
+      ],
+      "limits": [
+        "참조 모든 문자열과 실제 외부 자료 도착·원격 모델/CLI 능력은 이 표본 공간의 범위 아님",
+        "남은 원래 C-15/C-13/A-47·이후 사본과 각 명시 공간 밖의 전건 종료는 미확정",
+        "개별 초과 2개와 최종 전역 관문은 남음"
+      ],
+      "files": [
+        {
+          "path": ".claude/skills/do-math/scripts/tests/structure/test_rule_consistency.py",
+          "sha256": "3b0de930b2304d2304e7b56a73962b0fa799c546f6af7d8f3f61f7a9e8200684"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/unit/test_planning_task_contracts.py",
+          "sha256": "24fbae2c6ed067cbf7257acd7704d452e0f5d7433238422a975bc34c05c54d29"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/unit/test_activation_requirements.py",
+          "sha256": "7772db6246af90d4dd922e83f4073f01adc8f79e5bf18fa563a7b73a43694ade"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/unit/test_provider_cli_surface.py",
+          "sha256": "681fbdf2d879df1889b22595d90a02d86662d585ae51b2e17b25a124e4dd7f9d"
         }
       ],
       "whole_requirement_closed": false

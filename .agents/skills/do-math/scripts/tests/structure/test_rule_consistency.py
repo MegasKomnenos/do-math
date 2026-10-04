@@ -1,7 +1,7 @@
 """3-C current canonical rules and their complete direct call-site population.
 
 Finite behavioral spaces are checked in their existing domain test modules.
-This table covers five original pairs; it does not declare the other six
+This table covers eight original pairs; it does not declare the other three
 original pairs or every future semantic copy verified.
 """
 import ast
@@ -34,6 +34,19 @@ RULES = {
         ('core_engine.py', '_publish_control_request'), ('core_engine.py', '_validate_bundle_current'),
         ('dispatch_engine.py', '_owner_stopping'), ('lifecycle_engine.py', '_action_lifecycle_gate'),
         ('lifecycle_engine.py', '_execution_stop_requested')}),
+    'B-49': ('file_io.py', 'executable_identity', {
+        ('cli_execution.py', 'checked_start_paths'), ('codex_adapter.py', 'capability_identity'),
+        ('codex_adapter.py', 'observation_key'), ('formal.py', '_project_identity'),
+        ('formal.py', 'inspect_toolchain'), ('formal.py', 'verify_lean')}),
+    'B-32': ('task_contracts.py', 'unsupplied_task_inputs', {
+        ('core_engine.py', '_apply'), ('planning.py', 'task_ready'),
+        ('submission.py', '_payload_issues'), ('submission.py', 'candidate')}),
+    'B-33:settings': ('observations.py', 'observation_settings_errors', {
+        ('call_engine.py', '_prepare_call'), ('initialization.py', 'activation_requirements'),
+        ('initialization_engine.py', '_initialization_control'), ('observations.py', 'tracker_config'),
+        ('planning_engine.py', '_retry_observation_configuration'),
+        ('submission.py', '_payload_issues'), ('submission.py', 'candidate')}),
+    'B-33:binding': ('observations.py', 'tracker_config', {('call_engine.py', '_prepare_call')}),
 }
 
 

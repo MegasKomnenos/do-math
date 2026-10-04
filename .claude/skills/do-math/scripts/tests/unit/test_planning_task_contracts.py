@@ -23,6 +23,30 @@ from support.role_answers import candidate
 
 
 class TaskContractReviewTests(unittest.TestCase):
+    def test_input_classification_agrees_for_every_small_reference_population(self):
+        """3-C/B-32: future named sources may be authored but never counted as arrived."""
+        refs = ('KN-present', 'TK-present', 'source:arrived.txt', 'source:future.txt',
+                'tool:lean', 'unknown-record')
+        checked = 0
+        for supplied_mask in range(1 << len(refs)):
+            supplied = {ref for index, ref in enumerate(refs) if supplied_mask & (1 << index)}
+            for requested_mask in range(1 << len(refs)):
+                requested = [ref for index, ref in enumerate(refs) if requested_mask & (1 << index)]
+                strict = task_contracts.unsupplied_task_inputs(requested, supplied, admit_named_sources=False)
+                authoring = task_contracts.unsupplied_task_inputs(requested, supplied, admit_named_sources=True)
+                expected_strict = sorted(set(requested) - supplied)
+                expected_authoring = [ref for ref in expected_strict if not ref.startswith('source:')]
+                with self.subTest(supplied_mask=supplied_mask, requested_mask=requested_mask):
+                    self.assertEqual(strict, expected_strict)
+                    self.assertEqual(authoring, expected_authoring)
+                    self.assertLessEqual(set(authoring), set(strict))
+                    self.assertEqual(task_contracts.unsupplied_task_inputs(requested * 2, supplied,
+                        admit_named_sources=False), strict)
+                    if not strict:
+                        self.assertEqual(authoring, [])
+                checked += 1
+        self.assertEqual(checked, 2 ** (2 * len(refs)))
+
     def test_readiness_and_work_profile_selection_agree_over_the_finite_requirement_space(self):
         """3-C/B-16: both work roles, every rating/floor/allowlist/pinned-tier combination.
 

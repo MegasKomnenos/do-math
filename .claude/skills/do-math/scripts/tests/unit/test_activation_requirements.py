@@ -16,6 +16,41 @@ from support.fakes.host import FakeHost
 
 
 class ObservationAdmissionTests(unittest.TestCase):
+    def test_profile_role_mode_selection_and_tracker_binding_agree_for_every_produced_profile(self):
+        """3-C/B-33: every configured mode and registered role/tier on real producers."""
+        from do_math.execution_profiles import OBSERVATION_MODES, PROFILE_ROLES, WORK_ROLES, profile_ref
+        from do_math.observations import bind_task_rules, observation_settings_used, task_rules_from_execution
+        from support.observation_inputs import observation_rule
+        from support.entry import entry
+        profiles_seen = set()
+        for mode in OBSERVATION_MODES:
+            produced = build_profiles({**DEFAULT_CONFIG, 'observation_mode': mode,
+                                      'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5},
+                                      host=entry().ports.host)
+            for profile in produced['execution_profiles'].values():
+                with self.subTest(role=profile['role'], tier=profile.get('ai', {}).get('tier'), configured_mode=mode):
+                    role = profile['role']
+                    expected_mode = mode if role == 'research_work' else 'periodic' if role in WORK_ROLES else 'deadline_only'
+                    self.assertEqual(profile['observation']['mode'], expected_mode)
+                    research = role == 'research_work'
+                    expected_settings = ([] if expected_mode == 'deadline_only' else
+                                         ['tool_review_window_seconds', 'observation_interval_seconds'])
+                    if research: expected_settings.append('self_check_response_window_seconds')
+                    self.assertEqual(observation_settings_used(profile), expected_settings)
+                    self.assertEqual(observation_settings_errors(profile), [])
+                    rules = [observation_rule(operator='checkpoint_count_gte', subject_kind='checkpoint',
+                                              subject_id='$execution')] if research else []
+                    bound = bind_task_rules(rules, 'EX-finite-role') if research else []
+                    config = tracker_config(profile, initial_self_check_rules=bound)
+                    self.assertEqual(config['observation_mode'], expected_mode)
+                    self.assertEqual(config['observation_profile_ref'], profile_ref(profile))
+                    self.assertIs(config['research_self_checks'], research)
+                    self.assertIs(config['checkpoint_expected'], research)
+                    self.assertEqual(config['observation_rules'], bound)
+                    if research: self.assertEqual(task_rules_from_execution(bound, 'EX-finite-role'), rules)
+                    profiles_seen.add(role)
+        self.assertEqual(profiles_seen, PROFILE_ROLES)
+
     def test_default_bootstrap_reports_exact_missing_settings_before_activation(self):
         from support.entry import entry
         _entry = entry()
