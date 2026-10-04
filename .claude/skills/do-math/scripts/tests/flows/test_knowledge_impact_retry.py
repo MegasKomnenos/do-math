@@ -97,6 +97,7 @@ def damage_stored_output(sim, execution):
     if changed == body or len(changed) != len(body):
         raise AssertionError('the fixture could not change the stored output in place')
     stored[oid] = (kind, changed)
+    return changed
 
 
 def new_owner_process(sim):
@@ -106,16 +107,23 @@ def new_owner_process(sim):
 
 class UnreadableBeforeReviewTests(unittest.TestCase):
     def test_an_unreadable_held_submission_is_consumed_once_before_its_review_is_prepared(self):
-        """Two owner passes: retire the unreadable impact review, then run its diagnosis."""
+        """손상 제출의 검토는 한 번 정리하고 진단에는 검증 실패 좌표만 전달한다."""
         sim = impact_sim()
         waiting, producer, _, _ = held_impact(sim)
-        damage_stored_output(sim, producer)
+        original, = [row for row in producer['output_files']
+                     if row['sha256'] == producer['submission_intent']['output_sha256']]
+        self.assertEqual(sim.engine.store.read(original['artifact_ref'], sim.engine.head),
+                         sim.engine.store.read(producer['submission_intent']['output_ref'], sim.engine.head))
+        changed = damage_stored_output(sim, producer)
         new_owner_process(sim)
+        knowledge = deepcopy(sim.instance['knowledge'])
         diagnostics = []
-        def capture_diagnosis(output, context):
+
+        def diagnose(output, context):
             diagnostics.append(deepcopy(context['recovery_materials']))
             return output
-        sim.model.on('operational_review').reply(Answer(capture_diagnosis))
+
+        sim.model.on('operational_review', target=producer['id']).reply(Answer(diagnose))
 
         def owner_pass():
             try:
@@ -135,12 +143,21 @@ class UnreadableBeforeReviewTests(unittest.TestCase):
         owner_pass()  # the next pass proceeds and does not prepare the same review again
         self.assertEqual(review_attempts(), attempts)
         self.assertEqual(len(diagnostics), 1)
-        unreadable = [row for row in diagnostics[0]['output_files'] if 'restoration_error' in row]
-        self.assertTrue(unreadable, diagnostics)
-        for row in unreadable:
-            self.assertNotIn('local_path', row)
-            self.assertNotEqual(row['sha256'], row['restoration_error']['observed_sha256'])
-            self.assertEqual(row['bytes'], row['restoration_error']['observed_bytes'])
+        source = producer['submission_intent']['output_ref']
+        restored, = [row for row in diagnostics[0]['output_files'] if row['artifact_ref'] == original['artifact_ref']]
+        self.assertEqual(restored['sha256'], producer['submission_intent']['output_sha256'])
+        self.assertEqual(restored['restoration_error'], {
+            'error_type': 'ValueError', 'reason': 'operational review artifact hash changed: ' + original['artifact_ref'],
+            'observed_sha256': hashlib.sha256(changed).hexdigest(), 'observed_bytes': len(changed)})
+        self.assertNotIn('local_path', restored)
+        self.assertFalse([row for row in sim.model.calls if row['action'].get('stage') == 'impact_review'])
+        self.assertEqual(sim.engine.store.read(source, sim.engine.head), changed)
+        self.assertEqual(sim.instance['knowledge'], knowledge)
+        sim.restart()
+        owner_pass()
+        self.assertEqual(review_attempts(), attempts)
+        self.assertEqual(sim.instance['knowledge'], knowledge)
+
         self.assertFalse(any(row.get('stage') == 'impact_review' and
             row.get('input_basis', {}).get('impact_review', {}).get('producer_execution_id') == producer['id']
             for row in sim.runtime['queue']))

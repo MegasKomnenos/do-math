@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B62 검증완료·확정준비",
-      "active": "다음기존재시작/후보diff의강한사례와main강화보존·원문/분류/모집단마감",
+      "last_closed": "B63 검증완료·확정준비",
+      "active": "다음남은diff의현재강화/이관/은퇴마감과운전문서현재화 후모집단고정·최종관문 준비",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -16259,6 +16259,92 @@
               "id": "boundary.test_storage_batch_process_counts.BatchProcessCounts.test_export_and_query_start_one_git_child_per_batch",
               "seconds": 31.20299999997951,
               "budget_seconds": 30.0
+            }
+          ],
+          "tier": null
+        }
+      }
+    },
+    "restart_detail_integration": {
+      "id": "B63",
+      "state": "verified_main_commit_pending",
+      "scope": "main보다강한actualunboundworker 미시작소유자상실/held제출artifact정확복구2파일 추가검증",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-m3_ewjg1\\report.json",
+        "sha256": "3614cbb8b8917dffdd2b77800af72ecb2308e1d890179204f4c3fde03e6eb430",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 22
+        },
+        "total_seconds": 9.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_process_restart_state.RestartStateTests.test_restart_ends_only_the_known_owner_and_rebinds_recovery_to_the_same_world",
+              "seconds": 2.952999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 8.327999999979511,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-0iwa7v6z\\report.json",
+        "sha256": "4f5bfcc6f457f5cd9ab6b222569327009eb842c4364077d262fd949f95f58e21",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 7
+        },
+        "total_seconds": 11.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 8.140999999945052,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "actualworker정상launch뒤미시작run은ownerloss때evidence/oldcallback/CLI를만들지않고원시작결과와durable세계보존. 손상단일artifact는expected/observedhash/bytes/진단을정확보존하고local파일/knowledge변경/재시작검토비재생. 기존queue단언유지. 제품/helper변경없음.",
+      "limits": "22개9.8초와복구1+구조6개11.8초는다른source판본의부분보고. restart2.953/smell8.328/8.141초초과보존.전체관문/예산증거아님.",
+      "files": [
+        {
+          "path": "tests/sim/test_process_restart_state.py",
+          "sha256": "eef154f60509cee250a98405027a3ad3fa2555435c8eff320a08e69aeddae3fe"
+        },
+        {
+          "path": "tests/flows/test_knowledge_impact_retry.py",
+          "sha256": "dcd921b8d002d1e0ad2b8f985506fd1287e9a6232e8d7c5839256c9a8072eadf"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "held_submission_restoration": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-0iwa7v6z\\report.json",
+        "sha256": "4f5bfcc6f457f5cd9ab6b222569327009eb842c4364077d262fd949f95f58e21",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 7
+        },
+        "total_seconds": 11.8,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 8.140999999945052,
+              "budget_seconds": 5.0
             }
           ],
           "tier": null
