@@ -17,8 +17,9 @@ import unittest
 
 from do_math.canonical import canonical_json, exact_content_hash
 from do_math.contracts import schema_for
-from do_math.planning import contract_hash
-from do_math.submission import payload_issues
+from do_math.planning import contract_hash, record_index
+from do_math.submission import payload_issues, supplied_record_ids
+from do_math.task_contracts import available_input_refs
 from support.role_answers import candidate, seal_response
 from support.observation_inputs import supply_observation_rules
 from support.default_responder import common, contract_checks, rating
@@ -55,6 +56,13 @@ class AssessmentSubmissionTests(unittest.TestCase):
         output = deepcopy(self.output)
         for task in self.context['tasks']:
             task.setdefault('content_sha256', exact_content_hash(task))
+        # Use the same input-basis producers as the role context and packaging.
+        # This scene has no discovered Lean and supplies only its declared records.
+        instance = {'sources': self.context['sources'],
+                    'knowledge': {row['id']: row for row in self.context['knowledge_catalog']}}
+        runtime = {'tasks': {row['id']: row for row in self.context['tasks']}}
+        self.context['available_input_refs'] = available_input_refs(instance, runtime, lean_available=False)
+        self.context['supplied_record_ids'] = supplied_record_ids(self.context, record_index(instance, runtime))
         seal_response(output, self.context, self.workspace)
         return [(issue['rule_id'], issue['path'], issue['message'])
                 for issue in payload_issues(output, schema_for("research_preparation"), self.context, extensions, self.workspace, clock=_entry.ports.clock)]
