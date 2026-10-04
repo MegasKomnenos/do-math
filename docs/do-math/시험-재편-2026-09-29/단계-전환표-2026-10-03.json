@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B63 검증완료·확정준비",
-      "active": "다음남은diff의현재강화/이관/은퇴마감과운전문서현재화 후모집단고정·최종관문 준비",
+      "last_closed": "B64 검증완료·확정준비",
+      "active": "통합main 전체일반T2+flows1회실행으로현재모집단/시간/지문/실패확인;여섯부류·원문전건·fresh최종관문은별도",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -16267,7 +16267,7 @@
     },
     "restart_detail_integration": {
       "id": "B63",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "main보다강한actualunboundworker 미시작소유자상실/held제출artifact정확복구2파일 추가검증",
       "changed_area": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-m3_ewjg1\\report.json",
@@ -16349,7 +16349,52 @@
           ],
           "tier": null
         }
-      }
+      },
+      "commit": "c94bec8e"
+    },
+    "operation_document_integration": {
+      "id": "B64",
+      "state": "verified_main_commit_pending",
+      "scope": "검증된현재대기/constraint·봉인제출복구·수학goalbasis·보류질문재해석의운전문서설명갱신",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-7_fn6icx\\report.json",
+        "sha256": "65b882fcab5c1510764a99ffbe48dcc96f39218cabeb8f10c1c65b939c19621f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 1.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-7_fn6icx\\report.json",
+        "sha256": "65b882fcab5c1510764a99ffbe48dcc96f39218cabeb8f10c1c65b939c19621f",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 1.2,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "contract": "고정waiting reason/owner/coordinates표시,미지constraint보충제거,검증불가source비전달/정확진단,mathgoal/academic판본분리,공개답변후한번재해석을현재코드/검증근거에맞춰문서화. 초기inputgoal소유문장유지.",
+      "limits": "doc-code6개1.2초통과는문서명령/필드/정책소유검사이며동작/원문전건/최종관문을대신하지 않는다.제품/test코드변경없음.",
+      "files": [
+        {
+          "path": "references/CLI-실행-계약.md",
+          "sha256": "1dbc1bda6037b69be0058e743e86b23004a63b86c578f9be4e6bfc3ea9631272"
+        }
+      ],
+      "whole_requirement_closed": false
     }
   }
 }
