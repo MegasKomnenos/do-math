@@ -130,7 +130,9 @@ class InputRecoveryPublicTests(unittest.TestCase):
 
 class OverflowGitConnection(unittest.TestCase):
     def test_plan_choice_repackages_original_work_and_reaches_runner(self):
-        """About 10 s: a 720 KB task question packed three times and two model calls through the worker."""
+        """A 720 KB input, profile recovery, real work and an independent incomplete assessment."""
+        from support.cross_contracts import assert_call_records
+        from support.model import Answer
         sim = Sim.activated()
         clear_work(sim)
         engine = sim.engine
@@ -164,6 +166,8 @@ class OverflowGitConnection(unittest.TestCase):
         model = scenario_model(sim, DefaultResponder())
 
         def choose(context, workspace):
+            if not context['input_overflow_requests']:
+                return
             request = context['input_overflow_requests'][0]
             extension = {'input_overflow_resolutions': [{'action_id': request['action_id'],
                 'profile_ref': request['allowed_profile_refs'][0], 'reason': 'The complete input fits this allowed profile'}]}
@@ -175,8 +179,14 @@ class OverflowGitConnection(unittest.TestCase):
         waiting = sim.runtime['waiting_actions'][action['id']]
         self.assertEqual(waiting['next_owner'], 'research_plan', waiting)
         owner, question_id = waiting['action']['owner_activity_id'], waiting['question_id']
+        request, = [a for a in sim.runtime['queue'] if a.get('overflow_activity_id') == owner]
+        self.assertEqual(request['input_overflow'], waiting['detail'])
+        self.assertEqual(assert_call_records(self, sim)['research_plan'], 0)
         sim.step()
         self.assertEqual([call['role'] for call in model.calls], ['research_plan'])
+        first_plan, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == request['id']]
+        self.assertEqual(first_plan['outcome'], 'output_accepted', first_plan.get('error'))
+        self.assertEqual(assert_call_records(self, sim)['research_plan'], 1)
         retried = next(a for a in sim.runtime['queue'] if a['id'] == action['id'])
         self.assertEqual(retried['profile_ref'], reference)
         self.assertEqual(retried['owner_activity_id'], owner)
@@ -190,6 +200,39 @@ class OverflowGitConnection(unittest.TestCase):
         self.assertEqual(len(attempts), 2)
         self.assertEqual(len({e['id'] for e in attempts}), 2)
         self.assertTrue(any(e.get('outcome') == 'output_accepted' for e in attempts))
+
+        accepted, = [e for e in attempts if e.get('outcome') == 'output_accepted']
+        assessment_request, = [a for a in sim.runtime['queue']
+                               if accepted['id'] in a.get('receipt_refs', [])]
+        self.assertIn('Assess accepted research report and knowledge', assessment_request['reason'])
+        imported = [kid for kid, record in sim.instance['knowledge'].items()
+                    if record.get('producer_execution') == accepted['id']]
+        self.assertTrue(imported)
+        self.assertCountEqual(assessment_request['evidence_refs'], imported)
+        def inspect_remaining(out, context):
+            out['goal_audit'] = False
+            for result in out['task_assessments']:
+                current = next(t for t in context['tasks'] if t['id'] == result['task_id'])
+                result.update(decision='incomplete', reason='The report is present; the required evidence is still missing.',
+                    item_dispositions=[], unresolved=[{'obligation_id': obligation['id'],
+                        'missing_inputs': obligation['evidence_required'], 'next_owner': 'research_work'}
+                        for obligation in current['completion_obligations']])
+            return out
+        model.on('research_plan', id=assessment_request['id']).reply(Answer(inspect_remaining))
+        sim.run_until(lambda current: any(c['action']['id'] == assessment_request['id']
+                                         for c in current.model.calls), max_steps=8)
+        assessment_plan, = [e for e in sim.runtime['executions'].values()
+                            if e['action']['id'] == assessment_request['id']]
+        self.assertEqual(assessment_plan['outcome'], 'output_accepted',
+                         {'error': assessment_plan.get('error'), 'receipts': model.receipts})
+        self.assertEqual(sim.runtime['tasks'][row['id']]['assessment']['execution_id'], assessment_plan['id'])
+        self.assertEqual(sim.runtime['tasks'][row['id']]['assessment']['decision'], 'incomplete')
+        self.assertEqual(assert_call_records(self, sim)['research_plan'], 2)
+        for _ in range(2):
+            sim.step()
+            assert_call_records(self, sim)
+            for requested in (request, assessment_request):
+                self.assertEqual(sum(c['action']['id'] == requested['id'] for c in model.calls), 1)
 
 
 if __name__ == '__main__':

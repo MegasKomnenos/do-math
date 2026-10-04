@@ -25,6 +25,7 @@ from support.state_builders import charter_change
 from support.academic_scenes import academic_responder, ended, explicit_sim, solve_with, solved_sim, theorem_sim
 from support.engine_lifecycle import applied, http_fails
 from support.engine_purpose import drive
+from support.cross_contracts import assert_call_records
 
 ORIGIN = 'http://127.0.0.1:8123'
 
@@ -61,6 +62,14 @@ class AcademicRequirementFlowTests(unittest.TestCase):
         self.assertEqual([row['claim'] for row in task['completion_obligations']], ['draft account', 'cite reviewed equality'])
         self.assertNotEqual(engine.runtime['status'], 'completed')
         self.assertNotEqual(task['status'], 'completed')
+        request, = [a for a in sim.runtime['queue'] if a['role'] == 'research_plan'
+                    and 'postsolution academic requirements' in a.get('reason', '')]
+        tasks_before = deepcopy(engine.runtime['tasks'])
+        queue_before = deepcopy(engine.runtime['queue'])
+        engine._ensure_academic_followup()
+        self.assertEqual(engine.runtime['tasks'], tasks_before)
+        self.assertEqual(engine.runtime['queue'], queue_before)
+        assert_call_records(self, sim)
 
         drive(self, sim, predicate=lambda s: s.runtime['status'] == 'completed', limit=30)
         task = academic_tasks(engine)[0]
@@ -74,6 +83,14 @@ class AcademicRequirementFlowTests(unittest.TestCase):
         self.assertEqual(recorded[0]['decision'], 'satisfied')
         self.assertEqual(engine.status()['academic_validation']['status'], 'completed')
         self.assertIn(task['title'], responder.work_order)
+        execution, = [row for row in sim.runtime['executions'].values()
+                      if row['action']['id'] == request['id']]
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        self.assertEqual(sum(c['action']['id'] == request['id'] for c in sim.model.calls), 1)
+        after = assert_call_records(self, sim)
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim), after)
 
     def test_external_rejection_keeps_formal_solution_and_requires_planner_evidence_to_clear(self):
         sim = solved_sim(None)  # The real solution; the runtime completed.
@@ -82,12 +99,17 @@ class AcademicRequirementFlowTests(unittest.TestCase):
         knowledge = next(iter(engine.instance['knowledge'].values()))
         formal_before = deepcopy(engine.instance['formal_results'][knowledge['formal_result_id']])
         self.assertEqual(engine.runtime['status'], 'completed')
+        before = assert_call_records(self, sim)
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim), before)
 
         applied(sim, 'decision', config={'change': {
             'kind': 'academic_rejection', 'actor': 'external referee',
             'text': 'The reader-facing explanation needs a specific response.'}})
         rejection = engine.runtime['external_rejections'][-1]
         rejection_before = deepcopy(rejection)
+        request, = [a for a in sim.runtime['queue'] if a.get('rejection_id') == rejection['id']]
         # The stored rejection never changes; the planner's input derives whether it blocks the solution.
         before_plan = engine._context({'role': 'research_plan'}, sim.root / 'plan-before-resolution')
         self.assertIs(next(row for row in before_plan['external_rejections']
@@ -110,6 +132,14 @@ class AcademicRequirementFlowTests(unittest.TestCase):
                                                        resolve_evidence=engine._academic_evidence), [])
         resolution_execution = engine.runtime['executions'][resolution['execution_id']]
         self.assertEqual(resolution_execution['action']['role'], 'research_plan')
+        self.assertEqual(resolution_execution['action']['id'], request['id'])
+        self.assertEqual(resolution_execution['action']['rejection_id'], rejection['id'])
+        self.assertEqual(resolution_execution['outcome'], 'output_accepted', resolution_execution.get('error'))
+        after = assert_call_records(self, sim)
+        self.assertEqual(after['research_plan'] - before['research_plan'], 1)
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim), after)
         self.assertEqual(engine.instance['goal_status'], 'mathematically_solved')
         self.assertEqual(engine.instance['formal_results'][knowledge['formal_result_id']], formal_before)
 

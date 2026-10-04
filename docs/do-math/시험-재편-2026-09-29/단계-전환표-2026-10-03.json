@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B90~B99와 B100 자료 도착 후 평가 무효화의 실제 계획 수락 확인. 개정 순환·선택 무효화·목표 근거 상실·학술 후속/반려·일반 입력초과·수락 결과 직접 발동 전건 연결이 남음."
+        "remaining": "B90~B102의 관찰·실패 진단·시간·입력·형식/검토·신뢰·지식·평가·선택·목표/학술·입력초과/결과 발동 연결을 확인했다. 미시작 목표 감사의 근거 변경·부수 통찰·형식 계속 실행의 입력 변경, 직접 큐 생산자와 사건 전건×대상 유무의 최종 대응이 남음. 개정 대기 순환은 B101에서 불가능함을 증명하고 분기를 제거했다."
       },
       {
         "id": "12-A",
@@ -13089,9 +13089,9 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B100 5b25487c; B101 선택 무효화 실제 수락과 불가능한 개정 순환 분기 제거",
-      "active": "B101 확정 후 목표 근거 무효화·학술 후속/반려의 남은 계획 발동 연결",
-      "exit": "남은 직접 계획 원천의 실제 대상·근거·호출 검증",
+      "last_closed": "B101 60ed9b75; B102 다섯 계획 원천의 실제 수락/중복 방지와 관련52개 통과",
+      "active": "B102 확정 후 미시작 목표 감사·부수 통찰·형식 계속 실행의 입력 변경 발동 연결",
+      "exit": "남은 직접 계획 원천 연결 후 사건 전건×대상 유무 표의 실제 검사 대응 확정",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "기존 생산자와 실제 owner/모델/작업자 결과를 사용한다. 실제 실패를 고치고 검증된 부분의 남김을 제거한다.",
       "running_test": null,
@@ -18435,6 +18435,78 @@
         ],
         "original_sim_test_retained": true
       },
+      "whole_requirement_closed": false
+    },
+    "goal_academic_result_trigger_verification": {
+      "id": "B102",
+      "scope": "목표 근거 상실·학술 후속 생성·외부 반려·입력초과 프로필 재선택·연구 결과 수락 후 평가의 실제 계획 연결",
+      "state": "검수·관련 검증 완료",
+      "memory_node": "M-0519",
+      "reports": {
+        "fixture-followup-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-목표-학술-결과-발동/fixture-followup-failure.json",
+          "sha256": "e9761eb1a2988db265ab88bc62f2c39d074c831d96a035242903273d13da8974",
+          "counts": {
+            "passed": 2,
+            "failed": 1
+          },
+          "total_seconds": 74.1,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "fixture-assessment-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-목표-학술-결과-발동/fixture-assessment-failure.json",
+          "sha256": "2ea1298b3e3f9a63737bb51aa268ab7e82381057cdb6d0fddef54be1f7a3f4e5",
+          "counts": {
+            "passed": 1,
+            "failed": 1
+          },
+          "total_seconds": 16.8,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-목표-학술-결과-발동/report.json",
+          "sha256": "dd2a128679256919ffcc0396010c755b0e8e0b2a8a7377795d1cb9bfb7976b71",
+          "counts": {
+            "passed": 52
+          },
+          "total_seconds": 78.5,
+          "complete": true,
+          "successful": true,
+          "changed_during_run": []
+        }
+      },
+      "preservation": "기존 세 모듈의 시험 ID와 모든 원단언을 AST로 대조해 보존. 기존 네 흐름을 보강했으며 제품 코드는 변경하지 않음.",
+      "cases": [
+        {
+          "producer": "knowledge_engine._invalidate_goal_currentness",
+          "test": "flows.test_knowledge_close_staged_transition.StagedTransitionTests.test_lost_mathematical_dependency_reopens_the_actual_goal",
+          "observed": "해결 근거 유지 시 실제 호출0, 상실 후 계획1회 수락·goal_basis_invalidated event_refs 결속·같은 사건/요청 재실행 없음; 별도 연구 준비는 허용"
+        },
+        {
+          "producer": "academic_engine._ensure_academic_followup",
+          "test": "flows.test_academic_requirement_flows.AcademicRequirementFlowTests.test_explicit_requirement_blocks_runtime_completion_until_independent_assessment",
+          "observed": "중복 ensure의 과제·큐 불변; 후속 요청 ID의 계획1회 수락, 독립 평가로 완료, 완료 후2pass 호출 불변"
+        },
+        {
+          "producer": "academic_engine._academic_control",
+          "test": "flows.test_academic_requirement_flows.AcademicRequirementFlowTests.test_external_rejection_keeps_formal_solution_and_requires_planner_evidence_to_clear",
+          "observed": "반려 전 완료 상태 호출0; rejection_id와 해결 평가 실행의 요청 동일, 실제 계획1회·수락·원반려/형식해 보존, 완료 뒤 중복 없음"
+        },
+        {
+          "producer": "call_engine._prepare_call input_overflow",
+          "test": "flows.test_engine_input_recovery.OverflowGitConnection.test_plan_choice_repackages_original_work_and_reaches_runner",
+          "observed": "초과 작업 모델호출0; 원 activity/detail에 결속한 프로필 재선택 계획1회 수락 뒤 같은 작업 재포장·원주체 유지"
+        },
+        {
+          "producer": "core_engine._apply accepted research",
+          "test": "flows.test_engine_input_recovery.OverflowGitConnection.test_plan_choice_repackages_original_work_and_reaches_runner",
+          "observed": "연구 실행 receipt_refs와 생산 지식 evidence_refs 전건을 후속 계획에 연결, 실제 계획1회·미완료 평가 수락·평가 execution_id 확인·두 요청 재실행 없음"
+        }
+      ],
       "whole_requirement_closed": false
     }
   }

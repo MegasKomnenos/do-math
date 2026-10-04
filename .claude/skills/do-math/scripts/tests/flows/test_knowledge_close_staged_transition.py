@@ -84,6 +84,14 @@ class StagedTransitionTests(unittest.TestCase):
         kid = theorem_id(sim)
         solve_goal(sim.engine, kid)
         self.assertEqual(sim.instance['goal_status'], 'mathematically_solved')
+        from support.cross_contracts import assert_call_records
+        from support.model import Answer
+        sim.engine._invalidate_goal_currentness()
+        self.assertFalse(any(e['kind'] == 'goal_basis_invalidated' for e in sim.runtime['events']))
+        sim.engine._save()
+        before = assert_call_records(self, sim)
+        sim.step()
+        self.assertEqual(assert_call_records(self, sim), before)
         sim.engine.instance, sim.engine.runtime = k.invalidate_knowledge(sim.instance, sim.runtime, kid,
             reason='수학 증거 철회', actor_ref='user', clock=sim.ports.clock)
         events = deepcopy(sim.runtime['events'])
@@ -107,6 +115,23 @@ class StagedTransitionTests(unittest.TestCase):
         _, state, runtime = sim.engine.store.load()
         self.assertEqual(state['goal_status'], 'unsolved')
         self.assertEqual(runtime['status'], 'ready')
+        # No ready task remains; decide from the current input without reopening a goal audit.
+        sim.model.on('research_plan').reply(Answer(lambda out, ctx: {**out, 'goal_audit': False}))
+        request = plans[0]
+        event = added_events[0]
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        sim.run_until(lambda s: any(c['action']['id'] == request['id'] for c in s.model.calls), max_steps=8)
+        after = assert_call_records(self, sim)
+        self.assertEqual(after['research_plan'] - before['research_plan'], 1)
+        execution, = [row for row in sim.runtime['executions'].values() if row['action']['id'] == request['id']]
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        self.assertIn(event['id'], execution['action']['event_refs'])
+        for _ in range(2):
+            sim.step()
+            assert_call_records(self, sim)
+            self.assertEqual(sum(c['action']['id'] == request['id'] for c in sim.model.calls), 1)
+            self.assertEqual(sum(event['id'] in c['action'].get('event_refs', []) for c in sim.model.calls), 1)
+        self.assertEqual(sum(e['kind'] == 'goal_basis_invalidated' for e in sim.runtime['events']), 1)
 
 
 class KnowledgeWithdrawalTests(unittest.TestCase):
