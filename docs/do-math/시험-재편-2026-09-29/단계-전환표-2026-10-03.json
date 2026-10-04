@@ -4827,7 +4827,7 @@
       {
         "id": "9-B",
         "state": "partial_verification",
-        "remaining": "B86 현재 공급자 성공/거부/백그라운드 녹화와 B87 완료 사건 판정 확보. 여러 결과·정리/한도 사건, 예약·설정·능력 탐침·역할 스키마 및 Lean 경계 자료가 남음. B86 최초 탐침 실패는 원보고 그대로 보존.",
+        "remaining": "B86/B89 실제12항목·6종과 제품 재생 확보. 등록된 triggerless 예약, quota 거부, 복수 결과/종료 정리, 실제 역할 스키마 수용 및 해석 함수×판본 전건 연결이 남음.",
         "evidence": "기존 obligations의 실제 test_bindings와 원문; 현재폐쇄 미입증"
       },
       {
@@ -13088,12 +13088,12 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "통합 실행에서 드러난 시험 전제와 호출부 교정",
-      "last_closed": "B87 87fd1c1b; B88 관련 97개 통과",
-      "active": "B88 통합 실패 다섯 건과 대역 탐색 차이 교정 확정",
-      "exit": "실제 Git과 대역의 같은 경계 계약 및 관련 검증 통과, 원보고 보존, 커밋",
-      "next": "준비한 12항목 말뭉치 편입 B89; 이후 남은 발동 규칙·문서 대응과 최종 검증",
-      "work_method": "실제 전체 실패에서 원인을 좁혀 교정하며 제품의 상위 탐색 동작과 음성 단언을 보존한다. 부분 교정으로 원 전체 보고를 성공으로 쓰지 않는다.",
+      "phase": "발동 규칙의 실제 대상·호출 검증",
+      "last_closed": "B88 0bb1af48 관련97개; B89 실제12항목 관련68개와 최종재생3개 통과",
+      "active": "B89 확정 후 기존 발동 지점 목록을 실제 사건×대상 0/1 검사에 연결",
+      "exit": "11-B의 현재 발동 사건 모집단과 실제 owner 경로의 호출 0/1 및 중복 억제 검사",
+      "next": "13-C 문서 대응과 나머지 구체적 의미 공백, 최종 같은 판본 전체 관문",
+      "work_method": "이미 조사한 모집단을 사용하고 기존 정상 생산자와 실제 호출 기록으로 필요한 검사를 구현한다. 새 전수 감사로 확대하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
       "goal_complete": false
@@ -18071,6 +18071,44 @@
       "memory_node": "M-0505",
       "defect_id": "KD-1912",
       "additional_finding": "KD-1912: 실제 Git과 대역의 불완전 내부 .git 탐색 차이. SHA1/SHA256과 7부분집합 전건의 실제 Git pass/대역 fail을 확인 후 교정."
+    },
+    "external_corpus_replay": {
+      "id": "B89",
+      "scope": "실제 scholarly 설정, 작은따옴표 Lean 선언, 예약 부재 조회, 양 공급자 version/help 녹화와 제품 해석기 재생",
+      "state": "관련 검증 완료",
+      "memory_node": "M-0506",
+      "entries": 12,
+      "kinds": [
+        "codex_stream",
+        "claude_stream",
+        "lean_output",
+        "scholarly_config",
+        "scheduler_json",
+        "cli_surface"
+      ],
+      "related": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-외부-말뭉치/related.json",
+        "counts": {
+          "passed": 68
+        },
+        "seconds": 27.1,
+        "sha256": "b833e9fe5588993dab186174338b21f61dba65ed34af5f204c9d7e57cb3ae91f"
+      },
+      "final_replay": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-외부-말뭉치/attributes-and-replay.json",
+        "counts": {
+          "passed": 3
+        },
+        "seconds": 0.0,
+        "sha256": "7e80924aa98c80107147c2c3d2ffe9936b245c435a9683a222599f955a23af5a"
+      },
+      "whole_requirement_closed": false,
+      "limits": [
+        "예약 자료는 존재하지 않는 작업 세 종류이며 등록된 triggerless 작업의 전건 증거는 아님",
+        "CLI 도움말은 명령 표면만 증명하고 실행 동작은 B86 실호출과 별도",
+        "실제 quota 거부·복수 결과 구간·종료 정리·실제 역할 스키마 수용 및 모든 해석 함수×판본 전건은 남음"
+      ],
+      "raw_byte_preservation": "corpus/.gitattributes disables text normalization for captured files; manifest remains LF. Index blobs and checkout filters are compared with source bytes before commit."
     }
   }
 }

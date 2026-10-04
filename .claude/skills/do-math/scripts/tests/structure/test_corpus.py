@@ -7,7 +7,7 @@ import unittest
 CORPUS = Path(__file__).resolve().parents[1] / 'corpus'
 LIMIT_BYTES = 5 * 1024 * 1024  # it ships inside the skill and its Codex copy
 FIELDS = {'id', 'kind', 'path', 'tool_version', 'recorded_at', 'command', 'role', 'source', 'verdict'}
-FILE_FIELDS = ('path', 'final_path', 'source_path')
+FILE_FIELDS = ('path', 'final_path', 'source_path', 'compiled_path')
 
 
 class CorpusCompletenessTests(unittest.TestCase):
@@ -29,6 +29,9 @@ class CorpusCompletenessTests(unittest.TestCase):
     def test_every_entry_has_its_fields_and_files_and_no_file_is_undeclared(self):
         entries = json.loads((CORPUS / 'manifest.json').read_text(encoding='utf-8'))['entries']
         self.assertGreater(len(entries), 0)
+        self.assertTrue({'lean_output', 'scholarly_config', 'scheduler_json', 'cli_surface'}
+                        <= {entry['kind'] for entry in entries},
+                        'the recorded non-provider boundaries must not disappear from the manifest')
         self.assertEqual(len({entry['id'] for entry in entries}), len(entries), 'entry IDs must be distinct')
         declared = set()
         for entry in entries:
@@ -38,7 +41,12 @@ class CorpusCompletenessTests(unittest.TestCase):
                     if field in entry:
                         self.assertTrue((CORPUS / entry[field]).is_file(), entry[field])
                         declared.add(entry[field])
-        present = {path.relative_to(CORPUS).as_posix() for path in CORPUS.rglob('*') if path.is_file()} - {'manifest.json'}
+                for recording in entry.get('recordings', []):
+                    path = CORPUS / recording['path']
+                    self.assertTrue(path.is_file(), recording['path'])
+                    self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), recording['sha256'])
+                    declared.add(recording['path'])
+        present = {path.relative_to(CORPUS).as_posix() for path in CORPUS.rglob('*') if path.is_file()} - {'manifest.json', '.gitattributes'}
         self.assertEqual(present - declared, set(), 'corpus files the manifest does not declare')
         self.assertLessEqual(sum((CORPUS / path).stat().st_size for path in present), LIMIT_BYTES)
 

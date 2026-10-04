@@ -1,0 +1,4 @@
+# Raw JSON reports retain their captured bytes, including line endings.
+*.json -text -whitespace
+*.jsonl -text -whitespace
+.gitattributes text eol=lf whitespace

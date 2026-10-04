@@ -236,6 +236,210 @@
     ],
     "post_result_event_types": []
    }
+  },
+  {
+   "id": "lean-apostrophe-432",
+   "kind": "lean_output",
+   "path": "lean/lean-apostrophe-432.txt",
+   "tool_version": "Lean (version 4.32.0, x86_64-w64-windows-gnu, commit 8c9756b28d64dab099da31a4c09229a9e6a2ef35, Release)",
+   "recorded_at": "2026-10-04",
+   "command": "lean apostrophe-check.lean; actual check_file output, no extraction",
+   "role": "boundary_protocol",
+   "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+   "verdict": {
+    "status": "verified",
+    "declaration_signatures": {
+     "corpus_apostrophe'": "corpus_apostrophe' : True"
+    },
+    "axioms": {
+     "corpus_apostrophe'": []
+    },
+    "compiled_input_matches": true
+   },
+   "source_sha256": "15ac944b5524d25910035d56640674a4208fad660f9dc4b011782d79cdec2305",
+   "source_path": "lean/apostrophe-source.lean",
+   "compiled_path": "lean/apostrophe-check.lean",
+   "declarations": [
+    "corpus_apostrophe'"
+   ]
+  },
+  {
+   "id": "scholarly-actual-codex-config",
+   "kind": "scholarly_config",
+   "path": "configuration/scholarly-codex.toml",
+   "tool_version": "codex-cli 0.160.0",
+   "recorded_at": "2026-10-04",
+   "command": "exact scholarly table excerpt from the real project .codex/config.toml",
+   "role": "boundary_protocol",
+   "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+   "verdict": {
+    "command": "C:/math/services/scholarly-mcp/.venv/Scripts/python.exe",
+    "args": [
+     "C:/math/services/scholarly-mcp/server.py"
+    ]
+   },
+   "source_sha256": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926",
+   "recording": {
+    "id": "scholarly-config",
+    "source": "C:\\math\\.codex\\config.toml",
+    "source_sha256": "f1e9baa8d87c79874b23592342e884218be0cd58eef923650a020953dbaae693",
+    "source_lines_inclusive": [
+     22,
+     26
+    ],
+    "sha256": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926",
+    "transformation": "exact byte excerpt of the scholarly table; unrelated settings excluded",
+    "expected_server": {
+     "command": "C:/math/services/scholarly-mcp/.venv/Scripts/python.exe",
+     "args": [
+      "C:/math/services/scholarly-mcp/server.py"
+     ]
+    }
+   }
+  },
+  {
+   "id": "scheduler-absent-tasks",
+   "kind": "scheduler_json",
+   "path": "scheduler/absent-tasks.json",
+   "tool_version": "PowerShell 5.1.22621.6133; Windows 10.0.22631",
+   "recorded_at": "2026-10-04",
+   "command": "operator_schedule.ps1 -Action status; fresh absent names only",
+   "role": "boundary_protocol",
+   "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+   "verdict": {
+    "operator": null,
+    "engine": null,
+    "wake": null
+   },
+   "source_sha256": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5",
+   "returncode": 0,
+   "arguments": {
+    "Repository": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+    "Instance": "RI-recording",
+    "Workspace": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+    "Python": "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "OperatorTask": "do-math-corpus-59163509d5ef453a9164759257ddeeb7-operator",
+    "EngineTask": "do-math-corpus-59163509d5ef453a9164759257ddeeb7-engine",
+    "WakeTask": "do-math-corpus-59163509d5ef453a9164759257ddeeb7-wake"
+   }
+  },
+  {
+   "id": "codex-current-command-surface",
+   "kind": "cli_surface",
+   "path": "capabilities/codex-surface-0.txt",
+   "tool_version": "codex-cli 0.160.0",
+   "recorded_at": "2026-10-04",
+   "command": "real adapter-declared version/help commands",
+   "role": "boundary_protocol",
+   "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+   "verdict": {
+    "verified": true,
+    "supported": {
+     "jsonl": true,
+     "model": true,
+     "structured_output": true,
+     "effort_via_config": true,
+     "sandbox": true,
+     "local_job_stop": true
+    },
+    "scope": "cli_command_surface_only",
+    "unknown": [
+     "actual_input_bytes",
+     "provider_operation_ids",
+     "remote_termination",
+     "per_call_usage",
+     "provider_stop_reason",
+     "automatic_compaction_control",
+     "per_execution_read_isolation",
+     "cross_profile_noninterference"
+    ],
+    "version_sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+    "exec_help_sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e"
+   },
+   "source_sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+   "provider": "codex",
+   "recordings": [
+    {
+     "path": "capabilities/codex-surface-0.txt",
+     "exit_code": 0,
+     "sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+     "command": [
+      "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+      "--version"
+     ]
+    },
+    {
+     "path": "capabilities/codex-surface-1.txt",
+     "exit_code": 0,
+     "sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+     "command": [
+      "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+      "--help"
+     ]
+    },
+    {
+     "path": "capabilities/codex-surface-2.txt",
+     "exit_code": 0,
+     "sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e",
+     "command": [
+      "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+      "exec",
+      "--help"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "claude-current-command-surface",
+   "kind": "cli_surface",
+   "path": "capabilities/claude-surface-0.txt",
+   "tool_version": "2.1.289 (Claude Code)",
+   "recorded_at": "2026-10-04",
+   "command": "real adapter-declared version/help commands",
+   "role": "boundary_protocol",
+   "source": ".skill-workspace/test-restructure-2026-09-29/finish/boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+   "verdict": {
+    "verified": true,
+    "supported": {
+     "jsonl": true,
+     "model": true,
+     "structured_output": true,
+     "local_job_stop": true
+    },
+    "scope": "cli_command_surface_only",
+    "unknown": [
+     "remote_termination",
+     "per_execution_read_isolation",
+     "provider_operation_ids",
+     "automatic_compaction_control",
+     "provider_operation_count",
+     "provider_maximum_output"
+    ],
+    "version_sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+    "exec_help_sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367"
+   },
+   "source_sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+   "provider": "claude",
+   "recordings": [
+    {
+     "path": "capabilities/claude-surface-0.txt",
+     "exit_code": 0,
+     "sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+     "command": [
+      "C:/Users/wogud/.local/bin/claude.exe",
+      "--version"
+     ]
+    },
+    {
+     "path": "capabilities/claude-surface-1.txt",
+     "exit_code": 0,
+     "sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+     "command": [
+      "C:/Users/wogud/.local/bin/claude.exe",
+      "--help"
+     ]
+    }
+   ]
   }
  ],
  "supported_stream_versions": {

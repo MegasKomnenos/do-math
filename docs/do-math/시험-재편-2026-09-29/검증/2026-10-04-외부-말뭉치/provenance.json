@@ -1,0 +1,120 @@
+[
+  {
+    "id": "scholarly-config",
+    "source": "C:\\math\\.codex\\config.toml",
+    "source_sha256": "f1e9baa8d87c79874b23592342e884218be0cd58eef923650a020953dbaae693",
+    "source_lines_inclusive": [
+      22,
+      26
+    ],
+    "sha256": "269e3197cc417fb7efd00eacff241e527b17a483ab0f6186959238bd8a954926",
+    "transformation": "exact byte excerpt of the scholarly table; unrelated settings excluded",
+    "expected_server": {
+      "command": "C:/math/services/scholarly-mcp/.venv/Scripts/python.exe",
+      "args": [
+        "C:/math/services/scholarly-mcp/server.py"
+      ]
+    }
+  },
+  {
+    "id": "lean-version",
+    "command": [
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+      "--version"
+    ],
+    "exit_code": 0,
+    "stdout_sha256": "78caa1ebd7869026f8812677a76273f299444e5a1b610be3df495edf2cf233ca",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "lean-apostrophe",
+    "command": [
+      "C:\\math\\.skill-workspace\\do-math-toolchains\\lean-4.32.0\\lean-4.32.0-windows\\bin\\lean.exe",
+      "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b\\apostrophe-check.lean"
+    ],
+    "exit_code": 0,
+    "stdout_sha256": "15ac944b5524d25910035d56640674a4208fad660f9dc4b011782d79cdec2305",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "scheduler-absent",
+    "command": [
+      "powershell.exe",
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      "C:\\math\\.claude\\skills\\do-math\\scripts\\operator_schedule.ps1",
+      "-Action",
+      "status",
+      "-Repository",
+      "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+      "-Instance",
+      "RI-recording",
+      "-Workspace",
+      "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\boundary-recordings-b88-83b47dafd0a745b08ca9422e02e63e8b",
+      "-Python",
+      "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "-OperatorTask",
+      "do-math-corpus-59163509d5ef453a9164759257ddeeb7-operator",
+      "-EngineTask",
+      "do-math-corpus-59163509d5ef453a9164759257ddeeb7-engine",
+      "-WakeTask",
+      "do-math-corpus-59163509d5ef453a9164759257ddeeb7-wake"
+    ],
+    "exit_code": 0,
+    "stdout_sha256": "8bfd19c5dd3d9a9b5f28f73bc31a8ca457059f43c043fb7ec5e11b0c922c2ac5",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "codex-surface-0",
+    "command": [
+      "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+      "--version"
+    ],
+    "exit_code": 0,
+    "stdout_sha256": "f6464b8cc67af75deb2589fe1dbcde152fc15ffb76a91de1cf0686b4623afb1e",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "codex-surface-1",
+    "command": [
+      "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+      "--help"
+    ],
+    "exit_code": 0,
+    "stdout_sha256": "4a7f0188d4d6e6d812c5cfbcf82468336b899acd5e437de7450421a403c0071e",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "codex-surface-2",
+    "command": [
+      "C:/Users/wogud/AppData/Local/Programs/OpenAI/Codex/bin/codex.exe",
+      "exec",
+      "--help"
+    ],
+    "exit_code": 0,
+    "stdout_sha256": "0e82cfde0122715250e93dc65866caa956b2ac5b9d0b20ec4ad4f9e81486509e",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "claude-surface-0",
+    "command": [
+      "C:/Users/wogud/.local/bin/claude.exe",
+      "--version"
+    ],
+    "exit_code": 0,
+    "stdout_sha256": "312af555db83afe66ff467b667dbabb30e1693e84b60ac0ea6b3dfb893ae9e9e",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "claude-surface-1",
+    "command": [
+      "C:/Users/wogud/.local/bin/claude.exe",
+      "--help"
+    ],
+    "exit_code": 0,
+    "stdout_sha256": "a58ca2282c01312250fc8d861088dae6e46340ad55346557fcdbc0053f415367",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

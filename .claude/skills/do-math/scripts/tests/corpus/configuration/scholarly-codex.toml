@@ -1,0 +1,5 @@
+[mcp_servers.scholarly]
+command = "C:/math/services/scholarly-mcp/.venv/Scripts/python.exe"
+args = ["C:/math/services/scholarly-mcp/server.py"]
+startup_timeout_sec = 30
+tool_timeout_sec = 1800
