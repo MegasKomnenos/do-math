@@ -4835,8 +4835,8 @@
       },
       {
         "id": "3-B",
-        "state": "implementation_audit",
-        "remaining": "역할 계약×live/복구/단계의 입력 요구표와 실제 값/정확 참조 도달을 전건 검증"
+        "state": "partial_implementation",
+        "remaining": "요구표·실제 일반/주요 변형 도달·누락/필수 파일 손상 거부를 연결. 원문 계약 의미 항목과 모든 변형 모집단의 최종 종료는 미확정"
       },
       {
         "id": "3-C",
@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B68 운영·감사·복구 입력의 관련 168개 같은 판본 검증",
-      "active": "3-B 원문 계약별 모집단과 선언/소비/누락 검사의 종료 판정",
+      "last_closed": "B69 역할 요구 누락/손상 관문의 관련 97개 같은 판본 검증",
+      "active": "3-C 원래 11개 평가자 쌍과 이후 사본의 정본/차분 검증",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -16650,6 +16650,48 @@
         {
           "path": ".claude/skills/do-math/scripts/tests/sim/test_review_owner_path.py",
           "sha256": "80917ada6fd5a0b13de785df464a32133bf1794471c8d155637cfec2a6a0a754"
+        }
+      ],
+      "whole_requirement_closed": false
+    },
+    "role_input_missing_guard_integration": {
+      "id": "B69",
+      "state": "verified_main_commit_pending",
+      "scope": "실제 열 개 역할의 선언 항목 누락·필수 카탈로그 파일 삭제/같은 크기 변조 탐지와 현재 스키마 단계 선언 완비 검사",
+      "changed_area": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 97
+        },
+        "total_seconds": 42.4,
+        "changed_during_run": []
+      },
+      "tracked_report": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-입력-누락-관문/report.json",
+      "report_sha256": "43d01f53f9cb860535aafff152d482a81e175cc4b92ba74fa0945af8a56dae82",
+      "command": "python .claude/skills/do-math/scripts/run_tests.py structure unit.test_role_input_scoped_packaging sim.test_role_input_context --jobs 3",
+      "contract": [
+        "실제 준비 입력에서 요구 루트를 양쪽 모두 제거해도 실패하고 그 키를 지목",
+        "필수 지역 파일은 없어지거나 같은 크기로 바뀌면 읽기/해시 검사에서 실패",
+        "unittest subtest 실패를 실제 TestResult로 수집",
+        "스키마가 선택하는 단계 전건과 요구 선언 전건을 대조"
+      ],
+      "limits": [
+        "개별 초과 9개; 전역 T2/T3/변이/실호출과 예산 완료 증거 아님",
+        "자연어 계약의 모든 의미 자동 추출 또는 모든 변형 종료로 주장하지 않음"
+      ],
+      "files": [
+        {
+          "path": ".claude/skills/do-math/scripts/tests/support/role_input_requirements.py",
+          "sha256": "c72bb896a2376d7faa520e3972fe556cc98a49f200a646aeb2d85f02bdd8f565"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/sim/test_role_input_context.py",
+          "sha256": "2a3615c0bfa28126ab1f87ed871f29f0b8e609e62375b8c8451738e666675ff2"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/unit/test_role_input_scoped_packaging.py",
+          "sha256": "a2abbc80965be64b2c066cc592d36917c2c4f514c42f922df1a00feaf2695209"
         }
       ],
       "whole_requirement_closed": false

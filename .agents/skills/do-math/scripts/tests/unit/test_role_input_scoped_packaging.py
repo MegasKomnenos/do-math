@@ -153,6 +153,31 @@ class RoleInputClassTests(unittest.TestCase):
                 self.assertEqual(judgment_input_keys(role, {'role': role})[:len(row['keys'])],
                                  row['keys'])
 
+    def test_review_stage_requirements_cover_every_current_schema_branch(self):
+        import ast
+        import inspect
+        from do_math import review_cycle
+        from do_math.role_input_requirements import REVIEW_STAGE_INPUTS, judgment_input_paths
+        tree = ast.parse(inspect.getsource(review_cycle.stage_schema))
+        stages = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Compare) and isinstance(node.left, ast.Name) and node.left.id == 'stage':
+                self.assertEqual(len(node.comparators), 1)
+                right = node.comparators[0]
+                candidates = right.elts if isinstance(right, (ast.Tuple, ast.List)) else [right]
+                for value in candidates:
+                    self.assertIsInstance(value, ast.Constant, 'opaque stage selection needs a declared population')
+                    self.assertIsInstance(value.value, str)
+                    stages.add(value.value)
+        self.assertTrue(stages)
+        self.assertEqual(stages, set(REVIEW_STAGE_INPUTS))
+        for stage in stages:
+            with self.subTest(stage=stage):
+                schema = review_cycle.stage_schema(stage)
+                self.assertIn('proposal_digest', schema['required'])
+                paths = judgment_input_paths('identity_review', {'stage': stage}, context={})
+                self.assertTrue({'role_review.' + key for key in REVIEW_STAGE_INPUTS[stage]} <= set(paths))
+
     def test_role_input_maps_context_its_scope_does_not_inline(self):
         """About 1.2 s, over the 0.2 s unit budget: fourteen scopes each package a full input into files."""
         planning, intent, operational = PLANNING_DIRECT, INTENT_DIRECT, OPERATIONAL_DIRECT

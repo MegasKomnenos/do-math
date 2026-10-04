@@ -177,3 +177,67 @@ def assert_recovery_judgment_input(test, scene, execution, *, source_snapshot):
         test.assertEqual(hashlib.sha256(raw).hexdigest(), source['sha256'])
         test.assertEqual(raw, scene.sim.engine.store.read(source['artifact_ref'], source_snapshot))
     return value
+
+
+def assert_missing_judgment_inputs_rejected(test, role, prepared, workspace, *, producer_context):
+    """Remove each required root from both views; collect the real checker's failures.
+
+    The prepared input is a real producer result, shared read-only below its
+    top-level dictionaries. A unittest result preserves subtest failures; an
+    assertRaises wrapper would miss those because unittest records them itself.
+    """
+    original = prepared['validation_context']
+    paths = judgment_input_paths(role, original['action'], context=original)
+    required = tuple(dict.fromkeys((*judgment_input_keys(role, original['action']),
+                                  *(path.split('.')[0].removesuffix('[]') for path in paths))))
+    for key in required:
+        damaged = {**prepared, 'context': dict(prepared['context']),
+                   'validation_context': dict(original)}
+        del damaged['context'][key]
+        del damaged['validation_context'][key]
+
+        result = judgment_check_result(role, damaged, workspace, producer_context=producer_context)
+        with test.subTest(role=role, removed_requirement=key):
+            test.assertFalse(result.wasSuccessful(), 'missing requirement passed: ' + key)
+            reasons = '\n'.join(reason for _, reason in (*result.failures, *result.errors))
+            test.assertIn(key, reasons, 'failure must identify the missing judgment input')
+
+
+def judgment_check_result(role, prepared, workspace, *, producer_context):
+    """Collect both assertions and unittest subtest failures from the real checker."""
+    import unittest
+
+    class InputCheck(unittest.TestCase):
+        def runTest(self):
+            assert_judgment_inputs(self, role, prepared, workspace, producer_context=producer_context)
+
+    result = unittest.TestResult()
+    InputCheck().run(result)
+    return result
+
+
+def assert_unreadable_requirement_rejected(test, role, prepared, workspace, *, producer_context):
+    """A real mandatory catalog file must fail when absent or changed at the same size."""
+    from pathlib import Path
+
+    mapped = [(key, prepared['context'][key]['source_ref'])
+              for key in judgment_input_keys(role, prepared['validation_context']['action'])
+              if isinstance(prepared['context'][key], dict)
+              and set(prepared['context'][key]) == {'source_ref', 'total'}]
+    test.assertTrue(mapped, 'this real role input must exercise a required mapped source')
+    key, ref = mapped[0]
+    path = Path(workspace) / ref['path']
+    test.assertTrue(path.resolve().is_relative_to(Path(workspace).resolve()))
+    original = path.read_bytes()
+    test.assertTrue(original)
+    try:
+        path.unlink()
+        result = judgment_check_result(role, prepared, workspace, producer_context=producer_context)
+        test.assertFalse(result.wasSuccessful(), 'missing mandatory source passed: ' + key)
+        path.write_bytes(b'X' + original[1:])
+        test.assertEqual(path.stat().st_size, len(original))
+        result = judgment_check_result(role, prepared, workspace, producer_context=producer_context)
+        test.assertFalse(result.wasSuccessful(), 'same-size source corruption passed: ' + key)
+    finally:
+        path.write_bytes(original)
+    test.assertEqual(path.read_bytes(), original)

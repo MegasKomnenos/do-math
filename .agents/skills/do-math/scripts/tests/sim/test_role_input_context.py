@@ -787,6 +787,10 @@ class RoleContractInputTests(unittest.TestCase):
                     clock=sim.clock)
                 self.assertIsNone(fitted['overflow'])
                 assert_judgment_inputs(self, role, fitted, root, producer_context=context)
+                from support.role_input_requirements import assert_missing_judgment_inputs_rejected
+                assert_missing_judgment_inputs_rejected(self, role, fitted, root, producer_context=context)
+                from support.role_input_requirements import assert_unreadable_requirement_rejected
+                assert_unreadable_requirement_rejected(self, role, fitted, root, producer_context=context)
 
 
 class FollowupDocumentTests(unittest.TestCase):
