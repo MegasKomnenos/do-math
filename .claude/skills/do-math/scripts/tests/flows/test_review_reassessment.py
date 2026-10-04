@@ -22,8 +22,9 @@ def setUpModule():
 
 class OwnerReassessmentTests(unittest.TestCase):
     def test_public_qualified_report_reopens_the_judgment_and_the_owner_settles_a_bounded_followup(self):
-        """About 18 s: two controls and the reassessment's scope and initial attempts run on a state that holds a whole research flow."""
+        """Real reassessment and its one plan followup; about 84 s under parallel load, preserving the full input chain."""
         sim = produced_sim()
+        from support.cross_contracts import assert_call_records
         kid, assessment = reviewed_theorem(sim)
         original = sim.runtime['review_cycles'][assessment['review_cycle_id']]
         reviewer = original['results']['initial:1:initial-0']['execution_id']
@@ -58,6 +59,27 @@ class OwnerReassessmentTests(unittest.TestCase):
         self.assertEqual((cycle['status'], cycle['decision']), ('unresolved', 'unresolved'))
         self.assertEqual(set(sim.instance['identity_assessments']), assessments)
         self.assertEqual(sim.instance['identity_assessments'][assessment['id']]['review_cycle_id'], original['id'])
+        self.assertFalse(any(row['action'].get('identity_review', {}).get('review_cycle_id') == cycle['id']
+                             for row in sim.runtime['executions'].values()))
+        before = assert_call_records(self, sim)
+        requests = [a for a in sim.runtime['queue'] if a.get('identity_review', {}).get('review_cycle_id') == cycle['id']]
+        self.assertEqual(len(requests), 1, {'followups': activity['followups'],
+            'history': cycle['history'][-3:], 'queue': sim.runtime['queue'],
+            'plans': [row['action'] for row in sim.runtime['executions'].values() if row['role'] == 'research_plan']})
+        request, = requests
+        self.assertEqual(request['identity_review']['assessment_id'], assessment['id'])
+        sim.model.on('research_plan').reply(amend(goal_audit=False))
+        sim.run_until(lambda s: any(c['action']['id'] == request['id'] for c in s.model.calls), max_steps=8)
+        after = assert_call_records(self, sim)
+        self.assertEqual(after['research_plan'] - before['research_plan'], 1)
+        execution, = [row for row in sim.runtime['executions'].values() if row['action']['id'] == request['id']]
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        self.assertEqual(execution['action']['identity_review']['assessment_id'], assessment['id'])
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(sum(c['action']['id'] == request['id'] for c in sim.model.calls), 1)
+        self.assertFalse(any(a.get('identity_review', {}).get('review_cycle_id') == cycle['id'] for a in sim.runtime['queue']))
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
 
 
 if __name__ == '__main__':

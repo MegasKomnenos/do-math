@@ -539,6 +539,15 @@
       "found_by": "11-B 실제 관찰기/owner/작업자 호출 행렬. yz6o61qc에서 explicit_review_due × live_due만 예정 호출1 대신0으로 실패했다. publication_candidate가 시계 포트 정체성을 유지하며 상태만 복사하도록 두 소비 경로를 교정한 뒤 sy2f5c3v에서 통과.",
       "missed_kind": "관찰기 단위 시간 검사는 실제 owner의 게시용 복사를 거치지 않았고, 다른 관찰 기한은 batch 수신 시각을 사용해 포트 시계 분리를 가렸다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1914",
+      "summary": "계획 요청 병합이 사유/사건 참조만 보존하고 identity_review 등 특수 발동 데이터를 버린다. 최초 요청의 같은 데이터는 호출자와 가변 객체를 공유한다.",
+      "category": 3,
+      "reproduction": "flows.test_review_reassessment.OwnerReassessmentTests.test_public_qualified_report_reopens_the_judgment_and_the_owner_settles_a_bounded_followup",
+      "found_by": "B96 실제 재평가의 assessment_reassessment_applied 후 계획에 사유만 남고 identity_review가 없는 것을 h8wtpc4j와 czyl5hpd에서 확인. _enqueue의 미처리 extra 데이터를 보존하고 충돌 데이터를 별도 요청으로 유지한 뒤 ii8h5q0_에서 실제 흐름 통과. 최초 요청 alias도 직접 검사로 재현 후 교정.",
+      "missed_kind": "재평가 검사는 활동의 next_owner/followups에서 멈췄고 실제 계획 입력을 확인하지 않았다. 기존 큐 검사도 명시적으로 병합하는 관찰/사유/참조 필드만 다뤘다.",
+      "status": "closed"
     }
   ]
 }

@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B90~B93 운영 발동, B94 기한 사건, B95 공개 source 변경의 task_new_input 계획 소비 검증 완료. 나머지 직접 계획 발동 원천의 사건×대상 전건 및 다른 실패 원천 연결이 남음."
+        "remaining": "B90~B95와 B96 형식 실패/평가 재검토의 실제 호출 확인. KD-1914 발동 데이터 유실 교정. 일반 검토 결과·검토 자원 종료·신뢰 전환·지식/개정/평가/권한·입력초과·수락 결과의 직접 원천 전건 연결이 남음."
       },
       {
         "id": "12-A",
@@ -13089,9 +13089,9 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B94 7c0111b1; B95 새 자료 입력 관련11개 통과",
-      "active": "B95 확정 후 직접 계획 발동 원천을 기존 실제 흐름과 연결",
-      "exit": "형식·검토·지식·개정·평가·외부반려·입력초과·출력수락 계획 원천의 대상/호출 누락 보완",
+      "last_closed": "B95 02dd4000; B96 발동 데이터 보존과 관련88개 통과",
+      "active": "B96 확정 후 일반 검토 결과와 나머지 직접 발동의 실제 연결",
+      "exit": "남은 직접 계획 발동을 기존 실제 흐름과 연결하고0/1 호출·근거 보존·중복 방지 확인",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "기존 생산자와 실제 owner/모델/작업자 결과를 사용한다. 실제 실패를 고치고 검증된 부분의 남김을 제거한다.",
       "running_test": null,
@@ -18248,6 +18248,29 @@
       },
       "whole_requirement_closed": false,
       "limits": "과제 입력인 source의 실제 변경 원천. 사용자 입력 해석/평가·지식/형식/검토/권한의 다른 직접 계획 발동은 별도 남김."
+    },
+    "formal_review_trigger_payload_correction": {
+      "id": "B96",
+      "scope": "형식 실패·평가 재검토의 실제 계획 발동과 _enqueue 발동 데이터 보존",
+      "state": "검수·관련 검증 완료",
+      "defect_id": "KD-1914",
+      "memory_node": "M-0513",
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-형식-검토-발동/report.json",
+        "sha256": "c9636aafd93f9ed16cd00ae7c6fbdb6d692e5bb8354ed9a5addd124ac230d0fd",
+        "counts": {
+          "passed": 88
+        },
+        "seconds": 198.4,
+        "changed_during_run": []
+      },
+      "closed_scopes": [
+        "formal_result failed opens one formal_target plan, verified does not",
+        "assessment_reassessment_applied payload reaches one accepted plan",
+        "unhandled trigger payload survives both enqueue orders, conflicting payloads separate, mutable values detach"
+      ],
+      "whole_requirement_closed": false,
+      "remaining": "일반 identity review 게시·자원 종료·신뢰 전환·권한/지식/개정 등 다른 직접 계획 원천은 별도 남김"
     }
   }
 }

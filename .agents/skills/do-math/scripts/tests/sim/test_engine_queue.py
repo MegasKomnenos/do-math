@@ -43,6 +43,29 @@ def charter_change(engine, **content_changes):
 
 
 class ObservationMerge(unittest.TestCase):
+    def test_plan_merge_preserves_trigger_payload_and_keeps_conflicting_targets_separate(self):
+        cases = [('identity_review', {'review_cycle_id': 'RC-one'}, {'review_cycle_id': 'RC-two'}),
+                 ('formal_target', 'K-one', 'K-two'), ('rejection_id', 'RJ-one', 'RJ-two')]
+        engine = Sim.activated().engine
+        for field, first, other in cases:
+            for specific_first in (False, True):
+                with self.subTest(field=field, specific_first=specific_first):
+                    engine.runtime['queue'] = []
+                    payload = {field: deepcopy(first)}
+                    if specific_first:
+                        engine._enqueue('research_plan', reason='Specific judgment', **payload)
+                    engine._enqueue('research_plan', reason='Preserved events')
+                    engine._enqueue('research_plan', reason='Specific judgment', **payload)
+                    self.assertEqual(len(engine.runtime['queue']), 1)
+                    self.assertEqual(engine.runtime['queue'][0][field], first)
+                    if isinstance(first, dict):
+                        payload[field]['reviewer_note'] = 'caller changed after enqueue'
+                        self.assertEqual(engine.runtime['queue'][0][field], first)
+                    engine._enqueue('research_plan', reason='Another judgment', **{field: other})
+                    self.assertEqual([row[field] for row in engine.runtime['queue']], [first, other])
+                    engine._save()
+                    self.assertEqual(engine.store.load(engine.head)[2]['queue'], engine.runtime['queue'])
+
     def test_merged_review_keeps_all_obligations_and_evidence_refs(self):
         engine = Sim.activated().engine
         engine.runtime["queue"] = []

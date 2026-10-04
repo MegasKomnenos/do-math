@@ -2922,9 +2922,21 @@ class CoreEngineMixin:
         compare_keys = ("role", "target", "stage", "slot", "round", "review_cycle_id", "basis", "transition_id",
                         "assessment_targets", "observation_rule_targets", "review_basis_key", "live", "grant_id", "profile_ref",
                          "cleanup_execution_ids", "delegation_application_id", "initial_submission_diagnosis")
+        merged_keys = {'id', 'lineage_id', 'reason', 'requested_by', 'event_refs', 'obligation_ids',
+                       'observation_refs', 'receipt_refs', 'evidence_refs', 'revision_followup',
+                       'observation', 'revision_parent_ids', 'revision_targets', 'opened_at'}
+        payload_keys = set(extra) - set(compare_keys) - merged_keys
         live_actions = live_action_ids(self.runtime)
         for queued in self.runtime["queue"]:
-            if queued.get("id") not in live_actions and all(queued.get(k) == action.get(k) for k in compare_keys):
+            if (queued.get("id") not in live_actions
+                    and all(queued.get(k) == action.get(k) for k in compare_keys)
+                    and all(key not in queued or queued[key] == action[key] for key in payload_keys)):
+                # Trigger-specific facts are part of the requested judgment.
+                # Preserve newly supplied facts; incompatible facts need another request.
+                for key in payload_keys:
+                    queued.setdefault(key, deepcopy(action[key]))
+                if 'opened_at' in action:
+                    queued.setdefault('opened_at', action['opened_at'])
                 # A request without revision targets must outlive the retirement of merged targets.
                 if not queued.get("revision_targets") or not action.get("revision_targets"):
                     queued["unbound_request"] = True
@@ -2961,6 +2973,8 @@ class CoreEngineMixin:
                     queued["merged_action_ids"] = list(dict.fromkeys([*queued.get("merged_action_ids", []), action["id"]]))
                 self._cancel_selected_revision_targets(queued)
                 return
+        for key in payload_keys:
+            action[key] = deepcopy(action[key])
         action.setdefault("id", self.ports.clock.new_id("AC"))
         action.setdefault("lineage_id", action["id"])
         self.runtime["queue"].append(action)
