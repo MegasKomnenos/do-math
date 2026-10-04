@@ -15,6 +15,20 @@ def setUpModule():
 
 
 class CrossResearchMachineTests(unittest.TestCase):
+    def test_revised_research_closure_preserves_merged_request_reasons(self):
+        from support.cross_obligations import assert_preserved_reasons
+        from copy import deepcopy
+        machine = ResearchMachine()
+        self.addCleanup(machine.teardown)
+        machine.revise_during_identity_review(0)
+        machine.contracts_after_every_event()
+        requests = deepcopy(machine.oracle.requests)
+        self.assertTrue(requests)
+        machine.close()
+        machine.contracts_after_every_event()
+        assert_preserved_reasons(requests, machine.sim.runtime)
+        self.assertEqual(machine.sim.runtime['status'], 'closed')
+
     def test_long_transition_sequences(self):
         """Six twenty-event examples: worker calls and storage make this a flow budget."""
         assert_machine(ResearchMachine, LONG)

@@ -12,11 +12,12 @@ The public activation already sealed its own central checks, so a seal count
 the legacy test compared with 1 is the activation's count plus 1 here.
 """
 from copy import deepcopy
+import hashlib
 import json
 import unittest
 
 from do_math.canonical import canonical_json
-from do_math.execution_lifecycle import transition_execution
+from do_math.execution_lifecycle import NATIVE_FINAL_RECEIPT, transition_execution
 from do_math.payloads import json_safe
 from support.engine_context import damage
 from support.sim import warm_template
@@ -44,6 +45,44 @@ class NativeFinalGitTests(unittest.TestCase):
         scene = self.scene
         return (engine or self.engine)._collect_submitted_result(execution, result, scene.context, scene.schema,
                                                                  scene.workspace)
+
+    def test_terminated_native_recovery_records_the_real_receipt_without_reopening_the_attempt(self):
+        scene = self.scene
+        engine = self.engine
+        execution = engine.runtime['executions']['EX-history']
+        raw = canonical_json(scene.output)
+        result = self.native(execution, raw)
+        transition_execution(execution, 'stopping', at=scene.sim.clock.now())
+        transition_execution(execution, 'ended', at=scene.sim.clock.now(), outcome='execution_incomplete',
+                             disposition='preserved_for_followup')
+        engine._save()
+        execution = engine.runtime['executions']['EX-history']
+        before = deepcopy(execution)
+        parent = engine.head
+        receipt = engine._capture_native_submission(execution, result, scene.context, scene.schema,
+            scene.workspace, raw, recovery_request='UC-native-recovery')
+        self.assertEqual(receipt, {
+            'id': receipt['id'], 'kind': NATIVE_FINAL_RECEIPT, 'state': 'accepted',
+            'execution_id': execution['id'], 'received_at': scene.sim.clock.now(),
+            'parent_snapshot': parent, 'final_sha256': hashlib.sha256(raw).hexdigest(),
+            'recovery_request_id': 'UC-native-recovery', 'payload': receipt['payload']})
+        self.assertEqual(execution['status'], 'ended')
+        self.assertEqual(execution['outcome'], 'execution_incomplete')
+        self.assertEqual(execution['transitions'], before['transitions'])
+        self.assertEqual(execution['ended_at'], before['ended_at'])
+        self.assertEqual(execution['result_disposition'], before['result_disposition'])
+        self.assertEqual(execution['submission_receipt'], receipt)
+        self.assertEqual(execution['authority_revocation'], {
+            'scope': 'execution_research', 'reason': 'submission_intent',
+            'at': receipt['received_at'], 'receipt_id': receipt['id']})
+        self.assertEqual(execution, {**before, 'submission_intent': execution['submission_intent'],
+            'submission_receipt': receipt, 'authority_revocation': {
+                'scope': 'execution_research', 'reason': 'submission_intent',
+                'at': receipt['received_at'], 'receipt_id': receipt['id']}})
+        self.assertEqual(engine.store.read(execution['submission_intent']['output_ref'], engine.head), raw)
+        published = deepcopy(execution)
+        engine._reload()
+        self.assertEqual(engine.runtime['executions']['EX-history'], published)
 
     def test_rejected_native_final_leaves_explicit_retry_to_the_existing_fresh_execution_path(self):
         execution = self.engine.runtime['executions']['EX-history']
