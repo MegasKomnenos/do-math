@@ -525,8 +525,9 @@ class FormalEngineMixin:
             transition['status'] = 'failed'
             transition.setdefault('history', []).append({'kind': 'activation_failed', 'reason': str(error),
                                                          'at': self._lifecycle_now().isoformat()})
-            self._lifecycle_event('trust_transition_failed', target=transition_id, reason=str(error))
-            self._enqueue('research_plan', reason='Trust transition failed; the previous environment remains in force', transition_id=transition_id)
+            event = self._lifecycle_event('trust_transition_failed', target=transition_id, reason=str(error))
+            self._enqueue('research_plan', reason='Trust transition failed; the previous environment remains in force',
+                          transition_id=transition_id, event_refs=[event['id']])
         else:
             self.instance['trust_environments'][transition['to_environment']]['validation_receipt'] = deepcopy(verification)
             transition.update(status='active', activated_at=self._lifecycle_now().isoformat())

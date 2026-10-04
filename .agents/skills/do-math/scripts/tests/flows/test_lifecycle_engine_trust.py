@@ -90,6 +90,35 @@ class TransitionTests(unittest.TestCase):
     def results(self):
         return self.sim.runtime['trust_transitions'][self.tid]['results']
 
+    def assert_transition_plan_once(self, event_kind):
+        from support.cross_contracts import assert_call_records
+        from support.default_responder import DefaultResponder
+        from support.model import amend
+        sim = self.sim
+        event, = [row for row in sim.runtime['events'] if row['kind'] == event_kind and row.get('target') == self.tid]
+        before = assert_call_records(self, sim)
+        sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+        sim.model.on('research_plan').reply(amend(goal_audit=False))
+        sim.run_until(lambda s: any(c['role'] == 'research_plan' and event['id'] in c['action'].get('event_refs', [])
+                                   for c in s.model.calls), max_steps=8)
+        after = assert_call_records(self, sim)
+        self.assertGreater(after['research_plan'], before['research_plan'])
+        self.assertEqual(sum(c['role'] == 'research_plan' and event['id'] in c['action'].get('event_refs', [])
+                             for c in sim.model.calls), 1)
+        plan, = [row for row in sim.runtime['executions'].values()
+                 if row['role'] == 'research_plan' and event['id'] in row['action'].get('event_refs', [])]
+        self.assertEqual(plan['outcome'], 'output_accepted', plan.get('error'))
+        if event_kind == 'trust_transition_failed':
+            self.assertEqual(plan['action'].get('transition_id'), self.tid,
+                {'plan_action': plan['action'], 'queue': sim.runtime['queue'],
+                 'waiting': sim.runtime.get('waiting_actions', {}),
+                 'history': sim.runtime['history'][-4:]})
+        self.assertNotIn(event['id'], sim.runtime['pending_events'])
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(sum(event['id'] in c['action'].get('event_refs', []) for c in sim.model.calls), 1)
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
+
     def test_full_transition_preserves_old_formal_records_and_full_command(self):
         """About 3 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
         sim = self.sim
@@ -117,6 +146,9 @@ class TransitionTests(unittest.TestCase):
             if row['role'] == 'trust_check':
                 self.assertEqual(row['outcome'], 'output_accepted')
                 self.assertEqual(row['submission_receipt']['kind'], 'machine_output')
+        self.assertFalse(any(a.get('transition_id') == self.tid and a['role'] == 'research_plan'
+                             for a in sim.runtime['queue']))
+        self.assert_transition_plan_once('trust_transition_activated')
 
     def test_the_activation_a_finished_recheck_queues_names_its_source(self):
         """About 3 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
@@ -156,6 +188,10 @@ class TransitionTests(unittest.TestCase):
         self.assertEqual(sim.instance['active_trust_environment'], self.old)
         self.assertEqual(sim.runtime['trust_transitions'][self.tid]['status'], 'failed')
         self.assertEqual({row['status'] for row in self.results().values()}, {'failed'})
+        requests = [a for a in sim.runtime['queue'] if a['role'] == 'research_plan' and a.get('transition_id') == self.tid]
+        self.assertEqual(len(requests), 1)
+        self.assert_transition_plan_once('trust_transition_failed')
+        self.assertEqual(sim.instance['active_trust_environment'], self.old)
 
     def test_changed_semantics_requires_independent_review(self):
         """About 3 s, over the 2 s Sim budget: the start state holds two reviewed theorems whose review cycles (3.2 MB) every save copies and checks."""
