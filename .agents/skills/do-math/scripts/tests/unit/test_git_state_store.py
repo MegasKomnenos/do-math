@@ -314,3 +314,28 @@ class BatchOutputTests(unittest.TestCase):
                              (b'oid blob 0\n\nextra', 'unexpected trailing batch output')]:
             with self.subTest(raw=data), self.assertRaisesRegex(GitBackendError, reason):
                 parse_read_objects(['one'], data)
+
+
+class ProjectOutputTests(unittest.TestCase):
+    def test_project_decoders_keep_empty_false_exit_and_strict_utf8_distinct(self):
+        from do_math.storage_finish_git_output import parse_project_root, parse_project_tree, parse_project_paths
+        self.assertIsNone(parse_project_root(b' \n'))
+        self.assertEqual(parse_project_root(b' /repo \n'), Path('/repo'))
+        self.assertEqual(parse_project_tree(False, b' tree \n'), 'tree')
+        self.assertEqual(parse_project_tree(0, b''), '')
+        for code in (1, 128, None):
+            self.assertIsNone(parse_project_tree(code, b'HEAD:absent\n'))
+        self.assertEqual(parse_project_paths(False, b'a\0a\0sub/b\0'), frozenset({'a', 'sub/b'}))
+        self.assertEqual(parse_project_paths(None, b''), frozenset())
+        with self.assertRaisesRegex(RuntimeError, '^cannot read tracked paths for the configured project$'):
+            parse_project_paths(128, b'\xff')
+        for parse, args in ((parse_project_root, (b'\xff',)),
+                            (parse_project_tree, (0, b'\xff')),
+                            (parse_project_paths, (0, b'\xff\0'))):
+            with self.subTest(parser=parse.__name__), self.assertRaises(UnicodeDecodeError) as rejected:
+                parse(*args)
+            self.assertEqual(rejected.exception.encoding, 'utf-8')
+            self.assertEqual(rejected.exception.object, b'\xff')
+            self.assertEqual((rejected.exception.start, rejected.exception.end), (0, 1))
+            self.assertEqual(rejected.exception.reason, 'invalid start byte')
+        self.assertIsNone(parse_project_tree(1, b'\xff'))

@@ -138,5 +138,46 @@ class PayloadStorageTests(unittest.TestCase):
                              repo.read(stored['payloads'][0]['path'], new_head))
 
 
+    def test_damaged_unreferenced_payload_blocks_reappearance_before_object_write_or_cas(self):
+        from do_math.canonical import FrozenText
+        from support.storage_git import ObservedGit, rewrite_commit
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            backend = ObservedGit()
+            repo = record_store(root, backend=backend)
+            value = 'exact 원문\n' * 20000
+            first = repo.initialize(*current_state({'title': value}))
+            paths = repo.list_files('runtime/artifacts/', first)
+            self.assertEqual(len(paths), 1)
+            path, = paths
+            original = repo.read(path, first)
+            self.assertIs(type(original), bytes)
+            self.assertEqual(original, canonical_json(value))
+            _, instance, runtime = repo.load(first)
+            self.assertIs(type(instance['title']), FrozenText)
+            instance['title'] = 'short'
+            second = repo.save_with_state(first, instance, runtime)[0]
+            damaged = rewrite_commit(repo, second, {path: b'corrupted archive\n'})
+            reader = record_store(root, backend=backend, contract=installed_contract())
+            _, instance, runtime = reader.load(damaged)
+            self.assertEqual(instance['title'], 'short')
+            instance['title'] = value
+            caller = canonical_json([instance, runtime])
+            start = len(backend.calls)
+            with self.assertRaises(ValueError) as caught:
+                reader.save_with_state(damaged, instance, runtime)
+            self.assertIs(type(caught.exception), ValueError)
+            self.assertEqual(str(caught.exception), 'immutable artifact differs from encoded state: ' + path)
+            self.assertEqual([name for name, _ in backend.calls[start:]
+                              if name in {'write_object', 'update_ref'}], [])
+            self.assertEqual(backend.artifact_specs('read_objects', start), [[damaged + ':' + path]])
+            self.assertEqual(reader.load()[0], damaged)
+            self.assertEqual(reader.load()[1]['title'], 'short')
+            self.assertEqual(reader.read_many([path], damaged), {path: b'corrupted archive\n'})
+            self.assertEqual(reader.read_many([path], first), {path: original})
+            self.assertEqual(canonical_json([instance, runtime]), caller)
+
+
 if __name__ == '__main__':
     unittest.main()

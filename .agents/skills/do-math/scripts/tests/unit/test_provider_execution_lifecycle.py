@@ -14,9 +14,9 @@ import unittest
 
 from do_math.activities import assign_execution, finish_activity, open_activity, validate_activities, wait_for
 from do_math.control_transport import ControlTransport
-from do_math.execution_lifecycle import (create_execution, end_preparation, end_recovered, record_submission_intent,
+from do_math.execution_lifecycle import (begin_preparation, create_execution, end_preparation, end_recovered, record_submission_intent,
                                          recover_execution, transition_execution)
-from do_math.provider_wait import gate_open, retry_time
+from do_math.provider_wait import epoch_seconds, gate_open, retry_time, utc
 from support.execution_inputs import sealed_maintenance_submission
 from support.fakes.clock import FakeClock
 
@@ -80,6 +80,23 @@ class ActivityContractTests(unittest.TestCase):
 
 
 class ExecutionLifecycleTests(unittest.TestCase):
+    def test_preparation_records_each_stage_without_starting_the_attempt(self):
+        execution = create_execution(execution_id="EX-1", owner_activity_id="AY-1", actor_kind="ai",
+                                     input_manifest=[], profile_ref="PF-1", created_at=TIME)
+        before = deepcopy(execution)
+        self.assertIs(begin_preparation(execution, at=TIME), execution)
+        self.assertEqual(execution, {**before, "input_preparation": {
+            "stage": "context", "started_at": TIME, "updated_at": TIME}})
+        later = "2026-09-20T00:00:01+00:00"
+        self.assertIs(begin_preparation(execution, at=later, stage="role_input"), execution)
+        self.assertEqual(execution, {**before, "input_preparation": {
+            "stage": "role_input", "started_at": TIME, "updated_at": later}})
+        transition_execution(execution, "starting", at=later)
+        started = deepcopy(execution)
+        with self.assertRaisesRegex(ValueError, "^input preparation requires a queued execution$"):
+            begin_preparation(execution, at=later)
+        self.assertEqual(execution, started)
+
     def running(self, execution_id="EX-1"):
         execution = create_execution(execution_id=execution_id, owner_activity_id="AY-1", actor_kind="ai",
                                      input_manifest={"source": "fixed"}, profile_ref="PF-1", created_at=TIME)
@@ -107,6 +124,13 @@ class ExecutionLifecycleTests(unittest.TestCase):
             receipt = transport.receive(request, publish=lambda _: {"state": "accepted", "published": True,
                                                                     "snapshot": "SN-1"})
         self.assertEqual((receipt["state"], receipt["execution_id"]), ("accepted", "EX-1"))
+        queued = create_execution(execution_id="EX-1", owner_activity_id="AY-1", actor_kind="ai",
+                                  input_manifest={"source": "fixed"}, profile_ref="PF-1", created_at=TIME)
+        before_queued = deepcopy(queued)
+        with self.assertRaisesRegex(ValueError,
+                '^submission intent requires a running execution or explicit terminated recovery$'):
+            record_submission_intent(queued, self.sealed_intent(queued['id']), receipt, at=TIME)
+        self.assertEqual(queued, before_queued)
         record_submission_intent(execution, self.sealed_intent(execution["id"]), receipt, at=TIME)
         transition_execution(execution, "stopping", at=TIME)
         transition_execution(execution, "ended", at=TIME, outcome="output_accepted",
@@ -160,6 +184,24 @@ class ExecutionLifecycleTests(unittest.TestCase):
 
 
 class ProviderWaitTests(unittest.TestCase):
+    def test_retry_time_parser_accepts_finite_epochs_and_zoned_times_only(self):
+        for value, expected in ((0, 0.0), (-1, -1.0), (1.5, 1.5),
+                                ('1970-01-01T09:00:00+09:00', 0.0)):
+            with self.subTest(value=value):
+                result = epoch_seconds(value)
+                self.assertIs(type(result), float)
+                self.assertEqual(result, expected)
+        for value in (None, False, True, float('nan'), float('inf'), float('-inf'),
+                      [], {}, '', '1970-01-01T00:00:00', 'not-a-time'):
+            with self.subTest(value=value):
+                self.assertIsNone(epoch_seconds(value))
+
+    def test_retry_time_serialization_preserves_epoch_and_explicit_absence(self):
+        self.assertEqual(utc(0), "1970-01-01T00:00:00+00:00")
+        self.assertEqual(utc(1.5), "1970-01-01T00:00:01.500000+00:00")
+        self.assertEqual(utc(-1), "1969-12-31T23:59:59+00:00")
+        self.assertIsNone(utc(None))
+
     def test_provider_wait_is_a_wait_record_not_a_capacity_claim(self):
         self.assertEqual(retry_time({}, 2, 100, 20, 60), 140)
         self.assertEqual(retry_time({}, 9, 100, 20, 60), 160)

@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B57 검증완료·확정준비",
-      "active": "다음 기존모듈내추가저장/제어/provider/역할입력과설치/실경계누락 통합",
+      "last_closed": "B58 검증완료·확정준비",
+      "active": "다음 기존제어/수송/CLI입력·위임/역할입력/생산자쌍·terminal상태와실경계 추가사례 통합",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -15633,7 +15633,7 @@
     },
     "document_contract_integration": {
       "id": "B57",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "문서모집단의명령별옵션·scope field·정책소유검사와외부Claude명령/초기입력goal표기교정4파일",
       "changed_area": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-qqxzipzy\\report.json",
@@ -15711,6 +15711,175 @@
         "changed_during_run": [],
         "budget": {
           "over_budget": [],
+          "tier": null
+        }
+      },
+      "commit": "cd2f7fe4"
+    },
+    "storage_detail_integration": {
+      "id": "B58",
+      "state": "verified_main_commit_pending",
+      "scope": "기존 저장/producer record/물리fingerprint/payload/fixture seal와관찰/checkpoint/rule/실행수명10모듈의누락/강화 사례 통합",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-7gswwoco\\report.json",
+        "sha256": "1276af213e156fe5257f8f860b47d1a97a367bce68a760206a71e3979ec8cc5a",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 84
+        },
+        "total_seconds": 14.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_producer_record_storage.ExecutionRecordTests.test_actual_submission_authority_revocation_round_trip",
+              "seconds": 0.2339999999385327,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.ExecutionRecordTests.test_configure_preserves_selected_profile_edition_not_all_historical_editions",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.KnowledgeRecordTests.test_actual_review_cycle_and_identity_producer_round_trip",
+              "seconds": 0.21799999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.KnowledgeRecordTests.test_staged_review_producer_keeps_transient_candidate_and_real_transition",
+              "seconds": 0.39099999994505197,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.KnowledgeRecordTests.test_verified_identity_and_environment_continuity_round_trip",
+              "seconds": 0.5470000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.SchemaIngressTests.test_capability_and_import_seals_reject_damage_before_publication",
+              "seconds": 3.905999999959022,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.SchemaIngressTests.test_operational_disposition_variant_is_validated_at_storage",
+              "seconds": 3.327999999979511,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_producer_record_storage.SchemaIngressTests.test_registered_metadata_references_cover_adoption_profiles_events_and_trust",
+              "seconds": 0.640999999945052,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_producer_seal.FixtureMutationSealTests.test_candidate_revision_cannot_target_an_absent_or_unhashed_input_record",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_submission_producer_seal.FixtureMutationSealTests.test_revision_seal_keeps_exact_fixed_hashes_from_both_input_catalogs",
+              "seconds": 0.3440000000409782,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-b0qqx223\\report.json",
+        "sha256": "62919d62900f8edbdd9e68b88e390ffc40e0c09155f265c879c5a6d21145d06b",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 8.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 6.954000000027008,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "실제정상생산자·Repository왕복/게시전단일손상반려·input/hash/head전문보존,unreferenced큰원문의재등장검증,고정input mutation seal·live checkpoint 보존·미발급self-check비소비·실제준비/종료/예약정산 경계. 제품/helper동작변경없음.",
+      "limits": "저장84개14.7초10개초과/관찰80개2.1초3개초과/구조6개8초·smell6.954초를구별한다.부분보고는전체같은판본T2/T3·변이·예산 증거가아니다.",
+      "files": [
+        {
+          "path": "tests/unit/test_git_state_store.py",
+          "sha256": "d85b615ffe0f576aef21a7a7a543facb557359dcea6625f34a0af034d4f2493d"
+        },
+        {
+          "path": "tests/unit/test_producer_record_storage.py",
+          "sha256": "d51c6ea3e5b8bcca0bbce306c2988906f060f9430a0825c38a2cc30ad614f1db"
+        },
+        {
+          "path": "tests/unit/test_storage_file_fingerprints.py",
+          "sha256": "ae3f71a7dd77b6a79a38e83ce05dbc5704ebdcdb4942533da86601dd19514e51"
+        },
+        {
+          "path": "tests/unit/test_storage_payloads.py",
+          "sha256": "c1470bfa6ccc6e1707a47fa33e4c60401bfafd4016b7f2c941ee5558affac831"
+        },
+        {
+          "path": "tests/unit/test_submission_producer_seal.py",
+          "sha256": "5f3e02e654e19db7a597a16f6bb75bbdd8003b87678efeaa75eb37d82e1ad90c"
+        },
+        {
+          "path": "tests/unit/test_observation_checkpoint.py",
+          "sha256": "747777fad2a924d879fad648ff29186021d8eca1db22ecb3a5e4143b9e2a21ae"
+        },
+        {
+          "path": "tests/unit/test_observation_rule_binding.py",
+          "sha256": "b461c817f17e2ed73241b2cd0d37ba97e54bb03ad3ef50139f8d425624634df5"
+        },
+        {
+          "path": "tests/unit/test_observation_tracker.py",
+          "sha256": "c3c5bb7680178126b2a2550150b5110156b658422029f8f4794cd9262f00d835"
+        },
+        {
+          "path": "tests/unit/test_provider_execution_lifecycle.py",
+          "sha256": "32859708d150d4a2e805db84f64bdb73b4e98460648fb3fe92ad61726aba74d1"
+        },
+        {
+          "path": "tests/unit/test_provider_stored_executions.py",
+          "sha256": "e9fdf7792da99bad2bf7bb8a633ee00259d71874e1c8c39c6e78923f5845a16a"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "observation_lifecycle": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-8qliuc0o\\report.json",
+        "sha256": "3cb9ddc81c0bd103015b4d5e62caacbf1f2976ca98c75432df1426a483e694dd",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 80
+        },
+        "total_seconds": 2.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "unit.test_provider_execution_lifecycle.ExecutionLifecycleTests.test_accepted_output_requires_a_real_transport_receipt",
+              "seconds": 0.2969999999040738,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_provider_stored_executions.StoredExecutionTests.test_confirmed_local_termination_releases_only_its_reservation",
+              "seconds": 0.32900000002700835,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_provider_stored_executions.StoredExecutionTests.test_intent_stops_and_revokes_execution_authority_in_same_git_publication",
+              "seconds": 0.4059999999590218,
+              "budget_seconds": 0.2
+            }
+          ],
           "tier": null
         }
       }

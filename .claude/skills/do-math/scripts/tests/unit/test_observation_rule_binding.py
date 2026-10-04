@@ -46,6 +46,37 @@ class PreparationRuleTests(unittest.TestCase):
                            'output/candidates/0/initial_observation_rules',
                            'observation rules must be a nonempty list of at most 16 rules')])
 
+    def test_rule_preparation_rejects_extra_duplicate_and_malformed_deferral_rows(self):
+        from do_math.canonical import canonical_json
+        from do_math.model_policy import assessment_basis
+        from support.observation_inputs import prepared_rule_conditions
+        from support.storage_records import task_with_reference_locators
+
+        task = task_with_reference_locators()
+        tasks = {task['id']: task}
+        action = {'observation_rule_targets': {task['id']: assessment_basis(task)}}
+        extensions = {'task_conditions': prepared_rule_conditions([task['id']])}
+        expected = {task['id']: extensions['task_conditions'][0]['observation_rules']}
+        before = canonical_json([action, extensions, tasks])
+        self.assertEqual(observations.validate_rule_preparation(action, extensions, tasks), expected)
+        for fault, reason in (
+                ('extra', 'rule preparation permits only task_id and observation_rules'),
+                ('duplicate', 'duplicate observation rule target: ' + task['id']),
+                ('deferral', 'rule deferral needs reason, distinct missing_inputs and next_owner')):
+            changed = deepcopy(extensions)
+            if fault == 'extra':
+                changed['task_conditions'][0]['task_title'] = task['title']
+            elif fault == 'duplicate':
+                changed['task_conditions'].append(deepcopy(changed['task_conditions'][0]))
+            else:
+                changed = {'observation_rule_deferrals': [{
+                    'task_id': task['id'], 'reason': '', 'missing_inputs': [], 'next_owner': 'unknown'}]}
+            with self.subTest(fault=fault), self.assertRaises(ValueError) as rejected:
+                observations.validate_rule_preparation(action, changed, tasks)
+            self.assertIs(type(rejected.exception), ValueError)
+            self.assertEqual(str(rejected.exception), reason)
+            self.assertEqual(canonical_json([action, extensions, tasks]), before)
+
 
 class ExecutionBindingTests(unittest.TestCase):
     def test_foreign_execution_is_not_silently_rebound(self):

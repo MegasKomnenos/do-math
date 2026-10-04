@@ -260,12 +260,21 @@ class QueueRecordTests(ProducerCase):
         action = runtime['queue'][0]
         action['model_selection'] = selection(instance['config'], action, {}, {}, instance=instance)
         head = self.repository.initialize(instance, runtime)
-        loaded = self.repository.load(head)[2]
+        _, published, loaded = self.repository.load(head)
+        self.assertEqual(published, {**instance, 'object_format': 'sha1'})
         self.assertEqual(loaded['queue'][0]['model_selection'], action['model_selection'])
         wrong = deepcopy(loaded)
         wrong['queue'][0]['model_selection']['profile_ref']['sha256'] = '0' * 64
         with self.assertRaisesRegex(ValueError, '^profile reference is absent or stale$'):
             self.repository.validate_candidate(instance, wrong)
+        wrong = deepcopy(loaded)
+        wrong['queue'][0]['model_selection']['model'] += '-different'
+        with self.assertRaises(ValueError) as rejected:
+            self.repository.save_with_state(head, instance, wrong)
+        self.assertIs(type(rejected.exception), ValueError)
+        self.assertEqual(str(rejected.exception), 'model selection differs from the pinned role/model profile')
+        self.assertEqual(self.repository.load(), (head, published, loaded))
+
 
 
 class ExecutionRecordTests(ProducerCase):
@@ -532,6 +541,23 @@ class ExecutionRecordTests(ProducerCase):
                                              transport=lambda *_: {'http_status': 503, 'body': b'uncertain'},
                                              runtime=runtime, clock=_entry.ports.clock, environment=_entry.environment)
         self.assertEqual(unknown['status'], 'unknown')
+
+        _, saved_instance, saved_runtime = self.repository.load(head)
+        for changes, reason in (
+                ({'request_sha256': '0' * 64}, 'external operation request/key differs from sealed bytes'),
+                ({'status': 'confirmed', 'succeeded': False}, 'confirmed external operation requires success evidence'),
+                ({'status': 'failed', 'effect_absent': False}, 'failed external operation requires effect-absence evidence'),
+                ({'status': 'unknown', 'succeeded': True}, 'unknown external effect has a definitive success value'),
+                ({'status': 'cancelled', 'transmitted': True}, 'cancelled external effect was not confirmed untransmitted'),
+                ({'handling': 'reconciled', 'reconciliation': {}}, 'reconciled handling lacks external effect evidence')):
+            with self.subTest(changes=changes):
+                damaged = deepcopy(saved_runtime)
+                damaged['external_operations'][operation['id']].update(changes)
+                with self.assertRaises(ValueError) as rejected:
+                    self.repository.save_with_state(head, saved_instance, damaged)
+                self.assertIs(type(rejected.exception), ValueError)
+                self.assertEqual(str(rejected.exception), reason)
+                self.assertEqual(self.repository.load(), (head, saved_instance, saved_runtime))
         proof = {'operation_id': operation['id'], 'request_sha256': operation['request_sha256'],
                  'idempotency_key': operation['idempotency_key'], 'evidence_ref': 'synthetic-remote-receipt',
                  'observed_at': '2026-09-20T00:00:00Z', 'fact': 'effect_absent'}
@@ -543,6 +569,15 @@ class ExecutionRecordTests(ProducerCase):
         persist(retry)
         self.assertEqual(self.repository.load(head)[2]['external_operations'][operation['id']]['previous_outcome'],
                          'failed')
+        _, saved_instance, saved_runtime = self.repository.load(head)
+        damaged = deepcopy(saved_runtime)
+        damaged['external_operations'][operation['id']]['retry_evidence']['request_sha256'] = '0' * 64
+        with self.assertRaises(ValueError) as rejected:
+            self.repository.save_with_state(head, saved_instance, damaged)
+        self.assertIs(type(rejected.exception), ValueError)
+        self.assertEqual(str(rejected.exception), 'external retry evidence differs from the operation')
+        self.assertEqual(self.repository.load(), (head, saved_instance, saved_runtime))
+
 
 
 class GovernanceRecordTests(ProducerCase):
@@ -575,12 +610,39 @@ class GovernanceRecordTests(ProducerCase):
         _, instance, runtime = self.repository.load(saved)
         self.assertEqual(runtime['academic_resolution_records'][0]['evidence_hashes'][path],
                          hashlib.sha256(raw).hexdigest())
+
+        damaged = deepcopy(runtime)
+        damaged['academic_resolution_records'][0]['sha256'] = '0' * 64
+        with self.assertRaises(ValueError) as rejected:
+            self.repository.save_with_state(saved, instance, damaged)
+        self.assertIs(type(rejected.exception), ValueError)
+        self.assertEqual(str(rejected.exception), 'academic resolution seal/evidence binding is invalid')
+        self.assertEqual(self.repository.load(), (saved, instance, runtime))
         broken = deepcopy(runtime)
         row = broken['academic_resolution_records'][0]
         row['evidence_hashes'][path] = '0' * 64
         row['sha256'] = exact_content_hash({k: v for k, v in row.items() if k != 'sha256'})
         with self.assertRaisesRegex(ValueError, 'artifact evidence'):
             self.repository.validate_candidate(instance, broken, saved)
+
+        # The actual resolution producer's cross-family edges are mandatory,
+        # independently of its well-formed hashes and preserved artifact bytes.
+        for field, missing in (('rejection_id', 'RJ-absent'), ('execution_id', 'EX-absent'),
+                               ('evidence_refs', 'KN-absent')):
+            with self.subTest(reference=field):
+                damaged = deepcopy(runtime)
+                record = damaged['academic_resolution_records'][0]
+                if field == 'evidence_refs':
+                    record[field] = [*record[field], missing]
+                    record['evidence_hashes'][missing] = hashlib.sha256(b'unknown record').hexdigest()
+                else:
+                    record[field] = missing
+                record['sha256'] = exact_content_hash({key: value for key, value in record.items() if key != 'sha256'})
+                with self.assertRaisesRegex(ValueError,
+                        '^academic_resolution_records references unknown record: ' + missing + '$'):
+                    self.repository.validate_candidate(instance, damaged, saved)
+                self.assertEqual(self.repository.load(saved)[2], runtime)
+                self.assertEqual(self.repository.read(path, saved), raw)
 
     def test_grant_question_kind_survives_storage(self):
         # The engine marks the user question of an external request that names no grant
@@ -835,6 +897,253 @@ class ProducerStorageContractTests(unittest.TestCase):
                                                               source_ref='fixture:submission', actor_ref='fixture:author', clock=_entry.ports.clock)
                 Draft202012Validator(registered).validate(state['knowledge'][kid])
                 self.assertEqual(state['knowledge'][kid]['uncertainty_assessment'], value)
+
+
+class SchemaIngressTests(ProducerCase):
+    def test_operational_disposition_variant_is_validated_at_storage(self):
+        """A public failure/review prefix creates the actual disposition; about 10 s cold."""
+        from support.cross_states import assert_event, failure_ready, queued
+        sim = failure_ready()
+        action = queued(sim, 'operational_review')
+        self.assertIsNotNone(action)
+        assert_event(sim, action, 'operation', 'continue')
+        published = deepcopy(sim.engine.store.load())
+        head, instance, runtime = published
+        self.assertTrue(runtime['operational_dispositions'])
+        identifier, record = next(iter(runtime['operational_dispositions'].items()))
+        self.assertEqual(record['disposition']['kind'], 'continue')
+        damaged = deepcopy(runtime)
+        damaged['operational_dispositions'][identifier]['disposition']['kind'] = 'unsupported-disposition'
+        before = deepcopy(damaged)
+        with self.assertRaisesRegex(ValueError, '^operational disposition kind is unsupported$'):
+            sim.engine.store.save_with_state(head, instance, damaged)
+        self.assertEqual(damaged, before)
+        self.assertEqual(sim.engine.store.load(), published)
+
+    def test_capability_and_import_seals_reject_damage_before_publication(self):
+        """The two records come from real public activation; about 7 s cold."""
+        from support.sim import Sim
+        sim = Sim.activated()
+        published = deepcopy(sim.engine.store.load())
+        head, instance, runtime = published
+        self.assertTrue(instance['capability_evidence'])
+        self.assertTrue(runtime['intent_imports'])
+        capability_id = next(iter(instance['capability_evidence']))
+        import_id = next(iter(runtime['intent_imports']))
+        damaged_i, damaged_r = deepcopy((instance, runtime))
+        capability = damaged_i['capability_evidence'].pop(capability_id)
+        capability['id'] = 'CE-' + '0' * 64
+        damaged_i['capability_evidence'][capability['id']] = capability
+        cases = [(damaged_i, damaged_r, 'capability evidence ID differs from its content')]
+        damaged_i, damaged_r = deepcopy((instance, runtime))
+        damaged_r['intent_imports'][import_id]['sha256'] = '0' * 64
+        cases.append((damaged_i, damaged_r, 'sealed intent import hash mismatch'))
+        for candidate_i, candidate_r, reason in cases:
+            with self.subTest(reason=reason):
+                before = deepcopy((candidate_i, candidate_r))
+                with self.assertRaises(ValueError) as caught:
+                    sim.engine.store.save_with_state(head, candidate_i, candidate_r)
+                self.assertIs(type(caught.exception), ValueError)
+                self.assertEqual(str(caught.exception), reason)
+                self.assertEqual((candidate_i, candidate_r), before)
+                self.assertEqual(sim.engine.store.load(), published)
+
+    def test_cold_lifecycle_validation_checks_original_bytes_and_current_projection(self):
+        from do_math.initialization import initialize_state
+        from do_math.record_schemas import validate_lifecycle
+        from support.entry import entry
+        port = entry().ports
+        instance, runtime = initialize_state(instance_id=INSTANCE_ID, goal='정확한 원문',
+            workspace=self.repository_path, config={}, source_input='정확한 원문', clock=port.clock, host=port.host)
+        head = self.repository.initialize(instance, runtime)
+        _, instance, runtime = self.repository.load(head)
+        self.assertIsNone(validate_lifecycle(instance, runtime))
+        self.assertTrue(self.repository.contract.validate(instance, runtime))
+        damaged = deepcopy(instance)
+        damaged['lifecycle']['immutable_input']['sha256'] = '0' * 64
+        before = deepcopy((damaged, runtime))
+        with self.assertRaisesRegex(ValueError, '^immutable input bytes or hash differs$'):
+            self.repository.contract.validate(damaged, runtime)
+        self.assertEqual((damaged, runtime), before)
+        cases = [
+            ({**instance, 'lifecycle': None}, runtime,
+             'current lifecycle contract: the lifecycle and the runtime status are required'),
+            (instance, {**runtime, 'status': None},
+             'current lifecycle contract: the lifecycle and the runtime status are required'),
+            ({**instance, 'lifecycle': {**instance['lifecycle'], 'permanently_closed': True}}, runtime,
+             'current lifecycle contract: a permanently closed instance cannot have a live projection'),
+            *[(instance, {**runtime, 'last_observed_utc': value},
+               'current lifecycle contract: the persisted UTC high-water is absent or invalid')
+              for value in (None, 'invalid+00:00', '2090-01-01T00:00:00+09:00')],
+        ]
+        for candidate_i, candidate_r, reason in cases:
+            with self.subTest(reason=reason):
+                before = deepcopy((candidate_i, candidate_r))
+                with self.assertRaises(ValueError) as caught:
+                    validate_lifecycle(candidate_i, candidate_r)
+                self.assertIs(type(caught.exception), ValueError)
+                self.assertEqual(str(caught.exception), reason)
+                self.assertEqual((candidate_i, candidate_r), before)
+
+    def test_registered_metadata_references_cover_adoption_profiles_events_and_trust(self):
+        """Public activation builds the four actual metadata families (about 7 s cold)."""
+        from support.sim import Sim
+        sim = Sim.activated()
+        request = sim.control('input', text='Retain the current natural-number domain and the pending input.')
+        sim.engine.process_controls()
+        self.assertEqual(sim.engine.control_result(request['request_id'])['effect'], 'applied')
+        head, instance, runtime = sim.engine.store.load()
+        lifecycle = instance['lifecycle']
+        check, adoption = lifecycle['intent_check'], lifecycle['adoption']
+        self.assertTrue(runtime['pending_events'])
+        self.assertTrue(runtime['trust_bindings'])
+        expected_lifecycle = [(lifecycle['input_id'], 'inputs'),
+            (check['interpretation_execution_id'], 'executions'),
+            (check['check_execution_id'], 'executions'),
+            (adoption['initial_profile_ref']['id'], 'execution_profiles'),
+            *[(identifier, 'grants') for identifier in adoption['initial_grant_ids']],
+            *[(identifier, 'grants') for identifier in adoption['research_grant_ids']]]
+        cases = (
+            ('research', 'lifecycle', lifecycle, expected_lifecycle),
+            ('research', 'role_profile_refs', instance['role_profile_refs'],
+             [(reference['id'], 'execution_profiles') for refs in instance['role_profile_refs'].values()
+              for reference in refs]),
+            ('runtime', 'pending_events', runtime['pending_events'],
+             [(identifier, 'events') for identifier in runtime['pending_events']]),
+            ('runtime', 'trust_bindings', runtime['trust_bindings'],
+             [(identifier, 'trust_environments') for identifier in runtime['trust_bindings']]),
+        )
+        for root, name, value, expected in cases:
+            with self.subTest(family=name):
+                self.assertTrue(expected)
+                self.assertEqual(list(sim.engine.store.contract.family(root, name).references(value)), expected)
+        self.assertEqual(sim.engine.store.load(), (head, instance, runtime))
+        self.assertEqual(sim.model.calls, [])
+
+    def test_profile_coordinates_are_rejected_before_publication(self):
+        from do_math.execution_profiles import profile_ref
+        instance, runtime = execution_state()
+        head = self.repository.initialize(instance, runtime)
+        _, instance, runtime = self.repository.load(head)
+        foreign = next(p for p in instance['execution_profiles'].values()
+                       if p['role'] != runtime['executions']['EX-1']['role'])
+        constraint_id = next(p['ai']['capacity_refs'][0] for p in instance['execution_profiles'].values()
+                             if p.get('ai', {}).get('capacity_refs'))
+        baseline = deepcopy((instance, runtime))
+        for fault, reason in (
+                ('actor', 'execution/profile actor or role mismatch'),
+                ('selection', 'selected profile belongs to a different role'),
+                ('host_pointer', 'adopted host capacity reference names another constraint kind'),
+                ('capacity_reference', 'profile references unknown capacity constraint'),
+                ('concurrency', 'concurrency constraint lacks its model or slot limit')):
+            with self.subTest(fault=fault):
+                changed, running = deepcopy(baseline)
+                if fault == 'actor':
+                    running['executions']['EX-1']['actor_kind'] = 'ai'
+                elif fault == 'selection':
+                    changed['role_profile_refs']['formal_check'] = [profile_ref(foreign)]
+                elif fault == 'host_pointer':
+                    changed['host_capacity_ref'] = constraint_id
+                elif fault == 'capacity_reference':
+                    del changed['capacity_constraints'][constraint_id]
+                else:
+                    del changed['capacity_constraints'][constraint_id]['accounting_unit']
+                with self.assertRaises(ValueError) as rejected:
+                    self.repository.save_with_state(head, changed, running)
+                self.assertIs(type(rejected.exception), ValueError)
+                self.assertEqual(str(rejected.exception), reason)
+                self.assertEqual(self.repository.load(), (head, *baseline))
+
+    def test_kind_semantics_reject_corruption_of_registered_candidates(self):
+        instance, runtime = current_state()
+        instance, token = knowledge_io.register_kind_definition(instance, {
+            'family': 'relation', 'token': 'derived_observation',
+            'meaning': 'An explicitly proposed mathematical relation',
+            'constraints': {'mathematical_claim': True}},
+            source_ref='input', actor_ref='user', clock=self.clock)
+        definition = knowledge_io.lookup_definition(instance, 'relation', token)
+        identifier = definition['id']
+        self.assertEqual(definition['constraints'], {
+            'mathematical_claim': True, 'requires_formal_results': True,
+            'requires_assessments': True})
+        head = self.repository.initialize(instance, runtime)
+        _, instance, runtime = self.repository.load(head)
+        builtin_id = next(key for key, row in instance['kind_definitions'].items() if row.get('builtin'))
+        for fault, reason in (
+                ('builtin', 'builtin kind differs from installed definition'),
+                ('duplicate', 'multiple current definitions of one kind'),
+                ('checked', 'checked kind lacks its check reference'),
+                ('active', 'active kind lacks approval reference'),
+                ('formal', 'mathematical relation kind cannot waive formal evidence'),
+                ('assessment', 'mathematical relation kind cannot waive formal evidence')):
+            with self.subTest(fault=fault):
+                changed = deepcopy(instance)
+                row = changed['kind_definitions'][identifier]
+                if fault == 'builtin':
+                    changed['kind_definitions'][builtin_id]['meaning'] += ' corrupted'
+                elif fault == 'duplicate':
+                    other = deepcopy(row)
+                    other['id'] = 'KD-duplicate'
+                    changed['kind_definitions'][other['id']] = other
+                elif fault == 'checked':
+                    row['status'] = 'checked'
+                elif fault == 'active':
+                    # Deliberately malformed authority: this is a rejection input.
+                    row.update(status='active', check_ref='untrusted-check')
+                else:
+                    row['constraints']['requires_formal_results' if fault == 'formal'
+                                       else 'requires_assessments'] = False
+                with self.assertRaises(ValueError) as rejected:
+                    self.repository.save_with_state(head, changed, runtime)
+                self.assertIs(type(rejected.exception), ValueError)
+                self.assertEqual(str(rejected.exception), reason)
+                self.assertEqual(self.repository.load(), (head, instance, runtime))
+
+    def test_response_storage_requires_its_actual_obligation_and_execution(self):
+        from do_math.configuration import DEFAULT_CONFIG
+        from do_math.activities import assign_execution
+        from do_math.execution_lifecycle import create_execution, transition_execution
+        from do_math.execution_profiles import resolve_profile
+        from do_math.observations import ObservationTracker, tracker_config
+        from support.observation_inputs import acknowledge, observation_rule, observe, self_check_response, write_checkpoint
+
+        instance, runtime = execution_state('research_work', config={**DEFAULT_CONFIG,
+            'tool_review_window_seconds': 60, 'self_check_response_window_seconds': 5})
+        execution = runtime['executions']['EX-1']
+        transition_execution(execution, 'starting', at=self.clock.now())
+        transition_execution(execution, 'running', at=self.clock.now())
+        profile = resolve_profile(instance['execution_profiles'], execution['execution_profile_ref'])
+        tracker = ObservationTracker(execution['id'], self.repository_path,
+            tracker_config(profile, initial_self_check_rules=[observation_rule(
+                required_evidence=['workspace:checkpoint.json'])]), time_port=self.clock)
+        write_checkpoint(self.repository_path, counters={'attempts': 2})
+        obligation = next(row for row in observe(tracker, {'type': 'tick'}) if row['kind'] == 'self_check_due')
+        acknowledge(tracker, obligation['id'])
+        response = tracker.record_self_check_response(self_check_response(obligation),
+                                                      available_evidence_refs={'workspace:checkpoint.json'})
+        self.assertEqual(response['kind'], 'self_check_received')
+        runtime['self_check_obligations'] = tracker.stored_obligations()
+        runtime['self_check_responses'] = {response['id']: response}
+        other = create_execution(execution_id='EX-other', owner_activity_id='AT-1',
+            actor_kind=profile['actor_kind'], input_manifest={},
+            profile_ref=execution['execution_profile_ref'], created_at=self.clock.now())
+        other['role'] = profile['role']
+        assign_execution(runtime, 'AT-1', other)
+        head = self.repository.initialize(instance, runtime)
+        _, instance, runtime = self.repository.load(head)
+        self.assertEqual(runtime['self_check_responses'][response['id']], response)
+        self.assertEqual(runtime['self_check_obligations'][obligation['id']]['response_ref'], response['id'])
+        for field, value, reason in (
+                ('obligation_id', 'SC-absent', 'self-check response references unknown obligation'),
+                ('execution_id', other['id'], 'self-check response execution differs from obligation')):
+            with self.subTest(field=field):
+                changed = deepcopy(runtime)
+                changed['self_check_responses'][response['id']][field] = value
+                with self.assertRaises(ValueError) as rejected:
+                    self.repository.save_with_state(head, instance, changed)
+                self.assertIs(type(rejected.exception), ValueError)
+                self.assertEqual(str(rejected.exception), reason)
+                self.assertEqual(self.repository.load(), (head, instance, runtime))
 
 
 if __name__ == '__main__':

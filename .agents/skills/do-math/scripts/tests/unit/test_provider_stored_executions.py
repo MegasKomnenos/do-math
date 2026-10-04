@@ -66,6 +66,14 @@ class StoredExecutionTests(unittest.TestCase):
         _, self.instance, self.runtime = self.repo.load(self.head)
         self.execution = self.runtime["executions"]["EX-audit"]
 
+    def test_unadmitted_attempt_has_no_capacity_to_hold_or_return(self):
+        from support.entry import entry
+        slots = SessionSlots(self.runtime, self.instance, jobs=ProviderJobs(clock=self.clock),
+                             clock=self.clock, host_id=entry().host_id)
+        before = deepcopy((self.instance, self.runtime))
+        self.assertIs(lifecycle.release_or_hold(self.execution, slots, at=TIME), True)
+        self.assertEqual((self.instance, self.runtime), before)
+
     def running(self):
         transition_execution(self.execution, "starting", at=TIME)
         transition_execution(self.execution, "running", at=TIME)
@@ -186,6 +194,42 @@ class StoredExecutionTests(unittest.TestCase):
         lifecycle.end_preparation(paused, at=TIME, stage="role_input", reason="test interruption", cancelled=True)
         self.assertEqual((paused["outcome"], paused["input_preparation"]["stage"], paused["input_manifest"]),
                          ("cancelled", "role_input", []))
+
+    def test_unconfirmed_job_keeps_the_original_error_and_reservations_until_termination(self):
+        from support.entry import entry
+        host_id = entry().host_id
+        jobs = ProviderJobs(clock=self.clock)
+        profile = next(row for row in self.instance['execution_profiles'].values()
+                       if row['role'] == 'research_work' and row['actor_kind'] == 'ai')
+        self.execution.update(role='research_work', execution_profile_ref=profile_ref(profile))
+        slots = SessionSlots(self.runtime, self.instance, jobs=jobs, clock=self.clock, host_id=host_id)
+        transition_execution(self.execution, 'starting', at=TIME)
+        self.assertTrue(slots.acquire('EX-audit', profile=profile, execution=self.execution))
+        self.assertTrue(self.execution['capacity']['reservation_ids'])
+        name = self.execution['launch_ticket']['job_name']
+        job = self.enterContext(jobs.launch([sys.executable, 'codex_worker.py', 'request.json'], name=name))
+        slots.started('EX-audit', {'job_name': name}, at=TIME)
+        self.execution['error'] = 'Original worker diagnosis before barrier reconciliation.'
+        before_capacity = deepcopy(self.execution['capacity'])
+        before_reservations = deepcopy(self.runtime['reservations'])
+        self.assertIs(lifecycle.release_or_hold(self.execution, slots, at=TIME), False)
+        self.assertEqual(self.execution['status'], 'stopping')
+        self.assertEqual(self.execution['error'], 'Original worker diagnosis before barrier reconciliation.')
+        self.assertEqual(self.execution['capacity'], before_capacity)
+        self.assertEqual(self.runtime['reservations'], before_reservations)
+        self.reload()
+        self.assertEqual(self.execution['error'], 'Original worker diagnosis before barrier reconciliation.')
+        job.terminate()
+        restored_slots = SessionSlots(self.runtime, self.instance, jobs=jobs, clock=self.clock, host_id=host_id)
+        self.assertIs(lifecycle.release_or_hold(self.execution, restored_slots, at=TIME), True)
+        self.assertEqual(self.execution['status'], 'stopping')
+        self.assertEqual(self.execution['capacity']['local_termination'], 'confirmed')
+        self.assertEqual(self.execution['error'], 'Original worker diagnosis before barrier reconciliation.')
+        self.assertEqual(set(self.runtime['reservations']), set(before_reservations))
+        for identifier, original in before_reservations.items():
+            self.assertEqual(self.runtime['reservations'][identifier]['returned'], original['reserved'])
+        self.reload()
+        self.assertEqual(self.execution['capacity']['local_termination'], 'confirmed')
 
 
 if __name__ == "__main__":

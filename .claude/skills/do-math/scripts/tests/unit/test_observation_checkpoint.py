@@ -173,6 +173,26 @@ class CheckpointReadTests(CheckpointCase):
         self.assertEqual(preserved["artifact_ref"], "ART-1")
         canonical_json(preserved)
 
+    def test_oversized_live_checkpoint_is_refused_before_replacing_preserved_evidence(self):
+        from support.entry import entry
+        clock = entry().ports.clock
+        self.write()
+        previous, artifacts = observations.preserve_checkpoint(self.ws,
+            artifact_prefix='runtime/artifacts/checkpoint-before', max_bytes=100000, clock=clock)
+        raw = (self.ws / 'checkpoint.json').read_bytes()
+        oversized = raw + b' ' * (observations.CHECKPOINT_MAX_BYTES + 1 - len(raw))
+        (self.ws / 'checkpoint.json').write_bytes(oversized)
+        self.assertEqual(self.read(), {
+            'status': 'invalid', 'error': 'ValueError: checkpoint exceeds the 4 MiB record limit'})
+        retained, added = observations.preserve_checkpoint(self.ws, previous=previous,
+            artifact_prefix='runtime/artifacts/checkpoint-after', max_bytes=len(oversized), clock=clock)
+        self.assertEqual(retained['sha256'], previous['sha256'])
+        self.assertEqual(retained['artifact_ref'], previous['artifact_ref'])
+        self.assertEqual(artifacts[previous['artifact_ref']], raw)
+        self.assertEqual(added, {})
+        self.assertEqual(retained['final_observation']['checkpoint_status'], 'invalid')
+        self.assertEqual((self.ws / 'checkpoint.json').read_bytes(), oversized)
+
 
 class CheckpointReminderTests(CheckpointCase):
     def test_reminder_is_once_and_does_not_replace_existing_feedback(self):

@@ -82,5 +82,62 @@ class FingerprintTests(unittest.TestCase):
         self.assertFalse(artifact_verified(first, path, digest, len(raw) + 1))
 
 
+    def test_extended_windows_path_publication_keeps_exact_versions_and_no_temporary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / '정본.bin'
+            raw = b'\x00\xff\r\n' + '원문'.encode('utf-8')
+            extended = file_io._windows_path(path)
+            self.assertEqual(file_io._windows_path(extended), extended)
+            file_io.write_bytes_atomic(extended, b'old', fsync=True)
+            with file_io.shared_reader(extended) as previous:
+                file_io.write_bytes_atomic(extended, raw, fsync=True)
+                self.assertEqual(previous.read(), b'old')
+                actual = file_io.read_bytes_shared(extended)
+                self.assertIs(type(actual), bytes)
+                self.assertEqual(actual, raw)
+            self.assertEqual(path.read_bytes(), raw)
+            self.assertEqual(list(path.parent.glob(path.name + '.*.tmp')), [])
+
+    def test_physical_boundary_recovers_after_root_disappears_between_stat_and_open(self):
+        from support.engine_control import on_audit
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory).resolve()
+            root, displaced = base / 'boundary', base / 'during-open'
+            root.mkdir()
+            self.assertEqual((root.resolve().parent, displaced.resolve().parent), (base, base))
+            path = root / 'evidence.bin'
+            path.write_bytes(b'keep\x00\xff')
+            boundary = file_io.PhysicalBoundary(root)
+            original_volume = boundary.volume
+            observed = []
+            def disappear(arguments):
+                # The stat check already finished; this lookup precedes the
+                # real CreateFileW call. No filesystem/product call is replaced.
+                if arguments[1] == 'CloseHandle' and not observed:
+                    root.rename(displaced)
+                    observed.append(arguments[1])
+            try:
+                with on_audit('ctypes.dlsym', disappear):
+                    with self.assertRaises(FileNotFoundError) as caught:
+                        boundary.check()
+                self.assertIs(type(caught.exception), FileNotFoundError)
+                self.assertEqual(caught.exception.winerror, 2)
+                self.assertEqual(caught.exception.errno, errno.ENOENT)
+                self.assertEqual(observed, ['CloseHandle'])
+                self.assertEqual(boundary.volume, original_volume)
+            finally:
+                if displaced.exists():
+                    displaced.rename(root)
+            self.assertIsNone(boundary.check())
+            self.assertFalse(displaced.exists())
+            self.assertEqual(boundary.volume, original_volume)
+            with boundary.open(path, 'rb') as stream:
+                self.assertEqual(stream.read(), b'keep\x00\xff')
+            moved = root / 'renamed.bin'
+            file_io.atomic_replace(path, moved)
+            self.assertFalse(path.exists())
+            self.assertEqual(moved.read_bytes(), b'keep\x00\xff')
+
+
 if __name__ == '__main__':
     unittest.main()

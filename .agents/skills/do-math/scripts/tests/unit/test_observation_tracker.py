@@ -215,6 +215,31 @@ class SelfCheckObligationTests(TrackerCase):
         with self.assertRaisesRegex(ValueError, "bookkeeping"):
             self.t.stored_obligations()
 
+    def test_unissued_delivery_and_malformed_feedback_do_not_consume_the_obligation(self):
+        obligation = self.due()
+        before = deepcopy(self.t.stored_obligations())
+        consumed = deepcopy(self.t.consumed_rules)
+        with self.assertRaises(ValueError) as rejected:
+            self.t.record_delivery(obligation['id'], source_offset=0)
+        self.assertIs(type(rejected.exception), ValueError)
+        self.assertEqual(str(rejected.exception), 'self-check delivery requires an issued request')
+        for malformed, reason in (
+                ([], 'self-check feedback requires a self_check_due obligation'),
+                ({**obligation, 'kind': 'other'}, 'self-check feedback requires a self_check_due obligation'),
+                ({**obligation, 'due': []}, 'malformed self-check obligation'),
+                ({**obligation, 'rule_revision': '0'}, 'malformed self-check obligation')):
+            with self.subTest(obligation=malformed), self.assertRaises(ValueError) as rejected:
+                self_check_feedback(malformed)
+            self.assertIs(type(rejected.exception), ValueError)
+            self.assertEqual(str(rejected.exception), reason)
+            self.assertEqual(self.t.stored_obligations(), before)
+            self.assertEqual(self.t.consumed_rules, consumed)
+        request = self.t.issue_self_check(obligation['id'])
+        self.t.record_delivery(obligation['id'], source_offset=0)
+        self.assertEqual(request, observations.self_check_request(self.t.obligations[obligation['id']]))
+        self.assertIs(type(self.t.obligations[obligation['id']]['delivered_source_offset']), int)
+        self.assertEqual(self.t.obligations[obligation['id']]['delivered_source_offset'], 0)
+
 
 class RuleProposalTests(TrackerCase):
     def test_a_rules_file_in_the_workspace_is_not_a_replacement_path(self):
@@ -263,6 +288,31 @@ class RuleProposalTests(TrackerCase):
         result = self.t.record_self_check_response(response, available_evidence_refs={"EV-1"})
         self.assertEqual(result["kind"], "self_check_received")
         self.assertEqual(result["rule_update"]["kind"], "observation_rules_rejected")
+
+    def test_identical_rule_proposal_preserves_revision_and_consumed_boundary(self):
+        obligation = self.due()
+        before = deepcopy(self.t.consumed_rules)
+        digest = self.t.rules_digest
+        rules = deepcopy(self.t.rules)
+        response = self_check_response(obligation)
+        response['rule_proposal'] = {'current_revision': self.t.rule_revision,
+                                    'reason': 'Keep the current rule', 'rules': rules}
+        result = self.t.record_self_check_response(response, available_evidence_refs={'EV-1'})
+        self.assertEqual(result['kind'], 'self_check_received')
+        update = result['rule_update']
+        self.assertEqual(update['kind'], 'observation_rules_unchanged')
+        self.assertEqual(update['rules'], rules)
+        self.assertEqual((update['previous_rules_sha256'], update['active_rules_sha256']), (digest, digest))
+        self.assertIs(type(update['active_revision']), int)
+        self.assertEqual(update['active_revision'], obligation['rule_revision'])
+        self.assertEqual(self.t.consumed_rules, before)
+        self.assertEqual(before, {row['boundary_key']: row['boundary'] for row in obligation['due']})
+        rows = observe(self.t, {'type': 'tick'})
+        self.assertNotIn('self_check_due', kinds(rows))
+        self.write(counters={'attempts': 4})
+        next_due = [row for row in observe(self.t, {'type': 'tick'}) if row['kind'] == 'self_check_due']
+        self.assertEqual(len(next_due), 1)
+        self.assertEqual([(row['first_boundary'], row['boundary']) for row in next_due[0]['due']], [(4, 4)])
 
 
 class CheckpointSignalTests(TrackerCase):
@@ -319,6 +369,34 @@ class CheckpointSignalTests(TrackerCase):
         self.assertTrue(any(r["kind"] == "checkpoint_reminder_due" for r in observe(tracker, {"type": "tick"})))
         self.assertFalse(any(r["kind"] == "checkpoint_reminder_due" for r in observe(tracker, {"type": "tick"})))
         self.assertFalse(any(r["kind"] == "checkpoint_reminder_due" for r in observe(self.t, {"type": "tick"})))
+
+    def test_counted_checkpoint_cannot_be_reclassified_as_self_check_evidence(self):
+        rules = observations.bind_task_rules([
+            observation_rule('checkpoint_count_gte', 'checkpoint', '$execution', 1)], 'E')
+        tracker = ObservationTracker('E', self.ws, {**self.config, 'observation_rules': rules},
+                                     time_port=scripted_clock(self.clock))
+        write_checkpoint(self.ws, counters={'attempts': 1})
+        raw = (self.ws / 'checkpoint.json').read_bytes()
+        import hashlib
+        digest = hashlib.sha256(raw).hexdigest()
+        rows = observe(tracker, {'type': 'tick'})
+        due = [row for row in rows if row['kind'] == 'self_check_due']
+        self.assertEqual(len(due), 1)
+        self.assertEqual([(row['operator'], row['value'], row['boundary']) for row in due[0]['due']],
+                         [('checkpoint_count_gte', 1, 1)])
+        consumed = deepcopy(tracker.consumed_rules)
+        before = tracker.stored_obligations()
+        with self.assertRaises(ValueError) as rejected:
+            tracker.register_self_check_checkpoint(digest)
+        self.assertIs(type(rejected.exception), ValueError)
+        self.assertEqual(str(rejected.exception),
+                         'checkpoint already counted; response lineage must precede file polling')
+        self.assertEqual(tracker.self_check_checkpoints, set())
+        self.assertEqual(tracker.consumed_rules, consumed)
+        self.assertEqual(tracker.stored_obligations(), before)
+        self.assertNotIn('self_check_due', kinds(observe(tracker, {'type': 'tick'})))
+        self.assertEqual(tracker.checkpoint_count, 1)
+        self.assertEqual((self.ws / 'checkpoint.json').read_bytes(), raw)
 
 
 class DeadlineHoldTests(TrackerCase):
@@ -474,6 +552,19 @@ class ExecutionTrackerTests(unittest.TestCase):
         self.assertEqual(unavailable["rule_ids"], ["R-1"])
         self.assertEqual(unavailable["followup"]["kind"], "operational_review_due")
         self.assertFalse(any(r["kind"] == "self_check_due" for r in rows))
+
+    def test_unavailable_text_rule_ids_publish_and_reload_without_record_id_restrictions(self):
+        from support.state_builders import current_state
+        from support.storage_records import record_store
+        ids = ['progress check', '규칙', 'r:1', ' \t']
+        tracker = self.tracker(observation_rules=[observation_rule(id=value) for value in ids])
+        self.clock.value = 100
+        rows = observe(tracker, {'type': 'tick'})
+        unavailable = next(row for row in rows if row['kind'] == 'observation_unavailable')
+        self.assertEqual(unavailable['rule_ids'], ids)
+        repo = record_store(self.directory / 'published')
+        head = repo.initialize(*current_state(runtime={'observations': {'EX-1': unavailable}}))
+        self.assertEqual(repo.load(head)[2]['observations'], {'EX-1': unavailable})
 
     def test_maximum_interval_keeps_distinct_ids_for_every_due_rule(self):
         from support.entry import entry
