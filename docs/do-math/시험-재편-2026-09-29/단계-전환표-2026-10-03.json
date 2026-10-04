@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B90~B103에서 직접 _enqueue 원천의 주요 실제 호출·수락·비반복과 대조 조건을 검증했다. 다음은 직접 queue.append 생산자를 포함하는 사건 전건×판단 대상 유무 표와 현재 시험의 대응 확정이다. planning.schedule_reconsideration의 고갈/평가 오류/대기 변형, knowledge_io.import_candidate의 비형식 계획, 공개 직접 요청·일반 pending_events 배정도 포함해야 하며 단순 _enqueue 호출 위치 수를 전건으로 삼지 않는다."
+        "remaining": "B104에 literal _enqueue23·동적4·직접 queue 쓰기24·lifecycle 사건28의 현재 소스/지문과 재개·신규 분류를 기록했다. 비형식 가져오기·교체의 실제 계획1/형식 가져오기0을 검증했다. governance 변경·영향 전파·반복 결과·미완료 의무 후속·재고의 나머지 조건·일반 사건/공개 요청을 기존 실제 검사에 대응하고 빈 조합을 해소해야 한다. 위치 수를 의미 사건 전건으로 간주하지 않는다."
       },
       {
         "id": "12-A",
@@ -13089,11 +13089,11 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B102 f5dc3c49; B103 감사/통찰/형식 계속 실행 연결과 관련63개 통과",
-      "active": "B103 확정 후 11-B의 사건 전건×판단 대상 유무 표를 실제 생산자·기존 검사에 대응",
-      "exit": "직접 큐 생산자와 일반 사건 배정을 포함한 유한 모집단 및 미검증 조합의 해소",
+      "last_closed": "B103 2eb2c94f; B104 직접 큐 원천 분류와 가져오기/교체 관련49개 통과",
+      "active": "B104의 남은 직접 판단 원천 여섯 가족을 기존 실제 검사와 대응하고 빈 조합 해소",
+      "exit": "소스 위치 목록을 의미 사건×판단 대상 유무 표로 닫고 호출0/1과 수락·중복 방지 근거 확인",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
-      "work_method": "개별 흐름 추가를 먼저 늘리지 않는다. 현재 코드의 생산자와 기존 검사 원문을 대응해 실제 빈 조합만 보강한다.",
+      "work_method": "B104의 소스 지문·원천 목록을 재사용한다. 기존 단위/수신/flow를 먼저 대응하고 실제 빈 조합만 추가한다.",
       "running_test": null,
       "source_tree_frozen": false,
       "goal_complete": false
@@ -18578,6 +18578,661 @@
             "flows.test_knowledge_formal_lineage.FormalAttemptLineageTests.test_changed_trust_environment_replans_instead_of_resuming_the_old_formal_input"
           ],
           "observed": "입력 동일 시 정상 형식 계속 실행·계획0; 같은 도구 명령의 새 신뢰 환경 공개 등록/전환 후에는 추가 형식 실행0·기존 시도 완전 보존·지식과 이전 실행 근거를 가진 계획1 수락·중복 없음"
+        }
+      ],
+      "whole_requirement_closed": false
+    },
+    "direct_queue_trigger_population": {
+      "id": "B104",
+      "scope": "직접 큐 생산자·재개·일반 사건 원천의 현재 소스 목록과 비형식 가져오기/교체의 실제 계획 대조",
+      "state": "소스 모집단 분류 및 가져오기/교체 관련 검증 완료; 전건 상태 조합 대응 진행",
+      "memory_node": "M-0521",
+      "source_head": "2eb2c94f4bd67c80ddcaf4a8d37428d35b6ba337",
+      "source_hashes": {
+        "academic_engine.py": "3ac98306ed425ec1d832767981f761c328ce9b4b6ffbd0c0a067d91141701981",
+        "activities.py": "e3224b8c9ea9d09e93a8d9ae91975c88788f310c5507ede5345089d148f15328",
+        "call_engine.py": "32e3933fe006a8cd04ecff52a936ee4e7d315aeed591bb11fdadcdf7951e8898",
+        "core_engine.py": "6b65bdb6e37e446d3e05c0bb6b566e1665e20e5f6230d11c943722ff5babd92b",
+        "decision_engine.py": "5d0d5b2cdcbaf92af075a59b24cf4e1aa4217274d363324795466067c2676e62",
+        "external_engine.py": "3c182a9e07cdad33a6877de465b34ce90152004a12d5507cb4adf24fa52785e6",
+        "formal_engine.py": "5f95f88bc9aeaf83486fd5975e46dd7ad88d35b15d8036a87c8f7cdb0fece27f",
+        "governance.py": "403ff0580e0921b25e4765540a586789d5656c6fd283ce3a25344840e9de3595",
+        "governance_engine.py": "b0e32b634a1499744c840300173266a11352897863c6d7a2dcd0257863e89ceb",
+        "knowledge.py": "87e86bb850c996535326580c7581736e2cb3ca8cc774fa63bdb2b2de7ea13418",
+        "knowledge_engine.py": "81b63d1852d4d9546da52149a8b44e51789a4d83f8a3fbc3f8f44220128bd616",
+        "knowledge_io.py": "51ce883dc235555f51a77409480eb90266e9cd051229f0b70f121e4d11debe0b",
+        "lifecycle_engine.py": "8cdc7ca0707dfdb9819d124c25b0bb10ea993445ef98337abae42f4ec95b9ec1",
+        "planning.py": "9aa124aedff252fdf338af34d81eec9fb2ab86f198d47ac1fe70d7a2d9dc2df8",
+        "planning_engine.py": "27971d062e6103588a8232d64f4006cee4021d16e7111163c4f2523c6ce68282",
+        "provider_engine.py": "417c730909bccdc7ed5ac5bd81eded90fd1d1f6050a318cbd5f03a25bfe182d7",
+        "repair_execution.py": "bacf9045775aa763ed9402bfb961da5623dd1433f6b8cc13e7e8a59ec483d712",
+        "review_engine.py": "5d5ec41bca37729bd0970faf29a6cf99adb8424e8612714ef93364b889e54f43",
+        "revision_engine.py": "3b8a6aed417ba003f5e540adee8bf5084706b0735f45f0737af78d7a680a8bde",
+        "revisions.py": "a9a23b92a1f1244c1f02e995456d180e7b624913aa726bb6fa92b885cb705882",
+        "task_scope.py": "f73eba27e250f64d244febd6380afe61eaddfc505ed1b291efd9a1befe099f9f"
+      },
+      "inventory": {
+        "literal_enqueue": [
+          {
+            "file": "academic_engine.py",
+            "function": "_ensure_academic_followup",
+            "line": 122,
+            "call": "self._enqueue('research_plan', reason='Complete the explicit postsolution academic requirements')"
+          },
+          {
+            "file": "academic_engine.py",
+            "function": "_academic_control",
+            "line": 135,
+            "call": "self._enqueue('research_plan', reason='Examine the external rejection against the preserved solution evidence', rejection_id=entry['id'])"
+          },
+          {
+            "file": "call_engine.py",
+            "function": "_prepare_call",
+            "line": 77,
+            "call": "self._enqueue('research_plan', reason='Goal audit inputs changed before the complete independent group finished')"
+          },
+          {
+            "file": "call_engine.py",
+            "function": "_prepare_call",
+            "line": 252,
+            "call": "self._enqueue('research_plan', reason='Select an already authorized profile for the preserved input overflow', input_overflow=deepcopy(detail), overflow_activity_id=activity_id)"
+          },
+          {
+            "file": "core_engine.py",
+            "function": "_schedule_operational_reviews",
+            "line": 1141,
+            "call": "self._enqueue('operational_review', identifier, live=True, reason=next_review['reason'], observation={'kind': 'scheduled_review_due', 'disposition_id': request['disposition_id']}, observation_refs=[request['disposition_id']])"
+          },
+          {
+            "file": "core_engine.py",
+            "function": "_publish_control_request",
+            "line": 1236,
+            "call": "self._enqueue('operational_review', execution['id'], live=True, observation=deepcopy(record), obligation_ids=[response['obligation_id']], observation_refs=[record['id']])"
+          },
+          {
+            "file": "core_engine.py",
+            "function": "_observe_running",
+            "line": 2734,
+            "call": "self._enqueue('operational_review', execution_id, live=True, observation=observation, obligation_ids=observed.get('obligation_ids', [observed['obligation_id']] if observed.get('obligation_id') else []), observation_refs=[record['id']])"
+          },
+          {
+            "file": "core_engine.py",
+            "function": "_apply_extensions",
+            "line": 3078,
+            "call": "self._enqueue('research_plan', reason='Incidental research knowledge is now available', receipt_refs=[execution_id], evidence_refs=imported_insights)"
+          },
+          {
+            "file": "core_engine.py",
+            "function": "_apply",
+            "line": 3237,
+            "call": "self._enqueue('research_plan')"
+          },
+          {
+            "file": "core_engine.py",
+            "function": "_apply",
+            "line": 3280,
+            "call": "self._enqueue('research_plan', reason='Assess accepted research report and knowledge', receipt_refs=[execution_id], evidence_refs=imported)"
+          },
+          {
+            "file": "decision_engine.py",
+            "function": "_refresh_changed_decision",
+            "line": 212,
+            "call": "self._enqueue('operational_review', execution_id, reason='Resolve repeated decision premise conflicts')"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_formal_steps",
+            "line": 376,
+            "call": "self._enqueue('research_plan', reason='Formal continuation inputs changed; reassess the preserved result', evidence_refs=[kid, predecessor['id']])"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_formal_steps",
+            "line": 467,
+            "call": "self._enqueue('research_plan', reason='Assess preserved formal verification result', formal_target=kid)"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_finish_trust_transition",
+            "line": 529,
+            "call": "self._enqueue('research_plan', reason='Trust transition failed; the previous environment remains in force', transition_id=transition_id, event_refs=[event['id']])"
+          },
+          {
+            "file": "knowledge_engine.py",
+            "function": "_invalidate_goal_currentness",
+            "line": 29,
+            "call": "self._enqueue('research_plan', reason='Previously used goal evidence is no longer current')"
+          },
+          {
+            "file": "knowledge_engine.py",
+            "function": "_knowledge_control",
+            "line": 60,
+            "call": "self._enqueue('research_plan', reason=reason, knowledge_id=knowledge_id, source_ref=source_ref)"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_refresh_readiness",
+            "line": 571,
+            "call": "self._enqueue('research_plan', reason='Assessment evidence changed; reassess existing results: ' + ', '.join(sorted(reassess)))"
+          },
+          {
+            "file": "repair_execution.py",
+            "function": "route_failed_action",
+            "line": 150,
+            "call": "self._enqueue('operational_review', execution_id, reason=reason)"
+          },
+          {
+            "file": "review_engine.py",
+            "function": "_publish_assessment_reassessment",
+            "line": 177,
+            "call": "self._enqueue('research_plan', reason='Consume original judgment reassessment and downstream effects', identity_review=result)"
+          },
+          {
+            "file": "review_engine.py",
+            "function": "_settle_review_resource_dispositions",
+            "line": 354,
+            "call": "self._enqueue('research_plan', reason='Review resources cannot complete the fixed proposal', evidence_refs=[cid, cycle['knowledge_id']])"
+          },
+          {
+            "file": "review_engine.py",
+            "function": "_publish_identity_review_result",
+            "line": 1024,
+            "call": "self._enqueue('research_plan', reason=reason, identity_review=followup, evidence_refs=[updated['id'], item['id']])"
+          },
+          {
+            "file": "revision_engine.py",
+            "function": "_selected_action_current",
+            "line": 82,
+            "call": "self._enqueue('research_plan', reason='A selected contract or its approval changed before dispatch')"
+          },
+          {
+            "file": "revision_engine.py",
+            "function": "_reconcile_revision_delegations",
+            "line": 130,
+            "call": "self._enqueue('research_plan', reason='A delegated task ended or changed while its revision obligation remains: ' + parent_id, revision_followup=detached)"
+          }
+        ],
+        "dynamic_enqueue": [
+          {
+            "file": "core_engine.py",
+            "function": "_apply_inbox",
+            "line": 906,
+            "call": "self._enqueue(requested.pop('role'), requested.pop('target', None), **requested)"
+          },
+          {
+            "file": "governance_engine.py",
+            "function": "_ensure_goal_audit_requests",
+            "line": 356,
+            "call": "self._enqueue(**scope, id=identifier, requested_by=request_execution_id, reason='Complete the unsealed slot of the requested goal audit')"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_activate_initialization",
+            "line": 209,
+            "call": "self._enqueue(initial_role, reason='initialization activation', event_refs=list(dict.fromkeys(self.runtime['pending_events'])))"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_refresh_readiness",
+            "line": 688,
+            "call": "self._enqueue(role, id=self.ports.clock.new_id('AC'), reason='Preserved research events require reconsideration', opened_at=now.isoformat(), event_refs=selected)"
+          }
+        ],
+        "queue_writes": [
+          {
+            "file": "activities.py",
+            "function": "continue_activity",
+            "line": 180,
+            "call": "runtime.setdefault('queue', []).append(action)",
+            "classification": "existing_request_resume_or_refresh"
+          },
+          {
+            "file": "core_engine.py",
+            "function": "_continue_initial_execution",
+            "line": 2421,
+            "call": "self.runtime['queue'].insert(0, action)",
+            "classification": "other_role_producer"
+          },
+          {
+            "file": "core_engine.py",
+            "function": "_resume_input_overflow_action",
+            "line": 2547,
+            "call": "self.runtime['queue'].insert(0, action)",
+            "classification": "existing_request_resume_or_refresh"
+          },
+          {
+            "file": "core_engine.py",
+            "function": "_enqueue",
+            "line": 2978,
+            "call": "self.runtime['queue'].append(action)",
+            "classification": "queue_helper_callers_own_trigger"
+          },
+          {
+            "file": "decision_engine.py",
+            "function": "_apply_task_plan",
+            "line": 176,
+            "call": "runtime.setdefault('queue', []).append({'id': self.ports.clock.new_id('AC'), 'role': 'research_preparation', 'reason': reason, 'requested_by': execution_id})",
+            "classification": "other_role_producer"
+          },
+          {
+            "file": "decision_engine.py",
+            "function": "_apply_task_plan",
+            "line": 172,
+            "call": "runtime.setdefault('queue', []).append(action)",
+            "classification": "other_role_producer"
+          },
+          {
+            "file": "decision_engine.py",
+            "function": "_refresh_changed_decision",
+            "line": 206,
+            "call": "self.runtime['queue'].insert(original_position, refreshed)",
+            "classification": "existing_request_resume_or_refresh"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_resume_formal_waits",
+            "line": 135,
+            "call": "self.runtime['queue'].append(action)",
+            "classification": "other_role_producer"
+          },
+          {
+            "file": "governance.py",
+            "function": "_queue",
+            "line": 499,
+            "call": "runtime.setdefault('queue', []).append(action)",
+            "classification": "queue_helper_callers_own_trigger"
+          },
+          {
+            "file": "governance_engine.py",
+            "function": "_configure_candidate",
+            "line": 101,
+            "call": "state['queue'].insert(0, {'id': self.ports.clock.new_id('AC'), 'role': 'research_preparation', 'reason': 'Reprepare task profile contracts for the newly adopted host resources', 'revision_targets': revisions.capture_targets(result, state, affected)})",
+            "classification": "other_role_producer"
+          },
+          {
+            "file": "governance_engine.py",
+            "function": "_resume_action_authority_waits",
+            "line": 210,
+            "call": "self.runtime['queue'].append(deepcopy(action))",
+            "classification": "existing_request_resume_or_refresh"
+          },
+          {
+            "file": "knowledge.py",
+            "function": "_apply_impact_effects",
+            "line": 338,
+            "call": "new_runtime['queue'].append(action)",
+            "classification": "judgment_producer_or_role_choice"
+          },
+          {
+            "file": "knowledge.py",
+            "function": "replace_knowledge",
+            "line": 556,
+            "call": "new_runtime['queue'].append({'id': action_id, 'lineage_id': action_id, 'role': next_role, 'target': actual_replacement_id, 'reason': reason})",
+            "classification": "judgment_producer_or_role_choice"
+          },
+          {
+            "file": "knowledge_io.py",
+            "function": "import_candidate",
+            "line": 318,
+            "call": "new_runtime.setdefault('queue', []).append({'id': action_id, 'lineage_id': action_id, 'role': next_role, 'target': record_id, 'reason': 'imported candidate requires verification', 'source_ref': source_ref})",
+            "classification": "judgment_producer_or_role_choice"
+          },
+          {
+            "file": "planning.py",
+            "function": "schedule_reconsideration",
+            "line": 842,
+            "call": "runtime['queue'].append(queued)",
+            "classification": "judgment_producer_or_role_choice"
+          },
+          {
+            "file": "planning_engine.py",
+            "function": "_retry_observation_configuration",
+            "line": 68,
+            "call": "self.runtime['queue'].append(fresh)",
+            "classification": "other_role_producer"
+          },
+          {
+            "file": "planning_engine.py",
+            "function": "_ensure_model_assessments",
+            "line": 167,
+            "call": "self.runtime['queue'].append({'id': self.ports.clock.new_id('AC'), 'role': 'research_preparation', **targets, 'reason': 'Prepare the assigned ratings and observation rules before independent review. Preserve the user contract. Read prior reviews and preparation histories when repairing rejected preparation.'})",
+            "classification": "other_role_producer"
+          },
+          {
+            "file": "provider_engine.py",
+            "function": "_requeue_provider_action",
+            "line": 87,
+            "call": "self.runtime['queue'].append(restored)",
+            "classification": "existing_request_resume_or_refresh"
+          },
+          {
+            "file": "repair_execution.py",
+            "function": "route_submission_return",
+            "line": 166,
+            "call": "self.runtime['queue'].append(retry)",
+            "classification": "existing_request_resume_or_refresh"
+          },
+          {
+            "file": "revisions.py",
+            "function": "record_repetition",
+            "line": 256,
+            "call": "queue.append({'id': clock.new_id('AC'), 'role': role, 'target': event_ref if role == 'operational_review' else None, 'reason': reason, 'repetition_lineage': [lineage, lineage_id], 'receipt_refs': [event_ref]})",
+            "classification": "judgment_producer_or_role_choice"
+          },
+          {
+            "file": "revisions.py",
+            "function": "continue_repetition",
+            "line": 306,
+            "call": "runtime.setdefault('queue', []).append(action)",
+            "classification": "existing_request_resume_or_refresh"
+          },
+          {
+            "file": "revisions.py",
+            "function": "continue_repetition",
+            "line": 312,
+            "call": "runtime['queue'].append(deepcopy(action))",
+            "classification": "existing_request_resume_or_refresh"
+          },
+          {
+            "file": "task_scope.py",
+            "function": "apply_task_assessments",
+            "line": 461,
+            "call": "new_runtime['queue'].append({'id': clock.new_id('AC'), 'role': 'task_contract_review', 'target': target_id, 'reason': 'Inherited obligations require independent approval'})",
+            "classification": "other_role_producer"
+          },
+          {
+            "file": "task_scope.py",
+            "function": "apply_task_assessments",
+            "line": 486,
+            "call": "new_runtime['queue'].append({'id': clock.new_id('AC'), 'role': 'research_plan', 'reason': 'Select continuation for assessed remaining obligations', 'requested_by': execution_id})",
+            "classification": "judgment_producer_or_role_choice"
+          }
+        ],
+        "lifecycle_events": [
+          {
+            "file": "core_engine.py",
+            "function": "_apply_inbox",
+            "line": 857,
+            "call": "self._lifecycle_event('source_imported', target=entry['id'], source_ref=request['id'])",
+            "schedule": "True"
+          },
+          {
+            "file": "core_engine.py",
+            "function": "_stage_submission_capture",
+            "line": 2818,
+            "call": "self._lifecycle_event('submission_checked', target=execution['id'], source_ref=execution['id'] if origin == 'native_final' else receipt['id'], schedule=False, evidence_refs=[prefix + '/check.json'], **details)",
+            "schedule": "False"
+          },
+          {
+            "file": "external_engine.py",
+            "function": "_external_control",
+            "line": 45,
+            "call": "self._lifecycle_event('external_operation_prepared', target=entry['id'], source_ref=source_ref)",
+            "schedule": "True"
+          },
+          {
+            "file": "external_engine.py",
+            "function": "_external_control",
+            "line": 59,
+            "call": "self._lifecycle_event('external_operation_reconciled', target=entry['id'], source_ref=source_ref, outcome=entry['status'], evidence=config['evidence'])",
+            "schedule": "True"
+          },
+          {
+            "file": "external_engine.py",
+            "function": "_external_control",
+            "line": 106,
+            "call": "self._lifecycle_event('external_operation_retry_prepared', target=entry['id'], source_ref=source_ref, previous_status=previous['status'])",
+            "schedule": "True"
+          },
+          {
+            "file": "external_engine.py",
+            "function": "_run_external_action",
+            "line": 218,
+            "call": "self._lifecycle_event('external_operation_' + result['status'], target=operation_id, source_ref=result['source_ref'], request_sha256=result['request_sha256'])",
+            "schedule": "True"
+          },
+          {
+            "file": "external_engine.py",
+            "function": "_run_external_action",
+            "line": 171,
+            "call": "self._lifecycle_event('external_reconciliation_required', target=operation_id)",
+            "schedule": "True"
+          },
+          {
+            "file": "external_engine.py",
+            "function": "_run_external_action",
+            "line": 185,
+            "call": "self._lifecycle_event('external_operation_not_authorized', target=operation_id, reason=str(error))",
+            "schedule": "True"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_trust_control",
+            "line": 50,
+            "call": "self._lifecycle_event('trust_environment_registered', target=environment_id, source_ref=source_ref)",
+            "schedule": "True"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_trust_control",
+            "line": 73,
+            "call": "self._lifecycle_event('trust_transition_started', target=transition['id'], source_ref=source_ref)",
+            "schedule": "True"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_trust_control",
+            "line": 77,
+            "call": "self._lifecycle_event('trust_environment_invalidated', target=config.get('env_id'), source_ref=source_ref)",
+            "schedule": "True"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_apply_trust_rebind",
+            "line": 95,
+            "call": "self._lifecycle_event('trust_environment_rebound', target=environment_id, schedule=False, basis={'toolchain_record': deepcopy(check['toolchain_record']), 'previous': deepcopy(rebind['previous']), 'current': deepcopy(rebind['current']), 'recorded_at': rebind['recorded_at']})",
+            "schedule": "False"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_trust_check_steps",
+            "line": 311,
+            "call": "self._lifecycle_event('trust_target_checked', target=knowledge_id, transition_id=transition_id, result=result['status'])",
+            "schedule": "True"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_trust_check_steps",
+            "line": 302,
+            "call": "self._lifecycle_event('trust_target_stopped', target=knowledge_id, transition_id=transition_id, execution_id=execution_id, artifact_ref=artifact)",
+            "schedule": "True"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_finish_trust_transition",
+            "line": 534,
+            "call": "self._lifecycle_event('trust_transition_activated', target=transition_id)",
+            "schedule": "True"
+          },
+          {
+            "file": "formal_engine.py",
+            "function": "_finish_trust_transition",
+            "line": 528,
+            "call": "self._lifecycle_event('trust_transition_failed', target=transition_id, reason=str(error))",
+            "schedule": "True"
+          },
+          {
+            "file": "governance_engine.py",
+            "function": "_record_goal_audit_followup",
+            "line": 418,
+            "call": "self._lifecycle_event('goal_audit_completed', target=self.instance['id'], basis_sha256=basis, judgment_ids=judgment_ids, outcome='not_established', next_owner='research_plan')",
+            "schedule": "True"
+          },
+          {
+            "file": "knowledge_engine.py",
+            "function": "_invalidate_goal_currentness",
+            "line": 28,
+            "call": "self._lifecycle_event('goal_basis_invalidated', judgment_ids=[j.get('id', j.get('execution_id')) for j in stale])",
+            "schedule": "True"
+          },
+          {
+            "file": "knowledge_engine.py",
+            "function": "_knowledge_control",
+            "line": 59,
+            "call": "self._lifecycle_event('knowledge_' + operation, target=knowledge_id, source_ref=source_ref, reason=reason)",
+            "schedule": "True"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_activate_initialization",
+            "line": 199,
+            "call": "self._lifecycle_event('initialization_activated', target=self.instance.get('id'))",
+            "schedule": "True"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_limited_recovery_control",
+            "line": 310,
+            "call": "self._lifecycle_event('limited_recovery_approved', target=action['id'], source_ref=source_ref, schedule=False, basis={**deepcopy(action['repair']['limited_recovery']), 'approval_sha256': exact_content_hash(change)})",
+            "schedule": "False"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_apply_extended_control",
+            "line": 439,
+            "call": "self._lifecycle_event('user_decision_applied', source_ref=source_ref, decision_id=result['id'])",
+            "schedule": "True"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_conversation_control",
+            "line": 507,
+            "call": "self._lifecycle_event('conversation_' + operation, target=conversation_id, source_ref=source_ref, generation=generation, schedule=False)",
+            "schedule": "False"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_lose_conversation",
+            "line": 512,
+            "call": "self._lifecycle_event('conversation_lost', target=conversation['id'], source_ref=source_ref, generation=conversation['generation'], reason=reason, schedule=False)",
+            "schedule": "False"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_refresh_readiness",
+            "line": 581,
+            "call": "self._lifecycle_event('task_assessment_invalidated', target=task_id, source_ref=assessment.get('execution_id'), basis_sha256=basis, next_owner='research_plan', reason=assessment.get('invalidated_reason', 'Recorded terminal assessment is no longer current'))",
+            "schedule": "True"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_refresh_readiness",
+            "line": 661,
+            "call": "self._lifecycle_event('task_condition_evaluation_error', target=task_id, errors=evaluation['errors'])",
+            "schedule": "True"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_refresh_readiness",
+            "line": 653,
+            "call": "self._lifecycle_event('task_became_ready', target=task_id, basis={'records': evaluation['basis']})",
+            "schedule": "True"
+          },
+          {
+            "file": "lifecycle_engine.py",
+            "function": "_refresh_readiness",
+            "line": 657,
+            "call": "self._lifecycle_event('task_readiness_lost', target=task_id, errors=evaluation['errors'], basis={'dispatch_occupied': evaluation.get('dispatch_occupied', False)}, schedule=not evaluation.get('dispatch_occupied', False))",
+            "schedule": "not evaluation.get('dispatch_occupied', False)"
+          }
+        ]
+      },
+      "counts": {
+        "literal_enqueue": 23,
+        "dynamic_enqueue": 4,
+        "queue_writes": 24,
+        "lifecycle_events": 28
+      },
+      "scope_limits": "숫자는 AST 호출 위치 수이지 의미 사건 수나 검증 완료 수가 아니다. 큐 하위 metadata append는 제외했다. queue 대입에서 새 role 딕셔너리를 생산하는 위치는 발견되지 않았지만 모든 동적 데이터 흐름의 자동 증명은 아니다. lifecycle 동적 kind와 schedule 조건은 후속 상태 조합 표에서 펼쳐야 한다.",
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-직접-큐-발동/report.json",
+        "sha256": "f607ae286bb9fea832ad17c4fec0eeffbef29cb7d4507358120cafeb5d120bec",
+        "counts": {
+          "passed": 49
+        },
+        "total_seconds": 38.8,
+        "complete": true,
+        "successful": true,
+        "changed_during_run": []
+      },
+      "verified_case": {
+        "id": "flows.test_knowledge_currentness_flows.ImportedKnowledgePlanningTests.test_nonformal_import_and_replacement_run_targeted_plans_while_formal_import_waits_for_verification",
+        "producers": [
+          "knowledge_io.import_candidate",
+          "knowledge.replace_knowledge"
+        ],
+        "observed": "공개 비형식 가져오기와 교체 대상별 실제 계획1회 수락·원제어 source_ref와 대상 결속·추가 owner2회 중복 없음. 공개 형식 가져오기는 실제 계획0 및 형식 verified 확인."
+      },
+      "remaining_new_judgment_families": [
+        {
+          "source": "governance._queue callers",
+          "variants": [
+            "academic-only governance change",
+            "new execution authority",
+            "task_scope decision"
+          ],
+          "status": "기존 공개 제어 흐름과 실제 호출/수락 단언 대응 필요"
+        },
+        {
+          "source": "knowledge._apply_impact_effects",
+          "variants": [
+            "affected records present",
+            "no affected records",
+            "identical already queued impact"
+          ],
+          "status": "B99 전체 복구 흐름의 영향 계획 ID가 실제 관찰에 포함되는지 확인 필요"
+        },
+        {
+          "source": "revisions.record_repetition",
+          "variants": [
+            "diagnose vs no diagnosis",
+            "hold vs no hold",
+            "exhaustion_empty planning vs other operational review",
+            "existing pending receipt merge"
+          ],
+          "status": "기존 결과 분류 전건 단위 검사와 수신 흐름을 실제 요청/호출에 대응 필요"
+        },
+        {
+          "source": "task_scope.apply_task_assessments",
+          "variants": [
+            "incomplete open obligations without unresolved inputs",
+            "missing input wait",
+            "terminal assessment",
+            "existing plan"
+          ],
+          "status": "현재 원천은 B102의 결과 수신 계획과 별개; 직접 생성 후속 계획 수락 근거 확인 필요"
+        },
+        {
+          "source": "planning.schedule_reconsideration",
+          "variants": [
+            "periodic/revisit/new input",
+            "returned work",
+            "missing regeneration condition",
+            "readiness evaluation error",
+            "external wait owner",
+            "live or already attempted judgment"
+          ],
+          "status": "B94/B95로 시간·선택 사건을 확인했으며 남은 조건 조합과 실제 대상의 유효성 검토 필요"
+        },
+        {
+          "source": "lifecycle event router and explicit public request",
+          "variants": [
+            "concrete lifecycle kind × target present/absent",
+            "schedule=False",
+            "already assigned event",
+            "public role request/replay"
+          ],
+          "status": "28개 source family의 동적 kind와 사용자 요청·복구 원천을 포함한 의미 사건 표 필요"
         }
       ],
       "whole_requirement_closed": false

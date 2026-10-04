@@ -366,5 +366,57 @@ class CurrentnessReturnRoutingTests(unittest.TestCase):
         self.assertEqual(observed.calls['receipt'], [])
 
 
+class ImportedKnowledgePlanningTests(unittest.TestCase):
+    def test_nonformal_import_and_replacement_run_targeted_plans_while_formal_import_waits_for_verification(self):
+        from do_math import knowledge
+        from support.cross_contracts import assert_call_records
+        from support.model import amend
+        for formal in (False, True):
+            with self.subTest(formal=formal):
+                sim = Sim.activated()
+                clear_work(sim)
+                sim.model.responder = DefaultResponder(preparation_candidates=[], plan_assessments=False)
+                sim.model.on('research_plan').reply(amend(goal_audit=False))
+                source = 'theorem imported_plan_case : True := by trivial'
+                if formal:
+                    sim.lean.allow(source, ['imported_plan_case'],
+                        signatures={'imported_plan_case': 'imported_plan_case : True'},
+                        declaration_evidence={'imported_plan_case': {'type': 'True', 'value': None}},
+                        axioms={'imported_plan_case': []}, dependencies={'imported_plan_case': {}})
+                request = applied(sim, 'knowledge', config={'operation': 'import', 'candidate': {
+                    'kind': 'theorem' if formal else 'observation', 'title': 'Imported planning evidence',
+                    'statement': 'True holds.', 'summary': 'A supplied observation.',
+                    'explanation': 'Inspect the supplied evidence.', 'lean_code': source if formal else '',
+                    'declaration_names': ['imported_plan_case'] if formal else []}})
+                kid, = sim.instance['knowledge']
+                plans = [a for a in sim.runtime['queue'] if a['role'] == 'research_plan' and a.get('target') == kid]
+                self.assertEqual(len(plans), int(not formal))
+                before = assert_call_records(self, sim)
+                sim.step()
+                after = assert_call_records(self, sim)
+                self.assertEqual(after['research_plan'] - before['research_plan'], int(not formal))
+                if formal:
+                    self.assertTrue(any(e.get('formal_status') == 'verified' for e in sim.runtime['executions'].values()))
+                    continue
+                plan = plans[0]
+                self.assertEqual(plan['source_ref'], request['request_id'])
+                execution, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == plan['id']]
+                self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+                applied(sim, 'knowledge', config={'operation': 'revise', 'id': kid,
+                    'changes': {'statement': 'The supplied observation is clarified.'}, 'reason': 'Clarify the evidence.',
+                    'declared_impact': knowledge.plan_impact(sim.instance, sim.runtime,
+                        knowledge.revision_roots(sim.instance, kid), [])['computed_impact']})
+                replacement, = [k for k, row in sim.instance['knowledge'].items() if row.get('supersedes') == kid]
+                followup, = [a for a in sim.runtime['queue'] if a['role'] == 'research_plan' and a.get('target') == replacement]
+                sim.run_until(lambda current: any(c['action']['id'] == followup['id'] for c in current.model.calls), max_steps=8)
+                executed, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == followup['id']]
+                self.assertEqual(executed['outcome'], 'output_accepted', executed.get('error'))
+                for _ in range(2):
+                    sim.step()
+                    assert_call_records(self, sim)
+                    for expected in (plan, followup):
+                        self.assertEqual(sum(c['action']['id'] == expected['id'] for c in sim.model.calls), 1)
+
+
 if __name__ == '__main__':
     unittest.main()
