@@ -466,6 +466,10 @@ def capture_checkpoint_files(workspace, checkpoint, *, max_bytes):
 class ObservationTracker:
     """One execution's v5 observation state; persistence remains ENGINE-owned."""
 
+    def publication_candidate(self):
+        """Isolate mutable observation state while retaining the live clock port."""
+        return deepcopy(self, {id(self.time_port): self.time_port})
+
     def __init__(self, execution_id: str, workspace: Path, config: dict, *, time_port):
         """``time_port`` supplies wall time for records and monotonic time for observation rules."""
         config = deepcopy(config)

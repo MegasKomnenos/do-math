@@ -1187,7 +1187,7 @@ class CoreEngineMixin:
         original_head = self.head
         tracker = self._trackers.get(execution["id"])
         live_tracker = tracker
-        tracker = deepcopy(tracker) if tracker is not None else None
+        tracker = tracker.publication_candidate() if tracker is not None else None
         feedback = []
         receipt = {"id": self.ports.clock.new_id("CT"), "request_id": request["request_id"], "request_sha256": digest,
             "execution_id": execution["id"], "kind": request["kind"], "state": "accepted", "received_at": self.ports.clock.now(),
@@ -2635,7 +2635,7 @@ class CoreEngineMixin:
         # The owner loop applies controls and conversation leases. Observation
         # changes only the runtime. The tracker copy is judged first; the runtime
         # is rolled back and published only when the tick has something to write.
-        candidate = deepcopy(tracker)
+        candidate = tracker.publication_candidate()
         candidate.fact_sequence = max(candidate.fact_sequence,
             self.runtime['executions'][execution_id].get('observation_fact_sequence', 0))
         events = batch.events

@@ -19,6 +19,7 @@ import unittest
 import jsonschema
 
 from do_math import observations
+
 from do_math.canonical import canonical_json
 from do_math.context_store import collect_outputs
 from do_math.execution_profiles import BOUNDARY, seal_profile
@@ -27,6 +28,23 @@ from do_math.state_contract import default_state_contract, validate_record
 from do_math.submission import _workspace_checks
 from support.observation_inputs import Clock, acknowledge, observation_rule, observe, self_check_response, write_checkpoint
 from support.fakes.clock import FakeClock
+
+
+class PublicationCandidateTests(unittest.TestCase):
+    def test_candidate_isolates_state_but_keeps_both_clocks_connected(self):
+        from support.fakes.clock import FakeClock
+        clock = FakeClock()
+        with tempfile.TemporaryDirectory() as directory:
+            tracker = observations.ObservationTracker('EX-clock', Path(directory),
+                {'observation_mode': 'event_driven', 'research_self_checks': False}, time_port=clock)
+            tracker.schedule_review('review', at=clock.now(), reason='Check progress', basis_ref='DISP-one')
+            candidate = tracker.publication_candidate()
+            candidate.explicit_reviews['review']['fired'] = True
+            self.assertFalse(tracker.explicit_reviews['review']['fired'])
+            self.assertIs(candidate.time_port, clock)
+            clock.advance(3)
+            self.assertEqual(candidate.time_port.now(), clock.now())
+            self.assertEqual(candidate.clock(), clock.monotonic())
 
 
 def profile(bindings):

@@ -530,6 +530,15 @@
       "found_by": "B87 전체 실행의 저장소 내부 scratch와 B88 실제 Git 계약 검사에서 주변 저장소 탐색 차이를 발견. 7sktoq3v에서 HEAD/objects/refs의 모든 불완전 부분집합 7종과 SHA1/SHA256 조합 14개는 실제 Git이 모두 통과하고 대역이 모두 실패했다.",
       "missed_kind": "대역과 실제의 초기화 계약은 정상 저장소 종류를 비교했으나 불완전한 내부 .git와 유효한 상위 저장소의 결합을 다루지 않았다. 무효 gitfile의 탐색 차단은 유지하고 불완전 디렉터리만 계속 탐색한다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1913",
+      "summary": "관찰기의 게시 후보 복사가 주입된 시계 포트까지 복제해 실제 시간 진행과 분리된다. 한 차례 관찰 게시 이후 명시 예약 검토가 기한에 발동하지 않는다.",
+      "category": 6,
+      "reproduction": "flows.test_observation_application.OperationalReviewTriggerTests.test_observation_triggers_open_one_real_review_only_for_a_live_due_target",
+      "found_by": "11-B 실제 관찰기/owner/작업자 호출 행렬. yz6o61qc에서 explicit_review_due × live_due만 예정 호출1 대신0으로 실패했다. publication_candidate가 시계 포트 정체성을 유지하며 상태만 복사하도록 두 소비 경로를 교정한 뒤 sy2f5c3v에서 통과.",
+      "missed_kind": "관찰기 단위 시간 검사는 실제 owner의 게시용 복사를 거치지 않았고, 다른 관찰 기한은 batch 수신 시각을 사용해 포트 시계 분리를 가렸다.",
+      "status": "closed"
     }
   ]
 }

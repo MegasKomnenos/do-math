@@ -13,6 +13,7 @@ from copy import deepcopy
 import copy
 import json
 from pathlib import Path
+from datetime import timedelta
 import unittest
 
 from do_math.control_transport import ControlTransport
@@ -88,6 +89,71 @@ class ReminderApplicationTests(unittest.TestCase):
         self.assertEqual(sim.runtime['queue'], queue)
         self.assertTrue(tracker.checkpoint_reminded)
         self.assertNotEqual(sim.engine.head, head)  # the applied tick is published
+
+
+class OperationalReviewTriggerTests(unittest.TestCase):
+    def test_observation_triggers_open_one_real_review_only_for_a_live_due_target(self):
+        """11-B observation subset: actual Tracker -> owner -> model/worker, including duplicate delivery."""
+        from support.cross_contracts import assert_call_records
+        from support.default_responder import DefaultResponder
+        from support.model import Answer
+
+        def proceed(out, context):
+            return {**out, 'disposition': {'kind': 'continue',
+                'basis_refs': [context['execution_to_review']['id']], 'next_owner': 'research_work',
+                'reason': 'The preserved observation was examined; continue the same work.', 'next_review': None}}
+
+        cases = ('tool_review_due', 'periodic_review_due', 'explicit_review_due', 'observation_input_rejected')
+        for kind in cases:
+            for state in ('not_due', 'live_due', 'terminated_due'):
+                with self.subTest(trigger=kind, target=state):
+                    sim = Sim.activated()
+                    sim.model.responder = DefaultResponder(preparation_candidates=[])
+                    sim.step()  # consume the actual activation/preparation receipt first
+                    before = assert_call_records(self, sim)
+                    self.assertEqual(before['operational_review'], 0)
+                    execution_id = 'EX-trigger'
+                    workspace = running_execution(sim, execution_id, 'research_work', bind=True)
+                    write_checkpoint(workspace)
+                    tracker = ObservationTracker(execution_id, workspace, {
+                        'observation_mode': 'periodic' if kind == 'periodic_review_due' else 'event_driven',
+                        'research_self_checks': False, 'tool_review_window_seconds': 2,
+                        'observation_interval_seconds': 2}, time_port=sim.clock)
+                    stream = workspace / 'stdout.jsonl'
+                    if kind == 'explicit_review_due':
+                        tracker.schedule_review('review-trigger', at=(sim.clock.wall() + timedelta(seconds=2)).isoformat(),
+                                                reason='Examine preserved progress', basis_ref=execution_id)
+                    initial = ([{'type': 'item.started', 'item': {'id': 'tool-trigger', 'type': 'command_execution'}}]
+                               if kind == 'tool_review_due' else [])
+                    first = batch(sim, initial, stream, terminated=state == 'terminated_due')
+                    sim.engine._observe_running(execution_id, tracker, first)
+                    self.assertFalse(any(action['role'] == 'operational_review' for action in sim.runtime['queue']))
+                    if state != 'not_due':
+                        sim.advance(3)
+                    incoming = ([{'type': 'turn.started', 'execution_id': 'EX-other'}]
+                                if kind == 'observation_input_rejected' and state != 'not_due' else [])
+                    delivered = batch(sim, incoming, stream, start=first.end_offset, first_row=len(initial),
+                                      terminated=state == 'terminated_due')
+                    sim.engine._observe_running(execution_id, tracker, delivered)
+                    sim.engine._observe_running(execution_id, tracker, delivered)
+                    expected = int(state == 'live_due')
+                    queued = [action for action in sim.runtime['queue'] if action['role'] == 'operational_review']
+                    self.assertEqual(len(queued), expected)
+                    if expected:
+                        self.assertEqual((queued[0]['target'], queued[0]['live']), (execution_id, True))
+                        self.assertEqual(sim.runtime['observations'][execution_id]['kind'], kind)
+                    sim.model.on('operational_review', target=execution_id).reply(Answer(proceed))
+                    sim.step()
+                    after = assert_call_records(self, sim)
+                    self.assertEqual(after['operational_review'] - before['operational_review'], expected)
+                    reviewed = [row for row in sim.runtime['executions'].values() if row['role'] == 'operational_review']
+                    self.assertEqual(len(reviewed), expected)
+                    for row in reviewed:
+                        self.assertEqual(row['outcome'], 'output_accepted', row.get('error'))
+                    sim.step()
+                    self.assertEqual(assert_call_records(self, sim), after,
+                                     'an accepted review must not be reopened on the next owner pass')
+                    self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
 
 
 class OwnerCallClassificationTests(unittest.TestCase):
@@ -210,7 +276,8 @@ class ObservationTransactionTests(unittest.TestCase):
             arguments['x'] is before or arguments['x'] == before)})
         with copies, RefHeldByAnotherWriter(sim), self.assertRaisesRegex(GitStateStoreConflict, CAS):
             sim.engine._observe_running('EX-one', tracker, batch(sim, [], workspace / 'stdout.jsonl'))
-        self.assertGreater(copies.count('copy', caller='do_math.core_engine'), 0)  # the tracker copy is observed
+        self.assertGreater(copies.count('copy', caller='do_math.observations'), 0)  # publication_candidate copies the tracker
+        self.assertFalse(any(copies.captured('copy', caller='do_math.observations')))
         self.assertFalse(any(copies.captured('copy', caller='do_math.core_engine')))
         self.assertEqual(sim.engine.runtime, before)
         self.assertEqual(tracker.counters, {})

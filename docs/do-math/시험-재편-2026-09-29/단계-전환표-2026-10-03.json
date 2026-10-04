@@ -4928,8 +4928,8 @@
       },
       {
         "id": "11-B",
-        "state": "implementation_audit",
-        "remaining": "계획/운영 점검의 사건×판단대상 있음/없음에서 실행0또는1 검사"
+        "state": "partial_verification",
+        "remaining": "B90: 관찰 네 원천×발동 전/살아 있는 대상/종료된 대상의 호출0/1, 재전달과 수락 후 중복 없음 확인. 예약·자기점검·실패 진단 및 계획 발동 원천의 실제 대상/호출 검증은 남음."
       },
       {
         "id": "12-A",
@@ -13088,12 +13088,12 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "발동 규칙의 실제 대상·호출 검증",
-      "last_closed": "B88 0bb1af48 관련97개; B89 실제12항목 관련68개와 최종재생3개 통과",
-      "active": "B89 확정 후 기존 발동 지점 목록을 실제 사건×대상 0/1 검사에 연결",
-      "exit": "11-B의 현재 발동 사건 모집단과 실제 owner 경로의 호출 0/1 및 중복 억제 검사",
-      "next": "13-C 문서 대응과 나머지 구체적 의미 공백, 최종 같은 판본 전체 관문",
-      "work_method": "이미 조사한 모집단을 사용하고 기존 정상 생산자와 실제 호출 기록으로 필요한 검사를 구현한다. 새 전수 감사로 확대하지 않는다.",
+      "phase": "발동 규칙의 실제 호출 검증",
+      "last_closed": "B89 a0b0cc2e; B90 관찰 발동 행렬과 KD-1913 교정, 최종17개 통과",
+      "active": "B90 확정 후 저장된 운영 재검토 예약의 실제 호출 검증",
+      "exit": "저장된 next_review 기한 전후·실행 대상 유효성·재전달에서 실제 호출0/1과 중복 방지 확인",
+      "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
+      "work_method": "기존 생산자와 실제 owner/모델/작업자 결과를 사용한다. 실제 실패를 고치고 검증된 부분의 남김을 제거한다.",
       "running_test": null,
       "source_tree_frozen": false,
       "goal_complete": false
@@ -18109,6 +18109,41 @@
         "실제 quota 거부·복수 결과 구간·종료 정리·실제 역할 스키마 수용 및 모든 해석 함수×판본 전건은 남음"
       ],
       "raw_byte_preservation": "corpus/.gitattributes disables text normalization for captured files; manifest remains LF. Index blobs and checkout filters are compared with source bytes before commit."
+    },
+    "observation_trigger_clock_correction": {
+      "id": "B90",
+      "scope": "11-B 관찰 발동 네 원천×세 대상 국면의 실제 모델/작업자 호출 및 관찰 후보의 시계 포트 보존",
+      "state": "검수·관련 검증 완료",
+      "defect_id": "KD-1913",
+      "memory_node": "M-0507",
+      "trigger_kinds": [
+        "tool_review_due",
+        "periodic_review_due",
+        "explicit_review_due",
+        "observation_input_rejected"
+      ],
+      "target_states": [
+        "not_due",
+        "live_due",
+        "terminated_due"
+      ],
+      "reports": {
+        "red": "검증/2026-10-05-관찰-발동/red.json",
+        "focused": "검증/2026-10-05-관찰-발동/focused.json",
+        "related_before_location_fix": "검증/2026-10-05-관찰-발동/related-before-copy-location.json",
+        "rollback": "검증/2026-10-05-관찰-발동/rollback.json",
+        "final": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-관찰-발동/report.json",
+          "sha256": "89a7aaa085b402331718909b45bb786b0fc5750b392a14f5b9865e48b6a600c3",
+          "counts": {
+            "passed": 17
+          },
+          "seconds": 83.8,
+          "changed_during_run": []
+        }
+      },
+      "whole_requirement_closed": false,
+      "remaining": "자기점검 수신 후속, 저장된 next_review 예약, 반복된 판정 충돌·실패 진단 및 계획 발동 원천은 이번 행렬에 포함하지 않음."
     }
   }
 }
