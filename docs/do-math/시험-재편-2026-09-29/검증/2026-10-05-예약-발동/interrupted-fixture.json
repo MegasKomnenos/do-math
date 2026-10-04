@@ -1,0 +1,9 @@
+{
+  "output": "C:/Users/wogud/AppData/Local/Temp/do-math-tests-f52gcv06",
+  "state": "explicitly_stopped",
+  "process_id": 2208,
+  "cause": "First ModelDouble rule repeated its first answer forever; a second matching rule was never chosen. Repeated past next_review created more reviews inside the same owner run.",
+  "action": "Verified process command before Stop-Process. No elapsed-time limit applied. Corrected to two sequential answers in one rule.",
+  "complete": false,
+  "successful": false
+}

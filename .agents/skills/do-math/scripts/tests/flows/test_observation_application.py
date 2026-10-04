@@ -92,6 +92,81 @@ class ReminderApplicationTests(unittest.TestCase):
 
 
 class OperationalReviewTriggerTests(unittest.TestCase):
+    def test_stored_review_schedule_calls_once_at_its_deadline_only_while_target_runs(self):
+        """A real accepted continue creates the schedule; owner passes consume it once."""
+        from do_math.execution_lifecycle import transition_execution
+        from support.cross_contracts import assert_call_records
+        from support.default_responder import DefaultResponder
+        from support.model import Answer
+
+        for state in ('no_schedule', 'before', 'at', 'after', 'stopping', 'ended'):
+            with self.subTest(state=state):
+                sim = Sim.activated()
+                sim.model.responder = DefaultResponder(preparation_candidates=[])
+                sim.step()
+                def owner_pass():
+                    # Continue this owner rather than reenter run's recovery path,
+                    # which deliberately stops a predecessor left by another owner.
+                    with sim.engine.store.writer_lock():
+                        sim.engine._reload()
+                        sim.engine._run_parallel(max_steps=1)
+
+                target = 'EX-scheduled-review'
+                workspace = running_execution(sim, target, 'research_work', bind=True)
+                write_checkpoint(workspace)
+                tracker = ObservationTracker(target, workspace,
+                    {'observation_mode': 'event_driven', 'research_self_checks': False}, time_port=sim.clock)
+                sim.engine._observe_running(target, tracker, batch(sim,
+                    [{'type': 'turn.started', 'execution_id': 'EX-other'}], workspace / 'stdout.jsonl'))
+                at = sim.clock.wall() + timedelta(seconds=30)
+                next_review = None if state == 'no_schedule' else {'at': at.isoformat(), 'reason': 'Review preserved progress again'}
+
+                def proceed(out, context, schedule=next_review):
+                    return {**out, 'disposition': {'kind': 'continue',
+                        'basis_refs': [context['execution_to_review']['id']], 'next_owner': 'research_work',
+                        'reason': 'Continue with the explicit next review decision.', 'next_review': schedule}}
+
+                sim.model.on('operational_review', target=target).reply(Answer(proceed)).reply(Answer(
+                    lambda out, context: proceed(out, context, schedule=None)))
+                owner_pass()
+                before = assert_call_records(self, sim)
+                self.assertEqual(before['operational_review'], 1)
+                saved = sim.runtime['executions'][target]['operational_continuation']
+                self.assertEqual(saved['next_review'], next_review)
+                disposition_id = saved['disposition_id']
+                self.assertEqual(sim.runtime['executions'][target]['status'], 'running')
+                self.assertEqual(sim.engine.store.load(sim.engine.head)[2]['executions'][target]['operational_continuation'], saved)
+                if state in ('stopping', 'ended'):
+                    execution = sim.runtime['executions'][target]
+                    transition_execution(execution, 'stopping', at=sim.clock.now(), reason='work stopped')
+                    if state == 'ended':
+                        transition_execution(execution, 'ended', at=sim.clock.now(), outcome='cancelled')
+                    sim.engine._save()
+                offset = -1 if state == 'before' else 1 if state in ('after', 'stopping', 'ended', 'no_schedule') else 0
+                sim.advance((at - sim.clock.wall()).total_seconds() + offset)
+                owner_pass()
+                expected = int(state in ('at', 'after'))
+                after = assert_call_records(self, sim)
+                self.assertEqual(after['operational_review'] - before['operational_review'], expected,
+                    {'target_status': sim.runtime['executions'][target]['status'],
+                     'continuation': sim.runtime['executions'][target].get('operational_continuation'),
+                     'tracker': target in sim.engine._trackers, 'now': sim.clock.now(),
+                     'queue': sim.runtime['queue'], 'waiting': sim.runtime.get('waiting_actions', {})})
+                if expected:
+                    review = next(row for row in sim.runtime['executions'].values()
+                                  if row['role'] == 'operational_review'
+                                  and row['action'].get('observation', {}).get('kind') == 'scheduled_review_due')
+                    self.assertEqual(review['action']['observation_refs'], [disposition_id])
+                    self.assertEqual(review['action']['target'], target)
+                    self.assertEqual(review['outcome'], 'output_accepted', review.get('error'))
+                else:
+                    self.assertEqual(sim.runtime['executions'][target]['operational_continuation'], saved)
+                before_idle = sim.clock.now()
+                owner_pass()
+                self.assertEqual(sim.clock.now(), before_idle)
+                self.assertEqual(assert_call_records(self, sim), after)
+                self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
+
     def test_observation_triggers_open_one_real_review_only_for_a_live_due_target(self):
         """11-B observation subset: actual Tracker -> owner -> model/worker, including duplicate delivery."""
         from support.cross_contracts import assert_call_records

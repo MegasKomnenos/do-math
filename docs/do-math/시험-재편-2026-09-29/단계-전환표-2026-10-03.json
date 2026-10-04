@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B90: 관찰 네 원천×발동 전/살아 있는 대상/종료된 대상의 호출0/1, 재전달과 수락 후 중복 없음 확인. 예약·자기점검·실패 진단 및 계획 발동 원천의 실제 대상/호출 검증은 남음."
+        "remaining": "B90 관찰4원천×3국면과 B91 저장 예약6국면의 실제 호출0/1·중복 방지 검증 완료. 자기점검 수신 후속·판정 충돌·실패 진단·계획 발동 원천의 대상과 실제 호출 검증은 남음."
       },
       {
         "id": "12-A",
@@ -13089,9 +13089,9 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B89 a0b0cc2e; B90 관찰 발동 행렬과 KD-1913 교정, 최종17개 통과",
-      "active": "B90 확정 후 저장된 운영 재검토 예약의 실제 호출 검증",
-      "exit": "저장된 next_review 기한 전후·실행 대상 유효성·재전달에서 실제 호출0/1과 중복 방지 확인",
+      "last_closed": "B90 2460b70c; B91 저장된 재검토 예약6국면과 관련7개 통과",
+      "active": "B91 확정 후 자기점검 수신 후속과 실패 진단 발동을 기존 실제 검증에 연결",
+      "exit": "남은 운영 발동 원천의 실제0/1 호출과 대상/근거 결속 확인",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "기존 생산자와 실제 owner/모델/작업자 결과를 사용한다. 실제 실패를 고치고 검증된 부분의 남김을 제거한다.",
       "running_test": null,
@@ -18144,6 +18144,36 @@
       },
       "whole_requirement_closed": false,
       "remaining": "자기점검 수신 후속, 저장된 next_review 예약, 반복된 판정 충돌·실패 진단 및 계획 발동 원천은 이번 행렬에 포함하지 않음."
+    },
+    "scheduled_review_trigger_verification": {
+      "id": "B91",
+      "scope": "실제 수락 continue로 만든 next_review의 여섯 기한/대상 국면과 실제 모델·worker 호출0/1",
+      "state": "검수·관련 검증 완료",
+      "memory_node": "M-0508",
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-예약-발동/report.json",
+        "sha256": "578bdbb92a36461faaf3d62d78139f6638c4dec52df93e781e7c6bdb56ea16c4",
+        "counts": {
+          "passed": 7
+        },
+        "seconds": 115.4,
+        "changed_during_run": []
+      },
+      "cases": [
+        "no_schedule",
+        "before",
+        "at",
+        "after",
+        "stopping",
+        "ended"
+      ],
+      "scope_limit": "같은 owner의 실제 scheduler loop 검증이며 재시작 복구나 tracker가 소유한 예약 경로의 전건 증명은 아님",
+      "fixture_corrections": [
+        "run 재진입의 복구가 대상 상태를 stopping으로 바꾸는 전제 오류",
+        "선택 필드를 필수처럼 읽은 진단 오류",
+        "중복 모델 규칙의 첫 응답 반복으로 생긴 무한 예약: 해당 실행 명시 중단, 한 규칙의 순차 응답으로 교정"
+      ],
+      "whole_requirement_closed": false
     }
   }
 }
