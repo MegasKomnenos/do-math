@@ -73,6 +73,29 @@ class RecordCase(unittest.TestCase):
 
 
 class ToolchainRecordTests(RecordCase):
+    def test_live_admission_tracks_added_and_removed_judgment_files_but_ignores_notes(self):
+        note = self.olean.parent / 'notes.txt'
+        note.write_bytes(b'not a judgment module')
+        self.assertEqual(self.check()['status'], 'verified')
+        added = self.olean.parent / 'Added.olean'
+        added.write_bytes(b'a new judgment module')
+        result = self.check()
+        self.assertEqual(result['status'], 'invalid')
+        self.assertEqual(result['changed_files'], ['toolchain/lib/lean/Init/Added.olean'])
+        added.unlink()
+        self.assertEqual(self.check()['status'], 'verified')
+        self.olean.unlink()
+        result = self.check()
+        self.assertEqual(result['status'], 'invalid')
+        self.assertEqual(result['changed_files'], ['toolchain/lib/lean/Init/Prelude.olean'])
+
+    def test_live_admission_rejects_a_missing_recorded_member_even_when_installed_files_are_unchanged(self):
+        self.assertEqual(self.check()['status'], 'verified')
+        self.rewrite(lambda r: r['baselines'][0]['fingerprint']['files'].pop('toolchain/lib/lean/Init/Prelude.olean'))
+        result = self.check()
+        self.assertEqual(result['status'], 'invalid')
+        self.assertIn('fingerprint digest differs', result['errors'][0])
+
     def test_current_environment_is_verified_from_record_identity_and_fingerprint(self):
         self.assertEqual(environment_errors(self.environment, self.binding), [])
         self.assertEqual(register_request_errors({k: v for k, v in self.request.items()}), [])
@@ -102,7 +125,11 @@ class ToolchainRecordTests(RecordCase):
         for change in ({'exit_code': 17}, {'status': 'failed'}):
             with self.subTest(change=change):
                 original = self.record_path.read_bytes()
-                self.rewrite(lambda r: r['baselines'][-1]['validation'].update(change))
+                def failed_evidence(record):
+                    baseline = record['baselines'][-1]
+                    baseline['validation'].update(change)
+                    baseline['validation_sha256'] = records.validation_sha256(baseline['validation'])
+                self.rewrite(failed_evidence)
                 result = self.check()
                 self.assertEqual(result['status'], 'invalid')
                 self.assertIn('current toolchain baseline has no successful representative check', result['errors'])

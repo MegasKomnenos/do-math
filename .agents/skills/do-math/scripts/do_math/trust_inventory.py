@@ -10,6 +10,7 @@ explicit content check against the recorded full hashes.
 """
 from concurrent.futures import ThreadPoolExecutor  # layer: parallel file hashing; the digests do not depend on thread scheduling
 from contextlib import contextmanager
+import hashlib
 import json
 import math
 import os
@@ -180,6 +181,17 @@ def record_errors(record):
         errors.append('toolchain record identity digest differs from its identity')
     elif record['id'] != record_id(record['identity'], record['baselines'][0]['content']['sha256']):
         errors.append('toolchain record ID differs from its identity and first content baseline')
+    for index, baseline in enumerate(record['baselines']):
+        for inventory in ('fingerprint', 'content'):
+            if baseline[inventory]['sha256'] != exact_content_hash(baseline[inventory]['files']):
+                errors.append(f'toolchain baseline {index} {inventory} digest differs from its files')
+        if set(baseline['fingerprint']['files']) != set(baseline['content']['files']):
+            errors.append(f'toolchain baseline {index} fingerprint and content file populations differ')
+        validation = baseline['validation']
+        if validation['source_sha256'] != hashlib.sha256(validation['source_text'].encode('utf-8')).hexdigest():
+            errors.append(f'toolchain baseline {index} validation source digest differs from its text')
+        if baseline['validation_sha256'] != validation_sha256(validation):
+            errors.append(f'toolchain baseline {index} validation digest differs from its evidence')
     if any(check['baseline'] >= len(record['baselines']) for check in record['checks']):
         errors.append('toolchain record check names an absent baseline')
     return errors

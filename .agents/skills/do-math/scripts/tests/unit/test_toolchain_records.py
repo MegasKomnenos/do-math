@@ -29,6 +29,55 @@ class RecordFixture(unittest.TestCase):
 
 
 class RecordContractTests(RecordFixture):
+    def test_every_baseline_inventory_and_validation_digest_binds_its_exact_content(self):
+        from support.entry import entry
+        first = self.record['baselines'][0]
+        self.record['baselines'].append(records.new_baseline(deepcopy(first['fingerprint']),
+            deepcopy(first['content']), deepcopy(first['validation']), clock=entry().ports.clock))
+        cases = {
+            'fingerprint member removed': lambda b: b['fingerprint']['files'].pop(next(iter(b['fingerprint']['files']))),
+            'fingerprint row changed': lambda b: b['fingerprint']['files'][next(iter(b['fingerprint']['files']))].__setitem__(0, 123456),
+            'content member removed': lambda b: b['content']['files'].pop(next(iter(b['content']['files']))),
+            'content bytes changed': lambda b: b['content']['files'].__setitem__(next(iter(b['content']['files'])), '0' * 64),
+            'validation output changed': lambda b: b['validation'].update(stdout='different proof output'),
+        }
+        for index in range(len(self.record['baselines'])):
+            for name, change in cases.items():
+                with self.subTest(baseline=index, change=name):
+                    candidate = deepcopy(self.record)
+                    change(candidate['baselines'][index])
+                    self.assertNotEqual(records.record_errors(candidate), [], 'a stored digest cannot vouch for changed evidence')
+
+    def test_validation_summary_fields_are_sensitive_and_recording_metadata_is_not(self):
+        baseline = self.record['baselines'][0]
+        for field in records.VALIDATION_SUMMARY:
+            candidate = deepcopy(self.record)
+            value = baseline['validation'][field]
+            changed = [*value, 'different'] if isinstance(value, list) else value + 1 if isinstance(value, int) else value + ' changed'
+            if field == 'source_sha256':
+                changed = '0' * 64
+            candidate['baselines'][0]['validation'][field] = changed
+            with self.subTest(validation_field=field):
+                self.assertIn('toolchain baseline 0 validation digest differs from its evidence', records.record_errors(candidate))
+        candidate = deepcopy(self.record)
+        candidate['baselines'][0]['recorded_at'] = 'later recording'
+        candidate['checks'].append({'checked_at': 'later', 'baseline': 0, 'result': 'passed', 'mismatched': []})
+        self.assertEqual(records.record_errors(candidate), [])
+        self.assertEqual(records.usable_errors(candidate), [])
+        self.assertEqual(records.binding(candidate), records.binding(self.record))
+
+    def test_recomputed_inventory_digest_cannot_hide_a_different_file_population_or_source_text(self):
+        candidate = deepcopy(self.record)
+        fingerprint = candidate['baselines'][0]['fingerprint']
+        fingerprint['files'].pop(next(iter(fingerprint['files'])))
+        fingerprint['sha256'] = exact_content_hash(fingerprint['files'])
+        self.assertEqual(records.record_errors(candidate),
+                         ['toolchain baseline 0 fingerprint and content file populations differ'])
+        candidate = deepcopy(self.record)
+        candidate['baselines'][0]['validation']['source_text'] += '\nexample : False := by sorry\n'
+        self.assertEqual(records.record_errors(candidate),
+                         ['toolchain baseline 0 validation source digest differs from its text'])
+
     def test_a_record_names_its_identity_and_first_content_baseline(self):
         baseline = self.record['baselines'][0]
         self.assertEqual(self.record['id'], records.record_id(self.identity, baseline['content']['sha256']))

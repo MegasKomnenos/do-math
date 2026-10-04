@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B75 완료·개설 근거 관련 162개 같은 판본 검증",
-      "active": "5-A trust inventory/validation과 편입 허용 목록의 내용·모집단·시점 민감도",
+      "last_closed": "B76 신뢰 근거 수리와 관련113개 같은 판본 검증",
+      "active": "5-A 실제 편입 적용의 봉인 입력 허용 참조와 현재성·생산자 수리 분류",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -17143,6 +17143,55 @@
         {
           "path": ".claude/skills/do-math/scripts/이음새-정본.md",
           "sha256": "f27d7adb9eb6c2c73cdbda8af8cc0edad944062837694cb38eb5d6e2b78242c3"
+        }
+      ],
+      "whole_requirement_closed": false
+    },
+    "trust_record_basis_integration": {
+      "id": "B76",
+      "state": "verified_main_commit_pending",
+      "scope": "신뢰 기록 baseline 목록·검증 근거의 자기 일관성과 실제 착수 관문의 내용/모집단 민감도 수리",
+      "changed_area": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 113
+        },
+        "total_seconds": 181.2,
+        "changed_during_run": []
+      },
+      "tracked_report": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-신뢰-근거-일관성/report.json",
+      "report_sha256": "ee1fa2c3c18380cb7f00a6d1a5663eb3be418919ae18f9efa0083b3f9dcb0242",
+      "tracked_red_report": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-신뢰-근거-일관성/red.json",
+      "red_sha256": "3bb48b0fa8e1ac11357ef8cbc4303bae9ab0493de8c4a72107182b8e3e5957d4",
+      "command": "python .claude/skills/do-math/scripts/run_tests.py structure unit.test_toolchain_records unit.test_trust_environment sim.test_toolchain_tools sim.test_trust_transition sim.test_public_record_storage flows.test_lifecycle_engine_trust flows.test_engine_stored_input_scale.StoredInputScaleTests.test_56230_file_toolchain_manifest_registers_by_reference_without_state_amplification --jobs 3",
+      "contract": [
+        "기존 record_errors를 생산자/소비자 공통 검사로 유지",
+        "모든 baseline 목록 해시·동일 파일 모집단·소스 원문/요약 해시 확인",
+        "실제 .olean 추가/삭제는 착수 거부, 일반 notes 파일은 근거 밖",
+        "합성 compiler 결과와 실제 규모 설치를 혼동하지 않음"
+      ],
+      "limits": [
+        "5-A 편입 등 함수 전건/시점 축과 최종 관문 미완료",
+        "개별 예산 초과35개, 56230항목 규모63.906초로60초 초과",
+        "매 착수 시 전 파일 바이트 재해시로 위협 모델을 바꾸지 않음"
+      ],
+      "files": [
+        {
+          "path": ".claude/skills/do-math/scripts/do_math/trust_inventory.py",
+          "sha256": "f0f2e44636f9f5e3d254f776730bd098b8d5b4e67a023019f746fe5d8e88cf5b"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/unit/test_toolchain_records.py",
+          "sha256": "f6453439e3091607c71401f4d7e803c5c484a9dce547d89cedd91dba24e987b4"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/unit/test_trust_environment.py",
+          "sha256": "052cdff7049889508a113cb2e6fcaada00315797316d941461860fe9af80ff93"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/이음새-정본.md",
+          "sha256": "3616be72a7f52e742e3007d6ac3272e9420fbe827d1dd16c9b5f9d5645ec174a"
         }
       ],
       "whole_requirement_closed": false
