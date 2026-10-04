@@ -45,7 +45,7 @@ class PurposeFlowTests(unittest.TestCase):
         kid, previous_cycle = item['id'], item['review_cycle_id']
         previous_assessments = deepcopy(engine.instance['identity_assessments'])
         downstream = next(task for task in engine.runtime['tasks'].values() if task['title'] == 'Dependent')
-        applied(sim, 'knowledge', config={'operation': 'invalidate', 'id': kid,
+        invalidation = applied(sim, 'knowledge', config={'operation': 'invalidate', 'id': kid,
             'reason': 'The previous explanation is disputed and its use is withdrawn',
             'declared_impact': knowledge.plan_impact(engine.instance, engine.runtime, [kid], [])['computed_impact']})
         self.assertEqual(engine.instance['goal_status'], 'unsolved')
@@ -56,10 +56,15 @@ class PurposeFlowTests(unittest.TestCase):
         self.assertFalse(any(judgment.get('current') for judgment in engine.instance.get('goal_judgments', [])))
         changes = {'explanation': EXPLANATION + ' This revision explicitly resolves the disputed domain description.'}
         roots = knowledge.revision_roots(engine.instance, kid)
-        applied(sim, 'knowledge', config={'operation': 'revise', 'id': kid, 'changes': changes,
+        revision = applied(sim, 'knowledge', config={'operation': 'revise', 'id': kid, 'changes': changes,
             'reason': 'The replacement explanation fixes the domain explicitly',
             'declared_impact': knowledge.plan_impact(engine.instance, engine.runtime, roots, [])['computed_impact']})
         replacement_id = next(row['id'] for row in engine.instance['knowledge'].values() if row.get('supersedes') == kid)
+        sources = {invalidation['request_id'], revision['request_id']}
+        requested = [a for a in sim.runtime['queue'] if a['role'] == 'research_plan'
+                     and a.get('knowledge_id') == kid and a.get('source_ref') in sources]
+        self.assertEqual(len(requested), 2)
+        self.assertEqual({a['source_ref'] for a in requested}, sources)
         with observe_judgment_inputs(self) as prepared:
             drive(self, sim, limit=55)
         self.assertTrue(any(row['role'] == 'identity_review' for row in prepared))
@@ -80,6 +85,19 @@ class PurposeFlowTests(unittest.TestCase):
             self.assertEqual((task['status'], task['results']), ('completed', results))
             self.assertFalse(task['assessment']['current'])
         self.assertTrue(sim.instance['goal_judgments'][-1].get('current', True))
+        from support.cross_contracts import assert_call_records
+        counts = assert_call_records(self, sim)
+        for request in requested:
+            calls = [c for c in sim.model.calls if c['action']['id'] == request['id']]
+            self.assertEqual(len(calls), 1)
+            executed, = [row for row in sim.runtime['executions'].values() if row['action']['id'] == request['id']]
+            self.assertEqual(executed['outcome'], 'output_accepted', executed.get('error'))
+            self.assertEqual((executed['action']['knowledge_id'], executed['action']['source_ref']),
+                             (kid, request['source_ref']))
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim), counts)
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
 
     def test_environment_revalidation_does_not_clear_independent_meaning_dispute(self):
         sim, responder = self.start()

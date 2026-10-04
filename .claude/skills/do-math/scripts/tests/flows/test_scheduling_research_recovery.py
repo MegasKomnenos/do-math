@@ -255,5 +255,62 @@ class ParkedFailureTests(unittest.TestCase):
         self.assertEqual(self.sim.runtime['queue'][0]['id'], 'AC-other')
 
 
+
+
+class DelegatedRevisionPlanningTests(unittest.TestCase):
+    def test_closed_delegate_returns_obligation_and_queues_one_replan(self):
+        from support.planning_contract_inputs import relation_sim, delegated_revision, withdraw
+        self.sim = relation_sim()
+        self.engine = self.sim.engine
+        self.parent, self.tid, self.kid = delegated_revision(self.sim)
+        withdraw(self.sim, self.tid)
+        entry = deepcopy(self.sim.runtime['waiting_actions'][self.parent])
+        queue = deepcopy(self.sim.runtime['queue'])
+        self.engine._reconcile_revision_delegations()
+        expected = {**entry, 'delegated_targets': {}, 'delegation_history': [{'record_id': self.kid, 'task_id': self.tid}]}
+        self.assertEqual(self.sim.runtime['waiting_actions'][self.parent], expected)
+        # 기존 계획 요청은 합쳐지되 위임 반환 근거를 빠뜨리면 안 된다.
+        existing = next(a for a in queue if a['role'] == 'research_plan')
+        expected_queue = deepcopy(queue)
+        expected_plan = next(a for a in expected_queue if a['id'] == existing['id'])
+        reason = 'A delegated task ended or changed while its revision obligation remains: ' + self.parent
+        reasons = list(existing.get('reasons', [existing['reason']] if existing.get('reason') else []))
+        if reason not in reasons:
+            reasons.append(reason)
+        expected_plan.update(unbound_request=True, reasons=reasons, reason='\n'.join(reasons),
+            revision_followup=[{'record_id': self.kid, 'task_id': self.tid}])
+        self.assertEqual(self.sim.runtime['queue'], expected_queue)
+        before = deepcopy(self.sim.runtime)
+        self.engine._reconcile_revision_delegations()
+        self.assertEqual(self.sim.runtime, before)
+        self.engine._save()
+        self.sim.restart()
+        self.assertEqual(self.sim.runtime['waiting_actions'][self.parent], expected)
+
+        from support.cross_contracts import assert_call_records
+        from support.model import Answer
+        sim = self.sim
+        sim.model.responder = DefaultResponder(plan_assessments=False)
+        def defer(out, context):
+            for row in out['dispositions']:
+                row.update(kind='not_selected', next_owner='research_plan',
+                    revisit={'at': '2090-01-02T00:00:00+00:00', 'event_refs': []})
+            return out
+        sim.model.on('research_plan').reply(Answer(defer))
+        before = assert_call_records(self, sim)
+        request, = [a for a in sim.runtime['queue'] if a.get('revision_followup')]
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        sim.run_until(lambda current: any(c['action']['id'] == request['id'] for c in current.model.calls), max_steps=8)
+        self.assertEqual(assert_call_records(self, sim)['research_plan'] - before['research_plan'], 1)
+        execution, = [row for row in sim.runtime['executions'].values() if row['action']['id'] == request['id']]
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        self.assertEqual(execution['action']['revision_followup'], [{'record_id': self.kid, 'task_id': self.tid}])
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(sum(c['action'].get('revision_followup') == request['revision_followup']
+                                 for c in sim.model.calls), 1)
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
+
+
 if __name__ == '__main__':
     unittest.main()

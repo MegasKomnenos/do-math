@@ -219,34 +219,6 @@ class RevisionObligationTests(unittest.TestCase):
 
 
 class DelegatedWorkRevisionTests(unittest.TestCase):
-    def test_closed_delegate_returns_obligation_and_queues_one_replan(self):
-        from support.planning_contract_inputs import relation_sim, delegated_revision, withdraw
-        self.sim = relation_sim()
-        self.engine = self.sim.engine
-        self.parent, self.tid, self.kid = delegated_revision(self.sim)
-        withdraw(self.sim, self.tid)
-        entry = deepcopy(self.sim.runtime['waiting_actions'][self.parent])
-        queue = deepcopy(self.sim.runtime['queue'])
-        self.engine._reconcile_revision_delegations()
-        expected = {**entry, 'delegated_targets': {}, 'delegation_history': [{'record_id': self.kid, 'task_id': self.tid}]}
-        self.assertEqual(self.sim.runtime['waiting_actions'][self.parent], expected)
-        # 기존 계획 요청은 합쳐지되 위임 반환 근거를 빠뜨리면 안 된다.
-        existing = next(a for a in queue if a['role'] == 'research_plan')
-        expected_queue = deepcopy(queue)
-        expected_plan = next(a for a in expected_queue if a['id'] == existing['id'])
-        reason = 'A delegated task ended or changed while its revision obligation remains: ' + self.parent
-        reasons = list(existing.get('reasons', [existing['reason']] if existing.get('reason') else []))
-        if reason not in reasons:
-            reasons.append(reason)
-        expected_plan.update(unbound_request=True, reasons=reasons, reason='\n'.join(reasons),
-            revision_followup=[{'record_id': self.kid, 'task_id': self.tid}])
-        self.assertEqual(self.sim.runtime['queue'], expected_queue)
-        before = deepcopy(self.sim.runtime)
-        self.engine._reconcile_revision_delegations()
-        self.assertEqual(self.sim.runtime, before)
-        self.engine._save()
-        self.sim.restart()
-        self.assertEqual(self.sim.runtime['waiting_actions'][self.parent], expected)
 
 
     def test_waiting_work_result_does_not_force_assessment_status(self):

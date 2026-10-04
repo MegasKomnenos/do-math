@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B90~B97 및 B98 신뢰 전환 활성화/실패의 실제 계획 호출 확인. 지식/개정/평가/권한·입력초과·수락 결과의 직접 원천 전건 연결이 남음."
+        "remaining": "B90~B98 및 B99 지식 무효화/개정·위임 반환의 실제 계획 호출 확인. 개정 순환·평가 변화·선택 무효화·목표 근거 상실·학술 후속/반려·일반 입력초과·수락 결과 직접 발동 전건 연결이 남음."
       },
       {
         "id": "12-A",
@@ -13089,9 +13089,9 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B97 6710ba3a; B98 신뢰 사건 결속 KD-1915 교정, 관련67개 통과",
-      "active": "B98 확정 후 지식·개정·평가의 실제 발동 연결",
-      "exit": "남은 직접 계획 원천의 실제 조건/대상/호출과 중복 방지 검증",
+      "last_closed": "B98 2494faad; B99 지식·위임 반환 관련59개 통과",
+      "active": "B99 확정 후 개정 순환·평가 및 선택 변경의 발동 연결",
+      "exit": "남은 직접 계획 원천의 실제 대상·근거·호출 검증",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "기존 생산자와 실제 owner/모델/작업자 결과를 사용한다. 실제 실패를 고치고 검증된 부분의 남김을 제거한다.",
       "running_test": null,
@@ -18317,6 +18317,29 @@
       },
       "whole_requirement_closed": false,
       "limits": "정상 활성화 사건의 일반 재계획과 실패 transition_id 진단 요청을 구별. 다른 정당한 계획을0회로 강제하지 않는다."
+    },
+    "knowledge_revision_trigger_verification": {
+      "id": "B99",
+      "scope": "공개 지식 무효화·개정 요청과 위임 반환의 실제 계획 호출 및 근거 보존",
+      "state": "검수·관련 검증 완료",
+      "memory_node": "M-0516",
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-지식-개정-발동/report.json",
+        "sha256": "73453273ee95c814f28e00f9e929af6fad2d58d2345433ac6b314bb2c0797ad6",
+        "counts": {
+          "passed": 59
+        },
+        "seconds": 170.1,
+        "changed_during_run": []
+      },
+      "relocation": {
+        "old_id": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
+        "current_id": "flows.test_scheduling_research_recovery.DelegatedRevisionPlanningTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
+        "preserved_original_ast_statements": 24,
+        "reason": "실제 모델/worker 호출까지 확장한 흐름 검사"
+      },
+      "whole_requirement_closed": false,
+      "limits": "기존 목적 흐름의 두 공개 지식 제어와 실제 닫힌 위임 과제의 반환. 모든 지식/개정 입력 조합의 전건 증명은 아님."
     }
   }
 }

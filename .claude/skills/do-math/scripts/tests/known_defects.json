@@ -490,7 +490,7 @@
       "id": "KD-0502",
       "summary": "위임 종료의 계획 요청을 기존 요청에 합칠 때 revision_followup 근거를 잃는다.",
       "category": 4,
-      "reproduction": "sim.test_planning_revision_obligations.DelegatedWorkRevisionTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
+      "reproduction": "flows.test_scheduling_research_recovery.DelegatedRevisionPlanningTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
       "found_by": "99c4ef93 계획 소유 시험 실제 실행. 최초 보고 do-math-tests-l_xmvrtg 보존. 정상 생산자 입력 교정 뒤 같은 실패를 재현; finish/resume-planning-result.json에 최종 파일 동일 hash의 무표시/표시 보고를 연결한다. main ty13d1cp에서 정확 tool 판정/위임 근거 병합은 failed, 봉인 누락은 GitStateStoreError error, 입력초과 이력은 B32 대기 분리로 이미 passed. 세 수리 및 두 저장 경로의 명시 deep copy 후 zvxjwxp4 변경 영역32개가 통과했다. 전체 관문은 미완료.",
       "missed_kind": "CODE ONLY 시험은 실행하지 않았다. 실제 수신자·저장 검증 및 합쳐진 요청 전체 비교가 드러낸 결함. 제품은 수정하지 않았다. 이전 원재현 ID: sim.test_planning_relation_conditions.DelegatedRevisionTests.test_closed_delegate_returns_obligation_and_queues_one_replan",
       "status": "closed"
