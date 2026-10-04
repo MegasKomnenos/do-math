@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B90~B95와 B96 형식 실패/평가 재검토의 실제 호출 확인. KD-1914 발동 데이터 유실 교정. 일반 검토 결과·검토 자원 종료·신뢰 전환·지식/개정/평가/권한·입력초과·수락 결과의 직접 원천 전건 연결이 남음."
+        "remaining": "B90~B95, B96 형식 실패/평가 재검토, B97 일반 검토 match/입력초과 자원 종료의 실제 계획 호출 확인. 신뢰 전환·지식/개정/평가/권한·입력초과의 다른 원천·수락 결과 직접 발동 전건 연결이 남음."
       },
       {
         "id": "12-A",
@@ -13089,9 +13089,9 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B95 02dd4000; B96 발동 데이터 보존과 관련88개 통과",
-      "active": "B96 확정 후 일반 검토 결과와 나머지 직접 발동의 실제 연결",
-      "exit": "남은 직접 계획 발동을 기존 실제 흐름과 연결하고0/1 호출·근거 보존·중복 방지 확인",
+      "last_closed": "B96 ed77c5e9; B97 검토 후속2흐름 및 관련5개 통과",
+      "active": "B97 확정 후 신뢰 전환·지식·개정·평가의 직접 발동 연결",
+      "exit": "남은 직접 계획 원천의 실제 조건/대상/호출과 중복 방지 검증",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "기존 생산자와 실제 owner/모델/작업자 결과를 사용한다. 실제 실패를 고치고 검증된 부분의 남김을 제거한다.",
       "running_test": null,
@@ -18271,6 +18271,34 @@
       ],
       "whole_requirement_closed": false,
       "remaining": "일반 identity review 게시·자원 종료·신뢰 전환·권한/지식/개정 등 다른 직접 계획 원천은 별도 남김"
+    },
+    "review_followup_plan_verification": {
+      "id": "B97",
+      "scope": "일반 동일성 판정과 review_input_overflow 자원 종료의 근거 보존 및 실제 계획1회",
+      "state": "검수·관련 검증 완료",
+      "memory_node": "M-0514",
+      "reports": {
+        "flows": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-검토-후속-계획/flows.json",
+          "sha256": "494e48a1429de77908ce6f22c757b0cbdc7945dbc658dfc4d922f2a46aa9e7e9",
+          "counts": {
+            "passed": 2
+          },
+          "seconds": 110.2,
+          "changed_during_run": []
+        },
+        "related": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-검토-후속-계획/related.json",
+          "sha256": "ffd0d2c74bd8fea7120a60ac54904aeea04e22e14f3bf2a049e23bb6ef387ab1",
+          "counts": {
+            "passed": 5
+          },
+          "seconds": 22.8,
+          "changed_during_run": []
+        }
+      },
+      "whole_requirement_closed": false,
+      "limits": "완료 match 및 실제 입력초과 자원 종료 경로. 모든 검토 판정/자원 처분 조합은 별도 기존 검사와 연결."
     }
   }
 }

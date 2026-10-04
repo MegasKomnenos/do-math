@@ -15,6 +15,8 @@ import unittest
 from unittest.mock import patch
 
 from support.engine_lifecycle import applied
+from support.cross_contracts import assert_call_records
+from support.model import amend
 from support.review_sim import cycle_of, dispute, opened_sim, review_executions, theorem_id, warm_opened
 
 
@@ -24,7 +26,7 @@ def setUpModule():
 
 class DisputeFlowTests(unittest.TestCase):
     def test_owner_runs_a_rejected_objection_through_organize_judge_and_answer_to_a_match(self):
-        """About 26 s: eleven review attempts run as model calls, one per owner pass."""
+        """Eleven actual review attempts and their plan followup; measured 78.2 s, preserving the full chain."""
         sim = opened_sim()
         dispute(sim, {'id': 'f', 'statement': 'The domain is wrong', 'evidence': ['proposal']})
         sim.run_until(lambda s: cycle_of(s)['phase'] == 'organize', max_steps=4)
@@ -58,6 +60,23 @@ class DisputeFlowTests(unittest.TestCase):
             self.assertNotIn('self_messages', message['content'])
             self.assertNotIn('proposal', message['content'])
         self.assertEqual(len({message['message_id'] for message in messages}), len(messages))
+        plans = [a for a in sim.runtime['queue'] if a.get('identity_review', {}).get('cycle_id') == cycle['id']]
+        self.assertEqual(len(plans), 1)
+        request = plans[0]
+        before = assert_call_records(self, sim)
+        self.assertEqual(request['identity_review']['assessment_id'], assessment['id'])
+        self.assertEqual(set(request['evidence_refs']), {cycle['id'], cycle['knowledge_id']})
+        sim.model.on('research_plan').reply(amend(goal_audit=False))
+        sim.run_until(lambda s: any(c['action']['id'] == request['id'] for c in s.model.calls), max_steps=8)
+        self.assertEqual(assert_call_records(self, sim)['research_plan'] - before['research_plan'], 1)
+        plan, = [row for row in sim.runtime['executions'].values() if row['action']['id'] == request['id']]
+        self.assertEqual(plan['outcome'], 'output_accepted', plan.get('error'))
+        self.assertEqual(plan['action']['identity_review'], request['identity_review'])
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(sum(c['action'].get('identity_review', {}).get('cycle_id') == cycle['id']
+                                 for c in sim.model.calls), 1)
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
 
 
 class SiblingSlotTests(unittest.TestCase):
@@ -148,6 +167,16 @@ class InputOverflowTests(unittest.TestCase):
         self.assertEqual(restored['proposal_digest'], cycle['proposal_digest'])
         self.assertEqual(restored['history'], cycle['history'])
         self.assertIn(cid, fitted['validation_context']['supplied_record_ids'])
+        self.assertEqual(set(plan['evidence_refs']), {cid, kid})
+        before = assert_call_records(self, sim)
+        sim.model.on('research_plan').reply(amend(goal_audit=False))
+        sim.run_until(lambda s: any(c['action']['id'] == plan['id'] for c in s.model.calls), max_steps=8)
+        self.assertEqual(assert_call_records(self, sim)['research_plan'] - before['research_plan'], 1)
+        result, = [row for row in sim.runtime['executions'].values() if row['action']['id'] == plan['id']]
+        self.assertEqual(result['outcome'], 'output_accepted', result.get('error'))
+        self.assertEqual(set(result['action']['evidence_refs']), {cid, kid})
+        sim.step()
+        self.assertEqual(sum(cid in c['action'].get('evidence_refs', []) for c in sim.model.calls), 1)
         sim.restart()
         self.assertEqual(sim.runtime['review_cycles'][cid]['status'], 'unresolved')
 
