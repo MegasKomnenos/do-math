@@ -64,6 +64,8 @@ def task_status(instance, runtime, *, evaluation_context=None):
                        if entry.get("action", {}).get("target") == identifier or identifier in entry.get("action", {}).get("revision_targets", {})
                        or identifier in entry.get("delegated_targets", {}).values()]
         waiting = []
+        if not ended and task.get('waiting'):
+            waiting.append(task['waiting'])
         for action in queued:
             if action.get('id') in running_ids:
                 continue
@@ -73,16 +75,19 @@ def task_status(instance, runtime, *, evaluation_context=None):
                 waiting.append(action['dispatch_wait'])
         readiness = None
         if not ended and not executions and task.get('status') not in task_contracts.TERMINAL_TASK_STATUSES:
-            readiness = planning.task_ready(task, instance, runtime, include_scheduling_waits=False,
-                                            evaluation_context=evaluation_context)
+            readiness = deepcopy(planning.task_ready(task, instance, runtime, include_scheduling_waits=False,
+                                                     evaluation_context=evaluation_context))
             if readiness['state'] != 'ready':
-                waiting.append({'kind': 'contract_review' if planning.CONTRACT_REVIEW_MISSING in readiness['errors'] else 'required_input',
-                                'errors': readiness['errors']})
-        waiting = list({json.dumps(row, sort_keys=True): row for row in waiting}.values())
+                if readiness.get('waits'):
+                    waiting.extend(readiness['waits'])
+                else:
+                    waiting.append({'kind': 'contract_review' if planning.CONTRACT_REVIEW_MISSING in readiness['errors'] else 'required_input',
+                                    'errors': readiness['errors']})
+        waiting = deepcopy(list({json.dumps(row, sort_keys=True): row for row in waiting}.values()))
         next_owner = ('user' if any(row.get('kind') == 'user_decision' or row.get('next_owner') == 'user' for row in waiting) else
-                      'task_contract_review' if any(row.get('kind') == 'contract_review' for row in waiting) else
                       next((row['next_owner'] for row in waiting if row.get('next_owner')),
-                           queued[0]['role'] if queued else None))
+                           'task_contract_review' if any(row.get('kind') == 'contract_review' for row in waiting)
+                           else queued[0]['role'] if queued else None))
         assessment = task.get('assessment', {})
         followups = [e['id'] for e in runtime.get('events', [])
                      if e['kind'] == 'task_assessment_invalidated' and e.get('target') == identifier]
@@ -313,6 +318,10 @@ def render_human_report(report: dict) -> str:
                      f"active_records={','.join(task.get('active_execution_ids', [])) or 'none'} "
                      f"queued={','.join(str(value) for value in task.get('selected_actions', [])) or 'none'} "
                      f"waits={waits} next={task.get('next_owner') or 'none'}")
+        for wait in task.get('waits', []):
+            lines.append('    wait: ' + json.dumps(wait, ensure_ascii=False, sort_keys=True))
+        if task.get('readiness') and task['readiness']['errors']:
+            lines.append('    readiness: ' + '; '.join(task['readiness']['errors']))
     for name, gate in (report.get('provider_waits') or {}).get('providers', {}).items():
         lines.append(f"provider {name}: {gate['state']} retry={display_time(gate.get('retry_at')) or 'unknown'} "
                      f"generation={gate['generation']}")

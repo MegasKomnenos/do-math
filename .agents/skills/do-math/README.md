@@ -239,7 +239,7 @@ JSON status에서 먼저 볼 필드는 다음과 같다.
 | `status` | 실행 루프의 현재 CLI 상태 |
 | `goal_status` | 현재 목표 감사 근거에 대한 CLI 목표 상태 |
 | `pending_actions` | 실행기가 아직 처리하지 않은 action 수 |
-| `tasks` | 과제 ID·제목·현재 CLI 단계 |
+| `tasks` | 과제 ID·제목·현재 CLI 단계와 실제 대기 종류·다음 담당자·대상 참조. 사람용 출력에도 대기의 근거 좌표를 함께 표시한다 |
 | `knowledge` | 현재 사용 가능한 `K` 수와 `formal_results`, `expositions`, `identity_assessments`의 기록 수. 기록 수를 성공 판정 수로 읽지 않는다 |
 | `questions` | 사용자 입력이나 결정을 기다리는 질문 |
 | `budget` | 작업 슬롯의 모델별 동시 세션 한도·점유·여유. 운영 역할은 슬롯을 점유하지 않는다. 현재 조회에서만 값이 있다 |

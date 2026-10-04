@@ -76,6 +76,58 @@ class WorkProfileAdmissionTests(unittest.TestCase):
 
 
 class PlanningConnections(unittest.TestCase):
+    def test_snapshot_preserves_the_assessment_producers_stored_wait_and_its_coordinates(self):
+        import json
+        from do_math.reporting import status_report, render_human_report
+        sim = reassessment_sim()
+        engine = sim.engine
+        head, instance, runtime = engine.store.load()
+        before = deepcopy((instance, runtime))
+        wait = deepcopy(runtime['tasks']['TK-1']['waiting'])
+        self.assertEqual(wait['kind'], 'assessment_input')
+        self.assertEqual(wait['target_refs'], [MISSING_SOURCE])
+        report = status_report(engine.store, head, instance, runtime, requested_areas=['record_storage'],
+                               evaluation_context={'now': engine.ports.clock.now()})
+        row = next(row for row in report['tasks'] if row['id'] == 'TK-1')
+        self.assertIn(wait, row['waits'])
+        self.assertEqual(row['next_owner'], wait['next_owner'])
+        lines = render_human_report(report).splitlines()
+        index = next(i for i, line in enumerate(lines) if line.startswith('  TK-1 revision='))
+        self.assertEqual(json.loads(lines[index + 1].removeprefix('    wait: ')), wait)
+        reported_wait = next(value for value in row['waits'] if value['kind'] == wait['kind'])
+        reported_wait['target_refs'].clear()
+        reported_wait['basis_ref'] = 'not stored'
+        self.assertEqual((instance, runtime), before)
+        self.assertEqual(engine.store.load(), (head, *before))
+
+    def test_snapshot_permission_wait_preserves_the_actual_grant_target_and_next_owner(self):
+        from do_math.reporting import snapshot_report, render_human_report
+        from do_math.governance import timestamp
+        sim = owner_sim()
+        engine = sim.engine
+        task = engine.runtime['tasks']['TK-1']
+        before = deepcopy(engine.store.load())
+        self.assertEqual(planning.task_ready(task, sim.instance, sim.runtime,
+            evaluation_context=engine._evaluation_context())['state'], 'ready')
+        expires = max(timestamp(sim.instance['grants'][ref]['expires_at']) for ref in task['authority_refs'])
+        sim.advance((expires - sim.clock.wall()).total_seconds() + 1)
+        report = snapshot_report(sim.repository, sim.instance_id, snapshot=engine.head,
+                                 backend=engine.ports.git_backend, clock=engine.ports.clock)
+        row = next(row for row in report['tasks'] if row['id'] == task['id'])
+        expected = {'kind': 'permission', 'target_refs': task['authority_refs'], 'next_owner': 'governance'}
+        self.assertEqual(row['readiness']['waits'], [expected])
+        self.assertIn(expected, row['waits'])
+        self.assertEqual(row['next_owner'], 'governance')
+        text = render_human_report(report)
+        task_line = next(line for line in text.splitlines() if line.startswith('  ' + task['id'] + ' revision='))
+        self.assertIn('permission', task_line)
+        self.assertIn('next=governance', task_line)
+        lines = text.splitlines()
+        position = lines.index(task_line)
+        for reference in task['authority_refs']:
+            self.assertIn(reference, '\n'.join(lines[position:position + 2]))
+        self.assertEqual(engine.store.load(), before)
+
     def test_snapshot_report_supplies_clock_to_task_authority(self):
         from do_math.reporting import snapshot_report
         sim = owner_sim()
