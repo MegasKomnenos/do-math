@@ -425,7 +425,19 @@ def apply_task_assessments(instance, runtime, assessments, *, execution_id, inpu
                     raise ValueError('transfer recipient must be bound to the current input')
                 if any(e.get('status') != 'ended' and e.get('action', {}).get('target') == target['id'] for e in new_runtime.get('executions', {}).values()):
                     raise ValueError('transfer recipient has a live execution')
-                if row['target_obligation_id'] in {o['id'] for o in contract_obligations(target)}:
+                existing = next((o for o in contract_obligations(target) if o['id'] == row['target_obligation_id']), None)
+                if existing is not None:
+                    origin = {'from_task': task['id'], 'from_revision': task['revision'],
+                              'from_obligation_id': obligation['id'], 'obligation_id': row['target_obligation_id'],
+                              'authority_ref': row['authority_ref']}
+                    recorded = [record for record in target.get('transferred_obligations', [])
+                                if all(record.get(key) == value for key, value in origin.items())]
+                    expected = {**obligation, 'id': row['target_obligation_id']}
+                    producer = (new_runtime.get('executions', {}).get(recorded[0].get('execution_id'), {})
+                                if len(recorded) == 1 else {})
+                    if (len(recorded) == 1 and exact_content_hash(existing) == exact_content_hash(expected)
+                            and producer.get('status') == 'ended' and producer.get('role') in {'research_plan', 'operational_review'}):
+                        continue  # Retain the established transfer; do not revise its recipient again.
                     raise ValueError('transfer cannot overwrite an existing recipient obligation')
                 transfers.append((task, target, row, obligation))
     changed_targets = set()

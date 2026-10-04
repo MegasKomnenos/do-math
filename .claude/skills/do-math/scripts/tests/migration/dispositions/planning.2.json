@@ -48,7 +48,7 @@
       "legacy_id": "test_planning_engine.PlanningConnections.test_readiness_refresh_requests_reassessment_while_other_work_remains",
       "disposition": "moved",
       "new_ids": [
-        "sim.test_planning_engine_connections.PlanningConnections.test_readiness_refresh_requests_reassessment_while_other_work_remains"
+        "flows.test_scheduling_research_recovery.AssessmentReplanningTests.test_readiness_refresh_requests_reassessment_while_other_work_remains"
       ],
       "note": "The missing input is the source name new.txt and it arrives by the public source control (the assessment finds it by name, task_scope alias lookup); the legacy test injected a source row SO-new. The reassessment joins the plan the source events queue, so the one research_plan also carries their reason; TK-1 in its reason and the count of one are asserted as before."
     },

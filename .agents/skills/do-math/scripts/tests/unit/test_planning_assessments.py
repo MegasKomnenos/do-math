@@ -21,6 +21,40 @@ NO_JUDGMENT = '^fulfilled obligation needs its designated judge or a current spe
 
 
 class AssessmentApplicationTests(unittest.TestCase):
+    def test_reassessment_retains_an_existing_exact_transfer_without_revising_its_recipient(self):
+        i, r, a = transfer_assessment()
+        a['decision'] = 'incomplete'
+        a['item_dispositions'][0] = {'obligation_id': 'OB-1', 'kind': 'open', 'evidence_refs': []}
+        i, r = apply_assessment(i, r, a)
+        recipient = deepcopy(r['tasks']['TK-2'])
+        for _ in range(2):
+            i, r = apply_assessment(i, r, a)
+            self.assertEqual(r['tasks']['TK-2'], recipient)
+            self.assertEqual(r['tasks']['TK-1']['assessment']['item_dispositions'], a['item_dispositions'])
+
+    def test_retained_transfer_rejects_changed_origin_or_obligation_without_mutation(self):
+        i, r, a = transfer_assessment()
+        a['decision'] = 'incomplete'
+        a['item_dispositions'][0] = {'obligation_id': 'OB-1', 'kind': 'open', 'evidence_refs': []}
+        i, r = apply_assessment(i, r, a)
+        for field, value in (('from_task', 'TK-other'), ('from_revision', 99),
+                             ('from_obligation_id', 'OB-other'), ('obligation_id', 'OB-other'),
+                             ('authority_ref', 'DC-other'), ('execution_id', 'EX-missing'),
+                             ('claim', 'different inherited scope'), ('duplicate_origin', True)):
+            with self.subTest(field=field):
+                changed = deepcopy(r)
+                recipient = changed['tasks']['TK-2']
+                if field == 'claim':
+                    recipient['completion_obligations'][-1]['claim'] = value
+                elif field == 'duplicate_origin':
+                    recipient['transferred_obligations'].append(deepcopy(recipient['transferred_obligations'][0]))
+                else:
+                    recipient['transferred_obligations'][0][field] = value
+                before = deepcopy((i, changed))
+                with self.assertRaisesRegex(ValueError, '^transfer cannot overwrite an existing recipient obligation$'):
+                    apply_assessment(i, changed, a)
+                self.assertEqual((i, changed), before)
+
     def test_transfer_binds_receiving_contract_and_blocks_incomplete_recipient_completion(self):
         i, r, a = transfer_assessment()
         previous = deepcopy(r)

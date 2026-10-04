@@ -557,6 +557,15 @@
       "found_by": "B98 실제 도구사슬 등록/두 재검사 실패/활성화 실패에서 w_94u1xk와 yg4oybrl 원보고가 사건을 소비한 plan에 transition_id가 없고 별도 전환 요청이 대기함을 확인했다. 실패 producer가 생성한 event.id를 직접 요청의 event_refs에 결박한 뒤 p1uman57에서 정상/실패 경로 모두 통과.",
       "missed_kind": "기존 실패 검사는 이전 환경 보존과 transition.status=failed까지 확인했지만 그 실패 사건이 정확한 진단 요청에 들어가는지는 확인하지 않았다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1916",
+      "summary": "미완료 과제의 자료 도착 후 재평가에서 이미 적용된 의무 이전을 유지하면 신규 이전으로 오인해 기존 수신 의무 덮어쓰기 오류로 반려한다.",
+      "category": 4,
+      "reproduction": "flows.test_scheduling_research_recovery.AssessmentReplanningTests.test_readiness_refresh_requests_reassessment_while_other_work_remains",
+      "found_by": "B100 기존 자료 도착 fixture를 실제 계획 수락까지 확장. ea605uoi에서 integration.application transfer cannot overwrite 오류, v22l7vgk에서 반복 재평가의 최소 재현을 확인. 기존 이전의 정확한 기원/권위/의무/생산 실행을 검사해 수신 과제를 재수정하지 않도록 교정한 뒤 ck_ymc9y에서 실제 수락 확인.",
+      "missed_kind": "이전 재평가 검사는 assessment.current=False와 계획 큐 생성에서 멈췄고 실제 재수신을 실행하지 않았다. 최초 이전만 검증해 기존 이전이 있는 미완료 평가의 후속 처리를 놓쳤다.",
+      "status": "closed"
     }
   ]
 }

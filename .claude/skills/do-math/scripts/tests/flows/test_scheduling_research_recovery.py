@@ -312,5 +312,62 @@ class DelegatedRevisionPlanningTests(unittest.TestCase):
         self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
 
 
+class AssessmentReplanningTests(unittest.TestCase):
+    def test_readiness_refresh_requests_reassessment_while_other_work_remains(self):
+        from do_math import task_contracts
+        from support.planning_owner import reassessment_sim, arrive, MISSING_SOURCE
+        sim = reassessment_sim()
+        engine = sim.engine
+        arrive(sim, MISSING_SOURCE)
+        self.assertTrue(engine.runtime['tasks']['TK-1']['assessment']['current'])
+        original_results = deepcopy(engine.runtime['tasks']['TK-1']['results'])
+        engine._refresh_readiness()
+        self.assertFalse(engine.runtime['tasks']['TK-1']['assessment']['current'])
+        plans = [a for a in engine.runtime['queue'] if a['role'] == 'research_plan']
+        self.assertEqual(len(plans), 1)
+        self.assertIn('TK-1', plans[0]['reason'])
+        self.assertEqual(task_contracts.returned_task_ids(engine.runtime['tasks']), ['TK-1'])
+        engine._refresh_readiness()
+        self.assertEqual(len([a for a in engine.runtime['queue'] if a['role'] == 'research_plan']), 1)
+        self.assertEqual(engine.runtime['tasks']['TK-1']['results'], original_results)
+
+        from support.cross_contracts import assert_call_records
+        from support.role_answers import disposition
+        prior = deepcopy(engine.runtime['tasks']['TK-1']['assessment'])
+        class ReassessmentResponder(DefaultResponder):
+            def respond(self, role, context, workspace):
+                if role != 'research_plan':
+                    return super().respond(role, context, workspace)
+                rows = []
+                for identifier in context['ready_task_ids']:
+                    row = disposition(identifier, kind='not_selected')
+                    row.update(next_owner='research_plan', revisit={'at': '2090-01-02T00:00:00+00:00', 'event_refs': []})
+                    rows.append(row)
+                return empty_plan(dispositions=rows, task_assessments=[{
+                    'task_id': 'TK-1', 'decision': 'incomplete', 'reason': 'The new input is present; the proof still needs work.',
+                    'item_dispositions': deepcopy(prior['item_dispositions']),
+                    'unresolved': [{'obligation_id': 'OB-proof', 'missing_inputs': ['proof-report.txt'],
+                                    'next_owner': 'research_work'}]}])
+        sim.model.responder = ReassessmentResponder(preparation_candidates=[], plan_assessments=False)
+        engine._save()
+        before = assert_call_records(self, sim)
+        request = plans[0]
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        sim.run_until(lambda current: any(c['action']['id'] == request['id'] for c in current.model.calls), max_steps=8)
+        self.assertEqual(assert_call_records(self, sim)['research_plan'] - before['research_plan'], 1)
+        execution, = [row for row in sim.runtime['executions'].values() if row['action']['id'] == request['id']]
+        self.assertEqual(execution['outcome'], 'output_accepted',
+                         {'error': execution.get('error'), 'integration': execution.get('integration_result'), 'receipts': sim.model.receipts})
+        task = sim.runtime['tasks']['TK-1']
+        self.assertTrue(task['assessment']['current'])
+        self.assertEqual(task['assessment']['execution_id'], execution['id'])
+        self.assertEqual(task['results'], original_results)
+        after = assert_call_records(self, sim)
+        for _ in range(2):
+            sim.step()
+            self.assertEqual(assert_call_records(self, sim)['research_plan'], after['research_plan'])
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
+
+
 if __name__ == '__main__':
     unittest.main()

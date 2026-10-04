@@ -178,22 +178,6 @@ class PlanningConnections(unittest.TestCase):
         self.assertFalse(slots.acquire('EX-no-slot', profile=profile, execution=execution))
         self.assertEqual(engine._select_model(action)['tier'], 'high')
 
-    def test_readiness_refresh_requests_reassessment_while_other_work_remains(self):
-        from do_math import task_contracts
-        sim = reassessment_sim()
-        engine = sim.engine
-        arrive(sim, MISSING_SOURCE)
-        self.assertTrue(engine.runtime['tasks']['TK-1']['assessment']['current'])
-        original_results = deepcopy(engine.runtime['tasks']['TK-1']['results'])
-        engine._refresh_readiness()
-        self.assertFalse(engine.runtime['tasks']['TK-1']['assessment']['current'])
-        plans = [a for a in engine.runtime['queue'] if a['role'] == 'research_plan']
-        self.assertEqual(len(plans), 1)
-        self.assertIn('TK-1', plans[0]['reason'])
-        self.assertEqual(task_contracts.returned_task_ids(engine.runtime['tasks']), ['TK-1'])
-        engine._refresh_readiness()
-        self.assertEqual(len([a for a in engine.runtime['queue'] if a['role'] == 'research_plan']), 1)
-        self.assertEqual(engine.runtime['tasks']['TK-1']['results'], original_results)
 
     def test_live_work_defers_reassessment_until_end_and_unrelated_changes_do_not_reopen(self):
         from do_math.execution_lifecycle import transition_execution

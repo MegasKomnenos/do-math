@@ -4929,7 +4929,7 @@
       {
         "id": "11-B",
         "state": "partial_verification",
-        "remaining": "B90~B98 및 B99 지식 무효화/개정·위임 반환의 실제 계획 호출 확인. 개정 순환·평가 변화·선택 무효화·목표 근거 상실·학술 후속/반려·일반 입력초과·수락 결과 직접 발동 전건 연결이 남음."
+        "remaining": "B90~B99와 B100 자료 도착 후 평가 무효화의 실제 계획 수락 확인. 개정 순환·선택 무효화·목표 근거 상실·학술 후속/반려·일반 입력초과·수락 결과 직접 발동 전건 연결이 남음."
       },
       {
         "id": "12-A",
@@ -13089,8 +13089,8 @@
     },
     "current_focus": {
       "phase": "발동 규칙의 실제 호출 검증",
-      "last_closed": "B98 2494faad; B99 지식·위임 반환 관련59개 통과",
-      "active": "B99 확정 후 개정 순환·평가 및 선택 변경의 발동 연결",
+      "last_closed": "B99 38623bdd; B100 KD-1916 교정과 평가 발동 관련115개 통과",
+      "active": "B100 확정 후 개정 순환과 선택 무효화의 실제 계획 연결",
       "exit": "남은 직접 계획 원천의 실제 대상·근거·호출 검증",
       "next": "자기점검 및 실패 진단·계획 발동의 남김, 13-C 및 최종 전건 관문",
       "work_method": "기존 생산자와 실제 owner/모델/작업자 결과를 사용한다. 실제 실패를 고치고 검증된 부분의 남김을 제거한다.",
@@ -18340,6 +18340,30 @@
       },
       "whole_requirement_closed": false,
       "limits": "기존 목적 흐름의 두 공개 지식 제어와 실제 닫힌 위임 과제의 반환. 모든 지식/개정 입력 조합의 전건 증명은 아님."
+    },
+    "assessment_trigger_transfer_repair": {
+      "id": "B100",
+      "scope": "자료 도착으로 무효화된 미완료 평가의 실제 계획 수락과 기존 의무 이전 보존",
+      "state": "검수·관련 검증 완료",
+      "defect_id": "KD-1916",
+      "memory_node": "M-0517",
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-평가-발동/report.json",
+        "sha256": "c0067e1a218e5130ef56fd3b107a1f75298e65ec6e10623e2ad093967cc333fd",
+        "counts": {
+          "passed": 115
+        },
+        "seconds": 66.1,
+        "changed_during_run": []
+      },
+      "relocation": {
+        "old_id": "sim.test_planning_engine_connections.PlanningConnections.test_readiness_refresh_requests_reassessment_while_other_work_remains",
+        "current_id": "flows.test_scheduling_research_recovery.AssessmentReplanningTests.test_readiness_refresh_requests_reassessment_while_other_work_remains",
+        "original_statements_preserved": 15,
+        "migration_destination_updated": true
+      },
+      "whole_requirement_closed": false,
+      "limits": "기존 이전도 현재 권위·입력 결속·별도 미종결 수신자·실행 중 수신자 거부를 유지한다. 수신 의무/기원이 다른 경우 덮어쓰기를 허용하지 않는다."
     }
   }
 }
