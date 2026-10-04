@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B52 검증완료·확정준비",
-      "active": "다음 지식7모듈/명시 합성 Lean 생산자1개와 남은engine/CLI/교차 통합",
+      "last_closed": "B53 검증완료·확정준비",
+      "active": "다음 engine/CLI15모듈과 원 녹화·규모·중첩제어·공개도구4도우미 및 남은 교차 통합",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -14333,7 +14333,7 @@
     },
     "operator_population_integration": {
       "id": "B52",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "운영자 후보4모듈/52원사례를 기존 증거/예약/동결/복구 정상 생산자에 연결",
       "changed_area": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-93mxh4xo\\report.json",
@@ -14465,6 +14465,536 @@
         {
           "path": "tests/flows/test_operator_recovery_contract.py",
           "sha256": "ee4a58e5fce386a4e68aba0c8122b877fbb7661257269316e6cce8ccba058f22"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "commit": "63888f63"
+    },
+    "knowledge_population_integration": {
+      "id": "B53",
+      "state": "verified_main_commit_pending",
+      "scope": "지식 후보7모듈/115원사례와 명시 합성 Lean 출력 생산자1개 통합",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-o60amyzv\\report.json",
+        "sha256": "2e1e423dfbd647573659f1bcbdd50685f2241f213613f30e2d5986bd4b759707",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 295
+        },
+        "total_seconds": 204.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_knowledge_close_engine_guards.EngineGuards.test_terminal_trust_generators_do_not_register_executions",
+              "seconds": 2.077999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_knowledge_currentness.RecoveryMaterialTests.test_failed_execution_materials_are_restored_for_its_operational_review",
+              "seconds": 3.23499999998603,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_knowledge_formal_engine.FormalBindingConnections.test_verifier_uses_the_fixed_environment_command_and_fingerprint",
+              "seconds": 2.14000000001397,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_knowledge_formal_engine.FormalContinuationTests.test_close_preserves_the_ended_check_without_continuation",
+              "seconds": 2.047000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_knowledge_formal_engine.FormalContinuationTests.test_pause_resume_retains_one_action_and_reaches_identity_review",
+              "seconds": 3.812000000034459,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_knowledge_import_control.FormalConsumerTests.test_formal_consumer_passes_runtime_and_preapproved_toolchain",
+              "seconds": 2.077999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_knowledge_import_control.FormalConsumerTests.test_review_start_failure_produces_a_storable_wait_after_formal_acceptance",
+              "seconds": 3.5,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_knowledge_import_control.FormalConsumerTests.test_revision_consumer_passes_declared_scope_and_queues_replacement",
+              "seconds": 2.25,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_knowledge_import_control.FormalTrustFileTests.test_changed_olean_blocks_even_fake_verifier",
+              "seconds": 2.734000000054948,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_knowledge_import_control.FormalTrustFileTests.test_configured_command_other_than_the_approved_one_holds_the_formal_check",
+              "seconds": 2.625,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_activation_requires_verified_complete_and_unchanged_basis",
+              "seconds": 0.6870000000344589,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_basis_rejections_identify_each_bad_row",
+              "seconds": 0.48499999998603016,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_capture_basis_requires_distinct_existing_ids",
+              "seconds": 0.23499999998603016,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_confirmation_requires_exact_digest_scope_and_independence",
+              "seconds": 0.26500000001396984,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_formal_authority_assessment_returns_exact_basis",
+              "seconds": 0.5,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_impact_roots_declarations_and_exclusions_must_exist",
+              "seconds": 0.4839999999385327,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_invalidating_unused_environment_preserves_active_knowledge",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_reassessment_requires_original_policy_and_proposal",
+              "seconds": 0.609000000054948,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_reference_locators_do_not_treat_prose_as_records",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_repeated_impact_does_not_duplicate_planner_action",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_repeated_suspension_records_reason_without_mutating_sealed_vote",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_research_dependency_cycle_and_missing_dependency",
+              "seconds": 0.31299999996554106,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_research_use_rejects_missing_identifier_and_suspended_record",
+              "seconds": 0.35900000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_reviewed_impacts_require_a_nonempty_mapping",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_staged_review_rejects_missing_stored_transition",
+              "seconds": 0.375,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_staged_review_target_must_exist",
+              "seconds": 0.2190000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_stale_impact_rejects_without_effects",
+              "seconds": 0.2969999999040738,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_suspension_requires_concrete_objection_references",
+              "seconds": 0.20300000009592623,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_transition_normalization_removes_only_review_receipts",
+              "seconds": 0.26599999994505197,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_transition_results_reject_wrong_environment_target_and_status",
+              "seconds": 0.2029999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_transition_unknown_invalid_and_active_environment",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_currentness.CurrentnessGuards.test_withdraw_relation_kind_suspends_only_matching_relations",
+              "seconds": 0.3589999999385327,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_evidence.EvidenceGuards.test_project_search_paths_must_be_absolute",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_evidence.EvidenceGuards.test_toolchain_shape_rejections_are_precise",
+              "seconds": 0.2809999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_decision_reference_keeps_currentness_separate_from_content",
+              "seconds": 0.23400000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_duplicate_assessment_use_is_rejected_by_storage",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_duplicate_exposition_items_are_rejected_by_storage",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_exposition_items_reject_blank_list_member",
+              "seconds": 0.46899999992456287,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_formal_evidence_rejects_each_fixed_input_change",
+              "seconds": 0.375,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_formal_overlay_does_not_publish",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_identity_policy_and_decision_guards",
+              "seconds": 0.625,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_identity_replay_and_collision",
+              "seconds": 0.4529999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_knowledge_view_reports_exact_live_links",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_obsolete_assessment_cannot_restore",
+              "seconds": 0.4529999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_publication_waits_for_transition",
+              "seconds": 0.3440000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_reader_and_judgment_views_are_detached",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_reused_source_and_declarations_cannot_differ",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_sealed_formal_replay_is_exact_and_changed_result_is_rejected",
+              "seconds": 0.4690000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_source_change_suspends_uses_without_rewriting_judgments",
+              "seconds": 0.4529999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_unknown_authority_family_has_exact_reason",
+              "seconds": 0.28100000007543713,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_use_status_and_cardinality_guards",
+              "seconds": 0.2809999999590218,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_close_records.RecordGuards.test_withdrawn_use_cannot_be_revived",
+              "seconds": 0.39000000001396984,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_engine.FormalBindingConnections.test_exact_compiler_keys_and_source_survive_result_artifacts",
+              "seconds": 1.172000000020489,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_engine.FormalBindingConnections.test_failed_result_uses_the_fixed_command_fingerprint_and_axioms",
+              "seconds": 1.4060000000754371,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_engine.FormalBindingConnections.test_publication_signature_distinguishes_exact_unicode_payload",
+              "seconds": 1.4219999999040738,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_runtime.FormalRuntimeTests.test_uncapped_lean_admission_with_an_adopted_host_budget",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_interrupted_receiver_preserves_bytes_decimal_and_routes_failure",
+              "seconds": 9.016000000061467,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_formal_runtime.MachineResultReceiverTests.test_wrong_compiler_is_rejected",
+              "seconds": 39.56200000003446,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_bundle_level_reviewed_effect_is_applied_once",
+              "seconds": 0.2029999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactBundleTests.test_coupled_changes_use_the_single_reviewed_s0_plan",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_designated_review_has_producible_closed_schema_and_exact_scope",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_review_resolver_uses_actual_git_bytes_and_scoped_receipt",
+              "seconds": 0.625,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_impact_review.ImpactReviewTests.test_sealed_review_allows_real_domain_git_retry_and_rejects_wrong_evidence",
+              "seconds": 0.3910000000614673,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.AssessmentReassessmentTests.test_actual_central_control_and_activity_settlement_call_the_reassessment_mixin",
+              "seconds": 0.3440000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.AssessmentReassessmentTests.test_actual_scope_to_sealed_reaffirmation_restores_same_assessment",
+              "seconds": 0.4219999999040738,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.AssessmentReassessmentTests.test_changed_current_input_and_forged_result_target_are_rejected",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.AssessmentReassessmentTests.test_confirmed_error_withdraws_without_creating_a_new_identity_assessment",
+              "seconds": 1.0310000000754371,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.AssessmentReassessmentTests.test_incomplete_and_original_author_continuation_are_rejected",
+              "seconds": 0.5,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.AssessmentReassessmentTests.test_independent_objection_must_have_read_the_exact_original_assessment",
+              "seconds": 0.35900000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.AssessmentReassessmentTests.test_ordinary_report_does_not_suspend",
+              "seconds": 0.29599999997299165,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.AssessmentReassessmentTests.test_reaffirmed_negative_original_is_not_positive_knowledge",
+              "seconds": 0.875,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.AssessmentReassessmentTests.test_reassessment_organizer_answer_and_judges_replay_the_same_sealed_object",
+              "seconds": 2.093999999924563,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.AssessmentReassessmentTests.test_unresolved_remains_suspended_and_finite_activity_retains_next_owner",
+              "seconds": 0.4690000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.DomainReassessmentTests.test_inconclusive_reassessment_keeps_suspension_and_has_no_automatic_repeat",
+              "seconds": 0.23400000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.DomainReassessmentTests.test_qualified_reassessment_restores_negative_and_preserves_sealed_judgment",
+              "seconds": 0.4220000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.DomainReassessmentTests.test_reassessment_rejects_forged_conclusion_and_accepts_final_running_execution",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.DomainReassessmentTests.test_reassessment_withdrawal_propagates_locally_and_keeps_formal_result",
+              "seconds": 0.35900000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.ReassessmentPublicationTests.test_authorized_replacement_replays_through_domain_publication",
+              "seconds": 0.7970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.ReassessmentPublicationTests.test_reaffirmed_noncurrent_judgment_is_recorded_without_restoring_use",
+              "seconds": 0.34299999999348074,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_reassessment.ReassessmentStorageTests.test_actual_split_state_suspend_review_save_reload_and_next_owner",
+              "seconds": 0.7190000000409782,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_record_authorities.StorageRoundTripTests.test_storage_registration_roundtrip_uses_split_family_files",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_storage_roundtrip.ExactSourceTests.test_actual_git_candidate_preserves_exact_source_and_declaration_names",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_storage_roundtrip.ExactSourceTests.test_identity_basis_distinguishes_exact_exposition_and_compiler_expressions",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_storage_roundtrip.ExactSourceTests.test_source_catalog_delivers_exact_proposal_text_and_compiler_keys",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_storage_roundtrip.ExactSourceTests.test_synthetic_transition_review_cannot_cover_a_changed_unicode_expression",
+              "seconds": 0.2029999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_storage_roundtrip.KnowledgeRoundtripTests.test_central_explanation_revision_reuses_formal_and_schedules_only_replacement",
+              "seconds": 0.7820000000065193,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_storage_roundtrip.KnowledgeRoundtripTests.test_current_mismatch_has_active_effect_without_positive_knowledge",
+              "seconds": 0.5459999999729916,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_storage_roundtrip.KnowledgeRoundtripTests.test_raw_lean_source_hash_and_record_basis_preserve_unicode_distinctions",
+              "seconds": 0.31299999996554106,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_storage_roundtrip.KnowledgeRoundtripTests.test_shared_formal_result_continuity_round_trips_for_each_exposition",
+              "seconds": 0.9529999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_knowledge_storage_roundtrip.KnowledgeRoundtripTests.test_unicode_currentness_and_impact_survive_actual_storage",
+              "seconds": 0.35900000005494803,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-6dpliu_b\\report.json",
+        "sha256": "da30f855f8b9f370811cee71f1301c4de0060df9fecf1452d9a07465fd7221b7",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 15.0,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 12.844000000040978,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "형식/출처/import/record/현재성·독립검토·실제worker/engine guard·신뢰전환/staged검토와 지식철회의pending/answered 보존을 실제 제품 경로로 검증. 합성 Lean과 원 녹화 구분. 제품동작변경없음.",
+      "limits": "295개204.9초·90개개별예산초과·구조smell12.844초를구분한다. 부분가족 검증은전체관문/T4/T5증거가아니다.",
+      "files": [
+        {
+          "path": "tests/unit/test_knowledge_close_currentness.py",
+          "sha256": "4c0b6446edf9ae8b0a50bf7811a1a4c9e9029df8201e767ae63c8fbf5052312b"
+        },
+        {
+          "path": "tests/unit/test_knowledge_close_evidence.py",
+          "sha256": "299a0e9204f7201ddc4065a7f462039fa87b18b2cd2f69fa60384da4094eec4d"
+        },
+        {
+          "path": "tests/unit/test_knowledge_close_imports.py",
+          "sha256": "7ff9f966a7cd990281f58fbeffda33b9d95df3529c3ac370967ac313b99d5412"
+        },
+        {
+          "path": "tests/unit/test_knowledge_close_records.py",
+          "sha256": "a2fe7398cbc79209820fd9b2fddfdf9a516bc467864b1171825724bde2f19ee7"
+        },
+        {
+          "path": "tests/sim/test_knowledge_close_engine_guards.py",
+          "sha256": "cc3703d7daffd6d748c6b85b288cf6eff9e001c68e7752084c796826290bfee2"
+        },
+        {
+          "path": "tests/sim/test_knowledge_close_worker.py",
+          "sha256": "d530fd3c89197da620e3ea8e33b21033b4b52c6e66e38952bf87bb0ff1477fc7"
+        },
+        {
+          "path": "tests/flows/test_knowledge_close_staged_transition.py",
+          "sha256": "0e8fee0a81ccd8837cda61b07432718422a976275682bd5803da6c86a13ab79b"
+        },
+        {
+          "path": "tests/support/knowledge_close_inputs.py",
+          "sha256": "c8e942f1a07f09fc83efc92af7b33c71e11710a413c0efd145be1b873aa09438"
         }
       ],
       "whole_requirement_closed": false
