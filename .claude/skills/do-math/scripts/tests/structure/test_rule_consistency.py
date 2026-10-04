@@ -1,7 +1,7 @@
 """3-C current canonical rules and their complete direct call-site population.
 
 Finite behavioral spaces are checked in their existing domain test modules.
-This table covers three original pairs; it does not declare the other eight
+This table covers five original pairs; it does not declare the other six
 original pairs or every future semantic copy verified.
 """
 import ast
@@ -21,6 +21,19 @@ RULES = {
     'D-02': ('task_scope.py', 'validate_withdrawal_scope', {
         ('submission.py', '_payload_issues'), ('submission.py', 'disposition'),
         ('task_scope.py', '_validate')}),
+    'C-19': ('governance.py', 'authorize', {
+        ('call_engine.py', '_prepare_call'), ('call_engine.py', '_call_stop_requested'),
+        ('core_engine.py', '_publish_control_request'), ('core_engine.py', '_validate_bundle_current'),
+        ('core_engine.py', '_finish_native_recovery'), ('core_engine.py', '_capture_native_submission'),
+        ('core_engine.py', '_cleanup_scope'), ('formal_engine.py', '_resume_formal_waits'),
+        ('formal_engine.py', '_formal_steps'), ('formal_engine.py', 'stop'),
+        ('governance.py', 'authorize_review_replacement'), ('governance_engine.py', '_resume_action_authority_waits'),
+        ('lifecycle_engine.py', '_action_lifecycle_gate'), ('lifecycle_engine.py', '_check_limited_recovery'),
+        ('planning.py', 'task_ready')}),
+    'B-36': ('lifecycle_engine.py', '_limited_recovery_allowed', {
+        ('core_engine.py', '_publish_control_request'), ('core_engine.py', '_validate_bundle_current'),
+        ('dispatch_engine.py', '_owner_stopping'), ('lifecycle_engine.py', '_action_lifecycle_gate'),
+        ('lifecycle_engine.py', '_execution_stop_requested')}),
 }
 
 
@@ -28,35 +41,37 @@ class CanonicalRuleTests(unittest.TestCase):
     def test_every_declared_rule_has_one_definition_and_all_direct_consumers_use_it(self):
         trees = {p.name: ast.parse(p.read_text(encoding='utf-8'))
                  for p in (SCRIPTS / 'do_math').glob('*.py')}
+        nodes = {path: tuple(ast.walk(tree)) for path, tree in trees.items()}
+        functions = {path: [node for node in items if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))]
+                     for path, items in nodes.items()}
+        sites = {path: [(function.name, call) for function in items for call in ast.walk(function)
+                        if isinstance(call, ast.Call)] for path, items in functions.items()}
         for rule, (owner, name, expected) in RULES.items():
             with self.subTest(rule=rule):
-                definitions = [(path, node.name) for path, tree in trees.items()
-                    for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-                    and node.name == name]
+                definitions = [(path, node.name) for path, items in functions.items()
+                               for node in items if node.name == name]
                 self.assertEqual(definitions, [(owner, name)])
                 calls = set()
                 for path, tree in trees.items():
                     bindings = {}
-                    for node in ast.walk(tree):
+                    for node in nodes[path]:
                         if isinstance(node, ast.ImportFrom):
                             module = (node.module or '').split('.')[-1]
                             for imported in node.names:
                                 if imported.name == name and module == owner[:-3]:
                                     bindings[imported.asname or name] = name
-                    for function in ast.walk(tree):
-                        if not isinstance(function, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                            continue
-                        for call in ast.walk(function):
-                            if not isinstance(call, ast.Call):
-                                continue
-                            if isinstance(call.func, ast.Name) and call.func.id == name:
-                                self.assertTrue(path == owner or call.func.id in bindings,
-                                                'shared rule name is not imported from its owner')
-                                calls.add((path, function.name))
-                            elif isinstance(call.func, ast.Attribute) and call.func.attr == name:
-                                self.assertIsInstance(call.func.value, ast.Name)
+                    for function, call in sites[path]:
+                        if isinstance(call.func, ast.Name) and call.func.id == name:
+                            self.assertTrue(path == owner or call.func.id in bindings,
+                                            'shared rule name is not imported from its owner')
+                            calls.add((path, function))
+                        elif isinstance(call.func, ast.Attribute) and call.func.attr == name:
+                            self.assertIsInstance(call.func.value, ast.Name)
+                            if name.startswith('_'):
+                                self.assertEqual(call.func.value.id, 'self', 'shared owner predicate uses its inherited method')
+                            else:
                                 self.assertEqual(call.func.value.id, owner[:-3])
-                                calls.add((path, function.name))
-                            elif isinstance(call.func, ast.Name) and call.func.id in bindings:
-                                calls.add((path, function.name))
+                            calls.add((path, function))
+                        elif isinstance(call.func, ast.Name) and call.func.id in bindings:
+                            calls.add((path, function))
                 self.assertEqual(calls, expected, 'new or missing direct consumers require declaration review')

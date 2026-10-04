@@ -572,6 +572,51 @@ class LimitedRecoveryTests(unittest.TestCase):
 class PausedDispatchTests(unittest.TestCase):
     """The owner's pass while paused: only the action a limited recovery decision names is dispatched."""
 
+    def test_limited_recovery_admission_and_stop_gate_agree_for_each_binding_axis(self):
+        """3-C/B-36: public approval with one premise changed at a time, no model replay."""
+        from support.scheduling_recovery import limited_recovery_sim
+        sim = limited_recovery_sim()
+        engine = sim.engine
+        before_instance, before_runtime = deepcopy(sim.instance), deepcopy(sim.runtime)
+        original = deepcopy(next(a for a in sim.runtime['queue'] if a['id'] == 'AC-limited'))
+        cases = ('valid', 'missing_binding', 'pause_id', 'pause_basis', 'action_hash', 'target',
+                 'purpose', 'profile', 'source_approval', 'grant_revoked', 'permanently_closed', 'new_stop')
+        for damage in cases:
+            engine.instance, engine.runtime = deepcopy(before_instance), deepcopy(before_runtime)
+            action = deepcopy(original)
+            binding = action['repair']['limited_recovery']
+            if damage == 'missing_binding': action['repair'].pop('limited_recovery')
+            elif damage in ('pause_id', 'pause_basis'): binding[damage] = 'changed-' + damage
+            elif damage == 'action_hash': binding['action_sha256'] = '0' * 64
+            elif damage == 'target': action['target'] = 'RI-other'
+            elif damage == 'purpose': action['purpose'] += ' outside approval'
+            elif damage == 'profile': action['profile_ref'] = {**action['profile_ref'], 'revision': action['profile_ref']['revision'] + 1}
+            elif damage == 'source_approval':
+                engine.runtime['extended_controls'][binding['source_ref']]['request']['config']['change']['procedure'] += ' changed'
+            elif damage == 'grant_revoked': engine.instance['grants'][action['grant_id']]['status'] = 'revoked'
+            elif damage == 'permanently_closed': engine.instance['lifecycle']['permanently_closed'] = True
+            elif damage == 'new_stop': engine.runtime['stop_requested'] = 'new emergency stop'
+            with self.subTest(damage=damage):
+                allowed = damage == 'valid'
+                self.assertIs(engine._limited_recovery_allowed(action), allowed)
+                self.assertIs(engine._execution_stop_requested(action), not allowed)
+                if allowed:
+                    engine._action_lifecycle_gate(action)
+                else:
+                    reason = ('closed/completed instance cannot dispatch' if damage == 'permanently_closed' else
+                              'profile reference is absent or stale' if damage == 'profile' else
+                              'lifecycle or conversation prevents dispatch')
+                    import re
+                    with self.assertRaisesRegex(ValueError, '^' + re.escape(reason) + '$'):
+                        engine._action_lifecycle_gate(action)
+        engine.instance, engine.runtime = before_instance, before_runtime
+        self.assertIs(engine._limited_recovery_allowed(original), True)
+        sim.advance(301)  # the publicly adopted limited approval lasts five minutes
+        self.assertIs(engine._limited_recovery_allowed(original), False)
+        self.assertIs(engine._execution_stop_requested(original), True)
+        with self.assertRaisesRegex(ValueError, '^lifecycle or conversation prevents dispatch$'):
+            engine._action_lifecycle_gate(deepcopy(original))
+
     def recovery(self, e, action, grant_id, purpose, procedure, profile):
         extended(e, 'decision', {'change': {'kind': 'limited_recovery', 'action_id': action['id'], 'grant_id': grant_id,
             'profile_ref': profile, 'purpose': purpose, 'procedure': procedure,

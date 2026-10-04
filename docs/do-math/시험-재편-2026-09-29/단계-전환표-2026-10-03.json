@@ -4841,7 +4841,7 @@
       {
         "id": "3-C",
         "state": "partial_implementation",
-        "remaining": "원래11쌍 중 B-16/C-12/D-02의 정본/직접 소비와 유한 공간을 검증. 남은8쌍 및 이후 의미상 사본 전건은 미확정"
+        "remaining": "원래11쌍 중 5쌍의 명시한 공간과 정본 소비를 연결. C-15/B-49/B-32/B-33/C-13/A-47 및 이후 사본·각 공간 밖의 종료는 미확정"
       },
       {
         "id": "4-A",
@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B70 판정 세쌍의 관련 119개 같은 판본 검증",
-      "active": "3-C 남은 원래 여덟 평가자 쌍과 이후 사본의 정본/차분 검증",
+      "last_closed": "B71 허가·정지 규칙의 관련 100개 같은 판본 검증",
+      "active": "3-C 원래 남은 여섯 규칙 쌍과 이후 사본의 정본/차분 검증",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -16768,6 +16768,85 @@
         {
           "path": ".claude/skills/do-math/scripts/tests/structure/test_rule_consistency.py",
           "sha256": "97ad12fcf5bd4f23738b7ec4a6b0ad6887427e719e670dce6c3196a8ffb3ba81"
+        }
+      ],
+      "whole_requirement_closed": false
+    },
+    "authority_rule_consistency_integration": {
+      "id": "B71",
+      "state": "verified_main_commit_pending",
+      "scope": "원래 C-19/B-36의 실제 grant 배정/정지·공개 제한 복구 결박과 공유 정본 소비 대조",
+      "original_pairs": [
+        "B-16",
+        "C-19",
+        "B-36",
+        "C-15",
+        "C-12",
+        "B-49",
+        "B-32",
+        "D-02",
+        "B-33",
+        "C-13",
+        "A-47"
+      ],
+      "verified_in_declared_scope": [
+        "C-19",
+        "B-36"
+      ],
+      "connected_pairs": [
+        "B-16",
+        "C-12",
+        "D-02",
+        "C-19",
+        "B-36"
+      ],
+      "remaining_original_pairs": [
+        "C-15",
+        "B-49",
+        "B-32",
+        "B-33",
+        "C-13",
+        "A-47"
+      ],
+      "changed_area": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 100
+        },
+        "total_seconds": 56.8,
+        "changed_during_run": []
+      },
+      "tracked_report": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-04-허가-정지-차분/report.json",
+      "report_sha256": "6d26a6665cd009287334091271cbc861af07829a02a8f03a162e8c9f87f00e91",
+      "command": "python .claude/skills/do-math/scripts/run_tests.py structure sim.test_lifecycle_engine_controls sim.test_call_stop_flags sim.test_submission_engine_calls flows.test_scheduling_recovery_calls.LimitedRecoveryCallTests --jobs 3",
+      "contract": [
+        "원 grant를 바인딩한 실행은 대체 grant가 있어도 소급 허가하지 않음",
+        "철회/만료의 배정 거부와 실제 stop flag/종료를 연결",
+        "공개 제한 복구의 결박 각 축과 승인 만료에서 배정과 정지 관문이 일치",
+        "같은 다섯 정본의 AST 수집을 재사용하여 단언을 줄이지 않음"
+      ],
+      "limits": [
+        "각 보고의 명시한 입력 공간 밖까지 완료라고 주장하지 않음",
+        "원래 남은 여섯 쌍·이후 사본과 최종 전역 관문은 미완료",
+        "개별 초과 11개; 단독 구조 검사 개선을 전체 T2/T3 속도로 확대하지 않음"
+      ],
+      "files": [
+        {
+          "path": ".claude/skills/do-math/scripts/tests/structure/test_rule_consistency.py",
+          "sha256": "9b7bddafd4ac50cd90ad8ff68ecb7d651bc7a32ebb4893e95471c8ce55ae3e39"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/sim/test_lifecycle_engine_controls.py",
+          "sha256": "b11ad8e58f6df0896f621f73c13b308c8e8ad4d5be888710e5965532df5a8007"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/sim/test_call_stop_flags.py",
+          "sha256": "84a559cce7286ac19d51a274cf088c5af87c5f392c76615dbdfecac496ad2027"
+        },
+        {
+          "path": ".claude/skills/do-math/scripts/tests/sim/test_submission_engine_calls.py",
+          "sha256": "965c9d6a63e2766db9d6b744d6a702e91aa2e94df010e68e47e6d3d458979d01"
         }
       ],
       "whole_requirement_closed": false

@@ -44,6 +44,10 @@ class ProducerCallTests(unittest.TestCase):
         def revoke(context, workspace):
             execution = next(value for value in sim.engine.runtime["executions"].values() if value["status"] == "running")
             applied_now(sim, "decision", config={"change": {"kind": "revoke", "grant_id": execution["grant_id"]}})
+            self.assertFalse(governance.authorize(sim.engine.instance, execution['action'],
+                runtime=sim.runtime, at=sim.ports.clock.now())['allowed'])
+            with self.assertRaisesRegex(ValueError, '^research authority: no current grant permits this action$'):
+                sim.engine._action_lifecycle_gate(dict(execution['action']))
             unbound = {key: value for key, value in execution["action"].items() if key != "grant_id"}
             alternative.append(governance.authorize(sim.engine.instance, unbound, at=sim.ports.clock.now())["allowed"])
         model.before("maintenance", revoke)

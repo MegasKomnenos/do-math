@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import sys
 import unittest
+from copy import deepcopy
 
 from do_math.execution_lifecycle import record_submission_intent
 from do_math.knowledge import plan_impact, revision_roots
@@ -173,8 +174,15 @@ class PreparationStopTests(StopFlagHarness):
 
     def test_revoked_grant_publishes_a_stop(self):
         with self.running() as (e, eid, future, reads):
+            from do_math.governance import authorize
+            action = deepcopy(e.runtime['executions'][eid]['action'])
+            self.assertIs(authorize(e.instance, action, self.sim.clock.now(), runtime=e.runtime)['allowed'], True)
+            e._action_lifecycle_gate(deepcopy(action))
             grant = e.runtime['executions'][eid]['grant_id']
             self.apply('decision', config={'change': {'kind': 'revoke', 'grant_id': grant}})
+            self.assertIs(authorize(e.instance, action, self.sim.clock.now(), runtime=e.runtime)['allowed'], False)
+            with self.assertRaisesRegex(ValueError, '^research authority: no current grant permits this action$'):
+                e._action_lifecycle_gate(deepcopy(action))
             self.assertStopped(e, eid, future, reads)
 
     def test_governance_revision_publishes_a_stop(self):
@@ -222,12 +230,19 @@ class PreparationStopTests(StopFlagHarness):
 
     def test_grant_expiry_is_a_clock_comparison(self):
         with self.running() as (e, eid, future, reads):
+            from do_math.governance import authorize
+            action = deepcopy(e.runtime['executions'][eid]['action'])
+            self.assertIs(authorize(e.instance, action, self.sim.clock.now(), runtime=e.runtime)['allowed'], True)
+            e._action_lifecycle_gate(deepcopy(action))
             grant = e.instance['grants'][e.runtime['executions'][eid]['grant_id']]
             later = datetime.fromisoformat(grant['expires_at']) + timedelta(seconds=1)
             e._settle_stops()
             self.assertFalse(future.stop.is_set())
             # Only the wall clock passes the expiry; the call deadline's monotonic clock stays.
             self.sim.clock.set_wall(later)
+            self.assertIs(authorize(e.instance, action, self.sim.clock.now(), runtime=e.runtime)['allowed'], False)
+            with self.assertRaisesRegex(ValueError, '^research authority: no current grant permits this action$'):
+                e._action_lifecycle_gate(deepcopy(action))
             e._settle_stops()
             self.assertStopped(e, eid, future, reads, 'authority_changed')
 
