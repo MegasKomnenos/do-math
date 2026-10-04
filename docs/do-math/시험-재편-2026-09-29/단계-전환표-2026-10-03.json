@@ -4881,8 +4881,8 @@
       {
         "id": "13-C",
         "state": "partial_implementation",
-        "remaining": "B113까지 단순 점 표기 필드161곳 전건·함수5·진단7을 검증하고 파일명33을 구별했다. 이 표기 모집단의 미결은0이며 새 미소유 이름은 실패한다. 단독 이름·배열/상수 표기·역할별 산출 전건과 실제 읽기 출력 한도는 남음.",
-        "evidence": "document_dotted_reference_population 및 B110~112/B84 원증거; 13-C 전체 완료 아님"
+        "remaining": "B114까지 점/배열 필드189곳·함수5·상수3·진단7을 검증하고 파일명33을 구별했다. 해당 점/배열 표기 미결0. 단독 이름·문장 내 조합 표기·역할별 산출 전건과 실제 읽기 출력 한도는 남음.",
+        "evidence": "document_array_and_constant_bindings 및 B110~113/B84 원증거; 13-C 전체 완료 아님"
       }
     ],
     "stage2": [
@@ -13089,8 +13089,8 @@
     },
     "current_focus": {
       "phase": "문서와 실제 코드의 대응 검증",
-      "last_closed": "B112 8af6e011; B113 단순 점 표기 필드161곳 전건 소유자 연결·구조57개 통과",
-      "active": "13-C의 배열·상수 표기와 단독 이름 및 읽기 경계",
+      "last_closed": "B113 7823c9a0; B114 배열28/상수3 추가·구조59개 통과",
+      "active": "13-C 단독 이름의 실제 코드 연결과 비필드 용어 분류, 읽기 경계",
       "exit": "13-C의 이름 전건과 읽기 경계를 근거별로 검수; 파일명 분류를 필드 검증으로 세지 않음",
       "next": "원래 요구별 미해소를 마친 뒤 현행 판본 일반/fresh T3/변이/T4·T5",
       "work_method": "이미 확인한 발동 원천은 다시 전수 감사하지 않는다. 원래 요구별 미해소와 최종 판본 관문을 계속 유지한다.",
@@ -24378,6 +24378,348 @@
       "limits": "소문자 단순 점 표기에 한정한다. 단독 이름·배열 인덱스·대문자 상수 표기 및 역할별 산출 전건과 실제 운전 도구 바이트 한도는 미해소다. 파일명 분류는 존재 검증이 아니다.",
       "owner_evidence": "제출 check.passed와 수입 check.sha256를 분리. 선택적 change.value 및 payload.kind는 실제 소유자의 고정 키 읽기에 결속하며 쓰기·타 객체·중첩 함수·동적 키는 이름 근거로 쓰지 않는다. plan_settle_wait는 계획 정착 대기의 생산자 하나에 명시 결속한다.",
       "budget_note": "구조57개51.0초. smell 검사9.032초는 개별5초 기준을 초과했으나 정확성 검사를 유지했다."
+    },
+    "document_array_and_constant_bindings": {
+      "id": "B114",
+      "scope": "배열 항목28곳과 모듈 상수3곳을 실제 저장·입력 생산자에 연결",
+      "state": "배열/상수 표기 검증 완료·13-C 전체는 일부 구현",
+      "memory_node": "M-0531",
+      "reports": {
+        "before": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-배열-상수/before.json",
+          "sha256": "b79bc453f5cf3043ee588ff36a98b4903e6ed38e55a112f79b8cfe920617e169",
+          "counts": {
+            "error": 10,
+            "passed": 7
+          },
+          "total_seconds": 4.2,
+          "complete": true,
+          "successful": false,
+          "changed_during_run": []
+        },
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-문서-배열-상수/report.json",
+          "sha256": "2d77ce2d52f8b98b0c792d80022107231aa4126318eec06716c5c65f8a559af2",
+          "counts": {
+            "passed": 59
+          },
+          "total_seconds": 51.7,
+          "complete": true,
+          "successful": true,
+          "changed_during_run": []
+        }
+      },
+      "counts": {
+        "field": 189,
+        "filename_not_a_field": 33,
+        "function": 5,
+        "diagnostic": 7,
+        "constant": 3
+      },
+      "namespaces": [
+        "academic_validation",
+        "action",
+        "activation",
+        "ai",
+        "assessment",
+        "candidate_record",
+        "candidates",
+        "change",
+        "checkpoint_files",
+        "checkpoint_source",
+        "config",
+        "contract_checks",
+        "disposition",
+        "documents",
+        "environment_check",
+        "execution",
+        "execution_to_review",
+        "execution_window",
+        "expected",
+        "external_rejections",
+        "formal_result",
+        "formal_verifier",
+        "governance",
+        "governance_content",
+        "governance_record",
+        "immutable_input",
+        "import_check",
+        "import_payload",
+        "init_result",
+        "input_manifest",
+        "instance",
+        "item_dispositions",
+        "knowledge_changes",
+        "lifecycle",
+        "maintenance_fence",
+        "materialized_output_files",
+        "observation",
+        "operating_summary",
+        "operation_progress",
+        "operational_evidence",
+        "pending_findings",
+        "plan_settle_wait",
+        "preview",
+        "previous_output_files",
+        "profile",
+        "profile_selection",
+        "project",
+        "prompt",
+        "query_record",
+        "query_result",
+        "question_details",
+        "record_map",
+        "recovered_output_files",
+        "recovery_materials",
+        "recovery_source",
+        "rejected_response",
+        "repair",
+        "research_sources",
+        "result_source",
+        "results",
+        "review_research",
+        "review_sources",
+        "revision_resolutions",
+        "revisit",
+        "role_review",
+        "role_tiers",
+        "runtime",
+        "scheduling_result",
+        "scholarly",
+        "scope",
+        "selection_result",
+        "session_limits",
+        "source_range",
+        "source_ref",
+        "status",
+        "subject",
+        "submission_check",
+        "submission_contract",
+        "task",
+        "task_assessments",
+        "task_conditions",
+        "toolchain",
+        "user_request",
+        "worker_feedback"
+      ],
+      "added_references": [
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 70,
+          "token": "documents[].artifact_ref",
+          "kind": "field"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 650,
+          "token": "planning.RECORD_FAMILIES",
+          "kind": "constant"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 732,
+          "token": "item_dispositions[].evidence_refs",
+          "kind": "field"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 873,
+          "token": "recovery_materials.output_files[].restoration_error",
+          "kind": "field"
+        },
+        {
+          "document": "references/CLI-실행-계약.md",
+          "line": 929,
+          "token": "results[].report",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 29,
+          "token": "results[].report",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 31,
+          "token": "sources[].local_path",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 31,
+          "token": "output_files[].local_path",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 31,
+          "token": "previous_output_files[].local_path",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 45,
+          "token": "previous_output_files[].local_path",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 49,
+          "token": "results[].output_files[].local_path",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 49,
+          "token": "previous_output_files[].local_path",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 126,
+          "token": "candidates[].revises_task_id",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 126,
+          "token": "knowledge_changes[].id",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 130,
+          "token": "task_conditions[].knowledge_revision_targets",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 204,
+          "token": "observations.OPERATORS",
+          "kind": "constant"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 206,
+          "token": "task_conditions[].observation_rules",
+          "kind": "field"
+        },
+        {
+          "document": "references/공통-실행.md",
+          "line": 356,
+          "token": "knowledge.AUTHORED_FIELDS",
+          "kind": "constant"
+        },
+        {
+          "document": "references/지식-저작과-재사용.md",
+          "line": 25,
+          "token": "results[].output_files[].local_path",
+          "kind": "field"
+        },
+        {
+          "document": "references/지식-저작과-재사용.md",
+          "line": 25,
+          "token": "previous_output_files[].local_path",
+          "kind": "field"
+        },
+        {
+          "document": "references/초기화-운전.md",
+          "line": 27,
+          "token": "result.items[].path",
+          "kind": "field"
+        },
+        {
+          "document": "계약/동일성-검토.md",
+          "line": 65,
+          "token": "pending_findings[].ref",
+          "kind": "field"
+        },
+        {
+          "document": "계약/보충-조사.md",
+          "line": 35,
+          "token": "sources[].ref",
+          "kind": "field"
+        },
+        {
+          "document": "계약/보충-조사.md",
+          "line": 35,
+          "token": "sources[].ref",
+          "kind": "field"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 49,
+          "token": "task_assessments[].item_dispositions",
+          "kind": "field"
+        },
+        {
+          "document": "계약/연구-계획.md",
+          "line": 109,
+          "token": "external_rejections[].id",
+          "kind": "field"
+        },
+        {
+          "document": "계약/연구-수행.md",
+          "line": 96,
+          "token": "revision_resolutions[].disposition",
+          "kind": "field"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 15,
+          "token": "checkpoint_files[].local_path",
+          "kind": "field"
+        },
+        {
+          "document": "계약/운영-점검.md",
+          "line": 21,
+          "token": "output_files[].local_path",
+          "kind": "field"
+        },
+        {
+          "document": "계약/의도-해석.md",
+          "line": 34,
+          "token": "question_details[].id",
+          "kind": "field"
+        },
+        {
+          "document": "계약/후보-준비.md",
+          "line": 154,
+          "token": "contract_checks[].sibling_boundaries",
+          "kind": "field"
+        }
+      ],
+      "pending_dotted_count": 0,
+      "failure_correction": "초기 검사10오류는 존재하지 않는 RECORDS.checkpoints를 읽은 검사 지원 코드의 동일 원인이다. 실제 runtime.checkpoints의 map item schema로 수정했다. 제품 결함으로 세지 않는다.",
+      "boundary": "배열 suffix는 실제 items를 따라간다. 객체/map 키를 항목 필드로 사용하지 않는다. 인덱스는 필드 소유자 확인이며 실제 배열 길이 인증이 아니다. 저장 execution.output_files에는 없는 local_path를 복원 생산자에 결속한다.",
+      "limits": "기존 단순 점 표기161곳과 새 배열28곳으로 필드189곳이다. 단독 이름·문장 내 조합 표기·역할별 산출 전건 및 실제 읽기 도구 출력 한도는 남음.",
+      "next_candidate_evidence": {
+        "scope": "현재24문서의 단일 ASCII 식별자 표기, lexical presence only",
+        "unique": 1029,
+        "occurrences": 3537,
+        "without_python_lexical_match": [
+          "ProcessId",
+          "ParentProcessId",
+          "CommandLine",
+          "PT0S",
+          "F",
+          "U",
+          "needs_revision",
+          "import_unit",
+          "rg",
+          "TaskOutput",
+          "checkpoint_schema",
+          "FileRenameInfoEx",
+          "describe_source",
+          "not_implemented",
+          "restricted",
+          "LIVE_INSTALLATION_ROOT",
+          "question_detail"
+        ],
+        "caveat": "AST keyword 이름과 PowerShell 등은 이 사전 탐색에서 제외했다.17개 모두 결함이라는 뜻이 아니다."
+      },
+      "budget_note": "구조59개51.7초; 전체 의미를 약화하거나 timeout을 추가하지 않았다."
     }
   }
 }

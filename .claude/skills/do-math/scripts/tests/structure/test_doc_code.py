@@ -1,11 +1,11 @@
-"""13-C command names and command-specific flags across the operating/role documents.
+"""13-C commands, policies, dotted fields, functions and constants in role documents.
 
-Fields, policies and reading-boundary obligations have separate closure work;
-this test does not substitute flag vocabulary for those requirements.
+Unqualified prose field names and reading-boundary obligations still require
+separate closure; dotted references are checked against their actual owners.
 """
 from pathlib import Path
 import unittest
-from support.doc_code import (command_issues, consumed_object_schema, declared_policy_names, diagnostic_names, diagnostic_reference_issues, documented_policies, documents,
+from support.doc_code import (command_issues, constant_reference_issues, consumed_object_schema, declared_policy_names, diagnostic_names, diagnostic_reference_issues, documented_policies, documents,
                               field_bindings, field_schemas, function_reference_issues, parser_options, policy_issues, produced_object_schema, scoped_field_issues, tool_options, unowned_field_references, written_object_schema)
 
 SKILL = Path(__file__).resolve().parents[3]
@@ -91,6 +91,20 @@ class DocumentCodeTests(unittest.TestCase):
             if choice:
                 return {'left': 1}
             return {'right': 1}
+        def conditional(choice):
+            return {'base': 1, **({'optional': 1} if choice else {})}
+        def array_producer():
+            values = [{'item': 1} for _ in range(1)]
+            target = []
+            target.append({'own': 1})
+            other = []
+            other.append({'foreign': 1})
+        schema = produced_object_schema(conditional)
+        self.assertEqual(scoped_field_issues('`view.base` `view.optional`', {'view': schema}), [])
+        self.assertEqual(set(produced_object_schema(array_producer, 'values', list_item=True)['properties']), {'item'})
+        self.assertEqual(set(produced_object_schema(array_producer, 'target.append', argument=0)['properties']), {'own'})
+        with self.assertRaisesRegex(ValueError, 'Review producer list item'):
+            produced_object_schema(array_producer, 'target', list_item=True)
         schema = produced_object_schema(result, bindings={'extra': {'properties': {'observed': {}}}})
         self.assertEqual(scoped_field_issues('`view.own` `view.observed`', {'view': schema}), [])
         with self.assertRaisesRegex(ValueError, 'Unused producer bindings'):
@@ -168,6 +182,13 @@ class DocumentCodeTests(unittest.TestCase):
         self.assertEqual(set(schema['properties']), {'second'})
         with self.assertRaisesRegex(ValueError, 'Review producer branch'):
             written_object_schema(producer, 'result', branch="command == 'missing'")
+        def loop_producer(first, second):
+            for row in first:
+                row['first'] = 1
+            for row in second:
+                row['second'] = 2
+        schema = written_object_schema(loop_producer, 'row', iteration='first')
+        self.assertEqual(set(schema['properties']), {'first'})
         schemas = field_schemas()
         self.assertEqual(scoped_field_issues('`input_manifest.prompt.sha256` `prompt.artifact_ref` '
             '`init_result.instance_id` `selection_result.selection.profile_ref` `query_record.family`', schemas), [])
@@ -197,7 +218,7 @@ class DocumentCodeTests(unittest.TestCase):
         self.assertEqual(scoped_field_issues('`payload.deadline_offset_ms` <!-- do-math fields: payload=import_payload -->', schemas),
                          [('scoped field', 'payload.deadline_offset_ms')])
 
-    def test_all_simple_dotted_document_fields_have_an_owner(self):
+    def test_all_dotted_document_fields_have_an_owner(self):
         schemas = field_schemas()
         pending = [(document.relative_to(SKILL).as_posix(), token)
                    for document in documents(SKILL)
@@ -207,6 +228,32 @@ class DocumentCodeTests(unittest.TestCase):
                          ['new_space.value', 'recrod.id'])
         self.assertEqual(unowned_field_references('`record.id` <!-- do-math fields: record=governance_record -->', schemas), [])
         self.assertEqual(unowned_field_references('`pythonw.exe` `integration.currentness` `os.scandir(...)`', schemas), [])
+
+    def test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields(self):
+        item = {'properties': {'own': {}, 'nested': {'type': 'array', 'items': {'properties': {'leaf': {}}}}}}
+        schemas = {'rows': {'type': 'array', 'items': item},
+                   'mapping': {'type': 'object', 'additionalProperties': item},
+                   'object': {'properties': {'own': {}}}}
+        self.assertEqual(scoped_field_issues('`rows[].own` `rows[0].nested[].leaf`', schemas), [])
+        for token in ('rows.own', 'rows[].leaf', 'mapping[].own', 'object[].own'):
+            self.assertEqual(scoped_field_issues('`' + token + '`', schemas), [('scoped field', token)])
+        self.assertEqual(unowned_field_references('`unknown[].own` `integration[].currentness` `unknown[].json`', schemas),
+                         ['integration[].currentness', 'unknown[].json', 'unknown[].own'])
+        self.assertEqual(scoped_field_issues('`data[].own` <!-- do-math fields: data=rows -->', schemas), [])
+        actual = field_schemas()
+        self.assertEqual(scoped_field_issues('`results[].report` `results[].output_files[].local_path` '
+            '`documents[].artifact_ref` `question_details[].id` `recovery_materials.output_files[].restoration_error`', actual), [])
+        self.assertEqual(scoped_field_issues('`execution.output_files[].local_path`', actual),
+                         [('scoped field', 'execution.output_files[].local_path')])
+
+    def test_documented_module_constants_exist_independently_of_field_names(self):
+        issues = [(document.relative_to(SKILL).as_posix(), *issue)
+                  for document in documents(SKILL)
+                  for issue in constant_reference_issues(document.read_text(encoding='utf-8'))]
+        self.assertEqual(issues, [])
+        self.assertEqual(constant_reference_issues('`planning.RECORD_FAMILIES` `observations.OPERATORS` `knowledge.AUTHORED_FIELDS`'), [])
+        self.assertEqual(constant_reference_issues('`planning.MISSING_CONSTANT` `missing_module.OPERATORS`'),
+                         [('constant reference', 'missing_module.OPERATORS'), ('constant reference', 'planning.MISSING_CONSTANT')])
 
     def test_documented_policy_names_have_installed_owners(self):
         names = declared_policy_names(SCRIPTS)

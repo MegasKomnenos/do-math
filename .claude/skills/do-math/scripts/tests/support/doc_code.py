@@ -9,7 +9,8 @@ Dotted fields use their actual schema or an explicitly selected producer. A
 prose variable with different owners, such as record or result, can declare
 its owner on the same line: <!-- do-math fields: record=governance_record -->.
 These bindings never leak to later lines or override canonical namespaces.
-Unknown namespaces are coverage gaps, not evidence of a valid field.
+The document test rejects unknown namespaces. Array suffixes traverse item
+shapes; an index proves field ownership, not that a runtime array has that index.
 """
 import ast
 import inspect
@@ -22,6 +23,7 @@ import shlex
 ENTRY = re.compile(r'(?:do_math\.py|\$dmCli)\s+([a-z][a-z-]*)\b')
 SPAN = re.compile(r'(?<!`)`([^`\n]+)`(?!`)')
 FLAG = re.compile(r'^--[a-z][a-z-]*(?:=.*)?$')
+FIELD = re.compile(r'[a-z][a-z0-9_]*(?:\[\d*\])?(?:\.[a-z][a-z0-9_]*(?:\[\d*\])?)+')
 
 
 def documents(skill):
@@ -90,7 +92,7 @@ def command_issues(text, options, flags):
     return sorted(issues)
 
 
-def producer_nodes(function, scope=None, branch=None):
+def producer_nodes(function, scope=None, branch=None, iteration=None):
     tree = ast.parse(textwrap.dedent(inspect.getsource(inspect.unwrap(function))))
     function_node = tree.body[0]
     if scope is not None:
@@ -106,11 +108,14 @@ def producer_nodes(function, scope=None, branch=None):
             continue
         nodes.append(node)
         pending.extend(ast.iter_child_nodes(node))
-    if branch is not None:
-        expected = ast.unparse(ast.parse(branch, mode='eval').body)
-        matches = [node for node in nodes if isinstance(node, ast.If) and ast.unparse(node.test) == expected]
+    if branch is not None or iteration is not None:
+        expression = branch if branch is not None else iteration
+        expected = ast.unparse(ast.parse(expression, mode='eval').body)
+        matches = [node for node in nodes if
+                   (isinstance(node, ast.If) and branch is not None and ast.unparse(node.test) == expected) or
+                   (isinstance(node, ast.For) and iteration is not None and ast.unparse(node.iter) == expected)]
         if len(matches) != 1:
-            raise ValueError(f'Review producer branch {function.__qualname__}: {branch}')
+            raise ValueError(f'Review producer branch {function.__qualname__}: {expression}')
         pending, nodes = list(matches[0].body), []
         while pending:
             node = pending.pop()
@@ -121,19 +126,28 @@ def producer_nodes(function, scope=None, branch=None):
     return nodes
 
 
-def produced_object_schema(function, target=None, *, bindings=None, variants=False, keyword=None, scope=None, branch=None, return_item=None):
+def produced_object_schema(function, target=None, *, bindings=None, variants=False, keyword=None, scope=None, branch=None, return_item=None, argument=None, list_item=False):
     """Read explicitly selected producer objects; unknown fields require review."""
     nodes = producer_nodes(function, scope, branch)
-    if keyword is not None:
+    if keyword is not None or argument is not None:
         expected = ast.unparse(ast.parse(target, mode='eval').body)
-        values = [item.value for node in nodes if isinstance(node, ast.Call) and ast.unparse(node.func) == expected
-                  for item in node.keywords if item.arg == keyword]
+        calls = [node for node in nodes if isinstance(node, ast.Call) and ast.unparse(node.func) == expected]
+        if argument is not None:
+            if any(argument >= len(node.args) for node in calls):
+                raise ValueError(f'Review producer call argument {function.__qualname__}')
+            values = [node.args[argument] for node in calls]
+        else:
+            values = [item.value for node in calls for item in node.keywords if item.arg == keyword]
     elif target is None:
         values = [node.value for node in nodes if isinstance(node, ast.Return)]
     else:
         expected = ast.unparse(ast.parse(target, mode='eval').body)
         values = [node.value for node in nodes if isinstance(node, ast.Assign)
                   and any(ast.unparse(item) == expected for item in node.targets)]
+    if list_item:
+        if any(not isinstance(value, ast.ListComp) for value in values):
+            raise ValueError(f'Review producer list item {function.__qualname__}')
+        values = [value.elt for value in values]
     if return_item is not None:
         if any(not isinstance(value, ast.Tuple) or return_item >= len(value.elts) for value in values):
             raise ValueError(f'Review producer result tuple {function.__qualname__}')
@@ -146,31 +160,37 @@ def produced_object_schema(function, target=None, *, bindings=None, variants=Fal
         if expression in bindings:
             used.add(expression)
             return bindings[expression]
+        if isinstance(node, ast.IfExp) and isinstance(node.body, ast.Dict) and isinstance(node.orelse, ast.Dict):
+            return {'anyOf': [shape(node.body), shape(node.orelse)]}
         if not isinstance(node, ast.Dict):
             return {}
-        properties = {}
+        properties, compositions = {}, []
         for key, value in zip(node.keys, node.values):
             if key is None:
                 expanded = shape(value)
-                if 'properties' not in expanded:
+                if 'properties' in expanded:
+                    properties.update(expanded['properties'])
+                elif 'anyOf' in expanded or 'allOf' in expanded:
+                    compositions.append(expanded)
+                else:
                     raise ValueError(f'Unresolved object keys in document field producer {function.__qualname__}')
-                properties.update(expanded['properties'])
             elif isinstance(key, ast.Constant) and isinstance(key.value, str):
                 properties[key.value] = shape(value)
             else:
                 raise ValueError(f'Unresolved object keys in document field producer {function.__qualname__}')
-        return {'type': 'object', 'properties': properties, 'additionalProperties': False}
+        own = {'type': 'object', 'properties': properties, 'additionalProperties': False}
+        return {'allOf': [own, *compositions]} if compositions else own
     shapes = [shape(value) for value in values]
     if used != set(bindings):
         raise ValueError(f'Unused producer bindings in {function.__qualname__}: {sorted(set(bindings) - used)}')
     return {'anyOf': shapes} if variants else shapes[0]
 
 
-def written_object_schema(function, target, *, branch=None):
+def written_object_schema(function, target, *, branch=None, iteration=None):
     """Fixed subscript/keyword additions to one selected object, not other CLI branches."""
     expected = ast.unparse(ast.parse(target, mode='eval').body)
     properties = {}
-    for node in producer_nodes(function, branch=branch):
+    for node in producer_nodes(function, branch=branch, iteration=iteration):
         if isinstance(node, ast.Assign):
             for destination in node.targets:
                 if isinstance(destination, ast.Subscript) and ast.unparse(destination.value) == expected:
@@ -291,6 +311,46 @@ def field_schemas():
     environment_base['properties'].update(written_object_schema(trust_validation.check_environment, 'result')['properties'])
     schemas['environment_check'] = produced_object_schema(trust_validation.check_environment, variants=True,
         bindings={'result': environment_base})
+    def array(item):
+        return {'type': 'array', 'items': item}
+    schemas['candidates'] = contracts.schema_for('research_preparation')['properties']['candidates']
+    schemas['task_assessments'] = contracts.schema_for('research_plan')['properties']['task_assessments']
+    schemas['item_dispositions'] = schemas['task_assessments']['items']['properties']['item_dispositions']
+    extensions = submission.extension_schema({'role': 'research_preparation'})['properties']
+    for name in ('task_conditions', 'knowledge_changes', 'revision_resolutions', 'contract_checks'):
+        schemas[name] = extensions[name]
+    schemas['question_details'] = governance.interpretation_schema('interpret')['properties']['question_details']
+    schemas['external_rejections'] = array(RECORDS['external_rejections'])
+    schemas['pending_findings'] = array(produced_object_schema(review_cycle._add_findings,
+        "cycle['findings'][key]", variants=True))
+    document = produced_object_schema(context_store.prepare_role_input, 'manifest.update', keyword='documents', list_item=True)
+    document['properties'].update(written_object_schema(context_store.prepare_role_input, 'row',
+        iteration="zip(manifest['documents'], documents)")['properties'])
+    schemas['documents'] = array(document)
+    stored_file = produced_object_schema(CoreEngineMixin._preserve_outputs, 'output_files.append', argument=0)
+    restored_file = produced_object_schema(CoreEngineMixin._context, 'restored.append', argument=0, bindings={'file': stored_file})
+    schemas['materialized_output_files'] = array(restored_file)
+    previous_file = produced_object_schema(context_store.restore_continuation, 'latest[logical]', bindings={'deepcopy(entry)': stored_file})
+    schemas['previous_output_files'] = array(produced_object_schema(context_store.restore_continuation,
+        'restored.append', argument=0, bindings={'entry': previous_file}))
+    schemas['research_sources'] = array(produced_object_schema(CoreEngineMixin._context, 'sources.append', argument=0,
+        bindings={'source': RECORDS['sources']}))
+    schemas['checkpoint_files'] = array(produced_object_schema(CoreEngineMixin._context, "evidence['checkpoint_files'].append", argument=0,
+        bindings={'source': roots['runtime']['properties']['checkpoints']['additionalProperties']['properties']['evidence_files']['items']}))
+    schemas['recovered_output_files'] = array(schemas['recovery_source'])
+    schemas['recovery_materials'] = produced_object_schema(CoreEngineMixin._context, 'context["recovery_materials"]',
+        bindings={'output_files': array(schemas['recovery_source'])})
+    # The task result retains the research response, then _context restores its files.
+    research_output = contracts.schema_for('research_work')
+    retained = {'properties': {key: value for key, value in research_output['properties'].items()
+                              if key not in {'knowledge', 'relations', 'integration_bundles'}}}
+    result = produced_object_schema(CoreEngineMixin._apply, "task['results'].append", argument=0, bindings={
+        "{key: deepcopy(value) for key, value in output.items() if key not in {'knowledge', 'relations', 'integration_bundles'}}": retained,
+        "deepcopy(self.runtime['executions'][execution_id].get('output_files', []))": array(stored_file)})
+    result['properties']['output_files'] = schemas['materialized_output_files']
+    schemas['results'] = array(result)
+    schemas['query_result']['properties']['items'] = array(produced_object_schema(core_engine._record_evidence))
+    schemas['review_sources'] = array(consumed_object_schema(ReviewEngineMixin._materialize_research_sources, 'source'))
     for name in ('execution_window', 'scholarly', 'formal_verifier'):
         schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
     schemas['preview'] = produced_object_schema(submission.install_tools, 'context["formal_verifier"]["preview"]')
@@ -330,6 +390,23 @@ def property_variants(schema, name):
     return variants
 
 
+
+def item_variants(schema):
+    """Array notation traverses declared items, never an arbitrary object map."""
+    variants = []
+    if not isinstance(schema, dict):
+        return variants
+    if isinstance(schema.get('items'), dict):
+        variants.append(schema['items'])
+    for keyword in ('allOf', 'anyOf', 'oneOf'):
+        for child in schema.get(keyword, []):
+            variants.extend(item_variants(child))
+    for keyword in ('then', 'else'):
+        if keyword in schema:
+            variants.extend(item_variants(schema[keyword]))
+    return variants
+
+
 def field_bindings(line, schemas):
     """Line-local prose variables may name owners; canonical namespaces cannot be rebound."""
     local, issues, aliases = dict(schemas), [], set()
@@ -343,25 +420,26 @@ def field_bindings(line, schemas):
             else:
                 local[alias] = schemas[owner]
                 aliases.add(alias)
-        used = {span.split('.')[0] for span in SPAN.findall(line)
-                if re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', span)}
+        used = {re.split(r'[.\[]', span)[0] for span in SPAN.findall(line)
+                if FIELD.fullmatch(span)}
         issues.extend(('unused field binding', alias) for alias in sorted(aliases - used))
     return local, issues
 
 
 
 def unowned_field_references(text, schemas):
-    """Unbound simple dotted names cannot silently escape the document population."""
+    """Unbound dotted names, including array items, cannot silently escape the population."""
     pending = set()
     for line in text.splitlines():
         local, _ = field_bindings(line, schemas)
         for token in SPAN.findall(line):
-            if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', token):
+            if not FIELD.fullmatch(token):
                 continue
-            if token.endswith(('.py', '.json', '.md', '.txt', '.jsonl', '.exe')):
+            if '[' not in token and token.endswith(('.py', '.json', '.md', '.txt', '.jsonl', '.exe')):
                 continue  # Filename classification does not prove file existence.
-            root = token.split('.')[0]
-            if root not in local and root not in {'contract_check', 'integration'}:
+            root = re.split(r'[.\[]', token)[0]
+            diagnostic = '[' not in token and root in {'contract_check', 'integration'}
+            if root not in local and not diagnostic:
                 pending.add(token)
     return sorted(pending)
 
@@ -373,14 +451,15 @@ def scoped_field_issues(text, schemas):
         local, binding_issues = field_bindings(line, schemas)
         issues.extend(binding_issues)
         for span in SPAN.findall(line):
-            if not re.fullmatch(r'[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+', span):
+            if not FIELD.fullmatch(span):
                 continue
-            root, *parts = span.split('.')
+            root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
             if root not in local:
                 continue
             candidates = [local[root]]
             for part in parts:
-                candidates = [child for schema in candidates for child in property_variants(schema, part)]
+                candidates = [child for schema in candidates for child in
+                              (item_variants(schema) if part.startswith('[') else property_variants(schema, part))]
                 if not candidates:
                     issues.append(('scoped field', span))
                     break
@@ -456,3 +535,19 @@ def diagnostic_reference_issues(text, names):
                    if re.fullmatch(r'[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*', token)
                    and not token.endswith('.py') and token.split('.')[0] in names
                    and token not in names[token.split('.')[0]]})
+
+
+def constant_reference_issues(text):
+    issues = []
+    for token in SPAN.findall(text):
+        if not re.fullmatch(r'[a-z][a-z0-9_]*\.[A-Z][A-Z0-9_]*', token):
+            continue
+        module, name = token.split('.')
+        try:
+            value = getattr(importlib.import_module('do_math.' + module), name)
+        except (ImportError, AttributeError):
+            issues.append(('constant reference', token))
+        else:
+            if callable(value):
+                issues.append(('constant reference', token))
+    return sorted(set(issues))
