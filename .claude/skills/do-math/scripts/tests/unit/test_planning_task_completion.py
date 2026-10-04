@@ -86,6 +86,43 @@ class PartialWithdrawalTests(unittest.TestCase):
 
 
 class CompletionBasisTests(unittest.TestCase):
+    def test_every_submitted_formal_basis_field_is_sensitive_and_later_judgment_is_not(self):
+        from do_math.task_scope import SUBMITTED_FORMAL_BASIS_FIELDS, ASSESSMENT_KNOWLEDGE_BOOKKEEPING_FIELDS
+        instance, runtime = completed_with_knowledge()
+        task = runtime['tasks']['TK-1']
+        original = deepcopy(instance['formal_results']['FR-proof'])
+        for field in SUBMITTED_FORMAL_BASIS_FIELDS:
+            value = original.get(field)
+            replacement = [*value, 'new-member'] if isinstance(value, list) else value + ' changed' if isinstance(value, str) else 'new-' + field
+            instance['formal_results']['FR-proof'] = {**deepcopy(original), field: replacement}
+            with self.subTest(submitted_field=field):
+                self.assertFalse(task_scope.assessment_current(task, instance, runtime))
+        instance['formal_results']['FR-proof'] = deepcopy(original)
+        for field in ASSESSMENT_KNOWLEDGE_BOOKKEEPING_FIELDS:
+            instance['knowledge']['KN-proof'][field] = 'RC-later'
+            with self.subTest(review_bookkeeping=field):
+                self.assertTrue(task_scope.assessment_current(task, instance, runtime))
+        for field, value in (('publication_state', 'accepted'), ('formal_use', 'active'),
+                             ('verification', {'status': 'verified', 'checked_at': 'later'})):
+            instance['formal_results']['FR-proof'] = {**deepcopy(original), field: value}
+            with self.subTest(later_formal_judgment=field):
+                self.assertTrue(task_scope.assessment_current(task, instance, runtime))
+        instance['formal_results']['FR-proof'] = deepcopy(original)
+        instance['formal_results'].pop('FR-proof')
+        self.assertFalse(task_scope.assessment_current(task, instance, runtime), 'removing submitted evidence changes membership')
+
+    def test_explicit_formal_citation_tracks_judgment_changes_that_a_knowledge_citation_ignores(self):
+        instance, runtime = completed_with_knowledge()
+        task = runtime['tasks']['TK-1']
+        original_assessment = deepcopy(task['assessment'])
+        implicit = task_scope.assessment_basis(task, original_assessment, instance, runtime)
+        direct = deepcopy(original_assessment)
+        direct['item_dispositions'][0]['evidence_refs'].append('FR-proof')
+        explicit = task_scope.assessment_basis(task, direct, instance, runtime)
+        instance['formal_results']['FR-proof']['verification'] = {'status': 'verified'}
+        self.assertEqual(task_scope.assessment_basis(task, original_assessment, instance, runtime), implicit)
+        self.assertNotEqual(task_scope.assessment_basis(task, direct, instance, runtime), explicit)
+
     def test_submission_completion_survives_later_formal_verification_and_review_id(self):
         instance, runtime = completed_with_knowledge()
         task = runtime['tasks']['TK-1']

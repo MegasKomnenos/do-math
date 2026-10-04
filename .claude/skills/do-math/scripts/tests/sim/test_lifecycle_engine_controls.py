@@ -201,6 +201,45 @@ class ReadinessTests(unittest.TestCase):
         e._refresh_readiness()
         self.assertFalse(any(a['role'] == 'task_contract_review' for a in e.runtime['queue']))
 
+    def test_live_review_suppresses_reopening_until_return_after_external_premise_change(self):
+        from do_math import execution_lifecycle, planning
+        e = self.e
+        t = task(e, approved=False)
+        other = task(e, 'TK-other-review', approved=False)
+        e._refresh_readiness()
+        action = next(a for a in e.runtime['queue']
+                      if a['role'] == 'task_contract_review' and a.get('target') == t['id'])
+        sealed_action = deepcopy(action)
+        e._register_execution(action, {'id': 'EX-live-contract-review', 'role': 'task_contract_review', 'status': 'running'})
+        execution = e.runtime['executions']['EX-live-contract-review']
+        self.assertEqual(execution['status'], 'running')
+        registered_action = deepcopy(execution['action'])
+        e._remove_action(action)
+
+        def reviews(identifier):
+            return [a for a in e.runtime['queue']
+                    if a['role'] == 'task_contract_review' and a.get('target') == identifier]
+
+        profile = e.instance['execution_profiles'][t['profile_refs'][0]['id']]
+        profile['ai']['effort'] = 'high' if profile['ai']['effort'] != 'high' else 'low'
+        changed_key = planning.review_basis_key(t, e.instance, e.runtime)
+        self.assertNotEqual(changed_key, sealed_action['review_basis_key'])
+        for _ in range(2):
+            e._refresh_readiness()
+            self.assertEqual(reviews(t['id']), [])
+            self.assertEqual(len(reviews(other['id'])), 1, 'another target remains eligible')
+            self.assertEqual(execution['action'], registered_action, 'the running input stays sealed')
+
+        execution_lifecycle.transition_execution(execution, 'stopping', at=e.ports.clock.now())
+        execution_lifecycle.transition_execution(execution, 'ended', at=e.ports.clock.now(), outcome='execution_incomplete')
+        e._refresh_readiness()
+        reopened = reviews(t['id'])
+        self.assertEqual(len(reopened), 1)
+        self.assertEqual(reopened[0]['contract_basis'], sealed_action['contract_basis'])
+        self.assertEqual(reopened[0]['review_basis_key'], changed_key)
+        e._refresh_readiness()
+        self.assertEqual(reviews(t['id']), reopened)
+
     def test_missing_input_and_bad_condition_distinct(self):
         e = self.e
         a = task(e, inputs=['absent'])

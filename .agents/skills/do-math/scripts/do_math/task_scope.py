@@ -11,6 +11,12 @@ from .task_contracts import LIFECYCLE_STATES, TERMINAL_TASK_STATUSES
 
 _WITHDRAWABLE_STATES = LIFECYCLE_STATES - TERMINAL_TASK_STATUSES
 
+# A KN citation binds submitted content; a direct FR citation binds its full
+# judgment. Review scheduling identifiers are outside the KN content basis.
+ASSESSMENT_KNOWLEDGE_BOOKKEEPING_FIELDS = frozenset({'review_cycle_id', 'previous_review_cycle_id'})
+SUBMITTED_FORMAL_BASIS_FIELDS = ('id', 'family', 'lean_code', 'declaration_names',
+                               'dependencies', 'producer_execution', 'origin_refs')
+
 
 def result_ids(task: dict) -> set[str]:
     """IDs of the returned results a completion assessment of this task may cite."""
@@ -267,12 +273,11 @@ def assessment_basis(task, assessment, instance, runtime, *, records=None):
         if found and found[0]=='task':value=task_reference_basis(value)
         elif found and found[0] == 'knowledge':
             value = {key: item for key, item in value.items()
-                     if key not in {'review_cycle_id', 'previous_review_cycle_id'}}
+                     if key not in ASSESSMENT_KNOWLEDGE_BOOKKEEPING_FIELDS}
         elif found and found[0] == 'formal-result' and ref not in strict:
             # A KN citation binds submitted mathematics, not a judgment that
             # did not exist yet. Explicit FR citations still bind the full record.
-            value = {key: value[key] for key in ('id', 'family', 'lean_code', 'declaration_names',
-                     'dependencies', 'producer_execution', 'origin_refs') if key in value}
+            value = {key: value[key] for key in SUBMITTED_FORMAL_BASIS_FIELDS if key in value}
         result[ref]=exact_content_hash(value) if value is not None else None
     return result
 
