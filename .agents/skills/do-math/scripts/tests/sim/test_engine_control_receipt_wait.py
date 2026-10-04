@@ -15,9 +15,6 @@ from do_math.control_server import wait_receipt
 from do_math.control_transport import ControlTransport
 from support.fakes.clock import FakeClock
 
-DIFFERENT_RECEIPT = 'request_id was already received with different content'
-
-
 class ReceiptWaitTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
@@ -44,10 +41,23 @@ class ReceiptWaitTests(unittest.TestCase):
         self.assertEqual(receipt, ControlTransport.worker_receipt(binding, request_id))
         self.assertEqual(receipt, wait_receipt(binding, request_id, 0, clock=_entry.ports.clock))
         self.assertEqual(receipt, transport.pump(lambda _: self.fail('replay must not publish'))[0])
-        source.write_bytes(b'{"different":')
-        with self.assertRaisesRegex(ValueError, '^' + DIFFERENT_RECEIPT + '$'):
-            transport.pump(lambda _: self.fail('changed malformed input must not publish'))
+        changed = b'{"different":'
+        source.write_bytes(changed)
+        self.assertEqual([receipt], transport.pump(lambda _: self.fail('changed malformed input must not publish')))
+        self.assertEqual(source.read_bytes(), changed)
         self.assertEqual(receipt, ControlTransport.worker_receipt(binding, request_id))
+        self.assertEqual(receipt, wait_receipt(binding, request_id, 0, clock=_entry.ports.clock))
+        ControlTransport.worker_submit(binding, request_id='valid-followup', kind='submission_preview',
+                                       payload={'output_sha256': 'a' * 64})
+        calls = []
+        def inspect(request):
+            calls.append(request['request_id'])
+            return {'state': 'previewed', 'result': {'valid': True}}
+        delivered = transport.pump(inspect)
+        self.assertEqual(calls, ['valid-followup'])
+        self.assertEqual(delivered, [receipt, ControlTransport.worker_receipt(binding, 'valid-followup')])
+        self.assertEqual(delivered[1]['state'], 'previewed')
+        self.assertEqual(delivered[1]['result'], {'valid': True})
 
     def test_preview_is_replayable_but_never_a_publication_receipt(self):
         from support.entry import entry

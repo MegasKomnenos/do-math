@@ -13031,8 +13031,8 @@
     },
     "current_focus": {
       "phase": "후보 시험 모집단의 기능 가족별 main 통합",
-      "last_closed": "B53 검증완료·확정준비",
-      "active": "다음 engine/CLI15모듈과 원 녹화·규모·중첩제어·공개도구4도우미 및 남은 교차 통합",
+      "last_closed": "B54 검증완료·확정준비",
+      "active": "다음 교차42사건/전이·11관찰자·standalone1개를 current 계약으로 통합; 기존12LONG 중복하지 않음",
       "exit": "후보와 main의 남은 실제 시험/도우미 차이를 검수하고 관련 가족·구조 검증 후 확정한다.",
       "next": "여섯 부류·2단계11의무의 실제 선언/소비자/일반시험 전건을 닫고 동일 최종 판본의 전체 T2/flows, fresh T3/극단변이, 예산과 최소T4/T5·말뭉치·지침을 검증한다.",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
@@ -14472,7 +14472,7 @@
     },
     "knowledge_population_integration": {
       "id": "B53",
-      "state": "verified_main_commit_pending",
+      "state": "committed_to_main",
       "scope": "지식 후보7모듈/115원사례와 명시 합성 Lean 출력 생산자1개 통합",
       "changed_area": {
         "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-o60amyzv\\report.json",
@@ -14997,7 +14997,378 @@
           "sha256": "c8e942f1a07f09fc83efc92af7b33c71e11710a413c0efd145be1b873aa09438"
         }
       ],
-      "whole_requirement_closed": false
+      "whole_requirement_closed": false,
+      "commit": "c58a15e1"
+    },
+    "engine_population_integration": {
+      "id": "B54",
+      "state": "verified_main_commit_pending",
+      "scope": "engine/CLI 후보15모듈/62원사례·녹화/규모/중첩제어/공개도구4도우미 및 현재 malformed 재전달 기대 교정",
+      "changed_area": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-jyaoqc9o\\report.json",
+        "sha256": "4fc726741a1d046ccd8d5adb33792aa1774aec6f48a2760568e676f440d0d645",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 21
+        },
+        "total_seconds": 13.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_known_defects.KnownDefectLedgerTests.test_ledger_and_marks_correspond",
+              "seconds": 5.094000000040978,
+              "budget_seconds": 5.0
+            },
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 11.827999999979511,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "structure": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-jyaoqc9o\\report.json",
+        "sha256": "4fc726741a1d046ccd8d5adb33792aa1774aec6f48a2760568e676f440d0d645",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 21
+        },
+        "total_seconds": 13.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_known_defects.KnownDefectLedgerTests.test_ledger_and_marks_correspond",
+              "seconds": 5.094000000040978,
+              "budget_seconds": 5.0
+            },
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 11.827999999979511,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "contract": "원4.3MB Lean5선언/603폐포·37프로필/100×10입력·실제 공개CLI/guard/관측/저장 경로 검증. 잘못된 입력 재전달은 첫durable반려 유지/비게시/뒤정상요청1회진행. 제품동작변경없음.",
+      "limits": "최초212개531.4초/211passed1failed/39개예산초과 보존. 현재21개13.9초와candidate2개는다른helper판본이며합산한현행전체관문아님. ledger5.094초/smell11.828초 초과 유지.",
+      "files": [
+        {
+          "path": "tests/unit/test_engine_activity_guards.py",
+          "sha256": "d24cf97e108c380f8ba3e0734e32825dedc7fb41a0caa275e31ec718fc99e25f"
+        },
+        {
+          "path": "tests/unit/test_engine_cli_request_matrix.py",
+          "sha256": "c480d8517964dbcec31df188de0b1706cc0a831656eaadb54389e060a9ceb192"
+        },
+        {
+          "path": "tests/unit/test_engine_event_guards.py",
+          "sha256": "0e2ee2e81d093eafdb4281d8f0381aff1af1e7146f6f93ba2b72370d40608317"
+        },
+        {
+          "path": "tests/unit/test_engine_maintenance_guards.py",
+          "sha256": "7a081d8d2a6c650a066b6d3d358195f8649394b007bd0c679655bb65968a9ce4"
+        },
+        {
+          "path": "tests/unit/test_engine_recovery_choices.py",
+          "sha256": "4a5ce300d013e9a9cde6ddb479e5aa95fe94f31bd61d5f2091e5f9dfa86f682f"
+        },
+        {
+          "path": "tests/unit/test_engine_role_input_scale.py",
+          "sha256": "bed3c7bc15c56045f7f74598cf3799c05d9dba40dbeab9953ec96e68679154c0"
+        },
+        {
+          "path": "tests/unit/test_engine_source_guards.py",
+          "sha256": "4135eb316d773f3cbafc2ef2520bb28bc7b406c525a4af6bb50f1f979dc83a9e"
+        },
+        {
+          "path": "tests/unit/test_engine_trace_report_corruption.py",
+          "sha256": "eee802c99139afa771ab6fc5651aa1c4e0e30e62f041ab7509c0c17c4ec7de1a"
+        },
+        {
+          "path": "tests/sim/test_engine_control_server_wire.py",
+          "sha256": "223f7f5a125faa4beb8e16f9f758edadf7ad1bfc4f38ee4a15366aabb6a9179d"
+        },
+        {
+          "path": "tests/sim/test_engine_trace_failure_paths.py",
+          "sha256": "72a90fe2843d37afd65023a2a0ea5e58514d2bbac16681c6f412dde9571c6e11"
+        },
+        {
+          "path": "tests/flows/test_engine_cli_conditional_journey.py",
+          "sha256": "daedc47afaa5b8ecfcb18428c6deccb786adf81de81c32ec4f1b6f61a2d6734a"
+        },
+        {
+          "path": "tests/flows/test_engine_cli_journey.py",
+          "sha256": "98663b197154ca3864ec84d6bea9ec7d8ae4e811979f61dd15ae01f9b251c8f0"
+        },
+        {
+          "path": "tests/flows/test_engine_nested_control_consumption.py",
+          "sha256": "ae1ab7c3c614c51726089df09a28214bbfb6d0d2bb2ee68d008ad19e872cc541"
+        },
+        {
+          "path": "tests/flows/test_engine_recorded_lean_scale.py",
+          "sha256": "31614f37e61a53823196d0683c7d86225c3edda3778eede6f8281b40b06c6e32"
+        },
+        {
+          "path": "tests/flows/test_engine_stored_input_scale.py",
+          "sha256": "d783f5ea31c97b3aac9c071dd9efbbc22bd38195e68a19e9ef305c1a7db4dcb6"
+        },
+        {
+          "path": "tests/support/engine_lean_recording.py",
+          "sha256": "7edb445f2163a032d7a27c821a6554b6c3f39d00100f049fe381f33f02e7b930"
+        },
+        {
+          "path": "tests/support/engine_nested_controls.py",
+          "sha256": "56d667ed191a25c27f67306d85c683259ba8d14b47c2c7e3ba11ee1f6d01fd0f"
+        },
+        {
+          "path": "tests/support/engine_size_cases.py",
+          "sha256": "56de5e14988910da2cb8f4d6459379929af39c9d958a0520817831ac04e25972"
+        },
+        {
+          "path": "tests/support/engine_tool_output.py",
+          "sha256": "e66146471960048f2b83646cca5b7e5303dfe442f0cd31ae25cc71fe053a0ee3"
+        },
+        {
+          "path": "tests/sim/test_engine_control_receipt_wait.py",
+          "sha256": "7b7c8c1fda9d7ee86042e7f742452e6d69489263ef8ed6673c6f3860791de3f9"
+        }
+      ],
+      "whole_requirement_closed": false,
+      "initial_family": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-ornl__37\\report.json",
+        "sha256": "afc8d45d310e0226236c3c57da95818bb3c893a456a80b14867b87753e89762d",
+        "complete": true,
+        "successful": false,
+        "counts": {
+          "passed": 211,
+          "failed": 1
+        },
+        "total_seconds": 531.4,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "flows.test_engine_cli_journey.CliJourneyTests.test_existing_unverified_knowledge_selects_plan_at_the_activation_stop",
+              "seconds": 104.34299999999348,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_engine_cli_journey.CliJourneyTests.test_public_preparation_chains_snapshot_config_hash_grants_and_profile",
+              "seconds": 170.65599999995902,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_engine_flow.EngineTests.test_formal_requires_two_blind_reviews_and_failure_does_not_create_k",
+              "seconds": 77.71799999999348,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_engine_purpose_currentness.PurposeFlowTests.test_environment_revalidation_does_not_clear_independent_meaning_dispute",
+              "seconds": 69.64099999994505,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_engine_purpose_currentness.PurposeFlowTests.test_knowledge_currentness_loss_and_revision_recover_through_fresh_review",
+              "seconds": 157.875,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_engine_purpose_decisions.PurposeFlowTests.test_objection_judgment_answer_and_final_approval_use_real_engine",
+              "seconds": 135.9220000000205,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "flows.test_engine_purpose_solution.PurposeFlowTests.test_task_dependency_extension_blocks_A_until_B_completed_then_solves_goal",
+              "seconds": 92.84400000004098,
+              "budget_seconds": 60.0
+            },
+            {
+              "id": "sim.test_engine_cli_input.QueryInputTests.test_query_rejects_unused_filters_before_reading_in_both_interfaces",
+              "seconds": 3.4219999999040738,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_control_receipts.PreviewReceiptTests.test_preview_control_is_nonpublishing_and_returns_sanitized_result",
+              "seconds": 3.5160000000614673,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_control_receipts.SafetyBoundaryTests.test_safety_boundary_releases_the_held_deadline_only_after_publication",
+              "seconds": 3.922000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_control_receipts.SelfCheckReceiptTests.test_rejected_self_check_is_preserved_but_not_acknowledged_as_accepted",
+              "seconds": 3.109000000054948,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_control_receipts.SelfCheckReceiptTests.test_self_check_failed_publication_does_not_publish_tracker_binding",
+              "seconds": 2.655999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_control_receipts.SelfCheckReceiptTests.test_self_check_response_and_its_rule_update_are_saved",
+              "seconds": 2.530999999959022,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_control_receipts.SelfCheckReceiptTests.test_self_check_transport_and_native_call_bind_in_both_arrival_orders",
+              "seconds": 6.233999999938533,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_control_receipts.SubmissionReceiptTests.test_failed_cas_does_not_acknowledge_submission",
+              "seconds": 3.3290000000270084,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_control_receipts.SubmissionReceiptTests.test_receipt_requires_successful_cas_and_replay_does_not_reapply",
+              "seconds": 2.51500000001397,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_control_server_wire.PublishedReceiptWireTests.test_closed_worker_transport_keeps_the_accepted_receipt_and_refuses_new_drafts",
+              "seconds": 20.48499999998603,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_controls.ActiveTransitionTests.test_crash_marks_owning_activity_unresolved",
+              "seconds": 3.469000000040978,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_controls.ActiveTransitionTests.test_stale_request_is_consumed_and_does_not_poison_later_controls",
+              "seconds": 2.577999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_controls.PublicMaintenanceFenceTests.test_public_maintenance_fence_survives_restart_and_preserves_user_pause",
+              "seconds": 4.125,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_input_overflow.OverflowConnections.test_stale_contract_or_unoffered_profile_cannot_release_wait",
+              "seconds": 2.702999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_queue.QueuedPreparationTests.test_charter_replanning_preserves_ongoing_preparation_and_consumes_its_event",
+              "seconds": 10.547000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_queue.QueuedPreparationTests.test_empty_or_failed_initial_preparation_does_not_wait_forever",
+              "seconds": 2.125,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_queue.QueuedPreparationTests.test_pause_before_model_resume_has_no_checkpoint_grace",
+              "seconds": 2.047000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_queue.QueuedPreparationTests.test_pause_received_during_input_preparation_prevents_model_start",
+              "seconds": 2.422000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_queue.QueuedPreparationTests.test_readiness_is_derived_and_changes_with_contract_review_evidence",
+              "seconds": 8.062000000034459,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_queue.QueuedPreparationTests.test_running_model_stops_immediately_after_public_pause",
+              "seconds": 3.062999999965541,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_walkthroughs.DesignWalkthroughs.test_w07_every_ready_candidate_disposed_and_changed_premise_blocks_reuse",
+              "seconds": 2.202999999979511,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "sim.test_engine_walkthroughs.PriorityVectorTests.test_v112_engine_completion_rejects_open_then_applies_fulfilled_obligations",
+              "seconds": 2.297000000020489,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "unit.test_engine_cli_contract.RequestModeTests.test_json_string_values_preserve_leading_hyphens",
+              "seconds": 2.015999999945052,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_engine_cli_contract.RequestModeTests.test_operator_origin_is_offered_only_where_control_admission_accepts_it",
+              "seconds": 0.859000000054948,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_engine_cli_contract.RequestModeTests.test_retry_action_is_a_distinct_request_mode",
+              "seconds": 1.640999999945052,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_engine_cli_request_matrix.JsonRequestMatrixTests.test_boolean_and_multiple_argument_forms_preserve_exact_values",
+              "seconds": 0.2970000000204891,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_engine_cli_request_matrix.JsonRequestMatrixTests.test_request_caller_and_top_level_identity_reach_the_parser",
+              "seconds": 0.39099999994505197,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_engine_control_transport.TransportDeliveryTests.test_open_transports_are_read_at_the_first_pump_not_at_construction",
+              "seconds": 0.21899999992456287,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_engine_control_transport.TransportDeliveryTests.test_pump_reads_only_open_transports_and_close_answers_a_raced_delivery",
+              "seconds": 0.3279999999795109,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_engine_control_transport.TransportDeliveryTests.test_request_id_rejected_without_engine_record_stays_taken_in_every_transport",
+              "seconds": 0.3280000000959262,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_engine_control_transport.TransportReceiptTests.test_received_but_unpublished_request_is_published_on_recovery",
+              "seconds": 0.35900000005494803,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_engine_role_input_scale.RoleInputScaleTests.test_every_role_state_keeps_required_input_within_the_default_byte_budget",
+              "seconds": 16.984000000054948,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "candidate_corrected": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-_wkhoq27\\report.json",
+        "sha256": "2df65db2c54ae25734a4030960818d88365f713d382afe9a427c0056645ea781",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 2
+        },
+        "total_seconds": 0.1,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [],
+          "tier": null
+        }
+      },
+      "format_fix": "EOF 빈 줄만 제거하고 AST 동일 확인. 원 실행 보고는 그대로이며 최종 파일 지문은 형식 교정 뒤 값."
     }
   }
 }
