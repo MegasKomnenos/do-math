@@ -381,6 +381,27 @@ class ReviewFailureTests(unittest.TestCase):
         self.assertFalse(assess_use(insight, sim.instance)["valid"])
         self.assertEqual(insight["dependencies"], [kid])
 
+        from support.cross_contracts import assert_call_records
+        request, = [a for a in sim.runtime['queue'] if insight['id'] in a.get('evidence_refs', [])]
+        self.assertIn('Incidental research knowledge is now available', request['reason'])
+        publisher = sim.runtime['executions'][model.calls[-1]['execution_id']]
+        author = sim.runtime['executions'][insight['producer_execution']]
+        self.assertEqual(publisher['action']['review_cycle_id'], author['action']['review_cycle_id'])
+        self.assertNotEqual(publisher['id'], author['id'])
+        self.assertIn(publisher['id'], request['receipt_refs'])
+        model.on('research_plan', id=request['id']).reply(Answer(lambda out, ctx: {**out, 'goal_audit': False}))
+        before = assert_call_records(self, sim)
+        sim.run_until(lambda current: any(c['action']['id'] == request['id'] for c in current.model.calls), max_steps=12)
+        self.assertGreaterEqual(assert_call_records(self, sim)['research_plan'] - before['research_plan'], 1)
+        self.assertEqual(sum(c['action']['id'] == request['id'] for c in model.calls), 1)
+        execution, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == request['id']]
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        self.assertIn(insight['id'], execution['action']['evidence_refs'])
+        for _ in range(2):
+            sim.step()
+            assert_call_records(self, sim)
+            self.assertEqual(sum(insight['id'] in c['action'].get('evidence_refs', []) for c in model.calls), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

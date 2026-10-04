@@ -418,5 +418,64 @@ class SelectedActionReplanningTests(unittest.TestCase):
         self.assertEqual(sim.engine.store.load(sim.engine.head)[2], sim.runtime)
 
 
+class GoalAuditReplanningTests(unittest.TestCase):
+    def test_current_goal_basis_runs_the_auditor_without_replanning(self):
+        from support.engine_lifecycle import _ended_execution, clear_work
+        from support.cross_contracts import assert_call_records
+        sim = Sim.activated()
+        clear_work(sim)
+        _ended_execution(sim.engine, 'EX-plan-audit', 'research_plan')
+        basis = sim.engine._goal_basis_key()
+        sim.engine._ensure_goal_audit_requests(basis, 'EX-plan-audit')
+        sim.engine._save()
+        before = assert_call_records(self, sim)
+        sim.step()
+        after = assert_call_records(self, sim)
+        self.assertEqual(after['goal_audit'] - before['goal_audit'], 1)
+        self.assertEqual(after['research_plan'], before['research_plan'])
+        execution, = [e for e in sim.runtime['executions'].values() if e['role'] == 'goal_audit']
+        self.assertEqual(execution['action']['basis'], basis)
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        self.assertFalse(any('Goal audit inputs changed' in a.get('reason', '') for a in sim.runtime['queue']))
+
+    def test_changed_goal_basis_requeues_planning_without_starting_an_auditor(self):
+        from support.engine_lifecycle import clear_work
+        from support.cross_contracts import assert_call_records
+        from support.model import amend
+        sim = Sim.activated()
+        clear_work(sim)
+        basis = sim.engine._goal_basis_key()
+        sim.engine._enqueue('goal_audit', basis=basis)
+        sim.engine._save()
+        source = sim.root / 'new-audit-evidence.txt'
+        source.write_text('Additional evidence changes the goal audit input.', encoding='utf-8')
+        applied(sim, 'source', config={'path': str(source)})
+        self.assertNotEqual(sim.engine._goal_basis_key(), basis)
+        action = sim.runtime['queue'][0]
+        before = deepcopy(sim.runtime['executions'])
+        self.assertIs(sim.engine._prepare_call(action), True)
+        self.assertEqual(sim.runtime['executions'], before)
+        self.assertEqual([a['role'] for a in sim.runtime['queue']], ['research_plan'])
+        self.assertEqual(sim.runtime['queue'][0]['reason'],
+                         'Goal audit inputs changed before the complete independent group finished')
+        self.assertEqual(sim.engine.store.load(sim.engine.head)[2]['queue'], sim.runtime['queue'])
+
+        request = sim.runtime['queue'][0]
+        sim.model.on('research_plan').reply(amend(goal_audit=False))
+        calls_before = assert_call_records(self, sim)
+        sim.advance(sim.instance['config']['plan_settle_seconds'] + 1)
+        sim.run_until(lambda current: any(c['action']['id'] == request['id'] for c in current.model.calls), max_steps=8)
+        calls_after = assert_call_records(self, sim)
+        self.assertEqual(calls_after['research_plan'] - calls_before['research_plan'], 1)
+        self.assertEqual(calls_after['goal_audit'], calls_before['goal_audit'])
+        execution, = [e for e in sim.runtime['executions'].values() if e['action']['id'] == request['id']]
+        self.assertEqual(execution['outcome'], 'output_accepted', execution.get('error'))
+        for _ in range(2):
+            sim.step()
+            assert_call_records(self, sim)
+            self.assertEqual(sum(c['action']['id'] == request['id'] for c in sim.model.calls), 1)
+            self.assertEqual(sum(c['action']['id'] == action['id'] for c in sim.model.calls), 0)
+
+
 if __name__ == '__main__':
     unittest.main()

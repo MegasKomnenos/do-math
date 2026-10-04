@@ -119,19 +119,6 @@ class PreparationBranchTests(unittest.TestCase):
                          ('obsolete_action', action['id'], 'The live observation target has ended'))
         self.assertEqual(sim.engine.store.load(sim.engine.head)[2]['history'][-1], row)
 
-    def test_changed_goal_basis_requeues_planning_without_starting_an_auditor(self):
-        sim = Sim.activated()
-        clear_work(sim)
-        sim.engine._enqueue('goal_audit', basis='superseded-basis')
-        action = sim.runtime['queue'][0]
-        before = deepcopy(sim.runtime['executions'])
-        self.assertIs(sim.engine._prepare_call(action), True)
-        self.assertEqual(sim.runtime['executions'], before)
-        self.assertEqual([a['role'] for a in sim.runtime['queue']], ['research_plan'])
-        self.assertEqual(sim.runtime['queue'][0]['reason'],
-                         'Goal audit inputs changed before the complete independent group finished')
-        self.assertEqual(sim.engine.store.load(sim.engine.head)[2]['queue'], sim.runtime['queue'])
-
     def test_revoked_maintenance_authority_is_parked_before_execution_creation(self):
         sim = Sim.activated()
         gid = sim.instance['lifecycle']['adoption']['research_grant_ids'][0]
