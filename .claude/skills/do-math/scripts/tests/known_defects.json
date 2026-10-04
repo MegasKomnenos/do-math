@@ -512,6 +512,15 @@
       "found_by": "B86 실제 CLI의 invalid_json_schema 응답을 그대로 녹화한 codex-schema-rejected-0160. fzcpndvs에서 실패 프로토콜은 완결이라는 독립 기대값으로 먼저 실패를 확인했고, 실패 terminal이 있는 경우만 허용한 뒤 8lb06bsq와 1iow0wmp에서 통과했다.",
       "missed_kind": "기존 Codex 정상/잘림 말뭉치에 실제 공급자 거부 사건이 없었다. 합성 정상 응답만으로 알려진 오류 사건의 실제 순서를 확인하지 못했다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1911",
+      "summary": "백그라운드 CLI 탐침이 현행 Claude에 없는 TaskOutput 도구 이름을 필수 성공 조건으로 요구한다. 실제 동일 작업의 완료 알림과 최종 응답·파일이 있어도 실패한다.",
+      "category": 9,
+      "reproduction": "sim.test_operator_probe_contract.ProbeContractTests.test_background_requires_matching_completion_before_result_and_completed_file",
+      "found_by": "B86 Claude 2.1.289의 실제 init 및 ToolSearch(select:TaskOutput)는 도구 부재를 확인했다. 4r57pk4v에서 실제 runner/worker를 통한 동일 작업 완료와 최종 파일 시나리오가 old actual_wait_tool=False로 실패했다.",
+      "missed_kind": "합성 탐침이 TaskOutput 사건을 임의로 넣어 실제 CLI의 도구 가용성을 가렸다. 실제 작업 ID·호출 ID·완료 상태와 selected result 앞의 순서를 요구하도록 바꾸고 녹화 원문 및 교란 반례로 검증한다.",
+      "status": "closed"
     }
   ]
 }

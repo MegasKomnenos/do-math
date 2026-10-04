@@ -12,7 +12,26 @@ from do_math.scholarly_config import resolve_scholarly_server
 from do_math.provider_wait import provider_for
 
 
-def run_case(destination, case, *, ports, provider, model, effort, timeout, only_assigned, scholarly=False, codex_home, environment, host_id):
+def background_completed_before_result(parsed):
+    """The probe's one native task completes before the selected final result."""
+    if not parsed.get('parse_complete') or not parsed.get('turn_completed'):
+        return False
+    events = parsed.get('background_events', [])
+    starts = [row for row in events if row['event'].get('subtype') == 'task_started']
+    ends = [row for row in events if row['event'].get('subtype') == 'task_notification']
+    if len(starts) != 1 or len(ends) != 1:
+        return False
+    start, end = starts[0], ends[0]
+    first, last = start['event'], end['event']
+    identity = (first.get('task_id'), first.get('tool_use_id'))
+    return (all(isinstance(value, str) and value for value in identity)
+            and first.get('task_type') == 'local_bash' and first.get('is_backgrounded') is True
+            and identity == (last.get('task_id'), last.get('tool_use_id'))
+            and last.get('status') == 'completed'
+            and start['line'] < end['line'] < parsed.get('selected_result', {}).get('result_line', 0))
+
+
+def run_case(destination, case, *, ports, provider, model, effort, only_assigned, scholarly=False, codex_home, environment, host_id):
     root = destination / case
     workspace = root / "workspace"
     workspace.mkdir(parents=True)
@@ -36,7 +55,7 @@ def run_case(destination, case, *, ports, provider, model, effort, timeout, only
     elif case == "background":
         prompt += ('Use Bash to start exactly one background command (run_in_background=true) which waits 5 seconds '
                    'and writes completed.txt containing exactly ' + nonce + '. Write a local phase-pending.json checkpoint while it runs. '
-                   'Use the actual TaskOutput tool to wait for that background task, then read completed.txt and submit phase finished. '
+                   'Wait for the native completion notification for that task, then read completed.txt and submit phase finished. '
                    'Keep the CLI invocation active until the job finishes. Do not submit the final JSON while it is still pending; '
                    'print mode may terminate outstanding background work when the final result is returned. Do not start agents or another model.')
     else:
@@ -66,7 +85,7 @@ def run_case(destination, case, *, ports, provider, model, effort, timeout, only
     runner = ModelRunner(jobs=ports.jobs, clock=ports.clock, environment=environment, host_id=host_id)
     routed_model = model if provider_for(model) == provider else "claude:" + model
     result = runner.run(prompt=prompt, output_schema=schema, workspace=workspace, evidence_dir=root / "evidence",
-        model=routed_model, effort=effort, timeout_seconds=timeout, claude_only_assigned_model=only_assigned,
+        model=routed_model, effort=effort, timeout_seconds=None, claude_only_assigned_model=only_assigned,
         scholarly_server=server, on_observation=observe, should_stop=lambda: stop)
     collected = result.get("execution", {}).get("collect", {})
     parsed = collected.get("jsonl", {})
@@ -82,7 +101,7 @@ def run_case(destination, case, *, ports, provider, model, effort, timeout, only
             checks["scholarly_actual_tool"] = "mcp__scholarly__list_sources" in native_tool_names
     if case == "background":
         checks["native_background_start"] = any(row["event"].get("subtype") == "task_started" for row in parsed.get("background_events", []))
-        checks["actual_wait_tool"] = "TaskOutput" in native_tool_names
+        checks["background_completed_before_result"] = background_completed_before_result(parsed)
         checks["completed_file"] = (workspace / "completed.txt").is_file() and (workspace / "completed.txt").read_text(encoding="utf-8").strip() == nonce
     if provider == "claude" and only_assigned and case != "stop":
         checks["reported_models"] = bool(parsed.get("reported_models")) and parsed["reported_models"] == [model]
@@ -108,7 +127,6 @@ def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=No
     parser.add_argument("--effort", default="low")
     parser.add_argument("--only-assigned-model", action="store_true")
     parser.add_argument("--scholarly", action="store_true")
-    parser.add_argument("--timeout-seconds", type=int, default=180)
     parser.add_argument("--cases", nargs="+", choices=("structured", "files", "background", "stop"), default=["structured", "files", "stop"])
     parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args(argv)
@@ -116,8 +134,8 @@ def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=No
         result = inspect_bundle()
         print(json.dumps(result, ensure_ascii=False))
         return 0 if result["status"] == "verified" else 1
-    if not args.provider or not args.model or not args.output_dir or args.timeout_seconds < 1:
-        parser.error("live probes require explicit --provider, --model, --output-dir and a positive timeout")
+    if not args.provider or not args.model or not args.output_dir:
+        parser.error("live probes require explicit --provider, --model and --output-dir")
     if args.provider == "claude" and args.only_assigned_model and not args.model.startswith("claude-"):
         parser.error("model locking requires the full Claude model ID")
     if args.provider == "codex" and provider_for(args.model) == "claude":
@@ -132,7 +150,7 @@ def main(argv=None, *, ports=None, environment=None, host_id=None, codex_home=No
         print("probe " + case, flush=True)
         try:
             results.append(run_case(args.output_dir, case, ports=ports, provider=args.provider, model=args.model, effort=args.effort,
-                timeout=args.timeout_seconds, only_assigned=args.only_assigned_model, scholarly=args.scholarly and case == "files", codex_home=codex_home, environment=environment, host_id=host_id))
+                only_assigned=args.only_assigned_model, scholarly=args.scholarly and case == "files", codex_home=codex_home, environment=environment, host_id=host_id))
         except Exception as error:
             results.append({"case": case, "passed": False, "error": type(error).__name__ + ": " + str(error)})
     root = Path(__file__).parent

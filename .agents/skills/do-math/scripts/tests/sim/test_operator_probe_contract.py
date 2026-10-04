@@ -37,7 +37,7 @@ class ProbeContractTests(unittest.TestCase):
         self.ports = replace(self.values.ports, jobs=self.jobs)
         with chdir(self.root):
             result = probe_cli.run_case(self.root / 'evidence', case, ports=self.ports, provider=provider,
-                model=model, effort='low', timeout=10, only_assigned=only_assigned, scholarly=scholarly,
+                model=model, effort='low', only_assigned=only_assigned, scholarly=scholarly,
                 codex_home=self.home, environment=self.values.environment, host_id=self.values.host_id)
         self.report = json.loads(Path(result['report']).read_bytes())
         self.assertEqual(result, {'case': case, 'passed': self.report['passed'], 'checks': self.report['checks'],
@@ -46,6 +46,8 @@ class ProbeContractTests(unittest.TestCase):
         self.assertEqual(len(self.jobs.launched), 1)
         self.assertTrue(self.jobs.launched[0].closed)
         self.assertTrue(self.jobs.launched[0].done)
+        request = json.loads(self.report['result']['execution']['collect']['source_request']['raw']['text'])
+        self.assertIsNone(request['max_runtime_seconds'])
         return result
 
     def test_files_preserve_nonce_and_the_checkpoint_requested_by_product(self):
@@ -55,6 +57,8 @@ class ProbeContractTests(unittest.TestCase):
         self.assertTrue(result['passed'])
         self.assertEqual((self.root / 'evidence/files/workspace/probe-evidence.txt').read_text(),
                          self.cli.calls[0]['output']['nonce'])
+        self.assertEqual({key: value.get('type') for key, value in self.cli.calls[0]['schema']['properties'].items()},
+                         {'status': 'string', 'nonce': 'string', 'phase': 'string'})
 
     def test_wrong_file_content_is_failed_even_with_completed_structured_response(self):
         result = self.run_case('files', file_value='wrong nonce')
@@ -157,22 +161,48 @@ class ProbeContractTests(unittest.TestCase):
         self.assertFalse(result['passed'])
         self.assertEqual(self.jobs.launched[0].terminations, 0)
 
-    def test_background_requires_started_event_wait_tool_and_completed_file(self):
+    def test_background_requires_matching_completion_before_result_and_completed_file(self):
         result = self.run_case('background', provider='claude', model='claude-opus-5', events=[
-            {'type': 'system', 'subtype': 'task_started', 'task_id': 'background-one'},
-            {'type': 'assistant', 'message': {'content': [
-                {'type': 'tool_use', 'id': 'wait-one', 'name': 'TaskOutput', 'input': {'task_id': 'background-one'}}]}}])
+            {'type': 'system', 'subtype': 'task_started', 'task_id': 'background-one',
+             'tool_use_id': 'tool-one', 'task_type': 'local_bash', 'is_backgrounded': True},
+            {'type': 'system', 'subtype': 'task_notification', 'task_id': 'background-one',
+             'tool_use_id': 'tool-one', 'status': 'completed'}])
         self.assertEqual(result['checks'], {'local_termination': True, 'structured_result': True,
-            'native_background_start': True, 'actual_wait_tool': True, 'completed_file': True})
+            'native_background_start': True, 'background_completed_before_result': True, 'completed_file': True})
         self.assertTrue(result['passed'], result)
-        self.assertEqual(self.report['actual_tool_names'], ['TaskOutput'])
+        self.assertEqual(self.report['actual_tool_names'], [])
         self.assertIn('run_in_background=true', self.cli.calls[0]['prompt'])
 
     def test_background_without_events_and_file_fails_each_effect_check(self):
         result = self.run_case('background', provider='claude', model='claude-opus-5', file_value=None)
         self.assertEqual(result['checks'], {'local_termination': True, 'structured_result': True,
-            'native_background_start': False, 'actual_wait_tool': False, 'completed_file': False})
+            'native_background_start': False, 'background_completed_before_result': False, 'completed_file': False})
         self.assertFalse(result['passed'])
+
+    def test_recorded_background_requires_exact_identity_status_and_pre_result_completion(self):
+        from do_math.claude_stream import parse_stream
+        source = Path(__file__).resolve().parents[1] / 'corpus/claude/claude-background-completed-21289.jsonl'
+        parsed = parse_stream(source.read_bytes())
+        self.assertTrue(probe_cli.background_completed_before_result(parsed))
+        for field, value in (('task_id', 'other-task'), ('tool_use_id', 'other-call'),
+                             ('status', 'stopped'), ('status', 'failed')):
+            with self.subTest(field=field, value=value):
+                changed = deepcopy(parsed)
+                ended = next(row for row in changed['background_events']
+                             if row['event'].get('subtype') == 'task_notification')
+                ended['event'][field] = value
+                self.assertFalse(probe_cli.background_completed_before_result(changed))
+        for position in (0, parsed['selected_result']['result_line'], parsed['selected_result']['result_line'] + 1):
+            with self.subTest(completion_line=position):
+                changed = deepcopy(parsed)
+                ended = next(row for row in changed['background_events']
+                             if row['event'].get('subtype') == 'task_notification')
+                ended['line'] = position
+                self.assertFalse(probe_cli.background_completed_before_result(changed))
+        changed = deepcopy(parsed)
+        changed['background_events'] = [row for row in changed['background_events']
+                                       if row['event'].get('subtype') != 'task_notification']
+        self.assertFalse(probe_cli.background_completed_before_result(changed))
 
     def test_locked_claude_reports_exact_requested_model(self):
         result = self.run_case('structured', provider='claude', model='claude-opus-5', only_assigned=True,
@@ -190,14 +220,17 @@ class ProbeContractTests(unittest.TestCase):
     def test_cli_rejects_missing_required_live_arguments_before_effects(self):
         destination = self.root / 'unused'
         valid = ['--provider', 'codex', '--model', 'fixture-model', '--output-dir', str(destination)]
-        for options in ([], valid[:-2], valid + ['--timeout-seconds', '0']):
+        cases = (([], 'live probes require explicit --provider, --model and --output-dir'),
+                 (valid[:-2], 'live probes require explicit --provider, --model and --output-dir'),
+                 (valid + ['--timeout-seconds', '300'], 'unrecognized arguments: --timeout-seconds 300'))
+        for options, message in cases:
             errors = io.StringIO()
             with self.subTest(options=options), redirect_stderr(errors), ObservedCalls(run=ModelRunner.run) as calls:
                 with self.assertRaises(SystemExit) as error:
                     probe_cli.main(options, ports=self.values.ports, environment=self.values.environment,
                                    host_id=self.values.host_id, codex_home=self.home)
                 self.assertEqual(error.exception.code, 2)
-                self.assertIn('live probes require explicit --provider, --model, --output-dir and a positive timeout', errors.getvalue())
+                self.assertIn(message, errors.getvalue())
                 self.assertEqual(calls.count('run'), 0)
                 self.assertFalse(destination.exists())
 
