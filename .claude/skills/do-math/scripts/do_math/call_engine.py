@@ -356,8 +356,7 @@ class CallEngineMixin:
         execution = self.runtime["executions"][execution_id]
         execution["input_published_at"] = self.ports.clock.now()
         self._trackers[execution_id] = tracker
-        call_deadline = (None if role in execution_profiles.WORK_ROLES
-                         else self.ports.clock.monotonic() + config["call_timeout_seconds"])
+        call_deadline = execution_window.call_deadline(role, config, clock=self.ports.clock.monotonic)
         return {'action': action, 'base': base, 'binding': binding, 'call_deadline': call_deadline,
                 'config': config, 'context': context, 'execution': execution, 'execution_id': execution_id,
                 'fitted': fitted, 'profile': profile, 'prompt': prompt, 'role': role, 'schema': schema,
@@ -406,7 +405,7 @@ class CallEngineMixin:
             current["currentness_changes"] = premise_changes or [{"field": "action_contract_or_authority", "reason": "execution input changed"}]
         requested = (current.get("submission_intent") or self._execution_stop_requested(action, current)
                      or not allowed or changed
-                     or (call_deadline is not None and self.ports.clock.monotonic() >= call_deadline))
+                     or execution_window.deadline_passed(call_deadline, clock=self.ports.clock.monotonic))
         if not requested:
             # The notice compares the same clock as the deadline above.
             execution_window.request_finish(workspace, call_deadline, config, clock=self.ports.clock.monotonic,

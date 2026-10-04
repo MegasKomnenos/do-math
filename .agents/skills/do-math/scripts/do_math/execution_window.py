@@ -5,6 +5,21 @@ import json
 from pathlib import Path
 
 from .file_io import write_bytes_atomic
+from .execution_profiles import WORK_ROLES
+from .model_policy import ROLE_TIERS
+
+
+# Every AI role uses its frozen profile window. A work role has no elapsed limit.
+AI_CALL_TIME_RULES = {role: None if role in WORK_ROLES else 'call_timeout_seconds' for role in ROLE_TIERS}
+
+
+def call_deadline(role, config, *, clock):
+    field = AI_CALL_TIME_RULES[role]
+    return None if field is None else clock() + config[field]
+
+
+def deadline_passed(deadline, *, clock):
+    return deadline is not None and clock() >= deadline
 
 
 def notice_seconds(config):

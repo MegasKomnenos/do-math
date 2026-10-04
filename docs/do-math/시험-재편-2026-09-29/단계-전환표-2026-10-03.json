@@ -13030,11 +13030,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "관찰 시간 국면 선언 확정",
-      "last_closed": "B80 26ed5d50; B81 관련167개 통과",
-      "active": "관찰의 실제 세 국면과129일반 조합의 근거·미러·기억·커밋 확정",
-      "exit": "세 국면 선언을 실제 setter/observe가 공유하고 일반 행렬·기존167검사 및 정확한 근거가 검수 커밋에 포함됨",
-      "next": "6-A 나머지 운영 호출·checkpoint 유예·대화 임대·시작 전 국면의 실제 선언과 전건 검증을 연결",
+      "phase": "AI 호출 시간 정본 확정",
+      "last_closed": "B81 bb635525; B82 관련122개 통과",
+      "active": "AI 호출 시간 규칙의 실제 생산·정지 정본 및 근거·미러·기억·커밋 확정",
+      "exit": "모든 AI 프로필·무기한 작업·알림 비회수·만료 경계와 관련122검사의 근거를 같은 검수 커밋에 포함",
+      "next": "6-A의 남은 임대·checkpoint 유예·시작/종료 시각 생산자와 일반 국면을 연결",
       "work_method": "기능 가족의 실제 diff와 정상 생산자 검수, 관련 가족1회 실행, 실패/미실행만 교정 후 재검증, 원보고와 다른 판본을 구분, 커밋 확정. 최종 관문은 부분 보고 합산으로 대체하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -17693,6 +17693,45 @@
         "Actual current clock phase gating preserved; no hard test timeout or removed run limit",
         "The phase matrix covers observation modes/phases/live/evaluate and receipt-time boundaries, not every6-A rule"
       ]
+    },
+    "ai_call_time_rule_integration": {
+      "id": "B82",
+      "base_head": "bb635525",
+      "scope": "현행 모든 AI 역할의 실제 프로필 호출 창 생산·만료 정본과 일반 경계 검사",
+      "state": "verified_scope_recorded_in_owning_commit",
+      "owned_files": [
+        "scripts/do_math/execution_window.py",
+        "scripts/do_math/call_engine.py",
+        "scripts/tests/unit/test_provider_execution_window.py",
+        "scripts/이음새-정본.md"
+      ],
+      "population": {
+        "ai_roles": 11,
+        "profile_tiers": 3,
+        "published_elapsed_boundaries": 3,
+        "profile_scenes": 99,
+        "expiry_comparisons_per_scene": 3
+      },
+      "start_anchor": "existing after input publication; unchanged",
+      "not_closed": [
+        "6-A 전체 시간 규칙/국면",
+        "checkpoint 유예·대화 임대·시작 전 지연",
+        "machine/Lean 개별 계약",
+        "최종 같은 판본 관문"
+      ],
+      "whole_requirement_closed": false,
+      "memory_node": "M-0499",
+      "changed_area": {
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 122
+        },
+        "total_seconds": 127.0,
+        "changed_during_run": []
+      },
+      "tracked_report": "C:\\math\\docs\\do-math\\시험-재편-2026-09-29\\검증\\2026-10-04-AI-호출-시간-규칙\\report.json",
+      "report_sha256": "5322a4686a42309919f240a62e5d4e519c6290e7eeea10364d0c72185a4bd7ce"
     }
   }
 }

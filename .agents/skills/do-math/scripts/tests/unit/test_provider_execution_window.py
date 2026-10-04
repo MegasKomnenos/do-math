@@ -24,6 +24,63 @@ class WindowTests(unittest.TestCase):
     def setUp(self):
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
 
+    def test_each_actual_ai_profile_preserves_its_deadline_notice_and_expiration_boundaries(self):
+        from copy import deepcopy
+        from do_math import execution_profiles, execution_window, model_policy
+        from support.entry import entry
+        from support.provider_inputs import PROFILE_CONFIG
+        config = deepcopy(PROFILE_CONFIG)
+        profiles = execution_profiles.build_profiles(config, host=entry().ports.host)['execution_profiles']
+        config.update(call_timeout_seconds=1, operator_timeout_seconds=1, finish_notice_seconds=1)
+        self.assertEqual(set(execution_window.AI_CALL_TIME_RULES), set(model_policy.ROLE_TIERS))
+        observed = set()
+        for profile in profiles.values():
+            if profile['actor_kind'] != 'ai':
+                continue
+            role = profile['role']
+            observed.add(role)
+            frozen = execution_profiles.runtime_config(profile)
+            duration = frozen['call_timeout_seconds']
+            self.assertEqual(duration, PROFILE_CONFIG['operator_timeout_seconds'] if role == 'recovery'
+                             else PROFILE_CONFIG['call_timeout_seconds'])
+            for elapsed in (0, 0.125, duration):
+                with self.subTest(role=role, tier=profile['ai']['tier'], elapsed=elapsed):
+                    workspace = self.root / f"{profile['id']}-{elapsed}"
+                    workspace.mkdir()
+                    started = 1000.0
+                    deadline = execution_window.call_deadline(role, frozen, clock=lambda: started)
+                    limited = role not in execution_profiles.WORK_ROLES
+                    self.assertEqual(deadline, started + duration if limited else None)
+                    value = publish(workspace, 'EX-window', deadline, frozen,
+                                    clock=lambda: started + elapsed, wall_clock=WALL)
+                    self.assertEqual(value['deadline_source'], 'operational_call' if limited else 'none')
+                    self.assertEqual(value['remaining_ms_at_start'], int((duration - elapsed) * 1000)
+                                     if limited else None)
+                    self.assertEqual(json.loads((workspace / '.control/execution-window.json').read_text(encoding='utf-8')), value)
+                    for offset in (-0.001, 0, 0.001):
+                        at = started + duration + offset
+                        self.assertEqual(execution_window.deadline_passed(deadline, clock=lambda: at),
+                                         limited and offset >= 0)
+                    self.assertEqual(request_finish(workspace, deadline, frozen,
+                        clock=lambda: started + duration - notice_seconds(frozen), now_iso=NOTICE_AT), limited)
+                    self.assertFalse(request_finish(workspace, deadline, frozen,
+                        clock=lambda: started + duration, now_iso=NOTICE_AT))
+                    if limited:
+                        notice = json.loads((workspace / '.control/finish-request.json').read_text(encoding='utf-8'))
+                        self.assertFalse(notice['revokes_authority'])
+                    else:
+                        self.assertFalse((workspace / '.control/finish-request.json').exists())
+        self.assertEqual(observed, set(execution_window.AI_CALL_TIME_RULES))
+
+    def test_unbounded_work_never_samples_a_deadline_clock_or_requires_duration_settings(self):
+        from do_math import execution_profiles, execution_window
+        def forbidden_clock():
+            raise AssertionError('an unbounded work call must not start a deadline clock')
+        for role in execution_profiles.WORK_ROLES:
+            with self.subTest(role=role):
+                self.assertIsNone(execution_window.call_deadline(role, {}, clock=forbidden_clock))
+                self.assertFalse(execution_window.deadline_passed(None, clock=forbidden_clock))
+
     def test_actual_remaining_time_and_notice_do_not_revoke_authority(self):
         config = {"call_timeout_seconds": 30, "finish_notice_seconds": 60}
         # The notice is a tenth of the call limit when that is shorter than the configured notice.
