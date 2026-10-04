@@ -141,6 +141,18 @@ class FormalJudgmentInputTests(unittest.TestCase):
 
 
 class RoleInputClassTests(unittest.TestCase):
+    def test_every_role_judgment_requirement_names_its_installed_contract(self):
+        from do_math.role_input_requirements import ROLE_INPUT_REQUIREMENTS, judgment_input_keys
+        assignments = contracts.reading_map()
+        self.assertEqual(set(ROLE_INPUT_REQUIREMENTS), set(contracts.ROLES))
+        for role, row in ROLE_INPUT_REQUIREMENTS.items():
+            with self.subTest(role=role):
+                self.assertIn(row['contract'], assignments[role])
+                self.assertTrue(row['keys'])
+                self.assertEqual(len(row['keys']), len(set(row['keys'])))
+                self.assertEqual(judgment_input_keys(role, {'role': role})[:len(row['keys'])],
+                                 row['keys'])
+
     def test_role_input_maps_context_its_scope_does_not_inline(self):
         """About 1.2 s, over the 0.2 s unit budget: fourteen scopes each package a full input into files."""
         planning, intent, operational = PLANNING_DIRECT, INTENT_DIRECT, OPERATIONAL_DIRECT

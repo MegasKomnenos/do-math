@@ -29,6 +29,7 @@ LAYERS = {
     'do_math/codex_worker.py': '3',
     'do_math/configuration.py': '2',
     'do_math/context_store.py': '2',
+    'do_math/role_input_requirements.py': '1',
     'do_math/contracts.py': '2',
     'do_math/control_contracts.py': '2',
     'do_math/control_protocol.py': '1',

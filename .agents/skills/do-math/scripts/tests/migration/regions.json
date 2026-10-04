@@ -21,6 +21,7 @@
    "product_modules": [
     "do_math/canonical.py",
     "do_math/context_store.py",
+    "do_math/role_input_requirements.py",
     "do_math/file_io.py",
     "do_math/git_store.py",
     "do_math/ids.py",
@@ -178,7 +179,8 @@
     "do_math/maintenance_gate.py",
     "do_math/operation_trace.py",
     "do_math/operational_dispositions.py",
-    "do_math/trace_report.py"
+    "do_math/trace_report.py",
+    "do_math/wait_rules.py"
    ]
   },
   "initialization": {

@@ -70,9 +70,12 @@ class OperationalInputTests(unittest.TestCase):
         _entry = entry()
         profile = next(p for p in engine.instance['execution_profiles'].values() if p['role'] == 'operational_review')
         context = engine._context(action, root, execution_id='EX-review')
-        return context, prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
+        fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
             role='operational_review', profile=profile, snapshot=engine.head, workspace=root,
             activity_id='AY-review', install_submission_tools=True, clock=_entry.ports.clock)
+        from support.role_input_requirements import assert_judgment_inputs
+        assert_judgment_inputs(self, 'operational_review', fitted, root, producer_context=context)
+        return context, fitted
 
     def test_live_review_receives_the_already_sealed_target_checkpoint(self):
         engine, action, checkpoint, raw = self.fixture()
@@ -633,7 +636,16 @@ class FormalJudgmentInputTests(unittest.TestCase):
         instance, runtime, kid, verification = central_check_knowledge()
         engine = context_engine(instance, runtime)
         with tempfile.TemporaryDirectory() as directory:
-            item, = engine._context({'role': 'goal_audit'}, Path(directory))['eligible_knowledge']
+            root = Path(directory)
+            context = engine._context({'role': 'goal_audit'}, root)
+            from support.entry import entry
+            from support.role_input_requirements import assert_judgment_inputs
+            profile = next(p for p in engine.instance['execution_profiles'].values() if p['role'] == 'goal_audit')
+            fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
+                role='goal_audit', profile=profile, snapshot=engine.head, workspace=root,
+                activity_id='AY-audit', clock=entry().ports.clock)
+            assert_judgment_inputs(self, 'goal_audit', fitted, root, producer_context=context)
+            item, = context['eligible_knowledge']
         self.assert_environment(item['proposal']['formal'])
         self.assert_judged(item['proposal']['formal'], verification)
         self.assert_judged(item['formal_result']['verification'], verification)
@@ -732,6 +744,51 @@ class ReviewSeatInputTests(unittest.TestCase):
         self.assertEqual(context['record_map']['ledger'], 'supplied_only')
 
 
+class RoleContractInputTests(unittest.TestCase):
+    def test_every_role_preserves_its_declared_judgment_inputs_or_exact_sources(self):
+        """All ten real context producers and packagers; no model call per role.
+
+        The review scene's one shared public build includes the actual formal
+        worker. Stage/recovery variants have separate existing owner cases;
+        this sweep checks the entire role population at its normal entry.
+        """
+        from do_math.role_input_requirements import ROLE_INPUT_REQUIREMENTS
+        from support.engine_lifecycle import applied, clear_work, task
+        from support.review_sim import opened_sim
+        from support.role_input_requirements import assert_judgment_inputs
+        self.assertEqual(set(ROLE_INPUT_REQUIREMENTS), set(contracts.ROLES))
+        for role in contracts.ROLES:
+            with self.subTest(role=role), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                sim = opened_sim() if role == 'identity_review' else Sim.activated()
+                engine = sim.engine
+                if role == 'identity_review':
+                    action = deepcopy(next(a for a in sim.runtime['queue'] if a['role'] == role))
+                else:
+                    clear_work(sim)
+                    action = {'id': 'AC-input-requirement', 'role': role}
+                    if role in {'research_preparation', 'research_plan', 'research_work',
+                                'task_contract_review', 'supplemental_research', 'operational_review'}:
+                        row = task(engine, approved=False)
+                        if role == 'operational_review':
+                            action['target'] = row['producer_execution']
+                        elif role in {'research_work', 'task_contract_review', 'supplemental_research'}:
+                            action['target'] = row['id']
+                        engine._save()
+                    if role == 'intent_interpretation':
+                        applied(sim, 'input', text='Keep the exact supplied source and its current constraints.')
+                        action = deepcopy(next(a for a in sim.runtime['queue'] if a['role'] == role))
+                context = engine._context(action, root)
+                profile = execution_profiles.resolve_profile(engine.instance['execution_profiles'],
+                    engine.instance['role_profile_refs'][role][0])
+                fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime,
+                    role=role, profile=profile, snapshot=engine.head, workspace=root,
+                    activity_id='AY-input-requirement', install_submission_tools=True,
+                    clock=sim.clock)
+                self.assertIsNone(fitted['overflow'])
+                assert_judgment_inputs(self, role, fitted, root, producer_context=context)
+
+
 class FollowupDocumentTests(unittest.TestCase):
     """From the Sim's public activation; the legacy tests restored the synthetic active template."""
 
@@ -765,6 +822,8 @@ class FollowupDocumentTests(unittest.TestCase):
             profile = next(p for p in engine.instance["execution_profiles"].values() if p["role"] == role)
             fitted = prepare_role_input(context, instance=engine.instance, runtime=engine.runtime, role=role,
                 profile=profile, snapshot=engine.head, workspace=workspace, activity_id="AC-" + role, clock=_entry.ports.clock)
+            from support.role_input_requirements import assert_judgment_inputs
+            assert_judgment_inputs(self, role, fitted, workspace, producer_context=context)
             source = fitted["context"]["configuration_source"]
             self.assertEqual(json.loads((workspace / source["path"]).read_bytes()), engine.instance["config"])
 
