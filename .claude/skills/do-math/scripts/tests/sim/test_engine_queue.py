@@ -9,6 +9,7 @@ the model process of a call is a Jobs-fake Job carrying the launch ticket's name
 from contextlib import contextmanager
 from copy import deepcopy
 import hashlib
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -157,6 +158,7 @@ class QueuedPreparationTests(unittest.TestCase):
         e = self.engine
         before_executions = set(e.runtime['executions'])
         before_runs = set((self.workspace / 'runs').iterdir())
+        before_time = self.sim.clock.monotonic()
         with ObservedCalls(upkeep=e._upkeep, model=self.sim.model.spawn, launch=self.sim.jobs.launch) as calls:
             with at_return(e._context, lambda: self.sim.control('pause', text='stop during materialization')) as contexts:
                 generator = e._call_steps(e.runtime['queue'][0])
@@ -176,6 +178,7 @@ class QueuedPreparationTests(unittest.TestCase):
         self.assertIsNone(execution.get('started_at'))
         self.assertNotIn('capacity', execution)
         self.assertEqual(set((self.workspace / 'runs').iterdir()), before_runs)
+        self.assertEqual(self.sim.clock.monotonic(), before_time)
 
     def test_pause_before_model_resume_has_no_checkpoint_grace(self):
         e = self.engine
@@ -186,7 +189,15 @@ class QueuedPreparationTests(unittest.TestCase):
                 self.sim.control('pause', text='stop before model resume')
                 e._apply_inbox(pump=False)  # The owner pass applies and publishes the control.
                 e._upkeep()
+                stopped_at = self.sim.clock.now()
+                stopped_monotonic = self.sim.clock.monotonic()
                 self.assertTrue(arguments['should_stop'](), 'a suspended model must not resume for checkpoint grace')
+                self.assertEqual(self.sim.clock.monotonic(), stopped_monotonic)
+                execution = e.runtime['executions'][arguments['execution_id']]
+                self.assertEqual(execution['stop_observed_at'], stopped_at)
+                request_path = Path(arguments['workspace']) / '.control' / 'stop-request.json'
+                request = json.loads(request_path.read_bytes())
+                self.assertEqual((request['immediate'], request['deadline']), (True, stopped_at))
         finally:
             with self.assertRaises(StopIteration) as ended:
                 steps.send({'status': 'stopped', 'output': None, 'usage': {}, 'error': 'stopped before resume'})
@@ -221,9 +232,21 @@ class QueuedPreparationTests(unittest.TestCase):
                 self.sim.control('pause', text='stop running work')
                 e._apply_inbox(pump=False)  # The owner pass applies and publishes the control.
                 e._upkeep()
+                stopped_at = self.sim.clock.now()
+                stopped_monotonic = self.sim.clock.monotonic()
                 self.assertTrue(arguments['should_stop']())
+                self.assertEqual(self.sim.clock.monotonic(), stopped_monotonic)
                 execution = e.runtime['executions'][arguments['execution_id']]
                 self.assertEqual(execution['status'], 'stopping')
+                self.assertEqual(execution['stop_observed_at'], stopped_at)
+                request_path = Path(arguments['workspace']) / '.control' / 'stop-request.json'
+                first_request = request_path.read_bytes()
+                request = json.loads(first_request)
+                self.assertEqual((request['immediate'], request['deadline']), (True, stopped_at))
+                self.sim.advance(0.001)
+                self.assertTrue(arguments['should_stop']())
+                self.assertEqual(execution['stop_observed_at'], stopped_at)
+                self.assertEqual(request_path.read_bytes(), first_request)
         finally:
             with self.assertRaises(StopIteration) as ended:
                 steps.send({'status': 'stopped', 'output': None, 'usage': {}, 'error': 'local stop requested'})
