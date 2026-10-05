@@ -13088,11 +13088,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "통합 미실행 모집단 검증",
-      "last_closed": "B124 db266b3b; B125 결과게시진단수리·runner18개통과",
-      "active": "B126 미실행558개가속한571개검사의고정소스실행준비",
+      "phase": "수정 판본의 전체 일반 통합검증",
+      "last_closed": "B125 3955a029; B126 미실행558포함571개전부통과·소스불변",
+      "active": "B127 현재판본의전체일반검사실행준비",
       "exit": "각 독립 작업은 정해진 산출물·관련 검증으로 종료하고 요구 충족 여부를 별도로 기록한다",
-      "next": "B126완결판정→현재판본의전체일반정상결과.게시실패의원OS오류는추정으로확정하지않음",
+      "next": "B127원보고의완결/성공/skip/소스지문확인후원래미해소요구와최종T3/변이/T4T5작업으로진행",
       "work_method": "fork_turns=none으로 필요한 원문/현행코드/증거/종료조건만 전달한다. 큰 영역 제목 그대로 파견하지 않고 구체 slice를 확정한다. 탐색 이력을 상위에 누적하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -35652,8 +35652,8 @@
               "FINAL-ordinary"
             ],
             "purpose": "현재 누적 main 변경의 전체 일반 통합 결과 확인",
-            "status": "incomplete",
-            "dispatch_state": "publication_diagnostic_repair_complete_missing_run_ready",
+            "status": "partial_complete",
+            "dispatch_state": "missing_population_passed_full_run_ready",
             "dependencies": [
               "DOC-RETURN-PURE"
             ],
@@ -35675,15 +35675,14 @@
               "python .claude/skills/do-math/scripts/run_tests.py --jobs 3 --output C:/math/.skill-workspace/test-restructure-2026-09-29/finish/ordinary-b123-20261005-a/run"
             ],
             "exit_condition": "기본5폴더전건의성공/실패/skip/not_run과소스변경여부를원보고로판정.실패를원문요구별한정수리로배정하며부분검사합산으로성공을만들지않음.",
-            "evidence_pointer": "current_work.worker_publication_diagnostics",
+            "evidence_pointer": "current_work.missing_tests_b126",
             "remaining_scope": [
-              "B126에서미실행모집단전건의실제완료판정",
-              "현재후속수정판본의전체일반정상결과확보"
+              "현재수정판본의동일소스전체일반정상결과"
             ],
             "next_packet": {
-              "purpose": "B126571개실제검사",
-              "input_pointer": "current_work.missing_tests_b126",
-              "exit": "선택된571개와미실행558포함을원보고로대조하고완결/성공/실행중변경을판정"
+              "purpose": "B127전체일반통합",
+              "input_pointer": "current_work.ordinary_integration_b127",
+              "exit": "기본5폴더전건의완결/성공/소스불변을원보고로확인하고skip은사유와별도판정"
             }
           }
         ]
@@ -47174,7 +47173,7 @@
     "missing_tests_b126": {
       "id": "B126",
       "scope": "B123 미실행558개가속한86모듈의571개실제재검증",
-      "state": "실행준비완료·아직시작전",
+      "state": "실행완료·571개전부통과",
       "execution_root": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\missing-b126-20261005-a",
       "modules": [
         "contracts.test_pairs",
@@ -47843,7 +47842,56 @@
       "workers": 3,
       "not_whole_suite": true,
       "source_policy": "B125확정후동일소스고정·실행전후canonical파일/HEAD지문확인.관찰은삭제공유읽기.",
-      "result_rule": "실제complete/successful/not_run/source변경을확인.원B123보고와합산해전체일반통과로표시하지않음."
+      "result_rule": "실제complete/successful/not_run/source변경을확인.원B123보고와합산해전체일반통과로표시하지않음.",
+      "memory_node": "M-0542",
+      "actual_head": "3955a029a355bfb1381fbcdfadd83d14f1d7e213",
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-미실행-B126/report.json",
+        "sha256": "933ef2702939c22e438f0343f6b8f134935288a19d86f07d6e8325775faa392b",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 571
+        },
+        "total_seconds": 63.1,
+        "changed_during_run": []
+      },
+      "artifacts": {
+        "report.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-미실행-B126/report.json",
+          "sha256": "933ef2702939c22e438f0343f6b8f134935288a19d86f07d6e8325775faa392b"
+        },
+        "source-before.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-미실행-B126/source-before.json",
+          "sha256": "330eb084a679959073a820d044b693cecb1bef29a7251d10112aac2d133c2a99"
+        },
+        "source-after.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-미실행-B126/source-after.json",
+          "sha256": "485af54d63c04e879e5cac8438f92bf37a62c19f6390a56d306332191d7e2e69"
+        },
+        "selection.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-미실행-B126/selection.json",
+          "sha256": "06aa43f01f73ad84fed6e58e20935bdb616a3ff3be76ede98dc6b31e272e23ee"
+        }
+      },
+      "selected_actual": 571,
+      "missing_excluded": 0,
+      "selection_drift": [],
+      "source_files": 969,
+      "source_changes": [],
+      "exit_code": 0
+    },
+    "ordinary_integration_b127": {
+      "id": "B127",
+      "scope": "B124fixture·B125진단수리후동일판본의전체일반정상결과확보",
+      "state": "실행준비완료·아직시작전",
+      "execution_root": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\ordinary-b127-20261005-a",
+      "command": "python -u -B .claude/skills/do-math/scripts/run_tests.py --jobs 3 --output C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\ordinary-b127-20261005-a\\run",
+      "workers": 3,
+      "time_policy": "soft baseline; no timeout",
+      "observer": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\observe-test-run.py",
+      "source_policy": "커밋후canonical tracked/untracked969파일과HEAD를전후대조;진행중결과파일은삭제공유읽기",
+      "not_final_goal": "전체일반회귀의현재기준선.원래요구별남김/freshT3/변이/T4T5완료는아님."
     }
   }
 }
