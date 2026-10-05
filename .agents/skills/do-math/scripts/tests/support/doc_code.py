@@ -362,12 +362,23 @@ def field_schemas():
         submission.install_tools, 'context["record_map"]["read_tool"]')
     schemas['submission_contract'] = produced_object_schema(submission.install_tools, 'contract')
     schemas['profile_selection'] = produced_object_schema(context_store.prepare_role_input, "value['profile_selection']")
-    schemas['operating_summary'] = produced_object_schema(reporting.operating_summary)
+    from support.state_builders import current_state
+    instance, runtime = current_state()
+    summary = reporting.operating_summary(instance, runtime)
+    schemas['operating_summary'] = {'type': 'object', 'properties': {
+        name: {} for name in summary}, 'additionalProperties': False}
+    # Only the fixed supervision object is traversed. This initializing result
+    # does not establish other blocker variants or items in its empty grants.
+    schemas['operating_summary']['properties']['supervision'] = {
+        'type': 'object', 'properties': {name: {} for name in summary['supervision']},
+        'additionalProperties': False}
+    supervision_fields = {'type': 'object', 'properties': {
+        name: {} for name in supervision.supervision_facts(instance, runtime)}, 'additionalProperties': False}
     schemas['governance'] = produced_object_schema(governance.governance_view)
     schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
     schemas['operation_progress'] = produced_object_schema(trace_report.progress)
     schemas['status'] = produced_object_schema(reporting.status_report, bindings={
-        'supervision_facts(instance, runtime)': produced_object_schema(supervision.supervision_facts),
+        'supervision_facts(instance, runtime)': supervision_fields,
         'operating_summary(instance, runtime)': schemas['operating_summary'],
         'observed': {'type': 'object', 'properties': {name: {} for name in reporting.OBSERVED_FIELDS}}})
     schemas['operational_evidence'] = produced_object_schema(CoreEngineMixin._context, 'evidence')

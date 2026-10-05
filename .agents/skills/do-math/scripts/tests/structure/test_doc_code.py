@@ -132,6 +132,21 @@ class DocumentCodeTests(unittest.TestCase):
         self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
             '`status.budget` `profile_selection.allowed_profiles` `operational_evidence.activity_continuations`', schemas), [])
         self.assertEqual(scoped_field_issues('`status.allowed_profiles`', schemas), [('scoped field', 'status.allowed_profiles')])
+        self.assertEqual(scoped_field_issues('`operating_summary.scope` `operating_summary.lifecycle` '
+            '`operating_summary.initialization` `operating_summary.execution_status` `operating_summary.goal_status` '
+            '`operating_summary.primary_blocker` `operating_summary.workspace` '
+            '`operating_summary.conversation_loss_policy` `operating_summary.active_execution_ids` '
+            '`operating_summary.grants` `operating_summary.supervision.configured_enabled` '
+            '`operating_summary.supervision.interval_seconds` `operating_summary.supervision.actual_schedule` '
+            '`status.operating_summary.supervision.configured_enabled` '
+            '`status.status` `status.user_pause` `status.maintenance_fence` `status.model_policy_violation` '
+            '`status.conversation_lost` `status.installation_repair` `status.operator_enabled`', schemas), [])
+        for token in ('operating_summary.operator_enabled', 'operating_summary.configured_enabled',
+                      'operating_summary.supervision.operator_enabled',
+                      'operating_summary.primary_blocker.kind', 'operating_summary.grants[].id',
+                      'status.configured_enabled', 'status.user_pause.reason', 'status.installation_repair.id'):
+            with self.subTest(token=token):
+                self.assertEqual(scoped_field_issues('`' + token + '`', schemas), [('scoped field', token)])
 
     def test_documented_function_references_resolve_to_callables(self):
         issues = [(document.relative_to(SKILL).as_posix(), *issue)
