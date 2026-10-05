@@ -68,6 +68,8 @@ class DocumentCodeTests(unittest.TestCase):
         self.assertEqual(scoped_field_issues(
             '`execution_window.self_check_directory` `execution.execution_window.effective_deadline_at` '
             '`formal_verifier.preview.command` `record_map.read_tool.command` '
+            '`record_map.snapshot` `record_map.ledger` `record_map.families` '
+            '`record_map.blocked_keys` `record_map.instruction` '
             '`submission_contract.limits.checkpoint_bytes` `assessment.current` `runtime.user_pause`', schemas), [])
         self.assertEqual(scoped_field_issues('`execution.execution_window.self_check_directory`', schemas),
                          [('scoped field', 'execution.execution_window.self_check_directory')])
@@ -75,6 +77,8 @@ class DocumentCodeTests(unittest.TestCase):
                          [('scoped field', 'execution_window.effective_deadline_at')])
         self.assertEqual(scoped_field_issues('`record_map.read_tool.nonexistent` `runtime.checkpoint_bytes`', schemas),
                          [('scoped field', 'record_map.read_tool.nonexistent'), ('scoped field', 'runtime.checkpoint_bytes')])
+        self.assertEqual(scoped_field_issues('`record_map.nonexistent` `record_map.families.nonexistent`', schemas),
+                         [('scoped field', 'record_map.families.nonexistent'), ('scoped field', 'record_map.nonexistent')])
 
     def test_producer_fields_do_not_come_from_nested_scopes_or_unknown_spreads(self):
         def nested_only(context):

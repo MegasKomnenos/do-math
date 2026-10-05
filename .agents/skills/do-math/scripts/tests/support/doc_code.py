@@ -356,7 +356,8 @@ def field_schemas():
         schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
     schemas['preview'] = produced_object_schema(submission.install_tools, 'context["formal_verifier"]["preview"]')
     schemas['formal_verifier']['properties']['preview'] = schemas['preview']
-    schemas['record_map'] = produced_object_schema(context_store.record_map)
+    schemas['record_map'] = {'type': 'object', 'properties': {
+        name: {} for name in context_store.record_map({}, 'research_work', 'fixed')}, 'additionalProperties': False}
     schemas['record_map']['properties']['read_tool'] = produced_object_schema(
         submission.install_tools, 'context["record_map"]["read_tool"]')
     schemas['submission_contract'] = produced_object_schema(submission.install_tools, 'contract')

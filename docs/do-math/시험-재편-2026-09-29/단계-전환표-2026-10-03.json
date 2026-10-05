@@ -4881,7 +4881,7 @@
       {
         "id": "13-C",
         "state": "partial_implementation",
-        "remaining": "문서 이름 검사 중 실제 스키마·배열·이름 소유자 검사는 유지. 생산자 AST 추정의 삭제/재대입 거짓 통과와 dict 작성법 의존을 독립 검토로 재현해 DOC-RETURN-* 교체 작업에 배정했다. 선택 인자 우회는 B115에서 교정. 단독/조합 이름, 실제 반환 계약, 정책 의미 대응과 읽기 출력 한도는 미완료. B116에서 역할문서240443~306721바이트는 stdin 직접 입력임을 확인했다. 운전 지침은 구간읽기이며 실제 도구 바이트 상한은 미확인이다. 토큰 예산을 임의 바이트 상한으로 바꾸지 않는다.",
+        "remaining": "문서 이름 검사 중 실제 스키마·배열·이름 소유자 검사는 유지. 생산자 AST 추정의 삭제/재대입 거짓 통과와 dict 작성법 의존을 독립 검토로 재현해 DOC-RETURN-* 교체 작업에 배정했다. 선택 인자 우회는 B115에서 교정. 단독/조합 이름, 실제 반환 계약, 정책 의미 대응과 읽기 출력 한도는 미완료. B116에서 역할문서240443~306721바이트는 stdin 직접 입력임을 확인했다. 운전 지침은 구간읽기이며 실제 도구 바이트 상한은 미확인이다. 토큰 예산을 임의 바이트 상한으로 바꾸지 않는다. B119 record_map 기본 반환의 AST 결속1개는 실제 순수 반환 키로 교체 완료(문서17개통과). 다른 생산자 교체와 이름/읽기 경계는 남음.",
         "evidence": "independent_execution.document_review 및 기존 원보고. 구조 통과/소스상 키 존재를 실제 반환 계약 전건 증명으로 취급하지 않는다."
       }
     ],
@@ -13089,10 +13089,10 @@
     },
     "current_focus": {
       "phase": "독립 새 문맥 작업으로 재편 완료와 기존 변경 재검토",
-      "last_closed": "B117 c71053d6; B118 KD-1921 수리·관련20개통과",
-      "active": "DOC-RETURN-RECORD-MAP 실제반환결속의검증된변경확정",
+      "last_closed": "B118 46aaa333; B119 record_map 실제반환 교체·문서17개통과",
+      "active": "문서의 남은 반환 공간을 기존 실제 결과/공유 계약으로 연결하는 한정 교체",
       "exit": "각 독립 작업은 정해진 산출물·관련 검증으로 종료하고 요구 충족 여부를 별도로 기록한다",
-      "next": "문서생산자교체의남은명시범위와원래미해소요구를새문맥단위로진행;완료한R17재감사금지",
+      "next": "DOC-RETURN-PURE의 operating_summary/supervision_facts만 다음 묶음. status_report/trace_report는 I/O 의존을 별도 처리하며 record_map/R17은 반복하지 않음",
       "work_method": "fork_turns=none으로 필요한 원문/현행코드/증거/종료조건만 전달한다. 큰 영역 제목 그대로 파견하지 않고 구체 slice를 확정한다. 탐색 이력을 상위에 누적하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -35382,10 +35382,18 @@
             ],
             "exit_condition": "해당 결속을 실제 결과/공유 계약으로 교체하고 구문 추출을 제거한다. 실행 불가능/근거 부재이면 미완료로 정확히 반환하며 추론기 확대로 우회하지 않는다.",
             "dependencies": [],
-            "status": "planned",
-            "dispatch_state": "record_map_packet_ready",
+            "status": "partial_complete",
+            "dispatch_state": "record_map_complete",
             "review_pointer": "current_work.builder_population_and_windowless_boundary.pure_document_review",
-            "first_implementation": "context_store.record_map 기본 반환 필드의 AST 결속 하나만 실제 순수 반환 키로 교체; read_tool 및 다른 네 함수는 제외"
+            "first_implementation": "완료: record_map 기본 필드. 동일 변경 재수행 금지.",
+            "completed_scope": [
+              "B119 record_map 기본 반환 AST 결속1개 제거·문서모듈17통과"
+            ],
+            "remaining_scope": [
+              "operating_summary/supervision_facts의 실제 입력을 사용하는 다음 순수 반환 묶음",
+              "status_report/trace_report.progress의 콜백·파일 경계를 별도 기존 시험과 연결"
+            ],
+            "evidence_pointer": "current_work.record_map_runtime_binding"
           },
           {
             "id": "DOC-RETURN-CLI",
@@ -46542,6 +46550,34 @@
       "fixture_correction": "중간3실패는 Windows OSError 문자열의 filename repr 표현과 시험 str 비교의 차이. 제품결함 red4개와 구별하여 그대로 보존",
       "probe": "작업자 probe_cli.py --skill-only verified 보고. root는 원본 runner JSON20pass 및 diff를 직접 검수",
       "remaining": "현재 지정R17의형제부재반례수리는완료.원문9-A전건 및 최종 동일판본관문은 별도이며 불필요하게 정상pythonw경계를 다시구축하지 않는다."
+    },
+    "record_map_runtime_binding": {
+      "id": "B119",
+      "scope": "record_map 기본 필드의 AST 생산자 결속 하나를 실제 순수 반환으로 교체",
+      "state": "한정 단순화·문서17개 검증 완료",
+      "memory_node": "M-0536",
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-record-map-실제반환/report.json",
+        "sha256": "4dd80f9b146131bfe0e493a7d2094499826da39eab6fb409e223d8430eb2ed3b",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 17
+        },
+        "total_seconds": 7.8,
+        "changed_during_run": []
+      },
+      "producer": "context_store.record_map({}, research_work, fixed)",
+      "removed_ast_bindings": 1,
+      "new_generic_helpers": 0,
+      "new_schema_copies": 0,
+      "product_changes": false,
+      "preserved": [
+        "정상반환snapshot/ledger/families/blocked_keys/instruction",
+        "없는필드및families내임의키거부",
+        "별도설치read_tool.command의기존양성/음성검사"
+      ],
+      "limits": "최상위필드의실제반환증거다. read_tool설치및다른생산자의AST결속,값의의미/권한/모든미래분기전건을인증하지않는다."
     }
   }
 }
