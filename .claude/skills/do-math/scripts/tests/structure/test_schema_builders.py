@@ -1,12 +1,16 @@
 """Schema builders share no mutable node (의무 1-E): a result changed in place changes no other result and no global.
 
-``_calls`` samples public product functions whose name contains schema, with
+``_calls`` samples public module functions whose name contains schema, with
 calls covering the declared arguments. ``TRANSFORMERS`` names the ones that
 take a caller's schema and return it changed; their results are checked through
-the builders that use them. A schema function in neither table fails the walk,
+the builders that use them. A schema function without a declaration fails the walk,
 so a newly named schema function cannot silently miss the walk. Each argument
 variant runs twice to catch retained results. Unnamed composition helpers have
-a separate probe; the name-based census alone is not a complete 1-E population.
+a separate probe. Class schema methods are declared by their tested delegate or
+borrowed-input contract; reviewed constant builders have direct probes below.
+The bounded ownership dispositions come from return_ownership_review (G4/G5) in
+docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json. This registration
+does not certify that the name-based census covers the whole 1-E population.
 Action/extension samples cover ROLES and their shape-changing preparation,
 review-cycle and stage inputs, without multiplying unrelated axes. Audit and
 impact samples exercise filtering and repeated option construction.
@@ -79,17 +83,42 @@ TRANSFORMERS = {
     'do_math.contracts.identify_schema': 'content-addresses a caller schema',
     'do_math.contracts.schema_reference': 'refers to a caller schema',
     'do_math.contracts.with_integration_schema': 'wraps a caller schema; checked through schema_for',
+    'do_math.governance_engine.GovernanceEngineMixin._governance_schema':
+        'borrows non-audit input; audit copies and adds additional_audit_schema; '
+        'CoreEngineMixin._response_schema owns the final with_integration_schema copy',
 }
 
 
+DELEGATED_SCHEMA_METHODS = {
+    'do_math.core_engine.CoreEngineMixin._response_schema':
+        'every successful branch ends in with_integration_schema -> identify_schema -> json_copy; '
+        '_calls exercises that copy boundary through schema_for/action_schema',
+    'do_math.review_engine.ReviewEngineMixin._review_schema':
+        'pending-seat validation then _seat_schema; _composition_calls covers all five stages; '
+        'the method adds no mutable input to the returned schema',
+    'do_math.review_engine.ReviewEngineMixin._review_research_schema':
+        '_calls covers research_schema; the method adds two fresh enum lists containing only '
+        'the valid pending request ID and digest strings',
+}
+
+
+# Borrowed constant lookups are not owned builders: task_contracts.repetition_outcome
+# and repair_execution.recovery_outcome return their global table rows for reading.
+# G5 explicitly excludes them; no copy API or immutable-return promise is implied.
+
+
 def _schema_functions():
-    """Public module-level functions of the product whose names say they build or change a schema."""
+    """Public module functions and all class methods whose names contain schema."""
     found = set()
     for path in PRODUCT.rglob('*.py'):
         module = '.'.join(('do_math',) + path.relative_to(PRODUCT).with_suffix('').parts).removesuffix('.__init__')
         for node in ast.parse(path.read_text(encoding='utf-8')).body:
             if isinstance(node, ast.FunctionDef) and 'schema' in node.name and not node.name.startswith('_'):
                 found.add(module + '.' + node.name)
+            elif isinstance(node, ast.ClassDef):
+                for method in node.body:
+                    if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef)) and 'schema' in method.name:
+                        found.add(module + '.' + node.name + '.' + method.name)
     return found
 
 
@@ -162,6 +191,28 @@ def _isolation_problems(calls):
     return problems
 
 
+def _constant_object_calls():
+    """Reviewed owned dict builders outside the schema-name census (G5)."""
+    from do_math import contracts, knowledge_io, planning
+    from do_math.state_contract import StateContract
+    contract = StateContract()
+    contract.register_family('research', 'sample', schema=contracts.closed_object({'name': contracts.STRING}))
+    # One installed definition for each of the three existing constructor shapes.
+    definitions = {}
+    for row in knowledge_io.BUILTIN_DEFINITIONS:
+        shape = (row['family'], row['constraints']['mathematical_claim'], row['constraints']['requires_evidence'])
+        definitions.setdefault(shape, row)
+    return {
+        'do_math.planning.lifecycle_values': [planning.lifecycle_values],
+        'do_math.knowledge_io._definition': [
+            lambda row=row: knowledge_io._definition(row['family'], row['token'], row['meaning'],
+                mathematical=row['constraints']['mathematical_claim'], evidence=row['constraints']['requires_evidence'])
+            for row in definitions.values()],
+        # The two checker calls cover the initial digest computation and cache hit.
+        'do_math.state_contract.StateContract.manifest': [contract.manifest],
+    }
+
+
 class SchemaBuilderTests(unittest.TestCase):
     def test_control_schema_composition_does_not_share_mutable_field_nodes(self):
         """The unnamed obj/fields builders also fall under the 1-E isolation invariant."""
@@ -181,7 +232,7 @@ class SchemaBuilderTests(unittest.TestCase):
             child.update(original)
 
     def test_every_schema_function_is_declared(self):
-        declared = set(_calls()) | set(TRANSFORMERS)
+        declared = set(_calls()) | set(TRANSFORMERS) | set(DELEGATED_SCHEMA_METHODS)
         self.assertEqual(sorted(_schema_functions() - declared), [], 'schema functions not declared here')
         self.assertEqual(sorted(declared - _schema_functions()), [], 'declared schema functions that no longer exist')
 
@@ -232,6 +283,66 @@ class SchemaBuilderTests(unittest.TestCase):
 
     def test_unnamed_schema_composition_results_detach_every_mutable_node(self):
         self.assertEqual(_isolation_problems(_composition_calls()), [])
+
+    def test_constant_object_builders_detach_mutable_nodes_and_keep_immutable_leaves(self):
+        from do_math import planning
+        from do_math.state_contract import StateContract
+        self.assertEqual(_isolation_problems(_constant_object_calls()), [])
+        # lifecycle_values intentionally shares the owners' immutable frozensets.
+        for family, values in planning.lifecycle_values().items():
+            with self.subTest(family=family):
+                self.assertIsInstance(values, frozenset)
+                self.assertTrue(all(isinstance(value, str) for value in values))
+        self.assertTrue(all(isinstance(value, str) for value in StateContract().manifest().values()))
+
+    def test_observation_contract_builders_detach_all_rows_from_each_other_and_operators(self):
+        from do_math import execution_profiles, observations
+        calls = {
+            'do_math.observations.observation_rule_contract': observations.observation_rule_contract,
+            'do_math.execution_profiles._research_observation_rule_contract':
+                execution_profiles._research_observation_rule_contract,
+        }
+        seen = {id(node) for node in _containers(observations.OPERATORS)}
+        kept = []
+        for name, call in calls.items():
+            for repeat in range(2):
+                with self.subTest(builder=name, repeat=repeat):
+                    result = call()
+                    kept.append(result)
+                    self.assertIsInstance(result, list)
+                    self.assertEqual([row['operator'] for row in result], sorted(observations.OPERATORS))
+                    for row in result:
+                        self.assertIsInstance(row, dict)
+                        self.assertTrue(all(isinstance(value, str) for value in row.values()))
+                    nodes = [id(node) for node in _containers(result)]
+                    self.assertEqual(len(nodes), len(set(nodes)))
+                    self.assertFalse(seen.intersection(nodes))
+                    seen.update(nodes)
+
+    def test_blocked_key_builder_returns_independent_sets_of_immutable_names(self):
+        from do_math import context_store
+        before = deepcopy(context_store.BLOCKED_KEYS)
+        kept = []
+        # All exact keys, one role fallback, and an unregistered scope.
+        for scope in (*context_store.BLOCKED_KEYS, 'identity_review:scope', 'unregistered'):
+            with self.subTest(scope=scope):
+                first, second = context_store._blocked(scope), context_store._blocked(scope)
+                self.assertIsInstance(first, set)
+                self.assertIsInstance(second, set)
+                self.assertTrue(all(isinstance(value, str) for value in first | second))
+                self.assertEqual(first, second)
+                for result in (first, second):
+                    self.assertTrue(all(result is not earlier for earlier in kept))
+                    kept.append(result)
+                expected = second.copy()
+                original = first.copy()
+                try:
+                    first.add('isolation-probe')
+                    self.assertEqual(second, expected)
+                    self.assertEqual(context_store.BLOCKED_KEYS, before)
+                finally:
+                    first.clear()
+                    first.update(original)
 
 
 class SchemaBuilderIsolationCheckTests(unittest.TestCase):

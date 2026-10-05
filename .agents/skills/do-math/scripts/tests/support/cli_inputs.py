@@ -52,8 +52,8 @@ def role_reach(prompt, workspace, secret):
     requests = [argument for identifier in sorted({i for ids in context["record_index"].values() for i in ids})
                 for argument in ("--id", identifier)] + [argument for path in held for argument in ("--path", path)]
     if requests:
-        result = subprocess.run([sys.executable, "-B", "input/tools/read_input.py", *requests], cwd=workspace,
-                                capture_output=True, timeout=120)
+        result = subprocess.run([*context['record_map']['read_tool']['command'], *requests], cwd=workspace,
+                                capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
         output = json.loads(result.stdout)
         reached += ["read_input.py " + row["request"] for row in output["records"]
                     if row["status"] == "ok" and secret in json.dumps(row, ensure_ascii=False)]
