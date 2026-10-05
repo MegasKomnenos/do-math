@@ -46,6 +46,7 @@ from pathlib import Path
 import sys
 import tempfile
 import time
+import traceback
 import unittest
 import uuid
 
@@ -428,7 +429,13 @@ def _worker(directory):
         tests = list(flatten(loader.loadTestsFromNames(_read_json(directory / 'requested.json'))))
         if measurement is not None:
             measurement.begin([test.id() for test in tests])
-        report = _run_suite(tests, directory, checkpoint=True, measurement=measurement)
+        try:
+            report = _run_suite(tests, directory, checkpoint=True, measurement=measurement)
+        except Exception:
+            # Preserve runner failures before unwinding the worker's redirected stderr.
+            traceback.print_exc(file=err)
+            err.flush()
+            raise
     if measurement is not None:
         measurement.save(directory)
     return 0 if report['successful'] else 1

@@ -15,6 +15,55 @@ from test_categories import isolation_for, test_group as category
 
 
 class RunnerTests(unittest.TestCase):
+    def test_worker_preserves_checkpoint_publication_traceback_without_completing_report(self):
+        class Specimen(unittest.TestCase):
+            def test_value(self): self.assertEqual(2 + 2, 4)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            specimen = Specimen('test_value')
+            run_tests._write_json(root / 'requested.json', [specimen.id()])
+            failure = OSError(13, 'injected checkpoint publication failure', str(root / 'result.json'))
+            write_json = run_tests._write_json
+            def publish(path, value):
+                if path.name == 'result.json' and value['rows'][-1]['outcome'] == 'passed':
+                    raise failure
+                return write_json(path, value)
+            with mock.patch.object(sys, 'path', sys.path.copy()), \
+                    mock.patch.object(unittest.TestLoader, 'loadTestsFromNames',
+                                      return_value=unittest.TestSuite([specimen])), \
+                    mock.patch.object(run_tests, '_write_json', side_effect=publish):
+                with self.assertRaises(OSError) as caught:
+                    run_tests._worker(root)
+            self.assertIs(caught.exception, failure)
+            report = run_tests._read_json(root / 'result.json')
+            self.assertFalse(report['complete'])
+            self.assertFalse(report['successful'])
+            self.assertEqual(report['rows'][-1]['outcome'], 'running')
+            self.assertFalse((root / 'progress-000002.json').exists())
+            retained = (root / 'stderr.txt').read_text(encoding='utf-8')
+            self.assertIn('... ok', retained)
+            self.assertIn('Traceback (most recent call last):', retained)
+            self.assertIn(str(failure), retained)
+            self.assertIn('stopTest', retained)
+
+    def test_worker_keeps_completed_success_and_test_failure_exit_contracts(self):
+        class Specimen(unittest.TestCase):
+            def test_pass(self): self.assertEqual(2 + 2, 4)
+            def test_fail(self): self.fail('ordinary test failure')
+        for method, code, outcome in [('test_pass', 0, 'passed'), ('test_fail', 1, 'failed')]:
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                specimen = Specimen(method)
+                run_tests._write_json(root / 'requested.json', [specimen.id()])
+                with mock.patch.object(sys, 'path', sys.path.copy()), \
+                        mock.patch.object(unittest.TestLoader, 'loadTestsFromNames',
+                                          return_value=unittest.TestSuite([specimen])):
+                    self.assertEqual(run_tests._worker(root), code)
+                report = run_tests._read_json(root / 'result.json')
+                self.assertTrue(report['complete'])
+                self.assertEqual(report['successful'], code == 0)
+                self.assertEqual(report['rows'][0]['outcome'], outcome)
+
     def test_failure_is_readable_while_the_next_test_runs_before_group_completion(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
