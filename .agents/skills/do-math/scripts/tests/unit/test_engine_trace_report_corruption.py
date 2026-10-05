@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 from do_math.trace_report import phase_rows, progress, trace_rows
+from support.doc_code import documents, field_schemas, scoped_field_issues, unowned_field_references
 from support.fakes.clock import FakeClock
 
 
@@ -46,3 +47,36 @@ class TraceCorruptionTests(unittest.TestCase):
                 {'operation_id': f'{index:02}', 'status': 'unreadable_error_record'} for index in range(2, 18)])
             self.assertEqual(result['rows'], [])
             self.assertEqual(result['observed_at'], clock.now())
+            # Reuse this actual file response for the same document population
+            # as structure.test_doc_code; status stays at its repository boundary.
+            skill = Path(__file__).resolve().parents[3]
+            texts = [(document.relative_to(skill).as_posix(), document.read_text(encoding='utf-8'))
+                     for document in documents(skill)]
+            schemas = field_schemas()
+
+            def field_issues(text, report):
+                actual = {**schemas, 'operation_progress': {
+                    'type': 'object', 'properties': {name: {} for name in report},
+                    'additionalProperties': False}}
+                return scoped_field_issues(text, actual, defer_status=True)
+
+            self.assertEqual([(name, *issue) for name, text in texts
+                              for issue in field_issues(text, result)], [])
+            self.assertEqual([(name, token) for name, text in texts
+                              for token in unowned_field_references(text, schemas)], [])
+            alias = '`result.telemetry_errors` <!-- do-math fields: result=operation_progress -->'
+            self.assertEqual(field_issues(alias, result), [])
+            for token in ('operation_progress.budget', 'operation_progress.telemetry_errors.status',
+                          'operation_progress.telemetry_errors[].status', 'operation_progress.rows[].event'):
+                with self.subTest(token=token):
+                    self.assertEqual(field_issues('`' + token + '`', result), [('scoped field', token)])
+            for name in result:
+                with self.subTest(omitted=name):
+                    omitted = dict(result)
+                    del omitted[name]
+                    token = 'operation_progress.' + name
+                    self.assertEqual(field_issues('`' + token + '`', omitted), [('scoped field', token)])
+                    if name == 'telemetry_errors':
+                        self.assertTrue([(path, *issue) for path, text in texts
+                                         for issue in field_issues(text, omitted)])
+                        self.assertEqual(field_issues(alias, omitted), [('scoped field', 'result.telemetry_errors')])

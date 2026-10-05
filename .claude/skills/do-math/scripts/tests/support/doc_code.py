@@ -24,9 +24,10 @@ ENTRY = re.compile(r'(?:do_math\.py|\$dmCli)\s+([a-z][a-z-]*)\b')
 SPAN = re.compile(r'(?<!`)`([^`\n]+)`(?!`)')
 FLAG = re.compile(r'^--[a-z][a-z-]*(?:=.*)?$')
 FIELD = re.compile(r'[a-z][a-z0-9_]*(?:\[\d*\])?(?:\.[a-z][a-z0-9_]*(?:\[\d*\])?)+')
-# Only status is checked at the existing repository-return boundary. This is
-# an owner, not a schema that could validate fields without the actual report.
+# These owners are checked at their existing repository/file-return boundaries,
+# not schemas that could validate fields without the actual responses.
 STATUS_REPORT_BOUNDARY = object()
+OPERATION_PROGRESS_BOUNDARY = object()
 
 
 def documents(skill):
@@ -232,7 +233,7 @@ def consumed_object_schema(function, target, *, scope=None):
 
 def field_schemas():
     """Bind stored records separately from the role-input objects built from them."""
-    from do_math import academic, context_store, governance, reporting, submission, trace_report
+    from do_math import academic, context_store, governance, reporting, submission
     from do_math.contracts import PLAN_DISPOSITION
     from do_math.core_engine import CoreEngineMixin
     from do_math.record_schemas import config_schema
@@ -377,7 +378,7 @@ def field_schemas():
         'additionalProperties': False}
     schemas['governance'] = produced_object_schema(governance.governance_view)
     schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
-    schemas['operation_progress'] = produced_object_schema(trace_report.progress)
+    schemas['operation_progress'] = OPERATION_PROGRESS_BOUNDARY
     schemas['status'] = STATUS_REPORT_BOUNDARY
     schemas['operational_evidence'] = produced_object_schema(CoreEngineMixin._context, 'evidence')
     schemas['operational_evidence']['properties']['activity_continuations'] = produced_object_schema(
@@ -475,7 +476,7 @@ def unowned_field_references(text, schemas):
     return sorted(pending)
 
 
-def scoped_field_issues(text, schemas, *, defer_status=False):
+def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     issues = []
     for line in text.splitlines():
@@ -491,6 +492,10 @@ def scoped_field_issues(text, schemas, *, defer_status=False):
                 if defer_status:
                     continue
                 raise ValueError('status fields require the actual repository report')
+            if local[root] is OPERATION_PROGRESS_BOUNDARY:
+                if defer_operation_progress:
+                    continue
+                raise ValueError('operation_progress fields require the actual file report')
             candidates = [local[root]]
             for part in parts:
                 candidates = [child for schema in candidates for child in

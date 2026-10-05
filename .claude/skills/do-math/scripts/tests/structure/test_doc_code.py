@@ -56,9 +56,24 @@ class DocumentCodeTests(unittest.TestCase):
             self.assertEqual(scoped_field_issues(text, schemas, defer_status=True), [])
             self.assertEqual(unowned_field_references(text, schemas), [])
         self.assertEqual(unowned_field_references('`statuz.budget`', schemas), ['statuz.budget'])
+        # unit.test_engine_trace_report_corruption owns the independent file
+        # response; deferring either boundary must not defer the other one.
+        for text in ('`operation_progress.telemetry_errors`',
+                     '`result.telemetry_errors` <!-- do-math fields: result=operation_progress -->'):
+            with self.assertRaisesRegex(ValueError, 'operation_progress fields require the actual file report'):
+                scoped_field_issues(text, schemas)
+            with self.assertRaisesRegex(ValueError, 'operation_progress fields require the actual file report'):
+                scoped_field_issues(text, schemas, defer_status=True)
+            self.assertEqual(scoped_field_issues(text, schemas, defer_operation_progress=True), [])
+            self.assertEqual(unowned_field_references(text, schemas), [])
+        with self.assertRaisesRegex(ValueError, 'status fields require the actual repository report'):
+            scoped_field_issues('`status.budget`', schemas, defer_operation_progress=True)
+        self.assertEqual(unowned_field_references('`operation_progres.telemetry_errors`', schemas),
+                         ['operation_progres.telemetry_errors'])
         issues = [(document.relative_to(SKILL).as_posix(), *issue)
                   for document in documents(SKILL)
-                  for issue in scoped_field_issues(document.read_text(encoding='utf-8'), schemas, defer_status=True)]
+                  for issue in scoped_field_issues(document.read_text(encoding='utf-8'), schemas,
+                                                  defer_status=True, defer_operation_progress=True)]
         self.assertEqual(issues, [])
 
     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):

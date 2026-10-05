@@ -4881,7 +4881,7 @@
       {
         "id": "13-C",
         "state": "partial_implementation",
-        "remaining": "문서 이름 검사 중 실제 스키마·배열·이름 소유자 검사는 유지. 생산자 AST 추정의 삭제/재대입 거짓 통과와 dict 작성법 의존을 독립 검토로 재현해 DOC-RETURN-* 교체 작업에 배정했다. 선택 인자 우회는 B115에서 교정. 단독/조합 이름, 실제 반환 계약, 정책 의미 대응과 읽기 출력 한도는 미완료. B116에서 역할문서240443~306721바이트는 stdin 직접 입력임을 확인했다. 운전 지침은 구간읽기이며 실제 도구 바이트 상한은 미확인이다. 토큰 예산을 임의 바이트 상한으로 바꾸지 않는다. B119 record_map 기본 반환의 AST 결속1개는 실제 순수 반환 키로 교체 완료(문서17개통과). 다른 생산자 교체와 이름/읽기 경계는 남음. B120 operating_summary/supervision_facts의AST생산자호출2개를 실제반환키로교체완료. status_report최종전달·trace_report파일경계는별도미완료. B121 status_report AST/수동spread3개제거,실제저장소최종반환에문서검사연결(22개통과).순수/조회출력묶음의남김은trace_report파일경계다.",
+        "remaining": "문서 이름 검사 중 실제 스키마·배열·이름 소유자 검사는 유지. 생산자 AST 추정의 삭제/재대입 거짓 통과와 dict 작성법 의존을 독립 검토로 재현해 DOC-RETURN-* 교체 작업에 배정했다. 선택 인자 우회는 B115에서 교정. 단독/조합 이름, 실제 반환 계약, 정책 의미 대응과 읽기 출력 한도는 미완료. B116에서 역할문서240443~306721바이트는 stdin 직접 입력임을 확인했다. 운전 지침은 구간읽기이며 실제 도구 바이트 상한은 미확인이다. 토큰 예산을 임의 바이트 상한으로 바꾸지 않는다. B119 record_map 기본 반환의 AST 결속1개는 실제 순수 반환 키로 교체 완료(문서17개통과). 다른 생산자 교체와 이름/읽기 경계는 남음. B120 operating_summary/supervision_facts의AST생산자호출2개를 실제반환키로교체완료. status_report최종전달·trace_report파일경계는별도미완료. B121 status_report AST/수동spread3개제거,실제저장소최종반환에문서검사연결(22개통과).순수/조회출력묶음의남김은trace_report파일경계다. B122 trace_report파일결과연결까지지정조회출력5생산자교체완료(24개통과).이묶음은더확장하지않으며다른문서생산자/이름/읽기경계는별도작업.",
         "evidence": "independent_execution.document_review 및 기존 원보고. 구조 통과/소스상 키 존재를 실제 반환 계약 전건 증명으로 취급하지 않는다."
       }
     ],
@@ -13088,11 +13088,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "독립 새 문맥 작업으로 재편 완료와 기존 변경 재검토",
-      "last_closed": "B120 369d23bb; B121 status 실제저장소반환 연결·관련22개통과",
-      "active": "operation_progress 실제 파일 결과를 기존 경계 검사에서 문서 소유자에 연결",
+      "phase": "현재 후보의 전체 일반 통합검증",
+      "last_closed": "B121 61e080b2; B122 progress실제파일연결·관련24개통과",
+      "active": "B123 기본5폴더전체검사를위한최종편집확정과소스지문기록",
       "exit": "각 독립 작업은 정해진 산출물·관련 검증으로 종료하고 요구 충족 여부를 별도로 기록한다",
-      "next": "DOC-RETURN-PURE 마지막 trace_report.progress 파일 경계. 그 뒤 이 묶음을 닫고 남은 원문 요구/통합 검증 작업으로 이동",
+      "next": "B123 원보고의실제결과를확인하고실패가있으면해당요구의한정수리로배정.최종관문완료로혼동하지않음",
       "work_method": "fork_turns=none으로 필요한 원문/현행코드/증거/종료조건만 전달한다. 큰 영역 제목 그대로 파견하지 않고 구체 slice를 확정한다. 탐색 이력을 상위에 누적하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -24786,7 +24786,7 @@
           "rule": "재검토 영역은 별도 전수 재실행이 아니라 겹치는 요구 작업의 입력이다. 같은 diff/원보고 검토를 두 번 배정하지 않는다."
         },
         "counts": {
-          "tasks": 108,
+          "tasks": 109,
           "stage1": 19,
           "stage2": 11,
           "preservation": 61,
@@ -25241,9 +25241,9 @@
         },
         "readiness": {
           "next_dispatch": [
-            "DOC-RETURN-PURE"
+            "INTEGRATION-CURRENT"
           ],
-          "reason": "record_map과두순수함수교체는완료했다.남은status_report는실제저장소경계의반환전달을확인하는작업으로분리하며이미완료한세함수를다시교체하지않는다."
+          "reason": "조회출력교체의지정묶음종료.누적제품/시험변경의결합상태를확인하기위해기본전체선택으로중간통합실행한다."
         },
         "unresolved_decisions": [
           {
@@ -35382,28 +35382,18 @@
             ],
             "exit_condition": "해당 결속을 실제 결과/공유 계약으로 교체하고 구문 추출을 제거한다. 실행 불가능/근거 부재이면 미완료로 정확히 반환하며 추론기 확대로 우회하지 않는다.",
             "dependencies": [],
-            "status": "partial_complete",
-            "dispatch_state": "status_repository_boundary_complete",
+            "status": "complete",
+            "dispatch_state": "returned",
             "review_pointer": "current_work.builder_population_and_windowless_boundary.pure_document_review",
             "first_implementation": "완료: record_map 기본 필드. 동일 변경 재수행 금지.",
             "completed_scope": [
               "B119 record_map 기본 반환 AST 결속1개 제거·문서모듈17통과",
               "B120 operating_summary/supervision_facts 실제반환에 결속; AST생산자호출2개제거·문서17개통과",
-              "B121 status_report 실제최종반환에문서검사연결·AST및수동spread3개제거·관련22개통과"
+              "B121 status_report 실제최종반환에문서검사연결·AST및수동spread3개제거·관련22개통과",
+              "B122 trace_report.progress 실제파일반환에문서검사연결·직접영향24개통과"
             ],
-            "remaining_scope": [
-              "trace_report.progress 파일 읽기 결과의 실제 경계 연결"
-            ],
-            "evidence_pointer": "current_work.status_repository_document_binding",
-            "next_packet": {
-              "purpose": "operation_progress의 실제 파일 경계 결과로 문서 필드 검사 연결",
-              "inputs": [
-                "scripts/do_math/trace_report.py:progress",
-                "scripts/tests/support/doc_code.py:operation_progress",
-                "trace_report/progress 기존 단위 또는 경계 검사"
-              ],
-              "exit": "기존 실제 임시파일 결과에서 현재 문서경로를 검증하고 해당 AST 결속을 제거한다. 새추론기/가짜파일시스템/전체엔진flow를추가하지않는다."
-            }
+            "remaining_scope": [],
+            "evidence_pointer": "current_work.progress_file_document_binding"
           },
           {
             "id": "DOC-RETURN-CLI",
@@ -35654,6 +35644,37 @@
                 "changed_during_run": []
               }
             }
+          },
+          {
+            "id": "INTEGRATION-CURRENT",
+            "kind": "integration_verification",
+            "requirement_ids": [
+              "FINAL-ordinary"
+            ],
+            "purpose": "현재 누적 main 변경의 전체 일반 통합 결과 확인",
+            "status": "planned",
+            "dispatch_state": "ready_after_commit",
+            "dependencies": [
+              "DOC-RETURN-PURE"
+            ],
+            "inputs": [
+              {
+                "path": ".claude/skills/do-math/scripts/run_tests.py",
+                "section": "DEFAULT_FOLDERS/jobs/edition/report"
+              },
+              {
+                "path": ".claude/skills/do-math/scripts/tests/시험-지침.md",
+                "section": "통합 확인과 소스 고정"
+              }
+            ],
+            "outputs": [
+              "완결report와source-before/after지문",
+              "실패시실제오류와이전교정의관계"
+            ],
+            "verification": [
+              "python .claude/skills/do-math/scripts/run_tests.py --jobs 3 --output C:/math/.skill-workspace/test-restructure-2026-09-29/finish/ordinary-b123-20261005-a/run"
+            ],
+            "exit_condition": "기본5폴더전건의성공/실패/skip/not_run과소스변경여부를원보고로판정.실패를원문요구별한정수리로배정하며부분검사합산으로성공을만들지않음."
           }
         ]
       },
@@ -46668,6 +46689,57 @@
       "product_changes": false,
       "budget_note": "human-report0.891초는개별0.2초보다길다.기존실제저장소결과와문서모집단/누락검사를재사용하며정확성을줄이지않음.전체관련22개10.0초.",
       "limits": "현재 명시 문서 경로와 최종 반환 전달 검사다. 모든상태값의의미·모든선택적블록·다른반환생산자전체완료를뜻하지않음."
+    },
+    "progress_file_document_binding": {
+      "id": "B122",
+      "scope": "operation_progress의 AST 결속을 기존 실제 파일 결과 검사로 교체하여 지정 조회 출력 묶음 종료",
+      "state": "한정 교체·직접 영향24개 검증 완료",
+      "memory_node": "M-0539",
+      "base_head": "61e080b2a7eb498c1dcd3492553005ef13373bd7",
+      "report": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-progress-실제반환/report.json",
+        "sha256": "e3cd4ca757ca38cf560cae8128c1cff76f29806667e78f523c8c863bb75ddf9e",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 24
+        },
+        "total_seconds": 9.5,
+        "changed_during_run": []
+      },
+      "boundary": "기존 unit.test_engine_trace_report_corruption의 임시파일과 실제 progress 최종 반환을 문서 필드에 연결",
+      "removed_ast_producer_calls": 1,
+      "product_changes": false,
+      "new_generic_framework": false,
+      "proof": [
+        "현재 문서모집단 operation_progress.telemetry_errors",
+        "최종키별삭제/별칭누락거부",
+        "다른소유자및증명하지않은배열내부경로거부",
+        "실제반환부재시기본거부·두경계의명시위임만허용"
+      ],
+      "preserved": "기존corruption/status단언과sim의정상live/파일부재검사유지.다른파일경계를구조검사안에서기동하지않음.",
+      "budget_note": "progress0.734/status0.766초는개별0.2초기준초과.실제경계와문서모집단검사를유지.전체관련24개9.5초",
+      "limits": "DOC-RETURN-PURE의지정5생산자묶음종료이며다른문서생산자·13-C전체·재편전체완료가아님."
+    },
+    "ordinary_integration_b123": {
+      "id": "B123",
+      "scope": "B88 이후 누적 main 변경의 현재 전체 일반 통합 결과 확보",
+      "state": "실행 준비 완료·아직 시작 전",
+      "command": "python .claude/skills/do-math/scripts/run_tests.py --jobs 3 --output C:/math/.skill-workspace/test-restructure-2026-09-29/finish/ordinary-b123-20261005-a/run",
+      "execution_root": "C:/math/.skill-workspace/test-restructure-2026-09-29/finish/ordinary-b123-20261005-a",
+      "expected_report": "C:/math/.skill-workspace/test-restructure-2026-09-29/finish/ordinary-b123-20261005-a/run/report.json",
+      "selected_folders": [
+        "structure",
+        "unit",
+        "contracts",
+        "sim",
+        "flows"
+      ],
+      "workers": 3,
+      "time_policy": "soft baseline; no timeout",
+      "source_policy": "최종편집커밋후공식Python소스지문과별도canonical skill tracked/untracked 파일SHA/HEAD/status를실행전후대조.기존사용자변경과미추적시험을없애거나제외하지않음.",
+      "stop_rule": "경과시간만으로실패/재시작하지않고실제세션·원보고로완결판정",
+      "not_final_goal": "중간통합확인.원래미해소요구/fullT3/변이/T4T5는남음."
     }
   }
 }
