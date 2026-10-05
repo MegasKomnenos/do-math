@@ -7,6 +7,9 @@ the builders that use them. A schema function in neither table fails the walk,
 so a newly named schema function cannot silently miss the walk. Each argument
 variant runs twice to catch retained results. Unnamed composition helpers have
 a separate probe; the name-based census alone is not a complete 1-E population.
+Action/extension samples cover ROLES and their shape-changing preparation,
+review-cycle and stage inputs, without multiplying unrelated axes. Audit and
+impact samples exercise filtering and repeated option construction.
 """
 import ast
 from copy import deepcopy
@@ -16,7 +19,6 @@ import unittest
 from unittest.mock import patch
 
 PRODUCT = Path(__file__).resolve().parents[2] / 'do_math'
-ROLES_WITH_ACTIONS = ('research_preparation', 'research_work', 'maintenance', 'intent_interpretation')
 REQUEST = {'integration_id': 'IN-1', 'payload_sha256': 'a' * 64, 'producer_execution_id': 'EX-1',
            'input_snapshot': 'b' * 40, 'plans': {'scope': {'digest': 'c' * 64}}}
 
@@ -24,22 +26,50 @@ REQUEST = {'integration_id': 'IN-1', 'payload_sha256': 'a' * 64, 'producer_execu
 def _calls():
     from do_math import contracts, governance, integration, record_schemas, review_cycle, submission, supervision
     from do_math.contracts import ROLES
+    # Empty target maps are the installed preflight's presence-based inputs.
+    # The ordinary role sample supplies the fourth (neither key) combination.
+    preparations = [{'role': 'research_preparation', **targets} for targets in (
+        {'assessment_targets': {}}, {'observation_rule_targets': {}},
+        {'assessment_targets': {}, 'observation_rule_targets': {}})]
+    actions = [{'role': role} for role in ROLES] + preparations + [
+        {'role': 'maintenance', 'stage': 'impact_review', 'input_basis': {'impact_review': REQUEST}},
+        {'role': 'intent_interpretation', 'stage': 'check'}]
+    extensions = [{'role': role, **cycle} for role in ROLES
+                  for cycle in ({}, {'review_cycle_id': 'RC-1'})] + preparations
+    # The schema consumes the installed governance records' identity, status
+    # and content, including the required_inputs list (not a keyed mapping).
+    audit = {'id': 'AU-1', 'kind': 'additional_audit', 'revision': 1, 'supersedes': [],
+             'status': 'active', 'content': {'scope': ['P'], 'required_inputs': ['CH1', 'POL1'],
+             'assessor': 'goal_audit', 'verdict_mapping': {
+                 'pass': 'satisfied', 'partial': 'not_satisfied', 'unknown': 'unresolved'}}}
+    inactive = {**deepcopy(audit), 'id': 'AU-old', 'status': 'superseded', 'superseded_by': 'AU-1'}
+    policy = {'id': 'POL1', 'kind': 'policy', 'revision': 1, 'supersedes': [], 'status': 'active',
+              'content': {'rule_id': 'R1', 'text': 'Require evidence', 'scope': ['P'],
+                          'reason_refs': ['CH1'], 'audit_refs': []}}
+    second_audit = {**deepcopy(audit), 'id': 'AU-2'}
+    audits = [{}, {'AU-1': audit}, {'AU-old': inactive, 'POL1': policy},
+              {'AU-1': audit, 'AU-2': second_audit, 'AU-old': inactive, 'POL1': policy}]
+    requests = [REQUEST, {**REQUEST, 'plans': {
+        'bundle': {'digest': 'c' * 64},
+        'activity-extensions.json/knowledge_changes/0': {'digest': 'd' * 64}}}]
     return {
         'do_math.contracts.schema_for': [lambda role=role: contracts.schema_for(role) for role in ROLES],
-        'do_math.contracts.action_schema': [lambda role=role: contracts.action_schema({'role': role})
-                                            for role in ROLES_WITH_ACTIONS],
+        'do_math.contracts.action_schema': [lambda action=action: contracts.action_schema(action)
+                                            for action in actions],
         'do_math.contracts.disposition_schema': [contracts.disposition_schema],
-        'do_math.governance.additional_audit_schema': [lambda: governance.additional_audit_schema({})],
+        'do_math.governance.additional_audit_schema': [
+            lambda records=records: governance.additional_audit_schema({'governance': records}) for records in audits],
         'do_math.governance.interpretation_schema': [lambda stage=stage: governance.interpretation_schema(stage)
                                                      for stage in ('interpret', 'check')],
-        'do_math.integration.impact_review_response_schema': [lambda: integration.impact_review_response_schema(REQUEST)],
+        'do_math.integration.impact_review_response_schema': [
+            lambda request=request: integration.impact_review_response_schema(request) for request in requests],
         'do_math.record_schemas.config_schema': [record_schemas.config_schema],
         'do_math.review_cycle.stage_schema': [lambda stage=stage: review_cycle.stage_schema(stage)
                                               for stage in ('scope', 'initial', 'organize', 'answer', 'judge')],
         'do_math.review_cycle.research_schema': [review_cycle.research_schema],
         'do_math.review_cycle.research_request_schema': [review_cycle.research_request_schema],
-        'do_math.submission.extension_schema': [lambda: submission.extension_schema(
-            {'role': 'research_work', 'review_cycle_id': 'RC-1'})],
+        'do_math.submission.extension_schema': [lambda action=action: submission.extension_schema(action)
+                                                for action in extensions],
         'do_math.supervision.repair_report_schema': [lambda diagnosed=diagnosed: supervision.repair_report_schema(
             diagnosed=diagnosed) for diagnosed in (False, True)],
     }
@@ -157,6 +187,48 @@ class SchemaBuilderTests(unittest.TestCase):
 
     def test_results_share_no_node_with_each_other_or_a_module_global(self):
         self.assertEqual(_isolation_problems(_calls()), [])
+
+    def test_schema_samples_reach_context_dependent_shapes(self):
+        # Confirm the added fixtures actually enter the intended producer shapes.
+        from do_math.contracts import ROLES
+        calls = _calls()
+        actions = calls['do_math.contracts.action_schema']
+        self.assertIn('regenerate_after', actions[ROLES.index('research_preparation')]()['required'])
+        for call in actions[len(ROLES):len(ROLES) + 3]:
+            schema = call()
+            self.assertEqual(schema['properties']['candidates']['maxItems'], 0)
+            self.assertNotIn('regenerate_after', schema['properties'])
+        self.assertIn('impact_review', actions[-2]()['properties'])
+        self.assertIn('bundle_sha256', actions[-1]()['required'])
+        extensions = calls['do_math.submission.extension_schema']
+        ordinary = extensions[2 * ROLES.index('research_preparation')]()['properties']
+        self.assertIn('task_title', ordinary['model_assessments']['items']['required'])
+        for call, observes in zip(extensions[-3:], (False, True, True)):
+            properties = call()['properties']
+            self.assertIn('task_id', properties['model_assessments']['items']['required'])
+            self.assertEqual('task_conditions' in properties, observes)
+            self.assertEqual('observation_rule_deferrals' in properties, observes)
+            if observes:
+                self.assertEqual(properties['task_conditions']['items']['required'], ['task_id', 'observation_rules'])
+        for cycle in (0, 1):
+            identity = extensions[2 * ROLES.index('identity_review') + cycle]()['properties']
+            self.assertEqual('research_requests' in identity, bool(cycle))
+            supplemental = extensions[2 * ROLES.index('supplemental_research') + cycle]()['properties']
+            self.assertEqual(bool(supplemental), not cycle)
+        for call, count in zip(calls['do_math.governance.additional_audit_schema'], (0, 1, 0, 2)):
+            schema = call()
+            self.assertEqual((schema['minItems'], schema['maxItems']), (count, count))
+            if count:
+                self.assertEqual(len(schema['items']['oneOf']), count)
+                for option in schema['items']['oneOf']:
+                    self.assertEqual(option['properties']['input_hashes']['required'], ['CH1', 'POL1'])
+                    self.assertEqual(option['properties']['verdict']['enum'], ['pass', 'partial', 'unknown'])
+            else:
+                self.assertIs(schema['items'], False)
+        for call, count in zip(calls['do_math.integration.impact_review_response_schema'], (1, 2)):
+            decisions = call()['properties']['plan_decisions']
+            self.assertEqual((decisions['minItems'], decisions['maxItems']), (count, count))
+            self.assertEqual(len(decisions['items']['oneOf']), count)
 
     def test_unnamed_schema_composition_results_detach_every_mutable_node(self):
         self.assertEqual(_isolation_problems(_composition_calls()), [])

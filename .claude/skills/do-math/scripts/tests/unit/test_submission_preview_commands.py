@@ -6,11 +6,12 @@ import unittest
 
 from do_math.submission import install_tools
 from do_math.contracts import schema_for
+from do_math.context_store import record_map
 
 
 class LeanPreviewTests(unittest.TestCase):
     def test_worker_commands_use_the_console_interpreter_when_the_engine_runs_windowless(self):
-        """Cold run: 0.28 s; real archive installation checks both commands from a pythonw engine."""
+        """Cold run: 0.28 s; real archive installation checks all three commands from a pythonw engine."""
         from support.entry import entry
         _entry = entry()
         from unittest.mock import patch
@@ -24,7 +25,10 @@ class LeanPreviewTests(unittest.TestCase):
             workspace.mkdir()
             context = {"action": {"role": "research_work"}, "snapshot": "fixed",
                 "formal_verifier": {"command": ["definitely-missing-lean"], "allowed_axioms": []}}
+            # The read command is issued only when the input includes a record map.
+            context['record_map'] = record_map({}, context['action']['role'], context['snapshot'])
             with patch.object(sys, 'executable', str(interpreters / 'pythonw.exe')):
                 contract = install_tools(workspace, context, schema_for('research_work'), 1000000, clock=_entry.ports.clock)
             self.assertEqual(contract['command'][0], str(interpreters / 'python.exe'))
             self.assertEqual(context['formal_verifier']['preview']['command'][0], str(interpreters / 'python.exe'))
+            self.assertEqual(context['record_map']['read_tool']['command'][0], str(interpreters / 'python.exe'))
