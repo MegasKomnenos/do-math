@@ -9,6 +9,7 @@ import tempfile
 import unittest
 
 from support.git_init_cli import git_init_sim
+from support.git_init_contract import isolated_nonrepository_parent
 from support.sim import built
 from support.storage_files import audit_events
 
@@ -34,6 +35,7 @@ class GitInitActivationTests(unittest.TestCase):
         with audit_events('subprocess.Popen') as started:
             first = built('git-init-cli', git_init_sim, object_format='sha256')
             head = first.engine.head
+            isolated_nonrepository_parent(first.root)
             (first.repository / '.git/HEAD').unlink()
             self.assertFalse(first.ports.git_backend.repository_exists(first.repository))
             second = built('git-init-cli', git_init_sim, object_format='sha256')
