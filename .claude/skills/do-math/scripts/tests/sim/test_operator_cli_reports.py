@@ -63,6 +63,14 @@ class ScheduleFailureTests(unittest.TestCase):
                                               repository, INSTANCE)
         self.assertTrue(result['operator_schedule']['reconcile'].startswith(
             "& '" + str(interpreters / 'python.exe') + "' "))
+        (interpreters / 'python.exe').unlink()
+        with patch.object(sys, 'executable', str(interpreters / 'pythonw.exe')):
+            result, code = cli._schedule_failure({'config': {'operator_enabled': True}}, RuntimeError('failed'),
+                                                repository, INSTANCE)
+        self.assertEqual(code, 5)
+        self.assertEqual(result['operator_schedule']['error'], 'failed')
+        self.assertIsNone(result['operator_schedule']['reconcile'])
+        self.assertIn(repr(str(interpreters / 'python.exe')), result['operator_schedule']['reconcile_error'])
 
 
 if __name__ == '__main__':

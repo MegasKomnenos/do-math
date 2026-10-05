@@ -5,6 +5,7 @@ Retries repeat only the same rename, never the operation described by the file.
 """
 from contextlib import contextmanager
 from functools import lru_cache
+import errno
 import hashlib
 import json
 import os
@@ -202,12 +203,17 @@ def console_python():
 
     A scheduled engine runs under ``pythonw.exe``, a GUI-subsystem program:
     PowerShell neither waits for it nor shows its output. Its sibling
-    ``python.exe`` is the same installation with a console. Processes the
-    engine starts itself with piped output keep ``sys.executable``.
+    ``python.exe`` is the same installation with a console. A missing sibling
+    is an error: a GUI executable cannot supply a shell command. Processes
+    the engine starts itself with piped output keep ``sys.executable``.
     """
     current=Path(sys.executable)
+    if current.name.lower()!='pythonw.exe':
+        return sys.executable
     console=current.with_name('python.exe')
-    return str(console) if current.name.lower()=='pythonw.exe' and console.is_file() else sys.executable
+    if not console.is_file():
+        raise FileNotFoundError(errno.ENOENT, 'console Python sibling is not a file', str(console))
+    return str(console)
 
 
 def sha256_file(path):

@@ -105,10 +105,16 @@ def _schedule_failure(result: dict[str, Any], error: Exception, repository: Path
     def quote(value):
         return "'" + str(value).replace("'", "''") + "'"
     entrypoint = Path(__file__).resolve().parents[1] / "do_math.py"
-    reconcile = ("& " + quote(console_python()) + " " + quote(entrypoint)
+    failure = {"status": "failed", "error": str(error), "reconcile": None}
+    result["operator_schedule"] = failure
+    try:
+        interpreter = console_python()
+    except OSError as reconcile_error:
+        failure["reconcile_error"] = str(reconcile_error)
+        return result, ERROR_EXIT_CODES['tool_error']
+    failure["reconcile"] = ("& " + quote(interpreter) + " " + quote(entrypoint)
                  + " operator " + mode + " --repository " + quote(repository.resolve())
                  + " --instance " + quote(instance))
-    result["operator_schedule"] = {"status": "failed", "error": str(error), "reconcile": reconcile}
     return result, ERROR_EXIT_CODES['tool_error']
 
 

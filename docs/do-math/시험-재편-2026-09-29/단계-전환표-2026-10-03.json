@@ -4820,9 +4820,9 @@
       },
       {
         "id": "9-A",
-        "state": "partial_verification",
-        "remaining": "B85플래그성질과지급4생산자검토유지. B117 실제pythonw가도구를설치하고PowerShell에서지급명령을실행하여JSON/로그/성공0·거부1 확인(2passed,skip0). 형제python.exe부재때GUI실행기를반환하는정본의조건반례와직접호출자실패경로수리가남음.",
-        "evidence": "builder_population_and_windowless_boundary"
+        "state": "implementation_reviewed",
+        "remaining": "B85프로세스창억제/네이티브비트, 지급4생산자검토, B117실제pythonw→PowerShell읽기경계, B118형제콘솔부재거부와저장된CLI결과보존을확인했다. 최종동일판본일반/T3/변이/실환경관문은별도.",
+        "evidence": "boundary_storage_guard_correction, independent_schema_boundary_followup.issued_command_review, builder_population_and_windowless_boundary, console_sibling_refusal"
       },
       {
         "id": "9-B",
@@ -13089,10 +13089,10 @@
     },
     "current_focus": {
       "phase": "독립 새 문맥 작업으로 재편 완료와 기존 변경 재검토",
-      "last_closed": "B116 a0ea8b52; B117 빌더등록·실제pythonw읽기경계검증완료",
-      "active": "R17 형제console interpreter부재의명시거부와호출자오류경로수리",
+      "last_closed": "B117 c71053d6; B118 KD-1921 수리·관련20개통과",
+      "active": "DOC-RETURN-RECORD-MAP 실제반환결속의검증된변경확정",
       "exit": "각 독립 작업은 정해진 산출물·관련 검증으로 종료하고 요구 충족 여부를 별도로 기록한다",
-      "next": "R17 한정수리 → DOC-RETURN-PURE의record_map기본반환교체. 완료한R07후보를다시감사하지않음",
+      "next": "문서생산자교체의남은명시범위와원래미해소요구를새문맥단위로진행;완료한R17재감사금지",
       "work_method": "fork_turns=none으로 필요한 원문/현행코드/증거/종료조건만 전달한다. 큰 영역 제목 그대로 파견하지 않고 구체 slice를 확정한다. 탐색 이력을 상위에 누적하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -25241,10 +25241,9 @@
         },
         "readiness": {
           "next_dispatch": [
-            "R17",
             "DOC-RETURN-PURE"
           ],
-          "reason": "출력불가능GUI명령지급의확정조건반례를수리한뒤record_map의불필요AST의존을제거한다. R07의지정후보작업은끝났으며새근거없이반복하지않는다."
+          "reason": "R17의확정제품반례는수리와소비자검증까지완료했다.검증된record_map교체를확정하고같은범위는재수행하지않는다."
         },
         "unresolved_decisions": [
           {
@@ -26864,28 +26863,18 @@
               "rule": "이 입력과 겹치는 이전 변경 검토 결과가 있으면 재사용한다. 무관한 전체 검토 완료를 기다리지 않는다."
             },
             "unresolved_decision_question": "모든 지급 명령이 console_python을 거치고 pythonw 부모에서도 콘솔 해석기가 선택되는가",
-            "status": "partial_complete",
-            "dispatch_state": "actual_windowless_read_boundary_complete",
-            "evidence_pointer": "current_work.builder_population_and_windowless_boundary",
+            "status": "implementation_reviewed",
+            "dispatch_state": "bounded_repair_returned",
+            "evidence_pointer": "current_work.console_sibling_refusal",
             "completed_scope": [
               "지급 생산자4곳의 실제 console_python 호출과 기존 소비 검사 대조",
               "record_map 읽기 명령을 실제 생성하여 세 작업자 명령의 interpreter 단언; 단위1개 통과",
-              "실제pythonw→PowerShell→생산읽기명령의성공/거부와JSON출력·로그통과"
+              "실제pythonw→PowerShell→생산읽기명령의성공/거부와JSON출력·로그통과",
+              "KD-1921 형제부재거부 및 실제init/config 결과·예약오류보존,관련20개통과"
             ],
             "remaining_scope": [
-              "pythonw+형제python.exe부재의정본반환을명시거부하고지급자오류처리검증"
-            ],
-            "next_packet": {
-              "purpose": "출력용console interpreter가없으면GUI명령지급을명시거부",
-              "inputs": [
-                "do_math/file_io.py:console_python",
-                "do_math/submission.py:install_tools",
-                "do_math/cli.py:_schedule_failure",
-                "scripts/이음새-정본.md의console_python계약",
-                "기존unit/sim소비자시험"
-              ],
-              "exit": "형제부재반례를재현하고정본과직접호출자의오류경로를최소수리한다.이미확인한정상pythonw경계를반복구축하지않는다."
-            }
+              "최종 동일 판본의 일반/T3/변이/실환경 결과 연결"
+            ]
           },
           {
             "id": "R18",
@@ -46483,6 +46472,76 @@
         "stop": "첫 구현 단위와 다른 네 함수의 실제 입력·검증 조건을 확정했으므로 여기서 종료한다. 후속 대상 탐색이나 canonical 수정으로 이어가지 않는다."
       },
       "integration_note": "스키마11개 및 나머지경계8개의 통과와 수정후windowless2개 통과를 각 원보고로 보존한다. 첫 보고의 unsuccessful을 성공으로 바꾸거나 두 보고를 새 전체 일반 통과로 합산하지 않는다."
+    },
+    "console_sibling_refusal": {
+      "id": "B118",
+      "scope": "KD-1921: 콘솔 형제가 없는 pythonw 명령 지급 거부와 예약 실패의 이미 저장된 결과 보존",
+      "state": "제품 수리·반례 및 직접 소비자20개 검증 완료",
+      "memory_node": "M-0535",
+      "base_head": "c71053d6540cfa1cfac6c6ef1d66e360aee0e0a1",
+      "reports": {
+        "before": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/before.json",
+          "sha256": "def7a54e8694a0bb6d9555e2bffd04bbdb853fffd89ab54145d5b99856af78ac",
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "passed": 3,
+            "failed": 4
+          },
+          "total_seconds": 12.5,
+          "changed_during_run": []
+        },
+        "fixture-path-failure": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/fixture-path-failure.json",
+          "sha256": "4609e1f6b2c2f0b0caca44760e432f3b604fcb6d1b1ad6d9d2e3b03e4499acae",
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "passed": 1,
+            "failed": 3
+          },
+          "total_seconds": 10.5,
+          "changed_during_run": []
+        },
+        "focused": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/focused.json",
+          "sha256": "15eb58838663ad78491d366d7368e47bba51e2590b2c0fb2c2c1db0862e637c7",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 3
+          },
+          "total_seconds": 9.6,
+          "changed_during_run": []
+        },
+        "report": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-05-콘솔-실행기-부재/report.json",
+          "sha256": "858210f749ba9901cebb57501f54eba9e70bfdd0aeb00ba21a74cddcb8ae795e",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 20
+          },
+          "total_seconds": 26.2,
+          "changed_during_run": []
+        }
+      },
+      "changes": [
+        "console_python은 pythonw 옆 python.exe 부재 시 FileNotFoundError로 명시 거부",
+        "install_tools는 context/파일을 바꾸기 전에 실행기를 한 번 확인하고 세 지급명령이 그 값을 공유",
+        "예약 실패 응답은 원예약오류와 저장된 init/configure 결과를 유지; 실행기 오류는 reconcile=null/reconcile_error로 표현"
+      ],
+      "verification_scope": [
+        "실행기 부재의 실제 도구 설치 거부·무부분변경",
+        "정상 세 작업자 명령",
+        "직접 예약 오류 보고",
+        "실제 초기화/설정 생산 결과와 저장상태 보존",
+        "원장/창 억제/층 구조 검사"
+      ],
+      "fixture_correction": "중간3실패는 Windows OSError 문자열의 filename repr 표현과 시험 str 비교의 차이. 제품결함 red4개와 구별하여 그대로 보존",
+      "probe": "작업자 probe_cli.py --skill-only verified 보고. root는 원본 runner JSON20pass 및 diff를 직접 검수",
+      "remaining": "현재 지정R17의형제부재반례수리는완료.원문9-A전건 및 최종 동일판본관문은 별도이며 불필요하게 정상pythonw경계를 다시구축하지 않는다."
     }
   }
 }

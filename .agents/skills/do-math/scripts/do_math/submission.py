@@ -1441,6 +1441,7 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
 
     The read tool reads that state only at the input snapshot and within the record map.
     """
+    interpreter = console_python()
     context["reference_catalog"] = reference_catalog(context, workspace)
     package = Path(__file__).resolve().parent
     # The installed edition is identified by fingerprint-cached digests; code
@@ -1461,7 +1462,7 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
     if "record_map" in context:
         from .context_store import READ_LOG
         context["record_map"]["read_tool"] = {
-            "command": [console_python(), "-B", "input/tools/read_input.py"],
+            "command": [interpreter, "-B", "input/tools/read_input.py"],
             "arguments": "--list [--family <root/family>] | --id <record ID> (repeatable) | --path <snapshot file path> "
                          "(repeatable) [--output <workspace-relative file> with one --path]",
             "log_path": READ_LOG}
@@ -1470,12 +1471,12 @@ def install_tools(workspace: Path, context: dict, schema: dict, max_artifact_byt
             b"sys.path.insert(0, str(Path(__file__).with_name('submission-support.zip')))\n"
             b"from do_math.formal_preview import main\nraise SystemExit(main())\n")
         context["formal_verifier"]["preview"] = {
-            "command": [console_python(), "-B", "input/tools/check_lean.py"],
+            "command": [interpreter, "-B", "input/tools/check_lean.py"],
             "arguments": "--source <workspace-relative .lean file> --declaration <name> (repeat for each declaration)",
             "authoritative": False,
             "environment": "Same verifier edition and configured command for the kernel check, signatures and axioms; dependency evidence is not extracted. Shared libraries and Lake caches are not isolated. Central verification is mandatory."}
     from .contracts import schema_reference
-    contract = {"command": [console_python(), "-B", "input/tools/check_submission.py"],
+    contract = {"command": [interpreter, "-B", "input/tools/check_submission.py"],
         "schema_ref": schema_reference(schema),
         "delivery": "Normal delivery is one complete JSON final. Central validation captures its exact bytes after verified CLI completion and local termination. Draft submission is optional and early; an accepted draft cannot be replaced by a later final.",
         "arguments": "--output <workspace-relative draft>; add --preview or --submit and --wait-seconds <remaining caller budget> for central control; --new-knowledge-id prints a fresh replacement_id without submission or reservation",

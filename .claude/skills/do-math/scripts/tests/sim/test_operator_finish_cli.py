@@ -4,8 +4,10 @@ from dataclasses import replace
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from do_math import cli, scheduled_operator as operator
 from do_math.engine import initialize
@@ -22,9 +24,12 @@ setUpModule = warm_template
 
 class CliTests(unittest.TestCase):
     def test_new_instance_installs_default_two_hour_operator_and_keeps_saved_failures(self):
-        for error in (None, RuntimeError('scheduler unavailable'), OSError('scheduler executable unavailable'),
-                      subprocess.SubprocessError('scheduler process failed')):
-            with self.subTest(error=error), tempfile.TemporaryDirectory() as directory:
+        """About 3 s: real initialization receipts cover four scheduler faults, including a missing console sibling."""
+        for error, missing_console in ((None, False), (RuntimeError('scheduler unavailable'), False),
+                      (OSError('scheduler executable unavailable'), False),
+                      (subprocess.SubprocessError('scheduler process failed'), False),
+                      (RuntimeError('scheduler unavailable'), True)):
+            with self.subTest(error=error, missing_console=missing_console), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 sim = Sim.activated()
                 repository = make_repository(root / 'repository')
@@ -34,8 +39,11 @@ class CliTests(unittest.TestCase):
                 config.write_text(json.dumps({'scholarly_enabled': False}), encoding='utf-8')
                 args = cli.build_parser().parse_args(['init', '--repository', str(repository),
                     '--workspace', str(root / 'work'), '--goal', 'Keep the saved instance', '--config-file', str(config)])
+                windowless = root / 'pythonw.exe'
+                windowless.write_bytes(b'')
                 with Returns(initialize, snapshot=deepcopy) as saved, Returns(
-                        operator.schedule, snapshot=deepcopy) as scheduled:
+                        operator.schedule, snapshot=deepcopy) as scheduled, patch.object(
+                        sys, 'executable', str(windowless) if missing_console else sys.executable):
                     result, code = cli.execute(args, ports=ports, codex_home=sim.codex_home, environment=sim.environment, host_id=sim.host_id)
                 self.assertEqual({key: result[key] for key in saved.snapshots[0]}, saved.snapshots[0])
                 repo = ResearchRepository(repository, result['instance_id'], backend=ports.git_backend, clock=ports.clock)
@@ -53,22 +61,32 @@ class CliTests(unittest.TestCase):
                     self.assertEqual(code, 5)
                     failure = result['operator_schedule']
                     self.assertEqual((failure['status'], failure['error']), ('failed', str(error)))
-                    self.assertIn('operator install', failure['reconcile'])
-                    self.assertIn('--repository', failure['reconcile'])
-                    self.assertIn(str(repository), failure['reconcile'])
+                    if missing_console:
+                        self.assertIsNone(failure['reconcile'])
+                        self.assertIn(repr(str(root / 'python.exe')), failure['reconcile_error'])
+                    else:
+                        self.assertIn('operator install', failure['reconcile'])
+                        self.assertIn('--repository', failure['reconcile'])
+                        self.assertIn(str(repository), failure['reconcile'])
 
     def test_configure_schedule_process_errors_preserve_the_applied_control(self):
+        """About 3.5 s: three real applied controls retain receipts across independent scheduler/console failures."""
         from support.entry import entry
         _entry = entry()
-        for error in (OSError('scheduler executable unavailable'), subprocess.SubprocessError('scheduler process failed')):
-            with self.subTest(error=error):
+        for error, missing_console in ((OSError('scheduler executable unavailable'), False),
+                (subprocess.SubprocessError('scheduler process failed'), False),
+                (OSError('scheduler executable unavailable'), True)):
+            with self.subTest(error=error, missing_console=missing_console):
                 scene = Scene()
                 ports = replace(scene.ports, scheduler=Scheduler(error=error))
                 config = scene.sim.root / 'configuration.json'
                 config.write_text(json.dumps({'operator_interval_seconds': 8000}), encoding='utf-8')
                 args = cli.build_parser().parse_args(['configure', '--repository', str(scene.args[0]),
                     '--instance', scene.args[1], '--config-file', str(config)])
-                with Returns(cli._control, snapshot=deepcopy) as saved:
+                windowless = scene.sim.root / 'pythonw.exe'
+                windowless.write_bytes(b'')
+                with Returns(cli._control, snapshot=deepcopy) as saved, patch.object(
+                        sys, 'executable', str(windowless) if missing_console else sys.executable):
                     result, code = cli.execute(args, ports=ports, codex_home=_entry.codex_home, environment=_entry.environment, host_id=_entry.host_id)
                 self.assertEqual(code, 5)
                 self.assertEqual({key: result[key] for key in saved.snapshots[0]}, saved.snapshots[0])
@@ -76,6 +94,10 @@ class CliTests(unittest.TestCase):
                 self.assertEqual(scene.load()[1]['config']['operator_interval_seconds'], 8000)
                 self.assertEqual(result['operator_schedule']['status'], 'failed')
                 self.assertEqual(result['operator_schedule']['error'], str(error))
+                if missing_console:
+                    self.assertIsNone(result['operator_schedule']['reconcile'])
+                    self.assertIn(repr(str(windowless.with_name('python.exe'))),
+                                  result['operator_schedule']['reconcile_error'])
 
     def test_release_queues_conditional_resume_even_before_pending_hold_is_applied(self):
         from support.entry import entry

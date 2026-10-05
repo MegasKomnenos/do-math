@@ -602,6 +602,15 @@
       "found_by": "B109 사건 원천×대상 없음 대조의 w4frrm49에서 준비1·계획1을 재현. 과제/지식이 없는 상태의 미시작 일반 준비에 source 사건을 결속한 뒤 jama1ase에서 준비1·계획0과 사건 소비 확인.",
       "missed_kind": "기존 빈 준비 검사는 별도 새 자료 사건이 없었고, 새 자료 검사는 실제 후보가 있는 경우만 확인했다. 준비 입력에 이미 포함된 사실과 준비 시작 뒤 도착한 사실의 담당을 구별하지 않았다.",
       "status": "closed"
+    },
+    {
+      "id": "KD-1921",
+      "summary": "pythonw.exe의 형제 python.exe가 없을 때 콘솔 명령 정본이 GUI 실행기를 지급해 작업자 검사와 예약 실패 재조정 명령이 셸 실행 계약을 어긴다.",
+      "category": 9,
+      "reproduction": "unit.test_submission_preview_commands.LeanPreviewTests.test_worker_tools_reject_a_windowless_interpreter_without_its_console_sibling",
+      "found_by": "R17의 수정 전 4yviykas에서 실제 도구 설치와 init/configure 생산자·예약 오류 안내의 네 반례가 실패했다. 정본이 형제 부재를 거부하고 설치 진입에서 확인하며 예약 실패 응답은 원결과·원오류와 reconcile=null/reconcile_error를 함께 보존하도록 수리했다. 8yaqu8pz의 설치 거부 통과와 Windows 오류 경로의 repr 표현을 반영한 6xbk7d_v의 CLI 세 반례 통과로 확인했다.",
+      "missed_kind": "기존 pythonw 시험은 형제 python.exe가 있는 경로만 검사했다. 실행기 확인 실패와 이미 저장된 초기화·설정 영수증의 결합을 검사하지 않았다.",
+      "status": "closed"
     }
   ]
 }

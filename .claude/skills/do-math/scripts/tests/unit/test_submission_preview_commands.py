@@ -1,5 +1,6 @@
 """Installed worker commands select the console sibling of a windowless interpreter."""
 from pathlib import Path
+from copy import deepcopy
 import sys
 import tempfile
 import unittest
@@ -10,6 +11,26 @@ from do_math.context_store import record_map
 
 
 class LeanPreviewTests(unittest.TestCase):
+    def test_worker_tools_reject_a_windowless_interpreter_without_its_console_sibling(self):
+        from support.entry import entry
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            windowless = root / 'pythonw.exe'
+            windowless.write_bytes(b'')
+            workspace = root / 'workspace'
+            workspace.mkdir()
+            context = {'action': {'role': 'research_work'}, 'snapshot': 'fixed',
+                'formal_verifier': {'command': ['definitely-missing-lean'], 'allowed_axioms': []}}
+            context['record_map'] = record_map({}, context['action']['role'], context['snapshot'])
+            original = deepcopy(context)
+            with patch.object(sys, 'executable', str(windowless)):
+                with self.assertRaises(FileNotFoundError) as failure:
+                    install_tools(workspace, context, schema_for('research_work'), 1000000, clock=entry().ports.clock)
+            self.assertEqual(failure.exception.filename, str(root / 'python.exe'))
+            self.assertEqual(context, original)
+            self.assertEqual(list(workspace.iterdir()), [])
+
     def test_worker_commands_use_the_console_interpreter_when_the_engine_runs_windowless(self):
         """Cold run: 0.28 s; real archive installation checks all three commands from a pythonw engine."""
         from support.entry import entry

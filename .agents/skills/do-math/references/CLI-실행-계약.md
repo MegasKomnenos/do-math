@@ -29,7 +29,7 @@ python .agents/skills/do-math/scripts/do_math.py <command> [options]
 | `0` | 명령 처리가 정상 종료됐다. 제어 명령은 `effect`를 따로 확인한다 |
 | `1` | `check`가 결함을 찾았거나 `profile` 결과가 `verified`가 아니다 |
 | `2` | 인자·파일·JSON·필드·대상 상태가 CLI 계약에 맞지 않는다. 응답 `kind=input_error` |
-| `5` | Git 저장, OS, subprocess 같은 도구 계층이 실패했으면 응답 `kind=tool_error`다. `run`이 다른 실행기가 보유한 writer lock을 얻지 못한 경우도 여기에 속하며, 그 실행기가 끝난 뒤 다시 실행한다. 제어 명령의 lock 경합은 오류가 아니라 exit 0과 `lock="busy"`로 반환한다. 구현이 요청을 처리하지 못한 내부 계약 오류이면 `kind=contract_error`, `next_owner=maintenance`다. `init`·`configure`가 상태를 저장한 뒤 예약 등록에 실패한 경우에도 exit 5이며, 이때는 `error` 대신 `result.operator_schedule`에 `status="failed"`와 재조정 명령이 담긴다 | <!-- do-math fields: result=scheduling_result -->
+| `5` | Git 저장, OS, subprocess 같은 도구 계층이 실패했으면 응답 `kind=tool_error`다. `run`이 다른 실행기가 보유한 writer lock을 얻지 못한 경우도 여기에 속하며, 그 실행기가 끝난 뒤 다시 실행한다. 제어 명령의 lock 경합은 오류가 아니라 exit 0과 `lock="busy"`로 반환한다. 구현이 요청을 처리하지 못한 내부 계약 오류이면 `kind=contract_error`, `next_owner=maintenance`다. `init`·`configure`가 상태를 저장한 뒤 예약 등록에 실패한 경우에도 exit 5이며, 이때는 최상위 `error` 대신 `result.operator_schedule`에 `status="failed"`, 원예약 오류 `error`와 재조정 명령 `reconcile`이 담긴다. 콘솔 실행기를 찾지 못하면 `reconcile=null`과 `reconcile_error`를 반환하며 저장된 결과와 원예약 오류를 보존한다 | <!-- do-math fields: result=scheduling_result -->
 
 JSON 응답의 최상위 필드는 `schema_version`, `response_contract`, `request_id`, `command`, `exit_code`와 `result` 또는 `error`다. 성공 값은 `result`, 오류의 `kind`·`message`·후속 정보는 `error`에서 읽는다. `result`와 `error`는 함께 나타나지 않는다. 사람용 `status`와 CSV `timeline` 출력은 텍스트이며, `--request-file` 호출은 이 값도 JSON 봉투의 `result`로 반환한다.
 
