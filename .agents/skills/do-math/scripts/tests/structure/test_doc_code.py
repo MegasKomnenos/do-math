@@ -48,9 +48,17 @@ class DocumentCodeTests(unittest.TestCase):
 
     def test_documented_scoped_fields_belong_to_their_actual_schema(self):
         schemas = field_schemas()
+        # unit.test_storage_report_projections checks these same documents with
+        # status_report's actual repository response, including result=status.
+        for text in ('`status.budget`', '`result.config_sha256` <!-- do-math fields: result=status -->'):
+            with self.assertRaisesRegex(ValueError, 'status fields require the actual repository report'):
+                scoped_field_issues(text, schemas)
+            self.assertEqual(scoped_field_issues(text, schemas, defer_status=True), [])
+            self.assertEqual(unowned_field_references(text, schemas), [])
+        self.assertEqual(unowned_field_references('`statuz.budget`', schemas), ['statuz.budget'])
         issues = [(document.relative_to(SKILL).as_posix(), *issue)
                   for document in documents(SKILL)
-                  for issue in scoped_field_issues(document.read_text(encoding='utf-8'), schemas)]
+                  for issue in scoped_field_issues(document.read_text(encoding='utf-8'), schemas, defer_status=True)]
         self.assertEqual(issues, [])
 
     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
@@ -129,22 +137,17 @@ class DocumentCodeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Review document field producer'):
             produced_object_schema(alternatives)
         schemas = field_schemas()
-        self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
-            '`status.budget` `profile_selection.allowed_profiles` `operational_evidence.activity_continuations`', schemas), [])
-        self.assertEqual(scoped_field_issues('`status.allowed_profiles`', schemas), [('scoped field', 'status.allowed_profiles')])
+        self.assertEqual(scoped_field_issues(
+            '`profile_selection.allowed_profiles` `operational_evidence.activity_continuations`', schemas), [])
         self.assertEqual(scoped_field_issues('`operating_summary.scope` `operating_summary.lifecycle` '
             '`operating_summary.initialization` `operating_summary.execution_status` `operating_summary.goal_status` '
             '`operating_summary.primary_blocker` `operating_summary.workspace` '
             '`operating_summary.conversation_loss_policy` `operating_summary.active_execution_ids` '
             '`operating_summary.grants` `operating_summary.supervision.configured_enabled` '
-            '`operating_summary.supervision.interval_seconds` `operating_summary.supervision.actual_schedule` '
-            '`status.operating_summary.supervision.configured_enabled` '
-            '`status.status` `status.user_pause` `status.maintenance_fence` `status.model_policy_violation` '
-            '`status.conversation_lost` `status.installation_repair` `status.operator_enabled`', schemas), [])
+            '`operating_summary.supervision.interval_seconds` `operating_summary.supervision.actual_schedule`', schemas), [])
         for token in ('operating_summary.operator_enabled', 'operating_summary.configured_enabled',
                       'operating_summary.supervision.operator_enabled',
-                      'operating_summary.primary_blocker.kind', 'operating_summary.grants[].id',
-                      'status.configured_enabled', 'status.user_pause.reason', 'status.installation_repair.id'):
+                      'operating_summary.primary_blocker.kind', 'operating_summary.grants[].id'):
             with self.subTest(token=token):
                 self.assertEqual(scoped_field_issues('`' + token + '`', schemas), [('scoped field', token)])
 

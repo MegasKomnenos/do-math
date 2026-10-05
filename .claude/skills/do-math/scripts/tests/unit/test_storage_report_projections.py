@@ -1,5 +1,6 @@
 """저장 snapshot의 timeline/CSV와 관찰 필드 거부를 실제 Repository 위에서 검사한다."""
 import csv
+from copy import deepcopy
 import io
 import json
 from pathlib import Path
@@ -7,6 +8,9 @@ import tempfile
 import unittest
 
 from do_math import reporting
+from do_math.supervision import supervision_facts
+from support.doc_code import (documents, field_schemas, scoped_field_issues,
+                              status_field_schema, unowned_field_references)
 from support.fakes.clock import FakeClock
 from support.fakes.git_backend import InProcessGit
 from support.record_builders import stored_surface_state
@@ -54,9 +58,14 @@ class ReportProjections(unittest.TestCase):
 
     def test_status_refuses_unknown_observation_before_rendering(self):
         with tempfile.TemporaryDirectory() as directory:
-            repo = record_store(Path(directory))
-            head = repo.initialize(*current_state())
+            clock = FakeClock()
+            repo = record_store(Path(directory), clock=clock)
+            head = repo.initialize(*current_state({'id': INSTANCE_ID, 'workspace': str(Path(directory) / 'workspace')}))
             _, instance, runtime = repo.load(head)
+            for observation in (None, {'research_observed_at': clock.now()}):
+                report = reporting.status_report(repo, head, instance, runtime, observation=observation)
+                self.assertEqual({name: report[name] for name in reporting.OBSERVED_FIELDS},
+                                 {name: (observation or {}).get(name) for name in reporting.OBSERVED_FIELDS})
             with self.assertRaisesRegex(ValueError, '^status observation has unknown fields: storage_unknown$'):
                 reporting.status_report(repo, head, instance, runtime, observation={'storage_unknown': 1})
 
@@ -128,6 +137,54 @@ class ReportProjections(unittest.TestCase):
             _, instance, runtime = repo.load(head)
             report = reporting.status_report(repo, head, instance, runtime,
                                               requested_areas=['start_import_input'])
+            # This existing repository boundary owns the status namespace in
+            # the same document population as structure.test_doc_code.
+            skill = Path(__file__).resolve().parents[3]
+            texts = [(document.relative_to(skill).as_posix(), document.read_text(encoding='utf-8'))
+                     for document in documents(skill)]
+            schemas = field_schemas()
+            schemas['status'] = status_field_schema(report)
+            self.assertEqual([(name, *issue) for name, text in texts
+                              for issue in scoped_field_issues(text, schemas)], [])
+            self.assertEqual([(name, token) for name, text in texts
+                              for token in unowned_field_references(text, schemas)], [])
+            self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
+                '`status.budget` `status.operating_summary.supervision.configured_enabled` '
+                '`status.status` `status.user_pause` `status.maintenance_fence` `status.model_policy_violation` '
+                '`status.conversation_lost` `status.installation_repair` `status.operator_enabled`', schemas), [])
+            alias = '`result.config_sha256` <!-- do-math fields: result=status -->'
+            self.assertEqual(scoped_field_issues(alias, schemas), [])
+            for token in ('status.allowed_profiles', 'status.configured_enabled',
+                          'status.user_pause.reason', 'status.installation_repair.id',
+                          'status.operating_summary.primary_blocker.kind',
+                          'status.operating_summary.grants[].id'):
+                with self.subTest(token=token):
+                    self.assertEqual(scoped_field_issues('`' + token + '`', schemas), [('scoped field', token)])
+            facts = supervision_facts(instance, runtime)
+            self.assertEqual({name: report[name] for name in facts}, facts)
+            self.assertEqual(report['operating_summary'], reporting.operating_summary(instance, runtime))
+            for name in ('operating_summary', *facts, *reporting.OBSERVED_FIELDS, 'config_sha256'):
+                with self.subTest(omitted=name):
+                    omitted = dict(report)
+                    del omitted[name]
+                    schemas['status'] = status_field_schema(omitted)
+                    token = 'status.' + name
+                    self.assertEqual(scoped_field_issues('`' + token + '`', schemas), [('scoped field', token)])
+                    if name in {'operating_summary', 'budget', 'config_sha256'}:
+                        self.assertTrue([(path, *issue) for path, text in texts
+                                         for issue in scoped_field_issues(text, schemas)])
+                    if name == 'config_sha256':
+                        self.assertEqual(scoped_field_issues(alias, schemas), [('scoped field', 'result.config_sha256')])
+            for path in (('operating_summary', 'supervision'),
+                         ('operating_summary', 'supervision', 'configured_enabled')):
+                omitted = deepcopy(report)
+                parent = omitted
+                for name in path[:-1]:
+                    parent = parent[name]
+                del parent[path[-1]]
+                schemas['status'] = status_field_schema(omitted)
+                token = 'status.' + '.'.join(path)
+                self.assertEqual(scoped_field_issues('`' + token + '`', schemas), [('scoped field', token)])
             self.assertEqual(report['inspection']['status'], 'blocked')
             self.assertEqual(report['operating_summary']['primary_blocker'],
                              {'kind': 'initialization', 'next_owner': 'operator', 'missing': []})

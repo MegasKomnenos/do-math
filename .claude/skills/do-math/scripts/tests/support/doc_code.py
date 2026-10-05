@@ -24,6 +24,9 @@ ENTRY = re.compile(r'(?:do_math\.py|\$dmCli)\s+([a-z][a-z-]*)\b')
 SPAN = re.compile(r'(?<!`)`([^`\n]+)`(?!`)')
 FLAG = re.compile(r'^--[a-z][a-z-]*(?:=.*)?$')
 FIELD = re.compile(r'[a-z][a-z0-9_]*(?:\[\d*\])?(?:\.[a-z][a-z0-9_]*(?:\[\d*\])?)+')
+# Only status is checked at the existing repository-return boundary. This is
+# an owner, not a schema that could validate fields without the actual report.
+STATUS_REPORT_BOUNDARY = object()
 
 
 def documents(skill):
@@ -229,7 +232,7 @@ def consumed_object_schema(function, target, *, scope=None):
 
 def field_schemas():
     """Bind stored records separately from the role-input objects built from them."""
-    from do_math import academic, context_store, governance, reporting, submission, supervision, trace_report
+    from do_math import academic, context_store, governance, reporting, submission, trace_report
     from do_math.contracts import PLAN_DISPOSITION
     from do_math.core_engine import CoreEngineMixin
     from do_math.record_schemas import config_schema
@@ -372,19 +375,34 @@ def field_schemas():
     schemas['operating_summary']['properties']['supervision'] = {
         'type': 'object', 'properties': {name: {} for name in summary['supervision']},
         'additionalProperties': False}
-    supervision_fields = {'type': 'object', 'properties': {
-        name: {} for name in supervision.supervision_facts(instance, runtime)}, 'additionalProperties': False}
     schemas['governance'] = produced_object_schema(governance.governance_view)
     schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
     schemas['operation_progress'] = produced_object_schema(trace_report.progress)
-    schemas['status'] = produced_object_schema(reporting.status_report, bindings={
-        'supervision_facts(instance, runtime)': supervision_fields,
-        'operating_summary(instance, runtime)': schemas['operating_summary'],
-        'observed': {'type': 'object', 'properties': {name: {} for name in reporting.OBSERVED_FIELDS}}})
+    schemas['status'] = STATUS_REPORT_BOUNDARY
     schemas['operational_evidence'] = produced_object_schema(CoreEngineMixin._context, 'evidence')
     schemas['operational_evidence']['properties']['activity_continuations'] = produced_object_schema(
         CoreEngineMixin._context, "evidence['activity_continuations']")
     return schemas
+
+
+def status_field_schema(report):
+    """Bind status fields from a final repository response, never its producers.
+
+    Keep the fixed nested objects previously covered by the document binding;
+    a sample does not establish blocker variants or items in empty arrays.
+    """
+    schema = {'type': 'object', 'properties': {name: {} for name in report},
+              'additionalProperties': False}
+    for name in ('submission_checks', 'knowledge', 'execution_attempts', 'operating_summary'):
+        if isinstance(report.get(name), dict):
+            schema['properties'][name] = {'type': 'object',
+                'properties': {key: {} for key in report[name]}, 'additionalProperties': False}
+    summary = report.get('operating_summary', {})
+    if isinstance(summary, dict) and isinstance(summary.get('supervision'), dict):
+        schema['properties']['operating_summary']['properties']['supervision'] = {
+            'type': 'object', 'properties': {name: {} for name in summary['supervision']},
+            'additionalProperties': False}
+    return schema
 
 
 def property_variants(schema, name):
@@ -457,7 +475,7 @@ def unowned_field_references(text, schemas):
     return sorted(pending)
 
 
-def scoped_field_issues(text, schemas):
+def scoped_field_issues(text, schemas, *, defer_status=False):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     issues = []
     for line in text.splitlines():
@@ -469,6 +487,10 @@ def scoped_field_issues(text, schemas):
             root, *parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', span)
             if root not in local:
                 continue
+            if local[root] is STATUS_REPORT_BOUNDARY:
+                if defer_status:
+                    continue
+                raise ValueError('status fields require the actual repository report')
             candidates = [local[root]]
             for part in parts:
                 candidates = [child for schema in candidates for child in
