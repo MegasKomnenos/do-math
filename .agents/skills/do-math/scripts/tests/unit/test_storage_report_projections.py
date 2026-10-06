@@ -145,7 +145,8 @@ class ReportProjections(unittest.TestCase):
             schemas = field_schemas()
             schemas['status'] = status_field_schema(report)
             self.assertEqual([(name, *issue) for name, text in texts
-                              for issue in scoped_field_issues(text, schemas, defer_operation_progress=True)], [])
+                              for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                                                              defer_query_record=True, defer_query_result=True)], [])
             self.assertEqual([(name, token) for name, text in texts
                               for token in unowned_field_references(text, schemas)], [])
             self.assertEqual(scoped_field_issues('`status.operating_summary.primary_blocker` '
@@ -172,7 +173,8 @@ class ReportProjections(unittest.TestCase):
                     self.assertEqual(scoped_field_issues('`' + token + '`', schemas), [('scoped field', token)])
                     if name in {'operating_summary', 'budget', 'config_sha256'}:
                         self.assertTrue([(path, *issue) for path, text in texts
-                                         for issue in scoped_field_issues(text, schemas, defer_operation_progress=True)])
+                                         for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                                                                         defer_query_record=True, defer_query_result=True)])
                     if name == 'config_sha256':
                         self.assertEqual(scoped_field_issues(alias, schemas), [('scoped field', 'result.config_sha256')])
             for path in (('operating_summary', 'supervision'),

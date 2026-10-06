@@ -15,6 +15,7 @@ from outside do-math that the owner refuses to publish over.
 from argparse import Namespace
 import base64
 from contextlib import redirect_stdout
+from copy import deepcopy
 import hashlib
 import io
 import json
@@ -34,6 +35,7 @@ from do_math.engine import ResearchEngine, control
 from do_math.reporting import OBSERVED_FIELDS
 from do_math.repository import ResearchRepository
 from support.cli_images import initialized_cli
+from support.doc_code import documents, field_schemas, scoped_field_issues, unowned_field_references
 from support.engine_cli import CliInstanceTest, body, cli_instance
 from support.engine_context import damage
 from support.provider_probes import ObservedCalls
@@ -294,7 +296,59 @@ class CliTests(CliInstanceTest):
         self.assertGreaterEqual(record_page['total'], record_page['loaded'])
         queried = self.cli('query', *self.instance_args(), '--files', '--prefix', 'research/', '--text', 'small', '--limit', '1')
         self.assertEqual(queried.returncode, 0, queried.stdout + queried.stderr)
-        self.assertGreaterEqual(body(queried)['total'], 1)
+        file_page = body(queried)
+        self.assertGreaterEqual(file_page['total'], 1)
+        self.assertTrue(file_page['items'])
+        skill = Path(__file__).resolve().parents[3]
+        texts = [(document.relative_to(skill).as_posix(), document.read_text(encoding='utf-8'))
+                 for document in documents(skill)]
+        schemas = field_schemas()
+
+        def field_issues(text, page):
+            schema = {'type': 'object', 'properties': {key: {} for key in page},
+                      'additionalProperties': False}
+            items = page.get('items')
+            if isinstance(items, list):
+                # Every returned file item must establish the field. Empty
+                # pages and non-object items cannot prove item fields.
+                keys = (set.intersection(*(set(item) for item in items))
+                        if items and all(isinstance(item, dict) for item in items) else set())
+                schema['properties']['items'] = {'type': 'array', 'items': {
+                    'type': 'object', 'properties': {key: {} for key in keys},
+                    'additionalProperties': False}}
+            return scoped_field_issues(text, {**schemas, 'query_result': schema},
+                defer_status=True, defer_operation_progress=True, defer_query_record=True)
+
+        self.assertEqual([(name, *issue) for name, text in texts
+                          for issue in field_issues(text, file_page)], [])
+        alias = '`result.snapshot` `result.items[].path` <!-- do-math fields: result=query_result -->'
+        self.assertEqual(field_issues(alias, file_page), [])
+        self.assertEqual(field_issues('`query_result.snapshot` `query_result.items[].path`', file_page), [])
+        for name, token in (('snapshot', 'result.snapshot'), ('items', 'result.items[].path')):
+            with self.subTest(omitted=name):
+                omitted = deepcopy(file_page)
+                del omitted[name]
+                self.assertEqual(field_issues(alias, omitted), [('scoped field', token)])
+                self.assertIn(('references/초기화-운전.md', 'scoped field', token),
+                    [(path, *issue) for path, text in texts for issue in field_issues(text, omitted)])
+        for index in range(len(file_page['items'])):
+            omitted = deepcopy(file_page)
+            del omitted['items'][index]['path']
+            self.assertEqual(field_issues(alias, omitted), [('scoped field', 'result.items[].path')])
+            self.assertIn(('references/초기화-운전.md', 'scoped field', 'result.items[].path'),
+                [(path, *issue) for path, text in texts for issue in field_issues(text, omitted)])
+        self.assertEqual(field_issues(alias, {**file_page, 'items': []}),
+                         [('scoped field', 'result.items[].path')])
+        # The preceding record query has these fields, but is not this owner.
+        self.assertTrue(record_page['items'])
+        self.assertIn('family', record_page['items'][0]['record'])
+        self.assertIn('logical_sha256', record_page['items'][0])
+        for token in ('result.items[].record.family', 'result.items[].logical_sha256', 'result.items.path'):
+            with self.subTest(token=token):
+                self.assertEqual(field_issues('`' + token + '` <!-- do-math fields: result=query_result -->', file_page),
+                                 [('scoped field', token)])
+        self.assertEqual(unowned_field_references(alias + '\n`result.items[].path`', schemas),
+                         ['result.items[].path'])
         store = self.store()
         head, _, _ = store.load()
         path = store.list_files('research/', head)[0]

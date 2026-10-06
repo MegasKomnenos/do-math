@@ -28,6 +28,8 @@ FIELD = re.compile(r'[a-z][a-z0-9_]*(?:\[\d*\])?(?:\.[a-z][a-z0-9_]*(?:\[\d*\])?
 # not schemas that could validate fields without the actual responses.
 STATUS_REPORT_BOUNDARY = object()
 OPERATION_PROGRESS_BOUNDARY = object()
+QUERY_RECORD_BOUNDARY = object()
+QUERY_RESULT_BOUNDARY = object()
 
 
 def documents(skill):
@@ -276,7 +278,7 @@ def field_schemas():
     schemas['rejected_response'] = produced_object_schema(context_store.restore_continuation, "history[-1]['rejected_response']")
     schemas['recovery_source'] = produced_object_schema(CoreEngineMixin._context, scope='recover', variants=True)
     from do_math import cli, core_engine
-    schemas['query_record'] = written_object_schema(core_engine._query_record, 'record')
+    schemas['query_record'] = QUERY_RECORD_BOUNDARY
     schemas['input_manifest'] = produced_object_schema(context_store.build_role_manifest)
     schemas['input_manifest']['properties'].update(written_object_schema(
         context_store.prepare_role_input, 'manifest')['properties'])
@@ -307,7 +309,7 @@ def field_schemas():
     schemas['import_check'] = produced_object_schema(governance.check_import, 'check',
         bindings={'deepcopy(output)': governance.interpretation_schema('check')})
     schemas['import_check']['properties'].update(written_object_schema(governance.check_import, 'check')['properties'])
-    schemas['query_result'] = produced_object_schema(core_engine.query_records)
+    schemas['query_result'] = QUERY_RESULT_BOUNDARY
     schemas['project'] = produced_object_schema(formal._project_identity, 'identity')
     schemas['project']['properties'].update(written_object_schema(formal._project_identity, 'identity')['properties'])
     schemas['toolchain'] = produced_object_schema(formal.inspect_toolchain, 'result', bindings={
@@ -354,7 +356,6 @@ def field_schemas():
         "deepcopy(self.runtime['executions'][execution_id].get('output_files', []))": array(stored_file)})
     result['properties']['output_files'] = schemas['materialized_output_files']
     schemas['results'] = array(result)
-    schemas['query_result']['properties']['items'] = array(produced_object_schema(core_engine._record_evidence))
     schemas['review_sources'] = array(consumed_object_schema(ReviewEngineMixin._materialize_research_sources, 'source'))
     for name in ('execution_window', 'scholarly', 'formal_verifier'):
         schemas[name] = produced_object_schema(CoreEngineMixin._context, f'context[{name!r}]')
@@ -476,7 +477,8 @@ def unowned_field_references(text, schemas):
     return sorted(pending)
 
 
-def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False):
+def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
+                        defer_query_record=False, defer_query_result=False):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     issues = []
     for line in text.splitlines():
@@ -496,6 +498,14 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                 if defer_operation_progress:
                     continue
                 raise ValueError('operation_progress fields require the actual file report')
+            if local[root] is QUERY_RECORD_BOUNDARY:
+                if defer_query_record:
+                    continue
+                raise ValueError('query_record fields require the actual query record')
+            if local[root] is QUERY_RESULT_BOUNDARY:
+                if defer_query_result:
+                    continue
+                raise ValueError('query_result fields require the actual query --files response')
             candidates = [local[root]]
             for part in parts:
                 candidates = [child for schema in candidates for child in

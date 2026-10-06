@@ -58,7 +58,8 @@ class TraceCorruptionTests(unittest.TestCase):
                 actual = {**schemas, 'operation_progress': {
                     'type': 'object', 'properties': {name: {} for name in report},
                     'additionalProperties': False}}
-                return scoped_field_issues(text, actual, defer_status=True)
+                return scoped_field_issues(text, actual, defer_status=True,
+                                           defer_query_record=True, defer_query_result=True)
 
             self.assertEqual([(name, *issue) for name, text in texts
                               for issue in field_issues(text, result)], [])

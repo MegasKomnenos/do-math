@@ -12,6 +12,7 @@ import unittest
 from do_math.core_engine import _query_record
 from do_math.planning import RECORD_FAMILIES
 from do_math.repository import RepositoryCursorError
+from support.doc_code import documents, field_schemas, scoped_field_issues, unowned_field_references
 from support.state_builders import current_state
 from support.storage_records import record_store
 
@@ -20,12 +21,36 @@ PREFIX = "runtime/artifacts/query-fixture/"
 
 class QueryFamilyNameTests(unittest.TestCase):
     def test_query_family_names_are_the_condition_grammar_names(self):
+        skill = Path(__file__).resolve().parents[3]
+        texts = [(document.relative_to(skill).as_posix(), document.read_text(encoding='utf-8'))
+                 for document in documents(skill)]
+        schemas = field_schemas()
+
+        def field_issues(text, record):
+            actual = {**schemas, 'query_record': {
+                'type': 'object', 'properties': {key: {} for key in record},
+                'additionalProperties': False}}
+            return scoped_field_issues(text, actual, defer_status=True,
+                defer_operation_progress=True, defer_query_result=True)
+
+        alias = '`record.family` <!-- do-math fields: record=query_record -->'
         for name, (_, stored) in RECORD_FAMILIES.items():
             if stored is not None:
                 with self.subTest(stored=stored):
                     # A kind definition's own "family" field moves to definition_family.
                     row = {"family": stored, "record": {"id": "X", "family": "relation"}}
-                    self.assertEqual(_query_record(row)["family"], name)
+                    record = _query_record(row)
+                    self.assertEqual(record["family"], name)
+                    self.assertEqual([(path, *issue) for path, text in texts
+                                      for issue in field_issues(text, record)], [])
+                    self.assertEqual(field_issues('`query_record.family`', record), [])
+                    self.assertEqual(field_issues(alias, record), [])
+                    omitted = dict(record)
+                    del omitted['family']
+                    self.assertEqual(field_issues(alias, omitted), [('scoped field', 'record.family')])
+                    self.assertIn(('references/CLI-실행-계약.md', 'scoped field', 'record.family'),
+                        [(path, *issue) for path, text in texts for issue in field_issues(text, omitted)])
+        self.assertEqual(unowned_field_references(alias + '\n`record.family`', schemas), ['record.family'])
         self.assertEqual(_query_record({"family": "question_links", "record": {"id": "Q"}})["family"], "question")
         # A stored family the grammar does not name keeps its stored name.
         self.assertEqual(_query_record({"family": "capability_evidence", "record": {"id": "C"}})["family"],

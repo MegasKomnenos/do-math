@@ -13088,11 +13088,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "조회 문서의 실제 반환 결속",
-      "last_closed": "B129 전체 실행 완결과 Git 거부 단언 2개 검증",
-      "active": "DOC-RETURN-CLI 조회 slice 적용 준비",
+      "phase": "CLI 반환의 실제 문서 결속",
+      "last_closed": "B130 조회 결속 교체와 관련 22개 통과",
+      "active": "DOC-RETURN-CLI select-profile 반환 작업의 배정 준비",
       "exit": "각 독립 작업은 정해진 산출물·관련 검증으로 종료하고 요구 충족 여부를 별도로 기록한다",
-      "next": "기존 파일 조회 결과와 query_record 결과에 문서 필드를 연결",
+      "next": "selection_result의 기존 실제 반환 시험을 재사용하여 AST 결속 교체",
       "work_method": "fork_turns=none으로 필요한 원문/현행코드/증거/종료조건만 전달한다. 큰 영역 제목 그대로 파견하지 않고 구체 slice를 확정한다. 탐색 이력을 상위에 누적하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -25243,7 +25243,7 @@
           "next_dispatch": [
             "DOC-RETURN-CLI"
           ],
-          "reason": "통합 실행의 전건 완결 결과와 유일한 구조 실패의 한정 수리를 확보했다. 원래 요구의 조회 반환 작업을 이어간다."
+          "reason": "조회 slice는 종료했다. 다음은 select-profile의 단일 반환 소유자이며 init/status와 다른 모집단으로 확장하지 않는다."
         },
         "unresolved_decisions": [
           {
@@ -35438,8 +35438,29 @@
             ],
             "exit_condition": "해당 결속을 실제 결과/공유 계약으로 교체하고 구문 추출을 제거한다. 실행 불가능/근거 부재이면 미완료로 정확히 반환하며 추론기 확대로 우회하지 않는다.",
             "dependencies": [],
-            "status": "planned",
-            "dispatch_state": "requires_bounded_packet"
+            "status": "partial_complete",
+            "dispatch_state": "query_slice_complete",
+            "evidence_pointer": "current_work.query_document_runtime_binding",
+            "completed_scope": [
+              "query_record 실제 가족 반환",
+              "query_result 실제 CLI 파일 조회 반환",
+              "_record_evidence의 문서 AST 결속 제거"
+            ],
+            "remaining_scope": [
+              "init_result",
+              "scheduling_result",
+              "selection_result",
+              "CLI status 전달 범위 확인"
+            ],
+            "next_packet": {
+              "purpose": "selection_result를 실제 select-profile 반환에 연결",
+              "inputs": [
+                "scripts/tests/support/doc_code.py의 selection_result 결속",
+                "scripts/do_math/cli.py의 select-profile 분기",
+                "기존 select-profile 경계 시험의 실제 반환"
+              ],
+              "exit": "실제 반환 또는 실제 공유 계약을 재사용하여 해당 AST 결속만 제거하고 정상/필드 누락의 직접 관련 시험으로 종료한다."
+            }
           },
           {
             "id": "DOC-RETURN-ROLE",
@@ -48180,6 +48201,75 @@
         }
       },
       "next": "DOC-RETURN-CLI의 조회 반환 결속 수리. 다음 전체 일반 실행은 관련 변경 묶음 뒤의 통합 또는 최종 관문에서 판본을 명시하여 수행한다."
+    },
+    "query_document_runtime_binding": {
+      "id": "B130",
+      "scope": "query_record와 파일 query_result 문서 필드를 실제 조회 결과에 연결",
+      "state": "조회 AST 결속 세 곳 제거; 수정 전 1실패·수정 후 관련 22개 통과",
+      "memory_node": "M-0545",
+      "base_head": "404645974035003bbbd73ce32bb73a0e20c639a1",
+      "reports": {
+        "red": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-조회-실제반환/red.json",
+          "sha256": "18b157524715948e239d2e8545e6cf450ccbe4ac549fe62a4a426f1e9db53a0e",
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 1.5,
+          "changed_during_run": []
+        },
+        "green": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-조회-실제반환/green.json",
+          "sha256": "e684ca1266f74991c04ca994c61c1f31c7ef0ba53a3a8f44a2f5a9862ca00acd",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 22
+          },
+          "total_seconds": 144.5,
+          "changed_during_run": []
+        }
+      },
+      "finding": "초기화-운전의 query --files 문서를 query_records/_record_evidence의 AST 모양에 연결하여 서로 다른 생산자의 snapshot/path 이름으로 통과할 수 있었다.",
+      "actual_boundaries": [
+        {
+          "owner": "query_record",
+          "producer": "core_engine._query_record",
+          "test": "unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names",
+          "document": "references/CLI-실행-계약.md",
+          "fields": [
+            "record.family"
+          ]
+        },
+        {
+          "owner": "query_result",
+          "producer": "cli.execute query --files / ResearchRepository.query",
+          "test": "boundary.test_engine_cli.CliTests.test_query_read_export_and_check_use_a_fixed_repository_snapshot",
+          "document": "references/초기화-운전.md",
+          "fields": [
+            "result.snapshot",
+            "result.items[].path"
+          ]
+        }
+      ],
+      "changes": [
+        "실제 조회 결과 없는 기본 문서 검증은 ValueError로 거부하며 구조 검사의 명시적 defer만 허용한다.",
+        "파일 항목의 실제 최상위 키 교집합을 사용하며 빈 배열은 항목 필드의 근거로 쓰지 않는다.",
+        "가족 이름·snapshot·items·path 삭제, 레코드 필드 차용, 배열 표기 생략, 별칭 줄 누출을 거부한다.",
+        "기존 상태·진행 보고 문서 호출에는 제공하지 않는 조회 소유자만 명시적으로 보류한다."
+      ],
+      "preserved": [
+        "제품 코드와 CLI 동작",
+        "새 저장소나 CLI 실행을 구조 문서 검사에 추가하지 않음",
+        "기존 실제 조회와 보고 시험 재사용"
+      ],
+      "limits": [
+        "DOC-RETURN-CLI의 init/select-profile 및 CLI status 반환 범위는 별도로 확인한다.",
+        "13-C의 단독 이름·다른 반환 소유자·정책 의미·실제 읽기 한도와 최종 관문은 미완료다.",
+        "부분 22개 통과를 동일 최종 판본 전체 성공으로 대신하지 않는다."
+      ]
     }
   }
 }
