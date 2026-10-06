@@ -78,8 +78,9 @@ class FakeGitRefPublicationTests(unittest.TestCase):
         """About 0.4 s: exhaust the real bounded file-publication retries."""
         self.path.chmod(stat.S_IREAD)
         self.addCleanup(self.path.chmod, stat.S_IWRITE)
-        with self.assertRaises(PermissionError):
+        with self.assertRaises(PermissionError) as denied:
             self.backend.update_ref(self.repo, self.ref, self.new, self.old)
+        self.assertEqual(denied.exception.winerror, 5)
         self.assertEqual(self.backend.ref_oid(self.repo, self.ref), self.old)
         self.assertFalse(self.lock.exists())
         self.path.chmod(stat.S_IWRITE)

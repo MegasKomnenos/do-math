@@ -1,0 +1,21 @@
+{
+  "state": "terminal",
+  "pid": 34856,
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "--jobs",
+    "3",
+    "--output",
+    "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\ordinary-b129-20261006-a\\run"
+  ],
+  "started_at": "2026-10-06T02:47:47.899209+00:00",
+  "workers": 3,
+  "source_before": "source-before.json",
+  "report": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\ordinary-b129-20261006-a\\run\\report.json",
+  "observer": "../observe-test-run.py",
+  "exit_code": 1,
+  "finished_at": "2026-10-06T05:46:34.856058+00:00"
+}
