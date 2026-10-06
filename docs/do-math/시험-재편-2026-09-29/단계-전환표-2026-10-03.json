@@ -13088,11 +13088,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "수정 판본의 전체 일반 통합검증",
-      "last_closed": "B125 3955a029; B126 미실행558포함571개전부통과·소스불변",
-      "active": "B127 현재판본의전체일반검사실행준비",
+      "phase": "통합 실행 신뢰성 수리 후 검증",
+      "last_closed": "B126 53a90266; B127최종보고없는중단확인; B128ref실패수리/정확review통과",
+      "active": "B128의 한정 수리와 중단 증거 확정",
       "exit": "각 독립 작업은 정해진 산출물·관련 검증으로 종료하고 요구 충족 여부를 별도로 기록한다",
-      "next": "B127원보고의완결/성공/skip/소스지문확인후원래미해소요구와최종T3/변이/T4T5작업으로진행",
+      "next": "현재판본전체일반검사의실제완결결과확보;원래요구·freshT3·변이·T4T5는유지",
       "work_method": "fork_turns=none으로 필요한 원문/현행코드/증거/종료조건만 전달한다. 큰 영역 제목 그대로 파견하지 않고 구체 slice를 확정한다. 탐색 이력을 상위에 누적하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -35652,8 +35652,8 @@
               "FINAL-ordinary"
             ],
             "purpose": "현재 누적 main 변경의 전체 일반 통합 결과 확인",
-            "status": "partial_complete",
-            "dispatch_state": "missing_population_passed_full_run_ready",
+            "status": "incomplete",
+            "dispatch_state": "B127_stopped_ref_failure_repair_verified",
             "dependencies": [
               "DOC-RETURN-PURE"
             ],
@@ -35675,14 +35675,14 @@
               "python .claude/skills/do-math/scripts/run_tests.py --jobs 3 --output C:/math/.skill-workspace/test-restructure-2026-09-29/finish/ordinary-b123-20261005-a/run"
             ],
             "exit_condition": "기본5폴더전건의성공/실패/skip/not_run과소스변경여부를원보고로판정.실패를원문요구별한정수리로배정하며부분검사합산으로성공을만들지않음.",
-            "evidence_pointer": "current_work.missing_tests_b126",
+            "evidence_pointer": "current_work.fake_git_ref_publication_repair",
             "remaining_scope": [
-              "현재수정판본의동일소스전체일반정상결과"
+              "수정후현재판본전체일반완결결과",
+              "기존권한skip별도판정"
             ],
             "next_packet": {
-              "purpose": "B127전체일반통합",
-              "input_pointer": "current_work.ordinary_integration_b127",
-              "exit": "기본5폴더전건의완결/성공/소스불변을원보고로확인하고skip은사유와별도판정"
+              "purpose": "수정된현재판본전체일반검사",
+              "exit": "공식runner기본5폴더/jobs3의완결원보고·소스전후불변·미실행없음을확인.관찰세션상실시실제프로세스/종료증거를조회하고기록만으로재시작하지않음."
             }
           }
         ]
@@ -47884,14 +47884,186 @@
     "ordinary_integration_b127": {
       "id": "B127",
       "scope": "B124fixture·B125진단수리후동일판본의전체일반정상결과확보",
-      "state": "실행준비완료·아직시작전",
+      "state": "실제프로세스없음·최종보고없음·중단원인미확정",
       "execution_root": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\ordinary-b127-20261005-a",
       "command": "python -u -B .claude/skills/do-math/scripts/run_tests.py --jobs 3 --output C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\ordinary-b127-20261005-a\\run",
       "workers": 3,
       "time_policy": "soft baseline; no timeout",
       "observer": "C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\observe-test-run.py",
       "source_policy": "커밋후canonical tracked/untracked969파일과HEAD를전후대조;진행중결과파일은삭제공유읽기",
-      "not_final_goal": "전체일반회귀의현재기준선.원래요구별남김/freshT3/변이/T4T5완료는아님."
+      "not_final_goal": "전체일반회귀의현재기준선.원래요구별남김/freshT3/변이/T4T5완료는아님.",
+      "memory_node": "M-0543",
+      "final_report_present": false,
+      "observed_counts": {
+        "passed": 39,
+        "failed": 1,
+        "running_at_last_checkpoint": 3
+      },
+      "source_files": 969,
+      "source_changes": [],
+      "head_same": true,
+      "execution_evidence": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-execution.json",
+        "sha256": "619f076c993f7c08133685a477fc391474d1d80ca098c49f9222ca80796ab7bf"
+      },
+      "worker_evidence": [
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-worker-0.json",
+          "sha256": "2a2385ca09b829c4a24def6f44f54a481500a4bd24398cbffd49168b2758b3f7"
+        },
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-worker-1.json",
+          "sha256": "7fc4b51988299807525b2939085c5b29086d39dcab5dd449b409bdd7ff728ece"
+        },
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-worker-2.json",
+          "sha256": "d5e873a796a7433dfe256b469bd890adc53615fc50c85ba40cf15b57c32a8899"
+        }
+      ],
+      "failure_review": {
+        "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-failure-review.json",
+        "sha256": "4252b29aeaea2742cc776edca02f509a43e95794a916bdc09de2c6c9c5f6d42e"
+      },
+      "source_evidence": [
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-source-before.json",
+          "sha256": "d99920b21e539ece5c70c6a48fd6da1a2f3b9a6e9fcb68e1e5f49513b6a77522"
+        },
+        {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-source-after.json",
+          "sha256": "44fca0bae43d7671466b424e0d2310320e1d92c109378f3bf900fc4322c61289"
+        }
+      ],
+      "exit_code": null,
+      "notes": "환경중단후handle93709없음및CIM으로runner/worker모두부재확인.중간running필드를실제실행으로간주하지않음.원래WinError5와실행전체종료원인은별개이며추정으로확정하지않음."
+    },
+    "fake_git_ref_publication_repair": {
+      "id": "B128",
+      "scope": "fake Git ref의 원자 게시·삭제 공유 읽기·소유 lock 정리 보강",
+      "state": "실패처리반례재현 및 실제/대역Git계약·정확review flow검증완료",
+      "memory_node": "M-0543",
+      "base_head": "53a902664769a9a6e0bf73b4031c6c4b4b13982c",
+      "reports": {
+        "red": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/red.json",
+          "sha256": "9bc9c5ce9cb679cfa6605a480fb8b6416d0176785f754194fd4835d0bec64fbc",
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "passed": 2,
+            "failed": 1,
+            "error": 1
+          },
+          "total_seconds": 0.1,
+          "changed_during_run": []
+        },
+        "related": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/related.json",
+          "sha256": "091a60eb47d8e98fb528ba4194f064b34c16c5300f52c24e103b8c50a7afd626",
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "passed": 71,
+            "failed": 1
+          },
+          "total_seconds": 19.4,
+          "changed_during_run": []
+        },
+        "corrected": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/corrected.json",
+          "sha256": "32168a042400667767014f705b1faed672c3772b35d7b50eebd995541e93e725",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 1
+          },
+          "total_seconds": 0.0,
+          "changed_during_run": []
+        },
+        "review-flow": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/review-flow.json",
+          "sha256": "d8bcd87019f638a536827e7d1b288a895d6cede6788c0b680a117993463ef034",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 1
+          },
+          "total_seconds": 111.0,
+          "changed_during_run": []
+        }
+      },
+      "changes": [
+        "ref_oid/_resolve/update_ref의참조읽기는기존read_bytes_shared사용",
+        "같은lock파일게시만기존atomic_replace의유한재시도로수행",
+        "영구게시실패/불일치CAS는자신의lock정리;성공게시후다른writer lock삭제금지"
+      ],
+      "preserved": [
+        "exclusive lock/CAS",
+        "영구PermissionError전파",
+        "제품실제Git/file_io/공유contract무수정",
+        "원래실제Git비영exit False와fake예외계약차이는새로변경하지않음"
+      ],
+      "proof": [
+        "읽기전용ref로transientWinError5/영구오류발생",
+        "같은lock재사용중다른CAS거부",
+        "실패후다음update가능",
+        "성공직후다른writer lock보존"
+      ],
+      "limits": [
+        "읽기전용속성재현은B127당시원인증명이아님",
+        "첫related71pass/1개행기대실패를수정후해당1개만재검사한결과로보존",
+        "정확ReviewAlphabet1회통과가OS간헐오류완전해결을증명하지않음"
+      ],
+      "artifacts": {
+        "red.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/red.json",
+          "sha256": "9bc9c5ce9cb679cfa6605a480fb8b6416d0176785f754194fd4835d0bec64fbc"
+        },
+        "related.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/related.json",
+          "sha256": "091a60eb47d8e98fb528ba4194f064b34c16c5300f52c24e103b8c50a7afd626"
+        },
+        "corrected.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/corrected.json",
+          "sha256": "32168a042400667767014f705b1faed672c3772b35d7b50eebd995541e93e725"
+        },
+        "review-flow.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/review-flow.json",
+          "sha256": "d8bcd87019f638a536827e7d1b288a895d6cede6788c0b680a117993463ef034"
+        },
+        "b127-source-before.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-source-before.json",
+          "sha256": "d99920b21e539ece5c70c6a48fd6da1a2f3b9a6e9fcb68e1e5f49513b6a77522"
+        },
+        "b127-source-after.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-source-after.json",
+          "sha256": "44fca0bae43d7671466b424e0d2310320e1d92c109378f3bf900fc4322c61289"
+        },
+        "b127-execution.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-execution.json",
+          "sha256": "619f076c993f7c08133685a477fc391474d1d80ca098c49f9222ca80796ab7bf"
+        },
+        "b127-primary-stdout.txt": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-primary-stdout.txt",
+          "sha256": "a6dd55128efeae952af96c1551f1d442458317005b19a9492ae5eea8168c4179"
+        },
+        "b127-failure-review.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-failure-review.json",
+          "sha256": "4252b29aeaea2742cc776edca02f509a43e95794a916bdc09de2c6c9c5f6d42e"
+        },
+        "b127-worker-0.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-worker-0.json",
+          "sha256": "2a2385ca09b829c4a24def6f44f54a481500a4bd24398cbffd49168b2758b3f7"
+        },
+        "b127-worker-1.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-worker-1.json",
+          "sha256": "7fc4b51988299807525b2939085c5b29086d39dcab5dd449b409bdd7ff728ece"
+        },
+        "b127-worker-2.json": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-Git-ref-게시/b127-worker-2.json",
+          "sha256": "d5e873a796a7433dfe256b469bd890adc53615fc50c85ba40cf15b57c32a8899"
+        }
+      }
     }
   }
 }

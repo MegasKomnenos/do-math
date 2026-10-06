@@ -1,0 +1,94 @@
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\cross_machine.py", line 26, in __init__
+    self.sim = self.new_sim()
+               ^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\cross_research_machine.py", line 269, in new_sim
+    return review_stage('answer')
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\cross_states.py", line 140, in review_stage
+    sim = _restore_start('cross-review-stage', _build_review_stage, stage=stage)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\cross_states.py", line 66, in _restore_start
+    sim = built(name, build, **parameters)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\sim.py", line 399, in built
+    return warm_built(name, build, **parameters).restore()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\sim.py", line 412, in warm_built
+    _BUILT[key] = _Template(lambda root, shared: build(root, shared, **inputs),
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\sim.py", line 312, in __init__
+    sim = build(self.live, self.shared) if build is not None else Sim.activated(self.live, shared=self.shared)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\sim.py", line 412, in <lambda>
+    _BUILT[key] = _Template(lambda root, shared: build(root, shared, **inputs),
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\cross_states.py", line 133, in _build_review_stage
+    sim = build_research_sim(root, shared, settings=settings, policy=policy)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\review_research.py", line 73, in build_research_sim
+    sim.activate(review_policy=policy)
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\sim.py", line 247, in activate
+    self.engine.run(until_active=True)
+  File "C:\math\.claude\skills\do-math\scripts\do_math\operation_trace.py", line 210, in run
+    return function(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\do_math\engine.py", line 134, in run
+    return self._run_executor(max_steps=max_steps, watch=watch, until_active=until_active)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\do_math\engine.py", line 149, in _run_executor
+    self._run_parallel(max_steps=max_steps, watch=watch, until_active=until_active)
+  File "C:\math\.claude\skills\do-math\scripts\do_math\scheduler.py", line 129, in _run_parallel
+    collected = self._calls.collect()
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\do_math\parallel.py", line 192, in collect
+    generator.send(result)
+  File "C:\math\.claude\skills\do-math\scripts\do_math\engine.py", line 195, in _call_steps
+    return self._receive_call(prepared, result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\do_math\call_engine.py", line 577, in _receive_call
+    self._publish_provider_result(artifacts)
+  File "C:\math\.claude\skills\do-math\scripts\do_math\provider_engine.py", line 66, in _publish_provider_result
+    self._save(artifacts)
+  File "C:\math\.claude\skills\do-math\scripts\do_math\core_engine.py", line 736, in _save
+    self.head, self.instance, self.runtime = self.store.save_with_state(
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\do_math\repository.py", line 378, in save_with_state
+    published = self._publish_candidate(expected_head, candidate)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\do_math\repository.py", line 419, in _publish_candidate
+    published = self._store.publish(expected_head, changes)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\do_math\operation_trace.py", line 199, in run
+    return function(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\do_math\git_store.py", line 305, in publish
+    self._compare_and_swap(commit, expected_head, "publish")
+  File "C:\math\.claude\skills\do-math\scripts\do_math\git_store.py", line 256, in _compare_and_swap
+    if not self._backend.update_ref(self.repository, self.ref, new, old):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\math\.claude\skills\do-math\scripts\tests\support\fakes\git_backend.py", line 221, in update_ref
+    os.replace(lock, path)
+PermissionError: [WinError 5] 액세스가 거부되었습니다: 'C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\ordinary-b127-20261005-a\\run\\parallel-1\\scratch\\do-math-sim-hggb4gq7\\live\\repository\\.git\\refs\\heads\\do-math\\RI-03E6TRPT000000000000000001.lock' -> 'C:\\math\\.skill-workspace\\test-restructure-2026-09-29\\finish\\ordinary-b127-20261005-a\\run\\parallel-1\\scratch\\do-math-sim-hggb4gq7\\live\\repository\\.git\\refs\\heads\\do-math\\RI-03E6TRPT000000000000000001'
+Execution cleanup incomplete; preserved state requires recovery: state ref changed before the publish compare-and-swap
+
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:
+Test case:

@@ -1,0 +1,76 @@
+{
+  "complete": false,
+  "successful": false,
+  "tests_run": 11,
+  "rows": [
+    {
+      "id": "flows.test_cross_operational_alphabets.OperationalAlphabetTests.test_initial_diagnosis_alphabet",
+      "outcome": "passed",
+      "seconds": 109.5,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_operational_alphabets.OperationalAlphabetTests.test_live_operational_alphabet",
+      "outcome": "passed",
+      "seconds": 102.09299999999348,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_operational_alphabets.OperationalAlphabetTests.test_operational_task_alphabet",
+      "outcome": "passed",
+      "seconds": 257.6720000000205,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_operational_alphabets.OperationalAlphabetTests.test_operations_alphabet",
+      "outcome": "passed",
+      "seconds": 123.25,
+      "details": []
+    },
+    {
+      "id": "flows.test_submission_ingress_owner.OperationalIngressDefectTests.test_valid_user_decision_is_applied_after_rejected_extensions",
+      "outcome": "passed",
+      "seconds": 34.98400000005495,
+      "details": []
+    },
+    {
+      "id": "flows.test_submission_ingress_owner.OwnerIngressTests.test_actual_maintenance_catalog_is_accepted_by_producer_and_central_application",
+      "outcome": "passed",
+      "seconds": 12.280999999959022,
+      "details": []
+    },
+    {
+      "id": "flows.test_submission_ingress_owner.OwnerIngressTests.test_fixed_question_investigator_has_no_extension_family_and_accepts_normal_answer",
+      "outcome": "passed",
+      "seconds": 108.125,
+      "details": []
+    },
+    {
+      "id": "flows.test_submission_ingress_owner.OwnerIngressTests.test_initial_interpretation_and_check_families_are_consumed_before_activation",
+      "outcome": "passed",
+      "seconds": 37.0,
+      "details": []
+    },
+    {
+      "id": "flows.test_submission_ingress_owner.OwnerIngressTests.test_maintenance_extension_table_is_consumed_before_a_valid_submission",
+      "outcome": "passed",
+      "seconds": 12.047000000020489,
+      "details": []
+    },
+    {
+      "id": "flows.test_submission_ingress_owner.OwnerIngressTests.test_metadata_nonobjects_preserve_the_research_envelope_and_next_output",
+      "outcome": "passed",
+      "seconds": 11.983999999938533,
+      "details": []
+    },
+    {
+      "id": "flows.test_submission_ingress_owner.OwnerIngressTests.test_metadata_returns_only_its_bundle_and_preserves_the_independent_bundle",
+      "outcome": "running",
+      "seconds": 0,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "flows.test_cross_operational_alphabets": 600.6870000000345
+  }
+}

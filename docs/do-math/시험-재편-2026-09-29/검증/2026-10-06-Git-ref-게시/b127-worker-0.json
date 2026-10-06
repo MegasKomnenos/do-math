@@ -1,0 +1,152 @@
+{
+  "complete": false,
+  "successful": false,
+  "tests_run": 24,
+  "rows": [
+    {
+      "id": "flows.test_cross_required_events.CrossTransitionRegressionTests.test_contract_review_after_pending_assessment_uses_a_dispatchable_target",
+      "outcome": "passed",
+      "seconds": 59.85900000005495,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.CrossTransitionRegressionTests.test_installation_repair_pending_has_no_model_answer_admission",
+      "outcome": "passed",
+      "seconds": 12.0,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.CrossTransitionRegressionTests.test_pending_completion_fulfils_reported_items_instead_of_retaining_open_items",
+      "outcome": "passed",
+      "seconds": 23.344000000040978,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.CrossTransitionRegressionTests.test_unchanged_assessed_report_is_not_a_new_completion_event",
+      "outcome": "passed",
+      "seconds": 34.375,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_academic_requirements_preserve_audit_and_mathematical_goal_change_retires_it",
+      "outcome": "passed",
+      "seconds": 43.42200000002049,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_close_preserves_actual_merged_requests_and_receipt",
+      "outcome": "passed",
+      "seconds": 5.094000000040978,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_closed_initialization_absorbs_real_restart_and_owner_events",
+      "outcome": "passed",
+      "seconds": 13.609000000054948,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_closed_initialization_owner_keeps_the_terminal_receipt",
+      "outcome": "passed",
+      "seconds": 9.60999999998603,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_closure_preserves_reasons_and_continues_following_real_events",
+      "outcome": "passed",
+      "seconds": 5.719000000040978,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_contract_decisions",
+      "outcome": "passed",
+      "seconds": 31.483999999938533,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_control_alphabet_preserves_user_stop_and_terminal_authority",
+      "outcome": "passed",
+      "seconds": 37.32799999997951,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_goal_change_retains_independent_review_actions",
+      "outcome": "passed",
+      "seconds": 30.358999999938533,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_identity_and_goal_decisions",
+      "outcome": "passed",
+      "seconds": 129.25,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_impact_decisions",
+      "outcome": "passed",
+      "seconds": 34.26500000001397,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_import_retirement_and_audit_requests_preserve_explicit_values",
+      "outcome": "passed",
+      "seconds": 28.703000000095926,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_initial_diagnosis_decisions",
+      "outcome": "passed",
+      "seconds": 24.859000000054948,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_installation_repair_report_releases_one_successor",
+      "outcome": "passed",
+      "seconds": 13.030999999959022,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_installation_repair_unresolved_settles_and_does_not_repeat",
+      "outcome": "passed",
+      "seconds": 15.280999999959022,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_interpretation_decisions",
+      "outcome": "passed",
+      "seconds": 51.93799999996554,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_investigation_outcomes",
+      "outcome": "passed",
+      "seconds": 50.21799999999348,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_judge_verdicts",
+      "outcome": "passed",
+      "seconds": 95.14100000006147,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_kind_definition_decisions",
+      "outcome": "passed",
+      "seconds": 25.593999999924563,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_limited_recovery_is_composable_with_pause_and_restart",
+      "outcome": "passed",
+      "seconds": 14.766000000061467,
+      "details": []
+    },
+    {
+      "id": "flows.test_cross_required_events.RequiredEventSeedTests.test_live_continue_and_retry_settle_before_restart",
+      "outcome": "running",
+      "seconds": 0,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {}
+}

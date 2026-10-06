@@ -20,6 +20,7 @@ import zlib
 
 from do_math.ports.git_backend import GitBackendError, ProjectSnapshot
 from do_math.lean_evidence import check_stop
+from do_math.file_io import atomic_replace, read_bytes_shared
 
 
 @dataclass
@@ -157,7 +158,7 @@ class InProcessGit:
         revision, _, path = spec.partition(':')
         if revision.startswith('refs/'):
             ref = git_dir / revision
-            oid = ref.read_text(encoding='ascii').strip() if ref.is_file() else None
+            oid = read_bytes_shared(ref).decode('ascii').strip() if ref.is_file() else None
         else:
             oid = revision
         if oid is None or self._object(git_dir, oid) is None:
@@ -197,7 +198,7 @@ class InProcessGit:
         path = self._git_dir(repository) / ref
         if not path.is_file():
             return None
-        raw = path.read_bytes().strip()
+        raw = read_bytes_shared(path).strip()
         width = 64 if self._format(self._git_dir(repository)) == 'sha256' else 40
         if re.fullmatch(rb'[0-9a-fA-F]{%d}' % width, raw) is None:
             raise GitBackendError('broken reference: ' + ref)
@@ -211,18 +212,23 @@ class InProcessGit:
             descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         except FileExistsError:
             return False
+        published = False
         try:
-            current = path.read_text(encoding='ascii').strip() if path.is_file() else None
+            current = read_bytes_shared(path).decode('ascii').strip() if path.is_file() else None
             if current != old:
                 return False
             os.write(descriptor, (new + '\n').encode('ascii'))
             os.close(descriptor)
             descriptor = None
-            os.replace(lock, path)
+            atomic_replace(lock, path)
+            published = True
             return True
         finally:
             if descriptor is not None:
                 os.close(descriptor)
+            # A failed publish still owns this lock after its descriptor closes.
+            # A successful rename releases the name for the next writer.
+            if not published:
                 os.unlink(lock)
 
     def list_tree(self, repository, commit):
