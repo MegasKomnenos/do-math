@@ -59,7 +59,8 @@ class TraceCorruptionTests(unittest.TestCase):
                     'type': 'object', 'properties': {name: {} for name in report},
                     'additionalProperties': False}}
                 return scoped_field_issues(text, actual, defer_status=True,
-                                           defer_query_record=True, defer_query_result=True)
+                                           defer_query_record=True, defer_query_result=True,
+                                           defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
 
             self.assertEqual([(name, *issue) for name, text in texts
                               for issue in field_issues(text, result)], [])

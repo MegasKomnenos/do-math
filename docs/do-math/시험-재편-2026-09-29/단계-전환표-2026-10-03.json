@@ -13088,11 +13088,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "CLI 반환의 실제 문서 결속",
-      "last_closed": "B130 조회 결속 교체와 관련 22개 통과",
-      "active": "DOC-RETURN-CLI select-profile 반환 작업의 배정 준비",
+      "phase": "역할 입력 문서의 실제 생성 결과 결속",
+      "last_closed": "B131 CLI 반환 묶음과 관련 25개 통과",
+      "active": "DOC-RETURN-ROLE input_manifest/prompt 작업 배정 준비",
       "exit": "각 독립 작업은 정해진 산출물·관련 검증으로 종료하고 요구 충족 여부를 별도로 기록한다",
-      "next": "selection_result의 기존 실제 반환 시험을 재사용하여 AST 결속 교체",
+      "next": "기존 실제 역할 입력 생성 결과와 문서 경로를 연결",
       "work_method": "fork_turns=none으로 필요한 원문/현행코드/증거/종료조건만 전달한다. 큰 영역 제목 그대로 파견하지 않고 구체 slice를 확정한다. 탐색 이력을 상위에 누적하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -25241,9 +25241,9 @@
         },
         "readiness": {
           "next_dispatch": [
-            "DOC-RETURN-CLI"
+            "DOC-RETURN-ROLE"
           ],
-          "reason": "조회 slice는 종료했다. 다음은 select-profile의 단일 반환 소유자이며 init/status와 다른 모집단으로 확장하지 않는다."
+          "reason": "순수 조회와 CLI 반환 묶음은 종료했다. 다음은 같은 생성 경계의 input_manifest/prompt에 한정한다."
         },
         "unresolved_decisions": [
           {
@@ -35438,29 +35438,17 @@
             ],
             "exit_condition": "해당 결속을 실제 결과/공유 계약으로 교체하고 구문 추출을 제거한다. 실행 불가능/근거 부재이면 미완료로 정확히 반환하며 추론기 확대로 우회하지 않는다.",
             "dependencies": [],
-            "status": "partial_complete",
-            "dispatch_state": "query_slice_complete",
-            "evidence_pointer": "current_work.query_document_runtime_binding",
+            "status": "complete",
+            "dispatch_state": "actual_cli_boundaries_verified",
+            "evidence_pointer": "current_work.cli_document_runtime_binding",
             "completed_scope": [
-              "query_record 실제 가족 반환",
-              "query_result 실제 CLI 파일 조회 반환",
-              "_record_evidence의 문서 AST 결속 제거"
-            ],
-            "remaining_scope": [
+              "B130 조회 결과·레코드 결속",
               "init_result",
               "scheduling_result",
               "selection_result",
-              "CLI status 전달 범위 확인"
+              "CLI status 최종 전달"
             ],
-            "next_packet": {
-              "purpose": "selection_result를 실제 select-profile 반환에 연결",
-              "inputs": [
-                "scripts/tests/support/doc_code.py의 selection_result 결속",
-                "scripts/do_math/cli.py의 select-profile 분기",
-                "기존 select-profile 경계 시험의 실제 반환"
-              ],
-              "exit": "실제 반환 또는 실제 공유 계약을 재사용하여 해당 AST 결속만 제거하고 정상/필드 누락의 직접 관련 시험으로 종료한다."
-            }
+            "remaining_scope": []
           },
           {
             "id": "DOC-RETURN-ROLE",
@@ -35506,7 +35494,16 @@
             "exit_condition": "해당 결속을 실제 결과/공유 계약으로 교체하고 구문 추출을 제거한다. 실행 불가능/근거 부재이면 미완료로 정확히 반환하며 추론기 확대로 우회하지 않는다.",
             "dependencies": [],
             "status": "planned",
-            "dispatch_state": "requires_bounded_packet"
+            "dispatch_state": "requires_bounded_packet",
+            "next_packet": {
+              "purpose": "input_manifest와 prompt를 실제 역할 입력 생성 결과에 연결",
+              "inputs": [
+                "scripts/tests/support/doc_code.py의 input_manifest/prompt 결속",
+                "scripts/do_math/context_store.py의 build_role_manifest/prepare_role_input",
+                "기존 역할 입력 생성·봉인·읽기 시험의 실제 manifest 파일"
+              ],
+              "exit": "같은 역할 입력 생성 경계의 실제 파일 또는 실제 공유 계약을 재사용해 이 결속들을 교체하고 정상/필드 누락을 검증한다. 다른 역할 결과·복원 경계는 별도로 남긴다."
+            }
           },
           {
             "id": "DOC-RETURN-REVIEW",
@@ -48269,6 +48266,90 @@
         "DOC-RETURN-CLI의 init/select-profile 및 CLI status 반환 범위는 별도로 확인한다.",
         "13-C의 단독 이름·다른 반환 소유자·정책 의미·실제 읽기 한도와 최종 관문은 미완료다.",
         "부분 22개 통과를 동일 최종 판본 전체 성공으로 대신하지 않는다."
+      ]
+    },
+    "cli_document_runtime_binding": {
+      "id": "B131",
+      "scope": "초기화·예약·프로필 선택의 실제 CLI 반환 결속과 status 최종 전달 확인",
+      "state": "남은 CLI AST 결속 세 곳 제거; 수정 전 1실패·수정 후 관련 25개 통과",
+      "memory_node": "M-0546",
+      "base_head": "6d1d1778bf82ddff5c965be673725974a6ec50ce",
+      "previous_slice": "B130",
+      "reports": {
+        "red": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-CLI-실제반환/red.json",
+          "sha256": "2f5962978cc00fd5fecf3de72d8fc1e9f80efb49ef2bd7d0dd190e720a5d3e63",
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 0.6,
+          "changed_during_run": []
+        },
+        "green": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-CLI-실제반환/green.json",
+          "sha256": "e34dc5985526d3f2bc5dff7a978faa3993f9f27c12ec235110e6e31507b0a653",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 25
+          },
+          "total_seconds": 54.9,
+          "changed_during_run": []
+        }
+      },
+      "actual_boundaries": [
+        {
+          "owners": [
+            "init_result",
+            "scheduling_result"
+          ],
+          "test": "boundary.test_engine_cli.CliTests.test_original_request_is_preserved_separately_from_the_mathematical_goal",
+          "fields": [
+            "result.instance_id",
+            "result.operator_schedule"
+          ],
+          "boundary": "동일 프로세스의 실제 cli.main/execute·Git·저장소·엔진, 외부 scheduler만 기존 FakeScheduler"
+        },
+        {
+          "owners": [
+            "selection_result"
+          ],
+          "test": "boundary.test_engine_cli.CliTests.test_profile_selection_respects_the_role_floor_without_model_execution",
+          "fields": [
+            "result.selection.profile_ref"
+          ],
+          "boundary": "기존 동일 프로세스 CLI 최종 응답"
+        },
+        {
+          "owners": [
+            "status"
+          ],
+          "test": "boundary.test_engine_cli.CliTests.test_public_check_json_discovery_and_fixed_snapshot",
+          "fields": [
+            "status 소유 문서 전건",
+            "result.config_sha256 삭제 거부"
+          ],
+          "boundary": "기존 과거 snapshot 및 현재 CLI 최종 응답"
+        }
+      ],
+      "changes": [
+        "initialize_instance 반환 AST, init 분기 쓰기 AST, select-profile 반환 AST와 selected의 수동 RECORDS 결속 제거",
+        "CLI 결과 소유자 세 개는 실제 결과 없이 기본 거부하며 지정 소유자만 명시적으로 보류",
+        "실제 최종 키와 selection/profile_ref의 고정 중첩만 검증; 다른 생산자 키 합집합과 범용 재귀 추론 없음",
+        "기존 두 번째 init의 설정을 operator_enabled=True로 바꾸고 기존 scheduler 대역을 포트로 주입; OS 예약 작업 등록 없음"
+      ],
+      "preserved": [
+        "기존 init 실행 횟수",
+        "원문 파일 보존·수학 목표 분리·SHA-256 단언",
+        "실제 Git/CLI/엔진",
+        "제품 코드"
+      ],
+      "limits": [
+        "실제 subprocess 시작·스트림 인코딩을 검사한 결과가 아니다. 변경 전 run_cli도 동일 프로세스 main이었다.",
+        "예약 실패·reconcile_error 의미의 전건이나 실제 OS 예약 성공을 입증하지 않는다.",
+        "DOC-RETURN-CLI 지정 문서 결속 묶음만 종료한다. 13-C 전체와 최종 일반/T3/변이/T4/T5는 미완료다."
       ]
     }
   }

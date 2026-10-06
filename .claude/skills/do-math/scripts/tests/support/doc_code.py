@@ -30,6 +30,8 @@ STATUS_REPORT_BOUNDARY = object()
 OPERATION_PROGRESS_BOUNDARY = object()
 QUERY_RECORD_BOUNDARY = object()
 QUERY_RESULT_BOUNDARY = object()
+CLI_RESULT_BOUNDARIES = {owner: object() for owner in
+                         ('init_result', 'scheduling_result', 'selection_result')}
 
 
 def documents(skill):
@@ -277,7 +279,6 @@ def field_schemas():
     schemas['result_source'] = produced_object_schema(context_store.restore_continuation, "stage['result_source']")
     schemas['rejected_response'] = produced_object_schema(context_store.restore_continuation, "history[-1]['rejected_response']")
     schemas['recovery_source'] = produced_object_schema(CoreEngineMixin._context, scope='recover', variants=True)
-    from do_math import cli, core_engine
     schemas['query_record'] = QUERY_RECORD_BOUNDARY
     schemas['input_manifest'] = produced_object_schema(context_store.build_role_manifest)
     schemas['input_manifest']['properties'].update(written_object_schema(
@@ -286,11 +287,7 @@ def field_schemas():
     schemas['prompt']['properties'].update(written_object_schema(
         context_store.prepare_role_input, "manifest['prompt']")['properties'])
     schemas['input_manifest']['properties']['prompt'] = schemas['prompt']
-    schemas['init_result'] = produced_object_schema(core_engine.initialize_instance)
-    schemas['scheduling_result'] = written_object_schema(cli.execute, 'result', branch="command == 'init'")
-    schemas['init_result']['properties'].update(schemas['scheduling_result']['properties'])
-    schemas['selection_result'] = produced_object_schema(cli.execute, branch="command == 'select-profile'", return_item=0,
-        bindings={'selected': RECORDS['executions']['properties']['model_selection']})
+    schemas.update(CLI_RESULT_BOUNDARIES)
     from do_math import formal, observations, planning, review_cycle, trust_validation
     from do_math.dispatch_engine import DispatchEngineMixin
     from do_math.review_engine import ReviewEngineMixin
@@ -478,8 +475,11 @@ def unowned_field_references(text, schemas):
 
 
 def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
-                        defer_query_record=False, defer_query_result=False):
+                        defer_query_record=False, defer_query_result=False, defer_cli_results=()):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
+    unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
+    if unknown:
+        raise ValueError(f'Unknown deferred CLI result owners: {sorted(unknown)}')
     issues = []
     for line in text.splitlines():
         local, binding_issues = field_bindings(line, schemas)
@@ -506,6 +506,12 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                 if defer_query_result:
                     continue
                 raise ValueError('query_result fields require the actual query --files response')
+            owner = next((name for name, boundary in CLI_RESULT_BOUNDARIES.items()
+                          if local[root] is boundary), None)
+            if owner is not None:
+                if owner in defer_cli_results:
+                    continue
+                raise ValueError(owner + ' fields require the actual CLI result')
             candidates = [local[root]]
             for part in parts:
                 candidates = [child for schema in candidates for child in

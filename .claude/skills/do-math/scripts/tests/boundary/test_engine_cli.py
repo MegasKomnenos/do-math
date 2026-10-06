@@ -35,7 +35,7 @@ from do_math.engine import ResearchEngine, control
 from do_math.reporting import OBSERVED_FIELDS
 from do_math.repository import ResearchRepository
 from support.cli_images import initialized_cli
-from support.doc_code import documents, field_schemas, scoped_field_issues, unowned_field_references
+from support.doc_code import documents, field_schemas, scoped_field_issues, status_field_schema, unowned_field_references
 from support.engine_cli import CliInstanceTest, body, cli_instance
 from support.engine_context import damage
 from support.provider_probes import ObservedCalls
@@ -44,6 +44,23 @@ from test_categories import test_group
 ENTRYPOINT = Path(__file__).resolve().parents[2] / 'do_math.py'
 CLOSED_LIFECYCLE = 'closed/completed instance cannot apply lifecycle controls'
 REFUSED_PUBLICATION = 'current state evidence must be repaired before publication: '
+
+
+def cli_field_issues(text, schemas, owner, result):
+    """Read final CLI keys and only the documented selection's fixed objects."""
+    schema = {'type': 'object', 'properties': {key: {} for key in result},
+              'additionalProperties': False}
+    selection = result.get('selection')
+    if owner == 'selection_result' and isinstance(selection, dict):
+        selected = {'type': 'object', 'properties': {key: {} for key in selection},
+                    'additionalProperties': False}
+        schema['properties']['selection'] = selected
+        if isinstance(selection.get('profile_ref'), dict):
+            selected['properties']['profile_ref'] = {'type': 'object',
+                'properties': {key: {} for key in selection['profile_ref']}, 'additionalProperties': False}
+    return scoped_field_issues(text, {**schemas, owner: schema},
+        defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+        defer_cli_results={'init_result', 'scheduling_result', 'selection_result'} - {owner})
 
 
 class ControlCliTests(CliInstanceTest):
@@ -80,16 +97,70 @@ class ControlCliTests(CliInstanceTest):
 
 class CliTests(CliInstanceTest):
     def test_original_request_is_preserved_separately_from_the_mathematical_goal(self):
+        from dataclasses import replace
+        from do_math.wiring import real_ports
+        from support.entry import entry
+        from support.fakes.scheduler import make_fake
+
         original = '증명: n+0=n. 모델은 gpt-6-sol까지. 새 인스턴스.\n'
         path = self.root / 'original.txt'
         path.write_bytes(original.encode('utf-8'))
-        response = self.cli('init', '--repository', str(self.repository), '--workspace', str(self.root / 'second'),
-                            '--goal', 'n+0=n', '--request-text-file', str(path), '--config-file', str(self.operator_disabled))
+        enabled = self.root / 'operator-enabled.json'
+        enabled.write_text(json.dumps({'operator_enabled': True}), encoding='utf-8')
+        host = entry()
+        scheduler = make_fake()
+        ports = replace(real_ports(environment=host.environment), scheduler=scheduler)
+        output = io.StringIO()
+        # The real init result includes scheduling; only the OS scheduler port
+        # uses its existing fake, so this test never registers Windows tasks.
+        with redirect_stdout(output):
+            code = cli.main(['init', '--repository', str(self.repository), '--workspace', str(self.root / 'second'),
+                             '--goal', 'n+0=n', '--request-text-file', str(path), '--config-file', str(enabled)],
+                            ports=ports, environment=host.environment, host_id=host.host_id, codex_home=host.codex_home)
+        response = subprocess.CompletedProcess(['init'], code, output.getvalue(), '')
         self.assertEqual(response.returncode, 0, response.stdout)
-        _, instance, runtime = self.store(body(response)['instance_id']).load()
+        result = body(response)
+        _, instance, runtime = self.store(result['instance_id']).load()
         self.assertEqual(instance['lifecycle']['immutable_input']['text'], original)
         self.assertEqual(runtime['inputs'][0]['config']['goal'], 'n+0=n')
         self.assertEqual(instance['lifecycle']['immutable_input']['sha256'], hashlib.sha256(original.encode()).hexdigest())
+        skill = Path(__file__).resolve().parents[3]
+        texts = [(document.relative_to(skill).as_posix(), document.read_text(encoding='utf-8'))
+                 for document in documents(skill)]
+        schemas = field_schemas()
+        self.assertEqual([(name, *issue) for name, text in texts
+                          for issue in cli_field_issues(text, schemas, 'init_result', result)], [])
+        alias = '`result.instance_id` <!-- do-math fields: result=init_result -->'
+        self.assertEqual(cli_field_issues(alias, schemas, 'init_result', result), [])
+        omitted = dict(result)
+        del omitted['instance_id']
+        self.assertEqual(cli_field_issues(alias, schemas, 'init_result', omitted),
+                         [('scoped field', 'result.instance_id')])
+        self.assertIn(('README.md', 'scoped field', 'result.instance_id'),
+            [(name, *issue) for name, text in texts
+             for issue in cli_field_issues(text, schemas, 'init_result', omitted)])
+        self.assertEqual([action for action, _ in scheduler.calls], ['install'])
+        self.assertEqual(set(result['operator_schedule']), {'operator', 'engine', 'wake'})
+        self.assertEqual(result['operator_schedule']['operator'],
+                         scheduler.tasks[scheduled_operator.task_names(self.repository, result['instance_id'])['operator']])
+        self.assertEqual([(name, *issue) for name, text in texts
+                          for issue in cli_field_issues(text, schemas, 'scheduling_result', result)], [])
+        schedule_alias = '`result.operator_schedule` <!-- do-math fields: result=scheduling_result -->'
+        self.assertEqual(cli_field_issues(schedule_alias, schemas, 'scheduling_result', result), [])
+        omitted = dict(result)
+        del omitted['operator_schedule']
+        self.assertEqual(cli_field_issues(schedule_alias, schemas, 'scheduling_result', omitted),
+                         [('scoped field', 'result.operator_schedule')])
+        missing = [(name, *issue) for name, text in texts
+                   for issue in cli_field_issues(text, schemas, 'scheduling_result', omitted)]
+        for name in ('README.md', 'references/CLI-실행-계약.md'):
+            self.assertIn((name, 'scoped field', 'result.operator_schedule'), missing)
+        self.assertEqual(cli_field_issues('`scheduling_result.selection`', schemas, 'scheduling_result', result),
+                         [('scoped field', 'scheduling_result.selection')])
+        for token in ('init_result.selection', 'init_result.profile_ref'):
+            self.assertEqual(cli_field_issues('`' + token + '`', schemas, 'init_result', result),
+                             [('scoped field', token)])
+        self.assertEqual(unowned_field_references(alias + '\n`result.instance_id`', schemas), ['result.instance_id'])
 
     def test_profile_selection_respects_the_role_floor_without_model_execution(self):
         response = self.cli('select-profile', *self.instance_args(), '--role', 'intent_interpretation')
@@ -98,6 +169,39 @@ class CliTests(CliInstanceTest):
         self.assertEqual(result['selection']['tier'], 'high')
         self.assertEqual(result['profile']['id'], result['selection']['profile_ref']['id'])
         self.assertEqual(self.store().load()[2]['executions'], {})
+        skill = Path(__file__).resolve().parents[3]
+        texts = [(document.relative_to(skill).as_posix(), document.read_text(encoding='utf-8'))
+                 for document in documents(skill)]
+        schemas = field_schemas()
+        self.assertEqual([(name, *issue) for name, text in texts
+                          for issue in cli_field_issues(text, schemas, 'selection_result', result)], [])
+        alias = '`result.selection.profile_ref` <!-- do-math fields: result=selection_result -->'
+        self.assertEqual(cli_field_issues(alias, schemas, 'selection_result', result), [])
+        self.assertEqual(cli_field_issues('`selection_result.selection.profile_ref.id`',
+                                         schemas, 'selection_result', result), [])
+        for path in (('selection',), ('selection', 'profile_ref'), ('selection', 'profile_ref', 'id')):
+            with self.subTest(omitted=path):
+                omitted = deepcopy(result)
+                parent = omitted
+                for key in path[:-1]:
+                    parent = parent[key]
+                del parent[path[-1]]
+                self.assertEqual(cli_field_issues('`selection_result.selection.profile_ref.id`',
+                                                 schemas, 'selection_result', omitted),
+                                 [('scoped field', 'selection_result.selection.profile_ref.id')])
+                if len(path) < 3:
+                    self.assertEqual(cli_field_issues(alias, schemas, 'selection_result', omitted),
+                                     [('scoped field', 'result.selection.profile_ref')])
+                    self.assertIn(('references/초기화-운전.md', 'scoped field', 'result.selection.profile_ref'),
+                        [(name, *issue) for name, text in texts
+                         for issue in cli_field_issues(text, schemas, 'selection_result', omitted)])
+        for token in ('selection_result.instance_id', 'selection_result.operator_schedule',
+                      'selection_result.profile_ref', 'selection_result.selection.id',
+                      'selection_result.selection[].profile_ref'):
+            self.assertEqual(cli_field_issues('`' + token + '`', schemas, 'selection_result', result),
+                             [('scoped field', token)])
+        self.assertEqual(unowned_field_references(alias + '\n`result.selection.profile_ref`', schemas),
+                         ['result.selection.profile_ref'])
 
     def test_resend_replays_its_receipt_until_an_opposite_control_intervenes(self):
         args = ['pause', *self.instance_args(), '--reason', 'audit2 pause']
@@ -234,6 +338,22 @@ class CliTests(CliInstanceTest):
         self.assertEqual({field: stored[field] for field in OBSERVED_FIELDS}, dict.fromkeys(OBSERVED_FIELDS))
         live = self.cli('status', *self.instance_args(), '--json')
         self.assertEqual(set(body(live)), set(stored))
+        skill = Path(__file__).resolve().parents[3]
+        texts = [(document.relative_to(skill).as_posix(), document.read_text(encoding='utf-8'))
+                 for document in documents(skill)]
+        schemas = field_schemas()
+        for result in (stored, body(live)):
+            schemas['status'] = status_field_schema(result)
+            self.assertEqual([(name, *issue) for name, text in texts
+                for issue in scoped_field_issues(text, schemas, defer_operation_progress=True,
+                    defer_query_record=True, defer_query_result=True,
+                    defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))], [])
+            omitted = dict(result)
+            del omitted['config_sha256']
+            schemas['status'] = status_field_schema(omitted)
+            self.assertEqual(scoped_field_issues(
+                '`result.config_sha256` <!-- do-math fields: result=status -->', schemas),
+                [('scoped field', 'result.config_sha256')])
 
 
     def test_explicit_request_identity_replays_once_and_rejects_changed_payload(self):
@@ -317,7 +437,8 @@ class CliTests(CliInstanceTest):
                     'type': 'object', 'properties': {key: {} for key in keys},
                     'additionalProperties': False}}
             return scoped_field_issues(text, {**schemas, 'query_result': schema},
-                defer_status=True, defer_operation_progress=True, defer_query_record=True)
+                defer_status=True, defer_operation_progress=True, defer_query_record=True,
+                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
 
         self.assertEqual([(name, *issue) for name, text in texts
                           for issue in field_issues(text, file_page)], [])

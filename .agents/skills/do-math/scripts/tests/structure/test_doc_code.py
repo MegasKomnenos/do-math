@@ -88,11 +88,32 @@ class DocumentCodeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'operation_progress fields require the actual file report'):
             scoped_field_issues('`operation_progress.telemetry_errors`', schemas,
                                 defer_query_record=True, defer_query_result=True)
+        for owner, field in (('init_result', 'instance_id'),
+                             ('scheduling_result', 'operator_schedule'),
+                             ('selection_result', 'selection.profile_ref')):
+            for text in (f'`{owner}.{field}`',
+                         f'`result.{field}` <!-- do-math fields: result={owner} -->'):
+                with self.subTest(owner=owner, text=text):
+                    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual CLI result'):
+                        scoped_field_issues(text, schemas)
+                    others = {'init_result', 'scheduling_result', 'selection_result'} - {owner}
+                    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual CLI result'):
+                        scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
+                                            defer_query_record=True, defer_query_result=True,
+                                            defer_cli_results=others)
+                    self.assertEqual(scoped_field_issues(text, schemas, defer_cli_results=(owner,)), [])
+                    self.assertEqual(unowned_field_references(text, schemas), [])
+        with self.assertRaisesRegex(ValueError, 'Unknown deferred CLI result owners'):
+            scoped_field_issues('', schemas, defer_cli_results=('selection_reslt',))
+        with self.assertRaisesRegex(ValueError, 'status fields require the actual repository report'):
+            scoped_field_issues('`status.budget`', schemas,
+                                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
         issues = [(document.relative_to(SKILL).as_posix(), *issue)
                   for document in documents(SKILL)
                   for issue in scoped_field_issues(document.read_text(encoding='utf-8'), schemas,
                                                   defer_status=True, defer_operation_progress=True,
-                                                  defer_query_record=True, defer_query_result=True)]
+                                                  defer_query_record=True, defer_query_result=True,
+                                                  defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))]
         self.assertEqual(issues, [])
 
     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
@@ -257,9 +278,7 @@ class DocumentCodeTests(unittest.TestCase):
         schema = written_object_schema(loop_producer, 'row', iteration='first')
         self.assertEqual(set(schema['properties']), {'first'})
         schemas = field_schemas()
-        self.assertEqual(scoped_field_issues('`input_manifest.prompt.sha256` `prompt.artifact_ref` '
-            '`init_result.instance_id` `selection_result.selection.profile_ref`', schemas), [])
-        self.assertEqual(scoped_field_issues('`init_result.selection`', schemas), [('scoped field', 'init_result.selection')])
+        self.assertEqual(scoped_field_issues('`input_manifest.prompt.sha256` `prompt.artifact_ref`', schemas), [])
 
     def test_optional_reads_and_same_named_checks_keep_their_actual_owners(self):
         def consumer(payload, other, field):

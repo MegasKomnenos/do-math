@@ -31,7 +31,8 @@ class QueryFamilyNameTests(unittest.TestCase):
                 'type': 'object', 'properties': {key: {} for key in record},
                 'additionalProperties': False}}
             return scoped_field_issues(text, actual, defer_status=True,
-                defer_operation_progress=True, defer_query_result=True)
+                                       defer_operation_progress=True, defer_query_result=True,
+                                       defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
 
         alias = '`record.family` <!-- do-math fields: record=query_record -->'
         for name, (_, stored) in RECORD_FAMILIES.items():
