@@ -13088,11 +13088,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "역할 입력 문서의 실제 생성 결과 결속",
-      "last_closed": "B131 CLI 반환 묶음과 관련 25개 통과",
-      "active": "DOC-RETURN-ROLE input_manifest/prompt 작업 배정 준비",
+      "phase": "역할 복원 문서의 실제 결과 결속",
+      "last_closed": "B132 역할 입력 메타데이터 결속과 최종 관련 26개 통과",
+      "active": "DOC-RETURN-ROLE 복원 결과 작업 배정 준비",
       "exit": "각 독립 작업은 정해진 산출물·관련 검증으로 종료하고 요구 충족 여부를 별도로 기록한다",
-      "next": "기존 실제 역할 입력 생성 결과와 문서 경로를 연결",
+      "next": "restore_continuation의 실제 stage/history/output_files와 문서 필드를 연결",
       "work_method": "fork_turns=none으로 필요한 원문/현행코드/증거/종료조건만 전달한다. 큰 영역 제목 그대로 파견하지 않고 구체 slice를 확정한다. 탐색 이력을 상위에 누적하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -25243,7 +25243,7 @@
           "next_dispatch": [
             "DOC-RETURN-ROLE"
           ],
-          "reason": "순수 조회와 CLI 반환 묶음은 종료했다. 다음은 같은 생성 경계의 input_manifest/prompt에 한정한다."
+          "reason": "역할 입력의 세 메타데이터 소유자는 종료했다. 다음은 restore_continuation의 같은 복원 경계이며 다른 역할 본문은 별도다."
         },
         "unresolved_decisions": [
           {
@@ -35493,17 +35493,28 @@
             ],
             "exit_condition": "해당 결속을 실제 결과/공유 계약으로 교체하고 구문 추출을 제거한다. 실행 불가능/근거 부재이면 미완료로 정확히 반환하며 추론기 확대로 우회하지 않는다.",
             "dependencies": [],
-            "status": "planned",
-            "dispatch_state": "requires_bounded_packet",
+            "status": "partial_complete",
+            "dispatch_state": "role_input_metadata_complete",
             "next_packet": {
-              "purpose": "input_manifest와 prompt를 실제 역할 입력 생성 결과에 연결",
+              "purpose": "restore_continuation 결과·반려·이전 출력 파일의 실제 복원 결속",
               "inputs": [
-                "scripts/tests/support/doc_code.py의 input_manifest/prompt 결속",
-                "scripts/do_math/context_store.py의 build_role_manifest/prepare_role_input",
-                "기존 역할 입력 생성·봉인·읽기 시험의 실제 manifest 파일"
+                "scripts/tests/support/doc_code.py의 result_source/rejected_response/previous_file/previous_output_files 추출",
+                "scripts/do_math/context_store.py restore_continuation",
+                "기존 다중 단계 복원 시험의 실제 stage/history/output_files"
               ],
-              "exit": "같은 역할 입력 생성 경계의 실제 파일 또는 실제 공유 계약을 재사용해 이 결속들을 교체하고 정상/필드 누락을 검증한다. 다른 역할 결과·복원 경계는 별도로 남긴다."
-            }
+              "exit": "같은 복원 함수의 문서 소유자를 실제 결과와 파일에 연결하고 해당 AST 추출·조립을 제거한다. 기존 복원 시험과 필드 누락 반례로 종료하며 _context/profile_selection은 별도로 남긴다."
+            },
+            "evidence_pointer": "current_work.role_manifest_document_binding",
+            "completed_scope": [
+              "input_manifest",
+              "prompt",
+              "documents"
+            ],
+            "remaining_scope": [
+              "prepare_role_input의 profile_selection 역할별 본문",
+              "CoreEngineMixin._context의 문서 결속",
+              "restore_continuation의 결과·반려·이전 파일 결속"
+            ]
           },
           {
             "id": "DOC-RETURN-REVIEW",
@@ -48350,6 +48361,88 @@
         "실제 subprocess 시작·스트림 인코딩을 검사한 결과가 아니다. 변경 전 run_cli도 동일 프로세스 main이었다.",
         "예약 실패·reconcile_error 의미의 전건이나 실제 OS 예약 성공을 입증하지 않는다.",
         "DOC-RETURN-CLI 지정 문서 결속 묶음만 종료한다. 13-C 전체와 최종 일반/T3/변이/T4/T5는 미완료다."
+      ]
+    },
+    "role_manifest_document_binding": {
+      "id": "B132",
+      "scope": "역할 입력 manifest·prompt·documents 메타데이터의 실제 생성 결과 결속",
+      "state": "세 소유자의 AST 추출 여섯 곳과 조립 제거; 최종 관련 26개 통과",
+      "memory_node": "M-0547",
+      "base_head": "f3ee5aebcf9008e3789fc5d97a7ae09275ad4640",
+      "reports": {
+        "red": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/red.json",
+          "sha256": "b64c12cf9685115b980430d2b5b9640ec97f18493d0c3b14329cd23f733bf714",
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 0.5,
+          "changed_during_run": []
+        },
+        "green": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/green.json",
+          "sha256": "a9bc14f91bd37d36818db9707a305502f9f5cf596b1303001eeea75a8c4120ff",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 26
+          },
+          "total_seconds": 34.8,
+          "changed_during_run": []
+        },
+        "red-documents": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/red-documents.json",
+          "sha256": "fcef15ab15a9fc37beb727bcc9a49c9c32f66fea2d87979196d9ef79a0274b7d",
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 1.5,
+          "changed_during_run": []
+        },
+        "green-documents": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-역할입력-실제반환/green-documents.json",
+          "sha256": "a01d3b8235cb485d0d2dd1de21d94187d42a648cf53ace7551ea356e32edf9a1",
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 26
+          },
+          "total_seconds": 298.5,
+          "changed_during_run": []
+        }
+      },
+      "actual_boundary": {
+        "producer": "context_store.prepare_role_input 최종 manifest와 artifacts",
+        "test": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+        "document": "references/CLI-실행-계약.md",
+        "fields": [
+          "input_manifest.prompt.sha256",
+          "prompt.artifact_ref",
+          "documents[].artifact_ref"
+        ]
+      },
+      "changes": [
+        "build_role_manifest/prepare_role_input의 manifest 두 추출, prompt 두 추출, documents 두 추출과 수동 조립 제거",
+        "세 소유자는 동일 실제 manifest에서 검증하며 미제공 소유자만 명시 보류한다.",
+        "prompt 한 단계 키와 모든 문서 항목의 공통 최상위 키만 사용하며 빈 목록은 항목 경로 근거가 아니다.",
+        "필드 삭제·prompt 전체 삭제·문서 항목 artifact_ref 삭제·빈 목록·키 차용·잘못된 배열 경로를 거부한다."
+      ],
+      "preserved": [
+        "기존 생성 호출 1회",
+        "catalog 파일 1회 생성·읽기 없음 단언",
+        "private resume 바이트",
+        "필수 direct 키·output contract·artifact 검증·변조 거부",
+        "제품 코드"
+      ],
+      "limits": [
+        "실제 반환 manifest/artifacts를 재사용한 근거이며 별도 manifest 파일 출판을 검증한 것은 아니다.",
+        "두 green 실행은 같은 26개 모집단의 다른 수정 단계이며 52개 통과로 합산하지 않는다.",
+        "최종 298.5초는 소프트 기준 기록이며 시간 제한·재실행·속도 개선 주장이 없다.",
+        "profile_selection 역할 본문, _context, restore_continuation의 나머지 결속과 DOC-RETURN-ROLE 전체는 미완료다."
       ]
     }
   }

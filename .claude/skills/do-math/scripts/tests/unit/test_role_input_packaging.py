@@ -16,6 +16,7 @@ import unittest
 
 from do_math.context_store import (build_role_manifest, defer_input_overflow, fit_context, prepare_role_input,
                                    validate_role_manifest)
+from support.doc_code import documents, field_schemas, scoped_field_issues, unowned_field_references
 from support.record_builders import surface_state
 from support.state_builders import current_state
 from support.fakes.clock import FakeClock
@@ -370,11 +371,41 @@ class RoleInputTests(unittest.TestCase):
         ``write_source_catalog`` compares each catalog file it finds before
         reusing it, so a second catalog of this context (the manifest's own)
         would open the written files for reading.
+        Over the 0.2 s unit budget: the existing packaged result also binds
+        the installed document population to its final manifest, prompt and documents.
         """
         from support.entry import entry
         _entry = entry()
         from do_math import contracts
         from do_math.context_store import verify_manifest_artifacts
+        skill = Path(__file__).resolve().parents[3]
+        texts = [(document.relative_to(skill).as_posix(), document.read_text(encoding='utf-8'))
+                 for document in documents(skill)]
+        schemas = field_schemas()
+
+        def field_issues(text, manifest):
+            # These owners read one final manifest: immediate prompt keys and
+            # keys common to every document; no other producer supplies fields.
+            schema = {'type': 'object', 'properties': {key: {} for key in manifest},
+                      'additionalProperties': False}
+            prompt = manifest.get('prompt')
+            prompt_schema = {'type': 'object',
+                'properties': {key: {} for key in prompt} if isinstance(prompt, dict) else {},
+                'additionalProperties': False}
+            if 'prompt' in manifest:
+                schema['properties']['prompt'] = prompt_schema
+            rows = manifest.get('documents')
+            keys = (set.intersection(*(set(row) for row in rows))
+                    if isinstance(rows, list) and rows and all(isinstance(row, dict) for row in rows) else set())
+            document_schema = {'type': 'array', 'items': {
+                'type': 'object', 'properties': {key: {} for key in keys}, 'additionalProperties': False}}
+            if 'documents' in manifest:
+                schema['properties']['documents'] = document_schema
+            return scoped_field_issues(text, {**schemas, 'input_manifest': schema, 'prompt': prompt_schema,
+                                             'documents': document_schema},
+                defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
+
         instance, runtime = surface_state()
         profile = role_profile(instance, 'research_work')
         context = {'action': {'role': 'research_work'}, 'task': {'id': 'TK-1'},
@@ -394,12 +425,52 @@ class RoleInputTests(unittest.TestCase):
             self.assertEqual(result['context']['resume_checkpoint'], context['resume_checkpoint'])
             self.assertTrue(validate_role_manifest(result['manifest']))
             self.assertEqual(result['manifest']['prompt']['sha256'], hashlib.sha256(result['prompt'].encode()).hexdigest())
+            manifest = result['manifest']
+            self.assertEqual(result['artifacts'][manifest['prompt']['artifact_ref']], result['prompt'].encode('utf-8'))
+            self.assertGreater(len(manifest['documents']), 1)
+            self.assertEqual([(name, *issue) for name, text in texts
+                              for issue in field_issues(text, manifest)], [])
+            self.assertEqual([(name, token) for name, text in texts
+                              for token in unowned_field_references(text, schemas)], [])
+            self.assertEqual(field_issues('`input_manifest.prompt.sha256` `prompt.artifact_ref`', manifest), [])
+            self.assertEqual(field_issues('`documents[].artifact_ref` `input_manifest.documents[].artifact_ref`', manifest), [])
+            self.assertEqual(field_issues('`result.prompt.sha256` <!-- do-math fields: result=input_manifest -->', manifest), [])
+            self.assertEqual(field_issues('`result.artifact_ref` <!-- do-math fields: result=prompt -->', manifest), [])
+            self.assertEqual(field_issues('`result[].artifact_ref` <!-- do-math fields: result=documents -->', manifest), [])
+            for token in ('input_manifest.artifact_ref', 'prompt.snapshot', 'input_manifest.prompt[].sha256',
+                          'input_manifest[].prompt.sha256', 'prompt[].artifact_ref', 'prompt.path',
+                          'documents[].snapshot', 'documents.artifact_ref', 'input_manifest.documents.artifact_ref'):
+                with self.subTest(token=token):
+                    self.assertEqual(field_issues('`' + token + '`', manifest), [('scoped field', token)])
+            for field, token in (('sha256', 'input_manifest.prompt.sha256'), ('artifact_ref', 'prompt.artifact_ref')):
+                with self.subTest(missing_prompt_field=field):
+                    omitted = deepcopy(manifest)
+                    del omitted['prompt'][field]
+                    self.assertEqual([(name, *issue) for name, text in texts
+                                      for issue in field_issues(text, omitted)],
+                                     [('references/CLI-실행-계약.md', 'scoped field', token)])
+                    for path in ('input_manifest.prompt.' + field, 'prompt.' + field):
+                        self.assertEqual(field_issues('`' + path + '`', omitted), [('scoped field', path)])
+            omitted = dict(manifest)
+            del omitted['prompt']
+            self.assertEqual([(name, *issue) for name, text in texts for issue in field_issues(text, omitted)],
+                             [('references/CLI-실행-계약.md', 'scoped field', 'input_manifest.prompt.sha256'),
+                              ('references/CLI-실행-계약.md', 'scoped field', 'prompt.artifact_ref')])
+            omitted_document = deepcopy(manifest)
+            del omitted_document['documents'][0]['artifact_ref']
+            for case, changed in (('missing_artifact_ref', omitted_document), ('empty', {**manifest, 'documents': []})):
+                with self.subTest(documents=case):
+                    self.assertEqual([(name, *issue) for name, text in texts for issue in field_issues(text, changed)],
+                                     [('references/CLI-실행-계약.md', 'scoped field', 'documents[].artifact_ref')])
+                    for token in ('documents[].artifact_ref', 'input_manifest.documents[].artifact_ref'):
+                        self.assertEqual(field_issues('`' + token + '`', changed), [('scoped field', token)])
             self.assertEqual(result['manifest']['output_contract']['id'], contracts.schema_for('research_work')['x-contract-id'])
             self.assertIn('previous_execution', result['manifest']['required_direct_keys'])
             broken = deepcopy(result['manifest'])
             broken['direct'] = [r for r in broken['direct'] if r['key'] != 'resume_checkpoint']
             with self.assertRaisesRegex(ValueError, 'required direct input is missing or duplicated'):
                 validate_role_manifest(broken)
+            # Includes each document's artifact_ref, exact bytes and digest.
             self.assertEqual(verify_manifest_artifacts(result['manifest'], result['artifacts'].__getitem__), [])
             result['artifacts'][result['manifest']['prompt']['artifact_ref']] = b'changed'
             with self.assertRaisesRegex(ValueError, 'input artifact bytes differ: prompt'):

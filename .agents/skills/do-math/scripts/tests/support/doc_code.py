@@ -32,6 +32,7 @@ QUERY_RECORD_BOUNDARY = object()
 QUERY_RESULT_BOUNDARY = object()
 CLI_RESULT_BOUNDARIES = {owner: object() for owner in
                          ('init_result', 'scheduling_result', 'selection_result')}
+ROLE_INPUT_BOUNDARIES = {owner: object() for owner in ('input_manifest', 'prompt', 'documents')}
 
 
 def documents(skill):
@@ -280,13 +281,7 @@ def field_schemas():
     schemas['rejected_response'] = produced_object_schema(context_store.restore_continuation, "history[-1]['rejected_response']")
     schemas['recovery_source'] = produced_object_schema(CoreEngineMixin._context, scope='recover', variants=True)
     schemas['query_record'] = QUERY_RECORD_BOUNDARY
-    schemas['input_manifest'] = produced_object_schema(context_store.build_role_manifest)
-    schemas['input_manifest']['properties'].update(written_object_schema(
-        context_store.prepare_role_input, 'manifest')['properties'])
-    schemas['prompt'] = produced_object_schema(context_store.prepare_role_input, 'manifest.update', keyword='prompt')
-    schemas['prompt']['properties'].update(written_object_schema(
-        context_store.prepare_role_input, "manifest['prompt']")['properties'])
-    schemas['input_manifest']['properties']['prompt'] = schemas['prompt']
+    schemas.update(ROLE_INPUT_BOUNDARIES)
     schemas.update(CLI_RESULT_BOUNDARIES)
     from do_math import formal, observations, planning, review_cycle, trust_validation
     from do_math.dispatch_engine import DispatchEngineMixin
@@ -327,10 +322,6 @@ def field_schemas():
     schemas['external_rejections'] = array(RECORDS['external_rejections'])
     schemas['pending_findings'] = array(produced_object_schema(review_cycle._add_findings,
         "cycle['findings'][key]", variants=True))
-    document = produced_object_schema(context_store.prepare_role_input, 'manifest.update', keyword='documents', list_item=True)
-    document['properties'].update(written_object_schema(context_store.prepare_role_input, 'row',
-        iteration="zip(manifest['documents'], documents)")['properties'])
-    schemas['documents'] = array(document)
     stored_file = produced_object_schema(CoreEngineMixin._preserve_outputs, 'output_files.append', argument=0)
     restored_file = produced_object_schema(CoreEngineMixin._context, 'restored.append', argument=0, bindings={'file': stored_file})
     schemas['materialized_output_files'] = array(restored_file)
@@ -475,11 +466,15 @@ def unowned_field_references(text, schemas):
 
 
 def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
-                        defer_query_record=False, defer_query_result=False, defer_cli_results=()):
+                        defer_query_record=False, defer_query_result=False, defer_cli_results=(),
+                        defer_role_inputs=()):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
     if unknown:
         raise ValueError(f'Unknown deferred CLI result owners: {sorted(unknown)}')
+    unknown = set(defer_role_inputs) - ROLE_INPUT_BOUNDARIES.keys()
+    if unknown:
+        raise ValueError(f'Unknown deferred role input owners: {sorted(unknown)}')
     issues = []
     for line in text.splitlines():
         local, binding_issues = field_bindings(line, schemas)
@@ -512,6 +507,12 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                 if owner in defer_cli_results:
                     continue
                 raise ValueError(owner + ' fields require the actual CLI result')
+            owner = next((name for name, boundary in ROLE_INPUT_BOUNDARIES.items()
+                          if local[root] is boundary), None)
+            if owner is not None:
+                if owner in defer_role_inputs:
+                    continue
+                raise ValueError(owner + ' fields require the actual role input manifest')
             candidates = [local[root]]
             for part in parts:
                 candidates = [child for schema in candidates for child in

@@ -113,7 +113,8 @@ class DocumentCodeTests(unittest.TestCase):
                   for issue in scoped_field_issues(document.read_text(encoding='utf-8'), schemas,
                                                   defer_status=True, defer_operation_progress=True,
                                                   defer_query_record=True, defer_query_result=True,
-                                                  defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))]
+                                                  defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                                                  defer_role_inputs=('input_manifest', 'prompt', 'documents'))]
         self.assertEqual(issues, [])
 
     def test_a_field_from_another_family_cannot_validate_a_scoped_name(self):
@@ -278,7 +279,24 @@ class DocumentCodeTests(unittest.TestCase):
         schema = written_object_schema(loop_producer, 'row', iteration='first')
         self.assertEqual(set(schema['properties']), {'first'})
         schemas = field_schemas()
-        self.assertEqual(scoped_field_issues('`input_manifest.prompt.sha256` `prompt.artifact_ref`', schemas), [])
+        for owner, suffix in (('input_manifest', '.prompt.sha256'), ('prompt', '.artifact_ref'),
+                              ('documents', '[].artifact_ref')):
+            for text in (f'`{owner}{suffix}`',
+                         f'`result{suffix}` <!-- do-math fields: result={owner} -->'):
+                with self.subTest(owner=owner, text=text):
+                    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual role input manifest'):
+                        scoped_field_issues(text, schemas)
+                    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual role input manifest'):
+                        scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
+                            defer_query_record=True, defer_query_result=True,
+                            defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                            defer_role_inputs={'input_manifest', 'prompt', 'documents'} - {owner})
+                    self.assertEqual(scoped_field_issues(text, schemas, defer_role_inputs=(owner,)), [])
+                    self.assertEqual(unowned_field_references(text, schemas), [])
+        with self.assertRaisesRegex(ValueError, 'Unknown deferred role input owners'):
+            scoped_field_issues('', schemas, defer_role_inputs=('input_manfiest',))
+        with self.assertRaisesRegex(ValueError, 'status fields require the actual repository report'):
+            scoped_field_issues('`status.budget`', schemas, defer_role_inputs=('input_manifest', 'prompt', 'documents'))
 
     def test_optional_reads_and_same_named_checks_keep_their_actual_owners(self):
         def consumer(payload, other, field):
@@ -327,8 +345,10 @@ class DocumentCodeTests(unittest.TestCase):
                          ['integration[].currentness', 'unknown[].json', 'unknown[].own'])
         self.assertEqual(scoped_field_issues('`data[].own` <!-- do-math fields: data=rows -->', schemas), [])
         actual = field_schemas()
+        with self.assertRaisesRegex(ValueError, 'documents fields require the actual role input manifest'):
+            scoped_field_issues('`documents[].artifact_ref`', actual)
         self.assertEqual(scoped_field_issues('`results[].report` `results[].output_files[].local_path` '
-            '`documents[].artifact_ref` `question_details[].id` `recovery_materials.output_files[].restoration_error`', actual), [])
+            '`question_details[].id` `recovery_materials.output_files[].restoration_error`', actual), [])
         self.assertEqual(scoped_field_issues('`execution.output_files[].local_path`', actual),
                          [('scoped field', 'execution.output_files[].local_path')])
 
