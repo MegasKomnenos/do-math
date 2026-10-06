@@ -48,6 +48,28 @@ class DocumentCodeTests(unittest.TestCase):
 
     def test_documented_scoped_fields_belong_to_their_actual_schema(self):
         schemas = field_schemas()
+        # Continuation fields need the restored response, including its files.
+        for owner, suffix in (('result_source', '.local_path'), ('rejected_response', '.local_path'),
+                              ('previous_output_files', '[].local_path')):
+            for text in (f'`{owner}{suffix}`',
+                         f'`result{suffix}` <!-- do-math fields: result={owner} -->'):
+                with self.subTest(owner=owner, text=text):
+                    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual continuation result'):
+                        scoped_field_issues(text, schemas)
+                    others = {'result_source', 'rejected_response', 'previous_output_files'} - {owner}
+                    with self.assertRaisesRegex(ValueError, owner + ' fields require the actual continuation result'):
+                        scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
+                            defer_query_record=True, defer_query_result=True,
+                            defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                            defer_role_inputs=('input_manifest', 'prompt', 'documents'),
+                            defer_continuations=others)
+                    self.assertEqual(scoped_field_issues(text, schemas, defer_continuations=(owner,)), [])
+                    self.assertEqual(unowned_field_references(text, schemas), [])
+        with self.assertRaisesRegex(ValueError, 'Unknown deferred continuation owners'):
+            scoped_field_issues('', schemas, defer_continuations=('result_sorce',))
+        with self.assertRaisesRegex(ValueError, 'status fields require the actual repository report'):
+            scoped_field_issues('`status.budget`', schemas,
+                defer_continuations=('result_source', 'rejected_response', 'previous_output_files'))
         # unit.test_storage_report_projections checks these same documents with
         # status_report's actual repository response, including result=status.
         for text in ('`status.budget`', '`result.config_sha256` <!-- do-math fields: result=status -->'):
@@ -114,6 +136,7 @@ class DocumentCodeTests(unittest.TestCase):
                                                   defer_status=True, defer_operation_progress=True,
                                                   defer_query_record=True, defer_query_result=True,
                                                   defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                                                  defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents'))]
         self.assertEqual(issues, [])
 
@@ -254,7 +277,7 @@ class DocumentCodeTests(unittest.TestCase):
                          [('unused field binding', 'record')])
         self.assertEqual(scoped_field_issues('`activation.observation_errors` `disposition.kind` '
             '`observation.rule_bindings` `role_tiers.recovery` `repair.previous_output` '
-            '`checkpoint_source.local_path` `result_source.local_path` `rejected_response.local_path`', schemas), [])
+            '`checkpoint_source.local_path`', schemas), [])
 
     def test_cli_result_branches_and_incremental_manifest_fields_remain_separate(self):
         def producer(command):

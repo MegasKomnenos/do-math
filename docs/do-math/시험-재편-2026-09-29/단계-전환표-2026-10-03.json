@@ -13088,11 +13088,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "역할 복원 문서의 실제 결과 결속",
-      "last_closed": "B132 역할 입력 메타데이터 결속과 최종 관련 26개 통과",
-      "active": "DOC-RETURN-ROLE 복원 결과 작업 배정 준비",
+      "phase": "역할 프로필 선택 문서의 실제 결과 결속",
+      "last_closed": "B133 복원 결과 세 소유자 결속과 관련 28개 통과",
+      "active": "DOC-RETURN-ROLE profile_selection 역할 본문 작업 배정 준비",
       "exit": "각 독립 작업은 정해진 산출물·관련 검증으로 종료하고 요구 충족 여부를 별도로 기록한다",
-      "next": "restore_continuation의 실제 stage/history/output_files와 문서 필드를 연결",
+      "next": "prepare_role_input의 profile_selection.allowed_profiles를 기존 실제 반환에 연결",
       "work_method": "fork_turns=none으로 필요한 원문/현행코드/증거/종료조건만 전달한다. 큰 영역 제목 그대로 파견하지 않고 구체 slice를 확정한다. 탐색 이력을 상위에 누적하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -25243,7 +25243,7 @@
           "next_dispatch": [
             "DOC-RETURN-ROLE"
           ],
-          "reason": "역할 입력의 세 메타데이터 소유자는 종료했다. 다음은 restore_continuation의 같은 복원 경계이며 다른 역할 본문은 별도다."
+          "reason": "역할 입력 메타데이터와 복원 세 소유자는 종료했다. 다음은 prepare_role_input의 profile_selection 단일 역할 본문 소유자이며 _context는 별도다."
         },
         "unresolved_decisions": [
           {
@@ -35494,26 +35494,28 @@
             "exit_condition": "해당 결속을 실제 결과/공유 계약으로 교체하고 구문 추출을 제거한다. 실행 불가능/근거 부재이면 미완료로 정확히 반환하며 추론기 확대로 우회하지 않는다.",
             "dependencies": [],
             "status": "partial_complete",
-            "dispatch_state": "role_input_metadata_complete",
+            "dispatch_state": "continuation_document_binding_complete",
             "next_packet": {
-              "purpose": "restore_continuation 결과·반려·이전 출력 파일의 실제 복원 결속",
+              "purpose": "prepare_role_input의 profile_selection 역할 본문 소유자를 실제 반환에 결속",
               "inputs": [
-                "scripts/tests/support/doc_code.py의 result_source/rejected_response/previous_file/previous_output_files 추출",
-                "scripts/do_math/context_store.py restore_continuation",
-                "기존 다중 단계 복원 시험의 실제 stage/history/output_files"
+                "scripts/tests/support/doc_code.py field_schemas의 value['profile_selection'] 추출",
+                "references/공통-실행.md의 profile_selection.allowed_profiles",
+                "unit/test_role_input_packaging.py test_candidate_population_is_compact_profile_bound_and_reproducible의 실제 반환 재사용 가능성 우선 확인"
               ],
-              "exit": "같은 복원 함수의 문서 소유자를 실제 결과와 파일에 연결하고 해당 AST 추출·조립을 제거한다. 기존 복원 시험과 필드 누락 반례로 종료하며 _context/profile_selection은 별도로 남긴다."
+              "exit": "profile_selection 단일 소유자의 실제 반환과 문서 경로·필드 누락 반례를 연결하고 해당 AST 추출만 제거한다. CoreEngineMixin._context는 별도 유지한다."
             },
-            "evidence_pointer": "current_work.role_manifest_document_binding",
+            "evidence_pointer": "current_work.continuation_document_binding",
             "completed_scope": [
               "input_manifest",
               "prompt",
-              "documents"
+              "documents",
+              "result_source",
+              "rejected_response",
+              "previous_output_files"
             ],
             "remaining_scope": [
               "prepare_role_input의 profile_selection 역할별 본문",
-              "CoreEngineMixin._context의 문서 결속",
-              "restore_continuation의 결과·반려·이전 파일 결속"
+              "CoreEngineMixin._context의 문서 결속"
             ]
           },
           {
@@ -48443,6 +48445,92 @@
         "두 green 실행은 같은 26개 모집단의 다른 수정 단계이며 52개 통과로 합산하지 않는다.",
         "최종 298.5초는 소프트 기준 기록이며 시간 제한·재실행·속도 개선 주장이 없다.",
         "profile_selection 역할 본문, _context, restore_continuation의 나머지 결속과 DOC-RETURN-ROLE 전체는 미완료다."
+      ]
+    },
+    "continuation_document_binding": {
+      "id": "B133",
+      "scope": "restore_continuation의 결과·반려·이전 출력 파일 문서 결속",
+      "state": "세 소유자의 AST 추출 네 곳과 조립 제거; 관련 28개 통과",
+      "base_head": "e618f7b1ea836ea1cf686ea812fa45658c86b489",
+      "memory_node": "M-0548",
+      "reports": {
+        "red": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-복원-실제반환/red.json",
+          "original_path": ".skill-workspace/test-restructure-2026-09-29/finish/continuation-document-bindings-20261006/red/report.json",
+          "sha256": "afa40a102e764b800e5b9dac3602ee825b708f5f9cad84b03efe3cda33d3378f",
+          "exit_code": 1,
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 1.8,
+          "changed_during_run": []
+        },
+        "green": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-복원-실제반환/green.json",
+          "original_path": ".skill-workspace/test-restructure-2026-09-29/finish/continuation-document-bindings-20261006/green/report.json",
+          "sha256": "2e69304c9b2620db3b32738465ee19423e52ba7655c53152a8511fbebe5ed74f",
+          "exit_code": 0,
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 28
+          },
+          "total_seconds": 304.2,
+          "changed_during_run": []
+        }
+      },
+      "actual_boundary": {
+        "producer": "context_store.restore_continuation 최종 continuation_history와 previous_output_files",
+        "test": "unit.test_role_input_packaging.RoleInputTests.test_multihop_restores_latest_file_and_stage_evidence",
+        "preserved_test": "unit.test_role_input_scoped_packaging.InputFittingTests.test_continuation_preserves_older_files_and_latest_replacements",
+        "documents": [
+          {
+            "path": ".claude/skills/do-math/references/공통-실행.md",
+            "lines": [
+              31,
+              45,
+              49
+            ],
+            "fields": [
+              "result_source.local_path",
+              "rejected_response.local_path",
+              "previous_output_files[].local_path"
+            ]
+          },
+          {
+            "path": ".claude/skills/do-math/references/지식-저작과-재사용.md",
+            "lines": [
+              25
+            ],
+            "fields": [
+              "previous_output_files[].local_path"
+            ]
+          }
+        ],
+        "population": "doc_code.documents()의 전체 현행 원문을 같은 실제 복원 결과로 검사",
+        "files": "snapshot에 귀속된 archive 읽기 callback으로 복원한 실제 임시파일의 바이트·sha256·bytes·snapshot과 최신/유지 파일의 execution_id·artifact_ref 확인"
+      },
+      "changes": [
+        "restore_continuation의 stage['result_source'], history[-1]['rejected_response'], latest[logical], restored.append 네 AST 추출과 previous_file 조립 제거",
+        "실제 복원 결과가 없으면 기본 거부하고 다른 경계는 미제공 소유자만 defer_continuations로 명시 보류",
+        "기존 multihop의 정상 복원 호출을 유지하고 같은 함수의 repair.raw_output_ref 분기를 추가해 반려 응답의 실제 파일 증거 확보",
+        "생산자별 공통 항목 키를 실제 결과에서 구하며 한 항목의 local_path 삭제·빈 출력 목록·없는 결과/반려 분기·키 차용·배열 오용을 거부"
+      ],
+      "preserved": [
+        "기존 정상 복원의 stage 순서·원래 바이트·sha256·checkpoint와 최신 lemma/유지 keep 파일 단언",
+        "owner activity 불일치와 continuation cycle 거부 단언",
+        "stored_file과 _context의 materialized_output_files 등 다른 살아 있는 결속",
+        "checkpoint_source 등 다른 문서 소유자, B132 manifest/prompt/documents 검증",
+        "제품 코드와 무관 dirty/untracked 자료"
+      ],
+      "limits": [
+        "snapshot에 귀속된 archive callback과 실제 임시파일의 복원 증거다. 실제 Git 게시나 수학적 완결을 검증한 것은 아니다.",
+        "red는 기존 구조 시험 1개에서 6개 하위단언의 ValueError not raised로 실패했으며 import/인자 오류가 아니다.",
+        "green은 구조 18·단위 6·CLI 경계 4의 관련 28개이며 전체 일반/T3/ROLE 완료가 아니다.",
+        "304.2초와 소프트 예산 초과 10개를 보존한다. 시간 제한·모집단 축소·속도 개선 주장은 없다.",
+        "prepare_role_input의 profile_selection 역할 본문과 CoreEngineMixin._context의 문서 결속, 13-C 및 최종 관문은 남아 있다."
       ]
     }
   }

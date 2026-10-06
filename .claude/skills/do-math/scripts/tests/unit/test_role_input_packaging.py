@@ -294,7 +294,30 @@ class RoleInputTests(unittest.TestCase):
             self.assertEqual(replay['prompt'], fitted['prompt'])
 
     def test_multihop_restores_latest_file_and_stage_evidence(self):
+        """Budget: full document checks and two real file restorations retain the boundary evidence."""
         from do_math import context_store
+        skill = Path(__file__).resolve().parents[3]
+        texts = [(path.relative_to(skill).as_posix(), path.read_text(encoding='utf-8'))
+                 for path in documents(skill)]
+        schemas = field_schemas()
+
+        def check(text, restored):
+            # Only these three restored owners are projected. Common item keys
+            # must be present in every sample; other owners cannot supply them.
+            rows = {name: [stage[name] for stage in restored['continuation_history'] if name in stage]
+                    for name in ('result_source', 'rejected_response')}
+            rows['previous_output_files'] = restored['previous_output_files']
+            actual = dict(schemas)
+            for owner, entries in rows.items():
+                keys = set.intersection(*(set(entry) for entry in entries)) if entries else set()
+                schema = {'type': 'object', 'properties': {key: {} for key in keys},
+                          'additionalProperties': False}
+                actual[owner] = {'type': 'array', 'items': schema} if owner == 'previous_output_files' else schema
+            return scoped_field_issues(text, actual,
+                defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                defer_role_inputs=('input_manifest', 'prompt', 'documents'))
+
         with tempfile.TemporaryDirectory() as directory:
             archive = {}
 
@@ -324,6 +347,60 @@ class RoleInputTests(unittest.TestCase):
                 self.assertEqual(stage['checkpoint'], runtime['checkpoints'][stage['execution_id']])
             self.assertEqual((Path(directory) / 'input/previous-output/lemma.txt').read_bytes(), b'new')
             self.assertEqual((Path(directory) / 'input/previous-output/keep.txt').read_bytes(), b'keep')
+            raw_ref = 'runtime/artifacts/EX-b/rejected.txt'
+            archive[raw_ref] = b'rejected response bytes'
+            repaired_root = Path(directory) / 'repair'
+            repaired = context_store.restore_continuation(runtime,
+                {'role': 'maintenance', 'repair': {'execution_id': 'EX-b', 'raw_output_ref': raw_ref,
+                    'raw_output_sha256': hashlib.sha256(archive[raw_ref]).hexdigest()}},
+                repaired_root, snapshot='a' * 40, read_artifact=lambda path: archive[path])
+            self.assertEqual([row['execution_id'] for row in repaired['continuation_history']], ['EX-a', 'EX-b'])
+            self.assertEqual(repaired['previous_execution']['result_source'],
+                             repaired['continuation_history'][-1]['result_source'])
+            restored_refs = [stage['result_source'] for stage in repaired['continuation_history']]
+            restored_refs += [repaired['continuation_history'][-1]['rejected_response']]
+            restored_refs += repaired['previous_output_files']
+            for ref in restored_refs:
+                raw = archive[ref['artifact_ref']]
+                self.assertEqual((repaired_root / ref['local_path']).read_bytes(), raw)
+                self.assertEqual((ref['sha256'], ref['bytes'], ref['snapshot']),
+                                 (hashlib.sha256(raw).hexdigest(), len(raw), 'a' * 40))
+            self.assertEqual({row['path']: (row['execution_id'], row['artifact_ref'])
+                              for row in repaired['previous_output_files']},
+                             {'lemma.txt': ('EX-b', 'runtime/artifacts/B/lemma.txt'),
+                              'keep.txt': ('EX-a', 'runtime/artifacts/A/keep.txt')})
+            self.assertEqual([(name, *issue) for name, text in texts for issue in check(text, repaired)], [])
+            for owner, suffix in (('result_source', '.local_path'), ('rejected_response', '.local_path'),
+                                  ('previous_output_files', '[].local_path')):
+                token = owner + suffix
+                alias = f'`result{suffix}` <!-- do-math fields: result={owner} -->'
+                self.assertEqual(check('`' + token + '`', repaired), [])
+                self.assertEqual(check(alias, repaired), [])
+                # Delete one item's field, retaining the same field in other
+                # items/owners. A union would incorrectly hide this omission.
+                omitted = deepcopy(repaired)
+                entry = (omitted['previous_output_files'][0] if owner == 'previous_output_files'
+                         else omitted['continuation_history'][0 if owner == 'result_source' else -1][owner])
+                del entry['local_path']
+                self.assertEqual(check('`' + token + '`', omitted), [('scoped field', token)])
+                self.assertEqual(check(alias, omitted), [('scoped field', 'result' + suffix)])
+                self.assertTrue([(name, *issue) for name, text in texts for issue in check(text, omitted)
+                                 if issue == ('scoped field', token)])
+            for token in ('result_source.execution_id', 'rejected_response.path',
+                          'previous_output_files[].outcome', 'previous_output_files.local_path',
+                          'result_source[].local_path', 'rejected_response[].local_path'):
+                self.assertEqual(check('`' + token + '`', repaired), [('scoped field', token)])
+            empty = deepcopy(repaired)
+            empty['previous_output_files'] = []
+            self.assertEqual(check('`previous_output_files[].local_path`', empty),
+                             [('scoped field', 'previous_output_files[].local_path')])
+            self.assertEqual(check('`rejected_response.local_path`', result),
+                             [('scoped field', 'rejected_response.local_path')])
+            absent = deepcopy(repaired)
+            for stage in absent['continuation_history']:
+                del stage['result_source']
+            self.assertEqual(check('`result_source.local_path`', absent),
+                             [('scoped field', 'result_source.local_path')])
             runtime['executions']['EX-a']['owner_activity_id'] = 'AT-other'
             with self.assertRaisesRegex(ValueError, 'activity'):
                 context_store.restore_continuation(runtime, {'role': 'maintenance', 'continuation_of': 'EX-b'},
@@ -404,6 +481,7 @@ class RoleInputTests(unittest.TestCase):
             return scoped_field_issues(text, {**schemas, 'input_manifest': schema, 'prompt': prompt_schema,
                                              'documents': document_schema},
                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
 
         instance, runtime = surface_state()

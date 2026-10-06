@@ -33,6 +33,8 @@ QUERY_RESULT_BOUNDARY = object()
 CLI_RESULT_BOUNDARIES = {owner: object() for owner in
                          ('init_result', 'scheduling_result', 'selection_result')}
 ROLE_INPUT_BOUNDARIES = {owner: object() for owner in ('input_manifest', 'prompt', 'documents')}
+CONTINUATION_BOUNDARIES = {owner: object() for owner in
+                           ('result_source', 'rejected_response', 'previous_output_files')}
 
 
 def documents(skill):
@@ -277,8 +279,7 @@ def field_schemas():
     schemas['repair'] = produced_object_schema(repair_execution.RepairExecutionMixin.route_submission_return, 'retry',
         bindings={'deepcopy(action)': RECORDS['queue']})['properties']['repair']
     schemas['checkpoint_source'] = produced_object_schema(CoreEngineMixin._context, 'evidence.update', keyword='checkpoint_source')
-    schemas['result_source'] = produced_object_schema(context_store.restore_continuation, "stage['result_source']")
-    schemas['rejected_response'] = produced_object_schema(context_store.restore_continuation, "history[-1]['rejected_response']")
+    schemas.update(CONTINUATION_BOUNDARIES)
     schemas['recovery_source'] = produced_object_schema(CoreEngineMixin._context, scope='recover', variants=True)
     schemas['query_record'] = QUERY_RECORD_BOUNDARY
     schemas.update(ROLE_INPUT_BOUNDARIES)
@@ -325,9 +326,6 @@ def field_schemas():
     stored_file = produced_object_schema(CoreEngineMixin._preserve_outputs, 'output_files.append', argument=0)
     restored_file = produced_object_schema(CoreEngineMixin._context, 'restored.append', argument=0, bindings={'file': stored_file})
     schemas['materialized_output_files'] = array(restored_file)
-    previous_file = produced_object_schema(context_store.restore_continuation, 'latest[logical]', bindings={'deepcopy(entry)': stored_file})
-    schemas['previous_output_files'] = array(produced_object_schema(context_store.restore_continuation,
-        'restored.append', argument=0, bindings={'entry': previous_file}))
     schemas['research_sources'] = array(produced_object_schema(CoreEngineMixin._context, 'sources.append', argument=0,
         bindings={'source': RECORDS['sources']}))
     schemas['checkpoint_files'] = array(produced_object_schema(CoreEngineMixin._context, "evidence['checkpoint_files'].append", argument=0,
@@ -467,7 +465,7 @@ def unowned_field_references(text, schemas):
 
 def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
-                        defer_role_inputs=()):
+                        defer_role_inputs=(), defer_continuations=()):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
     if unknown:
@@ -475,6 +473,9 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
     unknown = set(defer_role_inputs) - ROLE_INPUT_BOUNDARIES.keys()
     if unknown:
         raise ValueError(f'Unknown deferred role input owners: {sorted(unknown)}')
+    unknown = set(defer_continuations) - CONTINUATION_BOUNDARIES.keys()
+    if unknown:
+        raise ValueError(f'Unknown deferred continuation owners: {sorted(unknown)}')
     issues = []
     for line in text.splitlines():
         local, binding_issues = field_bindings(line, schemas)
@@ -513,6 +514,12 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                 if owner in defer_role_inputs:
                     continue
                 raise ValueError(owner + ' fields require the actual role input manifest')
+            owner = next((name for name, boundary in CONTINUATION_BOUNDARIES.items()
+                          if local[root] is boundary), None)
+            if owner is not None:
+                if owner in defer_continuations:
+                    continue
+                raise ValueError(owner + ' fields require the actual continuation result')
             candidates = [local[root]]
             for part in parts:
                 candidates = [child for schema in candidates for child in
