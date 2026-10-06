@@ -259,11 +259,25 @@ class RoleInputTests(unittest.TestCase):
             self.assertNotEqual(engine.runtime['checkpoints']['EX-a'], engine.runtime['checkpoints']['EX-b'])
 
     def test_candidate_population_is_compact_profile_bound_and_reproducible(self):
-        """About 0.3 s, over the 0.2 s unit budget: the role input with three 100 kB tasks is prepared and sealed twice (first and replay)."""
+        """Over the 0.2 s unit budget: three 100 kB tasks are sealed twice; the actual profile selection also checks the full document population."""
         from support.entry import entry
         _entry = entry()
         from do_math.context_store import read_source
         from do_math.execution_profiles import boundary_prompt
+        skill = Path(__file__).resolve().parents[3]
+        texts = [(path.relative_to(skill).as_posix(), path.read_text(encoding='utf-8'))
+                 for path in documents(skill)]
+        schemas = field_schemas()
+
+        def check(text, selection):
+            schema = {'type': 'object', 'properties': {key: {} for key in selection},
+                      'additionalProperties': False}
+            return scoped_field_issues(text, {**schemas, 'profile_selection': schema},
+                defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
+                defer_role_inputs=('input_manifest', 'prompt', 'documents'))
+
         instance, runtime = surface_state()
         runtime['tasks'] = {identifier: {'id': identifier, 'status': 'planned', 'question': identifier,
             'revision': 1, 'scope': {'included': ['P'], 'excluded': []},
@@ -292,6 +306,26 @@ class RoleInputTests(unittest.TestCase):
                 candidate_order=order, clock=_entry.ports.clock)
             self.assertEqual(replay['manifest']['candidate_order'], order)
             self.assertEqual(replay['prompt'], fitted['prompt'])
+            selection = actual['profile_selection']
+            self.assertEqual([(name, *issue) for name, text in texts
+                              for issue in check(text, selection)], [])
+            alias = '`result.allowed_profiles` <!-- do-math fields: result=profile_selection -->'
+            self.assertEqual(check(alias, selection), [])
+            omitted = dict(selection)
+            del omitted['allowed_profiles']
+            self.assertEqual([(name, *issue) for name, text in texts
+                              for issue in check(text, omitted)],
+                             [('references/공통-실행.md', 'scoped field', 'profile_selection.allowed_profiles'),
+                              ('계약/후보-준비.md', 'scoped field', 'profile_selection.allowed_profiles')])
+            self.assertEqual(check(alias, omitted), [('scoped field', 'result.allowed_profiles')])
+            # An exact source reference cannot stand in for the inline object.
+            self.assertEqual(check('`profile_selection.allowed_profiles`', selection['profiles_ref']),
+                             [('scoped field', 'profile_selection.allowed_profiles')])
+            for token in ('profile_selection.role', 'profile_selection[].allowed_profiles',
+                          'profile_selection.allowed_profiles[].artifact_ref'):
+                self.assertEqual(check('`' + token + '`', selection), [('scoped field', token)])
+            self.assertEqual(check('`result.role` <!-- do-math fields: result=profile_selection -->', selection),
+                             [('scoped field', 'result.role')])
 
     def test_multihop_restores_latest_file_and_stage_evidence(self):
         """Budget: full document checks and two real file restorations retain the boundary evidence."""
@@ -316,7 +350,7 @@ class RoleInputTests(unittest.TestCase):
             return scoped_field_issues(text, actual,
                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
-                defer_role_inputs=('input_manifest', 'prompt', 'documents'))
+                defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'))
 
         with tempfile.TemporaryDirectory() as directory:
             archive = {}
@@ -481,6 +515,7 @@ class RoleInputTests(unittest.TestCase):
             return scoped_field_issues(text, {**schemas, 'input_manifest': schema, 'prompt': prompt_schema,
                                              'documents': document_schema},
                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
+                defer_role_inputs=('profile_selection',),
                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
 

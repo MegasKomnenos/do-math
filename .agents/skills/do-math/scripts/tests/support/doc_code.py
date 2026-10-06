@@ -32,7 +32,8 @@ QUERY_RECORD_BOUNDARY = object()
 QUERY_RESULT_BOUNDARY = object()
 CLI_RESULT_BOUNDARIES = {owner: object() for owner in
                          ('init_result', 'scheduling_result', 'selection_result')}
-ROLE_INPUT_BOUNDARIES = {owner: object() for owner in ('input_manifest', 'prompt', 'documents')}
+ROLE_INPUT_BOUNDARIES = {owner: object() for owner in
+                         ('input_manifest', 'prompt', 'documents', 'profile_selection')}
 CONTINUATION_BOUNDARIES = {owner: object() for owner in
                            ('result_source', 'rejected_response', 'previous_output_files')}
 
@@ -352,7 +353,6 @@ def field_schemas():
     schemas['record_map']['properties']['read_tool'] = produced_object_schema(
         submission.install_tools, 'context["record_map"]["read_tool"]')
     schemas['submission_contract'] = produced_object_schema(submission.install_tools, 'contract')
-    schemas['profile_selection'] = produced_object_schema(context_store.prepare_role_input, "value['profile_selection']")
     from support.state_builders import current_state
     instance, runtime = current_state()
     summary = reporting.operating_summary(instance, runtime)
@@ -513,7 +513,7 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
             if owner is not None:
                 if owner in defer_role_inputs:
                     continue
-                raise ValueError(owner + ' fields require the actual role input manifest')
+                raise ValueError(owner + ' fields require the actual role input')
             owner = next((name for name, boundary in CONTINUATION_BOUNDARIES.items()
                           if local[root] is boundary), None)
             if owner is not None:

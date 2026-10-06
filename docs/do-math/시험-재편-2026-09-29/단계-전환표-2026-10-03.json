@@ -13088,11 +13088,11 @@
       "commit": "0f8bb757"
     },
     "current_focus": {
-      "phase": "역할 프로필 선택 문서의 실제 결과 결속",
-      "last_closed": "B133 복원 결과 세 소유자 결속과 관련 28개 통과",
-      "active": "DOC-RETURN-ROLE profile_selection 역할 본문 작업 배정 준비",
+      "phase": "남은 역할 입력 문서 결속의 다음 독립 범위 한정",
+      "last_closed": "B134 profile_selection 실제 반환 결속과 관련 28개 통과",
+      "active": "DOC-RETURN-ROLE의 남은 _context 결속은 입력과 소유자 모집단 한정 전",
       "exit": "각 독립 작업은 정해진 산출물·관련 검증으로 종료하고 요구 충족 여부를 별도로 기록한다",
-      "next": "prepare_role_input의 profile_selection.allowed_profiles를 기존 실제 반환에 연결",
+      "next": "다음 _context 소유자·실제 문서 경로·기존 반환 경계를 한정한 뒤 독립 작업으로 배정",
       "work_method": "fork_turns=none으로 필요한 원문/현행코드/증거/종료조건만 전달한다. 큰 영역 제목 그대로 파견하지 않고 구체 slice를 확정한다. 탐색 이력을 상위에 누적하지 않는다.",
       "running_test": null,
       "source_tree_frozen": false,
@@ -25243,7 +25243,7 @@
           "next_dispatch": [
             "DOC-RETURN-ROLE"
           ],
-          "reason": "역할 입력 메타데이터와 복원 세 소유자는 종료했다. 다음은 prepare_role_input의 profile_selection 단일 역할 본문 소유자이며 _context는 별도다."
+          "reason": "profile_selection 단일 소유자까지 실제 반환 결속을 마쳤다. 남은 _context 문서 결속은 다음 입력·소유자 모집단·문서 경로·기존 실제 반환 시험을 먼저 한정해야 하며 큰 제목 그대로 파견하지 않는다."
         },
         "unresolved_decisions": [
           {
@@ -35494,27 +35494,27 @@
             "exit_condition": "해당 결속을 실제 결과/공유 계약으로 교체하고 구문 추출을 제거한다. 실행 불가능/근거 부재이면 미완료로 정확히 반환하며 추론기 확대로 우회하지 않는다.",
             "dependencies": [],
             "status": "partial_complete",
-            "dispatch_state": "continuation_document_binding_complete",
+            "dispatch_state": "profile_selection_document_binding_complete",
             "next_packet": {
-              "purpose": "prepare_role_input의 profile_selection 역할 본문 소유자를 실제 반환에 결속",
+              "purpose": "남은 CoreEngineMixin._context 문서 결속의 다음 독립 작업 범위와 실제 입력을 먼저 한정",
               "inputs": [
-                "scripts/tests/support/doc_code.py field_schemas의 value['profile_selection'] 추출",
-                "references/공통-실행.md의 profile_selection.allowed_profiles",
-                "unit/test_role_input_packaging.py test_candidate_population_is_compact_profile_bound_and_reproducible의 실제 반환 재사용 가능성 우선 확인"
+                "scripts/tests/support/doc_code.py field_schemas의 남은 _context 소유자 결속에서 다음 단일 또는 함께 생성되는 소유자 모집단을 지정해야 한다.",
+                "선택한 소유자의 실제 문서 경로와 기존 실제 반환 경계 시험을 지정한 뒤 파견한다.",
+                "current_work.independent_execution.document_review J3/J4와 current_work.profile_selection_document_binding의 범위·남김을 재사용한다."
               ],
-              "exit": "profile_selection 단일 소유자의 실제 반환과 문서 경로·필드 누락 반례를 연결하고 해당 AST 추출만 제거한다. CoreEngineMixin._context는 별도 유지한다."
+              "exit": "다음 입력·모집단·산출물·검증·종료조건을 먼저 한정한다. 큰 _context 제목 전체를 그대로 파견하거나 이번 마감에서 새 모집단을 조사·구현하지 않는다."
             },
-            "evidence_pointer": "current_work.continuation_document_binding",
+            "evidence_pointer": "current_work.profile_selection_document_binding",
             "completed_scope": [
               "input_manifest",
               "prompt",
               "documents",
               "result_source",
               "rejected_response",
-              "previous_output_files"
+              "previous_output_files",
+              "profile_selection"
             ],
             "remaining_scope": [
-              "prepare_role_input의 profile_selection 역할별 본문",
               "CoreEngineMixin._context의 문서 결속"
             ]
           },
@@ -48531,6 +48531,85 @@
         "green은 구조 18·단위 6·CLI 경계 4의 관련 28개이며 전체 일반/T3/ROLE 완료가 아니다.",
         "304.2초와 소프트 예산 초과 10개를 보존한다. 시간 제한·모집단 축소·속도 개선 주장은 없다.",
         "prepare_role_input의 profile_selection 역할 본문과 CoreEngineMixin._context의 문서 결속, 13-C 및 최종 관문은 남아 있다."
+      ]
+    },
+    "profile_selection_document_binding": {
+      "id": "B134",
+      "scope": "prepare_role_input의 profile_selection 문서 결속",
+      "state": "단일 소유자의 AST 추출 제거와 실제 반환 결속; 관련 28개 통과",
+      "base_head": "e54a6bd428a06ee6e60de5207c1741cce5ac9cef",
+      "memory_node": "M-0549",
+      "reports": {
+        "red": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-프로필선택-실제반환/red.json",
+          "original_path": ".skill-workspace/test-restructure-2026-09-29/finish/profile-selection-binding-20261006/red/report.json",
+          "sha256": "a00a4640b8cfa7567f5b59cdcf71773e4e401b58276932c15bdc06ef2ff973d1",
+          "exit_code": 1,
+          "complete": true,
+          "successful": false,
+          "counts": {
+            "failed": 1
+          },
+          "total_seconds": 2.6,
+          "changed_during_run": []
+        },
+        "green": {
+          "path": "docs/do-math/시험-재편-2026-09-29/검증/2026-10-06-프로필선택-실제반환/green.json",
+          "original_path": ".skill-workspace/test-restructure-2026-09-29/finish/profile-selection-binding-20261006/green/report.json",
+          "sha256": "44fe6fb2c83c55e80aad6855f02004eabd0908cd6eb5acc3dd8d931baa54c9ae",
+          "exit_code": 0,
+          "complete": true,
+          "successful": true,
+          "counts": {
+            "passed": 28
+          },
+          "total_seconds": 228.7,
+          "changed_during_run": []
+        }
+      },
+      "actual_boundary": {
+        "producer": "context_store.prepare_role_input의 최종 fitted['context']['profile_selection']",
+        "test": "unit.test_role_input_packaging.RoleInputTests.test_candidate_population_is_compact_profile_bound_and_reproducible",
+        "documents": [
+          {
+            "path": ".claude/skills/do-math/references/공통-실행.md",
+            "lines": [
+              19
+            ],
+            "fields": [
+              "profile_selection.allowed_profiles"
+            ]
+          },
+          {
+            "path": ".claude/skills/do-math/계약/후보-준비.md",
+            "lines": [
+              88
+            ],
+            "fields": [
+              "profile_selection.allowed_profiles"
+            ]
+          }
+        ],
+        "population": "doc_code.documents() 전체 24개 현행 원문을 기존 research_preparation 실제 반환으로 검사",
+        "projection": "실제 profile_selection 객체의 즉시 키만 사용한다. allowed_profiles 삭제 시 두 원문에서 실패한다."
+      },
+      "changes": [
+        "field_schemas의 produced_object_schema(context_store.prepare_role_input, value['profile_selection']) 한 결속 제거",
+        "기존 ROLE_INPUT_BOUNDARIES 그룹을 재사용하여 실제 역할 입력 없는 기본 검증 거부; 다른 경계는 제공하지 않는 소유자만 defer_role_inputs로 보류",
+        "실제 입력 키의 문서 경로와 별칭을 검증하며 필드 삭제·참조 대체·다른 소유자 키 차용·배열 오용을 거부"
+      ],
+      "preserved": [
+        "기존 최초/재현 prepare_role_input 두 호출과 세 개의 100kB 과제",
+        "실제 source_ref 읽기와 task ID 전건·실행 프로필 동일성·후보 순서·prompt 재현 단언",
+        "B132 manifest/prompt/documents 및 B133 복원 소유자의 기존 단언",
+        "제품 코드와 다른 역할 본문·CoreEngineMixin._context 결속·무관 dirty/untracked 자료"
+      ],
+      "limits": [
+        "red는 기존 structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema 한 시험의 직접/별칭 두 단언에서 ValueError not raised로 실패했다. import/새 인자 오류가 아니다.",
+        "green은 구조 18·단위 6·CLI 경계 4의 관련 28개이며 전체 일반/T3/13-C/ROLE 완료가 아니다.",
+        "228.7초와 소프트 예산 초과 12개를 보존한다. 시험 범위 축소나 시간 제한·속도 개선 주장은 없다.",
+        "문서에서 단독 이름으로 적힌 프로필 값의 의미와 역할 허용 목록 전체를 감사하지 않았다.",
+        "CoreEngineMixin._context의 문서 결속은 남았다. 다음 파견 전에 입력·소유자 모집단·문서 경로와 기존 실제 반환 경계를 한정해야 하며 이 마감에서 조사하지 않았다."
       ]
     }
   }

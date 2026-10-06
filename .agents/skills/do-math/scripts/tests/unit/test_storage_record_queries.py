@@ -33,7 +33,7 @@ class QueryFamilyNameTests(unittest.TestCase):
             return scoped_field_issues(text, actual, defer_status=True,
                                        defer_operation_progress=True, defer_query_result=True,
                                        defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
-                                       defer_role_inputs=('input_manifest', 'prompt', 'documents'),
+                                       defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
                                        defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
 
         alias = '`record.family` <!-- do-math fields: record=query_record -->'
