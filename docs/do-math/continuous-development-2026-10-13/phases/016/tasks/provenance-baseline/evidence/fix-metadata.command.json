@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "git",
+    "show",
+    "--no-patch",
+    "--format=fuller",
+    "bbe64043f49d46fb7c3b6e768b99a8acbaa125cf"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T22:58:24.460307+00:00",
+  "ended": "2026-10-13T22:58:24.552086+00:00",
+  "exit_code": 0,
+  "stdout": "fix-metadata.stdout",
+  "stderr": "fix-metadata.stderr",
+  "stdout_sha256": "6fbe71465b92753b82b27003084579d45bbbb4f8ae76fc679c58bbbf59bc79ee"
+}

@@ -1,0 +1,127 @@
+--- context.md before 016
++++ context.md after 016
+@@ -80,6 +80,8 @@
+ 
+ phase 015 t4-adapter-report는 A1~A3 pass·A4 fail의 partial로 검수했다. report 검사 뒤 task 시작2667·종료2671파일과 현재 전건 일치, 허용16변경을 확인했다. 시작 모집단은014 inspected2750 중 skills/diff 부분이며 서로 다른 모집단의 숫자를 혼합하지 않는다. 최종 관련 정본/미러 각70선택·70passed·exit0와 각875 Python, 최종 T4 각295선택·고유row·283passed/6error/4failed/2skipped·exit1 및 소스 전후를 대조했다. 양쪽 각60worker의 실제 요청·판본·게시 SHA·branch DB, adapter5개의 원합집합 재분석을 확인했다. 측정 complete=true와 정본102/142·미러101/142 정보 도달은 기능 합격이 아니다. 근거는 run:phases/015/manager-evidence/verification.json·review.md다. 초기 실패와 정확 남김은 C11에 유지하며 G 전체 완료가 아니다.
+ 
++phase 016의 두 task를 complete로 검수했다. manager가 두 report 형식 검사 뒤 현재2675파일과 fixture task 종료 해시의 전건 일치, 이전015 모집단2671파일과 시작의 동일성을 확인했다. 추가4개는 이전 snapshot에서 제외한 양쪽 T3-store이며 새 제품 변경이 아니다. fixture의12변경(정본5·미러5·비용캐시2)은 writes/report와 같고, 양쪽 경계21·unit/structure35 선택/고유row/exit0와 각875 Python 및 실행 전후를 대조했다. 이전 정확10error/failed와 bootstrap2가 새 passed row에 연결된다. 양쪽 각9worker 게시·요청·소스/artifact SHA와 OS 원핸들/종료를 확인했다. provenance는 도입bbe64043의 첫 부모010b0597에서 추출한910파일·9901995바이트·901blob을 새 Git 조회로 전건 검산했다. 입력 준비 완료는 두 실제 비교 성공이 아니다. 검수 HEAD는 72684c76ed5d282279de5de956523ea17ffd4e40이며 근거는 run:phases/016/manager-evidence/verification.json·review.md와 두 원report다. 전체 T4와 최종 G 관문은 미수행이다.
++
+ ## C3 현재 정본과 이력의 역할
+ 
+ 이 서비스가 시작된 뒤 현재 실행 판단의 정본은 이 context.md와 plan.md다. 이전 단계-전환표 JSON/MD는 B134까지의 기준선과 상세 근거로 보존하며 현재 작업판으로 이중 갱신하지 않는다. 원문 의무·보존/P2 항목과 과거 보고는 계속 요구·증거의 진입점이다. 새로운 판정은 이 실행의 task report/evidence와 manager의 처분에 연결한다.
+@@ -96,7 +98,7 @@
+ 
+ ## C5 병렬 실행과 검증 자원
+ 
+-phase 001~015의 task 세션은 종료됐고015의 T4 측정 성과와 기능 미충족을 구별해 검수했다.016은 t4-fixture-repair와 provenance-baseline 두 독립 work다. 전자는 지정 fixture·OS 오류의 재현/수리·관련 검사·미러/비용 캐시를 단독 소유한다. 후자는 불변 Git 객체와015 원자료, 쓰기 대상이 아닌 shared-input 시험 정의만 읽어 자기 evidence에 과거 비교 트리/manifest를 준비한다. 후자는 제품 import·시험·미러·공유 캐시/설치·Git index 쓰기를 하지 않으며 전자의 작업 중 판본이나 결과를 기다리지 않는다. 실제 시험은 전자만 한 묶음씩 jobs1, 총worker3 이하로 수행한다. 두 산출물의 실제 연결과 양쪽 전체 T4는 다음 manager가 검수 뒤 순차 배정한다. 새 유료 공급자·예약 변경·학술 검색·기존 연구 운전은 필요하지 않다. 기존 실경계는 불변 입력에서 승인된 성질만 재사용하고 L01 외부 결정과 최종 관문은 유지한다.
++phase 001~016의 task 세션은 종료됐고016의 fixture/OS 수리와 과거 비교 입력 준비를 각각 검수했다.017 t4-baseline-integration 한 work가 실제 두 비교와 양쪽 전체 T4, raw 관측 보존을 순차 소유한다. 현재/과거 소스와 공유 캐시·미러를 고정해야 하는 연결 검증이므로 같은 phase에 제품 수정 task를 병행하지 않는다. 변경 가능한 제품 경로는 양쪽 비용캐시4개뿐이며 새 결함은 반례와 정확 후속 범위로 반환한다. jobs1·총worker3 이하·한 묶음씩을 유지한다. 다른 과거 보고/제품/설치·Git index를 수정하지 않고, 새 유료 공급자·예약 변경·학술 검색·기존 연구 운전은 수행하지 않는다. 기존 실경계의 승인된 성질 재사용과 L01 외부 결정·최종 관문은 유지한다.
+ 
+ do-math 시험 프로세스는 전체 합계 worker 3 이하, 동시에 한 검사 묶음만 실행한다. 검사 중 제품·시험 정본을 고정한다. 공식 도구는 python -u -B .claude/skills/do-math/scripts/run_tests.py 이며 전체 일반 검사는 기본 선택을 쓴다. 긴 실행은 자기 evidence 아래 원보고와 실제 process/session·시작·종료 상태를 남긴다. 관찰 도구의 yield/대기 만료를 시험 실패로 해석하지 않는다. 실행 중 result.json은 do_math.file_io.read_bytes_shared로 읽어 Windows rename을 방해하지 않는다.
+ 
+@@ -130,6 +132,8 @@
+ 
+ 015의 gpt-6.1-sol/high 수행을 검수했고016의 t4-fixture-repair와 provenance-baseline도 같은 사용자 지정 모델/effort로 배정한다. 후자는 코드 실행 없는 입력 준비이며 전자만 공식 제품 시험을 수행한다. 제품 공급자 실호출 모델을 새로 지정하지 않는다.
+ 
++016 두 task의 gpt-6.1-sol/high 수행을 검수했다.017 t4-baseline-integration에도 같은 사용자 지정 모델/effort를 명시한다. 이는 개발 실행 모델이며 제품 공급자 실호출은 새로 배정하지 않는다.
++
+ ## C9 요구별 상태와 과거 검토의 재사용 범위
+ 
+ phase 001의 requirement-state.json은 원래 19/11/61/12 항목을 각각 한 번씩 연결했고 tracking-state.json은 기존 109개 작업을 연결했다. 이들은 역사 근거와 종료 질문의 진입점이며 새로 수행한 전수 의미 감사가 아니다. 현재 판정은 이 context와 후속 report/manager의 처분을 따른다. 1-D/11-A/11-B의 검토된 성질, R17과 R07의 완료 부분, DOC-RETURN-PURE/CLI 및 B132~B134의 지정 경계는 유지하고 최종 판본 근거를 연결한다. 9-A의 R18 현재 외부 호출 전건, 1-E의 최종 반환 소유권 처분은 별도로 남는다. K-27/38/72/75와 P2 A-31/B-32는 후속 수리 이전의 낡은 remaining만으로 재수리하지 않는다.
+@@ -156,6 +160,8 @@
+ 
+ 015는b0d90537의 D5 자체 입출력 정지/D6 누락 worker 반려,bbe64043의 비용/공동 passed 소비와f56a2772의 시간 종료 제거를 actual diff·현재 소비 및002 근거와 대조했다. 이 한정 runner/측정 slice의 유지와 T4 보고 추가를 승인한다. 새 _read_json의 측정 전 import와 repo 내부 records.json 자기 의존은 이번 work의 실제 T3 반례로 교정됐고 양쪽70회귀에 기존 incremental/parallel 경계가 포함된다. 전체-T3-2026-10-03.json은 존재하는 역사 요약이고 연결된 raw는 부재라는 한계를 유지한다. 과거 counts를 새 성공에 더하거나 PR01 전체/provenance 검토를 닫지 않는다.015 F3의 두 baseline 비교 입력은016 provenance-baseline이 Git 도입 전후와 P10/P11에 결속해 준비하며 실제 비교는 후속 연결 작업 책임이다. 근거는015 task review.md·history-measurement.diff·history-runner.diff·history-timeout.diff 및 manager 검수다.
+ 
++016은5d8db87a/bd3ae53f의 설치 fixture·포트 수축,3b37e80c의 실제 Job 관측,c4ba50b4의 writer lock,23cc4df3의 Git/자손 콘솔,407db136의 archive checker 및8afa57c7의 필수 backend slice를 현재 diff/소비와010~012의 한정 검수에 대조했다. 실제 compiler/저장/currentness/identity·잠금 반려/정상 획득·Unicode 바이트를 유지하고 현재 입력/포트/관측 fixture만 교정한 판단을 승인한다. 다른 PR/hunk나 부재 원보고 counts는 새 성공으로 올리지 않는다. provenance 도입bbe64043의 실제 첫 부모010b0597와 도입 M-0472의 동일 baseline 기록을 확인했다. B56 네 Temp 원보고는 현재 해당 경로에 없고 역사2passed15.2초는 새 비교 근거가 아니다. 이 비교의 P10/P11은 정확 시험/역사 표기이며 requirement-state103row의 ID나 문서 후속 packet P10/P11이 아니다. 원문 진입점은 설계5.3~5.5/A29·PR01/B56와 K-05/K-06이다. 이전 objective의 requirement-state P10/P11 경로 표현은 이 범위로 정정하며 원배정은 수정하지 않는다. 근거는016 두 task review.md·history-review.json·history-selection.json·requirement-trace.json과 manager 검수다. PR01 전체 종결은 아니다.
++
+ ## C10 문서 결속에서 남은 고정 범위
+ 
+ document-closeout의 원목록은 실제24문서(계약11 포함), inline 필드189회·lexical owner79개·노출 owner84개와 당시 AST34지점이다. 이 수는 역사 목록의 크기이며 현 의미 검증 완료율이 아니다.008에서 P01의 운영/복구6 AST지점을 실제 _context/포장 객체와 저장·물질화 파일 검사로 교체했다. operational_evidence와 recovery_materials의 동명 source를 구별하고 정상·restoration_error·checkpoint_source=null·live 부재·activity_continuations와 반환 사본/제품 입력 반례를 확인했다. 일반 재개의 result_source와 B130~B134 기존 성질을 유지하며, 마지막 소비가 없어진 checkpoint_source/recovery_source/checkpoint_files/recovered_output_files 단독 입력은 제거했다. defer 두 입력의 실제 문서 검사 담당과 오기/누락 반례도 확인했다. 근거는 run:phases/008/tasks/document-recovery/evidence/binding-review.md 및 run:phases/008/manager-evidence/review.md다.
+@@ -170,7 +176,7 @@
+ 
+ 설치 Claude2.1.289의 정적 Read는 기본25,000token, 전체 파일 입력262,144bytes와 세션 fileReadingLimits override를 구별한다. PARTIAL 접두/긴 행 일부·명시offset/limit 오류와 설명2,000행 대 실제limit 미지정을 확인했다. 이것은 실제 운전 세션의 효과값이나 Read 실행이 아니다. 최신allow_large 설명도 설치 판본에 소급하지 않는다. 입력 byte guard와 shell character 제한을 출력 byte 상한으로 바꾸지 않는다. 내부10역할의 문서·전체 prompt UTF-8/stdin 전달은 운전 도구 출력과 별개이며 기존 분석은 현재 코드/문서가 같은 성질만 재사용한다.
+ 
+-010 reading F4/Q1~Q2의 외부 결정은 남는다. 공급자별 실제 운영 host/CLI판본·model·Read 또는 shell·개별/합산 호출 설정을 특정하고, 원문의 UTF-8 출력 byte 기준을 유지할지 실제token/character와 전 구간 수신 기준으로 개정할지 결정해야 한다. manager는 기준 변경을 자의 승인하지 않았고 사용자에게 단위 선택을 상신했다. 답변 전에는 기존byte 요구와 미충족 판정을 유지한다. 현재 개발 host를 제품operator로 자동 지정하지 않는다. 외부 결정과 독립적인011 문구 수리와012 Lean work는 완료했다.013 예약과014 학술 최소 연결도 완료했다.015 T4 측정은 검수됐고016의 fixture/OS 문제와 과거 비교 입력 준비는 이 답변과 독립적으로 진행한다. Claude 실제 Read 후속 검증은 해당 운전 프로필과 권한을 확정한 뒤 수행한다. B-20의 AI준수 한계는 유지한다. 구체적 선택지/잃는 보증은 run:phases/010/tasks/reading-limits/evidence/reading-boundaries.json·review.md, 검수는 run:phases/010/manager-evidence/verification.json·review.md다. 학술 외부 어휘는 별도 실제 응답 계약에서 확인한다. P02~P11/N01~N03의 다른 남김은 바꾸지 않았다.
++010 reading F4/Q1~Q2의 외부 결정은 남는다. 공급자별 실제 운영 host/CLI판본·model·Read 또는 shell·개별/합산 호출 설정을 특정하고, 원문의 UTF-8 출력 byte 기준을 유지할지 실제token/character와 전 구간 수신 기준으로 개정할지 결정해야 한다. manager는 기준 변경을 자의 승인하지 않았고 사용자에게 단위 선택을 상신했다. 답변 전에는 기존byte 요구와 미충족 판정을 유지한다. 현재 개발 host를 제품operator로 자동 지정하지 않는다. 외부 결정과 독립적인011 문구 수리와012 Lean work는 완료했다.013 예약과014 학술 최소 연결도 완료했다.015 T4 측정과016의 fixture/OS 수리·과거 입력 준비를 검수했고017의 실제 비교/전체 T4는 이 답변과 독립적으로 진행한다. Claude 실제 Read 후속 검증은 해당 운전 프로필과 권한을 확정한 뒤 수행한다. B-20의 AI준수 한계는 유지한다. 구체적 선택지/잃는 보증은 run:phases/010/tasks/reading-limits/evidence/reading-boundaries.json·review.md, 검수는 run:phases/010/manager-evidence/verification.json·review.md다. 학술 외부 어휘는 별도 실제 응답 계약에서 확인한다. P02~P11/N01~N03의 다른 남김은 바꾸지 않았다.
+ 
+ ## C11 최종 관문을 막는 도구·실경계 공백
+ 
+@@ -204,6 +210,12 @@
+ 
+ OS 관측도 미해결로 유지한다. 첫 정본 전건의 bootstrap freeze staging.rename WinError5는 최종 양쪽 동일 ID에서 통과했으나 원인이나 transient 여부는 미확인이다. real_git_descendants는 첫 정본에서 통과하고 최종 정본·미러에서는 store.publish/update-ref가 stdin handle을 DuplicateHandle하는 중 WinError6으로 실패했다. 현재 probe는 같은 pythonw에서 AttachConsole/FreeConsole 뒤 저장을 수행한다는 코드 사실을 확인했으나 인과는 아직 가설이다.016 t4-fixture-repair가 정확 ID·child/OS handle 조건·정상 대조로 판별하며 제품 수리가 쓰기 범위를 넘으면 최소 반례를 반환한다. 이전 failed/error를 소급 pass로 바꾸지 않는다. 근거는015 manager verification.json·review.md 및 task 원report다.13-C/L01·다른 문서/의미 질문과 G4~G6/G8 최종 관문은 남는다.
+ 
++016에서015의 정확9fixture와 WinError6 남김을 새 근거로 해소했다. installed_request는 현재 trust_inventory producer의 실제 지문/content11094파일 모집단·원바이트를 사용하며 clean-build validation/연구 채택 권한은 여전히 합성이다. 설치 공유 신뢰 기록을 승인/수정하지 않는다. 실제 compiler/저장/authoritative 소비의 범위는 원시험대로 유지한다. observation은 ok의 의미 schema와 Codex 문자열 전송을 같이 맞췄고, lock/archive child는 자기 real_ports를 전달한다. 양쪽21+35는 전건passed이며 이전10실패와 정확 대응한다.
++
++WinError6은 일반 child에서는 재현되지 않았고 실제 Job의 control은 null stdin/exit0, 원 AttachConsole/FreeConsole 관측은 invalid nonnull stdin/exit1·DuplicateHandle 실패였다. 시험의 콘솔 관측만 별도 pythonw child로 분리해 저장 stdin을 보존하고 실제 Git/자손·hidden console 양성 대조·visible=[]·binary readback을 유지했다. 별도 수리 관측의 실제 exit0/root_signaled/빈Job도 검수했다. 제품 Git runtime은 불변이다. bootstrap-info2는 현재 양쪽passed이나015 첫 WinError5의 원인은 미확인이다.017 전체 T4에서 재현되면 정확 trace/OS 조건으로 처리하며 무조건 retry/skip을 하지 않는다. 초기 진단의 없는 Job API/개행 계획/count-row 혼동 오류는 원exit1과 함께 보존하고 제품 실패와 구별한다.
++
++provenance의 입력 준비는 완료됐고 두 exact 비교는 아직 미검사다. 검수된 baseline은 run:phases/016/tasks/provenance-baseline/evidence/baseline-manifest.json에 결속된 pre-provenance/scripts910파일이다.017은 SHARED_INPUT_BASELINE_SCRIPTS로 이 절대 경로를 실제 소비하고 ordinary 결과/읽기·literal entered(빈 label 포함)/opens/import_opens·파일/context/line/arc와 명시 marker 차이·두worker raw union을 검증한다. TemporaryDirectory의 cleanup 전에 현재 실제 TestCase의 원관측을 자기 evidence로 보존한다. 원old 트리 개작이나 동등성 단언 완화는 허용하지 않는다. 이어 같은 제품 판본에서 정본/미러 전체 T4를 실제 선택/row/exit·각worker/adapter 자료까지 대조한다. 부분 회귀를 더해 전체 성공으로 읽지 않는다. 근거는016 manager verification.json·review.md와017 objective다. L01·다른 의미/문서 질문 및 G4~G6/G8은 유지한다.
++
+ ## C12 공급자 부분 성공과 원바이트 인도
+ 
+ phase 003이 추가한 T5 선택은 Codex/Claude maintenance 각 한 건이다. 003 당시 실 ModelRunner·real_ports·worker·adapter·parser를 사용했고 세 worker schema가 당시 action_schema 전체와 같았다. 새 호출은 Codex 1회·Claude 2회다. live-01은 2선택/2실패이며 Claude는 읽기 도구 출력에 checkpoint가 섞여 정확 비교가 실패했다. prompt를 명확히 한 live-02의 Claude 1선택은 모든 9개 판정과 공식 row가 통과했다. 003의 마지막 live와 종료 사이에는 호출 경로가 불변이고 오프라인 corpus 검사 세 파일만 바뀌었다. 003 검수 시 최종 정본 23개 및 미러 4개의 Python 864개 해시는 당시 종료 판본과 일치했다. 006 이후 판본은 아래의 새 근거를 따른다. 근거는 run:phases/003/manager-evidence/verification.json 및 task의 live-01/live-02/offline-01/mirror-replay 원보고다.
+@@ -243,3 +255,5 @@
+ 014 F2/F4의 원자료 보존과 한정 재사용을 검수했다. runtime124를 포함한139입력·host8원자료·도구 SHA, 기존21corpus 항목/verdict와122비manifest 경로가 유지됐다. 성공 녹화1항목·10원파일을 추가했고 현재 각22항목72파일409886바이트·75명시SHA 및144경로 Git raw/clean·미러 바이트가 일치한다. 공식 --check1334파일과 양쪽46회귀가 통과했다.129공식 변환 입력과 미러 offline은 정본 실호출의 한정 재사용이며 새 미러 유료호출0이다. 초기 두 공식 실패와 structured-content 오관측은 소급 수정하지 않는다. 이번 검수 제품·시험·지침·미러32경로를 관리 커밋으로 마감하고 비용 캐시2개는 제외한다. 원task 자료와32제품 원바이트는 raw-evidence.zip에 보존한다. 선별 추적 경로·압축 항목·SHA는 run:phases/014/manager-evidence/preservation.json에, stage/commit 행정 수신은 로컬 commit.json에 둔다. 압축으로만 추적되는 scratch 원경로와 행정 수신은 로컬 정리로 사라질 수 있으며 압축은 자동 복원 지시가 아니다.015 배정·공용 문서·기억 추가는 검증한 제품 바이트를 바꾸지 않는다.
+ 
+ 015 F5의 보존 사실을 검수했다. runtime 포함139입력·corpus144경로·host8원자료·도구 SHA와 index/pseudo 목록은 불변이며 전144경로 Git raw/clean을 확인했다. 공식 --check1336과 skill-only 및 양쪽70회귀를 승인된 성질로 유지한다.015의12개 제품/시험/지침/미러 경로(16변경 중 비용캐시4 제외)는 전체 T4 실패/skip 해소와 연결 검수 뒤 커밋하도록 대기한다. 이번 관리 커밋에는 공용 인계·선별 원근거·기억만 담고 현재12제품 원바이트와 task 원자료를 raw-evidence.zip에 보존한다. 추적 범위/항목 SHA는 run:phases/015/manager-evidence/preservation.json에, stage/commit 행정 수신은 로컬 commit.json에 둔다. 압축으로만 추적되는 scratch 원경로와 행정 수신은 정리로 사라질 수 있으며 압축은 자동 복원 지시가 아니다.016 배정은 기존 성공을 전체 G 합격으로 바꾸지 않는다.
++
++016 F3의 보존 사실을 검수했다.015의12제품 경로, runtime 포함139실호출 입력·144corpus 경로·8host 원자료·도구SHA·index/pseudo/T3-store는 불변이다. 전144경로 Git raw/clean과 공식 --check1336/skill-only 및 관련 양쪽56passed를 확인했다. 기존 실호출은 불변 경로/도구의 승인된 성질만 재사용하며 새 유료/예약 호출은 없다.01512경로와01610비캐시 제품경로, 합22경로의 커밋은017 전체 T4 연결 검수 뒤 판단한다. 이번 관리 마감은 공용 인계·두 원보고/선별 근거·017 배정·기억만 포함한다. 두 task 원자료(과거910파일 포함)와22제품 원바이트는 raw-evidence.zip으로 보존하고 전건 SHA/선별 추적 경로는 run:phases/016/manager-evidence/preservation.json에 둔다. 원경로 중 압축으로만 추적하는 scratch/중복 snapshot과 stage/commit 행정 수신은 로컬 보관이며 정리로 사라질 수 있다. 압축은 자동 복원 지시가 아니다.017 배정·관리 기록은 제품 검증 판본이나 G 완료 조건을 바꾸지 않는다.
+--- plan.md before 016
++++ plan.md after 016
+@@ -2,9 +2,9 @@
+ 
+ 이 파일은 현재 남김과 다음 판단을 관리한다. 상세한 과거 이력은 sources와 기존 repo 자료에 연결하고 여기에 반복 복사하지 않는다. 상태·근거·구체적 다음 질문 없이 '추가 감사 필요'만 적지 않는다.
+ 
+-## phase 001~015의 결과와 현재 상태
++## phase 001~016의 결과와 현재 상태
+ 
+-phase 001 세 분석 task의 A1~A4와 phase 002 mutation-baseline의 A1~A5를 manager가 검수했다. 정상 child의 증거 부재가 변이 포착으로 바뀌던 경로를 수리했고 관련 58개 시험 및 실제 child 19개 fixture의 원자료를 대조했다. phase 003은 공급자 smoke를 구현했으나 Codex schema 거부와 미러 원바이트 변형 때문에 partial이었다. Claude 최종 실호출과 정본 오프라인 23개 성공은 그 범위에서 승인했다. phase 004는 미러 치환과 양쪽 재생을 수리했으나 Git manifest 속성의 쓰기 범위가 부족해 A3를 완료하지 못했다. phase 005가 실제 하위 속성 두 파일을 고쳐 전88경로 raw/clean 동등성을 확인했고 manager가 A1~A3를 검수했다. phase 006은 원 의미를 보존하는 Codex 전송/수신 수리와 대표 실호출에 성공했다. 직접 소비11실패와 pair의 성공 표본 공백 때문에 partial이었다. phase 007이 현 fixture와 실제 분기 단언을 수리했고 manager가 A1~A5를 검수했다. 008은 운영/복구와 설치 지정 성과 A1~A4를 검수한 partial이며 그 A5의 기존 CLI 함수 표기4실패는009의 A1~A3 complete로 해소했다. 010의 host는 A1/A2/A4를 검수한 partial이며 관련61건의 두 회귀 문제는011의 새 양쪽136건 전부 통과로 해소했다.011 A1~A4를 검수했고 읽기 문구 반례도 종결했다. 읽기한도조사 완료/문구 수리와 L01/13-C 인증은 구별하며 실제 운전 프로필·출력 단위 결정은 남는다. 012의 Lean 실연쇄 A1~A4도 검수했다. 실제 대표 컴파일·verifier 정상/full 증거·타입 오류 및 정본/미러 각1 T5와 각48 회귀가 통과했다. 초기 두 도우미 오류는 역사 실패로 보존하며 설치 신뢰 승인으로 확대하지 않는다. 013 예약 A1~A4도 검수했다. 실제 held 등록/발화/wake/정리와 정본·미러 각33건을 승인했고, 초기3error 및 시계/OS stdout 관측 한계를 보존했다. live-final wake PID9492 원관측을 반영해 포괄적 미관측 표현만 정정했다. 014 학술 A1~A4도 검수했다. 최종 T5 1건·양쪽46회귀, 동일 native의 완료/양 본문/registry/격리와144corpus 경로를 승인했고 초기 두 실패·오관측의 적용 범위를 보존했다. 015는 T4 측정·양쪽70회귀를 검수한 partial이다. 최종 T4 각295건의283통과·6오류·4실패·2skip은 미해결이며 측정 complete와 구별한다. 최종 전체 관문은 아직 실행하지 않았다. 현재 상태의 근거는 context C9~C12와 다음 자료다.
++phase 001 세 분석 task의 A1~A4와 phase 002 mutation-baseline의 A1~A5를 manager가 검수했다. 정상 child의 증거 부재가 변이 포착으로 바뀌던 경로를 수리했고 관련 58개 시험 및 실제 child 19개 fixture의 원자료를 대조했다. phase 003은 공급자 smoke를 구현했으나 Codex schema 거부와 미러 원바이트 변형 때문에 partial이었다. Claude 최종 실호출과 정본 오프라인 23개 성공은 그 범위에서 승인했다. phase 004는 미러 치환과 양쪽 재생을 수리했으나 Git manifest 속성의 쓰기 범위가 부족해 A3를 완료하지 못했다. phase 005가 실제 하위 속성 두 파일을 고쳐 전88경로 raw/clean 동등성을 확인했고 manager가 A1~A3를 검수했다. phase 006은 원 의미를 보존하는 Codex 전송/수신 수리와 대표 실호출에 성공했다. 직접 소비11실패와 pair의 성공 표본 공백 때문에 partial이었다. phase 007이 현 fixture와 실제 분기 단언을 수리했고 manager가 A1~A5를 검수했다. 008은 운영/복구와 설치 지정 성과 A1~A4를 검수한 partial이며 그 A5의 기존 CLI 함수 표기4실패는009의 A1~A3 complete로 해소했다. 010의 host는 A1/A2/A4를 검수한 partial이며 관련61건의 두 회귀 문제는011의 새 양쪽136건 전부 통과로 해소했다.011 A1~A4를 검수했고 읽기 문구 반례도 종결했다. 읽기한도조사 완료/문구 수리와 L01/13-C 인증은 구별하며 실제 운전 프로필·출력 단위 결정은 남는다. 012의 Lean 실연쇄 A1~A4도 검수했다. 실제 대표 컴파일·verifier 정상/full 증거·타입 오류 및 정본/미러 각1 T5와 각48 회귀가 통과했다. 초기 두 도우미 오류는 역사 실패로 보존하며 설치 신뢰 승인으로 확대하지 않는다. 013 예약 A1~A4도 검수했다. 실제 held 등록/발화/wake/정리와 정본·미러 각33건을 승인했고, 초기3error 및 시계/OS stdout 관측 한계를 보존했다. live-final wake PID9492 원관측을 반영해 포괄적 미관측 표현만 정정했다. 014 학술 A1~A4도 검수했다. 최종 T5 1건·양쪽46회귀, 동일 native의 완료/양 본문/registry/격리와144corpus 경로를 승인했고 초기 두 실패·오관측의 적용 범위를 보존했다. 015는 T4 측정·양쪽70회귀를 검수한 partial이다. 015 당시 최종 T4 각295건의283통과·6오류·4실패·2skip은 역사 실패로 유지한다.016 두task는complete로 검수했고 정확10fixture/OS 실패가 양쪽 지정56passed로 해소됐다. Git 입력910파일 준비는 성공했으나 두 실제 비교와 양쪽 전체 T4는017 책임이다. 측정complete·부분회귀·입력준비와 전체기능 합격을 구별한다. 최종 전체 관문은 아직 실행하지 않았다. 현재 상태의 근거는 context C9~C12와 다음 자료다.
+ 
+ - 요구별 종료 질문: run:phases/001/tasks/closure-map/evidence/requirement-state.json. 원래 19/11/61/12 항목을 보존한다. 1-D/11-A/11-B 및 이미 검토한 부분은 최종 판본 연결로 넘기고 새 결함 없이 재구현하지 않는다.
+ - 기존 109작업·25영역 재검토: 같은 evidence의 tracking-state.json과 prior-review-state.json. PR23과 PR06/B22의 완료 범위를 재사용하고 필요한 slice를 실제 수리/의미 확인과 결합한다. 없는 임시 원보고의 counts는 역사 주장으로 남긴다.
+@@ -24,19 +24,19 @@
+ 
+ 분류는 완료율이 아니다. 검토된 성질은 최종 증거 대기, 확정된 공백은 수리, 아직 모르는 성질은 한 종료 질문, 실행 관문은 최종 고정판 검증으로 구별한다. 오래된 109개 task를 그대로 재파견하지 않는다.
+ 
+-## 다음 phase: 016
++## 다음 phase: 017
+ 
+-gpt-6.1-sol/high의 독립 work 두 개를 배정한다. t4-fixture-repair는015 F2/F6의 현 계약과 다른 fixture 네 경로 및 pythonw/Git 핸들 관측을 재현·수리한다. 설치 baseline 내용/지문, Codex 의미/전송 schema, 필수 backend와 archive child의 실포트/환경을 현재 정본에 맞추고 기존 정확 단언·실제 compiler/Job/저장을 유지한다. OS 오류는 정상 대조와 실제 handle 상태로 원인을 판별하며 bootstrap WinError5의 후속 통과를 원인 규명으로 읽지 않는다. 정확 실패 ID와 한정 관련 회귀, 공식 미러·캐시를 이 task만 소유한다.
++gpt-6.1-sol/high의 t4-baseline-integration 단일 work를 배정한다.016 fixture 수리 판본과 Git 첫 부모010b0597의 별도910파일 입력을 실제 연결한다. 환경변수 SHARED_INPUT_BASELINE_SCRIPTS의 값/하위 전달·전후manifest/소스/도구를 기록하고 정본·미러의 두 정확 비교를 공식 runner로 수행한다. ordinary/측정 보존·명시 marker 차이·두worker raw union을 현재 TestCase/실제 child 자료에 대조한다. 임시 fixture 삭제 전 raw를 확보하는 한정 companion을 자기 evidence에 두며 제품 시험/기대값을 복제하지 않는다.
+ 
+-provenance-baseline은015 F3의 P10/P11 두 skip에 필요한 pre-provenance-fix scripts 트리를 Git 이력과 원보고에 결속해 자기 evidence에 준비한다. 제품·시험 소스를 수정하거나 import/실행하지 않고 불변 Git 객체,015 보존 원자료와 상대가 쓰지 않는 shared-input 시험만 읽는다. 비교 트리의 Git blob·SHA·파일 모집단과 선택 이유, 후속 SHARED_INPUT_BASELINE_SCRIPTS 명령을 넘긴다. 입력 준비 완료를 비교 성공으로 보고하지 않는다.
++이어서 같은 제품·시험 판본에서 양쪽 --tier T4 --jobs 1 전체 선택을 각각 완결한다. 실제 선택/고유row/exit·worker 요청과 게시/원DB·adapter5개 분모/합집합·complete를 대조한다. 정본과 미러 도달률이 같거나 임계값을 넘을 필요는 없으나 기능 실패/skip/미실행은 숨기지 않는다. bootstrap WinError5가 재현되면 원trace/OS조건을 보존한다. 두 비교의 빠른 선행 실행과 전체 T4의 계측 포함 연결은 검증 목적이 다르다. 이미 검수한016의56관련 회귀는 새 이유 없이 반복하지 않는다.
+ 
+-전자는 유일한 공식 시험 실행자이며 jobs1·전체worker3 이하·한 묶음씩 수행한다. 후자는 공유 미러/캐시/DB/포트/설치/Git index를 건드리지 않는다. 서로의 미완성 산출물을 사용하거나 기다리지 않으므로 같은 phase에 배정한다. 전체 T4는 과거 비교 입력까지 준비된 뒤 후속 단일 연결 작업에서 정본·미러 각각 완결한다.015의12제품 경로는 그 검수까지 미커밋으로 두되 원바이트를 관리 archive에 보존한다. 새 S 계약은 없으며 두 objective가 실제 후속 책임과 준비 한계를 정한다.
++변경 가능한 제품 범위는 양쪽 비용캐시4개뿐이다. 구현/요구/기대값/과거baseline은 고정하고 새 결함은 정확 반례·필요파일을 다음 work로 반환한다. 검사 중 소스/공유캐시·미러 판본 충돌을 피하도록 다른 제품 task를 병행하지 않는다. 한 묶음씩 jobs1·총worker3 이하를 유지하고 마지막 공식 생성의 예상변경이 캐시뿐인지 확인한 뒤 --check/skill-only를 수행한다.01512제품과01610제품의Git마감은 새 전체연결 결과의 manager 검수 뒤 판단하며 현재 원바이트는016 archive에 보존한다.
+ 
+-L01 Q1/Q2의 운전 프로필·출력 단위 결정은 계속 남는다. 답변 전에는 원문 byte 기준과 미충족 판정을 유지하고016의 독립 작업을 진행한다.
++L01 Q1/Q2의 운전 프로필·출력 단위 결정은 계속 남는다. 답변 전에는 원문 byte 기준과 미충족 판정을 유지하고017의 독립 연결 검증을 진행한다. 전체일반/freshT3/전체변이·남은의미/문서·최종review는 이 작업 밖의 원래 완료기준으로 유지한다.
+ 
+ ## 가까운 후속 배정과 선행 관계
+ 
+-007 공급자 변경과008~009 문서·시험28경로는009관리마감까지커밋됐다.010의 host/읽기 조사를 검수했고011에서 두 회귀 문제와 문구 반례를 수리·검수했다.010~011 제품20경로는011 관리 커밋571d282c로 마감됐다.012 Lean/Mathlib 제품20경로는 a8fb1e41로 마감됐다.013 예약 제품20경로는 8d0ade6c으로 마감됐다.014 학술 제품32경로는 eb701074로 마감됐다.015 T4 측정과70회귀는 검수했으나 기능/입력/OS 남김을016으로 넘긴다.015 제품12경로는 후속 전체 T4 연결 검수까지 대기한다. 근거는015 manager-evidence/verification.json·review.md다. 그 밖의 구체적 남김은 아래와 같다. 먼저 해야 할 수리가 늘어나면 원래 G와 반례를 붙여 반환하고, 확인된 부분은 다시 탐색하지 않는다.
++007 공급자 변경과008~009 문서·시험28경로는009관리마감까지커밋됐다.010의 host/읽기 조사를 검수했고011에서 두 회귀 문제와 문구 반례를 수리·검수했다.010~011 제품20경로는011 관리 커밋571d282c로 마감됐다.012 Lean/Mathlib 제품20경로는 a8fb1e41로 마감됐다.013 예약 제품20경로는 8d0ade6c으로 마감됐다.014 학술 제품32경로는 eb701074로 마감됐다.015 T4 측정과016 fixture/OS 수리를 검수했다.016의Gitbaseline910파일과 새 양쪽56회귀를 승인하되 정확baseline 비교/전체T4는017에 남긴다.01512·01610비캐시 제품, 합22경로의 마감은 그 연결검수까지 대기한다. 근거는016 manager-evidence/verification.json·review.md다. 그 밖의 구체적 남김은 아래와 같다. 먼저 해야 할 수리가 늘어나면 원래 G와 반례를 붙여 반환하고, 확인된 부분은 다시 탐색하지 않는다.
+ 
+ | 남김 | 다음 담당 작업과 끝나는 조건 | 선행/한계 |
+ |---|---|---|
+@@ -48,9 +48,9 @@
+ | G1/G8 문서 N03 지정 문장 |008의 installation_root 전달 설명·bootstrap-info2건과009 회귀를 검수해 같은 문서 변경 단위로 인도한다. | 옛 전역은 복원하지 않는다. N03 다른 절은 계속 미검토. |
+ | G1/G3 나머지 문서·정책 | P02~P11·N01~N03의 미결 절만 실제 반환/공유 계약·기존 시험에 연결한다. 명시 소비 없는 instance는 제거 가능성을 판정한다. | 34 AST 구문지점의 제거 수로 진척을 세지 않고 마지막 소비자 뒤 helper를 정리한다. |
+ | G7 T4 adapter 보고 | 015의 실제 측정/게시/병합과 현 adapter 전체 정보 보고를 검수했다. 각60worker·원DB 재분석과 양쪽70회귀를 유지한다. | 도달률은 임계 관문이 아니다. T4 기능 실패/skip 및 G5 fresh 최종 판본은 별개다. |
+-| G1/G3/G7 T4 fixture·OS 실패 | 016 t4-fixture-repair가 정확 오류6·실패4의 입력/OS 원인을 다루고 관련 정본/미러 회귀를 확인한다. | runtime/설치 신뢰 검사를 낮추지 않는다. OS 원인 미확인·초기 bootstrap 실패도 후속 상태를 명시한다. |
+-| G2/G3/G7 P10/P11 비교 입력 | 016 provenance-baseline이 불변 Git 이력에 결속된 별도 scripts 트리·manifest를 준비한다. | 같은 phase에는 시험/제품 import를 하지 않는다. 준비 완료는 두 exact-baseline 성질의 통과가 아니다. |
+-| G7 T4 실제 연결과015 제품 마감 | 016 두 결과가 준비되면 후속 단일 work가 정확 baseline 두 비교와 양쪽 전체 T4를 실행하고 선택/row/exit·각 worker·소스/미러를 대조한다. | 부분 회귀의 합산은 전체 성공이 아니다. 별도 입력을 현재 root로 위장하거나 skip을 pass로 세지 않는다. |
++| G1/G3/G7 T4 fixture·OS 실패 | 016에서 정확10실패/오류와 관련 양쪽56건을 통과시켰다.017 전체 T4에서 결합 동작을 확인한다. | Git WinError6은 관측자의 stdin 부수효과였다. 제품runtime/신뢰guard는 유지했고 과거bootstrap WinError5 원인은 미확인이다. |
++| G2/G3/G7 P10/P11 실제 비교 | 016의Git원바이트910파일을017이 소비해 양쪽두정확시험과 cleanup 전 raw를 검증한다. | P10/P11은 여기서 역사/정확시험 표기이며 requirement-state ID나 문서packet과 다르다. 역사raw4개부재/입력준비완료와 실행성공을 구별한다. |
++| G7 T4 실제 연결과015~016 제품 마감 | 017 단일work가 양쪽전체T4의 실제선택/row/exit·각worker·소스/미러와 측정 완전성을 검증한다. manager가22제품경로의마감을판단한다. | 부분합산은전체성공이아니다. 미해결실패/skip은정확후속work로넘기며G4~G8전체완료로확대하지않는다. |
+ | G1/G2 남은 의미 질문·과거 재검토 | requirement-state의 해당 생산자/소비자/입력/단언 질문과 관련 PR slice만 배정한다. 이미 충분하면 유지하고 빠진 축만 수리한다. | R05/R06은 현 test_provider_native_storage 경로 사용. 없는 원보고는 해당 slice에서만 회수/대체 증거 필요를 판정한다. |
+ 
+ 원래 1-A는 A20의 필수+선택 역방향을 적용하고 역사 SHARDS/저장대역/timeout 표현은 현재 의미로 판정한다. 의미를 모르는 항목을 일괄 final-evidence로 올리지 않는다. G7이 외부 조건에 막혀도 독립 수리는 진행하며, 모든 행동이 막히면 context C7의 정확한 상신 절차를 따른다.
+--- seams.md before 016
++++ seams.md after 016
+@@ -25,3 +25,5 @@
+ 014의 기존 scholarly API 소비·성공 완료/양 본문·격리와 녹화 재생을 검수했다.015는 run_tests.py의 main/_isolated/_worker/결과 집계와 tests/support/branch_gate.py의 측정/저장/병합 정의, do_math.layers.LAYERS를 기준으로 T4 보고를 연결한다. 시험 결과와 측정 완전성·분기 도달 보고는 구별하고 T3 gate·선택 색인·증분 저장소 의미를 유지한다. 같은 task가 생산자/소비자·회귀를 함께 수정하므로 별도 S 항목이나 provides/uses는 추가하지 않는다. 새 보고 형식의 정본은 구현의 실제 선언과 검증으로 두며 자연어의 중복 schema를 만들지 않는다.015 task가 지침과 생산/소비 시험을 같은 변경으로 맞춘다.
+ 
+ 015의 T4 보고 정의는 tests/support/adapter_coverage.py의 AdapterMeasurement·validate_publication과 run_tests의 실제 소비가 정본이다. manager는 실제 worker 자료와 양쪽70회귀를 검수했고 T3 의미는 유지했다.016 t4-fixture-repair는 기존 trust_inventory/ModelRunner/ResearchRepository/formal/실포트 계약의 fixture 소비만 고친다. provenance-baseline은 Git 원바이트 입력을 자기 evidence에 준비하며 같은 phase의 다른 task와 제공/소비하지 않는다. SHARED_INPUT_BASELINE_SCRIPTS의 실제 소비는 기존 test_shared_input_provenance.py가 정의하고 후속 연결 task가 맡는다. 제품 인터페이스 개정이나 병렬 제공자/소비자 분리가 없어 S 항목과 provides/uses는 추가하지 않는다.
++
++016은 현재 fixture 소비만 교정했고 Git과 과거 입력 원바이트를 검수했다.017은 기존 SHARED_INPUT_BASELINE_SCRIPTS 소비·TestCase/WORKER/SNAPSHOT·run_tests/AdapterMeasurement의 실제 연결을 검증한다. 두 task 사이 새 인터페이스를 구현하지 않고 한 task가 고정된 제공/소비를 함께 실행하므로 S 항목·provides/uses는 추가하지 않는다. 의미/형식/오류의 정본은 기존 코드와015 측정 정의이며 과거910파일을 새 제품 계약이나 호환 분기로 만들지 않는다.

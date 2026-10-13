@@ -1,0 +1,191 @@
+{
+  "next": "017",
+  "decision": "두task는자기A를완료했으며manager가원보고/현재2675소스·허용12변경·양쪽각56passed/실제exit·9worker씩게시와OS핸들을대조했다. fixture9와WinError6은해소됐고제품runtime/신뢰검사는불변이다. bootstrap과거WinError5원인은현재통과와구별해남긴다. provenance는실제도입첫부모와M-0472·910Git원바이트를확인했지만실제비교를실행하지않았다. 두report는이경계에서상충하지않는다. 다음017은고정된두산출물을소비하는exact비교/raw보존·양쪽전체T4의단일work다. 공유소스/캐시의독립실행을보장하기위해동일phase에제품변경task를두지않는다. 새반례는writes밖수리로그대로반환한다. 원G/문서/의미/L01과최종관문은남아개발종료를선언하지않는다.015~016제품22경로는연결검수까지대기하고이번에는인계·선별근거·기억만마감한다.",
+  "reports": [
+    {
+      "task": "t4-fixture-repair",
+      "state": "read",
+      "detail": "report검사통과후전문을읽고원근거와현재파일을검수했다. A1~A4 complete를지정회귀범위에서승인하며전체T4와과거bootstrap원인규명으로확대하지않는다.",
+      "evidence": [
+        "run:phases/016/tasks/t4-fixture-repair/report.json",
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/t4-fixture-repair-report-check.json"
+      ]
+    },
+    {
+      "task": "provenance-baseline",
+      "state": "read",
+      "detail": "report검사통과후전문을읽고원근거와현재파일을검수했다. A1~A3 complete는Git입력준비의완료다.실제exact비교와G충족을뜻하지않는다.",
+      "evidence": [
+        "run:phases/016/tasks/provenance-baseline/report.json",
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/provenance-baseline-report-check.json"
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "item": "016/t4-fixture-repair/F1",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C11",
+        "run:phases/017/tasks/t4-baseline-integration/objective.md"
+      ],
+      "reason": "정확10실패는양쪽새passed와원핸들/수리diff로해소했다. 부분회귀와전체T4를구별하여017에연결책임을남긴다.",
+      "evidence": [
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "016/t4-fixture-repair/F2",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:phases/017/tasks/t4-baseline-integration/objective.md"
+      ],
+      "reason": "bootstrap현재양쪽2passed는승인하되과거WinError5원인미확인은유지한다.017전체에서재현되면정확trace/OS조건으로판정한다.",
+      "evidence": [
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "016/t4-fixture-repair/F3",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C2",
+        "run:context.md#C12",
+        "run:plan.md"
+      ],
+      "reason": "139입력/144corpus/host8/도구/01512제품보존을현재와원자료로확인했다.2675모집단차이와합성validation경계를명시하고22제품마감은017검수까지대기한다.",
+      "evidence": [
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/review.md"
+      ]
+    },
+    {
+      "item": "016/provenance-baseline/F1",
+      "action": "carry",
+      "destination": [
+        "run:context.md#C11",
+        "run:phases/017/tasks/t4-baseline-integration/objective.md"
+      ],
+      "reason": "도입부모·원기록·910Gitblob원바이트의입력자격을검수했다. 실제비교/wholeT4는미수행이므로017의정확raw/공식연결검증으로배정한다.",
+      "evidence": [
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/tasks/provenance-baseline/evidence/baseline-manifest.json"
+      ]
+    },
+    {
+      "item": "016/provenance-baseline/F2",
+      "action": "resolve",
+      "destination": [
+        "run:context.md#C9",
+        "run:phases/017/tasks/t4-baseline-integration/objective.md"
+      ],
+      "reason": "네역사보고의해당경로부재와P10/P11namespace정정을받아들인다.역사counts를새성공에합산하지않고현재exact시험/G2/G3/G7진입점으로연결했다.",
+      "evidence": [
+        "run:phases/016/tasks/provenance-baseline/evidence/historical-report-availability.json",
+        "run:phases/016/tasks/provenance-baseline/evidence/requirement-trace.json",
+        "run:phases/016/manager-evidence/review.md"
+      ]
+    }
+  ],
+  "context_updates": [
+    {
+      "item": "C2",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C2"
+      ],
+      "reason": "016두complete의근거와2675/2671모집단,부분회귀/입력준비의한계를추가했다.",
+      "evidence": [
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/review.md",
+        "run:phases/016/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C5",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C5"
+      ],
+      "reason": "종료된016분업의현재실행설명을017단일연결/판본고정/캐시소유로교체했다.기존worker상한은유지한다.",
+      "evidence": [
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/review.md",
+        "run:phases/016/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C8",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C8"
+      ],
+      "reason": "사용자지정모델을017에승계하며제품유료호출과구별했다.",
+      "evidence": [
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/review.md",
+        "run:phases/016/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C9",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C9"
+      ],
+      "reason": "지정fixture도입slice유지/교정과원baseline자격·역사raw부재·P10/P11식별자정정을추가했다.",
+      "evidence": [
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/review.md",
+        "run:phases/016/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C10",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C10"
+      ],
+      "reason": "L01질문/byte요구를그대로두고독립적으로진행하는현재행동을017로갱신했다.",
+      "evidence": [
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/review.md",
+        "run:phases/016/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C11",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C11"
+      ],
+      "reason": "정확10실패해소와관찰자핸들인과를추가하고bootstrap원인미확인·실제baseline비교/전체T4책임을보존했다.",
+      "evidence": [
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/review.md",
+        "run:phases/016/manager-evidence/common-docs.diff"
+      ]
+    },
+    {
+      "item": "C12",
+      "action": "amend",
+      "destination": [
+        "run:context.md#C12"
+      ],
+      "reason": "기존실호출한정재사용·22제품대기·원자료archive및추적/로컬범위를추가했다.",
+      "evidence": [
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/review.md",
+        "run:phases/016/manager-evidence/common-docs.diff"
+      ]
+    }
+  ],
+  "plan_update": "016두결과검수와F처분을반영하고017의두exact/raw및양쪽전체T4단일연결work를배정했다.검사전후판본고정/캐시범위·실패반환·22제품커밋대기를명시했다.나머지의미/문서/L01/최종일반·freshT3·전수변이·review계획과G는보존했다.",
+  "seam_updates": [],
+  "completion": null
+}

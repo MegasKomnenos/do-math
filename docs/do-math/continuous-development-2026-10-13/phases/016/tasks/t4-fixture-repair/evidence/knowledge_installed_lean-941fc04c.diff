@@ -1,0 +1,19 @@
+commit 8afa57c7f720f2964a6edaeaf3fa368a620a5269
+Author: MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+Date:   Sun Oct 4 05:52:49 2026 +0900
+
+    형식 프로젝트 관찰과 CLI 저장소 준비를 Git 의미 포트와 모든 소비자에 연결한다
+
+diff --git a/.claude/skills/do-math/scripts/tests/support/knowledge_installed_lean.py b/.claude/skills/do-math/scripts/tests/support/knowledge_installed_lean.py
+index 5dd1b133..708bdcfa 100644
+--- a/.claude/skills/do-math/scripts/tests/support/knowledge_installed_lean.py
++++ b/.claude/skills/do-math/scripts/tests/support/knowledge_installed_lean.py
+@@ -46,7 +46,7 @@ def installed_toolchain():
+     if not _OBSERVED:
+         with tempfile.TemporaryDirectory() as directory:
+             result = verify_lean(source=knowledge_candidate()['lean_code'], declarations=['truth'],
+-                                 workspace=Path(directory), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs)
++                                 workspace=Path(directory), lean_command=actual_command(), clock=_entry.ports.clock, environment=_entry.environment, jobs=_entry.ports.jobs, git_backend=_entry.ports.git_backend)
+         if result['status'] != 'verified':
+             raise AssertionError('the installed Lean did not verify the candidate: ' + repr(result))
+         _OBSERVED.append(result['toolchain'])

@@ -1,0 +1,20 @@
+{
+  "identity_source": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\fixture-reproduction.json",
+  "record_path": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\t4-fixture-repair\\evidence\\fixture-audit\\installed-record\\records\\TC-042e5b22198ecb46d4a731ef6f7f1365c8407579e29c8c72395c685d52941951.json",
+  "record_sha256": "7e894ae49e11f91adf525048dfd3b7214699119e3255bf464b1f86204504c119",
+  "judgment_files": 11094,
+  "fingerprint_unchanged": true,
+  "record_errors": [],
+  "content_sha256": "1ab185ba2769731887b6d12ca94d0c837cbf1baaf647f414d62da9b1f6b8f113",
+  "raw_content_samples": {
+    "project/.lake/config/1/lakefile.olean": "cc20058c4063189f951c390e5a6d4f181810e15dc3dc8a11531af5dc3b3b4740",
+    "project/.lake/config/5/lakefile.olean": "8a65ae185de6e65bbe542521154c2cc203ba61caeb715bce879c9da900c646c6",
+    "toolchain/lib/lean/Std/Time/Zoned/TimeZone.olean": "64597890686cace2f6ba3af87cfe84beb922933fe75adad2fd13bc86623ab30f",
+    "toolchain/lib/lean/Std/Time/Zoned/ZoneRules.olean": "ce78566c6ba6ec4efefaf70ca1235cb7d336903aa1debc8ed2644f8bea1758ef",
+    "toolchain/bin/libc++.dll": "ae0e6e44181262ead025043e6b600738fa1c1d300a19e07bc92bfb28e48ac187"
+  },
+  "synthetic_judgment_files": 2,
+  "synthetic_all_hashes_match": true,
+  "validation_is_synthetic": true,
+  "installation_record_adoption": false
+}

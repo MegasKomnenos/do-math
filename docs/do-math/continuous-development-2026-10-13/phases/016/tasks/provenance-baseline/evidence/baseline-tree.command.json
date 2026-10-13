@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "git",
+    "ls-tree",
+    "-r",
+    "-z",
+    "010b059700115f6d5d3df1bf24e931cf78eaa44a",
+    "--",
+    ".claude/skills/do-math/scripts/"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T22:58:24.853999+00:00",
+  "ended": "2026-10-13T22:58:24.949592+00:00",
+  "exit_code": 0,
+  "stdout": "baseline-tree.stdout",
+  "stderr": "baseline-tree.stderr",
+  "stdout_sha256": "7dcf849d7fbd85f1ab15c1b0245114cd03e7314ba41022b96e6bf08bb4262d17"
+}

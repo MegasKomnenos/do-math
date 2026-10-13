@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\provenance-baseline\\evidence\\verify_baseline.py"
+  ],
+  "cwd": "C:/math",
+  "pid": 32688,
+  "started": "2026-10-13T23:02:51.702835+00:00",
+  "ended": "2026-10-13T23:02:55.028681+00:00",
+  "exit_code": 0,
+  "stdout": "baseline-verify.stdout",
+  "stderr": "baseline-verify.stderr"
+}

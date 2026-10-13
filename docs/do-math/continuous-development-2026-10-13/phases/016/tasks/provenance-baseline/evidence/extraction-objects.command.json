@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "git",
+    "cat-file",
+    "--batch"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T23:01:33.303461+00:00",
+  "ended": "2026-10-13T23:01:33.736036+00:00",
+  "exit_code": 0,
+  "stdin": "extraction-objects.stdin",
+  "stdin_sha256": "ca43a541c0280e5e0f6e4d376fac411e0b590f524dba42f6699a8f79d4b3f44f",
+  "stdout": "extraction-objects.stdout.bin",
+  "stdout_sha256": "95e74e50b01c16c8bcd767a1ac58bad6fa77ee8965a77db86c6258a1f701bafd",
+  "stderr": "extraction-objects.stderr",
+  "object_count": 901
+}

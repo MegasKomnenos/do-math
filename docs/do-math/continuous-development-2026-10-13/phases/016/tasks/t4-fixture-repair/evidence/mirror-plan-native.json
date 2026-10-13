@@ -1,0 +1,13 @@
+{
+  "changes": [
+    ".agents/skills/do-math/scripts/tests/boundary/test_observation_real_job.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_scheduling_background_processes.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_scheduling_host_processes.py",
+    ".agents/skills/do-math/scripts/tests/boundary/test_submission_lean_preview.py",
+    ".agents/skills/do-math/scripts/tests/support/knowledge_roundtrip.py"
+  ],
+  "outside_writes": [],
+  "manifest_unchanged": true,
+  "manifest_values_unchanged": true,
+  "output_count": 1336
+}

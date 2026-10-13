@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "git",
+    "show",
+    "bbe64043f49d46fb7c3b6e768b99a8acbaa125cf:.claude/skills/do-math/scripts/tests/support/branch_gate.py"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T22:58:25.320066+00:00",
+  "ended": "2026-10-13T22:58:25.412688+00:00",
+  "exit_code": 0,
+  "stdout": "fix-branch_gate.stdout",
+  "stderr": "fix-branch_gate.stderr",
+  "stdout_sha256": "1930d7ecaace9b52f19042a16b65a0f9f51698dcd78c430964e4134c6e28d520"
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "path": ".claude/skills/do-math/scripts/tests/boundary/test_shared_input_provenance.py",
+    "phase015": "692981eaf0949c9ac7a2a6729485db8079b768aff70721f24dfded5c05a5223e",
+    "current_sha256": "692981eaf0949c9ac7a2a6729485db8079b768aff70721f24dfded5c05a5223e",
+    "equal": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/branch_gate.py",
+    "phase015": "6bfe13b54e54542a207fffca129e2db7581582781bb22774f61d4e8e31ce4327",
+    "current_sha256": "6bfe13b54e54542a207fffca129e2db7581582781bb22774f61d4e8e31ce4327",
+    "equal": true
+  },
+  {
+    "path": ".claude/skills/do-math/scripts/tests/support/t3_store.py",
+    "phase015": "1656b8a318518c33fb849941e07be4831a66d70e92ea742dd388121492220ef9",
+    "current_sha256": "1656b8a318518c33fb849941e07be4831a66d70e92ea742dd388121492220ef9",
+    "equal": true
+  }
+]

@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\016\tasks\t4-fixture-repair\evidence\os_job_launcher.py", line 9, in <module>
+    print('Job diagnostic exit:', child.exit_code())
+                                  ^^^^^^^^^^^^^^^
+AttributeError: 'WindowsJob' object has no attribute 'exit_code'

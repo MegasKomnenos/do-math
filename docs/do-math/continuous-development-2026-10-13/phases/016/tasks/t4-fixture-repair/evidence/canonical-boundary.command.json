@@ -1,0 +1,26 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "boundary.test_knowledge_formal_consumer",
+    "boundary.test_knowledge_lean_storage",
+    "boundary.test_observation_real_job",
+    "boundary.test_scheduling_host_processes",
+    "boundary.test_scheduling_background_processes",
+    "boundary.test_submission_lean_preview",
+    "boundary.test_operator_bootstrap_info",
+    "--tier",
+    "T4",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\016\\tasks\\t4-fixture-repair\\evidence\\canonical-boundary"
+  ],
+  "cwd": "C:\\math",
+  "pid": 34660,
+  "started": "2026-10-13T23:01:34.831522+00:00",
+  "ended": "2026-10-13T23:05:13.905358+00:00",
+  "exit_code": 0
+}

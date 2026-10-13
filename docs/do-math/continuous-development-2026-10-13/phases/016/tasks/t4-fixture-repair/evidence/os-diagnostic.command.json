@@ -1,0 +1,13 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/016/tasks/t4-fixture-repair/evidence/os_handle_probe.py"
+  ],
+  "cwd": "C:\\math",
+  "pid": 18748,
+  "started": "2026-10-13T22:59:50.107275+00:00",
+  "ended": "2026-10-13T22:59:54.130732+00:00",
+  "exit_code": 0
+}

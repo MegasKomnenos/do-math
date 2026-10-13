@@ -1,0 +1,133 @@
+[
+  [
+    "/review_units/1",
+    {
+      "id": "PR01",
+      "title": "실행기·T3·변이·시간 정책",
+      "historical_status": "not_reviewed_here",
+      "history_ids": [
+        "B56"
+      ],
+      "actual_reviewed_history_ids": [],
+      "disposition": "아직 재검토하지 않은 영역. 원래 end_question을 같은 파일을 다루는 요구 작업의 입력에 합친다.",
+      "finite_question": "선택·측정·변이·보고가 실제 시험 결과와 분리되고 미측정/미완결을 성공으로 만들지 않으며 timeout 제거와 소프트 예산을 지키는가?",
+      "coassign_with_tracking_tasks": [
+        "KEEP-RUNNER-DISCOVERY",
+        "KEEP-RUNNER-REPORT",
+        "FINAL-T3",
+        "MUTATION-PLAN"
+      ],
+      "source_seeds": [
+        {
+          "reference": "repo:.claude/skills/do-math/scripts/run_tests.py",
+          "exists": true,
+          "sha256": "6a2552fa012934a4ffc8b46cbc076dedb82809e6d0ec510905b192bf748884fe"
+        },
+        {
+          "reference": "repo:.claude/skills/do-math/scripts/tests/support/branch_gate.py",
+          "exists": true,
+          "sha256": "1930d7ecaace9b52f19042a16b65a0f9f51698dcd78c430964e4134c6e28d520"
+        },
+        {
+          "reference": "repo:.claude/skills/do-math/scripts/tests/support/mutation.py",
+          "exists": true,
+          "sha256": "4809b2d84d720b10424648ea438a191f88fa2ef42863d939c0e2d1ddef9109f7"
+        },
+        {
+          "reference": "repo:.claude/skills/do-math/scripts/tests/support/t3_store.py",
+          "exists": true,
+          "sha256": "1656b8a318518c33fb849941e07be4831a66d70e92ea742dd388121492220ef9"
+        },
+        {
+          "reference": "repo:.claude/skills/do-math/scripts/tests/support/selection.py",
+          "exists": true,
+          "sha256": "1106196c76a340647a26822f00ec5264f09c3764a186545d199ce6362d485ead"
+        },
+        {
+          "reference": "repo:.claude/skills/do-math/scripts/tests/시험-지침.md",
+          "exists": true,
+          "sha256": "c19490133b0be8ddf78a0bba11e993bbd07015a118fc96f9508fb662376d6cc4"
+        }
+      ],
+      "review_slices": [
+        {
+          "history_id": "B56",
+          "board_selector": "/current_work/measurement_integration",
+          "commit": null,
+          "current_files": [
+            {
+              "reference": "repo:.claude/skills/do-math/scripts/run_tests.py",
+              "exists": true,
+              "sha256": "6a2552fa012934a4ffc8b46cbc076dedb82809e6d0ec510905b192bf748884fe"
+            },
+            {
+              "reference": "repo:.claude/skills/do-math/scripts/tests/support/branch_gate.py",
+              "exists": true,
+              "sha256": "1930d7ecaace9b52f19042a16b65a0f9f51698dcd78c430964e4134c6e28d520"
+            },
+            {
+              "reference": "repo:.claude/skills/do-math/scripts/tests/support/mutation.py",
+              "exists": true,
+              "sha256": "4809b2d84d720b10424648ea438a191f88fa2ef42863d939c0e2d1ddef9109f7"
+            },
+            {
+              "reference": "repo:.claude/skills/do-math/scripts/tests/support/t3_store.py",
+              "exists": true,
+              "sha256": "1656b8a318518c33fb849941e07be4831a66d70e92ea742dd388121492220ef9"
+            },
+            {
+              "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_branch_gate.py",
+              "exists": true,
+              "sha256": "8bf34c9b2e32cb975b5f6b02261811f9c76468e930af174d1ef5391fa27e31bc"
+            },
+            {
+              "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_mutation.py",
+              "exists": true,
+              "sha256": "6dacf5c396be3ba41551f43147cd6596cb18fcaa3aa23e44299f5c04160a128e"
+            },
+            {
+              "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_runner_tiers.py",
+              "exists": true,
+              "sha256": "944e6bf1dc0d81b9927eca7d0c92e35a42410aba63b455330311384771923bac"
+            },
+            {
+              "reference": "repo:.claude/skills/do-math/scripts/tests/unit/test_t3_store.py",
+              "exists": true,
+              "sha256": "a62c5243867f6e892bb8d6ce54ff0a98d8fd626c64cb3a3276c7b1237df3ecf4"
+            },
+            {
+              "reference": "repo:.claude/skills/do-math/scripts/tests/sim/test_template.py",
+              "exists": true,
+              "sha256": "3ed63e31d4f0d5cb25fda1d07e2e217c7febb7b2a2501a35a6676bc76c01dde2"
+            },
+            {
+              "reference": "repo:.claude/skills/do-math/scripts/tests/boundary/test_shared_input_provenance.py",
+              "exists": true,
+              "sha256": "692981eaf0949c9ac7a2a6729485db8079b768aff70721f24dfded5c05a5223e"
+            }
+          ],
+          "unresolved_historical_file_locators": [],
+          "original_report_selectors": [
+            "/current_work/measurement_integration/changed_area/path",
+            "/current_work/measurement_integration/structure/path",
+            "/current_work/measurement_integration/timing_red/path",
+            "/current_work/measurement_integration/exact_baseline_comparison/path"
+          ],
+          "diff_to_read": "해당 board_selector의 도입 commit을 git log -S로 찾고 실제 제품/시험 hunk를 확인",
+          "required_comparison": "위 실제 hunk의 변경 함수 → 현재 직접 caller/수신자 → 원보고의 그 testID/판본을 함께 읽는다. 매핑만으로 유지 판정하지 않는다."
+        }
+      ],
+      "foundation_or_migration_sources": {
+        "board": "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json",
+        "selectors": [
+          "current_work.independent_execution.prior_review.foundation_to_unit",
+          "current_work.independent_execution.prior_review.non_b_history_to_unit",
+          "current_work.independent_execution.prior_review.migration_artifact_to_unit",
+          "current_work.independent_execution.prior_review.legacy_population_mapping",
+          "current_work.independent_execution.prior_review.preservation_mapping"
+        ]
+      },
+      "stop": "한 slice의 성질 유지/교정/제거/추가 판정과 근거가 있으면 종료. 다른 영역의 완료를 선행 장벽으로 삼지 않는다."
+    }
+  ]
+]

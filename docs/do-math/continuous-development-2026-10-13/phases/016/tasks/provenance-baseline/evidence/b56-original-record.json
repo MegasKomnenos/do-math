@@ -1,0 +1,144 @@
+{
+  "id": "B56",
+  "state": "verified_main_commit_pending",
+  "scope": "실행기 전체모듈비용·공유producer 입력provenance·변이오류/timeout판정·T3 store와모든확인된소비자/시험10파일 통합",
+  "changed_area": {
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-fj9e2u51\\report.json",
+    "sha256": "3b423af2326287ac9a2b03d549d61128e5287ff82a88b6d215047d3cad1acfbf",
+    "complete": true,
+    "successful": true,
+    "counts": {
+      "passed": 83,
+      "skipped": 2
+    },
+    "total_seconds": 25.5,
+    "changed_during_run": [],
+    "budget": {
+      "over_budget": [
+        {
+          "id": "unit.test_runner_tiers.ModuleFixtureTests.test_both_modes_preserve_order_fixture_counts_and_complete_module_costs",
+          "seconds": 0.34399999992456287,
+          "budget_seconds": 0.2
+        },
+        {
+          "id": "unit.test_runner_tiers.ReportTests.test_report_states_the_number_of_open_known_defects",
+          "seconds": 2.405999999959022,
+          "budget_seconds": 0.2
+        },
+        {
+          "id": "unit.test_runner_tiers.TierTests.test_discovery_reaches_the_folder_packages",
+          "seconds": 0.4529999999795109,
+          "budget_seconds": 0.2
+        },
+        {
+          "id": "unit.test_runner_tiers.TimingRecordTests.test_a_partial_public_selection_reports_its_cost_without_replacing_the_whole_module_cost",
+          "seconds": 0.875,
+          "budget_seconds": 0.2
+        }
+      ],
+      "tier": null
+    }
+  },
+  "structure": {
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-6bxa__n2\\report.json",
+    "sha256": "d5e4e5130d7a2dac5a98181cbeee64c174ef5e64c6f75a6fe1bcb7ce39ac8133",
+    "complete": true,
+    "successful": true,
+    "counts": {
+      "passed": 6
+    },
+    "total_seconds": 8.1,
+    "changed_during_run": [],
+    "budget": {
+      "over_budget": [
+        {
+          "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+          "seconds": 7.030999999959022,
+          "budget_seconds": 5.0
+        }
+      ],
+      "tier": null
+    }
+  },
+  "contract": "부분 선택은전체모듈비용을덮지 않는다. literal reads/coverage는보존하고 실제producer사용에따른transitive 입력/함수의존만따로기록한다. worker동일key분리와재측정의존폐기. timeout은동일정상선택성공필요,미측정오류/누락/기준선실패가그린을만들지않음.",
+  "limits": "첫85선택83passed/2baseline미제공skip25.5초와기준선제공후2passed15.2초를별도보존. pre-fix0b4a2ebc scripts gitarchive에서literal labels/opens/imports/coverage전건과two-workerunion의정확보존비교. 전체fresh관문증거아님. 구조smell7.031초보존.",
+  "files": [
+    {
+      "path": "run_tests.py",
+      "sha256": "fcdf5d2a34ef9ebfa14643eb87411f593c63016c8edb36f1930c14056c826cbf"
+    },
+    {
+      "path": "tests/support/branch_gate.py",
+      "sha256": "1930d7ecaace9b52f19042a16b65a0f9f51698dcd78c430964e4134c6e28d520"
+    },
+    {
+      "path": "tests/support/mutation.py",
+      "sha256": "98ca078052d82837d249e3c1f1d93d2aea6abf1e6d6f003379af323897d955c8"
+    },
+    {
+      "path": "tests/support/t3_store.py",
+      "sha256": "1656b8a318518c33fb849941e07be4831a66d70e92ea742dd388121492220ef9"
+    },
+    {
+      "path": "tests/unit/test_branch_gate.py",
+      "sha256": "8bf34c9b2e32cb975b5f6b02261811f9c76468e930af174d1ef5391fa27e31bc"
+    },
+    {
+      "path": "tests/unit/test_mutation.py",
+      "sha256": "53a39766dc5b9ecded35d3fd72719cf19811c4ca300c6f8e4f827b1fe0f65b90"
+    },
+    {
+      "path": "tests/unit/test_runner_tiers.py",
+      "sha256": "eed6d849e49a961fd80dc9535ce7fe8ab50d70f70935d2c84f305df5a06726c1"
+    },
+    {
+      "path": "tests/unit/test_t3_store.py",
+      "sha256": "a62c5243867f6e892bb8d6ce54ff0a98d8fd626c64cb3a3276c7b1237df3ecf4"
+    },
+    {
+      "path": "tests/sim/test_template.py",
+      "sha256": "3ed63e31d4f0d5cb25fda1d07e2e217c7febb7b2a2501a35a6676bc76c01dde2"
+    },
+    {
+      "path": "tests/boundary/test_shared_input_provenance.py",
+      "sha256": "692981eaf0949c9ac7a2a6729485db8079b768aff70721f24dfded5c05a5223e"
+    }
+  ],
+  "whole_requirement_closed": false,
+  "timing_red": {
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-eaivmkw0\\report.json",
+    "sha256": "b8edf42c1e2c0bd6eb5561dce58cdcd4975edff6da1923dbc29ba186f5c23925",
+    "complete": true,
+    "successful": false,
+    "counts": {
+      "failed": 1
+    },
+    "total_seconds": 0.9,
+    "changed_during_run": [],
+    "budget": {
+      "over_budget": [
+        {
+          "id": "unit.test_runner_tiers.TimingRecordTests.test_a_partial_public_selection_reports_its_cost_without_replacing_the_whole_module_cost",
+          "seconds": 0.890999999945052,
+          "budget_seconds": 0.2
+        }
+      ],
+      "tier": null
+    }
+  },
+  "exact_baseline_comparison": {
+    "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-hkr9st06\\report.json",
+    "sha256": "5b41f533e251219e0f43e91db3a95bceb04a3ad21714d3cdabe60cab2989f281",
+    "complete": true,
+    "successful": true,
+    "counts": {
+      "passed": 2
+    },
+    "total_seconds": 15.2,
+    "changed_during_run": [],
+    "budget": {
+      "over_budget": [],
+      "tier": null
+    }
+  }
+}

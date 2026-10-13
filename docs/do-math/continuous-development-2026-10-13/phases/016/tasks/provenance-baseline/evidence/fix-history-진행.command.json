@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "git",
+    "show",
+    "bbe64043f49d46fb7c3b6e768b99a8acbaa125cf",
+    "--",
+    "docs/do-math/시험-재편-2026-09-29/진행.md"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T22:59:01.022897+00:00",
+  "ended": "2026-10-13T22:59:01.113128+00:00",
+  "exit_code": 0,
+  "stdout": "fix-history-진행.stdout",
+  "stderr": "fix-history-진행.stderr",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

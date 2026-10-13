@@ -1,0 +1,6 @@
+{
+  "inspected_head": "72684c76ed5d282279de5de956523ea17ffd4e40",
+  "introduction_commit": "bbe64043f49d46fb7c3b6e768b99a8acbaa125cf",
+  "baseline_commit": "010b059700115f6d5d3df1bf24e931cf78eaa44a",
+  "selection": "First parent immediately before input_dependencies/shared producer provenance introduction; source/API validation still required."
+}

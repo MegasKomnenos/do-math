@@ -1,0 +1,74 @@
+{
+  "p10_p11_literal_occurrences": 0,
+  "interpretation": "P10/P11 are the exact-baseline test/history labels, not IDs in the 103-row requirement-state population. Do not invent matching requirement IDs.",
+  "related_rows": [
+    {
+      "selector": "/rows/34",
+      "id": "K-05",
+      "group": "preservation",
+      "original": "고른 시험이 0개면 \"no pass was established\"로 실패한다.",
+      "sources": [
+        {
+          "reference": "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json",
+          "exists": true,
+          "selector": "preservation[id='K-05']",
+          "sha256": "9f0a0e6100d70dacacc4c9a428db92903a08bd040f7bd736770b51715c98e365"
+        },
+        {
+          "reference": "run:sources/requirements-index.json",
+          "exists": true,
+          "selector": "rows[group=preservation,id=K-05]",
+          "sha256": "f031f787fa58dfbfa2f490d9cca00d0044f461f3c2d42b38e1cc39078ba25351"
+        },
+        {
+          "reference": "repo:docs/do-math/시험-재편-2026-09-29/조사/대역-사각지대.md",
+          "exists": true,
+          "selector": "3부 K-05",
+          "sha256": "d8f0838165e3917fb78ffb5b3955b067266505746ba96c29822907d498869da2"
+        },
+        {
+          "reference": "repo:.claude/skills/do-math/scripts/tests/migration/dispositions/kernel.knowledge.json",
+          "exists": true,
+          "selector": "id=K-05",
+          "sha256": "a05a2d564c881136214bb499d1643c1c5c94137592a2e8ca4a22261b3fbdce82"
+        }
+      ],
+      "question": "빈 match/selection에서 과거 측정 재사용 건을 신규 pass로 집계하지 않는가?",
+      "next_action": "지정한 source/test/기존 원보고로 질문을 답한다. 충분하면 최종 판본 대기로 옮기고, 빠진 입력/단언이 확인될 때만 그 한정 수리를 배정한다."
+    },
+    {
+      "selector": "/rows/35",
+      "id": "K-06",
+      "group": "preservation",
+      "original": "출력 폴더는 새것이거나 비어 있어야 하고, 결과를 재사용하는 캐시가 없다.",
+      "sources": [
+        {
+          "reference": "repo:docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json",
+          "exists": true,
+          "selector": "preservation[id='K-06']",
+          "sha256": "9f0a0e6100d70dacacc4c9a428db92903a08bd040f7bd736770b51715c98e365"
+        },
+        {
+          "reference": "run:sources/requirements-index.json",
+          "exists": true,
+          "selector": "rows[group=preservation,id=K-06]",
+          "sha256": "f031f787fa58dfbfa2f490d9cca00d0044f461f3c2d42b38e1cc39078ba25351"
+        },
+        {
+          "reference": "repo:docs/do-math/시험-재편-2026-09-29/조사/대역-사각지대.md",
+          "exists": true,
+          "selector": "3부 K-06",
+          "sha256": "d8f0838165e3917fb78ffb5b3955b067266505746ba96c29822907d498869da2"
+        },
+        {
+          "reference": "repo:.claude/skills/do-math/scripts/tests/migration/dispositions/kernel.knowledge.json",
+          "exists": true,
+          "selector": "id=K-06",
+          "sha256": "a05a2d564c881136214bb499d1643c1c5c94137592a2e8ca4a22261b3fbdce82"
+        }
+      ],
+      "question": "비어 있지 않은 출력 폴더를 거부하고 --full의 실제 실행 전건과 증분 측정 재사용을 구분하는가?",
+      "next_action": "지정한 source/test/기존 원보고로 질문을 답한다. 충분하면 최종 판본 대기로 옮기고, 빠진 입력/단언이 확인될 때만 그 한정 수리를 배정한다."
+    }
+  ]
+}

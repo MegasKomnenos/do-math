@@ -1,0 +1,120 @@
+{
+  "files": [
+    {
+      "reference": "run:sources/user-decisions.md",
+      "start_sha256": "832ac395fb005e051c8d582ec81db16d80994bf29db254fd317a3248d03a71b7",
+      "end_sha256": "832ac395fb005e051c8d582ec81db16d80994bf29db254fd317a3248d03a71b7",
+      "equal": true
+    },
+    {
+      "reference": "run:sources/model-policy-2026-10-14.md",
+      "start_sha256": "1bb613af7f8679e62c193dee6918c246fc2661be81f50ac2d69051ad4fe11aa8",
+      "end_sha256": "1bb613af7f8679e62c193dee6918c246fc2661be81f50ac2d69051ad4fe11aa8",
+      "equal": true
+    },
+    {
+      "reference": "run:phases/015/tasks/t4-adapter-report/report.json",
+      "start_sha256": "e21dcc67f09f1be39a97f8b8049f5f48cbc94e6eb9c49816804a5ce074c78602",
+      "end_sha256": "e21dcc67f09f1be39a97f8b8049f5f48cbc94e6eb9c49816804a5ce074c78602",
+      "equal": true
+    },
+    {
+      "reference": "run:phases/015/manager-evidence/verification.json",
+      "start_sha256": "05121de9300d859f67a847401364530ef14434882338d112639da848de5969bf",
+      "end_sha256": "05121de9300d859f67a847401364530ef14434882338d112639da848de5969bf",
+      "equal": true
+    },
+    {
+      "reference": "run:phases/015/manager-evidence/review.md",
+      "start_sha256": "f057b7dd338db701c352059582a7bb5e203a4808bb3ac635aeaf478b604fa9b3",
+      "end_sha256": "f057b7dd338db701c352059582a7bb5e203a4808bb3ac635aeaf478b604fa9b3",
+      "equal": true
+    },
+    {
+      "reference": "run:phases/015/manager-evidence/source-inspected.json",
+      "start_sha256": "2ad51ec5f60522219f79df36547de16178b761c3aefde0cf1f3d325104f57da8",
+      "end_sha256": "2ad51ec5f60522219f79df36547de16178b761c3aefde0cf1f3d325104f57da8",
+      "equal": true
+    },
+    {
+      "reference": "repo:.claude/skills/do-math/AGENTS.md",
+      "start_sha256": "9d5a195ff16e9f94d0e4a785bdf1c46d3a51bf521745eda2a8a28256245598e2",
+      "end_sha256": "9d5a195ff16e9f94d0e4a785bdf1c46d3a51bf521745eda2a8a28256245598e2",
+      "equal": true
+    },
+    {
+      "reference": "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+      "start_sha256": "6f962d34df63620b3bd8876d775699eac0f6d4123874d6ac96db2ec1a153be83",
+      "end_sha256": "6f962d34df63620b3bd8876d775699eac0f6d4123874d6ac96db2ec1a153be83",
+      "equal": true
+    },
+    {
+      "reference": "run:phases/001/tasks/closure-map/evidence/prior-review-state.json",
+      "start_sha256": "6552f056d4073d5f559ec10f20821c0860ee809b12688c9712fa22efd031b6a6",
+      "end_sha256": "6552f056d4073d5f559ec10f20821c0860ee809b12688c9712fa22efd031b6a6",
+      "equal": true
+    },
+    {
+      "reference": "run:phases/001/tasks/closure-map/evidence/requirement-state.json",
+      "start_sha256": "6aed000e4aec62e504ed5942d96b2d2a6dfbcd7c4f1539fcf96cfc435887a754",
+      "end_sha256": "6aed000e4aec62e504ed5942d96b2d2a6dfbcd7c4f1539fcf96cfc435887a754",
+      "equal": true
+    },
+    {
+      "reference": "run:phases/015/tasks/t4-adapter-report/evidence/history-original-observation.json",
+      "start_sha256": "f35e6d087fb6f889c88923e00cf2c03a959203d068a4ae38fde654af39fa2570",
+      "end_sha256": "f35e6d087fb6f889c88923e00cf2c03a959203d068a4ae38fde654af39fa2570",
+      "equal": true
+    },
+    {
+      "reference": "run:phases/015/tasks/t4-adapter-report/evidence/review.md",
+      "start_sha256": "16ede0756ca7d4e699f026d8b451051544edd06bd016173f694b65be4c48486c",
+      "end_sha256": "16ede0756ca7d4e699f026d8b451051544edd06bd016173f694b65be4c48486c",
+      "equal": true
+    },
+    {
+      "reference": "repo:.claude/skills/do-math/scripts/tests/boundary/test_shared_input_provenance.py",
+      "start_sha256": "692981eaf0949c9ac7a2a6729485db8079b768aff70721f24dfded5c05a5223e",
+      "end_sha256": "692981eaf0949c9ac7a2a6729485db8079b768aff70721f24dfded5c05a5223e",
+      "equal": true
+    },
+    {
+      "reference": "repo:.claude/skills/do-math/scripts/tests/support/branch_gate.py",
+      "start_sha256": "6bfe13b54e54542a207fffca129e2db7581582781bb22774f61d4e8e31ce4327",
+      "end_sha256": "6bfe13b54e54542a207fffca129e2db7581582781bb22774f61d4e8e31ce4327",
+      "equal": true
+    },
+    {
+      "reference": "repo:.claude/skills/do-math/scripts/tests/support/t3_store.py",
+      "start_sha256": "1656b8a318518c33fb849941e07be4831a66d70e92ea742dd388121492220ef9",
+      "end_sha256": "1656b8a318518c33fb849941e07be4831a66d70e92ea742dd388121492220ef9",
+      "equal": true
+    },
+    {
+      "reference": "run:context.md",
+      "start_sha256": "cb2a28069d8dd01899f7523e3f2b3bb5754cb2e3200fb7e87acfa47a638bf27b",
+      "end_sha256": "cb2a28069d8dd01899f7523e3f2b3bb5754cb2e3200fb7e87acfa47a638bf27b",
+      "equal": true
+    },
+    {
+      "reference": "run:plan.md",
+      "start_sha256": "da1228bda9d1a0a82dec33f43b6a1f483baf1b5a732242f338a527ce739b8b98",
+      "end_sha256": "da1228bda9d1a0a82dec33f43b6a1f483baf1b5a732242f338a527ce739b8b98",
+      "equal": true
+    },
+    {
+      "reference": "run:seams.md",
+      "start_sha256": "98d8c3932d7968ad3c4ba3c7b94fc4fccb120b21eae7fcc7627a47dc6e18454d",
+      "end_sha256": "98d8c3932d7968ad3c4ba3c7b94fc4fccb120b21eae7fcc7627a47dc6e18454d",
+      "equal": true
+    },
+    {
+      "reference": "run:phases/016/tasks/provenance-baseline/objective.md",
+      "start_sha256": "fe33a745ca80729a928d9224e3b4925c02137f220d87df4cfa3f86c162e5b463",
+      "end_sha256": "fe33a745ca80729a928d9224e3b4925c02137f220d87df4cfa3f86c162e5b463",
+      "equal": true
+    }
+  ],
+  "all_equal": true,
+  "scope": "Assigned inputs/common documents only. No claim about other task writes or whole working-tree cleanliness."
+}

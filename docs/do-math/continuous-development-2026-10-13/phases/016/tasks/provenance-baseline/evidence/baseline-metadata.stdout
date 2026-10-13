@@ -1,0 +1,7 @@
+commit 010b059700115f6d5d3df1bf24e931cf78eaa44a
+Author:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+AuthorDate: Sun Oct 4 09:36:25 2026 +0900
+Commit:     MegasKomnenos <35184490+MegasKomnenos@users.noreply.github.com>
+CommitDate: Sun Oct 4 09:36:25 2026 +0900
+
+    교차 사건과 관찰자 계약을 현재 단언으로 통합하고 과거 결함 허용을 제거한다

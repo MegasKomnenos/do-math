@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "git",
+    "--version"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T22:58:23.963318+00:00",
+  "ended": "2026-10-13T22:58:24.249356+00:00",
+  "exit_code": 0,
+  "stdout": "git-version.stdout",
+  "stderr": "git-version.stderr",
+  "stdout_sha256": "8fe1a25572eeafe6e16c3724d96e751ed2fd58a482a26c4cf9bbf60f00861568"
+}

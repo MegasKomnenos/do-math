@@ -1,0 +1,8 @@
+Open known defects: 0
+[boundary] 1 tests
+  isolated: boundary.test_scheduling_background_processes.BackgroundProcessTests
+  {'failed': 1}
+Over budget: 0 tests; T4 ran 8.3s of 300s
+{"complete": true, "successful": false, "counts": {"failed": 1}, "group_seconds": {"boundary": 8.3}, "total_seconds": 8.3}
+    1.594s failed             boundary.test_scheduling_background_processes.BackgroundProcessTests.test_real_git_descendants_are_observed_without_visible_windows
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\016\tasks\t4-fixture-repair\evidence\os-official-before\report.json

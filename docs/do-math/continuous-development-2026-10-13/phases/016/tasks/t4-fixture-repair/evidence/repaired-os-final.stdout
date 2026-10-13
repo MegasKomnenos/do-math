@@ -1,0 +1,1 @@
+{"exit_code": 0, "positive": {"positive": true, "names": ["git.exe", "conhost.exe", "git.exe"], "consoles": [26678018, 0, 26678018], "visible": [], "stdin_unchanged": true}, "negative": {"positive": false, "names": ["git.exe", "conhost.exe", "git.exe"], "consoles": [0, 0, 0], "visible": [], "stdin_unchanged": true}}

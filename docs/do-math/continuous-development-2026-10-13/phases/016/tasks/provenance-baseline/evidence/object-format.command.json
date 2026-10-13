@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "git",
+    "rev-parse",
+    "--show-object-format"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T23:02:54.702249+00:00",
+  "ended": "2026-10-13T23:02:54.793965+00:00",
+  "exit_code": 0,
+  "stdout": "object-format.stdout",
+  "stderr": "object-format.stderr",
+  "stdout_sha256": "335277ee77cfc8d51d6602e4137232cf6041aac2bc663777e384b90d5ae74d51"
+}

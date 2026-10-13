@@ -1,0 +1,200 @@
+{
+  "canonical-related-04": [],
+  "mirror-related-final": [],
+  "canonical-t4-final": [
+    {
+      "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_actual_approved_command_seals_result_and_ends_execution",
+      "outcome": "error",
+      "seconds": 10.953000000037719,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 104, in test_actual_approved_command_seals_result_and_ends_execution\n    sim, environment = self.start()\n                       ^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_actual_exact_source_and_compiler_names_reach_authoritative_consumer_and_artifact",
+      "outcome": "error",
+      "seconds": 2.3439999999827705,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 137, in test_actual_exact_source_and_compiler_names_reach_authoritative_consumer_and_artifact\n    sim, _ = self.start()\n             ^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_current_environment_change_after_actual_compile_prevents_publication",
+      "outcome": "error",
+      "seconds": 2.047000000020489,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 177, in test_current_environment_change_after_actual_compile_prevents_publication\n    sim, environment = self.start()\n                       ^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_identity_change_after_actual_compile_is_caught_at_publication",
+      "outcome": "error",
+      "seconds": 2.014999999955762,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 157, in test_identity_change_after_actual_compile_is_caught_at_publication\n    sim, environment = self.start({**deepcopy(self.baseline), 'verifier_path': str(checker)})\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_knowledge_lean_storage.InstalledLeanStorageTests.test_actual_lean_domain_revision_and_transition_preserve_exact_inputs_and_evidence",
+      "outcome": "error",
+      "seconds": 3.9380000000237487,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 30, in test_actual_lean_domain_revision_and_transition_preserve_exact_inputs_and_evidence\n    self.assert_exact_lean_result_survives(lambda: None)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 42, in assert_exact_lean_result_survives\n    instance, runtime, self.kid = installed_trust_state(self.root, observed['toolchain'])\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 152, in installed_trust_state\n    request = installed_request(workspace, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_knowledge_lean_storage.InstalledLeanStorageTests.test_actual_lean_git_revision_and_transition_preserve_exact_inputs_and_evidence",
+      "outcome": "error",
+      "seconds": 4.077999999979511,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 26, in test_actual_lean_git_revision_and_transition_preserve_exact_inputs_and_evidence\n    self.assert_exact_lean_result_survives(self.roundtrip)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 42, in assert_exact_lean_result_survives\n    instance, runtime, self.kid = installed_trust_state(self.root, observed['toolchain'])\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 152, in installed_trust_state\n    request = installed_request(workspace, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_observation_real_job.RealJobObservationTests.test_real_job_completion_is_observed_before_delayed_batch_application",
+      "outcome": "failed",
+      "seconds": 2.125,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_observation_real_job.py\", line 82, in test_real_job_completion_is_observed_before_delayed_batch_application\n    self.assertEqual(result['status'], 'completed', result.get('error'))\nAssertionError: 'failed' != 'completed'\n- failed\n+ completed\n : output: Additional properties are not allowed ('ok' was unexpected)\n"
+      ]
+    },
+    {
+      "id": "boundary.test_scheduling_background_processes.BackgroundProcessTests.test_real_git_descendants_are_observed_without_visible_windows",
+      "outcome": "failed",
+      "seconds": 1.0929999999934807,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_scheduling_background_processes.py\", line 134, in test_real_git_descendants_are_observed_without_visible_windows\n    self.assertEqual(process.returncode, 0, process.stderr)\nAssertionError: 1 != 0 : Traceback (most recent call last):\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\canonical-t4-final\\boundary-isolated-039\\scratch\\tmpz99zb6ik\\actual_git_probe.py\", line 56, in <module>\n    snap=store.publish(None,{'research/instance.json':b'{}','runtime/state.json':b'{}',\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\operation_trace.py\", line 199, in run\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\git_store.py\", line 305, in publish\n    self._compare_and_swap(commit, expected_head, \"publish\")\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\git_store.py\", line 256, in _compare_and_swap\n    if not self._backend.update_ref(self.repository, self.ref, new, old):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\git_process.py\", line 166, in update_ref\n    return not self._run(repository, \"update-ref\", ref, new, old or \"0\" * len(new)).returncode\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\git_process.py\", line 75, in _run\n    return self._run_process(\n           ^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\canonical-t4-final\\boundary-isolated-039\\scratch\\tmpz99zb6ik\\actual_git_probe.py\", line 16, in capture\n    return real_run(command,**kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 548, in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 992, in __init__\n    errread, errwrite) = self._get_handles(stdin, stdout, stderr)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1365, in _get_handles\n    p2cread = self._make_inheritable(p2cread)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1416, in _make_inheritable\n    h = _winapi.DuplicateHandle(\n        ^^^^^^^^^^^^^^^^^^^^^^^^\nOSError: [WinError 6] 핸들이 잘못되었습니다\n\n"
+      ]
+    },
+    {
+      "id": "boundary.test_scheduling_host_processes.WriterLockTests.test_two_processes_cannot_both_own_the_git_writer",
+      "outcome": "failed",
+      "seconds": 1.9690000000409782,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_scheduling_host_processes.py\", line 54, in test_two_processes_cannot_both_own_the_git_writer\n    self.assertIn('LockError', child.stdout)\nAssertionError: 'LockError' not found in 'TypeError\\n'\n"
+      ]
+    },
+    {
+      "id": "boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_literal_entries_opens_and_coverage_with_explicit_marker_differences",
+      "outcome": "skipped",
+      "seconds": 0.0,
+      "details": [
+        "P10/P11 pending: supply a separate pre-provenance-fix scripts tree"
+      ]
+    },
+    {
+      "id": "boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_two_worker_raw_union",
+      "outcome": "skipped",
+      "seconds": 0.01600000000325963,
+      "details": [
+        "P10/P11 pending: supply a separate pre-provenance-fix scripts tree"
+      ]
+    },
+    {
+      "id": "boundary.test_submission_lean_preview.LeanPreviewTests.test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker",
+      "outcome": "failed",
+      "seconds": 0.40600000001722947,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\boundary\\test_submission_lean_preview.py\", line 116, in test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker\n    self.assertIsNotNone(observed, result.stderr)\nAssertionError: unexpectedly None : Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nNameError: name 'ports' is not defined\n\n"
+      ]
+    }
+  ],
+  "mirror-t4-full": [
+    {
+      "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_actual_approved_command_seals_result_and_ends_execution",
+      "outcome": "error",
+      "seconds": 10.672000000020489,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 104, in test_actual_approved_command_seals_result_and_ends_execution\n    sim, environment = self.start()\n                       ^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_actual_exact_source_and_compiler_names_reach_authoritative_consumer_and_artifact",
+      "outcome": "error",
+      "seconds": 2.0619999999762513,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 137, in test_actual_exact_source_and_compiler_names_reach_authoritative_consumer_and_artifact\n    sim, _ = self.start()\n             ^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_current_environment_change_after_actual_compile_prevents_publication",
+      "outcome": "error",
+      "seconds": 2.1410000000032596,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 177, in test_current_environment_change_after_actual_compile_prevents_publication\n    sim, environment = self.start()\n                       ^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_knowledge_formal_consumer.FormalConsumerLeanTests.test_identity_change_after_actual_compile_is_caught_at_publication",
+      "outcome": "error",
+      "seconds": 1.952999999979511,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 157, in test_identity_change_after_actual_compile_is_caught_at_publication\n    sim, environment = self.start({**deepcopy(self.baseline), 'verifier_path': str(checker)})\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_formal_consumer.py\", line 100, in start\n    environment = adopt_installed(sim, toolchain or self.baseline, sim.root / 'installed')\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_installed_lean.py\", line 69, in adopt_installed\n    request = installed_request(directory, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_knowledge_lean_storage.InstalledLeanStorageTests.test_actual_lean_domain_revision_and_transition_preserve_exact_inputs_and_evidence",
+      "outcome": "error",
+      "seconds": 4.311999999976251,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 30, in test_actual_lean_domain_revision_and_transition_preserve_exact_inputs_and_evidence\n    self.assert_exact_lean_result_survives(lambda: None)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 42, in assert_exact_lean_result_survives\n    instance, runtime, self.kid = installed_trust_state(self.root, observed['toolchain'])\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 152, in installed_trust_state\n    request = installed_request(workspace, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_knowledge_lean_storage.InstalledLeanStorageTests.test_actual_lean_git_revision_and_transition_preserve_exact_inputs_and_evidence",
+      "outcome": "error",
+      "seconds": 3.98499999998603,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 26, in test_actual_lean_git_revision_and_transition_preserve_exact_inputs_and_evidence\n    self.assert_exact_lean_result_survives(self.roundtrip)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_knowledge_lean_storage.py\", line 42, in assert_exact_lean_result_survives\n    instance, runtime, self.kid = installed_trust_state(self.root, observed['toolchain'])\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 152, in installed_trust_state\n    request = installed_request(workspace, toolchain)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\support\\knowledge_roundtrip.py\", line 145, in installed_request\n    records.write_record(path, record)\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\trust_inventory.py\", line 226, in write_record\n    raise ValueError('; '.join(errors))\nValueError: toolchain baseline 0 fingerprint and content file populations differ\n"
+      ]
+    },
+    {
+      "id": "boundary.test_observation_real_job.RealJobObservationTests.test_real_job_completion_is_observed_before_delayed_batch_application",
+      "outcome": "failed",
+      "seconds": 1.9690000000409782,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_observation_real_job.py\", line 82, in test_real_job_completion_is_observed_before_delayed_batch_application\n    self.assertEqual(result['status'], 'completed', result.get('error'))\nAssertionError: 'failed' != 'completed'\n- failed\n+ completed\n : output: Additional properties are not allowed ('ok' was unexpected)\n"
+      ]
+    },
+    {
+      "id": "boundary.test_scheduling_background_processes.BackgroundProcessTests.test_real_git_descendants_are_observed_without_visible_windows",
+      "outcome": "failed",
+      "seconds": 1.3119999999762513,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_scheduling_background_processes.py\", line 134, in test_real_git_descendants_are_observed_without_visible_windows\n    self.assertEqual(process.returncode, 0, process.stderr)\nAssertionError: 1 != 0 : Traceback (most recent call last):\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\mirror-t4-full\\boundary-isolated-039\\scratch\\tmpjw191fgq\\actual_git_probe.py\", line 56, in <module>\n    snap=store.publish(None,{'research/instance.json':b'{}','runtime/state.json':b'{}',\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\operation_trace.py\", line 199, in run\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\git_store.py\", line 305, in publish\n    self._compare_and_swap(commit, expected_head, \"publish\")\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\git_store.py\", line 256, in _compare_and_swap\n    if not self._backend.update_ref(self.repository, self.ref, new, old):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\git_process.py\", line 166, in update_ref\n    return not self._run(repository, \"update-ref\", ref, new, old or \"0\" * len(new)).returncode\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\do_math\\git_process.py\", line 75, in _run\n    return self._run_process(\n           ^^^^^^^^^^^^^^^^^^\n  File \"C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\015\\tasks\\t4-adapter-report\\evidence\\mirror-t4-full\\boundary-isolated-039\\scratch\\tmpjw191fgq\\actual_git_probe.py\", line 16, in capture\n    return real_run(command,**kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 548, in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 992, in __init__\n    errread, errwrite) = self._get_handles(stdin, stdout, stderr)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1365, in _get_handles\n    p2cread = self._make_inheritable(p2cread)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py\", line 1416, in _make_inheritable\n    h = _winapi.DuplicateHandle(\n        ^^^^^^^^^^^^^^^^^^^^^^^^\nOSError: [WinError 6] 핸들이 잘못되었습니다\n\n"
+      ]
+    },
+    {
+      "id": "boundary.test_scheduling_host_processes.WriterLockTests.test_two_processes_cannot_both_own_the_git_writer",
+      "outcome": "failed",
+      "seconds": 1.7660000000032596,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_scheduling_host_processes.py\", line 54, in test_two_processes_cannot_both_own_the_git_writer\n    self.assertIn('LockError', child.stdout)\nAssertionError: 'LockError' not found in 'TypeError\\n'\n"
+      ]
+    },
+    {
+      "id": "boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_literal_entries_opens_and_coverage_with_explicit_marker_differences",
+      "outcome": "skipped",
+      "seconds": 0.0,
+      "details": [
+        "P10/P11 pending: supply a separate pre-provenance-fix scripts tree"
+      ]
+    },
+    {
+      "id": "boundary.test_shared_input_provenance.SharedInputProvenanceTests.test_exact_baseline_two_worker_raw_union",
+      "outcome": "skipped",
+      "seconds": 0.0,
+      "details": [
+        "P10/P11 pending: supply a separate pre-provenance-fix scripts tree"
+      ]
+    },
+    {
+      "id": "boundary.test_submission_lean_preview.LeanPreviewTests.test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker",
+      "outcome": "failed",
+      "seconds": 0.4380000000237487,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.agents\\skills\\do-math\\scripts\\tests\\boundary\\test_submission_lean_preview.py\", line 116, in test_preview_checker_loaded_from_the_support_archive_is_the_approved_checker\n    self.assertIsNotNone(observed, result.stderr)\nAssertionError: unexpectedly None : Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nNameError: name 'ports' is not defined\n\n"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "slices": [
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/knowledge_roundtrip.py",
+      "commit": "bd3ae53f7e1f50d72ba1feb52bffc430c43a628d",
+      "diff": "knowledge_roundtrip-711b6617.diff",
+      "sha256": "110e8afb9344b163059db6af57ebeca6b54a4d35baae6a6112bfc21860380678"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/knowledge_roundtrip.py",
+      "commit": "5d8db87a15a7dd42c79563e4f29a38d5867c1ccd",
+      "diff": "knowledge_roundtrip-41d9c1c8.diff",
+      "sha256": "ffa988d2d835a4299a11da631cc1f4aa707975d05d90f2813dfa9283f9c110eb"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/knowledge_installed_lean.py",
+      "commit": "8afa57c7f720f2964a6edaeaf3fa368a620a5269",
+      "diff": "knowledge_installed_lean-941fc04c.diff",
+      "sha256": "dd097dbccf0a86e4b1d0f0d2a6b4b69ea44342617f628bd38c2caa67ff48c7d9"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/support/knowledge_installed_lean.py",
+      "commit": "5d8db87a15a7dd42c79563e4f29a38d5867c1ccd",
+      "diff": "knowledge_installed_lean-41d9c1c8.diff",
+      "sha256": "58f4d959265a18075aea3ae05a2d481881bed1d684145a7119687db11b6bd14e"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/boundary/test_observation_real_job.py",
+      "commit": "bd3ae53f7e1f50d72ba1feb52bffc430c43a628d",
+      "diff": "test_observation_real_job-711b6617.diff",
+      "sha256": "a8bb2bdd49d35cd7de19f8910f9343599a2376354f94b506d036280254a69f63"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/boundary/test_observation_real_job.py",
+      "commit": "3b37e80c57f91302a6df64415128602373ec9944",
+      "diff": "test_observation_real_job-1bfc7314.diff",
+      "sha256": "5dc2c76c0dc5c42ec883c7fe06db95f609b6419af5bc39cc3747760dc6709612"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/boundary/test_scheduling_host_processes.py",
+      "commit": "bd3ae53f7e1f50d72ba1feb52bffc430c43a628d",
+      "diff": "test_scheduling_host_processes-711b6617.diff",
+      "sha256": "7665fd69ab3a251acf5a918ceac413d1883dc490c032ee24937dfe91a791aa15"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/boundary/test_scheduling_host_processes.py",
+      "commit": "c4ba50b43937c19c3eb46130d3818397c058616a",
+      "diff": "test_scheduling_host_processes-d9d69ee4.diff",
+      "sha256": "d85c4b591e4c4e72371ce4f4536e016b1edb2e6ef895b77841fa4b3d86e08774"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/boundary/test_scheduling_background_processes.py",
+      "commit": "bd3ae53f7e1f50d72ba1feb52bffc430c43a628d",
+      "diff": "test_scheduling_background_processes-711b6617.diff",
+      "sha256": "ee0d075f10a49d837ebe070b0db9b7835b88082c334973f866b33aa98aa6a7c5"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/boundary/test_scheduling_background_processes.py",
+      "commit": "23cc4df3c3389fd26633b1060bdb11f29db506dd",
+      "diff": "test_scheduling_background_processes-91d59a80.diff",
+      "sha256": "9b72d209489b447cc06d1db265cee3c8c61adcd34205104bf7a324841c2daeb4"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/boundary/test_submission_lean_preview.py",
+      "commit": "8afa57c7f720f2964a6edaeaf3fa368a620a5269",
+      "diff": "test_submission_lean_preview-941fc04c.diff",
+      "sha256": "d452be0e2b9a81208e0f6fdf4f32bb58e8b065fbd3bc24b0c3a594d32c2f3ba4"
+    },
+    {
+      "path": ".claude/skills/do-math/scripts/tests/boundary/test_submission_lean_preview.py",
+      "commit": "407db1367d19d8d2d49014df9aac821b49ac8bc6",
+      "diff": "test_submission_lean_preview-ea691d7d.diff",
+      "sha256": "e9d3233daddd95274ef1cf567651a143dce72ccbb68ad493d9c03673cf369cec"
+    }
+  ],
+  "prior_red_source_checks": [
+    {
+      "label": "canonical-t4-final",
+      "python_count": 875,
+      "start_mismatches": []
+    },
+    {
+      "label": "mirror-t4-full",
+      "python_count": 875,
+      "start_mismatches": []
+    }
+  ],
+  "direct_consumers": {
+    ".claude/skills/do-math/scripts/tests/boundary/test_knowledge_formal_consumer.py": [
+      "support.knowledge_installed_lean"
+    ],
+    ".claude/skills/do-math/scripts/tests/boundary/test_knowledge_lean_storage.py": [
+      "support.knowledge_roundtrip"
+    ],
+    ".claude/skills/do-math/scripts/tests/support/knowledge_installed_lean.py": [
+      "support.knowledge_roundtrip"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_knowledge_close_currentness.py": [
+      "support.knowledge_roundtrip"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_knowledge_close_records.py": [
+      "support.knowledge_roundtrip"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_knowledge_reassessment.py": [
+      "support.knowledge_roundtrip"
+    ],
+    ".claude/skills/do-math/scripts/tests/unit/test_knowledge_storage_roundtrip.py": [
+      "support.knowledge_roundtrip"
+    ]
+  }
+}

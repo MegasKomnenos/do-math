@@ -1,0 +1,14 @@
+{
+  "command": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/016/tasks/t4-fixture-repair/evidence/mirror_plan.py",
+    "mirror-plan-before-build"
+  ],
+  "cwd": "C:\\math",
+  "pid": 24856,
+  "started": "2026-10-13T23:06:22.100410+00:00",
+  "ended": "2026-10-13T23:06:25.567560+00:00",
+  "exit_code": 0
+}

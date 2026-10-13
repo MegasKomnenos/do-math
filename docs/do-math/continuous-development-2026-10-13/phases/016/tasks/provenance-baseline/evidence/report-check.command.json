@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "C:\\math\\services\\continuous-development\\check.py",
+    "report",
+    "C:\\math",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13",
+    "016",
+    "provenance-baseline"
+  ],
+  "cwd": "C:/math",
+  "pid": 6432,
+  "started": "2026-10-13T23:05:35.568070+00:00",
+  "ended": "2026-10-13T23:05:35.755914+00:00",
+  "exit_code": 0,
+  "stdout": "report-check.stdout",
+  "stderr": "report-check.stderr"
+}

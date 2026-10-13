@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "git",
+    "show",
+    "bbe64043f49d46fb7c3b6e768b99a8acbaa125cf",
+    "--",
+    "docs/do-math/시험-재편-2026-09-29/단계-전환표-2026-10-03.json"
+  ],
+  "cwd": "C:\\math",
+  "started": "2026-10-13T22:59:01.114127+00:00",
+  "ended": "2026-10-13T22:59:01.219620+00:00",
+  "exit_code": 0,
+  "stdout": "fix-history-단계-전환표-2026-10-03.stdout",
+  "stderr": "fix-history-단계-전환표-2026-10-03.stderr",
+  "stdout_sha256": "b558f255ca21549c869f487608754c05810099a4b1147321f9c9a7a296ef485a"
+}

@@ -1,0 +1,46 @@
+{
+  "kind": "work",
+  "purpose": "016의현계약fixture수리와Git과거입력을실제연결하여두exact비교/원관측과양쪽전체T4를검증한다. 제품22경로마감과후속판단에필요한실제결과를확보한다.",
+  "tasks": [
+    {
+      "id": "t4-baseline-integration",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "inputs": [
+        "run:sources/user-decisions.md",
+        "run:sources/model-policy-2026-10-14.md",
+        "run:phases/016/manager-evidence/verification.json",
+        "run:phases/016/manager-evidence/review.md",
+        "run:phases/016/manager-evidence/source-inspected.json",
+        "run:phases/016/tasks/t4-fixture-repair/report.json",
+        "run:phases/016/tasks/t4-fixture-repair/evidence/review.md",
+        "run:phases/016/tasks/provenance-baseline/report.json",
+        "run:phases/016/tasks/provenance-baseline/evidence/review.md",
+        "run:phases/016/tasks/provenance-baseline/evidence/baseline-manifest.json",
+        "run:phases/016/tasks/provenance-baseline/evidence/baseline-verification.json",
+        "run:phases/016/tasks/provenance-baseline/evidence/api-static-verification.json",
+        "run:phases/016/tasks/provenance-baseline/evidence/requirement-trace.json",
+        "run:phases/015/tasks/t4-adapter-report/report.json",
+        "run:phases/015/manager-evidence/verification.json",
+        "repo:.claude/skills/do-math/AGENTS.md",
+        "repo:.claude/skills/do-math/scripts/tests/시험-지침.md",
+        "repo:.claude/skills/do-math/scripts/이음새-정본.md",
+        "repo:docs/do-math/시험-재편-2026-09-29/설계.md",
+        "repo:.claude/skills/do-math/scripts/tests/boundary/test_shared_input_provenance.py",
+        "repo:.claude/skills/do-math/scripts/tests/support/branch_gate.py",
+        "repo:.claude/skills/do-math/scripts/tests/support/t3_store.py",
+        "repo:.claude/skills/do-math/scripts/tests/support/adapter_coverage.py",
+        "repo:.claude/skills/do-math/scripts/run_tests.py",
+        "repo:.claude/skills/writing-skills/references/멀티런타임_동기화.md"
+      ],
+      "writes": [
+        ".claude/skills/do-math/scripts/tests/.timings.json",
+        ".claude/skills/do-math/scripts/tests/.timings-t3.json",
+        ".agents/skills/do-math/scripts/tests/.timings.json",
+        ".agents/skills/do-math/scripts/tests/.timings-t3.json"
+      ],
+      "provides": [],
+      "uses": []
+    }
+  ]
+}
