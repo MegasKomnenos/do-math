@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    ".claude/skills/do-math/scripts/probe_cli.py",
+    "--skill-only"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 33144,
+  "started_at": "2026-10-13T18:01:20.976396+00:00",
+  "pid": 13396,
+  "state": "exited",
+  "ended_at": "2026-10-13T18:01:23.472375+00:00",
+  "exit_code": 0,
+  "changed_sources": []
+}

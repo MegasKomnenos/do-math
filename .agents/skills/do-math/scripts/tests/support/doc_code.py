@@ -36,6 +36,8 @@ ROLE_INPUT_BOUNDARIES = {owner: object() for owner in
                          ('input_manifest', 'prompt', 'documents', 'profile_selection')}
 CONTINUATION_BOUNDARIES = {owner: object() for owner in
                            ('result_source', 'rejected_response', 'previous_output_files')}
+OPERATIONAL_INPUT_BOUNDARIES = {owner: object() for owner in
+                              ('operational_evidence', 'recovery_materials')}
 
 
 def documents(skill):
@@ -279,9 +281,7 @@ def field_schemas():
     schemas['candidate_record'] = {'properties': {key: {} for key in knowledge_io._KNOWLEDGE_FIELDS}}
     schemas['repair'] = produced_object_schema(repair_execution.RepairExecutionMixin.route_submission_return, 'retry',
         bindings={'deepcopy(action)': RECORDS['queue']})['properties']['repair']
-    schemas['checkpoint_source'] = produced_object_schema(CoreEngineMixin._context, 'evidence.update', keyword='checkpoint_source')
     schemas.update(CONTINUATION_BOUNDARIES)
-    schemas['recovery_source'] = produced_object_schema(CoreEngineMixin._context, scope='recover', variants=True)
     schemas['query_record'] = QUERY_RECORD_BOUNDARY
     schemas.update(ROLE_INPUT_BOUNDARIES)
     schemas.update(CLI_RESULT_BOUNDARIES)
@@ -329,11 +329,6 @@ def field_schemas():
     schemas['materialized_output_files'] = array(restored_file)
     schemas['research_sources'] = array(produced_object_schema(CoreEngineMixin._context, 'sources.append', argument=0,
         bindings={'source': RECORDS['sources']}))
-    schemas['checkpoint_files'] = array(produced_object_schema(CoreEngineMixin._context, "evidence['checkpoint_files'].append", argument=0,
-        bindings={'source': roots['runtime']['properties']['checkpoints']['additionalProperties']['properties']['evidence_files']['items']}))
-    schemas['recovered_output_files'] = array(schemas['recovery_source'])
-    schemas['recovery_materials'] = produced_object_schema(CoreEngineMixin._context, 'context["recovery_materials"]',
-        bindings={'output_files': array(schemas['recovery_source'])})
     # The task result retains the research response, then _context restores its files.
     research_output = contracts.schema_for('research_work')
     retained = {'properties': {key: value for key, value in research_output['properties'].items()
@@ -367,9 +362,7 @@ def field_schemas():
     schemas['academic_validation'] = produced_object_schema(academic.academic_status, variants=True)
     schemas['operation_progress'] = OPERATION_PROGRESS_BOUNDARY
     schemas['status'] = STATUS_REPORT_BOUNDARY
-    schemas['operational_evidence'] = produced_object_schema(CoreEngineMixin._context, 'evidence')
-    schemas['operational_evidence']['properties']['activity_continuations'] = produced_object_schema(
-        CoreEngineMixin._context, "evidence['activity_continuations']")
+    schemas.update(OPERATIONAL_INPUT_BOUNDARIES)
     return schemas
 
 
@@ -465,7 +458,7 @@ def unowned_field_references(text, schemas):
 
 def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_progress=False,
                         defer_query_record=False, defer_query_result=False, defer_cli_results=(),
-                        defer_role_inputs=(), defer_continuations=()):
+                        defer_role_inputs=(), defer_continuations=(), defer_operational_inputs=()):
     """Check owned dotted fields; unresolved namespaces remain a separate coverage obligation."""
     unknown = set(defer_cli_results) - CLI_RESULT_BOUNDARIES.keys()
     if unknown:
@@ -476,6 +469,9 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
     unknown = set(defer_continuations) - CONTINUATION_BOUNDARIES.keys()
     if unknown:
         raise ValueError(f'Unknown deferred continuation owners: {sorted(unknown)}')
+    unknown = set(defer_operational_inputs) - OPERATIONAL_INPUT_BOUNDARIES.keys()
+    if unknown:
+        raise ValueError(f'Unknown deferred operational input owners: {sorted(unknown)}')
     issues = []
     for line in text.splitlines():
         local, binding_issues = field_bindings(line, schemas)
@@ -521,12 +517,55 @@ def scoped_field_issues(text, schemas, *, defer_status=False, defer_operation_pr
                     continue
                 raise ValueError(owner + ' fields require the actual continuation result')
             candidates = [local[root]]
+            owner = next((name for name, boundary in OPERATIONAL_INPUT_BOUNDARIES.items()
+                          if local[root] is boundary), None)
+            if owner is not None:
+                if owner in defer_operational_inputs:
+                    continue
+                raise ValueError(owner + ' fields require the actual operational input')
             for part in parts:
                 candidates = [child for schema in candidates for child in
                               (item_variants(schema) if part.startswith('[') else property_variants(schema, part))]
                 if not candidates:
                     issues.append(('scoped field', span))
                     break
+    return sorted(set(issues))
+
+
+def operational_field_issues(text, owner, value):
+    """Traverse one actual input, preserving each item and its conditional branch.
+
+    Null checkpoint sources and restoration errors are explicit document reading
+    conditions. Empty arrays do not establish an item shape; populated real
+    producer tests check those paths separately. No union of sample keys is used.
+    """
+    if owner not in OPERATIONAL_INPUT_BOUNDARIES:
+        raise ValueError('Unknown operational input owner: ' + owner)
+    issues = []
+    def visit(node, parts, path):
+        if not parts:
+            return True
+        if node is None and path == owner + '.checkpoint_source':
+            return True
+        part, *remaining = parts
+        if part.startswith('['):
+            if not isinstance(node, list):
+                return False
+            index = part[1:-1]
+            items = node if not index else node[int(index):int(index) + 1]
+            return (not index or bool(items)) and all(visit(item, remaining, path + part) for item in items)
+        if not isinstance(node, dict):
+            return False
+        if part == 'restoration_error' and part not in node:
+            return True  # Successful source; the error-only reading instruction does not apply.
+        if part == 'local_path' and 'restoration_error' in node:
+            return True  # Error sources must never be materialized; checked at the file boundary.
+        return part in node and visit(node[part], remaining, path + '.' + part)
+    for token in SPAN.findall(text):
+        if FIELD.fullmatch(token) and re.split(r'[.\[]', token)[0] == owner:
+            parts = re.findall(r'[a-z][a-z0-9_]*|\[\d*\]', token)[1:]
+            if not visit(value, parts, owner):
+                issues.append(('actual field', token))
     return sorted(set(issues))
 
 

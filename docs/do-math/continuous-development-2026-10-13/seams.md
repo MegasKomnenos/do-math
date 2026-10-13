@@ -11,3 +11,5 @@ corpus 생성의 정본은 `.agents/diff/_rules.json`, `writing-skills/scripts/b
 제품 공유 정의는 .claude/skills/do-math/scripts/이음새-정본.md 및 실제 타입·함수·스키마·포트 계약 시험을 원문으로 확인한다. report 형식은 서비스 protocol.md가 직접 규정한다. 후속 phase에서 외부 제공자/소비자를 분리 배정하려면 manager가 먼저 정본 파일·심볼, 입력/출력/오류/부수 효과, 경계 사례, 공유 검사와 실제 연결 책임을 해당 S 항목에 정한다. 같은 인터페이스는 같은 S ID를 유지하며 제품 내부 선택을 불필요한 seam으로 승격하지 않는다.
 
 008의 운영/복구 및 설치 설명 지정 성과를 검수했으나 전건 문서 검사는 기존 CLI 함수 표기로4건 실패했다. 009는 해당 표기를 function_reference_issues의 현 함수 표기 계약에 맞추는 문서 수리이며 제품 경계·오류·입력 의미를 바꾸지 않는다. provides/uses는 계속 빈 목록이고 새 S 항목은 없다. 검수 근거는 run:phases/008/manager-evidence/review.md, 후속 책임은009 objective다.
+
+009는 기존 함수 참조 표기만 교정해 정본110·미러89 전건 관련 회귀를 통과했고 manager가 원자료/현재 소스를 대조했다. 제품 경계 계약의 개정은 없다.010 host-smoke는 기존 windows_job/Jobs·실제 worker·console_python/PowerShell 출력 계약을 소비하며 테스트 공유화는 한 task 내부다.010 reading-limits는 고정된 운전 문서·CLI 입력 경로와 외부 호스트 읽기 계약을 독립 조사한다. 서로의 결과를 제공/소비하지 않아 S 항목을 새로 만들지 않는다. runtime 경계 변경이 필요하면 별도 finding과 후속 배정으로 돌린다.

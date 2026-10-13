@@ -13,6 +13,69 @@ SCRIPTS = SKILL / 'scripts'
 
 
 class DocumentCodeTests(unittest.TestCase):
+    def test_operational_fields_require_their_actual_input_owner(self):
+        schemas = field_schemas()
+        for owner, field in (('operational_evidence', 'activity_continuations'),
+                             ('recovery_materials', 'output_files[].restoration_error')):
+            with self.subTest(owner=owner), self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):
+                scoped_field_issues('`' + owner + '.' + field + '`', schemas)
+            other = {'operational_evidence', 'recovery_materials'} - {owner}
+            with self.assertRaisesRegex(ValueError, owner + ' fields require the actual'):
+                scoped_field_issues('`' + owner + '.' + field + '`', schemas, defer_operational_inputs=other)
+            self.assertEqual(scoped_field_issues('`' + owner + '.' + field + '`', schemas,
+                defer_operational_inputs=(owner,)), [])
+        for name in ('checkpoint_source', 'recovery_source', 'checkpoint_files', 'recovered_output_files'):
+            self.assertNotIn(name, schemas)
+        with self.assertRaisesRegex(ValueError, 'Unknown deferred operational input owners'):
+            scoped_field_issues('', schemas, defer_operational_inputs=('operational_evience',))
+        with self.assertRaisesRegex(ValueError, 'result_source fields require the actual continuation'):
+            scoped_field_issues('`result_source.local_path`', schemas,
+                               defer_operational_inputs=('operational_evidence', 'recovery_materials'))
+
+    def test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method(self):
+        import ast
+        from support.doc_code import OPERATIONAL_INPUT_BOUNDARIES
+        owners = {
+            'operational_evidence': ('sim/test_role_input_context.py', 'OperationalInputTests',
+                                    'test_live_review_receives_exact_checkpoint_evidence_files'),
+            'recovery_materials': ('sim/test_knowledge_currentness.py', 'RecoveryMaterialTests',
+                                  'test_failed_execution_materials_are_restored_for_its_operational_review')}
+        def verify(mapping):
+            self.assertEqual(set(mapping), set(OPERATIONAL_INPUT_BOUNDARIES))
+            for owner, (path, class_name, method_name) in mapping.items():
+                tree = ast.parse((SCRIPTS / 'tests' / path).read_text(encoding='utf-8'))
+                classes = [n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name]
+                self.assertEqual(len(classes), 1)
+                methods = [n for n in classes[0].body if isinstance(n, ast.FunctionDef) and n.name == method_name]
+                self.assertEqual(len(methods), 1)
+                calls = [n for n in ast.walk(methods[0]) if isinstance(n, ast.Call)
+                         and isinstance(n.func, ast.Name) and n.func.id == 'assert_operational_documents'
+                         and any(k.arg == 'owner' and isinstance(k.value, ast.Constant)
+                                 and k.value.value == owner for k in n.keywords)]
+                self.assertTrue(calls, owner + ' needs its actual document check')
+        verify(owners)
+        for fault in ('wrong_owner', 'missing_owner', 'missing_method', 'wrong_method'):
+            changed = dict(owners)
+            if fault == 'wrong_owner':
+                changed['operational_evience'] = changed.pop('operational_evidence')
+            elif fault == 'missing_owner':
+                del changed['recovery_materials']
+            elif fault == 'missing_method':
+                changed['recovery_materials'] = (*changed['recovery_materials'][:2], 'test_missing')
+            else:
+                changed['operational_evidence'] = (*changed['operational_evidence'][:2],
+                    'test_review_gets_the_same_canonical_basis_set_as_application')
+            with self.subTest(fault=fault), self.assertRaises(AssertionError):
+                verify(changed)
+
+    def test_operational_document_names_the_result_and_checkpoint_owners(self):
+        from support.doc_code import SPAN
+        text = (SKILL / '계약/운영-점검.md').read_text(encoding='utf-8')
+        self.assertIn('operational_evidence.checkpoint_source.local_path', SPAN.findall(text))
+        self.assertIn('recovery_materials.result_source.local_path', SPAN.findall(text))
+        self.assertNotIn('checkpoint_source.local_path', SPAN.findall(text))
+        self.assertNotIn('result_source.local_path', SPAN.findall(text))
+
     def test_documented_commands_and_options_exist(self):
         from do_math.cli_contract import build_parser
         options = parser_options(build_parser())
@@ -72,6 +135,7 @@ class DocumentCodeTests(unittest.TestCase):
                         scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
                             defer_query_record=True, defer_query_result=True,
                             defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                             defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'),
                             defer_continuations=others)
                     self.assertEqual(scoped_field_issues(text, schemas, defer_continuations=(owner,)), [])
@@ -147,6 +211,7 @@ class DocumentCodeTests(unittest.TestCase):
                                                   defer_status=True, defer_operation_progress=True,
                                                   defer_query_record=True, defer_query_result=True,
                                                   defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                                                  defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                                                   defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                                                   defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'))]
         self.assertEqual(issues, [])
@@ -228,7 +293,8 @@ class DocumentCodeTests(unittest.TestCase):
             produced_object_schema(alternatives)
         schemas = field_schemas()
         self.assertEqual(scoped_field_issues(
-            '`operational_evidence.activity_continuations`', schemas), [])
+            '`operational_evidence.activity_continuations`', schemas,
+            defer_operational_inputs=('operational_evidence',)), [])
         self.assertEqual(scoped_field_issues('`operating_summary.scope` `operating_summary.lifecycle` '
             '`operating_summary.initialization` `operating_summary.execution_status` `operating_summary.goal_status` '
             '`operating_summary.primary_blocker` `operating_summary.workspace` '
@@ -288,7 +354,7 @@ class DocumentCodeTests(unittest.TestCase):
                          [('unused field binding', 'record')])
         self.assertEqual(scoped_field_issues('`activation.observation_errors` `disposition.kind` '
             '`observation.rule_bindings` `role_tiers.recovery` `repair.previous_output` '
-            '`checkpoint_source.local_path`', schemas), [])
+            '`action.role`', schemas), [])
 
     def test_cli_result_branches_and_incremental_manifest_fields_remain_separate(self):
         def producer(command):
@@ -324,6 +390,7 @@ class DocumentCodeTests(unittest.TestCase):
                         scoped_field_issues(text, schemas, defer_status=True, defer_operation_progress=True,
                             defer_query_record=True, defer_query_result=True,
                             defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                            defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                             defer_role_inputs={'input_manifest', 'prompt', 'documents', 'profile_selection'} - {owner})
                     self.assertEqual(scoped_field_issues(text, schemas, defer_role_inputs=(owner,)), [])
                     self.assertEqual(unowned_field_references(text, schemas), [])
@@ -383,7 +450,7 @@ class DocumentCodeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'documents fields require the actual role input'):
             scoped_field_issues('`documents[].artifact_ref`', actual)
         self.assertEqual(scoped_field_issues('`results[].report` `results[].output_files[].local_path` '
-            '`question_details[].id` `recovery_materials.output_files[].restoration_error`', actual), [])
+            '`question_details[].id`', actual), [])
         self.assertEqual(scoped_field_issues('`execution.output_files[].local_path`', actual),
                          [('scoped field', 'execution.output_files[].local_path')])
 

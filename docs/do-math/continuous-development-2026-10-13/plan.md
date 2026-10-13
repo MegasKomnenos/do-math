@@ -2,9 +2,9 @@
 
 이 파일은 현재 남김과 다음 판단을 관리한다. 상세한 과거 이력은 sources와 기존 repo 자료에 연결하고 여기에 반복 복사하지 않는다. 상태·근거·구체적 다음 질문 없이 '추가 감사 필요'만 적지 않는다.
 
-## phase 001~008의 결과와 현재 상태
+## phase 001~009의 결과와 현재 상태
 
-phase 001 세 분석 task의 A1~A4와 phase 002 mutation-baseline의 A1~A5를 manager가 검수했다. 정상 child의 증거 부재가 변이 포착으로 바뀌던 경로를 수리했고 관련 58개 시험 및 실제 child 19개 fixture의 원자료를 대조했다. phase 003은 공급자 smoke를 구현했으나 Codex schema 거부와 미러 원바이트 변형 때문에 partial이었다. Claude 최종 실호출과 정본 오프라인 23개 성공은 그 범위에서 승인했다. phase 004는 미러 치환과 양쪽 재생을 수리했으나 Git manifest 속성의 쓰기 범위가 부족해 A3를 완료하지 못했다. phase 005가 실제 하위 속성 두 파일을 고쳐 전88경로 raw/clean 동등성을 확인했고 manager가 A1~A3를 검수했다. phase 006은 원 의미를 보존하는 Codex 전송/수신 수리와 대표 실호출에 성공했다. 직접 소비11실패와 pair의 성공 표본 공백 때문에 partial이었다. phase 007이 현 fixture와 실제 분기 단언을 수리했고 manager가 A1~A5를 검수했다. 008은 운영/복구와 설치 지정 성과 A1~A4를 검수했지만 기존 CLI 함수 표기 때문에 A5가 실패한 partial이다. 최종 전체 관문은 아직 실행하지 않았다. 현재 상태의 근거는 context C9~C12와 다음 자료다.
+phase 001 세 분석 task의 A1~A4와 phase 002 mutation-baseline의 A1~A5를 manager가 검수했다. 정상 child의 증거 부재가 변이 포착으로 바뀌던 경로를 수리했고 관련 58개 시험 및 실제 child 19개 fixture의 원자료를 대조했다. phase 003은 공급자 smoke를 구현했으나 Codex schema 거부와 미러 원바이트 변형 때문에 partial이었다. Claude 최종 실호출과 정본 오프라인 23개 성공은 그 범위에서 승인했다. phase 004는 미러 치환과 양쪽 재생을 수리했으나 Git manifest 속성의 쓰기 범위가 부족해 A3를 완료하지 못했다. phase 005가 실제 하위 속성 두 파일을 고쳐 전88경로 raw/clean 동등성을 확인했고 manager가 A1~A3를 검수했다. phase 006은 원 의미를 보존하는 Codex 전송/수신 수리와 대표 실호출에 성공했다. 직접 소비11실패와 pair의 성공 표본 공백 때문에 partial이었다. phase 007이 현 fixture와 실제 분기 단언을 수리했고 manager가 A1~A5를 검수했다. 008은 운영/복구와 설치 지정 성과 A1~A4를 검수한 partial이며 그 A5의 기존 CLI 함수 표기4실패는009의 A1~A3 complete로 해소했다. 최종 전체 관문은 아직 실행하지 않았다. 현재 상태의 근거는 context C9~C12와 다음 자료다.
 
 - 요구별 종료 질문: run:phases/001/tasks/closure-map/evidence/requirement-state.json. 원래 19/11/61/12 항목을 보존한다. 1-D/11-A/11-B 및 이미 검토한 부분은 최종 판본 연결로 넘기고 새 결함 없이 재구현하지 않는다.
 - 기존 109작업·25영역 재검토: 같은 evidence의 tracking-state.json과 prior-review-state.json. PR23과 PR06/B22의 완료 범위를 재사용하고 필요한 slice를 실제 수리/의미 확인과 결합한다. 없는 임시 원보고의 counts는 역사 주장으로 남긴다.
@@ -24,22 +24,26 @@ phase 001 세 분석 task의 A1~A4와 phase 002 mutation-baseline의 A1~A5를 ma
 
 분류는 완료율이 아니다. 검토된 성질은 최종 증거 대기, 확정된 공백은 수리, 아직 모르는 성질은 한 종료 질문, 실행 관문은 최종 고정판 검증으로 구별한다. 오래된 109개 task를 그대로 재파견하지 않는다.
 
-## 다음 phase: 009
+## 다음 phase: 010
 
-단일 work task `document-callable`이 CLI-실행-계약의 provider_final.output_contract 표기를 기존 함수 검사 경로로 교정하고008의 A5 남김을 닫는다. 실제 callable과 명시 module.function(...) 검사는 이미 존재하므로 unknown/defer/schema/helper를 고치지 않는다. 정본110개·미러89개의008 최종 관련 선택을 새 문서 판본으로 확인하며 정확한4실패 ID의 passed 연결을 남긴다. 부분 성공인008 report는 그대로 보존한다.
+host-smoke와 reading-limits를 독립 work task로 배정한다. 두 task는 gpt-6.1-sol/high다.
 
-task는 gpt-6.1-sol/high다. 쓰기는 해당 문서·공식 미러·비용 캐시로 닫는다. 실제 회귀와 생성이 같은 문서·캐시 판본에 의존해 한 task가 소유한다. 다른 G7 실연쇄도 설치 문서와 shared cache/corpus를 사용하므로 이 짧은 수리 뒤 배정한다. 정확한 A1~A3와 writes는 run:phases/009/tasks/document-callable/objective.md 및 phase.json에 있다.
+- host-smoke는 G7의 실제 Windows Job 작업자 연쇄·자손 종료와 pythonw 부모의 PowerShell/제품 출력 회수를 기존 경계에서 공식 T5에 연결한다. 새 host 시험과 필요한 공유화·사용법·미러·캐시만 소유하고 jobs1로 한 검사 묶음씩 실행한다. 공급자 유료 호출·runtime 수정·OS 예약 변경은 하지 않는다.
+- reading-limits는 L01/13-C의 현재 운전 host/tool/version/read-call·한도 단위·절단 규칙과 구간 회수 근거를 조사한다. writes=[]이며 고정된 운전 문서/CLI 코드와 호스트 자료만 읽는다. host-smoke가 바꾸는 시험·지침·미러·캐시나 그 결과에 의존하지 않고 제품 시험/생성기/모델 세션을 실행하지 않는다. 조사 완료와 요구 충족을 구별해 확인 불가능한 조건은 정확히 반환한다.
+
+상대 task의 미완성 결과를 소비하지 않고 실행 자원·파일을 공유하지 않아 병렬화한다. Lean/예약/학술은 별도의 실제 연쇄로 다음 결과에 맞춰 배정한다. 정확한 입력·A·쓰기·검사는 run:phases/010/phase.json과 각 objective에 있다.
 
 ## 가까운 후속 배정과 선행 관계
 
-007 공급자 변경 단위는 커밋됐고008 지정 성과를 검수했다.009가 전건 문서4실패를 해소하면008~009의 문서·시험 변경을 함께 마감하고 G7의 개별 실제 연쇄 배정을 정한다. 그 밖의 구체적 남김은 아래와 같다. 먼저 해야 할 수리가 늘어나면 원래 G와 반례를 붙여 반환하고, 확인된 부분은 다시 탐색하지 않는다.
+007 공급자 변경은 커밋됐고009의 정본110/미러89 전건 통과로008~009 문서·시험 변경28경로를 이번 관리 마감에 포함한다.009의 검수 근거는 manager-evidence/verification.json·review.md다.010에서 Job/pythonw와 L01을 독립 진행한다. 그 밖의 구체적 남김은 아래와 같다. 먼저 해야 할 수리가 늘어나면 원래 G와 반례를 붙여 반환하고, 확인된 부분은 다시 탐색하지 않는다.
 
 | 남김 | 다음 담당 작업과 끝나는 조건 | 선행/한계 |
 |---|---|---|
 | G1/G2/G3 공급자 단위의 최종 판본 연결 | 007에서 관련 회귀를 종료했다. 이후 변경이 그 경계에 영향을 주면 필요한 근거만 교체하고 G4~G7 최종 관문에 연결한다. | 006 Codex 대표 호출·003 Claude 한정 재사용과 역사 실패를 유지한다. 중간 회귀 합산은 전체 성공이 아니다. |
-| G7 Job/Lean/예약/학술 및 L01 | 공급자 최소 경계와 구별해 실제 Job/pythonw, Lean/Mathlib, 시험 전용 예약 등록·발화·해제, 학술 list_sources를 기존 실제 경로로 검증한다. L01은 현재 Codex/Claude 운전 read-call의 host·판본·절단 규칙·한도 단위를 특정한다. | 개별 실제 연쇄로 한 문맥에서 끝나는 task를 만든다. 역할 stdin을 운전 출력 한도로 대체하지 않는다. byte/token 권위 근거가 없으면 결정 질문을 남긴다. |
-| G1/G3 문서 P01 및 전건 회귀 | 008의 운영/복구 실제 반환·파일·반례 성과는 검수했다.009가 기존 CLI 함수 표기를 교정하고 전건 관련 회귀4실패를 새 판본에서 닫는다. | B133/B132~B134 및008 단언 유지. 제품 커밋은009 검수 뒤. |
-| G1/G8 문서 N03 지정 문장 | 008에서 installation_root 전달 설명과 양쪽 bootstrap-info2건을 검수했다.009 뒤 같은 문서 변경 단위의 인도 근거에 연결한다. | 옛 전역은 복원하지 않는다. N03 다른 절은 계속 미검토. |
+| G7 Job/pythonw와 L01 |010 host-smoke가 실제 OS 작업자/출력/정리 연쇄를 T5에 연결하고 reading-limits가 현재 운전 읽기 계약의 한도·단위를 조사한다. | 두 task는 독립이다. 역할 stdin을 운전 출력 한도로 대체하지 않고 byte/token 근거 미상은 정확한 결정 질문으로 남긴다. |
+| G7 Lean/예약/학술 | 실제 Lean/Mathlib, 시험 전용 예약 등록·발화·해제, 학술 list_sources를 기존 실제 경로로 각각 검증한다. |010 결과 뒤 실제 경계별 배정. Job/pythonw 성공이나 예약 cmdlet 대역의 결과로 대체하지 않는다. |
+| G1/G3 문서 P01 및 전건 회귀 |008 지정 성과와009 정본110/미러89 전건 통과를 검수해 이 부분을 닫았다. | B132~B134 및008 단언 유지. 최종 전체 판본 연결은 G4~G6/G8에 남는다. |
+| G1/G8 문서 N03 지정 문장 |008의 installation_root 전달 설명·bootstrap-info2건과009 회귀를 검수해 같은 문서 변경 단위로 인도한다. | 옛 전역은 복원하지 않는다. N03 다른 절은 계속 미검토. |
 | G1/G3 나머지 문서·정책 | P02~P11·N01~N03의 미결 절만 실제 반환/공유 계약·기존 시험에 연결한다. 명시 소비 없는 instance는 제거 가능성을 판정한다. | 34 AST 구문지점의 제거 수로 진척을 세지 않고 마지막 소비자 뒤 helper를 정리한다. |
 | G7 T4 adapter 보고 | T4 단독 전체 boundary 선택에 별도 adapter 분기 측정을 연결해 실제 보고를 만든다. | 설계5.5상 보고이며 통과 임계 관문으로 바꾸지 않는다. 최종 T3 선택과 분리한다. |
 | G1/G2 남은 의미 질문·과거 재검토 | requirement-state의 해당 생산자/소비자/입력/단언 질문과 관련 PR slice만 배정한다. 이미 충분하면 유지하고 빠진 축만 수리한다. | R05/R06은 현 test_provider_native_storage 경로 사용. 없는 원보고는 해당 slice에서만 회수/대체 증거 필요를 판정한다. |

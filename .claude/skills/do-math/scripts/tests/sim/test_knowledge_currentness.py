@@ -28,6 +28,7 @@ from do_math.knowledge_io import import_candidate
 from do_math.launch import ticket
 from do_math.state_contract import default_state_contract, validate_record
 from support.engine_lifecycle import applied, solve_goal
+from support.engine_context import assert_operational_documents, assert_operational_damage_rejected
 from support.knowledge_currentness import currentness_model
 from support.review_sim import reviewed_sim as reviewed_theorem_sim, theorem_id, warm_reviewed
 from support.sim import Sim, warm_template
@@ -104,6 +105,79 @@ class GoalDependencyTests(unittest.TestCase):
 
 
 class RecoveryMaterialTests(unittest.TestCase):
+    def test_normal_formal_completion_has_null_checkpoint_and_reports_unrestorable_sources(self):
+        """Real repository reads and _context distinguish normal, missing, hash and size branches."""
+        import tempfile
+        from support.engine_context import context_engine, package
+        result = b'{"status":"completed"}'
+        output = b'checked output bytes'
+        for fault in ('normal', 'normal_inline', 'missing_checkpoint', 'missing_result', 'output_hash', 'output_size', 'missing_output'):
+            prefix = 'runtime/artifacts/BA-formal-diagnostic-' + fault + '/'
+            files = {prefix + 'result.json': result, prefix + 'proof.txt': output}
+            if fault == 'missing_result':
+                del files[prefix + 'result.json']
+            if fault == 'missing_output':
+                del files[prefix + 'proof.txt']
+            engine = context_engine(files=files)
+            source = {'path': 'proof.txt', 'artifact_ref': prefix + 'proof.txt',
+                      'sha256': hashlib.sha256(output).hexdigest(), 'bytes': len(output)}
+            if fault == 'output_hash':
+                source['sha256'] = '0' * 64
+            if fault == 'output_size':
+                source['bytes'] += 1
+            role = 'formal_check' if fault not in ('normal_inline', 'missing_checkpoint') else 'research_preparation'
+            engine.runtime['executions']['EX-formal-diagnostic'] = {
+                'id': 'EX-formal-diagnostic', 'role': role, 'status': 'ended',
+                'action': {'role': role}, 'artifact_bundle': 'BA-formal-diagnostic-' + fault,
+                'result_ref': prefix + 'result.json', 'output_files': [source]}
+            if fault == 'normal_inline':
+                engine.runtime['executions']['EX-formal-diagnostic']['parent_execution_id'] = 'EX-parent'
+            with tempfile.TemporaryDirectory() as directory, self.subTest(fault=fault):
+                root = Path(directory)
+                context = engine._context({'role': 'operational_review', 'target': 'EX-formal-diagnostic'}, root)
+                recovery = context['recovery_materials']
+                if fault != 'missing_checkpoint':
+                    self.assertIsNone(recovery['checkpoint_source'])
+                self.assertEqual((recovery['result_kind'], recovery['final_result_status']),
+                                 ('execution_result', 'available'))
+                assert_operational_documents(self, context, root, engine, owner='recovery_materials')
+                assert_operational_documents(self, context, root, engine, owner='operational_evidence')
+                row = (recovery['result_source'] if fault == 'missing_result' else
+                       recovery['checkpoint_source'] if fault == 'missing_checkpoint' else recovery['output_files'][0])
+                if fault in ('normal', 'normal_inline'):
+                    self.assertNotIn('restoration_error', row)
+                    self.assertEqual((root / row['local_path']).read_bytes(), output)
+                    assert_operational_damage_rejected(self, context, root, engine, owner='recovery_materials')
+                else:
+                    self.assertNotIn('local_path', row)
+                    error = row['restoration_error']
+                    self.assertEqual(row['snapshot'], engine.head)
+                    if fault in ('output_hash', 'output_size'):
+                        self.assertEqual(error['error_type'], 'ValueError')
+                        reason = ('operational review artifact hash changed: ' + source['artifact_ref']
+                                  if fault == 'output_hash' else 'operational review artifact size changed')
+                        self.assertEqual(error['reason'], reason)
+                        self.assertEqual((error['observed_sha256'], error['observed_bytes']),
+                                         (hashlib.sha256(output).hexdigest(), len(output)))
+                        self.assertEqual((row['sha256'], row['bytes']), (source['sha256'], source['bytes']))
+                    else:
+                        self.assertEqual((error['observed_sha256'], error['observed_bytes']), (None, None))
+                        self.assertIn(row['artifact_ref'], error['reason'])
+                    # Diagnostic coordinates remain readable, unverifiable bytes do not.
+                    self.assertFalse((root / 'input/operational-review/EX-formal-diagnostic' /
+                                      ('result.json' if fault == 'missing_result' else
+                                       'checkpoint-recovery.json' if fault == 'missing_checkpoint' else 'files/proof.txt')).exists())
+                    damaged = deepcopy(context)
+                    bad = (damaged['recovery_materials']['result_source'] if fault == 'missing_result' else
+                           damaged['recovery_materials']['checkpoint_source'] if fault == 'missing_checkpoint' else
+                           damaged['recovery_materials']['output_files'][0])
+                    bad['local_path'] = 'input/unchecked-bytes.txt'
+                    with self.assertRaises(AssertionError):
+                        assert_operational_documents(self, damaged, root, engine, owner='recovery_materials')
+                fitted_root = root / 'packaged'
+                fitted, _ = package(engine, fitted_root, role='operational_review', target='EX-formal-diagnostic')
+                assert_operational_documents(self, fitted['context'], fitted_root, engine, owner='recovery_materials')
+
     def test_failed_execution_materials_are_restored_for_its_operational_review(self):
         sim = Sim.activated()
         currentness_model(sim).interrupt('research_preparation', interrupted_preparation)
@@ -129,14 +203,33 @@ class RecoveryMaterialTests(unittest.TestCase):
             self.assertEqual(engine.store.read(source['artifact_ref'], source['snapshot']), raw)
         restored = next(f for f in recovery['output_files'] if f['path'] == 'partial.txt')
         self.assertEqual((review_workspace / restored['local_path']).read_bytes(), PARTIAL)
+        assert_operational_documents(self, context, review_workspace, engine, owner='recovery_materials')
+        assert_operational_documents(self, context, review_workspace, engine, owner='operational_evidence')
+        assert_operational_damage_rejected(self, context, review_workspace, engine, owner='recovery_materials')
+        assert_operational_damage_rejected(self, context, review_workspace, engine, owner='operational_evidence')
+        # The same execution's genuine continuation source has a different owner/path.
+        from do_math.context_store import restore_continuation
+        resumed = restore_continuation(engine.runtime, {**execution['action'], 'continuation_of': execution['id']},
+            review_workspace, snapshot=engine.head, read_artifact=lambda path: engine.store.read(path, engine.head))
+        swapped = deepcopy(context)
+        swapped['recovery_materials']['result_source'] = resumed['continuation_history'][-1]['result_source']
+        with self.assertRaises(AssertionError):
+            assert_operational_documents(self, swapped, review_workspace, engine, owner='recovery_materials')
+        swapped = deepcopy(context)
+        swapped['recovery_materials']['result_source'] = context['operational_evidence']['checkpoint_source']
+        with self.assertRaises(AssertionError):
+            assert_operational_documents(self, swapped, review_workspace, engine, owner='recovery_materials')
         activity_result = b'{"report":"A separately preserved activity result."}'
         activity_ref = 'runtime/artifacts/BA-activity-result/diagnostic.json'
         engine.runtime['executions'][execution['id']]['result_ref'] = activity_ref
         engine._save({activity_ref: activity_result})
         other_workspace = sim.root / 'activity-result-review'
-        other = engine._context(review, other_workspace)['recovery_materials']
+        other_context = engine._context(review, other_workspace)
+        other = other_context['recovery_materials']
         self.assertEqual((other_workspace / other['result_source']['local_path']).read_bytes(), activity_result)
         self.assertNotEqual(other['result_source']['local_path'], other['checkpoint_source']['local_path'])
+        self.assertEqual(other['result_kind'], 'activity_result')
+        assert_operational_documents(self, other_context, other_workspace, engine, owner='recovery_materials')
 
     def test_recovery_captures_parent_and_inline_child_without_losing_action(self):
         sim = Sim.activated()
@@ -178,6 +271,8 @@ class RecoveryMaterialTests(unittest.TestCase):
         self.assertEqual(recovery['final_result_status'], 'not_produced')
         self.assertEqual(recovery['result_source'], recovery['checkpoint_source'])
         self.assertTrue((review_workspace / recovery['result_source']['local_path']).is_file())
+        assert_operational_documents(self, context, review_workspace, engine, owner='recovery_materials')
+        assert_operational_damage_rejected(self, context, review_workspace, engine, owner='recovery_materials')
 
 
 if __name__ == '__main__':

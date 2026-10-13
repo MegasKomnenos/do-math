@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from uuid import uuid4
 from unittest.mock import Mock
 
 from do_math import contracts, execution_lifecycle, execution_profiles, integration, knowledge_io, knowledge_records, \
@@ -24,12 +25,10 @@ from support.record_builders import approve_task, approved_task, surface_state
 from support.default_responder import common
 from support.role_answers import seal_response
 from support.engine_context import JUDGED, central_check_knowledge, context_engine, issue, package
+from support.engine_context import assert_operational_documents, assert_operational_damage_rejected
 from support.sim import Sim, warm_template
 
 setUpModule = warm_template
-
-CHECKPOINT = 'runtime/artifacts/BA-check/checkpoint.json'
-
 
 def use_state(engine, instance, runtime):
     """Give the engine the legacy ``context_engine`` state over ``instance`` and ``runtime``, keeping its workspace."""
@@ -54,12 +53,15 @@ class OperationalInputTests(unittest.TestCase):
         if claim is not None:
             value['current_claim'] = claim
             raw = json.dumps(value).encode()
-        engine = context_engine(files={CHECKPOINT: raw if stored is None else stored, **(files or {})})
+        # The template reuses its repository path. Each published bundle is
+        # immutable within that identity, including the per-process sealed memo.
+        checkpoint_path = 'runtime/artifacts/BA-check-' + uuid4().hex + '/checkpoint.json'
+        engine = context_engine(files={checkpoint_path: raw if stored is None else stored, **(files or {})})
         target = {'id': 'EX-work', 'role': 'research_work', 'status': 'running',
                   'action': {'role': 'research_work', 'target': 'TK-work'}}
         engine.runtime['executions'][target['id']] = target
         checkpoint = {'kind': 'worker_checkpoint', 'execution_id': target['id'], 'status': 'valid',
-            'value': value, 'artifact_ref': CHECKPOINT, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
+            'value': value, 'artifact_ref': checkpoint_path, 'sha256': hashlib.sha256(raw).hexdigest(), 'bytes': len(raw)}
         engine.runtime['checkpoints'] = {target['id']: checkpoint}
         action = {'id': 'AC-review', 'role': 'operational_review', 'target': target['id'],
                   'live': True, 'observation_refs': ['OF-one'], 'obligation_ids': ['SC-one']}
@@ -87,6 +89,8 @@ class OperationalInputTests(unittest.TestCase):
             source = evidence['checkpoint_source']
             self.assertEqual((workspace / source['local_path']).read_bytes(), raw)
             self.assertEqual(source['sha256'], checkpoint['sha256'])
+            self.assertNotIn('recovery_materials', context)
+            assert_operational_documents(self, context, workspace, engine, owner='operational_evidence')
 
     def test_large_checkpoint_stays_readable_without_becoming_mandatory_prompt_text(self):
         engine, action, _, raw = self.fixture(claim='Evidence retained. ' * 40000)
@@ -96,6 +100,7 @@ class OperationalInputTests(unittest.TestCase):
             self.assertIsNone(fitted['overflow'], 'Checkpoint text is available through its exact file reference')
             source = fitted['context']['operational_evidence']['checkpoint_source']
             self.assertEqual((root / source['local_path']).read_bytes(), raw)
+            assert_operational_documents(self, fitted['context'], root, engine, owner='operational_evidence')
 
     def test_review_gets_the_same_canonical_basis_set_as_application(self):
         engine, action, checkpoint, _ = self.fixture()
@@ -110,12 +115,49 @@ class OperationalInputTests(unittest.TestCase):
                   'sha256': hashlib.sha256(proof).hexdigest(), 'bytes': len(proof)}
         engine, action, checkpoint, _ = self.fixture(files={source['artifact_ref']: proof})
         checkpoint['evidence_files'] = [source]
+        engine.runtime['executions']['EX-successor'] = {
+            'id': 'EX-successor', 'role': 'research_work', 'status': 'running',
+            'continuation_of': 'EX-work', 'action': {'role': 'research_work', 'target': 'TK-work'}}
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             context = engine._context(action, root, execution_id='EX-review')
             files = context['operational_evidence'].get('checkpoint_files', [])
             self.assertEqual(len(files), 1)
             self.assertEqual((root / files[0]['local_path']).read_bytes(), proof)
+            assert_operational_documents(self, context, root, engine, owner='operational_evidence')
+            assert_operational_damage_rejected(self, context, root, engine, owner='operational_evidence')
+            successors = context['operational_evidence']['activity_continuations']
+            self.assertEqual(successors['frontier']['execution_ids'], ['EX-successor'])
+            self.assertEqual(successors['frontier']['state'], 'in_progress')
+            self.assertEqual(successors['executions'][0]['id'], 'EX-successor')
+            fitted_root = root / 'packaged'
+            fitted = self.packaged(engine, action, fitted_root)[1]
+            assert_operational_documents(self, fitted['context'], fitted_root, engine, owner='operational_evidence')
+
+    def test_unpreserved_checkpoint_has_no_readable_source_or_recovery_input(self):
+        engine, action, _, _ = self.fixture()
+        engine.runtime['checkpoints'] = {}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            context = engine._context(action, root, execution_id='EX-review')
+            self.assertEqual(context['operational_evidence']['checkpoint_status'], 'not_preserved')
+            self.assertIsNone(context['operational_evidence']['checkpoint_source'])
+            self.assertEqual(context['operational_evidence']['checkpoint_files'], [])
+            self.assertNotIn('recovery_materials', context)
+            assert_operational_documents(self, context, root, engine, owner='operational_evidence')
+
+    def test_changed_checkpoint_evidence_hash_and_size_are_rejected_before_review(self):
+        proof = b'preserved evidence'
+        source = {'path': 'proof.lean', 'artifact_ref': 'runtime/artifacts/BA-check/proof.lean',
+                  'sha256': hashlib.sha256(proof).hexdigest(), 'bytes': len(proof)}
+        for fault in ('sha256', 'bytes'):
+            engine, action, checkpoint, _ = self.fixture(files={source['artifact_ref']: proof})
+            changed = dict(source)
+            changed[fault] = '0' * 64 if fault == 'sha256' else len(proof) + 1
+            checkpoint['evidence_files'] = [changed]
+            with tempfile.TemporaryDirectory() as directory, self.subTest(fault=fault), self.assertRaises(ValueError) as rejected:
+                engine._context(action, Path(directory), execution_id='EX-review')
+            self.assertEqual(str(rejected.exception), 'operational checkpoint evidence bytes changed: ' + source['artifact_ref'])
 
     def test_packaged_operational_submission_checks_the_advertised_basis(self):
         from support.entry import entry

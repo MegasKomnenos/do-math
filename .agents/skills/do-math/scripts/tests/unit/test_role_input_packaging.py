@@ -275,6 +275,7 @@ class RoleInputTests(unittest.TestCase):
             return scoped_field_issues(text, {**schemas, 'profile_selection': schema},
                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                 defer_role_inputs=('input_manifest', 'prompt', 'documents'))
 
@@ -350,6 +351,7 @@ class RoleInputTests(unittest.TestCase):
             return scoped_field_issues(text, actual,
                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'),
+                defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                 defer_role_inputs=('input_manifest', 'prompt', 'documents', 'profile_selection'))
 
         with tempfile.TemporaryDirectory() as directory:
@@ -516,6 +518,7 @@ class RoleInputTests(unittest.TestCase):
                                              'documents': document_schema},
                 defer_status=True, defer_operation_progress=True, defer_query_record=True, defer_query_result=True,
                 defer_role_inputs=('profile_selection',),
+                defer_operational_inputs=('operational_evidence', 'recovery_materials'),
                 defer_continuations=('result_source', 'rejected_response', 'previous_output_files'),
                 defer_cli_results=('init_result', 'scheduling_result', 'selection_result'))
 

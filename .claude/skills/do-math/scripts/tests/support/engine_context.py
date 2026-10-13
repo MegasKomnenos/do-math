@@ -65,6 +65,87 @@ OPERATIONAL_DIRECT = {'execution_to_review': {'id': 'EX-work'}, 'observation': {
                       'admissible_basis_refs': []}
 
 
+def assert_operational_documents(case, context, workspace, engine, *, owner, snapshot=None):
+    """Bind document fields to one real _context/packaging result and sealed bytes."""
+    import hashlib
+    from support.doc_code import documents, operational_field_issues
+    value = context[owner]
+    snapshot = engine.head if snapshot is None else snapshot
+    for document in documents(Path(__file__).resolve().parents[3]):
+        case.assertEqual(operational_field_issues(document.read_text(encoding='utf-8'), owner, value), [],
+                         str(document))
+    target = context['execution_to_review']
+    case.assertEqual(value['source_snapshot'], snapshot)
+    if owner == 'operational_evidence':
+        case.assertEqual(value['execution_status'], target['status'])
+        sources = [value['checkpoint_source'], *value['checkpoint_files']]
+        if value['checkpoint_status'] == 'preserved':
+            case.assertEqual(value['checkpoint_source']['artifact_ref'], value['checkpoint']['artifact_ref'])
+            case.assertEqual(value['checkpoint_source']['sha256'], value['checkpoint']['sha256'])
+        else:
+            case.assertIsNone(value['checkpoint_source'])
+        case.assertIn('activity_continuations', value)
+    elif owner == 'recovery_materials':
+        case.assertFalse(context['live_review'])
+        case.assertEqual(value['execution_id'], target['id'])
+        bundle = 'runtime/artifacts/' + target['artifact_bundle'] + '/'
+        case.assertEqual(value['result_source']['artifact_ref'], target.get('result_ref') or bundle + 'result.json')
+        if value['checkpoint_source'] is not None:
+            case.assertEqual(value['checkpoint_source']['artifact_ref'], bundle + 'checkpoint-recovery.json')
+        sources = [value['result_source'], value['checkpoint_source'], *value['output_files']]
+    else:
+        raise ValueError('Unknown operational input owner: ' + owner)
+    for source in sources:
+        if source is None:
+            continue
+        case.assertEqual(source['snapshot'], snapshot)
+        if 'restoration_error' in source:
+            case.assertNotIn('local_path', source)
+            case.assertEqual(set(source['restoration_error']),
+                             {'error_type', 'reason', 'observed_sha256', 'observed_bytes'})
+            case.assertTrue(source['restoration_error']['reason'])
+            continue
+        case.assertIn('local_path', source)
+        case.assertTrue(source['local_path'].startswith('input/operational-review/' + target['id'] + '/'))
+        local = (Path(workspace) / source['local_path']).resolve()
+        case.assertTrue(local.is_relative_to(Path(workspace).resolve() / 'input'))
+        raw = local.read_bytes()
+        case.assertEqual(hashlib.sha256(raw).hexdigest(), source['sha256'])
+        case.assertEqual(len(raw), source['bytes'])
+        case.assertEqual(engine.store.read(source['artifact_ref'], source['snapshot']), raw)
+
+
+def assert_operational_damage_rejected(case, context, workspace, engine, *, owner):
+    """Perturb copies after production; these failures are document/file checks."""
+    from copy import deepcopy
+    value = context[owner]
+    slots = (['checkpoint_source'] if owner == 'operational_evidence' else
+             ['result_source', 'checkpoint_source'])
+    file_key = 'checkpoint_files' if owner == 'operational_evidence' else 'output_files'
+    slots += [(file_key, index) for index in range(len(value[file_key]))]
+    for slot in slots:
+        source = value[slot[0]][slot[1]] if isinstance(slot, tuple) else value[slot]
+        if source is None or 'restoration_error' in source:
+            continue
+        for fault in ('local_path', 'sha256', 'bytes'):
+            damaged = deepcopy(context)
+            row = damaged[owner][slot[0]][slot[1]] if isinstance(slot, tuple) else damaged[owner][slot]
+            if fault == 'local_path':
+                del row[fault]
+            elif fault == 'sha256':
+                row[fault] = '0' * 64
+            else:
+                row[fault] += 1
+            with case.subTest(owner=owner, slot=slot, fault=fault), case.assertRaises(AssertionError):
+                assert_operational_documents(case, damaged, workspace, engine, owner=owner)
+    other = 'recovery_materials' if owner == 'operational_evidence' else 'operational_evidence'
+    if other in context:
+        swapped = deepcopy(context)
+        swapped[owner] = swapped[other]
+        with case.subTest(owner=owner, fault='other_owner'), case.assertRaises(AssertionError):
+            assert_operational_documents(case, swapped, workspace, engine, owner=owner)
+
+
 def is_map_entry(value):
     """A context key given as a map entry: its exact catalog source and item count, not its content."""
     return isinstance(value, dict) and set(value) == {'source_ref', 'total'}

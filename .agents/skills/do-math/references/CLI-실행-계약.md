@@ -715,7 +715,7 @@ export --destination PATH [--snapshot OID] [--all]
 
 모든 AI 응답은 실행별 `schema.json`을 만족하는 JSON 객체 하나여야 한다. 이 실행별 schema와 수신 검사 코드가 필드·자료형·필수 여부·닫힌 값의 기계 정본이다. 아래 설명은 소비자가 각 역할 필드를 어떻게 해석하는지 밝히며 완전한 필드 목록을 별도 정본으로 만들지 않는다. Markdown fence나 JSON 밖의 설명은 허용하지 않는다.
 
-중앙 제출에 결박되지 않은 `ModelRunner` 호출(운영자 복구·CLI 탐침·공급자 smoke)은 최종 응답을 직접 소비한다. Codex의 CLI 전송에는 `provider_final.output_contract`가 정한 `output_json` 문자열 봉투를 사용한다. 그 문자열이 원 응답 JSON이며, 문자열 설명에 원 schema 전체가 포함된다. `output.schema.json`은 의미 계약, `transport.schema.json`은 실제 `--output-schema` 입력이고 worker의 schema 해시는 전달 snapshot을 가리킨다. 원 prompt와 native stream/final은 그대로 보존한다. 수신기는 봉투와 내부 JSON을 엄격히 해석하고 원 schema를 검증한 뒤에만 completed와 의미 output을 반환한다. 선택 필드 부재를 null이나 기본값으로 바꾸지 않는다. Claude의 직접 JSON 응답과 연구 control_binding의 중앙 제출 schema는 이 봉투를 사용하지 않는다.
+중앙 제출에 결박되지 않은 `ModelRunner` 호출(운영자 복구·CLI 탐침·공급자 smoke)은 최종 응답을 직접 소비한다. Codex의 CLI 전송에는 `provider_final.output_contract(...)`가 정한 `output_json` 문자열 봉투를 사용한다. 그 문자열이 원 응답 JSON이며, 문자열 설명에 원 schema 전체가 포함된다. `output.schema.json`은 의미 계약, `transport.schema.json`은 실제 `--output-schema` 입력이고 worker의 schema 해시는 전달 snapshot을 가리킨다. 원 prompt와 native stream/final은 그대로 보존한다. 수신기는 봉투와 내부 JSON을 엄격히 해석하고 원 schema를 검증한 뒤에만 completed와 의미 output을 반환한다. 선택 필드 부재를 null이나 기본값으로 바꾸지 않는다. Claude의 직접 JSON 응답과 연구 control_binding의 중앙 제출 schema는 이 봉투를 사용하지 않는다.
 
 모든 역할은 이번 판단·결과를 설명하는 `summary`, 실제 사용한 제공 ID·reference·workspace 좌표의 `used_sources`, 결과를 바꿀 미해결 질문의 `questions`와 선택적 `repair_responses`를 가진다. `integration_bundles`를 선언해야 하는 경우와 생략했을 때의 묶음 구성은 아래 「제출, 보존과 편입」 절을 따른다. 빈 배열과 필드 부재는 다르며, 실행별 schema가 요구한 필드는 생략하지 않는다.
 
@@ -872,7 +872,7 @@ relation 항목은 `kind`, `source`, `target`, `evidence`를 가진다. source�
 
 늦은 산출이 이미 닫힌 과제나 종결된 검토 자리를 가리키면 그 산출은 보존하되 대상을 다시 열지 않는다. 원문을 읽지 못한 실행, 실패한 공급자 호출과 의미상 미해결 결과도 구별해 기록한다.
 
-영향 검토를 준비할 때 생산자의 봉인 제출을 읽지 못하면 해당 생산자의 미시작 영향 검토 요청을 이력에 보존하고 제출 실패 대기로 넘긴다. 같은 요청을 다음 소유자 회차마다 다시 준비하지 않는다. 운영 진단의 복구 자료도 검증할 수 없는 파일 바이트를 입력 파일로 전달하지 않는다. `recovery_materials.output_files[].restoration_error`는 원래 artifact·snapshot·기대 해시·크기와 함께 오류 종류·사유, 읽은 경우의 실제 해시·크기를 제공한다. 이 행에는 복구 파일의 `local_path`가 없으며 수학적 산출의 수락 근거로 쓸 수 없다. 정상 파일의 복구·원문 접근 계약은 그대로 적용한다.
+영향 검토를 준비할 때 생산자의 봉인 제출을 읽지 못하면 해당 생산자의 미시작 영향 검토 요청을 이력에 보존하고 제출 실패 대기로 넘긴다. 같은 요청을 다음 소유자 회차마다 다시 준비하지 않는다. 운영 진단의 복구 자료도 검증할 수 없는 파일 바이트를 입력 파일로 전달하지 않는다. `recovery_materials.output_files[].restoration_error`는 원래 artifact·snapshot·기대 해시·크기와 함께 오류 종류·사유, 읽은 경우의 실제 해시·크기를 제공한다. 이 행에는 `recovery_materials.output_files[].local_path`가 없으며 수학적 산출의 수락 근거로 쓸 수 없다. 결과·복구 체크포인트의 복원 실패도 각 `recovery_materials.result_source.restoration_error`와 `recovery_materials.checkpoint_source.restoration_error`에 같은 형식으로 전달한다. `recovery_materials.final_result_status`의 `available`은 정상 결과 경로 선택이며 복원 성공을 뜻하지 않는다. checkpoint_source가 null이면 읽을 복구 체크포인트가 없고 live_review에는 recovery_materials가 없다. 정상 파일의 복구·원문 접근 계약은 그대로 적용한다.
 
 ## 실행 수명과 복구
 

@@ -23,6 +23,7 @@ import unittest
 
 from do_math import repository, submission
 from support.model import Answer
+from support.engine_context import assert_operational_documents
 from support.provider_probes import ObservedCalls
 from support.review_sim import held_impact, impact_review_answer, impact_sim, warm_impact
 
@@ -120,6 +121,12 @@ class UnreadableBeforeReviewTests(unittest.TestCase):
         diagnostics = []
 
         def diagnose(output, context):
+            from pathlib import Path
+            active = next(row for row in sim.runtime['executions'].values()
+                          if row['role'] == 'operational_review' and row['status'] != 'ended')
+            workspace = Path(sim.instance['workspace']) / 'runs' / active['id'] / 'workspace'
+            assert_operational_documents(self, context, workspace, sim.engine, owner='recovery_materials',
+                                         snapshot=active['input_snapshot'])
             diagnostics.append(deepcopy(context['recovery_materials']))
             return output
 

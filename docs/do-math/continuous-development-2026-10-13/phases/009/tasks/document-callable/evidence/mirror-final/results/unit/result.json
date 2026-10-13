@@ -1,0 +1,187 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 29,
+  "rows": [
+    {
+      "id": "unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_invalid_rows_and_unreadable_paths_keep_exact_source_and_no_completion",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_engine_trace_report_corruption.TraceCorruptionTests.test_unreadable_error_sidecar_has_bounded_explicit_status",
+      "outcome": "passed",
+      "seconds": 0.26600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_assessment_only_input_contains_waiting_contract_and_review_history",
+      "outcome": "passed",
+      "seconds": 0.25,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_candidate_population_is_compact_profile_bound_and_reproducible",
+      "outcome": "passed",
+      "seconds": 0.4380000000237487,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_checker_sees_canonical_catalog_beyond_direct_comparison",
+      "outcome": "passed",
+      "seconds": 0.21799999999348074,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_compaction_preserves_producer_validation_inputs",
+      "outcome": "passed",
+      "seconds": 0.10999999998603016,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_engine_context_restores_multihop_git_artifact",
+      "outcome": "passed",
+      "seconds": 0.20300000003771856,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_engine_review_context_reaches_role_input_with_bound_identity_and_policy",
+      "outcome": "passed",
+      "seconds": 0.18699999997625127,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_impact_review_evidence_is_required_direct_input",
+      "outcome": "passed",
+      "seconds": 0.0470000000204891,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_multihop_restores_latest_file_and_stage_evidence",
+      "outcome": "passed",
+      "seconds": 0.29699999996228144,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_optional_display_copies_are_referenced_instead_of_reclassified_as_mandatory",
+      "outcome": "passed",
+      "seconds": 0.10899999999674037,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_plan_receives_returned_work_separately_from_ready_selection_population",
+      "outcome": "passed",
+      "seconds": 0.125,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_preparation_compares_full_population_and_only_effective_k_summaries",
+      "outcome": "passed",
+      "seconds": 0.4690000000409782,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_required_direct_action_is_never_replaced_by_reference",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_required_input_overflow_is_structured_and_lossless",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_review_input_matches_real_seat_view_and_rejects_peer_injection",
+      "outcome": "passed",
+      "seconds": 0.046999999962281436,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_role_input_uses_current_schema_documents_and_private_resume_bytes",
+      "outcome": "passed",
+      "seconds": 0.39100000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_role_manifest_distinguishes_required_direct_views_from_references",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_role_overflow_keeps_original_sizes_and_waits_on_activity",
+      "outcome": "passed",
+      "seconds": 0.0470000000204891,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_role_overflow_records_the_context_budget_it_compared",
+      "outcome": "passed",
+      "seconds": 0.17099999997299165,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_submission_context_is_installed_before_single_input_seal",
+      "outcome": "passed",
+      "seconds": 0.0940000000409782,
+      "details": []
+    },
+    {
+      "id": "unit.test_role_input_packaging.RoleInputTests.test_verified_summary_tracks_identity_use_withdrawal",
+      "outcome": "passed",
+      "seconds": 0.75,
+      "details": []
+    },
+    {
+      "id": "unit.test_storage_record_queries.QueryFamilyNameTests.test_query_family_names_are_the_condition_grammar_names",
+      "outcome": "passed",
+      "seconds": 1.202999999979511,
+      "details": []
+    },
+    {
+      "id": "unit.test_storage_record_queries.QueryRecordTests.test_file_cursor_reuses_old_snapshot_and_malformed_cursor_is_error",
+      "outcome": "passed",
+      "seconds": 0.03200000000651926,
+      "details": []
+    },
+    {
+      "id": "unit.test_storage_report_projections.ReportProjections.test_human_report_preserves_loaded_initialization_blocker_and_machine_finding",
+      "outcome": "passed",
+      "seconds": 0.375,
+      "details": []
+    },
+    {
+      "id": "unit.test_storage_report_projections.ReportProjections.test_operation_timeline_preserves_producer_trace_bytes_and_null_snapshot",
+      "outcome": "passed",
+      "seconds": 0.045999999972991645,
+      "details": []
+    },
+    {
+      "id": "unit.test_storage_report_projections.ReportProjections.test_status_refuses_unknown_observation_before_rendering",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "unit.test_storage_report_projections.ReportProjections.test_timeline_uses_stored_execution_times_and_exact_snapshot",
+      "outcome": "passed",
+      "seconds": 0.0940000000409782,
+      "details": []
+    },
+    {
+      "id": "unit.test_storage_report_projections.ReportProjections.test_timezone_display_and_csv_preserve_null_and_nested_values",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "unit.test_engine_trace_report_corruption": 0.26600000000325963,
+    "unit.test_role_input_packaging": 3.9530000000377186,
+    "unit.test_storage_record_queries": 1.2349999999860302,
+    "unit.test_storage_report_projections": 0.5310000000172295
+  }
+}

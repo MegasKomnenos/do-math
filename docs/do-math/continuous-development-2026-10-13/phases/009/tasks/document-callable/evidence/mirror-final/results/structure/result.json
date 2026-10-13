@@ -1,0 +1,130 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 20,
+  "rows": [
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_a_field_from_another_family_cannot_validate_a_scoped_name",
+      "outcome": "passed",
+      "seconds": 0.1720000000204891,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_all_dotted_document_fields_have_an_owner",
+      "outcome": "passed",
+      "seconds": 0.18800000002374873,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_an_undefined_policy_is_not_accepted_as_an_arbitrary_code_word",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_another_commands_flag_cannot_validate_the_documented_command",
+      "outcome": "passed",
+      "seconds": 0.014999999955762178,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_array_paths_follow_items_instead_of_borrowing_parent_or_map_fields",
+      "outcome": "passed",
+      "seconds": 0.15700000000651926,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_cli_result_branches_and_incremental_manifest_fields_remain_separate",
+      "outcome": "passed",
+      "seconds": 0.18700000003445894,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_deferred_operational_inputs_have_a_document_check_in_the_assigned_method",
+      "outcome": "passed",
+      "seconds": 0.06299999996554106,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_document_variables_have_line_local_owners_without_a_union_of_families",
+      "outcome": "passed",
+      "seconds": 0.15600000001722947,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_documented_commands_and_options_exist",
+      "outcome": "passed",
+      "seconds": 1.1089999999967404,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_documented_diagnostic_codes_belong_to_their_actual_owner",
+      "outcome": "passed",
+      "seconds": 0.10999999998603016,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_documented_function_references_resolve_to_callables",
+      "outcome": "passed",
+      "seconds": 0.5470000000204891,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_documented_module_constants_exist_independently_of_field_names",
+      "outcome": "passed",
+      "seconds": 0.015000000013969839,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_documented_policy_names_have_installed_owners",
+      "outcome": "passed",
+      "seconds": 0.046999999962281436,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_documented_scoped_fields_belong_to_their_actual_schema",
+      "outcome": "passed",
+      "seconds": 0.20300000003771856,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_explicit_producer_composition_keeps_owners_and_rejects_stale_bindings",
+      "outcome": "passed",
+      "seconds": 0.1559999999590218,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_operational_document_names_the_result_and_checkpoint_owners",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_operational_fields_require_their_actual_input_owner",
+      "outcome": "passed",
+      "seconds": 0.15700000000651926,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_optional_reads_and_same_named_checks_keep_their_actual_owners",
+      "outcome": "passed",
+      "seconds": 0.1720000000204891,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_producer_fields_do_not_come_from_nested_scopes_or_unknown_spreads",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "structure.test_doc_code.DocumentCodeTests.test_role_input_fields_do_not_borrow_names_from_the_stored_execution",
+      "outcome": "passed",
+      "seconds": 0.15600000001722947,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "structure.test_doc_code": 3.610000000044238
+  }
+}

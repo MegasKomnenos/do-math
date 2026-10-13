@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs\\do-math\\continuous-development-2026-10-13\\phases\\009\\tasks\\document-callable\\evidence\\prepare.py"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 9280,
+  "started_at": "2026-10-13T17:54:04.479343+00:00",
+  "pid": 20832,
+  "state": "exited",
+  "ended_at": "2026-10-13T17:54:08.399193+00:00",
+  "exit_code": 0,
+  "changed_sources": []
+}

@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    "docs\\do-math\\continuous-development-2026-10-13\\phases\\009\\tasks\\document-callable\\evidence\\mirror_plan.py",
+    "cache-plan"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 30560,
+  "started_at": "2026-10-13T18:00:39.990909+00:00",
+  "pid": 23952,
+  "state": "exited",
+  "ended_at": "2026-10-13T18:00:42.992339+00:00",
+  "exit_code": 0,
+  "changed_sources": []
+}

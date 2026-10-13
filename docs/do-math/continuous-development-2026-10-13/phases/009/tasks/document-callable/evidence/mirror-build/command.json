@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-B",
+    ".claude/skills/writing-skills/scripts/build_skill_mirrors.py"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 38804,
+  "started_at": "2026-10-13T17:57:40.289363+00:00",
+  "pid": 23728,
+  "state": "exited",
+  "ended_at": "2026-10-13T17:57:43.574277+00:00",
+  "exit_code": 0,
+  "changed_sources": [
+    ".agents/skills/do-math/references/CLI-실행-계약.md",
+    ".agents/skills/do-math/scripts/tests/.timings.json"
+  ]
+}
