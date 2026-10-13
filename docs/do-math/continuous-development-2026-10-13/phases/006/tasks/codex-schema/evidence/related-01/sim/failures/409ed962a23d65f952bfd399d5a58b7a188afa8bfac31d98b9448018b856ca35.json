@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "sim.test_provider_runner_gaps.RunnerGapTests.test_noncanonical_final_number_is_an_output_validation_failure_after_collection",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_provider_runner_gaps.py\", line 76, in test_noncanonical_final_number_is_an_output_validation_failure_after_collection\n    self.assertRegex(result['error'], '^output JSON: ValueError:')\nAssertionError: Regex didn't match: '^output JSON: ValueError:' not found in \"output: Additional properties are not allowed ('value' was unexpected)\"\n"
+    ]
+  }
+}

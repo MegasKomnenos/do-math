@@ -1,0 +1,87 @@
+{
+  "argv": [
+    "git",
+    "show",
+    "065a323a",
+    "--",
+    ".claude/skills/do-math/scripts/tests/sim/test_provider_runner_gaps.py",
+    ".claude/skills/do-math/scripts/tests/sim/test_provider_close_worker_rejections.py"
+  ],
+  "exit_code": 0,
+  "reports": {
+    "changed_area": {
+      "historical_claim": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-laj86hxh\\report.json",
+        "sha256": "b624fdd1c5f850a962723e9f3f7f0d20a51f7ca520d5063d2860a4aedd3234bb",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 161
+        },
+        "total_seconds": 48.9,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "sim.test_provider_collection.IdentityTests.test_capability_identity_has_host_worker_and_cli_hashes",
+              "seconds": 2.062000000034459,
+              "budget_seconds": 2.0
+            },
+            {
+              "id": "unit.test_provider_engine_admission.ResourceWaitTests.test_configure_wakes_only_changed_resource_waits_and_keeps_pinned_profile",
+              "seconds": 0.28200000000651926,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_provider_stored_executions.StoredExecutionTests.test_confirmed_local_termination_releases_only_its_reservation",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_provider_stored_executions.StoredExecutionTests.test_intent_stops_and_revokes_execution_authority_in_same_git_publication",
+              "seconds": 0.20300000009592623,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_provider_wait_gates.ProviderTests.test_restriction_blocks_work_and_operational_roles_and_survives_another_owner",
+              "seconds": 0.25,
+              "budget_seconds": 0.2
+            },
+            {
+              "id": "unit.test_provider_wait_gates.ProviderTests.test_unknown_limit_uses_bounded_backoff_and_known_limit_preserves_time",
+              "seconds": 0.28200000000651926,
+              "budget_seconds": 0.2
+            }
+          ],
+          "tier": null
+        }
+      },
+      "exists": false
+    },
+    "structure": {
+      "historical_claim": {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-yspf93gz\\report.json",
+        "sha256": "762fc100be2e3035a16389cb04d84696d57785253813159f67eb499cc7caf2c5",
+        "complete": true,
+        "successful": true,
+        "counts": {
+          "passed": 6
+        },
+        "total_seconds": 7.7,
+        "changed_during_run": [],
+        "budget": {
+          "over_budget": [
+            {
+              "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+              "seconds": 6.452999999979511,
+              "budget_seconds": 5.0
+            }
+          ],
+          "tier": null
+        }
+      },
+      "exists": false
+    }
+  },
+  "scope": "B49 runner invalid-input, canonical-number rejection, pinned seal and local termination only; not PR15 as a whole."
+}

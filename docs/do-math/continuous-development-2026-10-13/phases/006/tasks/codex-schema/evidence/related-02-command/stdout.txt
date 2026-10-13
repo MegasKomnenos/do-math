@@ -1,0 +1,9 @@
+Open known defects: 0
+[sim] 4 tests
+Over budget: 0 tests
+{"complete": true, "successful": true, "counts": {"passed": 4}, "group_seconds": {"sim": 0.5}, "total_seconds": 0.5}
+    0.250s passed             sim.test_provider_final_contract.ProviderFinalContractTests.test_bound_draft_schema_stays_local_and_unbound_final_keeps_its_schema
+    0.172s passed             sim.test_provider_runner.ObservationBurstTests.test_a_valid_burst_is_delivered_whole_and_completes
+    0.062s passed             sim.test_provider_runner_gaps.RunnerGapTests.test_noncanonical_final_number_is_an_output_validation_failure_after_collection
+    0.047s passed             sim.test_provider_runner.ResultTests.test_completed_only_after_schema
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\006\tasks\codex-schema\evidence\related-02\report.json

@@ -1,0 +1,17 @@
+test_full_maintenance_contract_is_carried_without_requiring_optional_fields (sim.test_provider_schema.ProviderSchemaTests.test_full_maintenance_contract_is_carried_without_requiring_optional_fields) ... FAIL
+  failure evidence: C:\math\docs\do-math\continuous-development-2026-10-13\phases\006\tasks\codex-schema\evidence\red\sim\failures\6e9ff1505477632cd3bc4c7646ba0b4ce260c8c6cc15f8996876972d423bb7c8.json
+
+======================================================================
+FAIL: test_full_maintenance_contract_is_carried_without_requiring_optional_fields (sim.test_provider_schema.ProviderSchemaTests.test_full_maintenance_contract_is_carried_without_requiring_optional_fields)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\math\.claude\skills\do-math\scripts\tests\sim\test_provider_schema.py", line 52, in test_full_maintenance_contract_is_carried_without_requiring_optional_fields
+    self.assertEqual(set(transport['required']), set(transport['properties']))
+AssertionError: Items in the second set but not the first:
+'repair_responses'
+'integration_bundles'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.142s
+
+FAILED (failures=1)

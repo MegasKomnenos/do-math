@@ -1,0 +1,242 @@
+{
+  "complete": true,
+  "successful": false,
+  "tests_run": 35,
+  "rows": [
+    {
+      "id": "sim.test_operator_finish_provider.ProviderWakeTests.test_saved_wait_repairs_schedule_once_and_publication_precedes_effect",
+      "outcome": "passed",
+      "seconds": 1.8119999999762513,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_diagnosed_repair_restores_failed_request_and_preserves_regression_proof",
+      "outcome": "passed",
+      "seconds": 2.875,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_failed_structured_report_preserves_output_without_research_submission",
+      "outcome": "failed",
+      "seconds": 2.1410000000032596,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_finish_recovery.py\", line 235, in test_failed_structured_report_preserves_output_without_research_submission\n    self.assertEqual((report['status'], report['error_kind'], report['error']),\nAssertionError: Tuples differ: ('failed', 'execution_failure', 'worker_not_exited; t[65 chars]ing') != ('failed', 'output_validation', \"output/next_step: No[23 chars]ng'\")\n\nFirst differing element 1:\n'execution_failure'\n'output_validation'\n\n  ('failed',\n+  'output_validation',\n+  \"output/next_step: None is not of type 'string'\")\n-  'execution_failure',\n-  'worker_not_exited; turn_completed_missing; jsonl_parse_incomplete; '\n-  'final_message_missing')\n"
+      ]
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_hold_before_report_does_not_use_up_the_repair",
+      "outcome": "passed",
+      "seconds": 2.2660000000032596,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_judged_repair_counts_once_even_if_hold_holds_failed_verification",
+      "outcome": "passed",
+      "seconds": 1.7030000000377186,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_model_policy_pause_holds_future_calls_but_not_the_repair_attempt",
+      "outcome": "passed",
+      "seconds": 3.030999999959022,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_probe_routes_published_diagnosis_and_hold_blocks_recovery",
+      "outcome": "passed",
+      "seconds": 2.1560000000172295,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_provider_limit_reaches_gate_unchanged_and_unjudged_repair_can_retry",
+      "outcome": "passed",
+      "seconds": 2.8439999999827705,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_recovery_publishes_under_locks_and_restarts_after_collection_and_unlock",
+      "outcome": "passed",
+      "seconds": 1.7810000000172295,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_unknown_local_termination_holds_output_and_never_restarts",
+      "outcome": "passed",
+      "seconds": 1.0,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_unresolved_diagnosis_does_not_restart_or_repeat",
+      "outcome": "passed",
+      "seconds": 1.577999999979511,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_finish_recovery.RecoveryTests.test_unsupported_capability_is_saved_before_reserving_or_calling",
+      "outcome": "passed",
+      "seconds": 0.9220000000204891,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_absent_file_and_checkpoint_are_both_reported",
+      "outcome": "failed",
+      "seconds": 0.09399999998277053,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 71, in test_absent_file_and_checkpoint_are_both_reported\n    self.assertEqual(result['checks'], {'local_termination': True, 'structured_result': True,\nAssertionError: {'loc[33 chars]d_result': False, 'preserved_file': False, 'checkpoint': False} != {'loc[33 chars]d_result': True, 'preserved_file': False, 'checkpoint': False}\n  {'checkpoint': False,\n   'local_termination': True,\n   'preserved_file': False,\n-  'structured_result': False}\n?                       ^^^^\n\n+  'structured_result': True}\n?                       ^^^\n\n"
+      ]
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_background_requires_matching_completion_before_result_and_completed_file",
+      "outcome": "passed",
+      "seconds": 0.10899999999674037,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_background_without_events_and_file_fails_each_effect_check",
+      "outcome": "passed",
+      "seconds": 0.0940000000409782,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_claude_scholarly_tool_is_observed_from_actual_stream",
+      "outcome": "passed",
+      "seconds": 0.10999999998603016,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_claude_tool_requests_stop_and_collects_terminated_job",
+      "outcome": "passed",
+      "seconds": 0.125,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_cli_preserves_each_case_exception_and_complete_source_hashes",
+      "outcome": "passed",
+      "seconds": 0.3119999999762513,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_cli_rejects_missing_required_live_arguments_before_effects",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_cli_rejects_model_disagreement_lock_alias_and_duplicate_cases",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_codex_command_requests_stop_and_collects_terminated_job",
+      "outcome": "failed",
+      "seconds": 0.125,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 153, in test_codex_command_requests_stop_and_collects_terminated_job\n    self.assertEqual(result['checks'], {'local_termination': True, 'requested_stop': True})\nAssertionError: {'local_termination': True, 'requested_stop': False} != {'local_termination': True, 'requested_stop': True}\n- {'local_termination': True, 'requested_stop': False}\n?                                               ^^^^\n\n+ {'local_termination': True, 'requested_stop': True}\n?                                               ^^^\n\n"
+      ]
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_codex_mcp_nonstring_tool_is_ignored_without_losing_later_tool",
+      "outcome": "failed",
+      "seconds": 0.125,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 131, in test_codex_mcp_nonstring_tool_is_ignored_without_losing_later_tool\n    self.assertTrue(result['passed'], result)\nAssertionError: False is not true : {'case': 'files', 'passed': False, 'checks': {'local_termination': True, 'structured_result': False, 'preserved_file': False, 'checkpoint': False, 'scholarly_actual_tool': False}, 'report': 'C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Temp\\\\tmp1h9fyni2\\\\evidence\\\\files\\\\report.json'}\n"
+      ]
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_codex_nonobject_item_and_other_item_are_ignored",
+      "outcome": "failed",
+      "seconds": 0.125,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 137, in test_codex_nonobject_item_and_other_item_are_ignored\n    self.assertTrue(result['passed'], result)\nAssertionError: False is not true : {'case': 'structured', 'passed': False, 'checks': {'local_termination': True, 'structured_result': False}, 'report': 'C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Temp\\\\tmp3s96q6w8\\\\evidence\\\\structured\\\\report.json'}\n"
+      ]
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_codex_scholarly_tool_name_joins_server_and_tool",
+      "outcome": "failed",
+      "seconds": 0.10899999999674037,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 92, in test_codex_scholarly_tool_name_joins_server_and_tool\n    self.assertTrue(result['passed'], result)\nAssertionError: False is not true : {'case': 'files', 'passed': False, 'checks': {'local_termination': True, 'structured_result': False, 'preserved_file': False, 'checkpoint': False, 'scholarly_actual_tool': False}, 'report': 'C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Temp\\\\tmpj_uefhs5\\\\evidence\\\\files\\\\report.json'}\n"
+      ]
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_files_preserve_nonce_and_the_checkpoint_requested_by_product",
+      "outcome": "failed",
+      "seconds": 0.14100000000325963,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 55, in test_files_preserve_nonce_and_the_checkpoint_requested_by_product\n    self.assertEqual(result['checks'], {'local_termination': True, 'structured_result': True,\nAssertionError: {'loc[33 chars]d_result': False, 'preserved_file': False, 'checkpoint': False} != {'loc[33 chars]d_result': True, 'preserved_file': True, 'checkpoint': True}\n- {'checkpoint': False,\n?                ^^^^\n\n+ {'checkpoint': True,\n?                ^^^\n\n   'local_termination': True,\n-  'preserved_file': False,\n?                    ^^^^\n\n+  'preserved_file': True,\n?                    ^^^\n\n-  'structured_result': False}\n?                       ^^^^\n\n+  'structured_result': True}\n?                       ^^^\n\n"
+      ]
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_locked_claude_missing_model_evidence_is_not_success",
+      "outcome": "passed",
+      "seconds": 0.125,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_locked_claude_reports_exact_requested_model",
+      "outcome": "passed",
+      "seconds": 0.14000000001396984,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_message_nonlist_content_does_not_create_tool_observation",
+      "outcome": "passed",
+      "seconds": 0.14100000000325963,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_nonobject_message_and_text_blocks_do_not_create_tool_observation",
+      "outcome": "passed",
+      "seconds": 0.10899999999674037,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_other_scholarly_tool_does_not_satisfy_list_sources",
+      "outcome": "failed",
+      "seconds": 0.10999999998603016,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 110, in test_other_scholarly_tool_does_not_satisfy_list_sources\n    self.assertEqual(self.report['actual_tool_names'], ['mcp__scholarly__list_sources_preview'])\nAssertionError: Lists differ: [] != ['mcp__scholarly__list_sources_preview']\n\nSecond list contains 1 additional elements.\nFirst extra element 0:\n'mcp__scholarly__list_sources_preview'\n\n- []\n+ ['mcp__scholarly__list_sources_preview']\n"
+      ]
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_recorded_background_requires_exact_identity_status_and_pre_result_completion",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_scholarly_file_success_does_not_substitute_for_missing_tool",
+      "outcome": "failed",
+      "seconds": 0.23399999999674037,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 97, in test_scholarly_file_success_does_not_substitute_for_missing_tool\n    self.assertEqual(result['checks'], {'local_termination': True, 'structured_result': True,\nAssertionError: {'loc[39 chars]lt': False, 'preserved_file': False, 'checkpoi[38 chars]alse} != {'loc[39 chars]lt': True, 'preserved_file': True, 'checkpoint[35 chars]alse}\n- {'checkpoint': False,\n?                ^^^^\n\n+ {'checkpoint': True,\n?                ^^^\n\n   'local_termination': True,\n-  'preserved_file': False,\n?                    ^^^^\n\n+  'preserved_file': True,\n?                    ^^^\n\n   'scholarly_actual_tool': False,\n-  'structured_result': False}\n?                       ^^^^\n\n+  'structured_result': True}\n?                       ^^^\n\n"
+      ]
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_skill_only_uses_installed_bundle_without_model",
+      "outcome": "passed",
+      "seconds": 1.2660000000032596,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_stop_case_without_command_fails_without_termination_request",
+      "outcome": "passed",
+      "seconds": 0.09299999999348074,
+      "details": []
+    },
+    {
+      "id": "sim.test_operator_probe_contract.ProbeContractTests.test_wrong_file_content_is_failed_even_with_completed_structured_response",
+      "outcome": "failed",
+      "seconds": 0.1720000000204891,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 65, in test_wrong_file_content_is_failed_even_with_completed_structured_response\n    self.assertEqual(result['checks'], {'local_termination': True, 'structured_result': True,\nAssertionError: {'loc[33 chars]d_result': False, 'preserved_file': False, 'checkpoint': False} != {'loc[33 chars]d_result': True, 'preserved_file': False, 'checkpoint': True}\n- {'checkpoint': False,\n?                ^^^^\n\n+ {'checkpoint': True,\n?                ^^^\n\n   'local_termination': True,\n   'preserved_file': False,\n-  'structured_result': False}\n?                       ^^^^\n\n+  'structured_result': True}\n?                       ^^^\n\n"
+      ]
+    }
+  ],
+  "module_total_seconds": {
+    "sim.test_operator_finish_provider": 7.48399999999674,
+    "sim.test_operator_finish_recovery": 22.29700000002049,
+    "sim.test_operator_probe_contract": 3.875
+  }
+}

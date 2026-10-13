@@ -1,0 +1,22 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 2,
+  "rows": [
+    {
+      "id": "sim.test_provider_schema.ProviderSchemaTests.test_original_maintenance_constraints_reject_invalid_values_without_repair",
+      "outcome": "passed",
+      "seconds": 1.8589999999967404,
+      "details": []
+    },
+    {
+      "id": "sim.test_provider_schema.ProviderSchemaTests.test_probe_consumer_receives_its_original_result_through_the_transport",
+      "outcome": "passed",
+      "seconds": 0.09399999998277053,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "sim.test_provider_schema": 1.952999999979511
+  }
+}

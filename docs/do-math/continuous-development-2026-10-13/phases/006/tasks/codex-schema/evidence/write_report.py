@@ -1,0 +1,103 @@
+"""Assemble the task report from the recorded commands and verified source list."""
+import json
+from pathlib import Path
+import subprocess
+from run_command import ROOT, EVIDENCE, write_json
+
+PREFIX = 'run:phases/006/tasks/codex-schema/evidence/'
+def refs(*names): return [PREFIX + n for n in names]
+def repo(path): return 'repo:.claude/skills/do-math/scripts/' + path
+verification = json.loads((EVIDENCE / 'verification-final.json').read_bytes())
+
+details = {
+ 'do_math/model_runner.py': '비결박 Codex 호출에서 원 schema를 output.schema.json에 보존하고 provider_final의 봉투를 transport.schema.json으로 전달한다. 원 prompt와 결박/Claude 경로를 유지한다.',
+ 'do_math/model_call.py': '수집된 실제 source_request로 공급자를 판별하고 native final을 semantic_output으로 해석한 뒤 기존 canonical_json 및 원 schema 검증을 적용한다.',
+ 'do_math/provider_final.py': 'output_contract·semantic_output·CODEX_OUTPUT_KEY를 같은 정본에 정의한다. Codex의 JSON 문자열 봉투와 Claude의 직접 JSON을 엄격히 해석하며 원자료는 바꾸지 않는다.',
+ 'tests/support/provider_runs.py': '기본 CLI 대역의 의미 final을 실제 전달 schema에 맞춰 포장한다. 명시 stdout/final 원자료는 자동 재작성하지 않는다.',
+ 'tests/support/model.py': '일반 모델 대역의 Codex 최종 출력도 같은 현재 CLI 전송 계약을 따르게 한다. 결박 제출 경로는 봉투 없이 유지한다.',
+ 'tests/support/provider_live.py': '원 schema 보존 판정을 유지하고 전송 정의·worker hash 결속을 추가한다. raw final 일치와 의미 해석을 함께 검사하며 두 schema 해시를 기록한다.',
+ 'tests/sim/test_provider_schema.py': '실 ModelRunner/worker/adapter/분류기를 통한 원 schema 의미 보존·거부 입력·봉투/JSON 파손·native mismatch·실 probe 소비를 검사하는 7개 시험을 추가한다.',
+ 'tests/sim/test_provider_final_contract.py': '원 schema 보존·전송 schema·bound의 schema flag 부재를 함께 검사하고 공급자별 원 stdin byte 단언을 유지한다.',
+ 'tests/sim/test_provider_runner.py': '성공/대량 관찰 fixture의 native final을 현재 봉투로 갱신한다. usage·의미 output·행 순서·정확한 원바이트·종료 단언은 유지한다.',
+ 'tests/sim/test_provider_runner_gaps.py': '비정규 소수 값 거부 입력의 native final만 현재 봉투로 갱신하여 기존 canonical 값 거부를 계속 검사한다.',
+ 'tests/contracts/test_doubles_follow_corpus.py': '새 실제 Codex 녹화를 ModelDouble의 실제 출력 경로와 비교하고 native final 파일·semantic output을 대조한다. 이전 실패 녹화/Claude 검사를 유지한다.',
+ 'tests/unit/test_corpus_replay.py': '전건 native 재생을 유지하며 maintenance 원 schema 검증을 의미 값에 적용한다. 새 전송 schema/worker hash/명령 hash/원 final을 별도로 연결한다.',
+ 'tests/structure/test_corpus.py': '새 transport_schema_path 및 worker_status_path 선언과 전송 SHA를 전건 검사에 포함한다.',
+ 'tests/corpus/manifest.json': '기존 17항목의 내용/verdict를 유지하고 Codex 실제 성공 한 항목을 추가한다. 원/전송 schema·의미 값·raw/명령·worker 해시의 관계를 명시한다.',
+ 'tests/.timings.json': '공식 관련 검사로 갱신된 실행 비용 캐시다. 미러 시험 뒤 정본 캐시를 공식 생성기로 동기화했다.',
+ 'tests/시험-지침.md': '실제 전송 표현·원 schema/worker hash 판정·raw final과 의미 수신 구분·대표 호출 증거 범위를 반영한다.',
+ '이음새-정본.md': 'provider_final의 전송/수신 정본과 두 schema의 소유·호출 위치·증거 관계를 추가한다.',
+}
+changes = []
+for path in verification['changes']:
+    mirror = path.startswith('.agents/')
+    if '/references/' in path:
+        detail = 'CLI 계약에 비결박 Codex의 문자열 봉투, 두 schema, 원바이트 보존과 원 schema 수신 검증을 설명한다.'
+    else:
+        rel = path.split('/scripts/',1)[1]
+        if '/corpus/codex/codex-maintenance-transport-' in path:
+            detail = '이번 실제 Codex 성공의 stdout/stderr/final/prompt/원 schema/전송 schema/worker 상태 중 해당 원파일을 바이트 그대로 추가했다.'
+        else:
+            detail = details[rel]
+    if mirror: detail = '공식 build_skill_mirrors.py 생성 사본. ' + detail
+    changes.append({'path':path,'detail':detail})
+
+check_details = {
+ 'initial-inspection': ('pass','시작 2624소스/Git 상태·필수 입력 SHA와 원보고·현재 caller schema를 수집했다. phase 005 종료와 소스 차이 0개다.'),
+ 'red-command': ('pass','수리 전 한 시험의 기대된 exit 1/failed 1을 관찰했다. required/properties 차이에 integration_bundles와 repair_responses가 직접 나타난다. 제품 성공을 뜻하지 않는다.'),
+ 'semantic-command': ('pass','원 schema와 명시 값에 대한 6선택/6passed, 제품 전체 전달/수신 경로. 이후 한 시험의 예외 세부 단언과 직접 probe 시험을 semantic-final에서 보강했다.'),
+ 'related-01-command': ('fail','67선택/62passed/5failed. 구 native final fixture 4개와 새 시험의 예외 세부 단언 1개이며 related-02/semantic-final에서 각각 교정해 확인했다.'),
+ 'related-02-command': ('pass','수정한 기존 4시험을 정확한 ID로 재실행하여 4passed. bound·Claude·원 schema·소수 거부·관찰 원바이트 단언을 유지한다.'),
+ 'consumers-command': ('fail','45선택/34passed/11failed. 외부 CLI fixture가 구 schema/final 형태를 사용하는 배정 밖 직접 소비 11건이 남는다. 종료/연구 저장·Claude·worker root 및 다른 복구 회귀의 통과도 원 row 그대로 보존했다.'),
+ 'semantic-final-command': ('pass','강화한 원 schema 오류 세부 시험·실 probe 소비 시험 및 냄새 모듈 합계6선택/6passed. 변환 함수를 정답 생성기로 사용하지 않았다.'),
+ 'environment-command': ('fail','설치 CLI 관찰 후 보조 script가 surface_report의 bytes를 JSON 직렬화하다 TypeError였다. 원출력/당시 script를 보존했다. 모델 호출이나 제품 시험 실패가 아니다.'),
+ 'environment02-command': ('pass','json_safe로 관찰 저장을 교정했다. 현재 Codex/Claude 경로·버전·help와 명시 model/effort만 기록했고 비밀/전체 환경은 출력하지 않았다.'),
+ 'history-command': ('pass','B49/065a323a의 한정 전달/반려/종료 slice 실제 diff와 현재 소비를 대조했다. 원 Temp 보고2개가 없음을 관찰했으며 역사161/6 counts를 새 증거로 합산하지 않았다.'),
+ 't5-list-command': ('pass','공식 T5 선택에 Codex/Claude maintenance 두 ID가 포함된다. 목록 확인은 실호출 성공과 구분한다.'),
+ 'live-command': ('pass','현재 명시 gpt-6-astra/low·Codex0.162.1 대표 호출 한 번. 공식1선택/1passed/exit0, 11checks 전부true, CLI exit0와 로컬 barrier 확인. actual model/cost는 native에서 미보고다.'),
+ 'promote-command': ('pass','실제 성공의 7원파일을 새 corpus 항목으로 승격했다. 원/전송 schema·snapshot·argv/status hash와 semantic expected를 대조하고 기존17항목을 유지했다.'),
+ 'corpus-command': ('pass','정본 structure.test_corpus/unit.test_corpus_replay/contracts.test_doubles_follow_corpus/structure.test_test_smells의 18선택/18passed. 최종 Python 865개와 판본 일치.'),
+ 'mirror-plan-command': ('pass','현재 dirty와 공식 transform 계획을 대조했다. 허용된 대응25파일만 생성 대상이고 overlay manifest는 같은 바이트다.'),
+ 'mirror-build-command': ('pass','공식 생성기로 계획한 대응 파일만 갱신했다. corpus verbatim과 -text 속성을 유지한다.'),
+ 'mirror-corpus-command': ('pass','미러 corpus 3모듈14선택/14passed. 최종 Python865개와 판본 일치.'),
+ 'cache-plan-command': ('pass','미러 검사로 달라진 .timings 한 파일만 남는 것을 확인했다. 제품 코드/녹화 재생성 변경은 없다.'),
+ 'cache-sync-command': ('pass','공식 생성기로 허용된 미러 .timings 한 파일만 정본에 맞췄다.'),
+ 'reuse-command': ('fail','Claude 원자료의 현재 parser/collector/분류 확인 뒤 역사 CLI SHA를 조회하다 빈 identity의 KeyError였다. 원 script/출력 보존. 그 자료가 제공하지 않는 바이너리 동등성을 추정하지 않는다.'),
+ 'reuse02-command': ('pass','같은 경로·버전/help·12개 worker/tool/parser/collector 파일과 동일 prompt/schema를 대조하고 원 Claude 결과를 현 수신기로 completed/정확 output까지 검산했다. 새 유료 호출0. 합성 pairs의 source_request 부재로 두 성공 표본이 실패가 되는 별도 공백도 기록했다.'),
+ 'mirror-check-command': ('pass','최종 공식 --check:1305파일 drift 없음, exit0, 실행 중 소스 변화0.'),
+ 'skill-check-command': ('pass','최종 probe_cli --skill-only:installed_skill_structure verified, exit0, 실행 중 소스 변화0.'),
+ 'final-audit-command': ('pass','최종2640소스/50허용변경, 모든 공식 selected↔row 및 검사 중 불변, live 이후 runtime/helper 불변, 양쪽 corpus51파일/18항목/50명시SHA와 102경로raw=clean을 실제 argv로 검산했다.'),
+}
+checks = []
+for label,(result,detail) in check_details.items():
+    record = json.loads((EVIDENCE / label / 'command.json').read_bytes())
+    checks.append((record['started_at'],{'command':subprocess.list2cmdline(record['argv']),'cwd':'repo:.',
+        'result':result,'exit_code':record['exit_code'],'evidence':refs(label+'/command.json',label+'/stdout.txt',label+'/stderr.txt'),
+        'detail':detail}))
+checks = [row for _,row in sorted(checks,key=lambda row:row[0])]
+checks.append({'command':r'C:\Users\wogud\AppData\Local\Programs\Python\Python312\python.exe -u -B .claude/skills/do-math/scripts/run_tests.py smoke.test_provider_live.ProviderLiveTests.test_claude_maintenance_files_and_termination --jobs 1',
+    'cwd':'repo:.','result':'not_run','exit_code':None,'evidence':refs('claude-reuse.json','review-notes.md'),
+    'detail':'이 phase의 새 Claude 유료 호출은0이다. 동일 도구 경로/버전/help, 입력/schema 및 현재 수신·관련 회귀로 phase003 성공의 지정 성질을 재사용한다. 역사 executable SHA는 미기록이며 바이트 동일성을 주장하지 않는다.'})
+
+report = {
+ 'status':'partial',
+ 'narrative': 'Codex의 선택 필드 schema 거부를 원 계약의 의미를 유지하는 전송/수신 경계로 수리했다. provider_final 한 곳에서 output_json 문자열 봉투를 정의하고 그 설명에 원 schema 전체를 싣는다. ModelRunner는 output.schema.json과 실제 transport.schema.json을 따로 보존하며 원 prompt는 바꾸지 않는다. collector의 raw/native final 일치·worker hash·실패·종료 검사를 통과한 뒤 봉투를 엄격히 해석하고 기존 canonical 값 및 호출자 원 schema를 검증한다. 선택 필드 삭제/필수화, null/default 보충, 잘못된 필드 제거, 구형 응답 fallback은 없다. Claude와 control_binding은 기존 의미를 유지한다.\n\n수리 전 오프라인1건에서 실제 required/properties 반례를 관찰했다. 의미 회귀6건, 기존관련67건(당시62통과/5실패), 수정한4건, 의미 단언/직접probe/냄새6건을 각각 원보고로 남겼다. 5개 중간 실패는 current fixture와 예외 세부 단언으로 고쳐 해당 검사에서 통과했다. 직접 소비45건에서는34통과/11실패가 남았다. 9개 probe·1개 repair·1개 native storage fixture가 구 schema 또는 raw final을 가정하며 해당 파일은 phase writes 밖이다. contracts.pairs는 source_request 없는 합성 collection을 써 통과하는 검사 안에서 성공 branch 표본을 잃는 추가 공백도 확인했다. 제품에 조용한 fallback을 넣거나 외부 파일을 무단 수정하지 않았다. 이 남김 때문에 A3와 A5의 관련 회귀 인도 조건은 미충족이다.\n\n최종 경로로 Codex0.162.1/gpt-6-astra/low를 새로 한 번 호출했다. 공식1선택/1passed/exit0이며 원 schema/전송 정의/worker 해시·파일읽기·checkpoint·정확한 최종 응답·로컬 종료를 포함한11개 판정이 모두 참이다. 원바이트와 snapshot·worker PID/시각/argv·종료를 live에 보존했다. 실제 모델명과 비용은 미보고이며 native token counters를 비용이나 내부 호출 수로 바꾸지 않았다. 새 Claude/background 호출은 없고 phase003 Claude 성공은 원자료를 현 parser/collector/분류기로 재수신하고 도구 판본/입력 및 비변경 경계를 대조해 한정 재사용했다.\n\n기존17녹화와 실패 verdict를 그대로 두고 새 성공1항목·7파일을 추가했다. 원/전송 schema와 parser 재생/의미 수신을 별도 연결했다. 정본18검사·미러14검사는 최종 Python865개와 같은 판본으로 전부 통과했다. 양쪽 corpus는 각18항목·51파일·223685바이트·50명시SHA이며102개 경로의 실제Git raw/clean이 같다. 공식 생성계획/dirty 대조 뒤 허용25대응파일만 생성했고 미러 비용캐시만 다시 맞췄다. 최종--check1305파일/skill-only가 통과했고2640소스 중 실제50변경은 모두writes 안이다. live 후 runtime와 smoke helper는 불변이고 이후 Python 변경은 corpus검사3모듈뿐이다. 검사 중 소스 불변과 판본별 차이를 verification-final에 명시했다.\n\n현재 source는 phase005 종료와 같은2624파일에서 시작했고 기존engine 문서 차이는 새 제품 변경과 구분했다. B49 지정 반려/수치/종료 slice의 실제 diff·현재 소비·원보고 위치를 확인했으며 두 Temp 원보고의 부재와 새 대체 회귀를 구분했다. 보조 환경/재사용 script의 직렬화 및 미기록SHA 조회 실패도 원출력과 함께 보존했다. 작업은 부분 완료이며, manager가 배정 밖 fixture와 성공 branch 표본을 고친 뒤 직접 소비 회귀를 확인해야 한다. G4~G6, 전체T4/T5, Job/pythonw·Lean/Mathlib·예약·학술·L01·최종review 및Git 마감은 이번에 수행하지 않았다.',
+ 'acceptance':[
+  {'id':'A1','result':'pass','detail':'시작 소스/Git·phase005 종료·원 Codex 오류/schema/prompt/worker·공식 선택/row/exit를 결속했다. 실제 maintenance·repair·probe 비결박 소비와 연구 중앙 제출을 구분하고 null/부재/중첩/추가필드 제약, 현재CLI와 모델입력, 공식공급자 제약에 근거해 표현을 정했다. B49 한정 slice의 역사 원보고 부재도 정확히 기록했다.','evidence':refs('start-state.json','source-start.json','input-observations.json','caller-schemas.json','environment.json','history-review.json','history-b49.diff','review-notes.md')},
+  {'id':'A2','result':'pass','detail':'원스키마와 prompt를 보존하며 Codex봉투를 실제전달/수신 한소유위치에서 사용한다. 의미값은 기존원검증을 거치며 부재/null/빈값/중첩값을 합치지 않는다. native final·worker hash·종료 및 Claude/control_binding을 유지했고 새CLI가전달형식을수락한실증이 있다. provider_final은 기존layer1/identity등록에 이미 포함되어 별도등록이나 새framework가 필요하지 않았다.','evidence':refs('semantic/report.json','semantic-final/report.json','related-02/report.json','claude-reuse.json','live/report.json','promotion.json','syntax-check.json')+[repo('do_math/provider_final.py'),repo('do_math/model_runner.py'),repo('do_math/model_call.py')]},
+  {'id':'A3','result':'fail','detail':'핵심 의미/오류검출 및 기존native/종료/Claude/bound 회귀는 확인했고 현재대역으로실probe소비도통과했다. 그러나 직접소비45건중11실패가배정밖fixture에남고, 통과하는contracts.pairs에도성공표본누락이있다. 후속수정대상과미실행예측사례를F2/F3에명시했으므로 전체관련회귀완료를주장하지않는다.','evidence':refs('red/report.json','semantic/report.json','related-01/report.json','related-02/report.json','semantic-final/report.json','consumers/report.json','consumers-command/stderr.txt','pair-observation.json','review-notes.md')},
+  {'id':'A4','result':'pass','detail':'허용범위의오프라인핵심수리뒤Codex대표실호출을1회수행하여1선택/1passed/exit0과11checks를확인했다. worker실제schema snapshot·argv해시·원final·의미output·파일읽기·checkpoint·종료가대응한다. 새Claude호출0이며비변경경로의원자료재수신/버전/입력대조를근거로phase003성공을한정재사용했다. 미보고비용·actual model을추정하지않았다.','evidence':refs('live-inputs.json','live-command/command.json','live/report.json','promotion.json','claude-reuse.json','verification-final.json')},
+  {'id':'A5','result':'fail','detail':'녹화/문서/공식미러·양쪽전체corpus검사·Git바이트·최종해시인도는완료했다. 기존17항목불변,18항목/51파일/50SHA씩,102경로raw=clean,정본18passed/미러14passed,--check/skill-only통과다. 다만이조건의관련회귀전건통과는A3의11건과F3때문에미충족이므로완료로올리지않는다.','evidence':refs('manifest-before.json','promotion.json','corpus/report.json','mirror-corpus/report.json','mirror-plan.json','mirror-build-command/command.json','mirror-check-command/stdout.txt','skill-check-command/stdout.txt','corpus-final.json','source-final.json','verification-final.json')},
+ ],
+ 'changes':changes,'seams':[],
+ 'findings':[
+  {'id':'F1','kind':'fact','detail':'phase003의Codexmaintenance schema거부는원계약을보존하는문자열봉투수리후실제대표호출에서해소됐다. 설정model=gpt-6-astra/effort=low,CLI0.162.1,1회/1passed/11checks true다. 원/전송schema와실제raw/worker/종료를새녹화에보존했다. G7전체나새원계약충족으로확대하지않는다.','evidence':refs('live/report.json','live-command/command.json','promotion.json','corpus-final.json'),'affects':['run:context.md#C12','run:context.md#G7','run:plan.md',repo('do_math/provider_final.py')],'next_action':'manager가003F1의대표역할전달실패를새근거로처분한다. 후속fixture만변하고제품실행경로가불변이면이유료호출을재사용할수있다. 다른G7연쇄는별도배정한다.'},
+  {'id':'F2','kind':'issue','detail':'consumers45선택중11실패는새Codex전송형식과배정밖fixture불일치다. support.operator_finish_scene는CLI schema의최상위속성을의미schema로읽고, support.operator_probe_inputs는nonce속성을직접찾는다. sim.test_operator_finish_recovery의한단언도call.schema==원schema를요구한다. flows.test_provider_native_storage의한시험은explicit stdout/final을구{}로제공한다. 이자료를자동재작성하거나제품에구형fallback을넣지않았다. 추가정적조회에서sim.test_observation_delivery의단일chunk시험에도같은구final/completed기대가있으며이는이번미실행이다.','evidence':refs('consumers/report.json','consumers-command/stderr.txt','review-notes.md')+[repo('tests/support/operator_finish_scene.py'),repo('tests/support/operator_probe_inputs.py'),repo('tests/sim/test_observation_delivery.py')],'affects':['run:context.md#G1','run:context.md#G2','run:context.md#G3','run:plan.md','run:phases/006/tasks/codex-schema/objective.md#A3','run:phases/006/tasks/codex-schema/objective.md#A5',repo('tests/support/operator_finish_scene.py'),repo('tests/support/operator_probe_inputs.py'),repo('tests/sim/test_operator_probe_contract.py'),repo('tests/sim/test_operator_finish_recovery.py'),repo('tests/flows/test_provider_native_storage.py'),repo('tests/sim/test_observation_delivery.py'),repo('tests/flows/test_provider_raw_ingress.py')],'next_action':'새work에서이정본/미러파일들을writes에넣고전송schema와원semantic schema를명시구분하도록외부CLIfixture를교체한다. 원관찰바이트/수치/오류/정산단언을유지하고11실패및단일chunk시험을재검증한다. malformed raw ingress도원collector반려가출력형식반려로가려지지않게확인한다. 이불일치를허용잔여로닫지않는다.'},
+  {'id':'F3','kind':'issue','detail':'contracts.pairs._runner_result_samples의두비결박collected표본에는실collector가항상생산하는source_request가없다. 현classify_run은공급자를그검증된요청에서판별하므로두표본은output_validation/KeyError source_request가된다. Pair검사는결과가저장가능한지만보아여전히통과하며비결박성공branch검증을잃는다. 제품의실제수집성공과구별되는시험공백이고이fixture도writes밖이다.','evidence':refs('pair-observation.json','reuse02-command/command.json','consumers/report.json')+[repo('tests/contracts/pairs.py')],'affects':['run:context.md#G3','run:plan.md',repo('tests/contracts/pairs.py'),repo('tests/contracts/test_pairs.py')],'next_action':'같은후속fixture작업에서실제collection요청/원바이트계약을따르는성공·결박·실패·정지표본을만들고이름뿐아닌실제status/분기를검사한다. 실제ModelRunner/collector를가리는대역이나누락요청fallback으로해결하지않는다.'},
+  {'id':'F4','kind':'decision','detail':'Claude와기존background의승인된성질은한정재사용한다. Claude원smoke를현parser/collection_reasons/classify_run으로재수신해completed와정확output을확인했고prompt/schema/도구파일12개·설치경로·버전·help가같다. 역사surface identity는빈객체여서과거CLI바이너리SHA동등성은입증하지않는다. 모델/도구조건변경없이Codex분기만바뀐점과실Claude회귀에근거하며새유료Claude호출은0이다.','evidence':refs('claude-reuse.json','environment.json','related-01/report.json','related-02/report.json','consumers/report.json','review-notes.md'),'affects':['run:context.md#C12','run:context.md#G7','run:plan.md'],'next_action':'manager는이재사용의범위와역사binary SHA미기록한계를유지한다. 이후Claude실행/입력/도구조건이바뀌면그때대표실호출을배정하며배경·연구저장·전체G7성공으로확대하지않는다.'},
+ ],
+ 'checks':checks,
+}
+write_json(EVIDENCE.parent / 'report.json',report)
+print(json.dumps({'status':report['status'],'acceptance':{a['id']:a['result'] for a in report['acceptance']},
+                  'changes':len(changes),'checks':len(checks),'findings':len(report['findings'])},ensure_ascii=False))

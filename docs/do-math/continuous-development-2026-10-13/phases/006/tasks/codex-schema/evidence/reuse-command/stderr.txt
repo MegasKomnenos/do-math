@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\math\docs\do-math\continuous-development-2026-10-13\phases\006\tasks\codex-schema\evidence\verify_reuse.py", line 56, in <module>
+    assert old_identity['cli_sha256'] == environment['surfaces']['claude']['cli_sha256']
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'cli_sha256'

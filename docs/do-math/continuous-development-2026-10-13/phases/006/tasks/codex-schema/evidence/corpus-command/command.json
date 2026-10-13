@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "structure.test_corpus",
+    "unit.test_corpus_replay",
+    "contracts.test_doubles_follow_corpus",
+    "structure.test_test_smells",
+    "--jobs",
+    "1",
+    "--output",
+    "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/corpus"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 38900,
+  "started_at": "2026-10-13T15:29:10.946374+00:00",
+  "pid": 23472,
+  "state": "exited",
+  "ended_at": "2026-10-13T15:29:30.629265+00:00",
+  "exit_code": 0,
+  "changed_sources": [
+    ".claude/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

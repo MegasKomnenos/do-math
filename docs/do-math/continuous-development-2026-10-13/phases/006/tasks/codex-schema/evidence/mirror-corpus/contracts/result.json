@@ -1,0 +1,70 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 10,
+  "rows": [
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_a_changed_body_or_declaration_set_has_no_implicit_success",
+      "outcome": "passed",
+      "seconds": 0.014999999955762178,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_a_declaration_the_source_does_not_define_fails_like_lean",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_declared_facts_reproduce_the_recorded_signature_and_axiom_lines",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_explicit_binder_type_value_and_shared_bodies_survive_the_parser",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_explicit_facts_still_pass_through_signature_and_forbidden_axiom_checks",
+      "outcome": "passed",
+      "seconds": 0.015000000013969839,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_missing_or_conflicting_facts_are_not_silently_filled",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_only_the_default_producer_source_verifies_with_evidence_by_default",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.LeanDoubleOutputTests.test_preview_registration_removes_previous_extraction_permission",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.ModelDoubleStreamTests.test_current_maintenance_outputs_match_the_provider_doubles_at_the_real_parser",
+      "outcome": "passed",
+      "seconds": 0.01600000000325963,
+      "details": []
+    },
+    {
+      "id": "contracts.test_doubles_follow_corpus.ModelDoubleStreamTests.test_the_codex_stream_is_judged_like_a_recorded_completed_stream",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "contracts.test_doubles_follow_corpus": 0.09399999998277053
+  }
+}

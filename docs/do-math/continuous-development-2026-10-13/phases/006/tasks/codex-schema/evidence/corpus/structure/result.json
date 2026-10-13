@@ -1,0 +1,47 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 6,
+  "rows": [
+    {
+      "id": "structure.test_corpus.CorpusCompletenessTests.test_each_provider_has_a_versioned_real_stream",
+      "outcome": "passed",
+      "seconds": 0.0,
+      "details": []
+    },
+    {
+      "id": "structure.test_corpus.CorpusCompletenessTests.test_every_entry_has_its_fields_and_files_and_no_file_is_undeclared",
+      "outcome": "passed",
+      "seconds": 0.030999999959021807,
+      "details": []
+    },
+    {
+      "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+      "outcome": "passed",
+      "seconds": 11.89100000000326,
+      "details": []
+    },
+    {
+      "id": "structure.test_test_smells.SmellTests.test_product_coverage_exclusions_state_a_reason",
+      "outcome": "passed",
+      "seconds": 0.0470000000204891,
+      "details": []
+    },
+    {
+      "id": "structure.test_test_smells.SmellTests.test_test_side_helpers_patch_no_product_name",
+      "outcome": "passed",
+      "seconds": 0.8900000000139698,
+      "details": []
+    },
+    {
+      "id": "structure.test_test_smells.SmellTests.test_test_sources_are_unchanged_by_unicode_normalization",
+      "outcome": "passed",
+      "seconds": 0.23499999998603016,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "structure.test_corpus": 0.061999999976251274,
+    "structure.test_test_smells": 13.063000000023749
+  }
+}

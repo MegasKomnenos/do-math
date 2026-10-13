@@ -1,0 +1,16 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 1,
+  "rows": [
+    {
+      "id": "smoke.test_provider_live.ProviderLiveTests.test_codex_maintenance_files_and_termination",
+      "outcome": "passed",
+      "seconds": 44.92200000002049,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "smoke.test_provider_live": 44.92200000002049
+  }
+}

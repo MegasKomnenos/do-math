@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "sim.test_operator_probe_contract.ProbeContractTests.test_codex_scholarly_tool_name_joins_server_and_tool",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 92, in test_codex_scholarly_tool_name_joins_server_and_tool\n    self.assertTrue(result['passed'], result)\nAssertionError: False is not true : {'case': 'files', 'passed': False, 'checks': {'local_termination': True, 'structured_result': False, 'preserved_file': False, 'checkpoint': False, 'scholarly_actual_tool': False}, 'report': 'C:\\\\Users\\\\wogud\\\\AppData\\\\Local\\\\Temp\\\\tmpj_uefhs5\\\\evidence\\\\files\\\\report.json'}\n"
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 6,
+  "rows": [
+    {
+      "id": "sim.test_provider_schema.ProviderSchemaTests.test_full_maintenance_contract_is_carried_without_requiring_optional_fields",
+      "outcome": "passed",
+      "seconds": 0.09399999998277053,
+      "details": []
+    },
+    {
+      "id": "sim.test_provider_schema.ProviderSchemaTests.test_invalid_envelope_and_json_never_become_successful_semantic_values",
+      "outcome": "passed",
+      "seconds": 0.75,
+      "details": []
+    },
+    {
+      "id": "sim.test_provider_schema.ProviderSchemaTests.test_maintenance_absence_empty_and_nonempty_values_remain_distinct",
+      "outcome": "passed",
+      "seconds": 0.5619999999762513,
+      "details": []
+    },
+    {
+      "id": "sim.test_provider_schema.ProviderSchemaTests.test_native_final_mismatch_is_rejected_before_decoding",
+      "outcome": "passed",
+      "seconds": 0.0470000000204891,
+      "details": []
+    },
+    {
+      "id": "sim.test_provider_schema.ProviderSchemaTests.test_original_maintenance_constraints_reject_invalid_values_without_repair",
+      "outcome": "passed",
+      "seconds": 3.172000000020489,
+      "details": []
+    },
+    {
+      "id": "sim.test_provider_schema.ProviderSchemaTests.test_repair_consumer_keeps_its_full_schema_and_exact_result",
+      "outcome": "passed",
+      "seconds": 1.062999999965541,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "sim.test_provider_schema": 5.687999999965541
+  }
+}

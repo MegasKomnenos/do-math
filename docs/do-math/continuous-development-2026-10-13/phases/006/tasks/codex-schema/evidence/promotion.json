@@ -1,0 +1,163 @@
+{
+  "smoke": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live\\smoke-isolated-000\\scratch\\provider-smoke-codex-oruxkyim\\smoke.json",
+  "entries_before": 17,
+  "entries_after": 18,
+  "entry": {
+    "id": "codex-maintenance-transport-20261014",
+    "kind": "codex_stream",
+    "path": "codex/codex-maintenance-transport-20261014.jsonl",
+    "tool_version": "codex-cli 0.162.1",
+    "recorded_at": "2026-10-13T15:25:53.383055+00:00",
+    "command": [
+      "C:\\Users\\wogud\\.codex\\packages\\standalone\\releases\\0.162.1-x86_64-pc-windows-msvc\\bin\\codex.exe",
+      "--ask-for-approval",
+      "never",
+      "exec",
+      "--json",
+      "--color",
+      "never",
+      "--output-last-message",
+      "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live\\smoke-isolated-000\\scratch\\provider-smoke-codex-oruxkyim\\call\\final.txt",
+      "--model",
+      "gpt-6-astra",
+      "--cd",
+      "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live\\smoke-isolated-000\\scratch\\provider-smoke-codex-oruxkyim\\workspace",
+      "--strict-config",
+      "--config",
+      "model_reasoning_effort=\"low\"",
+      "--config",
+      "project_doc_max_bytes=0",
+      "--ephemeral",
+      "--ignore-user-config",
+      "--ignore-rules",
+      "--skip-git-repo-check",
+      "--output-schema",
+      "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live\\smoke-isolated-000\\scratch\\provider-smoke-codex-oruxkyim\\do-math-cli-vxnrsd_o\\schema.json",
+      "--config",
+      "windows.sandbox=\"unelevated\"",
+      "--sandbox",
+      "danger-full-access",
+      "-"
+    ],
+    "command_sha256": "5b9e149cd2f0c4219a810944e00aea3f7eccd3eeeffa50810c078e5f034af9ed",
+    "command_binding": "Current codex_worker.build_argv from preserved source_request; digest equals exited worker status.",
+    "role": "maintenance",
+    "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/stdout.jsonl",
+    "source_sha256": "9b0ed3ca5f00143df5c420c485827ea2c386a81faedd2483ee1c9c63791dcbfd",
+    "live_passed": true,
+    "live_checks": {
+      "completed": true,
+      "structured_output": true,
+      "schema_unchanged": true,
+      "transport_schema": true,
+      "worker_schema_hash": true,
+      "nonce_file": true,
+      "checkpoint": true,
+      "native_read": true,
+      "native_completion": true,
+      "selected_final": true,
+      "local_termination": true
+    },
+    "model": "gpt-6-astra",
+    "effort": "low",
+    "host": "desktop",
+    "reported_models": [],
+    "prompt_sha256": "5b32c697c49e242d0af69364dafef5c434ee03c96d1af319d48a9ba8ba0ba9b7",
+    "schema_sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+    "transport_schema_sha256": "48d462f63581312266615b6b24197b0e3057c9c2889d5ea1be2620f87e79f09b",
+    "scope": "One unbound maintenance call. schema_path is the complete semantic role contract; transport_schema_path is the Codex JSON-string envelope. Native replay and original-schema semantic receipt are separately checked.",
+    "response_transport": "codex_output_json",
+    "semantic_output": {
+      "summary": "Provider smoke complete.",
+      "used_sources": [
+        "probe-evidence.txt",
+        "checkpoint.json"
+      ],
+      "questions": [],
+      "report": "74856b42c29d5ffaa43e4a99e6229ed9",
+      "remaining_work": []
+    },
+    "recordings": [
+      {
+        "path": "codex/codex-maintenance-transport-20261014.schema.json",
+        "sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+        "bytes": 2531,
+        "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/output.schema.json"
+      },
+      {
+        "path": "codex/codex-maintenance-transport-20261014.transport.schema.json",
+        "sha256": "48d462f63581312266615b6b24197b0e3057c9c2889d5ea1be2620f87e79f09b",
+        "bytes": 3206,
+        "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/transport.schema.json"
+      },
+      {
+        "path": "codex/codex-maintenance-transport-20261014.stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0,
+        "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/stderr.txt"
+      },
+      {
+        "path": "codex/codex-maintenance-transport-20261014.worker-status.json",
+        "sha256": "1bd82eef6adb6ced18840975f9a932f6ea5f896b02a1b6f56d35286c7f621941",
+        "bytes": 366,
+        "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/worker-status.json"
+      },
+      {
+        "path": "codex/codex-maintenance-transport-20261014.prompt.txt",
+        "sha256": "5b32c697c49e242d0af69364dafef5c434ee03c96d1af319d48a9ba8ba0ba9b7",
+        "bytes": 1436,
+        "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/call/input.txt"
+      },
+      {
+        "path": "codex/codex-maintenance-transport-20261014.final.txt",
+        "sha256": "79fb7040c590b12e3935d778516b1029644c0279c415155c3a29c701a1275d5b",
+        "bytes": 219,
+        "source": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/live/smoke-isolated-000/scratch/provider-smoke-codex-oruxkyim/selected-final.txt"
+      }
+    ],
+    "schema_path": "codex/codex-maintenance-transport-20261014.schema.json",
+    "transport_schema_path": "codex/codex-maintenance-transport-20261014.transport.schema.json",
+    "worker_status_path": "codex/codex-maintenance-transport-20261014.worker-status.json",
+    "final_path": "codex/codex-maintenance-transport-20261014.final.txt",
+    "verdict": {
+      "turn_completed": true,
+      "turn_failed": false,
+      "parse_complete": true,
+      "usage_fields": [
+        "cache_write_input_tokens",
+        "cached_input_tokens",
+        "input_tokens",
+        "output_tokens",
+        "reasoning_output_tokens"
+      ],
+      "unknown_events": [],
+      "final_sha256": "79fb7040c590b12e3935d778516b1029644c0279c415155c3a29c701a1275d5b",
+      "final_is_selected_text": true
+    }
+  },
+  "checks": {
+    "completed": true,
+    "structured_output": true,
+    "schema_unchanged": true,
+    "transport_schema": true,
+    "worker_schema_hash": true,
+    "nonce_file": true,
+    "checkpoint": true,
+    "native_read": true,
+    "native_completion": true,
+    "selected_final": true,
+    "local_termination": true
+  },
+  "worker_schema_snapshot_matches": true,
+  "worker_prompt_snapshot_matches": true,
+  "new_model_calls": 1,
+  "reported_cost": null,
+  "reported_cost_note": "Native Codex stream reports token counters, not a price or invoice.",
+  "reported_usage": {
+    "input_tokens": 78318,
+    "cached_input_tokens": 57984,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 502,
+    "reasoning_output_tokens": 0
+  }
+}

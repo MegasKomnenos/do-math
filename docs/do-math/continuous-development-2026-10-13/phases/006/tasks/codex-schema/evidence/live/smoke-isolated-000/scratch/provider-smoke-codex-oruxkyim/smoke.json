@@ -1,0 +1,278 @@
+{
+  "provider": "codex",
+  "started_at": "2026-10-13T15:25:08.670682+00:00",
+  "runner_calls": 1,
+  "evidence_directory": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live\\smoke-isolated-000\\scratch\\provider-smoke-codex-oruxkyim",
+  "checks": {
+    "completed": true,
+    "structured_output": true,
+    "schema_unchanged": true,
+    "transport_schema": true,
+    "worker_schema_hash": true,
+    "nonce_file": true,
+    "checkpoint": true,
+    "native_read": true,
+    "native_completion": true,
+    "selected_final": true,
+    "local_termination": true
+  },
+  "inputs": {
+    "cli": "C:\\Users\\wogud\\.codex\\packages\\standalone\\releases\\0.162.1-x86_64-pc-windows-msvc\\bin\\codex.exe",
+    "model": "gpt-6-astra",
+    "effort": "low",
+    "host": "desktop"
+  },
+  "version": {
+    "command": [
+      "C:\\Users\\wogud\\.codex\\packages\\standalone\\releases\\0.162.1-x86_64-pc-windows-msvc\\bin\\codex.exe",
+      "--version"
+    ],
+    "exit_code": 0,
+    "text": "codex-cli 0.162.1"
+  },
+  "nonce": "74856b42c29d5ffaa43e4a99e6229ed9",
+  "expected_output": {
+    "summary": "Provider smoke complete.",
+    "used_sources": [
+      "probe-evidence.txt",
+      "checkpoint.json"
+    ],
+    "questions": [],
+    "report": "74856b42c29d5ffaa43e4a99e6229ed9",
+    "remaining_work": []
+  },
+  "expected_checkpoint": {
+    "current_claim": "The smoke file was written and read back.",
+    "evidence_paths": [
+      "probe-evidence.txt"
+    ],
+    "attempts": [
+      "Write and read the nonce file."
+    ],
+    "remaining_work": [],
+    "next_step": "Return the maintenance response.",
+    "progress_state": "ready_to_submit"
+  },
+  "result": {
+    "status": "completed",
+    "output": {
+      "summary": "Provider smoke complete.",
+      "used_sources": [
+        "probe-evidence.txt",
+        "checkpoint.json"
+      ],
+      "questions": [],
+      "report": "74856b42c29d5ffaa43e4a99e6229ed9",
+      "remaining_work": []
+    },
+    "usage": {
+      "input_tokens": 78318,
+      "cached_input_tokens": 57984,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 502,
+      "reasoning_output_tokens": 0
+    },
+    "evidence_dir": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live\\smoke-isolated-000\\scratch\\provider-smoke-codex-oruxkyim\\call",
+    "execution": {
+      "started": {
+        "pid": 32476,
+        "creation_filetime": "134363787089749583",
+        "request_sha256": "d9332669ffd1ca90e5cf895e1327b0835a3d30bc2cfea99440a05a45f3b3787e",
+        "job_name": "Local\\DoMath-a4d86a9e89894ff49b30559a8dc28ff0"
+      },
+      "collect": {
+        "source_request": {
+          "present": true,
+          "bytes": 1727,
+          "sha256": "d9332669ffd1ca90e5cf895e1327b0835a3d30bc2cfea99440a05a45f3b3787e",
+          "raw": {
+            "sha256": "d9332669ffd1ca90e5cf895e1327b0835a3d30bc2cfea99440a05a45f3b3787e",
+            "text": "{\"approval_policy\":\"never\",\"codex_path\":\"C:\\\\Users\\\\wogud\\\\.codex\\\\packages\\\\standalone\\\\releases\\\\0.162.1-x86_64-pc-windows-msvc\\\\bin\\\\codex.exe\",\"cwd\":\"C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\006\\\\tasks\\\\codex-schema\\\\evidence\\\\live\\\\smoke-isolated-000\\\\scratch\\\\provider-smoke-codex-oruxkyim\\\\workspace\",\"effort\":\"low\",\"final_path\":\"C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\006\\\\tasks\\\\codex-schema\\\\evidence\\\\live\\\\smoke-isolated-000\\\\scratch\\\\provider-smoke-codex-oruxkyim\\\\call\\\\final.txt\",\"max_runtime_seconds\":null,\"model\":\"gpt-6-astra\",\"output_schema_path\":\"C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\006\\\\tasks\\\\codex-schema\\\\evidence\\\\live\\\\smoke-isolated-000\\\\scratch\\\\provider-smoke-codex-oruxkyim\\\\do-math-cli-vxnrsd_o\\\\schema.json\",\"prompt_path\":\"C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\006\\\\tasks\\\\codex-schema\\\\evidence\\\\live\\\\smoke-isolated-000\\\\scratch\\\\provider-smoke-codex-oruxkyim\\\\do-math-cli-vxnrsd_o\\\\prompt.bin\",\"sandbox\":\"danger-full-access\",\"status_path\":\"C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\006\\\\tasks\\\\codex-schema\\\\evidence\\\\live\\\\smoke-isolated-000\\\\scratch\\\\provider-smoke-codex-oruxkyim\\\\call\\\\worker-status.json\",\"stderr_path\":\"C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\006\\\\tasks\\\\codex-schema\\\\evidence\\\\live\\\\smoke-isolated-000\\\\scratch\\\\provider-smoke-codex-oruxkyim\\\\call\\\\stderr.txt\",\"stdout_path\":\"C:\\\\math\\\\docs\\\\do-math\\\\continuous-development-2026-10-13\\\\phases\\\\006\\\\tasks\\\\codex-schema\\\\evidence\\\\live\\\\smoke-isolated-000\\\\scratch\\\\provider-smoke-codex-oruxkyim\\\\call\\\\stdout.jsonl\",\"windows_sandbox\":\"unelevated\"}",
+            "base64": "eyJhcHByb3ZhbF9wb2xpY3kiOiJuZXZlciIsImNvZGV4X3BhdGgiOiJDOlxcVXNlcnNcXHdvZ3VkXFwuY29kZXhcXHBhY2thZ2VzXFxzdGFuZGFsb25lXFxyZWxlYXNlc1xcMC4xNjIuMS14ODZfNjQtcGMtd2luZG93cy1tc3ZjXFxiaW5cXGNvZGV4LmV4ZSIsImN3ZCI6IkM6XFxtYXRoXFxkb2NzXFxkby1tYXRoXFxjb250aW51b3VzLWRldmVsb3BtZW50LTIwMjYtMTAtMTNcXHBoYXNlc1xcMDA2XFx0YXNrc1xcY29kZXgtc2NoZW1hXFxldmlkZW5jZVxcbGl2ZVxcc21va2UtaXNvbGF0ZWQtMDAwXFxzY3JhdGNoXFxwcm92aWRlci1zbW9rZS1jb2RleC1vcnV4a3lpbVxcd29ya3NwYWNlIiwiZWZmb3J0IjoibG93IiwiZmluYWxfcGF0aCI6IkM6XFxtYXRoXFxkb2NzXFxkby1tYXRoXFxjb250aW51b3VzLWRldmVsb3BtZW50LTIwMjYtMTAtMTNcXHBoYXNlc1xcMDA2XFx0YXNrc1xcY29kZXgtc2NoZW1hXFxldmlkZW5jZVxcbGl2ZVxcc21va2UtaXNvbGF0ZWQtMDAwXFxzY3JhdGNoXFxwcm92aWRlci1zbW9rZS1jb2RleC1vcnV4a3lpbVxcY2FsbFxcZmluYWwudHh0IiwibWF4X3J1bnRpbWVfc2Vjb25kcyI6bnVsbCwibW9kZWwiOiJncHQtNi1hc3RyYSIsIm91dHB1dF9zY2hlbWFfcGF0aCI6IkM6XFxtYXRoXFxkb2NzXFxkby1tYXRoXFxjb250aW51b3VzLWRldmVsb3BtZW50LTIwMjYtMTAtMTNcXHBoYXNlc1xcMDA2XFx0YXNrc1xcY29kZXgtc2NoZW1hXFxldmlkZW5jZVxcbGl2ZVxcc21va2UtaXNvbGF0ZWQtMDAwXFxzY3JhdGNoXFxwcm92aWRlci1zbW9rZS1jb2RleC1vcnV4a3lpbVxcZG8tbWF0aC1jbGktdnhucnNkX29cXHNjaGVtYS5qc29uIiwicHJvbXB0X3BhdGgiOiJDOlxcbWF0aFxcZG9jc1xcZG8tbWF0aFxcY29udGludW91cy1kZXZlbG9wbWVudC0yMDI2LTEwLTEzXFxwaGFzZXNcXDAwNlxcdGFza3NcXGNvZGV4LXNjaGVtYVxcZXZpZGVuY2VcXGxpdmVcXHNtb2tlLWlzb2xhdGVkLTAwMFxcc2NyYXRjaFxccHJvdmlkZXItc21va2UtY29kZXgtb3J1eGt5aW1cXGRvLW1hdGgtY2xpLXZ4bnJzZF9vXFxwcm9tcHQuYmluIiwic2FuZGJveCI6ImRhbmdlci1mdWxsLWFjY2VzcyIsInN0YXR1c19wYXRoIjoiQzpcXG1hdGhcXGRvY3NcXGRvLW1hdGhcXGNvbnRpbnVvdXMtZGV2ZWxvcG1lbnQtMjAyNi0xMC0xM1xccGhhc2VzXFwwMDZcXHRhc2tzXFxjb2RleC1zY2hlbWFcXGV2aWRlbmNlXFxsaXZlXFxzbW9rZS1pc29sYXRlZC0wMDBcXHNjcmF0Y2hcXHByb3ZpZGVyLXNtb2tlLWNvZGV4LW9ydXhreWltXFxjYWxsXFx3b3JrZXItc3RhdHVzLmpzb24iLCJzdGRlcnJfcGF0aCI6IkM6XFxtYXRoXFxkb2NzXFxkby1tYXRoXFxjb250aW51b3VzLWRldmVsb3BtZW50LTIwMjYtMTAtMTNcXHBoYXNlc1xcMDA2XFx0YXNrc1xcY29kZXgtc2NoZW1hXFxldmlkZW5jZVxcbGl2ZVxcc21va2UtaXNvbGF0ZWQtMDAwXFxzY3JhdGNoXFxwcm92aWRlci1zbW9rZS1jb2RleC1vcnV4a3lpbVxcY2FsbFxcc3RkZXJyLnR4dCIsInN0ZG91dF9wYXRoIjoiQzpcXG1hdGhcXGRvY3NcXGRvLW1hdGhcXGNvbnRpbnVvdXMtZGV2ZWxvcG1lbnQtMjAyNi0xMC0xM1xccGhhc2VzXFwwMDZcXHRhc2tzXFxjb2RleC1zY2hlbWFcXGV2aWRlbmNlXFxsaXZlXFxzbW9rZS1pc29sYXRlZC0wMDBcXHNjcmF0Y2hcXHByb3ZpZGVyLXNtb2tlLWNvZGV4LW9ydXhreWltXFxjYWxsXFxzdGRvdXQuanNvbmwiLCJ3aW5kb3dzX3NhbmRib3giOiJ1bmVsZXZhdGVkIn0="
+          }
+        },
+        "source_prompt": {
+          "present": true,
+          "bytes": 1436,
+          "sha256": "5b32c697c49e242d0af69364dafef5c434ee03c96d1af319d48a9ba8ba0ba9b7",
+          "raw": {
+            "sha256": "5b32c697c49e242d0af69364dafef5c434ee03c96d1af319d48a9ba8ba0ba9b7",
+            "text": "This is an isolated maintenance integration smoke. Work only in C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live\\smoke-isolated-000\\scratch\\provider-smoke-codex-oruxkyim\\workspace. Write probe-evidence.txt as UTF-8 containing exactly 74856b42c29d5ffaa43e4a99e6229ed9, with no newline. Then use a separate shell tool call to read that file from disk and print only a JSON object with key read_nonce and the value read from the file. Do not print a hardcoded nonce. Write checkpoint.json with this exact JSON content: {\"current_claim\": \"The smoke file was written and read back.\", \"evidence_paths\": [\"probe-evidence.txt\"], \"attempts\": [\"Write and read the nonce file.\"], \"remaining_work\": [], \"next_step\": \"Return the maintenance response.\", \"progress_state\": \"ready_to_submit\"}. Read checkpoint.json back and verify its JSON value silently, without printing its content. The dedicated nonce read tool result must contain only the one read_nonce JSON object; do not append checkpoint contents or diagnostic text to that output. Finally return this maintenance response exactly: {\"summary\": \"Provider smoke complete.\", \"used_sources\": [\"probe-evidence.txt\", \"checkpoint.json\"], \"questions\": [], \"report\": \"74856b42c29d5ffaa43e4a99e6229ed9\", \"remaining_work\": []}. Keep the complete supplied response schema. Do not start agents, another model, background tasks, research, or network tools.",
+            "base64": "VGhpcyBpcyBhbiBpc29sYXRlZCBtYWludGVuYW5jZSBpbnRlZ3JhdGlvbiBzbW9rZS4gV29yayBvbmx5IGluIEM6XG1hdGhcZG9jc1xkby1tYXRoXGNvbnRpbnVvdXMtZGV2ZWxvcG1lbnQtMjAyNi0xMC0xM1xwaGFzZXNcMDA2XHRhc2tzXGNvZGV4LXNjaGVtYVxldmlkZW5jZVxsaXZlXHNtb2tlLWlzb2xhdGVkLTAwMFxzY3JhdGNoXHByb3ZpZGVyLXNtb2tlLWNvZGV4LW9ydXhreWltXHdvcmtzcGFjZS4gV3JpdGUgcHJvYmUtZXZpZGVuY2UudHh0IGFzIFVURi04IGNvbnRhaW5pbmcgZXhhY3RseSA3NDg1NmI0MmMyOWQ1ZmZhYTQzZTRhOTllNjIyOWVkOSwgd2l0aCBubyBuZXdsaW5lLiBUaGVuIHVzZSBhIHNlcGFyYXRlIHNoZWxsIHRvb2wgY2FsbCB0byByZWFkIHRoYXQgZmlsZSBmcm9tIGRpc2sgYW5kIHByaW50IG9ubHkgYSBKU09OIG9iamVjdCB3aXRoIGtleSByZWFkX25vbmNlIGFuZCB0aGUgdmFsdWUgcmVhZCBmcm9tIHRoZSBmaWxlLiBEbyBub3QgcHJpbnQgYSBoYXJkY29kZWQgbm9uY2UuIFdyaXRlIGNoZWNrcG9pbnQuanNvbiB3aXRoIHRoaXMgZXhhY3QgSlNPTiBjb250ZW50OiB7ImN1cnJlbnRfY2xhaW0iOiAiVGhlIHNtb2tlIGZpbGUgd2FzIHdyaXR0ZW4gYW5kIHJlYWQgYmFjay4iLCAiZXZpZGVuY2VfcGF0aHMiOiBbInByb2JlLWV2aWRlbmNlLnR4dCJdLCAiYXR0ZW1wdHMiOiBbIldyaXRlIGFuZCByZWFkIHRoZSBub25jZSBmaWxlLiJdLCAicmVtYWluaW5nX3dvcmsiOiBbXSwgIm5leHRfc3RlcCI6ICJSZXR1cm4gdGhlIG1haW50ZW5hbmNlIHJlc3BvbnNlLiIsICJwcm9ncmVzc19zdGF0ZSI6ICJyZWFkeV90b19zdWJtaXQifS4gUmVhZCBjaGVja3BvaW50Lmpzb24gYmFjayBhbmQgdmVyaWZ5IGl0cyBKU09OIHZhbHVlIHNpbGVudGx5LCB3aXRob3V0IHByaW50aW5nIGl0cyBjb250ZW50LiBUaGUgZGVkaWNhdGVkIG5vbmNlIHJlYWQgdG9vbCByZXN1bHQgbXVzdCBjb250YWluIG9ubHkgdGhlIG9uZSByZWFkX25vbmNlIEpTT04gb2JqZWN0OyBkbyBub3QgYXBwZW5kIGNoZWNrcG9pbnQgY29udGVudHMgb3IgZGlhZ25vc3RpYyB0ZXh0IHRvIHRoYXQgb3V0cHV0LiBGaW5hbGx5IHJldHVybiB0aGlzIG1haW50ZW5hbmNlIHJlc3BvbnNlIGV4YWN0bHk6IHsic3VtbWFyeSI6ICJQcm92aWRlciBzbW9rZSBjb21wbGV0ZS4iLCAidXNlZF9zb3VyY2VzIjogWyJwcm9iZS1ldmlkZW5jZS50eHQiLCAiY2hlY2twb2ludC5qc29uIl0sICJxdWVzdGlvbnMiOiBbXSwgInJlcG9ydCI6ICI3NDg1NmI0MmMyOWQ1ZmZhYTQzZTRhOTllNjIyOWVkOSIsICJyZW1haW5pbmdfd29yayI6IFtdfS4gS2VlcCB0aGUgY29tcGxldGUgc3VwcGxpZWQgcmVzcG9uc2Ugc2NoZW1hLiBEbyBub3Qgc3RhcnQgYWdlbnRzLCBhbm90aGVyIG1vZGVsLCBiYWNrZ3JvdW5kIHRhc2tzLCByZXNlYXJjaCwgb3IgbmV0d29yayB0b29scy4="
+          }
+        },
+        "host_resources": null,
+        "stdout": {
+          "present": true,
+          "bytes": 4572,
+          "sha256": "9b0ed3ca5f00143df5c420c485827ea2c386a81faedd2483ee1c9c63791dcbfd",
+          "raw": {
+            "sha256": "9b0ed3ca5f00143df5c420c485827ea2c386a81faedd2483ee1c9c63791dcbfd",
+            "text": "{\"type\":\"thread.started\",\"thread_id\":\"01a135de-18f5-73e0-b0c5-f415fd0fd241\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"agent_message\",\"text\":\"I’ll write the files, read the nonce in a separate shell call, and silently verify the checkpoint.\\n\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"\\\"C:\\\\\\\\Program Files\\\\\\\\PowerShell\\\\\\\\7\\\\\\\\pwsh.exe\\\" -Command \\\"[System.IO.File]::WriteAllText((Join-Path (Get-Location) 'probe-evidence.txt'), '74856b42c29d5ffaa43e4a99e6229ed9', [System.Text.UTF8Encoding]::new(\\\"'$false))'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_1\",\"type\":\"command_execution\",\"command\":\"\\\"C:\\\\\\\\Program Files\\\\\\\\PowerShell\\\\\\\\7\\\\\\\\pwsh.exe\\\" -Command \\\"[System.IO.File]::WriteAllText((Join-Path (Get-Location) 'probe-evidence.txt'), '74856b42c29d5ffaa43e4a99e6229ed9', [System.Text.UTF8Encoding]::new(\\\"'$false))'\",\"aggregated_output\":\"\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_2\",\"type\":\"command_execution\",\"command\":\"\\\"C:\\\\\\\\Program Files\\\\\\\\PowerShell\\\\\\\\7\\\\\\\\pwsh.exe\\\" -Command '$nonceRead = [System.IO.File]::ReadAllText((Join-Path (Get-Location) '\\\"'probe-evidence.txt'), [System.Text.Encoding]::UTF8); @{ read_nonce = \\\"'$nonceRead } | ConvertTo-Json -Compress'\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_2\",\"type\":\"command_execution\",\"command\":\"\\\"C:\\\\\\\\Program Files\\\\\\\\PowerShell\\\\\\\\7\\\\\\\\pwsh.exe\\\" -Command '$nonceRead = [System.IO.File]::ReadAllText((Join-Path (Get-Location) '\\\"'probe-evidence.txt'), [System.Text.Encoding]::UTF8); @{ read_nonce = \\\"'$nonceRead } | ConvertTo-Json -Compress'\",\"aggregated_output\":\"{\\\"read_nonce\\\":\\\"74856b42c29d5ffaa43e4a99e6229ed9\\\"}\\r\\n\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.started\",\"item\":{\"id\":\"item_3\",\"type\":\"command_execution\",\"command\":\"\\\"C:\\\\\\\\Program Files\\\\\\\\PowerShell\\\\\\\\7\\\\\\\\pwsh.exe\\\" -Command '$checkpointText = '\\\"'{\\\\\\\"current_claim\\\\\\\": \\\\\\\"The smoke file was written and read back.\\\\\\\", \\\\\\\"evidence_paths\\\\\\\": [\\\\\\\"probe-evidence.txt\\\\\\\"], \\\\\\\"attempts\\\\\\\": [\\\\\\\"Write and read the nonce file.\\\\\\\"], \\\\\\\"remaining_work\\\\\\\": [], \\\\\\\"next_step\\\\\\\": \\\\\\\"Return the maintenance response.\\\\\\\", \\\\\\\"progress_state\\\\\\\": \\\\\\\"ready_to_submit\\\\\\\"}'; \\\"'$checkpointPath = Join-Path (Get-Location) '\\\"'checkpoint.json'; [System.IO.File]::WriteAllText(\\\"'$checkpointPath, $checkpointText, [System.Text.UTF8Encoding]::new($false)); $actualCheckpoint = [System.IO.File]::ReadAllText($checkpointPath, [System.Text.Encoding]::UTF8) | ConvertFrom-Json; $expectedCheckpoint = $checkpointText | ConvertFrom-Json; if (($actualCheckpoint | ConvertTo-Json -Depth 10 -Compress) -cne ($expectedCheckpoint | ConvertTo-Json -Depth 10 -Compress)) { throw '\\\"'Checkpoint verification failed' }\\\"\",\"aggregated_output\":\"\",\"exit_code\":null,\"status\":\"in_progress\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_3\",\"type\":\"command_execution\",\"command\":\"\\\"C:\\\\\\\\Program Files\\\\\\\\PowerShell\\\\\\\\7\\\\\\\\pwsh.exe\\\" -Command '$checkpointText = '\\\"'{\\\\\\\"current_claim\\\\\\\": \\\\\\\"The smoke file was written and read back.\\\\\\\", \\\\\\\"evidence_paths\\\\\\\": [\\\\\\\"probe-evidence.txt\\\\\\\"], \\\\\\\"attempts\\\\\\\": [\\\\\\\"Write and read the nonce file.\\\\\\\"], \\\\\\\"remaining_work\\\\\\\": [], \\\\\\\"next_step\\\\\\\": \\\\\\\"Return the maintenance response.\\\\\\\", \\\\\\\"progress_state\\\\\\\": \\\\\\\"ready_to_submit\\\\\\\"}'; \\\"'$checkpointPath = Join-Path (Get-Location) '\\\"'checkpoint.json'; [System.IO.File]::WriteAllText(\\\"'$checkpointPath, $checkpointText, [System.Text.UTF8Encoding]::new($false)); $actualCheckpoint = [System.IO.File]::ReadAllText($checkpointPath, [System.Text.Encoding]::UTF8) | ConvertFrom-Json; $expectedCheckpoint = $checkpointText | ConvertFrom-Json; if (($actualCheckpoint | ConvertTo-Json -Depth 10 -Compress) -cne ($expectedCheckpoint | ConvertTo-Json -Depth 10 -Compress)) { throw '\\\"'Checkpoint verification failed' }\\\"\",\"aggregated_output\":\"\",\"exit_code\":0,\"status\":\"completed\"}}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_4\",\"type\":\"agent_message\",\"text\":\"{\\\"output_json\\\":\\\"{\\\\\\\"summary\\\\\\\": \\\\\\\"Provider smoke complete.\\\\\\\", \\\\\\\"used_sources\\\\\\\": [\\\\\\\"probe-evidence.txt\\\\\\\", \\\\\\\"checkpoint.json\\\\\\\"], \\\\\\\"questions\\\\\\\": [], \\\\\\\"report\\\\\\\": \\\\\\\"74856b42c29d5ffaa43e4a99e6229ed9\\\\\\\", \\\\\\\"remaining_work\\\\\\\": []}\\\"}\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":78318,\"cached_input_tokens\":57984,\"cache_write_input_tokens\":0,\"output_tokens\":502,\"reasoning_output_tokens\":0}}\n",
+            "base64": "eyJ0eXBlIjoidGhyZWFkLnN0YXJ0ZWQiLCJ0aHJlYWRfaWQiOiIwMWExMzVkZS0xOGY1LTczZTAtYjBjNS1mNDE1ZmQwZmQyNDEifQp7InR5cGUiOiJ0dXJuLnN0YXJ0ZWQifQp7InR5cGUiOiJpdGVtLmNvbXBsZXRlZCIsIml0ZW0iOnsiaWQiOiJpdGVtXzAiLCJ0eXBlIjoiYWdlbnRfbWVzc2FnZSIsInRleHQiOiJJ4oCZbGwgd3JpdGUgdGhlIGZpbGVzLCByZWFkIHRoZSBub25jZSBpbiBhIHNlcGFyYXRlIHNoZWxsIGNhbGwsIGFuZCBzaWxlbnRseSB2ZXJpZnkgdGhlIGNoZWNrcG9pbnQuXG4ifX0KeyJ0eXBlIjoiaXRlbS5zdGFydGVkIiwiaXRlbSI6eyJpZCI6Iml0ZW1fMSIsInR5cGUiOiJjb21tYW5kX2V4ZWN1dGlvbiIsImNvbW1hbmQiOiJcIkM6XFxcXFByb2dyYW0gRmlsZXNcXFxcUG93ZXJTaGVsbFxcXFw3XFxcXHB3c2guZXhlXCIgLUNvbW1hbmQgXCJbU3lzdGVtLklPLkZpbGVdOjpXcml0ZUFsbFRleHQoKEpvaW4tUGF0aCAoR2V0LUxvY2F0aW9uKSAncHJvYmUtZXZpZGVuY2UudHh0JyksICc3NDg1NmI0MmMyOWQ1ZmZhYTQzZTRhOTllNjIyOWVkOScsIFtTeXN0ZW0uVGV4dC5VVEY4RW5jb2RpbmddOjpuZXcoXCInJGZhbHNlKSknIiwiYWdncmVnYXRlZF9vdXRwdXQiOiIiLCJleGl0X2NvZGUiOm51bGwsInN0YXR1cyI6ImluX3Byb2dyZXNzIn19CnsidHlwZSI6Iml0ZW0uY29tcGxldGVkIiwiaXRlbSI6eyJpZCI6Iml0ZW1fMSIsInR5cGUiOiJjb21tYW5kX2V4ZWN1dGlvbiIsImNvbW1hbmQiOiJcIkM6XFxcXFByb2dyYW0gRmlsZXNcXFxcUG93ZXJTaGVsbFxcXFw3XFxcXHB3c2guZXhlXCIgLUNvbW1hbmQgXCJbU3lzdGVtLklPLkZpbGVdOjpXcml0ZUFsbFRleHQoKEpvaW4tUGF0aCAoR2V0LUxvY2F0aW9uKSAncHJvYmUtZXZpZGVuY2UudHh0JyksICc3NDg1NmI0MmMyOWQ1ZmZhYTQzZTRhOTllNjIyOWVkOScsIFtTeXN0ZW0uVGV4dC5VVEY4RW5jb2RpbmddOjpuZXcoXCInJGZhbHNlKSknIiwiYWdncmVnYXRlZF9vdXRwdXQiOiIiLCJleGl0X2NvZGUiOjAsInN0YXR1cyI6ImNvbXBsZXRlZCJ9fQp7InR5cGUiOiJpdGVtLnN0YXJ0ZWQiLCJpdGVtIjp7ImlkIjoiaXRlbV8yIiwidHlwZSI6ImNvbW1hbmRfZXhlY3V0aW9uIiwiY29tbWFuZCI6IlwiQzpcXFxcUHJvZ3JhbSBGaWxlc1xcXFxQb3dlclNoZWxsXFxcXDdcXFxccHdzaC5leGVcIiAtQ29tbWFuZCAnJG5vbmNlUmVhZCA9IFtTeXN0ZW0uSU8uRmlsZV06OlJlYWRBbGxUZXh0KChKb2luLVBhdGggKEdldC1Mb2NhdGlvbikgJ1wiJ3Byb2JlLWV2aWRlbmNlLnR4dCcpLCBbU3lzdGVtLlRleHQuRW5jb2RpbmddOjpVVEY4KTsgQHsgcmVhZF9ub25jZSA9IFwiJyRub25jZVJlYWQgfSB8IENvbnZlcnRUby1Kc29uIC1Db21wcmVzcyciLCJhZ2dyZWdhdGVkX291dHB1dCI6IiIsImV4aXRfY29kZSI6bnVsbCwic3RhdHVzIjoiaW5fcHJvZ3Jlc3MifX0KeyJ0eXBlIjoiaXRlbS5jb21wbGV0ZWQiLCJpdGVtIjp7ImlkIjoiaXRlbV8yIiwidHlwZSI6ImNvbW1hbmRfZXhlY3V0aW9uIiwiY29tbWFuZCI6IlwiQzpcXFxcUHJvZ3JhbSBGaWxlc1xcXFxQb3dlclNoZWxsXFxcXDdcXFxccHdzaC5leGVcIiAtQ29tbWFuZCAnJG5vbmNlUmVhZCA9IFtTeXN0ZW0uSU8uRmlsZV06OlJlYWRBbGxUZXh0KChKb2luLVBhdGggKEdldC1Mb2NhdGlvbikgJ1wiJ3Byb2JlLWV2aWRlbmNlLnR4dCcpLCBbU3lzdGVtLlRleHQuRW5jb2RpbmddOjpVVEY4KTsgQHsgcmVhZF9ub25jZSA9IFwiJyRub25jZVJlYWQgfSB8IENvbnZlcnRUby1Kc29uIC1Db21wcmVzcyciLCJhZ2dyZWdhdGVkX291dHB1dCI6IntcInJlYWRfbm9uY2VcIjpcIjc0ODU2YjQyYzI5ZDVmZmFhNDNlNGE5OWU2MjI5ZWQ5XCJ9XHJcbiIsImV4aXRfY29kZSI6MCwic3RhdHVzIjoiY29tcGxldGVkIn19CnsidHlwZSI6Iml0ZW0uc3RhcnRlZCIsIml0ZW0iOnsiaWQiOiJpdGVtXzMiLCJ0eXBlIjoiY29tbWFuZF9leGVjdXRpb24iLCJjb21tYW5kIjoiXCJDOlxcXFxQcm9ncmFtIEZpbGVzXFxcXFBvd2VyU2hlbGxcXFxcN1xcXFxwd3NoLmV4ZVwiIC1Db21tYW5kICckY2hlY2twb2ludFRleHQgPSAnXCIne1xcXCJjdXJyZW50X2NsYWltXFxcIjogXFxcIlRoZSBzbW9rZSBmaWxlIHdhcyB3cml0dGVuIGFuZCByZWFkIGJhY2suXFxcIiwgXFxcImV2aWRlbmNlX3BhdGhzXFxcIjogW1xcXCJwcm9iZS1ldmlkZW5jZS50eHRcXFwiXSwgXFxcImF0dGVtcHRzXFxcIjogW1xcXCJXcml0ZSBhbmQgcmVhZCB0aGUgbm9uY2UgZmlsZS5cXFwiXSwgXFxcInJlbWFpbmluZ193b3JrXFxcIjogW10sIFxcXCJuZXh0X3N0ZXBcXFwiOiBcXFwiUmV0dXJuIHRoZSBtYWludGVuYW5jZSByZXNwb25zZS5cXFwiLCBcXFwicHJvZ3Jlc3Nfc3RhdGVcXFwiOiBcXFwicmVhZHlfdG9fc3VibWl0XFxcIn0nOyBcIickY2hlY2twb2ludFBhdGggPSBKb2luLVBhdGggKEdldC1Mb2NhdGlvbikgJ1wiJ2NoZWNrcG9pbnQuanNvbic7IFtTeXN0ZW0uSU8uRmlsZV06OldyaXRlQWxsVGV4dChcIickY2hlY2twb2ludFBhdGgsICRjaGVja3BvaW50VGV4dCwgW1N5c3RlbS5UZXh0LlVURjhFbmNvZGluZ106Om5ldygkZmFsc2UpKTsgJGFjdHVhbENoZWNrcG9pbnQgPSBbU3lzdGVtLklPLkZpbGVdOjpSZWFkQWxsVGV4dCgkY2hlY2twb2ludFBhdGgsIFtTeXN0ZW0uVGV4dC5FbmNvZGluZ106OlVURjgpIHwgQ29udmVydEZyb20tSnNvbjsgJGV4cGVjdGVkQ2hlY2twb2ludCA9ICRjaGVja3BvaW50VGV4dCB8IENvbnZlcnRGcm9tLUpzb247IGlmICgoJGFjdHVhbENoZWNrcG9pbnQgfCBDb252ZXJ0VG8tSnNvbiAtRGVwdGggMTAgLUNvbXByZXNzKSAtY25lICgkZXhwZWN0ZWRDaGVja3BvaW50IHwgQ29udmVydFRvLUpzb24gLURlcHRoIDEwIC1Db21wcmVzcykpIHsgdGhyb3cgJ1wiJ0NoZWNrcG9pbnQgdmVyaWZpY2F0aW9uIGZhaWxlZCcgfVwiIiwiYWdncmVnYXRlZF9vdXRwdXQiOiIiLCJleGl0X2NvZGUiOm51bGwsInN0YXR1cyI6ImluX3Byb2dyZXNzIn19CnsidHlwZSI6Iml0ZW0uY29tcGxldGVkIiwiaXRlbSI6eyJpZCI6Iml0ZW1fMyIsInR5cGUiOiJjb21tYW5kX2V4ZWN1dGlvbiIsImNvbW1hbmQiOiJcIkM6XFxcXFByb2dyYW0gRmlsZXNcXFxcUG93ZXJTaGVsbFxcXFw3XFxcXHB3c2guZXhlXCIgLUNvbW1hbmQgJyRjaGVja3BvaW50VGV4dCA9ICdcIid7XFxcImN1cnJlbnRfY2xhaW1cXFwiOiBcXFwiVGhlIHNtb2tlIGZpbGUgd2FzIHdyaXR0ZW4gYW5kIHJlYWQgYmFjay5cXFwiLCBcXFwiZXZpZGVuY2VfcGF0aHNcXFwiOiBbXFxcInByb2JlLWV2aWRlbmNlLnR4dFxcXCJdLCBcXFwiYXR0ZW1wdHNcXFwiOiBbXFxcIldyaXRlIGFuZCByZWFkIHRoZSBub25jZSBmaWxlLlxcXCJdLCBcXFwicmVtYWluaW5nX3dvcmtcXFwiOiBbXSwgXFxcIm5leHRfc3RlcFxcXCI6IFxcXCJSZXR1cm4gdGhlIG1haW50ZW5hbmNlIHJlc3BvbnNlLlxcXCIsIFxcXCJwcm9ncmVzc19zdGF0ZVxcXCI6IFxcXCJyZWFkeV90b19zdWJtaXRcXFwifSc7IFwiJyRjaGVja3BvaW50UGF0aCA9IEpvaW4tUGF0aCAoR2V0LUxvY2F0aW9uKSAnXCInY2hlY2twb2ludC5qc29uJzsgW1N5c3RlbS5JTy5GaWxlXTo6V3JpdGVBbGxUZXh0KFwiJyRjaGVja3BvaW50UGF0aCwgJGNoZWNrcG9pbnRUZXh0LCBbU3lzdGVtLlRleHQuVVRGOEVuY29kaW5nXTo6bmV3KCRmYWxzZSkpOyAkYWN0dWFsQ2hlY2twb2ludCA9IFtTeXN0ZW0uSU8uRmlsZV06OlJlYWRBbGxUZXh0KCRjaGVja3BvaW50UGF0aCwgW1N5c3RlbS5UZXh0LkVuY29kaW5nXTo6VVRGOCkgfCBDb252ZXJ0RnJvbS1Kc29uOyAkZXhwZWN0ZWRDaGVja3BvaW50ID0gJGNoZWNrcG9pbnRUZXh0IHwgQ29udmVydEZyb20tSnNvbjsgaWYgKCgkYWN0dWFsQ2hlY2twb2ludCB8IENvbnZlcnRUby1Kc29uIC1EZXB0aCAxMCAtQ29tcHJlc3MpIC1jbmUgKCRleHBlY3RlZENoZWNrcG9pbnQgfCBDb252ZXJ0VG8tSnNvbiAtRGVwdGggMTAgLUNvbXByZXNzKSkgeyB0aHJvdyAnXCInQ2hlY2twb2ludCB2ZXJpZmljYXRpb24gZmFpbGVkJyB9XCIiLCJhZ2dyZWdhdGVkX291dHB1dCI6IiIsImV4aXRfY29kZSI6MCwic3RhdHVzIjoiY29tcGxldGVkIn19CnsidHlwZSI6Iml0ZW0uY29tcGxldGVkIiwiaXRlbSI6eyJpZCI6Iml0ZW1fNCIsInR5cGUiOiJhZ2VudF9tZXNzYWdlIiwidGV4dCI6IntcIm91dHB1dF9qc29uXCI6XCJ7XFxcInN1bW1hcnlcXFwiOiBcXFwiUHJvdmlkZXIgc21va2UgY29tcGxldGUuXFxcIiwgXFxcInVzZWRfc291cmNlc1xcXCI6IFtcXFwicHJvYmUtZXZpZGVuY2UudHh0XFxcIiwgXFxcImNoZWNrcG9pbnQuanNvblxcXCJdLCBcXFwicXVlc3Rpb25zXFxcIjogW10sIFxcXCJyZXBvcnRcXFwiOiBcXFwiNzQ4NTZiNDJjMjlkNWZmYWE0M2U0YTk5ZTYyMjllZDlcXFwiLCBcXFwicmVtYWluaW5nX3dvcmtcXFwiOiBbXX1cIn0ifX0KeyJ0eXBlIjoidHVybi5jb21wbGV0ZWQiLCJ1c2FnZSI6eyJpbnB1dF90b2tlbnMiOjc4MzE4LCJjYWNoZWRfaW5wdXRfdG9rZW5zIjo1Nzk4NCwiY2FjaGVfd3JpdGVfaW5wdXRfdG9rZW5zIjowLCJvdXRwdXRfdG9rZW5zIjo1MDIsInJlYXNvbmluZ19vdXRwdXRfdG9rZW5zIjowfX0K"
+          }
+        },
+        "stderr": {
+          "present": true,
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "raw": {
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "text": "",
+            "base64": ""
+          }
+        },
+        "final": {
+          "present": true,
+          "bytes": 219,
+          "sha256": "79fb7040c590b12e3935d778516b1029644c0279c415155c3a29c701a1275d5b",
+          "raw": {
+            "sha256": "79fb7040c590b12e3935d778516b1029644c0279c415155c3a29c701a1275d5b",
+            "text": "{\"output_json\":\"{\\\"summary\\\": \\\"Provider smoke complete.\\\", \\\"used_sources\\\": [\\\"probe-evidence.txt\\\", \\\"checkpoint.json\\\"], \\\"questions\\\": [], \\\"report\\\": \\\"74856b42c29d5ffaa43e4a99e6229ed9\\\", \\\"remaining_work\\\": []}\"}",
+            "base64": "eyJvdXRwdXRfanNvbiI6IntcInN1bW1hcnlcIjogXCJQcm92aWRlciBzbW9rZSBjb21wbGV0ZS5cIiwgXCJ1c2VkX3NvdXJjZXNcIjogW1wicHJvYmUtZXZpZGVuY2UudHh0XCIsIFwiY2hlY2twb2ludC5qc29uXCJdLCBcInF1ZXN0aW9uc1wiOiBbXSwgXCJyZXBvcnRcIjogXCI3NDg1NmI0MmMyOWQ1ZmZhYTQzZTRhOTllNjIyOWVkOVwiLCBcInJlbWFpbmluZ193b3JrXCI6IFtdfSJ9"
+          }
+        },
+        "worker_status": {
+          "argv_sha256": "5b9e149cd2f0c4219a810944e00aea3f7eccd3eeeffa50810c078e5f034af9ed",
+          "cli_exit_code": 0,
+          "request_sha256": "d9332669ffd1ca90e5cf895e1327b0835a3d30bc2cfea99440a05a45f3b3787e",
+          "schema_sha256": "48d462f63581312266615b6b24197b0e3057c9c2889d5ea1be2620f87e79f09b",
+          "state": "exited",
+          "stdin_sha256": "5b32c697c49e242d0af69364dafef5c434ee03c96d1af319d48a9ba8ba0ba9b7"
+        },
+        "jsonl": {
+          "parsed_bytes": 4572,
+          "unparsed_tail_bytes": 0,
+          "events": [
+            "thread.started",
+            "turn.started",
+            "item.completed",
+            "item.started",
+            "item.completed",
+            "item.started",
+            "item.completed",
+            "item.started",
+            "item.completed",
+            "item.completed",
+            "turn.completed"
+          ],
+          "thread_id": "01a135de-18f5-73e0-b0c5-f415fd0fd241",
+          "turn_completed": true,
+          "turn_failed": false,
+          "usage": [
+            {
+              "input_tokens": 78318,
+              "cached_input_tokens": 57984,
+              "cache_write_input_tokens": 0,
+              "output_tokens": 502,
+              "reasoning_output_tokens": 0
+            }
+          ],
+          "unknown_events": [],
+          "parse_complete": true,
+          "final_text": "{\"output_json\":\"{\\\"summary\\\": \\\"Provider smoke complete.\\\", \\\"used_sources\\\": [\\\"probe-evidence.txt\\\", \\\"checkpoint.json\\\"], \\\"questions\\\": [], \\\"report\\\": \\\"74856b42c29d5ffaa43e4a99e6229ed9\\\", \\\"remaining_work\\\": []}\"}"
+        },
+        "worker_argv": [
+          "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "C:\\math\\.claude\\skills\\do-math\\scripts\\do_math\\codex_worker.py",
+          "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live\\smoke-isolated-000\\scratch\\provider-smoke-codex-oruxkyim\\do-math-cli-vxnrsd_o\\request.json"
+        ],
+        "process_identity": {
+          "pid": 32476,
+          "creation_filetime": "134363787089749583"
+        },
+        "stop_receipts": [],
+        "result": "output_collected",
+        "reasons": [],
+        "termination_barrier": {
+          "active_processes": 0,
+          "process_ids": [],
+          "root_signaled": true,
+          "confirmed": true
+        },
+        "provider_operation_ids": "unknown",
+        "remote_termination": "unknown",
+        "provider_stop_reason": "unknown",
+        "execution_id": null,
+        "profile_ref": null,
+        "provider_observation": {
+          "execution_id": null,
+          "operation_ids": "unknown",
+          "operation_count": "unknown",
+          "remote_termination": "unknown",
+          "stop_reason": "unknown",
+          "usage": {
+            "input_tokens": 78318,
+            "cached_input_tokens": 57984,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 502,
+            "reasoning_output_tokens": 0
+          },
+          "usage_scope": "reported_execution_counters_not_invoice",
+          "model_usage_reported": {},
+          "model_usage_scope": "last_reported_cumulative_not_added_to_segment_usage",
+          "evidence_sha256": "9b0ed3ca5f00143df5c420c485827ea2c386a81faedd2483ee1c9c63791dcbfd"
+        }
+      }
+    },
+    "error": null,
+    "assigned_model": "gpt-6-astra",
+    "execution_id": null,
+    "profile_ref": null,
+    "provider_observation": {
+      "execution_id": null,
+      "operation_ids": "unknown",
+      "operation_count": "unknown",
+      "remote_termination": "unknown",
+      "stop_reason": "unknown",
+      "usage": {
+        "input_tokens": 78318,
+        "cached_input_tokens": 57984,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 502,
+        "reasoning_output_tokens": 0
+      },
+      "usage_scope": "reported_execution_counters_not_invoice",
+      "model_usage_reported": {},
+      "model_usage_scope": "last_reported_cumulative_not_added_to_segment_usage",
+      "evidence_sha256": "9b0ed3ca5f00143df5c420c485827ea2c386a81faedd2483ee1c9c63791dcbfd"
+    }
+  },
+  "prompt_sha256": "5b32c697c49e242d0af69364dafef5c434ee03c96d1af319d48a9ba8ba0ba9b7",
+  "schema_sha256": "b4458e001449bf0c485d343cab7ba26b25f05969bdc7f6b12754e62bd8818dca",
+  "transport_schema_sha256": "48d462f63581312266615b6b24197b0e3057c9c2889d5ea1be2620f87e79f09b",
+  "checkpoint": {
+    "status": "valid",
+    "value": {
+      "current_claim": "The smoke file was written and read back.",
+      "evidence_paths": [
+        "probe-evidence.txt"
+      ],
+      "attempts": [
+        "Write and read the nonce file."
+      ],
+      "remaining_work": [],
+      "next_step": "Return the maintenance response.",
+      "progress_state": "ready_to_submit"
+    },
+    "sha256": "4fd6ae615f3250cbe3d75305bd34dc241bf75387b751f994ad57846e763f1735",
+    "raw": {
+      "sha256": "4fd6ae615f3250cbe3d75305bd34dc241bf75387b751f994ad57846e763f1735",
+      "text": "{\"current_claim\": \"The smoke file was written and read back.\", \"evidence_paths\": [\"probe-evidence.txt\"], \"attempts\": [\"Write and read the nonce file.\"], \"remaining_work\": [], \"next_step\": \"Return the maintenance response.\", \"progress_state\": \"ready_to_submit\"}",
+      "base64": "eyJjdXJyZW50X2NsYWltIjogIlRoZSBzbW9rZSBmaWxlIHdhcyB3cml0dGVuIGFuZCByZWFkIGJhY2suIiwgImV2aWRlbmNlX3BhdGhzIjogWyJwcm9iZS1ldmlkZW5jZS50eHQiXSwgImF0dGVtcHRzIjogWyJXcml0ZSBhbmQgcmVhZCB0aGUgbm9uY2UgZmlsZS4iXSwgInJlbWFpbmluZ193b3JrIjogW10sICJuZXh0X3N0ZXAiOiAiUmV0dXJuIHRoZSBtYWludGVuYW5jZSByZXNwb25zZS4iLCAicHJvZ3Jlc3Nfc3RhdGUiOiAicmVhZHlfdG9fc3VibWl0In0="
+    },
+    "observed_at": "2026-10-13T15:25:53.381056+00:00"
+  },
+  "native_read_events": [
+    {
+      "event_index": 6,
+      "tool_id": "item_2",
+      "value": {
+        "read_nonce": "74856b42c29d5ffaa43e4a99e6229ed9"
+      }
+    }
+  ],
+  "observed_event_count": 11,
+  "ended_at": "2026-10-13T15:25:53.383055+00:00",
+  "passed": true
+}

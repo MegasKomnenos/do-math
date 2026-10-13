@@ -1,0 +1,21 @@
+{
+  "argv": [
+    "C:\\Users\\wogud\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "smoke.test_provider_live.ProviderLiveTests.test_codex_maintenance_files_and_termination",
+    "--jobs",
+    "1",
+    "--output",
+    "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\live"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 25880,
+  "started_at": "2026-10-13T15:25:05.192920+00:00",
+  "pid": 1108,
+  "state": "exited",
+  "ended_at": "2026-10-13T15:25:55.812155+00:00",
+  "exit_code": 0,
+  "changed_sources": []
+}

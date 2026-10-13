@@ -1,0 +1,11 @@
+test_full_maintenance_contract_is_carried_without_requiring_optional_fields (sim.test_provider_schema.ProviderSchemaTests.test_full_maintenance_contract_is_carried_without_requiring_optional_fields) ... ok
+test_invalid_envelope_and_json_never_become_successful_semantic_values (sim.test_provider_schema.ProviderSchemaTests.test_invalid_envelope_and_json_never_become_successful_semantic_values) ... ok
+test_maintenance_absence_empty_and_nonempty_values_remain_distinct (sim.test_provider_schema.ProviderSchemaTests.test_maintenance_absence_empty_and_nonempty_values_remain_distinct) ... ok
+test_native_final_mismatch_is_rejected_before_decoding (sim.test_provider_schema.ProviderSchemaTests.test_native_final_mismatch_is_rejected_before_decoding) ... ok
+test_original_maintenance_constraints_reject_invalid_values_without_repair (sim.test_provider_schema.ProviderSchemaTests.test_original_maintenance_constraints_reject_invalid_values_without_repair) ... ok
+test_repair_consumer_keeps_its_full_schema_and_exact_result (sim.test_provider_schema.ProviderSchemaTests.test_repair_consumer_keeps_its_full_schema_and_exact_result) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 5.691s
+
+OK

@@ -1,0 +1,21 @@
+{
+  "verdict": "revise",
+  "alignment": "독해자는 실호출 성공과 회귀 미완료, 원/전송 schema 구별, 실제 성공 분기 검증을 중심으로 재구성했다. 세 불명확 표현은 모두 지정 원문으로 해소할 수 있으므로 배정의 의미를 바꾸지 않고 명시한다. 수행 전 결과와 미확인 외부 조건에 관한 uncertainties는 계획의 한계와 일치한다.",
+  "findings": [
+    {
+      "index": 1,
+      "action": "revise",
+      "reason": "C5의 이 도우미를 operator/probe/cross_installation 외부 CLI fixture와 pair 표본으로 명시한다."
+    },
+    {
+      "index": 2,
+      "action": "revise",
+      "reason": "C12의 이 도우미를 앞서 배정한 외부 CLI fixture로 명시한다."
+    },
+    {
+      "index": 3,
+      "action": "revise",
+      "reason": "A3에 Pair.fields의 수신 필드가 생산 표본 written 합집합에 포함되는 기존 검사임을 풀어 쓴다. 새 의미나 입력축을 만들지 않는다."
+    }
+  ]
+}

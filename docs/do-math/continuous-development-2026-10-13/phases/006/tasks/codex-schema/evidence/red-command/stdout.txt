@@ -1,0 +1,6 @@
+Open known defects: 0
+[sim] 1 tests
+Over budget: 0 tests
+{"complete": true, "successful": false, "counts": {"failed": 1}, "group_seconds": {"sim": 0.1}, "total_seconds": 0.1}
+    0.140s failed             sim.test_provider_schema.ProviderSchemaTests.test_full_maintenance_contract_is_carried_without_requiring_optional_fields
+Report: C:\math\docs\do-math\continuous-development-2026-10-13\phases\006\tasks\codex-schema\evidence\red\report.json

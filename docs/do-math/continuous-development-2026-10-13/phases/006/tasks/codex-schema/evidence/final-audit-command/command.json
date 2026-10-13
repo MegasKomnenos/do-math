@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe",
+    "-u",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/audit_delivery.py",
+    "final"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 39672,
+  "started_at": "2026-10-13T15:36:31.930868+00:00",
+  "pid": 38424,
+  "state": "exited",
+  "ended_at": "2026-10-13T15:36:40.563410+00:00",
+  "exit_code": 0,
+  "changed_sources": []
+}

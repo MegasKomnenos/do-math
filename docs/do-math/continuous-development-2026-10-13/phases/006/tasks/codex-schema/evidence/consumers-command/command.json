@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "sim.test_operator_probe_contract",
+    "sim.test_operator_finish_recovery",
+    "sim.test_operator_finish_provider",
+    "boundary.test_provider_worker_roots",
+    "contracts.test_pairs",
+    "flows.test_provider_native_storage",
+    "--jobs",
+    "1",
+    "--output",
+    "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/consumers"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 40436,
+  "started_at": "2026-10-13T15:17:38.044725+00:00",
+  "pid": 12744,
+  "state": "exited",
+  "ended_at": "2026-10-13T15:18:32.656628+00:00",
+  "exit_code": 1,
+  "changed_sources": [
+    ".claude/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

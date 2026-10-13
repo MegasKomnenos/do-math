@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "sim.test_provider_final_contract.ProviderFinalContractTests.test_bound_draft_schema_stays_local_and_unbound_final_keeps_its_schema",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "test_bound_draft_schema_stays_local_and_unbound_final_keeps_its_schema (sim.test_provider_final_contract.ProviderFinalContractTests.test_bound_draft_schema_stays_local_and_unbound_final_keeps_its_schema) (provider='gpt-6-astra', bound=False)\nTraceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_provider_final_contract.py\", line 78, in test_bound_draft_schema_stays_local_and_unbound_final_keeps_its_schema\n    self.assertEqual(json.loads(sent) if provider == 'claude' else json.loads(\nAssertionError: {'additionalProperties': False, 'properties[519 chars]ect'} != {'type': 'object', 'properties': {'ids': {'[114 chars]alse}\nDiff is 1763 characters long. Set self.maxDiff to None to see it.\n"
+    ]
+  }
+}

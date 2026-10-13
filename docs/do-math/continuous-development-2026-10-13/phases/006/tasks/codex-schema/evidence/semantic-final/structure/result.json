@@ -1,0 +1,34 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 4,
+  "rows": [
+    {
+      "id": "structure.test_test_smells.SmellTests.test_new_system_tests_have_no_smell",
+      "outcome": "passed",
+      "seconds": 12.15600000001723,
+      "details": []
+    },
+    {
+      "id": "structure.test_test_smells.SmellTests.test_product_coverage_exclusions_state_a_reason",
+      "outcome": "passed",
+      "seconds": 0.031000000017229468,
+      "details": []
+    },
+    {
+      "id": "structure.test_test_smells.SmellTests.test_test_side_helpers_patch_no_product_name",
+      "outcome": "passed",
+      "seconds": 0.75,
+      "details": []
+    },
+    {
+      "id": "structure.test_test_smells.SmellTests.test_test_sources_are_unchanged_by_unicode_normalization",
+      "outcome": "passed",
+      "seconds": 0.21899999998277053,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "structure.test_test_smells": 13.15600000001723
+  }
+}

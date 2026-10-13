@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe",
+    "-u",
+    "-B",
+    "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/verify_reuse.py"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 3616,
+  "started_at": "2026-10-13T15:35:14.290784+00:00",
+  "pid": 40452,
+  "state": "exited",
+  "ended_at": "2026-10-13T15:35:17.726947+00:00",
+  "exit_code": 1,
+  "changed_sources": []
+}

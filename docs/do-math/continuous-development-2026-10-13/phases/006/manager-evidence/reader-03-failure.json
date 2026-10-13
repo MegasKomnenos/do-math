@@ -1,0 +1,5 @@
+{
+  "result": "failed",
+  "reason": "Reader quote at line 415 inserted the word 두 before 성공 표본; the original draft was unchanged. The writing tool rejected the exact-quote validation.",
+  "action": "Preserve failed evidence and request a fresh whole reading of the same draft; do not repair the reader output or claim this reading passed."
+}

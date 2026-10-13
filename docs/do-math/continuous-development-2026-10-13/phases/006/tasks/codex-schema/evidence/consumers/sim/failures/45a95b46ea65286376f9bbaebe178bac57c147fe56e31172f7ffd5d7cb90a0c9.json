@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "sim.test_operator_probe_contract.ProbeContractTests.test_other_scholarly_tool_does_not_satisfy_list_sources",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 110, in test_other_scholarly_tool_does_not_satisfy_list_sources\n    self.assertEqual(self.report['actual_tool_names'], ['mcp__scholarly__list_sources_preview'])\nAssertionError: Lists differ: [] != ['mcp__scholarly__list_sources_preview']\n\nSecond list contains 1 additional elements.\nFirst extra element 0:\n'mcp__scholarly__list_sources_preview'\n\n- []\n+ ['mcp__scholarly__list_sources_preview']\n"
+    ]
+  }
+}

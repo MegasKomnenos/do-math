@@ -1,0 +1,50 @@
+[
+  {
+    "branch": "codex, collected",
+    "status": "failed",
+    "error_kind": "output_validation",
+    "error": "output JSON: KeyError: 'source_request'"
+  },
+  {
+    "branch": "codex, collected, bound",
+    "status": "completed",
+    "error_kind": null,
+    "error": null
+  },
+  {
+    "branch": "codex, incomplete",
+    "status": "failed",
+    "error_kind": "execution_failure",
+    "error": "fixture"
+  },
+  {
+    "branch": "codex, stopped",
+    "status": "stopped",
+    "error_kind": "execution_failure",
+    "error": "stop requested or timeout"
+  },
+  {
+    "branch": "claude, collected",
+    "status": "failed",
+    "error_kind": "output_validation",
+    "error": "output JSON: KeyError: 'source_request'"
+  },
+  {
+    "branch": "claude, collected, bound",
+    "status": "completed",
+    "error_kind": null,
+    "error": null
+  },
+  {
+    "branch": "claude, incomplete",
+    "status": "failed",
+    "error_kind": "execution_failure",
+    "error": "fixture"
+  },
+  {
+    "branch": "claude, stopped",
+    "status": "stopped",
+    "error_kind": "execution_failure",
+    "error": "stop requested or timeout"
+  }
+]

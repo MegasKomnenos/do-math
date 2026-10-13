@@ -1,0 +1,29 @@
+{
+  "complete": true,
+  "successful": true,
+  "tests_run": 2,
+  "rows": [
+    {
+      "id": "boundary.test_provider_worker_roots.WorkerRootTests.test_claude_worker_remains_importable_as_its_direct_job_root",
+      "outcome": "passed",
+      "seconds": 0.34399999998277053,
+      "details": []
+    },
+    {
+      "id": "boundary.test_provider_worker_roots.WorkerRootTests.test_worker_remains_importable_as_its_direct_job_root",
+      "outcome": "passed",
+      "seconds": 0.35899999999674037,
+      "details": []
+    }
+  ],
+  "module_total_seconds": {
+    "boundary.test_provider_worker_roots": 0.7029999999795109
+  },
+  "returncode": 0,
+  "worker_seconds": 1.3439999999827705,
+  "directory": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\006\\tasks\\codex-schema\\evidence\\consumers\\boundary-isolated-000",
+  "requested": [
+    "boundary.test_provider_worker_roots.WorkerRootTests.test_claude_worker_remains_importable_as_its_direct_job_root",
+    "boundary.test_provider_worker_roots.WorkerRootTests.test_worker_remains_importable_as_its_direct_job_root"
+  ]
+}

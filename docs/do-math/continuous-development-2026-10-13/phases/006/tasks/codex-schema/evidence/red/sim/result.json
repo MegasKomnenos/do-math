@@ -1,0 +1,18 @@
+{
+  "complete": true,
+  "successful": false,
+  "tests_run": 1,
+  "rows": [
+    {
+      "id": "sim.test_provider_schema.ProviderSchemaTests.test_full_maintenance_contract_is_carried_without_requiring_optional_fields",
+      "outcome": "failed",
+      "seconds": 0.14000000001396984,
+      "details": [
+        "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_provider_schema.py\", line 52, in test_full_maintenance_contract_is_carried_without_requiring_optional_fields\n    self.assertEqual(set(transport['required']), set(transport['properties']))\nAssertionError: Items in the second set but not the first:\n'repair_responses'\n'integration_bundles'\n"
+      ]
+    }
+  ],
+  "module_total_seconds": {
+    "sim.test_provider_schema": 0.14000000001396984
+  }
+}

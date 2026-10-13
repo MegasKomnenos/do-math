@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "sim.test_operator_probe_contract.ProbeContractTests.test_codex_command_requests_stop_and_collects_terminated_job",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 153, in test_codex_command_requests_stop_and_collects_terminated_job\n    self.assertEqual(result['checks'], {'local_termination': True, 'requested_stop': True})\nAssertionError: {'local_termination': True, 'requested_stop': False} != {'local_termination': True, 'requested_stop': True}\n- {'local_termination': True, 'requested_stop': False}\n?                                               ^^^^\n\n+ {'local_termination': True, 'requested_stop': True}\n?                                               ^^^\n\n"
+    ]
+  }
+}

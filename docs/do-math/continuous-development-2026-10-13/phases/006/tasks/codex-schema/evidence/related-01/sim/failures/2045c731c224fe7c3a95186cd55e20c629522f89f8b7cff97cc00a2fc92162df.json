@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "sim.test_provider_runner.ResultTests.test_completed_only_after_schema",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_provider_runner.py\", line 82, in test_completed_only_after_schema\n    self.assertEqual(result['status'], 'completed')\nAssertionError: 'failed' != 'completed'\n- failed\n+ completed\n\n"
+    ]
+  }
+}

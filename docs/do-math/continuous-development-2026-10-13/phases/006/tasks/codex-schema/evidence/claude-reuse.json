@@ -1,0 +1,47 @@
+{
+  "original_smoke": "C:\\math\\docs\\do-math\\continuous-development-2026-10-13\\phases\\003\\tasks\\provider-smoke\\evidence\\live-02\\smoke-isolated-000\\scratch\\provider-smoke-claude-nfy7ei6r\\smoke.json",
+  "result_status": "completed",
+  "result_output": {
+    "summary": "Provider smoke complete.",
+    "used_sources": [
+      "probe-evidence.txt",
+      "checkpoint.json"
+    ],
+    "questions": [],
+    "report": "d41b9cde2cf8a02b5b58392165507e25",
+    "remaining_work": []
+  },
+  "checks": {
+    "completed": true,
+    "structured_output": true,
+    "schema_unchanged": true,
+    "nonce_file": true,
+    "checkpoint": true,
+    "native_read": true,
+    "native_completion": true,
+    "selected_final": true,
+    "local_termination": true
+  },
+  "collection_reasons": [],
+  "prompt_unchanged": true,
+  "schema_unchanged": true,
+  "unchanged_modules": [
+    ".claude/skills/do-math/scripts/do_math/claude_adapter.py",
+    ".claude/skills/do-math/scripts/do_math/claude_worker.py",
+    ".claude/skills/do-math/scripts/do_math/claude_stream.py",
+    ".claude/skills/do-math/scripts/do_math/worker_request.py",
+    ".claude/skills/do-math/scripts/do_math/cli_worker.py",
+    ".claude/skills/do-math/scripts/do_math/cli_execution.py",
+    ".claude/skills/do-math/scripts/do_math/codex_adapter.py",
+    ".claude/skills/do-math/scripts/do_math/native_final.py",
+    ".claude/skills/do-math/scripts/do_math/contracts.py",
+    ".claude/skills/do-math/scripts/do_math/core_engine.py",
+    ".claude/skills/do-math/scripts/do_math/wiring.py",
+    ".claude/skills/do-math/scripts/do_math/windows_job.py"
+  ],
+  "historical_cli_identity": {},
+  "tool_reuse_basis": "Same executable path, version and complete current help bytes; historical binary SHA was not recorded, so byte identity is not claimed.",
+  "current_version": "2.1.289 (Claude Code)",
+  "new_claude_calls": 0,
+  "changed_shared_code": "model_runner Codex-only schema branch; model_call reads the verified source_request and semantic_output Claude branch performs the previous strict_json_loads. Bound returns precede decoding."
+}

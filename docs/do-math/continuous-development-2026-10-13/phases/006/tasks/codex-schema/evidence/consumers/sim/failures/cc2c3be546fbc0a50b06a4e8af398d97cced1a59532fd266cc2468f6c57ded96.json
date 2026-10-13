@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "event": "test_failure",
+  "test": {
+    "id": "sim.test_operator_probe_contract.ProbeContractTests.test_wrong_file_content_is_failed_even_with_completed_structured_response",
+    "outcome": "failed",
+    "seconds": 0,
+    "details": [
+      "Traceback (most recent call last):\n  File \"C:\\math\\.claude\\skills\\do-math\\scripts\\tests\\sim\\test_operator_probe_contract.py\", line 65, in test_wrong_file_content_is_failed_even_with_completed_structured_response\n    self.assertEqual(result['checks'], {'local_termination': True, 'structured_result': True,\nAssertionError: {'loc[33 chars]d_result': False, 'preserved_file': False, 'checkpoint': False} != {'loc[33 chars]d_result': True, 'preserved_file': False, 'checkpoint': True}\n- {'checkpoint': False,\n?                ^^^^\n\n+ {'checkpoint': True,\n?                ^^^\n\n   'local_termination': True,\n   'preserved_file': False,\n-  'structured_result': False}\n?                       ^^^^\n\n+  'structured_result': True}\n?                       ^^^\n\n"
+    ]
+  }
+}

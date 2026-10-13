@@ -1,0 +1,34 @@
+{
+  "mirror-check": {
+    "exit_code": 0,
+    "stdout_sha256": "f0819d139192598ffa315c83ed7fbe3aebdf7e9be7d1ce4fe2283da047a09c58",
+    "changed_sources": []
+  },
+  "skill-check": {
+    "exit_code": 0,
+    "stdout_sha256": "e3a27a9dcd02deeb27f9fc718caa5f1efc74364be87050f132fb997e6deebccf",
+    "changed_sources": []
+  },
+  "history_b49": {
+    "argv": [
+      "git",
+      "show",
+      "065a323a",
+      "--",
+      ".claude/skills/do-math/scripts/tests/sim/test_provider_runner_gaps.py",
+      ".claude/skills/do-math/scripts/tests/sim/test_provider_close_worker_rejections.py"
+    ],
+    "exit_code": 0,
+    "diff_matches": true,
+    "historical_reports": [
+      {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-laj86hxh\\report.json",
+        "exists_now": false
+      },
+      {
+        "path": "C:\\Users\\wogud\\AppData\\Local\\Temp\\do-math-tests-yspf93gz\\report.json",
+        "exists_now": false
+      }
+    ]
+  }
+}

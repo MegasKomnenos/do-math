@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "C:/Users/wogud/AppData/Local/Programs/Python/Python312/python.exe",
+    "-u",
+    "-B",
+    ".claude/skills/do-math/scripts/run_tests.py",
+    "sim.test_provider_schema",
+    "--jobs",
+    "1",
+    "--output",
+    "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/semantic"
+  ],
+  "cwd": "C:\\math",
+  "wrapper_pid": 40756,
+  "started_at": "2026-10-13T15:14:10.275159+00:00",
+  "pid": 22144,
+  "state": "exited",
+  "ended_at": "2026-10-13T15:14:22.105132+00:00",
+  "exit_code": 0,
+  "changed_sources": [
+    ".claude/skills/do-math/scripts/tests/.timings.json"
+  ]
+}

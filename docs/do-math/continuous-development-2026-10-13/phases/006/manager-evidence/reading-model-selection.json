@@ -1,0 +1,39 @@
+{
+  "purpose": "A fresh document reading after two exact-quote validation failures; not a do-math provider smoke or task model override.",
+  "model": "gpt-6-astra",
+  "effort": "medium",
+  "basis": "docs/do-math/continuous-development-2026-10-13/phases/006/tasks/codex-schema/evidence/environment.json",
+  "basis_sha256": "138cbe3bf6e2d0946765b92612f619102f35559ebe949c53c636bac937ab19ca",
+  "supported_model": {
+    "slug": "gpt-6-astra",
+    "supported_reasoning_levels": [
+      {
+        "effort": "low",
+        "description": "Fast responses with lighter reasoning"
+      },
+      {
+        "effort": "medium",
+        "description": "Balances speed and reasoning depth for everyday tasks"
+      },
+      {
+        "effort": "high",
+        "description": "Greater reasoning depth for complex problems"
+      },
+      {
+        "effort": "xhigh",
+        "description": "Extra high reasoning depth for complex problems"
+      },
+      {
+        "effort": "max",
+        "description": "Maximum reasoning depth for the hardest problems"
+      },
+      {
+        "effort": "ultra",
+        "description": "Maximum reasoning with automatic task delegation"
+      }
+    ],
+    "default_reasoning_level": "medium"
+  },
+  "draft_changed": false,
+  "global_settings_changed": false
+}
